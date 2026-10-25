@@ -7032,7 +7032,7 @@ if(window.FP&&FP.menu){var _m=FP.menu;FP.menu=async function(){var r=await _m.ap
 /* ================= Watermark hak cipta (kedua aplikasi) =================
    Teks kecil & redup di ujung kanan bilah status bawah dan di kepala jendela Import data — tidak menutupi tampilan / tombol. */
 (function(){var T='Copyright Habil Abdillah 2026';window.GCEX_COPY=T;
-  function put(){var f=document.getElementById('status');if(f&&!document.getElementById('wmark')){var s=document.createElement('span');s.id='wmark';s.textContent='© '+T;s.title='GC-Ex · Grade Control Excellence · '+T;f.appendChild(s);}
+  function put(){var f=document.getElementById('status');if(f&&!document.getElementById('wmark')){var s=document.createElement('span');s.id='wmark';s.textContent='© '+T;s.title='GC-Ex · Grade Control Excellence · '+T+'\nKomponen open-source (Plotly.js MIT, Electron, Python, dll.) & penafian merek dagang: menu Bantuan › Lisensi pihak ketiga & merek dagang';f.appendChild(s);}
     var h=document.querySelector('#imp .impHead');if(h&&!document.getElementById('wmarkImp')){var t=document.createElement('span');t.id='wmarkImp';t.textContent='© '+T;h.appendChild(t);}}
   var css=document.createElement('style');css.id='wmCss';css.textContent='#wmark{margin-left:12px;padding-left:10px;border-left:1px solid var(--bd,#d5dbe3);color:var(--mu,#6b7785);opacity:.8;font-size:10.5px;white-space:nowrap;user-select:none;pointer-events:auto}'+
     '#wmarkImp{margin-left:auto;align-self:flex-end;font-size:10.5px;opacity:.7;white-space:nowrap;user-select:none;padding-left:12px}';

@@ -1,0 +1,80 @@
+GC-Ex (GC-Ex Block Model & GC-Ex Drillhole)
+PENAFIAN MEREK DAGANG / TRADEMARK DISCLAIMER
+======================================================================
+
+Bahasa Indonesia
+----------------
+Nama produk, merek dan logo pihak lain yang disebut di aplikasi GC-Ex, di
+dokumentasinya, atau di format file yang didukungnya adalah merek dagang atau
+merek dagang terdaftar milik pemiliknya masing-masing, antara lain:
+
+  - Leapfrog, Leapfrog Geo dan Leapfrog Edge — Seequent Limited (bagian dari
+    Bentley Systems, Incorporated).
+  - GEOVIA dan Surpac — Dassault Systèmes atau anak perusahaannya.
+  - Micromine — Micromine Pty Ltd.
+  - Global Mapper — Blue Marble Geographics.
+  - AutoCAD dan DXF — Autodesk, Inc.
+  - Microsoft, Windows, Excel, Access, OneDrive dan SharePoint — Microsoft
+    Corporation.
+  - Google dan Google Chrome — Google LLC.
+  - Plotly — Plotly Technologies Inc.
+  - Electron — OpenJS Foundation.
+  - Python — Python Software Foundation.
+
+GC-Ex adalah perangkat lunak independen. GC-Ex TIDAK berafiliasi dengan,
+TIDAK disponsori, dan TIDAK didukung atau disahkan oleh pemilik merek-merek
+tersebut. Nama-nama itu dipakai semata-mata untuk menjelaskan kecocokan format
+file dan alur kerja (misalnya "membaca file string Surpac .str" atau "export
+OBJ untuk Leapfrog"), bukan untuk menyatakan hubungan apa pun. GC-Ex tidak
+memakai logo pihak-pihak tersebut. Kecocokan dengan perangkat lunak pihak lain
+diupayakan tetapi tidak dijamin, dan dapat berubah bila format file mereka
+berubah.
+
+"GC-Ex" dan "Grade Control Excellence" adalah nama produk milik Habil Abdillah.
+
+Hasil perhitungan
+-----------------
+GC-Ex adalah alat bantu. Hasil pemodelan, estimasi, reporting dan analisis
+(termasuk menu Ore Geometry) harus diperiksa dan menjadi tanggung jawab
+pengguna / Competent Person yang berwenang sebelum dipakai untuk keputusan
+teknis, pelaporan sumber daya / cadangan (mis. KCMI, JORC) atau keperluan
+komersial. Perangkat lunak disediakan "apa adanya" tanpa jaminan apa pun.
+
+
+English
+-------
+Product names, brands and logos of third parties mentioned in the GC-Ex
+application, its documentation or the file formats it supports are trademarks
+or registered trademarks of their respective owners, including:
+
+  - Leapfrog, Leapfrog Geo and Leapfrog Edge — Seequent Limited (a Bentley
+    Systems, Incorporated company).
+  - GEOVIA and Surpac — Dassault Systèmes or its subsidiaries.
+  - Micromine — Micromine Pty Ltd.
+  - Global Mapper — Blue Marble Geographics.
+  - AutoCAD and DXF — Autodesk, Inc.
+  - Microsoft, Windows, Excel, Access, OneDrive and SharePoint — Microsoft
+    Corporation.
+  - Google and Google Chrome — Google LLC.
+  - Plotly — Plotly Technologies Inc.
+  - Electron — OpenJS Foundation.
+  - Python — Python Software Foundation.
+
+GC-Ex is independent software. GC-Ex is NOT affiliated with, sponsored by,
+or endorsed by any of these trademark owners. These names are used solely to
+describe file-format and workflow compatibility (for example "reads Surpac
+.str string files" or "exports OBJ for Leapfrog"), not to imply any
+relationship. GC-Ex does not use the logos of these parties. Compatibility
+with third-party software is pursued but not guaranteed and may change if
+their file formats change.
+
+"GC-Ex" and "Grade Control Excellence" are product names of Habil Abdillah.
+
+Results
+-------
+GC-Ex is a support tool. Modelling, estimation, reporting and analysis results
+(including the Ore Geometry menu) must be reviewed by, and remain the
+responsibility of, the user / qualified Competent Person before being used for
+technical decisions, resource / reserve reporting (e.g. KCMI, JORC) or
+commercial purposes. The software is provided "as is", without warranty of
+any kind.

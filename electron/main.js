@@ -56,6 +56,9 @@ function prjOwner(p) {
 }
 const sharedFile = () => path.join(app.getPath('appData'), 'GC-Ex-shared', 'apps.json');
 function readShared() { try { return JSON.parse(fs.readFileSync(sharedFile(), 'utf8')); } catch (e) { return {}; } }
+/* folder pemberitahuan lisensi pihak ketiga & penafian merek (resources/legal) */
+function legalDir() { return app.isPackaged ? path.join(process.resourcesPath, 'legal') : path.join(__dirname, '..', 'legal'); }
+function openLegal() { const d = legalDir(), f = path.join(d, 'LISENSI_PIHAK_KETIGA.txt'); shell.openPath(fs.existsSync(f) ? f : d); }
 function regSelf() { if (!app.isPackaged) return; try { fs.mkdirSync(path.dirname(sharedFile()), { recursive: true }); const o = readShared(); o[G.theme] = process.execPath; fs.writeFileSync(sharedFile(), JSON.stringify(o, null, 1)); } catch (e) {} }
 // hasil: 'here' (dibuka di aplikasi ini), 'other' (diteruskan), 'none' (bukan proyek GC-Ex / gagal)
 function routePrj(p) {
@@ -333,7 +336,13 @@ function buildMenu() {
           try { const res = await fetch(backend.url + '/mdl/cache/clear', { method: 'POST' }); const j = await res.json(); dialog.showMessageBox(mainWin, { type: 'info', message: (j.removed || 0) + ' cache dihapus.' }); }
           catch (e) { dialog.showMessageBox(mainWin, { type: 'error', message: 'Gagal menghapus cache: ' + e.message }); }
         } },
-      { label: 'Tentang GC-Ex', click: () => dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', message: APP_NAME + ' - Grade Control Excellence', detail: 'Versi ' + app.getVersion() + '\nBackend: ' + (backend.ok ? 'aktif (' + backend.url + ')' : 'tidak aktif' + (backend.err ? ' - ' + backend.err : '')) + '\nLog: ' + logDir + '\n\nCopyright © 2026 Habil Abdillah' }) }
+      { label: 'Lisensi pihak ketiga & merek dagang', click: () => openLegal() },
+      { label: 'Tentang GC-Ex', click: async () => {
+          const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi & merek dagang'], defaultId: 0, noLink: true, message: APP_NAME + ' - Grade Control Excellence', detail: 'Versi ' + app.getVersion() + '\nBackend: ' + (backend.ok ? 'aktif (' + backend.url + ')' : 'tidak aktif' + (backend.err ? ' - ' + backend.err : '')) + '\nLog: ' + logDir + '\n\nCopyright © 2026 Habil Abdillah' +
+            '\n\nMemakai komponen open-source: Plotly.js (MIT), Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, lxml, openpyxl, pyodbc (MIT / BSD).' +
+            '\nLeapfrog, Surpac, GEOVIA, Micromine, AutoCAD, Microsoft Excel / Access dan nama produk lain adalah merek dagang milik pemiliknya; GC-Ex tidak berafiliasi dengan mereka.' });
+          if (r.response === 1) openLegal();
+        } }
     ] }
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(tpl));

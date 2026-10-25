@@ -1,0 +1,140 @@
+GC-Ex (GC-Ex Block Model & GC-Ex Drillhole)
+PEMBERITAHUAN LISENSI PIHAK KETIGA / THIRD-PARTY SOFTWARE NOTICES
+======================================================================
+
+Copyright (c) 2026 Habil Abdillah. Hak cipta atas kode GC-Ex dilindungi.
+
+GC-Ex memakai komponen perangkat lunak open-source di bawah ini. Setiap
+komponen tetap milik pemegang hak ciptanya dan didistribusikan sesuai
+lisensinya masing-masing. Lisensi komponen-komponen ini mengizinkan
+pemakaian, penyalinan dan distribusi (termasuk untuk keperluan komersial)
+dengan syarat pemberitahuan hak cipta dan teks lisensinya disertakan —
+itulah fungsi file ini dan file pendampingnya di folder yang sama.
+
+GC-Ex uses the open-source software components listed below. Each
+component remains the property of its copyright holders and is
+distributed under its own license, reproduced or referenced here.
+
+File di folder ini / files in this folder
+-----------------------------------------
+  LISENSI_PIHAK_KETIGA.txt   file ini: daftar komponen + lisensi Plotly.js
+  LISENSI_PYTHON.txt         teks lisensi lengkap Python, PyInstaller dan semua
+                             paket Python di backend (dibuat otomatis saat build)
+  LISENSI_ELECTRON.txt       lisensi Electron (disalin dari paket Electron saat build)
+  LISENSI_CHROMIUM.html      lisensi Chromium, Node.js dan komponen lain yang dibawa
+                             Electron (disalin dari paket Electron saat build)
+  LISENSI_PLOTLY_BUNDEL.txt  pemberitahuan pustaka yang dibundel di dalam plotly.min.js
+                             (diambil saat build bila tersedia)
+  PENAFIAN_MEREK.txt         penafian merek dagang / trademark disclaimer
+
+Salinan LICENSE.electron.txt dan LICENSES.chromium.html juga ada di folder
+instalasi aplikasi (disertakan otomatis oleh electron-builder).
+
+
+1. DAFTAR KOMPONEN / COMPONENT LIST
+-----------------------------------
+
+  Komponen                    Versi     Lisensi                       Dipakai untuk
+  --------------------------  --------  ----------------------------  ---------------------------------
+  Plotly.js                   2.27.0    MIT                           grafik & tampilan 3D / 2D (tertanam
+                                                                      di halaman aplikasi)
+  Electron                    33.2.1    MIT                           jendela aplikasi desktop
+    (termasuk Chromium & Node.js)       BSD-3-Clause, MIT & lainnya   lihat LISENSI_CHROMIUM.html
+  NSIS (installer, via        -         zlib/libpng                   installer & uninstaller Windows
+    electron-builder 25.1.8)
+  Python                      3.12      PSF License                   runtime backend (lihat LISENSI_PYTHON.txt)
+  PyInstaller (bootloader)    6.11.1    GPL-2.0 dengan pengecualian   pembungkus backend menjadi .exe;
+                                        bootloader (bootloader        pengecualian ini mengizinkan program
+                                        exception)                    hasil bungkusan didistribusikan
+                                                                      dengan lisensi apa pun
+  FastAPI                     0.115.6   MIT                           server lokal backend
+  Starlette                   (dep.)    BSD-3-Clause                  dependensi FastAPI
+  Uvicorn                     0.32.1    BSD-3-Clause                  server lokal backend
+  h11, anyio, sniffio,        (dep.)    MIT / MIT / MIT atau          dependensi Uvicorn / Starlette /
+    click, colorama, idna               Apache-2.0 / BSD-3-Clause /   Click
+                                        BSD-3-Clause / BSD-3-Clause
+  Pydantic, pydantic-core     2.10.4    MIT                           validasi data backend
+  annotated-types,            (dep.)    MIT / PSF-2.0                 dependensi Pydantic
+    typing-extensions
+  openpyxl, et-xmlfile        3.1.5     MIT                           baca / tulis Excel (.xlsx)
+  lxml                        5.3.0     BSD-3-Clause (termasuk        pembaca XML
+                                        libxml2 & libxslt: MIT)
+  NumPy                       2.1.3     BSD-3-Clause (termasuk        perhitungan numerik backend
+                                        pustaka yang dibundel di
+                                        wheel, mis. OpenBLAS)
+  pyodbc                      5.2.0     MIT                           koneksi database MS Access (ODBC)
+
+  Daftar paket Python yang PERSIS ikut di dalam installer, beserta versi dan
+  teks lisensinya, ada di LISENSI_PYTHON.txt (dibuat otomatis oleh build).
+  Paket khusus pengujian (pytest, httpx) dan alat build tidak ikut di dalam
+  aplikasi.
+
+
+2. PLOTLY.JS 2.27.0 — MIT LICENSE
+---------------------------------
+
+plotly.js v2.27.0
+Copyright 2012-2023, Plotly, Inc.
+All rights reserved.
+Licensed under the MIT license
+
+The MIT License (MIT)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Plotly.js menyertakan sejumlah pustaka open-source lain di dalam berkas
+plotly.min.js (antara lain modul d3, earcut, regl dan stack.gl) dengan
+lisensi permisif (MIT / BSD / ISC). Pemberitahuannya ada di
+LISENSI_PLOTLY_BUNDEL.txt; sumber resmi: repositori github.com/plotly/plotly.js.
+
+
+3. ELECTRON, CHROMIUM & NODE.JS
+-------------------------------
+
+Electron 33.2.1 dilisensikan dengan MIT License. Teks lengkapnya ada di
+LISENSI_ELECTRON.txt. Electron membawa Chromium, Node.js dan komponen lain;
+lisensi semuanya tercantum di LISENSI_CHROMIUM.html (dan LICENSES.chromium.html
+di folder instalasi).
+
+
+4. PYTHON, PYINSTALLER & PAKET PYTHON BACKEND
+---------------------------------------------
+
+Teks lengkap PSF License (Python), lisensi PyInstaller (GPL-2.0 dengan
+pengecualian bootloader) dan lisensi setiap paket Python yang dibundel di
+backend tercantum di LISENSI_PYTHON.txt.
+
+
+5. METODE & STANDAR YANG DIRUJUK (BUKAN KODE PIHAK KETIGA)
+---------------------------------------------------------
+
+Algoritme berikut diimplementasikan sendiri di GC-Ex berdasarkan literatur
+ilmiah yang terbuka untuk umum; tidak ada kode dari perangkat lunak komersial
+yang disalin:
+  - Thin-plate spline / radial basis function (Duchon 1976; Carr dkk. 2001,
+    SIGGRAPH "Reconstruction and representation of 3D objects with radial
+    basis functions").
+  - Ordinary kriging & variografi (Matheron 1963; Journel & Huijbregts 1978).
+  - Marching tetrahedra untuk isosurface (Doi & Koide 1991).
+  - Kovarians keluarga Cauchy umum untuk interpolan "spheroidal" (formulasi
+    GC-Ex sendiri; bukan implementasi milik pihak lain).
+  - Simbol peta struktur mengikuti konvensi kartografi geologi yang umum
+    (gaya USGS).
+Format file pihak lain (.str, .dtm, .mdl, .msh, .dxf, .obj, GeoTIFF/world file)
+dibaca / ditulis semata-mata untuk kecocokan pertukaran data.

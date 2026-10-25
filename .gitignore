@@ -7,3 +7,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 *.log
+legal/LISENSI_PYTHON.txt
+legal/LISENSI_ELECTRON.txt
+legal/LISENSI_CHROMIUM.html
+legal/LISENSI_PLOTLY_BUNDEL.txt

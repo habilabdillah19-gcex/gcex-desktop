@@ -30,6 +30,14 @@
       "filter": [
         "**/*"
       ]
+    },
+    {
+      "from": "legal",
+      "to": "legal",
+      "filter": [
+        "*.txt",
+        "*.html"
+      ]
     }
   ],
   "win": {

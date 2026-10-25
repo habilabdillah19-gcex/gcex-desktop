@@ -39,6 +39,14 @@ jobs:
           node-version: "20"
       - name: Pasang paket Node
         run: npm install --no-audit --no-fund
+      - name: Kumpulkan lisensi pihak ketiga
+        shell: pwsh
+        run: |
+          python legal/gen_licenses.py legal/LISENSI_PYTHON.txt
+          Copy-Item node_modules/electron/dist/LICENSE legal/LISENSI_ELECTRON.txt
+          Copy-Item node_modules/electron/dist/LICENSES.chromium.html legal/LISENSI_CHROMIUM.html
+          try { Invoke-WebRequest -UseBasicParsing https://unpkg.com/plotly.js@2.27.0/dist/plotly.min.js.LICENSE.txt -OutFile legal/LISENSI_PLOTLY_BUNDEL.txt } catch { Write-Host "plotly.min.js.LICENSE.txt tidak tersedia: lewati" }
+          Get-ChildItem legal | Format-Table Name, Length
       - name: Bangun installer GC-Ex Block Model
         run: npm run dist
         env:
