@@ -51,10 +51,24 @@ jobs:
         run: npm run dist
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Cek file lisensi di GC-Ex Block Model
+        shell: pwsh
+        run: |
+          $d = "dist/win-unpacked"
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
+            if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
+          }
       - name: Bangun installer GC-Ex Drillhole
         run: npm run dist:dh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Cek file lisensi di GC-Ex Drillhole
+        shell: pwsh
+        run: |
+          $d = "dist/win-unpacked"
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
+            if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
+          }
 
       - uses: actions/upload-artifact@v4
         with:
