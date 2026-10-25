@@ -73,9 +73,11 @@ TAIL = r"""
 MAPST['Lineasi / shoot']=MAPST['Lineasi / shoot']||{c:'#2b8a3e',w:1.8,d:'longdash'};
 /* titik pick-up ber-dip / dip azimuth -> basis data struktur (satu file STR per file pick-up) */
 function mapPfStr(f){if(!window.STR||!f)return 0;var fid='pf_'+f.id;STR.P=STR.P.filter(function(p){return p.fid!==fid;});STR.F=STR.F.filter(function(x){return x.id!==fid;});var n=0,nl=0;
+  /* file yang sama sudah di-import sebagai CSV struktur -> tidak digandakan (RBF tidak menghitung dua kali) */
+  if(STR.F.some(function(x){return x.kind==='csv'&&String(x.name).toLowerCase()===String(f.name).toLowerCase();}))return{n:0,nl:0,dup:true};
   f.P.forEach(function(p){var s=p[5];if(!s)return;if(s.dip==null){if(s.pl!=null)nl++;return;}var z=mapZ(p[1],p[2],p[3]);if(z==null)z=(window.G&&isFinite(G.z1))?G.z1:0;
     STR.P.push({id:stId(),no:p[0],x:p[1],y:p[2],z:z,dip:s.dip,az:s.az,pl:s.pl,tr:s.tr,ket:p[4]==='-'?'':p[4],fid:fid});n++;});
-  if(n)STR.F.push({id:fid,name:f.name+' (Map pick-up)',on:f.on!==false,kind:'map',pf:f.id});if(n||nl)stDirty(true);return{n:n,nl:nl};}
+  if(n)STR.F.push({id:fid,name:f.name+' (Mapping pick-up)',on:f.on!==false,kind:'map',pf:f.id});if(n||nl)stDirty(true);return{n:n,nl:nl};}
 (function(){var _d=mapPtDel;mapPtDel=function(id){var n=MAP.PF.length,r=_d.apply(this,arguments);if(MAP.PF.length<n&&window.STR){var fid='pf_'+id;if(STR.F.some(function(x){return x.id===fid;})){STR.P=STR.P.filter(function(p){return p.fid!==fid;});STR.F=STR.F.filter(function(x){return x.id!==fid;});stDirty(true);}}return r;};
   var _s=mapPtSet;mapPtSet=function(id,k,v){var r=_s.apply(this,arguments);if(k==='on'&&window.STR){var sf=stFile('pf_'+id);if(sf){sf.on=v;stDirty(true);}}return r;};
   var _md=mapDirty;mapDirty=function(){var r=_md.apply(this,arguments);try{var k=mapGmKey();if(k!==MAP._gk){var first=MAP._gk===undefined;MAP._gk=k;if(!first||k){try{IM.sc={};}catch(e){}gmDirty(true);}}}catch(e){console.error(e);}return r;};})();
@@ -94,10 +96,10 @@ function mapGmBox(){var f=MAP.sel&&MAP.F.filter(function(x){return x.id===MAP.se
   return h+'</div>';}
 function mapGmTag(f){var d=f.dom&&window.gmDom?(GM.doms.filter(function(x){return String(x.id)===String(f.dom);})[0]):null,s='';if(d)s+=' &middot; <b style="color:'+d.col+'">GM: '+mapE(d.name)+'</b>';if(f.lin)s+=' &middot; <b>tren pitch</b>';return s;}
 /* simbol lineasi (panah trend + angka plunge) di Map */
-(function(){var _m=mapStrSym;mapStrSym=function(){var o=_m.apply(this,arguments);try{var L=+MAP.sym||10,r=Math.PI/180,add=function(x,y,pl,tr){var a=tr*r,ex=x+0.9*L*Math.sin(a),ey=y+0.9*L*Math.cos(a);o.x.push(x,ex,null);o.y.push(y,ey,null);
+(function(){var _m=mapStrSym;mapStrSym=function(){var o=_m.apply(this,arguments);if(MAP.lay.lin===false)return o;try{var L=+MAP.sym||10,r=Math.PI/180,add=function(x,y,pl,tr){var a=tr*r,ex=x+0.9*L*Math.sin(a),ey=y+0.9*L*Math.cos(a);o.x.push(x,ex,null);o.y.push(y,ey,null);
       [150,-150].forEach(function(b){var c=a+b*r;o.x.push(ex,ex+0.3*L*Math.sin(c),null);o.y.push(ey,ey+0.3*L*Math.cos(c),null);});o.tx.push(x+1.15*L*Math.sin(a));o.ty.push(y+1.15*L*Math.cos(a));o.tt.push(String(Math.round(pl)));};
-    if(window.STR)STR.P.forEach(function(p){if(stOn(p)&&p.pl!=null&&p.tr!=null&&isFinite(+p.pl)&&isFinite(+p.tr))add(p.x,p.y,+p.pl,+p.tr);});
-    (MAP.PF||[]).forEach(function(f){if(f.on)f.P.forEach(function(p){var s=p[5];if(s&&s.dip==null&&s.pl!=null&&s.tr!=null)add(p[1],p[2],+s.pl,+s.tr);});});}catch(e){console.error(e);}return o;};})();
+    if(window.STR)STR.P.forEach(function(p){if(stOn(p)&&!(MAP.hid&&MAP.hid['stf:'+p.fid])&&p.pl!=null&&p.tr!=null&&isFinite(+p.pl)&&isFinite(+p.tr))add(p.x,p.y,+p.pl,+p.tr);});
+    (MAP.PF||[]).forEach(function(f){if(f.on&&!(MAP.hid&&MAP.hid['pf:'+f.id]))f.P.forEach(function(p){var s=p[5];if(s&&s.dip==null&&s.pl!=null&&s.tr!=null)add(p[1],p[2],+s.pl,+s.tr);});});}catch(e){console.error(e);}return o;};})();
 /* lineasi di 3D */
 (function(){var _t=stTraces;stTraces=function(T,o){var r0=_t.apply(this,arguments);try{if(!STR.lay||VIEW2D||!STR.P.length)return r0;var r=Math.max(0.5,+STR.sz||5),X=[],Y=[],Z=[],rd=Math.PI/180;
     STR.P.forEach(function(p){if(!stOn(p)||p.pl==null||p.tr==null||!isFinite(+p.pl)||!isFinite(+p.tr))return;var c=stLoc(p);if(o&&o.clip&&o.K&&!inK(o.K,{x:c[0],y:c[1],z:c[2]}))return;var pl=(+p.pl)*rd,tr=(+p.tr)*rd,l=[Math.cos(pl)*Math.sin(tr),Math.cos(pl)*Math.cos(tr),-Math.sin(pl)];
@@ -109,9 +111,9 @@ function mapGmTag(f){var d=f.dom&&window.gmDom?(GM.doms.filter(function(x){retur
       for(var i=1;i<f.pts.length;i++){var a=f.pts[i-1],b=f.pts[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/2));for(var j=(i===1?0:1);j<=n;j++){var t=j/n,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,z=mapZ(x,y,(a.length>2&&b.length>2&&a[2]!=null&&b[2]!=null)?a[2]+(b[2]-a[2])*t:null);if(z==null){X.push(null);Y.push(null);Z.push(null);continue;}X.push(x-offX);Y.push(y-offY);Z.push(z+0.3);}}X.push(null);Y.push(null);Z.push(null);});
       if(X.length>1)T.push({type:'scatter3d',mode:'lines',x:X,y:Y,z:Z,line:{color:d.col,width:7,dash:'dash'},name:d.name+' jejak singkapan (Map)',hoverinfo:'name'});});}catch(e){console.error(e);}return r;};})();
 /* ringkasan basis data struktur terpadu di GM (5) */
-function stDbHtml(){var c={gm:0,ref:0,map:0},nl=0,pl=0,mo=0,ml=0;STR.P.forEach(function(p){var f=stFile(p.fid);if(p.fid==='gm')c.gm++;else if(f&&f.kind==='map')c.map++;else c.ref++;if(p.pl!=null&&p.tr!=null)nl++;});
+function stDbHtml(){var c={gm:0,ref:0,map:0},nl=0,pl=0,mo=0,ml=0;STR.P.forEach(function(p){var f=stFile(p.fid);if(p.fid==='gm')c.gm++;else if(f&&/^map/.test(f.kind||''))c.map++;else c.ref++;if(p.pl!=null&&p.tr!=null)nl++;});
   if(mapOk()){(MAP.PF||[]).forEach(function(f){f.P.forEach(function(p){if(p[5]&&p[5].dip==null&&p[5].pl!=null)pl++;});});MAP.F.forEach(function(f){if(f.dom!=null&&f.dom!=='')mo++;if(f.lin)ml++;});}
-  return '<div class="box gmstate" style="margin-top:6px"><b>Basis data struktur terpadu</b> <small>(satu tabel: dipakai RBF &#9315;, OK dinamis, Map &amp; 3D)</small><br>Bidang: '+c.gm+' flag GM &middot; '+c.ref+' Data Referensi / CSV / manual &middot; '+c.map+' pick-up Map<br>Lineasi: '+(nl+pl)+' titik'+(pl?' (termasuk '+pl+' lineasi saja dari pick-up Map)':'')+(ml?' &middot; '+ml+' garis sumbu lipatan / lineasi Map':'')+'<br>Jejak singkapan vein dari Map: '+mo+' garis</div>';}
+  return '<div class="box gmstate" style="margin-top:6px"><b>Basis data struktur terpadu</b> <small>(satu tabel: dipakai RBF &#9315;, OK dinamis, Map &amp; 3D)</small><br>Bidang: '+c.gm+' flag GM &middot; '+c.ref+' Data Referensi / CSV / manual &middot; '+c.map+' Peta (Mapping)<br>Lineasi: '+(nl+pl)+' titik'+(pl?' (termasuk '+pl+' lineasi saja dari pick-up Map)':'')+(ml?' &middot; '+ml+' garis sumbu lipatan / lineasi Map':'')+'<br>Jejak singkapan vein dari Map: '+mo+' garis</div>';}
 (function(){var _s=stGmHtml;stGmHtml=function(){var h=_s.apply(this,arguments);try{h+=stDbHtml();}catch(e){console.error(e);}return h;};})();
 """
 
@@ -152,7 +154,7 @@ def patch(s):
     s = rep(s, "ket:STR.sd.ket,fid:'man'},o);",
             "ket:STR.sd.ket,pl:STR.sd.pl!=null&&STR.sd.tr!=null?STR.sd.pl:null,tr:STR.sd.pl!=null&&STR.sd.tr!=null?STR.sd.tr:null,fid:'man'},o);")
     # ---- Data Referensi > Struktur: sumber Map ----
-    s = rep(s, "p.fid==='man'?'manual':'file'", "p.fid==='man'?'manual':((stFile(p.fid)||{}).kind==='map'?'Map':'file')")
+    s = rep(s, "p.fid==='man'?'manual':'file'", "p.fid==='man'?'manual':(/^map/.test((stFile(p.fid)||{}).kind||'')?'Mapping':'file')")
     s = rep(s, "ditampilkan di menu <b>Map</b> dengan simbol USGS.</div>",
             "ditampilkan di menu <b>Map</b> dengan simbol USGS. Satu basis data dengan flag struktur Geological Modelling &#9316; dan titik pick-up Map yang berkolom Dip / Dip_Azimuth.</div>")
     # ---- Map: pick-up dengan kolom struktur ----
@@ -164,7 +166,7 @@ def patch(s):
     s = rep(s, "MAP.PF.push({id:mapId(),name:name,on:true,lab:'id',line:false,P:P});",
             "var _pf={id:mapId(),name:name,on:true,lab:'id',line:false,P:P};MAP.PF.push(_pf);var _ns=window.mapPfStr?mapPfStr(_pf):0;")
     s = rep(s, "return P.length+(bad?' ('+bad+' baris tanpa koordinat dilewati)':'');}",
-            "return P.length+(bad?' ('+bad+' baris tanpa koordinat dilewati)':'')+(_ns&&(_ns.n||_ns.nl)?' - '+(_ns.n?_ns.n+' data dip / dip azimuth':'')+(_ns.n&&_ns.nl?' + ':'')+(_ns.nl?_ns.nl+' lineasi':'')+' masuk basis data struktur (dipakai RBF)':'');}")
+            "return P.length+(bad?' ('+bad+' baris tanpa koordinat dilewati)':'')+(_ns&&(_ns.n||_ns.nl)?' - '+(_ns.n?_ns.n+' data dip / dip azimuth':'')+(_ns.n&&_ns.nl?' + ':'')+(_ns.nl?_ns.nl+' lineasi':'')+' masuk basis data struktur (dipakai RBF)':'')+(_ns&&_ns.dup?' - data struktur file ini sudah ada sebagai CSV di Struktur Geologi (tidak digandakan)':'');}")
     s = rep(s, "CSV <code>ID, East, North, RL, Code</code> (header fleksibel;",
             "CSV <code>ID, East, North, RL, Code</code>, opsional <code>Dip, Dip_Azimuth, Plunge, Trend</code> &rarr; data struktur langsung masuk basis data struktur &amp; pemodelan (header fleksibel;")
     s = rep(s, "(by[p[4]]=by[p[4]]||[]).push([p[1],p[2]]);",

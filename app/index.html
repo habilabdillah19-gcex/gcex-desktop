@@ -914,10 +914,12 @@ function benchChanged(){var b=$('benchFilter').value,s=$('holeFilter');s.innerHT
   collars.forEach(function(c){if(b==='ALL'||getBench(c[0])===b){var q=document.createElement('option');q.value=c[0];q.text=c[0];s.appendChild(q);}});
   updatePlot();}
 function prj(){return $('ortho').checked?'orthographic':'perspective';}
-function setCam(x,y,z,up){Plotly.relayout('plotDiv',{'scene.camera':{eye:{x:x,y:y,z:z},up:up||{x:0,y:0,z:1},center:{x:0,y:0,z:0},projection:{type:prj()}}});}
-function orthoChanged(){var gd=$('plotDiv'),L=gd&&gd._fullLayout;if(window.VIEW2D||!L||!L.scene)return;try{Plotly.relayout('plotDiv',{'scene.camera.projection.type':prj()});}catch(e){console.error(e);}}
-/* proyeksi ortografis dipertahankan saat kembali dari Penampang 2D / tampilan lain */
-(function(){var _u=updatePlot;updatePlot=function(){var r=_u.apply(this,arguments);setTimeout(function(){try{var L=$('plotDiv')._fullLayout,c=L&&L.scene&&L.scene.camera;if(!window.VIEW2D&&c&&$('ortho')&&(c.projection&&c.projection.type)!==prj())Plotly.relayout('plotDiv',{'scene.camera.projection.type':prj()});}catch(e){}},0);return r;};})();
+/* kamera: tombol Top / Front / Side / Iso / Tegak lurus dirender ulang lewat updatePlot (bukan relayout) supaya rentang sumbu 3D selalu dihitung ulang;
+   kamera saat ini (juga hasil putar mouse) & proyeksi Ortho dibawa ke setiap render, termasuk saat kembali dari Penampang 2D */
+function camKeep(layout){if(window.VIEW2D||!layout.scene)return;var c=window.__camNext;if(!c){try{var L=$('plotDiv')._fullLayout,k=L&&L.scene&&L.scene.camera;if(k&&k.eye)c=k;}catch(e){}}if(!c&&window.__cam3d)c=window.__cam3d;window.__camNext=null;
+  layout.scene.camera=c?{eye:{x:+c.eye.x,y:+c.eye.y,z:+c.eye.z},up:Object.assign({x:0,y:0,z:1},c.up||{}),center:Object.assign({x:0,y:0,z:0},c.center||{}),projection:{type:prj()}}:{projection:{type:prj()}};}
+function setCam(x,y,z,up){if(window.VIEW2D)return;window.__camNext={eye:{x:x,y:y,z:z},up:up||{x:0,y:0,z:1},center:{x:0,y:0,z:0}};updatePlot();}
+function orthoChanged(){if(window.VIEW2D)return;updatePlot();}
 function savePNG(){var t=$('ttl').textContent;Promise.resolve(Plotly.relayout('plotDiv',{'title.text':t,'margin.t':50})).then(function(){return Plotly.downloadImage('plotDiv',{format:'png',filename:'GCEx_'+(String(t||'').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60)||'blockmodel'),width:1920,height:1080});}).then(function(){Plotly.relayout('plotDiv',{'title.text':'','margin.t':6});});}
 function normAz(a){a=a%360;if(a<0)a+=360;return Math.round(a*10)/10;}
 function secGeom(){var m=$('sMode').value,zc=(G.z0+G.z1)/2;
@@ -1084,7 +1086,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var ttl=(window.BX&&BX.m?BX.m.name:'Block model')+(clip?(axN?' | Slice '+axN+' '+pos+' m +/- '+(thick/2):' | Sayatan Strike '+normAz(g.az)+' Dip '+g.dip+' off '+pos+' m +/- '+(thick/2)):'');
   $('ttl').textContent=(ZONE?ZONE+' \u00b7 ':'')+ttl;var layout={font:{color:fg,family:'Segoe UI,Roboto,Arial,sans-serif'},paper_bgcolor:bg,uirevision:'keep',legend:{font:{color:fg},title:{text:el},x:0.99,xanchor:'right',y:0.98,bgcolor:dark?'rgba(22,32,44,.85)':'rgba(255,255,255,.85)',bordercolor:gr,borderwidth:1},
     scene:{xaxis:ax('Easting (+'+offX+')'),yaxis:ax('Northing (+'+offY+')'),zaxis:ax('Elevation'),aspectmode:'manual',aspectratio:{x:xr/base,y:yr/base,z:(zr/base)*zex}},
-    margin:{l:0,r:0,b:0,t:6}};
+    margin:{l:0,r:0,b:0,t:6}};camKeep(layout);
   if(VIEW2D)sec2dRender(traces,{vis:vis,g:g,pos:pos,K:K,dark:dark,fg:fg,bg:bg,gr:gr,el:el,lw:lw,zex:zex,clip:clip,cut:cut,useCls:useCls,th:th,pal:pal,classOf:classOf});
   else Plotly.react('plotDiv',traces,layout,{responsive:true,displaylogo:false});
   $('stats').innerHTML=dh.html;
@@ -1096,7 +1098,7 @@ function dDraft(){if(PERF_REL())return;DRAFT=true;if(!_dr)_dr=requestAnimationFr
 function lblCfg(th,clip){var m=$('asLbl').value,mi=parseFloat($('asMin').value);
   return{on:m!=='off'&&($('asScope').value==='all'||!!clip),min:m==='all'?-Infinity:(isNaN(mi)?(th.length?th[0]:-Infinity):mi),dec:Math.max(0,Math.min(4,parseInt($('asDec').value)||0)),
     fmt:$('asFmt').value,col:$('asCol').checked,size:Math.max(6,+$('asSz').value||10),max:Math.max(50,parseInt($('asMax').value)||1500),cut:false};}
-function toggle2D(){VIEW2D=!VIEW2D;$('btn2d').classList.toggle('on',VIEW2D);try{Plotly.purge('plotDiv');}catch(e){}updatePlot();}
+function toggle2D(){try{if(!VIEW2D){var L0=$('plotDiv')._fullLayout,k0=L0&&L0.scene&&L0.scene.camera;if(k0&&k0.eye)window.__cam3d=JSON.parse(JSON.stringify(k0));}}catch(e){}VIEW2D=!VIEW2D;$('btn2d').classList.toggle('on',VIEW2D);try{Plotly.purge('plotDiv');}catch(e){}updatePlot();}
 function camFollowHook(){if($('camFollow')&&$('camFollow').checked&&!VIEW2D)setTimeout(viewSection,250);}
 function PERF_REL(){var e=$('perfRel');return !!(e&&e.checked);}
 document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.type==='range'&&PERF_REL())updatePlot();},true);
@@ -4100,7 +4102,7 @@ function lyrPreset(p){LYR.items=LYR.items||lyrDef();lyrApply(function(){LYR.item
   else if(p==='ref')it.c.set(['bx','dg','wf','pt','st'].indexOf(it.k)>=0);
   else if(p==='none')it.c.set(false);});});}
 function lyrRender(){var m=$('lyrMenu');if(!m||m.getAttribute('data-st')!=='open')return;LYR.items=LYR.items||lyrDef();var h='<div class=lyrh><b>Layer</b><span><button class=x onclick="lyrState(\'mini\')" title="Ciutkan jadi strip tipis">&#8250;</button><button class=x onclick="lyrState(\'off\')" title="Tutup panel Layer">&times;</button></span></div><div class=lyrb>';
-  LYR.items.forEach(function(it){if(it.g){h+='<div class=lyrg>'+it.g+'</div>';return;}var ok=it.c.ok();h+='<label class="lyri'+(ok?'':' off')+'"><input type=checkbox '+(it.c.get()&&ok?'checked':'')+(ok?'':' disabled')+' onchange="lyrSet(\''+it.k+'\',this.checked)">'+it.t+'</label>';});
+  LYR.items.forEach(function(it){if(it.g){h+='<div class=lyrg>'+it.g+'</div>';return;}var ok=it.c.ok();h+='<label class="lyri'+(ok?'':' off')+'"><input type=checkbox '+(it.c.get()&&ok?'checked':'')+(ok?'':' disabled')+' onchange="lyrSet(\''+it.k+'\',this.checked)">'+it.t+(ok?'':' <small style="opacity:.75">(belum ada data)</small>')+'</label>';});
   h+='<div class=lyrp><button onclick="lyrPreset(\'all\')">Semua</button><button onclick="lyrPreset(\'mine\')" title="Block model, dig block, as-mined, topografi & pit">Tambang</button><button onclick="lyrPreset(\'ref\')" title="Block model, string & data referensi">Referensi</button><button onclick="lyrPreset(\'none\')">Kosongkan</button></div>'+
     '<div class=hint>Klik nama di legenda grafik juga menyembunyikan satu trace sementara.</div></div>';m.innerHTML=h;}
 function lyrState(st){var m=$('lyrMenu');if(!m)return;var old=m.getAttribute('data-st')||'off';if(st===old&&st!=='open')return;m.setAttribute('data-st',st);m.style.display=st==='off'?'none':'flex';m.classList.toggle('mini',st==='mini');
