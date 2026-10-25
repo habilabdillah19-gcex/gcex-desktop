@@ -1,0 +1,79 @@
+{
+  "name": "gcex-desktop",
+  "productName": "GC-Ex",
+  "version": "0.11.1",
+  "description": "GC-Ex Grade Control Excellence - aplikasi desktop (Block Model & Drillhole)",
+  "main": "electron/main.js",
+  "author": "Habil Abdillah",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "dist:dh": "electron-builder --config builder-dh.json --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.gcex.desktop",
+    "productName": "GC-Ex",
+    "copyright": "Copyright © 2026 Habil Abdillah",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "app/**/*",
+      "package.json",
+      "build/icon*.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "dist-backend/gcex-backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "GC-Ex-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GC-Ex",
+      "uninstallDisplayName": "GC-Ex ${version}"
+    },
+    "fileAssociations": [
+      {
+        "ext": "prj",
+        "name": "GC-Ex Block Model Project",
+        "description": "Proyek GC-Ex Block Model",
+        "icon": "icon.ico",
+        "role": "Editor"
+      }
+    ]
+  },
+  "gcex": {
+    "page": "app/index.html",
+    "title": "GC-Ex Block Model",
+    "icon": "build/icon.ico",
+    "theme": "bm"
+  }
+}

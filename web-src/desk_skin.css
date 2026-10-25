@@ -1,0 +1,87 @@
+/* ================= GC-Ex: kulit desktop (dipakai GC-Ex Block Model & GC-Ex Drillhole) =================
+   1) kesan 3D halus: gradasi tipis + sorotan atas + bayangan pada tombol, bilah atas, kartu & pop-up;
+      tombol yang ditekan "masuk" (inset), kolom isian cekung.
+   2) lebih padat: bilah atas, tombol, kolom isian & rail lebih rendah; huruf sedikit lebih kecil.
+   Warna hanya berupa lapisan terang/gelap transparan di atas warna tema, sehingga mengikuti palet masing-masing
+   aplikasi (navy / kuning) dan mode Gelap. */
+:root{--sk-hi:rgba(255,255,255,.55);--sk-hi2:rgba(255,255,255,.18);--sk-lo:rgba(16,24,40,.07);--sk-sh1:0 1px 2px rgba(16,24,40,.10),0 1px 1px rgba(16,24,40,.06);
+  --sk-sh2:0 2px 6px rgba(16,24,40,.14),0 1px 2px rgba(16,24,40,.08);--sk-pop:0 14px 34px rgba(16,24,40,.26),0 3px 8px rgba(16,24,40,.14);--sk-in:inset 0 1px 2px rgba(16,24,40,.10)}
+body.dark{--sk-hi:rgba(255,255,255,.07);--sk-hi2:rgba(255,255,255,.10);--sk-lo:rgba(0,0,0,.18);--sk-sh1:0 1px 2px rgba(0,0,0,.45);--sk-sh2:0 2px 6px rgba(0,0,0,.5);
+  --sk-pop:0 16px 40px rgba(0,0,0,.6),0 3px 10px rgba(0,0,0,.4);--sk-in:inset 0 1px 2px rgba(0,0,0,.45)}
+
+/* ---------- huruf & kepadatan ---------- */
+body{font-size:12px}
+#top{flex-basis:44px;gap:8px;padding:0 10px}
+#top button,#top .tb,#top .seg button,.dmWrap #dmBtn,.dmWrap #pjBtn{font-size:11.5px;padding:3px 8px;min-height:25px}
+#top .gcx{font-size:18px}
+#top .brand b{font-size:13px}
+#top .brand small{font-size:9.5px}
+#rail{flex-basis:60px;padding:6px 5px}
+#rail .rb,#rail button{font-size:9.5px;padding:5px 2px 4px}
+#side{flex-basis:280px;width:280px;padding:10px 12px 12px}
+#side button{font-size:11.5px;padding:3px 8px;min-height:25px}
+#side select{font-size:11.5px;padding:2px 6px;min-height:25px}
+#side input[type=text],#side input[type=number]{font-size:11.5px}
+#side label{font-size:11.5px}
+.impBody{font-size:12px}
+.impBody .card b{font-size:13px}
+#statsCard,#gsPanel{font-size:11.5px}
+#side h3{font-size:10.5px}
+#side h4{font-size:10.5px}
+.uitabs button{font-size:11px;padding:2px 6px;min-height:23px}
+footer{font-size:10.5px}
+.elbox .elbt button{white-space:nowrap;font-size:11px;padding:3px 4px}
+.hint{font-size:10.5px}
+
+/* ---------- tombol umum di panel & dialog: timbul halus ---------- */
+#side button:not(.x):not(:disabled),.impBody button:not(.x),.impFoot button,#lyDlg button,.bsbox button,.mdlBox button,#pjMenu button,#dmMenu button,#dbPop button,#fpBar button,#cmdDlg button{
+  background-image:linear-gradient(180deg,var(--sk-hi),rgba(255,255,255,0) 55%,var(--sk-lo));box-shadow:var(--sk-sh1),inset 0 1px 0 var(--sk-hi2);
+  transition:box-shadow .12s ease,transform .06s ease,filter .12s ease}
+#side button:not(.x):not(:disabled):hover,.impBody button:not(.x):hover,.impFoot button:hover,#lyDlg button:hover,.bsbox button:hover,.mdlBox button:hover,#dbPop button:hover{box-shadow:var(--sk-sh2),inset 0 1px 0 var(--sk-hi2)}
+#side button:not(.x):not(:disabled):active,.impBody button:not(.x):active,.impFoot button:active,#lyDlg button:active,.bsbox button:active,.mdlBox button:active,#dbPop button:active,
+#top button:active,#top .tb:active{box-shadow:inset 0 2px 4px rgba(16,24,40,.25);transform:translateY(1px)}
+button:disabled{box-shadow:none!important;background-image:none!important;filter:saturate(.6);opacity:.55}
+
+/* tombol utama & status aktif: gradasi lebih tegas + kilap atas */
+.btn-pri,.ib,.sb,.mdbtn,#bxDlg .mdbtn,#pBM .mdbtn,.uitabs button.on,.rptabs button.on,#plTools button.on,#dmMenu .sprow button.on,#s3Box .s3seg button.on{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.04) 48%,rgba(0,0,0,.10))!important;
+  box-shadow:0 1px 2px rgba(16,24,40,.22),inset 0 1px 0 rgba(255,255,255,.28)!important;text-shadow:0 1px 0 rgba(0,0,0,.12)}
+.btn-pri:hover,.ib:hover,.sb:hover,.mdbtn:hover{filter:brightness(1.06)}
+.btn-pri:active,.ib:active,.sb:active,.mdbtn:active{box-shadow:inset 0 2px 5px rgba(0,0,0,.28)!important;transform:translateY(1px)}
+
+/* ---------- bilah atas: gradasi & kelompok tombol timbul ---------- */
+#top{background-image:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 45%,rgba(0,0,0,.10));box-shadow:0 2px 8px rgba(16,24,40,.28)}
+#top .seg,#top .tb,.dmWrap #dmBtn,.dmWrap #pjBtn{background-image:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.02));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.22)}
+#top .seg button{background-image:none;box-shadow:none}
+#top .tb.on,#top .seg button.on{box-shadow:inset 0 2px 5px rgba(0,0,0,.30)}
+#top .tb.pri{background-image:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0) 50%,rgba(0,0,0,.12))}
+
+/* ---------- rail kiri: item aktif timbul dengan garis aksen ---------- */
+#rail .rb{border-radius:7px;transition:background .12s ease,box-shadow .12s ease}
+#rail .rb:hover{box-shadow:var(--sk-sh1)}
+#rail .rb.on{box-shadow:var(--sk-sh1),inset 3px 0 0 var(--pr)}
+
+/* ---------- tab bagian: kontrol bersegmen ---------- */
+.uitabs{border-radius:8px;box-shadow:var(--sk-in)}
+
+/* ---------- kolom isian: cekung ---------- */
+#side select,#side input[type=text],#side input[type=number],.impBody select,.impBody input[type=text],.impBody input[type=number],.mdlBox input,.bsbox input,.bsbox select{
+  box-shadow:var(--sk-in);border-radius:5px}
+#side select:focus,#side input:focus,.impBody input:focus,.mdlBox input:focus,.bsbox input:focus{box-shadow:var(--sk-in),0 0 0 3px var(--prs)}
+
+/* ---------- kartu & kotak pengaturan ---------- */
+.card,.amset,.elbox,.calcm,#statsCard,.slot,details.mini,.amcm{box-shadow:var(--sk-sh1);border-radius:8px}
+.slot.on{box-shadow:var(--sk-sh2)}
+
+/* ---------- pop-up & dialog: mengambang ---------- */
+#pjMenu,#dmMenu,#dbPop,#dbEdBar,#fpToast,#fpBan,#fpBar,#s3Box,#lyrMenu,.impBox,.mdlBox,.bsbox,#cmdDlg>div,#gsPanel,#drawLayer .drawBar{box-shadow:var(--sk-pop)!important}
+.impBox,.mdlBox,.bsbox{border-radius:10px;overflow:hidden}
+.impHead,.bsbox .bsh{background-image:linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,.08))}
+
+/* ---------- bilah gulir tipis ---------- */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(100,116,139,.42);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,.65);background-clip:padding-box}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

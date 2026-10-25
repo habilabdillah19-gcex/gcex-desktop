@@ -1,0 +1,69 @@
+/* ================= GC-Ex: jarak rapat (padding / margin) — dipakai GC-Ex Block Model & GC-Ex Drillhole =================
+   Jarak tulisan ke tepi kotak, antar baris isian, antar bagian dipersempit ±30-40% supaya panel & jendela muat lebih banyak
+   tanpa mengecilkan huruf lagi. Dipasang paling akhir (sesudah tema & kulit desktop). */
+/* panel kiri (Properti) */
+#side{padding:0 8px 8px!important}
+#ptPH{margin:0 -8px 6px!important;height:24px!important;padding:0 6px 0 8px!important}
+#ptNav{margin:10px -8px -8px!important;bottom:-8px!important;padding:4px 8px 6px!important}
+#side h3{margin:0 0 6px}
+#side h4{margin:8px 0 4px}
+#side .f,#side .g2.f,#side .g3.f{margin-bottom:6px}
+#side .hint{margin-bottom:5px}
+#side label,#side .lab{margin-bottom:2px}
+#side label.sw{padding:2px 0}
+#side .box{padding:6px 7px;margin:0 -2px 6px}
+#side .box .g3 button{height:26px;padding:2px 4px}
+#side .g2,#side .g3{gap:5px}
+#side .sws{gap:0 8px}
+#side button{padding:2px 6px;min-height:23px}
+#side select{padding:1px 4px;min-height:23px}
+#side input[type=text],#side input[type=number],#side input[type=date]{padding:2px 5px;min-height:23px}
+#side .uitabs{padding:3px 2px;margin:6px 0 4px}
+#side .uitabs button{min-height:21px;padding:1px 5px}
+#side .uisec.dock{padding-left:6px}
+#side .pltb th,#side .pltb td{padding:2px 3px}
+#side details.gmdet{padding:3px 6px;margin:4px 0}
+#side label.gmfile{padding:3px 6px}
+#side .amset{padding:4px 6px;margin:4px 0}
+#side .amh{margin:8px 0 3px}
+#side .elbox{padding:4px 6px}
+#side .calcm{padding:4px 6px}
+#side .dbsub{margin-top:8px;margin-bottom:3px}
+#side .lyrow{padding-top:2px;padding-bottom:2px}
+#side .slot{padding:6px;gap:4px}
+/* project tree */
+#ptWrap .pth{height:24px!important}
+.ptr{height:20px!important}
+#ptree{padding:2px 0 6px!important}
+/* bilah atas */
+#top{flex-basis:40px!important;gap:6px!important;padding:0 8px!important}
+#top button,#top .tb,#top .seg button,.dmWrap #dmBtn,.dmWrap #pjBtn{padding:2px 7px!important;min-height:24px!important}
+/* jendela Import & dialog */
+.impHead{padding:8px 12px!important;gap:8px!important}
+.impBody{padding:8px 12px!important;gap:8px!important}
+.impFoot{padding:6px 12px!important;gap:8px!important}
+.card{padding:8px 10px!important}
+.card .ch{margin-bottom:6px!important;gap:8px!important}
+.slots{gap:6px!important}
+.slot{padding:6px!important;gap:4px!important}
+#imp select,#imp input[type=text],#imp input[type=number]{height:26px!important;padding:2px 6px!important}
+.flist{margin-top:5px!important}
+#mdlDlg .mdlBox{padding:10px 12px!important}
+.bsbox .bsh{padding:6px 10px!important}
+/* menu proyek / demo */
+#pjMenu,#dmMenu{padding:4px!important}
+#pjMenu button,#dmMenu button{padding:4px 8px!important}
+#pjMenu .mh,#dmMenu .mh{padding:5px 6px 3px!important}
+/* panel Geostatistik */
+#gsPanel .gh{padding:6px 10px!important}
+#gsPanel .gsBody{padding:6px 10px 10px!important}
+#gsPanel .tabs{margin:6px -10px 6px!important;padding:0 10px!important}
+#gsPanel .tabs button{padding:5px 8px!important}
+#gsPanel details{padding:4px 8px!important}
+#gsPanel .sum{padding:6px 8px!important}
+/* kartu Ringkasan & legenda */
+#statsCard .ch{padding:4px 8px!important}
+#statsCard .cb,#statsCard>div:not(.ch){padding-left:8px;padding-right:8px}
+/* menu klik kanan tree */
+#ptMenu button{padding:3px 12px!important}
+#ptMenu .pmh{padding:3px 10px 4px!important}

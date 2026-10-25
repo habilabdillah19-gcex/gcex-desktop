@@ -1,0 +1,43 @@
+/* ================= Tema GC-Ex Drillhole: palet terbalik dari GC-Ex Block Model =================
+   Mayor = KUNING (bilah atas, kepala dialog impor, tombol utama, tombol/tab aktif)
+   Minor = BIRU navy (strip di bawah bilah atas, tombol sorotan, garis aksen, teks judul & tautan).
+   Teks tetap navy (bukan kuning) supaya terbaca di latar putih. */
+:root{--top:#f0c047;--toptx:#1d2b5e;--ac:#233a7e;--acs:#e8ecf7;--pr:#233a7e;--pr2:#2e4c9e;--prs:#fff4c2;
+  --mj:#f0c047;--mj2:#d6a12b;--mjtx:#1d2b5e;--mjln:rgba(29,43,94,.28);--mjhv:rgba(29,43,94,.10)}
+body.dark{--top:#ddb049;--toptx:#121b38;--ac:#6f8fe0;--acs:#1f2d55;--pr:#8ea8ea;--pr2:#a9bdf0;--prs:#3a3416;
+  --mj:#ddb049;--mj2:#c29b00;--mjtx:#121b38;--mjln:rgba(18,27,56,.35);--mjhv:rgba(18,27,56,.12)}
+/* bilah atas kuning, strip & tombol sorotan navy */
+#top{border-bottom-color:var(--ac)}
+#top .seg{border-color:var(--mjln)}
+#top .seg button{border-right-color:var(--mjln)}
+#top .seg button:hover,#top .tb:hover{background:var(--mjhv)}
+#top .tb{border-color:var(--mjln)}
+#top .tb.on{background:var(--mjhv);box-shadow:inset 0 0 0 1px var(--mjln)}
+#top .tb.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+#top .tb.pri:hover{background:var(--pr2)}
+#top .tb.pri.on{box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
+#top .brand small{color:var(--toptx);opacity:.8}
+.dmWrap #dmBtn,.dmWrap #pjBtn{background:var(--mjhv);border-color:var(--mjln)}
+.dmWrap #dmBtn:hover{color:var(--toptx);border-color:var(--ac)}
+#lyrBtn.on{background:var(--mjhv);border-color:var(--ac)}
+/* kepala jendela impor / panel awal */
+.impHead{border-bottom-color:var(--ac)}
+.impHead .impBrand b{color:var(--toptx)}
+.impHead .impBrand small{color:var(--toptx);opacity:.8}
+#drawTip{color:var(--toptx)}
+#okBar,#meBar{color:#fff}
+/* tombol utama & status aktif: kuning dengan teks navy */
+.btn-pri,.ib,.sb,.mdbtn,#bxDlg .mdbtn,#pBM .mdbtn,.card .no,#dmMenu .sprow button.on,#plTools button.on,.rptabs button.on,
+#s3Box .s3seg button.on,#rail .rb.on[data-step]::after,.cmdK.k-menu,.gg-hd i{background:var(--mj);color:var(--mjtx);border-color:var(--mj2)}
+.btn-pri:hover,.sb:hover,.mdbtn:hover,.ib:hover{background:var(--mj2);color:var(--mjtx)}
+body.dark .btn-pri{color:var(--mjtx)}
+.sw input:checked{background:var(--mj2)}
+/* logo GC-Ex di bilah atas & kepala panel awal: navy di atas kuning */
+#top .gcx,.impHead .gcx{color:var(--toptx)}
+/* posisi sayatan (Mundur / 95.0 m / Maju) */
+#top #hdStep span{color:var(--toptx);border-color:var(--mjln)}
+/* tombol impor (teks putih dipaksa !important di gaya asli) & tombol tipis di kepala dialog */
+.sb{color:var(--mjtx)!important}
+.ib.ghost{border-color:var(--mjln)}
+/* tab bagian aktif */
+.uitabs button.on{background:var(--mj);color:var(--mjtx);border-color:var(--mj2)}

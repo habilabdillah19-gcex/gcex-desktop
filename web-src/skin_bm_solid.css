@@ -1,0 +1,58 @@
+/* ================= GC-Ex Block Model: tampilan PADAT (tanpa transparansi / gradasi pudar) =================
+   Semua warna solid. Kesan timbul dari tepi bawah lebih gelap + bayangan keras (tanpa blur), bukan gradasi tembus.
+   Dipasang sesudah desk_skin.css, hanya di GC-Ex Block Model. */
+:root{--bs-top:#233a7e;--bs-btn:#2e4a8f;--bs-btnhv:#36549e;--bs-btnon:#1b2f66;--bs-btnln:#46619f;--bs-btnbt:#172a5c;
+  --bs-face:#f4f6f9;--bs-facehv:#ffffff;--bs-ln:#c6cfdb;--bs-lnbt:#9eabbc;--bs-hard:#c9d3df;--bs-dis:#e9edf2;--bs-distx:#98a3b0;--bs-pop:#9fb0c6;--bs-thumb:#b7c1cd}
+body.dark{--bs-top:#14204a;--bs-btn:#1f2d5c;--bs-btnhv:#263769;--bs-btnon:#101a3c;--bs-btnln:#34457a;--bs-btnbt:#0b1330;
+  --bs-face:#1c2836;--bs-facehv:#223142;--bs-ln:#2f3e50;--bs-lnbt:#0f1720;--bs-hard:#0b121b;--bs-dis:#18222e;--bs-distx:#566577;--bs-pop:#3a4a5e;--bs-thumb:#3a4a5e}
+/* ---------- semua gradasi & animasi pudar dimatikan ---------- */
+#top,#top .seg,#top .tb,.dmWrap #dmBtn,.dmWrap #pjBtn,#top .tb.pri,.impHead,.bsbox .bsh,.gcg-dh,
+#side button,.impBody button,.impFoot button,#lyDlg button,.bsbox button,.mdlBox button,#pjMenu button,#dmMenu button,#dbPop button,#fpBar button,#cmdDlg button,.gcg-a button,
+.btn-pri,.ib,.sb,.mdbtn,#bxDlg .mdbtn,#pBM .mdbtn,.uitabs button.on,.rptabs button.on,#plTools button.on,#dmMenu .sprow button.on,#s3Box .s3seg button.on{background-image:none!important;text-shadow:none!important}
+.gcg-pop,.gcg-dlg,.gcg-bg{animation:none!important}
+/* ---------- bilah atas: navy padat, tombol kotak timbul ---------- */
+#top{background:var(--bs-top);box-shadow:none}
+#top .brand small,#pjBtn small{opacity:1}
+#top .seg{border:1px solid var(--bs-btnln);border-bottom-color:var(--bs-btnbt);background:var(--bs-btn);box-shadow:0 1px 0 var(--bs-btnbt)}
+#top .seg button{background:var(--bs-btn);border-right:1px solid var(--bs-btnln)}
+#top .tb,.dmWrap #dmBtn,.dmWrap #pjBtn{background:var(--bs-btn);border:1px solid var(--bs-btnln);border-bottom-color:var(--bs-btnbt);box-shadow:0 1px 0 var(--bs-btnbt)}
+#top .seg button:hover,#top .tb:hover,.dmWrap #dmBtn:hover,.dmWrap #pjBtn:hover{background:var(--bs-btnhv)}
+#top .tb.on,#top .seg button.on,#lyrBtn.on{background:var(--bs-btnon);box-shadow:inset 0 2px 0 #0d1a3d;border-color:#f0c047}
+#top .tb.pri{background:#f0c047;border-color:#f0c047;border-bottom-color:#a77612;box-shadow:0 1px 0 #a77612}
+#top button:active,#top .tb:active{transform:translateY(1px);box-shadow:none}
+/* ---------- tombol panel & dialog: muka terang, tepi bawah gelap ---------- */
+#side button:not(.x):not(:disabled),.impBody button:not(.x),.impFoot button,#lyDlg button,.bsbox button,.mdlBox button,#pjMenu button,#dmMenu button,#dbPop button,#fpBar button,#cmdDlg button,.gcg-a button{
+  background-color:var(--bs-face);border:1px solid var(--bs-ln);border-bottom-color:var(--bs-lnbt);box-shadow:0 1px 0 var(--bs-hard)!important}
+#side button:not(.x):not(:disabled):hover,.impBody button:not(.x):hover,.impFoot button:hover,#lyDlg button:hover,.bsbox button:hover,.mdlBox button:hover,#dbPop button:hover,.gcg-a button:hover{background-color:var(--bs-facehv)}
+#side button:not(.x):not(:disabled):active,.impBody button:not(.x):active,.impFoot button:active,#lyDlg button:active,.bsbox button:active,.mdlBox button:active,#dbPop button:active,.gcg-a button:active{
+  box-shadow:inset 0 2px 0 var(--bs-hard)!important;border-bottom-color:var(--bs-ln);transform:translateY(1px)}
+/* tombol utama & status aktif: navy padat dengan tepi bawah lebih gelap */
+.btn-pri,.ib,.sb,.mdbtn,#bxDlg .mdbtn,#pBM .mdbtn,.uitabs button.on,.rptabs button.on,#plTools button.on,#dmMenu .sprow button.on,#s3Box .s3seg button.on,.gcg-a button.go,
+#side .btn-pri:not(:disabled),#side .uitabs button.on{background-color:var(--pr)!important;color:#fff!important;border:1px solid var(--pr)!important;border-bottom-color:#14245a!important;box-shadow:0 1px 0 #14245a!important;filter:none}
+body.dark .btn-pri,body.dark .uitabs button.on,body.dark .gcg-a button.go,body.dark #side .btn-pri:not(:disabled),body.dark #side .uitabs button.on{color:#0e1621!important;border-bottom-color:#5d77b8!important;box-shadow:0 1px 0 #3b4f86!important}
+.btn-pri:hover,.ib:hover,.sb:hover,.mdbtn:hover{filter:none;background-color:var(--pr2)!important}
+/* tombol nonaktif: abu-abu padat (tidak tembus) */
+button:disabled,.dbsel button:disabled{opacity:1!important;filter:none!important;background:var(--bs-dis)!important;color:var(--bs-distx)!important;border:1px solid var(--bs-ln)!important;box-shadow:none!important}
+#amBody .amr.off{opacity:1;color:var(--bs-distx)}
+/* ---------- rail, tab, kolom isian, kartu ---------- */
+#rail .rb:hover{box-shadow:none;background:var(--prs)}
+#rail .rb.on{box-shadow:inset 3px 0 0 var(--pr)}
+.uitabs{box-shadow:none;border-bottom:2px solid var(--bs-ln)}
+.uisec .uitabs{border-bottom:1px solid var(--bs-ln)}
+#side select,#side input[type=text],#side input[type=number],.impBody select,.impBody input[type=text],.impBody input[type=number],.mdlBox input,.bsbox input,.bsbox select{
+  box-shadow:none;border:1px solid var(--bs-ln);border-top-color:var(--bs-lnbt)}
+#side select:focus,#side input:focus,.impBody input:focus,.mdlBox input:focus,.bsbox input:focus{box-shadow:0 0 0 2px var(--pr);outline:none}
+.card,.amset,.elbox,.calcm,#statsCard,.slot,details.mini,.amcm{box-shadow:0 1px 0 var(--bs-hard)}
+/* ---------- pop-up & dialog: tepi tegas + bayangan keras, latar tidak diredupkan ---------- */
+#pjMenu,#dmMenu,#dbPop,#dbEdBar,#fpBan,#fpBar,#s3Box,#lyrMenu,.impBox,.mdlBox,.bsbox,#cmdDlg>div,#gsPanel,#drawLayer .drawBar,.gcg-pop,.gcg-dlg,#fpDlg .fpBox{
+  box-shadow:0 4px 0 var(--bs-hard)!important;border:1px solid var(--bs-pop)!important}
+#fpToast{box-shadow:0 4px 0 #0d1a3d!important}
+#bxDlg,#fpDlg,.bsdlg,.gcg-bg,#lyDlg,#mdlDlg{background:transparent!important}
+/* ---------- bilah gulir padat ---------- */
+::-webkit-scrollbar-thumb{background:var(--bs-thumb);border:2px solid var(--sf,#fff);background-clip:border-box}
+::-webkit-scrollbar-thumb:hover{background:var(--bs-lnbt)}
+/* ---------- logo: GC-Ex dengan tulisan Block Model di bawahnya (pengganti lencana kuning) ---------- */
+#top .gcxw{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1;flex:0 0 auto}
+#top .gcxw .gcx{line-height:1}
+#top .gcxm{font:700 9.5px/1 Arial,'Helvetica Neue',Helvetica,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#f0c047;margin-top:3px;padding-left:2px;white-space:nowrap}
+#top .modb{display:none}

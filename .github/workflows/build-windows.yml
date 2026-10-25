@@ -1,0 +1,60 @@
+name: Build GC-Ex (Windows 64-bit)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- backend Python ----------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pasang paket Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pyinstaller==6.11.1
+      - name: Uji backend
+        run: python backend/ci_test.py
+      - name: Bangun backend (PyInstaller)
+        run: pyinstaller --noconfirm --onedir --name gcex-backend --distpath dist-backend --workpath build-py --collect-submodules uvicorn backend/run_backend.py
+      - name: Cek backend hasil build
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist-backend/gcex-backend/gcex-backend.exe -ArgumentList "--port","8799" -PassThru -WindowStyle Hidden
+          $ok = $false
+          for ($i=0; $i -lt 40; $i++) { try { $r = Invoke-RestMethod http://127.0.0.1:8799/health; if ($r.ok) { $ok = $true; break } } catch {}; Start-Sleep -Milliseconds 500 }
+          Stop-Process -Id $p.Id -Force
+          if (-not $ok) { throw "backend.exe tidak merespons /health" }
+          Write-Host "backend.exe OK"
+
+      # ---------- Electron + installer ----------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Pasang paket Node
+        run: npm install --no-audit --no-fund
+      - name: Bangun installer GC-Ex Block Model
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Bangun installer GC-Ex Drillhole
+        run: npm run dist:dh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GC-Ex-Setup-Windows
+          path: dist/GC-Ex-Setup-*.exe
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GC-Ex-Drillhole-Setup-Windows
+          path: dist/GC-Ex-Drillhole-Setup-*.exe
+          retention-days: 30

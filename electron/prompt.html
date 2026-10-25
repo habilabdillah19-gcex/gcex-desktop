@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>GC-Ex</title>
+<style>
+  :root { --navy: #1f3a5f; --yellow: #f0c047; --line: #c9d3de; --muted: #55606e; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font: 14px "Segoe UI", Arial, sans-serif; color: #1b2430; background: #fff; display: flex; flex-direction: column; }
+  .bar { height: 4px; background: var(--yellow); flex: none; }
+  main { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; min-height: 0; }
+  #msg { white-space: pre-wrap; line-height: 1.4; overflow: auto; max-height: 140px; }
+  input { width: 100%; height: 32px; padding: 0 8px; font: inherit; border: 1px solid var(--line); border-radius: 5px; }
+  input:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+  .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
+  button { min-width: 84px; height: 30px; font: inherit; border-radius: 5px; border: 1px solid var(--line); background: #f3f6f9; cursor: pointer; }
+  button.ok { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 600; }
+  button:focus-visible { outline: 2px solid var(--yellow); }
+  /* GC-Ex Drillhole: palet terbalik (kuning mayor, navy minor) */
+  html.dh .bar { background: var(--navy); }
+  html.dh button.ok { background: var(--yellow); border-color: #d6a12b; color: #1d2b5e; }
+  html.dh button:focus-visible { outline-color: var(--navy); }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<main>
+  <div id="msg"></div>
+  <input id="val" type="text" autocomplete="off" spellcheck="false">
+  <div class="btns"><button id="no" type="button">Batal</button><button id="yes" class="ok" type="button">OK</button></div>
+</main>
+<script>
+  const q = new URLSearchParams(location.search), id = q.get('id');
+  if (q.get('theme') === 'dh') document.documentElement.classList.add('dh');
+  document.getElementById('msg').textContent = q.get('msg') || '';
+  const v = document.getElementById('val');
+  v.value = q.get('def') || '';
+  const done = (x) => window.gcexPrompt.done(id, x);
+  document.getElementById('yes').onclick = () => done(v.value);
+  document.getElementById('no').onclick = () => done(null);
+  addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); done(v.value); } else if (e.key === 'Escape') { e.preventDefault(); done(null); } });
+  addEventListener('load', () => { v.focus(); v.select(); window.gcexPrompt.size(Math.ceil(document.querySelector('main').scrollHeight + 4)); });
+</script>
+</body>
+</html>

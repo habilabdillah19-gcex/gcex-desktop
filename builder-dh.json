@@ -1,0 +1,65 @@
+{
+  "appId": "com.gcex.drillhole",
+  "productName": "GC-Ex Drillhole",
+  "copyright": "Copyright © 2026 Habil Abdillah",
+  "extraMetadata": {
+    "name": "gcex-drillhole",
+    "productName": "GC-Ex Drillhole",
+    "description": "GC-Ex Drillhole Ultimate - aplikasi desktop",
+    "gcex": {
+      "page": "app-dh/index.html",
+      "title": "GC-Ex Drillhole",
+      "icon": "build/icon-dh.ico",
+      "theme": "dh"
+    }
+  },
+  "directories": {
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "files": [
+    "electron/**/*",
+    "app-dh/**/*",
+    "package.json",
+    "build/icon*.ico"
+  ],
+  "extraResources": [
+    {
+      "from": "dist-backend/gcex-backend",
+      "to": "backend",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "build/icon-dh.ico",
+    "artifactName": "GC-Ex-Drillhole-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "GC-Ex Drillhole",
+    "uninstallDisplayName": "GC-Ex Drillhole ${version}"
+  },
+  "fileAssociations": [
+    {
+      "ext": "prj",
+      "name": "GC-Ex Drillhole Project",
+      "description": "Proyek GC-Ex Drillhole",
+      "icon": "icon-dh.ico",
+      "role": "Editor"
+    }
+  ]
+}
