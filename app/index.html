@@ -1850,10 +1850,14 @@ function dgState(){var el=$('dgState');if(!el)return;var P=dgPlane();
 function dgStart(){if(!VIEW2D)toggle2D();else setTimeout(updatePlot,0);DG.on=true;DG.cur=[];DG.c2=[];DG.pl=dgPlane();if(!$('dgNo').value)$('dgNo').value=dgNext();dgCv();dgDraw();dgState();}
 function dgNext(){var m=0;DG.S.forEach(function(s){m=Math.max(m,+s.no||0);});return m+1;}
 function dgUndo(){if(!DG.on)return;DG.cur.pop();DG.c2.pop();dgDraw();dgState();}
-function dgCancel(){DG.on=false;DG.cur=[];DG.c2=[];dgDraw();dgState();if(VIEW2D)updatePlot();}
+function dgCancel(){DG.dbm=null;DG.on=false;DG.cur=[];DG.c2=[];dgDraw();dgState();if(VIEW2D)updatePlot();}
 function dgFinish(closed){if(!DG.on)return;if(DG.cur.length<2||(closed&&DG.cur.length<3)){alert(closed?'String tertutup butuh minimal 3 titik.':'String butuh minimal 2 titik.');return;}
-  var no=parseInt($('dgNo').value)||dgNext();DG.S.push({no:no,d:$('dgDesc').value||'',closed:!!closed,pts:DG.cur.slice(),pl:DG.pl,col:DG.pal[DG.S.length%DG.pal.length],vis:true});
-  $('dgNo').value=no+1;DG.on=false;DG.cur=[];DG.c2=[];dgSave();dgList();dgDraw();dgState();updatePlot();}
+  var dbm=DG.dbm,o={no:parseInt($('dgNo').value)||dgNext(),d:$('dgDesc').value||'',closed:!!closed,pts:DG.cur.slice(),pl:DG.pl,col:DG.pal[DG.S.length%DG.pal.length],vis:true};
+  if(dbm&&closed&&window.dbSN){/* dig block manual: samakan dengan dig block otomatis */
+    var B=lyBench(),t=dbSN(o.d||dbm);o.d=o.d||dbm;o.no=t.n;o.col=t.c;o.db={top:B[0],bot:B[1]};o.manual=true;o.id=dbId();}
+  DG.S.push(o);DG.dbm=null;
+  $('dgNo').value=(o.no|0)+1;DG.on=false;DG.cur=[];DG.c2=[];dgSave();dgList();dgDraw();dgState();updatePlot();
+  if(o.db){try{if(dbU().sfOn)dbInner(true);}catch(e){}try{dbPanel();}catch(e){}try{if(window.lyPanel)lyPanel();}catch(e){}}}
 function dgDel(i){if(!confirm('Hapus string #'+DG.S[i].no+'?'))return;DG.S.splice(i,1);dgSave();dgList();updatePlot();}
 function dgVis(i,v){DG.S[i].vis=v;dgSave();updatePlot();}
 function dgGo(i){var P=DG.S[i].pl;if(!P)return;$('sMode').value=P.m==='H'?'H':'P';if(P.m!=='H'){$('p1e').value=P.p[0];$('p1n').value=P.p[1];$('p2e').value=P.p[2];$('p2n').value=P.p[3];$('dipS').value=P.dip;$('dipN').value=P.dip;}
@@ -1866,12 +1870,29 @@ function dgList(){var el=$('dgList');if(!el)return;if(!DG.S.length){el.innerHTML
     return '<tr><td><input type=checkbox '+(s.vis?'checked':'')+' onchange=dgVis('+i+',this.checked) title=Tampilkan></td><td><span style=color:'+s.col+';font-weight:700>'+s.no+'</span></td><td>'+(s.d||'-')+'</td>'+
       '<td title=Panjang&nbsp;'+dgLen(s).toFixed(1)+'&nbsp;m'+(A?'&#10;Luas&nbsp;'+A.toFixed(1)+'&nbsp;m2':'')+'>'+s.pts.length+(s.closed?' &#9711;':'')+'</td><td><a href=javascript:void(0) onclick=dgGo('+i+') title=Buka&nbsp;bidang&nbsp;string&nbsp;ini>'+(s.pl?(s.pl.m==='H'?'Z '+(+s.pl.pos).toFixed(0):'S '+normAz(s.pl.az)+'/'+s.pl.dip):'-')+'</a></td>'+
       '<td><button class=x onclick=dgDel('+i+') title=Hapus>&times;</button></td></tr>';}).join('')+'</table>';}
+
+/* ---------- gabung ruas yang bersambung jadi satu polyline (garis tidak patah-patah) ---------- */
+function segJoin(){return{X:[],Y:[],Z:[],last:null,n:0,
+  add:function(a,b){var L=this.last,e=1e-7;
+    if(!L||Math.abs(L.x-a.x)>e||Math.abs(L.y-a.y)>e||Math.abs((L.z||0)-(a.z||0))>e){if(L){this.X.push(null);this.Y.push(null);this.Z.push(null);}this.X.push(a.x);this.Y.push(a.y);this.Z.push(a.z);}
+    this.X.push(b.x);this.Y.push(b.y);this.Z.push(b.z);this.last=b;this.n++;},
+  brk:function(){this.last=null;}};}
+/* ---------- banyak kotak -> WebGL (zoom / geser Penampang 2D tetap ringan) ---------- */
+function bx2dGl(t,n){if(n>150&&window.BXGL!==false)t.type='scattergl';return t;}
+/* ---------- gabung blok sekelas jadi persegi panjang (jumlah path SVG jauh lebih sedikit) ---------- */
+function bxMergeRects(R){if(R.length<2)return R;var e=1e-6,out=[];
+  R.sort(function(a,b){return a[2]-b[2]||a[0]-b[0];});
+  var run=null;R.forEach(function(r){if(run&&Math.abs(run[2]-r[2])<e&&Math.abs(run[3]-r[3])<e&&Math.abs(run[1]-r[0])<e)run[1]=r[1];else{run=r.slice();out.push(run);}});
+  out.sort(function(a,b){return a[0]-b[0]||a[1]-b[1]||a[2]-b[2];});
+  var col=null,out2=[];out.forEach(function(r){if(col&&Math.abs(col[0]-r[0])<e&&Math.abs(col[1]-r[1])<e&&Math.abs(col[3]-r[2])<e)col[3]=r[3];else{col=r.slice();out2.push(col);}});
+  return out2;}
 function dgTraces(T,o){var showAll=$('dgAll')?$('dgAll').checked:true;DG.S.forEach(function(s){if(!s.vis)return;var p=s.pts.map(function(q){return{x:q[0],y:q[1],z:q[2]};});if(s.closed)p.push(p[0]);
-    var X=[],Y=[],Z=[],any=false,clip=o.clip||VIEW2D;if(!clip&&!showAll)return;
-    for(var i=1;i<p.length;i++){var sg=[p[i-1],p[i]];if(clip){sg=clipSeg(p[i-1],p[i],o.K);if(!sg)continue;}X.push(sg[0].x,sg[1].x,null);Y.push(sg[0].y,sg[1].y,null);Z.push(sg[0].z,sg[1].z,null);any=true;}
-    if(!any)return;T.push({type:'scatter3d',mode:'lines',x:X,y:Y,z:Z,name:'String '+s.no+(s.d?' '+s.d:''),line:{color:s.col,width:5},hoverinfo:'name',showlegend:true});
-    var vx=[],vy=[],vz=[];s.pts.forEach(function(q){var pp={x:q[0],y:q[1],z:q[2]};if(!clip||inK(o.K,pp)){vx.push(q[0]);vy.push(q[1]);vz.push(q[2]);}});
-    if(vx.length)T.push({type:'scatter3d',mode:'markers',x:vx,y:vy,z:vz,marker:{color:s.col,size:2.5},hoverinfo:'skip',showlegend:false});});}
+    var clip=o.clip||VIEW2D,J=segJoin();if(!clip&&!showAll)return;
+    for(var i=1;i<p.length;i++){var sg=[p[i-1],p[i]];if(clip){sg=clipSeg(p[i-1],p[i],o.K);if(!sg){J.brk();continue;}}J.add(sg[0],sg[1]);}
+    if(!J.n)return;T.push({type:'scatter3d',mode:'lines',x:J.X,y:J.Y,z:J.Z,name:'String '+s.no+(s.d?' '+s.d:''),line:{color:s.col,width:5},hoverinfo:'name',showlegend:true});
+    /* titik verteks hanya untuk string hasil digitasi tangan (dig block otomatis bisa ratusan titik) */
+    if(!s.auto&&!s.inner&&s.pts.length<=400){var vx=[],vy=[],vz=[];s.pts.forEach(function(q){var pp={x:q[0],y:q[1],z:q[2]};if(!clip||inK(o.K,pp)){vx.push(q[0]);vy.push(q[1]);vz.push(q[2]);}});
+      if(vx.length)T.push({type:'scatter3d',mode:'markers',x:vx,y:vy,z:vz,marker:{color:s.col,size:2.5},hoverinfo:'skip',showlegend:false});}});}
 function dgCv(){var c=$('dgCv');if(c)return c;var host=$('plotDiv').parentNode;if(getComputedStyle(host).position==='static')host.style.position='relative';c=document.createElement('canvas');c.id='dgCv';c.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:4';host.appendChild(c);return c;}
 function dgDraw(){var c=$('dgCv');if(!c)return;var gd=$('plotDiv'),hr=gd.parentNode.getBoundingClientRect(),gr=gd.getBoundingClientRect(),d=window.devicePixelRatio||1;
   c.style.left=(gr.left-hr.left)+'px';c.style.top=(gr.top-hr.top)+'px';c.style.width=gr.width+'px';c.style.height=gr.height+'px';c.width=gr.width*d;c.height=gr.height*d;
@@ -1904,7 +1925,7 @@ function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.lengt
   gd.addEventListener('mouseleave',function(){DG.hov=null;dgDraw();});gd.addEventListener('wheel',function(){setTimeout(dgDraw,60);},{passive:true});
   window.addEventListener('resize',function(){setTimeout(dgDraw,200);});
   document.addEventListener('keydown',function(e){if(!DG.on)return;var tg=(e.target&&e.target.tagName)||'';if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA')return;
-    if(e.key==='Enter'){dgFinish(false);e.preventDefault();}else if(e.key==='Backspace'){dgUndo();e.preventDefault();}else if(e.key==='Escape'){dgCancel();e.preventDefault();}});
+    if(e.key==='Enter'){dgFinish(!!DG.dbm);e.preventDefault();}else if(e.key==='Backspace'){dgUndo();e.preventDefault();}else if(e.key==='Escape'){dgCancel();e.preventDefault();}});
   var hook=function(){if(gd.on&&!gd._dgHook){gd._dgHook=1;gd.on('plotly_relayout',function(){setTimeout(dgDraw,0);});gd.on('plotly_afterplot',function(){dgDraw();});}};setInterval(function(){hook();if(DG.on)dgState();},1000);
   dgLoad();dgList();dgState();})();
 var CP={cam:null};
@@ -2197,11 +2218,12 @@ function bxTraces(T,o){if(!BX.m||!$('bxShow')||!$('bxShow').checked||VIEW2D)retu
   BX.mc={k:ck,t:out};out.forEach(function(t){T.push(t);});}
 function bxTraces2D(o,F){if(!BX.m||!$('bxShow')||!$('bxShow').checked)return[];if(window.lyFcOn&&lyFcOn())return lyFc2D();var S=bxSel({clip:true,K:o.K}),m=BX.m,g=o.g,G={},out=[];
   var u=g.u||[1,0,0];S.idx.forEach(function(i,j){(G[S.cl[j]]=G[S.cl[j]]||[]).push(i);});
-  Object.keys(G).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var L=G[k],ci=bxClassInfo(k),X=[],Y=[];
+  Object.keys(G).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var L=G[k],ci=bxClassInfo(k),X=[],Y=[],R=[];
     L.forEach(function(i){var x0,x1,y0,y1;if(g.m==='H'){x0=m.x[i]-m.sx[i]/2;x1=m.x[i]+m.sx[i]/2;y0=m.y[i]-m.sy[i]/2;y1=m.y[i]+m.sy[i]/2;}
       else{var c=F(m.x[i]-offX,m.y[i]-offY,m.z[i]),hw=(m.sx[i]*Math.abs(u[0])+m.sy[i]*Math.abs(u[1]))/2;x0=c[0]-hw;x1=c[0]+hw;y0=c[1]-m.sz[i]/2;y1=c[1]+m.sz[i]/2;}
-      X.push(x0,x1,x1,x0,x0,null);Y.push(y0,y0,y1,y1,y0,null);});
-    out.push({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+L.length+')',hoverinfo:'name',showlegend:true});});
+      R.push([x0,x1,y0,y1]);});
+    bxMergeRects(R).forEach(function(r){X.push(r[0],r[1],r[1],r[0],r[0],null);Y.push(r[2],r[2],r[3],r[3],r[2],null);});
+    out.push(bx2dGl({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+L.length+')',hoverinfo:'name',showlegend:true},X.length/6));});
   return out;}
 function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&LY.fst){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,a=U.attr,cat=!!m.cat[a],sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},tv=0,tt=0,sw=0,sv=0,gA=cat?(m.num[U.fAttr]||m.num[Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]]||null):m.num[a];
   idx.forEach(function(i,j){var v=m.sx[i]*m.sy[i]*m.sz[i],sg=bxSGv(sgA?sgA[i]:NaN),t=v*sg,k=cl[j],r=C[k]||(C[k]={n:0,v:0,t:0,g:0,gt:0});r.n++;r.v+=v;r.t+=t;tv+=v;tt+=t;
@@ -2550,7 +2572,7 @@ function lyFcRects(X0,X1,Y0,Y1){var fc=lyComp(),g={},n={},st={};if(!fc)return{g:
 function lyFcOn(){return !!(BX.m&&BX.ui&&BX.ui.fl&&VIEW2D&&secGeom().m==='H');}
 function lyFc2D(){var R=lyFcRects(),out=[];LY.fst=R.st;Object.keys(R.g).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var ci=bxClassInfo(k),X=[],Y=[];
     R.g[k].forEach(function(o){var x0=o[0],x1=o[0]+o[2],y0=o[1],y1=o[1]+o[3];X.push(x0,x1,x1,x0,x0,null);Y.push(y0,y0,y1,y1,y0,null);});
-    out.push({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+R.n[k]+')',hoverinfo:'name',showlegend:true});});
+    out.push(bx2dGl({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+R.n[k]+')',hoverinfo:'name',showlegend:true},X.length/6));});
   try{bxStatsFc(R.st,R.s);}catch(e){}return out;}
 
 /* ---------- tujuan (DEST) per dig block: isian per string > aturan material/sulfida > tujuan default ---------- */
@@ -2666,7 +2688,7 @@ function dbAuto(){if(!dbEnsure())return;var U=dbU(),m=BX.m,zs=lyZs(),B=lyBench()
   rep=rep0;var inn=dbInner(true);dgSave();dgList();updatePlot();
   DB.msg=res.length-drop?'<b>'+(res.length-drop)+' dig block</b> dibuat'+(drop?' ('+drop+' dibuang: sumproduct '+bxE(dbRAttr())+' &lt; batas terendah)':'')+(moved?' &middot; '+moved+' pindah kelas karena sumproduct':'')+', total luas '+area.toFixed(1)+' m&sup2; &middot; lebar min. '+(k*s0)+' m'+(stat.fill?' &middot; '+(stat.fill*s0*s0).toFixed(1)+' m&sup2; lubang/celah disatukan':'')+(stat.thin?' &middot; '+(stat.thin*s0*s0).toFixed(1)+' m&sup2; bagian &lt; '+(k*s0)+' m '+(U.mmwMode==='grow'?'diperlebar':'dibuang'):'')+(stat.ch?' &middot; undakan &lt; '+U.chamf+' m dihaluskan pada '+stat.ch+' polygon':'')+(inn.n?' &middot; <b>'+inn.n+' string ganda</b> (sulfida / sxs &gt; '+U.sxsThr+')':'')+(inn.f?' &middot; '+inn.f+' polygon terlalu sempit untuk string ganda':'')+(rep?' &middot; '+rep+' polygon otomatis lama diganti':'')+'. String Z = RL bawah '+lyFmt(B[1])+(stat.small?' &middot; '+(stat.small*s0*s0).toFixed(1)+' m&sup2; kantong &lt; luas min. diabaikan':'')+'.':'<span class=warn>Tidak ada dig block di atas luas minimum.</span>';if($('dbMsg'))$('dbMsg').innerHTML=DB.msg;}
 /* ---------- digit manual di menu Block Model ---------- */
-function dbDig(){if(!dbEnsure())return;var U=dbU();U.snap=U.snap!==false;if($('dgDesc'))$('dgDesc').value=U.dbMat||'ORE';if($('dgNo')&&!$('dgNo').value)$('dgNo').value=dgNext();dgStart();dbPanel();}
+function dbDig(){if(!dbEnsure())return;var U=dbU();U.snap=U.snap!==false;DG.dbm=String(U.dbMat||'ORE');if($('dgDesc'))$('dgDesc').value=U.dbMat||'ORE';if($('dgNo')&&!$('dgNo').value)$('dgNo').value=dgNext();dgStart();dbPanel();}
 function dbRunCalc(){if(!DG.on||!BX.m||!VIEW2D){DB.run=null;return null;}var A=dgAx(),P=DG.c2.slice();if(A&&DG.hov){P.push([A.x.p2d(DG.hov[0]-A.x._offset),A.y.p2d(DG.hov[1]-A.y._offset)]);}
   if(P.length<3){DB.run={n:DG.c2.length,a:0,t:null};return DB.run;}var key=JSON.stringify(P),now=Date.now();if(key===DB.rk&&DB.run)return DB.run;if(now-DB.rt<40&&DB.run&&DB.run.n===DG.c2.length)return DB.run;DB.rk=key;DB.rt=now;
   var t=lyTon(P,lyZs(),[]);DB.run={n:DG.c2.length,a:lyArea(P),t:t};return DB.run;}
@@ -2702,6 +2724,8 @@ function dbPanel(){var el=$('dbBody');if(!el)return;if(!BX.m){el.innerHTML='<div
   h+='<div class=g2><div><label>Material</label><input type=text value="'+bxE(U.dbMat)+'" onchange="dbSet(\'dbMat\',this.value);if($(\'dgDesc\'))$(\'dgDesc\').value=this.value"></div><div><label>&nbsp;</label><label class=sw><input type=checkbox '+(U.snap!==false?'checked':'')+' onchange="bxSet(\'snap\',this.checked,1)">Snap sudut blok</label></div></div>';
   h+='<div class=g4 style="margin-top:6px"><button class="'+(DG.on?'':'btn-pri')+'" onclick="dbDig()" '+(DG.on?'disabled':'')+'>&#9998; Mulai</button><button onclick="dgFinish(true)" '+(DG.on?'':'disabled')+' title="Tutup polygon (atau klik titik pertama)">&#9711; Tutup</button><button onclick="dgUndo()" '+(DG.on?'':'disabled')+' title="Backspace">&#8630; Undo</button><button onclick="dgCancel();dbPanel()" '+(DG.on?'':'disabled')+' title="Esc">&#10005; Batal</button></div>';
   h+='<div id=dbRun class=dbrun>'+(DG.on?'<b style="color:#e8590c">&#9679; Mendigit</b> &middot; '+dbRunTxt(dbRunCalc()):'Klik <b>Mulai</b>, lalu klik sudut-sudut blok di Penampang 2D. Tonase &amp; kadar dihitung langsung saat mendigit.')+'</div>';
+  h+='<div class=hint style="margin-top:2px"><b>Enter</b> = tutup poligon &amp; simpan &middot; <b>Backspace</b> = undo titik &middot; <b>Esc</b> = batal. Dig block manual langsung memakai nomor &amp; warna string material <b>'+bxE(U.dbMat)+'</b> dan langsung masuk daftar di bawah &mdash; bentuk, warna, nama &amp; lokasi tujuannya bisa diedit sama seperti hasil otomatis.</div>';
+  h+='<div class=dbsub>&#9776; Daftar dig block di flitch ini</div>'+dbTable();
   h+='<div class=dbsub>&#8681; Export dig block flitch ini (Surpac)</div><div class=hint>File: '+bxE(dbFileName())+'.str &middot; nama polygon tetap mengikuti templat penamaan</div>'+
     '<div class=g3 style="margin-top:4px"><button class=btn-pri onclick="dbExport(\'strb\')" title="Surpac STR binary: StringId, Y, X, Z (format sama dengan contoh)">STR binary</button><button onclick="dbExport(\'strt\')" title="Surpac STR teks: StringId, Y, X, Z">STR teks</button><button onclick="dbExport(\'dxf\')">DXF</button></div>'+
     '<label class=sw style="margin-top:4px"><input type=checkbox '+(U.strD?'checked':'')+' onchange="dbSet(\'strD\',this.checked)">STR teks: sertakan kolom keterangan (D1 = material, D2 = tujuan)</label>';
@@ -3415,7 +3439,7 @@ function amPanel(){var el=$('amBody');if(!el)return;var m=BX.m;if(!m){el.innerHT
         if(x.open){var oreOpts=[['','auto ('+I.oreAuto+')']];R.cls.concat([R.ws]).forEach(function(c){['SF','OX',''].forEach(function(o){var v=c.m+o;oreOpts.push([v,v]);});});
           var dOpts=[['','auto ('+(I.calc&&amDst(I.ore)?amDst(I.ore).d:'-')+')']];var dseen={};R.dst.forEach(function(q){if(q.d&&!dseen[q.d]){dseen[q.d]=1;dOpts.push([q.d,q.d+' · '+q.l]);}});
           h+='<div class=amed><div class=g2><div><label>Pit</label><input value="'+amE(x.pit)+'" onchange="amPSet(\''+x.id+'\',\'pit\',this.value)"></div><div><label>Block</label><input value="'+amE(x.blk)+'" onchange="amPSet(\''+x.id+'\',\'blk\',this.value)"></div></div><div class=g2><div><label>Shift</label>'+sel(x.shift,[['DS','DS · Siang'],['NS','NS · Malam']],"amPSet('"+x.id+"','shift',this.value)")+'</div>'+
-            '<div><label>Tanggal</label><input type=date value="'+amE(x.date)+'" onchange="amPSet(\''+x.id+'\',\'date\',this.value)"></div><div><label>Kode ore</label>'+sel(x.ore,oreOpts,"amPSet('"+x.id+"','ore',this.value)")+'</div></div><div class=g2><div><label>Tujuan</label>'+sel(x.dest,dOpts,"amPSet('"+x.id+"','dest',this.value)")+'</div><div><label>String ID</label><input type=number value="'+amE(x.sid)+'" placeholder="'+I.sid+'" onchange="amPSet(\''+x.id+'\',\'sid\',this.value)"></div></div><div class=g2><div><label>Densitas override</label><input type=number step=any value="'+amE(x.dens)+'" placeholder="'+amF(I.sgM,2)+'" onchange="amPSet(\''+x.id+'\',\'dens\',this.value)"></div><div><label>Kode manual</label><input value="'+amE(x.code)+'" placeholder="auto" onchange="amPSet(\''+x.id+'\',\'code\',this.value)"></div></div>'+
+            '<div><label>Tanggal</label><input type=date value="'+amE(x.date)+'" onchange="amPSet(\''+x.id+'\',\'date\',this.value)"></div><div><label>Kode ore</label>'+sel(x.ore,oreOpts,"amPSet('"+x.id+"','ore',this.value)")+'</div></div><div class=g2><div><label>Tujuan</label>'+sel(x.dest,dOpts,"amPSet('"+x.id+"','dest',this.value)")+'</div><div><label>String ID</label><input type=number value="'+amE(x.sid)+'" placeholder="'+I.sid+'" onchange="amPSet(\''+x.id+'\',\'sid\',this.value)"></div></div><div class=g2><div><label>Warna poligon</label><input type=color value="'+amE(I.col)+'" onchange="amPSet(\''+x.id+'\',\'col\',this.value)" title="Warna poligon di peta, layout &amp; register"></div><div><label>&nbsp;</label><button style="width:100%" onclick="amPSet(\''+x.id+'\',\'col\',\'\')" title="Kembali ke warna bawaan kode ore">&#8634; Warna otomatis</button></div></div><div class=g2><div><label>Densitas override</label><input type=number step=any value="'+amE(x.dens)+'" placeholder="'+amF(I.sgM,2)+'" onchange="amPSet(\''+x.id+'\',\'dens\',this.value)"></div><div><label>Kode manual</label><input value="'+amE(x.code)+'" placeholder="auto" onchange="amPSet(\''+x.id+'\',\'code\',this.value)"></div></div>'+
             '<div><label>Keterangan</label><input value="'+amE(x.ket)+'" onchange="amPSet(\''+x.id+'\',\'ket\',this.value)"></div>'+
             (I.calc?'<table class="pltb amt amkv"><tr><td>Luas</td><td>'+I.area.toFixed(1)+' m&sup2;</td><td>BCM</td><td>'+I.bcm.toFixed(1)+'</td></tr><tr><td>Densitas</td><td>'+amF(I.dens,2)+'</td><td>Ton</td><td><b>'+I.ton.toFixed(1)+'</b></td></tr><tr><td>'+amE(U.attr)+' as-mined</td><td><b>'+amF(I.gA,3)+'</b></td><td>'+amE(U.attr)+' model</td><td>'+amF(I.gO,3)+'</td></tr><tr><td>'+amE(R.ag||'Ag')+'</td><td>'+amF(I.ag,2)+'</td><td>'+amE(R.sxs||'SxS')+'</td><td>'+amF(I.sx,2)+'</td></tr>'+amElRows(I)+'<tr><td>Jenis ore</td><td>'+amE(I.jenis)+'</td><td>Lokasi</td><td>'+amE(I.lok)+' <small>'+amE(I.jl)+'</small></td></tr><tr><td>Sub-blok</td><td>'+(I.st.n||0)+'</td><td>Data baru</td><td>'+I.pu.toFixed(0)+'% ton</td></tr></table>':'')+
             '<div class=g2 style="margin-top:4px"><button onclick="amPOpen(\''+x.id+'\')">Tutup</button><button class=dn onclick="if(confirm(\'Hapus poligon '+amE(I.code).replace(/'/g,'')+'?\'))amBndDel(\''+x.id+'\')">Hapus poligon</button></div></div>';}

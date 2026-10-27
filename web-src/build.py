@@ -258,6 +258,10 @@ if '--noplotly' not in sys.argv:
     p = open(W + 'plotly.js', encoding='utf-8').read()
     rep('<script id="plotlyInline"></script>', '<script id="plotlyInline">' + p.replace('</script', '<\\/script') + '</script>')
 
+import bmfix_patch
+s = bmfix_patch.patch(s)
+print('BM fix (garis 2D, zoom, dig block manual): OK')
+
 import palette_patch as _pal
 s, _np = _pal.patch(s)
 s = _pal.layout(s)
