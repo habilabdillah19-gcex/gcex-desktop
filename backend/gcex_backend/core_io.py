@@ -26,6 +26,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional
 
@@ -125,10 +126,17 @@ class Project:
         self.folder, self.db, self.local = folder, db, local
         self.lock = threading.RLock()
 
-    def conn(self) -> sqlite3.Connection:
+    @contextmanager
+    def conn(self):
+        """Koneksi singkat: commit bila berhasil (rollback bila galat) lalu SELALU ditutup, supaya file database
+        tidak tetap terkunci (penting di Windows, OneDrive / drive jaringan, dan saat rekan membuka folder yang sama)."""
         c = sqlite3.connect(str(self.db), timeout=30)
         c.row_factory = sqlite3.Row
-        return c
+        try:
+            with c:
+                yield c
+        finally:
+            c.close()
 
 
 _PROJECTS: dict[str, Project] = {}
