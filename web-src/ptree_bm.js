@@ -67,17 +67,30 @@
       var K=[].concat(mdK('models','ref','Wireframe'),mdK('pts','pts','Titik'),mdK('str','string','String'));
       return{id:'ref',step:'4',st:st.ref,t:'Data Referensi',ic:'folder',fold:1,tab:'Model',b:K.length||'',hint:'Opsional: solid & string Surpac, titik survey sebagai acuan',
         menu:function(){return[{t:'Import model vein / solid…',fn:function(){PT.pick('.dtm,.str,.msh,.obj,.dxf',true,function(i){mdImport(i);});}},{t:'Import titik survey…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'Import string (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}];},kids:K};},'ref','Data Referensi');
-    /* 5 flitch: daftar flitch yang sudah punya dig block */
-    add(function(){var Sg=ok(function(){return DG.S;},[]),G={},ord=[];
-      Sg.forEach(function(q,i){var p=q.pl;if(!p||p.m!=='H'||!isFinite(+p.pos))return;var th=+p.thick||0,k=(+p.pos).toFixed(3)+'|'+th.toFixed(3);if(!G[k]){G[k]={pos:+p.pos,th:th,n:0};ord.push(k);}G[k].n++;});
-      ord.sort(function(a,b){return G[b].pos-G[a].pos;});var fmt=function(v){return String(+(+v).toFixed(3));};
-      var open=function(g){var top=g.pos+g.th/2;lySet('fh',+g.th.toFixed(3));lySet('top',+top.toFixed(3));lyApply();};
-      var fl=ord.map(function(k){var g=G[k],top=g.pos+g.th/2,bot=g.pos-g.th/2;return{id:'fl.'+k,t:'RL '+fmt(top)+' – '+fmt(bot),ic:'flitch',tab:'BM',sub:'Dig block',b:g.n+' poligon',
+    /* 5 flitch: SEMUA flitch yang sudah dikerjakan (dig block, string, poligon as-mined) sebagai subnode untuk audit / review */
+    add(function(){var Sg=ok(function(){return DG.S;},[]),AMB=ok(function(){return amBndAll();},[]),G={},ord=[],fmt=function(v){return String(+(+v).toFixed(3));};
+      var grp=function(top,bot){var k=(+top).toFixed(3)+'|'+(+bot).toFixed(3);if(!G[k]){G[k]={top:+top,bot:+bot,db:[],am:[]};ord.push(k);}return G[k];};
+      Sg.forEach(function(q,i){if(q.inner||q.amTmp)return;var top,bot;if(q.db){top=q.db.top;bot=q.db.bot;}else{var p=q.pl;if(!p||p.m!=='H'||!isFinite(+p.pos)||!q.closed)return;var th=+p.thick||0;top=+p.pos+th/2;bot=+p.pos-th/2;}grp(top,bot).db.push({s:q,i:i});});
+      AMB.forEach(function(x){if(isFinite(+x.top)&&isFinite(+x.bot))grp(x.top,x.bot).am.push(x);});
+      ord.sort(function(a,b){return G[b].top-G[a].top;});
+      var open=function(g){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+(+g.top).toFixed(3));lyApply();};
+      var B=ok(function(){return lyBench();},[NaN,NaN]),isAct=function(g){return Math.abs(g.top-B[0])<1e-6&&Math.abs(g.bot-B[1])<1e-6;};
+      var fl=ord.map(function(k){var g=G[k],ak=isAct(g),bd=[g.db.length?g.db.length+' DB':'',g.am.length?g.am.length+' AM':''].filter(Boolean).join(' · ');
+        var kids=[];
+        if(g.db.length)kids.push({id:'fl.'+k+'.db',t:'Dig block ('+g.db.length+')',ic:'poly',fold:1,kids:g.db.map(function(o){var q=o.s;return{id:'fl.'+k+'.db.'+(q.id||o.i),t:'#'+q.no+' '+(q.d||'string')+(q.dest?' → '+q.dest:''),ic:q.manual?'digit':'poly',
+          b:(function(){try{var a=dgArea(q);return a?a.toFixed(0)+' m²':'';}catch(e){return '';}})(),
+          go:function(){try{if(!isAct(g))open(g);setTimeout(function(){if(window.DGM)DGM.last=q.id;DB.sel=q.id;PT.goSub('BM','Dig block');try{dbPanel();}catch(e){}updatePlot();},120);}catch(e){console.error(e);}},
+          menu:function(){return[{t:'Buka flitch & sorot',fn:function(){if(!isAct(g))open(g);}},{t:'Edit bentuk…',fn:function(){if(!isAct(g))open(g);setTimeout(function(){dbEdStart(DG.S.indexOf(q));},200);}}];}};})});
+        if(g.am.length)kids.push({id:'fl.'+k+'.am',t:'Poligon as-mined ('+g.am.length+')',ic:'poly',fold:1,kids:g.am.map(function(x){var I=ok(function(){return amInfoById(x.id);},null);return{id:'fl.'+k+'.am.'+x.id,t:(I&&I.code)||x.name||x.id,ic:'poly',
+          b:I&&I.calc?N(Math.round(I.ton))+' t @ '+(isFinite(I.gA)?I.gA.toFixed(2):'-'):'',
+          go:function(){try{if(!isAct(g))open(g);setTimeout(function(){uiTab('AM');PT.goSub('AM','Register');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();},150);}catch(e){console.error(e);}},
+          menu:function(){return[{t:'Buka di register',fn:function(){if(!isAct(g))open(g);uiTab('AM');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();}},{t:'Edit bentuk…',fn:function(){if(!isAct(g))open(g);setTimeout(function(){amEdShape(x.id);},200);}}];}};})});
+        return{id:'fl.'+k,t:'RL '+fmt(g.top)+' – '+fmt(g.bot)+(ak?' (aktif)':''),ic:'flitch',tab:'BM',sub:'Dig block',b:bd,fold:1,kids:kids,
         foc:'rep',go:function(){try{open(g);setTimeout(function(){PT.goSub('BM','Dig block');},80);}catch(e){console.error(e);}},
-        menu:function(){return[{t:'Buka flitch ini (Penampang 2D)',fn:function(){open(g);}},{sep:1},{t:'Hapus semua dig block di flitch ini…',danger:1,fn:function(){open(g);setTimeout(A('dbDelFlitch'),200);}}];}};});
+        menu:function(){return[{t:'Buka flitch ini (Penampang 2D)',fn:function(){open(g);}},{t:'Register as-mined flitch ini',fn:function(){open(g);uiTab('AM');}},{sep:1},{t:'Hapus semua dig block di flitch ini…',danger:1,fn:function(){open(g);setTimeout(A('dbDelFlitch'),200);}}];}};});
       return{id:'fl',step:'5',st:st.fl,t:'Flitch Aktif',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'fl',b:m?flTxt():'',hint:'Tinggi flitch, RL atas / bawah, metode tonase, lalu Terapkan flitch (Penampang 2D)',
         menu:function(){return[{t:'Terapkan flitch (buka Penampang 2D)',fn:A('lyApply'),dis:!m}];},
-        kids:[{id:'fl.2d',t:'Penampang 2D',ic:'s2d',tab:'Slice',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();}}].concat(fl.length?[{id:'fl.list',t:'Flitch dengan dig block',ic:'flitch',b:fl.length,kids:fl}]:[])};},'fl','Flitch Aktif');
+        kids:[{id:'fl.2d',t:'Penampang 2D',ic:'s2d',tab:'Slice',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();}}].concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,kids:fl}]:[])};},'fl','Flitch Aktif');
     add(function(){return{id:'dig',step:'6',st:st.dig,t:'Dig Block',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'auto',b:s.dig?s.dig+' poligon':'',hint:'Dig block otomatis dari kelas kadar & tujuan material, atau digit manual (flitch aktif)',
         menu:function(){return[{t:'Buat dig block otomatis (flitch aktif)',fn:function(){A('dbAuto')();},dis:!m},{t:'Hapus semua dig block di flitch aktif…',danger:1,fn:A('dbDelFlitch'),dis:!s.dig}];},
         kids:[{id:'dig.auto',t:'Otomatis (kelas & tujuan)',ic:'poly',tab:'BM',sub:'Dig block',foc:'auto'},{id:'dig.man',t:'Digit manual (snap sudut blok)',ic:'digit',tab:'BM',sub:'Dig block',foc:'man'},
@@ -91,8 +104,11 @@
         kids:[sub('am.1','Setup register & kelas','gear','AM','Setup'),sub('am.2','Sampel (collar / assay)','table','AM','Sampel'),sub('am.3','Poligon, pick-up & lantai','poly','AM','Poligon'),sub('am.4','Parameter estimasi','attr','AM','Parameter')]};},'am','As-Mined');
     add(function(){return{id:'reg',step:'10',st:st.reg,t:'Register & Laporan As-Mined',ic:'folder',fold:1,tab:'AM',sub:'Register',hint:'Register poligon → Excel, layout & report rekonsiliasi',
         menu:function(){return[{t:'Kirim register ke Excel…',fn:A('amXlSend'),dis:typeof window.amXlSend!=='function'},{t:'Salin register ke Excel',fn:A('amRegCopy')},{t:'Register (CSV)',fn:A('amRegCsv')},{sep:1},{t:'Report rekonsiliasi (PDF)',fn:A('amPdf')},{t:'Rekonsiliasi (CSV)',fn:A('amCsv')},{t:'Block model as-mined (.mdl)',fn:A('amMdl')}];},
-        kids:[sub('reg.1','Register poligon','report','AM','Register'),sub('reg.2','Layout as-mined','map','AM','Layout'),{id:'reg.xl',t:'Kirim register ke Excel…',ic:'export',go:A('amXlSend'),dim:typeof window.amXlSend!=='function'},
-          {id:'reg.pdf',t:'Report rekonsiliasi (PDF)',ic:'report',go:A('amPdf')},{id:'reg.mdl',t:'Block model as-mined (.mdl)',ic:'block',go:A('amMdl')}]};},'reg','Register');
+        kids:[sub('reg.1','Register poligon','report','AM','Register')].concat((function(){var G={},ord=[];ok(function(){return amBndAll();},[]).forEach(function(x){var k=(+x.top).toFixed(3)+'|'+(+x.bot).toFixed(3);if(!G[k]){G[k]={top:+x.top,bot:+x.bot,n:0,t:0,m:0};ord.push(k);}var I=ok(function(){return amInfoById(x.id);},null);G[k].n++;if(I&&I.calc&&x.on){G[k].t+=I.ton;if(isFinite(I.gA))G[k].m+=I.gA*I.ton;}});
+            if(!ord.length)return[];ord.sort(function(a,b){return G[b].top-G[a].top;});var f=function(v){return String(+(+v).toFixed(3));};
+            return[{id:'reg.fl',t:'Per flitch ('+ord.length+')',ic:'flitch',fold:1,kids:ord.map(function(k){var g=G[k];return{id:'reg.fl.'+k,t:'RL '+f(g.top)+' – '+f(g.bot),ic:'flitch',b:g.n+' pol · '+N(Math.round(g.t))+' t'+(g.t?' @ '+(g.m/g.t).toFixed(2):''),tab:'AM',sub:'Register',
+              go:function(){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+g.top.toFixed(3));amApply();}};})}];})()).concat([sub('reg.2','Layout as-mined','map','AM','Layout'),{id:'reg.xl',t:'Kirim register ke Excel…',ic:'export',go:A('amXlSend'),dim:typeof window.amXlSend!=='function'},
+          {id:'reg.pdf',t:'Report rekonsiliasi (PDF)',ic:'report',go:A('amPdf')},{id:'reg.mdl',t:'Block model as-mined (.mdl)',ic:'block',go:A('amMdl')}])};},'reg','Register');
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.s',t:'Sayatan',ic:'section',tab:'Slice'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     return L;}
   PT.install({app:'bm',nodes:nodes,nav:true,openDef:['bm','fl','dig','am'],
