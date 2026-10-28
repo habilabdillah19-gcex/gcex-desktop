@@ -456,7 +456,7 @@ function grantFilePermissions() {
     const r = await dialog.showMessageBox(mainWin, {
       type: 'warning', buttons: ['Pilih folder lain', 'Tetap pakai folder ini', 'Batal'], defaultId: 0, cancelId: 2, title: 'Folder proyek',
       message: 'Folder ini termasuk folder sistem / folder induk yang dilindungi.',
-      detail: (details && details.path ? details.path + '\n\n' : '') + 'Sebaiknya buat subfolder khusus proyek, mis. Documents\\GC-Ex\\Proyek_Z3.'
+      detail: (details && details.path ? details.path + '\n\n' : '') + 'Sebaiknya buat subfolder khusus proyek, mis. Documents\\GC-Ex\\Proyek_A.'
     });
     callback(r.response === 0 ? 'tryAgain' : r.response === 1 ? 'allow' : 'deny');
   });

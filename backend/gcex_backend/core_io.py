@@ -427,20 +427,20 @@ GEO_LABEL = {"lithology": "Litologi", "alteration": "Alterasi", "oxidation": "Ok
 
 
 def ai_prompt(extra: str = "", logged: Optional[dict] = None) -> str:
-    # Disusun dari foto core box asli proyek (PT. Contoh Tambang, LTH-101 box 11): papan label putih di atas kotak,
-    # 4 baris core di kotak besi/kayu, blok penanda run, papan skala catur hitam-putih di bawah.
+    # Tata letak foto core box standar: papan label putih di atas kotak, 4 baris core di kotak besi/kayu,
+    # blok penanda run, papan skala catur hitam-putih di bawah. Contoh nilai di bawah fiktif.
     p = (
         "Anda ahli geoteknik senior yang menilai foto core box hasil pemboran inti (diamond drilling) di tambang emas "
-        "epitermal (PT. Contoh Tambang). TUJUAN UTAMA: parameter GEOTEKNIK dari foto "
+        "epitermal. TUJUAN UTAMA: parameter GEOTEKNIK dari foto "
         "(core recovery, RQD, GSI, RMR, pelapukan, kondisi, struktur). Deskripsi geologi hanya pelengkap bila "
         "logging geologist belum ada.\n\n"
         "TATA LETAK FOTO (standar proyek):\n"
         "- Papan label putih di BAGIAN ATAS, tulisan tangan / spidol hitam, berisi:\n"
-        "  baris 1: nama perusahaan 'PT. CONTOH TAMBANG' (abaikan);\n"
+        "  baris 1: nama perusahaan / proyek (abaikan);\n"
         "  'HOLE ID: LTH-101' -> hole_id;  'START DRILL: 05-03-25' -> drill_start;\n"
         "  'BOX: 11' -> box_no;  'DATE POTO: 12-03-25' -> photo_date;\n"
         "  'DEPTH: 36.30' -> from_m;  'M:TO: 40.10' -> to_m;  'M:CONDT: WET' -> condition (WET / DRY).\n"
-        "  Tulisan tangan sering rapat: '13-0119' berarti 05-03-25. Tulis tanggal seperti tertulis (DD-MM-YY). "
+        "  Tulisan tangan sering rapat: '050325' berarti 05-03-25. Tulis tanggal seperti tertulis (DD-MM-YY). "
         "Bedakan O/0, I/1, S/5, B/8 dari konteks (Hole ID berpola huruf-strip-angka, kedalaman berupa angka meter dengan 2 desimal).\n"
         "- Di bawah papan: kotak core berisi biasanya 4 BARIS core, dibaca kiri ke kanan, baris atas ke bawah "
         "(atas = lebih dangkal). Blok kecil putih bertulis di antara core = penanda kedalaman run / core block.\n"

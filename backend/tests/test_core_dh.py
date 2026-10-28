@@ -124,7 +124,7 @@ def test_import_assay_geology_collar_survey_and_photo_detail(prj):
     s = c.post("/core/dh/search", json={"folder": str(d), "q": "au>=1"}).json()
     assert [r["v"] for r in s["results"]] == [9, 4.8, 1.2] and s["results"][0]["photo_id"] is None
     assert s["results"][1]["hole"] == "LTH 101"  # nama hole seperti di file lab, bukan kunci internal
-    s = c.post("/core/dh/search", json={"folder": str(d), "q": "LTH542"}).json()
+    s = c.post("/core/dh/search", json={"folder": str(d), "q": "LTH101"}).json()
     assert any(r["type"] == "foto" for r in s["results"])
     bad = c.post("/core/dh/search", json={"folder": str(d), "q": "Zn>1"})
     assert bad.status_code == 500 and "Zn" in bad.json()["error"]

@@ -84,8 +84,8 @@ def test_parse_filename():
     assert core_io.parse_filename("GCD0123 B05 12,5-15,0m.jpg") == {"box_no": "5", "from_m": 12.5, "to_m": 15.0, "hole_id": "GCD0123"}
     assert core_io.parse_filename("IMG_0001.jpg") == {}
     assert core_io.parse_filename("DSC00012.JPG") == {}
-    assert core_io.parse_filename("Z3-280-63 BX4 10.2m-14.0m.jpg") == {"box_no": "4", "from_m": 10.2, "to_m": 14.0, "hole_id": "Z3-280-63"}
-    assert core_io.parse_filename("P2_261_329_box3_4.5-9.0.jpg")["hole_id"] == "P2_261_329"
+    assert core_io.parse_filename("DDH-07-15 BX4 10.2m-14.0m.jpg") == {"box_no": "4", "from_m": 10.2, "to_m": 14.0, "hole_id": "DDH-07-15"}
+    assert core_io.parse_filename("DDH_08_22_box3_4.5-9.0.jpg")["hole_id"] == "DDH_08_22"
 
 
 def test_open_scan_order_and_filename_guess(folder):

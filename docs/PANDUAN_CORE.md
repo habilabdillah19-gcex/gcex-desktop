@@ -64,7 +64,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 1. **Buka folder foto** → pilih folder berisi foto core box. Subfolder (mis. per lubang bor) ikut dibaca. Format: JPG, PNG, TIFF, BMP, WEBP.
 2. Hole ID, nomor box dan kedalaman **dibaca dari nama file** bila polanya jelas (bila tidak, AI membaca papan label di foto, lihat bagian 3a), mis.:
    - `LTH-101_Box11_36.30-40.10.jpg` → LTH-101, box 11, 36,30–40,10 m
-   - `Z3-280-63 BX4 10.2m-14.0m.jpg` → Z3-280-63, box 4, 10,2–14,0 m
+   - `DDH-07-15 BX4 10.2m-14.0m.jpg` → DDH-07-15, box 4, 10,2–14,0 m
    - `GCD0123 B05 12,5-15,0m.jpg` → GCD0123, box 5, 12,5–15,0 m
 
    Isian dari nama file diberi label berarsir **nama file** dan tidak ditimpa AI. Nama seperti `IMG_0001.jpg` dibiarkan kosong: AI mencoba membaca papan label di foto.
@@ -77,7 +77,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 
 ### 3a. Papan label yang dibaca AI
 
-AI diberi tahu tata letak foto core box proyek (contoh asli: `docs/referensi/contoh_corebox_LTH-101_box11.jpg`):
+AI diberi tahu tata letak foto core box proyek (contoh fiktif: `docs/referensi/contoh_corebox_fiktif_LTH-101_box11.jpg`):
 
 | Tulisan di papan | Kolom di GC-Ex |
 |---|---|
