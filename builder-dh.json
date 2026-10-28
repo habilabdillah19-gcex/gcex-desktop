@@ -69,5 +69,14 @@
       "icon": "icon-dh.ico",
       "role": "Editor"
     }
-  ]
+  ],
+  "electronFuses": {
+    "runAsNode": false,
+    "enableCookieEncryption": true,
+    "enableNodeOptionsEnvironmentVariable": false,
+    "enableNodeCliInspectArguments": false,
+    "enableEmbeddedAsarIntegrityValidation": true,
+    "onlyLoadAppFromAsar": true
+  },
+  "asar": true
 }

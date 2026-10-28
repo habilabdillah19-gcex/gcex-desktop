@@ -891,7 +891,7 @@ body.sgdrag #stage{pointer-events:none}
    <div id="plNeed" style="display:none">
     <label class="sb"><input type="file" accept=".js" onchange="SA.addPlotly(this.files[0]);this.value=''">Import Plotly (plotly-2.x.min.js)</label><span class="hint2" style="margin-left:8px">cukup sekali &mdash; disimpan di browser</span>
    </div>
-   <div id="plSave" style="display:none" class="hint2">Agar file ini benar-benar mandiri untuk dibagikan, <a href="#" onclick="SA.saveStandalone();return false">unduh salinan HTML dengan Plotly tertanam</a>.</div>
+   <div id="plSave" style="display:none"></div>
   </section>
  </div>
  <div class="impFoot"><div id="impMsg"></div><button class="ib" id="btnGo" onclick="SA.go()" disabled>Tampilkan viewer &rarr;</button></div>
@@ -5667,7 +5667,7 @@ function envCopyEst(eid){var d=gmDom(eid),v=d&&gmDom(d.env);if(!v||!meParOf(v)){
 (function(){'use strict';
 var SA=window.SA={T:[],sp:[],plotlyTxt:null,map:{},feat:{}};
 var E=function(i){return document.getElementById(i);};
-SA.src0='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+SA.src0='';
 var CDN='https://cdn.plot.ly/plotly-2.27.0.min.js';
 
 /* ================= helpers (port dari modul VBA) ================= */
@@ -6210,7 +6210,7 @@ SA.initPlotly=async function(){if(window.Plotly){plOk('tertanam di file ini');re
   E('plStat').innerHTML='Tidak ada koneksi internet dan Plotly belum tersimpan. Pilih file <b>plotly-2.x.min.js</b> sekali saja (file yang sama yang dipakai versi Excel).';E('plNeed').style.display='block';SA.goState();};
 SA.addPlotly=async function(f){if(!f)return;var t=await f.text();try{evalJs(t);}catch(e){}if(!window.Plotly){E('plStat').innerHTML='<span style="color:var(--dn)">File bukan library Plotly.</span>';return;}
   SA.plotlyTxt=t;await idbPut('plotly',t);plOk('dimuat dari '+esc(f.name)+' dan disimpan di browser');};
-SA.saveStandalone=async function(){var t=SA.plotlyTxt;if(!t){try{t=await (await fetch(CDN)).text();}catch(e){}}if(!t||t.indexOf('Plotly')<0){alert('Library Plotly belum tersedia sebagai teks. Pilih file plotly-2.x.min.js dulu.');E('plNeed').style.display='block';return;}
+SA.saveStandalone=async function(){return;var t=SA.plotlyTxt;if(!t){try{t=await (await fetch(CDN)).text();}catch(e){}}if(!t||t.indexOf('Plotly')<0){alert('Library Plotly belum tersedia sebagai teks. Pilih file plotly-2.x.min.js dulu.');E('plNeed').style.display='block';return;}
   var src=SA.src0,a='<script id="plotlyInline">',i=src.indexOf(a),j=src.indexOf('<'+'/script>',i);if(i<0||j<0){alert('Struktur file tidak dikenali.');return;}
   var html=src.slice(0,i+a.length)+t.replace(/<\/script/gi,'<\\/script')+src.slice(j),blob=new Blob([html],{type:'text/html'}),l=document.createElement('a');
   l.href=URL.createObjectURL(blob);l.download='Drillhole3D_Viewer_Offline_lengkap.html';document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(l.href);l.remove();},800);};

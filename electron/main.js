@@ -3,7 +3,7 @@
 // menjalankan backend Python (FastAPI),
 // memberi izin folder proyek tanpa dialog berulang, menu, log, dan menutup backend saat keluar.
 'use strict';
-const { app, BrowserWindow, Menu, dialog, shell, session, ipcMain, protocol, net: enet } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, session, ipcMain, protocol, clipboard, net: enet } = require('electron');
 const { pathToFileURL } = require('url');
 const path = require('path');
 const fs = require('fs');
@@ -27,6 +27,11 @@ if (process.env.GCEX_APP === 'core' && !app.isPackaged) {
   app.setPath('userData', path.join(app.getPath('appData'), 'GC-Ex Core Interpretation'));
 }
 const APP_NAME = G.title;
+// lisensi (kunci terikat komputer); diwajibkan pada aplikasi terpasang. Saat pengembangan: set GCEX_LIC=1 untuk menguji.
+const LIC = require('./license').create(app.getPath('appData'));
+const LIC_ON = app.isPackaged || process.env.GCEX_LIC === '1';
+// DevTools & lihat sumber hanya untuk pengembangan (tidak di aplikasi terpasang)
+const DEVTOOLS = !app.isPackaged && process.env.GCEX_DEVTOOLS !== '0';
 let mainWin = null;
 let backend = { proc: null, port: 0, url: '', ok: false, err: '' };
 
@@ -64,7 +69,6 @@ const sharedFile = () => path.join(app.getPath('appData'), 'GC-Ex-shared', 'apps
 function readShared() { try { return JSON.parse(fs.readFileSync(sharedFile(), 'utf8')); } catch (e) { return {}; } }
 /* folder pemberitahuan lisensi pihak ketiga & penafian merek (resources/legal) */
 function legalDir() { return app.isPackaged ? path.join(process.resourcesPath, 'legal') : path.join(__dirname, '..', 'legal'); }
-function openLegal() { const d = legalDir(), f = path.join(d, 'LISENSI_PIHAK_KETIGA.txt'); shell.openPath(fs.existsSync(f) ? f : d); }
 function regSelf() { if (!app.isPackaged) return; try { fs.mkdirSync(path.dirname(sharedFile()), { recursive: true }); const o = readShared(); o[G.theme] = process.execPath; fs.writeFileSync(sharedFile(), JSON.stringify(o, null, 1)); } catch (e) {} }
 // hasil: 'here' (dibuka di aplikasi ini), 'other' (diteruskan), 'none' (bukan proyek GC-Ex / gagal)
 function routePrj(p) {
@@ -162,7 +166,7 @@ ipcMain.on('gcex:prompt', (e, o) => {
   const win = new BrowserWindow({
     parent, modal: true, width: 480, height: 210, resizable: false, minimizable: false, maximizable: false, fullscreenable: false,
     show: false, title: 'GC-Ex', backgroundColor: '#ffffff', icon: path.join(__dirname, '..', G.icon),
-    webPreferences: { preload: path.join(__dirname, 'prompt-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false }
+    webPreferences: { preload: path.join(__dirname, 'prompt-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, devTools: DEVTOOLS }
   });
   win.setMenu(null);
   let done = false;
@@ -210,7 +214,7 @@ function createWindow() {
   mainWin = new BrowserWindow({
     width: 1600, height: 950, minWidth: 1100, minHeight: 700, show: false,
     title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : G.theme === 'core' ? '#ecebe6' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, devTools: DEVTOOLS,
       // simpan otomatis & sinyal kunci proyek tetap berjalan normal walau jendela diminimalkan
       backgroundThrottling: false }
   });
@@ -264,7 +268,7 @@ function createWindow() {
     if (/^https?:/i.test(url)) shell.openExternal(url);
   });
   mainWin.webContents.on('render-process-gone', (e, d) => log('[renderer] berhenti', d));
-  mainWin.webContents.on('console-message', (e, level, msg) => { if (level >= 2) log('[halaman]', msg); });
+  mainWin.webContents.on('console-message', (e, level, msg) => { const lv = typeof level === 'number' ? level : ({ warning: 2, error: 3 }[e && e.level] || 0); const m = msg !== undefined ? msg : e && e.message; if (lv >= 2) log('[halaman]', m); });
   mainWin.on('closed', () => { mainWin = null; });
 }
 
@@ -306,7 +310,51 @@ function editMenu(wc) {
     if (items.length) Menu.buildFromTemplate(items).popup({ window: BrowserWindow.fromWebContents(wc) || undefined });
   });
 }
-app.on('web-contents-created', (e, wc) => editMenu(wc));
+app.on('web-contents-created', (e, wc) => { editMenu(wc); lockDown(wc); });
+// aplikasi terpasang: tidak ada jalan melihat kode sumber (DevTools, view-source, navigasi ke file lain)
+function lockDown(wc) {
+  if (DEVTOOLS) return;
+  wc.on('before-input-event', (ev, i) => {
+    const k = String(i.key || '').toLowerCase(), c = i.control || i.meta;
+    if (k === 'f12' || (c && i.shift && ['i', 'j', 'c'].includes(k)) || (c && k === 'u')) ev.preventDefault();
+  });
+  wc.on('devtools-opened', () => { try { wc.closeDevTools(); } catch (er) {} });
+  wc.on('will-navigate', (ev, url) => { if (/^view-source:/i.test(url)) ev.preventDefault(); });
+}
+
+// ---------- lisensi: jendela aktivasi / info ----------
+let licWin = null, licResolve = null, licMode = 'activate', licBusy = false;
+function showLicense(mode) {
+  return new Promise((res) => {
+    licMode = mode || 'activate';
+    if (licWin) { licWin.focus(); const pr = licResolve; licResolve = (v) => { if (pr) pr(v); res(v); }; return; }
+    licResolve = res;
+    const info = licMode === 'info' && mainWin;
+    licWin = new BrowserWindow({ width: 640, height: 660, resizable: false, minimizable: !info, maximizable: false, fullscreenable: false, show: false,
+      parent: info ? mainWin : undefined, modal: !!info, title: (info ? 'Lisensi ' : 'Aktivasi ') + APP_NAME, icon: path.join(__dirname, '..', G.icon), backgroundColor: '#e7e4dd',
+      webPreferences: { preload: path.join(__dirname, 'activate-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, devTools: DEVTOOLS } });
+    licWin.setMenu(null);
+    licWin.once('ready-to-show', () => licWin.show());
+    licWin.loadFile(path.join(__dirname, 'activate.html'));
+    licWin.on('closed', () => { licWin = null; const r = licResolve; licResolve = null; if (r) r(LIC.check(G.theme).ok); });
+  });
+}
+ipcMain.handle('lic:state', () => ({ theme: G.theme, appName: APP_NAME, machineId: LIC.machineId(), apps: LIC.apps, check: LIC.check(G.theme), mode: licMode }));
+ipcMain.handle('lic:activate', (e, key) => { const r = LIC.activate(key, G.theme); log('[lisensi] aktivasi', r.ok ? 'OK ' + (r.info && r.info.id) : 'gagal: ' + r.reason); return r; });
+ipcMain.handle('lic:copy', (e, t) => { clipboard.writeText(String(t || '')); return true; });
+ipcMain.handle('lic:openFile', async () => {
+  const r = await dialog.showOpenDialog(licWin || mainWin, { title: 'Buka file lisensi GC-Ex', filters: [{ name: 'Lisensi GC-Ex', extensions: ['gcexlic', 'txt'] }], properties: ['openFile'] });
+  if (r.canceled || !r.filePaths || !r.filePaths.length) return null;
+  try { return fs.readFileSync(r.filePaths[0], 'utf8').slice(0, 20000); } catch (e) { return null; }
+});
+ipcMain.handle('lic:remove', () => {
+  const c = dialog.showMessageBoxSync(licWin || mainWin, { type: 'warning', title: 'Lisensi GC-Ex', buttons: ['Hapus lisensi', 'Batal'], defaultId: 1, cancelId: 1, noLink: true,
+    message: 'Hapus lisensi dari komputer ini?', detail: 'Semua aplikasi GC-Ex di komputer ini akan meminta kunci lisensi lagi saat dibuka berikutnya.' });
+  if (c !== 0) return false;
+  LIC.remove(); log('[lisensi] dihapus'); return true;
+});
+ipcMain.on('lic:done', () => { const r = licResolve; licResolve = null; if (r) r(true); if (licMode === 'info' && licWin) licWin.close(); });
+ipcMain.on('lic:close', () => { if (licWin) licWin.close(); });
 
 // ---------- ukuran tampilan: bawaan 85% (layar laptop dengan skala Windows 125-150% terasa sempit), diingat ----------
 const ZOOMS = [0.75, 0.8, 0.85, 0.9, 1.0, 1.1, 1.25];
@@ -336,8 +384,7 @@ function buildMenu() {
       { label: 'Perbesar', accelerator: 'CmdOrCtrl+Plus', visible: false, click: () => stepZoom(+1) },
       { label: 'Perkecil', accelerator: 'CmdOrCtrl+-', click: () => stepZoom(-1) },
       { label: 'Ukuran bawaan (' + Math.round(ZOOM_DEF * 100) + '%)', accelerator: 'CmdOrCtrl+0', click: () => setZoom(ZOOM_DEF) },
-      { type: 'separator' }, { label: 'Layar penuh', accelerator: 'F11', type: 'checkbox', checked: !!(mainWin && mainWin.isFullScreen()), click: () => { if (mainWin) mainWin.setFullScreen(!mainWin.isFullScreen()); } },
-      { label: 'Developer tools', accelerator: 'Ctrl+Shift+I', click: () => mainWin && mainWin.webContents.toggleDevTools() }
+      { type: 'separator' }, { label: 'Layar penuh', accelerator: 'F11', type: 'checkbox', checked: !!(mainWin && mainWin.isFullScreen()), click: () => { if (mainWin) mainWin.setFullScreen(!mainWin.isFullScreen()); } }
     ] },
     { label: 'Bantuan', submenu: [
       { label: 'Buka folder log', click: () => shell.openPath(logDir) },
@@ -349,12 +396,13 @@ function buildMenu() {
           try { const res = await fetch(backend.url + '/mdl/cache/clear', { method: 'POST' }); const j = await res.json(); dialog.showMessageBox(mainWin, { type: 'info', message: (j.removed || 0) + ' cache dihapus.' }); }
           catch (e) { dialog.showMessageBox(mainWin, { type: 'error', message: 'Gagal menghapus cache: ' + e.message }); }
         } },
-      { label: 'Lisensi pihak ketiga & merek dagang', click: () => openLegal() },
-      { label: 'Tentang GC-Ex', click: async () => {
-          const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi & merek dagang'], defaultId: 0, noLink: true, message: APP_NAME + ' - Grade Control Excellence', detail: 'Versi ' + app.getVersion() + '\nBackend: ' + (backend.ok ? 'aktif (' + backend.url + ')' : 'tidak aktif' + (backend.err ? ' - ' + backend.err : '')) + '\nLog: ' + logDir + '\n\nCopyright © 2026 Habil Abdillah' +
-            '\n\nMemakai komponen open-source: ' + (G.theme === 'core' ? '' : 'Plotly.js (MIT), ') + 'Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, Pillow (MIT-CMU), lxml, openpyxl, pyodbc (MIT / BSD).' + (G.theme === 'core' ? '\nAI lokal memakai Ollama (MIT, dipasang terpisah); model AI mengikuti lisensi masing-masing.' : '') +
-            '\nLeapfrog, Surpac, GEOVIA, Micromine, AutoCAD, Microsoft Excel / Access, Ollama dan nama produk lain adalah merek dagang milik pemiliknya; GC-Ex tidak berafiliasi dengan mereka.' });
-          if (r.response === 1) openLegal();
+      { type: 'separator' },
+      { label: 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
+      { label: 'Tentang GC-Ex', click: () => {
+          const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
+          dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK'], defaultId: 0, noLink: true, message: APP_NAME + ' - Grade Control Excellence',
+            detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah' +
+              (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') });
         } }
     ] }
   ];
@@ -394,11 +442,23 @@ app.whenReady().then(async () => {
     if (!own) { log('[prj] bukan proyek GC-Ex, dibuka di Notepad:', f0); try { spawn('notepad.exe', [f0], { detached: true, stdio: 'ignore' }).unref(); } catch (e) {} app.quit(); return; }
     if (own !== APP_NAME) { if (routePrj(f0) === 'other') { app.quit(); return; } f0done = true; }
   }
+  if (LIC_ON) {
+    const c = LIC.check(G.theme);
+    if (!c.ok) {
+      licBusy = true;
+      log('[lisensi] belum aktif:', c.reason);
+      const ok = await showLicense('activate');
+      if (!ok) { licBusy = false; log('[lisensi] aplikasi ditutup tanpa lisensi'); app.quit(); return; }
+    } else if (c.daysLeft != null && c.daysLeft <= 14) {
+      setTimeout(() => { if (mainWin) dialog.showMessageBox(mainWin, { type: 'warning', title: 'Lisensi GC-Ex', message: 'Lisensi GC-Ex berakhir dalam ' + c.daysLeft + ' hari (' + c.info.e + ').', detail: 'Minta kunci perpanjangan ke penerbit GC-Ex, lalu masukkan lewat Bantuan > Lisensi GC-Ex.' }); }, 4000);
+    }
+  }
   grantFilePermissions();
   buildMenu();
   createWindow();
+  if (licWin) { const w = licWin; setTimeout(() => { try { if (!w.isDestroyed()) w.close(); } catch (e) {} licBusy = false; }, 600); } else licBusy = false;
   if (f0 && !f0done) routePrj(f0);
   startBackend().then(() => { if (mainWin) mainWin.webContents.send('gcex:backend', { ok: backend.ok, url: backend.url, err: backend.err }); });
 });
-app.on('window-all-closed', () => { stopBackend(); app.quit(); });
+app.on('window-all-closed', () => { if (licBusy) return; stopBackend(); app.quit(); });
 app.on('will-quit', stopBackend);

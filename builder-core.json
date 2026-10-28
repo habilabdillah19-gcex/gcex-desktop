@@ -67,5 +67,14 @@
     "createStartMenuShortcut": true,
     "shortcutName": "GC-Ex Core Interpretation",
     "uninstallDisplayName": "GC-Ex Core Interpretation ${version}"
-  }
+  },
+  "electronFuses": {
+    "runAsNode": false,
+    "enableCookieEncryption": true,
+    "enableNodeOptionsEnvironmentVariable": false,
+    "enableNodeCliInspectArguments": false,
+    "enableEmbeddedAsarIntegrityValidation": true,
+    "onlyLoadAppFromAsar": true
+  },
+  "asar": true
 }

@@ -265,6 +265,9 @@ import bmfix_patch
 s = bmfix_patch.patch(s)
 print('BM fix (garis 2D, zoom, dig block manual): OK')
 
+import nosrc_patch as _nosrc
+s = _nosrc.patch(s)
+print('Tanpa akses kode sumber: OK')
 import palette_patch as _pal
 s, _np = _pal.patch(s, earthy=True)
 s = _pal.layout(s)

@@ -9,16 +9,16 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ---------- backend Python ----------
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Pasang paket Python
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt pyinstaller==6.11.1
+          pip install -r backend/requirements.txt pyinstaller==6.22.3
       - name: Uji backend
         run: python backend/ci_test.py
       - name: Bangun backend (PyInstaller)
@@ -46,11 +46,17 @@ jobs:
           Write-Host "backend.exe OK"
 
       # ---------- Electron + installer ----------
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
       - name: Pasang paket Node
         run: npm install --no-audit --no-fund
+      - name: Audit keamanan paket (Node & Python, informasi)
+        shell: pwsh
+        run: |
+          npm audit --audit-level=high; if ($LASTEXITCODE -ne 0) { Write-Host "::warning::npm audit menemukan kerentanan (lihat log)" }
+          python -m pip install pip-audit; python -m pip_audit -r backend/requirements.txt; if ($LASTEXITCODE -ne 0) { Write-Host "::warning::pip-audit menemukan kerentanan (lihat log)" }
+          exit 0
       - name: Kumpulkan lisensi pihak ketiga
         shell: pwsh
         run: |
@@ -96,17 +102,17 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: GC-Ex-Setup-Windows
           path: dist/GC-Ex-Setup-*.exe
           retention-days: 30
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: GC-Ex-Drillhole-Setup-Windows
           path: dist/GC-Ex-Drillhole-Setup-*.exe
           retention-days: 30
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: GC-Ex-Core-Setup-Windows
           path: dist/GC-Ex-Core-Setup-*.exe

@@ -69,6 +69,9 @@ k = s.rindex('</body>')
 s = s[:k] + '<style id="dhTheme">\n' + css + '\n</style>\n<style id="deskSkin">\n' + open(SHARED + 'desk_skin.css', encoding='utf-8').read() + '\n</style>\n<style id="deskDense">\n' + open(SHARED + 'desk_dense.css', encoding='utf-8').read() + '\n</style>\n' + s[k:]
 assert '<script id="plotlyInline">' in s and len(s) > 3_000_000, 'Plotly tertanam tidak ditemukan'
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
+import nosrc_patch
+s = nosrc_patch.patch(s)
+print('Tanpa akses kode sumber: OK')
 import palette_patch
 s, npal = palette_patch.patch(s)
 s = palette_patch.layout(s)

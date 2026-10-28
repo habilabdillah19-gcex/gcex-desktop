@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pembuat Lisensi GC-Ex</title>
+<style>
+:root{--bg:#e7e4dd;--sf:#f8f6f1;--sf2:#efece5;--bd:#d3cdc1;--tx:#2a2d31;--mu:#62656a;--pr:#2c3b57;--ac:#b5893e;--ok:#2f6b3a;--dn:#9b3d2f}
+@media (prefers-color-scheme: dark){:root{--bg:#1b1d20;--sf:#232629;--sf2:#2a2d31;--bd:#3a3d42;--tx:#e5e1d8;--mu:#a29d93;--pr:#a7b5cf;--ac:#c9a063;--ok:#7fc08a;--dn:#d98a7a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.45 'Segoe UI',Tahoma,Arial,sans-serif}
+.w{max-width:860px;margin:0 auto;padding:20px 16px 40px}
+h1{margin:0;font-size:20px;color:var(--pr)}.sub{color:var(--mu);margin:2px 0 14px}
+.card{background:var(--sf);border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin-bottom:6px}
+label{display:block;font-size:12px;color:var(--mu);margin:6px 0 2px}
+input[type=text],input[type=date],textarea{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--sf2);color:var(--tx)}
+textarea{height:110px;font:12px/1.4 Consolas,monospace;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:620px){.g2{grid-template-columns:1fr}}
+.chk{display:flex;flex-wrap:wrap;gap:12px;margin-top:4px}.chk label{display:flex;gap:5px;align-items:center;margin:0;color:var(--tx)}
+button,.btn{font:inherit;padding:6px 14px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;display:inline-block}
+button.pri{background:var(--pr);border-color:var(--pr);color:#fff;font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.ok{color:var(--ok)}.err{color:var(--dn)}.mu{color:var(--mu)}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:left}th{color:var(--mu);font-weight:600}
+.tw{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>Pembuat Lisensi GC-Ex</h1>
+  <div class="sub">Membuat kunci lisensi terikat komputer untuk GC-Ex Block Model, Drillhole &amp; Core Interpretation. Berjalan offline di browser ini (Edge / Chrome terbaru); kunci privat tidak dikirim ke mana pun.</div>
+
+  <div class="card">
+    <div class="lab">1. Kunci privat penerbit</div>
+    <div class="row" style="margin-top:0"><label class="btn" style="margin:0;color:var(--tx)"><input type="file" id="kf" accept=".json" hidden>Buka GCEx_KUNCI_PRIVAT_LISENSI.json…</label><span id="ks" class="mu">Belum dimuat.</span></div>
+    <div class="mu" style="margin-top:6px">Simpan file kunci privat di flashdisk / brankas, bukan di folder bersama. Siapa pun yang memegangnya bisa membuat lisensi.</div>
+  </div>
+
+  <div class="card">
+    <div class="lab">2. Data lisensi</div>
+    <div class="g2">
+      <div><label for="mid">ID Komputer (dari jendela Aktivasi GC-Ex)</label><input type="text" id="mid" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" spellcheck="false"></div>
+      <div><label for="lid">No. lisensi</label><input type="text" id="lid" spellcheck="false"></div>
+      <div><label for="nm">Nama pemegang</label><input type="text" id="nm" placeholder="mis. Budi Santoso"></div>
+      <div><label for="org">Organisasi / departemen (opsional)</label><input type="text" id="org" placeholder="mis. Mine Geology - Pit Z3"></div>
+      <div><label for="exp">Berlaku sampai</label><input type="date" id="exp"><label style="display:flex;gap:5px;align-items:center;color:var(--tx)"><input type="checkbox" id="noexp"> Tanpa batas waktu</label></div>
+      <div><label>Aplikasi</label><div class="chk"><label><input type="checkbox" class="ap" value="bm" checked> Block Model</label><label><input type="checkbox" class="ap" value="dh" checked> Drillhole</label><label><input type="checkbox" class="ap" value="core"> Core Interpretation</label><label><input type="checkbox" id="all"> Semua (termasuk aplikasi GC-Ex berikutnya)</label></div></div>
+    </div>
+    <div class="row"><button class="pri" id="go" disabled>Buat kunci lisensi</button><span id="msg"></span></div>
+  </div>
+
+  <div class="card" id="out" style="display:none">
+    <div class="lab">3. Kunci lisensi</div>
+    <textarea id="key" readonly></textarea>
+    <div class="row"><button id="cp">Salin kunci</button><button id="dl">Simpan file .gcexlic</button><span class="mu">Kirim kunci / file ini ke pemakai; tempel di jendela Aktivasi GC-Ex.</span></div>
+  </div>
+
+  <div class="card">
+    <div class="lab">Daftar lisensi yang dibuat di browser ini</div>
+    <div class="tw"><table id="reg"><thead><tr><th>No.</th><th>Tanggal</th><th>Pemegang</th><th>ID Komputer</th><th>Aplikasi</th><th>Berlaku</th></tr></thead><tbody></tbody></table></div>
+    <div class="row"><button id="csv">Unduh daftar (CSV)</button><span class="mu">Daftar disimpan di browser ini saja; unduh CSV secara berkala sebagai arsip.</span></div>
+  </div>
+</div>
+<script>
+(function(){'use strict';
+const EXPECT_X='9r0X96ABXcPSrjl0edVsTn836jFZxwBDmFvX4aie0ug';
+const B32='0123456789ABCDEFGHJKMNPQRSTVWXYZ', APPN={bm:'Block Model',dh:'Drillhole',core:'Core'};
+const $=i=>document.getElementById(i);let KEY=null;
+const b64u=b=>{let s='';new Uint8Array(b).forEach(c=>s+=String.fromCharCode(c));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const u8=s=>new TextEncoder().encode(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const reg=()=>{try{return JSON.parse(localStorage.getItem('gcex_lic_reg')||'[]');}catch(e){return[];}};
+const saveReg=L=>{try{localStorage.setItem('gcex_lic_reg',JSON.stringify(L));}catch(e){}};
+function newId(){const d=today().replace(/-/g,''),r=Math.random().toString(36).slice(2,6).toUpperCase();return 'L-'+d+'-'+r;}
+function d1y(){const d=new Date();d.setFullYear(d.getFullYear()+1);return d.toISOString().slice(0,10);}
+$('lid').value=newId();$('exp').value=d1y();
+$('noexp').onchange=()=>{$('exp').disabled=$('noexp').checked;};
+$('all').onchange=()=>{document.querySelectorAll('.ap').forEach(c=>{c.disabled=$('all').checked;});};
+$('mid').addEventListener('input',()=>{let v=$('mid').value.toUpperCase().replace(/[^0-9A-Z]/g,'').replace(/[ILOU]/g,c=>({I:'1',L:'1',O:'0',U:'V'}[c])).slice(0,16);$('mid').value=v.match(/.{1,4}/g)?v.match(/.{1,4}/g).join('-'):'';});
+function msg(t,c){$('msg').className=c||'';$('msg').innerHTML=t||'';}
+$('kf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text()),j=o.jwk||o;if(j.kty!=='OKP'||j.crv!=='Ed25519'||!j.d)throw new Error('bukan kunci privat Ed25519 GC-Ex');
+    KEY=await crypto.subtle.importKey('jwk',{kty:'OKP',crv:'Ed25519',d:j.d,x:j.x},{name:'Ed25519'},false,['sign']);
+    const match=j.x===EXPECT_X;$('ks').innerHTML=match?'<span class=ok>&#10003; Kunci privat dimuat dan cocok dengan aplikasi GC-Ex.</span>':'<span class=err>&#9888; Kunci dimuat, TETAPI tidak cocok dengan kunci publik di aplikasi GC-Ex versi ini. Lisensi yang dibuat tidak akan diterima.</span>';$('go').disabled=false;}
+  catch(er){KEY=null;$('go').disabled=true;$('ks').innerHTML='<span class=err>Gagal memuat: '+esc(er.message)+(/Ed25519|algorithm/i.test(er.message)?' (perbarui Edge / Chrome)':'')+'</span>';}
+  e.target.value='';};
+$('go').onclick=async()=>{const mid=$('mid').value.trim();if(!/^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){3}$/.test(mid)){msg('ID Komputer harus 16 karakter (XXXX-XXXX-XXXX-XXXX).','err');return;}
+  const n=$('nm').value.trim();if(!n){msg('Isi nama pemegang.','err');return;}
+  const a=$('all').checked?['*']:[...document.querySelectorAll('.ap:checked')].map(c=>c.value);if(!a.length){msg('Pilih minimal satu aplikasi.','err');return;}
+  const e=$('noexp').checked?'':$('exp').value;if(!$('noexp').checked&&!/^\d{4}-\d{2}-\d{2}$/.test(e)){msg('Isi tanggal berlaku.','err');return;}
+  const P={v:1,id:$('lid').value.trim()||newId(),m:mid,a:a,n:n,o:$('org').value.trim(),i:today(),e:e};
+  const head='GCEX1.'+b64u(u8(JSON.stringify(P))),sig=await crypto.subtle.sign({name:'Ed25519'},KEY,u8(head)),key=head+'.'+b64u(sig);
+  $('key').value=key;$('out').style.display='block';msg('&#10003; Kunci dibuat untuk <b>'+esc(n)+'</b>.','ok');
+  const L=reg();L.unshift({id:P.id,t:P.i,n:n,o:P.o,m:mid,a:a.join(' '),e:e||'tanpa batas',key:key});saveReg(L);draw();
+  $('dl').onclick=()=>{const b=new Blob([key+'\r\n'],{type:'text/plain'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='GCEx_Lisensi_'+n.replace(/[^A-Za-z0-9]+/g,'_')+'_'+mid+'.gcexlic';document.body.appendChild(l);l.click();setTimeout(()=>{URL.revokeObjectURL(l.href);l.remove();},800);};
+  $('lid').value=newId();};
+$('cp').onclick=async()=>{try{await navigator.clipboard.writeText($('key').value);}catch(e){$('key').select();document.execCommand('copy');}$('cp').textContent='Tersalin ✓';setTimeout(()=>{$('cp').textContent='Salin kunci';},1500);};
+function draw(){const L=reg();$('reg').querySelector('tbody').innerHTML=L.length?L.map(r=>'<tr><td>'+esc(r.id)+'</td><td>'+esc(r.t)+'</td><td>'+esc(r.n)+(r.o?'<br><span class=mu>'+esc(r.o)+'</span>':'')+'</td><td>'+esc(r.m)+'</td><td>'+esc(r.a.split(' ').map(x=>x==='*'?'Semua':APPN[x]||x).join(', '))+'</td><td>'+esc(r.e)+'</td></tr>').join(''):'<tr><td colspan=6 class=mu>Belum ada.</td></tr>';}
+$('csv').onclick=()=>{const L=reg(),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',r=['No,Tanggal,Pemegang,Organisasi,ID_Komputer,Aplikasi,Berlaku,Kunci'].concat(L.map(x=>[x.id,x.t,x.n,x.o,x.m,x.a,x.e,x.key].map(q).join(',')));
+  const b=new Blob([r.join('\r\n')+'\r\n'],{type:'text/csv'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='GCEx_Daftar_Lisensi_'+today()+'.csv';document.body.appendChild(l);l.click();setTimeout(()=>{URL.revokeObjectURL(l.href);l.remove();},800);};
+draw();})();
+</script>
+</body>
+</html>
