@@ -9,11 +9,11 @@
 <style>
 /* Gaya "atlas lapangan": kertas terang, tinta navy, judul serif (Playfair Display), label mesin ketik (Courier Prime),
    aksen BIRU. Font dibundel di folder fonts/ (OFL) -> tetap offline. */
-@font-face{font-family:"Playfair Display";src:url(fonts/PlayfairDisplay.woff) format("woff");font-weight:400 900;font-style:normal}
-@font-face{font-family:"Playfair Display";src:url(fonts/PlayfairDisplay-Italic.woff) format("woff");font-weight:400 900;font-style:italic}
-@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Regular.woff) format("woff");font-weight:400}
-@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Bold.woff) format("woff");font-weight:700}
-@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Italic.woff) format("woff");font-weight:400;font-style:italic}
+@font-face{font-family:"Playfair Display";src:url(fonts/PlayfairDisplay-wght.ttf) format("truetype");font-weight:400 900;font-style:normal}
+@font-face{font-family:"Playfair Display";src:url(fonts/PlayfairDisplay-Italic-wght.ttf) format("truetype");font-weight:400 900;font-style:italic}
+@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Regular.ttf) format("truetype");font-weight:400}
+@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Bold.ttf) format("truetype");font-weight:700}
+@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Italic.ttf) format("truetype");font-weight:400;font-style:italic}
 :root{
   --serif:"Playfair Display",Georgia,"Times New Roman",serif;
   --mono:"Courier Prime","Courier New",Consolas,monospace;
@@ -148,6 +148,7 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 
 /* ---------- bilah status ---------- */
 #sbar{display:flex;align-items:center;gap:14px;padding:5px 14px;background:var(--pn);border-top:1.5px solid var(--ink);color:var(--mu);font-size:11.5px;min-height:30px}
+#wmark{padding-left:12px;border-left:1px solid var(--bd);color:var(--mu);white-space:nowrap;font-family:"Segoe UI",system-ui,Arial,sans-serif;font-weight:600;font-size:11px}
 #prog{display:none;align-items:center;gap:8px;flex:1;max-width:640px}
 #prog .bar{flex:1;height:8px;background:var(--pn2);border:1px solid var(--bd2);border-radius:5px;overflow:hidden}
 #prog .bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
@@ -348,6 +349,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <span id="sSum">Belum ada proyek.</span>
   <div id="prog"><span id="pTxt"></span><div class="bar"><i id="pBar"></i></div><button class="btn sm" id="pStop"><svg class="i"><use href="#i-stop"/></svg>Hentikan</button></div>
   <span style="margin-left:auto" id="sBe">Backend: menghubungkan…</span>
+  <span id="wmark" title="GC-Ex Core Interpretation">Copyright © Habil Abdillah 2026</span>
 </div>
 
 <div id="start">

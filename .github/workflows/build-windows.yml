@@ -65,6 +65,8 @@ jobs:
           Copy-Item node_modules/electron/dist/LICENSES.chromium.html legal/LISENSI_CHROMIUM.html
           try { Invoke-WebRequest -UseBasicParsing https://unpkg.com/plotly.js@2.27.0/dist/plotly.min.js.LICENSE.txt -OutFile legal/LISENSI_PLOTLY_BUNDEL.txt } catch { Write-Host "plotly.min.js.LICENSE.txt tidak tersedia: lewati" }
           Get-ChildItem legal | Format-Table Name, Length
+      - name: Cek teks syarat penggunaan (halaman lisensi installer)
+        run: python -c "b=open('legal/SYARAT_PENGGUNAAN.txt','rb').read(); assert b and all(x < 128 for x in b), 'SYARAT_PENGGUNAAN.txt harus ASCII'; print('OK', len(b))"
       - name: Bangun installer GC-Ex Block Model
         run: npm run dist
         env:
@@ -73,7 +75,7 @@ jobs:
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
-          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_FONT_OFL.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
       - name: Bangun installer GC-Ex Drillhole
@@ -84,7 +86,7 @@ jobs:
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
-          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_FONT_OFL.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
@@ -98,7 +100,7 @@ jobs:
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
-          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/LISENSI_PYTHON.txt","resources/docs/PANDUAN_CORE.html","resources/backend/gcex-backend.exe","LICENSE.electron.txt")) {
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_FONT_OFL.txt","resources/legal/PENAFIAN_MEREK.txt","resources/app.asar","resources/docs/PANDUAN_CORE.html","resources/backend/gcex-backend.exe","LICENSE.electron.txt")) {
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 

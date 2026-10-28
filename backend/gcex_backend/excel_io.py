@@ -41,6 +41,8 @@ def build_register(headers: list[str], rows: list[list[Any]], sheet: str = "Regi
         ws.column_dimensions[get_column_letter(j)].width = min(max(width, 8), 40)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{max(1, len(rows) + 1)}"
+    from .legal_mark import mark_workbook
+    mark_workbook(wb, "GC-Ex")
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

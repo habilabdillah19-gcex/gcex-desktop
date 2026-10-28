@@ -1,0 +1,200 @@
+GC-Ex - SYARAT PENGGUNAAN, LISENSI & PENAFIAN
+GC-Ex - TERMS OF USE, LICENSE & DISCLAIMER
+Berlaku untuk / applies to: GC-Ex Block Model, GC-Ex Drillhole,
+GC-Ex Core Interpretation. Versi syarat / terms version: 2026-10-28.
+
+Copyright (c) 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.
+
+Dengan memasang, menyalin atau memakai perangkat lunak ini Anda menyatakan
+telah membaca dan menyetujui syarat di bawah. Bila tidak setuju, jangan
+memasang atau memakainya.
+
+======================================================================
+BAHASA INDONESIA
+======================================================================
+
+1. HAK CIPTA DAN KEPEMILIKAN
+   GC-Ex ("Perangkat Lunak"), termasuk kode program, tampilan, ikon, nama
+   "GC-Ex" dan "Grade Control Excellence", dokumentasi dan panduannya, adalah
+   ciptaan Habil Abdillah dan dilindungi sebagai Program Komputer menurut
+   Undang-Undang Republik Indonesia Nomor 28 Tahun 2014 tentang Hak Cipta.
+   Perangkat Lunak dilisensikan, bukan dijual.
+
+2. LISENSI PEMAKAIAN
+   Anda mendapat izin non-eksklusif, tidak dapat dialihkan dan dapat dicabut
+   untuk memasang dan memakai Perangkat Lunak bagi pekerjaan Anda, bila
+   installer diterima dari Habil Abdillah atau dari pihak yang ia izinkan.
+
+3. YANG TIDAK DIIZINKAN tanpa izin tertulis dari Habil Abdillah:
+   a. menjual, menyewakan, meminjamkan, atau membagikan Perangkat Lunak
+      atau installer kepada pihak lain di luar yang diizinkan;
+   b. menyalin, mengubah, menerjemahkan, membongkar (reverse engineering,
+      decompile, disassemble) atau membuat karya turunan, kecuali sejauh
+      diizinkan tegas oleh hukum yang berlaku;
+   c. menghapus, menutupi atau mengubah pemberitahuan hak cipta, tanda
+      "Copyright (c) Habil Abdillah 2026", watermark, atau file di folder
+      "legal";
+   d. memakai nama "GC-Ex" atau nama Habil Abdillah untuk produk lain atau
+      untuk menyatakan dukungan tanpa izin.
+
+4. KOMPONEN PIHAK KETIGA (OPEN SOURCE)
+   Perangkat Lunak memakai komponen open source (antara lain Electron,
+   Chromium, Node.js, Python, FastAPI, Uvicorn, Pydantic, NumPy, Pillow,
+   openpyxl, lxml, pyodbc, Plotly.js, font Playfair Display dan Courier
+   Prime). Setiap komponen tetap milik pemegang hak ciptanya dan berlaku
+   lisensinya masing-masing (MIT, BSD, PSF, Apache-2.0, SIL OFL 1.1, zlib,
+   GPL-2.0 dengan pengecualian bootloader untuk PyInstaller, dan lainnya).
+   Daftar dan teks lengkapnya ada di folder "legal" di folder instalasi
+   (LISENSI_PIHAK_KETIGA.txt, LISENSI_PYTHON.txt, LISENSI_ELECTRON.txt,
+   LISENSI_CHROMIUM.html, LISENSI_FONT_OFL.txt) dan menu Bantuan. Syarat
+   ini tidak membatasi hak Anda yang diberikan oleh lisensi open source
+   tersebut atas komponen yang bersangkutan.
+
+5. PERANGKAT LUNAK TERPISAH: OLLAMA DAN MODEL AI
+   GC-Ex Core Interpretation dapat memakai Ollama dan model AI (misalnya
+   Qwen3-VL) yang dipasang sendiri oleh pengguna. Keduanya bukan bagian
+   dari Perangkat Lunak, tidak dibundel, dan tunduk pada lisensinya
+   masing-masing (Ollama: MIT; Qwen3-VL: Apache-2.0; model lain: periksa
+   lisensinya sebelum dipakai). Pengguna bertanggung jawab memastikan
+   pemakaian model tersebut sesuai lisensinya.
+
+6. MEREK DAGANG
+   Leapfrog, Seequent, Surpac, GEOVIA, Micromine, Global Mapper, AutoCAD,
+   Microsoft, Windows, Excel, Access, Google, Gemini, Ollama, Qwen, Llama,
+   Plotly, Electron, Python dan nama produk lain adalah merek dagang milik
+   pemiliknya. GC-Ex tidak berafiliasi dengan, tidak disponsori dan tidak
+   didukung oleh mereka. Nama-nama itu dipakai hanya untuk menjelaskan
+   kecocokan format file. Lihat PENAFIAN_MEREK.txt.
+
+7. TANPA JAMINAN
+   Perangkat Lunak disediakan "APA ADANYA" dan "SEBAGAIMANA TERSEDIA",
+   tanpa jaminan apa pun, tersurat maupun tersirat, termasuk jaminan
+   kelayakan untuk diperdagangkan, kesesuaian untuk tujuan tertentu,
+   ketepatan, kelengkapan, atau bebas dari kesalahan dan gangguan.
+
+8. HASIL TEKNIS DAN HASIL AI ADALAH ALAT BANTU
+   a. Hasil pemodelan, estimasi, rekonsiliasi, reporting, interpretasi dan
+      analisis GC-Ex adalah alat bantu. Hasil wajib diperiksa oleh pengguna
+      yang kompeten sebelum dipakai.
+   b. Nilai geoteknik dari foto (core recovery, RQD, GSI, RMR, pelapukan,
+      kondisi, struktur) yang dihasilkan AI adalah PERKIRAAN VISUAL, bukan
+      pengukuran. Nilai ini TIDAK BOLEH menjadi satu-satunya dasar keputusan
+      desain lereng, penyanggaan, peledakan, keselamatan kerja, atau
+      keputusan lain yang berisiko bagi orang dan aset.
+   c. Pelaporan sumber daya dan cadangan (mis. KCMI, JORC) serta keputusan
+      teknis dan komersial tetap menjadi tanggung jawab pengguna dan Competent
+      Person yang berwenang.
+
+9. BATASAN TANGGUNG JAWAB
+   Sejauh diizinkan oleh hukum yang berlaku, Habil Abdillah tidak
+   bertanggung jawab atas kerugian langsung maupun tidak langsung,
+   insidental, khusus atau konsekuensial (termasuk kehilangan data,
+   keuntungan, produksi, atau gangguan usaha) yang timbul dari pemakaian
+   atau ketidakmampuan memakai Perangkat Lunak atau hasilnya, meskipun
+   kemungkinan kerugian tersebut telah diberitahukan.
+
+10. DATA DAN PRIVASI
+   a. GC-Ex memproses data di komputer Anda sendiri. Backend dan Ollama hanya
+      mendengar di 127.0.0.1. GC-Ex tidak mengirim foto, data bor, assay
+      atau hasil kerja ke internet dan tidak mengumpulkan data pemakaian.
+   b. Hak atas data yang Anda olah (foto core box, data bor, assay, model,
+      register) tetap milik pemiliknya. Anda bertanggung jawab memastikan
+      Anda berwenang memakai, menyimpan dan membagikan data tersebut sesuai
+      kebijakan perusahaan dan peraturan yang berlaku.
+   c. Hasil kerja disimpan di folder yang Anda pilih (mis. subfolder
+      _GCEx_Core). Pencadangan (backup) adalah tanggung jawab pengguna.
+
+11. PENGAKHIRAN
+   Izin ini berakhir otomatis bila Anda melanggar syarat ini. Setelah
+   berakhir, hentikan pemakaian dan hapus semua salinan Perangkat Lunak.
+
+12. HUKUM YANG BERLAKU
+   Syarat ini tunduk pada hukum Republik Indonesia. Bila ada ketentuan
+   yang tidak berlaku, ketentuan lain tetap berlaku.
+
+======================================================================
+ENGLISH
+======================================================================
+
+1. COPYRIGHT AND OWNERSHIP
+   GC-Ex (the "Software"), including its program code, user interface,
+   icons, the names "GC-Ex" and "Grade Control Excellence", documentation
+   and guides, is the work of Habil Abdillah and is protected as a Computer
+   Program under Law of the Republic of Indonesia No. 28 of 2014 on
+   Copyright. The Software is licensed, not sold.
+
+2. LICENSE GRANT
+   You receive a non-exclusive, non-transferable, revocable permission to
+   install and use the Software for your work, if you received the installer
+   from Habil Abdillah or from a party he has authorized.
+
+3. RESTRICTIONS - without written permission from Habil Abdillah you may not:
+   a. sell, rent, lend or distribute the Software or its installer to
+      parties beyond those authorized;
+   b. copy, modify, translate, reverse engineer, decompile, disassemble or
+      create derivative works, except as expressly permitted by applicable
+      law;
+   c. remove, obscure or alter copyright notices, the "Copyright (c) Habil
+      Abdillah 2026" mark, watermarks, or files in the "legal" folder;
+   d. use the name "GC-Ex" or Habil Abdillah's name for other products or
+      to imply endorsement.
+
+4. THIRD-PARTY (OPEN SOURCE) COMPONENTS
+   The Software uses open source components that remain the property of
+   their copyright holders and are governed by their own licenses (MIT,
+   BSD, PSF, Apache-2.0, SIL OFL 1.1, zlib, GPL-2.0 with bootloader
+   exception for PyInstaller, and others), listed with full texts in the
+   "legal" folder and the Help menu. These terms do not limit your rights
+   under those open source licenses for the respective components.
+
+5. SEPARATE SOFTWARE: OLLAMA AND AI MODELS
+   GC-Ex Core Interpretation can use Ollama and AI models (e.g. Qwen3-VL)
+   installed by the user. They are not part of the Software, are not
+   bundled, and are governed by their own licenses (Ollama: MIT; Qwen3-VL:
+   Apache-2.0; other models: check before use). The user is responsible for
+   using such models in line with their licenses.
+
+6. TRADEMARKS
+   Third-party product names are trademarks of their respective owners.
+   GC-Ex is not affiliated with, sponsored or endorsed by them; the names are
+   used only to describe file-format compatibility. See PENAFIAN_MEREK.txt.
+
+7. NO WARRANTY
+   The Software is provided "AS IS" and "AS AVAILABLE", without warranty of
+   any kind, express or implied, including merchantability, fitness for a
+   particular purpose, accuracy, completeness, or error-free operation.
+
+8. TECHNICAL AND AI RESULTS ARE DECISION-SUPPORT ONLY
+   a. Modelling, estimation, reconciliation, reporting, interpretation and
+      analysis results must be reviewed by a competent user before use.
+   b. AI-generated geotechnical values from photos (core recovery, RQD, GSI,
+      RMR, weathering, condition, structure) are VISUAL ESTIMATES, not
+      measurements, and MUST NOT be the sole basis for slope design, ground
+      support, blasting, safety or other decisions that put people or assets
+      at risk.
+   c. Resource and reserve reporting (e.g. KCMI, JORC) and technical or
+      commercial decisions remain the responsibility of the user and the
+      qualified Competent Person.
+
+9. LIMITATION OF LIABILITY
+   To the extent permitted by applicable law, Habil Abdillah shall not be
+   liable for any direct, indirect, incidental, special or consequential
+   damages (including loss of data, profit, production or business
+   interruption) arising from the use of or inability to use the Software
+   or its results, even if advised of the possibility of such damages.
+
+10. DATA AND PRIVACY
+   GC-Ex processes data on your own computer; its backend and Ollama listen
+   only on 127.0.0.1. GC-Ex does not send photos, drillhole data, assays or
+   work results to the internet and collects no usage data. Rights to the
+   data you process remain with their owners; you are responsible for being
+   authorized to use, store and share that data. Backups are the user's
+   responsibility.
+
+11. TERMINATION
+   This permission ends automatically if you breach these terms; you must
+   then stop using and delete all copies of the Software.
+
+12. GOVERNING LAW
+   These terms are governed by the laws of the Republic of Indonesia. If any
+   provision is unenforceable, the remaining provisions stay in effect.

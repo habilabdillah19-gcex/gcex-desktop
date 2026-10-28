@@ -59,7 +59,8 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "GC-Ex-Setup-${version}.${ext}"
+      "artifactName": "GC-Ex-Setup-${version}.${ext}",
+      "legalTrademarks": "GC-Ex dan Grade Control Excellence adalah nama produk milik Habil Abdillah"
     },
     "nsis": {
       "oneClick": false,
@@ -68,7 +69,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "GC-Ex",
-      "uninstallDisplayName": "GC-Ex ${version}"
+      "uninstallDisplayName": "GC-Ex ${version}",
+      "license": "legal/SYARAT_PENGGUNAAN.txt"
     },
     "fileAssociations": [
       {

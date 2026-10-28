@@ -111,8 +111,12 @@ def test_import_assay_geology_collar_survey_and_photo_detail(prj):
     # Excel memuat kolom rata-rata kadar
     from openpyxl import load_workbook
     x = c.post("/core/export/xlsx", json={"folder": str(d)})
-    head = [h.value for h in load_workbook(BytesIO(x.content))["Core Log"][1]]
+    wbx = load_workbook(BytesIO(x.content))
+    head = [h.value for h in wbx["Core Log"][1]]
     assert "Au rata-rata" in head and "Cu maks" in head
+    # tanda hak cipta: footer cetak, properti file, sheet Keterangan
+    assert wbx["Core Log"].oddFooter.right.text == "Copyright \u00a9 Habil Abdillah 2026"
+    assert "Habil Abdillah" in wbx.properties.description and wbx["Keterangan"]["A2"].value == "Copyright \u00a9 Habil Abdillah 2026"
 
     # cari cepat: teks (geologi) dan angka (assay)
     s = c.post("/core/dh/search", json={"folder": str(d), "q": "chalcopyrite"}).json()

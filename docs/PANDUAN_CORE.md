@@ -180,3 +180,8 @@ Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris;
 | Pita overlay tidak pas dengan core | Klik **Atur area core**, sesuaikan kotak & jumlah baris, simpan untuk semua foto lubang ini. |
 | `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di GC-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
 | Bar "Backend tidak aktif" | Menu **Bantuan → Buka folder log**, kirim `backend.log` dan file log terbaru. |
+
+## 11. Hak cipta & syarat penggunaan
+
+GC-Ex Core Interpretation adalah ciptaan Habil Abdillah (Copyright © Habil Abdillah 2026). Saat memasang dan saat pertama kali membuka aplikasi, pengguna harus menyetujui **Syarat Penggunaan, Lisensi & Penafian**. Teks lengkap dan daftar komponen open source ada di menu **Bantuan › Syarat penggunaan & penafian** dan **Bantuan › Lisensi pihak ketiga & merek dagang**. Nilai geoteknik dari AI adalah perkiraan visual dan tidak boleh menjadi satu-satunya dasar keputusan keselamatan.
+

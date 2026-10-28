@@ -10,6 +10,7 @@ const fs = require('fs');
 const net = require('net');
 const http = require('http');
 const { spawn } = require('child_process');
+const watermark = require('./watermark');
 
 // Aplikasi mana yang dijalankan (Block Model / Drillhole) ditentukan oleh field "gcex" di package.json
 // (diisi electron-builder lewat extraMetadata). Saat pengembangan: set GCEX_APP=dh untuk Drillhole, GCEX_APP=core untuk Core Interpretation.
@@ -69,6 +70,35 @@ const sharedFile = () => path.join(app.getPath('appData'), 'GC-Ex-shared', 'apps
 function readShared() { try { return JSON.parse(fs.readFileSync(sharedFile(), 'utf8')); } catch (e) { return {}; } }
 /* folder pemberitahuan lisensi pihak ketiga & penafian merek (resources/legal) */
 function legalDir() { return app.isPackaged ? path.join(process.resourcesPath, 'legal') : path.join(__dirname, '..', 'legal'); }
+function openLegal(name) { const d = legalDir(), f = path.join(d, name || 'LISENSI_PIHAK_KETIGA.txt'); shell.openPath(fs.existsSync(f) ? f : d); }
+
+// ---------- syarat penggunaan & penafian: wajib disetujui sekali per versi syarat (juga ditampilkan di installer) ----------
+const TERMS_VERSION = '2026-10-28';
+function ensureTerms() {
+  const s = readSet();
+  if (s.termsAccepted === TERMS_VERSION) return true;
+  for (;;) {
+    const r = dialog.showMessageBoxSync({
+      type: 'info', title: APP_NAME + ' - Syarat Penggunaan', noLink: true, defaultId: 0, cancelId: 2,
+      buttons: ['Setuju', 'Baca selengkapnya', 'Tidak setuju (keluar)'],
+      message: 'Syarat Penggunaan & Penafian GC-Ex',
+      detail: 'Copyright \u00a9 2026 Habil Abdillah. GC-Ex dilindungi UU No. 28 Tahun 2014 tentang Hak Cipta dan dilisensikan, bukan dijual.\n\n' +
+        '\u2022 Dilarang menjual, membagikan ke pihak lain, membongkar, atau menghapus tanda hak cipta tanpa izin tertulis.\n' +
+        '\u2022 Disediakan "apa adanya" tanpa jaminan. Hasil pemodelan, estimasi dan nilai geoteknik dari AI adalah alat bantu / perkiraan, wajib diperiksa orang yang kompeten, dan tidak boleh menjadi satu-satunya dasar keputusan keselamatan.\n' +
+        '\u2022 Data diproses di komputer ini saja; tanggung jawab atas izin pemakaian data perusahaan ada pada pengguna.\n' +
+        '\u2022 Komponen open source tetap di bawah lisensinya masing-masing (menu Bantuan).\n\n' +
+        'Pilih "Baca selengkapnya" untuk teks lengkap (Bahasa Indonesia & English).'
+    });
+    if (r === 1) { openLegal('SYARAT_PENGGUNAAN.txt'); continue; }
+    if (r !== 0) { log('[syarat] tidak disetujui, keluar'); return false; }
+    writeSet({ termsAccepted: TERMS_VERSION, termsAcceptedAt: new Date().toISOString() });
+    log('[syarat] disetujui versi', TERMS_VERSION);
+    return true;
+  }
+}
+
+// watermark hak cipta di sudut jendela, dipasang ulang setiap halaman dimuat
+function markWindow(wc) { try { wc.executeJavaScript(watermark.script(G.theme), true).catch(() => {}); } catch (e) {} }
 function regSelf() { if (!app.isPackaged) return; try { fs.mkdirSync(path.dirname(sharedFile()), { recursive: true }); const o = readShared(); o[G.theme] = process.execPath; fs.writeFileSync(sharedFile(), JSON.stringify(o, null, 1)); } catch (e) {} }
 // hasil: 'here' (dibuka di aplikasi ini), 'other' (diteruskan), 'none' (bukan proyek GC-Ex / gagal)
 function routePrj(p) {
@@ -219,7 +249,8 @@ function createWindow() {
       backgroundThrottling: false }
   });
   mainWin.once('ready-to-show', () => { mainWin.maximize(); mainWin.show(); });
-  mainWin.webContents.on('did-finish-load', () => { try { mainWin.webContents.setZoomFactor(zoomNow()); } catch (e) {} PRJ.ready = true; });
+  mainWin.webContents.on('did-finish-load', () => { try { mainWin.webContents.setZoomFactor(zoomNow()); } catch (e) {} PRJ.ready = true; markWindow(mainWin.webContents); });
+  mainWin.webContents.on('dom-ready', () => markWindow(mainWin.webContents));
   mainWin.webContents.on('did-start-loading', () => { PRJ.ready = false; });
   mainWin.on('enter-full-screen', () => { try { buildMenu(); } catch (e) {} try { mainWin.webContents.send('gcex:fs', true); } catch (e) {} });
   mainWin.on('leave-full-screen', () => { try { buildMenu(); } catch (e) {} try { mainWin.webContents.send('gcex:fs', false); } catch (e) {} });
@@ -397,12 +428,18 @@ function buildMenu() {
           catch (e) { dialog.showMessageBox(mainWin, { type: 'error', message: 'Gagal menghapus cache: ' + e.message }); }
         } },
       { type: 'separator' },
+      { label: 'Syarat penggunaan & penafian', click: () => openLegal('SYARAT_PENGGUNAAN.txt') },
+      { label: 'Lisensi pihak ketiga (open source) & merek dagang', click: () => openLegal() },
       { label: 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
-      { label: 'Tentang GC-Ex', click: () => {
+      { label: 'Tentang GC-Ex', click: async () => {
           const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
-          dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK'], defaultId: 0, noLink: true, message: APP_NAME + ' - Grade Control Excellence',
-            detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah' +
-              (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') });
+          const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true, message: APP_NAME + ' - Grade Control Excellence',
+            detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +
+              (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') +
+              '\n\nMemakai komponen open source: ' + (G.theme === 'core' ? '' : 'Plotly.js (MIT), ') + 'Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, Pillow (MIT-CMU), lxml, openpyxl, pyodbc (MIT / BSD)' + (G.theme === 'core' ? ', font Playfair Display & Courier Prime (SIL OFL 1.1).\nAI lokal memakai Ollama (MIT, dipasang terpisah); model AI mengikuti lisensi masing-masing.' : '.') +
+              '\nLeapfrog, Surpac, GEOVIA, Micromine, AutoCAD, Microsoft Excel / Access, Ollama dan nama produk lain adalah merek dagang milik pemiliknya; GC-Ex tidak berafiliasi dengan mereka.' });
+          if (r.response === 1) openLegal();
+          if (r.response === 2) openLegal('SYARAT_PENGGUNAAN.txt');
         } }
     ] }
   ];
@@ -442,6 +479,8 @@ app.whenReady().then(async () => {
     if (!own) { log('[prj] bukan proyek GC-Ex, dibuka di Notepad:', f0); try { spawn('notepad.exe', [f0], { detached: true, stdio: 'ignore' }).unref(); } catch (e) {} app.quit(); return; }
     if (own !== APP_NAME) { if (routePrj(f0) === 'other') { app.quit(); return; } f0done = true; }
   }
+  // syarat penggunaan dulu, baru aktivasi lisensi
+  if (!ensureTerms()) { app.quit(); return; }
   if (LIC_ON) {
     const c = LIC.check(G.theme);
     if (!c.ok) {

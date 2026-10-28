@@ -641,8 +641,9 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "D2"
     ws.auto_filter.ref = ws.dimensions
+    from .legal_mark import COPYRIGHT, mark_workbook
     info = wb.create_sheet("Keterangan")
-    for line in [["GC-Ex Core Interpretation — log foto core box"], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
+    for line in [["GC-Ex Core Interpretation — log foto core box"], [COPYRIGHT], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
                  [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
                  ["Litologi, alterasi, oksidasi, warna, pelapukan: diambil dari LOGGING GEOLOGIST (tabel Geologi) bila ada di rentang foto; AI visual hanya mengisi bila logging tidak ada. Lihat kolom 'Sumber isian geologi'."],
                  ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."],
@@ -650,6 +651,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
         info.append(line)
     info.column_dimensions["A"].width = 24
     info.column_dimensions["B"].width = 80
+    mark_workbook(wb, "GC-Ex Core Interpretation")
     b = io.BytesIO()
     wb.save(b)
     return b.getvalue()

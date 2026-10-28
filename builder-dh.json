@@ -50,7 +50,8 @@
       }
     ],
     "icon": "build/icon-dh.ico",
-    "artifactName": "GC-Ex-Drillhole-Setup-${version}.${ext}"
+    "artifactName": "GC-Ex-Drillhole-Setup-${version}.${ext}",
+    "legalTrademarks": "GC-Ex dan Grade Control Excellence adalah nama produk milik Habil Abdillah"
   },
   "nsis": {
     "oneClick": false,
@@ -59,7 +60,8 @@
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "shortcutName": "GC-Ex Drillhole",
-    "uninstallDisplayName": "GC-Ex Drillhole ${version}"
+    "uninstallDisplayName": "GC-Ex Drillhole ${version}",
+    "license": "legal/SYARAT_PENGGUNAAN.txt"
   },
   "fileAssociations": [
     {
