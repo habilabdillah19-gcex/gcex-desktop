@@ -7,12 +7,12 @@ import html
 import re
 import sys
 
-CSS = """body{font:15px/1.55 "Segoe UI",system-ui,sans-serif;color:#26231d;background:#f4f1ea;margin:0}
-main{max-width:920px;margin:0 auto;padding:28px 34px 60px;background:#fbfaf6;min-height:100vh}
-h1{color:#2f4636;border-bottom:3px solid #c79a46;padding-bottom:8px}h2{color:#2f4636;margin-top:30px}h3{margin-top:22px}
-table{border-collapse:collapse;margin:10px 0;width:100%}th,td{border:1px solid #d6cfc0;padding:6px 9px;text-align:left;vertical-align:top}
-th{background:#2f4636;color:#f3ecdc}code{background:#efe9dc;border-radius:4px;padding:1px 5px;font-family:Consolas,monospace;font-size:13px}
-pre{background:#26231d;color:#f3ecdc;padding:10px 14px;border-radius:6px;overflow:auto}pre code{background:none;color:inherit}a{color:#8a6420}"""
+CSS = """body{font:15px/1.55 "Segoe UI",system-ui,sans-serif;color:#141a26;background:#ecebe6;margin:0}
+main{max-width:920px;margin:0 auto;padding:28px 34px 60px;background:#f6f5f1;min-height:100vh}
+h1,h2,h3{font-family:Georgia,'Times New Roman',serif;color:#141a26}h1{border-bottom:1.5px solid #141a26;padding-bottom:8px}h2{margin-top:30px;color:#2a5ea8}h3{margin-top:22px}
+table{border-collapse:collapse;margin:10px 0;width:100%}th,td{border:1px solid #c6c4bd;padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#141a26;color:#f6f5f1}code{background:#e4e3dd;border-radius:4px;padding:1px 5px;font-family:Consolas,monospace;font-size:13px}
+pre{background:#141a26;color:#f6f5f1;padding:10px 14px;border-radius:6px;overflow:auto}pre code{background:none;color:inherit}a{color:#2a5ea8}"""
 
 
 def inline(t: str) -> str:

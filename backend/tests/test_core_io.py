@@ -48,7 +48,8 @@ class FakeOllama(BaseHTTPRequestHandler):
             FakeOllama.calls.append(body)
             assert body["messages"][0]["images"], "gambar tidak dikirim"
             assert body["format"]["type"] == "object"
-            ans = {"hole_id": "LTH-101", "box_no": "11", "from_m": 36.3, "to_m": 40.1, "lithology": "Andesit",
+            assert "M:TO" in body["messages"][0]["content"] and "drill_start" in body["format"]["required"]
+            ans = {"hole_id": "LTH-101", "box_no": "11", "from_m": 36.3, "to_m": 40.1, "drill_start": "05-03-25", "photo_date": "12-03-25", "lithology": "Andesit",
                    "color": "Abu-abu gelap (Dark Grey)", "weathering": "W2 (Slightly Weathered)", "oxidation": "Slightly Oxidized",
                    "alteration": "Silisifikasi lemah", "condition": "WET", "recovery_pct": 98, "rqd_pct": 120, "gsi": "60-70",
                    "rmr": 68, "notes": "Rekahan jarang, vein kuarsa tipis.", "confidence": "sedang"}
@@ -157,6 +158,7 @@ def test_ai_respects_manual_edits_and_verification(folder, ollama):
     rows = {r["id"]: r for r in c.post("/core/rows", json={"folder": str(folder)}).json()["rows"]}
     assert rows[a]["color"] == "Merah kecoklatan"            # editan manual dipertahankan
     assert rows[a]["lithology"] == "Andesit" and rows[a]["status"] == "done" and rows[a]["ai_conf"] == "sedang"
+    assert (rows[a]["drill_start"], rows[a]["photo_date"]) == ("05-03-25", "12-03-25")
     assert rows[a]["rqd_pct"] == 100                           # dibatasi 0-100
     assert rows[v]["status"] == "pending" and rows[v]["lithology"] is None  # terverifikasi: tidak disentuh
     # Hole/Box/kedalaman dari nama file b (3.5-7.2) tidak ditimpa bacaan AI (36.3-40.1); bacaan AI tetap tersimpan

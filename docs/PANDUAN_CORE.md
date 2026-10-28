@@ -54,18 +54,34 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 ## 3. Alur kerja
 
 1. **Buka folder foto** → pilih folder berisi foto core box. Subfolder (mis. per lubang bor) ikut dibaca. Format: JPG, PNG, TIFF, BMP, WEBP.
-2. Hole ID, nomor box dan kedalaman **dibaca dari nama file** bila polanya jelas, mis.:
+2. Hole ID, nomor box dan kedalaman **dibaca dari nama file** bila polanya jelas (bila tidak, AI membaca papan label di foto, lihat bagian 3a), mis.:
    - `LTH-101_Box11_36.30-40.10.jpg` → LTH-101, box 11, 36,30–40,10 m
    - `Z3-280-63 BX4 10.2m-14.0m.jpg` → Z3-280-63, box 4, 10,2–14,0 m
    - `GCD0123 B05 12,5-15,0m.jpg` → GCD0123, box 5, 12,5–15,0 m
 
-   Isian dari nama file diberi label biru **nama file** dan tidak ditimpa AI. Nama seperti `IMG_0001.jpg` dibiarkan kosong: AI mencoba membaca papan label di foto.
+   Isian dari nama file diberi label berarsir **nama file** dan tidak ditimpa AI. Nama seperti `IMG_0001.jpg` dibiarkan kosong: AI mencoba membaca papan label di foto.
 3. **Jalankan AI lokal** → pilih model → **Analisis foto yang belum**. Bilah kemajuan di bawah menunjukkan jumlah, sisa waktu, dan tombol **Hentikan**. Hasil tiap foto langsung tersimpan, jadi aplikasi boleh ditutup di tengah jalan; jalankan lagi untuk melanjutkan yang belum.
 4. **Periksa & perbaiki.** Klik baris tabel (atau ↑ ↓) untuk melihat foto. Scroll = zoom, tarik = geser, klik ganda = pas layar, tombol ↗ = resolusi penuh untuk membaca label kecil. Ubah isian di kartu kiri atau langsung di tabel.
-   - Sel **krem** = isian AI yang belum dicek.
+   - Sel **biru muda** (label biru **AI**) = isian AI yang belum dicek.
    - Label **diedit** (hijau) = sudah diubah geologist. Isian ini **tidak pernah ditimpa AI**, walau AI dijalankan ulang.
 5. **Verifikasi**: tombol **Verifikasi & lanjut** atau **Ctrl+Enter** menandai foto sudah diperiksa lalu pindah ke foto berikutnya. Foto terverifikasi tidak disentuh AI lagi. Beberapa foto sekaligus: centang di kolom kiri tabel → **Verifikasi terpilih**.
-6. **Export Excel**: semua foto atau hanya yang tampil sesuai filter. Sheet `Core Log` berisi semua kolom + status AI, keyakinan AI, siapa yang memverifikasi; nama file foto bisa diklik untuk membuka fotonya. Sel krem di Excel = isian AI yang belum diverifikasi.
+6. **Export Excel**: semua foto atau hanya yang tampil sesuai filter. Sheet `Core Log` berisi semua kolom + status AI, keyakinan AI, siapa yang memverifikasi; nama file foto bisa diklik untuk membuka fotonya. Sel biru muda di Excel = isian AI yang belum diverifikasi.
+
+### 3a. Papan label yang dibaca AI
+
+AI diberi tahu tata letak foto core box proyek (contoh asli: `docs/referensi/contoh_corebox_LTH-101_box11.jpg`):
+
+| Tulisan di papan | Kolom di GC-Ex |
+|---|---|
+| HOLE ID: LTH-101 | Hole ID |
+| START DRILL: 05-03-25 | Start Drill |
+| BOX: 11 | Box No |
+| DATE POTO: 12-03-25 | Tanggal Foto |
+| DEPTH: 36.30 | From (m) |
+| M:TO: 40.10 | To (m) |
+| M:CONDT: WET | Kondisi Foto |
+
+Kotak berisi 4 baris core (atas = dangkal, kiri → kanan); papan catur di bawah = skala 20 cm per kotak, dipakai AI untuk memperkirakan panjang potongan core (recovery, RQD). Bila format papan di proyek lain berbeda, tulis di **Instruksi tambahan**.
 
 **Filter dua arah:** pilih Hole ID dan isi rentang kedalaman → tabel menyaring dan pratinjau langsung lompat ke foto pertama yang cocok. Klik judul kolom untuk mengurutkan; klik **No** untuk kembali ke urutan nama file.
 
@@ -84,7 +100,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 
 ## 5. Dari dashboard lama (Gemini)
 
-**Impor JSON lama** membaca file proyek `.json` dari dashboard versi Gemini dan mencocokkannya per nama file foto. Hasil berstatus "Done" masuk sebagai isian AI (krem, belum diverifikasi); sisanya sebagai isian manual. Foto yang tidak ada di folder dilaporkan.
+**Impor JSON lama** membaca file proyek `.json` dari dashboard versi Gemini dan mencocokkannya per nama file foto. Hasil berstatus "Done" masuk sebagai isian AI (biru muda, belum diverifikasi); sisanya sebagai isian manual. Foto yang tidak ada di folder dilaporkan.
 
 ## 6. Batasan yang perlu diketahui
 

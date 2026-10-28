@@ -68,6 +68,11 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         libtiff, libwebp: lisensi
                                         permisif masing-masing)
 
+  Playfair Display (font)     subset    SIL OFL 1.1                   huruf judul GC-Ex Core Interpretation
+  Courier Prime (font)        subset    SIL OFL 1.1                   huruf label & tabel GC-Ex Core
+                                                                      Interpretation (teks lisensi: folder
+                                                                      app-core/fonts/OFL_*.txt di aplikasi)
+
   Tidak dibundel / not bundled:
   Ollama                      -         MIT                           mesin AI lokal untuk GC-Ex Core
                                                                       Interpretation; dipasang terpisah

@@ -49,6 +49,8 @@ FIELDS: list[tuple[str, str, str]] = [
     ("box_no", "s", "Box No"),
     ("from_m", "n", "From (m)"),
     ("to_m", "n", "To (m)"),
+    ("drill_start", "s", "Start Drill"),
+    ("photo_date", "s", "Tanggal Foto"),
     ("lithology", "s", "Litologi"),
     ("color", "s", "Warna Batuan"),
     ("weathering", "s", "Tingkat Pelapukan"),
@@ -140,7 +142,7 @@ CREATE TABLE IF NOT EXISTS photos (
   status TEXT DEFAULT 'pending', missing INTEGER DEFAULT 0,
   ai_json TEXT, ai_model TEXT, ai_at TEXT, ai_secs REAL, ai_conf TEXT, error TEXT,
   edited TEXT DEFAULT '[]', from_name TEXT DEFAULT '[]', verified INTEGER DEFAULT 0, verified_by TEXT, verified_at TEXT,
-  hole_id TEXT, box_no TEXT, from_m REAL, to_m REAL, lithology TEXT, color TEXT, weathering TEXT,
+  hole_id TEXT, box_no TEXT, from_m REAL, to_m REAL, drill_start TEXT, photo_date TEXT, lithology TEXT, color TEXT, weathering TEXT,
   oxidation TEXT, alteration TEXT, condition TEXT, recovery_pct REAL, rqd_pct REAL, gsi TEXT, rmr REAL, notes TEXT,
   edited_at TEXT, edited_by TEXT
 );
@@ -184,8 +186,9 @@ def get_project(folder: str) -> Project:
         with p.conn() as c:
             c.executescript(_DDL)
             have = {x[1] for x in c.execute("PRAGMA table_info(photos)")}
-            if "from_name" not in have:
-                c.execute("ALTER TABLE photos ADD COLUMN from_name TEXT DEFAULT '[]'")
+            for col, ddl in (("from_name", "TEXT DEFAULT '[]'"), ("drill_start", "TEXT"), ("photo_date", "TEXT")):
+                if col not in have:
+                    c.execute(f"ALTER TABLE photos ADD COLUMN {col} {ddl}")
             c.execute("INSERT OR IGNORE INTO meta VALUES ('schema', ?)", (str(SCHEMA_VERSION),))
             c.execute("INSERT OR IGNORE INTO meta VALUES ('created', ?)", (now(),))
         if not local:
@@ -397,7 +400,7 @@ def ai_schema() -> dict:
     return {
         "type": "object",
         "properties": {
-            "hole_id": txt, "box_no": txt, "from_m": num, "to_m": num,
+            "hole_id": txt, "box_no": txt, "from_m": num, "to_m": num, "drill_start": txt, "photo_date": txt,
             "lithology": txt, "color": txt,
             "weathering": {"type": ["string", "null"], "enum": WEATHERING + [None]},
             "oxidation": {"type": ["string", "null"], "enum": OXIDATION + [None]},
@@ -406,24 +409,42 @@ def ai_schema() -> dict:
             "recovery_pct": num, "rqd_pct": num, "gsi": txt, "rmr": num, "notes": txt,
             "confidence": {"type": "string", "enum": ["rendah", "sedang", "tinggi"]},
         },
-        "required": ["hole_id", "box_no", "from_m", "to_m", "lithology", "color", "weathering", "oxidation", "alteration",
+        "required": ["hole_id", "box_no", "from_m", "to_m", "drill_start", "photo_date", "lithology", "color", "weathering", "oxidation", "alteration",
                      "condition", "recovery_pct", "rqd_pct", "gsi", "rmr", "notes", "confidence"],
     }
 
 
 def ai_prompt(extra: str = "") -> str:
+    # Disusun dari foto core box asli proyek (PT. Contoh Tambang, LTH-101 box 11): papan label putih di atas kotak,
+    # 4 baris core di kotak besi/kayu, blok penanda run, papan skala catur hitam-putih di bawah.
     p = (
-        "Anda geologist / geoteknik senior yang mendeskripsi foto core box hasil pemboran inti (diamond drilling) di tambang emas.\n"
-        "Langkah:\n"
-        "1. Baca papan / label / tulisan di foto: Hole ID, nomor box, kedalaman From dan To (meter). "
-        "Jangan menebak angka yang tidak terbaca: isi null.\n"
-        "2. Deskripsikan batuan secara visual: litologi dominan, warna dominan (bahasa Indonesia + istilah Inggris dalam kurung), "
-        "tingkat pelapukan (skala ISRM W1-W6), tingkat oksidasi, alterasi yang terlihat (mis. silisifikasi, argilik, propilitik, kuarsa vein).\n"
-        "3. Geoteknik: perkiraan core recovery (%), RQD (%) = panjang potongan core utuh >= 10 cm dibagi panjang run, "
-        "GSI (rentang, mis. '55-65'), RMR perkiraan (0-100). Ini PERKIRAAN visual dari foto; bila tidak bisa dinilai isi null.\n"
-        "4. condition: WET bila core basah / mengkilap, DRY bila kering.\n"
-        "5. notes: ringkas (maks 2 kalimat) tentang struktur (rekahan, kekar, sesar, zona hancur), vein dan mineralisasi yang terlihat.\n"
-        "6. confidence: seberapa yakin Anda atas pembacaan label dan deskripsi (rendah / sedang / tinggi).\n"
+        "Anda geologist / geoteknik senior yang mendeskripsi foto core box hasil pemboran inti (diamond drilling) di tambang emas "
+        "epitermal (PT. Contoh Tambang).\n\n"
+        "TATA LETAK FOTO (standar proyek):\n"
+        "- Papan label putih di BAGIAN ATAS, tulisan tangan / spidol hitam, berisi:\n"
+        "  baris 1: nama perusahaan 'PT. CONTOH TAMBANG' (abaikan);\n"
+        "  'HOLE ID: LTH-101' -> hole_id;  'START DRILL: 05-03-25' -> drill_start;\n"
+        "  'BOX: 11' -> box_no;  'DATE POTO: 12-03-25' -> photo_date;\n"
+        "  'DEPTH: 36.30' -> from_m;  'M:TO: 40.10' -> to_m;  'M:CONDT: WET' -> condition (WET / DRY).\n"
+        "  Tulisan tangan sering rapat: '13-0119' berarti 05-03-25. Tulis tanggal seperti tertulis (DD-MM-YY). "
+        "Bedakan O/0, I/1, S/5, B/8 dari konteks (Hole ID berpola huruf-strip-angka, kedalaman berupa angka meter dengan 2 desimal).\n"
+        "- Di bawah papan: kotak core berisi biasanya 4 BARIS core, dibaca kiri ke kanan, baris atas ke bawah "
+        "(atas = lebih dangkal). Blok kecil putih bertulis di antara core = penanda kedalaman run / core block.\n"
+        "- Papan catur hitam-putih di paling bawah = skala panjang (tiap kotak 20 cm); pakai untuk memperkirakan panjang potongan core.\n\n"
+        "TUGAS:\n"
+        "1. Baca papan label. Jangan menebak angka / huruf yang tidak terbaca: isi null. "
+        "to_m harus lebih besar dari from_m; satu box umumnya berisi 3-5 m core.\n"
+        "2. Deskripsikan core secara visual: litologi dominan, warna dominan (bahasa Indonesia + istilah Inggris dalam kurung, "
+        "mis. 'Abu-abu gelap kehitaman (Dark Grey)'), tingkat pelapukan skala ISRM W1-W6, tingkat oksidasi "
+        "(oksida besi coklat / merah / kuning = teroksidasi), alterasi yang terlihat (mis. silisifikasi, argilik, propilitik, "
+        "kuarsa vein / stockwork, sulfida).\n"
+        "3. Geoteknik dari foto: core recovery (%) = panjang core yang ada dibanding interval box; "
+        "RQD (%) = jumlah panjang potongan core utuh >= 10 cm dibagi panjang interval; GSI (rentang, mis. '55-65'); "
+        "RMR perkiraan (0-100). Ini PERKIRAAN visual; bila tidak bisa dinilai isi null.\n"
+        "4. condition: dari papan (M:CONDT) bila terbaca; bila tidak, WET bila core basah / mengkilap, DRY bila kering.\n"
+        "5. notes: ringkas (maks 2 kalimat) tentang struktur (rekahan, kekar, sesar, zona hancur / rubble), vein dan "
+        "mineralisasi yang terlihat, sebut baris core bila perlu (mis. 'baris 3 zona hancur').\n"
+        "6. confidence: seberapa yakin Anda atas pembacaan papan label dan deskripsi (rendah / sedang / tinggi).\n"
         "Jawab HANYA dengan JSON sesuai skema."
     )
     if extra and extra.strip():
@@ -560,13 +581,13 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     ws.title = "Core Log"
     head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + ["Interval (m)", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
     ws.append(head)
-    hf = PatternFill("solid", fgColor="2F4F3A")
+    hf = PatternFill("solid", fgColor="141A26")
     for i, _ in enumerate(head, 1):
         cell = ws.cell(row=1, column=i)
         cell.font = Font(bold=True, color="FFFFFF")
         cell.fill = hf
         cell.alignment = Alignment(vertical="center", wrap_text=True)
-    ai_fill = PatternFill("solid", fgColor="FFF4D6")
+    ai_fill = PatternFill("solid", fgColor="E2EAF6")
     for n, r in enumerate(data, 1):
         iv = round(r["to_m"] - r["from_m"], 2) if r["from_m"] is not None and r["to_m"] is not None else None
         sub = str(Path(r["rel"]).parent).replace("\\", "/")
@@ -581,14 +602,16 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
             for j, (k, _t, _l) in enumerate(FIELDS):
                 if k not in r["edited"] and k not in r["from_name"] and r["status"] == "done" and r[k] is not None:
                     ws.cell(row=n + 1, column=4 + j).fill = ai_fill
-    widths = [5, 26, 14, 12, 7, 9, 9, 18, 24, 20, 20, 20, 9, 10, 9, 9, 8, 46, 9, 10, 16, 10, 11, 14, 18, 14]
+    # No, File, Subfolder, Hole, Box, From, To, Start Drill, Tgl Foto, Litologi, Warna, Pelapukan, Oksidasi, Alterasi, Kondisi,
+    # Recovery, RQD, GSI, RMR, Catatan, Interval, Status, Model, Keyakinan, Diverifikasi, oleh, tanggal, Diedit oleh
+    widths = [5, 30, 14, 12, 7, 9, 9, 12, 12, 18, 26, 24, 20, 22, 9, 10, 9, 9, 8, 50, 10, 10, 16, 10, 11, 14, 18, 14]
     for i, w in enumerate(widths[:len(head)], 1):
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "D2"
     ws.auto_filter.ref = ws.dimensions
     info = wb.create_sheet("Keterangan")
     for line in [["GC-Ex Core Interpretation — log foto core box"], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
-                 [], ["Sel berwarna krem = isian AI yang belum diedit / diverifikasi geologist."],
+                 [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
                  ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."]]:
         info.append(line)
     info.column_dimensions["A"].width = 24
