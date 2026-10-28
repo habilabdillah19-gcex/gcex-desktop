@@ -5571,8 +5571,11 @@ function stDbHtml(){var c={gm:0,ref:0,map:0},nl=0,pl=0,mo=0,ml=0;STR.P.forEach(f
      halo, kontak luar = kontak vein -> selubung pinch-out ke vein di sisi itu (tidak harus melingkupi seluruh vein).
    - Model Estimation: blok di dalam solid vein = milik vein; blok selubung = di dalam solid selubung DAN di luar solid vein.
      Komposit halo: soft boundary (halo + sampel vein, bawaan) atau hard boundary (halo saja).
-   - Atribut Domain vein (Geological Modelling) juga memberi kode halo -> Geostatistik bisa memfilter halo. */
-var ENVD={cut:0.2,dil:3,minL:1,ext:0,iso:false,soft:true};
+   - Atribut Domain vein (Geological Modelling) juga memberi kode halo -> Geostatistik bisa memfilter halo.
+   - Vein bercabang (domain induk + cabang): selubung dibuat dari domain INDUK dan memakai interval induk + semua cabang.
+     Opsi 'Satukan cabang' (bawaan): satu bentang per bor dari kontak teratas s/d terbawah -> selubung melingkupi induk & cabang,
+     sela waste di antaranya ikut selubung (sampelnya = sampel halo). */
+var ENVD={cut:0.2,dil:3,minL:1,ext:0,iso:false,soft:true,bridge:true};
 function envIs(d){if(typeof d==='string')d=gmDom(d);return !!(d&&d.env);}
 function envOf(vid){for(var i=0;i<GM.doms.length;i++)if(GM.doms[i].env===vid)return GM.doms[i];return null;}
 function envO(d){return Object.assign({},ENVD,d&&d.envO||{});}
@@ -5584,6 +5587,11 @@ function envVeinIv(d,hole){var G=new Set(window.gmGroup?gmGroup(d.env):[d.env]);
 function envHalo(d,hole){var S=(GM.envF&&GM.envF[d.id])||{};return(S[hole]||[]).slice();}
 function envSetIv(eid,hole,f,t,on){var d=gmDom(eid);if(!d)return;var S=envStore(eid),L=S[hole]||[];f=+f;t=+t;if(!(t>f))return;
   L=envSub(L,[[f,t]]);if(on)L=envMerge(L.concat(envSub([[f,t]],envVeinIv(d,hole))),1e-6);if(L.length)S[hole]=L;else delete S[hole];}
+/* bentang selubung di satu bor: gabungan halo + vein; bila 'satukan' aktif -> satu bentang dari kontak teratas s/d terbawah
+   (vein bercabang / split: sela waste di antara induk & cabang ikut selubung) */
+function envSpan(d,h){var H=envHalo(d,h),V=envVeinIv(d,h);if(!H.length&&!V.length)return[];var L=envMerge(H.concat(V),0.05);if(envBridge(d)&&L.length>1)L=[[L[0][0],L[L.length-1][1]]];return L;}
+/* satukan hanya untuk vein yang punya cabang (split / splay); vein tunggal dengan dua tembusan terpisah tetap dua bentang */
+function envBridge(d){return envO(d).bridge!==false&&!!(window.gmKids&&d&&d.env&&gmKids(d.env).length);}
 function envStat(d){var S=(GM.envF&&GM.envF[d.id])||{},nh=0,m=0;Object.keys(S).forEach(function(h){if(!S[h].length)return;nh++;S[h].forEach(function(r){m+=r[1]-r[0];});});return{nh:nh,m:m};}
 /* ---------- usulan otomatis halo ---------- */
 function envAuto(eid,silent){var d=gmDom(eid);if(!d||!d.env)return;var v=gmDom(d.env);if(!v){alert('Domain vein induk selubung ini tidak ada.');return;}var O=envO(d),ei=elements.indexOf(GM.opt.el||$('elementFilter').value);if(ei<0){alert('Pilih unsur.');return;}
@@ -5606,10 +5614,8 @@ function envCopyEst(eid){var d=gmDom(eid),v=d&&gmDom(d.env);if(!v||!meParOf(v)){
   /* kontak luar selubung = gabungan vein + halo per bor */
   var _gr=gmRuns;gmRuns=function(dom){var d=gmDom(dom);if(!d||!d.env)return _gr.apply(this,arguments);var R=[],hs={};
     Object.keys(GM.flags).forEach(function(h){hs[h]=1;});Object.keys((GM.envF&&GM.envF[d.id])||{}).forEach(function(h){hs[h]=1;});
-    Object.keys(hs).forEach(function(h){if(!holeData[h])return;var H=envHalo(d,h);if(!H.length)return;/* bor tanpa halo tidak memberi kontak selubung -> diinterpolasi */
-      envMerge(H.concat(envVeinIv(d,h)),0.05).forEach(function(r){var t=Math.min(r[1],holeData[h].maxD);if(t>r[0])R.push({id:h,f:r[0],t:t});});});
-    /* bor yang menembus vein tapi tanpa halo: kontak luar = kontak vein (halo pinch-out di bor itu) */
-    Object.keys(GM.flags).forEach(function(h){if(!holeData[h]||envHalo(d,h).length)return;envVeinIv(d,h).forEach(function(r){var t=Math.min(r[1],holeData[h].maxD);if(t>r[0])R.push({id:h,f:r[0],t:t});});});
+    /* bor tanpa halo: kontak luar = kontak vein (halo pinch-out di bor itu) */
+    Object.keys(hs).forEach(function(h){if(!holeData[h])return;envSpan(d,h).forEach(function(r){var t=Math.min(r[1],holeData[h].maxD);if(t>r[0])R.push({id:h,f:r[0],t:t});});});
     return R;};
   var _sr=gmSetRange;gmSetRange=function(id,f,t,dom){var d=dom?gmDom(dom):null;if(d&&d.env){envSetIv(d.id,id,f,t,true);return;}
     if(!dom&&GM.act&&envIs(GM.act)&&(GM.mode==='flag'||GM.mode==='erase')){envSetIv(GM.act,id,f,t,false);return;}return _sr.apply(this,arguments);};
@@ -5634,6 +5640,7 @@ function envCopyEst(eid){var d=gmDom(eid),v=d&&gmDom(d.env);if(!v||!meParOf(v)){
         if(d.id===GM.act){var box=document.createElement('div');box.className='envbox';
           box.innerHTML='<div class=g2><div><label title="Batas kadar halo">COG halo</label><input type=number step=any value="'+O.cut+'" onchange="envSetO(\''+d.id+'\',\'cut\',+this.value)"></div><div><label title="Sela waste maks. di dalam halo">Dilusi (m)</label><input type=number step=any min=0 value="'+O.dil+'" onchange="envSetO(\''+d.id+'\',\'dil\',+this.value)"></div><div><label>Panjang min.</label><input type=number step=any min=0 value="'+O.minL+'" onchange="envSetO(\''+d.id+'\',\'minL\',+this.value)"></div><div><label title="Perluasan maks. halo dari kontak vein di sepanjang bor (0 = bebas)">Maks dari vein</label><input type=number step=any min=0 value="'+O.ext+'" onchange="envSetO(\''+d.id+'\',\'ext\',+this.value)"></div></div>'+
             '<label class=sw><input type=checkbox '+(O.iso?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'iso\',this.checked)">Ikutkan bor yang tidak menembus vein (halo tanpa vein)</label>'+
+            (gmKids(d.env).length?'<label class=sw title="Untuk vein bercabang / split: di tiap bor selubung membentang dari kontak teratas s/d terbawah (vein induk + cabang + halo); sela waste di antara vein ikut selubung"><input type=checkbox '+(O.bridge!==false?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'bridge\',this.checked);gmDirty()">Satukan induk &amp; '+gmKids(d.env).length+' cabang dalam satu selubung (sela di antara vein ikut selubung)</label>':'')+
             '<label class=sw><input type=checkbox '+(O.soft?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'soft\',this.checked);gmDirty(true)">Estimasi soft boundary (komposit halo + vein)</label>'+
             '<div class=g2><button class=btn-pri onclick="envAuto(\''+d.id+'\')">&#9676; Usulkan halo</button><button onclick="envCopyEst(\''+d.id+'\')" title="Salin variogram, pass & top-cut dari domain vein">Salin parameter vein</button></div>'+
             (d.envMsg?'<div class=hint>'+d.envMsg+'</div>':'')+'<div class=hint>Koreksi manual: tab Flag &rarr; &#9998; Flag / &#9003; Hapus flag saat selubung aktif hanya mengubah halo (flag vein aman). Lalu String &rarr; Tarik otomatis &amp; Solid seperti vein biasa; di sisi tanpa halo selubung pinch-out ke kontak vein.</div>';
@@ -5646,7 +5653,7 @@ function envCopyEst(eid){var d=gmDom(eid),v=d&&gmDom(d.env);if(!v||!meParOf(v)){
 (function(){if(typeof meRuns!=='function')return;
   var _mr=meRuns;meRuns=function(dom){var d=gmDom(dom);if(!d||!d.env)return _mr.apply(this,arguments);var O=envO(d),R={};
     var hs={};Object.keys((GM.envF&&GM.envF[d.id])||{}).forEach(function(h){hs[h]=1;});if(O.soft)Object.keys(GM.flags).forEach(function(h){hs[h]=1;});
-    Object.keys(hs).forEach(function(h){if(!holeData[h])return;var L=envHalo(d,h);if(O.soft)L=L.concat(envVeinIv(d,h));L=envMerge(L).map(function(r){return[r[0],Math.min(r[1],holeData[h].maxD)];}).filter(function(r){return r[1]>r[0];});if(L.length)R[h]=L;});return R;};
+    Object.keys(hs).forEach(function(h){if(!holeData[h])return;var V=envVeinIv(d,h),L=envBridge(d)?envSub(envSpan(d,h),V):envHalo(d,h);if(O.soft)L=L.concat(V);L=envMerge(L).map(function(r){return[r[0],Math.min(r[1],holeData[h].maxD)];}).filter(function(r){return r[1]>r[0];});if(L.length)R[h]=L;});return R;};
   var _mg=meGrpR;meGrpR=function(d){if(!d||!d.env)return _mg.apply(this,arguments);var R0=IM.R[d.id];if(!R0||!R0.mesh)return R0;var v=gmDom(d.env),RV=v?_mg(v):null;
     var key=R0.key+'|'+(RV&&RV.key||RV&&RV.mesh&&RV.mesh.x&&RV.mesh.x.length||'-');ME._env=ME._env||{};var c=ME._env[d.id];if(c&&c.key===key)return c;
     var WO=R0._W||(R0._W=wfInside(R0.mesh)),WV=RV&&RV.mesh?(RV.W||RV._W||(RV._W=wfInside(RV.mesh))):null;
