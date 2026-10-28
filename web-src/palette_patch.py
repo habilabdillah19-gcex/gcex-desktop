@@ -1,15 +1,15 @@
 """Palet kuning GC-Ex (0.7.0): kuning lemon jenuh #f5c400 diganti emas seimbang yang komplementer tepat dengan navy #233a7e
 (OKLCH hue 86.5° = hue navy 266.5° + 180°, chroma 0.145, L 0.83). Teks navy di atasnya tetap kontras AAA (7.9:1)."""
 REPL = [('#f5c400', '#f0c047'), ('#F5C400', '#f0c047'), ('rgba(245,196,0,', 'rgba(240,192,71,'), ('#e3b500', '#d6a12b'), ('#d9ad00', '#d6a12b'),
-        ('#b88f00', '#a77612'), ('#d6ab00', '#ddb049'),
-        # 0.14.0: tema earthy - kuning emas -> oker redup, navy jenuh -> navy redup
-        ('#f0c047', '#c49a4c'), ('rgba(240,192,71,', 'rgba(196,154,76,'), ('#d6a12b', '#b5893e'), ('#a77612', '#8c6a2f'), ('#ddb049', '#c9a35e'),
-        ('#233a7e', '#2c3b57'), ('#2e4c9e', '#3d4f70'), ('#2e4a8f', '#34425f'), ('#1b2f66', '#1f293e')]
+        ('#b88f00', '#a77612'), ('#d6ab00', '#ddb049')]
+# 0.14.0: tema earthy KHUSUS GC-Ex Block Model - kuning emas -> oker redup, navy jenuh -> navy redup
+EARTHY = [('#f0c047', '#c49a4c'), ('rgba(240,192,71,', 'rgba(196,154,76,'), ('#d6a12b', '#b5893e'), ('#a77612', '#8c6a2f'), ('#ddb049', '#c9a35e'),
+          ('#233a7e', '#2c3b57'), ('#2e4c9e', '#3d4f70'), ('#2e4a8f', '#34425f'), ('#1b2f66', '#1f293e')]
 
 
-def patch(s):
+def patch(s, earthy=False):
     n = 0
-    for a, b in REPL:
+    for a, b in REPL + (EARTHY if earthy else []):
         n += s.count(a)
         s = s.replace(a, b)
     return s, n

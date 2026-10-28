@@ -266,7 +266,7 @@ s = bmfix_patch.patch(s)
 print('BM fix (garis 2D, zoom, dig block manual): OK')
 
 import palette_patch as _pal
-s, _np = _pal.patch(s)
+s, _np = _pal.patch(s, earthy=True)
 s = _pal.layout(s)
 print('Palet kuning baru:', _np, 'tempat')
 open(OUT, 'w', encoding='utf-8').write(s)

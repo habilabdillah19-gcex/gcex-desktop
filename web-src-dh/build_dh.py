@@ -11,6 +11,7 @@ Modul desktop yang disisipkan (sebelum FP.startUI, setelah semua fungsi proyek &
 - slabbar_dh.js        : bilah Maju / Mundur mengambang, hanya muncul saat sayatan / Penampang 2D aktif
 - ../web-src/ptree.js + ptree_dh.js : Project Tree (pohon proyek urut alur kerja + panel properti)
 - deskflush_dh.js      : simpan ke komputer + folder proyek dan lepas kunci sebelum jendela ditutup
+- env_dh.js            : selubung mineralisasi (envelope / halo) per domain vein, soft boundary di Model Estimation
 Di browser biasa (tanpa GC-Ex Desktop) modul ini tidak mengubah apa pun.
 """
 import os
@@ -25,7 +26,7 @@ SHARED = os.path.join(W, '..', 'web-src') + os.sep
 s = open(W + 'gcex_dh_base.html', encoding='utf-8').read()
 mods = [SHARED + 'mdlbig.js', SHARED + 'guide.js', SHARED + 'desk_text.js', W + 'mdlbig_dh.js', W + 'deskflush_dh.js', SHARED + 'prj.js', SHARED + 'wm.js']
 if shutil.which('node'):
-    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js']:
+    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js']:
         r = subprocess.run(['node', '--check', m], capture_output=True, text=True)
         assert r.returncode == 0, 'Galat sintaks di ' + m + ':\n' + r.stderr[:800]
     print('Cek sintaks modul: OK')
@@ -59,7 +60,7 @@ print('UI 0.12 (Mapping / Layout / Sayatan): OK')
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan
 css = open(W + 'theme_dh.css', encoding='utf-8').read()
