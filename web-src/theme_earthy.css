@@ -1,0 +1,37 @@
+/* ================= GC-Ex Block Model: tema EARTHY (membumi & redup) + tipografi UI sistem =================
+   Tipografi: font UI sistem (Segoe UI di Windows; Tahoma / Arial sebagai cadangan), dipilih untuk keterbacaan
+   pada ukuran kecil & rapat (menu, tab, dialog, panel log). Tidak ada font dekoratif.
+   Palet: latar abu-abu muda hangat & putih tulang; teks & elemen navy + charcoal; aksen oker (tanah liat);
+   netral tambahan abu-abu muda. Dipasang paling akhir, sesudah desk_skin / bm_solid / desk_dense. */
+:root{
+  --ui-font:'Segoe UI',Tahoma,Arial,'Helvetica Neue',sans-serif;
+  /* latar & permukaan */
+  --bg:#e7e4dd;--sf:#f8f6f1;--sf2:#efece5;--bd:#d3cdc1;
+  /* teks & elemen: charcoal + navy redup */
+  --tx:#2a2d31;--mu:#62656a;--pr:#2c3b57;--pr2:#3d4f70;--prs:#e2e5ea;
+  /* aksen oker / terakota redup */
+  --ac:#b5893e;--acs:#f0e5cf;--dn:#9b3d2f;
+  --top:#27324a;--toptx:#ece8df;--sh:0 1px 2px rgba(42,45,49,.14);
+  /* kulit tombol padat */
+  --bs-top:#27324a;--bs-btn:#34425f;--bs-btnhv:#3e4d6c;--bs-btnon:#1f293e;--bs-btnln:#4b5976;--bs-btnbt:#1a2233;
+  --bs-face:#f3f0e9;--bs-facehv:#fbf9f4;--bs-ln:#cdc6b9;--bs-lnbt:#a8a090;--bs-hard:#cbc4b6;--bs-dis:#e6e2d9;--bs-distx:#9a958b;--bs-pop:#a8a090;--bs-thumb:#bcb5a7}
+body.dark{
+  --bg:#1b1d20;--sf:#232629;--sf2:#2a2d31;--bd:#3a3d42;
+  --tx:#e5e1d8;--mu:#a29d93;--pr:#a7b5cf;--pr2:#bcc8dd;--prs:#2b3344;
+  --ac:#c9a063;--acs:#3a3226;--dn:#d98a7a;--top:#1a2131;--toptx:#e5e1d8;
+  --bs-top:#1a2131;--bs-btn:#26304a;--bs-btnhv:#2e3956;--bs-btnon:#151b2a;--bs-btnln:#3b4664;--bs-btnbt:#10151f;
+  --bs-face:#2a2d31;--bs-facehv:#31353a;--bs-ln:#3e4247;--bs-lnbt:#141619;--bs-hard:#121417;--bs-dis:#25282c;--bs-distx:#6c6a64;--bs-pop:#4a4d52;--bs-thumb:#4a4d52}
+/* ---------- tipografi seragam ---------- */
+html,body,button,input,select,textarea,table,.impBody,#side,#top,#rail,footer,#statsCard,#gsPanel,.gcg-pop,.gcg-dlg{font-family:var(--ui-font)!important}
+code,pre,kbd,samp,.mono,#amBody code,#logBox,#deskLog,.log,.logbox{font-family:var(--ui-font)!important;font-variant-numeric:tabular-nums}
+body{-webkit-font-smoothing:auto;text-rendering:optimizeLegibility;letter-spacing:0}
+table,td,th,.num,input[type=number]{font-variant-numeric:tabular-nums}
+/* ---------- elemen: navy untuk aksi utama, charcoal untuk teks, oker untuk penanda aktif ---------- */
+#side h3,#side h4,#side h4.lyhead,.lyrg{color:var(--pr)}
+#top{background:var(--top)!important;color:var(--toptx);border-bottom:2px solid var(--ac)}
+.btn-pri,#side .btn-pri,.impFoot .btn-pri{background-color:var(--pr)!important;border-color:var(--pr)!important;color:#f8f6f1!important}
+#rail .rb.on,#rail button.on{box-shadow:inset 3px 0 0 var(--ac)}
+.uitabs button.on,.rptabs button.on{background:var(--pr)!important;border-color:var(--pr)!important;color:#f8f6f1!important}
+.hint,.note,small{color:var(--mu)}
+::selection{background:var(--acs);color:var(--tx)}
+a{color:var(--pr2)}

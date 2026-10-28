@@ -231,14 +231,17 @@ rep1("var pg={W:W,H:H,ops:ops,scale:0},b=lyPdf([pg]);", "var pg={W:W,H:H,ops:ops
 
 # ---------- 7z. Cek sintaks semua modul JS (bila Node.js tersedia) supaya galat ketahuan saat build ----------
 import shutil as _sh, subprocess as _sp
+# modul tambahan 0.14.0+ (dipasang di akhir lapisan UI, berurutan)
+EXTRA = ['theme_ui.js']
 if _sh.which('node'):
-    for _m in ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
+    for _m in EXTRA + ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
         _r = _sp.run(['node', '--check', W + _m], capture_output=True, text=True)
         assert _r.returncode == 0, 'Galat sintaks di ' + _m + ':\n' + _r.stderr[:800]
     print('Cek sintaks modul: OK')
 
 # ---------- 8. Lapisan UI di akhir sumber viewer ----------
 ui = open(W + 'am2.js', encoding='utf-8').read() + '\n' + open(W + 'amfloor.js', encoding='utf-8').read() + '\n' + open(W + 'sgfix.js', encoding='utf-8').read() + '\n' + open(W + 'multiel.js', encoding='utf-8').read() + '\n' + open(W + 'mdlsum.js', encoding='utf-8').read() + '\n' + open(W + 'rpbm.js', encoding='utf-8').read() + '\n' + open(W + 'ui_layer.js', encoding='utf-8').read() + '\n' + open(W + 'ptree.js', encoding='utf-8').read() + '\n' + open(W + 'ptree_bm.js', encoding='utf-8').read()
+ui += ''.join('\n' + open(W + _m, encoding='utf-8').read() for _m in EXTRA)
 i = s.index('<script type="text/plain" id="vsrc">')
 j = s.index('</script>', i)
 s = s[:j] + ui + '\n' + s[j:]
@@ -251,7 +254,7 @@ assert _n>=6
 
 # ---------- 8d. Kulit desktop (3D halus + lebih padat), dipasang sebagai <style> terakhir ----------
 _k = s.rindex('</body>')
-s = s[:_k] + '<style id="deskSkin">\n' + open(W + 'desk_skin.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="bmSolid">\n' + open(W + 'skin_bm_solid.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="deskDense">\n' + open(W + 'desk_dense.css', encoding='utf-8').read() + '\n</style>\n' + s[_k:]
+s = s[:_k] + '<style id="deskSkin">\n' + open(W + 'desk_skin.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="bmSolid">\n' + open(W + 'skin_bm_solid.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="deskDense">\n' + open(W + 'desk_dense.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="themeEarthy">\n' + open(W + 'theme_earthy.css', encoding='utf-8').read() + '\n</style>\n' + s[_k:]
 
 # ---------- 9. Tanam Plotly ----------
 if '--noplotly' not in sys.argv:
