@@ -577,12 +577,14 @@ def search(p: core_io.Project, q: str, limit: int = 60) -> dict:
         if not name:
             raise ValueError(f"Unsur '{el}' tidak ada di data assay. Ada: {', '.join(cols.values()) or '-'}")
         cmp = {">=": lambda x: x >= val, "<=": lambda x: x <= val, ">": lambda x: x > val, "<": lambda x: x < val, "=": lambda x: abs(x - val) < 1e-9}[op]
+        with p.conn() as c:
+            hname = {hk: h for h, hk in c.execute("SELECT DISTINCT hole, hole_key FROM dh_int WHERE kind='assay'")}
         for hk, ivs in intervals_by_hole(p, "assay").items():
             for f, t, at in ivs:
                 v = at.get(name)
                 if v is not None and cmp(v):
                     ph = photos_for(hk, f, t)
-                    res.append({"type": "assay", "hole": hk, "f": f, "t": t, "text": f"{name} = {v:g}",
+                    res.append({"type": "assay", "hole": hname.get(hk, hk), "f": f, "t": t, "text": f"{name} = {v:g}",
                                 "photo_id": ph[0]["id"] if ph else None, "photo": ph[0]["name"] if ph else None, "v": v})
         res.sort(key=lambda x: -x["v"])
         return {"results": res[:limit], "total": len(res), "numeric": True}
