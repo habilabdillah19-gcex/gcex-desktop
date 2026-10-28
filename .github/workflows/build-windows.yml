@@ -70,6 +70,18 @@ jobs:
         run: npm run dist
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Uji jalan GC-Ex Block Model (fuses, asar, gerbang lisensi)
+        shell: pwsh
+        run: |
+          $exe = "dist/win-unpacked/GC-Ex.exe"; if (-not (Test-Path $exe)) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Where-Object { $_.Name -notlike 'Uninstall*' } | Select-Object -First 1).FullName }
+          $log = Join-Path $env:APPDATA "GC-Ex/logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
+          $p = Start-Process -FilePath $exe -PassThru
+          $ok = $false; for ($i=0; $i -lt 40; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
+          $alive = -not $p.HasExited
+          Get-Process | Where-Object { $_.Path -like "*win-unpacked*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          Write-Host ($t)
+          if (-not $ok -or -not $alive) { Write-Host "::error::GC-Ex Block Model: aplikasi tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
+          Write-Host "GC-Ex Block Model: jendela aktivasi lisensi tampil, aplikasi berjalan"
       - name: Cek file lisensi di GC-Ex Block Model
         shell: pwsh
         run: |
@@ -81,6 +93,18 @@ jobs:
         run: npm run dist:dh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Uji jalan GC-Ex Drillhole (fuses, asar, gerbang lisensi)
+        shell: pwsh
+        run: |
+          $exe = "dist/win-unpacked/GC-Ex Drillhole.exe"; if (-not (Test-Path $exe)) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Where-Object { $_.Name -notlike 'Uninstall*' } | Select-Object -First 1).FullName }
+          $log = Join-Path $env:APPDATA "GC-Ex Drillhole/logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
+          $p = Start-Process -FilePath $exe -PassThru
+          $ok = $false; for ($i=0; $i -lt 40; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
+          $alive = -not $p.HasExited
+          Get-Process | Where-Object { $_.Path -like "*win-unpacked*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          Write-Host ($t)
+          if (-not $ok -or -not $alive) { Write-Host "::error::GC-Ex Drillhole: aplikasi tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
+          Write-Host "GC-Ex Drillhole: jendela aktivasi lisensi tampil, aplikasi berjalan"
       - name: Cek file lisensi di GC-Ex Drillhole
         shell: pwsh
         run: |
