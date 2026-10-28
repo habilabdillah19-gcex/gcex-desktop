@@ -17,7 +17,10 @@
   function segTag(){var b=$('dbBody');if(!b)return;var seg='fl';[].forEach.call(b.children,function(c){
       if(c.classList.contains('dbsub')){var t=c.textContent||'';seg=/otomatis|tujuan/i.test(t)?'auto':/digit manual/i.test(t)?'man':/export/i.test(t)?'exp':/running grade/i.test(t)?'rep':seg;}
       else if(c.classList.contains('elbox')&&seg==='fl')seg='el';
-      c.setAttribute('data-seg',seg);});
+      /* aturan kelas (string number / warna / material) & tujuan dipakai dig block otomatis DAN manual */
+      var rule=seg==='auto'&&(c.classList.contains('dbrt')||c.classList.contains('dbdt')||(c.classList.contains('dbsub')&&/tujuan/i.test(c.textContent||''))||
+        (c.tagName==='BUTTON'&&/dbRAdd/.test(c.getAttribute('onclick')||''))||!!(c.querySelector&&c.querySelector('select[onchange*="rAttr"],button[onclick*="lyDestAdd"]')));
+      c.setAttribute('data-seg',rule?'rule':seg);});
     if(FOC)b.setAttribute('data-f',FOC);else b.removeAttribute('data-f');}
   function focus(f){FOC=f||'';segTag();var b=$('dbBody');if(b&&f){var sd=$('side');if(sd)sd.scrollTop=0;}}
   (function(){var d=window.dbPanel;if(typeof d==='function'&&!d._ptf){window.dbPanel=function(){var r=d.apply(this,arguments);try{segTag();}catch(e){}return r;};window.dbPanel._ptf=1;}})();
@@ -96,5 +99,6 @@
     onSelect:function(n){var f=n.foc||'';focus(f);setTimeout(function(){focus(f);},120);document.body.classList.toggle('pt-bmhd',n.tab==='BM'&&!/^bm(\.|$)/.test(n.id));},
     css:'#pBM>.uitabs,#amBody>.uitabs,#pAM .amflow{display:none!important}'+
       'body.pt-bmhd #pBM>:not(.uisec){display:none!important}'+
-      ['fl','el','auto','man','exp','rep'].map(function(k){return '#dbBody[data-f='+k+']>[data-seg]:not([data-seg='+k+']){display:none!important}';}).join('')});
+      [['fl'],['el'],['auto','rule','rep'],['man','rule','rep'],['exp'],['rep']].map(function(K){return '#dbBody[data-f='+K[0]+']>[data-seg]'+K.map(function(k){return ':not([data-seg='+k+'])';}).join('')+'{display:none!important}';}).join('')+
+      '#dbBody[data-f=man]{display:flex;flex-direction:column}#dbBody[data-f=man]>[data-seg=man]{order:1}#dbBody[data-f=man]>[data-seg=rule]{order:2}#dbBody[data-f=man]>[data-seg=rep]{order:3}'});
 })();
