@@ -56,6 +56,8 @@ jobs:
         run: |
           python legal/gen_licenses.py legal/LISENSI_PYTHON.txt
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen_licenses.py gagal (exit $LASTEXITCODE)"; exit 1 }
+          # Electron baru tidak lagi mengunduh binary saat npm install: unduh sekarang (perlu LICENSE & LICENSES.chromium.html)
+          if (-not (Test-Path node_modules/electron/dist/LICENSE)) { node node_modules/electron/install.js; if ($LASTEXITCODE -ne 0) { Write-Host "::error::unduh binary Electron gagal"; exit 1 } }
           foreach ($p in @(@("node_modules/electron/dist/LICENSE","legal/LISENSI_ELECTRON.txt"),@("node_modules/electron/dist/LICENSES.chromium.html","legal/LISENSI_CHROMIUM.html"))) {
             if (-not (Test-Path $p[0])) { Write-Host ("::error::tidak ada " + $p[0] + "; isi dist: " + ((Get-ChildItem node_modules/electron/dist -ErrorAction SilentlyContinue | Select-Object -First 30 -ExpandProperty Name) -join ", ")); exit 1 }
             Copy-Item $p[0] $p[1]
