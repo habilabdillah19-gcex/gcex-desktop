@@ -75,6 +75,10 @@ jobs:
         run: |
           $exe = "dist/win-unpacked/GC-Ex.exe"; if (-not (Test-Path $exe)) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Where-Object { $_.Name -notlike 'Uninstall*' } | Select-Object -First 1).FullName }
           $log = Join-Path $env:APPDATA "GC-Ex/logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
+          # syarat penggunaan dianggap sudah disetujui (dialog itu diuji manual); yang diuji: aplikasi jalan sampai gerbang lisensi
+          $sd = Join-Path $env:APPDATA "GC-Ex"; New-Item -ItemType Directory -Force -Path $sd | Out-Null
+          $tv = (Select-String -Path electron/main.js -Pattern "const TERMS_VERSION = '([^']+)'").Matches[0].Groups[1].Value
+          Set-Content -Path (Join-Path $sd "settings.json") -Value ('{"termsAccepted":"' + $tv + '"}') -Encoding utf8
           $p = Start-Process -FilePath $exe -PassThru
           $ok = $false; for ($i=0; $i -lt 40; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
           $alive = -not $p.HasExited
@@ -98,6 +102,10 @@ jobs:
         run: |
           $exe = "dist/win-unpacked/GC-Ex Drillhole.exe"; if (-not (Test-Path $exe)) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Where-Object { $_.Name -notlike 'Uninstall*' } | Select-Object -First 1).FullName }
           $log = Join-Path $env:APPDATA "GC-Ex Drillhole/logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
+          # syarat penggunaan dianggap sudah disetujui (dialog itu diuji manual); yang diuji: aplikasi jalan sampai gerbang lisensi
+          $sd = Join-Path $env:APPDATA "GC-Ex Drillhole"; New-Item -ItemType Directory -Force -Path $sd | Out-Null
+          $tv = (Select-String -Path electron/main.js -Pattern "const TERMS_VERSION = '([^']+)'").Matches[0].Groups[1].Value
+          Set-Content -Path (Join-Path $sd "settings.json") -Value ('{"termsAccepted":"' + $tv + '"}') -Encoding utf8
           $p = Start-Process -FilePath $exe -PassThru
           $ok = $false; for ($i=0; $i -lt 40; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
           $alive = -not $p.HasExited
