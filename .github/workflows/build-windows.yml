@@ -51,18 +51,15 @@ jobs:
           node-version: "24"
       - name: Pasang paket Node
         run: npm install --no-audit --no-fund
-      - name: Audit keamanan paket (Node & Python, informasi)
-        shell: pwsh
-        run: |
-          npm audit --audit-level=high; if ($LASTEXITCODE -ne 0) { Write-Host "::warning::npm audit menemukan kerentanan (lihat log)" }
-          python -m pip install pip-audit; python -m pip_audit -r backend/requirements.txt; if ($LASTEXITCODE -ne 0) { Write-Host "::warning::pip-audit menemukan kerentanan (lihat log)" }
-          exit 0
       - name: Kumpulkan lisensi pihak ketiga
         shell: pwsh
         run: |
           python legal/gen_licenses.py legal/LISENSI_PYTHON.txt
-          Copy-Item node_modules/electron/dist/LICENSE legal/LISENSI_ELECTRON.txt
-          Copy-Item node_modules/electron/dist/LICENSES.chromium.html legal/LISENSI_CHROMIUM.html
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen_licenses.py gagal (exit $LASTEXITCODE)"; exit 1 }
+          foreach ($p in @(@("node_modules/electron/dist/LICENSE","legal/LISENSI_ELECTRON.txt"),@("node_modules/electron/dist/LICENSES.chromium.html","legal/LISENSI_CHROMIUM.html"))) {
+            if (-not (Test-Path $p[0])) { Write-Host ("::error::tidak ada " + $p[0] + "; isi dist: " + ((Get-ChildItem node_modules/electron/dist -ErrorAction SilentlyContinue | Select-Object -First 30 -ExpandProperty Name) -join ", ")); exit 1 }
+            Copy-Item $p[0] $p[1]
+          }
           try { Invoke-WebRequest -UseBasicParsing https://unpkg.com/plotly.js@2.27.0/dist/plotly.min.js.LICENSE.txt -OutFile legal/LISENSI_PLOTLY_BUNDEL.txt } catch { Write-Host "plotly.min.js.LICENSE.txt tidak tersedia: lewati" }
           Get-ChildItem legal | Format-Table Name, Length
       - name: Cek teks syarat penggunaan (halaman lisensi installer)
@@ -119,3 +116,18 @@ jobs:
           name: GC-Ex-Core-Setup-Windows
           path: dist/GC-Ex-Core-Setup-*.exe
           retention-days: 30
+
+      # audit keamanan (informasi, tidak menggagalkan build): environment Python terpisah supaya tidak ikut ke daftar lisensi
+      - name: Audit keamanan paket (Node & Python)
+        if: always()
+        shell: pwsh
+        run: |
+          $j = npm audit --json 2>$null | Out-String
+          try { $o = $j | ConvertFrom-Json; $v = $o.metadata.vulnerabilities; Write-Host ("npm audit: critical=" + $v.critical + " high=" + $v.high + " moderate=" + $v.moderate + " low=" + $v.low)
+            if (($v.critical + $v.high + $v.moderate) -gt 0) { $o.vulnerabilities.PSObject.Properties | ForEach-Object { Write-Host ("::warning::npm " + $_.Name + " (" + $_.Value.severity + ")") } } } catch { Write-Host "npm audit tidak terbaca" }
+          python -m venv .audit
+          .audit/Scripts/python -m pip install -q pip-audit
+          .audit/Scripts/python -m pip_audit -r backend/requirements.txt -f json -o audit_py.json; $null = $LASTEXITCODE
+          if (Test-Path audit_py.json) { python -c "import json;d=json.load(open('audit_py.json'));[print('::warning::pip '+x['name']+' '+x['version']+' '+v['id']+' fix '+(','.join(v.get('fix_versions') or ['-']))) for x in d.get('dependencies',[]) for v in x.get('vulns',[])];print('pip-audit selesai')" }
+          exit 0
+
