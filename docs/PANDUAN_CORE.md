@@ -1,8 +1,8 @@
 # Panduan GC-Ex Core Interpretation
 
-Interpretasi foto core box dengan AI yang berjalan **di komputer sendiri**. Tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
+Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 28 Oktober 2026 (versi 0.15.0).
+Pembaruan terakhir: 28 Oktober 2026 (versi 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 
@@ -89,7 +89,53 @@ Kotak berisi 4 baris core (atas = dangkal, kiri → kanan); papan catur di bawah
 
 **Instruksi tambahan** di dialog AI: tulis aturan proyek, mis. kode litologi `AND, DAC, QV, BX`, atau "tulis warna dalam bahasa Inggris saja".
 
-## 4. Dikerjakan bersama (beberapa geologist)
+## 4. Data bor: Collar, Survey, Assay, Geologi (header dinamis)
+
+Tombol **Data bor** di bilah atas. Pilih tab tabel, lalu **Pilih file CSV / Excel…** (.csv, .txt, .tsv, .xlsx, .xlsm; .xls lama: simpan ulang sebagai .xlsx).
+
+1. **Baris header** dan **sheet** dideteksi otomatis (baris judul laporan lab di atas header dilewati). Bisa diganti bila salah.
+2. **Kolom utama**: pilih kolom file untuk tiap isian. Nama header bebas; GC-Ex menebak dari nama umum (Hole_ID / BHID / DHID, From / Depth_From, Easting / X, RL / Z, Dip / Inclination, Azimuth / Bearing, …).
+
+   | Tabel | Wajib | Opsional |
+   |---|---|---|
+   | Collar | Hole ID, X, Y, Z | Total depth, dip & azimuth collar |
+   | Survey | Hole ID, kedalaman, dip, azimuth | – |
+   | Assay | Hole ID, From, To | kolom unsur apa pun |
+   | Geologi | Hole ID, From, To | kolom apa pun (Lith, Alteration, Mineralogy, Vein, …) |
+
+3. **Kolom lain yang ikut**: centang kolom yang dipakai, beri **nama di GC-Ex** (mis. `Au (ppm)` → `Au`, `Sample No` → `Sample`) dan pilih **angka / teks**. Kolom dengan nama sama di import berikutnya dianggap kolom yang sama.
+4. Pratinjau di atas menandai kolom yang dipakai (biru = kolom utama, coret = tidak dipakai).
+5. **Cara import**: *Tambah / perbarui per hole* (hole di file diganti seluruhnya, hole lain tetap; untuk data bor baru / sampel ulang) atau *Ganti semua*.
+6. Ringkasan hasil: jumlah baris, baris yang dilewati beserta alasannya (Hole ID kosong, From ≥ To, …), nilai di bawah limit deteksi, interval tumpang tindih, hole yang tidak ada di Collar, dan jumlah hole yang cocok dengan foto.
+
+Pemetaan kolom **disimpan di proyek**: file berikutnya dengan susunan header yang sama langsung memakai pemetaan terakhir. Bila format Excel berubah, cukup pilih ulang kolomnya.
+
+Aturan nilai: `<0.01` dibaca 0,005 (setengah limit deteksi); `>10` dibaca 10; `-`, kosong, `NA` = tidak ada nilai; koma desimal (`0,25`) dibaca. Hole ID dicocokkan tanpa membedakan huruf besar, spasi, `-` dan `_` (`LTH 101` = `LTH-101` = `lth101`).
+
+**Yang didapat setelah import:**
+- Kartu foto → **Data lab**: koordinat collar, koordinat X, Y, Z di From dan To foto (dihitung dari survey), tabel assay dan geologi di rentang foto. Kadar diberi warna kelas.
+- Tabel → kolom **<unsur> rata2** (rata-rata tertimbang panjang di rentang foto) untuk unsur yang dipilih di filter **Kadar**.
+- Excel → kolom `<unsur> rata-rata` dan `<unsur> maks` untuk semua unsur angka.
+
+## 5. Cari cepat & filter
+
+- **Cari cepat** (kotak di bilah atas, **Ctrl+K**) mencari di nama file, Hole ID, isian log, dan semua kolom teks data geologi / assay. Contoh: `LTH-101`, `pyrite`, `QV`, `silisifikasi`, nomor sampel `S0034`. Hasil menunjukkan interval dan foto core box-nya; ↑ ↓ lalu Enter (atau klik) untuk membuka foto.
+- **Kueri kadar**: `Au>=1`, `Cu>0.3`, `Ag<5` → semua interval assay yang memenuhi, diurutkan dari nilai tertinggi, lengkap dengan fotonya. Overlay assay otomatis menyala saat membuka hasil assay.
+- **Filter** (bilah kedua, menyaring tabel): Hole ID, rentang kedalaman (pratinjau lompat ke foto pertama yang cocok), status AI / verifikasi, **Kadar** (unsur, rata2 / maks, ≥ nilai — mis. tampilkan hanya box dengan Au maks ≥ 1 g/t), dan **Saring** teks.
+
+## 6. Overlay hasil assay di foto core box
+
+Tombol **lapisan** (ikon tumpukan) di pojok kanan atas pratinjau menyalakan overlay:
+- **Pita assay** di atas tiap baris core, warna sesuai kelas kadar (biru muda → navy) dan nilai kadarnya. Garis tegak = batas interval sampel.
+- **Pita geologi** di bawah tiap baris (mis. Lith: AND, DAC, QV).
+- **Kedalaman** di awal dan akhir setiap baris.
+- Strip pengaturan di bawah foto: pilih unsur, ubah **kelas** (mis. `0.1, 0.5, 1, 3`), tampilkan / sembunyikan nilai, pilih kolom geologi, dan legenda.
+
+**Atur area core**: kotak biru menandai area baris core di foto (bawaan: cocok dengan foto standar proyek, papan label di atas, 4 baris). Tarik sudut untuk mengubah ukuran, tengah untuk menggeser, isi jumlah baris, lalu simpan untuk **foto ini**, **semua foto lubang ini**, atau **bawaan proyek**.
+
+Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris; baris 1 = paling dangkal, kiri → kanan. Ini **perkiraan**: bila core hilang (recovery rendah) atau panjang tiap baris tidak sama, posisi pita bisa bergeser dari penanda kedalaman di core block. Pakai penanda di core block sebagai acuan akhir.
+
+## 7. Dikerjakan bersama (beberapa geologist)
 
 - Hasil kerja disimpan di subfolder `_GCEx_Core` **di dalam folder foto** (`gcex_core.db`). Geologist lain yang membuka folder yang sama (mis. di drive jaringan) melihat dan melanjutkan pekerjaan yang sama. Nama Anda dicatat pada setiap editan dan verifikasi.
 - Foto asli tidak pernah diubah, dipindah, atau diganti namanya.
@@ -98,17 +144,18 @@ Kotak berisi 4 baris core (atas = dangkal, kiri → kanan); papan catur di bawah
 - **Pindai ulang** mendaftarkan foto baru yang ditambahkan ke folder; foto yang dihapus ditandai **File hilang** (hasilnya tetap tersimpan).
 - Sebaiknya satu folder dikerjakan satu orang pada satu waktu; dua orang mengedit foto yang sama bersamaan = editan terakhir yang berlaku.
 
-## 5. Dari dashboard lama (Gemini)
+## 8. Dari dashboard lama (Gemini)
 
 **Impor JSON lama** membaca file proyek `.json` dari dashboard versi Gemini dan mencocokkannya per nama file foto. Hasil berstatus "Done" masuk sebagai isian AI (biru muda, belum diverifikasi); sisanya sebagai isian manual. Foto yang tidak ada di folder dilaporkan.
 
-## 6. Batasan yang perlu diketahui
+## 9. Batasan yang perlu diketahui
 
 - **RQD, GSI, RMR dan core recovery dari AI adalah perkiraan visual dari foto**, bukan pengukuran di core shed (panjang potongan, kondisi rekahan, kekuatan batuan tidak bisa diukur dari foto). Pakai sebagai bantuan awal; nilai resmi tetap dari logging geoteknik.
+- Posisi pita overlay di foto adalah perkiraan (interval box dibagi rata ke baris core), bukan hasil pembacaan penanda kedalaman.
 - Pembacaan papan label tergantung ketajaman foto. Bila AI salah membaca Hole ID / kedalaman, perbaiki manual; lebih baik lagi beri nama file dengan pola di bagian 3.
 - Keyakinan AI (rendah / sedang / tinggi) adalah penilaian model itu sendiri, bukan jaminan.
 
-## 7. Masalah umum
+## 10. Masalah umum
 
 | Gejala | Penyebab / solusi |
 |---|---|
@@ -118,4 +165,8 @@ Kotak berisi 4 baris core (atas = dangkal, kiri → kanan); papan catur di bawah
 | Banyak foto berstatus "AI gagal" | Arahkan kursor ke label "AI gagal" untuk melihat penyebab. Biasanya Ollama tertutup di tengah antrean atau memori habis; jalankan Ollama lagi lalu **Jalankan AI lokal** (yang gagal diulang otomatis). |
 | "Folder ini tidak bisa ditulisi" | Folder hanya-baca. Hasil disimpan di komputer ini saja; salin folder foto ke lokasi yang bisa ditulisi untuk kerja bersama. |
 | Foto tidak muncul di tabel | Ekstensi bukan JPG/PNG/TIFF/BMP/WEBP, atau foto ditambahkan setelah folder dibuka: klik **Pindai ulang**. |
+| Data lab kosong di kartu foto | Hole ID / From / To foto belum diisi, atau Hole ID di foto berbeda dengan di file lab (mis. `LTH-101A`). Perbaiki Hole ID di kartu; data lab langsung dicocokkan ulang. |
+| "Tidak ada baris yang bisa diimport" | Baris header salah (isi nomor baris yang berisi nama kolom) atau kolom From / To bukan angka. Lihat alasan di pesan. |
+| Pita overlay tidak pas dengan core | Klik **Atur area core**, sesuaikan kotak & jumlah baris, simpan untuk semua foto lubang ini. |
+| `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di GC-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
 | Bar "Backend tidak aktif" | Menu **Bantuan → Buka folder log**, kirim `backend.log` dan file log terbaru. |

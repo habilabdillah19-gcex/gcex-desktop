@@ -71,7 +71,8 @@ svg.i{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .fg label{color:var(--mu);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase}
 .fi{background:var(--card);border:1px solid var(--bd2);border-radius:4px;padding:4px 7px;min-width:0}
 .fi:focus{outline:2px solid var(--ac);outline-offset:-1px}
-#cnt{margin-left:auto;color:var(--mu);font-size:12px}
+#cnt{margin-left:auto;color:var(--mu);font-size:12px;white-space:nowrap}
+#fStat,#fHole{max-width:150px}#fbar{flex-wrap:nowrap;overflow-x:auto}#fbar .fg,#fbar .btn{flex:none}
 
 /* ---------- isi ---------- */
 #main{flex:1;display:flex;min-height:0}
@@ -182,6 +183,65 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 .mlist label:hover{background:var(--acs)}
 .mlist small{color:var(--mu)}
 code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:0 4px;font-family:var(--mono);font-size:12px}
+/* ---------- cari cepat ---------- */
+#qwrap{position:relative;flex:1 1 420px;min-width:220px;max-width:520px}
+#qq{width:100%;background:var(--card);border:1px solid var(--ink);border-radius:20px;padding:6px 12px 6px 32px;font-size:12.5px}
+#qq:focus{outline:2px solid var(--ac);outline-offset:0}
+#qwrap svg{position:absolute;left:11px;top:8px;color:var(--mu)}
+#qres{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--card);border:1px solid var(--ink);border-radius:8px;box-shadow:0 14px 40px rgba(20,26,38,.25);max-height:62vh;overflow:auto;z-index:40;display:none}
+#qres .qh{padding:7px 12px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu);border-bottom:1px solid var(--bd)}
+#qres a{display:grid;grid-template-columns:70px 1fr;gap:2px 10px;padding:7px 12px;border-bottom:1px solid var(--pn2);cursor:pointer;color:var(--tx);text-decoration:none}
+#qres a:hover,#qres a.on{background:var(--acs)}
+#qres a i{font-style:normal;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);grid-row:span 2;align-self:center}
+#qres a small{color:var(--mu);font-size:11px}
+/* ---------- overlay assay ---------- */
+#vwrap{position:absolute;left:0;top:0;transform-origin:0 0}
+#vwrap img{position:static;display:block}
+#vsvg,#vcal{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#vcal{pointer-events:auto;display:none}
+#vtools button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#ovp,#calp{background:var(--pn2);color:var(--tx);border-bottom:1.5px solid var(--ink);padding:6px 12px;font-size:11.5px;display:none;flex:none}
+#ovp .r,#calp .r{display:flex;align-items:center;gap:6px;margin:2px 0;flex-wrap:wrap}
+#ovp select,#ovp input,#calp input{background:var(--card);border:1px solid var(--bd2);border-radius:3px;padding:1px 4px;font-size:11.5px;color:var(--tx)}
+#ovp .lg{display:flex;flex-wrap:wrap;gap:3px 8px}
+#ovp .lg span{display:inline-flex;align-items:center;gap:4px}
+#ovp .lg b{width:14px;height:10px;border:1px solid #141a26;display:inline-block}
+#ovp .t,#calp .t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
+#calp button,#ovp button{font-size:11px;padding:2px 7px}
+/* ---------- data lab di kartu ---------- */
+.lab{margin-top:14px;border-top:1.5px solid var(--ink);padding-top:9px}
+.lab h4{font-family:var(--serif);font-weight:800;font-size:16px;margin-bottom:6px}
+.lab h4 em{color:var(--ac)}
+.lab .sub{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu);margin:8px 0 3px}
+.lab .tw{overflow:auto;max-height:220px;border:1px solid var(--bd);border-radius:5px;background:var(--card)}
+.lab table{border-collapse:collapse;font-size:11.5px;width:100%}
+.lab th{position:sticky;top:0;background:var(--pn);text-align:left;font-weight:700;padding:3px 6px;border-bottom:1px solid var(--ink);white-space:nowrap}
+.lab td{padding:2px 6px;border-bottom:1px solid var(--pn2);white-space:nowrap}
+.lab td.n{text-align:right}
+.lab td i.sw{display:inline-block;width:9px;height:9px;border:1px solid var(--ink);margin-right:4px;vertical-align:-1px}
+.xyz{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-size:11.5px}
+.xyz b{font-weight:400;color:var(--mu)}
+/* ---------- dialog data bor ---------- */
+#mDH .dlg{width:min(980px,96vw)}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--ink);padding:0 18px}
+.tabs button{border:1px solid var(--bd2);border-bottom:0;background:var(--pn2);padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;font-size:12px;letter-spacing:.04em;margin-bottom:-1.5px}
+.tabs button.on{background:var(--pn);border-color:var(--ink);border-bottom:1.5px solid var(--pn);font-weight:700}
+.tabs button small{color:var(--mu);font-weight:400}
+.pv{overflow:auto;max-height:190px;border:1px solid var(--bd);border-radius:5px;background:var(--card)}
+.pv table{border-collapse:collapse;font-size:11px}
+.pv th,.pv td{padding:2px 7px;border-bottom:1px solid var(--pn2);white-space:nowrap;text-align:left}
+.pv th{background:var(--pn);position:sticky;top:0;border-bottom:1px solid var(--ink)}
+.pv th.role{background:var(--ac);color:#fff}
+.pv th.off{color:var(--mu);text-decoration:line-through}
+.rolegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 12px}
+.rolegrid label{display:flex;flex-direction:column;gap:2px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.rolegrid label.req{color:var(--ink)}
+.rolegrid select{text-transform:none;letter-spacing:0}
+.colt{overflow:auto;max-height:230px;border:1px solid var(--bd);border-radius:5px}
+.colt table{border-collapse:collapse;width:100%;font-size:12px}
+.colt td,.colt th{padding:3px 7px;border-bottom:1px solid var(--pn2);text-align:left}
+.colt th{background:var(--pn);position:sticky;top:0;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:400;color:var(--mu)}
+.colt input[type=text]{width:100%;border:1px solid var(--bd);border-radius:3px;padding:1px 5px;background:var(--card)}
 #toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:var(--ink);color:var(--pn);padding:8px 16px;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:none;z-index:60;max-width:80vw}
 </style>
 </head>
@@ -202,16 +262,24 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
   <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></symbol>
+  <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14h14M2 6h14v14"/></symbol>
   <symbol id="i-core" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M8 4v5M14 9v5M10 14v6"/></symbol>
 </svg>
 
 <div id="top">
   <div class="brand"><span class="kick">GC-Ex · Core Box · AI Lokal</span><b>Core <em>Interpretation</em></b><small id="prjName">Interpretasi foto core box · 100% offline</small></div>
   <div class="sp"></div>
-  <button class="tb pri" id="bOpen" title="Buka folder foto core box (boleh berisi subfolder per lubang bor)"><svg class="i"><use href="#i-folder"/></svg>Buka folder foto</button>
-  <button class="tb" id="bRescan" disabled title="Cari foto baru / yang hilang di folder"><svg class="i"><use href="#i-refresh"/></svg>Pindai ulang</button>
-  <button class="tb" id="bImport" disabled title="Ambil hasil dari file .json dashboard lama (dicocokkan per nama file foto)"><svg class="i"><use href="#i-imp"/></svg>Impor JSON lama</button>
-  <button class="tb" id="bExport" disabled title="Simpan log ke Excel"><svg class="i"><use href="#i-xls"/></svg>Export Excel</button>
+  <div id="qwrap"><svg class="i"><use href="#i-search"/></svg><input id="qq" placeholder="Cari cepat (Ctrl+K): LTH-101, pyrite, QV, Au>=1…" autocomplete="off" disabled><div id="qres"></div></div>
+  <div class="sp"></div>
+  <button class="tb pri" id="bOpen" title="Buka folder foto core box (boleh berisi subfolder per lubang bor)"><svg class="i"><use href="#i-folder"/></svg>Buka folder</button>
+  <button class="tb" id="bRescan" disabled title="Cari foto baru / yang hilang di folder"><svg class="i"><use href="#i-refresh"/></svg></button>
+  <button class="tb" id="bDH" disabled title="Import Collar, Survey, Assay, Geologi (CSV / Excel) dengan header bebas"><svg class="i"><use href="#i-db"/></svg>Data bor</button>
+  <button class="tb" id="bImport" disabled title="Ambil hasil dari file .json dashboard lama (dicocokkan per nama file foto)"><svg class="i"><use href="#i-imp"/></svg>JSON</button>
+  <button class="tb" id="bExport" disabled title="Simpan log ke Excel"><svg class="i"><use href="#i-xls"/></svg>Excel</button>
+  <button class="tb pri" id="bAI" disabled title="Interpretasi foto dengan AI lokal (Ollama)"><svg class="i"><use href="#i-chip"/></svg>Jalankan AI</button>
   <span class="pill" id="aiPill" title="Status AI lokal (Ollama). Klik untuk pengaturan."><span class="dot wait" id="aiDot"></span><span id="aiTxt">AI lokal: memeriksa…</span></span>
   <button class="tb" id="bDark" title="Tema gelap / terang"><svg class="i"><use href="#i-moon"/></svg></button>
 </div>
@@ -222,27 +290,37 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <div class="fg"><label>Status</label><select class="fi" id="fStat">
     <option value="">Semua</option><option value="pending">Belum dianalisis AI</option><option value="done">Sudah dianalisis AI</option>
     <option value="error">AI gagal</option><option value="unver">Belum diverifikasi</option><option value="ver">Sudah diverifikasi</option><option value="miss">File hilang</option></select></div>
-  <div class="fg"><label>Cari</label><input class="fi" id="fQ" placeholder="nama file / catatan…" style="width:170px"></div>
+  <div class="fg" id="fgG" style="display:none"><label>Kadar</label><select class="fi" id="fEl"></select><select class="fi" id="fAgg" title="rata-rata tertimbang atau nilai interval tertinggi di foto"><option value="g">rata2</option><option value="gmax">maks</option></select><span>≥</span><input class="fi" id="fMin" type="number" step="0.01" style="width:70px" placeholder="nilai"></div>
+  <div class="fg"><label>Saring</label><input class="fi" id="fQ" placeholder="nama file / catatan…" style="width:170px"></div>
   <button class="btn sm" id="fClr">Reset filter</button>
   <span id="cnt"></span>
-  <button class="btn pri" id="bAI" disabled><svg class="i"><use href="#i-chip"/></svg>Jalankan AI lokal</button>
 </div>
 
 <div id="main">
   <div id="left">
     <div id="viewer">
       <div class="ph" id="vph"><div><svg class="i" style="width:40px;height:40px;opacity:.6"><use href="#i-core"/></svg><div style="margin-top:8px">Pilih foto di tabel untuk melihat pratinjau.<br>Scroll = zoom, tarik = geser, klik ganda = pas layar.</div></div></div>
-      <img id="vimg" alt="" style="display:none">
+      <div id="vwrap"><img id="vimg" alt="" style="display:none"><svg id="vsvg"></svg><svg id="vcal"></svg></div>
       <div id="vtools">
         <button id="vZin" title="Perbesar"><svg class="i"><use href="#i-zin"/></svg></button>
         <button id="vZout" title="Perkecil"><svg class="i"><use href="#i-zout"/></svg></button>
         <button id="vFit" title="Pas layar"><svg class="i"><use href="#i-fit"/></svg></button>
         <button id="vRot" title="Putar 90°"><svg class="i"><use href="#i-rot"/></svg></button>
         <button id="vFull" title="Muat resolusi penuh (untuk membaca label kecil)"><svg class="i"><use href="#i-open"/></svg></button>
+        <button id="vOv" title="Overlay hasil assay & geologi di foto"><svg class="i"><use href="#i-layers"/></svg></button>
       </div>
       <div id="vinfo" style="display:none"></div>
     </div>
     <div id="vsplitH" title="Tarik untuk mengubah tinggi pratinjau"></div>
+      <div id="ovp">
+        <div class="r"><span class="t">Overlay</span> Assay <select id="ovEl"></select> kelas <input id="ovCls" style="width:120px" title="batas kelas, dipisah koma"> <label><input type="checkbox" id="ovLbl" checked> nilai</label>
+          · Geologi <select id="ovGeo"></select> <button class="btn sm" id="ovCal" style="margin-left:auto"><svg class="i"><use href="#i-crop"/></svg>Atur area core</button></div>
+        <div class="r"><div class="lg" id="ovLeg"></div><span id="ovInfo" style="color:var(--mu);margin-left:auto"></span></div>
+      </div>
+      <div id="calp">
+        <div class="r"><span class="t">Area core box</span> Tarik kotak biru menutupi semua baris core (sudut = ukuran, tengah = geser). Baris 1 = paling dangkal, kiri → kanan.</div>
+        <div class="r">Jumlah baris <input id="calRows" type="number" min="1" max="12" style="width:50px"> ·<button class="btn sm pri" data-sc="photo">Simpan foto ini</button><button class="btn sm" data-sc="hole">Semua foto lubang ini</button><button class="btn sm" data-sc="default">Bawaan proyek</button><button class="btn sm" id="calX">Batal</button></div>
+      </div>
     <div id="card"><div class="note">Belum ada foto dipilih.</div></div>
   </div>
   <div id="split"></div>
@@ -305,6 +383,25 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   </div>
 </div></div>
 
+<!-- dialog data bor -->
+<div class="mask" id="mDH"><div class="dlg">
+  <header><b>Data <em>bor</em> · Collar, Survey, Assay, Geologi</b><button data-close>×</button></header>
+  <div class="tabs" id="dhTabs"></div>
+  <div class="bd">
+    <div class="row"><button class="btn pri" id="dhFile"><svg class="i"><use href="#i-folder"/></svg>Pilih file CSV / Excel…</button><span id="dhFname" style="color:var(--mu)">belum ada file</span>
+      <span style="margin-left:auto" id="dhSheetW"></span><span class="lbl" style="min-width:0">baris header</span><input class="fi" id="dhHr" type="number" min="1" style="width:56px" title="nomor baris yang berisi nama kolom"></div>
+    <div id="dhBody" style="display:none;flex-direction:column;gap:10px">
+      <div><span class="lbl">Pratinjau</span> <small id="dhN" style="color:var(--mu)"></small><div class="pv" id="dhPv"></div></div>
+      <div><span class="lbl">Kolom utama</span> <small style="color:var(--mu)">— pilih kolom file untuk tiap isian; nama header bebas</small><div class="rolegrid" id="dhRoles" style="margin-top:5px"></div></div>
+      <div id="dhColsW"><span class="lbl">Kolom lain yang ikut</span> <small style="color:var(--mu)">— centang, beri nama tampilan (mis. Au_ppm → Au), pilih angka / teks</small><div class="colt" id="dhCols" style="margin-top:5px"></div></div>
+      <div class="row"><label>Cara import</label><select class="fi" id="dhMode"><option value="upsert">Tambah / perbarui per hole (hole di file diganti, hole lain tetap)</option><option value="replace">Ganti semua data tabel ini</option></select></div>
+    </div>
+    <div class="box" id="dhRep" style="display:none"></div>
+    <div class="box" id="dhSum"></div>
+  </div>
+  <div class="ft"><button class="btn" id="dhClear">Kosongkan tabel ini</button><span style="flex:1"></span><button class="btn" data-close>Tutup</button><button class="btn pri" id="dhGo" disabled><svg class="i"><use href="#i-imp"/></svg>Import</button></div>
+</div></div>
+<input type="file" id="dhIn" accept=".csv,.txt,.tsv,.xlsx,.xlsm" style="display:none">
 <input type="file" id="jsonIn" accept=".json" style="display:none">
 <div id="toast"></div>
 
@@ -370,7 +467,7 @@ async function openFolder(folder) {
     $('#prjName').textContent = j.folder;
     document.title = 'GC-Ex Core Interpretation — ' + j.folder.split(/[\\/]/).pop();
     $('#start').style.display = 'none';
-    ['#bRescan', '#bImport', '#bExport', '#bAI'].forEach(s => $(s).disabled = false);
+    ['#bRescan', '#bImport', '#bExport', '#bAI', '#bDH', '#qq'].forEach(s => $(s).disabled = false);
     S.cur = -1; S.sel.clear();
     await loadRows();
     let m = j.scan.total + ' foto' + (j.scan.added ? ' · ' + j.scan.added + ' baru' : '') + (j.scan.missing ? ' · ' + j.scan.missing + ' hilang' : '');
@@ -382,6 +479,7 @@ async function openFolder(folder) {
 async function loadRows(keepScroll) {
   const j = await api('/core/rows', { folder: S.folder });
   S.rows = j.rows; S.byId = new Map(S.rows.map(r => [r.id, r]));
+  S.dh = j.dh || S.dh; dhColsChanged();
   fillHoles(); applyFilter(keepScroll); showSummary(j.summary);
 }
 function showSummary(s) {
@@ -398,6 +496,7 @@ function fillHoles() {
 
 /* =============================== filter & urutan =============================== */
 function applyFilter(keepScroll) {
+  const gEl = $('#fEl').value, gAgg = $('#fAgg').value, gMin = parseFloat($('#fMin').value);
   const h = $('#fHole').value, fa = parseFloat($('#fFrom').value), fb = parseFloat($('#fTo').value), st = $('#fStat').value, q = $('#fQ').value.trim().toLowerCase();
   const curId = S.view[S.cur] && S.view[S.cur].id;
   let v = S.rows.filter(r => {
@@ -411,11 +510,12 @@ function applyFilter(keepScroll) {
     if (st === 'unver' && r.verified) return false;
     if (st === 'ver' && !r.verified) return false;
     if (q && !((r.rel + ' ' + (r.notes || '') + ' ' + (r.lithology || '') + ' ' + (r.alteration || '')).toLowerCase().includes(q))) return false;
+    if (gEl && !isNaN(gMin)) { const v = r[gAgg] && r[gAgg][gEl]; if (v == null || v < gMin) return false; }
     return true;
   });
   if (S.sort) {
     const { k, d } = S.sort;
-    v.sort((a, b) => { const x = a[k], y = b[k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : natural(x, y)) * d; });
+    v.sort((a, b) => { const x = k === '_g' ? (a.g && a.g[gEl]) : a[k], y = k === '_g' ? (b.g && b.g[gEl]) : b[k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : natural(x, y)) * d; });
   } else if (h) v.sort((a, b) => (a.from_m == null) - (b.from_m == null) || (a.from_m - b.from_m) || natural(a.rel, b.rel));
   S.view = v;
   S.cur = curId != null ? v.findIndex(r => r.id === curId) : -1;
@@ -436,8 +536,14 @@ const COLS = [
   { k: 'recovery_pct', l: 'Rec %', w: 60, e: 1, n: 1 }, { k: 'rqd_pct', l: 'RQD %', w: 60, e: 1, n: 1 }, { k: 'gsi', l: 'GSI', w: 64, e: 1 },
   { k: 'rmr', l: 'RMR', w: 56, e: 1, n: 1 }, { k: 'ai_conf', l: 'Keyakinan', w: 80 }, { k: 'notes', l: 'Catatan', w: 260, e: 1 }
 ];
+function cols() {
+  const el = $('#fEl').value;
+  if (!el) return COLS;
+  const i = COLS.findIndex(c => c.k === '_iv') + 1;
+  return COLS.slice(0, i).concat([{ k: '_g', l: el + ' rata2', w: 92, n: 1 }], COLS.slice(i));
+}
 function layoutTable() {
-  const tw = $('#tw');
+  const tw = $('#tw'), COLS = cols();
   tw.style.setProperty('--cols', COLS.map(c => c.w + 'px').join(' '));
   if (!$('#thead').dataset.ok) {
     $('#thead').dataset.ok = 1;
@@ -469,6 +575,7 @@ function cellHtml(c, r, i) {
     case 'name': return `<span title="${esc(r.rel)}">${esc(r.name)}</span>`;
     case '_iv': return r.from_m != null && r.to_m != null ? (r.to_m - r.from_m).toFixed(2) : '';
     case 'ai_conf': return esc(r.ai_conf || '');
+    case '_g': { const el = $('#fEl').value, v = r.g && r.g[el], m = r.gmax && r.gmax[el]; return v == null ? '' : `<span title="maks ${fmt(m)}" style="${gradeStyle(el, v)}">${fmt(v)}</span>`; }
   }
   const isAi = r.status === 'done' && !r.verified && !r.edited.includes(c.k) && !r.from_name.includes(c.k) && r[c.k] != null;
   return `<input class="ce${isAi ? ' ai' : ''}${c.n ? ' num' : ''}" data-f="${c.k}" data-id="${r.id}" ${c.n ? 'type="number" step="0.01"' : ''} ${c.dl ? 'list="' + c.dl + '"' : ''} value="${esc(fmt(r[c.k]))}" ${r.verified ? 'title="Sudah diverifikasi"' : ''}>`;
@@ -483,7 +590,7 @@ function renderRows() {
     let h = '';
     for (let i = st; i < en; i++) {
       const r = S.view[i];
-      h += `<div class="tr rw${i === S.cur ? ' cur' : ''}${r.missing ? ' miss' : ''}" data-i="${i}" style="top:${i * rh}px">` + COLS.map(c => `<div class="${c.n ? 'num' : ''}">${cellHtml(c, r, i)}</div>`).join('') + '</div>';
+      h += `<div class="tr rw${i === S.cur ? ' cur' : ''}${r.missing ? ' miss' : ''}" data-i="${i}" style="top:${i * rh}px">` + cols().map(c => `<div class="${c.n ? 'num' : ''}">${cellHtml(c, r, i)}</div>`).join('') + '</div>';
     }
     if (keep) return; // jangan ganggu sel yang sedang diketik; digambar ulang setelah selesai
     body.innerHTML = h;
@@ -536,6 +643,7 @@ function showCard(r) {
       <button class="btn" id="cShow" ${D && D.showFile ? '' : 'style="display:none"'}><svg class="i"><use href="#i-folder"/></svg>Tampilkan file</button>
     </div>
     <div class="note">${r.verified ? 'Diverifikasi oleh <b>' + esc(r.verified_by || '-') + '</b> · ' + esc(r.verified_at || '') : 'Sel biru muda = isian AI yang belum dicek. Isian yang Anda edit tidak akan ditimpa AI.'}${r.edited_by ? '<br>Terakhir diedit: ' + esc(r.edited_by) + ' · ' + esc(r.edited_at || '') : ''}</div>
+    <div class="lab" id="cLab"></div>
     <details class="hist" id="cHist"><summary>Riwayat perubahan &amp; jawaban asli AI</summary><div class="hlist" id="cHL">Memuat…</div></details>`;
   $('#cPrev').onclick = () => select(S.cur - 1);
   $('#cNext').onclick = () => select(S.cur + 1);
@@ -551,13 +659,19 @@ function showCard(r) {
         + (j.ai ? '<div style="margin-top:6px"><b>Jawaban asli AI:</b><pre class="mono" style="white-space:pre-wrap;font-size:11px">' + esc(JSON.stringify(j.ai, null, 1)) + '</pre></div>' : '');
     } catch (err) { $('#cHL').textContent = err.message; }
   };
+  renderLab(r);
 }
 
 /* =============================== simpan editan =============================== */
 async function saveField(id, k, val) {
   const r = S.byId.get(id); if (!r) return;
   const p = api('/core/update', { folder: S.folder, id, values: { [k]: val }, by: user() })
-    .then(j => { Object.assign(r, j.row); if (k === 'hole_id') fillHoles(); if (S.view[S.cur] && S.view[S.cur].id === id) showCard(r); renderRows(); })
+    .then(async j => {
+      Object.assign(r, j.row); if (k === 'hole_id') fillHoles();
+      const isCur = S.view[S.cur] && S.view[S.cur].id === id;
+      if (['hole_id', 'from_m', 'to_m'].includes(k) && S.dh && (S.dh.assay || S.dh.geology)) { await loadRows(true); if (isCur) loadDetail(r); }
+      if (isCur) showCard(S.byId.get(id) || r); renderRows();
+    })
     .catch(e => say('Gagal menyimpan ' + (FIELD_LABEL[k] || k) + ':\n' + e.message));
   S.pending.push(p); p.finally(() => S.pending.splice(S.pending.indexOf(p), 1));
   return p;
@@ -607,9 +721,10 @@ function showImage(r) {
   $('#vinfo').style.display = 'block';
   $('#vinfo').textContent = r.rel + (r.missing ? ' (file hilang)' : '');
   if (r.missing) { img.style.display = 'none'; $('#vph').style.display = 'grid'; $('#vph').innerHTML = '<div>File foto tidak ditemukan di folder.<br>Klik <b>Pindai ulang</b> setelah file dikembalikan.</div>'; return; }
-  img.onload = () => { if (V.id !== r.id) return; V.iw = img.naturalWidth; V.ih = img.naturalHeight; img.style.display = 'block'; if (!V.keep) fit(); V.keep = false; apply(); };
+  img.onload = () => { if (V.id !== r.id) return; V.iw = img.naturalWidth; V.ih = img.naturalHeight; img.style.display = 'block'; if (!V.keep) fit(); V.keep = false; apply(); drawOverlay(); };
   img.onerror = () => { $('#vph').style.display = 'grid'; $('#vph').innerHTML = '<div>Foto tidak bisa dibuka.</div>'; img.style.display = 'none'; };
   img.src = imgUrl(r.id, 2000);
+  loadDetail(r);
 }
 function fit() {
   const vw = $('#viewer').clientWidth, vh = $('#viewer').clientHeight;
@@ -617,7 +732,7 @@ function fit() {
   V.s = Math.min(vw / rw, vh / rh) || 1; V.x = (vw - rw * V.s) / 2; V.y = (vh - rh * V.s) / 2;
 }
 function apply() {
-  const img = $('#vimg');
+  const img = $('#vwrap');
   const off = { 0: [0, 0], 90: [V.ih, 0], 180: [V.iw, V.ih], 270: [0, V.iw] }[V.rot];
   img.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.s}) translate(${off[0]}px,${off[1]}px) rotate(${V.rot}deg)`;
 }
@@ -625,7 +740,7 @@ function zoomAt(f, cx, cy) { const ns = Math.max(0.05, Math.min(20, V.s * f)); V
 const vw = $('#viewer');
 vw.addEventListener('wheel', e => { if ($('#vimg').style.display === 'none') return; e.preventDefault(); const b = vw.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - b.left, e.clientY - b.top); }, { passive: false });
 vw.addEventListener('mousedown', e => {
-  if (e.target.closest('#vtools') || e.button !== 0) return;
+  if (e.target.closest('#vtools,#ovp,#calp') || e.button !== 0 || CAL.on) return;
   const sx = e.clientX - V.x, sy = e.clientY - V.y; vw.classList.add('drag');
   const mv = ev => { V.x = ev.clientX - sx; V.y = ev.clientY - sy; apply(); };
   const up = () => { vw.classList.remove('drag'); removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
@@ -635,10 +750,10 @@ vw.addEventListener('dblclick', () => { fit(); apply(); });
 $('#vZin').onclick = () => zoomAt(1.3, vw.clientWidth / 2, vw.clientHeight / 2);
 $('#vZout').onclick = () => zoomAt(1 / 1.3, vw.clientWidth / 2, vw.clientHeight / 2);
 $('#vFit').onclick = () => { fit(); apply(); };
-$('#vRot').onclick = () => { V.rot = (V.rot + 90) % 360; fit(); apply(); };
+$('#vRot').onclick = () => { if (CAL.on) return; V.rot = (V.rot + 90) % 360; fit(); apply(); };
 $('#vFull').onclick = () => {
   if (V.id == null || V.full) return; V.full = true; const img = $('#vimg'), old = V.iw;
-  img.onload = () => { const k = old / img.naturalWidth; V.iw = img.naturalWidth; V.ih = img.naturalHeight; V.s *= k; apply(); toast('Resolusi penuh dimuat'); };
+  img.onload = () => { const k = old / img.naturalWidth; V.iw = img.naturalWidth; V.ih = img.naturalHeight; V.s *= k; apply(); drawOverlay(); toast('Resolusi penuh dimuat'); };
   img.src = imgUrl(V.id, 0);
 };
 
@@ -762,13 +877,16 @@ $('#bDark').onclick = () => { document.body.classList.toggle('dark'); LS.set('da
 if (LS.get('dark', false)) document.body.classList.add('dark');
 
 /* =============================== filter =============================== */
-['#fHole', '#fStat'].forEach(s => $(s).addEventListener('change', () => applyFilter()));
-let fT = 0; ['#fFrom', '#fTo', '#fQ'].forEach(s => $(s).addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => applyFilter(), 250); }));
-$('#fClr').onclick = () => { $('#fHole').value = ''; $('#fFrom').value = ''; $('#fTo').value = ''; $('#fStat').value = ''; $('#fQ').value = ''; S.sort = null; applyFilter(); };
+['#fHole', '#fStat', '#fEl', '#fAgg'].forEach(s => $(s).addEventListener('change', () => applyFilter()));
+let fT = 0; ['#fFrom', '#fTo', '#fQ', '#fMin'].forEach(s => $(s).addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => applyFilter(), 250); }));
+$('#fClr').onclick = () => { $('#fHole').value = ''; $('#fFrom').value = ''; $('#fTo').value = ''; $('#fStat').value = ''; $('#fQ').value = ''; $('#fMin').value = ''; S.sort = null; applyFilter(); };
 
 /* =============================== keyboard =============================== */
 document.addEventListener('keydown', e => {
-  if ($('#mAI').classList.contains('on')) { if (e.key === 'Escape') $('#mAI').classList.remove('on'); return; }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); if (!$('#qq').disabled) { $('#qq').focus(); $('#qq').select(); } return; }
+  const openDlg = document.querySelector('.mask.on');
+  if (openDlg) { if (e.key === 'Escape') openDlg.classList.remove('on'); return; }
+  if (CAL.on && e.key === 'Escape') { calEnd(); return; }
   if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); verifyCurrent(true); return; }
   const inField = /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName);
   if (inField) { if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT') document.activeElement.blur(); return; }
@@ -782,6 +900,318 @@ dragSplit($('#split'), ev => { const w = Math.max(340, Math.min(innerWidth * 0.7
 dragSplit($('#vsplitH'), ev => { const t = $('#left').getBoundingClientRect().top, h = Math.max(160, Math.min(innerHeight * 0.8, ev.clientY - t)); $('#viewer').style.height = h + 'px'; LS.set('vh', h); });
 if (LS.get('lw', 0)) $('#left').style.width = LS.get('lw') + 'px';
 if (LS.get('vh', 0)) $('#viewer').style.height = LS.get('vh') + 'px';
+
+
+/* =============================== data bor: kadar, overlay, data lab =============================== */
+S.dh = null; S.det = null;
+const OV = { on: LS.get('ov', false), el: LS.get('ovEl', ''), geo: LS.get('ovGeo', ''), lbl: LS.get('ovLbl', true), cls: LS.get('ovCls', {}) };
+const BLUES = ['#dbe7f5', '#9fbfe6', '#5a8fd0', '#2a5ea8', '#141a26'];
+const GEOC = ['#c9b48a', '#8fa3b8', '#b98a6a', '#7f9a86', '#a690b5', '#c7a0a0', '#6f7f99', '#b8b06d', '#8a8f96', '#d1a86a'];
+const numCols = () => ((S.dh && S.dh.columns && S.dh.columns.assay) || []).filter(c => c.type === 'n').map(c => c.name);
+const geoCols = () => ((S.dh && S.dh.columns && S.dh.columns.geology) || []).map(c => c.name);
+function classes(el) {
+  if (OV.cls[el]) return OV.cls[el];
+  if (/^au/i.test(el)) return [0.1, 0.5, 1, 3];
+  if (/^ag/i.test(el)) return [5, 20, 50, 100];
+  // kuantil 20/40/60/80 dari nilai rata-rata foto di proyek
+  const v = S.rows.map(r => r.g && r.g[el]).filter(x => x != null).sort((a, b) => a - b);
+  if (v.length < 5) return [0.1, 0.5, 1, 3];
+  const q = f => +v[Math.min(v.length - 1, Math.floor(f * v.length))].toPrecision(2);
+  return [...new Set([q(.2), q(.4), q(.6), q(.8)])];
+}
+function gradeIdx(el, v) { const c = classes(el); let i = 0; while (i < c.length && v >= c[i]) i++; return i; }
+function gradeStyle(el, v) { const i = gradeIdx(el, v); return `background:${BLUES[i]};color:${i >= 3 ? '#fff' : '#141a26'};padding:1px 5px;border-radius:3px`; }
+function geoColor(code) { let h = 0; for (const ch of String(code)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return GEOC[h % GEOC.length]; }
+function dhColsChanged() {
+  const nc = numCols(), gc = geoCols();
+  $('#fgG').style.display = nc.length ? '' : 'none';
+  const fe = $('#fEl'), cur = fe.value;
+  fe.innerHTML = '<option value="">(tidak)</option>' + nc.map(n => `<option>${esc(n)}</option>`).join('');
+  fe.value = nc.includes(cur) ? cur : (nc.find(n => /^au/i.test(n)) || '');
+  if (!OV.el || !nc.includes(OV.el)) OV.el = nc.find(n => /^au/i.test(n)) || nc[0] || '';
+  if (!OV.geo || !gc.includes(OV.geo)) OV.geo = gc.find(n => /lith|lito/i.test(n)) || gc[0] || '';
+  $('#ovEl').innerHTML = '<option value="">(tidak)</option>' + nc.map(n => `<option>${esc(n)}</option>`).join(''); $('#ovEl').value = OV.el;
+  $('#ovGeo').innerHTML = '<option value="">(tidak)</option>' + gc.map(n => `<option>${esc(n)}</option>`).join(''); $('#ovGeo').value = OV.geo;
+  $('#ovCls').value = OV.el ? classes(OV.el).join(', ') : '';
+  $('#ovLbl').checked = OV.lbl;
+}
+let detTok = 0;
+async function loadDetail(r) {
+  const tok = ++detTok; S.det = null; renderLab(r);
+  if (!S.dh || !(S.dh.assay || S.dh.geology || S.dh.collar)) { drawOverlay(); return; }
+  try { const j = await api('/core/dh/photo', { folder: S.folder, id: r.id }); if (tok !== detTok) return; S.det = j; renderLab(r); drawOverlay(); }
+  catch (e) { if (tok === detTok) $('#cLab').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
+}
+function renderLab(r) {
+  const el = $('#cLab'); if (!el) return;
+  const d = S.det;
+  if (!S.dh || !(S.dh.assay || S.dh.geology || S.dh.collar)) { el.innerHTML = '<h4>Data <em>lab</em></h4><div class="note">Belum ada data bor. Klik <b>Data bor</b> untuk import Collar, Survey, Assay, Geologi (CSV / Excel).</div>'; return; }
+  if (!d) { el.innerHTML = '<h4>Data <em>lab</em></h4><div class="note">Memuat…</div>'; return; }
+  if (!r.hole_id || r.from_m == null || r.to_m == null) { el.innerHTML = '<h4>Data <em>lab</em></h4><div class="note">Isi Hole ID, From dan To foto ini agar data lab bisa dicocokkan.</div>'; return; }
+  const xyz = (p) => p ? `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}` : '–';
+  let h = '<h4>Data <em>lab</em> · ' + esc(r.hole_id) + ' ' + fmt(r.from_m) + '–' + fmt(r.to_m) + ' m</h4>';
+  h += d.collar ? `<div class="xyz"><b>Collar X, Y, Z</b><span>${xyz(d.collar)}${d.collar.depth != null ? ' · EOH ' + fmt(d.collar.depth) + ' m' : ''}</span><b>From → X, Y, Z</b><span>${xyz(d.xyz_from)}</span><b>To → X, Y, Z</b><span>${xyz(d.xyz_to)}</span></div>`
+    : '<div class="note">Hole tidak ada di Collar.</div>';
+  const tbl = (rows, keys, colorKey, isGeo) => {
+    if (!rows.length) return '<div class="note">Tidak ada interval di rentang foto ini.</div>';
+    return '<div class="tw"><table><tr><th>From</th><th>To</th>' + keys.map(k => `<th>${esc(k)}</th>`).join('') + '</tr>' + rows.map(x => '<tr><td class="n">' + fmt(x.f) + '</td><td class="n">' + fmt(x.t) + '</td>' + keys.map(k => {
+      const v = x[k];
+      if (v == null) return '<td></td>';
+      if (typeof v === 'number') return `<td class="n"><span style="${k === colorKey ? gradeStyle(k, v) : ''}">${fmt(v)}</span></td>`;
+      return `<td>${k === colorKey && isGeo ? `<i class="sw" style="background:${geoColor(v)}"></i>` : ''}${esc(v)}</td>`;
+    }).join('') + '</tr>').join('') + '</table></div>';
+  };
+  const ak = [...new Set([].concat(...d.assay.map(x => Object.keys(x))))].filter(k => k !== 'f' && k !== 't');
+  const gk = [...new Set([].concat(...d.geology.map(x => Object.keys(x))))].filter(k => k !== 'f' && k !== 't');
+  if (S.dh.assay) {
+    const g = r.g ? Object.entries(r.g).map(([k, v]) => `${esc(k)} <b>${fmt(v)}</b>`).join(' · ') : '';
+    h += '<div class="sub">Assay (' + d.assay.length + ' interval)' + (g ? ' · rata-rata tertimbang: ' + g : '') + '</div>' + tbl(d.assay, ak, OV.el, false);
+  }
+  if (S.dh.geology) h += '<div class="sub">Geologi (' + d.geology.length + ' interval)</div>' + tbl(d.geology, gk, OV.geo, true);
+  el.innerHTML = h;
+}
+/* posisi kedalaman -> titik di foto: baris core dibaca kiri->kanan, atas->bawah; panjang per baris = interval box / jumlah baris */
+function depthSegs(a, b, f, t, tr) {
+  const L = b - a, n = tr.rows, out = [];
+  let s0 = Math.max(0, (Math.max(f, a) - a) / L * n), s1 = Math.min(n, (Math.min(t, b) - a) / L * n);
+  while (s0 < s1 - 1e-9) {
+    const row = Math.min(n - 1, Math.floor(s0 + 1e-9)), e = Math.min(s1, row + 1);
+    out.push({ row, u0: s0 - row, u1: e - row }); s0 = e;
+  }
+  return out;
+}
+function drawOverlay() {
+  const svg = $('#vsvg'), r = S.view[S.cur];
+  $('#vOv').classList.toggle('on', OV.on);
+  $('#ovp').style.display = OV.on && !CAL.on ? 'block' : 'none';
+  if (!OV.on || !r || !V.iw || r.missing) { svg.innerHTML = ''; svg.style.display = 'none'; return; }
+  svg.style.display = 'block';
+  svg.setAttribute('width', V.iw); svg.setAttribute('height', V.ih); svg.setAttribute('viewBox', `0 0 ${V.iw} ${V.ih}`);
+  const d = S.det, info = $('#ovInfo');
+  // legenda
+  const cl = OV.el ? classes(OV.el) : [];
+  $('#ovLeg').innerHTML = OV.el ? BLUES.slice(0, cl.length + 1).map((c, i) => `<span><b style="background:${c}"></b>${i === 0 ? '< ' + cl[0] : i === cl.length ? '≥ ' + cl[i - 1] : cl[i - 1] + '–' + cl[i]}</span>`).join('') : '';
+  if (!d || r.from_m == null || r.to_m == null || !r.hole_id) { svg.innerHTML = ''; info.textContent = !S.dh || !S.dh.assay ? ' belum ada data bor' : ' Hole / From / To belum diisi'; return; }
+  const tr = d.tray, W = V.iw, H = V.ih, X0 = tr.x0 * W, Y0 = tr.y0 * H, BW = (tr.x1 - tr.x0) * W, RH = (tr.y1 - tr.y0) * H / tr.rows;
+  const fs = Math.max(10, Math.min(RH * 0.2, W / 45)), sw = Math.max(1.5, W / 900);
+  let h = `<g font-family="Courier Prime, Courier New, monospace" font-weight="700">`;
+  for (let i = 0; i < tr.rows; i++) h += `<rect x="${X0}" y="${Y0 + i * RH}" width="${BW}" height="${RH}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-dasharray="${sw * 4} ${sw * 3}" stroke-width="${sw}"/>`;
+  const a = r.from_m, b = r.to_m;
+  let nA = 0, nG = 0;
+  if (OV.geo) for (const x of d.geology) {
+    const v = x[OV.geo]; if (v == null) continue; nG++;
+    for (const sgm of depthSegs(a, b, x.f, x.t, tr)) {
+      const x0 = X0 + sgm.u0 * BW, w = (sgm.u1 - sgm.u0) * BW, y = Y0 + (sgm.row + 1) * RH - RH * 0.16;
+      h += `<rect x="${x0}" y="${y}" width="${w}" height="${RH * 0.16}" fill="${geoColor(v)}" stroke="#141a26" stroke-width="${sw}"/>`;
+      if (w > fs * 2) h += `<text x="${x0 + w / 2}" y="${y + RH * 0.08}" font-size="${fs * 0.8}" fill="#141a26" text-anchor="middle" dominant-baseline="central">${esc(String(v).slice(0, Math.max(2, Math.floor(w / (fs * 0.5)))))}</text>`;
+    }
+  }
+  if (OV.el) for (const x of d.assay) {
+    const v = x[OV.el]; if (v == null) continue; nA++;
+    const k = gradeIdx(OV.el, v), col = BLUES[k];
+    const segs = depthSegs(a, b, x.f, x.t, tr);
+    segs.forEach((sgm, si) => {
+      const x0 = X0 + sgm.u0 * BW, w = (sgm.u1 - sgm.u0) * BW, y = Y0 + sgm.row * RH;
+      h += `<rect x="${x0}" y="${y}" width="${w}" height="${RH}" fill="${col}" fill-opacity="${k ? 0.32 : 0.12}"/>`;
+      h += `<rect x="${x0}" y="${y}" width="${w}" height="${RH * 0.2}" fill="${col}" stroke="#141a26" stroke-width="${sw}"/>`;
+      h += `<line x1="${x0}" x2="${x0}" y1="${y}" y2="${y + RH}" stroke="#fff" stroke-width="${sw * 1.6}"/><line x1="${x0}" x2="${x0}" y1="${y}" y2="${y + RH}" stroke="#141a26" stroke-width="${sw * .7}"/>`;
+      if (OV.lbl && si === 0 && w > fs * 1.5) h += `<text x="${x0 + w / 2}" y="${y + RH * 0.1}" font-size="${fs}" fill="${k >= 3 ? '#fff' : '#141a26'}" text-anchor="middle" dominant-baseline="central">${fmt(v)}</text>`;
+    });
+  }
+  // label kedalaman di awal & akhir tiap baris
+  for (let i = 0; i < tr.rows; i++) {
+    const d0 = a + (b - a) * i / tr.rows, d1 = a + (b - a) * (i + 1) / tr.rows, y = Y0 + i * RH + RH * 0.36;
+    for (const [xx, dd, an] of [[X0 + sw * 4, d0, 'start'], [X0 + BW - sw * 4, d1, 'end']])
+      h += `<text x="${xx}" y="${y}" font-size="${fs * 0.85}" text-anchor="${an}" dominant-baseline="central" fill="#fff" stroke="#141a26" stroke-width="${fs * 0.22}" paint-order="stroke">${dd.toFixed(2)}</text>`;
+  }
+  svg.innerHTML = h + '</g>';
+  info.textContent = ` ${nA} assay · ${nG} geologi`;
+}
+$('#vOv').onclick = () => { OV.on = !OV.on; LS.set('ov', OV.on); if (OV.on && (!S.dh || !S.dh.assay)) toast('Belum ada data assay: klik Data bor untuk import.', 4000); drawOverlay(); };
+$('#ovEl').onchange = e => { OV.el = e.target.value; LS.set('ovEl', OV.el); $('#ovCls').value = OV.el ? classes(OV.el).join(', ') : ''; drawOverlay(); if (S.view[S.cur]) renderLab(S.view[S.cur]); };
+$('#ovGeo').onchange = e => { OV.geo = e.target.value; LS.set('ovGeo', OV.geo); drawOverlay(); if (S.view[S.cur]) renderLab(S.view[S.cur]); };
+$('#ovLbl').onchange = e => { OV.lbl = e.target.checked; LS.set('ovLbl', OV.lbl); drawOverlay(); };
+$('#ovCls').onchange = e => {
+  const v = e.target.value.split(/[,;\s]+/).map(Number).filter(x => !isNaN(x)).sort((a, b) => a - b).slice(0, 4);
+  if (v.length) OV.cls[OV.el] = v; else delete OV.cls[OV.el];
+  LS.set('ovCls', OV.cls); e.target.value = classes(OV.el).join(', '); drawOverlay(); renderRows(); if (S.view[S.cur]) renderLab(S.view[S.cur]);
+};
+
+/* =============================== atur area core box =============================== */
+const CAL = { on: false, t: null };
+function calStart() {
+  const r = S.view[S.cur]; if (!r || !V.iw) return;
+  if (!S.det) { toast('Tunggu data foto dimuat…'); return; }
+  CAL.on = true; CAL.t = Object.assign({}, S.det.tray);
+  V.rot = 0; fit(); apply();
+  $('#calRows').value = CAL.t.rows; $('#calp').style.display = 'block'; $('#ovp').style.display = 'none';
+  $('#vsvg').style.display = 'none'; calDraw();
+}
+function calEnd() { CAL.on = false; $('#calp').style.display = 'none'; $('#vcal').style.display = 'none'; $('#vcal').innerHTML = ''; drawOverlay(); }
+function calDraw() {
+  const g = $('#vcal'), W = V.iw, H = V.ih, t = CAL.t;
+  g.style.display = 'block'; g.setAttribute('width', W); g.setAttribute('height', H); g.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const x0 = t.x0 * W, y0 = t.y0 * H, x1 = t.x1 * W, y1 = t.y1 * H, hs = Math.max(10, W / 70) / Math.max(.2, V.s * 1.4) * 1.4, sw = Math.max(1.5, 2 / V.s);
+  let h = `<rect data-h="move" x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" fill="#2a5ea8" fill-opacity=".14" stroke="#2a5ea8" stroke-width="${sw * 2}" style="cursor:move"/>`;
+  for (let i = 1; i < t.rows; i++) { const y = y0 + (y1 - y0) * i / t.rows; h += `<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="#fff" stroke-width="${sw}" stroke-dasharray="${sw * 5} ${sw * 4}" pointer-events="none"/>`; }
+  for (let i = 0; i < t.rows; i++) h += `<text x="${x0 + sw * 6}" y="${y0 + (y1 - y0) * (i + .5) / t.rows}" font-size="${hs * 1.4}" fill="#fff" stroke="#141a26" stroke-width="${hs * .25}" paint-order="stroke" dominant-baseline="central" pointer-events="none" font-family="Courier Prime, monospace" font-weight="700">${i + 1} →</text>`;
+  for (const [k, x, y] of [['nw', x0, y0], ['ne', x1, y0], ['sw', x0, y1], ['se', x1, y1]])
+    h += `<rect data-h="${k}" x="${x - hs / 2}" y="${y - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#2a5ea8" stroke-width="${sw * 2}" style="cursor:${k === 'nw' || k === 'se' ? 'nwse' : 'nesw'}-resize"/>`;
+  g.innerHTML = h;
+}
+$('#vcal').addEventListener('mousedown', e => {
+  const hnd = e.target.dataset && e.target.dataset.h; if (!hnd) return;
+  e.preventDefault(); e.stopPropagation();
+  const b = vw.getBoundingClientRect(), t0 = Object.assign({}, CAL.t), sx = e.clientX, sy = e.clientY;
+  const mv = ev => {
+    const dx = (ev.clientX - sx) / V.s / V.iw, dy = (ev.clientY - sy) / V.s / V.ih, t = CAL.t, cl = v => Math.max(0, Math.min(1, v));
+    if (hnd === 'move') { const w = t0.x1 - t0.x0, hh = t0.y1 - t0.y0; t.x0 = cl(Math.min(1 - w, t0.x0 + dx)); t.y0 = cl(Math.min(1 - hh, t0.y0 + dy)); t.x1 = t.x0 + w; t.y1 = t.y0 + hh; }
+    else {
+      if (hnd.includes('w')) t.x0 = cl(Math.min(t0.x1 - .02, t0.x0 + dx)); if (hnd.includes('e')) t.x1 = cl(Math.max(t0.x0 + .02, t0.x1 + dx));
+      if (hnd.includes('n')) t.y0 = cl(Math.min(t0.y1 - .02, t0.y0 + dy)); if (hnd.includes('s')) t.y1 = cl(Math.max(t0.y0 + .02, t0.y1 + dy));
+    }
+    calDraw();
+  };
+  const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+  addEventListener('mousemove', mv); addEventListener('mouseup', up);
+});
+$('#calRows').oninput = e => { const n = parseInt(e.target.value); if (n >= 1 && n <= 12) { CAL.t.rows = n; calDraw(); } };
+$('#ovCal').onclick = calStart;
+$('#calX').onclick = calEnd;
+document.querySelectorAll('#calp [data-sc]').forEach(b => b.onclick = async () => {
+  const r = S.view[S.cur]; if (!r) return;
+  try {
+    await api('/core/dh/tray', { folder: S.folder, id: r.id, tray: CAL.t, scope: b.dataset.sc });
+    if (b.dataset.sc === 'default') S.dh.tray_default = CAL.t;
+    toast({ photo: 'Area core disimpan untuk foto ini', hole: 'Area core disimpan untuk semua foto ' + (r.hole_id || ''), default: 'Area core bawaan proyek disimpan (foto yang belum diatur sendiri)' }[b.dataset.sc]);
+    calEnd(); loadDetail(r);
+  } catch (e) { say(e.message); }
+});
+
+/* =============================== cari cepat (Ctrl+K) =============================== */
+let qT = 0, qSel = -1, qRes = [];
+$('#qq').addEventListener('input', () => { clearTimeout(qT); qT = setTimeout(runSearch, 220); });
+$('#qq').addEventListener('focus', () => { if (qRes.length || $('#qq').value.trim()) $('#qres').style.display = 'block'; });
+document.addEventListener('mousedown', e => { if (!e.target.closest('#qwrap')) $('#qres').style.display = 'none'; });
+$('#qq').addEventListener('keydown', e => {
+  const items = [...$('#qres').querySelectorAll('a')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(0, Math.min(items.length - 1, qSel + (e.key === 'ArrowDown' ? 1 : -1))); items.forEach((a, i) => a.classList.toggle('on', i === qSel)); if (items[qSel]) items[qSel].scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter') { e.preventDefault(); clearTimeout(qT); if (items.length && qSel >= 0) items[qSel].click(); else runSearch().then(() => { const f = $('#qres a'); if (f) f.click(); }); }
+  else if (e.key === 'Escape') { $('#qres').style.display = 'none'; $('#qq').blur(); }
+});
+async function runSearch() {
+  const q = $('#qq').value.trim(), box = $('#qres');
+  if (!q || !S.folder) { box.style.display = 'none'; qRes = []; return; }
+  try {
+    const j = await api('/core/dh/search', { folder: S.folder, q, limit: 80 });
+    qRes = j.results; qSel = qRes.length ? 0 : -1;
+    const lab = { foto: 'Foto', assay: 'Assay', geologi: 'Geologi' };
+    box.innerHTML = `<div class="qh">${j.total} hasil${j.total > qRes.length ? ' · tampil ' + qRes.length : ''}${j.numeric ? ' · urut nilai tertinggi' : ''}</div>` + (qRes.length ? qRes.map((x, i) =>
+      `<a data-i="${i}" class="${i === 0 ? 'on' : ''}"><i>${lab[x.type]}</i><span><b>${esc(x.hole || '')}</b> ${x.f != null ? fmt(x.f) + '–' + fmt(x.t) + ' m' : ''} · ${esc(x.text)}</span><small>${x.photo_id ? '→ ' + esc(x.photo) : 'tidak ada foto core box untuk interval ini'}</small></a>`).join('')
+      : '<div class="qh" style="border:0">Tidak ditemukan. Coba Hole ID, kata di log (mis. pyrite, QV), nama file, atau Au>=1.</div>');
+    box.style.display = 'block';
+    box.querySelectorAll('a').forEach(a => a.onclick = () => gotoResult(qRes[+a.dataset.i]));
+  } catch (e) { box.innerHTML = '<div class="qh" style="border:0;color:var(--er);text-transform:none;letter-spacing:0">' + esc(e.message) + '</div>'; box.style.display = 'block'; }
+}
+function gotoResult(x) {
+  $('#qres').style.display = 'none';
+  if (!x.photo_id) { toast('Interval ' + (x.hole || '') + ' ' + fmt(x.f) + '–' + fmt(x.t) + ' m belum punya foto core box di folder ini.', 4500); return; }
+  let i = S.view.findIndex(r => r.id === x.photo_id);
+  if (i < 0) { $('#fClr').click(); i = S.view.findIndex(r => r.id === x.photo_id); }
+  if (i >= 0) { select(i); if (x.type === 'assay' && !OV.on) { OV.on = true; LS.set('ov', true); drawOverlay(); } }
+}
+
+/* =============================== dialog Data bor (header dinamis) =============================== */
+const DH = { kind: 'assay', src: null, pv: null };
+const KIND_L = { collar: 'Collar', survey: 'Survey', assay: 'Assay', geology: 'Geologi' };
+async function dhSummary() { const j = await api('/core/dh/summary', { folder: S.folder }); S.dh = j; dhColsChanged(); dhTabs(); return j; }
+function dhTabs() {
+  const n = S.dh || {};
+  $('#dhTabs').innerHTML = Object.keys(KIND_L).map(k => `<button data-k="${k}" class="${k === DH.kind ? 'on' : ''}">${KIND_L[k]} <small>${(n[k] || 0).toLocaleString('id')}</small></button>`).join('');
+  $('#dhTabs').querySelectorAll('button').forEach(b => b.onclick = () => { DH.kind = b.dataset.k; DH.src = null; DH.pv = null; dhReset(); dhTabs(); });
+  const cols = (n.columns && n.columns[DH.kind]) || [];
+  $('#dhSum').innerHTML = `<b>${KIND_L[DH.kind]}</b> di proyek: ${(n[DH.kind] || 0).toLocaleString('id')} baris` + (cols.length ? ' · kolom: ' + cols.map(c => esc(c.name) + (c.type === 'n' ? '' : ' (teks)')).join(', ') : '')
+    + `<br><small style="color:var(--mu)">${{ collar: 'Hole ID + X, Y, Z wajib; total depth, dip & azimuth collar opsional.', survey: 'Hole ID, kedalaman, dip, azimuth. Dip negatif = ke bawah (Surpac / Leapfrog) dikenali otomatis.', assay: 'Hole ID, From, To + kolom unsur apa pun (Au, Ag, Cu, …). <0.01 dibaca setengah limit deteksi.', geology: 'Hole ID, From, To + kolom apa pun (Lith, Alteration, Mineralogy, Vein, …).' }[DH.kind]}</small>`;
+}
+function dhReset() { $('#dhBody').style.display = 'none'; $('#dhRep').style.display = 'none'; $('#dhGo').disabled = true; $('#dhFname').textContent = 'belum ada file'; $('#dhSheetW').innerHTML = ''; $('#dhHr').value = ''; }
+async function openDH() { $('#mDH').classList.add('on'); dhReset(); try { await dhSummary(); } catch (e) { say(e.message); } }
+$('#bDH').onclick = openDH;
+$('#dhFile').onclick = async () => {
+  if (D && D.openFile) {
+    const p = await D.openFile({ title: 'Pilih file ' + KIND_L[DH.kind], filters: [{ name: 'CSV / Excel', extensions: ['csv', 'txt', 'tsv', 'xlsx', 'xlsm'] }] });
+    if (p) { DH.src = { path: p, name: p.split(/[\\/]/).pop() }; dhPreview(); }
+  } else $('#dhIn').click();
+};
+$('#dhIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const path = D && D.pathOf ? D.pathOf(f) : '';
+  if (path) DH.src = { path, name: f.name };
+  else { const b = new Uint8Array(await f.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); DH.src = { b64: btoa(s), name: f.name }; }
+  dhPreview();
+};
+$('#dhHr').onchange = () => { if (DH.src) dhPreview(Math.max(0, (parseInt($('#dhHr').value) || 1) - 1)); };
+async function dhPreview(hr, sheet) {
+  try {
+    $('#dhFname').textContent = DH.src.name + ' · membaca…';
+    const j = await api('/core/dh/preview', Object.assign({ folder: S.folder, kind: DH.kind, header_row: hr, sheet: sheet || (DH.pv && DH.pv.sheet) || null }, DH.src));
+    DH.pv = j;
+    $('#dhFname').textContent = DH.src.name + (j.reused ? ' · pemetaan terakhir dipakai lagi' : '');
+    $('#dhHr').value = j.header_row + 1;
+    $('#dhSheetW').innerHTML = j.sheets.length > 1 ? '<span class="lbl" style="min-width:0">sheet</span> <select class="fi" id="dhSheet">' + j.sheets.map(x => `<option ${x === j.sheet ? 'selected' : ''}>${esc(x)}</option>`).join('') + '</select> ' : '';
+    if ($('#dhSheet')) $('#dhSheet').onchange = e => dhPreview(undefined, e.target.value);
+    $('#dhN').textContent = j.nrows.toLocaleString('id') + ' baris data' + (j.sheet ? ' · sheet ' + j.sheet : '');
+    const opts = (sel) => '<option value="">— tidak ada —</option>' + j.headers.map((h, i) => `<option value="${i}" ${sel === i ? 'selected' : ''}>${esc(h || '(kolom ' + (i + 1) + ')')}</option>`).join('');
+    $('#dhRoles').innerHTML = j.roles.map(r => `<label class="${r.req ? 'req' : ''}">${esc(r.label)}${r.req ? ' *' : ''}<select class="fi" data-role="${r.key}">${opts(j.guess.roles[r.key])}</select></label>`).join('');
+    $('#dhColsW').style.display = DH.kind === 'survey' ? 'none' : '';
+    $('#dhCols').innerHTML = '<table><tr><th>Pakai</th><th>Kolom di file</th><th>Nama di GC-Ex</th><th>Jenis</th><th>Contoh</th></tr>' + j.guess.cols.map((c, k) =>
+      `<tr><td><input type="checkbox" data-c="${k}" data-f="use" ${c.use ? 'checked' : ''}></td><td>${esc(c.src)}</td><td><input type="text" data-c="${k}" data-f="name" value="${esc(c.name)}"></td><td><select class="fi" data-c="${k}" data-f="type"><option value="n" ${c.type === 'n' ? 'selected' : ''}>angka</option><option value="s" ${c.type === 's' ? 'selected' : ''}>teks</option></select></td><td style="color:var(--mu)">${esc(j.sample.slice(0, 3).map(r => r[c.i]).filter(v => v !== '' && v != null).join(' · ')).slice(0, 40)}</td></tr>`).join('') + '</table>';
+    $('#dhRoles').onchange = dhPvTable; $('#dhCols').onchange = dhPvTable;
+    dhPvTable();
+    $('#dhBody').style.display = 'flex'; $('#dhGo').disabled = false; $('#dhRep').style.display = 'none';
+  } catch (e) { $('#dhFname').textContent = DH.src.name; say('Gagal membaca file:\n' + e.message); }
+}
+function dhMapping() {
+  const roles = {}; document.querySelectorAll('#dhRoles select').forEach(s => roles[s.dataset.role] = s.value === '' ? null : +s.value);
+  const cols = DH.pv.guess.cols.map(c => Object.assign({}, c));
+  document.querySelectorAll('#dhCols [data-c]').forEach(el => { const c = cols[+el.dataset.c]; c[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value; });
+  // kolom yang dipakai sebagai peran utama tidak ikut sebagai atribut
+  const used = new Set(Object.values(roles).filter(v => v != null));
+  cols.forEach(c => { if (used.has(c.i)) c.use = false; });
+  return { roles, cols };
+}
+function dhPvTable() {
+  const j = DH.pv, m = dhMapping(), roleOf = {};
+  Object.entries(m.roles).forEach(([k, v]) => { if (v != null) roleOf[v] = (j.roles.find(r => r.key === k) || {}).label; });
+  const colOf = {}; m.cols.forEach(c => colOf[c.i] = c);
+  $('#dhPv').innerHTML = '<table><tr>' + j.headers.map((h, i) => {
+    const r = roleOf[i], c = colOf[i];
+    return `<th class="${r ? 'role' : (c && c.use ? '' : 'off')}" title="${r ? 'dipakai sebagai ' + esc(r) : c && c.use ? 'ikut sebagai ' + esc(c.name) : 'tidak dipakai'}">${esc(h || '(kosong)')}${r ? '<br><small>→ ' + esc(r) + '</small>' : c && c.use && c.name !== h ? '<br><small>→ ' + esc(c.name) + '</small>' : ''}</th>`;
+  }).join('') + '</tr>' + j.sample.map(r => '<tr>' + j.headers.map((_, i) => `<td>${esc(r[i] == null ? '' : r[i])}</td>`).join('') + '</tr>').join('') + '</table>';
+}
+$('#dhGo').onclick = async () => {
+  if (!DH.pv) return;
+  const m = dhMapping(), miss = DH.pv.roles.filter(r => r.req && m.roles[r.key] == null);
+  if (miss.length) { say('Pilih kolom untuk: ' + miss.map(r => r.label).join(', ')); return; }
+  const mode = $('#dhMode').value;
+  if (mode === 'replace' && S.dh && S.dh[DH.kind] && !ask('Ganti SEMUA ' + S.dh[DH.kind] + ' baris ' + KIND_L[DH.kind] + ' di proyek dengan isi file ini?')) return;
+  $('#dhGo').disabled = true;
+  try {
+    const j = await api('/core/dh/import', Object.assign({ folder: S.folder, kind: DH.kind, header_row: DH.pv.header_row, sheet: DH.pv.sheet || null, roles: m.roles, cols: m.cols, mode }, DH.src));
+    const r = j.report;
+    $('#dhRep').className = 'box ok'; $('#dhRep').style.display = 'block';
+    $('#dhRep').innerHTML = `<b>${KIND_L[DH.kind]}: ${r.rows.toLocaleString('id')} baris diimport</b> · ${r.holes} hole` + (r.matched_photo_holes != null && DH.kind !== 'collar' ? ` · ${r.matched_photo_holes} hole cocok dengan foto` : '')
+      + (r.skipped ? `<br>Dilewati ${r.skipped}: ` + Object.entries(r.reasons).map(([k, v]) => esc(k) + ' (' + v + ')').join(', ') : '')
+      + (r.bdl ? `<br>${r.bdl} nilai di bawah limit deteksi (&lt;) dibaca setengah nilainya.` : '') + (r.warnings || []).map(w => '<br>⚠ ' + esc(w)).join('');
+    S.dh = j.summary; dhTabs(); await loadRows(true);
+    if (S.view[S.cur]) { showCard(S.view[S.cur]); loadDetail(S.view[S.cur]); }
+  } catch (e) { say('Import gagal:\n' + e.message); }
+  $('#dhGo').disabled = false;
+};
+$('#dhClear').onclick = async () => {
+  if (!S.dh || !S.dh[DH.kind]) { toast('Tabel ' + KIND_L[DH.kind] + ' sudah kosong'); return; }
+  if (!ask('Hapus semua data ' + KIND_L[DH.kind] + ' (' + S.dh[DH.kind] + ' baris) dari proyek ini? File sumber tidak terpengaruh.')) return;
+  try { const j = await api('/core/dh/clear', { folder: S.folder, kind: DH.kind }); S.dh = j.summary; dhTabs(); await loadRows(true); if (S.view[S.cur]) loadDetail(S.view[S.cur]); } catch (e) { say(e.message); }
+};
 
 /* =============================== daftar pilihan & mulai =============================== */
 document.body.insertAdjacentHTML('beforeend', '<datalist id="dlW"></datalist><datalist id="dlO"></datalist><datalist id="dlC"><option>WET</option><option>DRY</option></datalist>');

@@ -220,3 +220,11 @@ def test_readonly_folder_uses_local_db(folder, monkeypatch):
 def test_missing_folder_is_readable_error():
     r = c.post("/core/open", json={"folder": "C:/tidak/ada/folder"})
     assert r.status_code == 500 and "tidak ditemukan" in r.json()["error"]
+
+
+def test_project_folder_deleted_while_open_is_recreated(folder):
+    import shutil
+    c.post("/core/open", json={"folder": str(folder)})
+    shutil.rmtree(folder / "_GCEx_Core")
+    j = c.post("/core/open", json={"folder": str(folder)}).json()
+    assert j["ok"] and j["scan"]["total"] == 4 and (folder / "_GCEx_Core" / "gcex_core.db").exists()

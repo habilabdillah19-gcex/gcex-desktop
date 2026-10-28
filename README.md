@@ -13,6 +13,7 @@ Ketiga aplikasi bisa dipasang berdampingan; masing-masing punya penyimpanan send
 
 **GC-Ex Core Interpretation** — interpretasi foto core box 100% offline: folder foto (ribuan foto, bersubfolder)
 dibaca backend, Hole / Box / kedalaman dari nama file, deskripsi oleh model vision lokal di **Ollama**
+(`core_dh.py`: import Collar/Survey/Assay/Geologi CSV/Excel dengan header dinamis, cari cepat, overlay assay di foto)
 (`127.0.0.1:11434`, mis. `qwen3-vl:8b`), verifikasi geologist, export Excel. Hasil disimpan di
 `<folder foto>/_GCEx_Core/gcex_core.db` (SQLite) supaya rekan bisa melanjutkan. Panduan: `docs/PANDUAN_CORE.md`.
 Pengembangan: `npm run start:core` (Windows) atau `GCEX_APP=core npx electron .`.
@@ -69,6 +70,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3c | Project Tree (pohon proyek urut alur kerja + Properti) di kedua aplikasi; bilah Sayatan mengambang di Drillhole | selesai (0.5.0) |
 | 3d | Orthofoto latar lepas elevasi; UI Block Model 10 langkah dengan status; as-mined lantai pick-up tidak rata | selesai (0.6.0) |
 | 3e | GC-Ex Core Interpretation: foto core box + AI vision lokal (Ollama), verifikasi, Excel | selesai (0.15.0) |
+| 3f | Core Interpretation: data bor header dinamis, cari cepat, filter kadar, overlay assay di foto | selesai (0.16.0) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna

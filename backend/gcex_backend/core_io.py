@@ -175,8 +175,9 @@ def get_project(folder: str) -> Project:
     key = str(f).lower()
     with _PLOCK:
         p = _PROJECTS.get(key)
-        if p:
+        if p and p.db.exists():
             return p
+        _PROJECTS.pop(key, None)  # folder _GCEx_Core dihapus / dipindah saat aplikasi terbuka: buat ulang
         d = f / PRJ_DIR
         local = not _writable(d)
         if local:
@@ -572,14 +573,17 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
+    from . import core_dh
     data = rows(p)
+    core_dh.photo_grades(p, data)
+    els = [c["name"] for c in core_dh.columns(p)["assay"] if c["type"] == "n"]
     if ids:
         s = set(ids)
         data = [r for r in data if r["id"] in s]
     wb = Workbook()
     ws = wb.active
     ws.title = "Core Log"
-    head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + ["Interval (m)", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
+    head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + [f"{e} rata-rata" for e in els] + [f"{e} maks" for e in els] + ["Interval (m)", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
     ws.append(head)
     hf = PatternFill("solid", fgColor="141A26")
     for i, _ in enumerate(head, 1):
@@ -591,7 +595,8 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     for n, r in enumerate(data, 1):
         iv = round(r["to_m"] - r["from_m"], 2) if r["from_m"] is not None and r["to_m"] is not None else None
         sub = str(Path(r["rel"]).parent).replace("\\", "/")
-        line = [n, r["name"], "" if sub == "." else sub] + [r[k] for k, _t, _l in FIELDS] + [
+        g, gm = r.get("g") or {}, r.get("gmax") or {}
+        line = [n, r["name"], "" if sub == "." else sub] + [r[k] for k, _t, _l in FIELDS] + [g.get(e) for e in els] + [gm.get(e) for e in els] + [
             iv, {"done": "Selesai", "error": "Gagal", "pending": "Belum"}.get(r["status"], r["status"]), r["ai_model"], r["ai_conf"],
             "Ya" if r["verified"] else "Belum", r["verified_by"], r["verified_at"], r["edited_by"]]
         ws.append(line)
@@ -605,6 +610,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     # No, File, Subfolder, Hole, Box, From, To, Start Drill, Tgl Foto, Litologi, Warna, Pelapukan, Oksidasi, Alterasi, Kondisi,
     # Recovery, RQD, GSI, RMR, Catatan, Interval, Status, Model, Keyakinan, Diverifikasi, oleh, tanggal, Diedit oleh
     widths = [5, 30, 14, 12, 7, 9, 9, 12, 12, 18, 26, 24, 20, 22, 9, 10, 9, 9, 8, 50, 10, 10, 16, 10, 11, 14, 18, 14]
+    widths = widths[:3 + len(FIELDS)] + [11] * (2 * len(els)) + widths[3 + len(FIELDS):]
     for i, w in enumerate(widths[:len(head)], 1):
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "D2"
@@ -612,7 +618,8 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     info = wb.create_sheet("Keterangan")
     for line in [["GC-Ex Core Interpretation — log foto core box"], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
                  [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
-                 ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."]]:
+                 ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."],
+                 ["Kolom '<unsur> rata-rata' = rata-rata tertimbang panjang assay lab di rentang From-To foto; 'maks' = nilai interval tertinggi."]]:
         info.append(line)
     info.column_dimensions["A"].width = 24
     info.column_dimensions["B"].width = 80
@@ -717,8 +724,11 @@ def api_rescan(b: FolderBody) -> dict:
 
 @router.post("/rows")
 def api_rows(b: FolderBody) -> dict:
+    from . import core_dh  # data bor: rata-rata & maksimum kadar per foto
     p = get_project(b.folder)
-    return {"ok": True, "rows": rows(p), "summary": summary(p)}
+    rs = rows(p)
+    core_dh.photo_grades(p, rs)
+    return {"ok": True, "rows": rs, "summary": summary(p), "dh": core_dh.summary(p)}
 
 
 @router.post("/update")
