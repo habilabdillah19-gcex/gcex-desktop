@@ -334,6 +334,8 @@ def summary(p: core_io.Project) -> dict:
     m = core_io.get_meta(p)
     out["maps"] = {k: json.loads(m["dh_map_" + k]) for k in KINDS if m.get("dh_map_" + k)}
     out["tray_default"] = json.loads(m.get("tray_default") or "null") or TRAY_DEFAULT
+    out["geo_link"] = geo_link(p)
+    out["geo_link_auto"] = not m.get("geo_link")
     return out
 
 
@@ -378,6 +380,91 @@ def photo_grades(p: core_io.Project, rows: list[dict]) -> None:
         if g:
             r["g"] = g
             r["gmax"] = mx
+
+
+# ---------------------------------------------------------------- logging geologist > AI visual
+# AI visual ditujukan untuk parameter GEOTEKNIK. Isian geologi di kartu foto diambil dari logging geologist (tabel Geologi)
+# bila ada di rentang foto; AI hanya mengisi bila logging tidak ada.
+GEO_FIELDS: dict[str, list[str]] = {
+    "lithology": ["lith", "lithology", "litologi", "lito", "rock", "rocktype", "lithcode", "lith1"],
+    "alteration": ["alteration", "alterasi", "alt", "altint", "alterationint", "interpretasialterasi", "alterationtype", "alt1"],
+    "oxidation": ["oxidation", "oksidasi", "ox", "oxint", "oxide", "oxidationint", "redox"],
+    "color": ["colour", "color", "warna", "col"],
+    "weathering": ["weathering", "pelapukan", "weath", "wth", "weatheringgrade"],
+}
+
+
+def geo_link(p: core_io.Project) -> dict:
+    """Kolom tabel Geologi yang dipakai untuk tiap isian geologi kartu foto (pengaturan pengguna, atau tebakan dari nama kolom)."""
+    m = core_io.get_meta(p)
+    names = [c["name"] for c in columns(p)["geology"]]
+    if m.get("geo_link"):
+        saved = json.loads(m["geo_link"])
+        return {k: (v if v in names else None) for k, v in saved.items() if k in GEO_FIELDS}
+    out: dict[str, Optional[str]] = {}
+    used: set[str] = set()
+    for f, al in GEO_FIELDS.items():
+        out[f] = None
+        nn = {norm_h(n): n for n in names if n not in used}
+        hit = next((nn[a] for a in al if a in nn), None) or next((n for k, n in nn.items() for a in al if len(a) >= 4 and k.startswith(a)), None)
+        if hit:
+            out[f] = hit
+            used.add(hit)
+    return out
+
+
+def _logged(ivs: list, a: float, b: float, link: dict) -> dict:
+    """Ringkas interval logging di rentang foto: kode dominan; bila campuran 'QV (60%) / DAC (40%)'."""
+    out = {}
+    for f, col in link.items():
+        if not col:
+            continue
+        share: dict[str, float] = {}
+        for fi, ti, at in ivs:
+            if ti <= a or fi >= b:
+                continue
+            v = at.get(col)
+            if v is None or str(v).strip() in ("", "-"):
+                continue
+            v = str(v).strip() if not isinstance(v, float) else f"{v:g}"
+            share[v] = share.get(v, 0) + min(ti, b) - max(fi, a)
+        tot = sum(share.values())
+        if not tot:
+            continue
+        top = sorted(share.items(), key=lambda x: -x[1])
+        out[f] = top[0][0] if top[0][1] / tot >= 0.8 else " / ".join(f"{k} ({v / tot * 100:.0f}%)" for k, v in top[:3])
+    return out
+
+
+def photo_logging(p: core_io.Project, rows: list[dict]) -> None:
+    link = geo_link(p)
+    if not any(link.values()):
+        return
+    keys = {hole_key(r["hole_id"]) for r in rows if r.get("hole_id")}
+    by = intervals_by_hole(p, "geology", keys)
+    for r in rows:
+        ivs = by.get(hole_key(r.get("hole_id")))
+        if ivs and r.get("from_m") is not None and r.get("to_m") is not None:
+            lg = _logged(ivs, r["from_m"], r["to_m"], link)
+            if lg:
+                r["log"] = lg
+
+
+def enrich(p: core_io.Project, rows: list[dict]) -> None:
+    """Tambahkan kadar per foto dan isian geologi dari logging geologist."""
+    photo_grades(p, rows)
+    photo_logging(p, rows)
+
+
+def logged_for_photo(p: core_io.Project, pid: int) -> dict:
+    ensure(p)
+    with p.conn() as c:
+        r = c.execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone()
+    if not r:
+        return {}
+    rr = [dict(r)]
+    photo_logging(p, rr)
+    return rr[0].get("log", {})
 
 
 def _dirvec(dip: float, azi: float, down_negative: bool) -> tuple[float, float, float]:
@@ -556,6 +643,11 @@ class TrayBody(BaseModel):
     scope: str = "photo"  # photo | hole | default
 
 
+class GeoLinkBody(BaseModel):
+    folder: str
+    link: Optional[dict] = None  # None = kembali ke tebakan otomatis
+
+
 class SearchBody(BaseModel):
     folder: str
     q: str
@@ -635,6 +727,18 @@ def api_tray(b: TrayBody) -> dict:
     p = core_io.get_project(b.folder)
     set_tray(p, b.id, b.tray, b.scope)
     return {"ok": True}
+
+
+@router.post("/geolink")
+def api_geolink(b: GeoLinkBody) -> dict:
+    p = core_io.get_project(b.folder)
+    ensure(p)
+    if b.link is None:
+        with p.lock, p.conn() as c:
+            c.execute("DELETE FROM meta WHERE key='geo_link'")
+    else:
+        core_io.set_meta(p, {"geo_link": json.dumps({k: (v or None) for k, v in b.link.items() if k in GEO_FIELDS})})
+    return {"ok": True, "summary": summary(p)}
 
 
 @router.post("/search")

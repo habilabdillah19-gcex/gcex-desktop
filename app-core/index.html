@@ -106,6 +106,12 @@ body.dark .fld.ai{border-color:#2d4166}
 .tag.ai{background:var(--ac);color:#fff}
 .tag.ed{border:1px solid var(--ink);color:var(--ink)}
 .tag.fn{background:var(--hatch),var(--pn2);color:var(--ink)}
+.tag.lgt{background:var(--ink);color:var(--pn)}
+.fld.lg{border-color:var(--ink);background:var(--card)}
+.fld.lg input{cursor:default}
+.sect{grid-column:span 2;font-family:var(--serif);font-weight:800;font-size:15px;margin-top:6px;padding-bottom:2px;border-bottom:1px solid var(--ink)}
+.sect em{font-family:var(--mono);font-style:normal;font-weight:400;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.rw .logv{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--ink);padding-left:5px}
 .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;white-space:nowrap}
 .badge::before{content:"";width:9px;height:9px;border-radius:50%;flex:none}
 .b-pending::before{border:2px solid var(--ink)}
@@ -351,7 +357,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
     <p>Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). GC-Ex membaca Hole ID, nomor box dan kedalaman dari nama file bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.</p>
     <div class="steps">
       <div><b>1 · Buka folder</b>Hasil kerja disimpan di subfolder <code>_GCEx_Core</code> di folder itu, jadi rekan yang membuka folder yang sama bisa melanjutkan.</div>
-      <div><b>2 · AI lokal</b>Model vision di Ollama, tanpa internet. Isian yang sudah Anda edit tidak pernah ditimpa.</div>
+      <div><b>2 · AI geoteknik</b>Model vision di Ollama, tanpa internet, menilai recovery, RQD, GSI, RMR. Logging geologist & editan Anda tidak pernah ditimpa.</div>
       <div><b>3 · Verifikasi</b>Periksa tiap foto, Ctrl+Enter untuk verifikasi &amp; lanjut, lalu Export Excel.</div>
     </div>
     <button class="btn pri" id="sOpen" style="font-size:13.5px;padding:9px 16px"><svg class="i"><use href="#i-folder"/></svg>Buka folder foto core box</button>
@@ -374,7 +380,8 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
       <small style="color:var(--mu)">foto asli tidak diubah</small></div>
     <div><span class="lbl">Instruksi tambahan</span> <small style="color:var(--mu)">(opsional, mis. kode litologi proyek)</small>
       <textarea class="fi" id="aiExtra" rows="3" style="width:100%;margin-top:4px" placeholder="Contoh: Pakai kode litologi AND (andesit), DAC (dasit), QV (quartz vein), BX (breksi)."></textarea></div>
-    <div class="box wn">RQD, GSI, RMR dan recovery dari foto hanyalah <b>perkiraan visual AI</b>, bukan pengukuran di core shed. Hasil wajib diperiksa dan diverifikasi geologist sebelum dipakai.</div>
+    <div class="box ok"><b>AI visual untuk parameter geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, struktur). Litologi, alterasi, oksidasi dan warna diambil dari <b>logging geologist</b> (Data bor › Geologi) bila ada; AI hanya mengisi bila logging tidak ada dan tidak pernah menimpa logging.</div>
+    <div class="box wn">Nilai geoteknik dari foto hanyalah <b>perkiraan visual AI</b>, bukan pengukuran di core shed. Hasil wajib diperiksa dan diverifikasi geologist sebelum dipakai.</div>
   </div>
   <div class="ft">
     <button class="btn" data-close>Tutup</button>
@@ -509,13 +516,14 @@ function applyFilter(keepScroll) {
     if (st === 'error' && r.status !== 'error') return false;
     if (st === 'unver' && r.verified) return false;
     if (st === 'ver' && !r.verified) return false;
-    if (q && !((r.rel + ' ' + (r.notes || '') + ' ' + (r.lithology || '') + ' ' + (r.alteration || '')).toLowerCase().includes(q))) return false;
+    if (q && !((r.rel + ' ' + (r.notes || '') + ' ' + (r.lithology || '') + ' ' + (r.alteration || '') + ' ' + Object.values(r.log || {}).join(' ')).toLowerCase().includes(q))) return false;
     if (gEl && !isNaN(gMin)) { const v = r[gAgg] && r[gAgg][gEl]; if (v == null || v < gMin) return false; }
     return true;
   });
   if (S.sort) {
     const { k, d } = S.sort;
-    v.sort((a, b) => { const x = k === '_g' ? (a.g && a.g[gEl]) : a[k], y = k === '_g' ? (b.g && b.g[gEl]) : b[k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : natural(x, y)) * d; });
+    const val = (o) => k === '_g' ? (o.g && o.g[gEl]) : (o.log && o.log[k] != null ? o.log[k] : o[k]);
+    v.sort((a, b) => { const x = val(a), y = val(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : natural(x, y)) * d; });
   } else if (h) v.sort((a, b) => (a.from_m == null) - (b.from_m == null) || (a.from_m - b.from_m) || natural(a.rel, b.rel));
   S.view = v;
   S.cur = curId != null ? v.findIndex(r => r.id === curId) : -1;
@@ -577,6 +585,7 @@ function cellHtml(c, r, i) {
     case 'ai_conf': return esc(r.ai_conf || '');
     case '_g': { const el = $('#fEl').value, v = r.g && r.g[el], m = r.gmax && r.gmax[el]; return v == null ? '' : `<span title="maks ${fmt(m)}" style="${gradeStyle(el, v)}">${fmt(v)}</span>`; }
   }
+  if (r.log && r.log[c.k] != null) return `<span class="logv" title="Logging geologist: ${esc(r.log[c.k])}">${esc(r.log[c.k])}</span>`;
   const isAi = r.status === 'done' && !r.verified && !r.edited.includes(c.k) && !r.from_name.includes(c.k) && r[c.k] != null;
   return `<input class="ce${isAi ? ' ai' : ''}${c.n ? ' num' : ''}" data-f="${c.k}" data-id="${r.id}" ${c.n ? 'type="number" step="0.01"' : ''} ${c.dl ? 'list="' + c.dl + '"' : ''} value="${esc(fmt(r[c.k]))}" ${r.verified ? 'title="Sudah diverifikasi"' : ''}>`;
 }
@@ -613,11 +622,15 @@ function selChanged() {
 /* =============================== kartu interpretasi =============================== */
 function showCard(r) {
   const fld = (k, cls, input) => {
-    const ed = r.edited.includes(k), fn = !ed && r.from_name.includes(k), ai = r.status === 'done' && !r.verified && !ed && !fn && r[k] != null;
-    const tag = ed ? '<span class="tag ed">diedit</span>' : fn ? '<span class="tag fn" title="Dibaca dari nama file; tidak ditimpa AI">nama file</span>' : ai ? '<span class="tag ai">AI</span>' : '';
-    return `<div class="fld ${cls || ''}${ai ? ' ai' : ''}"><label>${esc(FIELD_LABEL[k] || k)}${tag}</label>${input}</div>`;
+    const lg = r.log && r.log[k] != null;
+    const ed = !lg && r.edited.includes(k), fn = !lg && !ed && r.from_name.includes(k), ai = !lg && r.status === 'done' && !r.verified && !ed && !fn && r[k] != null;
+    const tag = lg ? '<span class="tag lgt" title="Dari logging geologist (tabel Geologi). Diutamakan di atas AI. Ubah di data Geologi.">logging</span>' : ed ? '<span class="tag ed">diedit</span>' : fn ? '<span class="tag fn" title="Dibaca dari nama file; tidak ditimpa AI">nama file</span>' : ai ? '<span class="tag ai">AI</span>' : '';
+    return `<div class="fld ${cls || ''}${ai ? ' ai' : ''}${lg ? ' lg' : ''}"><label>${esc(FIELD_LABEL[k] || k)}${tag}</label>${input}</div>`;
   };
-  const inp = (k, ty, list) => `<input data-cf="${k}" ${ty === 'n' ? 'type="number" step="0.01"' : ''} ${list ? 'list="' + list + '"' : ''} value="${esc(fmt(r[k]))}">`;
+  const inp = (k, ty, list) => r.log && r.log[k] != null
+    ? `<input readonly value="${esc(r.log[k])}" title="${esc(r[k] != null ? 'Isian AI / manual (tidak dipakai): ' + r[k] : 'Dari logging geologist')}">`
+    : `<input data-cf="${k}" ${ty === 'n' ? 'type="number" step="0.01"' : ''} ${list ? 'list="' + list + '"' : ''} value="${esc(fmt(r[k]))}">`;
+  const hasLog = r.log && Object.keys(r.log).length;
   const iv = r.from_m != null && r.to_m != null ? (r.to_m - r.from_m).toFixed(2) + ' m' : '–';
   $('#card').innerHTML = `
     <div class="chd"><h3 title="${esc(r.rel)}">${esc(r.name)}</h3>${statusBadge(r)}
@@ -627,14 +640,16 @@ function showCard(r) {
       ${fld('from_m', '', inp('from_m', 'n'))}${fld('to_m', '', inp('to_m', 'n'))}
       ${fld('drill_start', '', inp('drill_start'))}${fld('photo_date', '', inp('photo_date'))}
       <div class="fld full" style="background:transparent;border-style:dashed"><label>Interval</label><b>${iv}</b> <small style="color:var(--mu)">${esc(r.rel)}</small></div>
-      ${fld('lithology', 'full', inp('lithology'))}
-      ${fld('color', 'full', inp('color'))}
-      ${fld('weathering', '', inp('weathering', 's', 'dlW'))}${fld('oxidation', '', inp('oxidation', 's', 'dlO'))}
-      ${fld('alteration', 'full', inp('alteration'))}
+      <div class="sect full">Geoteknik <em>· AI visual</em></div>
       ${fld('recovery_pct', '', inp('recovery_pct', 'n'))}${fld('rqd_pct', '', inp('rqd_pct', 'n'))}
       ${fld('gsi', '', inp('gsi'))}${fld('rmr', '', inp('rmr', 'n'))}
-      ${fld('condition', '', inp('condition', 's', 'dlC'))}<div class="fld"><label>Keyakinan AI</label><b>${esc(r.ai_conf || '–')}</b>${r.ai_model ? ' <small style="color:var(--mu)">' + esc(r.ai_model) + (r.ai_secs ? ' · ' + r.ai_secs + ' dtk' : '') + '</small>' : ''}</div>
+      ${fld('weathering', '', inp('weathering', 's', 'dlW'))}${fld('condition', '', inp('condition', 's', 'dlC'))}
       ${fld('notes', 'full', `<textarea data-cf="notes" rows="3">${esc(r.notes || '')}</textarea>`)}
+      <div class="fld full" style="background:transparent;border-style:dashed"><label>Keyakinan AI</label><b>${esc(r.ai_conf || '–')}</b>${r.ai_model ? ' <small style="color:var(--mu)">' + esc(r.ai_model) + (r.ai_secs ? ' · ' + r.ai_secs + ' dtk' : '') + '</small>' : ''}</div>
+      <div class="sect full">Geologi <em>· ${hasLog ? 'logging geologist' : 'belum ada logging, isian AI / manual'}</em></div>
+      ${fld('lithology', 'full', inp('lithology'))}
+      ${fld('alteration', 'full', inp('alteration'))}
+      ${fld('oxidation', '', inp('oxidation', 's', 'dlO'))}${fld('color', '', inp('color'))}
     </div>
     ${r.error && r.status === 'error' ? '<div class="err">AI gagal: ' + esc(r.error) + '</div>' : ''}
     <div class="cact">
@@ -642,7 +657,7 @@ function showCard(r) {
       <button class="btn" id="cAI" ${r.missing || r.verified ? 'disabled' : ''}><svg class="i"><use href="#i-chip"/></svg>${r.status === 'done' ? 'Analisis ulang' : 'Analisis foto ini'}</button>
       <button class="btn" id="cShow" ${D && D.showFile ? '' : 'style="display:none"'}><svg class="i"><use href="#i-folder"/></svg>Tampilkan file</button>
     </div>
-    <div class="note">${r.verified ? 'Diverifikasi oleh <b>' + esc(r.verified_by || '-') + '</b> · ' + esc(r.verified_at || '') : 'Sel biru muda = isian AI yang belum dicek. Isian yang Anda edit tidak akan ditimpa AI.'}${r.edited_by ? '<br>Terakhir diedit: ' + esc(r.edited_by) + ' · ' + esc(r.edited_at || '') : ''}</div>
+    <div class="note">${hasLog ? 'Isian bertanda <b>logging</b> berasal dari logging geologist dan diutamakan; AI tidak menimpanya. ' : ''}${r.verified ? 'Diverifikasi oleh <b>' + esc(r.verified_by || '-') + '</b> · ' + esc(r.verified_at || '') : 'Sel biru muda = isian AI yang belum dicek. Isian yang Anda edit tidak akan ditimpa AI.'}${r.edited_by ? '<br>Terakhir diedit: ' + esc(r.edited_by) + ' · ' + esc(r.edited_at || '') : ''}</div>
     <div class="lab" id="cLab"></div>
     <details class="hist" id="cHist"><summary>Riwayat perubahan &amp; jawaban asli AI</summary><div class="hlist" id="cHL">Memuat…</div></details>`;
   $('#cPrev').onclick = () => select(S.cur - 1);
@@ -1131,8 +1146,25 @@ function dhTabs() {
   $('#dhTabs').querySelectorAll('button').forEach(b => b.onclick = () => { DH.kind = b.dataset.k; DH.src = null; DH.pv = null; dhReset(); dhTabs(); });
   const cols = (n.columns && n.columns[DH.kind]) || [];
   $('#dhSum').innerHTML = `<b>${KIND_L[DH.kind]}</b> di proyek: ${(n[DH.kind] || 0).toLocaleString('id')} baris` + (cols.length ? ' · kolom: ' + cols.map(c => esc(c.name) + (c.type === 'n' ? '' : ' (teks)')).join(', ') : '')
+    + (DH.kind === 'geology' && cols.length ? geoLinkHtml() : '')
     + `<br><small style="color:var(--mu)">${{ collar: 'Hole ID + X, Y, Z wajib; total depth, dip & azimuth collar opsional.', survey: 'Hole ID, kedalaman, dip, azimuth. Dip negatif = ke bawah (Surpac / Leapfrog) dikenali otomatis.', assay: 'Hole ID, From, To + kolom unsur apa pun (Au, Ag, Cu, …). <0.01 dibaca setengah limit deteksi.', geology: 'Hole ID, From, To + kolom apa pun (Lith, Alteration, Mineralogy, Vein, …).' }[DH.kind]}</small>`;
 }
+const GEO_F = { lithology: 'Litologi', alteration: 'Alterasi', oxidation: 'Oksidasi', color: 'Warna', weathering: 'Pelapukan' };
+function geoLinkHtml() {
+  const gl = (S.dh && S.dh.geo_link) || {}, cols = S.dh.columns.geology.map(c => c.name);
+  return `<div style="margin-top:8px"><span class="lbl">Logging → isian kartu foto</span> <small style="color:var(--mu)">(diutamakan di atas AI${S.dh.geo_link_auto ? '; tebakan otomatis dari nama kolom' : ''})</small><div class="rolegrid" id="glk" style="margin-top:4px">`
+    + Object.entries(GEO_F).map(([k, l]) => `<label>${l}<select class="fi" data-gl="${k}"><option value="">— tidak dari logging —</option>${cols.map(c => `<option ${gl[k] === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>`).join('')
+    + `</div>${S.dh.geo_link_auto ? '' : '<button class="btn sm" id="glAuto" style="margin-top:5px">Kembali ke tebakan otomatis</button>'}</div>`;
+}
+document.addEventListener('change', async e => {
+  if (!e.target.dataset || !e.target.dataset.gl) return;
+  const link = {}; document.querySelectorAll('#glk [data-gl]').forEach(x => link[x.dataset.gl] = x.value || null);
+  try { const j = await api('/core/dh/geolink', { folder: S.folder, link }); S.dh = j.summary; dhTabs(); await loadRows(true); if (S.view[S.cur]) showCard(S.view[S.cur]); toast('Kolom logging disimpan'); } catch (err) { say(err.message); }
+});
+document.addEventListener('click', async e => {
+  if (e.target.id !== 'glAuto') return;
+  try { const j = await api('/core/dh/geolink', { folder: S.folder, link: null }); S.dh = j.summary; dhTabs(); await loadRows(true); if (S.view[S.cur]) showCard(S.view[S.cur]); } catch (err) { say(err.message); }
+});
 function dhReset() { $('#dhBody').style.display = 'none'; $('#dhRep').style.display = 'none'; $('#dhGo').disabled = true; $('#dhFname').textContent = 'belum ada file'; $('#dhSheetW').innerHTML = ''; $('#dhHr').value = ''; }
 async function openDH() { $('#mDH').classList.add('on'); dhReset(); try { await dhSummary(); } catch (e) { say(e.message); } }
 $('#bDH').onclick = openDH;

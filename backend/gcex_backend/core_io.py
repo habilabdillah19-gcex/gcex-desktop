@@ -423,12 +423,17 @@ def ai_schema() -> dict:
     }
 
 
-def ai_prompt(extra: str = "") -> str:
+GEO_LABEL = {"lithology": "Litologi", "alteration": "Alterasi", "oxidation": "Oksidasi", "color": "Warna", "weathering": "Pelapukan"}
+
+
+def ai_prompt(extra: str = "", logged: Optional[dict] = None) -> str:
     # Disusun dari foto core box asli proyek (PT. Contoh Tambang, LTH-101 box 11): papan label putih di atas kotak,
     # 4 baris core di kotak besi/kayu, blok penanda run, papan skala catur hitam-putih di bawah.
     p = (
-        "Anda geologist / geoteknik senior yang mendeskripsi foto core box hasil pemboran inti (diamond drilling) di tambang emas "
-        "epitermal (PT. Contoh Tambang).\n\n"
+        "Anda ahli geoteknik senior yang menilai foto core box hasil pemboran inti (diamond drilling) di tambang emas "
+        "epitermal (PT. Contoh Tambang). TUJUAN UTAMA: parameter GEOTEKNIK dari foto "
+        "(core recovery, RQD, GSI, RMR, pelapukan, kondisi, struktur). Deskripsi geologi hanya pelengkap bila "
+        "logging geologist belum ada.\n\n"
         "TATA LETAK FOTO (standar proyek):\n"
         "- Papan label putih di BAGIAN ATAS, tulisan tangan / spidol hitam, berisi:\n"
         "  baris 1: nama perusahaan 'PT. CONTOH TAMBANG' (abaikan);\n"
@@ -443,19 +448,24 @@ def ai_prompt(extra: str = "") -> str:
         "TUGAS:\n"
         "1. Baca papan label. Jangan menebak angka / huruf yang tidak terbaca: isi null. "
         "to_m harus lebih besar dari from_m; satu box umumnya berisi 3-5 m core.\n"
-        "2. Deskripsikan core secara visual: litologi dominan, warna dominan (bahasa Indonesia + istilah Inggris dalam kurung, "
-        "mis. 'Abu-abu gelap kehitaman (Dark Grey)'), tingkat pelapukan skala ISRM W1-W6, tingkat oksidasi "
-        "(oksida besi coklat / merah / kuning = teroksidasi), alterasi yang terlihat (mis. silisifikasi, argilik, propilitik, "
-        "kuarsa vein / stockwork, sulfida).\n"
-        "3. Geoteknik dari foto: core recovery (%) = panjang core yang ada dibanding interval box; "
-        "RQD (%) = jumlah panjang potongan core utuh >= 10 cm dibagi panjang interval; GSI (rentang, mis. '55-65'); "
-        "RMR perkiraan (0-100). Ini PERKIRAAN visual; bila tidak bisa dinilai isi null.\n"
+        "2. GEOTEKNIK (prioritas): core recovery (%) = panjang core yang ada dibanding interval box; "
+        "RQD (%) = jumlah panjang potongan core utuh >= 10 cm dibagi panjang interval (pakai skala catur 20 cm); "
+        "GSI (rentang, mis. '55-65') dari struktur blok & kondisi permukaan rekahan; RMR perkiraan (0-100); "
+        "tingkat pelapukan skala ISRM W1-W6. Ini PERKIRAAN visual; bila tidak bisa dinilai isi null.\n"
+        "3. Geologi pelengkap: litologi dominan, warna dominan (bahasa Indonesia + istilah Inggris dalam kurung, "
+        "mis. 'Abu-abu gelap kehitaman (Dark Grey)'), tingkat oksidasi (oksida besi coklat / merah / kuning = teroksidasi), "
+        "alterasi yang terlihat (mis. silisifikasi, argilik, propilitik, kuarsa vein / stockwork, sulfida).\n"
         "4. condition: dari papan (M:CONDT) bila terbaca; bila tidak, WET bila core basah / mengkilap, DRY bila kering.\n"
         "5. notes: ringkas (maks 2 kalimat) tentang struktur (rekahan, kekar, sesar, zona hancur / rubble), vein dan "
         "mineralisasi yang terlihat, sebut baris core bila perlu (mis. 'baris 3 zona hancur').\n"
         "6. confidence: seberapa yakin Anda atas pembacaan papan label dan deskripsi (rendah / sedang / tinggi).\n"
         "Jawab HANYA dengan JSON sesuai skema."
     )
+    if logged:
+        p += ("\n\nINTERVAL INI SUDAH DILOGGING GEOLOGIST (data resmi, jangan diubah): "
+              + "; ".join(f"{GEO_LABEL.get(k, k)}: {v}" for k, v in logged.items())
+              + ". Isi kolom " + ", ".join(sorted(logged)) + " dengan null. Pakai logging ini hanya sebagai konteks "
+              "(mis. QV / silisifikasi umumnya keras dan RQD tinggi kecuali hancur), lalu fokus pada geoteknik.")
     if extra and extra.strip():
         p += "\n\nInstruksi tambahan dari geologist proyek:\n" + extra.strip()
     return p
@@ -473,10 +483,10 @@ def _parse_json(text: str) -> dict:
         return json.loads(m.group(0))
 
 
-def ollama_analyze(host: str, model: str, img: bytes, extra: str = "", timeout: float = 900) -> dict:
+def ollama_analyze(host: str, model: str, img: bytes, extra: str = "", timeout: float = 900, logged: Optional[dict] = None) -> dict:
     body = {
         "model": model,
-        "messages": [{"role": "user", "content": ai_prompt(extra), "images": [base64.b64encode(img).decode()]}],
+        "messages": [{"role": "user", "content": ai_prompt(extra, logged), "images": [base64.b64encode(img).decode()]}],
         "stream": False,
         "format": ai_schema(),
         "options": {"temperature": 0, "num_ctx": 8192},
@@ -488,14 +498,15 @@ def ollama_analyze(host: str, model: str, img: bytes, extra: str = "", timeout: 
     return _parse_json((j.get("message") or {}).get("content", ""))
 
 
-def apply_ai(p: Project, pid: int, res: dict, model: str, secs: float) -> None:
+def apply_ai(p: Project, pid: int, res: dict, model: str, secs: float, protect: Optional[set] = None) -> None:
     """Isi kolom dari hasil AI, kecuali kolom yang sudah diedit geologist, diambil dari nama file
-    (Hole / Box / kedalaman), atau foto sudah diverifikasi. Bacaan AI tetap tersimpan utuh di ai_json."""
+    (Hole / Box / kedalaman), sudah ada di logging geologist (protect), atau foto sudah diverifikasi.
+    Bacaan AI tetap tersimpan utuh di ai_json."""
     with p.lock, p.conn() as c:
         r = c.execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone()
         if not r:
             return
-        edited = set(json.loads(r["edited"] or "[]")) | set(json.loads(r["from_name"] or "[]"))
+        edited = set(json.loads(r["edited"] or "[]")) | set(json.loads(r["from_name"] or "[]")) | set(protect or ())
         sets, vals = [], []
         if not r["verified"]:
             for k, _t, _l in FIELDS:
@@ -551,8 +562,10 @@ def ai_start(p: Project, ids: list[int], host: str, model: str, extra: str, max_
                     f = photo_path(p, pid)
                     st["current"], st["current_id"] = f.name, pid
                     st["message"] = f"Menganalisis {f.name}"
-                    res = ollama_analyze(host, model, resized_jpeg(f, max_px), extra)
-                    apply_ai(p, pid, res, model, time.time() - t0)
+                    from . import core_dh
+                    logged = core_dh.logged_for_photo(p, pid)  # logging geologist diutamakan; AI fokus geoteknik
+                    res = ollama_analyze(host, model, resized_jpeg(f, max_px), extra, logged=logged)
+                    apply_ai(p, pid, res, model, time.time() - t0, protect=set(logged))
                     st["done"] += 1
                 except Exception as e:  # noqa: BLE001 - satu foto gagal tidak menghentikan antrean
                     log.warning("AI gagal untuk id %s: %s", pid, e)
@@ -583,7 +596,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
 
     from . import core_dh
     data = rows(p)
-    core_dh.photo_grades(p, data)
+    core_dh.enrich(p, data)
     els = [c["name"] for c in core_dh.columns(p)["assay"] if c["type"] == "n"]
     if ids:
         s = set(ids)
@@ -591,7 +604,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "Core Log"
-    head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + [f"{e} rata-rata" for e in els] + [f"{e} maks" for e in els] + ["Interval (m)", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
+    head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + [f"{e} rata-rata" for e in els] + [f"{e} maks" for e in els] + ["Interval (m)", "Sumber isian geologi", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
     ws.append(head)
     hf = PatternFill("solid", fgColor="141A26")
     for i, _ in enumerate(head, 1):
@@ -603,9 +616,14 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     for n, r in enumerate(data, 1):
         iv = round(r["to_m"] - r["from_m"], 2) if r["from_m"] is not None and r["to_m"] is not None else None
         sub = str(Path(r["rel"]).parent).replace("\\", "/")
-        g, gm = r.get("g") or {}, r.get("gmax") or {}
-        line = [n, r["name"], "" if sub == "." else sub] + [r[k] for k, _t, _l in FIELDS] + [g.get(e) for e in els] + [gm.get(e) for e in els] + [
-            iv, {"done": "Selesai", "error": "Gagal", "pending": "Belum"}.get(r["status"], r["status"]), r["ai_model"], r["ai_conf"],
+        g, gm, lg = r.get("g") or {}, r.get("gmax") or {}, r.get("log") or {}
+        src = []
+        for k in ("lithology", "alteration", "oxidation", "color", "weathering"):
+            s_ = "logging" if k in lg else "manual" if k in r["edited"] else "AI" if r["status"] == "done" and r[k] is not None else None
+            if s_:
+                src.append(f"{GEO_LABEL[k]}: {s_}")
+        line = [n, r["name"], "" if sub == "." else sub] + [lg.get(k, r[k]) for k, _t, _l in FIELDS] + [g.get(e) for e in els] + [gm.get(e) for e in els] + [
+            iv, "; ".join(src), {"done": "Selesai", "error": "Gagal", "pending": "Belum"}.get(r["status"], r["status"]), r["ai_model"], r["ai_conf"],
             "Ya" if r["verified"] else "Belum", r["verified_by"], r["verified_at"], r["edited_by"]]
         ws.append(line)
         c = ws.cell(row=n + 1, column=2)
@@ -613,12 +631,12 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
         c.font = Font(color="1F5FA8", underline="single")
         if not r["verified"]:  # isian AI yang belum diverifikasi diberi warna
             for j, (k, _t, _l) in enumerate(FIELDS):
-                if k not in r["edited"] and k not in r["from_name"] and r["status"] == "done" and r[k] is not None:
+                if k not in r["edited"] and k not in r["from_name"] and k not in lg and r["status"] == "done" and r[k] is not None:
                     ws.cell(row=n + 1, column=4 + j).fill = ai_fill
     # No, File, Subfolder, Hole, Box, From, To, Start Drill, Tgl Foto, Litologi, Warna, Pelapukan, Oksidasi, Alterasi, Kondisi,
     # Recovery, RQD, GSI, RMR, Catatan, Interval, Status, Model, Keyakinan, Diverifikasi, oleh, tanggal, Diedit oleh
     widths = [5, 30, 14, 12, 7, 9, 9, 12, 12, 18, 26, 24, 20, 22, 9, 10, 9, 9, 8, 50, 10, 10, 16, 10, 11, 14, 18, 14]
-    widths = widths[:3 + len(FIELDS)] + [11] * (2 * len(els)) + widths[3 + len(FIELDS):]
+    widths = widths[:3 + len(FIELDS)] + [11] * (2 * len(els)) + widths[3 + len(FIELDS):3 + len(FIELDS) + 1] + [34] + widths[3 + len(FIELDS) + 1:]
     for i, w in enumerate(widths[:len(head)], 1):
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "D2"
@@ -626,6 +644,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     info = wb.create_sheet("Keterangan")
     for line in [["GC-Ex Core Interpretation — log foto core box"], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
                  [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
+                 ["Litologi, alterasi, oksidasi, warna, pelapukan: diambil dari LOGGING GEOLOGIST (tabel Geologi) bila ada di rentang foto; AI visual hanya mengisi bila logging tidak ada. Lihat kolom 'Sumber isian geologi'."],
                  ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."],
                  ["Kolom '<unsur> rata-rata' = rata-rata tertimbang panjang assay lab di rentang From-To foto; 'maks' = nilai interval tertinggi."]]:
         info.append(line)
@@ -735,7 +754,7 @@ def api_rows(b: FolderBody) -> dict:
     from . import core_dh  # data bor: rata-rata & maksimum kadar per foto
     p = get_project(b.folder)
     rs = rows(p)
-    core_dh.photo_grades(p, rs)
+    core_dh.enrich(p, rs)
     return {"ok": True, "rows": rs, "summary": summary(p), "dh": core_dh.summary(p)}
 
 

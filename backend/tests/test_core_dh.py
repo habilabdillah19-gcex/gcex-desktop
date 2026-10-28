@@ -165,3 +165,43 @@ def test_num_parsing():
     assert core_dh._num("1.234,5") == (1234.5, True)
     assert core_dh._num("-") == (None, False)
     assert core_dh.hole_key("LTH 101") == core_dh.hole_key("lth-101") == "lth101"
+
+
+def test_geologist_logging_has_priority_over_ai(prj, monkeypatch):
+    """AI visual untuk geoteknik; litologi / alterasi dari logging geologist diutamakan dan tidak ditimpa AI."""
+    d, tmp = prj
+    f = _csv(tmp, "geo.csv", "Hole,From,To,Lithology,Alt_Int,Mineralogy\nLTH-101,36.3,38.5,QV,Silisifikasi kuat,pyrite\nLTH-101,38.5,40.1,DAC,Argilik,-\n")
+    pv = c.post("/core/dh/preview", json={"folder": str(d), "kind": "geology", "path": f}).json()
+    j = c.post("/core/dh/import", json={"folder": str(d), "kind": "geology", "path": f, "roles": pv["guess"]["roles"], "cols": pv["guess"]["cols"]}).json()
+    assert j["summary"]["geo_link"]["lithology"] == "Lithology" and j["summary"]["geo_link"]["alteration"] == "Alt_Int"
+    rows = {r["name"]: r for r in c.post("/core/rows", json={"folder": str(d)}).json()["rows"]}
+    r11 = rows["LTH-101_Box11_36.3-40.1.jpg"]
+    assert r11["log"]["lithology"] == "QV (58%) / DAC (42%)" and "log" not in rows["IMG_0001.jpg"]
+
+    # AI dijalankan: prompt memuat logging, isian logging dilindungi, geoteknik terisi
+    sent = {}
+
+    def fake(host, model, img, extra="", timeout=900, logged=None):
+        sent["logged"] = logged
+        sent["prompt"] = core_io.ai_prompt(extra, logged)
+        return {"lithology": "Andesit", "alteration": "Propilitik", "rqd_pct": 75, "gsi": "55-65", "confidence": "sedang"}
+    monkeypatch.setattr(core_io, "ollama_analyze", fake)
+    core_io.ai_start(core_io.get_project(str(d)), [r11["id"]], "h", "m", "", 800)
+    core_io.JOB.thread.join(5)
+    assert sent["logged"] == {"lithology": "QV (58%) / DAC (42%)", "alteration": "Silisifikasi kuat (58%) / Argilik (42%)"}
+    assert "SUDAH DILOGGING GEOLOGIST" in sent["prompt"] and "GEOTEKNIK" in sent["prompt"]
+    r = {x["name"]: x for x in c.post("/core/rows", json={"folder": str(d)}).json()["rows"]}["LTH-101_Box11_36.3-40.1.jpg"]
+    assert r["lithology"] is None and r["alteration"] is None and r["rqd_pct"] == 75 and r["log"]["lithology"].startswith("QV")
+
+    # Excel memakai logging + kolom sumber
+    from openpyxl import load_workbook
+    ws = load_workbook(BytesIO(c.post("/core/export/xlsx", json={"folder": str(d)}).content))["Core Log"]
+    head = [h.value for h in ws[1]]
+    line = next([x.value for x in row] for row in ws.iter_rows(min_row=2) if row[1].value == "LTH-101_Box11_36.3-40.1.jpg")
+    assert line[head.index("Litologi")] == "QV (58%) / DAC (42%)" and "Litologi: logging" in line[head.index("Sumber isian geologi")]
+
+    # pengguna memilih kolom logging sendiri / mematikan
+    j = c.post("/core/dh/geolink", json={"folder": str(d), "link": {"lithology": "Lithology", "alteration": None}}).json()
+    assert j["summary"]["geo_link"] == {"lithology": "Lithology", "alteration": None} and not j["summary"]["geo_link_auto"]
+    j = c.post("/core/dh/geolink", json={"folder": str(d), "link": None}).json()
+    assert j["summary"]["geo_link_auto"] and j["summary"]["geo_link"]["alteration"] == "Alt_Int"

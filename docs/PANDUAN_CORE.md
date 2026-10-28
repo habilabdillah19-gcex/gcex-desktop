@@ -51,6 +51,14 @@ Bila folder model ingin disimpan di drive lain (mis. `D:\OllamaModels`), atur va
 
 Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antrean berjalan di latar belakang, jadi 500 foto bisa ditinggal semalam. Model yang tidak bisa melihat gambar (mis. `llama3.2:3b`) tampil abu-abu dan tidak bisa dipilih.
 
+## 2d. Prinsip: AI untuk geoteknik, logging geologist untuk geologi
+
+- **AI visual menilai parameter geoteknik**: core recovery, RQD, GSI, RMR, tingkat pelapukan, kondisi (WET / DRY) dan catatan struktur.
+- **Isian geologi** (litologi, alterasi, oksidasi, warna) **diambil dari logging geologist** (Data bor › Geologi) bila ada di rentang From–To foto. Isian ini bertanda hitam **logging**, tidak bisa ditimpa AI, dan dipakai di tabel, filter, cari cepat dan Excel.
+- AI hanya mengisi isian geologi bila logging untuk foto itu **tidak ada**. Bila ada, logging dikirim ke AI sebagai konteks (mis. QV / silisifikasi umumnya keras) dan AI diminta fokus pada geoteknik.
+- Bila satu foto memotong beberapa interval logging, isian diringkas: kode dominan (≥ 80 % panjang), atau campuran mis. `QV (58%) / DAC (42%)`.
+- Urutan prioritas: **logging geologist > editan manual di kartu > AI**. Kolom Mineralogy, Vein Type, Interpretasi Alterasi, dll. tampil lengkap di **Data lab** dan bisa ditampilkan sebagai pita di overlay.
+
 ## 3. Alur kerja
 
 1. **Buka folder foto** → pilih folder berisi foto core box. Subfolder (mis. per lubang bor) ikut dibaca. Format: JPG, PNG, TIFF, BMP, WEBP.
@@ -65,7 +73,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
    - Sel **biru muda** (label biru **AI**) = isian AI yang belum dicek.
    - Label **diedit** (hijau) = sudah diubah geologist. Isian ini **tidak pernah ditimpa AI**, walau AI dijalankan ulang.
 5. **Verifikasi**: tombol **Verifikasi & lanjut** atau **Ctrl+Enter** menandai foto sudah diperiksa lalu pindah ke foto berikutnya. Foto terverifikasi tidak disentuh AI lagi. Beberapa foto sekaligus: centang di kolom kiri tabel → **Verifikasi terpilih**.
-6. **Export Excel**: semua foto atau hanya yang tampil sesuai filter. Sheet `Core Log` berisi semua kolom + status AI, keyakinan AI, siapa yang memverifikasi; nama file foto bisa diklik untuk membuka fotonya. Sel biru muda di Excel = isian AI yang belum diverifikasi.
+6. **Export Excel**: semua foto atau hanya yang tampil sesuai filter. Sheet `Core Log` berisi semua kolom + status AI, keyakinan AI, siapa yang memverifikasi; nama file foto bisa diklik untuk membuka fotonya. Sel biru muda di Excel = isian AI yang belum diverifikasi; kolom **Sumber isian geologi** menulis asal tiap isian (logging / manual / AI).
 
 ### 3a. Papan label yang dibaca AI
 
@@ -107,6 +115,8 @@ Tombol **Data bor** di bilah atas. Pilih tab tabel, lalu **Pilih file CSV / Exce
 4. Pratinjau di atas menandai kolom yang dipakai (biru = kolom utama, coret = tidak dipakai).
 5. **Cara import**: *Tambah / perbarui per hole* (hole di file diganti seluruhnya, hole lain tetap; untuk data bor baru / sampel ulang) atau *Ganti semua*.
 6. Ringkasan hasil: jumlah baris, baris yang dilewati beserta alasannya (Hole ID kosong, From ≥ To, …), nilai di bawah limit deteksi, interval tumpang tindih, hole yang tidak ada di Collar, dan jumlah hole yang cocok dengan foto.
+
+**Logging → isian kartu foto** (tab Geologi): pilih kolom logging untuk Litologi, Alterasi, Oksidasi, Warna, Pelapukan. GC-Ex menebak dari nama kolom (Lith / Lithology / Litologi, Alteration / Alt_Int / Alterasi, Ox / Oxidation, Colour / Warna, Weathering); pilih "— tidak dari logging —" bila isian itu tetap dari AI / manual.
 
 Pemetaan kolom **disimpan di proyek**: file berikutnya dengan susunan header yang sama langsung memakai pemetaan terakhir. Bila format Excel berubah, cukup pilih ulang kolomnya.
 
