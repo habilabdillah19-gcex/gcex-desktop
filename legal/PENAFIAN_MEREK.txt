@@ -1,4 +1,4 @@
-GC-Ex (GC-Ex Block Model & GC-Ex Drillhole)
+GC-Ex (GC-Ex Block Model, GC-Ex Drillhole & GC-Ex Core Interpretation)
 PENAFIAN MEREK DAGANG / TRADEMARK DISCLAIMER
 ======================================================================
 
@@ -16,7 +16,10 @@ merek dagang terdaftar milik pemiliknya masing-masing, antara lain:
   - AutoCAD dan DXF — Autodesk, Inc.
   - Microsoft, Windows, Excel, Access, OneDrive dan SharePoint — Microsoft
     Corporation.
-  - Google dan Google Chrome — Google LLC.
+  - Google, Google Chrome dan Gemini — Google LLC.
+  - Ollama — Ollama, Inc.
+  - Qwen — Alibaba Cloud / Alibaba Group.
+  - Llama — Meta Platforms, Inc.
   - Plotly — Plotly Technologies Inc.
   - Electron — OpenJS Foundation.
   - Python — Python Software Foundation.

@@ -1,14 +1,21 @@
 # GC-Ex Desktop (Grade Control Excellence)
 
-Satu repositori, dua aplikasi Windows 64-bit dengan backend Python yang sama:
+Satu repositori, tiga aplikasi Windows 64-bit dengan backend Python yang sama:
 
 | Aplikasi | Halaman | Sumber | Installer |
 |---|---|---|---|
 | GC-Ex Block Model | `app/index.html` | `web-src/` (`python build.py`) | `GC-Ex-Setup-<versi>.exe` |
 | GC-Ex Drillhole | `app-dh/index.html` | `web-src-dh/` (`python build_dh.py`) | `GC-Ex-Drillhole-Setup-<versi>.exe` |
+| GC-Ex Core Interpretation | `app-core/index.html` | langsung `app-core/index.html` (satu file, tanpa build) | `GC-Ex-Core-Setup-<versi>.exe` |
 
-Kedua aplikasi bisa dipasang berdampingan; masing-masing punya penyimpanan proyek sendiri
-(`%APPDATA%\\GC-Ex` dan `%APPDATA%\\GC-Ex Drillhole`).
+Ketiga aplikasi bisa dipasang berdampingan; masing-masing punya penyimpanan sendiri
+(`%APPDATA%\\GC-Ex`, `%APPDATA%\\GC-Ex Drillhole`, `%APPDATA%\\GC-Ex Core Interpretation`).
+
+**GC-Ex Core Interpretation** — interpretasi foto core box 100% offline: folder foto (ribuan foto, bersubfolder)
+dibaca backend, Hole / Box / kedalaman dari nama file, deskripsi oleh model vision lokal di **Ollama**
+(`127.0.0.1:11434`, mis. `qwen3-vl:8b`), verifikasi geologist, export Excel. Hasil disimpan di
+`<folder foto>/_GCEx_Core/gcex_core.db` (SQLite) supaya rekan bisa melanjutkan. Panduan: `docs/PANDUAN_CORE.md`.
+Pengembangan: `npm run start:core` (Windows) atau `GCEX_APP=core npx electron .`.
 
 Aplikasi desktop Windows 64-bit untuk GC-Ex Block Model: dig block per flitch, layout PDF,
 as-mined & register poligon, rekonsiliasi dengan Surpac, serta koneksi ke MS Access dan Excel.
@@ -19,6 +26,8 @@ as-mined & register poligon, rekonsiliasi dengan Surpac, serta koneksi ke MS Acc
 gcex-desktop/
 ├─ app/index.html          Tampilan GC-Ex Block Model (sama dengan versi HTML offline)
 ├─ app-dh/index.html       Tampilan GC-Ex Drillhole Ultimate + modul desktop
+├─ app-core/index.html     Tampilan GC-Ex Core Interpretation (offline penuh: tanpa CDN, ikon & font lokal)
+├─ builder-core.json       Konfigurasi installer GC-Ex Core Interpretation
 ├─ web-src-dh/             Sumber Drillhole: gcex_dh_base.html + mdlbig_dh.js + deskflush_dh.js + build_dh.py
 ├─ builder-dh.json         Konfigurasi installer GC-Ex Drillhole
 ├─ electron/main.js        Jendela aplikasi, menu, log, menjalankan & menghentikan backend
@@ -29,6 +38,7 @@ gcex-desktop/
 │  │                             (hanya kolom input; rumus, link, grafik, makro tetap utuh; cadangan dulu)
 │  ├─ gcex_backend/access_io.py  Baca tabel / tambah baris ke database MS Access (.accdb/.mdb)
 │  ├─ gcex_backend/mdl_io.py     Block model .mdl besar: cache kolom di disk, potongan RL/XY, ringkasan per RL
+│  ├─ gcex_backend/core_io.py    Core Interpretation: proyek foto (SQLite), thumbnail, antrean AI Ollama, Excel
 │  ├─ gcex_backend/server.py     API: /health /info /excel/* (termasuk /excel/register-write) /mdl/* /access/*
 │  ├─ run_backend.py             Titik masuk (dipakai Electron & PyInstaller)
 │  └─ tests/                     Uji otomatis
@@ -58,6 +68,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3b | File jumbo: topografi / desain pit .str, .dxf, .csv ±500-700 MB dibaca per potongan (hasil identik), assay 200.000 baris, orthofoto 1 GB | selesai (0.4.0) |
 | 3c | Project Tree (pohon proyek urut alur kerja + Properti) di kedua aplikasi; bilah Sayatan mengambang di Drillhole | selesai (0.5.0) |
 | 3d | Orthofoto latar lepas elevasi; UI Block Model 10 langkah dengan status; as-mined lantai pick-up tidak rata | selesai (0.6.0) |
+| 3e | GC-Ex Core Interpretation: foto core box + AI vision lokal (Ollama), verifikasi, Excel | selesai (0.15.0) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna
@@ -66,4 +77,6 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 - Untuk fitur MS Access: driver Access 64-bit (MS Office 64-bit, atau
   *Microsoft Access Database Engine 2016 Redistributable* x64). Menu **Bantuan → Tentang GC-Ex**
   dan endpoint `/info` menunjukkan apakah driver terdeteksi.
+- Untuk GC-Ex Core Interpretation: Ollama (dipasang terpisah) + satu model vision; lihat `docs/PANDUAN_CORE.md`
+  untuk pemasangan tanpa internet. Tanpa Ollama, log tetap bisa diisi & diverifikasi manual.
 - Log ada di `%APPDATA%\GC-Ex\logs` (menu **Bantuan → Buka folder log**).

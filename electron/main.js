@@ -1,5 +1,6 @@
 // GC-Ex Desktop - proses utama Electron
-// Tugas: membuka jendela GC-Ex (app/index.html = Block Model, app-dh/index.html = Drillhole), menjalankan backend Python (FastAPI),
+// Tugas: membuka jendela GC-Ex (app/index.html = Block Model, app-dh/index.html = Drillhole, app-core/index.html = Core Interpretation),
+// menjalankan backend Python (FastAPI),
 // memberi izin folder proyek tanpa dialog berulang, menu, log, dan menutup backend saat keluar.
 'use strict';
 const { app, BrowserWindow, Menu, dialog, shell, session, ipcMain, protocol, net: enet } = require('electron');
@@ -11,7 +12,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 
 // Aplikasi mana yang dijalankan (Block Model / Drillhole) ditentukan oleh field "gcex" di package.json
-// (diisi electron-builder lewat extraMetadata). Saat pengembangan: set GCEX_APP=dh untuk Drillhole.
+// (diisi electron-builder lewat extraMetadata). Saat pengembangan: set GCEX_APP=dh untuk Drillhole, GCEX_APP=core untuk Core Interpretation.
 let PKG = {};
 try { PKG = require('../package.json'); } catch (e) {}
 const G = Object.assign({ page: 'app/index.html', title: 'GC-Ex Block Model', icon: 'build/icon.ico', theme: 'bm' }, PKG.gcex || {});
@@ -19,6 +20,11 @@ if (process.env.GCEX_APP === 'dh' && !app.isPackaged) {
   Object.assign(G, { page: 'app-dh/index.html', title: 'GC-Ex Drillhole', icon: 'build/icon-dh.ico', theme: 'dh' });
   app.setName('GC-Ex Drillhole');
   app.setPath('userData', path.join(app.getPath('appData'), 'GC-Ex Drillhole'));
+}
+if (process.env.GCEX_APP === 'core' && !app.isPackaged) {
+  Object.assign(G, { page: 'app-core/index.html', title: 'GC-Ex Core Interpretation', icon: 'build/icon-core.ico', theme: 'core' });
+  app.setName('GC-Ex Core Interpretation');
+  app.setPath('userData', path.join(app.getPath('appData'), 'GC-Ex Core Interpretation'));
 }
 const APP_NAME = G.title;
 let mainWin = null;
@@ -71,7 +77,7 @@ function routePrj(p) {
     return 'none';
   }
   if (own !== APP_NAME) {
-    const key = /Drillhole/i.test(own) ? 'dh' : 'bm', exe = readShared()[key];
+    const key = /Drillhole/i.test(own) ? 'dh' : /Core/i.test(own) ? 'core' : 'bm', exe = readShared()[key];
     log('[prj] milik', own, '->', exe || '(tidak ditemukan)');
     if (exe && fs.existsSync(exe)) { try { spawn(exe, [p], { detached: true, stdio: 'ignore' }).unref(); return 'other'; } catch (e) { log('[prj] gagal meneruskan', e.message); } }
     dialog.showMessageBox(mainWin || undefined, { type: 'warning', title: APP_NAME, message: 'Proyek ini dibuat dengan ' + own + '.',
@@ -191,13 +197,19 @@ ipcMain.handle('gcex:openFile', async (e, opt) => {
   if (r.canceled || !r.filePaths || !r.filePaths.length) return null;
   return r.filePaths[0];
 });
+// pilih folder (mis. folder foto core box); hasil: path lengkap atau null
+ipcMain.handle('gcex:openFolder', async (e, opt) => {
+  const r = await dialog.showOpenDialog(mainWin, { title: opt && opt.title, defaultPath: opt && opt.defaultPath, properties: ['openDirectory'] });
+  if (r.canceled || !r.filePaths || !r.filePaths.length) return null;
+  return r.filePaths[0];
+});
 ipcMain.handle('gcex:showFile', (e, p) => { if (p && fs.existsSync(p)) shell.showItemInFolder(p); });
 
 // ---------- jendela ----------
 function createWindow() {
   mainWin = new BrowserWindow({
     width: 1600, height: 950, minWidth: 1100, minHeight: 700, show: false,
-    title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
+    title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : G.theme === 'core' ? '#2f4636' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false,
       // simpan otomatis & sinyal kunci proyek tetap berjalan normal walau jendela diminimalkan
       backgroundThrottling: false }
@@ -329,7 +341,8 @@ function buildMenu() {
     ] },
     { label: 'Bantuan', submenu: [
       { label: 'Buka folder log', click: () => shell.openPath(logDir) },
-      { label: 'Hapus cache block model besar', click: async () => {
+      { label: 'Panduan AI lokal (Ollama)', visible: G.theme === 'core', click: () => { const f = path.join(legalDir(), '..', 'docs', 'PANDUAN_CORE.html'); shell.openPath(fs.existsSync(f) ? f : legalDir()); } },
+      { label: 'Hapus cache block model besar', visible: G.theme !== 'core', click: async () => {
           const r = await dialog.showMessageBox(mainWin, { type: 'question', buttons: ['Hapus', 'Batal'], defaultId: 1, title: 'Cache block model',
             message: 'Hapus cache block model .mdl besar?', detail: 'Cache dibuat ulang otomatis saat model dibuka lagi (pembacaan pertama lebih lama). Folder: ' + path.join(app.getPath('userData'), 'cache') });
           if (r.response !== 0) return;
@@ -339,8 +352,8 @@ function buildMenu() {
       { label: 'Lisensi pihak ketiga & merek dagang', click: () => openLegal() },
       { label: 'Tentang GC-Ex', click: async () => {
           const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi & merek dagang'], defaultId: 0, noLink: true, message: APP_NAME + ' - Grade Control Excellence', detail: 'Versi ' + app.getVersion() + '\nBackend: ' + (backend.ok ? 'aktif (' + backend.url + ')' : 'tidak aktif' + (backend.err ? ' - ' + backend.err : '')) + '\nLog: ' + logDir + '\n\nCopyright © 2026 Habil Abdillah' +
-            '\n\nMemakai komponen open-source: Plotly.js (MIT), Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, lxml, openpyxl, pyodbc (MIT / BSD).' +
-            '\nLeapfrog, Surpac, GEOVIA, Micromine, AutoCAD, Microsoft Excel / Access dan nama produk lain adalah merek dagang milik pemiliknya; GC-Ex tidak berafiliasi dengan mereka.' });
+            '\n\nMemakai komponen open-source: ' + (G.theme === 'core' ? '' : 'Plotly.js (MIT), ') + 'Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, Pillow (MIT-CMU), lxml, openpyxl, pyodbc (MIT / BSD).' + (G.theme === 'core' ? '\nAI lokal memakai Ollama (MIT, dipasang terpisah); model AI mengikuti lisensi masing-masing.' : '') +
+            '\nLeapfrog, Surpac, GEOVIA, Micromine, AutoCAD, Microsoft Excel / Access, Ollama dan nama produk lain adalah merek dagang milik pemiliknya; GC-Ex tidak berafiliasi dengan mereka.' });
           if (r.response === 1) openLegal();
         } }
     ] }

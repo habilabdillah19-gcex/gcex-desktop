@@ -1,0 +1,71 @@
+{
+  "appId": "com.gcex.core",
+  "productName": "GC-Ex Core Interpretation",
+  "copyright": "Copyright © 2026 Habil Abdillah",
+  "extraMetadata": {
+    "name": "gcex-core",
+    "productName": "GC-Ex Core Interpretation",
+    "description": "GC-Ex Core Interpretation - interpretasi foto core box dengan AI lokal (offline)",
+    "gcex": {
+      "page": "app-core/index.html",
+      "title": "GC-Ex Core Interpretation",
+      "icon": "build/icon-core.ico",
+      "theme": "core"
+    }
+  },
+  "directories": {
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "files": [
+    "electron/**/*",
+    "app-core/**/*",
+    "package.json",
+    "build/icon*.ico"
+  ],
+  "extraResources": [
+    {
+      "from": "dist-backend/gcex-backend",
+      "to": "backend",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "legal",
+      "to": "legal",
+      "filter": [
+        "*.txt",
+        "*.html"
+      ]
+    },
+    {
+      "from": "docs",
+      "to": "docs",
+      "filter": [
+        "PANDUAN_CORE.html"
+      ]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "build/icon-core.ico",
+    "artifactName": "GC-Ex-Core-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "GC-Ex Core Interpretation",
+    "uninstallDisplayName": "GC-Ex Core Interpretation ${version}"
+  }
+}

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 100% offline: tidak ada skrip, font atau ikon dari internet. Semua data lewat backend lokal (127.0.0.1). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob: http://127.0.0.1:* http://localhost:*; img-src 'self' data: blob: http://127.0.0.1:* http://localhost:*">
+<title>GC-Ex Core Interpretation</title>
+<style>
+:root{
+  --top:#2f4636;--toptx:#f3ecdc;--ac:#c79a46;--ac2:#a97f31;--acs:#f6ecd6;
+  --bg:#e9e5dc;--pn:#fbfaf6;--pn2:#f3f0e8;--bd:#d6cfc0;--tx:#26231d;--mu:#6f685b;
+  --ok:#2f7d4a;--oks:#dcefdf;--wn:#a86b12;--wns:#fbecd0;--er:#b3392f;--ers:#f7dcd8;--ai:#fff4d6;--sel:#e9dcbd;
+  --rh:34px;
+}
+body.dark{
+  --top:#1d2a21;--toptx:#efe6d2;--ac:#d4aa5c;--ac2:#e2bd77;--acs:#3a3222;
+  --bg:#161816;--pn:#202320;--pn2:#262a26;--bd:#3a3f39;--tx:#ece7dc;--mu:#a49d8f;
+  --ok:#6fc08a;--oks:#1f3527;--wn:#e0a44c;--wns:#3a2e18;--er:#ec8278;--ers:#3c2220;--ai:#3a3420;--sel:#3d3624;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font:13px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:Consolas,"Cascadia Mono",monospace}
+
+/* ---------- bilah atas ---------- */
+#top{background:var(--top);color:var(--toptx);display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:3px solid var(--ac)}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand .logo{width:30px;height:30px;border-radius:7px;background:var(--ac);color:var(--top);display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:-.5px}
+.brand b{font-size:15px;white-space:nowrap}
+.brand small{display:block;font-size:11px;opacity:.75;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#top .sp{flex:1}
+.tb{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid rgba(255,255,255,.22);border-radius:6px;background:transparent;color:var(--toptx);cursor:pointer;white-space:nowrap}
+.tb:hover{background:rgba(255,255,255,.1)}
+.tb.pri{background:var(--ac);border-color:var(--ac);color:#22190a;font-weight:600}
+.tb.pri:hover{background:var(--ac2)}
+.tb:disabled{opacity:.45;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:rgba(0,0,0,.18);cursor:pointer;border:1px solid rgba(255,255,255,.15);white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#999}
+.dot.ok{background:#7bd88f}.dot.no{background:#f08a7e}.dot.wait{background:#f3c552}
+
+/* ---------- bilah filter ---------- */
+#fbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:7px 12px;background:var(--pn);border-bottom:1px solid var(--bd)}
+.fg{display:flex;align-items:center;gap:5px;color:var(--mu)}
+.fg label{color:var(--tx);font-weight:600}
+.fi{background:var(--pn2);border:1px solid var(--bd);border-radius:5px;padding:4px 7px;min-width:0}
+.fi:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--pn2);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ac)}
+.btn.pri{background:var(--ac);border-color:var(--ac2);color:#22190a;font-weight:600}
+.btn.pri:hover{background:var(--ac2)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#cnt{margin-left:auto;color:var(--mu)}
+
+/* ---------- isi ---------- */
+#main{flex:1;display:flex;min-height:0}
+#left{width:470px;min-width:340px;display:flex;flex-direction:column;background:var(--pn);border-right:1px solid var(--bd);min-height:0}
+#split{width:6px;cursor:col-resize;background:transparent;margin-left:-3px;margin-right:-3px;z-index:3}
+#split:hover{background:var(--ac)}
+#viewer{position:relative;height:42%;min-height:200px;background:#11130f;overflow:hidden;cursor:grab;flex:none}
+#viewer.drag{cursor:grabbing}
+#viewer img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;max-width:none}
+#viewer .ph{position:absolute;inset:0;display:grid;place-items:center;color:#a8a294;text-align:center;padding:20px}
+#vtools{position:absolute;right:8px;top:8px;display:flex;gap:4px}
+#vtools button{background:rgba(20,22,18,.75);color:#eee;border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 7px;cursor:pointer;display:grid;place-items:center}
+#vtools button:hover{background:rgba(60,60,50,.9)}
+#vinfo{position:absolute;left:8px;bottom:8px;background:rgba(20,22,18,.75);color:#eee;padding:3px 8px;border-radius:5px;font-size:11px;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vsplitH{height:6px;cursor:row-resize;flex:none;background:var(--bd)}
+#vsplitH:hover{background:var(--ac)}
+#card{flex:1;overflow:auto;padding:10px 12px 14px}
+.chd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.chd h3{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav{display:flex;gap:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.fld{background:var(--pn2);border:1px solid var(--bd);border-radius:6px;padding:4px 7px 5px;position:relative}
+.fld.full{grid-column:span 2}
+.fld label{display:flex;justify-content:space-between;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--mu);margin-bottom:1px}
+.fld input,.fld textarea,.fld select{width:100%;border:0;background:transparent;font-weight:600;padding:1px 0;outline:none}
+.fld textarea{resize:vertical;min-height:40px;font-weight:400}
+.fld.ai{background:var(--ai)}
+.fld:focus-within{border-color:var(--ac)}
+.tag{font-size:9.5px;border-radius:3px;padding:0 4px;text-transform:none;letter-spacing:0}
+.tag.ai{background:var(--wns);color:var(--wn)}
+.tag.ed{background:var(--oks);color:var(--ok)}
+.tag.fn{background:#dfe7f3;color:#2c4f86}
+body.dark .tag.fn{background:#22304a;color:#9db8e8}
+.badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-pending{background:var(--wns);color:var(--wn)}.b-done{background:var(--oks);color:var(--ok)}.b-error{background:var(--ers);color:var(--er)}
+.b-ver{background:var(--ok);color:#fff}.b-miss{background:var(--ers);color:var(--er)}
+.cact{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.note{font-size:11.5px;color:var(--mu);margin-top:8px}
+.err{color:var(--er);font-size:12px;margin-top:6px;white-space:pre-wrap}
+details.hist{margin-top:10px}
+details.hist summary{cursor:pointer;color:var(--mu)}
+.hlist{font-size:11.5px;margin-top:6px;max-height:180px;overflow:auto}
+.hlist div{padding:2px 0;border-bottom:1px dashed var(--bd)}
+
+/* ---------- tabel virtual ---------- */
+#right{flex:1;display:flex;flex-direction:column;min-width:0;padding:8px;gap:6px}
+#bulk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--mu)}
+#tw{flex:1;overflow:auto;border:1px solid var(--bd);border-radius:7px;background:var(--pn);position:relative}
+.tr{display:grid;grid-template-columns:var(--cols);height:var(--rh);align-items:center;border-bottom:1px solid var(--bd);min-width:max-content}
+.th{position:sticky;top:0;z-index:2;background:var(--top);color:var(--toptx);font-weight:600;font-size:12px;height:32px}
+.th>div{cursor:pointer;user-select:none}
+.tr>div{padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rw{position:absolute;left:0;right:0;cursor:pointer}
+.rw:hover{background:rgba(199,154,70,.09)}
+.rw.cur{background:var(--sel);box-shadow:inset 3px 0 0 var(--ac)}
+.rw.miss{opacity:.5}
+.rw input.ce{width:100%;border:1px solid transparent;background:transparent;padding:2px 3px;border-radius:3px}
+.rw input.ce:hover{border-color:var(--bd)}
+.rw input.ce:focus{border-color:var(--ac);background:var(--pn2);outline:none}
+.rw input.ce.ai{background:var(--ai)}
+.rw img.th48{height:26px;width:52px;object-fit:cover;border-radius:3px;display:block;background:#222}
+.num{text-align:right}
+
+/* ---------- bilah status ---------- */
+#sbar{display:flex;align-items:center;gap:14px;padding:5px 12px;background:var(--pn);border-top:1px solid var(--bd);color:var(--mu);font-size:12px;min-height:30px}
+#prog{display:none;align-items:center;gap:8px;flex:1;max-width:620px}
+#prog .bar{flex:1;height:9px;background:var(--pn2);border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+#prog .bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
+
+/* ---------- layar awal & dialog ---------- */
+#start{position:absolute;inset:0;top:52px;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}
+.sc{background:var(--pn);border:1px solid var(--bd);border-radius:12px;max-width:760px;width:100%;padding:26px 30px;box-shadow:0 10px 40px rgba(0,0,0,.12)}
+.sc h2{font-size:20px;margin-bottom:6px}
+.sc p{color:var(--mu);margin-bottom:12px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.steps div{background:var(--pn2);border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:12px;color:var(--mu)}
+.steps b{display:block;color:var(--tx);margin-bottom:3px;font-size:13px}
+.recent{margin-top:14px}
+.recent a{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;color:var(--tx);text-decoration:none;cursor:pointer}
+.recent a:hover{background:var(--pn2)}
+.recent a span{color:var(--mu);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mask{position:fixed;inset:0;background:rgba(10,12,8,.45);display:none;align-items:center;justify-content:center;z-index:50}
+.mask.on{display:flex}
+.dlg{background:var(--pn);border:1px solid var(--bd);border-radius:10px;width:min(640px,94vw);max-height:90vh;overflow:auto;box-shadow:0 14px 50px rgba(0,0,0,.3)}
+.dlg header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:3px solid var(--ac);background:var(--top);color:var(--toptx);border-radius:10px 10px 0 0}
+.dlg header b{flex:1;font-size:14px}
+.dlg header button{background:none;border:0;color:var(--toptx);cursor:pointer;font-size:20px;line-height:1}
+.dlg .bd{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.dlg .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dlg .row label{min-width:120px;font-weight:600}
+.dlg .ft{display:flex;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--bd)}
+.box{border:1px solid var(--bd);border-radius:7px;padding:9px 11px;background:var(--pn2);font-size:12.5px}
+.box.wn{background:var(--wns);border-color:#e4c88f}
+.box.er{background:var(--ers);border-color:#e6b0aa}
+.box.ok{background:var(--oks);border-color:#a8d2b2}
+.mlist{max-height:170px;overflow:auto;display:flex;flex-direction:column;gap:3px}
+.mlist label{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer;font-weight:400;min-width:0}
+.mlist label:hover{background:var(--pn)}
+.mlist small{color:var(--mu)}
+code{background:var(--pn2);border:1px solid var(--bd);border-radius:4px;padding:0 4px;font-family:Consolas,monospace;font-size:12px}
+#toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:var(--top);color:var(--toptx);padding:8px 16px;border-radius:7px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:none;z-index:60;max-width:80vw}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.9-3M4 5v4h4M4 13a8 8 0 0 0 14.9 3M20 19v-4h-4"/></symbol>
+  <symbol id="i-xls" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l4 5M13 13l-4 5"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-imp" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-zin" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5M11 8v6M8 11h6"/></symbol>
+  <symbol id="i-zout" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5M8 11h6"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-rot" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8M20 3v5h-5"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
+  <symbol id="i-core" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M8 4v5M14 9v5M10 14v6"/></symbol>
+</svg>
+
+<div id="top">
+  <div class="brand"><div class="logo">GC</div><div><b>GC-Ex Core Interpretation</b><small id="prjName">Interpretasi foto core box · AI lokal (offline)</small></div></div>
+  <div class="sp"></div>
+  <button class="tb pri" id="bOpen" title="Buka folder foto core box (boleh berisi subfolder per lubang bor)"><svg class="i"><use href="#i-folder"/></svg>Buka folder foto</button>
+  <button class="tb" id="bRescan" disabled title="Cari foto baru / yang hilang di folder"><svg class="i"><use href="#i-refresh"/></svg>Pindai ulang</button>
+  <button class="tb" id="bImport" disabled title="Ambil hasil dari file .json dashboard lama (dicocokkan per nama file foto)"><svg class="i"><use href="#i-imp"/></svg>Impor JSON lama</button>
+  <button class="tb" id="bExport" disabled title="Simpan log ke Excel"><svg class="i"><use href="#i-xls"/></svg>Export Excel</button>
+  <span class="pill" id="aiPill" title="Status AI lokal (Ollama). Klik untuk pengaturan."><span class="dot wait" id="aiDot"></span><span id="aiTxt">AI lokal: memeriksa…</span></span>
+  <button class="tb" id="bDark" title="Tema gelap / terang"><svg class="i"><use href="#i-moon"/></svg></button>
+</div>
+
+<div id="fbar">
+  <div class="fg"><label>Hole ID</label><select class="fi" id="fHole"><option value="">Semua</option></select></div>
+  <div class="fg"><label>Kedalaman</label><input class="fi" id="fFrom" type="number" step="0.1" placeholder="From" style="width:74px"><span>–</span><input class="fi" id="fTo" type="number" step="0.1" placeholder="To" style="width:74px"><span>m</span></div>
+  <div class="fg"><label>Status</label><select class="fi" id="fStat">
+    <option value="">Semua</option><option value="pending">Belum dianalisis AI</option><option value="done">Sudah dianalisis AI</option>
+    <option value="error">AI gagal</option><option value="unver">Belum diverifikasi</option><option value="ver">Sudah diverifikasi</option><option value="miss">File hilang</option></select></div>
+  <div class="fg"><label>Cari</label><input class="fi" id="fQ" placeholder="nama file / catatan…" style="width:170px"></div>
+  <button class="btn sm" id="fClr">Reset filter</button>
+  <span id="cnt"></span>
+  <button class="btn pri" id="bAI" disabled><svg class="i"><use href="#i-chip"/></svg>Jalankan AI lokal</button>
+</div>
+
+<div id="main">
+  <div id="left">
+    <div id="viewer">
+      <div class="ph" id="vph"><div><svg class="i" style="width:40px;height:40px;opacity:.6"><use href="#i-core"/></svg><div style="margin-top:8px">Pilih foto di tabel untuk melihat pratinjau.<br>Scroll = zoom, tarik = geser, klik ganda = pas layar.</div></div></div>
+      <img id="vimg" alt="" style="display:none">
+      <div id="vtools">
+        <button id="vZin" title="Perbesar"><svg class="i"><use href="#i-zin"/></svg></button>
+        <button id="vZout" title="Perkecil"><svg class="i"><use href="#i-zout"/></svg></button>
+        <button id="vFit" title="Pas layar"><svg class="i"><use href="#i-fit"/></svg></button>
+        <button id="vRot" title="Putar 90°"><svg class="i"><use href="#i-rot"/></svg></button>
+        <button id="vFull" title="Muat resolusi penuh (untuk membaca label kecil)"><svg class="i"><use href="#i-open"/></svg></button>
+      </div>
+      <div id="vinfo" style="display:none"></div>
+    </div>
+    <div id="vsplitH" title="Tarik untuk mengubah tinggi pratinjau"></div>
+    <div id="card"><div class="note">Belum ada foto dipilih.</div></div>
+  </div>
+  <div id="split"></div>
+  <div id="right">
+    <div id="bulk">
+      <span id="selInfo">0 dipilih</span>
+      <button class="btn sm" id="bSelAll">Pilih semua yang tampil</button>
+      <button class="btn sm" id="bSelNone">Kosongkan</button>
+      <button class="btn sm" id="bSelVer" disabled><svg class="i"><use href="#i-check"/></svg>Verifikasi terpilih</button>
+      <button class="btn sm" id="bSelUnver" disabled>Batalkan verifikasi</button>
+      <button class="btn sm" id="bSelAI" disabled><svg class="i"><use href="#i-chip"/></svg>AI untuk terpilih</button>
+      <span style="margin-left:auto">↑ ↓ pindah foto · Ctrl+Enter verifikasi &amp; lanjut</span>
+    </div>
+    <div id="tw"><div class="tr th" id="thead"></div><div id="tbody" style="position:relative"></div></div>
+  </div>
+</div>
+
+<div id="sbar">
+  <span id="sSum">Belum ada proyek.</span>
+  <div id="prog"><span id="pTxt"></span><div class="bar"><i id="pBar"></i></div><button class="btn sm" id="pStop"><svg class="i"><use href="#i-stop"/></svg>Hentikan</button></div>
+  <span style="margin-left:auto" id="sBe">Backend: menghubungkan…</span>
+</div>
+
+<div id="start">
+  <div class="sc">
+    <h2>Interpretasi foto core box, 100% di komputer ini</h2>
+    <p>Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). GC-Ex membaca Hole ID, nomor box dan kedalaman dari nama file bila ada, lalu AI lokal (Ollama) mendeskripsikan tiap foto. Geologist memeriksa, memperbaiki dan memverifikasi; hasilnya diexport ke Excel.</p>
+    <div class="steps">
+      <div><b>1 · Buka folder foto</b>Hasil kerja disimpan di subfolder <code>_GCEx_Core</code> di folder itu, jadi rekan yang membuka folder yang sama bisa melanjutkan.</div>
+      <div><b>2 · Jalankan AI lokal</b>Model vision di Ollama, tanpa internet. Isian yang sudah Anda edit tidak ditimpa.</div>
+      <div><b>3 · Verifikasi &amp; export</b>Periksa tiap foto, klik Verifikasi, lalu Export Excel. Sel krem = isian AI yang belum dicek.</div>
+    </div>
+    <button class="btn pri" id="sOpen" style="font-size:14px;padding:9px 16px"><svg class="i"><use href="#i-folder"/></svg>Buka folder foto core box</button>
+    <div class="recent" id="recent"></div>
+    <div class="box" id="sAi" style="margin-top:14px">Memeriksa AI lokal…</div>
+  </div>
+</div>
+
+<!-- dialog AI -->
+<div class="mask" id="mAI"><div class="dlg">
+  <header><svg class="i"><use href="#i-chip"/></svg><b>AI lokal (Ollama)</b><button data-close>×</button></header>
+  <div class="bd">
+    <div class="box" id="aiState">Memeriksa…</div>
+    <div class="row"><label>Alamat Ollama</label><input class="fi" id="aiHost" style="flex:1" value="http://127.0.0.1:11434"><button class="btn sm" id="aiCheck"><svg class="i"><use href="#i-refresh"/></svg>Periksa</button></div>
+    <div><b>Model vision</b> <small style="color:var(--mu)">(hanya model yang bisa melihat gambar yang dipakai)</small>
+      <div class="mlist box" id="aiModels" style="margin-top:5px"></div></div>
+    <div class="row"><label>Ukuran foto ke AI</label><select class="fi" id="aiPx"><option value="1024">1024 px (cepat)</option><option value="1600" selected>1600 px (seimbang)</option><option value="2048">2048 px (label kecil, lambat)</option></select>
+      <small style="color:var(--mu)">foto asli tidak diubah</small></div>
+    <div><b>Instruksi tambahan</b> <small style="color:var(--mu)">(opsional, mis. kode litologi proyek)</small>
+      <textarea class="fi" id="aiExtra" rows="3" style="width:100%;margin-top:4px" placeholder="Contoh: Pakai kode litologi AND (andesit), DAC (dasit), QV (quartz vein), BX (breksi)."></textarea></div>
+    <div class="box wn">RQD, GSI, RMR dan recovery dari foto hanyalah <b>perkiraan visual AI</b>, bukan pengukuran di core shed. Hasil wajib diperiksa dan diverifikasi geologist sebelum dipakai.</div>
+  </div>
+  <div class="ft">
+    <button class="btn" data-close>Tutup</button>
+    <button class="btn" id="aiRunAll">Ulangi semua yang belum diverifikasi</button>
+    <button class="btn pri" id="aiRun"><svg class="i"><use href="#i-chip"/></svg>Analisis foto yang belum (<span id="aiN">0</span>)</button>
+  </div>
+</div></div>
+
+<input type="file" id="jsonIn" accept=".json" style="display:none">
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =============================== utilitas =============================== */
+const $ = (s) => document.querySelector(s);
+const D = window.gcexDesktop || null;
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const say = (m) => D ? D.alert(m) : alert(m);
+const ask = (m) => D ? D.confirm(m) : confirm(m);
+const askText = (m, d) => (D && D.prompt) ? D.prompt(m, d) : prompt(m, d);
+const LS = { get: (k, d) => { try { const v = localStorage.getItem('gcexCore.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+             set: (k, v) => { try { localStorage.setItem('gcexCore.' + k, JSON.stringify(v)); } catch (e) {} } };
+let toastT = 0;
+function toast(m, ms) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', ms || 2600); }
+const fmt = (v, d) => v == null || v === '' ? '' : (typeof v === 'number' ? (d != null ? v.toFixed(d) : String(+v.toFixed(3))) : String(v));
+const natural = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+
+/* =============================== backend =============================== */
+let BE = '';
+async function backendUrl() {
+  if (BE) return BE;
+  const q = new URLSearchParams(location.search).get('backend');
+  if (q) return (BE = q.replace(/\/$/, ''));
+  if (D) { const st = await D.backend(); if (!st || !st.ok) throw new Error('Backend GC-Ex tidak aktif' + (st && st.err ? ': ' + st.err : '') + '. Buka Bantuan > Buka folder log.'); return (BE = st.url); }
+  return (BE = 'http://127.0.0.1:8765');
+}
+async function api(path, body, bin) {
+  const u = await backendUrl();
+  const r = await fetch(u + path, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  if (bin && r.ok) return r.arrayBuffer();
+  let j = null; try { j = await r.json(); } catch (e) {}
+  if (!r.ok || !j || j.ok === false) throw new Error((j && (j.error || (j.detail && JSON.stringify(j.detail)))) || ('HTTP ' + r.status));
+  return j;
+}
+const imgUrl = (id, w) => BE + '/core/img?folder=' + encodeURIComponent(S.folder) + '&id=' + id + '&w=' + w;
+
+/* =============================== status =============================== */
+const S = { folder: '', rows: [], byId: new Map(), view: [], cur: -1, sel: new Set(), fields: [], meta: {}, sort: null, ollama: null, pending: [] };
+const FIELD_LABEL = {};
+function user() {
+  let u = LS.get('user', '');
+  if (!u) { u = (askText('Nama Anda (dicatat pada editan & verifikasi):', '') || '').trim() || 'Geologist'; LS.set('user', u); }
+  return u;
+}
+
+/* =============================== proyek =============================== */
+async function chooseFolder() {
+  let f = null;
+  if (D && D.openFolder) f = await D.openFolder({ title: 'Pilih folder foto core box' });
+  else f = askText('Path folder foto core box (mis. D:\\Core\\LTH-101):', LS.get('recent', [])[0] || '');
+  if (f) openFolder(f);
+}
+async function openFolder(folder) {
+  try {
+    $('#sSum').textContent = 'Membuka folder & memindai foto…';
+    const j = await api('/core/open', { folder, by: user() });
+    S.folder = j.folder; S.meta = j.meta || {}; S.fields = j.fields; S.wea = j.weathering; S.oxi = j.oxidation;
+    S.fields.forEach(f => FIELD_LABEL[f.key] = f.label);
+    const rec = [j.folder].concat(LS.get('recent', []).filter(x => x.toLowerCase() !== j.folder.toLowerCase())).slice(0, 8);
+    LS.set('recent', rec);
+    $('#prjName').textContent = j.folder;
+    document.title = 'GC-Ex Core Interpretation — ' + j.folder.split(/[\\/]/).pop();
+    $('#start').style.display = 'none';
+    ['#bRescan', '#bImport', '#bExport', '#bAI'].forEach(s => $(s).disabled = false);
+    S.cur = -1; S.sel.clear();
+    await loadRows();
+    let m = j.scan.total + ' foto' + (j.scan.added ? ' · ' + j.scan.added + ' baru' : '') + (j.scan.missing ? ' · ' + j.scan.missing + ' hilang' : '');
+    toast(m, 3500);
+    if (j.db_local) say('Folder ini tidak bisa ditulisi (mis. folder hanya-baca).\n\nHasil kerja disimpan di komputer ini saja:\n' + j.db + '\n\nRekan di komputer lain tidak akan melihat hasil ini. Salin folder foto ke lokasi yang bisa ditulisi bila ingin dikerjakan bersama.');
+    if (S.view.length) select(0);
+  } catch (e) { $('#sSum').textContent = 'Gagal membuka folder.'; say('Gagal membuka folder:\n' + e.message); }
+}
+async function loadRows(keepScroll) {
+  const j = await api('/core/rows', { folder: S.folder });
+  S.rows = j.rows; S.byId = new Map(S.rows.map(r => [r.id, r]));
+  fillHoles(); applyFilter(keepScroll); showSummary(j.summary);
+}
+function showSummary(s) {
+  if (!s) return;
+  $('#sSum').textContent = `${s.total} foto · ${s.holes} lubang · AI selesai ${s.done} · gagal ${s.error} · diverifikasi ${s.verified}` + (s.missing ? ` · ${s.missing} file hilang` : '');
+  $('#aiN').textContent = S.rows.filter(r => !r.missing && !r.verified && r.status !== 'done').length;
+}
+function fillHoles() {
+  const sel = $('#fHole'), cur = sel.value;
+  const holes = [...new Set(S.rows.map(r => r.hole_id).filter(Boolean))].sort(natural);
+  sel.innerHTML = '<option value="">Semua (' + holes.length + ')</option>' + holes.map(h => `<option>${esc(h)}</option>`).join('');
+  sel.value = holes.includes(cur) ? cur : '';
+}
+
+/* =============================== filter & urutan =============================== */
+function applyFilter(keepScroll) {
+  const h = $('#fHole').value, fa = parseFloat($('#fFrom').value), fb = parseFloat($('#fTo').value), st = $('#fStat').value, q = $('#fQ').value.trim().toLowerCase();
+  const curId = S.view[S.cur] && S.view[S.cur].id;
+  let v = S.rows.filter(r => {
+    if (h && r.hole_id !== h) return false;
+    if (!isNaN(fa) && !(r.to_m == null || r.to_m >= fa)) return false;
+    if (!isNaN(fb) && !(r.from_m == null || r.from_m <= fb)) return false;
+    if (st === 'miss') { if (!r.missing) return false; } else if (st && r.missing) return false;
+    if (st === 'pending' && r.status !== 'pending') return false;
+    if (st === 'done' && r.status !== 'done') return false;
+    if (st === 'error' && r.status !== 'error') return false;
+    if (st === 'unver' && r.verified) return false;
+    if (st === 'ver' && !r.verified) return false;
+    if (q && !((r.rel + ' ' + (r.notes || '') + ' ' + (r.lithology || '') + ' ' + (r.alteration || '')).toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if (S.sort) {
+    const { k, d } = S.sort;
+    v.sort((a, b) => { const x = a[k], y = b[k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : natural(x, y)) * d; });
+  } else if (h) v.sort((a, b) => (a.from_m == null) - (b.from_m == null) || (a.from_m - b.from_m) || natural(a.rel, b.rel));
+  S.view = v;
+  S.cur = curId != null ? v.findIndex(r => r.id === curId) : -1;
+  $('#cnt').textContent = v.length + ' dari ' + S.rows.length + ' foto';
+  if (!keepScroll && S.cur < 0) $('#tw').scrollTop = 0;
+  layoutTable(); renderRows();
+  // filter kedalaman: lompat ke foto pertama yang cocok (dua arah: tabel <-> pratinjau)
+  if (S.cur < 0 && v.length && (!isNaN(fa) || !isNaN(fb) || h)) select(0);
+}
+
+/* =============================== tabel virtual =============================== */
+const COLS = [
+  { k: '_sel', l: '', w: 30 }, { k: '_no', l: 'No', w: 46 }, { k: '_th', l: 'Foto', w: 64 }, { k: 'status', l: 'Status', w: 92 },
+  { k: 'name', l: 'Nama file', w: 210 }, { k: 'hole_id', l: 'Hole ID', w: 100, e: 1 }, { k: 'box_no', l: 'Box', w: 52, e: 1 },
+  { k: 'from_m', l: 'From', w: 66, e: 1, n: 1 }, { k: 'to_m', l: 'To', w: 66, e: 1, n: 1 }, { k: '_iv', l: 'Int.', w: 52, n: 1 },
+  { k: 'lithology', l: 'Litologi', w: 120, e: 1 }, { k: 'color', l: 'Warna', w: 150, e: 1 }, { k: 'weathering', l: 'Pelapukan', w: 150, e: 1, dl: 'dlW' },
+  { k: 'oxidation', l: 'Oksidasi', w: 140, e: 1, dl: 'dlO' }, { k: 'alteration', l: 'Alterasi', w: 130, e: 1 },
+  { k: 'recovery_pct', l: 'Rec %', w: 60, e: 1, n: 1 }, { k: 'rqd_pct', l: 'RQD %', w: 60, e: 1, n: 1 }, { k: 'gsi', l: 'GSI', w: 64, e: 1 },
+  { k: 'rmr', l: 'RMR', w: 56, e: 1, n: 1 }, { k: 'ai_conf', l: 'Keyakinan', w: 80 }, { k: 'notes', l: 'Catatan', w: 260, e: 1 }
+];
+function layoutTable() {
+  const tw = $('#tw');
+  tw.style.setProperty('--cols', COLS.map(c => c.w + 'px').join(' '));
+  if (!$('#thead').dataset.ok) {
+    $('#thead').dataset.ok = 1;
+    $('#thead').addEventListener('click', e => {
+      if (e.target.id === 'selAllBox') { const on = e.target.checked; S.view.forEach(r => on ? S.sel.add(r.id) : S.sel.delete(r.id)); selChanged(); renderRows(); return; }
+      const d = e.target.closest('[data-k]'); if (!d) return; const k = d.dataset.k;
+      if (k === '_no') S.sort = null;
+      else if (k[0] === '_') return;
+      else S.sort = S.sort && S.sort.k === k ? (S.sort.d > 0 ? { k, d: -1 } : null) : { k, d: 1 };
+      applyFilter(true);
+    });
+  }
+  $('#thead').innerHTML = COLS.map(c => `<div data-k="${c.k}" class="${c.n ? 'num' : ''}" title="${c.k[0] === '_' && c.k !== '_no' ? '' : 'Klik untuk mengurutkan'}">${c.k === '_sel' ? '<input type="checkbox" id="selAllBox">' : esc(c.l) + (S.sort && S.sort.k === c.k ? (S.sort.d > 0 ? ' ▲' : ' ▼') : '')}</div>`).join('');
+  const rh = parseInt(getComputedStyle(document.body).getPropertyValue('--rh')) || 34;
+  $('#tbody').style.height = (S.view.length * rh) + 'px';
+}
+const rowH = () => parseInt(getComputedStyle(document.body).getPropertyValue('--rh')) || 34;
+function statusBadge(r) {
+  if (r.missing) return '<span class="badge b-miss">File hilang</span>';
+  if (r.verified) return '<span class="badge b-ver" title="Diverifikasi ' + esc(r.verified_by || '') + ' ' + esc(r.verified_at || '') + '">✓ Verifikasi</span>';
+  return { done: '<span class="badge b-done">AI selesai</span>', error: '<span class="badge b-error" title="' + esc(r.error || '') + '">AI gagal</span>' }[r.status] || '<span class="badge b-pending">Belum AI</span>';
+}
+function cellHtml(c, r, i) {
+  switch (c.k) {
+    case '_sel': return `<input type="checkbox" data-sel="${r.id}" ${S.sel.has(r.id) ? 'checked' : ''}>`;
+    case '_no': return i + 1;
+    case '_th': return `<img class="th48" loading="lazy" src="${imgUrl(r.id, 160)}" alt="">`;
+    case 'status': return statusBadge(r);
+    case 'name': return `<span title="${esc(r.rel)}">${esc(r.name)}</span>`;
+    case '_iv': return r.from_m != null && r.to_m != null ? (r.to_m - r.from_m).toFixed(2) : '';
+    case 'ai_conf': return esc(r.ai_conf || '');
+  }
+  const isAi = r.status === 'done' && !r.verified && !r.edited.includes(c.k) && !r.from_name.includes(c.k) && r[c.k] != null;
+  return `<input class="ce${isAi ? ' ai' : ''}${c.n ? ' num' : ''}" data-f="${c.k}" data-id="${r.id}" ${c.n ? 'type="number" step="0.01"' : ''} ${c.dl ? 'list="' + c.dl + '"' : ''} value="${esc(fmt(r[c.k]))}" ${r.verified ? 'title="Sudah diverifikasi"' : ''}>`;
+}
+let rafR = 0;
+function renderRows() {
+  cancelAnimationFrame(rafR);
+  rafR = requestAnimationFrame(() => {
+    const tw = $('#tw'), body = $('#tbody'), rh = rowH();
+    const ae = document.activeElement, keep = ae && ae.classList && ae.classList.contains('ce') && body.contains(ae) ? { id: ae.dataset.id, f: ae.dataset.f } : null;
+    const st = Math.max(0, Math.floor((tw.scrollTop - 32) / rh) - 8), en = Math.min(S.view.length, st + Math.ceil(tw.clientHeight / rh) + 16);
+    let h = '';
+    for (let i = st; i < en; i++) {
+      const r = S.view[i];
+      h += `<div class="tr rw${i === S.cur ? ' cur' : ''}${r.missing ? ' miss' : ''}" data-i="${i}" style="top:${i * rh}px">` + COLS.map(c => `<div class="${c.n ? 'num' : ''}">${cellHtml(c, r, i)}</div>`).join('') + '</div>';
+    }
+    if (keep) return; // jangan ganggu sel yang sedang diketik; digambar ulang setelah selesai
+    body.innerHTML = h;
+  });
+}
+
+/* =============================== pilih foto =============================== */
+function select(i, scroll = true) {
+  if (i < 0 || i >= S.view.length) return;
+  S.cur = i;
+  const r = S.view[i];
+  renderRows(); showCard(r); showImage(r);
+  if (scroll) { const tw = $('#tw'), rh = rowH(), y = i * rh; if (y < tw.scrollTop) tw.scrollTop = y; else if (y + rh + 34 > tw.scrollTop + tw.clientHeight) tw.scrollTop = y + rh + 40 - tw.clientHeight; }
+}
+function selChanged() {
+  const n = S.sel.size; $('#selInfo').textContent = n + ' dipilih';
+  ['#bSelVer', '#bSelUnver', '#bSelAI'].forEach(s => $(s).disabled = !n);
+}
+
+/* =============================== kartu interpretasi =============================== */
+function showCard(r) {
+  const fld = (k, cls, input) => {
+    const ed = r.edited.includes(k), fn = !ed && r.from_name.includes(k), ai = r.status === 'done' && !r.verified && !ed && !fn && r[k] != null;
+    const tag = ed ? '<span class="tag ed">diedit</span>' : fn ? '<span class="tag fn" title="Dibaca dari nama file; tidak ditimpa AI">nama file</span>' : ai ? '<span class="tag ai">AI</span>' : '';
+    return `<div class="fld ${cls || ''}${ai ? ' ai' : ''}"><label>${esc(FIELD_LABEL[k] || k)}${tag}</label>${input}</div>`;
+  };
+  const inp = (k, ty, list) => `<input data-cf="${k}" ${ty === 'n' ? 'type="number" step="0.01"' : ''} ${list ? 'list="' + list + '"' : ''} value="${esc(fmt(r[k]))}">`;
+  const iv = r.from_m != null && r.to_m != null ? (r.to_m - r.from_m).toFixed(2) + ' m' : '–';
+  $('#card').innerHTML = `
+    <div class="chd"><h3 title="${esc(r.rel)}">${esc(r.name)}</h3>${statusBadge(r)}
+      <div class="nav"><button class="btn sm" id="cPrev" title="Foto sebelumnya (↑)"><svg class="i"><use href="#i-up"/></svg></button><button class="btn sm" id="cNext" title="Foto berikutnya (↓)"><svg class="i"><use href="#i-down"/></svg></button></div></div>
+    <div class="grid">
+      ${fld('hole_id', '', inp('hole_id'))}${fld('box_no', '', inp('box_no'))}
+      ${fld('from_m', '', inp('from_m', 'n'))}${fld('to_m', '', inp('to_m', 'n'))}
+      <div class="fld full" style="background:transparent;border-style:dashed"><label>Interval</label><b>${iv}</b> <small style="color:var(--mu)">${esc(r.rel)}</small></div>
+      ${fld('lithology', 'full', inp('lithology'))}
+      ${fld('color', 'full', inp('color'))}
+      ${fld('weathering', '', inp('weathering', 's', 'dlW'))}${fld('oxidation', '', inp('oxidation', 's', 'dlO'))}
+      ${fld('alteration', 'full', inp('alteration'))}
+      ${fld('recovery_pct', '', inp('recovery_pct', 'n'))}${fld('rqd_pct', '', inp('rqd_pct', 'n'))}
+      ${fld('gsi', '', inp('gsi'))}${fld('rmr', '', inp('rmr', 'n'))}
+      ${fld('condition', '', inp('condition', 's', 'dlC'))}<div class="fld"><label>Keyakinan AI</label><b>${esc(r.ai_conf || '–')}</b>${r.ai_model ? ' <small style="color:var(--mu)">' + esc(r.ai_model) + (r.ai_secs ? ' · ' + r.ai_secs + ' dtk' : '') + '</small>' : ''}</div>
+      ${fld('notes', 'full', `<textarea data-cf="notes" rows="3">${esc(r.notes || '')}</textarea>`)}
+    </div>
+    ${r.error && r.status === 'error' ? '<div class="err">AI gagal: ' + esc(r.error) + '</div>' : ''}
+    <div class="cact">
+      ${r.verified ? '<button class="btn" id="cUnver">Batalkan verifikasi</button>' : '<button class="btn ok" id="cVer" title="Ctrl+Enter"><svg class="i"><use href="#i-check"/></svg>Verifikasi &amp; lanjut</button>'}
+      <button class="btn" id="cAI" ${r.missing || r.verified ? 'disabled' : ''}><svg class="i"><use href="#i-chip"/></svg>${r.status === 'done' ? 'Analisis ulang' : 'Analisis foto ini'}</button>
+      <button class="btn" id="cShow" ${D && D.showFile ? '' : 'style="display:none"'}><svg class="i"><use href="#i-folder"/></svg>Tampilkan file</button>
+    </div>
+    <div class="note">${r.verified ? 'Diverifikasi oleh <b>' + esc(r.verified_by || '-') + '</b> · ' + esc(r.verified_at || '') : 'Sel krem = isian AI yang belum dicek. Isian yang Anda edit tidak akan ditimpa AI.'}${r.edited_by ? '<br>Terakhir diedit: ' + esc(r.edited_by) + ' · ' + esc(r.edited_at || '') : ''}</div>
+    <details class="hist" id="cHist"><summary>Riwayat perubahan &amp; jawaban asli AI</summary><div class="hlist" id="cHL">Memuat…</div></details>`;
+  $('#cPrev').onclick = () => select(S.cur - 1);
+  $('#cNext').onclick = () => select(S.cur + 1);
+  const v = $('#cVer'); if (v) v.onclick = () => verifyCurrent(true);
+  const u = $('#cUnver'); if (u) u.onclick = () => verify([r.id], false);
+  $('#cAI').onclick = () => runAI('ids', [r.id]);
+  $('#cShow').onclick = () => D && D.showFile && D.showFile(S.folder.replace(/[\\/]$/, '') + '/' + r.rel);
+  $('#cHist').ontoggle = async (e) => {
+    if (!e.target.open) return;
+    try {
+      const j = await api('/core/history', { folder: S.folder, id: r.id, values: {} });
+      $('#cHL').innerHTML = (j.history.length ? j.history.map(x => `<div><b>${esc(FIELD_LABEL[x.field] || x.field)}</b>: ${esc(x.old ?? '–')} → ${esc(x.new ?? '–')} <span style="color:var(--mu)">· ${esc(x.by || '')} · ${esc(x.src)} · ${esc(x.at)}</span></div>`).join('') : '<div>Belum ada perubahan.</div>')
+        + (j.ai ? '<div style="margin-top:6px"><b>Jawaban asli AI:</b><pre class="mono" style="white-space:pre-wrap;font-size:11px">' + esc(JSON.stringify(j.ai, null, 1)) + '</pre></div>' : '');
+    } catch (err) { $('#cHL').textContent = err.message; }
+  };
+}
+
+/* =============================== simpan editan =============================== */
+async function saveField(id, k, val) {
+  const r = S.byId.get(id); if (!r) return;
+  const p = api('/core/update', { folder: S.folder, id, values: { [k]: val }, by: user() })
+    .then(j => { Object.assign(r, j.row); if (k === 'hole_id') fillHoles(); if (S.view[S.cur] && S.view[S.cur].id === id) showCard(r); renderRows(); })
+    .catch(e => say('Gagal menyimpan ' + (FIELD_LABEL[k] || k) + ':\n' + e.message));
+  S.pending.push(p); p.finally(() => S.pending.splice(S.pending.indexOf(p), 1));
+  return p;
+}
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.cf) { const r = S.view[S.cur]; if (r) saveField(r.id, t.dataset.cf, t.value); }
+  else if (t.classList.contains('ce')) saveField(+t.dataset.id, t.dataset.f, t.value);
+  else if (t.dataset.sel) { t.checked ? S.sel.add(+t.dataset.sel) : S.sel.delete(+t.dataset.sel); selChanged(); }
+});
+$('#tbody').addEventListener('click', e => {
+  if (e.target.matches('input')) { const row = e.target.closest('.rw'); if (row && !e.target.dataset.sel && +row.dataset.i !== S.cur) select(+row.dataset.i, false); return; }
+  const row = e.target.closest('.rw'); if (row) select(+row.dataset.i, false);
+});
+$('#tbody').addEventListener('focusout', () => setTimeout(() => { if (!document.activeElement || !document.activeElement.classList.contains('ce')) renderRows(); }, 0));
+$('#tw').addEventListener('scroll', renderRows, { passive: true });
+window.addEventListener('resize', renderRows);
+
+/* =============================== verifikasi =============================== */
+async function verify(ids, value) {
+  try {
+    await Promise.all(S.pending);
+    const j = await api('/core/verify', { folder: S.folder, ids, value, by: user() });
+    ids.forEach(id => { const r = S.byId.get(id); if (r) { r.verified = value ? 1 : 0; r.verified_by = value ? user() : null; r.verified_at = value ? new Date().toLocaleString('sv-SE') : null; } });
+    showSummary(j.summary); renderRows(); if (S.view[S.cur]) showCard(S.view[S.cur]);
+  } catch (e) { say('Gagal verifikasi:\n' + e.message); }
+}
+async function verifyCurrent(next) {
+  const r = S.view[S.cur]; if (!r) return;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  await new Promise(res => setTimeout(res, 0));
+  await verify([r.id], true);
+  if (next && S.cur < S.view.length - 1) select(S.cur + 1);
+}
+$('#bSelAll').onclick = () => { S.view.forEach(r => S.sel.add(r.id)); selChanged(); renderRows(); };
+$('#bSelNone').onclick = () => { S.sel.clear(); selChanged(); renderRows(); };
+$('#bSelVer').onclick = () => { if (ask('Verifikasi ' + S.sel.size + ' foto terpilih?\n\nVerifikasi berarti Anda sudah memeriksa isiannya.')) verify([...S.sel], true); };
+$('#bSelUnver').onclick = () => verify([...S.sel], false);
+$('#bSelAI').onclick = () => runAI('ids', [...S.sel]);
+
+/* =============================== pratinjau foto (zoom / geser / putar) =============================== */
+const V = { s: 1, x: 0, y: 0, rot: 0, iw: 0, ih: 0, id: null, full: false };
+function showImage(r) {
+  const img = $('#vimg');
+  V.id = r.id; V.full = false; V.rot = 0;
+  $('#vph').style.display = 'none';
+  $('#vinfo').style.display = 'block';
+  $('#vinfo').textContent = r.rel + (r.missing ? ' (file hilang)' : '');
+  if (r.missing) { img.style.display = 'none'; $('#vph').style.display = 'grid'; $('#vph').innerHTML = '<div>File foto tidak ditemukan di folder.<br>Klik <b>Pindai ulang</b> setelah file dikembalikan.</div>'; return; }
+  img.onload = () => { if (V.id !== r.id) return; V.iw = img.naturalWidth; V.ih = img.naturalHeight; img.style.display = 'block'; if (!V.keep) fit(); V.keep = false; apply(); };
+  img.onerror = () => { $('#vph').style.display = 'grid'; $('#vph').innerHTML = '<div>Foto tidak bisa dibuka.</div>'; img.style.display = 'none'; };
+  img.src = imgUrl(r.id, 2000);
+}
+function fit() {
+  const vw = $('#viewer').clientWidth, vh = $('#viewer').clientHeight;
+  const rw = V.rot % 180 ? V.ih : V.iw, rh = V.rot % 180 ? V.iw : V.ih;
+  V.s = Math.min(vw / rw, vh / rh) || 1; V.x = (vw - rw * V.s) / 2; V.y = (vh - rh * V.s) / 2;
+}
+function apply() {
+  const img = $('#vimg');
+  const off = { 0: [0, 0], 90: [V.ih, 0], 180: [V.iw, V.ih], 270: [0, V.iw] }[V.rot];
+  img.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.s}) translate(${off[0]}px,${off[1]}px) rotate(${V.rot}deg)`;
+}
+function zoomAt(f, cx, cy) { const ns = Math.max(0.05, Math.min(20, V.s * f)); V.x = cx - (cx - V.x) * ns / V.s; V.y = cy - (cy - V.y) * ns / V.s; V.s = ns; apply(); }
+const vw = $('#viewer');
+vw.addEventListener('wheel', e => { if ($('#vimg').style.display === 'none') return; e.preventDefault(); const b = vw.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - b.left, e.clientY - b.top); }, { passive: false });
+vw.addEventListener('mousedown', e => {
+  if (e.target.closest('#vtools') || e.button !== 0) return;
+  const sx = e.clientX - V.x, sy = e.clientY - V.y; vw.classList.add('drag');
+  const mv = ev => { V.x = ev.clientX - sx; V.y = ev.clientY - sy; apply(); };
+  const up = () => { vw.classList.remove('drag'); removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+  addEventListener('mousemove', mv); addEventListener('mouseup', up);
+});
+vw.addEventListener('dblclick', () => { fit(); apply(); });
+$('#vZin').onclick = () => zoomAt(1.3, vw.clientWidth / 2, vw.clientHeight / 2);
+$('#vZout').onclick = () => zoomAt(1 / 1.3, vw.clientWidth / 2, vw.clientHeight / 2);
+$('#vFit').onclick = () => { fit(); apply(); };
+$('#vRot').onclick = () => { V.rot = (V.rot + 90) % 360; fit(); apply(); };
+$('#vFull').onclick = () => {
+  if (V.id == null || V.full) return; V.full = true; const img = $('#vimg'), old = V.iw;
+  img.onload = () => { const k = old / img.naturalWidth; V.iw = img.naturalWidth; V.ih = img.naturalHeight; V.s *= k; apply(); toast('Resolusi penuh dimuat'); };
+  img.src = imgUrl(V.id, 0);
+};
+
+/* =============================== AI lokal =============================== */
+async function checkOllama() {
+  const host = $('#aiHost').value.trim() || 'http://127.0.0.1:11434';
+  $('#aiDot').className = 'dot wait'; $('#aiTxt').textContent = 'AI lokal: memeriksa…';
+  try {
+    const j = await api('/core/ollama', { host });
+    S.ollama = j;
+    const vis = j.models.filter(m => m.vision);
+    if (!j.running) {
+      $('#aiDot').className = 'dot no'; $('#aiTxt').textContent = 'AI lokal: Ollama tidak aktif';
+      const h = `<b>Ollama belum berjalan.</b> Pasang Ollama (lihat panduan), lalu jalankan dari Start menu. Rekomendasi model: <code>${esc(j.recommended[0])}</code>. Tanpa AI pun, Anda tetap bisa mengisi &amp; memverifikasi log secara manual.`;
+      $('#aiState').className = 'box er'; $('#aiState').innerHTML = h; $('#sAi').className = 'box er'; $('#sAi').innerHTML = h;
+    } else if (!vis.length) {
+      $('#aiDot').className = 'dot no'; $('#aiTxt').textContent = 'AI lokal: belum ada model vision';
+      const h = `Ollama ${esc(j.version || '')} aktif, tetapi <b>belum ada model vision</b>. Salin model dari komputer lain atau jalankan <code>ollama pull ${esc(j.recommended[0])}</code> saat ada internet (lihat panduan).`;
+      $('#aiState').className = 'box wn'; $('#aiState').innerHTML = h; $('#sAi').className = 'box wn'; $('#sAi').innerHTML = h;
+    } else {
+      $('#aiDot').className = 'dot ok'; $('#aiTxt').textContent = 'AI lokal: ' + (LS.get('model', '') || vis[0].name);
+      const h = `Ollama ${esc(j.version || '')} aktif · ${vis.length} model vision siap. Tidak ada data yang keluar dari komputer ini.`;
+      $('#aiState').className = 'box ok'; $('#aiState').innerHTML = h; $('#sAi').className = 'box ok'; $('#sAi').innerHTML = h;
+    }
+    const want = S.meta.ai_model || LS.get('model', '');
+    const chosen = vis.find(m => m.name === want) ? want : (vis[0] && vis[0].name);
+    $('#aiModels').innerHTML = j.models.length ? j.models.map(m => `<label style="${m.vision ? '' : 'opacity:.5'}"><input type="radio" name="aiM" value="${esc(m.name)}" ${m.vision ? '' : 'disabled'} ${m.name === chosen ? 'checked' : ''}><b>${esc(m.name)}</b><small>${esc(m.params || '')} · ${m.size ? (m.size / 1e9).toFixed(1) + ' GB' : ''}${m.vision ? '' : ' · tidak bisa melihat gambar'}</small></label>`).join('') : '<small>Belum ada model.</small>';
+    if (chosen) $('#aiTxt').textContent = 'AI lokal: ' + chosen;
+  } catch (e) { $('#aiDot').className = 'dot no'; $('#aiTxt').textContent = 'AI lokal: ?'; $('#aiState').className = 'box er'; $('#aiState').textContent = e.message; $('#sAi').textContent = e.message; }
+}
+function aiModel() { const m = document.querySelector('input[name=aiM]:checked'); return m ? m.value : ''; }
+function openAIDlg() {
+  if (S.meta.ai_host) $('#aiHost').value = S.meta.ai_host;
+  if (S.meta.ai_extra != null) $('#aiExtra').value = S.meta.ai_extra;
+  if (S.meta.ai_max_px) $('#aiPx').value = S.meta.ai_max_px;
+  $('#mAI').classList.add('on'); checkOllama();
+}
+async function runAI(scope, ids) {
+  if (!S.folder) return;
+  if (!S.ollama || !S.ollama.running || !aiModel()) { openAIDlg(); if (!S.ollama || !S.ollama.running) return; }
+  const model = aiModel();
+  if (!model) { say('Pilih model vision dulu.'); openAIDlg(); return; }
+  if (scope === 'ids') ids = ids.filter(id => { const r = S.byId.get(id); return r && !r.verified && !r.missing; });
+  if (scope === 'ids' && !ids.length) { say('Foto terpilih sudah diverifikasi / hilang. Batalkan verifikasi dulu bila ingin dianalisis ulang.'); return; }
+  if (scope === 'all' && !ask('Analisis ulang SEMUA foto yang belum diverifikasi?\n\nIsian yang sudah Anda edit tetap tidak ditimpa.')) return;
+  try {
+    await Promise.all(S.pending);
+    LS.set('model', model);
+    const j = await api('/core/ai/start', { folder: S.folder, scope, ids: ids || [], host: $('#aiHost').value.trim(), model, extra: $('#aiExtra').value, max_px: +$('#aiPx').value, by: user() });
+    S.meta.ai_model = model; S.meta.ai_host = $('#aiHost').value.trim(); S.meta.ai_extra = $('#aiExtra').value; S.meta.ai_max_px = $('#aiPx').value;
+    $('#mAI').classList.remove('on');
+    toast('AI lokal mulai: ' + j.job.total + ' foto');
+    pollAI();
+  } catch (e) { say(e.message); }
+}
+let pollT = 0, lastDone = -1;
+async function pollAI() {
+  clearTimeout(pollT);
+  let j; try { j = (await api('/core/ai/status')).job; } catch (e) { pollT = setTimeout(pollAI, 3000); return; }
+  const on = !!j.running;
+  $('#prog').style.display = on ? 'flex' : 'none';
+  $('#bAI').disabled = on || !S.folder;
+  if (on) {
+    const k = j.done + j.failed, pct = j.total ? k / j.total * 100 : 0;
+    $('#pBar').style.width = pct.toFixed(1) + '%';
+    const eta = j.eta_secs != null ? ' · sisa ±' + (j.eta_secs > 90 ? Math.round(j.eta_secs / 60) + ' menit' : j.eta_secs + ' detik') : '';
+    $('#pTxt').textContent = `AI ${k}/${j.total}${j.failed ? ' (' + j.failed + ' gagal)' : ''}${eta} · ${j.current || ''}`;
+    if (k !== lastDone) { lastDone = k; refreshQuiet(); }
+    pollT = setTimeout(pollAI, 1500);
+  } else if (lastDone !== -1) {
+    lastDone = -1; await refreshQuiet();
+    if (j.total) toast(`AI ${j.message}: ${j.done} berhasil${j.failed ? ', ' + j.failed + ' gagal (lihat status "AI gagal")' : ''}`, 6000);
+  }
+}
+async function refreshQuiet() {
+  if (!S.folder) return;
+  try {
+    const ae = document.activeElement;
+    if (ae && (ae.dataset.cf || ae.classList.contains('ce'))) return; // jangan ganggu yang sedang mengetik
+    await loadRows(true);
+    if (S.view[S.cur]) showCard(S.view[S.cur]);
+  } catch (e) {}
+}
+$('#pStop').onclick = async () => { if (ask('Hentikan AI setelah foto yang sedang dianalisis?')) { await api('/core/ai/cancel', {}); toast('AI akan berhenti setelah foto ini'); } };
+$('#bAI').onclick = openAIDlg;
+$('#aiPill').onclick = openAIDlg;
+$('#aiCheck').onclick = checkOllama;
+$('#aiRun').onclick = () => runAI('pending');
+$('#aiRunAll').onclick = () => runAI('all');
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.mask').classList.remove('on'));
+$('#aiModels').addEventListener('change', () => { $('#aiTxt').textContent = 'AI lokal: ' + aiModel(); LS.set('model', aiModel()); });
+
+/* =============================== bilah atas =============================== */
+$('#bOpen').onclick = chooseFolder;
+$('#sOpen').onclick = chooseFolder;
+$('#bRescan').onclick = async () => { try { const j = await api('/core/rescan', { folder: S.folder }); await loadRows(true); toast(`${j.scan.total} foto · ${j.scan.added} baru · ${j.scan.missing} hilang`); } catch (e) { say(e.message); } };
+$('#bExport').onclick = async () => {
+  try {
+    await Promise.all(S.pending);
+    const filtered = S.view.length !== S.rows.length;
+    let ids = [];
+    if (filtered && ask('Export hanya ' + S.view.length + ' foto yang tampil (sesuai filter)?\n\nOK = yang tampil saja · Batal = semua ' + S.rows.length + ' foto')) ids = S.view.map(r => r.id);
+    const buf = await api('/core/export/xlsx', { folder: S.folder, ids }, true);
+    const holes = [...new Set((ids.length ? S.view : S.rows).map(r => r.hole_id).filter(Boolean))];
+    const name = 'Core_Log_' + (holes.length === 1 ? holes[0] : S.folder.split(/[\\/]/).pop()).replace(/[^\w.-]+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    if (D) { const p = await D.saveFile(name, new Uint8Array(buf), [{ name: 'Excel', extensions: ['xlsx'] }]); if (p) { toast('Tersimpan: ' + p, 5000); if (D.showFile) D.showFile(p); } }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf])); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+  } catch (e) { say('Gagal export Excel:\n' + e.message); }
+};
+$('#bImport').onclick = () => $('#jsonIn').click();
+$('#jsonIn').onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const payload = JSON.parse(await f.text());
+    const j = await api('/core/import/json', { folder: S.folder, payload, by: user() });
+    await loadRows(true);
+    say(`Impor selesai: ${j.matched} foto cocok, ${j.unmatched} tidak ditemukan di folder.` + (j.unmatched_names.length ? '\n\nContoh yang tidak cocok:\n' + j.unmatched_names.join('\n') : ''));
+  } catch (err) { say('Gagal impor JSON:\n' + err.message); }
+};
+$('#bDark').onclick = () => { document.body.classList.toggle('dark'); LS.set('dark', document.body.classList.contains('dark')); };
+if (LS.get('dark', false)) document.body.classList.add('dark');
+
+/* =============================== filter =============================== */
+['#fHole', '#fStat'].forEach(s => $(s).addEventListener('change', () => applyFilter()));
+let fT = 0; ['#fFrom', '#fTo', '#fQ'].forEach(s => $(s).addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => applyFilter(), 250); }));
+$('#fClr').onclick = () => { $('#fHole').value = ''; $('#fFrom').value = ''; $('#fTo').value = ''; $('#fStat').value = ''; $('#fQ').value = ''; S.sort = null; applyFilter(); };
+
+/* =============================== keyboard =============================== */
+document.addEventListener('keydown', e => {
+  if ($('#mAI').classList.contains('on')) { if (e.key === 'Escape') $('#mAI').classList.remove('on'); return; }
+  if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); verifyCurrent(true); return; }
+  const inField = /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName);
+  if (inField) { if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT') document.activeElement.blur(); return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); select(Math.min(S.view.length - 1, S.cur + 1)); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); select(Math.max(0, S.cur - 1)); }
+});
+
+/* =============================== panel bisa digeser =============================== */
+function dragSplit(el, onMove) { el.addEventListener('mousedown', e => { e.preventDefault(); const mv = ev => onMove(ev); const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); renderRows(); if (V.id != null) { fit(); apply(); } }; addEventListener('mousemove', mv); addEventListener('mouseup', up); }); }
+dragSplit($('#split'), ev => { const w = Math.max(340, Math.min(innerWidth * 0.7, ev.clientX)); $('#left').style.width = w + 'px'; LS.set('lw', w); });
+dragSplit($('#vsplitH'), ev => { const t = $('#left').getBoundingClientRect().top, h = Math.max(160, Math.min(innerHeight * 0.8, ev.clientY - t)); $('#viewer').style.height = h + 'px'; LS.set('vh', h); });
+if (LS.get('lw', 0)) $('#left').style.width = LS.get('lw') + 'px';
+if (LS.get('vh', 0)) $('#viewer').style.height = LS.get('vh') + 'px';
+
+/* =============================== daftar pilihan & mulai =============================== */
+document.body.insertAdjacentHTML('beforeend', '<datalist id="dlW"></datalist><datalist id="dlO"></datalist><datalist id="dlC"><option>WET</option><option>DRY</option></datalist>');
+function recentList() {
+  const r = LS.get('recent', []);
+  $('#recent').innerHTML = r.length ? '<b>Folder terakhir</b>' + r.map(f => `<a data-f="${esc(f)}"><svg class="i"><use href="#i-folder"/></svg><b>${esc(f.split(/[\\/]/).pop())}</b><span>${esc(f)}</span></a>`).join('') : '';
+  $('#recent').querySelectorAll('a').forEach(a => a.onclick = () => openFolder(a.dataset.f));
+}
+// dipanggil Electron sebelum jendela ditutup: tunggu semua editan tersimpan
+window.gcexFlush = async () => { try { await Promise.all(S.pending); return { ok: true }; } catch (e) { return { ok: false, err: e.message }; } };
+(async function init() {
+  recentList();
+  try {
+    const u = await backendUrl();
+    const h = await fetch(u + '/health').then(r => r.json());
+    $('#sBe').textContent = 'Backend lokal ' + h.version + ' · offline';
+    const W = ['W1 (Fresh)', 'W2 (Slightly Weathered)', 'W3 (Moderately Weathered)', 'W4 (Highly Weathered)', 'W5 (Completely Weathered)', 'W6 (Residual Soil)'];
+    const O = ['Unoxidized', 'Slightly Oxidized', 'Moderately Oxidized', 'Strongly Oxidized', 'Completely Oxidized'];
+    $('#dlW').innerHTML = W.map(x => `<option>${x}</option>`).join(''); $('#dlO').innerHTML = O.map(x => `<option>${x}</option>`).join('');
+    checkOllama(); pollAI();
+    const auto = new URLSearchParams(location.search).get('folder');
+    if (auto) openFolder(auto);
+  } catch (e) { $('#sBe').textContent = 'Backend tidak aktif'; $('#sAi').className = 'box er'; $('#sAi').textContent = e.message; }
+})();
+</script>
+</body>
+</html>

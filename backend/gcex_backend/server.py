@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, access_io, excel_io, mdl_io, xlsx_patch
+from . import __version__, access_io, core_io, excel_io, mdl_io, xlsx_patch
 
 log = logging.getLogger("gcex")
 app = FastAPI(title="GC-Ex Backend", version=__version__)
@@ -34,6 +34,10 @@ for _exc in (OSError, ValueError, KeyError, RuntimeError, PermissionError):
 @app.exception_handler(Exception)
 async def _err(request: Request, exc: Exception):  # cadangan untuk galat lain: tetap dikembalikan sebagai pesan yang bisa dibaca
     return _json_err(request, exc)
+
+
+# GC-Ex Core Interpretation: foto core box + AI lokal (Ollama)
+app.include_router(core_io.router)
 
 
 @app.get("/health")

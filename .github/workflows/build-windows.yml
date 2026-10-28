@@ -29,8 +29,20 @@ jobs:
           $p = Start-Process -FilePath dist-backend/gcex-backend/gcex-backend.exe -ArgumentList "--port","8799" -PassThru -WindowStyle Hidden
           $ok = $false
           for ($i=0; $i -lt 40; $i++) { try { $r = Invoke-RestMethod http://127.0.0.1:8799/health; if ($r.ok) { $ok = $true; break } } catch {}; Start-Sleep -Milliseconds 500 }
+          if (-not $ok) { Stop-Process -Id $p.Id -Force; throw "backend.exe tidak merespons /health" }
+          # Core Interpretation: proyek foto + thumbnail (Pillow ikut terbundel) + cek Ollama (tidak ada di server: harus tetap menjawab)
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/foto_core/LTH-1" | Out-Null
+          python -c "from PIL import Image; Image.new('RGB',(1200,500),(120,100,80)).save(r'$env:RUNNER_TEMP/foto_core/LTH-1/LTH-1_Box1_0.0-3.5.jpg')"
+          $body = @{ folder = "$env:RUNNER_TEMP/foto_core"; by = "CI" } | ConvertTo-Json
+          $o = Invoke-RestMethod -Method Post -ContentType "application/json" -Body $body http://127.0.0.1:8799/core/open
+          if ($o.scan.total -ne 1) { Stop-Process -Id $p.Id -Force; throw "core/open: foto tidak terbaca" }
+          $rows = Invoke-RestMethod -Method Post -ContentType "application/json" -Body $body http://127.0.0.1:8799/core/rows
+          $id = $rows.rows[0].id
+          $img = Invoke-WebRequest -UseBasicParsing ("http://127.0.0.1:8799/core/img?w=200&id=" + $id + "&folder=" + [uri]::EscapeDataString("$env:RUNNER_TEMP/foto_core"))
+          if ($img.Headers["Content-Type"] -notlike "image/jpeg*") { Stop-Process -Id $p.Id -Force; throw "core/img: thumbnail gagal (Pillow?)" }
+          $ol = Invoke-RestMethod -Method Post -ContentType "application/json" -Body '{"host":"http://127.0.0.1:11434"}' http://127.0.0.1:8799/core/ollama
+          Write-Host ("core OK: hole " + $rows.rows[0].hole_id + ", thumbnail " + $img.RawContentLength + " byte, ollama running=" + $ol.running)
           Stop-Process -Id $p.Id -Force
-          if (-not $ok) { throw "backend.exe tidak merespons /health" }
           Write-Host "backend.exe OK"
 
       # ---------- Electron + installer ----------
@@ -70,6 +82,20 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
+      - name: Panduan Core Interpretation (HTML)
+        run: python docs/md2html.py docs/PANDUAN_CORE.md docs/PANDUAN_CORE.html
+      - name: Bangun installer GC-Ex Core Interpretation
+        run: npm run dist:core
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Cek isi GC-Ex Core Interpretation
+        shell: pwsh
+        run: |
+          $d = "dist/win-unpacked"
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/LISENSI_PYTHON.txt","resources/docs/PANDUAN_CORE.html","resources/backend/gcex-backend.exe","LICENSE.electron.txt")) {
+            if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: GC-Ex-Setup-Windows
@@ -79,4 +105,9 @@ jobs:
         with:
           name: GC-Ex-Drillhole-Setup-Windows
           path: dist/GC-Ex-Drillhole-Setup-*.exe
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GC-Ex-Core-Setup-Windows
+          path: dist/GC-Ex-Core-Setup-*.exe
           retention-days: 30

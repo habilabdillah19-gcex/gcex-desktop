@@ -1,8 +1,8 @@
 {
   "name": "gcex-desktop",
   "productName": "GC-Ex",
-  "version": "0.14.4",
-  "description": "GC-Ex Grade Control Excellence - aplikasi desktop (Block Model & Drillhole)",
+  "version": "0.15.0",
+  "description": "GC-Ex Grade Control Excellence - aplikasi desktop (Block Model, Drillhole & Core Interpretation)",
   "main": "electron/main.js",
   "author": "Habil Abdillah",
   "license": "UNLICENSED",
@@ -10,7 +10,9 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win nsis --x64 --publish never",
-    "dist:dh": "electron-builder --config builder-dh.json --win nsis --x64 --publish never"
+    "dist:dh": "electron-builder --config builder-dh.json --win nsis --x64 --publish never",
+    "dist:core": "electron-builder --config builder-core.json --win nsis --x64 --publish never",
+    "start:core": "set GCEX_APP=core&& electron ."
   },
   "devDependencies": {
     "electron": "33.2.1",

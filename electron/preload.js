@@ -27,6 +27,8 @@ contextBridge.exposeInMainWorld('gcexDesktop', {
   prompt: (msg, def) => ipcRenderer.sendSync('gcex:prompt', { msg: String(msg == null ? '' : msg), def: String(def == null ? '' : def) }),
   // pilih file yang sudah ada lewat dialog Windows; hasil: path lengkap atau null
   openFile: (opt) => ipcRenderer.invoke('gcex:openFile', opt || {}),
+  // pilih folder lewat dialog Windows; hasil: path lengkap atau null
+  openFolder: (opt) => ipcRenderer.invoke('gcex:openFolder', opt || {}),
   // layar penuh: on = true / false / undefined (toggle); hasil: status baru
   fullscreen: (on) => ipcRenderer.invoke('gcex:fullscreen', on),
   onFullscreen: (cb) => ipcRenderer.on('gcex:fs', (e, v) => cb(!!v)),

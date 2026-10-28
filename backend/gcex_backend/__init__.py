@@ -1,2 +1,2 @@
-"""GC-Ex backend: Excel, MS Access, dan (nanti) pembaca block model besar."""
-__version__ = "0.7.0"
+"""GC-Ex backend: Excel, MS Access, block model besar, dan foto core box + AI lokal (Core Interpretation)."""
+__version__ = "0.8.0"

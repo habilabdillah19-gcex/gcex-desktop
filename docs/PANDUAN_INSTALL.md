@@ -236,3 +236,11 @@ Node paling bawah di Project Tree, bertanda **REFERENSI**. Menu ini untuk meliha
   `LISENSI_PIHAK_KETIGA.txt` (daftar komponen + lisensi Plotly.js), `LISENSI_PYTHON.txt` (Python, PyInstaller & semua paket Python backend — dibuat otomatis saat build, sesuai isi installer), `LISENSI_ELECTRON.txt`, `LISENSI_CHROMIUM.html`, `LISENSI_PLOTLY_BUNDEL.txt`, dan `PENAFIAN_MEREK.txt`.
 - Semua komponen pihak ketiga berlisensi permisif (MIT / BSD / PSF / zlib; PyInstaller GPL-2.0 dengan pengecualian bootloader) sehingga boleh dipakai & dibagikan, termasuk komersial, asalkan file-file ini ikut disertakan — jangan dihapus dari folder instalasi bila aplikasi dibagikan ulang.
 - Sumber file statis ada di repositori: `legal/LISENSI_PIHAK_KETIGA.txt`, `legal/PENAFIAN_MEREK.txt`, generator `legal/gen_licenses.py`.
+
+
+## 23. GC-Ex Core Interpretation (0.15.0)
+
+- Aplikasi ketiga: installer `GC-Ex-Core-Setup-<versi>.exe` (artifact **GC-Ex-Core-Setup-Windows**). Shortcut **GC-Ex Core Interpretation**, data di `%APPDATA%\GC-Ex Core Interpretation`.
+- Interpretasi foto core box dengan AI vision **lokal** (Ollama + mis. `qwen3-vl:8b`), 100% offline. Foto dibaca langsung dari folder oleh backend; hasil di `<folder foto>\_GCEx_Core\gcex_core.db` sehingga rekan bisa melanjutkan.
+- Panduan lengkap, termasuk memasang Ollama & model tanpa internet: `docs/PANDUAN_CORE.md` (di aplikasi: **Bantuan › Panduan AI lokal (Ollama)**).
+

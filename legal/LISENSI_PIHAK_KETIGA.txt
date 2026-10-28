@@ -1,4 +1,4 @@
-GC-Ex (GC-Ex Block Model & GC-Ex Drillhole)
+GC-Ex (GC-Ex Block Model, GC-Ex Drillhole & GC-Ex Core Interpretation)
 PEMBERITAHUAN LISENSI PIHAK KETIGA / THIRD-PARTY SOFTWARE NOTICES
 ======================================================================
 
@@ -63,6 +63,18 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         pustaka yang dibundel di
                                         wheel, mis. OpenBLAS)
   pyodbc                      5.2.0     MIT                           koneksi database MS Access (ODBC)
+  Pillow                      11.0.0    MIT-CMU (HPND) (termasuk      baca foto & thumbnail
+                                        libjpeg-turbo, libpng, zlib,  (GC-Ex Core Interpretation)
+                                        libtiff, libwebp: lisensi
+                                        permisif masing-masing)
+
+  Tidak dibundel / not bundled:
+  Ollama                      -         MIT                           mesin AI lokal untuk GC-Ex Core
+                                                                      Interpretation; dipasang terpisah
+                                                                      oleh pengguna
+  Model AI (mis. Qwen3-VL)    -         lisensi masing-masing model   diunduh terpisah oleh pengguna lewat
+                                        (Qwen3-VL: Apache-2.0)        Ollama; periksa lisensi model sebelum
+                                                                      dipakai
 
   Daftar paket Python yang PERSIS ikut di dalam installer, beserta versi dan
   teks lisensinya, ada di LISENSI_PYTHON.txt (dibuat otomatis oleh build).
