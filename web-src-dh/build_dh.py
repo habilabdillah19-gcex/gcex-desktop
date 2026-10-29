@@ -60,7 +60,7 @@ print('UI 0.12 (Mapping / Layout / Sayatan): OK')
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + s[vj:]
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan
 css = open(W + 'theme_dh.css', encoding='utf-8').read()
@@ -73,8 +73,11 @@ import nosrc_patch
 s = nosrc_patch.patch(s)
 print('Tanpa akses kode sumber: OK')
 import palette_patch
-s, npal = palette_patch.patch(s)
+s, npal = palette_patch.patch(s, earthy=True)
 s = palette_patch.layout(s)
-print('Palet kuning baru:', npal, 'tempat')
+print('Palet earthy:', npal, 'tempat')
+import brand_build
+s = brand_build.apply(s, 'dh', OUT, open(SHARED + 'theme_earthy.css', encoding='utf-8').read() + '\n')
+print('Identitas GC-Ex 0.19: OK')
 open(OUT, 'w', encoding='utf-8').write(s)
 print('OK', OUT, len(s))

@@ -232,7 +232,7 @@ rep1("var pg={W:W,H:H,ops:ops,scale:0},b=lyPdf([pg]);", "var pg={W:W,H:H,ops:ops
 # ---------- 7z. Cek sintaks semua modul JS (bila Node.js tersedia) supaya galat ketahuan saat build ----------
 import shutil as _sh, subprocess as _sp
 # modul tambahan 0.14.0+ (dipasang di akhir lapisan UI, berurutan)
-EXTRA = ['theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js']
+EXTRA = ['theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js']
 if _sh.which('node'):
     for _m in EXTRA + ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
         _r = _sp.run(['node', '--check', W + _m], capture_output=True, text=True)
@@ -272,5 +272,8 @@ import palette_patch as _pal
 s, _np = _pal.patch(s, earthy=True)
 s = _pal.layout(s)
 print('Palet kuning baru:', _np, 'tempat')
+import brand_build as _brand
+s = _brand.apply(s, 'bm', OUT)
+print('Identitas GC-Ex 0.19: OK')
 open(OUT, 'w', encoding='utf-8').write(s)
 print('OK', len(s))

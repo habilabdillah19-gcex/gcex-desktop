@@ -77,6 +77,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3j | Grade shell 3D (Ore Geometry) dengan **Surface-Following**: hanya sel di sekitar batas cut-off yang dihitung penuh (hasil sama, 1,3–5 × lebih cepat) | selesai (0.18.3) |
 | 3k | Setiap pembaruan terbit di **GitHub Release** v<versi>: 3 installer terpisah + dokumen & tutorial + data latihan + lisensi & tentang + catatan rilis (commit) + SHA-256 + kode sumber | selesai (0.18.4) |
 | 3l | Catatan rilis: huruf non-ASCII (—, é) tidak rusak, jam commit ditulis dalam WIB | selesai (0.18.5) |
+| 3m | Identitas visual baru (selaras Core-Ex): halaman muka penuh, tema earthy kedua aplikasi, logo GC-Ex / BLOCK MODEL · DRILL HOLE ULTIMATE, nama project site per proyek; Sayatan 2D, garis sayatan di 3D tampak atas, rekap & edit string, legenda string ringkas, Geological Modelling per domain aktif | selesai (0.19.0) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna

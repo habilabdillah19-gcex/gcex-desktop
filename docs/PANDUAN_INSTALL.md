@@ -322,3 +322,17 @@ Setiap build di `main` menerbitkan **Release `v<versi>`** (repo → *Releases*; 
 - Versi dinaikkan pada setiap pembaruan (termasuk perubahan dokumen / data latihan saja), sehingga tiap pembaruan punya Release sendiri. Build ulang versi yang sama mengganti Release versi itu dengan isi terbaru.
 - Tutorial & data simulasi GC-Ex kini disimpan di repo: `docs/tutorial-gcex/`.
 - 0.18.5: daftar perubahan di catatan rilis kini UTF-8 (tanda — dll. tidak rusak) dan jam commit dalam WIB.
+
+## 30. Tampilan baru GC-Ex Block Model & Drill Hole Ultimate (0.19.0)
+
+- **Halaman muka penuh** (gaya Core-Ex): judul, tiga langkah kerja, lalu kartu Folder proyek / Proyek tersimpan / impor data. Tidak lagi berupa pop-up di atas tampilan.
+- **Nama project site**: isian di halaman muka. Tampil di bilah atas di bawah *Grade Control Excellence* dan **disimpan per proyek** (membuka proyek tersimpan / file .prj memakai nama site proyek itu).
+- **Logo** dua baris rata kiri-kanan: *GC-Ex* di atas, *BLOCK MODEL* atau *DRILL HOLE ULTIMATE* di bawah.
+- **Warna**: kedua aplikasi earthy & muted; biru dari Core-Ex (#1d4785 / #2a5ea8), aksen oker tanah (#b5893e), latar kertas. Drill Hole Ultimate tidak lagi kuning terang.
+- **Sayatan 2D**: nama baru untuk *Penampang (Sayatan) 2D* di semua menu, tree dan petunjuk.
+- **Gambar garis sayatan**: membuka jendela 3D **tampak atas** dengan data tetap tampil; tarik garis P1 → P2 langsung di atasnya (bidang tegak, dip bisa diubah di Properti).
+- **Block Model → Dig Block → Rekap & edit string** (dulu *Digitasi string bebas*): tabel string (tampil, nomor, keterangan, titik, panjang, bidang) dengan tombol ✎ edit bentuk dan × hapus; pembuatan string baru di bawahnya.
+- **Bilah "Langkah x / 10 · Berikutnya" dihapus**: urutan kerja dan flitch tersedia langsung di Project Tree.
+- **Drill Hole Ultimate → Geological Modelling**: *+ Tambah domain…* di Project Tree; Properti hanya menampilkan **domain aktif** yang dipilih di tree (Flag, String, Solid, Struktur bekerja pada domain itu); nomor bagian (② ③ ④ ⑤) dihapus.
+- **Legenda**: string kontrol bernomor digabung per domain & sisi (mis. *QV_Utama_HW*, *QV_Utama_FW*).
+
