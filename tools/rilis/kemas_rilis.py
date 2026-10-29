@@ -29,7 +29,7 @@ KUNCI_PRIVAT = ("KUNCI_PRIVAT", "private", ".pem", ".key")
 
 def git(*a):
     try:
-        return subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+        return subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=True).stdout.strip()
     except Exception:
         return ""
 
@@ -127,7 +127,16 @@ def main():
     tags = [t for t in git("tag", "--list", "v*", "--sort=-v:refname").splitlines() if t and t != tag]
     prev = next((t for t in tags if subprocess.run(["git", "merge-base", "--is-ancestor", t, sha], cwd=ROOT).returncode == 0), "")
     rng = f"{prev}..{sha}" if prev else sha
-    log = git("log", rng, "--no-merges", "--pretty=format:- `%h` %ad %s", "--date=format:%Y-%m-%d %H:%M")
+    WIB = datetime.timezone(datetime.timedelta(hours=7))
+    rows = []
+    for ln in git("-c", "i18n.logOutputEncoding=UTF-8", "log", rng, "--no-merges", "--pretty=format:%h\x1f%cI\x1f%s").splitlines():
+        h, d, m = (ln.split("\x1f") + ["", ""])[:3]
+        try:
+            d = datetime.datetime.fromisoformat(d).astimezone(WIB).strftime("%Y-%m-%d %H:%M WIB")
+        except ValueError:
+            pass
+        rows.append(f"- `{h}` {d} {m}")
+    log = "\n".join(rows)
     if not prev:
         log = "\n".join(log.splitlines()[:40])
     files = sorted(p for p in outd.iterdir() if p.is_file())

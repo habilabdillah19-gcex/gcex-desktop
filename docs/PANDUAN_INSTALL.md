@@ -321,4 +321,4 @@ Setiap build di `main` menerbitkan **Release `v<versi>`** (repo → *Releases*; 
 
 - Versi dinaikkan pada setiap pembaruan (termasuk perubahan dokumen / data latihan saja), sehingga tiap pembaruan punya Release sendiri. Build ulang versi yang sama mengganti Release versi itu dengan isi terbaru.
 - Tutorial & data simulasi GC-Ex kini disimpan di repo: `docs/tutorial-gcex/`.
-
+- 0.18.5: daftar perubahan di catatan rilis kini UTF-8 (tanda — dll. tidak rusak) dan jam commit dalam WIB.

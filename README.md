@@ -76,6 +76,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3i | Data besar: block model .mdl > 6 GB lancar di RAM 8 GB / VRAM 4 GB (indeks RL di luar RAM, batas blok per pemuatan, penampang 2D tanpa jeda); tanpa pembaruan online | selesai (0.18.2) |
 | 3j | Grade shell 3D (Ore Geometry) dengan **Surface-Following**: hanya sel di sekitar batas cut-off yang dihitung penuh (hasil sama, 1,3–5 × lebih cepat) | selesai (0.18.3) |
 | 3k | Setiap pembaruan terbit di **GitHub Release** v<versi>: 3 installer terpisah + dokumen & tutorial + data latihan + lisensi & tentang + catatan rilis (commit) + SHA-256 + kode sumber | selesai (0.18.4) |
+| 3l | Catatan rilis: huruf non-ASCII (—, é) tidak rusak, jam commit ditulis dalam WIB | selesai (0.18.5) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna
