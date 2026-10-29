@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const D = __dirname;
 const MID = '7K3Q-M9XT-2HDR-PV4C';
-const APPS = { bm: 'GC-Ex Block Model', dh: 'GC-Ex Drillhole', core: 'GC-Ex Core Interpretation' };
+const APPS = { bm: 'GC-Ex Block Model', dh: 'GC-Ex Drillhole', core: 'Core-Ex' };
 const INFO = { id: 'L-20261029-A7KD', m: MID, a: ['bm','dh','core'], n: 'Rina Wulandari', o: 'Geologi Tambang', i: '2026-10-29', e: '2027-10-29' };
 const KEY = 'GCEX1.eyJ2IjoxLCJpZCI6IkwtMjAyNjEwMjktQTdLRCIsIm0iOiI3SzNRLU05WFQtMkhEUi1QVjRDIiwiYSI6WyJibSIsImRoIiwiY29yZSJdLCJuIjoiUmluYSBXdWxhbmRhcmkifQ.Qm9udG9oLXRhbmRhLXRhbmdhbi1kZW1vLXNhamEtdGlkYWstYmVybGFrdS11bnR1ay1hcGxpa2FzaQ';
 async function act(browser, file, st, after) {
@@ -18,7 +18,7 @@ async function act(browser, file, st, after) {
 }
 (async () => {
   const b = await chromium.launch();
-  const base = { theme: 'core', appName: 'GC-Ex Core Interpretation', machineId: MID, apps: APPS, mode: 'activate', check: { ok: false, none: true, reason: 'Belum ada lisensi di komputer ini.' } };
+  const base = { theme: 'core', appName: 'Core-Ex', machineId: MID, apps: APPS, mode: 'activate', check: { ok: false, none: true, reason: 'Belum ada lisensi di komputer ini.' } };
   await act(b, 'a1_awal.png', base);
   await act(b, 'a2_sukses.png', base, { key: KEY, click: '#go', res: { ok: true, info: INFO } });
   await act(b, 'a3_galat.png', base, { key: KEY, click: '#go', res: { ok: false, reason: 'Kunci ini untuk komputer lain (ID 4FZW-81NC-QJ6T-0B2M). ID komputer ini: ' + MID + '.' } });

@@ -1,6 +1,6 @@
 # Lisensi GC-Ex (kunci terikat komputer)
 
-Sejak 0.17.0, GC-Ex Block Model, Drillhole dan Core Interpretation yang terpasang hanya bisa dibuka dengan **kunci lisensi**.
+Sejak 0.17.0, GC-Ex Block Model, Drillhole dan Core-Ex yang terpasang hanya bisa dibuka dengan **kunci lisensi**.
 
 ## Untuk pemakai
 1. Buka GC-Ex. Jendela **Aktivasi** menampilkan **ID Komputer** (XXXX-XXXX-XXXX-XXXX). Klik **Salin** dan kirim ke penerbit lisensi.

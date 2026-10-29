@@ -30,7 +30,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:4px 6px;b
 <body>
 <div class="w">
   <h1>Pembuat Lisensi GC-Ex</h1>
-  <div class="sub">Membuat kunci lisensi terikat komputer untuk GC-Ex Block Model, Drillhole &amp; Core Interpretation. Berjalan offline di browser ini (Edge / Chrome terbaru); kunci privat tidak dikirim ke mana pun.</div>
+  <div class="sub">Membuat kunci lisensi terikat komputer untuk GC-Ex Block Model, Drillhole &amp; Core-Ex. Berjalan offline di browser ini (Edge / Chrome terbaru); kunci privat tidak dikirim ke mana pun.</div>
 
   <div class="card">
     <div class="lab">1. Kunci privat penerbit</div>
@@ -46,7 +46,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:4px 6px;b
       <div><label for="nm">Nama pemegang</label><input type="text" id="nm" placeholder="mis. Budi Santoso"></div>
       <div><label for="org">Organisasi / departemen (opsional)</label><input type="text" id="org" placeholder="mis. Geologi Tambang"></div>
       <div><label for="exp">Berlaku sampai</label><input type="date" id="exp"><label style="display:flex;gap:5px;align-items:center;color:var(--tx)"><input type="checkbox" id="noexp"> Tanpa batas waktu</label></div>
-      <div><label>Aplikasi</label><div class="chk"><label><input type="checkbox" class="ap" value="bm" checked> Block Model</label><label><input type="checkbox" class="ap" value="dh" checked> Drillhole</label><label><input type="checkbox" class="ap" value="core"> Core Interpretation</label><label><input type="checkbox" id="all"> Semua (termasuk aplikasi GC-Ex berikutnya)</label></div></div>
+      <div><label>Aplikasi</label><div class="chk"><label><input type="checkbox" class="ap" value="bm" checked> Block Model</label><label><input type="checkbox" class="ap" value="dh" checked> Drillhole</label><label><input type="checkbox" class="ap" value="core"> Core-Ex</label><label><input type="checkbox" id="all"> Semua (termasuk aplikasi GC-Ex berikutnya)</label></div></div>
     </div>
     <div class="row"><button class="pri" id="go" disabled>Buat kunci lisensi</button><span id="msg"></span></div>
   </div>
@@ -66,7 +66,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:4px 6px;b
 <script>
 (function(){'use strict';
 const EXPECT_X='9r0X96ABXcPSrjl0edVsTn836jFZxwBDmFvX4aie0ug';
-const B32='0123456789ABCDEFGHJKMNPQRSTVWXYZ', APPN={bm:'Block Model',dh:'Drillhole',core:'Core'};
+const B32='0123456789ABCDEFGHJKMNPQRSTVWXYZ', APPN={bm:'Block Model',dh:'Drillhole',core:'Core-Ex'};
 const $=i=>document.getElementById(i);let KEY=null;
 const b64u=b=>{let s='';new Uint8Array(b).forEach(c=>s+=String.fromCharCode(c));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const u8=s=>new TextEncoder().encode(s);

@@ -1,4 +1,4 @@
-"""Uji GC-Ex Core Interpretation: proyek foto, nama file, thumbnail, AI lokal (Ollama tiruan), Excel, impor JSON lama."""
+"""Uji Core-Ex: proyek foto, nama file, thumbnail, AI lokal (Ollama tiruan), Excel, impor JSON lama."""
 import json
 import sys
 import threading

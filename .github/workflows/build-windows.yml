@@ -30,7 +30,7 @@ jobs:
           $ok = $false
           for ($i=0; $i -lt 40; $i++) { try { $r = Invoke-RestMethod http://127.0.0.1:8799/health; if ($r.ok) { $ok = $true; break } } catch {}; Start-Sleep -Milliseconds 500 }
           if (-not $ok) { Stop-Process -Id $p.Id -Force; throw "backend.exe tidak merespons /health" }
-          # Core Interpretation: proyek foto + thumbnail (Pillow ikut terbundel) + cek Ollama (tidak ada di server: harus tetap menjawab)
+          # Core-Ex: proyek foto + thumbnail (Pillow ikut terbundel) + cek Ollama (tidak ada di server: harus tetap menjawab)
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/foto_core/LTH-1" | Out-Null
           python -c "from PIL import Image; Image.new('RGB',(1200,500),(120,100,80)).save(r'$env:RUNNER_TEMP/foto_core/LTH-1/LTH-1_Box1_0.0-3.5.jpg')"
           $body = @{ folder = "$env:RUNNER_TEMP/foto_core"; by = "CI" } | ConvertTo-Json
@@ -121,13 +121,13 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
-      - name: Panduan Core Interpretation (HTML)
+      - name: Panduan Core-Ex (HTML)
         run: python docs/md2html.py docs/PANDUAN_CORE.md docs/PANDUAN_CORE.html
-      - name: Bangun installer GC-Ex Core Interpretation
+      - name: Bangun installer Core-Ex
         run: npm run dist:core
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-      - name: Cek isi GC-Ex Core Interpretation
+      - name: Cek isi Core-Ex
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
@@ -147,8 +147,8 @@ jobs:
           retention-days: 30
       - uses: actions/upload-artifact@v6
         with:
-          name: GC-Ex-Core-Setup-Windows
-          path: dist/GC-Ex-Core-Setup-*.exe
+          name: Core-Ex-Setup-Windows
+          path: dist/Core-Ex-Setup-*.exe
           retention-days: 30
 
       # audit keamanan (informasi, tidak menggagalkan build): environment Python terpisah supaya tidak ikut ke daftar lisensi

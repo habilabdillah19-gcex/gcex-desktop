@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 100% offline: tidak ada skrip, font atau ikon dari internet. Semua data lewat backend lokal (127.0.0.1). -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob: http://127.0.0.1:* http://localhost:*; img-src 'self' data: blob: http://127.0.0.1:* http://localhost:*; font-src 'self' file: data:">
-<title>GC-Ex Core Interpretation</title>
+<title>Core-Ex</title>
 <style>
 /* Gaya "atlas lapangan": kertas terang, tinta navy, judul serif (Playfair Display), label mesin ketik (Courier Prime),
    aksen BIRU. Font dibundel di folder fonts/ (OFL) -> tetap offline. */
@@ -277,7 +277,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
 </svg>
 
 <div id="top">
-  <div class="brand"><span class="kick">GC-Ex · Core Box · AI Lokal</span><b>Core <em>Interpretation</em></b><small id="prjName">Interpretasi foto core box · 100% offline</small></div>
+  <div class="brand"><span class="kick" title="Core-Ex (Core Excellence) · keluarga GC-Ex">Core Excellence</span><b>Core<em>-Ex</em></b><small id="prjName">Interpretasi foto core box · 100% offline</small></div>
   <div class="sp"></div>
   <div id="qwrap"><svg class="i"><use href="#i-search"/></svg><input id="qq" placeholder="Cari cepat (Ctrl+K): LTH-101, pyrite, QV, Au>=1…" autocomplete="off" disabled><div id="qres"></div></div>
   <div class="sp"></div>
@@ -349,14 +349,14 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <span id="sSum">Belum ada proyek.</span>
   <div id="prog"><span id="pTxt"></span><div class="bar"><i id="pBar"></i></div><button class="btn sm" id="pStop"><svg class="i"><use href="#i-stop"/></svg>Hentikan</button></div>
   <span style="margin-left:auto" id="sBe">Backend: menghubungkan…</span>
-  <span id="wmark" title="GC-Ex Core Interpretation">Copyright © Habil Abdillah 2026</span>
+  <span id="wmark" title="Core-Ex (Core Excellence) · keluarga GC-Ex">Copyright © Habil Abdillah 2026</span>
 </div>
 
 <div id="start">
   <div class="sc">
-    <span class="kick">Grade Control Excellence · Core Logging</span>
+    <span class="kick">Core Excellence · Core Logging</span>
     <h2>Foto core box dibaca di komputer ini, <em>bukan di cloud.</em></h2>
-    <p>Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). GC-Ex membaca Hole ID, nomor box dan kedalaman dari nama file bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.</p>
+    <p>Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). Core-Ex membaca Hole ID, nomor box dan kedalaman dari nama file bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.</p>
     <div class="steps">
       <div><b>1 · Buka folder</b>Hasil kerja disimpan di subfolder <code>_GCEx_Core</code> di folder itu, jadi rekan yang membuka folder yang sama bisa melanjutkan.</div>
       <div><b>2 · AI geoteknik</b>Model vision di Ollama, tanpa internet, menilai recovery, RQD, GSI, RMR. Logging geologist & editan Anda tidak pernah ditimpa.</div>
@@ -436,7 +436,7 @@ async function backendUrl() {
   if (BE) return BE;
   const q = new URLSearchParams(location.search).get('backend');
   if (q) return (BE = q.replace(/\/$/, ''));
-  if (D) { const st = await D.backend(); if (!st || !st.ok) throw new Error('Backend GC-Ex tidak aktif' + (st && st.err ? ': ' + st.err : '') + '. Buka Bantuan > Buka folder log.'); return (BE = st.url); }
+  if (D) { const st = await D.backend(); if (!st || !st.ok) throw new Error('Backend Core-Ex tidak aktif' + (st && st.err ? ': ' + st.err : '') + '. Buka Bantuan > Buka folder log.'); return (BE = st.url); }
   return (BE = 'http://127.0.0.1:8765');
 }
 async function api(path, body, bin) {
@@ -474,7 +474,7 @@ async function openFolder(folder) {
     const rec = [j.folder].concat(LS.get('recent', []).filter(x => x.toLowerCase() !== j.folder.toLowerCase())).slice(0, 8);
     LS.set('recent', rec);
     $('#prjName').textContent = j.folder;
-    document.title = 'GC-Ex Core Interpretation — ' + j.folder.split(/[\\/]/).pop();
+    document.title = 'Core-Ex — ' + j.folder.split(/[\\/]/).pop();
     $('#start').style.display = 'none';
     ['#bRescan', '#bImport', '#bExport', '#bAI', '#bDH', '#qq'].forEach(s => $(s).disabled = false);
     S.cur = -1; S.sel.clear();
@@ -1197,7 +1197,7 @@ async function dhPreview(hr, sheet) {
     const opts = (sel) => '<option value="">— tidak ada —</option>' + j.headers.map((h, i) => `<option value="${i}" ${sel === i ? 'selected' : ''}>${esc(h || '(kolom ' + (i + 1) + ')')}</option>`).join('');
     $('#dhRoles').innerHTML = j.roles.map(r => `<label class="${r.req ? 'req' : ''}">${esc(r.label)}${r.req ? ' *' : ''}<select class="fi" data-role="${r.key}">${opts(j.guess.roles[r.key])}</select></label>`).join('');
     $('#dhColsW').style.display = DH.kind === 'survey' ? 'none' : '';
-    $('#dhCols').innerHTML = '<table><tr><th>Pakai</th><th>Kolom di file</th><th>Nama di GC-Ex</th><th>Jenis</th><th>Contoh</th></tr>' + j.guess.cols.map((c, k) =>
+    $('#dhCols').innerHTML = '<table><tr><th>Pakai</th><th>Kolom di file</th><th>Nama di Core-Ex</th><th>Jenis</th><th>Contoh</th></tr>' + j.guess.cols.map((c, k) =>
       `<tr><td><input type="checkbox" data-c="${k}" data-f="use" ${c.use ? 'checked' : ''}></td><td>${esc(c.src)}</td><td><input type="text" data-c="${k}" data-f="name" value="${esc(c.name)}"></td><td><select class="fi" data-c="${k}" data-f="type"><option value="n" ${c.type === 'n' ? 'selected' : ''}>angka</option><option value="s" ${c.type === 's' ? 'selected' : ''}>teks</option></select></td><td style="color:var(--mu)">${esc(j.sample.slice(0, 3).map(r => r[c.i]).filter(v => v !== '' && v != null).join(' · ')).slice(0, 40)}</td></tr>`).join('') + '</table>';
     $('#dhRoles').onchange = dhPvTable; $('#dhCols').onchange = dhPvTable;
     dhPvTable();

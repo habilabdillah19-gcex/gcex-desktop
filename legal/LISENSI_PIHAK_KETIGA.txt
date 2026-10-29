@@ -1,4 +1,4 @@
-GC-Ex (GC-Ex Block Model, GC-Ex Drillhole & GC-Ex Core Interpretation)
+GC-Ex (GC-Ex Block Model, GC-Ex Drillhole & Core-Ex)
 PEMBERITAHUAN LISENSI PIHAK KETIGA / THIRD-PARTY SOFTWARE NOTICES
 ======================================================================
 
@@ -66,11 +66,11 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         wheel, mis. OpenBLAS)
   pyodbc                      5.2.0     MIT                           koneksi database MS Access (ODBC)
   Pillow                      11.0.0    MIT-CMU (HPND) (termasuk      baca foto & thumbnail
-                                        libjpeg-turbo, libpng, zlib,  (GC-Ex Core Interpretation)
+                                        libjpeg-turbo, libpng, zlib,  (Core-Ex)
                                         libtiff, libwebp: lisensi
                                         permisif masing-masing)
 
-  Playfair Display (font)     1.203     SIL OFL 1.1                   huruf judul GC-Ex Core Interpretation
+  Playfair Display (font)     1.203     SIL OFL 1.1                   huruf judul Core-Ex
                                                                       (file asli, tidak diubah)
   Courier Prime (font)        3.018     SIL OFL 1.1                   huruf label & tabel GC-Ex Core
                                                                       Interpretation (file asli, tidak diubah;

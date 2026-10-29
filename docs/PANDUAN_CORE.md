@@ -1,25 +1,27 @@
-# Panduan GC-Ex Core Interpretation
+# Panduan Core-Ex
+
+**Core-Ex** (Core Excellence) adalah aplikasi keluarga GC-Ex untuk foto core box; dahulu bernama *GC-Ex Core Interpretation*.
 
 Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 28 Oktober 2026 (versi 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
+Pembaruan terakhir: 29 Oktober 2026 (versi 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 
 | Bagian | Fungsi | Berjalan di |
 |---|---|---|
-| Jendela GC-Ex Core Interpretation | Tabel log, pratinjau foto, kartu interpretasi, verifikasi, export Excel | komputer ini |
-| Backend GC-Ex (FastAPI) | Membaca ribuan foto dari folder, membuat thumbnail, menyimpan hasil di database, mengantre AI, membuat Excel | komputer ini, hanya `127.0.0.1` |
+| Jendela Core-Ex | Tabel log, pratinjau foto, kartu interpretasi, verifikasi, export Excel | komputer ini |
+| Backend Core-Ex (FastAPI) | Membaca ribuan foto dari folder, membuat thumbnail, menyimpan hasil di database, mengantre AI, membuat Excel | komputer ini, hanya `127.0.0.1` |
 | Ollama + model vision | "Melihat" foto lalu menulis deskripsi (litologi, warna, pelapukan, oksidasi, alterasi, RQD, GSI, RMR, catatan) | komputer ini, `127.0.0.1:11434` |
 
 Backend dan Ollama hanya mendengar di `127.0.0.1`, jadi tidak bisa diakses dari komputer lain di jaringan.
 
 ## 2. Memasang
 
-### 2a. GC-Ex Core Interpretation
+### 2a. Core-Ex
 
-1. Unduh `GC-Ex-Core-Setup-<versi>.exe` dari GitHub (tab **Actions** → run terbaru → **Artifacts** → `GC-Ex-Core-Setup-Windows`).
-2. Jalankan installer. Tidak perlu hak admin. Shortcut **GC-Ex Core Interpretation** muncul di desktop dan Start menu.
+1. Unduh `Core-Ex-Setup-<versi>.exe` dari GitHub (tab **Actions** → run terbaru → **Artifacts** → `Core-Ex-Setup-Windows`).
+2. Jalankan installer. Tidak perlu hak admin. Shortcut **Core-Ex** muncul di desktop dan Start menu.
 3. Aplikasi bisa dipasang berdampingan dengan GC-Ex Block Model dan GC-Ex Drillhole.
 
 ### 2b. Ollama (mesin AI lokal) — sekali per komputer
@@ -37,7 +39,7 @@ Untuk komputer **tanpa internet** di site:
 
 1. Salin `OllamaSetup.exe` dan seluruh folder `%USERPROFILE%\.ollama\models` dari komputer di atas ke flashdisk / hard disk.
 2. Di komputer site: pasang `OllamaSetup.exe`, lalu tempel folder `models` ke `%USERPROFILE%\.ollama\models` (buat foldernya bila belum ada).
-3. Jalankan Ollama dari Start menu (ikon llama di system tray). Di GC-Ex, titik di kanan atas berubah hijau: **AI lokal: qwen3-vl:8b**.
+3. Jalankan Ollama dari Start menu (ikon llama di system tray). Di Core-Ex, titik di kanan atas berubah hijau: **AI lokal: qwen3-vl:8b**.
 
 Bila folder model ingin disimpan di drive lain (mis. `D:\OllamaModels`), atur variabel lingkungan `OLLAMA_MODELS` ke folder itu lalu jalankan ulang Ollama.
 
@@ -79,7 +81,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 
 AI diberi tahu tata letak foto core box proyek (contoh fiktif: `docs/referensi/contoh_corebox_fiktif_LTH-101_box11.jpg`):
 
-| Tulisan di papan | Kolom di GC-Ex |
+| Tulisan di papan | Kolom di Core-Ex |
 |---|---|
 | HOLE ID: LTH-101 | Hole ID |
 | START DRILL: 05-03-25 | Start Drill |
@@ -102,7 +104,7 @@ Kotak berisi 4 baris core (atas = dangkal, kiri → kanan); papan catur di bawah
 Tombol **Data bor** di bilah atas. Pilih tab tabel, lalu **Pilih file CSV / Excel…** (.csv, .txt, .tsv, .xlsx, .xlsm; .xls lama: simpan ulang sebagai .xlsx).
 
 1. **Baris header** dan **sheet** dideteksi otomatis (baris judul laporan lab di atas header dilewati). Bisa diganti bila salah.
-2. **Kolom utama**: pilih kolom file untuk tiap isian. Nama header bebas; GC-Ex menebak dari nama umum (Hole_ID / BHID / DHID, From / Depth_From, Easting / X, RL / Z, Dip / Inclination, Azimuth / Bearing, …).
+2. **Kolom utama**: pilih kolom file untuk tiap isian. Nama header bebas; Core-Ex menebak dari nama umum (Hole_ID / BHID / DHID, From / Depth_From, Easting / X, RL / Z, Dip / Inclination, Azimuth / Bearing, …).
 
    | Tabel | Wajib | Opsional |
    |---|---|---|
@@ -111,12 +113,12 @@ Tombol **Data bor** di bilah atas. Pilih tab tabel, lalu **Pilih file CSV / Exce
    | Assay | Hole ID, From, To | kolom unsur apa pun |
    | Geologi | Hole ID, From, To | kolom apa pun (Lith, Alteration, Mineralogy, Vein, …) |
 
-3. **Kolom lain yang ikut**: centang kolom yang dipakai, beri **nama di GC-Ex** (mis. `Au (ppm)` → `Au`, `Sample No` → `Sample`) dan pilih **angka / teks**. Kolom dengan nama sama di import berikutnya dianggap kolom yang sama.
+3. **Kolom lain yang ikut**: centang kolom yang dipakai, beri **nama di Core-Ex** (mis. `Au (ppm)` → `Au`, `Sample No` → `Sample`) dan pilih **angka / teks**. Kolom dengan nama sama di import berikutnya dianggap kolom yang sama.
 4. Pratinjau di atas menandai kolom yang dipakai (biru = kolom utama, coret = tidak dipakai).
 5. **Cara import**: *Tambah / perbarui per hole* (hole di file diganti seluruhnya, hole lain tetap; untuk data bor baru / sampel ulang) atau *Ganti semua*.
 6. Ringkasan hasil: jumlah baris, baris yang dilewati beserta alasannya (Hole ID kosong, From ≥ To, …), nilai di bawah limit deteksi, interval tumpang tindih, hole yang tidak ada di Collar, dan jumlah hole yang cocok dengan foto.
 
-**Logging → isian kartu foto** (tab Geologi): pilih kolom logging untuk Litologi, Alterasi, Oksidasi, Warna, Pelapukan. GC-Ex menebak dari nama kolom (Lith / Lithology / Litologi, Alteration / Alt_Int / Alterasi, Ox / Oxidation, Colour / Warna, Weathering); pilih "— tidak dari logging —" bila isian itu tetap dari AI / manual.
+**Logging → isian kartu foto** (tab Geologi): pilih kolom logging untuk Litologi, Alterasi, Oksidasi, Warna, Pelapukan. Core-Ex menebak dari nama kolom (Lith / Lithology / Litologi, Alteration / Alt_Int / Alterasi, Ox / Oxidation, Colour / Warna, Weathering); pilih "— tidak dari logging —" bila isian itu tetap dari AI / manual.
 
 Pemetaan kolom **disimpan di proyek**: file berikutnya dengan susunan header yang sama langsung memakai pemetaan terakhir. Bila format Excel berubah, cukup pilih ulang kolomnya.
 
@@ -150,7 +152,7 @@ Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris;
 - Hasil kerja disimpan di subfolder `_GCEx_Core` **di dalam folder foto** (`gcex_core.db`). Geologist lain yang membuka folder yang sama (mis. di drive jaringan) melihat dan melanjutkan pekerjaan yang sama. Nama Anda dicatat pada setiap editan dan verifikasi.
 - Foto asli tidak pernah diubah, dipindah, atau diganti namanya.
 - Folder boleh dipindah ke drive lain asalkan subfolder `_GCEx_Core` ikut tersalin.
-- Bila folder tidak bisa ditulisi (hanya-baca), GC-Ex memberi tahu dan menyimpan hasil di komputer ini saja.
+- Bila folder tidak bisa ditulisi (hanya-baca), Core-Ex memberi tahu dan menyimpan hasil di komputer ini saja.
 - **Pindai ulang** mendaftarkan foto baru yang ditambahkan ke folder; foto yang dihapus ditandai **File hilang** (hasilnya tetap tersimpan).
 - Sebaiknya satu folder dikerjakan satu orang pada satu waktu; dua orang mengedit foto yang sama bersamaan = editan terakhir yang berlaku.
 
@@ -178,10 +180,10 @@ Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris;
 | Data lab kosong di kartu foto | Hole ID / From / To foto belum diisi, atau Hole ID di foto berbeda dengan di file lab (mis. `LTH-101A`). Perbaiki Hole ID di kartu; data lab langsung dicocokkan ulang. |
 | "Tidak ada baris yang bisa diimport" | Baris header salah (isi nomor baris yang berisi nama kolom) atau kolom From / To bukan angka. Lihat alasan di pesan. |
 | Pita overlay tidak pas dengan core | Klik **Atur area core**, sesuaikan kotak & jumlah baris, simpan untuk semua foto lubang ini. |
-| `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di GC-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
+| `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di Core-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
 | Bar "Backend tidak aktif" | Menu **Bantuan → Buka folder log**, kirim `backend.log` dan file log terbaru. |
 
 ## 11. Hak cipta & syarat penggunaan
 
-GC-Ex Core Interpretation adalah ciptaan Habil Abdillah (Copyright © Habil Abdillah 2026). Saat memasang dan saat pertama kali membuka aplikasi, pengguna harus menyetujui **Syarat Penggunaan, Lisensi & Penafian**. Teks lengkap dan daftar komponen open source ada di menu **Bantuan › Syarat penggunaan & penafian** dan **Bantuan › Lisensi pihak ketiga & merek dagang**. Nilai geoteknik dari AI adalah perkiraan visual dan tidak boleh menjadi satu-satunya dasar keputusan keselamatan.
+Core-Ex adalah ciptaan Habil Abdillah (Copyright © Habil Abdillah 2026). Saat memasang dan saat pertama kali membuka aplikasi, pengguna harus menyetujui **Syarat Penggunaan, Lisensi & Penafian**. Teks lengkap dan daftar komponen open source ada di menu **Bantuan › Syarat penggunaan & penafian** dan **Bantuan › Lisensi pihak ketiga & merek dagang**. Nilai geoteknik dari AI adalah perkiraan visual dan tidak boleh menjadi satu-satunya dasar keputusan keselamatan.
 

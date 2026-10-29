@@ -1,6 +1,6 @@
-"""GC-Ex Core Interpretation: integrasi data bor (Collar, Survey, Assay, Geologi) dengan header dinamis.
+"""Core-Ex: integrasi data bor (Collar, Survey, Assay, Geologi) dengan header dinamis.
 
-- File CSV / TXT / Excel (.xlsx/.xlsm). Header TIDAK dipatok: GC-Ex menebak kolom dari nama header
+- File CSV / TXT / Excel (.xlsx/.xlsm). Header TIDAK dipatok: Core-Ex menebak kolom dari nama header
   (Hole_ID / BHID / DHID, From, To, Easting / X, …), lalu pengguna menentukan sendiri kolom mana yang dipakai
   untuk tiap peran dan kolom lain mana yang ikut (dengan nama tampilan & jenis angka / teks).
   Pemetaan disimpan di proyek dan dipakai lagi otomatis saat format file sama.

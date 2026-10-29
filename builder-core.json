@@ -1,14 +1,14 @@
 {
   "appId": "com.gcex.core",
-  "productName": "GC-Ex Core Interpretation",
+  "productName": "Core-Ex",
   "copyright": "Copyright © 2026 Habil Abdillah",
   "extraMetadata": {
     "name": "gcex-core",
-    "productName": "GC-Ex Core Interpretation",
-    "description": "GC-Ex Core Interpretation - interpretasi foto core box dengan AI lokal (offline)",
+    "productName": "Core-Ex",
+    "description": "Core-Ex (Core Excellence) - dokumentasi & interpretasi foto core box dengan AI lokal (offline), keluarga GC-Ex",
     "gcex": {
       "page": "app-core/index.html",
-      "title": "GC-Ex Core Interpretation",
+      "title": "Core-Ex",
       "icon": "build/icon-core.ico",
       "theme": "core"
     }
@@ -57,8 +57,8 @@
       }
     ],
     "icon": "build/icon-core.ico",
-    "artifactName": "GC-Ex-Core-Setup-${version}.${ext}",
-    "legalTrademarks": "GC-Ex dan Grade Control Excellence adalah nama produk milik Habil Abdillah"
+    "artifactName": "Core-Ex-Setup-${version}.${ext}",
+    "legalTrademarks": "Core-Ex, Core Excellence dan GC-Ex adalah nama produk milik Habil Abdillah"
   },
   "nsis": {
     "oneClick": false,
@@ -66,8 +66,8 @@
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "GC-Ex Core Interpretation",
-    "uninstallDisplayName": "GC-Ex Core Interpretation ${version}",
+    "shortcutName": "Core-Ex",
+    "uninstallDisplayName": "Core-Ex ${version}",
     "license": "legal/SYARAT_PENGGUNAAN.txt"
   },
   "electronFuses": {
