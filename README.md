@@ -81,6 +81,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3n | GC-Ex Drill Hole Ultimate: **domain aktif** dipakai bersama Geological Modelling, Geostatistik (komposit hanya dari domain aktif) dan Model Estimation (Jalankan domain aktif / semua domain); domain bisa diaktifkan dari node Geostatistik & Model Estimation di Project Tree | selesai (Drillhole 0.20.0) |
 | 3o | GC-Ex Block Model: **Additional flagging** (flag seluruh poligon dig block bila komposit unsur > COG, garis ganda; menggantikan material SxS) dan **review per flitch** di Project Tree (Dig Block, Laporan, As-Mined rencana vs aktual), legenda string ringkas | selesai (Block Model 0.20.1) |
 | 3p | Tutorial PDF: GC-Ex Drill Hole Ultimate diperbarui ke antarmuka 0.20 (gambar diambil ulang); **tutorial baru GC-Ex Block Model** (flitch, dig block, additional flagging, review per flitch, as-mined); data latihan BM + kolom S_PCT / ZN_PPM / CU_PPM; As-Mined per flitch: rencana & aktual sebagai subnode | selesai (Block Model 0.20.2) |
+| 3q | **Database proyek SQLite** (`gcex_proyek.db` di folder proyek): Block Model = dig block & as-mined per flitch (+ view rekap_flitch); Drill Hole Ultimate = collar, survey, assay, geologi, domain, flag, run estimasi (+ view assay_domain); tabel `riwayat` mencatat setiap perubahan | selesai (Block Model & Drillhole 0.20.3) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna

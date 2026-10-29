@@ -1,5 +1,6 @@
 """GC-Ex 0.19: pasang identitas visual bersama (brand.css + brand.js) dan font (Playfair Display, Courier Prime; OFL)
 ke hasil build GC-Ex Block Model / Drillhole. Dipanggil PALING AKHIR (sesudah palette_patch) supaya tidak ikut diganti."""
+import json
 import os
 import shutil
 
@@ -13,7 +14,12 @@ def apply(s, app, out_html, extra_css=''):
     s = s.replace('Penampang (Sayatan) 2D', 'Sayatan 2D').replace('Penampang 2D', 'Sayatan 2D')
     k = s.rindex('</body>')
     css = extra_css + open(W + 'brand.css', encoding='utf-8').read()
-    js = "window.GCEX_APP='%s';\n" % app + open(W + 'brand.js', encoding='utf-8').read()
+    root = os.path.join(W, '..')
+    pk = json.load(open(os.path.join(root, 'package.json'), encoding='utf-8'))
+    ver = pk.get('version', '')
+    if app == 'dh':
+        ver = json.load(open(os.path.join(root, 'builder-dh.json'), encoding='utf-8')).get('extraMetadata', {}).get('version') or ver
+    js = "window.GCEX_APP='%s';window.GCEX_VER='%s';\n" % (app, ver) + open(W + 'brand.js', encoding='utf-8').read() + '\n' + open(W + 'projdb.js', encoding='utf-8').read()
     s = s[:k] + '<style id="gxBrand">\n' + css + '\n</style>\n<script id="gxBrandJs">\n' + js + '\n</script>\n' + s[k:]
     src = os.path.join(W, '..', 'app-core', 'fonts')
     dst = os.path.join(os.path.dirname(os.path.abspath(out_html)), 'fonts')

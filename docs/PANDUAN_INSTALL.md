@@ -371,3 +371,15 @@ Versi ini hanya untuk **GC-Ex Block Model** (`GC-Ex-Setup-0.20.1.exe`, Release v
 - **As-Mined → Per flitch**: setiap flitch menampilkan selisih Δ; di dalamnya subnode **Rencana (dig block)** dan **Aktual (as-mined)** beserta poligon (label tidak lagi terpotong).
 - Skrip pembuat tutorial ada di `docs/tutorial-gcex/src` (gambar dibuat ulang dari aplikasi di repo: `tutorial_shots.py`, `shot_rusak.py`, `tutorial_bm_shots.py`; PDF: `build_tutorial.py`, `build_tutorial_bm.py`).
 
+## 34. Database proyek SQLite (GC-Ex Block Model & Drill Hole Ultimate 0.20.3)
+
+Release v0.20.3 berisi installer **GC-Ex Block Model 0.20.3** dan **GC-Ex Drill Hole Ultimate 0.20.3**. Core-Ex tetap 0.19.0.
+
+- Setiap kali proyek tersimpan ke **folder proyek**, GC-Ex memperbarui file **`gcex_proyek.db`** (SQLite) di folder itu. Proyek lama tanpa .db: dibuat otomatis pada penyimpanan pertama. Saat folder dibuka, .db yang ada dipakai sebagai dasar sehingga riwayat lama tetap.
+- **Block Model**: tabel `digblock` (id, RL atas / bawah, nama, material, tujuan, luas, ton, kadar, flag, titik), `asmined` (id, RL, kode, aktif, dihitung, BCM, ton, kadar, titik) dan view **`rekap_flitch`** (rencana vs aktual per flitch).
+- **Drill Hole Ultimate**: `collar`, `survey`, `assay` (satu kolom per unsur), `geologi`, `domain`, `flag_domain`, `estimasi_run` dan view **`assay_domain`** (setiap interval assay beserta domain flag-nya).
+- **Jejak perubahan**: tabel `riwayat` mencatat setiap baris yang ditambah / diubah / dihapus (waktu, pengguna, aplikasi, data lama & baru); tabel `sinkron` mencatat setiap penyimpanan dan versi aplikasinya. Impor pertama sebuah tabel dicatat satu baris ringkas.
+- Project Tree → **Proyek → Database proyek (SQLite)**: jumlah baris; klik = isi tabel & riwayat perubahan terakhir, tombol *Sinkronkan sekarang*.
+- File .db bisa dibuka dengan **DB Browser for SQLite**, Excel (ODBC), QGIS, Python, dll. Contoh: `SELECT * FROM rekap_flitch;` atau `SELECT domain, COUNT(*), AVG(Au) FROM assay_domain GROUP BY domain;`.
+- Hanya di aplikasi desktop (memakai backend GC-Ex); file proyek `.prj` tetap dipakai untuk mengirim proyek ke rekan.
+

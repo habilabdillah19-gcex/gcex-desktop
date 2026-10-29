@@ -1,6 +1,7 @@
 """Backend GC-Ex (FastAPI). Hanya mendengar di 127.0.0.1 (tidak bisa diakses dari jaringan)."""
 from __future__ import annotations
 
+import json
 import logging
 import os
 import traceback
@@ -173,6 +174,47 @@ class MdlSubset(MdlPath):
     bbox: Optional[list[Optional[float]]] = None
     center: bool = False  # True = pilih menurut titik tengah blok (filter GC-Ex Drillhole)
     max_n: Optional[int] = None  # batas blok per pemuatan (RAM/VRAM); rentang RL dipersempit dari atas bila lebih
+
+
+# ---------------------------------------------------------------- database proyek (SQLite) di folder proyek
+from . import proj_db  # noqa: E402
+
+
+class ProjKey(BaseModel):
+    key: str
+
+
+class ProjLoad(ProjKey):
+    db_b64: str = ""
+
+
+class ProjSync(ProjKey):
+    app: str = ""
+    user: str = ""
+    version: str = ""
+    tables: list[dict]
+
+
+@app.post("/proj/db/load")
+def proj_db_load(body: ProjLoad):
+    import base64
+    try:
+        return proj_db.load(body.key, base64.b64decode(body.db_b64) if body.db_b64 else b"")
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"ok": False, "error": str(e)})
+
+
+@app.post("/proj/db/sync")
+def proj_db_sync(body: ProjSync):
+    """Perbarui database proyek; hasil = file gcex_proyek.db (header X-GCEx-Sync = ringkasan JSON)."""
+    r = proj_db.sync(body.key, body.app, body.user, body.version, body.tables)
+    return Response(proj_db.read_bytes(body.key), media_type="application/vnd.sqlite3",
+                    headers={"X-GCEx-Sync": json.dumps(r, ensure_ascii=True), "Access-Control-Expose-Headers": "X-GCEx-Sync"})
+
+
+@app.post("/proj/db/info")
+def proj_db_info(body: ProjKey):
+    return proj_db.info(body.key)
 
 
 @app.post("/mdl/subset")
