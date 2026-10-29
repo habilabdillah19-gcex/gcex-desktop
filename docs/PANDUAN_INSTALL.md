@@ -298,3 +298,10 @@ Node paling bawah di Project Tree, bertanda **REFERENSI**. Menu ini untuk meliha
 - Pelanggan yang ingin memperbarui meminta installer versi terbaru ke admin; admin mengunduh dari Releases lalu mengirimkannya.
 - Ketiga aplikasi tetap dipasang terpisah (satu installer per aplikasi). Memasang versi baru di atas versi lama: pengaturan, proyek dan lisensi tetap.
 
+## 28. Grade shell dengan Surface-Following (GC-Ex Drillhole 0.18.3)
+
+- Menu **Ore Geometry → ④ Grade shell 3D**: opsi baru **Surface-Following (cepat)**, aktif bawaan. Ide dari metode Surface-Following pada pemodelan implisit RBF: RBF tidak dihitung di seluruh kotak, tetapi hanya di sekitar permukaan cut-off.
+- Cara kerja: RBF dihitung dulu di grid kasar (tiap 4 sel), lalu hanya blok yang dilintasi batas cut-off, tepi jangkauan data, dan blok berisi sampel ≥ cut-off (beserta tetangganya) yang dihitung penuh. Sisanya (jauh di dalam / jauh di luar shell) diisi interpolasi; mesh marching tetrahedra dan volume tetap di grid halus. Berlaku otomatis bila grid ≥ 150 ribu titik.
+- Uji 250.000 baris assay (grid 2,6 juta titik): indikator 3 cut-off 104 → 20 detik, numerik 35 → 8 detik; jumlah segitiga, volume dan validasi sampel **identik** dengan perhitungan penuh. Uji data tutorial (grid 2,5 juta titik): 1,3–1,5 × lebih cepat, selisih volume ≤ 0,2 %.
+- Hilangkan centang untuk menghitung seluruh grid (perilaku lama), mis. untuk pembanding.
+

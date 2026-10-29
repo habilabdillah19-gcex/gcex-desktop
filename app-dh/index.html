@@ -4777,17 +4777,41 @@ function OGENG(){var E={};
   E.interp=function(o,prog){var d=o.d,X=E.index(o.P,d,o.n),cov=E.cov(o.kern,o.alpha),nug=o.kern==='lin'?0:Math.max(0,Math.min(0.95,+o.nug||0)),sill=1-nug;
     var K=Math.max(4,o.k|0),ci=new Int32Array(4000),cd=new Float64Array(4000),m=K+1,A=new Float64Array(m*m),b=new Float64Array(m),sel=new Int32Array(K),M=o.M,c=o.c,P=o.P,V=o.V;
     var nx=o.nn[0],ny=o.nn[1],nz=d===3?o.nn[2]:1,N=nx*ny*nz,out=new Float32Array(N),q=[0,0,0],x=[0,0,0],nAct=0,ord=[];
-    for(var g=0;g<N;g++){var i=g%nx,r=(g-i)/nx,j=r%ny,kk=(r-j)/ny;x[0]=o.org[0]+i*o.st[0]-c[0];x[1]=o.org[1]+j*o.st[1]-c[1];if(d===3)x[2]=o.org[2]+kk*o.st[2]-c[2];
+    /* satu titik grid (i,j,kk) -> nilai RBF lokal (NaN = tanpa sampel dalam range) */
+    var evalAt=function(i,j,kk){x[0]=o.org[0]+i*o.st[0]-c[0];x[1]=o.org[1]+j*o.st[1]-c[1];if(d===3)x[2]=o.org[2]+kk*o.st[2]-c[2];
       for(var a=0;a<d;a++){var s=0;for(var e=0;e<d;e++)s+=M[a*d+e]*x[e];q[a]=s;}
-      var nc=E.query(X,q,ci,cd);if(!nc){out[g]=NaN;if(prog&&(g&65535)===0)prog(g/N);continue;}nAct++;
+      var nc=E.query(X,q,ci,cd);if(!nc)return NaN;
       var kn;if(nc<=K){kn=nc;for(a=0;a<nc;a++)sel[a]=a;}else{ord.length=nc;for(a=0;a<nc;a++)ord[a]=a;ord.sort(function(u,v){return cd[u]-cd[v];});kn=K;for(a=0;a<K;a++)sel[a]=ord[a];}
       var mm=kn+1;for(a=0;a<kn;a++){var pa=ci[sel[a]];for(e=a;e<kn;e++){var pb=ci[sel[e]],r2=0;for(var t=0;t<d;t++){var dd=P[pa*d+t]-P[pb*d+t];r2+=dd*dd;}var v=a===e?(o.kern==='lin'?0:sill)+nug+1e-9:cov(r2)*sill;A[a*mm+e]=v;A[e*mm+a]=v;}
         A[a*mm+kn]=1;A[kn*mm+a]=1;b[a]=(o.kern==='lin'?cov(cd[sel[a]]):cov(cd[sel[a]])*sill);}
       A[kn*mm+kn]=0;b[kn]=1;var est=0;
       if(kn===1)est=V[ci[sel[0]]];else if(E.solve(A,b,mm)){for(a=0;a<kn;a++)est+=b[a]*V[ci[sel[a]]];}else{for(a=0;a<kn;a++)est+=V[ci[sel[a]]];est/=kn;}
-      if(o.clamp){if(est<o.clamp[0])est=o.clamp[0];if(est>o.clamp[1])est=o.clamp[1];}out[g]=est;
-      if(prog&&(g&65535)===0)prog(g/N);}
-    return{v:out,nAct:nAct};};
+      if(o.clamp){if(est<o.clamp[0])est=o.clamp[0];if(est>o.clamp[1])est=o.clamp[1];}return est;};
+    var sf=d===3&&o.sf!==false&&o.T&&o.T.length&&N>=150000?(N>=1000000?4:2):0;
+    if(!sf){for(var g=0;g<N;g++){var i=g%nx,r=(g-i)/nx,j=r%ny,kk=(r-j)/ny,ve=evalAt(i,j,kk);out[g]=ve;if(ve===ve)nAct++;if(prog&&(g&65535)===0)prog(g/N);}return{v:out,nAct:nAct,nEval:N};}
+    /* ---- Surface-Following (pita sempit, kasar -> halus) ----
+       1) RBF dihitung di grid kasar (tiap sf simpul); 2) blok kasar yang dilintasi permukaan cut-off (nilai sudut di kedua sisi T,
+       atau tepi jangkauan data: sebagian sudut tanpa sampel), blok yang berisi sampel >= cut-off (benih) dan tetangganya ditandai; 3) hanya simpul di blok bertanda
+       dihitung penuh, sisanya diisi trilinear dari grid kasar (jauh dari permukaan: sisi dalam/luar sama). Mesh & volume tetap di grid halus. */
+    var cn=[Math.ceil((nx-1)/sf)+1,Math.ceil((ny-1)/sf)+1,Math.ceil((nz-1)/sf)+1],NC=cn[0]*cn[1]*cn[2],CV=new Float32Array(NC),fi=function(a,n){return Math.min(a*sf,n-1);},ne=0,tot=NC;
+    for(var cg=0;cg<NC;cg++){var a0=cg%cn[0],r0=(cg-a0)/cn[0],b0=r0%cn[1],c0=(r0-b0)/cn[1];CV[cg]=evalAt(fi(a0,nx),fi(b0,ny),fi(c0,nz));ne++;if(prog&&(ne&4095)===0)prog(0.5*ne/tot);}
+    var nb=[cn[0]-1,cn[1]-1,cn[2]-1],NB=Math.max(1,nb[0]*nb[1]*nb[2]),mk=new Uint8Array(NB),TT=o.T,ci0=function(a,b,c2){return a+cn[0]*(b+cn[1]*c2);};
+    for(var bc=0;bc<nb[2];bc++)for(var bb=0;bb<nb[1];bb++)for(var ba=0;ba<nb[0];ba++){var nN=0,lo=1e300,hi=-1e300;
+      for(var u=0;u<8;u++){var w=CV[ci0(ba+(u&1),bb+((u>>1)&1),bc+(u>>2))];if(w!==w)nN++;else{if(w<lo)lo=w;if(w>hi)hi=w;}}
+      var hit=nN>0&&nN<8;if(!hit&&nN===0)for(var tq=0;tq<TT.length;tq++)if(lo<TT[tq]&&hi>=TT[tq]){hit=true;break;}if(hit)mk[ba+nb[0]*(bb+nb[1]*bc)]=1;}
+    if(o.Q){var tmin=Math.min.apply(null,TT);for(var sI=0;sI<o.n;sI++){if(!(V[sI]>=tmin))continue;var bi=[0,1,2].map(function(t){var f=(o.Q[sI*3+t]-o.org[t])/o.st[t]/sf;return Math.max(0,Math.min(nb[t]-1,Math.floor(f)));});mk[bi[0]+nb[0]*(bi[1]+nb[1]*bi[2])]=1;}}
+    var mk2=mk.slice();for(bc=0;bc<nb[2];bc++)for(bb=0;bb<nb[1];bb++)for(ba=0;ba<nb[0];ba++){if(!mk[ba+nb[0]*(bb+nb[1]*bc)])continue;
+      for(var dz=-1;dz<=1;dz++)for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){var A1=ba+dx,B1=bb+dy,C1=bc+dz;if(A1>=0&&B1>=0&&C1>=0&&A1<nb[0]&&B1<nb[1]&&C1<nb[2])mk2[A1+nb[0]*(B1+nb[1]*C1)]=1;}}
+    var nMk=0;for(var t2=0;t2<NB;t2++)if(mk2[t2])nMk++;tot=NC+nMk*Math.pow(sf+1,3);
+    var done=new Uint8Array(N);
+    for(bc=0;bc<nb[2];bc++)for(bb=0;bb<nb[1];bb++)for(ba=0;ba<nb[0];ba++){if(!mk2[ba+nb[0]*(bb+nb[1]*bc)])continue;
+      for(var kz=fi(bc,nz);kz<=fi(bc+1,nz);kz++)for(var jy=fi(bb,ny);jy<=fi(bb+1,ny);jy++)for(var ix=fi(ba,nx);ix<=fi(ba+1,nx);ix++){var gg=ix+nx*(jy+ny*kz);if(done[gg])continue;done[gg]=1;out[gg]=evalAt(ix,jy,kz);ne++;if(prog&&(ne&4095)===0)prog(Math.min(0.99,ne/tot));}}
+    for(var g2=0;g2<N;g2++){if(!done[g2]){var i2=g2%nx,r2=(g2-i2)/nx,j2=r2%ny,k2=(r2-j2)/ny,A2=Math.min(nb[0]-1,Math.floor(i2/sf)),B2=Math.min(nb[1]-1,Math.floor(j2/sf)),C2=Math.min(nb[2]-1,Math.floor(k2/sf));
+        var x0=fi(A2,nx),x1=fi(A2+1,nx),y0=fi(B2,ny),y1=fi(B2+1,ny),z0=fi(C2,nz),z1=fi(C2+1,nz),tx=x1>x0?(i2-x0)/(x1-x0):0,ty=y1>y0?(j2-y0)/(y1-y0):0,tz=z1>z0?(k2-z0)/(z1-z0):0,s3=0,nan=false;
+        for(var u2=0;u2<8;u2++){var cw=CV[ci0(A2+(u2&1),B2+((u2>>1)&1),C2+(u2>>2))];if(cw!==cw){nan=true;break;}s3+=cw*((u2&1)?tx:1-tx)*((u2&2)?ty:1-ty)*((u2&4)?tz:1-tz);}
+        out[g2]=nan?NaN:s3;}
+      if(out[g2]===out[g2])nAct++;}
+    return{v:out,nAct:nAct,nEval:ne,sf:sf};};
   /* marching tetrahedra (6 tetra per sel), segitiga diorientasikan keluar (ke nilai < T) */
   E.mt=function(Vv,nn,org,st,T,bg,maxTri){var nx=nn[0],ny=nn[1],nz=nn[2],N=nx*ny*nz,X=[],Y=[],Z=[],I=[],J=[],Kk=[],map=new Map(),over=false,nIn=0;
     var val=function(g){var v=Vv[g];return v!==v?bg:v;};
@@ -4954,9 +4978,9 @@ function ogGsAxes(){var gs=OG.p.gs,dip,ddir;if(gs.ori==='plane'&&OG.R){dip=OG.R.
   var V=ogVec(dip,ddir),p=ogNum(gs.pitch,0)*OGR,mj=[0,1,2].map(function(k){return Math.cos(p)*V.s[k]+Math.sin(p)*V.dd[k];}),sm=[0,1,2].map(function(k){return -Math.sin(p)*V.s[k]+Math.cos(p)*V.dd[k];});
   return{dip:dip,ddir:ddir,pitch:ogNum(gs.pitch,0),mj:mj,sm:sm,mn:V.n,pt:ogPT(mj)};}
 var OGW=null,OGWJ={};
-function ogWorker(){if(OGW)return OGW;try{var src='var E=('+OGENG.toString()+')();self.onmessage=function(ev){var o=ev.data;try{var r=E.interp(o,function(f){self.postMessage({id:o.id,prog:f});});var M=[];(o.T||[]).forEach(function(T){M.push(E.mt(r.v,o.nn,o.org,o.st,T,o.bg,o.maxTri));});self.postMessage({id:o.id,v:r.v,nAct:r.nAct,M:M});}catch(e){self.postMessage({id:o.id,err:String(e&&e.message||e)});}};';
+function ogWorker(){if(OGW)return OGW;try{var src='var E=('+OGENG.toString()+')();self.onmessage=function(ev){var o=ev.data;try{var r=E.interp(o,function(f){self.postMessage({id:o.id,prog:f});});var M=[];(o.T||[]).forEach(function(T){M.push(E.mt(r.v,o.nn,o.org,o.st,T,o.bg,o.maxTri));});self.postMessage({id:o.id,v:r.v,nAct:r.nAct,nEval:r.nEval,sf:r.sf,M:M});}catch(e){self.postMessage({id:o.id,err:String(e&&e.message||e)});}};';
     OGW=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));OGW.onmessage=function(ev){var d=ev.data,j=OGWJ[d.id];if(!j)return;if(d.prog!=null){j.prog(d.prog);return;}delete OGWJ[d.id];if(d.err)j.rej(new Error(d.err));else j.res(d);};}catch(e){OGW=false;}return OGW;}
-function ogRunJob(o,prog){var W=ogWorker();if(!W){var r=OGE.interp(o,prog),M=(o.T||[]).map(function(T){return OGE.mt(r.v,o.nn,o.org,o.st,T,o.bg,o.maxTri);});return Promise.resolve({v:r.v,nAct:r.nAct,M:M});}
+function ogRunJob(o,prog){var W=ogWorker();if(!W){var r=OGE.interp(o,prog),M=(o.T||[]).map(function(T){return OGE.mt(r.v,o.nn,o.org,o.st,T,o.bg,o.maxTri);});return Promise.resolve({v:r.v,nAct:r.nAct,nEval:r.nEval,sf:r.sf,M:M});}
   return new Promise(function(res,rej){var id='j'+Date.now()+Math.random();OGWJ[id]={res:res,rej:rej,prog:prog||function(){}};o.id=id;W.postMessage(o);});}
 async function ogShell(prev){if(OG.busy)return;var gs=OG.p.gs,X=ogGsPts(),n=X.P.length;if(n<10){alert('Data assay '+(X.el||'')+' belum cukup untuk grade shell.');return;}
   var cuts=String(gs.cuts).split(/[;,\s]+/).map(Number).filter(function(v){return isFinite(v)&&v>0;}).sort(function(a,b){return a-b;});if(!cuts.length){alert('Isi minimal satu cut-off.');return;}
@@ -4965,16 +4989,18 @@ async function ogShell(prev){if(OG.busy)return;var gs=OG.p.gs,X=ogGsPts(),n=X.P.
   var maxN=prev?400000:3000000,res=ogNum(gs.res,0)>0?ogNum(gs.res,0):Math.max(1,Math.min(r3,10)/2),vol=(hi[0]-lo[0])*(hi[1]-lo[1])*(hi[2]-lo[2]);if(prev)res=Math.max(res*2,Math.cbrt(vol/maxN));while(vol/(res*res*res)>maxN)res*=1.15;
   var nn=[0,1,2].map(function(k){return Math.max(2,Math.floor((hi[k]-lo[k])/res)+2);}),c=[(lo[0]+hi[0])/2,(lo[1]+hi[1])/2,(lo[2]+hi[2])/2],Pi=new Float64Array(n*3);
   X.P.forEach(function(p,i){var e=[p[0]-c[0],p[1]-c[1],p[2]-c[2]];for(var a=0;a<3;a++)Pi[i*3+a]=M[a*3]*e[0]+M[a*3+1]*e[1]+M[a*3+2]*e[2];});
+  var Qw=new Float64Array(n*3);X.P.forEach(function(p,i){Qw[i*3]=p[0];Qw[i*3+1]=p[1];Qw[i*3+2]=p[2];});/* posisi sampel (benih Surface-Following) */
   var ind=gs.mode!=='num',tr=!ind&&gs.tr==='log',eps=0.001,jobs=[];
   if(ind)cuts.forEach(function(ct){jobs.push({cuts:[ct],V:Float64Array.from(X.P.map(function(p){return p[3]>=ct?1:0;})),T:[Math.min(0.99,Math.max(0.01,ogNum(gs.pth,0.5)))],bg:0,clamp:[0,1]});});
   else{var V=Float64Array.from(X.P.map(function(p){return tr?Math.log(Math.max(0,p[3])+eps):p[3];})),mn=1e18;for(var z0=0;z0<V.length;z0++)if(V[z0]<mn)mn=V[z0];jobs.push({cuts:cuts,V:V,T:cuts.map(function(ct){return tr?Math.log(ct+eps):ct;}),bg:mn-1,clamp:null});}
   OG.busy=true;OG.msg='Menghitung grade shell'+(prev?' (pratinjau)':'')+'… '+ogN(n)+' titik, grid '+nn.join(' × ')+' ('+ogN(res,1)+' m)';ogPanel();var t0=performance.now(),S={el:X.el,n:n,nRows:X.nRows,total:X.total,res:res,nn:nn,org:lo,mode:ind?'ind':'num',prev:!!prev,Ax:Ax,r:[r1,r2,r3],shells:[],when:Date.now()};
-  try{for(var q=0;q<jobs.length;q++){var J=jobs[q],o={d:3,P:Pi,V:J.V,n:n,M:M,c:c,org:lo,nn:nn,st:[res,res,res],k:Math.max(6,Math.min(40,ogNum(gs.k,16)|0)),alpha:ogNum(gs.alpha,3),nug:ogNum(gs.nug,0.1),kern:'sph',clamp:J.clamp,T:J.T,bg:J.bg,maxTri:1500000};
+  try{for(var q=0;q<jobs.length;q++){var J=jobs[q],o={d:3,P:Pi,V:J.V,n:n,M:M,c:c,org:lo,nn:nn,st:[res,res,res],k:Math.max(6,Math.min(40,ogNum(gs.k,16)|0)),alpha:ogNum(gs.alpha,3),nug:ogNum(gs.nug,0.1),kern:'sph',clamp:J.clamp,T:J.T,bg:J.bg,maxTri:1500000,Q:Qw,sf:OG.sf!==false&&gs.sf!==false};
       var R=await ogRunJob(o,function(f){var b=$('ogProg');if(b)b.style.width=Math.round(100*(q+f)/jobs.length)+'%';});
+      S.nEval=(S.nEval||0)+(R.nEval||nn[0]*nn[1]*nn[2]);S.nGrid=(S.nGrid||0)+nn[0]*nn[1]*nn[2];if(R.sf)S.sf=R.sf;
       J.T.forEach(function(T,k){var m=R.M[k],ct=J.cuts[k],gv=R.v;/* validasi: nilai grid (trilinear) di posisi sampel */
         var nA=0,nAin=0,nB=0,nBin=0;X.P.forEach(function(p){var ins=ogTri(gv,nn,lo,res,p,J.bg)>=T;if(p[3]>=ct){nA++;if(ins)nAin++;}else{nB++;if(ins)nBin++;}});
         S.shells.push({cut:ct,T:T,x:m.x,y:m.y,z:m.z,i:m.i,j:m.j,k:m.k,nt:m.i.length,vol:m.nIn*res*res*res,over:m.over,nA:nA,nAin:nAin,nB:nB,nBin:nBin,show:true});});}
-    S.ms=performance.now()-t0;OG.S=S;OG.msg='&#10003; Grade shell selesai ('+(S.ms/1000).toFixed(1)+' s'+(prev?', pratinjau kasar':'')+').';}
+    S.ms=performance.now()-t0;OG.S=S;OG.msg='&#10003; Grade shell selesai ('+(S.ms/1000).toFixed(1)+' s'+(prev?', pratinjau kasar':'')+(S.sf?', Surface-Following: '+Math.max(1,Math.round(100*S.nEval/S.nGrid))+' % titik grid dihitung penuh':'')+').';}
   catch(e){console.error(e);OG.msg='<span class=warn>Gagal: '+ogE(e.message)+'</span>';}
   OG.busy=false;ogPanel();try{updatePlot();}catch(e){}}
 function ogTri(V,nn,o,st,p,bg){var fx=(p[0]-o[0])/st,fy=(p[1]-o[1])/st,fz=(p[2]-o[2])/st,i=Math.floor(fx),j=Math.floor(fy),k=Math.floor(fz);if(i<0||j<0||k<0||i>=nn[0]-1||j>=nn[1]-1||k>=nn[2]-1)return bg;
@@ -5045,6 +5071,7 @@ function ogPanel(){var b=$('ogBody');if(!b)return;var P=OG.p,R=OG.R,L=OG.L,el=og
       '<div class="g3 f"><div><label>Pitch mayor (&deg;)</label>'+gin('pitch',gs.pitch,'any','Sudut sumbu mayor dari strike di bidang')+'</div><div class=hint style="grid-column:span 2;align-self:end;margin:0">Sumbu mayor: plunge <b>'+ogN(Ax.pt.pl,0)+'&deg; &rarr; '+ogN(Ax.pt.tr,0)+'&deg;</b>'+(OG.axes.length?' · <a href=javascript:void(0) onclick="var a=OG.axes[OG.axes.length-1];OG.p.gs.ori=\'man\';OG.p.gs.dip=+a.vein.dip.toFixed(1);OG.p.gs.ddir=+a.vein.ddir.toFixed(1);OG.p.gs.pitch=+a.pitch.toFixed(1);ogPanel()">pakai sumbu shoot terakhir</a>':'')+'</div></div>'+
       '<div class="g3 f"><div><label>Range mayor (m)</label>'+gin('r1',gs.r1)+'</div><div><label>Semi (m)</label>'+gin('r2',gs.r2)+'</div><div><label>Minor (m)</label>'+gin('r3',gs.r3)+'</div></div>'+
       '<div class="g3 f"><div><label>Alpha</label>'+sel("ogGs('alpha',+this.value)",[[3,'3'],[5,'5'],[7,'7'],[9,'9']],gs.alpha)+'</div><div><label>Nugget (0–0,9)</label>'+gin('nug',gs.nug)+'</div><div><label>Resolusi (m, 0 = auto)</label>'+gin('res',gs.res)+'</div></div>'+
+      '<label class=sw title="Hanya sel di sekitar batas cut-off yang dihitung penuh (hasil sama, jauh lebih cepat untuk grid besar). Hilangkan centang untuk menghitung seluruh grid."><input type=checkbox'+(gs.sf!==false?' checked':'')+' onchange="ogGs(\'sf\',this.checked)">Surface-Following (cepat)</label>'+
       '<div class="g2 f"><button onclick="ogShell(true)"'+(OG.busy?' disabled':'')+'>&#9654; Pratinjau cepat</button><button class=btn-pri onclick="ogShell(false)"'+(OG.busy?' disabled':'')+'>&#9654;&#9654; Hitung grade shell</button></div>';
     if(S&&S.shells.length){h+='<div class="box gmstate" style="margin-top:6px">'+ogE(S.el)+' · '+(S.mode==='ind'?'indikator':'numerik')+(S.prev?' · <b>pratinjau</b>':'')+' · '+ogN(S.n)+' titik ('+ogN(S.nRows)+' baris assay) · grid '+S.nn.join(' × ')+' @ '+ogN(S.res,1)+' m · '+(S.ms/1000).toFixed(1)+' s<br>Elipsoid '+S.r.map(function(v){return ogN(v,0);}).join(' / ')+' m, mayor '+ogN(S.Ax.pt.pl,0)+'&deg; &rarr; '+ogN(S.Ax.pt.tr,0)+'&deg;</div>'+
         '<div class=gmlist><table class=pltb><tr><th></th><th>Cut-off</th><th>Volume</th><th>Sampel &ge; cut di dalam</th><th>Sampel &lt; cut di dalam</th></tr>'+S.shells.map(function(s,q){return '<tr><td><input type=checkbox '+(s.show?'checked':'')+' onchange="OG.S.shells['+q+'].show=this.checked;updatePlot()"></td><td><b>&ge; '+ogN(s.cut,2)+'</b></td><td>'+ogN(s.vol,0)+' m&sup3;'+(s.over?' <span class=warn>(terpotong)</span>':'')+'</td><td>'+(s.nA?ogN(100*s.nAin/s.nA,0)+'% dari '+ogN(s.nA):'-')+'</td><td>'+(s.nAin+s.nBin?ogN(100*s.nBin/(s.nAin+s.nBin),0)+'% isi shell':'-')+'</td></tr>';}).join('')+'</table></div>'+
