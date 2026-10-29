@@ -75,10 +75,13 @@ def main():
     inst = []
     for stem, nm in APPS:
         f = dist / f"{stem}-{ver}.exe"
-        if not f.exists():
-            raise SystemExit(f"installer tidak ada: {f}")
-        shutil.copy2(f, outd / f.name)
-        inst.append((f.name, nm))
+        if f.exists():  # aplikasi lain yang versinya tidak naik tidak ikut rilis ini
+            shutil.copy2(f, outd / f.name)
+            inst.append((f.name, nm))
+    if not inst:
+        raise SystemExit(f"tidak ada installer versi {ver} di {dist}")
+    has_core = any(n.startswith("Core-Ex") for n, _ in inst)
+    has_gcex = any(n.startswith("GC-Ex") for n, _ in inst)
 
     D = ROOT / "docs"
     # ---- 1 dokumen
@@ -86,24 +89,21 @@ def main():
     zip_dir(dok, [
         (ROOT / "README.md", "README.md"),
         (D / "PANDUAN_INSTALL.md", "Panduan_Teknis/PANDUAN_INSTALL.md"),
-        (D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"),
-        (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
-        (D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"),
-        (D / "Core-Ex_Tutorial_Penggunaan.pdf", "Tutorial/Core-Ex_Tutorial_Penggunaan.pdf"),
         (D / "GC-Ex_Tutorial_Aktivasi_Lisensi.pdf", "Tutorial/GC-Ex_Tutorial_Aktivasi_Lisensi.pdf"),
-        (D / "tutorial-core" / "README.md", "Tutorial/Core-Ex_tutorial_README.md"),
         (D / "tutorial-aktivasi" / "BACA_SAYA.md", "Tutorial/Aktivasi_tutorial_BACA_SAYA.md"),
-    ])
+    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf")] if has_gcex else [])
+      + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
+          (D / "Core-Ex_Tutorial_Penggunaan.pdf", "Tutorial/Core-Ex_Tutorial_Penggunaan.pdf"),
+          (D / "tutorial-core" / "README.md", "Tutorial/Core-Ex_tutorial_README.md")] if has_core else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
-    items = [
-        (D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"),
-        (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py"),
-        (D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"),
-        (D / "referensi", "Core-Ex_Referensi"),
-    ]
-    if core_dummy and core_dummy.exists():
-        items.append((core_dummy, "Core-Ex_Data_Dummy"))
+    items = []
+    if has_gcex:
+        items += [(D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"), (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py")]
+    if has_core:
+        items += [(D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"), (D / "referensi", "Core-Ex_Referensi")]
+        if core_dummy and core_dummy.exists():
+            items.append((core_dummy, "Core-Ex_Data_Dummy"))
     zip_dir(dat, items)
     # ---- 3 lisensi & tentang
     tentang = outd / "TENTANG.txt"
@@ -147,12 +147,12 @@ def main():
          "| File | Isi | Ukuran |", "|---|---|---|"]
     desc = {n: f"Installer {a}" for n, a in inst}
     desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, Core-Ex, aktivasi lisensi)"
-    desc[dat.name] = "Data latihan dummy/simulasi (GC-Ex Drillhole & Block Model, Core-Ex) + generator"
+    desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm in inst) + ") + generator"
     desc[lis.name] = "Tentang, syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat)"
     for h, n, s in sums:
         L.append(f"| `{n}` | {desc.get(n, '')} | {s / 1048576:.1f} MB |")
     L += ["| Source code (zip / tar.gz) | Kode sumber commit ini (otomatis dari GitHub) | |", "",
-          "Ketiga aplikasi dipasang satu per satu (installer terpisah). Aplikasi offline, tanpa pembaruan otomatis: "
+          ("Rilis ini hanya berisi " + ", ".join(nm for _, nm in inst) + "; aplikasi lain tetap memakai rilis sebelumnya. " if len(inst) < len(APPS) else "") + "Aplikasi dipasang satu per satu (installer terpisah). Aplikasi offline, tanpa pembaruan otomatis: "
           "pelanggan meminta versi baru ke admin.", "",
           f"## Perubahan sejak {prev or 'awal'}", "", log or "- (tidak ada commit baru)", "",
           "## SHA-256", "", "```"] + [f"{h}  {n}" for h, n, _ in sums] + ["```", ""]

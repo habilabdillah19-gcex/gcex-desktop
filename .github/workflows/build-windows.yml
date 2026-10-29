@@ -155,7 +155,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PYTHONIOENCODING: utf-8
         run: |
-          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          # versi per aplikasi: package.json (Block Model), builder-dh.json / builder-core.json extraMetadata.version (bila ada)
+          $vs = @((Get-Content package.json -Raw | ConvertFrom-Json).version)
+          foreach ($b in @('builder-dh.json','builder-core.json')) { $x = (Get-Content $b -Raw | ConvertFrom-Json).extraMetadata.version; if ($x) { $vs += $x } }
+          $v = ($vs | Sort-Object { [version]$_ } -Descending | Select-Object -First 1)
+          Write-Host ("versi aplikasi: " + ($vs -join ', ') + " -> rilis v" + $v)
           $tag = "v$v"
           python docs/tutorial-core/buat_data_dummy.py build-rel/Core-Ex_Data_Dummy
           if ($LASTEXITCODE -ne 0) { throw "gagal membuat data dummy Core-Ex" }

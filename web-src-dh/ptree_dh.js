@@ -130,11 +130,20 @@
   function nodes(){var L=[],add=function(f,id,t){try{L.push(f());}catch(e){console.warn('tree',id,e);L.push({id:id,t:t,ic:'folder',fold:1});}};
     add(fProj,'proj','Proyek');add(fSpatial,'sp','Data Spasial');add(fDb,'db','Database Bor');add(fMapping,'mp','Peta (Mapping)');add(fStruct,'st','Struktur Geologi');
     add(fGM,'gm','Geological Modelling');add(fBM,'bm','Block Model');
+    /* 0.20: domain aktif juga dari node Geostatistik & Model Estimation */
+    var actD=ok(function(){return GM.act;}),tops=ok(function(){return gmTops();},[]);
+    var gsDom=function(d){var ch=ok(function(){return gmKids(d.id);},[]);return{id:'gs.d.'+d.id,t:d.name,ic:'dom',mark:d.id===actD&&ok(function(){return GS.domOnly!==false;},true)?'aktif':'',
+        hint:'Geostatistik hanya memakai sampel di dalam domain ini',go:function(){gxDomAct(d.id,'gs');},kids:ch.map(gsDom)};};
+    var meDom=function(d){return{id:'me.d.'+d.id,t:d.name,ic:'dom',mark:ok(function(){return gmTopId(actD)===d.id;},false)?'aktif':'',chk:ok(function(){return ME.sel[d.id]!==false;},true),onChk:function(v){ME.sel[d.id]=v;try{mePanel();}catch(e){}},
+        hint:'Klik = domain aktif (parameter & jalankan); centang = ikut "Jalankan semua domain"',go:function(){gxDomAct(d.id,'me');},
+        menu:function(){return[{t:'Jalankan estimasi domain ini',fn:function(){gxDomAct(d.id,'me');meRunAct();}},{t:'Jalankan semua domain (dicentang)',fn:A('meRun')}];}};};
     L.push({id:'me',step:'8',t:'Model Estimation',ic:'folder',fold:1,tab:'ME',b:ok(function(){return ME.store&&ME.store.runs&&ME.store.runs.length?ME.store.runs.length+' run':'';},''),
-      kids:[sub('me.1','Block model','block','ME','Block model'),sub('me.2','Domain & parameter','dom','ME','Domain'),sub('me.3','Jalankan','est','ME','Jalankan'),sub('me.4','Hasil','report','ME','Hasil')]});
+      menu:function(){return[{t:'Jalankan domain aktif',fn:A('meRunAct')},{t:'Jalankan semua domain (dicentang)',fn:A('meRun')}];},
+      kids:tops.map(meDom).concat([sub('me.1','Block model','block','ME','Block model'),sub('me.2','Domain & parameter','dom','ME','Domain'),sub('me.3','Jalankan','est','ME','Jalankan'),sub('me.4','Hasil','report','ME','Hasil')])});
     L.push({id:'val',step:'9',t:'Validasi BM',ic:'check',tab:'Val',hint:'Swath plot, komposit vs blok, distribusi, grade-tonase'});
     L.push({id:'rep',step:'10',t:'Reporting BM',ic:'folder',fold:1,tab:'Rep',kids:[sub('rep.1','Atribut','attr','Rep','Atribut'),sub('rep.2','Constraint (topo / pit / domain)','pit','Rep','Constraint'),sub('rep.3','Hasil grade × tonase','chart','Rep','Hasil')]});
-    L.push({id:'gs',step:'11',t:'Geostatistik',ic:'gs',hint:'Variogram & panduan (panel kanan)',go:function(){var p=$('gsPanel');if(!p||p.hidden||!GS.open)gsToggle();}});
+    L.push({id:'gs',step:'11',t:'Geostatistik',ic:'gs',fold:1,hint:'Variogram & panduan (panel kanan); pilih domain aktif di bawahnya',go:function(){var p=$('gsPanel');if(!p||p.hidden||!GS.open)gsToggle();},
+      kids:tops.map(gsDom).concat([{id:'gs.all',t:'Semua data (tanpa filter domain)',ic:'db',mark:ok(function(){return GS.domOnly===false;},false)?'aktif':'',go:function(){gxDomAct(null,'gs');}}])});
     L.push({id:'out',step:'12',t:'Layout & Ekspor',ic:'folder',fold:1,kids:[{id:'out.map',t:'Peta (layout cetak)',ic:'map',tab:'Map',sub:'Layer peta',kids:[sub('map.1','Layer peta (isi peta)','eye','Map','Layer peta'),sub('map.4','Layout & cetak','export','Map','Layout')]},
       {id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')},{id:'out.db',t:'Export database (CSV)',ic:'table',go:A('gxDbExport')},{id:'out.mdl',t:'Export block model GC (.mdl)',ic:'block',go:A('bxMdlExport'),dim:!(window.BX&&BX.m)}]});
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.w',t:'Warna kadar',ic:'color',tab:'Warna'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});

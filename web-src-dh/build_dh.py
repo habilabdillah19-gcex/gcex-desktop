@@ -60,7 +60,8 @@ print('UI 0.12 (Mapping / Layout / Sayatan): OK')
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s.replace("  if(!DOM.on)b+='<p class=gg-why>&#9432; Belum ada filter dom", "  if(!DOM.on&&!(window.gsDomCodes&&gsDomCodes()))b+='<p class=gg-why>&#9432; Belum ada filter dom")
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan
 css = open(W + 'theme_dh.css', encoding='utf-8').read()

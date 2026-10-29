@@ -336,3 +336,13 @@ Setiap build di `main` menerbitkan **Release `v<versi>`** (repo → *Releases*; 
 - **Drill Hole Ultimate → Geological Modelling**: *+ Tambah domain…* di Project Tree; Properti hanya menampilkan **domain aktif** yang dipilih di tree (Flag, String, Solid, Struktur bekerja pada domain itu); nomor bagian (② ③ ④ ⑤) dihapus.
 - **Legenda**: string kontrol bernomor digabung per domain & sisi (mis. *QV_Utama_HW*, *QV_Utama_FW*).
 
+## 31. Domain aktif di Geostatistik & Model Estimation (GC-Ex Drill Hole Ultimate 0.20.0)
+
+Versi ini hanya untuk **GC-Ex Drill Hole Ultimate** (`GC-Ex-Drillhole-Setup-0.20.0.exe`, Release v0.20.0). GC-Ex Block Model dan Core-Ex tetap versi 0.19.0 (Release v0.19.0).
+
+- **Satu domain aktif** dipakai bersama Geological Modelling, Geostatistik dan Model Estimation.
+- Mengaktifkan domain dari Project Tree, di mana saja: node domain di bawah **Geological Modelling**, **Geostatistik** atau **Model Estimation** (tanda *aktif*). Tidak perlu kembali ke Geological Modelling.
+- **Geostatistik**: komposit hanya dari interval bor yang di-flag ke domain aktif (domain + cabangnya; selubung = interval halo). Bilah **Domain** di atas panel Geostatistik menunjukkan domain yang dipakai dan bisa diganti di situ. **Semua data (tanpa filter domain)** = perilaku lama. *Simpan ke domain* otomatis memilih domain aktif. Filter *Domain untuk analisis* di menu Geologi tetap berlaku di atasnya.
+- **Model Estimation**: Properti menampilkan parameter domain aktif. **▶ Jalankan domain aktif** hanya mengestimasi domain aktif; **▶ Jalankan semua domain** mengestimasi semua domain yang dicentang (centang di node domain Model Estimation atau di tabel). Keduanya juga ada di menu … node Model Estimation.
+- Tutorial *GC-Ex Modelling & Estimasi* diperbarui: bab **Domain aktif di Geostatistik & Model Estimation (versi 0.20)**.
+

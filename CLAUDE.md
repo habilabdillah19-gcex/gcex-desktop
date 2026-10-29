@@ -5,8 +5,10 @@
   tentang / lisensi — harus muncul di **GitHub Release**. CI (`.github/workflows/build-windows.yml`) menerbitkan
   Release `v<versi package.json>` otomatis lewat `tools/rilis/kemas_rilis.py`.
 - Karena itu:
-  - **Naikkan versi** di `package.json` (patch: 0.18.3 -> 0.18.4) pada setiap push yang mengubah isi, termasuk
-    perubahan dokumen / data latihan saja, dan tambahkan baris versi di `README.md` + bagian di `docs/PANDUAN_INSTALL.md`.
+  - **Naikkan versi** aplikasi yang berubah (patch / minor) pada setiap push yang mengubah isi, termasuk perubahan dokumen /
+    data latihan saja. Versi per aplikasi: Block Model = `package.json`; Drillhole = `builder-dh.json` `extraMetadata.version`;
+    Core-Ex = `builder-core.json` `extraMetadata.version` (bila kosong ikut package.json). Release memakai versi tertinggi dan
+    hanya berisi installer yang bertanda versi itu (aplikasi lain tetap di rilis sebelumnya), dan tambahkan baris versi di `README.md` + bagian di `docs/PANDUAN_INSTALL.md`.
   - **Jangan memakai `[skip ci]`** di pesan commit (commit itu tidak akan masuk Release).
   - Sebelum push: `git fetch` + `git pull --rebase` (beberapa sesi push paralel); bila versi sudah dipakai sesi lain, naikkan lagi.
 - Isi Release: 3 installer terpisah (GC-Ex Block Model, GC-Ex Drillhole, Core-Ex — tidak dibundel), `_1_Dokumen.zip`,

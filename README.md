@@ -78,6 +78,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3k | Setiap pembaruan terbit di **GitHub Release** v<versi>: 3 installer terpisah + dokumen & tutorial + data latihan + lisensi & tentang + catatan rilis (commit) + SHA-256 + kode sumber | selesai (0.18.4) |
 | 3l | Catatan rilis: huruf non-ASCII (—, é) tidak rusak, jam commit ditulis dalam WIB | selesai (0.18.5) |
 | 3m | Identitas visual baru (selaras Core-Ex): halaman muka penuh, tema earthy kedua aplikasi, logo GC-Ex / BLOCK MODEL · DRILL HOLE ULTIMATE, nama project site per proyek; Sayatan 2D, garis sayatan di 3D tampak atas, rekap & edit string, legenda string ringkas, Geological Modelling per domain aktif | selesai (0.19.0) |
+| 3n | GC-Ex Drill Hole Ultimate: **domain aktif** dipakai bersama Geological Modelling, Geostatistik (komposit hanya dari domain aktif) dan Model Estimation (Jalankan domain aktif / semua domain); domain bisa diaktifkan dari node Geostatistik & Model Estimation di Project Tree | selesai (Drillhole 0.20.0) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna
