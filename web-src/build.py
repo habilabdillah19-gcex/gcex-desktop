@@ -232,7 +232,7 @@ rep1("var pg={W:W,H:H,ops:ops,scale:0},b=lyPdf([pg]);", "var pg={W:W,H:H,ops:ops
 # ---------- 7z. Cek sintaks semua modul JS (bila Node.js tersedia) supaya galat ketahuan saat build ----------
 import shutil as _sh, subprocess as _sp
 # modul tambahan 0.14.0+ (dipasang di akhir lapisan UI, berurutan)
-EXTRA = ['theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js']
+EXTRA = ['theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js']
 if _sh.which('node'):
     for _m in EXTRA + ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
         _r = _sp.run(['node', '--check', W + _m], capture_output=True, text=True)
@@ -252,6 +252,11 @@ _pat=_re.compile(r"sgA&&isFinite\(sgA\[([a-z.]+)\]\)&&sgA\[\1\]>0\?sgA\[\1\]:(?:
 _n=len(_pat.findall(s));s=_pat.sub(lambda mm:'bxSGv(sgA?sgA['+mm.group(1)+']:NaN)',s);print('SG terpusat:',_n,'tempat')
 assert _n>=6
 
+# ---------- 0.20: "sulfida / SxS" -> Additional flagging (aturan komposit unsur, lihat flrev_bm.js) ----------
+s = s.replace("(o.ton.sulf?'  (sulfida)':'')", "(window.afTxt?afTxt(o.ton):'')")
+s = s.replace("(t.sulf?' &middot; <b style=\"color:#b8860b\">sulfida &rarr; string ganda</b>':'')", "(t.sulf?' &middot; <b style=\"color:#b8860b\">&#9873; '+((t.af||[]).join(', ')||'flag')+' &rarr; garis ganda</b>':'')")
+s = s.replace("<span>Sulfida?</span>", "<span>Flag?</span>")
+s = s.replace("' string ganda</b> (sulfida / sxs &gt; '+U.sxsThr+')'", "' garis ganda</b> (additional flagging)'")
 # ---------- 8d. Kulit desktop (3D halus + lebih padat), dipasang sebagai <style> terakhir ----------
 _k = s.rindex('</body>')
 s = s[:_k] + '<style id="deskSkin">\n' + open(W + 'desk_skin.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="bmSolid">\n' + open(W + 'skin_bm_solid.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="deskDense">\n' + open(W + 'desk_dense.css', encoding='utf-8').read() + '\n</style>\n' + '<style id="themeEarthy">\n' + open(W + 'theme_earthy.css', encoding='utf-8').read() + '\n</style>\n' + s[_k:]

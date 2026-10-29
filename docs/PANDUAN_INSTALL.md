@@ -346,3 +346,20 @@ Versi ini hanya untuk **GC-Ex Drill Hole Ultimate** (`GC-Ex-Drillhole-Setup-0.20
 - **Model Estimation**: Properti menampilkan parameter domain aktif. **▶ Jalankan domain aktif** hanya mengestimasi domain aktif; **▶ Jalankan semua domain** mengestimasi semua domain yang dicentang (centang di node domain Model Estimation atau di tabel). Keduanya juga ada di menu … node Model Estimation.
 - Tutorial *GC-Ex Modelling & Estimasi* diperbarui: bab **Domain aktif di Geostatistik & Model Estimation (versi 0.20)**.
 
+## 32. Additional flagging & review per flitch (GC-Ex Block Model 0.20.1)
+
+Versi ini hanya untuk **GC-Ex Block Model** (`GC-Ex-Setup-0.20.1.exe`, Release v0.20.1). Nomor 0.20.1 dipakai karena Release v0.20.0 sudah milik GC-Ex Drill Hole Ultimate. Drill Hole Ultimate tetap 0.20.0 dan Core-Ex tetap 0.19.0.
+
+**Additional flagging** (menggantikan *Aturan sulfida / material SxS*; Dig Block → Otomatis → *Additional flagging (garis ganda)*)
+- Daftar aturan: *Nama flag*, *Unsur* (kolom block model), *> / ≥*, *COG*. Flag diberikan ke **seluruh poligon** dig block bila **komposit** unsur di dalam poligon (rata-rata tertimbang tonase) melewati COG. Contoh: *Ore Sulfide* = S > 0,8 %; *Zn tinggi* = Zn > 500 ppm; *Cu tinggi* = Cu > 500 ppm. Satuan COG = satuan kolom block model.
+- Aturan kode kategori tetap ada (flag bila ≥ 50 % tonase berkode tertentu).
+- Poligon ber-flag: **garis ganda** (jarak ke dalam diatur di *Garis ganda ke dalam (m)*), nama flag di label dig plan & PDF, daftar dig block (⚑) dan Project Tree. Aturan *Tujuan (DEST)* kolom **Flag?** (Ya / Tidak / semua) memakai flag ini.
+- Proyek lama: kolom sxs & batas serta kode sulfida otomatis menjadi aturan *Ore Sulfide*.
+
+**Review flitch per flitch di Project Tree** (dihitung dari poligon tersimpan; flitch aktif tidak berubah)
+- **Dig Block → Per flitch**: tiap flitch (RL atas – bawah, tanda *aktif*) berisi poligon: nama · material → tujuan, ton @ kadar, ⚑ flag. Klik = buka flitch di Sayatan 2D & sorot poligon; menu: *Edit bentuk*, *Hapus*.
+- **Laporan Grade × Tonnage → Per flitch**: ton @ kadar per flitch dan per material → tujuan. **Rekap semua flitch (CSV)**: satu baris per dig block di semua flitch (RL, material, tujuan, luas, ton, kadar, metal, flag).
+- **As-Mined → Per flitch**: *Rencana* (dig block) vs *Aktual* (as-mined) ton @ kadar dan selisih (Δ %). Klik = buka flitch dengan poligon dig block dan as-mined bertumpuk di Sayatan 2D.
+- *Flitch Aktif → Semua flitch* dan *Register & Laporan As-Mined → Per flitch* tetap ada.
+- Legenda: string dig block bernama sama (mis. *String 17 HG*) tampil sekali.
+

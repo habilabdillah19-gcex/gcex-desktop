@@ -16,7 +16,9 @@
   var RX=/^(.+?_(?:HW|FW))_?\d+$/i;
   if(window.Plotly&&Plotly.react&&!Plotly._gx19){var _r=Plotly.react;Plotly._gx19=1;
     Plotly.react=function(gd,d){try{if(Array.isArray(d)){var seen={};d.forEach(function(t){if(!t||typeof t.name!=='string')return;var m=RX.exec(t.name);if(!m||t.showlegend===false)return;
-          var g=m[1];t.name=g;t.legendgroup=t.legendgroup||('gx_'+g);if(seen[g])t.showlegend=false;else seen[g]=1;});}}catch(e){console.error(e);}
+          var g=m[1];t.name=g;t.legendgroup=t.legendgroup||('gx_'+g);if(seen[g])t.showlegend=false;else seen[g]=1;});
+          /* nama legenda yang sama (mis. puluhan "String 17 HG" dig block) cukup tampil sekali */
+          var dn={};d.forEach(function(t){if(!t||typeof t.name!=='string'||t.showlegend===false||!/lines/.test(t.mode||''))return;if(dn[t.name]){t.showlegend=false;t.legendgroup=dn[t.name];}else{dn[t.name]=t.legendgroup=t.legendgroup||('gxn_'+t.name);}});}}catch(e){console.error(e);}
       return _r.apply(this,arguments);};}
   /* ---------- 3. Block Model: rekap & edit string ---------- */
   if(typeof window.dgList==='function'&&window.DG&&typeof window.dbEdStart==='function'){
