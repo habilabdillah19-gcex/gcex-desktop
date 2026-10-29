@@ -139,17 +139,17 @@ jobs:
         with:
           name: GC-Ex-Setup-Windows
           path: dist/GC-Ex-Setup-*.exe
-          retention-days: 30
+          retention-days: 7
       - uses: actions/upload-artifact@v6
         with:
           name: GC-Ex-Drillhole-Setup-Windows
           path: dist/GC-Ex-Drillhole-Setup-*.exe
-          retention-days: 30
+          retention-days: 7
       - uses: actions/upload-artifact@v6
         with:
           name: Core-Ex-Setup-Windows
           path: dist/Core-Ex-Setup-*.exe
-          retention-days: 30
+          retention-days: 7
 
       # audit keamanan (informasi, tidak menggagalkan build): environment Python terpisah supaya tidak ikut ke daftar lisensi
       - name: Audit keamanan paket (Node & Python)
