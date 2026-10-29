@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Tutorial Core-Ex</title>
+<style>
+@font-face{font-family:Playfair;src:url(../../app-core/fonts/PlayfairDisplay-wght.ttf);font-weight:400 900}
+@font-face{font-family:'Courier Prime';src:url(../../app-core/fonts/CourierPrime-Regular.ttf)}
+@font-face{font-family:'Courier Prime';src:url(../../app-core/fonts/CourierPrime-Bold.ttf);font-weight:700}
+@page{size:A4;margin:16mm 16mm 18mm}
+:root{--ink:#1e2a38;--mu:#5d6773;--pr:#1f3a5f;--ac:#3b6ea5;--lt:#e8eef6;--bd:#cdd7e3;--ok:#2f6b3a;--dn:#9b3d2f;--warn:#fff4e0}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:10pt/1.5 'Segoe UI','Inter','DejaVu Sans',Arial,sans-serif}
+h1,h2,h3{font-family:Playfair,Georgia,serif;color:var(--pr);line-height:1.2}
+h2{font-size:18pt;margin:0 0 3.5mm;padding-bottom:2mm;border-bottom:2px solid var(--ac);break-after:avoid}
+h3{font-size:12pt;margin:5mm 0 2mm;break-after:avoid}
+p{margin:0 0 2.5mm}
+code{font-family:'Courier Prime',Consolas,monospace;font-size:9.6pt;background:var(--lt);padding:0 1.2mm;border-radius:1mm}
+.page{break-after:page}
+.cover{height:250mm;display:flex;flex-direction:column;justify-content:space-between}
+.band{background:var(--pr);color:#fff;border-radius:3mm;padding:16mm 12mm 14mm;position:relative;overflow:hidden}
+.band:after{content:"";position:absolute;right:-20mm;top:-20mm;width:80mm;height:80mm;border-radius:50%;border:10mm solid rgba(255,255,255,.07)}
+.kick{letter-spacing:.18em;text-transform:uppercase;font-size:9pt;opacity:.8}
+.band h1{color:#fff;font-size:38pt;margin:4mm 0 2mm}.band h1 em{color:#9cc0ea}
+.lead{font-size:12pt;opacity:.92;max-width:140mm}
+.cover img{width:100%;height:88mm;object-fit:cover;object-position:top;border-radius:2mm;border:1px solid var(--bd);margin-top:6mm}
+.toc{border:1px solid var(--bd);border-radius:3mm;padding:5mm 7mm;columns:2;column-gap:10mm;font-size:9.5pt}
+.toc b{color:var(--pr);display:block;column-span:all;margin-bottom:1.5mm}
+.toc div{break-inside:avoid;margin:.6mm 0}
+.meta{font-size:8.5pt;color:var(--mu)}
+.part{font-size:9pt;letter-spacing:.16em;text-transform:uppercase;color:var(--ac);font-weight:700;margin-bottom:1mm}
+.step{display:grid;grid-template-columns:8mm 1fr;gap:3mm;margin:0 0 3mm;break-inside:avoid}
+.num{width:7mm;height:7mm;border-radius:50%;background:var(--pr);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:9.5pt;margin-top:.3mm}
+figure{margin:2.5mm 0 4mm;break-inside:avoid}
+figure img{display:block;max-width:100%;margin:0 auto;border:1px solid var(--bd);border-radius:2mm;box-shadow:0 1mm 3mm rgba(31,58,95,.12)}
+figcaption{font-size:8.5pt;color:var(--mu);margin-top:1.5mm}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:5mm;align-items:start}
+.note{border-left:3px solid var(--ac);background:var(--lt);padding:2.5mm 4mm;border-radius:0 2mm 2mm 0;margin:3mm 0;break-inside:avoid}
+.warn{border-left:3px solid #c58a2a;background:var(--warn);padding:2.5mm 4mm;border-radius:0 2mm 2mm 0;margin:3mm 0;break-inside:avoid}
+.check{border:1px dashed var(--ac);border-radius:2mm;padding:2mm 4mm;margin:2mm 0 4mm;font-size:9.3pt;break-inside:avoid}
+.check b{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:9pt;margin:2mm 0 4mm}
+th{background:var(--pr);color:#fff;text-align:left;padding:1.8mm 2.5mm;font-weight:600}
+td{padding:1.8mm 2.5mm;border-bottom:1px solid var(--bd);vertical-align:top}
+tr{break-inside:avoid}tr:nth-child(even) td{background:#f6f8fb}
+ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
+.tag{display:inline-block;font-size:7.5pt;padding:0 1.5mm;border-radius:1mm;font-weight:700;vertical-align:1px}
+.t-ai{background:#2c5ea8;color:#fff}.t-log{background:#1e2a38;color:#fff}.t-ed{background:#2f6b3a;color:#fff}
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div>
+    <div class="band">
+      <div class="kick">Core Excellence · keluarga GC-Ex</div>
+      <h1>Tutorial Core<em>-Ex</em></h1>
+      <div class="lead">Latihan langkah demi langkah memakai Core-Ex: dokumentasi foto core box, data bor, AI lokal untuk geoteknik, pencarian, overlay assay, dan export Excel. Seluruh latihan memakai paket data dummy Core-Ex_Data_Dummy.</div>
+    </div>
+    <img src="gambar/t02_folder.png">
+  </div>
+  <div class="toc">
+    <b>Isi</b>
+    <div>0. Persiapan: aplikasi, Ollama, data dummy</div>
+    <div>1. Buka folder foto core box</div>
+    <div>2. Import data bor (Collar, Survey, Assay, Geologi)</div>
+    <div>3. Jalankan AI lokal</div>
+    <div>4. Baca kartu foto: geoteknik vs logging</div>
+    <div>5. Periksa, edit, verifikasi</div>
+    <div>6. Overlay assay di foto & atur area core</div>
+    <div>7. Cari cepat & kueri kadar</div>
+    <div>8. Filter kadar</div>
+    <div>9. Data baru: assay ulang per hole</div>
+    <div>10. Impor JSON dashboard lama & export Excel</div>
+    <div>11. Kunci jawaban & masalah umum</div>
+  </div>
+  <div class="meta">Core-Ex 0.18.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+</section>
+
+<section class="page">
+  <div class="part">Bagian 0</div>
+  <h2>Persiapan</h2>
+  <div class="step"><div class="num">1</div><div>
+    <b>Pasang Core-Ex.</b> Jalankan <code>Core-Ex-Setup-&lt;versi&gt;.exe</code> (tidak perlu hak admin). Saat pertama dibuka, setujui Syarat Penggunaan lalu aktifkan lisensi (lihat <i>Tutorial Aktivasi Lisensi GC-Ex</i>).
+  </div></div>
+  <div class="step"><div class="num">2</div><div>
+    <b>Pasang Ollama dan satu model vision</b> (sekali per komputer). Di komputer yang ada internet: pasang <code>OllamaSetup.exe</code> versi 0.12.7 atau lebih baru, lalu di Command Prompt jalankan <code>ollama pull qwen3-vl:8b</code>. Untuk komputer site tanpa internet, salin installer dan folder <code>%USERPROFILE%\.ollama\models</code> lewat flashdisk.
+    <table>
+      <tr><th>Model</th><th>Unduhan</th><th>Cocok untuk</th></tr>
+      <tr><td><code>qwen3-vl:8b</code> (disarankan)</td><td>±6,1 GB</td><td>NVIDIA ≥ 8 GB VRAM, atau RAM ≥ 16 GB</td></tr>
+      <tr><td><code>qwen3-vl:4b</code></td><td>±3,3 GB</td><td>laptop biasa (RAM 8–16 GB), lebih cepat</td></tr>
+    </table>
+  </div></div>
+  <div class="step"><div class="num">3</div><div>
+    <b>Ekstrak data dummy.</b> Ekstrak <code>Core-Ex_Data_Dummy.zip</code>, misalnya ke <code>D:\Latihan\</code>. Isinya:
+    <table>
+      <tr><th style="width:42%">File / folder</th><th>Dipakai di</th></tr>
+      <tr><td><code>Foto_Core\</code> (24 foto: LTH-101, LTH-102, <code>IMG_0001.jpg</code>)</td><td>Latihan 1 – Buka folder</td></tr>
+      <tr><td><code>Data_Lab\Collar_Latihan.csv</code>, <code>Survey_Latihan.csv</code></td><td>Latihan 2 – tab Collar, Survey</td></tr>
+      <tr><td><code>Data_Lab\Assay_Latihan.xlsx</code> (header di baris 3)</td><td>Latihan 2 – tab Assay</td></tr>
+      <tr><td><code>Data_Lab\Geologi_Latihan.txt</code> (hanya LTH-101)</td><td>Latihan 2 – tab Geologi</td></tr>
+      <tr><td><code>Data_Lab\Assay_Latihan_LTH-102_ulang.csv</code></td><td>Latihan 9 – assay ulang</td></tr>
+      <tr><td><code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code></td><td>Latihan 10 – impor JSON lama</td></tr>
+    </table>
+  </div></div>
+  <div class="note"><b>Prinsip Core-Ex.</b> AI visual menilai parameter <b>geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, catatan struktur). Isian <b>geologi</b> (litologi, alterasi, oksidasi, warna) diambil dari <b>logging geologist</b> bila ada; AI hanya mengisinya bila logging tidak ada. Urutan prioritas: logging geologist &gt; editan manual &gt; AI.</div>
+  <div class="warn">Nilai geoteknik dari AI adalah <b>perkiraan visual dari foto</b>, bukan pengukuran di core shed. Wajib diperiksa geologist / geotech sebelum dipakai.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 1</div>
+  <h2>Buka folder foto core box</h2>
+  <p>Saat dibuka, Core-Ex menampilkan halaman awal dengan tiga langkah kerja.</p>
+  <figure><img src="gambar/t01_awal.png" style="width:115mm"><figcaption>Gambar 1 – Halaman awal Core-Ex.</figcaption></figure>
+  <ol>
+    <li>Klik <b>Buka folder</b> (atau <b>Buka folder foto core box</b>), pilih <code>D:\Latihan\Core-Ex_Data_Dummy\Foto_Core</code>.</li>
+    <li>Subfolder per lubang ikut dibaca. Hole ID, box dan kedalaman dibaca dari nama file, mis. <code>LTH-101_Box3_7.26-10.89.jpg</code> → LTH-101, box 3, 7,26–10,89 m.</li>
+    <li><code>IMG_0001.jpg</code> (bergaya foto HP) tidak punya info di nama file; isiannya kosong dan nanti dibaca AI dari papan label.</li>
+  </ol>
+  <figure><img src="gambar/t02_folder.png" style="width:150mm"><figcaption>Gambar 2 – Folder terbuka: pratinjau foto di kiri, tabel log di kanan, status di bilah bawah.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> bilah bawah menulis <b>24 foto · 2 lubang</b>. Hasil kerja tersimpan di subfolder <code>_GCEx_Core</code> di dalam folder foto, jadi rekan yang membuka folder yang sama bisa melanjutkan.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 2</div>
+  <h2>Import data bor</h2>
+  <p>Klik <b>Data bor</b> di bilah atas. Ada empat tab: Collar, Survey, Assay, Geologi. Nama header bebas; Core-Ex menebak kolomnya, Anda tinggal memeriksa.</p>
+  <h3>2a. Collar dan Survey</h3>
+  <ol>
+    <li>Tab <b>Collar</b> → <b>Pilih file CSV / Excel…</b> → <code>Collar_Latihan.csv</code>. Pemisah titik koma dan koma desimal dikenali otomatis.</li>
+    <li>Periksa <b>Kolom utama</b>: Hole ID = BHID, X = Easting, Y = Northing, Z = RL. Klik <b>Import</b>.</li>
+    <li>Ulangi di tab <b>Survey</b> dengan <code>Survey_Latihan.csv</code>.</li>
+  </ol>
+  <figure><img src="gambar/t03_collar.png" style="width:125mm"><figcaption>Gambar 3 – Tab Collar: pratinjau (biru = kolom utama) dan pemetaan kolom.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> Collar: 2 baris diimport · 2 hole. Survey: 5 baris · 2 hole cocok dengan foto.</div>
+</section>
+
+<section class="page">
+  <h3 style="margin-top:0">2b. Assay (header dinamis)</h3>
+  <ol>
+    <li>Tab <b>Assay</b> → <code>Assay_Latihan.xlsx</code>. Baris judul laporan lab dilewati; <b>Baris header</b> terdeteksi di baris 3.</li>
+    <li>Di <b>Kolom lain yang ikut</b>, beri nama pendek: <code>Au (ppm)</code> → <code>Au</code>, <code>Ag (ppm)</code> → <code>Ag</code>, <code>Cu (%)</code> → <code>Cu</code>, <code>Sample No</code> → <code>Sample</code>. Hilangkan centang <code>Lab_Stat</code>.</li>
+    <li><b>Cara import</b>: <i>Tambah / perbarui per hole</i>. Klik <b>Import</b>.</li>
+  </ol>
+  <div class="two">
+    <figure><img src="gambar/t04_assay.png"><figcaption>Gambar 4 – Nama kolom diganti sebelum import.</figcaption></figure>
+    <figure><img src="gambar/t05_assay_hasil.png"><figcaption>Gambar 5 – Ringkasan hasil import assay.</figcaption></figure>
+  </div>
+  <div class="check"><b>✓ Cek:</b> 86 baris diimport · 2 hole · 18 nilai di bawah limit deteksi (&lt;) dibaca setengah nilainya. Nama unsur yang Anda beri (<code>Au</code>) dipakai di pencarian dan filter.</div>
+  <h3>2c. Geologi (logging geologist)</h3>
+  <p>Tab <b>Geologi</b> → <code>Geologi_Latihan.txt</code> (pemisah tab). Pastikan bagian <b>Logging → isian kartu foto</b> memetakan Litologi = Lith, Alterasi = Alt_Int, Oksidasi = Ox. Klik <b>Import</b>.</p>
+  <figure><img src="gambar/t06_geologi.png" style="width:120mm"><figcaption>Gambar 6 – Tab Geologi: kolom Lith, Alt_Int, Ox, Mineralogy, Vein_Type, Logged_By.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> 6 baris · 1 hole (hanya LTH-101 yang sudah dilogging). Tutup dialog dengan Esc.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 3</div>
+  <h2>Jalankan AI lokal</h2>
+  <ol>
+    <li>Pastikan titik di kanan atas berwarna biru/hijau: <b>AI lokal: qwen3-vl:8b</b>.</li>
+    <li>Klik <b>Jalankan AI</b>. Dialog menampilkan versi Ollama dan model vision yang terpasang; model yang tidak bisa melihat gambar tampil abu-abu.</li>
+    <li>Biarkan ukuran foto <b>1600 px (seimbang)</b>. Kolom <b>Instruksi tambahan</b> boleh diisi aturan proyek, mis. kode litologi.</li>
+    <li>Klik <b>Analisis foto yang belum (24)</b>.</li>
+  </ol>
+  <div class="two">
+    <figure><img src="gambar/t07_ai_dialog.png"><figcaption>Gambar 7 – Dialog AI lokal.</figcaption></figure>
+    <figure><img src="gambar/t08_ai_jalan.png"><figcaption>Gambar 8 – Antrean berjalan; bilah kemajuan dan tombol Hentikan di bawah.</figcaption></figure>
+  </div>
+  <p>Hasil tiap foto langsung tersimpan. Aplikasi boleh ditutup di tengah jalan; jalankan lagi untuk melanjutkan yang belum. Perkiraan waktu: GPU 8 GB ±5–20 detik per foto, hanya CPU ±1–3 menit.</p>
+  <div class="check"><b>✓ Cek:</b> bilah bawah menulis <b>AI selesai 24 · gagal 0</b>. Foto yang gagal diulang otomatis saat AI dijalankan lagi.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 4</div>
+  <h2>Baca kartu foto: geoteknik vs logging</h2>
+  <p>Klik baris <code>IMG_0001.jpg</code> di tabel (atau ketik <code>IMG_0001</code> di kotak Saring). AI membaca papan label: HOLE ID LTH-101, BOX 11, DEPTH 36.30 → M:TO 40.10, START DRILL dan DATE POTO.</p>
+  <figure><img src="gambar/t09_kartu_asli.png" style="width:150mm"><figcaption>Gambar 9 – IMG_0001: isian identitas dibaca AI dari papan label.</figcaption></figure>
+  <p>Arti label di setiap isian:</p>
+  <ul>
+    <li><span class="tag t-ai">AI</span> sel biru muda = isian AI yang belum dicek geologist.</li>
+    <li><span class="tag t-log">logging</span> = dari logging geologist (Data bor › Geologi); tidak bisa ditimpa AI.</li>
+    <li><span class="tag t-ed">diedit</span> = sudah diubah geologist; tidak pernah ditimpa AI walau dijalankan ulang.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <p>Gulir kartu ke bawah. Bandingkan dua lubang:</p>
+  <div class="two">
+    <figure><img src="gambar/t10_kartu_geologi.png"><figcaption>Gambar 10 – LTH-101 (sudah dilogging): Litologi QV, Alterasi Silisifikasi kuat, Oksidasi FR bertanda <b>logging</b>; warna batuan masih dari AI karena tidak ada di logging.</figcaption></figure>
+    <figure><img src="gambar/t11_kartu_543.png"><figcaption>Gambar 11 – LTH-102 (belum dilogging): judul "belum ada logging, isian AI / manual"; semua isian geologi dari AI.</figcaption></figure>
+  </div>
+  <div class="note">Di bagian <b>Data lab</b> kartu (gulir ke bawah) tampil koordinat collar, koordinat X, Y, Z di From dan To foto (dihitung dari survey), serta tabel assay dan geologi di rentang foto itu.</div>
+
+  <div class="part" style="margin-top:6mm">Latihan 5</div>
+  <h2>Periksa, edit, verifikasi</h2>
+  <ol>
+    <li>Pilih Hole ID <b>LTH-101</b> di filter. Pratinjau lompat ke box 1.</li>
+    <li>Ubah <b>RQD (%)</b> menjadi <code>62</code>, tekan Tab. Labelnya berubah menjadi <span class="tag t-ed">diedit</span>.</li>
+    <li>Tekan <b>Ctrl+Enter</b> (Verifikasi &amp; lanjut). Status baris menjadi <b>diverifikasi</b> dan pratinjau pindah ke foto berikutnya.</li>
+  </ol>
+  <figure><img src="gambar/t12_verifikasi.png" style="width:135mm"><figcaption>Gambar 12 – LTH-101 box 1 terverifikasi. Banyak foto sekaligus: centang di kolom kiri → Verifikasi terpilih.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> bilah bawah: <b>diverifikasi 1</b>. Riwayat setiap perubahan (nilai lama → baru, siapa, kapan) ada di bawah kartu.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 6</div>
+  <h2>Overlay assay di foto &amp; atur area core</h2>
+  <ol>
+    <li>Buka lagi <code>IMG_0001.jpg</code>. Klik ikon <b>lapisan</b> (tumpukan) di pojok kanan atas pratinjau.</li>
+    <li>Pita assay muncul di atas tiap baris core dengan warna kelas kadar, pita geologi (Lith) di bawahnya, dan kedalaman di awal/akhir baris.</li>
+    <li>Di strip bawah foto: pilih unsur <code>Au</code>, kelas <code>0.1, 0.5, 1, 3</code>, kolom geologi <code>Lith</code>.</li>
+  </ol>
+  <figure><img src="gambar/t13_overlay.png" style="width:150mm"><figcaption>Gambar 13 – Overlay Au dan Lith pada IMG_0001 (box 11, 36,30–40,10 m): zona QV berkadar tinggi.</figcaption></figure>
+  <p>Bila pita tidak pas dengan core, klik <b>Atur area core</b>: tarik sudut kotak biru, isi jumlah baris, lalu simpan untuk foto ini, semua foto lubang ini, atau bawaan proyek.</p>
+  <figure><img src="gambar/t14_area_core.png" style="width:80mm"><figcaption>Gambar 14 – Atur area core.</figcaption></figure>
+  <div class="warn">Posisi pita adalah <b>perkiraan</b>: interval box dibagi rata ke jumlah baris. Bila core hilang atau panjang baris tidak sama, pakai penanda kedalaman di core block sebagai acuan akhir.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 7</div>
+  <h2>Cari cepat &amp; kueri kadar</h2>
+  <ol>
+    <li>Tekan <b>Ctrl+K</b>, ketik <code>chalcopyrite</code>. Hasil menunjukkan interval logging yang menyebut mineral itu beserta fotonya. ↑ ↓ lalu Enter untuk membuka.</li>
+    <li>Ganti dengan <code>Au&gt;=3</code>. Hasil: semua interval assay dengan Au ≥ 3, diurutkan dari nilai tertinggi. Overlay assay menyala otomatis.</li>
+  </ol>
+  <div class="two">
+    <figure><img src="gambar/t15_cari.png"><figcaption>Gambar 15 – Cari teks: <code>chalcopyrite</code>.</figcaption></figure>
+    <figure><img src="gambar/t16_cari_au.png"><figcaption>Gambar 16 – Kueri kadar <code>Au&gt;=3</code>: 3 hasil, tertinggi 12,4 g/t.</figcaption></figure>
+  </div>
+  <p>Kotak cari juga mencari nama file, Hole ID, isian log dan nomor sampel. Kueri lain: <code>Cu&gt;0.3</code>, <code>Ag&lt;5</code>.</p>
+
+  <div class="part" style="margin-top:5mm">Latihan 8</div>
+  <h2>Filter kadar</h2>
+  <p>Di bilah filter: <b>Kadar</b> = Au, <b>maks</b>, ≥ <code>1</code>. Tabel hanya menampilkan box yang punya sampel Au ≥ 1 g/t.</p>
+  <figure><img src="gambar/t17_filter.png" style="width:125mm"><figcaption>Gambar 17 – Filter Au maks ≥ 1: 3 dari 24 foto.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> penghitung kanan atas: <b>3 dari 24 foto</b>. Klik <b>Reset filter</b> untuk kembali.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 9</div>
+  <h2>Data baru: assay ulang per hole</h2>
+  <p>Lab mengirim hasil analisa ulang LTH-102. File baru cukup diimport dengan cara <i>Tambah / perbarui per hole</i>: data LTH-102 diganti, LTH-101 tetap.</p>
+  <ol>
+    <li><b>Data bor</b> → tab <b>Assay</b> → <code>Assay_Latihan_LTH-102_ulang.csv</code>.</li>
+    <li>Header file ini sama dengan import sebelumnya, jadi <b>pemetaan terakhir dipakai lagi</b> (Au, Ag, Cu, Sample sudah terisi).</li>
+    <li>Klik <b>Import</b>.</li>
+  </ol>
+  <div class="two">
+    <figure><img src="gambar/t18_upsert_map.png"><figcaption>Gambar 18 – Pemetaan terakhir dipakai lagi.</figcaption></figure>
+    <figure><img src="gambar/t19_upsert_hasil.png"><figcaption>Gambar 19 – 44 baris LTH-102 diperbarui.</figcaption></figure>
+  </div>
+  <div class="check"><b>✓ Cek:</b> Assay: 44 baris diimport · 1 hole. Data assay LTH-101 tidak berubah.</div>
+
+  <div class="part" style="margin-top:5mm">Latihan 10</div>
+  <h2>Impor JSON lama &amp; export Excel</h2>
+  <ol>
+    <li><b>JSON</b> → <code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code>. Hasil dashboard lama dicocokkan per nama file foto: <b>2 foto cocok</b>.</li>
+    <li><b>Excel</b> → export semua foto atau hanya yang tampil sesuai filter.</li>
+  </ol>
+  <p>Sheet <code>Core Log</code> berisi semua kolom, status AI, keyakinan AI dan siapa yang memverifikasi; nama file foto bisa diklik. Sel biru muda = isian AI yang belum diverifikasi. Kolom <b>Sumber isian geologi</b> menulis asal tiap isian (logging / manual / AI), dan ada kolom <code>Au rata-rata</code> / <code>Au maks</code> per foto.</p>
+</section>
+
+<section class="page">
+  <figure style="margin-top:0"><img src="gambar/t20_akhir.png" style="width:150mm"><figcaption>Gambar 20 – Kondisi akhir latihan.</figcaption></figure>
+  <div class="part">Latihan 11</div>
+  <h2>Kunci jawaban</h2>
+  <table>
+    <tr><th style="width:38%">Pertanyaan</th><th>Jawaban</th></tr>
+    <tr><td>Berapa foto dan lubang di folder?</td><td>24 foto, 2 lubang (LTH-101, LTH-102)</td></tr>
+    <tr><td>IMG_0001 itu foto apa?</td><td>LTH-101 box 11, 36,30–40,10 m</td></tr>
+    <tr><td>Zona berkadar tinggi?</td><td>LTH-101 zona QV 36,8–41,2 m, Au sampai 12,4 g/t</td></tr>
+    <tr><td>Hasil <code>Au&gt;=3</code>?</td><td>3 interval: 12,4 · 3,6 · 3,6 g/t, semua di IMG_0001</td></tr>
+    <tr><td>Lubang yang sudah dilogging?</td><td>Hanya LTH-101; isian geologi LTH-102 dari AI</td></tr>
+    <tr><td>Nilai di bawah limit deteksi?</td><td>18 nilai di import pertama, dibaca setengah limit (<code>&lt;0.01</code> → 0,005)</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Masalah umum</h2>
+  <table>
+    <tr><th style="width:36%">Gejala</th><th>Penyebab / solusi</th></tr>
+    <tr><td>Titik merah "Ollama tidak aktif"</td><td>Ollama belum dipasang / dijalankan. Buka Ollama dari Start menu, lalu klik <b>Periksa</b> di dialog AI.</td></tr>
+    <tr><td>"Belum ada model vision"</td><td>Model belum diunduh / disalin (<code>ollama pull qwen3-vl:8b</code>).</td></tr>
+    <tr><td>AI sangat lambat</td><td>Berjalan di CPU. Pakai <code>qwen3-vl:4b</code>, ukuran foto 1024 px, atau komputer dengan kartu grafis NVIDIA.</td></tr>
+    <tr><td>Banyak foto "AI gagal"</td><td>Arahkan kursor ke label untuk melihat sebab. Biasanya Ollama tertutup atau memori habis; jalankan AI lagi (yang gagal diulang).</td></tr>
+    <tr><td>Data lab kosong di kartu foto</td><td>Hole ID / From / To foto belum terisi, atau Hole ID berbeda dengan file lab. Perbaiki di kartu; data dicocokkan ulang.</td></tr>
+    <tr><td>"Tidak ada baris yang bisa diimport"</td><td>Baris header salah atau kolom From / To bukan angka.</td></tr>
+    <tr><td><code>Au&gt;=1</code> → "Unsur tidak ada"</td><td>Pakai nama di Core-Ex saat import (<code>Au</code>, bukan <code>Au (ppm)</code>).</td></tr>
+    <tr><td>Pita overlay tidak pas</td><td><b>Atur area core</b>, sesuaikan kotak &amp; jumlah baris, simpan untuk semua foto lubang ini.</td></tr>
+    <tr><td>"Backend tidak aktif"</td><td>Bantuan → Buka folder log, kirim <code>backend.log</code> ke admin.</td></tr>
+  </table>
+  <p class="meta" style="margin-top:6mm">Core-Ex dilindungi UU No. 28 Tahun 2014 tentang Hak Cipta dan dilisensikan, bukan dijual. Ketentuan lengkap: Bantuan → Syarat penggunaan &amp; penafian. Ollama, Qwen dan nama produk lain adalah merek pemiliknya masing-masing.<br>Copyright © Habil Abdillah 2026.</p>
+</section>
+</body>
+</html>
