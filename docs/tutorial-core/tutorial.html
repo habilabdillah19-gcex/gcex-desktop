@@ -74,7 +74,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>10. Impor JSON dashboard lama & export Excel</div>
     <div>11. Kunci jawaban & masalah umum</div>
   </div>
-  <div class="meta">Core-Ex 0.18.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">Core-Ex 0.18.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -157,7 +157,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
   <div class="part">Latihan 3</div>
   <h2>Jalankan AI lokal</h2>
   <ol>
-    <li>Pastikan titik di kanan atas berwarna biru/hijau: <b>AI lokal: qwen3-vl:8b</b>.</li>
+    <li>Pastikan titik di kanan atas berwarna biru: <b>AI lokal: qwen3-vl:8b</b>. Core-Ex menjalankan Ollama sendiri saat dibuka; bila masih merah, klik <b>Jalankan Ollama</b> di dialog AI.</li>
     <li>Klik <b>Jalankan AI</b>. Dialog menampilkan versi Ollama dan model vision yang terpasang; model yang tidak bisa melihat gambar tampil abu-abu.</li>
     <li>Biarkan ukuran foto <b>1600 px (seimbang)</b>. Kolom <b>Instruksi tambahan</b> boleh diisi aturan proyek, mis. kode litologi.</li>
     <li>Klik <b>Analisis foto yang belum (24)</b>.</li>
@@ -279,8 +279,8 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
   <h2>Masalah umum</h2>
   <table>
     <tr><th style="width:36%">Gejala</th><th>Penyebab / solusi</th></tr>
-    <tr><td>Titik merah "Ollama tidak aktif"</td><td>Ollama belum dipasang / dijalankan. Buka Ollama dari Start menu, lalu klik <b>Periksa</b> di dialog AI.</td></tr>
-    <tr><td>"Belum ada model vision"</td><td>Model belum diunduh / disalin (<code>ollama pull qwen3-vl:8b</code>).</td></tr>
+    <tr><td>Titik merah "Ollama tidak aktif"</td><td>Klik <b>Jalankan AI</b> → <b>Jalankan Ollama</b>. Bila tertulis "Ollama belum terpasang", pasang <code>OllamaSetup.exe</code> dulu.</td></tr>
+    <tr><td>"Belum ada model vision"</td><td>Cek <code>ollama list</code>. Ada qwen3-vl → perbarui Ollama ke 0.12.7+ (model tetap). Tidak ada → <code>ollama pull qwen3-vl:8b</code> atau salin folder model.</td></tr>
     <tr><td>AI sangat lambat</td><td>Berjalan di CPU. Pakai <code>qwen3-vl:4b</code>, ukuran foto 1024 px, atau komputer dengan kartu grafis NVIDIA.</td></tr>
     <tr><td>Banyak foto "AI gagal"</td><td>Arahkan kursor ke label untuk melihat sebab. Biasanya Ollama tertutup atau memori habis; jalankan AI lagi (yang gagal diulang).</td></tr>
     <tr><td>Data lab kosong di kartu foto</td><td>Hole ID / From / To foto belum terisi, atau Hole ID berbeda dengan file lab. Perbaiki di kartu; data dicocokkan ulang.</td></tr>

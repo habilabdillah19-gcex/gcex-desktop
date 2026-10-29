@@ -4,7 +4,7 @@
 
 Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 29 Oktober 2026 (versi 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
+Pembaruan terakhir: 29 Oktober 2026 (versi 0.18.1: Core-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 
@@ -39,7 +39,7 @@ Untuk komputer **tanpa internet** di site:
 
 1. Salin `OllamaSetup.exe` dan seluruh folder `%USERPROFILE%\.ollama\models` dari komputer di atas ke flashdisk / hard disk.
 2. Di komputer site: pasang `OllamaSetup.exe`, lalu tempel folder `models` ke `%USERPROFILE%\.ollama\models` (buat foldernya bila belum ada).
-3. Jalankan Ollama dari Start menu (ikon llama di system tray). Di Core-Ex, titik di kanan atas berubah hijau: **AI lokal: qwen3-vl:8b**.
+3. Ollama tidak perlu dibuka manual: saat Core-Ex dibuka dan Ollama belum aktif, Core-Ex menjalankannya otomatis (bisa dimatikan di dialog **Jalankan AI** → *Jalankan Ollama otomatis…*). Bila masih mati, klik tombol **Jalankan Ollama** di dialog AI, atau buka Ollama dari Start menu (ikon llama di system tray). Titik di kanan atas berubah biru: **AI lokal: qwen3-vl:8b**.
 
 Bila folder model ingin disimpan di drive lain (mis. `D:\OllamaModels`), atur variabel lingkungan `OLLAMA_MODELS` ke folder itu lalu jalankan ulang Ollama.
 
@@ -171,8 +171,8 @@ Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris;
 
 | Gejala | Penyebab / solusi |
 |---|---|
-| Titik merah "Ollama tidak aktif" | Ollama belum dipasang / belum dijalankan. Buka Ollama dari Start menu, lalu klik **Periksa** di dialog AI. |
-| "Belum ada model vision" | Model belum diunduh / disalin. Lihat bagian 2b. |
+| Titik merah "Ollama tidak aktif" | Klik **Jalankan AI** → **Jalankan Ollama**. Bila muncul "Ollama belum terpasang", pasang `OllamaSetup.exe` dulu (bagian 2b). |
+| "Belum ada model vision" | Cek `ollama list` di Command Prompt. Model qwen3-vl tercantum → perbarui Ollama ke 0.12.7+ (model tidak terhapus). Tidak tercantum → `ollama pull qwen3-vl:8b` atau salin folder model (bagian 2b). Model di drive lain → atur `OLLAMA_MODELS`. |
 | AI sangat lambat | Model berjalan di CPU. Pakai `qwen3-vl:4b`, ukuran foto 1024 px, atau komputer dengan kartu grafis NVIDIA. |
 | Banyak foto berstatus "AI gagal" | Arahkan kursor ke label "AI gagal" untuk melihat penyebab. Biasanya Ollama tertutup di tengah antrean atau memori habis; jalankan Ollama lagi lalu **Jalankan AI lokal** (yang gagal diulang otomatis). |
 | "Folder ini tidak bisa ditulisi" | Folder hanya-baca. Hasil disimpan di komputer ini saja; salin folder foto ke lokasi yang bisa ditulisi untuk kerja bersama. |

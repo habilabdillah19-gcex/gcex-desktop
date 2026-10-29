@@ -376,6 +376,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <div class="bd">
     <div class="box" id="aiState">Memeriksa…</div>
     <div class="row"><label>Alamat Ollama</label><input class="fi" id="aiHost" style="flex:1" value="http://127.0.0.1:11434"><button class="btn sm" id="aiCheck"><svg class="i"><use href="#i-refresh"/></svg>Periksa</button></div>
+    <div class="row" id="aiAutoRow"><label style="display:flex;gap:6px;align-items:center;width:auto;flex:1"><input type="checkbox" id="aiAuto"> Jalankan Ollama otomatis saat Core-Ex dibuka bila belum aktif</label></div>
     <div><span class="lbl">Model vision</span> <small style="color:var(--mu)">(hanya model yang bisa melihat gambar)</small>
       <div class="mlist box" id="aiModels" style="margin-top:5px"></div></div>
     <div class="row"><label>Ukuran foto ke AI</label><select class="fi" id="aiPx"><option value="1024">1024 px (cepat)</option><option value="1600" selected>1600 px (seimbang)</option><option value="2048">2048 px (label kecil, lambat)</option></select>
@@ -775,7 +776,31 @@ $('#vFull').onclick = () => {
 };
 
 /* =============================== AI lokal =============================== */
-async function checkOllama() {
+const OL = { tried: false, busy: false };
+const olLocal = h => /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/i.test(h || 'http://127.0.0.1:11434');
+const olCanStart = () => !!(D && D.ollamaStart) && olLocal($('#aiHost').value.trim());
+/* nyalakan Ollama lewat Electron (aplikasi tray Ollama / "ollama serve"), lalu periksa ulang */
+async function startOllama(auto) {
+  if (OL.busy || !olCanStart()) return;
+  OL.busy = true; OL.tried = true;
+  const msg = 'Menjalankan Ollama… (bisa 5–30 detik saat pertama)';
+  $('#aiDot').className = 'dot wait'; $('#aiTxt').textContent = 'AI lokal: menjalankan Ollama…';
+  $('#aiState').className = 'box'; $('#aiState').innerHTML = msg; $('#sAi').className = 'box'; $('#sAi').innerHTML = msg;
+  let r = null;
+  try { r = await D.ollamaStart($('#aiHost').value.trim()); } catch (e) { r = { ok: false, msg: e.message }; }
+  OL.busy = false;
+  if (r && r.ok) { if (r.started) toast('Ollama dijalankan'); return checkOllama(true); }
+  await checkOllama(true);
+  if (!auto || (r && r.code !== 'notfound')) {
+    const h = r && r.code === 'notfound'
+      ? '<b>Ollama belum terpasang di komputer ini.</b> Pasang <code>OllamaSetup.exe</code> (lihat Bantuan → Panduan AI lokal), lalu klik <b>Jalankan Ollama</b> lagi.'
+      : '<b>Ollama belum bisa dijalankan.</b> ' + esc((r && r.msg) || '') + ' Coba buka Ollama dari Start menu.';
+    $('#aiState').className = 'box er'; $('#aiState').innerHTML = h + olBtn(); $('#sAi').className = 'box er'; $('#sAi').innerHTML = h + olBtn();
+  }
+}
+const olBtn = () => olCanStart() ? ' <button class="btn sm pri olgo" style="margin-top:6px"><svg class="i"><use href="#i-refresh"/></svg>Jalankan Ollama</button>' : '';
+document.addEventListener('click', e => { if (e.target.closest('.olgo')) startOllama(false); });
+async function checkOllama(noAuto) {
   const host = $('#aiHost').value.trim() || 'http://127.0.0.1:11434';
   $('#aiDot').className = 'dot wait'; $('#aiTxt').textContent = 'AI lokal: memeriksa…';
   try {
@@ -784,11 +809,14 @@ async function checkOllama() {
     const vis = j.models.filter(m => m.vision);
     if (!j.running) {
       $('#aiDot').className = 'dot no'; $('#aiTxt').textContent = 'AI lokal: Ollama tidak aktif';
-      const h = `<b>Ollama belum berjalan.</b> Pasang Ollama (lihat panduan), lalu jalankan dari Start menu. Rekomendasi model: <code>${esc(j.recommended[0])}</code>. Tanpa AI pun, Anda tetap bisa mengisi &amp; memverifikasi log secara manual.`;
+      if (!noAuto && !OL.tried && LS.get('autoOllama', true) && olCanStart()) return startOllama(true);
+      const h = olCanStart()
+        ? `<b>Ollama belum berjalan.</b> Klik <b>Jalankan Ollama</b> (atau buka Ollama dari Start menu). Rekomendasi model: <code>${esc(j.recommended[0])}</code>. Tanpa AI pun, Anda tetap bisa mengisi &amp; memverifikasi log secara manual.` + olBtn()
+        : `<b>Ollama belum berjalan.</b> Pasang Ollama (lihat panduan), lalu jalankan dari Start menu. Rekomendasi model: <code>${esc(j.recommended[0])}</code>. Tanpa AI pun, Anda tetap bisa mengisi &amp; memverifikasi log secara manual.`;
       $('#aiState').className = 'box er'; $('#aiState').innerHTML = h; $('#sAi').className = 'box er'; $('#sAi').innerHTML = h;
     } else if (!vis.length) {
       $('#aiDot').className = 'dot no'; $('#aiTxt').textContent = 'AI lokal: belum ada model vision';
-      const h = `Ollama ${esc(j.version || '')} aktif, tetapi <b>belum ada model vision</b>. Salin model dari komputer lain atau jalankan <code>ollama pull ${esc(j.recommended[0])}</code> saat ada internet (lihat panduan).`;
+      const h = `Ollama ${esc(j.version || '')} aktif, tetapi <b>belum ada model vision</b>. Cek di Command Prompt: <code>ollama list</code>. Bila qwen3-vl sudah tercantum, perbarui Ollama ke versi 0.12.7 atau lebih baru (model tidak terhapus). Bila belum ada, jalankan <code>ollama pull ${esc(j.recommended[0])}</code> saat ada internet, atau salin folder model dari komputer lain (lihat panduan).`;
       $('#aiState').className = 'box wn'; $('#aiState').innerHTML = h; $('#sAi').className = 'box wn'; $('#sAi').innerHTML = h;
     } else {
       $('#aiDot').className = 'dot ok'; $('#aiTxt').textContent = 'AI lokal: ' + (LS.get('model', '') || vis[0].name);
@@ -858,6 +886,9 @@ $('#pStop').onclick = async () => { if (ask('Hentikan AI setelah foto yang sedan
 $('#bAI').onclick = openAIDlg;
 $('#aiPill').onclick = openAIDlg;
 $('#aiCheck').onclick = checkOllama;
+$('#aiAuto').checked = LS.get('autoOllama', true);
+$('#aiAuto').onchange = () => LS.set('autoOllama', $('#aiAuto').checked);
+if (!(D && D.ollamaStart)) $('#aiAutoRow').style.display = 'none';
 $('#aiRun').onclick = () => runAI('pending');
 $('#aiRunAll').onclick = () => runAI('all');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.mask').classList.remove('on'));

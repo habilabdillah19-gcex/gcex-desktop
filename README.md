@@ -72,6 +72,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3e | Core-Ex: foto core box + AI vision lokal (Ollama), verifikasi, Excel | selesai (0.15.0) |
 | 3f | Core-Ex: data bor header dinamis, cari cepat, filter kadar, overlay assay di foto | selesai (0.16.0) |
 | 3g | GC-Ex Core Interpretation berganti nama menjadi **Core-Ex** (Core Excellence), tetap keluarga GC-Ex & lisensi bersama | selesai (0.18.0) |
+| 3h | Core-Ex menjalankan Ollama otomatis bila belum aktif + tombol **Jalankan Ollama** di dialog AI | selesai (0.18.1) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna

@@ -243,6 +243,49 @@ ipcMain.handle('gcex:openFolder', async (e, opt) => {
 });
 ipcMain.handle('gcex:showFile', (e, p) => { if (p && fs.existsSync(p)) shell.showItemInFolder(p); });
 
+// ---------- Ollama (AI lokal Core-Ex): cari & jalankan bila belum aktif ----------
+// Core-Ex hanya memakai Ollama yang terpasang terpisah; fungsi ini menyalakannya (aplikasi tray Ollama, atau "ollama serve"
+// tersembunyi) lalu menunggu sampai http://127.0.0.1:11434 menjawab. Tidak memasang / mengunduh apa pun.
+function ollamaHostOk(host) { return /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/i.test(String(host || 'http://127.0.0.1:11434').trim()); }
+async function ollamaUp(host, ms) {
+  try { const r = await fetch(String(host || 'http://127.0.0.1:11434').replace(/\/+$/, '') + '/api/version', { signal: AbortSignal.timeout(ms || 1500) }); return r.ok; } catch (e) { return false; }
+}
+function findOllama() {
+  const env = process.env, roots = [env.LOCALAPPDATA && path.join(env.LOCALAPPDATA, 'Programs', 'Ollama'), env.ProgramFiles && path.join(env.ProgramFiles, 'Ollama'), env.OLLAMA_HOME].filter(Boolean);
+  for (const r of roots) {
+    const tray = path.join(r, 'ollama app.exe'), cli = path.join(r, 'ollama.exe');
+    if (fs.existsSync(tray)) return { exe: tray, args: [], kind: 'app' };
+    if (fs.existsSync(cli)) return { exe: cli, args: ['serve'], kind: 'serve' };
+  }
+  try {
+    const out = require('child_process').execFileSync(process.platform === 'win32' ? 'where' : 'which', ['ollama'], { encoding: 'utf8', windowsHide: true, timeout: 4000 });
+    const f = out.split(/\r?\n/).map(x => x.trim()).find(x => x && fs.existsSync(x));
+    if (f) { const tray = path.join(path.dirname(f), 'ollama app.exe'); return fs.existsSync(tray) ? { exe: tray, args: [], kind: 'app' } : { exe: f, args: ['serve'], kind: 'serve' }; }
+  } catch (e) { /* tidak ada di PATH */ }
+  return null;
+}
+let ollamaStarting = null;
+ipcMain.handle('gcex:ollamaStart', (e, host) => {
+  if (ollamaStarting) return ollamaStarting;
+  ollamaStarting = (async () => {
+    host = String(host || 'http://127.0.0.1:11434').trim();
+    if (!ollamaHostOk(host)) return { ok: false, code: 'remote', msg: 'Alamat Ollama bukan komputer ini; jalankan Ollama di komputer ' + host + '.' };
+    if (await ollamaUp(host)) return { ok: true, already: true };
+    const f = findOllama();
+    if (!f) { log('[ollama] tidak ditemukan'); return { ok: false, code: 'notfound', msg: 'Ollama belum terpasang di komputer ini.' }; }
+    try {
+      const env = Object.assign({}, process.env);
+      const m = /:(\d+)\/?$/.exec(host); if (f.kind === 'serve' && m && m[1] !== '11434') env.OLLAMA_HOST = '127.0.0.1:' + m[1];
+      spawn(f.exe, f.args, { detached: true, stdio: 'ignore', windowsHide: f.kind === 'serve', env }).unref();
+      log('[ollama] dijalankan:', f.exe, f.args.join(' '));
+    } catch (er) { log('[ollama] gagal dijalankan', er.message); return { ok: false, code: 'spawn', msg: 'Gagal menjalankan Ollama: ' + er.message, exe: f.exe }; }
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) { await new Promise(r => setTimeout(r, 700)); if (await ollamaUp(host, 1200)) return { ok: true, started: true, exe: f.exe, ms: Date.now() - t0 }; }
+    return { ok: false, code: 'timeout', msg: 'Ollama sudah dijalankan tetapi belum menjawab setelah 30 detik. Tunggu sebentar lalu klik Periksa.', exe: f.exe };
+  })().finally(() => { setTimeout(() => { ollamaStarting = null; }, 500); });
+  return ollamaStarting;
+});
+
 // ---------- jendela ----------
 function createWindow() {
   mainWin = new BrowserWindow({

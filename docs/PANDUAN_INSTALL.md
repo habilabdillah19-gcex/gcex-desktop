@@ -272,3 +272,9 @@ Node paling bawah di Project Tree, bertanda **REFERENSI**. Menu ini untuk meliha
 - Lisensi yang sudah aktif tetap berlaku (kode aplikasi di kunci tetap `core`); tidak perlu aktivasi ulang. Di alat Pembuat Lisensi, centang **Core-Ex**.
 - Proyek foto lama tetap terbaca: folder `_GCEx_Core` dan database `gcex_core.db` di folder foto tidak diubah.
 - Syarat penggunaan diperbarui (versi 2026-10-29, memuat nama Core-Ex), jadi diminta disetujui sekali lagi.
+
+## 26. Core-Ex menjalankan Ollama sendiri (0.18.1)
+
+- Ollama tetap dipasang terpisah (sekali per komputer), tetapi tidak perlu dibuka manual: bila belum aktif saat Core-Ex dibuka, Core-Ex menjalankan aplikasi Ollama (`%LOCALAPPDATA%\Programs\Ollama\ollama app.exe`, atau `ollama serve` tersembunyi bila hanya CLI yang ada) lalu menunggu sampai siap (maks. 30 detik).
+- Bisa dimatikan: dialog **Jalankan AI** → hilangkan centang *Jalankan Ollama otomatis saat Core-Ex dibuka*. Tombol **Jalankan Ollama** tetap ada di dialog AI dan di halaman awal.
+- Hanya untuk alamat Ollama di komputer ini (127.0.0.1 / localhost). Bila Ollama tidak ditemukan, Core-Ex menulis "Ollama belum terpasang".

@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('gcexDesktop', {
   onPrj: (cb) => ipcRenderer.on('gcex:openPrj', (e, o) => cb(o)),
   // tampilkan file di Windows Explorer
   showFile: (p) => ipcRenderer.invoke('gcex:showFile', p),
+  // Core-Ex: nyalakan Ollama (AI lokal) bila belum aktif; hasil {ok, already?, started?, code?, msg?}
+  ollamaStart: (host) => ipcRenderer.invoke('gcex:ollamaStart', String(host || '')),
   // path lengkap file yang dipilih lewat <input type=file> / drag-drop ('' bila tidak diketahui)
   pathOf: (file) => { try { return webUtils.getPathForFile(file) || ''; } catch (e) { return ''; } },
   // panggil backend untuk data biner (mis. potongan block model): hasil {buf: ArrayBuffer, headers}
