@@ -305,3 +305,20 @@ Node paling bawah di Project Tree, bertanda **REFERENSI**. Menu ini untuk meliha
 - Uji 250.000 baris assay (grid 2,6 juta titik): indikator 3 cut-off 104 → 20 detik, numerik 35 → 8 detik; jumlah segitiga, volume dan validasi sampel **identik** dengan perhitungan penuh. Uji data tutorial (grid 2,5 juta titik): 1,3–1,5 × lebih cepat, selisih volume ≤ 0,2 %.
 - Hilangkan centang untuk menghitung seluruh grid (perilaku lama), mis. untuk pembanding.
 
+## 29. GitHub Release lengkap untuk ketertelusuran (0.18.4)
+
+Setiap build di `main` menerbitkan **Release `v<versi>`** (repo → *Releases*; privat) berisi:
+
+| File | Isi |
+|---|---|
+| `GC-Ex-Setup-<v>.exe`, `GC-Ex-Drillhole-Setup-<v>.exe`, `Core-Ex-Setup-<v>.exe` | installer, dipasang satu per satu |
+| `GC-Ex-<v>_1_Dokumen.zip` | README, panduan teknis (PANDUAN_INSTALL, PANDUAN_CORE), tutorial PDF: GC-Ex Modelling & Estimasi, Core-Ex, Aktivasi Lisensi |
+| `GC-Ex-<v>_2_Data-Latihan.zip` | data simulasi GC-Ex Drillhole & Block Model (SIM_*), paket dummy Core-Ex (foto core box & data lab fiktif), generator datanya |
+| `GC-Ex-<v>_3_Lisensi-dan-Tentang.zip` | TENTANG.txt (versi, commit, tanggal build), syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat) |
+| `GC-Ex-<v>_CATATAN_RILIS.md` | isi rilis + daftar perubahan (commit) sejak rilis sebelumnya + SHA-256 |
+| `SHA256SUMS.txt` | sidik jari semua file (cek keaslian file yang dikirim ke pelanggan) |
+| Source code (zip / tar.gz) | kode sumber persis commit rilis (otomatis dari tag) |
+
+- Versi dinaikkan pada setiap pembaruan (termasuk perubahan dokumen / data latihan saja), sehingga tiap pembaruan punya Release sendiri. Build ulang versi yang sama mengganti Release versi itu dengan isi terbaru.
+- Tutorial & data simulasi GC-Ex kini disimpan di repo: `docs/tutorial-gcex/`.
+

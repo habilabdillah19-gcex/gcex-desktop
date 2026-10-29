@@ -17,6 +17,8 @@ jobs:
       contents: write   # menerbitkan installer ke GitHub Release (repo privat -> release juga privat)
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0      # riwayat & tag lengkap: daftar perubahan sejak rilis sebelumnya di catatan rilis
 
       # ---------- backend Python ----------
       - uses: actions/setup-python@v6
@@ -142,26 +144,27 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
-      # installer disimpan di GitHub Release v<versi> (privat, tidak memakan kuota artifact Actions).
-      # Aplikasi TIDAK membaca release ini (tanpa auto-update); admin mengunduh lalu mengirim installer ke pelanggan.
-      - name: Terbitkan installer ke GitHub Release
+      # SETIAP build di main menerbitkan GitHub Release v<versi> (privat, tidak memakan kuota artifact Actions) berisi:
+      # 3 installer terpisah, dokumen (panduan teknis & tutorial), data latihan dummy, lisensi & tentang, catatan rilis
+      # (daftar commit sejak rilis sebelumnya) dan SHA256SUMS; kode sumber zip/tar.gz otomatis dari tag.
+      # Aplikasi TIDAK membaca release ini (tanpa auto-update); admin mengunduh lalu mengirim ke pelanggan.
+      - name: Kemas & terbitkan GitHub Release
         if: github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          PYTHONIOENCODING: utf-8
         run: |
           $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
           $tag = "v$v"
-          $files = @(Get-ChildItem dist -Filter "*-Setup-*.exe" | Where-Object { $_.Extension -eq ".exe" } | ForEach-Object { $_.FullName })
-          if ($files.Count -ne 3) { throw ("harus 3 installer, ditemukan " + $files.Count + ": " + ($files -join ", ")) }
-          $files | ForEach-Object { Write-Host ("installer: " + $_ + " " + (Get-Item $_).Length) }
+          python docs/tutorial-core/buat_data_dummy.py build-rel/Core-Ex_Data_Dummy
+          if ($LASTEXITCODE -ne 0) { throw "gagal membuat data dummy Core-Ex" }
+          python tools/rilis/kemas_rilis.py $v dist rilis build-rel/Core-Ex_Data_Dummy
+          if ($LASTEXITCODE -ne 0) { throw "gagal mengemas rilis" }
+          $files = @(Get-ChildItem rilis -File | ForEach-Object { $_.FullName })
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { gh release delete $tag --cleanup-tag --yes; if ($LASTEXITCODE -ne 0) { throw "gagal menghapus release lama $tag" } }
-          $sha = $env:GITHUB_SHA.Substring(0, 7)
-          $notes = "Installer GC-Ex $v dari commit $sha (build GitHub Actions run $env:GITHUB_RUN_NUMBER).`n`n" +
-                   "- GC-Ex-Setup-$v.exe : GC-Ex Block Model`n- GC-Ex-Drillhole-Setup-$v.exe : GC-Ex Drillhole`n- Core-Ex-Setup-$v.exe : Core-Ex`n`n" +
-                   "Dipasang satu per satu (terpisah). Aplikasi offline, tanpa pembaruan otomatis: pelanggan meminta versi baru ke admin."
-          gh release create $tag @files --target $env:GITHUB_SHA --title "GC-Ex $v" --notes $notes
+          gh release create $tag @files --target $env:GITHUB_SHA --title "GC-Ex $v" --notes-file "rilis/GC-Ex-${v}_CATATAN_RILIS.md"
           if ($LASTEXITCODE -ne 0) { throw "gagal membuat release $tag" }
 
       # artifact Actions (cadangan, 7 hari): bila kuota penyimpanan penuh, build tetap dianggap berhasil (installer sudah di Release)

@@ -1,0 +1,24 @@
+DATA SIMULASI TUTORIAL GC-Ex DRILLHOLE (SINTETIS, bukan data perusahaan)
+
+SIM_collar/survey/assay/geologi.csv : 33 lubang bor (11 section tegak lurus strike, 3 lubang per section), sampel 1 m
+SIM_upsert_*.csv                    : 4 lubang infill (SIM-INF-01..04) untuk latihan upsert
+SIM_upsert2_*.csv                   : 2 lubang infill tahap 2 (SIM-INF-05..06) untuk latihan koreksi Model Estimation
+SIM_topo_xyz.csv                    : topografi titik XYZ grid 5 m
+SIM_topo_xyz_nov.csv                : topografi bulan berikutnya (area pit turun s/d 6 m) untuk latihan menu Data Spasial
+SIM_BM_GC.csv                       : block model GC lama 2.5 m (62467 blok) di sekitar vein utama, atribut AU, SG, DOMAIN
+QV_Utama_Leapfrog.obj               : wireframe vein utama (contoh hasil Leapfrog, OBJ tertutup, 18696 segitiga)
+
+Geometri: QV_Utama strike 045, dip 70 ke 135 (tenggara), bentuk sigmoidal, tebal 1-3.2 m, ore shoot di tengah;
+QV_HW1 sejajar 22 m di sisi hangingwall (lebih tipis). Bor dari sisi HW: azimuth 315, dip -55 s/d -65.
+Koordinat sekitar E 505000, N 9012000. Dip survey negatif = ke bawah.
+Dibuat ulang: python make_sim_data.py
+
+VEIN BERCABANG (latihan domain induk, proyek terpisah):
+SIM_split_collar/survey/assay/geologi.csv : 28 lubang (7 section x 4 lubang, SPL-*); QVS_Utama + QVS_Cabang
+SIM_split_BM_GC.csv                        : block model GC 2.5 m (41623 blok) di sekitar kedua vein
+Geometri: QVS_Cabang lepas dari sisi footwall QVS_Utama pada ~66 m searah dip, menjauh 0,32 m per m ke atas.
+Bor baris 1-2 (dangkal) menembus dua vein (Utama dulu, Cabang di bawahnya); baris 3-4 hanya satu vein.
+
+STRUKTUR & PICK-UP (latihan menu Struktur & Map):
+SIM_struktur.csv        : 19 titik struktur (No, X, Y, Z, Dip, Dip_Azimuth, Keterangan): kontak HW di singkapan, 3 dari core oriented, 5 kekar
+SIM_pickup_survey.csv   : 114 titik pick-up (ID, East, North, RL, Code): VEIN_HW / VEIN_FW singkapan QV_Utama, TOE / CREST pit kecil
