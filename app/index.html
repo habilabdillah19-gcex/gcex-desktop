@@ -5052,11 +5052,12 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       var am=find('am');if(am&&GA.length)am.kids=(am.kids||[]).concat([{id:'am.fl',t:'Per flitch ('+GA.length+')',ic:'flitch',fold:1,hint:'Rencana (dig block) vs aktual (as-mined) per flitch',kids:GA.map(function(g){var c=flCalc(g),at=0,am2=0,nc=0;
           g.am.forEach(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}if(I&&I.calc&&x.on!==false){nc++;at+=I.ton;if(isFinite(I.gA))am2+=I.gA*I.ton;}});
           var pt=c?c.t:0,d=pt&&nc?' · Δ '+((at-pt)/pt*100).toFixed(1)+' %':'';
-          return{id:'am.fl.'+g.k,t:lab(g),ic:'flitch',b:'Rencana '+(c?tg(c.t,c.m):'-')+' · Aktual '+(nc?tg(at,am2):g.am.length?g.am.length+' pol (belum dihitung)':'-')+d,
+          return{id:'am.fl.'+g.k,t:lab(g),ic:'flitch',b:nc&&pt?'Δ '+((at-pt)/pt*100).toFixed(1)+' %':(g.am.length?g.am.length+' pol':'rencana'),
             hint:'Klik: buka flitch dengan dig block (rencana) dan poligon as-mined (aktual) bertumpuk di Sayatan 2D',
             go:function(){flOpen(g,function(){try{AM.show=true;}catch(e){}try{uiTab('AM');PT.goSub('AM','Poligon');}catch(e){}try{if(window.amApply&&g.am.length)amApply();}catch(e){}updatePlot();});},
-            kids:g.am.map(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}return{id:'am.fl.'+g.k+'.'+x.id,t:(I&&I.code)||x.name||x.id,ic:'poly',b:I&&I.calc?tg(I.ton,isFinite(I.gA)?I.gA*I.ton:0):'belum dihitung',
-              go:function(){flOpen(g,function(){uiTab('AM');PT.goSub('AM','Register');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();});}};})};})}]);
+            kids:[{id:'am.fl.'+g.k+'.r',t:'Rencana (dig block)',ic:'poly',b:c?g.db.length+' DB · '+tg(c.t,c.m):'-',go:function(){flOpen(g,function(){PT.goSub('BM','Dig block');});}},
+              {id:'am.fl.'+g.k+'.a',t:'Aktual (as-mined)',ic:'asmined',b:nc?nc+' pol · '+tg(at,am2)+d:(g.am.length?g.am.length+' pol (belum dihitung)':'belum ada poligon'),go:function(){flOpen(g,function(){try{AM.show=true;uiTab('AM');PT.goSub('AM','Register');if(window.amApply&&g.am.length)amApply();}catch(e){}updatePlot();});}}].concat(g.am.map(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}return{id:'am.fl.'+g.k+'.'+x.id,t:(I&&I.code)||x.name||x.id,ic:'poly',b:I&&I.calc?tg(I.ton,isFinite(I.gA)?I.gA*I.ton:0):'belum dihitung',
+              go:function(){flOpen(g,function(){uiTab('AM');PT.goSub('AM','Register');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();});}};}))};})}]);
     }catch(e){console.error(e);}return L;};
     try{PT.render(true);}catch(e){}}
 })();

@@ -5,7 +5,7 @@ SIM_upsert_*.csv                    : 4 lubang infill (SIM-INF-01..04) untuk lat
 SIM_upsert2_*.csv                   : 2 lubang infill tahap 2 (SIM-INF-05..06) untuk latihan koreksi Model Estimation
 SIM_topo_xyz.csv                    : topografi titik XYZ grid 5 m
 SIM_topo_xyz_nov.csv                : topografi bulan berikutnya (area pit turun s/d 6 m) untuk latihan menu Data Spasial
-SIM_BM_GC.csv                       : block model GC lama 2.5 m (62467 blok) di sekitar vein utama, atribut AU, SG, DOMAIN
+SIM_BM_GC.csv                       : block model GC lama 2.5 m (62467 blok) di sekitar vein utama, atribut AU, SG, DOMAIN + S_PCT (%), ZN_PPM, CU_PPM fiktif (latihan additional flagging GC-Ex Block Model)
 QV_Utama_Leapfrog.obj               : wireframe vein utama (contoh hasil Leapfrog, OBJ tertutup, 18696 segitiga)
 
 Geometri: QV_Utama strike 045, dip 70 ke 135 (tenggara), bentuk sigmoidal, tebal 1-3.2 m, ore shoot di tengah;

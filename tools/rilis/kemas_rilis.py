@@ -91,7 +91,7 @@ def main():
         (D / "PANDUAN_INSTALL.md", "Panduan_Teknis/PANDUAN_INSTALL.md"),
         (D / "GC-Ex_Tutorial_Aktivasi_Lisensi.pdf", "Tutorial/GC-Ex_Tutorial_Aktivasi_Lisensi.pdf"),
         (D / "tutorial-aktivasi" / "BACA_SAYA.md", "Tutorial/Aktivasi_tutorial_BACA_SAYA.md"),
-    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf")] if has_gcex else [])
+    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf")] if has_gcex else [])
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
           (D / "Core-Ex_Tutorial_Penggunaan.pdf", "Tutorial/Core-Ex_Tutorial_Penggunaan.pdf"),
           (D / "tutorial-core" / "README.md", "Tutorial/Core-Ex_tutorial_README.md")] if has_core else []))
@@ -99,7 +99,7 @@ def main():
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
     items = []
     if has_gcex:
-        items += [(D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"), (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py")]
+        items += [(D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"), (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py"), (D / "tutorial-gcex" / "tambah_unsur_bm.py", "Generator/tambah_unsur_bm.py")]
     if has_core:
         items += [(D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"), (D / "referensi", "Core-Ex_Referensi")]
         if core_dummy and core_dummy.exists():

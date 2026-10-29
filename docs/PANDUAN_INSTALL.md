@@ -363,3 +363,11 @@ Versi ini hanya untuk **GC-Ex Block Model** (`GC-Ex-Setup-0.20.1.exe`, Release v
 - *Flitch Aktif → Semua flitch* dan *Register & Laporan As-Mined → Per flitch* tetap ada.
 - Legenda: string dig block bernama sama (mis. *String 17 HG*) tampil sekali.
 
+## 33. Tutorial baru & data latihan (GC-Ex Block Model 0.20.2)
+
+- **Tutorial GC-Ex Block Model** (`GC-Ex_Tutorial_Block_Model.pdf`, di `GC-Ex-<versi>_1_Dokumen.zip` → *Tutorial*): halaman muka & nama project site, flitch & Sayatan 2D, dig block otomatis, **additional flagging**, digit manual & rekap string, laporan grade × tonase, **review per flitch** di Project Tree, layout dig plan, **as-mined rencana vs aktual**, register & 3D hasil kerja.
+- **Tutorial GC-Ex Drill Hole Ultimate** (`GC-Ex_Tutorial_Modelling_Estimasi.pdf`): semua gambar diambil ulang dari aplikasi 0.20 (halaman muka penuh, Project Tree, Sayatan 2D, domain aktif), langkah tambah domain lewat Project Tree, bab domain aktif di Geostatistik & Model Estimation.
+- **Data latihan**: `SIM_BM_GC.csv` mendapat kolom fiktif **S_PCT** (%), **ZN_PPM**, **CU_PPM** untuk latihan additional flagging (generator `tambah_unsur_bm.py`).
+- **As-Mined → Per flitch**: setiap flitch menampilkan selisih Δ; di dalamnya subnode **Rencana (dig block)** dan **Aktual (as-mined)** beserta poligon (label tidak lagi terpotong).
+- Skrip pembuat tutorial ada di `docs/tutorial-gcex/src` (gambar dibuat ulang dari aplikasi di repo: `tutorial_shots.py`, `shot_rusak.py`, `tutorial_bm_shots.py`; PDF: `build_tutorial.py`, `build_tutorial_bm.py`).
+
