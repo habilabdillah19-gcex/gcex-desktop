@@ -294,6 +294,7 @@ Node paling bawah di Project Tree, bertanda **REFERENSI**. Menu ini untuk meliha
 
 **Pembaruan (offline)**
 - GC-Ex tidak pernah memeriksa pembaruan lewat internet dan tidak memasang pembaruan sendiri (installer tidak berisi data publish / auto-update).
-- Setiap versi dibangun dari kode di repositori GitHub milik admin (GitHub Actions → *Build GC-Ex (Windows 64-bit)*). Pelanggan yang ingin memperbarui meminta installer versi terbaru ke admin; admin mengunduh artifact dari Actions lalu mengirimkannya.
+- Setiap versi dibangun dari kode di repositori GitHub milik admin (GitHub Actions → *Build GC-Ex (Windows 64-bit)*). Ketiga installer diterbitkan ke **GitHub Releases** repo (privat), tag `v<versi>` — buka repo → *Releases* → unduh `GC-Ex-Setup-…`, `GC-Ex-Drillhole-Setup-…`, `Core-Ex-Setup-…`. Releases tidak memakan kuota artifact Actions; artifact Actions tetap dibuat sebagai cadangan 7 hari bila kuota cukup.
+- Pelanggan yang ingin memperbarui meminta installer versi terbaru ke admin; admin mengunduh dari Releases lalu mengirimkannya.
 - Ketiga aplikasi tetap dipasang terpisah (satu installer per aplikasi). Memasang versi baru di atas versi lama: pengaturan, proyek dan lisensi tetap.
 

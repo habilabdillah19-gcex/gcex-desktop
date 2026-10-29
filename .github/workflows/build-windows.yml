@@ -5,9 +5,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# satu build sekaligus: GitHub Release versi yang sama tidak saling timpa di tengah jalan
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write   # menerbitkan installer ke GitHub Release (repo privat -> release juga privat)
     steps:
       - uses: actions/checkout@v6
 
@@ -135,17 +142,43 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
+      # installer disimpan di GitHub Release v<versi> (privat, tidak memakan kuota artifact Actions).
+      # Aplikasi TIDAK membaca release ini (tanpa auto-update); admin mengunduh lalu mengirim installer ke pelanggan.
+      - name: Terbitkan installer ke GitHub Release
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$v"
+          $files = @(Get-ChildItem dist -Filter "*-Setup-*.exe" | Where-Object { $_.Extension -eq ".exe" } | ForEach-Object { $_.FullName })
+          if ($files.Count -ne 3) { throw ("harus 3 installer, ditemukan " + $files.Count + ": " + ($files -join ", ")) }
+          $files | ForEach-Object { Write-Host ("installer: " + $_ + " " + (Get-Item $_).Length) }
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) { gh release delete $tag --cleanup-tag --yes; if ($LASTEXITCODE -ne 0) { throw "gagal menghapus release lama $tag" } }
+          $sha = $env:GITHUB_SHA.Substring(0, 7)
+          $notes = "Installer GC-Ex $v dari commit $sha (build GitHub Actions run $env:GITHUB_RUN_NUMBER).`n`n" +
+                   "- GC-Ex-Setup-$v.exe : GC-Ex Block Model`n- GC-Ex-Drillhole-Setup-$v.exe : GC-Ex Drillhole`n- Core-Ex-Setup-$v.exe : Core-Ex`n`n" +
+                   "Dipasang satu per satu (terpisah). Aplikasi offline, tanpa pembaruan otomatis: pelanggan meminta versi baru ke admin."
+          gh release create $tag @files --target $env:GITHUB_SHA --title "GC-Ex $v" --notes $notes
+          if ($LASTEXITCODE -ne 0) { throw "gagal membuat release $tag" }
+
+      # artifact Actions (cadangan, 7 hari): bila kuota penyimpanan penuh, build tetap dianggap berhasil (installer sudah di Release)
       - uses: actions/upload-artifact@v6
+        continue-on-error: true
         with:
           name: GC-Ex-Setup-Windows
           path: dist/GC-Ex-Setup-*.exe
           retention-days: 7
       - uses: actions/upload-artifact@v6
+        continue-on-error: true
         with:
           name: GC-Ex-Drillhole-Setup-Windows
           path: dist/GC-Ex-Drillhole-Setup-*.exe
           retention-days: 7
       - uses: actions/upload-artifact@v6
+        continue-on-error: true
         with:
           name: Core-Ex-Setup-Windows
           path: dist/Core-Ex-Setup-*.exe
