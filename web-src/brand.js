@@ -8,7 +8,7 @@
   document.documentElement.classList.add('app-'+APP);
   var $=function(i){return document.getElementById(i);};
   var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
-  var LOGO='<span class="gcxw" title="GC-Ex '+SUB+'"><span class="gcx">GC-<i>Ex</i></span><span class="gcxm">'+SUB+'</span></span>';
+  var LOGO='<span class="gcxw" title="GC-Ex '+SUB+'"><span class="gcx">GC-Ex</span><span class="gcxm">'+SUB+'</span></span>';
   /* samakan lebar baris bawah dengan "GC-Ex": jarak huruf baris bawah disetel */
   function fit(w){if(!w)return;var a=w.querySelector('.gcx'),b=w.querySelector('.gcxm');if(!a||!b)return;a.style.removeProperty('font-size');b.style.removeProperty('font-size');b.style.setProperty('letter-spacing','0px','important');
     var wa=a.getBoundingClientRect().width,wb=b.getBoundingClientRect().width,n=Math.max(1,b.textContent.length),cap=w.closest('#top')?23:30;if(!(wa>0&&wb>0))return;
@@ -39,23 +39,18 @@
       p:'Buka folder proyek atau import collar, survey, assay dan geologi. GC-Ex Drill Hole Ultimate membuat domain vein, string kontrol, solid RBF, estimasi block model dan grade shell. Semua diolah offline; tidak ada data yang dikirim ke mana pun.',
       s:[['1 &middot; Database bor','Collar, survey, assay, geologi (Excel / CSV), data spasial & block model.'],['2 &middot; Geological modelling','Flag domain, string HW / FW, solid vein, selubung, struktur.'],['3 &middot; Estimasi','Model estimation, validasi, grade shell & ore geometry.']]}}[APP];
   function landing(){var imp=$('imp');if(!imp)return;var hb=imp.querySelector('.impHead .impBrand');
-    if(hb&&!hb.querySelector('.gcxw')){var old=hb.querySelector('.gcx');if(old)old.outerHTML=LOGO;else hb.insertAdjacentHTML('afterbegin',LOGO);
-      var sm=hb.querySelector('small');if(sm)sm.innerHTML='Import data &middot; 100% offline di komputer ini';}
-    var body=imp.querySelector('.impBody');if(body&&!$('gxHero')){var h=document.createElement('section');h.id='gxHero';h.className='gxHero';
-      h.innerHTML='<div class="gxKick">Grade Control Excellence &middot; '+SUB+'</div><h1>'+HERO.h+'</h1><p>'+HERO.p+'</p>'+
-        '<div class="gxSteps">'+HERO.s.map(function(x){return '<div><b>'+x[0]+'</b><span>'+x[1]+'</span></div>';}).join('')+'</div>';
-      body.insertBefore(h,body.firstChild);
+    var body=imp.querySelector('.impBody');if(body&&!$('gxSite')){var h={parentNode:body,nextSibling:body.firstChild};
       var st=document.createElement('section');st.className='gxSite';
       st.innerHTML='<label for="gxSite">Nama project site</label><input type="text" id="gxSite" maxlength="80" placeholder="mis. Site A &middot; Pit Utara" autocomplete="off">'+
         '<span></span><small>Tampil di bilah atas di bawah &ldquo;Grade Control Excellence&rdquo; dan disimpan bersama proyek. Membuka proyek tersimpan memakai nama site proyek itu.</small>';
       h.parentNode.insertBefore(st,h.nextSibling);var inp=st.querySelector('input');inp.value=SA.site;
       inp.addEventListener('input',function(){SA.setSite(inp.value);});inp.addEventListener('change',function(){SA.setSite(inp.value);try{if(SA.saveWork)SA.saveWork();}catch(e){}});}
-    fit(imp.querySelector('.gcxw'));}
+  }
   function all(){try{top();}catch(e){console.error(e);}try{landing();}catch(e){console.error(e);}}
   all();
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitAll);
   window.addEventListener('load',function(){all();fitAll();});
   /* viewer dibangun ulang saat proyek dibuka -> pasang ulang logo / label bila hilang */
-  var t=0;new MutationObserver(function(){if(t)return;t=setTimeout(function(){t=0;var b=document.querySelector('#top .brand');if(b&&(!b.querySelector('.gcxw')||!$('zoneLbl')))top();else showSite();if(!$('gxHero'))landing();},120);})
+  var t=0;new MutationObserver(function(){if(t)return;t=setTimeout(function(){t=0;var b=document.querySelector('#top .brand');if(b&&(!b.querySelector('.gcxw')||!$('zoneLbl')))top();else showSite();if(!$('gxSite'))landing();},120);})
     .observe(document.body,{childList:true,subtree:true});
 })();

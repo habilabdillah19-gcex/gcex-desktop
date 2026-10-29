@@ -18,6 +18,6 @@ def apply(s, app, out_html, extra_css=''):
     src = os.path.join(W, '..', 'app-core', 'fonts')
     dst = os.path.join(os.path.dirname(os.path.abspath(out_html)), 'fonts')
     os.makedirs(dst, exist_ok=True)
-    for f in FONTS:
+    for f in []:
         shutil.copy2(os.path.join(src, f), os.path.join(dst, f))
     return s
