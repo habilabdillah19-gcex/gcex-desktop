@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Tutorial Aktivasi Lisensi GC-Ex</title>
+<style>
+@font-face{font-family:Playfair;src:url(../../app-core/fonts/PlayfairDisplay-wght.ttf);font-weight:400 900}
+@font-face{font-family:Courier Prime;src:url(../../app-core/fonts/CourierPrime-Regular.ttf)}
+@font-face{font-family:Courier Prime;src:url(../../app-core/fonts/CourierPrime-Bold.ttf);font-weight:700}
+@page{size:A4;margin:18mm 17mm 20mm}
+:root{--ink:#1e2a38;--mu:#5d6773;--pr:#1f3a5f;--ac:#3b6ea5;--lt:#e8eef6;--bd:#cdd7e3;--ok:#2f6b3a;--dn:#9b3d2f;--warn:#fff4e0}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:10.2pt/1.5 'Segoe UI','Inter','DejaVu Sans',Arial,sans-serif}
+h1,h2,h3{font-family:Playfair,Georgia,serif;color:var(--pr);line-height:1.2}
+h2{font-size:19pt;margin:0 0 4mm;padding-bottom:2mm;border-bottom:2px solid var(--ac);break-after:avoid}
+h3{font-size:12.5pt;margin:6mm 0 2mm;break-after:avoid}
+p{margin:0 0 2.5mm}
+code,.mono{font-family:'Courier Prime',Consolas,monospace;font-size:10pt;background:var(--lt);padding:0 1.2mm;border-radius:1mm}
+.page{break-after:page}
+.cover{height:252mm;display:flex;flex-direction:column;justify-content:space-between}
+.cover .band{background:var(--pr);color:#fff;border-radius:3mm;padding:16mm 12mm 14mm;position:relative;overflow:hidden}
+.cover .band:after{content:"";position:absolute;right:-20mm;top:-20mm;width:80mm;height:80mm;border-radius:50%;border:10mm solid rgba(255,255,255,.07)}
+.cover .kick{letter-spacing:.18em;text-transform:uppercase;font-size:9pt;opacity:.8}
+.cover h1{color:#fff;font-size:34pt;margin:4mm 0 3mm}
+.cover .lead{font-size:12pt;opacity:.92;max-width:130mm}
+.apps{display:flex;gap:3mm;margin-top:8mm;flex-wrap:wrap}
+.apps span{border:1px solid rgba(255,255,255,.4);border-radius:10mm;padding:1mm 4mm;font-size:9pt}
+.toc{border:1px solid var(--bd);border-radius:3mm;padding:6mm 8mm}
+.toc b{color:var(--pr)}
+.toc ol{margin:2mm 0 0;padding-left:5mm}.toc li{margin:1mm 0}
+.meta{font-size:8.5pt;color:var(--mu)}
+.flow{display:grid;grid-template-columns:1fr 6mm 1fr 6mm 1fr 6mm 1fr;align-items:center;margin:4mm 0 6mm}
+.flow .s{border:1px solid var(--bd);border-top:3px solid var(--ac);border-radius:2mm;padding:3mm;font-size:9pt;min-height:30mm;background:#fff}
+.flow .s b{display:block;color:var(--pr);font-size:9.5pt;margin-bottom:1mm}
+.flow .s i{font-style:normal;font-size:8pt;color:var(--mu);text-transform:uppercase;letter-spacing:.06em}
+.flow .ar{text-align:center;color:var(--ac);font-size:14pt}
+.step{display:grid;grid-template-columns:9mm 1fr;gap:3mm;margin:0 0 4mm;break-inside:avoid}
+.num{width:8mm;height:8mm;border-radius:50%;background:var(--pr);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:10pt;margin-top:.5mm}
+.step h4{margin:0 0 1mm;font-size:11pt;color:var(--pr)}
+figure{margin:3mm 0 4mm;break-inside:avoid}
+figure img{display:block;max-width:100%;border:1px solid var(--bd);border-radius:2mm;box-shadow:0 1mm 3mm rgba(31,58,95,.12)}
+figcaption{font-size:8.5pt;color:var(--mu);margin-top:1.5mm}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.note{border-left:3px solid var(--ac);background:var(--lt);padding:2.5mm 4mm;border-radius:0 2mm 2mm 0;margin:3mm 0;break-inside:avoid}
+.warn{border-left:3px solid #c58a2a;background:var(--warn);padding:2.5mm 4mm;border-radius:0 2mm 2mm 0;margin:3mm 0;break-inside:avoid}
+.danger{border-left:3px solid var(--dn);background:#fbecea;padding:2.5mm 4mm;border-radius:0 2mm 2mm 0;margin:3mm 0;break-inside:avoid}
+table{width:100%;border-collapse:collapse;font-size:9pt;margin:2mm 0 4mm}
+th{background:var(--pr);color:#fff;text-align:left;padding:2mm 2.5mm;font-weight:600}
+td{padding:2mm 2.5mm;border-bottom:1px solid var(--bd);vertical-align:top}
+tr{break-inside:avoid}
+tr:nth-child(even) td{background:#f6f8fb}
+td.m{color:var(--dn);width:46%}
+ul{margin:1mm 0 3mm;padding-left:5mm}li{margin:.8mm 0}
+.qa{break-inside:avoid;margin-bottom:3mm}.qa b{color:var(--pr)}
+.part{font-size:9pt;letter-spacing:.16em;text-transform:uppercase;color:var(--ac);font-weight:700;margin-bottom:1mm}
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div class="band">
+    <div class="kick">GC-Ex · Panduan</div>
+    <h1>Tutorial Aktivasi Lisensi</h1>
+    <div class="lead">Cara mengaktifkan GC-Ex di komputer pengguna, serta cara penerbit membuat dan mengelola kunci lisensi.</div>
+    <div class="apps"><span>GC-Ex Block Model</span><span>GC-Ex Drillhole</span><span>GC-Ex Core Interpretation</span></div>
+  </div>
+  <div class="toc">
+    <b>Isi</b>
+    <ol>
+      <li>Gambaran singkat: bagaimana lisensi GC-Ex bekerja</li>
+      <li>Bagian A: Untuk pengguna (mengaktifkan GC-Ex)</li>
+      <li>Bagian B: Untuk penerbit (membuat kunci lisensi)</li>
+      <li>Pesan galat dan solusinya</li>
+      <li>Pertanyaan umum</li>
+    </ol>
+  </div>
+  <div class="meta">Berlaku untuk GC-Ex versi 0.17.0 dan sesudahnya · Semua nama, ID komputer dan kunci di panduan ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+</section>
+
+<section class="page">
+  <div class="part">1</div>
+  <h2>Gambaran singkat</h2>
+  <p>Setiap aplikasi GC-Ex perlu <b>kunci lisensi yang terikat ke satu komputer</b>. Aktivasi berjalan sepenuhnya offline: tidak perlu internet, tidak ada akun, tidak ada server. Kunci ditandatangani secara digital oleh penerbit, sehingga tidak bisa diubah atau dipindah ke komputer lain.</p>
+  <div class="flow">
+    <div class="s"><i>Pengguna</i><b>1. Salin ID Komputer</b>Muncul otomatis saat GC-Ex pertama dibuka.</div><div class="ar">→</div>
+    <div class="s"><i>Pengguna → Penerbit</i><b>2. Kirim ID</b>Lewat e-mail, chat, atau pesan internal.</div><div class="ar">→</div>
+    <div class="s"><i>Penerbit</i><b>3. Buat kunci</b>Dengan alat Pembuat Lisensi dan kunci privat.</div><div class="ar">→</div>
+    <div class="s"><i>Pengguna</i><b>4. Aktifkan</b>Tempel kunci <code>GCEX1.…</code> atau buka file <code>.gcexlic</code>.</div>
+  </div>
+  <h3>Yang perlu diketahui</h3>
+  <ul>
+    <li><b>Satu kunci, satu komputer.</b> Kunci hanya berlaku di komputer yang ID-nya tercantum di dalam kunci.</li>
+    <li><b>Satu kunci bisa mencakup beberapa aplikasi.</b> Penerbit memilih Block Model, Drillhole, Core Interpretation, atau Semua. Ketiga aplikasi memakai satu file lisensi bersama, jadi cukup aktivasi sekali.</li>
+    <li><b>Masa berlaku.</b> Kunci bisa bertanggal kedaluwarsa (bawaan 1 tahun) atau tanpa batas waktu. GC-Ex mengingatkan 14 hari sebelum lisensi berakhir.</li>
+    <li><b>Lokasi file lisensi:</b> <code>%APPDATA%\GC-Ex Lisensi\lisensi.json</code>.</li>
+    <li><b>ID Komputer berubah</b> bila Windows di-install ulang atau GC-Ex dipindah ke komputer lain. Saat itu, minta kunci baru.</li>
+  </ul>
+  <div class="note"><b>Urutan saat pertama dibuka:</b> GC-Ex menampilkan <b>Syarat Penggunaan &amp; Penafian</b> lebih dulu. Setelah disetujui, barulah jendela <b>Aktivasi</b> muncul. Bila syarat tidak disetujui, aplikasi ditutup.</div>
+</section>
+
+<section class="page">
+  <div class="part">Bagian A</div>
+  <h2>Untuk pengguna: mengaktifkan GC-Ex</h2>
+
+  <div class="step"><div class="num">1</div><div>
+    <h4>Pasang dan buka GC-Ex</h4>
+    <p>Jalankan installer (mis. <code>GC-Ex-Core-Setup-Windows.exe</code>) lalu buka aplikasinya. Baca dan setujui Syarat Penggunaan yang muncul pertama kali.</p>
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div>
+    <h4>Salin ID Komputer</h4>
+    <p>Jendela <b>Aktivasi</b> muncul dan menampilkan <b>ID Komputer ini</b> (16 karakter, format <code>XXXX-XXXX-XXXX-XXXX</code>). Klik <b>Salin</b>, lalu kirim ID tersebut ke penerbit lisensi beserta nama Anda dan aplikasi yang dibutuhkan.</p>
+    <figure><img src="a1_awal.png" style="width:118mm"><figcaption>Gambar A1 – Jendela Aktivasi saat GC-Ex pertama dibuka.</figcaption></figure>
+  </div></div>
+
+  <div class="step"><div class="num">3</div><div>
+    <h4>Masukkan kunci lisensi</h4>
+    <p>Penerbit akan mengirim salah satu dari dua bentuk berikut. Keduanya berisi kunci yang sama:</p>
+    <ul>
+      <li><b>Teks</b> diawali <code>GCEX1.</code>: tempel ke kotak <b>Kunci lisensi</b>, lalu klik <b>Aktifkan</b> (atau tekan <b>Ctrl+Enter</b>).</li>
+      <li><b>File</b> <code>.gcexlic</code>: klik <b>Buka file .gcexlic…</b> dan pilih file-nya. Aktivasi berjalan otomatis.</li>
+    </ul>
+    <p>Salin kunci secara utuh, termasuk kedua titik di dalamnya. Spasi atau baris baru di awal dan akhir tidak masalah.</p>
+  </div></div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">4</div><div>
+    <h4>Selesai</h4>
+    <p>Bila kunci sah, muncul tanda <span style="color:var(--ok)">✓ Lisensi aktif…</span> dan GC-Ex langsung terbuka. Berikutnya GC-Ex tidak akan meminta kunci lagi selama lisensi masih berlaku.</p>
+    <div class="two">
+      <figure><img src="a2_sukses.png"><figcaption>Gambar A2 – Aktivasi berhasil.</figcaption></figure>
+      <figure><img src="a3_galat.png"><figcaption>Gambar A3 – Contoh galat: kunci dibuat untuk komputer lain. Daftar galat lengkap ada di bagian 4.</figcaption></figure>
+    </div>
+  </div></div>
+
+  <h3>Melihat, mengganti, atau menghapus lisensi</h3>
+  <p>Buka menu <b>Bantuan → Lisensi GC-Ex…</b>. Jendela ini menampilkan pemegang, aplikasi yang tercakup, tanggal berlaku, dan nomor lisensi.</p>
+  <div class="two">
+    <figure><img src="a4_info.png"><figcaption>Gambar A4 – Bantuan → Lisensi GC-Ex….</figcaption></figure>
+    <div>
+      <ul>
+        <li><b>Perpanjang / ganti kunci:</b> tempel kunci baru, lalu klik <b>Aktifkan</b>. Kunci lama otomatis tergantikan.</li>
+        <li><b>Hapus lisensi:</b> klik <b>Hapus lisensi dari komputer ini</b>, misalnya sebelum komputer diserahkan ke orang lain. GC-Ex akan meminta aktivasi lagi saat dibuka berikutnya.</li>
+        <li><b>Pengingat:</b> 14 hari sebelum berakhir, GC-Ex menampilkan peringatan saat dibuka. Kirim ID Komputer yang sama ke penerbit untuk meminta kunci perpanjangan.</li>
+      </ul>
+      <div class="warn"><b>Jangan memundurkan tanggal komputer.</b> GC-Ex mencatat tanggal pemakaian terakhir. Memundurkan jam sistem tidak akan menghidupkan lisensi yang sudah kedaluwarsa.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Bagian B</div>
+  <h2>Untuk penerbit: membuat kunci lisensi</h2>
+  <p>Kunci dibuat dengan alat <code>GCEx_Pembuat_Lisensi.html</code> (ada di folder <code>tools/lisensi</code> repositori). Alat ini berjalan offline di <b>Microsoft Edge atau Google Chrome versi terbaru</b>. Kunci privat tidak dikirim ke mana pun.</p>
+
+  <div class="step"><div class="num">1</div><div>
+    <h4>Buka alat dan muat kunci privat</h4>
+    <p>Klik dua kali <code>GCEx_Pembuat_Lisensi.html</code>, lalu klik <b>Buka GCEx_KUNCI_PRIVAT_LISENSI.json…</b> dan pilih file kunci privat dari flashdisk/brankas. Pastikan muncul <span style="color:var(--ok)">✓ Kunci privat dimuat dan cocok dengan aplikasi GC-Ex</span>.</p>
+    <figure><img src="g3_tidakcocok.png" style="width:150mm"><figcaption>Gambar B1 – Bila yang muncul peringatan merah seperti ini, file yang dibuka <b>bukan</b> kunci privat GC-Ex yang benar. Kunci yang dibuat dengannya akan ditolak aplikasi.</figcaption></figure>
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div>
+    <h4>Isi data lisensi</h4>
+    <table>
+      <tr><th style="width:30%">Kolom</th><th>Isi</th></tr>
+      <tr><td><b>ID Komputer</b></td><td>Dari pengguna (Gambar A1). Huruf kecil dan karakter mirip (O/0, I/1) otomatis dirapikan.</td></tr>
+      <tr><td><b>No. lisensi</b></td><td>Terisi otomatis (<code>L-TTTTBBHH-XXXX</code>). Boleh diganti dengan penomoran sendiri.</td></tr>
+      <tr><td><b>Nama pemegang</b></td><td>Wajib. Tampil di jendela lisensi dan dialog Tentang.</td></tr>
+      <tr><td><b>Organisasi / departemen</b></td><td>Opsional.</td></tr>
+      <tr><td><b>Berlaku sampai</b></td><td>Bawaan 1 tahun dari hari ini, atau centang <b>Tanpa batas waktu</b>.</td></tr>
+      <tr><td><b>Aplikasi</b></td><td>Centang aplikasi yang boleh dipakai. <b>Semua</b> juga mencakup aplikasi GC-Ex berikutnya.</td></tr>
+    </table>
+  </div></div>
+</section>
+
+<section class="page">
+  <div class="step" style="margin-top:4mm"><div class="num">3</div><div>
+    <h4>Buat dan kirim kunci</h4>
+    <p>Klik <b>Buat kunci lisensi</b>. Kunci muncul di kartu 3. Kirim ke pengguna dengan salah satu cara:</p>
+    <ul><li><b>Salin kunci</b>: tempel ke e-mail atau chat.</li><li><b>Simpan file .gcexlic</b>: lampirkan file-nya. Cara ini lebih aman dari salah salin.</li></ul>
+    <figure><img src="g2_hasil.png" style="width:150mm"><figcaption>Gambar B2 – Kunci selesai dibuat (contoh fiktif dengan kunci demo).</figcaption></figure>
+  </div></div>
+
+  <div class="step"><div class="num">4</div><div>
+    <h4>Arsipkan</h4>
+    <p>Setiap kunci tercatat di <b>Daftar lisensi yang dibuat di browser ini</b>. Daftar itu hanya tersimpan di browser tersebut dan bisa hilang bila riwayat browser dibersihkan. Klik <b>Unduh daftar (CSV)</b> secara berkala dan simpan bersama arsip lisensi.</p>
+  </div></div>
+</section>
+
+<section class="page">
+  <h3 style="margin-top:0">Menjaga kunci privat</h3>
+  <div class="danger"><b>File <code>GCEx_KUNCI_PRIVAT_LISENSI.json</code> adalah "stempel" penerbit.</b>
+    <ul style="margin-bottom:0">
+      <li><b>Bila bocor</b>, siapa pun bisa membuat lisensi GC-Ex yang sah.</li>
+      <li><b>Bila hilang</b>, lisensi baru tidak bisa dibuat untuk versi GC-Ex yang sudah terpasang. Kunci privat baru memerlukan rilis aplikasi baru dengan kunci publik baru, dan semua pengguna harus diaktivasi ulang.</li>
+    </ul></div>
+  <ul>
+    <li>Simpan di flashdisk/brankas offline, dengan <b>minimal satu cadangan</b> di tempat terpisah.</li>
+    <li>Jangan simpan di folder bersama, cloud drive umum, e-mail, chat, atau repositori Git.</li>
+    <li>Muat hanya saat akan membuat kunci, lalu tutup tab alat setelah selesai.</li>
+    <li>Kirim ke pengguna hanya <b>kunci lisensi</b> (<code>GCEX1.…</code> / <code>.gcexlic</code>), jangan pernah file kunci privat.</li>
+  </ul>
+
+  <h3>Kapan perlu kunci baru</h3>
+  <table>
+    <tr><th style="width:40%">Situasi</th><th>Yang dilakukan penerbit</th></tr>
+    <tr><td>Perpanjangan</td><td>Buat kunci baru dengan ID Komputer yang sama dan tanggal berlaku baru.</td></tr>
+    <tr><td>Menambah aplikasi (mis. Core)</td><td>Buat kunci baru dengan centang aplikasi yang lengkap. Kunci baru menggantikan yang lama.</td></tr>
+    <tr><td>Pengguna ganti komputer / install ulang Windows</td><td>Minta ID Komputer yang baru, lalu buat kunci baru. Catat di arsip bahwa kunci lama tidak dipakai lagi.</td></tr>
+    <tr><td>Nama/organisasi pemegang berubah</td><td>Buat kunci baru dengan data yang diperbarui.</td></tr>
+  </table>
+  <div class="note">Kunci yang sudah diberikan tidak bisa dicabut dari jauh, karena GC-Ex bekerja sepenuhnya offline. Untuk pemakai sementara atau kontraktor, pakai tanggal berlaku yang pendek.</div>
+</section>
+
+<section class="page">
+  <div class="part">4</div>
+  <h2>Pesan galat dan solusinya</h2>
+  <table>
+    <tr><th>Pesan di jendela Aktivasi</th><th>Penyebab dan solusi</th></tr>
+    <tr><td class="m">Format kunci tidak dikenal. Kunci GC-Ex diawali "GCEX1."</td><td>Teks yang ditempel bukan kunci GC-Ex, atau awalnya terpotong. Salin ulang kunci secara utuh, atau pakai file <code>.gcexlic</code>.</td></tr>
+    <tr><td class="m">Isi kunci rusak (salah salin?).</td><td>Sebagian karakter hilang atau berubah saat disalin (misalnya terpotong oleh aplikasi chat). Pakai file <code>.gcexlic</code>.</td></tr>
+    <tr><td class="m">Tanda tangan kunci tidak sah (kunci diubah, terpotong, atau bukan dari penerbit GC-Ex).</td><td>Kunci diedit, bagian akhirnya terpotong, atau dibuat dengan kunci privat yang salah (lihat Gambar B1). Minta penerbit membuat ulang.</td></tr>
+    <tr><td class="m">Kunci ini untuk komputer lain (ID …). ID komputer ini: …</td><td>ID Komputer yang dikirim ke penerbit tidak sama dengan komputer ini, misalnya tertukar dengan komputer lain atau Windows sudah di-install ulang. Kirim ID yang tampil di layar sekarang.</td></tr>
+    <tr><td class="m">Kunci ini tidak berlaku untuk GC-Ex … (berlaku: …)</td><td>Aplikasi yang dibuka tidak tercentang di kunci. Minta kunci baru yang mencakup aplikasi tersebut.</td></tr>
+    <tr><td class="m">Lisensi kedaluwarsa sejak …</td><td>Masa berlaku habis. Minta kunci perpanjangan ke penerbit.</td></tr>
+    <tr><td class="m">Lisensi kedaluwarsa (…); tanggal komputer lebih awal dari pemakaian terakhir (…).</td><td>Jam sistem dimundurkan atau baterai CMOS lemah. Perbaiki tanggal dan jam Windows (atur otomatis), lalu minta kunci baru bila memang sudah kedaluwarsa.</td></tr>
+    <tr><td class="m">Tempel kunci lisensi dulu.</td><td>Tombol Aktifkan diklik saat kotak kunci masih kosong.</td></tr>
+  </table>
+  <p class="meta">Di alat Pembuat Lisensi: "ID Komputer harus 16 karakter" berarti ID belum lengkap. "Gagal memuat … (perbarui Edge / Chrome)" berarti browser terlalu lama dan belum mendukung Ed25519.</p>
+</section>
+
+<section>
+  <div class="part">5</div>
+  <h2>Pertanyaan umum</h2>
+  <div class="qa"><b>Apakah aktivasi perlu internet?</b><br>Tidak. Seluruh proses, baik aktivasi di GC-Ex maupun pembuatan kunci, berjalan offline. ID dan kunci cukup dikirim lewat media apa pun.</div>
+  <div class="qa"><b>Saya punya Block Model, Drillhole dan Core. Apakah harus aktivasi tiga kali?</b><br>Tidak, bila kuncinya mencakup ketiganya. Ketiga aplikasi membaca file lisensi yang sama, jadi aktivasi cukup di salah satu aplikasi.</div>
+  <div class="qa"><b>Apakah update GC-Ex menghapus lisensi?</b><br>Tidak. Lisensi disimpan di <code>%APPDATA%\GC-Ex Lisensi</code>, terpisah dari folder instalasi. Uninstall dan install ulang GC-Ex juga tidak menghapusnya.</div>
+  <div class="qa"><b>Apakah ganti RAM, SSD atau kartu jaringan mengubah ID Komputer?</b><br>Umumnya tidak. ID diambil dari identitas instalasi Windows, sehingga yang mengubahnya adalah install ulang Windows atau pindah komputer.</div>
+  <div class="qa"><b>Apakah satu kunci bisa dipakai di dua komputer?</b><br>Tidak. Setiap komputer perlu kunci sendiri dengan ID Komputer masing-masing.</div>
+  <div class="qa"><b>Apakah data proyek ikut terkunci bila lisensi habis?</b><br>Tidak. File proyek, foto dan database tetap milik Anda dan tetap ada di folder masing-masing. Hanya aplikasinya yang tidak bisa dibuka sampai lisensi diperpanjang.</div>
+  <div class="qa"><b>Bagaimana cara menyerahkan komputer ke rekan lain?</b><br>Hapus lisensi lewat Bantuan → Lisensi GC-Ex… → Hapus lisensi dari komputer ini. Rekan tersebut lalu meminta kunci atas namanya sendiri dengan ID Komputer yang sama.</div>
+  <p class="meta" style="margin-top:8mm">GC-Ex dilindungi UU No. 28 Tahun 2014 tentang Hak Cipta dan dilisensikan, bukan dijual. Ketentuan lengkap ada di Bantuan → Syarat penggunaan &amp; penafian.<br>Copyright © Habil Abdillah 2026.</p>
+</section>
+</body>
+</html>
