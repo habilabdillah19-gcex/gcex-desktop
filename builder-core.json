@@ -3,6 +3,7 @@
   "productName": "Core-Ex",
   "copyright": "Copyright © 2026 Habil Abdillah",
   "extraMetadata": {
+    "version": "0.19.0",
     "name": "gcex-core",
     "productName": "Core-Ex",
     "description": "Core-Ex (Core Excellence) - dokumentasi & interpretasi foto core box dengan AI lokal (offline), keluarga GC-Ex",
