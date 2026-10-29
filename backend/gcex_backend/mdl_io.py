@@ -371,9 +371,14 @@ def _zsort(tmp: Path, n: int, zmin: float, zmax: float, dq: float, od, cancel=No
         for s0 in range(0, n, ZS_STEP):
             if cancel and cancel():
                 raise RuntimeError("Pembacaan dibatalkan.")
-            k = np.rint((np.asarray(zm[s0:s0 + ZS_STEP]) - zmin) / dq).astype(np.int64)
+            zc = np.asarray(zm[s0:s0 + ZS_STEP])
+            k = np.rint((zc - zmin) / dq).astype(np.int64)
+            if np.any(np.abs(zc - (zmin + k * dq)) > 1e-6):
+                ok = False  # RL tidak di kisi sub-blok -> argsort biasa
+                break
             np.clip(k, 0, nk - 1, out=k)
             cnt += np.bincount(k, minlength=nk)
+    if ok:
         ptr = np.zeros(nk, np.int64)
         np.cumsum(cnt[:-1], out=ptr[1:])
         del cnt
@@ -404,6 +409,11 @@ def _zsort(tmp: Path, n: int, zmin: float, zmax: float, dq: float, od, cancel=No
                 ok = False
                 break
             last = a[-1]
+        for mm in (om, zo):  # Windows: file yang masih dipetakan tidak bisa ditulis ulang
+            try:
+                mm._mmap.close()
+            except Exception:
+                pass
         del om, zo
     if not ok:
         zz = np.asarray(zm)
