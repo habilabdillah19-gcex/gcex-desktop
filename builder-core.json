@@ -78,5 +78,6 @@
     "enableEmbeddedAsarIntegrityValidation": true,
     "onlyLoadAppFromAsar": true
   },
-  "asar": true
+  "asar": true,
+  "publish": null
 }

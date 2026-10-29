@@ -278,3 +278,22 @@ Node paling bawah di Project Tree, bertanda **REFERENSI**. Menu ini untuk meliha
 - Ollama tetap dipasang terpisah (sekali per komputer), tetapi tidak perlu dibuka manual: bila belum aktif saat Core-Ex dibuka, Core-Ex menjalankan aplikasi Ollama (`%LOCALAPPDATA%\Programs\Ollama\ollama app.exe`, atau `ollama serve` tersembunyi bila hanya CLI yang ada) lalu menunggu sampai siap (maks. 30 detik).
 - Bisa dimatikan: dialog **Jalankan AI** → hilangkan centang *Jalankan Ollama otomatis saat Core-Ex dibuka*. Tombol **Jalankan Ollama** tetap ada di dialog AI dan di halaman awal.
 - Hanya untuk alamat Ollama di komputer ini (127.0.0.1 / localhost). Bila Ollama tidak ditemukan, Core-Ex menulis "Ollama belum terpasang".
+
+## 27. Data besar tanpa jeda & pembaruan offline (0.18.2)
+
+**Block model .mdl sangat besar (contoh uji: 6,2 GB, 141 juta blok, laptop RAM 7 GB, 2 inti CPU)**
+- File .mdl ≥ 150 MB dibaca sekali oleh backend menjadi cache di disk (uji 6,2 GB: ±85 detik, sekali saja). Indeks RL sekarang dibuat di disk, bukan di RAM: memori backend saat membangun cache turun dari ±2,8 GB menjadi ±0,6 GB.
+- Siapkan ruang disk kosong ±1,5–2 × ukuran file .mdl untuk cache (GC-Ex memberi tahu bila kurang). Tiga cache terakhir disimpan; yang lama dihapus otomatis.
+- **Batas blok per pemuatan** supaya RAM / VRAM 4 GB tidak penuh: ±1,5 juta blok (RAM ≤ 4 GB), ±2,5 juta (RAM < 8 GB), ±3,5 juta (RAM ≥ 8 GB). Bila rentang RL yang diminta berisi lebih banyak blok, GC-Ex memuat **rentang RL teratas yang muat** dan menampilkan pesan berisi RL yang dimuat. Untuk bench lain, import ulang dengan isian **RL bawah / RL atas** (atau centang *Hanya di dalam desain pit*). Mengambil potongan 2,5 juta blok dari model 6,2 GB: ±3,5 detik.
+- **Penampang 2D**: blok dilukis langsung ke gambar (bukan jutaan kotak), PNG penuh dikodekan di latar sehingga layar tidak membeku. Uji 2,5 juta blok: pindah ke 2D ±2 detik (sebelumnya ±42 detik), menggambar ulang / zoom / digitasi ±0,01 detik (sebelumnya ±3,3 detik).
+- **3D**: jumlah kubus tetap dibatasi profil Kinerja (Hemat 60 rb · Seimbang 150 rb · Penuh 400 rb) dan hanya sisi luar yang digambar, sehingga VRAM 4 GB cukup. Untuk melihat semua blok gunakan cut-off, Potong data atau Penampang 2D.
+- Batas heap JavaScript jendela GC-Ex dinaikkan ke 4 GB.
+
+**Data bor besar (GC-Ex Drillhole), uji 2.500 lubang / 250.000 baris assay + 250.000 baris geologi**
+- Impor + desurvey + gambar pertama ±5 detik (sekali, sebagian besar menggambar 3D); geser sayatan 2D ±0,2–0,6 detik; domain otomatis ±0,3 detik; memori ±0,5 GB. Tidak perlu pengaturan khusus.
+
+**Pembaruan (offline)**
+- GC-Ex tidak pernah memeriksa pembaruan lewat internet dan tidak memasang pembaruan sendiri (installer tidak berisi data publish / auto-update).
+- Setiap versi dibangun dari kode di repositori GitHub milik admin (GitHub Actions → *Build GC-Ex (Windows 64-bit)*). Pelanggan yang ingin memperbarui meminta installer versi terbaru ke admin; admin mengunduh artifact dari Actions lalu mengirimkannya.
+- Ketiga aplikasi tetap dipasang terpisah (satu installer per aplikasi). Memasang versi baru di atas versi lama: pengaturan, proyek dan lisensi tetap.
+

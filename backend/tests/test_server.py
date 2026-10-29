@@ -65,6 +65,11 @@ def test_mdl_open_subset_benches(tmp_path, monkeypatch):
     assert r.status_code == 200 and r.content.startswith(b"### Block Model ###") and int(r.headers["x-gcex-n"]) > 0
     rc = c.post("/mdl/subset", json={"path": str(f), "z_min": 130, "z_max": 150, "bbox": [None, None, None, None], "center": True})
     assert rc.status_code == 200 and 0 < int(rc.headers["x-gcex-n"]) <= int(r.headers["x-gcex-n"])
+    rm = c.post("/mdl/subset", json={"path": str(f), "max_n": 400})
+    assert rm.status_code == 200 and rm.headers["x-gcex-capped"] == "1" and 0 < int(rm.headers["x-gcex-n"]) <= 400
+    assert int(rm.headers["x-gcex-nreq"]) == 1500 and float(rm.headers["x-gcex-zmin"]) > 0
+    ru = c.post("/mdl/subset", json={"path": str(f), "max_n": 10 ** 6})
+    assert ru.headers["x-gcex-capped"] == "0" and int(ru.headers["x-gcex-n"]) == 1500
     b = c.post("/mdl/benches", json={"path": str(f), "bench": 10, "ref": 100, "attrs": ["au"]}).json()
     assert b["ok"] and b["total"]["n"] == 1500 and abs(b["total"]["ton"] - sum(x["ton"] for x in b["rows"])) < 1e-6
     e = c.post("/mdl/benches", json={"path": str(f), "bench": 10, "ref": 100, "attrs": ["kelas"]}).json()

@@ -173,8 +173,12 @@ def build_cache(path: str | Path, prog: Optional[Callable[[float, int], None]] =
         return old
     N = H["N"]
     free = shutil.disk_usage(cache_root()).free
-    if free < N * 1.4 + 200e6:
-        raise RuntimeError(f"Ruang disk untuk cache block model tidak cukup: butuh ±{N * 1.4 / 1e9:.1f} GB, "
+    # cache per blok: hi, lo, x, y, z, lv (33 B) + kolom atribut + indeks RL (zord 4-8 B + zs 8 B)
+    fb = sum(4 if a["type"] in (1, 3) else 8 for a in H["stored"])
+    n_est = max(0, N - H["data"]) / (8 + fb)
+    need = n_est * (33 + fb + 16) * 1.02 + 200e6
+    if free < need:
+        raise RuntimeError(f"Ruang disk untuk cache block model tidak cukup: butuh ±{need / 1e9:.1f} GB, "
                            f"tersedia {free / 1e9:.1f} GB di {cache_root()}. Kosongkan ruang atau hapus cache lama.")
     tmp = cd.with_name(cd.name + ".tmp")
     if tmp.exists():
@@ -191,11 +195,12 @@ def build_cache(path: str | Path, prog: Optional[Callable[[float, int], None]] =
     dicts: dict[int, dict[int, str]] = {k: {} for k in cat_k}
     n_tot = 0
     max_l = 0
+    min_l = 31
     zmin, zmax = np.inf, -np.inf
     t0 = time.time()
 
     def emit(arr: np.ndarray):
-        nonlocal n_tot, max_l, zmin, zmax
+        nonlocal n_tot, max_l, min_l, zmin, zmax
         if not len(arr):
             return
         hi = arr["hi"].astype(np.uint32)
@@ -232,6 +237,7 @@ def build_cache(path: str | Path, prog: Optional[Callable[[float, int], None]] =
             arr[f"f{k}"].astype("<i4" if a["type"] in (1, 3) else "<f8").tofile(files[f"f{k}"])
         n_tot += len(arr)
         max_l = max(max_l, ml)
+        min_l = min(min_l, int(lv.min()))
         zmin = min(zmin, float(cz.min()))
         zmax = max(zmax, float(cz.max()))
 
@@ -317,25 +323,24 @@ def build_cache(path: str | Path, prog: Optional[Callable[[float, int], None]] =
                 break
     for f in files.values():
         f.close()
-    # indeks urut RL
-    zz = np.fromfile(tmp / "z.bin", dtype="<f8")
-    order = np.argsort(zz, kind="stable").astype(np.int64 if n_tot >= 2 ** 31 else np.int32)
-    order.tofile(tmp / "zord.bin")
-    zz[order].tofile(tmp / "zs.bin")
-    del zz
+    # indeks urut RL (di luar RAM: memori tetap kecil walau model berisi ratusan juta blok)
+    od = np.int64 if n_tot >= 2 ** 31 else np.int32
+    if prog:
+        prog(99.0, n_tot)
+    _zsort(tmp, n_tot, zmin, zmax, RT[2] * 2.0 ** -(max_l + 1), od, cancel)
     (tmp / "head.bin").write_bytes(H["hraw"])
     # metadata Surpac setelah penanda akhir (disandikan); disalin apa adanya ke setiap potongan
     with open(p, "rb") as fh:
         fh.seek(tail_at if tail_at is not None else N)
         (tmp / "tail.bin").write_bytes(fh.read())
     meta = {"ver": CACHE_VER, "complete": True, "file": str(p), "fname": H["fname"], "size": N,
-            "mtime": int(p.stat().st_mtime), "n": int(n_tot), "maxL": int(max_l),
+            "mtime": int(p.stat().st_mtime), "n": int(n_tot), "maxL": int(max_l), "minL": int(min_l if n_tot else 0),
             "zmin": zmin if n_tot else None, "zmax": zmax if n_tot else None,
             "origin": H["origin"], "root": H["root"], "extent": H["extent"], "rot": H["rot"],
             "attrs": [{k: v for k, v in a.items()} for a in H["attrs"]],
             "stored": [{"name": a["name"], "type": a["type"]} for a in ST],
             "dicts": {str(k): {str(c): s for c, s in d.items()} for k, d in dicts.items()},
-            "ord_dtype": str(order.dtype), "build_s": round(time.time() - t0, 1), "data": H["data"]}
+            "ord_dtype": np.dtype(od).name, "build_s": round(time.time() - t0, 1), "data": H["data"]}
     (tmp / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
     if cd.exists():
         shutil.rmtree(cd, ignore_errors=True)
@@ -345,6 +350,93 @@ def build_cache(path: str | Path, prog: Optional[Callable[[float, int], None]] =
     if prog:
         prog(100.0, n_tot)
     return meta
+
+
+ZS_STEP = 8_000_000
+
+
+def _zsort(tmp: Path, n: int, zmin: float, zmax: float, dq: float, od, cancel=None):
+    """Tulis zord.bin (indeks blok urut RL, stabil) dan zs.bin (RL terurut) tanpa memuat seluruh kolom ke RAM.
+    Titik tengah blok octree selalu di kisi dq = setengah ukuran sub-blok terkecil -> counting sort per kunci RL,
+    dikerjakan per potongan ZS_STEP blok. Bila kisi tidak cocok (data aneh), kembali ke argsort biasa."""
+    if not n:
+        np.zeros(0, od).tofile(tmp / "zord.bin")
+        np.zeros(0, "<f8").tofile(tmp / "zs.bin")
+        return
+    zm = np.memmap(tmp / "z.bin", dtype="<f8", mode="r", shape=(n,))
+    nk = int(round((zmax - zmin) / dq)) + 1 if dq > 0 else 0
+    ok = 0 < nk <= 20_000_000
+    if ok:
+        cnt = np.zeros(nk, np.int64)
+        for s0 in range(0, n, ZS_STEP):
+            if cancel and cancel():
+                raise RuntimeError("Pembacaan dibatalkan.")
+            k = np.rint((np.asarray(zm[s0:s0 + ZS_STEP]) - zmin) / dq).astype(np.int64)
+            np.clip(k, 0, nk - 1, out=k)
+            cnt += np.bincount(k, minlength=nk)
+        ptr = np.zeros(nk, np.int64)
+        np.cumsum(cnt[:-1], out=ptr[1:])
+        del cnt
+        om = np.memmap(tmp / "zord.bin", dtype=od, mode="w+", shape=(n,))
+        zo = np.memmap(tmp / "zs.bin", dtype="<f8", mode="w+", shape=(n,))
+        for s0 in range(0, n, ZS_STEP):
+            if cancel and cancel():
+                raise RuntimeError("Pembacaan dibatalkan.")
+            zc = np.asarray(zm[s0:s0 + ZS_STEP])
+            k = np.rint((zc - zmin) / dq).astype(np.int64)
+            np.clip(k, 0, nk - 1, out=k)
+            o = np.argsort(k, kind="stable")
+            sk = k[o]
+            c = np.bincount(sk, minlength=nk)
+            first = np.zeros(nk, np.int64)
+            np.cumsum(c[:-1], out=first[1:])
+            pos = ptr[sk] + (np.arange(len(sk), dtype=np.int64) - first[sk])
+            om[pos] = (o + s0).astype(od)
+            zo[pos] = zc[o]
+            ptr += c
+        om.flush()
+        zo.flush()
+        # periksa urutan (kisi RL tidak cocok -> beberapa RL berbeda bisa jatuh ke kunci yang sama)
+        last = -np.inf
+        for s0 in range(0, n, ZS_STEP):
+            a = np.asarray(zo[s0:s0 + ZS_STEP])
+            if a[0] < last or (len(a) > 1 and bool(np.any(a[1:] < a[:-1]))):
+                ok = False
+                break
+            last = a[-1]
+        del om, zo
+    if not ok:
+        zz = np.asarray(zm)
+        order = np.argsort(zz, kind="stable").astype(od)
+        order.tofile(tmp / "zord.bin")
+        zz[order].tofile(tmp / "zs.bin")
+        del zz, order
+    del zm
+
+
+def fit_window(c: "_Cache", z_min: Optional[float], z_max: Optional[float], max_n: Optional[int]):
+    """Batas jumlah blok per pemuatan (RAM / VRAM komputer pengguna). Bila rentang RL yang diminta berisi lebih dari
+    max_n blok, rentang dipersempit dari ATAS (RL tertinggi dulu, bench aktif biasanya di atas) dan dibulatkan ke kisi
+    sub-blok terkecil. Hasil: (z_min, z_max, dipersempit?, perkiraan blok di rentang asli)."""
+    if not c.n:
+        return z_min, z_max, False, 0
+    m = c.m
+    hz = c.hz
+    zs = c.col("zs", "<f8")
+    lo = 0 if z_min is None else int(np.searchsorted(zs, z_min - hz - 1e-9, "left"))
+    hi = c.n if z_max is None else int(np.searchsorted(zs, z_max + hz + 1e-9, "right"))
+    tot = max(0, hi - lo)
+    if not max_n or tot <= max_n:
+        return z_min, z_max, False, tot
+    dz = m["root"][2] * 2.0 ** -max(1, m["maxL"])
+    oz = m["origin"][2]
+    top = z_max if z_max is not None else float(m["zmax"]) + dz / 2
+    zt = float(zs[hi - max_n]) + hz + 1e-6
+    zn = oz + np.ceil((zt - oz) / dz) * dz
+    if zn >= top:
+        zn = top - dz
+    zn = float(round(zn, 6))
+    return zn, (z_max if z_max is not None else None), True, tot
 
 
 def _touch(cd: Path):
@@ -404,6 +496,26 @@ class _Cache:
         n = meta["n"]
         self.n = n
         self.ST = meta["stored"]
+        self._hz = None
+
+    @property
+    def hz(self) -> float:
+        """Setengah tinggi blok TERBESAR yang ada di model (bukan blok akar): batas cari indeks RL tetap sempit."""
+        if self._hz is None:
+            ml = self.m.get("minL")
+            if ml is None:  # cache versi lama: hitung sekali dari kolom level
+                ml, lv = 31, self.col("lv", "u1")
+                for s0 in range(0, self.n, 50_000_000):
+                    ml = min(ml, int(np.asarray(lv[s0:s0 + 50_000_000]).min()))
+                if not self.n:
+                    ml = 0
+                self.m["minL"] = ml
+                try:
+                    (self.cd / "meta.json").write_text(json.dumps(self.m), encoding="utf-8")
+                except OSError:
+                    pass
+            self._hz = self.m["root"][2] * 2.0 ** -int(ml) / 2
+        return self._hz
 
     def col(self, name: str, dtype: str):
         return np.memmap(self.cd / f"{name}.bin", dtype=dtype, mode="r", shape=(self.n,)) if self.n else np.zeros(0, dtype)
@@ -426,7 +538,7 @@ def select(c: _Cache, z_min: Optional[float] = None, z_max: Optional[float] = No
     m = c.m
     if not c.n:
         return np.zeros(0, np.int64)
-    hzmax = m["root"][2] / 2
+    hzmax = c.hz
     zs = c.col("zs", "<f8")
     zord = c.col("zord", "<" + ("i8" if m["ord_dtype"] == "int64" else "i4"))
     lo = 0 if z_min is None else int(np.searchsorted(zs, z_min - hzmax - 1e-9, "left"))
@@ -610,9 +722,10 @@ def bench_summary(path: str | Path, bench: float, ref: float, attrs: list[str], 
     rep = sg_rep if (sg_rep is not None and sg_rep > 0) else sg
     nb_out: dict[int, dict] = {}
     step = 5_000_000
-    idx_all = select(c, z_min, z_max)
-    for s0 in range(0, len(idx_all), step):
-        ii = idx_all[s0:s0 + step]
+    # seluruh model: baca kolom berurutan per potongan (tanpa larik indeks raksasa di RAM)
+    idx_all = select(c, z_min, z_max) if (z_min is not None or z_max is not None) else None
+    for s0 in range(0, c.n if idx_all is None else len(idx_all), step):
+        ii = slice(s0, min(c.n, s0 + step)) if idx_all is None else idx_all[s0:s0 + step]
         lv = np.asarray(c.col("lv", "u1")[ii], dtype=np.int64)
         f = np.power(2.0, -lv)
         vol = RT[0] * RT[1] * RT[2] * f * f * f
@@ -622,9 +735,9 @@ def bench_summary(path: str | Path, bench: float, ref: float, attrs: list[str], 
             good = np.isfinite(s) & (s > 0)
             s = np.where(good, s, 0.0 if sg_zero == "zero" else rep)
         else:
-            s = np.full(len(ii), float(sg))
+            s = np.full(len(z), float(sg))
         t = vol * s
-        keep = np.ones(len(ii), bool)
+        keep = np.ones(len(z), bool)
         if cut_attr is not None and cut is not None:
             ca = np.asarray(c.col(f"f{names[cut_attr]}", "<f8" if c.ST[names[cut_attr]]["type"] != 1 else "<i4")[ii], dtype=np.float64)
             keep &= np.isfinite(ca) & (ca >= cut)

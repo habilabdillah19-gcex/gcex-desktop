@@ -11,15 +11,44 @@ function bmImgRaster(T){var x0=1e300,x1=-1e300,y0=1e300,y1=-1e300,mw=1e300,ks=[T
     if(X.length>6)ks.push(X[0],Y[0],X[X.length-6],Y[Y.length-6]);}
   if(!(x1>x0&&y1>y0))return null;var key=ks.join('|')+'|'+x0+'|'+x1+'|'+y0+'|'+y1;
   if(key===BMIMG.key&&BMIMG.url)return BMIMG.box;
-  var sx=x1-x0,sy=y1-y0,ppm=Math.min(BMIMG.max/sx,BMIMG.max/sy,Math.max(2,6/Math.max(mw,1e-3)));if(!(ppm>0))return null;
-  var W=Math.max(1,Math.round(sx*ppm)),H=Math.max(1,Math.round(sy*ppm)),cv=document.createElement('canvas');cv.width=W;cv.height=H;var g=cv.getContext('2d');g.imageSmoothingEnabled=false;
-  T.forEach(function(t){var X=t.x,Y=t.y;g.globalAlpha=t.opacity==null?1:t.opacity;g.fillStyle=t.fillcolor||(t.line&&t.line.color)||'#999';
+  /* resolusi: blok terkecil = 4 piksel bulat (tepi blok tetap tajam saat zoom), dikecilkan bila melebihi BMIMG.max piksel */
+  var sx=x1-x0,sy=y1-y0,mwc=Math.max(mw,1e-3),kp=4;while(kp>1&&Math.max(sx,sy)*kp/mwc>BMIMG.max)kp--;var ppm=Math.min(kp/mwc,BMIMG.max/sx,BMIMG.max/sy);if(!(ppm>0))return null;
+  /* piksel diisi langsung ke larik (tanpa API kanvas per kotak: jutaan fillRect lambat di GPU), lalu dikodekan PNG */
+  var W=Math.max(1,Math.round(sx*ppm)),H=Math.max(1,Math.round(sy*ppm)),buf=new Uint32Array(W*H);
+  T.forEach(function(t){var px=bmImgRGBA(t.fillcolor||(t.line&&t.line.color)||'#999',t.opacity==null?1:t.opacity),X=t.x,Y=t.y;
     for(var j=0;j+4<X.length;j+=6){var a=X[j],b=X[j+1],c=Y[j],d=Y[j+2];if(a===null||b===null)continue;
-      var px0=Math.floor((a-x0)*ppm),px1=Math.ceil((b-x0)*ppm),py0=Math.floor((y1-d)*ppm),py1=Math.ceil((y1-c)*ppm);g.fillRect(px0,py0,Math.max(1,px1-px0),Math.max(1,py1-py0));}});
-  BMIMG.key=key;BMIMG.url=cv.toDataURL('image/png');
-  BMIMG.box={source:BMIMG.url,xref:'x',yref:'y',x:x0,y:y1,sizex:sx,sizey:sy,xanchor:'left',yanchor:'top',sizing:'stretch',layer:'below',opacity:1,name:'bmimg'};return BMIMG.box;}
+      var px0=Math.max(0,Math.floor((a-x0)*ppm+1e-6)),px1=Math.min(W,Math.max(px0+1,Math.ceil((b-x0)*ppm-1e-6))),py0=Math.max(0,Math.floor((y1-d)*ppm+1e-6)),py1=Math.min(H,Math.max(py0+1,Math.ceil((y1-c)*ppm-1e-6)));
+      for(var yy=py0;yy<py1;yy++)buf.fill(px,yy*W+px0,yy*W+px1);}});
+  var cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.getContext('2d',{willReadFrequently:true}).putImageData(new ImageData(new Uint8ClampedArray(buf.buffer),W,H),0,0);
+  /* gambar besar: pratinjau kecil dulu (cepat), PNG penuh dikodekan di latar (toBlob, tidak membekukan layar) */
+  BMIMG.key=key;var big=W*H>1.5e6&&cv.toBlob,src;
+  if(big){var f=Math.ceil(Math.sqrt(W*H/4e5)),pw=Math.ceil(W/f),ph=Math.ceil(H/f),pb=new Uint32Array(pw*ph);for(var yy=0;yy<ph;yy++){var r0=yy*f*W;for(var xx=0;xx<pw;xx++)pb[yy*pw+xx]=buf[r0+xx*f];}
+    var pv=document.createElement('canvas');pv.width=pw;pv.height=ph;pv.getContext('2d',{willReadFrequently:true}).putImageData(new ImageData(new Uint8ClampedArray(pb.buffer),pw,ph),0,0);src=pv.toDataURL('image/png');}
+  else src=cv.toDataURL('image/png');
+  buf=null;
+  if(BMIMG.blob){try{URL.revokeObjectURL(BMIMG.blob);}catch(e){}BMIMG.blob='';}
+  BMIMG.url=src;BMIMG.box={source:src,xref:'x',yref:'y',x:x0,y:y1,sizex:sx,sizey:sy,xanchor:'left',yanchor:'top',sizing:'stretch',layer:'below',opacity:1,name:'bmimg'};
+  if(big){var myKey=key;cv.toBlob(function(b){if(!b||BMIMG.key!==myKey)return;var u=URL.createObjectURL(b);BMIMG.blob=u;BMIMG.url=u;BMIMG.box.source=u;
+    var gd=document.getElementById('plotDiv'),I=gd&&gd.layout&&gd.layout.images;if(!I)return;for(var q=0;q<I.length;q++)if(I[q]&&I[q].name==='bmimg'){var o={};o['images['+q+'].source']=u;try{Plotly.relayout(gd,o);}catch(e){}break;}},'image/png');}
+  return BMIMG.box;}
+/* warna CSS apa pun -> piksel RGBA 32-bit (little-endian: A B G R) */
+var BMRGBA={};
+function bmImgRGBA(c,op){var k=c+'|'+op;if(BMRGBA[k]!==undefined)return BMRGBA[k];var g=bmImgRGBA.g||(bmImgRGBA.g=document.createElement('canvas').getContext('2d'));
+  g.fillStyle='#000';g.fillStyle=c;var s=String(g.fillStyle),r=0,gg=0,b=0,a=1,m;
+  if(s[0]==='#'){r=parseInt(s.substr(1,2),16);gg=parseInt(s.substr(3,2),16);b=parseInt(s.substr(5,2),16);}
+  else if((m=/rgba?\(([^)]+)\)/.exec(s))){var p=m[1].split(',').map(parseFloat);r=p[0];gg=p[1];b=p[2];if(p.length>3)a=p[3];}
+  var A=Math.max(0,Math.min(255,Math.round(a*op*255)));return BMRGBA[k]=((A<<24)|(b<<16)|(gg<<8)|r)>>>0;}
 (function(){if(typeof window.bxTraces2D!=='function')return;var _bt=bxTraces2D;
-  bxTraces2D=function(o,F){var T=_bt.apply(this,arguments);BMIMG.cur=null;if(!BMIMG.on||!T||!T.length)return T;
+  /* blok sudah dilukis per kotak di kanvas -> penggabungan persegi panjang (sort jutaan kotak) tidak diperlukan */
+  if(typeof window.bxMergeRects==='function'){var _mr=bxMergeRects;bxMergeRects=function(R){return BMIMG.on&&R.length>5000?R:_mr(R);};}
+  /* hasil penampang di-cache: menggambar ulang tanpa perubahan data / sayatan / kelas tidak menghitung ulang jutaan blok */
+  var C2={k:null,T:null,img:null};
+  bxTraces2D=function(o,F){var key=null;
+    try{if(BMIMG.on&&BX.m&&!(window.lyFcOn&&lyFcOn())&&$('bxShow')&&$('bxShow').checked){var S=bxSel({clip:true,K:o.K}),U=BX.ui;
+      key=[S,JSON.stringify([o.K,o.g,offX,offY,U.op,U.attr,U.cls[U.attr]||0,U.catCol[U.attr]||0,U.catOn[U.attr]||0])];
+      if(C2.k&&C2.k[0]===key[0]&&C2.k[1]===key[1]&&C2.T){BMIMG.cur=C2.img;BMIMG.t=Date.now();if(C2.img&&BMIMG.box)BMIMG.cur=BMIMG.box;return C2.T.slice();}}}catch(e){key=null;}
+    var T=bxTraces2Dr.apply(this,arguments);C2.k=key;C2.T=T&&T.slice();C2.img=BMIMG.cur;return T;};
+  var bxTraces2Dr=function(o,F){var T=_bt.apply(this,arguments);BMIMG.cur=null;if(!BMIMG.on||!T||!T.length)return T;
     var R=T.filter(function(t){return t&&t.fill==='toself'&&Array.isArray(t.x);});if(!R.length)return T;var img=null;try{img=bmImgRaster(R);}catch(e){console.error(e);}if(!img)return T;
     BMIMG.cur=img;BMIMG.t=Date.now();
     var bb={type:'scatter',mode:'markers',x:[img.x,img.x+img.sizex],y:[img.y-img.sizey,img.y],marker:{size:1,opacity:0},hoverinfo:'skip',showlegend:false,name:'bmimg-bb'};

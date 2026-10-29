@@ -53,6 +53,8 @@ process.on('uncaughtException', e => log('[uncaught]', e && e.stack || String(e)
 
 // ---------- grafis: pilih GPU berperforma tinggi pada laptop dengan 2 kartu grafis ----------
 app.commandLine.appendSwitch('force_high_performance_gpu');
+// ---------- data besar: batas heap JavaScript jendela GC-Ex dinaikkan (bawaan V8 bisa < 4 GB; larik data besar tetap di luar heap) ----------
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 
 // ---------- file proyek .prj: dibuka dengan klik dua kali (asosiasi file dipasang installer) ----------
 // .prj = arsip ZIP; entri pertama gcex_prj.json (tidak dikompresi) berisi nama aplikasi pemilik.

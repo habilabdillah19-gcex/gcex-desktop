@@ -140,3 +140,42 @@ def test_select_by_center_with_open_sides(cache_env):
     x = c.col("x", "<f8")
     want = [i for i, (z, *_r) in enumerate(blocks) if 120.0 <= z <= 150.0 and x[i] <= O[0] + 40]
     assert idx.tolist() == want and 0 < len(want) < len(blocks)
+
+
+def test_rl_index_out_of_core_matches_argsort(cache_env, monkeypatch):
+    import numpy as np
+    monkeypatch.setattr(M, "ZS_STEP", 333)  # banyak potongan
+    p = cache_env / "a.mdl"
+    make_mdl(p, n=4000, seed=5)
+    m = M.build_cache(p)
+    c, _ = M.open_cache(p)
+    z = np.asarray(c.col("z", "<f8"))
+    ref = np.argsort(z, kind="stable")
+    od = "<i4" if m["ord_dtype"] == "int32" else "<i8"
+    assert np.array_equal(np.asarray(c.col("zord", od)), ref)
+    assert np.array_equal(np.asarray(c.col("zs", "<f8")), z[ref])
+
+
+def test_rl_index_fallback_when_off_grid(tmp_path):
+    import numpy as np
+    z = np.array([5.0, 1.0, 1.0000001, 3.0, 1.0, 2.5], "<f8")
+    z.tofile(tmp_path / "z.bin")
+    M._zsort(tmp_path, len(z), float(z.min()), float(z.max()), 1.0, np.int32)
+    o = np.fromfile(tmp_path / "zord.bin", "<i4")
+    assert np.array_equal(o, np.argsort(z, kind="stable"))
+    assert np.all(np.diff(np.fromfile(tmp_path / "zs.bin", "<f8")) >= 0)
+
+
+def test_fit_window_caps_block_count_from_top(cache_env):
+    p = cache_env / "a.mdl"
+    make_mdl(p, n=3000, seed=2)
+    M.build_cache(p)
+    c, m = M.open_cache(p)
+    z0, z1, cap, tot = M.fit_window(c, None, None, 10 ** 6)
+    assert not cap and tot == c.n and z0 is None
+    z0, z1, cap, tot = M.fit_window(c, None, None, 1000)
+    assert cap and tot == c.n and z1 is None
+    idx = M.select(c, z0, z1)
+    assert 0 < len(idx) <= 1000
+    dz = m["root"][2] * 2.0 ** -m["maxL"]
+    assert abs((z0 - m["origin"][2]) / dz - round((z0 - m["origin"][2]) / dz)) < 1e-6

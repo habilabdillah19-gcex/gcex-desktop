@@ -1,7 +1,7 @@
 {
   "name": "gcex-desktop",
   "productName": "GC-Ex",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "description": "GC-Ex Grade Control Excellence - aplikasi desktop (Block Model, Drillhole & Core-Ex)",
   "main": "electron/main.js",
   "author": "Habil Abdillah",
@@ -89,7 +89,8 @@
       "enableEmbeddedAsarIntegrityValidation": true,
       "onlyLoadAppFromAsar": true
     },
-    "asar": true
+    "asar": true,
+    "publish": null
   },
   "gcex": {
     "page": "app/index.html",

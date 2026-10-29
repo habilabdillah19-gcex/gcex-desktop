@@ -172,6 +172,7 @@ class MdlSubset(MdlPath):
     z_max: Optional[float] = None
     bbox: Optional[list[Optional[float]]] = None
     center: bool = False  # True = pilih menurut titik tengah blok (filter GC-Ex Drillhole)
+    max_n: Optional[int] = None  # batas blok per pemuatan (RAM/VRAM); rentang RL dipersempit dari atas bila lebih
 
 
 @app.post("/mdl/subset")
@@ -179,13 +180,16 @@ def mdl_subset(body: MdlSubset):
     """Potongan model (RL & kotak XY) sebagai file .mdl mini yang sah; header X-GCEx-N = jumlah blok."""
     import tempfile
     c, m = mdl_io.open_cache(body.path)
-    idx = mdl_io.select(c, body.z_min, body.z_max, body.bbox, body.center)
+    z0, z1, capped, n_req = mdl_io.fit_window(c, body.z_min, body.z_max, body.max_n)
+    idx = mdl_io.select(c, z0, z1, body.bbox, body.center)
     fd, tmp = tempfile.mkstemp(suffix=".mdl", prefix="gcex-sub-")
     with os.fdopen(fd, "wb") as fh:
         nb = mdl_io.write_subset(c, idx, fh)
     return FileResponse(tmp, media_type="application/octet-stream", background=BackgroundTask(os.remove, tmp),
                         headers={"X-GCEx-N": str(len(idx)), "X-GCEx-Total": str(m["n"]), "X-GCEx-Bytes": str(nb),
-                                 "Access-Control-Expose-Headers": "X-GCEx-N, X-GCEx-Total, X-GCEx-Bytes"})
+                                 "X-GCEx-Capped": "1" if capped else "0", "X-GCEx-Zmin": "" if z0 is None else repr(z0),
+                                 "X-GCEx-Zmax": "" if z1 is None else repr(z1), "X-GCEx-Nreq": str(n_req),
+                                 "Access-Control-Expose-Headers": "X-GCEx-N, X-GCEx-Total, X-GCEx-Bytes, X-GCEx-Capped, X-GCEx-Zmin, X-GCEx-Zmax, X-GCEx-Nreq"})
 
 
 class MdlBench(MdlPath):

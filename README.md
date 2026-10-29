@@ -73,6 +73,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3f | Core-Ex: data bor header dinamis, cari cepat, filter kadar, overlay assay di foto | selesai (0.16.0) |
 | 3g | GC-Ex Core Interpretation berganti nama menjadi **Core-Ex** (Core Excellence), tetap keluarga GC-Ex & lisensi bersama | selesai (0.18.0) |
 | 3h | Core-Ex menjalankan Ollama otomatis bila belum aktif + tombol **Jalankan Ollama** di dialog AI | selesai (0.18.1) |
+| 3i | Data besar: block model .mdl > 6 GB lancar di RAM 8 GB / VRAM 4 GB (indeks RL di luar RAM, batas blok per pemuatan, penampang 2D tanpa jeda); tanpa pembaruan online | selesai (0.18.2) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna
