@@ -86,6 +86,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3s | Core-Ex: folder foto besar (uji 4.501 foto / 45 GB nominal: scan 0,4 s, buka ulang 0,2 s, UI tetap lancar); thumbnail JPEG 2× lebih cepat & memori backend 470 → 100 MB (decode skala kecil); foto panorama > 178 MP tidak lagi ditolak | selesai (Core-Ex 0.21.1) |
 | 3t | Core-Ex: **tanda interval di foto** — half core (wajib nomor sampel, saran dari assay), core loss (Core Recovery dihitung otomatis), jenis lain; kolom Loss/Half di tabel, cari cepat, sheet Excel *Interval*, CSV, riwayat | selesai (Core-Ex 0.22.0) |
 | 3u | Core-Ex: **overlay berlapis** (assay, logging, interpretasi per baris, kartu foto; preset, warna & kelas per lapisan disimpan di proyek) dan **interpretasi AI per baris core** mengikuti batas geologi, bisa diedit di foto (nilai, geser batas, belah, gabung, tambah, hapus), tidak ditimpa AI; sheet Excel *Segmen* | selesai (Core-Ex 0.23.0) |
+| 3s | GC-Ex Drill Hole Ultimate: **Geostatistik per lapisan** di ruang unfold (sumber *Lapisan* di panel Geostatistik: statistik, variogram, anisotropi, model, KNA; akumulasi 2D = tebal × kadar), **Simpan ke lapisan** (model variogram, pass, diskretisasi, top-cut; range vertikal dari variogram downhole) dan **validasi lapisan** (swath Easting / Northing / Z unfold, grade-tonase DMT) | selesai (Drill Hole Ultimate 0.21.1) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna

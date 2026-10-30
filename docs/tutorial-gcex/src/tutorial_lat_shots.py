@@ -67,6 +67,16 @@ with sync_playwright() as pw:
     # 5. estimasi
     ev("uiTab('SL');SL.o.el=['Ni','Co','Fe','MgO','SiO2'];SL.o.ra='SiO2';SL.o.rb='MgO';slDirty(true);uiSecOpen('sl',3)"); pg.wait_for_timeout(600)
     shot('sl_estimasi', PANEL)
+    # 5b. geostatistik per lapisan (ruang unfold) -> simpan ke lapisan
+    ev("$('elementFilter').value='Ni';gsToggle()"); pg.wait_for_timeout(1500)
+    ev("slGsSet(1)"); pg.wait_for_timeout(2500)
+    note('gsLap', ev("[GS.R.label,GS.R.C.length,+GS.R.st.mean.toFixed(3),+GS.R.st.cv.toFixed(2)]"))
+    ev("gsTab('V')"); pg.wait_for_timeout(800); shot('gs_lapisan')
+    ev("gsTab('M');gsFitAuto()"); pg.wait_for_timeout(1200); shot('gs_lapisan_model')
+    ev("gsTab('K');knaRun()"); pg.wait_for_timeout(3500); note('knaLap', ev("$('knaMsg').innerText.split('Patokan')[0]"))
+    ev("gsTab('E')"); pg.wait_for_timeout(600); ev("slFromGs()"); note('gsSimpan', ev("$('slGsMsg').innerText"))
+    ev("var b=$('gsDomBox');if(b)b.scrollIntoView({block:'center'})"); pg.wait_for_timeout(400); shot('gs_simpan_lapisan')
+    ev("slGsSet('');gsToggle();uiTab('SL');uiSecOpen('sl',3)"); pg.wait_for_timeout(800); shot('sl_estimasi_vario', PANEL)
     ev("slRun()"); pg.wait_for_function("!SL.job", timeout=180000); pg.wait_for_timeout(600)
     note('slMsg', ev("SL.msg.replace(/<[^>]+>/g,'')")); note('slSt', ev("SL.S.st"))
     shot('sl_estimasi_hasil', PANEL)
@@ -81,6 +91,11 @@ with sync_playwright() as pw:
     note('lap15', ev("slReport().rows.map(r=>[r.name,r.n,Math.round(r.dmt),r.avg.map(v=>isFinite(v)?+v.toFixed(3):null)])"))
     shot('sl_laporan_cut', PANEL)
     ev("SL.o.cut=0;slDirty(true)")
+    ev("SL.v.k=1;SL.v.el='Ni';SL.v.dir='z';SL.v.bw=1;slPanel();uiSecOpen('sl',5)"); pg.wait_for_timeout(600)
+    note('valZ', ev("(function(){var Q=slVal();return{nC:Q.nC,cm:+Q.cm.toFixed(3),em:+Q.em.toFixed(3),sw:Q.sw.map(r=>[r[0],r[1]&&+r[1].toFixed(2),r[2]&&+r[2].toFixed(2)])};})()"))
+    shot('sl_validasi', PANEL)
+    ev("SL.v.dir='x';SL.v.bw=25;slPanel();uiSecOpen('sl',5)"); pg.wait_for_timeout(500); note('valX', ev("(function(){var Q=slVal();return Q.sw.map(r=>[r[0],r[1]&&+r[1].toFixed(2),r[2]&&+r[2].toFixed(2)]);})()"))
+    shot('sl_validasi_e', PANEL)
     # 7. project tree
     ev("PT.open['st']=1;PT.open['st.flt']=1;PT.open['sl']=1;PT.render(true);PT.select('sl')"); pg.wait_for_timeout(600); shot('tree', {'x': 0, 'y': 40, 'width': 320, 'height': 520})
     note('errs', errs)

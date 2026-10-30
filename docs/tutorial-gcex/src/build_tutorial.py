@@ -61,7 +61,7 @@ def ch(title, body, key=None): CH.append((title, body))
 # ================= ISI =================
 ch('Tentang tutorial ini', f'''
 <p>Tutorial ini mengajarkan alur kerja <b>pemodelan vein dan estimasi block model</b> di <b>GC-Ex Drillhole</b>
-(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.21</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
+(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.21.1</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
 dibagikan, dan semua gambar adalah tangkapan layar dari satu kali jalannya latihan tersebut. Jika rekan Anda mengikuti langkah
 yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <h3>Alur kerja</h3>
@@ -72,7 +72,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 </div>
 <h3>Yang dibutuhkan</h3>
 <ul>
-<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.21.0.exe</code>) dan lisensi aktif.</li>
+<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.21.1.exe</code>) dan lisensi aktif.</li>
 <li>Aplikasi berjalan sepenuhnya offline; tidak perlu browser atau file Plotly terpisah.</li>
 <li>Folder <code>data_simulasi</code> dari paket tutorial ini.</li>
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_VeinA</code> (boleh di OneDrive / SharePoint / drive jaringan).</li>
@@ -81,7 +81,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <p>Langkah bernomor = yang harus diklik / diisi. Kotak <span class="tag tip">Tips</span> berisi jalan pintas,
 <span class="tag why">Mengapa?</span> menjelaskan alasan geologinya, dan <span class="tag warn">Perhatian</span> berisi hal yang sering keliru.
 Nama tombol dan menu ditulis <b>tebal</b> persis seperti di layar.</p>
-''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.21 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
+''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.21.1 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
 
 ch('Data simulasi', f'''
 <p>Data ini <b>sintetis</b> (bukan data perusahaan), dibuat agar meniru kasus vein emas epitermal sempit berbentuk sigmoidal.</p>
@@ -466,10 +466,22 @@ ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> 
  + fig('sl_permukaan_sesar', f"Ringkasan setelah F1: 1 sesar post dipulihkan; {L1['st'][1][1]} hole saprolit ditandai &ldquo;berhenti / terpotong sesar&rdquo; (atap dan lantai di blok sesar berbeda: kontaknya dipakai, ketebalannya tidak).", '52%')
  + '<h3>&#9314; Estimasi per lapisan</h3>' + steps('Pilih <b>unsur</b> (Ni, Co, Fe, MgO, SiO2), panjang <b>komposit</b> 1 m, dan <b>rasio</b> SiO2 / MgO ([[sl_estimasi]]).',
    'Per lapisan: <b>Mode</b> Blok 3D (OK atau IDW) atau <b>Akumulasi 2D</b>; <b>Unfold</b> proporsional atau dari atap; azimuth &amp; range mayor / minor / vertikal (vertikal di ruang unfold, mis. 3 m); nugget; jumlah sampel.',
+   'Isi parameter dari <b>Geostatistik per lapisan</b> (di bawah) dengan <b>Simpan ke lapisan</b>, atau ketik manual (mengetik manual menonaktifkan model variogram tersimpan).',
    'Klik <b>&#9654; Jalankan estimasi lapisan</b>. Hasil masuk ke block model GC sebagai atribut <code>sl_lapisan</code>, <code>sl_ni</code>, <code>sl_co</code>, &hellip;, <code>sl_pass</code>, <code>sl_ns</code>, <code>sl_rasio</code> ([[sl_estimasi_hasil]], [[sl_bm_2d]], [[sl_bm_lapisan_3d]]).')
  + fig2('sl_estimasi', 'Parameter estimasi per lapisan.', 'sl_estimasi_hasil', 'Hasil run: ' + clean(NL['slMsg']).replace('&#10003; ', ''))
  + fig('sl_bm_2d', 'Block model GC berwarna sl_ni di Sayatan 2D: blok hanging wall ikut turun di timur sesar F1.')
  + fig('sl_bm_lapisan_3d', 'Atribut sl_lapisan di 3D.')
+ + '<h3>Geostatistik per lapisan (ruang unfold)</h3>' + steps('Buka panel <b>Geostatistik</b> (tombol kanan atas), unsur <b>Ni</b>. Di bilah atas panel pilih <b>Lapisan</b> = <i>Saprolit (unfold)</i>. Komposit diambil per lapisan: koordinat X, Y (dipulihkan bila ada sesar post) dan Z = posisi unfold; lapisan akumulasi 2D memakai nilai tebal &times; kadar.',
+     'Tab <b>Variogram / Anisotropi</b>: arah di bidang datar (0&deg; = timur). Variogram <b>downhole</b> = arah vertikal di ruang unfold ([[gs_lapisan]]).',
+     'Tab <b>Model</b> &rarr; fitting otomatis ([[gs_lapisan_model]]); tab <b>KNA</b> untuk jumlah sampel / radius. Uji estimasi grid tidak dipakai untuk sumber lapisan.',
+     'Tab <b>Uji estimasi</b> &rarr; <b>Simpan ke lapisan Saprolit</b> ([[gs_simpan_lapisan]]): model variogram, pass, diskretisasi dan top-cut tersimpan; azimuth, range mayor / minor / <b>vertikal (dari variogram downhole)</b> dan nugget di tabel &#9314; terisi, bertanda <i>variogram: Geostatistik</i> ([[sl_estimasi_vario]]).')
+ + fig('gs_lapisan', f"Geostatistik sumber Lapisan Saprolit (unfold): {NL['gsLap'][1]} komposit, rata-rata Ni {nf(NL['gsLap'][2],3)}%, CV {nf(NL['gsLap'][3],2)}.")
+ + fig('gs_lapisan_model', 'Model variogram lapisan Saprolit (fitting otomatis).')
+ + fig2('gs_simpan_lapisan', clean(NL['gsSimpan']).split('. Lanjut')[0] + '.', 'sl_estimasi_vario', 'Tabel estimasi: Saprolit memakai model dari Geostatistik.')
+ + '<h3>&#9316; Validasi lapisan</h3>' + steps('Bagian <b>Validasi</b>: pilih lapisan, unsur dan arah <b>swath</b> (Easting, Northing atau <b>Z unfold</b>) dengan lebar bin.',
+     'Bandingkan rata-rata <b>komposit</b> (oranye) dan <b>blok</b> (biru) per bin, serta selisih global. Tabel <b>grade-tonase</b> (DMT &amp; kadar per cut-off) di bawahnya ([[sl_validasi]], [[sl_validasi_e]]).')
+ + fig2('sl_validasi', f"Swath Z unfold Saprolit (bin 1 m): komposit {nf(NL['valZ']['cm'],3)}% vs blok {nf(NL['valZ']['em'],3)}%; profil vertikal Ni terbawa ke blok.", 'sl_validasi_e', 'Swath Easting (bin 25 m) dan grade-tonase DMT per cut-off.')
+ + why('Pada laterit, kadar Ni berubah tajam secara vertikal (puncak di saprolit atas) tetapi pelan secara lateral. Variogram di ruang unfold menangkap kontras ini: range vertikal beberapa meter, lateral ratusan meter. Tanpa unfold, profil vertikal tercampur variasi elevasi topografi.')
  + why('<b>Unfold proporsional</b>: setiap sampel / blok diberi posisi relatif antara atap dan lantai lapisannya (0 = atap, 1 = lantai), jadi sampel di puncak bukit dan di lembah yang sama-sama &ldquo;bagian atas saprolit&rdquo; dianggap berdekatan. Tanpa unfold, pencarian sampel memakai elevasi absolut dan bisa mengambil sampel dari lapisan lain di topografi yang miring.')
  + '<h3>&#9315; Laporan</h3>' + steps('Bagian <b>Laporan</b>: volume, <b>WMT</b> (volume &times; densitas basah), <b>DMT</b> (WMT &times; (1 &minus; kadar air)), kadar rata-rata (ditimbang DMT) dan rasio ([[sl_laporan]]).',
    'Isi <b>cut-off</b> Ni &ge; 1,5 untuk tonase bijih ([[sl_laporan_cut]]). <b>&#8681; Laporan CSV</b> untuk Excel.')
@@ -533,7 +545,7 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<tr><td><b>Tahap 2</b><br>Solid vein RBF</td><td><b>Sudah tersedia</b> ({{B:Membangun solid}}): permukaan HW dan FW per domain dimodelkan terpisah (RBF), solid dengan tebal minimum 1 m, potong tegas searah strike (radius pengaruh 15 m), pinch-out / potong topografi searah dip, orientasi & elipsoid per domain, dibangun ulang otomatis, export OBJ / DXF / Surpac STR+DTM.</td></tr>'
  + '<tr><td><b>Tahap 3</b><br>Model Estimation</td><td><b>Sudah tersedia</b> ({{B:Model Estimation}}, {{B:Koreksi setelah}}): parameter per domain dari Geostatistik, Ordinary Kriging blok GC di dalam solid, koreksi hanya sekitar bor baru, blok tambahan, atribut baru, riwayat run, export .mdl / CSV.</td></tr>'
  + '<tr><td><b>Pembaruan 23 Okt</b></td><td><b>Sudah tersedia</b>: validasi data ({{B:Validasi data}}), RBF halus &amp; anti-spike, vein bercabang ({{B:Vein bercabang}}), struktur geologi ({{B:Struktur geologi}}), menu Map ({{B:Map:}}).</td></tr>'
- + '<tr><td><b>Versi 0.21</b></td><td><b>Sudah tersedia</b>: Sesar 3D ({{B:Sesar 3D}}) dan Geomodeller Stratified-Laterite ({{B:Geomodeller Stratified}}); menu Geological Modelling berganti nama menjadi Geomodeller Vein.</td></tr>'
+ + '<tr><td><b>Versi 0.21</b></td><td><b>Sudah tersedia</b>: Sesar 3D ({{B:Sesar 3D}}) dan Geomodeller Stratified-Laterite ({{B:Geomodeller Stratified}}); menu Geological Modelling berganti nama menjadi Geomodeller Vein. <b>0.21.1</b>: Geostatistik per lapisan (ruang unfold), Simpan ke lapisan, validasi swath &amp; grade-tonase per lapisan.</td></tr>'
  + '<tr><td><b>Usulan berikutnya</b><br>(belum disepakati)</td><td>Klasifikasi blok (measured / indicated) dari pass, SoR dan jarak sampel; tabel grade-tonnage per domain dan per bench; rekonsiliasi GC lama vs model baru per periode.</td></tr></table>'
  + '<h3>Ringkasan angka latihan (untuk mengecek hasil peserta)</h3>'
  + kv([('Import awal', f"{N['nHole']} hole, {N['nAssay']:,} assay, block model GC {N['bx']:,} blok"),
@@ -615,7 +627,7 @@ table.kv td{{border-bottom:1px solid var(--ln);padding:1.3mm 2mm;vertical-align:
 ul{{margin:1mm 0 3mm;padding-left:5mm}}li{{margin:.6mm 0}}
 </style></head><body>
 <div class="cover"><div class="top"><div class="logo">GC-Ex</div><h1>Tutorial Pemodelan Vein &amp;<br>Estimasi Block Model</h1>
-<div class="sub">GC-Ex Drill Hole Ultimate 0.21 &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
+<div class="sub">GC-Ex Drill Hole Ultimate 0.21.1 &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
 <div class="img"><img src="{FIG['model_3d'][0]}"></div>
 <div class="meta">Edisi {today.day} {bulan} {today.year} &middot; untuk pelatihan internal geologist grade control<br>
 Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya latihan</div></div>

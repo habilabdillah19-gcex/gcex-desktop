@@ -416,3 +416,13 @@ Release v0.21.0 berisi installer **GC-Ex Drill Hole Ultimate 0.21.0**. GC-Ex Blo
 - AI menilai **tiap baris core** dan membaginya mengikuti batas geologi aktual (±1 m per segmen). Nilai lama per box tetap ada di kartu.
 - Semua hasil AI bisa diedit: di kartu / tabel segmen, atau langsung di foto (**Edit segmen**: klik segmen, tarik batas, belah, gabung, tambah, hapus). Editan tidak ditimpa AI.
 - Foto yang dianalisis versi sebelumnya belum punya segmen: jalankan **Analisis ulang** (isian yang sudah diedit tetap aman). Jawaban AI lebih panjang, jadi waktu per foto sedikit bertambah.
+
+## 36. Geostatistik & validasi per lapisan (GC-Ex Drill Hole Ultimate 0.21.1)
+
+Release v0.21.1 berisi installer **GC-Ex Drill Hole Ultimate 0.21.1** (Block Model 0.20.3 dan Core-Ex 0.19.0 tetap di rilis sebelumnya).
+
+- Panel **Geostatistik** → pilihan **Lapisan** (mis. *Saprolit (unfold)*): komposit lapisan dengan X, Y dipulihkan dari sesar post dan Z = posisi unfold (lapisan akumulasi 2D: nilai = tebal × kadar, Z = 0). Statistik, variogram (bidang datar, 0° = timur; downhole = vertikal), model dan KNA berlaku; uji estimasi grid dinonaktifkan.
+- Tab Uji estimasi → **Simpan ke lapisan**: model variogram, pass, diskretisasi dan top-cut disimpan ke lapisan; tabel ③ Estimasi terisi (azimuth, range mayor / minor / vertikal dari variogram downhole, nugget) dan bertanda *variogram: Geostatistik*. Mengetik parameter manual menonaktifkan model tersimpan.
+- Geomodeller Stratified-Laterite → **⑤ Validasi**: swath komposit vs blok (Easting, Northing, Z unfold), selisih rata-rata global, tabel grade-tonase DMT per cut-off.
+- Tutorial diperbarui (bab Geomodeller Stratified-Laterite: Geostatistik per lapisan & Validasi).
+

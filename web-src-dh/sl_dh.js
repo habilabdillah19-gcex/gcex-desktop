@@ -89,7 +89,8 @@ function slLayerAt(R,x,y,z){var q=slRest(x,y,z),t=slAt(R,R.S[0],q[0],q[1]);if(!i
   for(var k=0;k<R.nT;k++){var a=slAt(R,R.S[k],q[0],q[1]),b=slAt(R,R.S[k+1],q[0],q[1]);if(!isFinite(b))return null;if(q[2]>b)return{k:k,top:a,bot:b,q:q};}
   if(R.hasB)return{k:SL.L.length-1,top:slAt(R,R.S[R.nT],q[0],q[1]),bot:-1e9,q:q};return null;}
 /* ---------- ③ estimasi ---------- */
-function slMo(e,two){var a=(+e.az||0)*Math.PI/180,c0=Math.max(0,Math.min(0.95,+e.nug||0));return{vM:[Math.sin(a),Math.cos(a),0],vS:[Math.sin(a+Math.PI/2),Math.cos(a+Math.PI/2),0],vN:[0,0,1],c0:c0,cs:[1-c0],A:[Math.max(1,+e.r1||50)],B:[Math.max(1,+e.r2||50)],Cn:[two?1:Math.max(0.2,+e.r3||3)],R:[Math.max(1,+e.r1||50),Math.max(1,+e.r2||50),two?1:Math.max(0.2,+e.r3||3)]};}
+function slMo(e,two){if(e.m&&e.m.vM){var M=e.m,o={vM:M.vM.slice(),vS:M.vS.slice(),vN:two?[0,0,1]:M.vN.slice(),c0:+M.c0,cs:M.cs.map(Number),A:M.A.map(Number),B:M.B.map(Number),Cn:two?M.Cn.map(function(){return 1;}):M.Cn.map(Number)};o.R=[Math.max.apply(null,o.A),Math.max.apply(null,o.B),Math.max.apply(null,o.Cn)];return o;}
+  var a=(+e.az||0)*Math.PI/180,c0=Math.max(0,Math.min(0.95,+e.nug||0));return{vM:[Math.sin(a),Math.cos(a),0],vS:[Math.sin(a+Math.PI/2),Math.cos(a+Math.PI/2),0],vN:[0,0,1],c0:c0,cs:[1-c0],A:[Math.max(1,+e.r1||50)],B:[Math.max(1,+e.r2||50)],Cn:[two?1:Math.max(0.2,+e.r3||3)],R:[Math.max(1,+e.r1||50),Math.max(1,+e.r2||50),two?1:Math.max(0.2,+e.r3||3)]};}
 function slEls(){var E=(window.elements||[]);var L=(SL.o.el||[]).filter(function(e){return E.indexOf(e)>=0;});if(!L.length&&E.length)L=E.slice(0,Math.min(6,E.length));return L;}
 function slIsBase(k){return !!SL.o.base&&SL.L.length>1&&k===SL.L.length-1;}
 function slComps(R,k,els){var l=SL.L[k],e=l.est,unf=slIsBase(k)?'top':e.unf,cl=Math.max(0,+SL.o.comp||0),EI=els.map(function(x){return elements.indexOf(x);}),C=[],Tm=0,nT=0;
@@ -97,9 +98,9 @@ function slComps(R,k,els){var l=SL.L[k],e=l.est,unf=slIsBase(k)?'top':e.unf,cl=M
   R.H.forEach(function(h){var r=h.L[k];if(!r||!r.pres||!(r.t>r.f))return;var A=(groupedAssays[h.id]||[]).filter(function(a){return a[2]>a[1]&&a[2]>r.f&&a[1]<r.t;});if(!A.length)return;
     var segs=[];if(e.mode==='2d'||cl<=0)segs=[[r.f,r.t]];else{var n=Math.max(1,Math.round((r.t-r.f)/cl));for(var q=0;q<n;q++)segs.push([r.f+(r.t-r.f)*q/n,r.f+(r.t-r.f)*(q+1)/n]);}
     segs.forEach(function(sg){var len=0,V=EI.map(function(){return[0,0];});A.forEach(function(a){var o=Math.min(sg[1],a[2])-Math.max(sg[0],a[1]);if(o<=0)return;len+=o;EI.forEach(function(ei,q){var v=a[4][ei];if(v!=null&&isFinite(v)){V[q][0]+=o*v;V[q][1]+=o;}});});
-      if(len<0.5*(sg[1]-sg[0])-1e-9)return;var vals=V.map(function(w){return w[1]>0?w[0]/w[1]:NaN;});var p=getXYZ(h.id,(sg[0]+sg[1])/2),q2=slRest(p.x,p.y,p.z),z;
-      if(e.mode==='2d'){C.push({id:h.id,x:r.x,y:r.y,z:0,T:r.T,v:vals,fc:r.c});return;}
-      var th=r.zt-r.zb;z=unf==='top'?r.zt-q2[2]:(th>0.01?(r.zt-q2[2])/th*Tref:Tref/2);C.push({id:h.id,x:q2[0],y:q2[1],z:z,v:vals,fc:r.c});});});
+      if(len<0.5*(sg[1]-sg[0])-1e-9)return;var vals=V.map(function(w,q){var v=w[1]>0?w[0]/w[1]:NaN,tc=e.tc?+e.tc[els[q]]:0;return tc>0&&isFinite(v)?Math.min(v,tc):v;});var p=getXYZ(h.id,(sg[0]+sg[1])/2),q2=slRest(p.x,p.y,p.z),z;
+      if(e.mode==='2d'){C.push({id:h.id,x:r.x,y:r.y,z:0,T:r.T,v:vals,fc:r.c,f:sg[0],t:sg[1],len:sg[1]-sg[0]});return;}
+      var th=r.zt-r.zb;z=unf==='top'?r.zt-q2[2]:(th>0.01?(r.zt-q2[2])/th*Tref:Tref/2);C.push({id:h.id,x:q2[0],y:q2[1],z:z,v:vals,fc:r.c,f:sg[0],t:sg[1],len:sg[1]-sg[0]});});});
   C.Tref=Tref;return C;}
 function slRun(){if(SL.job){SL.job.cancel=true;return;}var m=window.BX&&BX.m;if(!m){alert('Import block model GC dulu (menu Block Model).');return;}try{meEnsure();}catch(e){}
   var R=slEnsure();if(!R){alert('Permukaan lapisan belum bisa dibangun: '+(SL.err||''));return;}var els=slEls();if(!els.length){alert('Database assay belum punya unsur.');return;}
@@ -114,9 +115,9 @@ function slStep(){var J=SL.job;if(!J)return;var t=performance.now(),m=J.m,saveAc
       if(X.two)z=0;else{var th=la.top-la.bot;z=X.unf==='top'?la.top-q[2]:(th>0.01?(la.top-q[2])/th*X.Tref:X.Tref/2);}
       if(window.FLT)FLT._code=slCode([q[0],q[1],q[2]]);
       var sz=X.two?1:(X.unf==='top'?m.sz[i]:m.sz[i]*X.Tref/Math.max(0.01,la.top-la.bot)),dk=m.sx[i]+'_'+m.sy[i]+'_'+sz.toFixed(2),dc=X.dc[dk];
-      if(!dc){var D=okDisc([m.sx[i],m.sy[i],X.two?0:sz],[2,2,X.two?1:2]);dc=X.dc[dk]={D:D,cbb:okCbb(X.mo,D)};}
-      var PS=[{mult:1,min:Math.max(1,+e.nmin||3),max:Math.max(2,+e.nmax||16)},{mult:2,min:Math.max(1,(+e.nmin||3)-1),max:Math.max(2,+e.nmax||16)},{mult:3,min:1,max:Math.max(2,+e.nmax||16)}],res=null;
-      for(var p=0;p<PS.length;p++){var sel=okSearch(X.mo,X.I,X.C,x,y,z,PS[p].mult,PS[p].max,X.two?0:Math.max(0,+e.mph||0));if(sel.length<PS[p].min)continue;var w=null;
+      if(!dc){var nd=e.nd&&e.nd.length===3?e.nd:[2,2,2],D=okDisc([m.sx[i],m.sy[i],X.two?0:sz],[nd[0],nd[1],X.two?1:nd[2]]);dc=X.dc[dk]={D:D,cbb:okCbb(X.mo,D)};}
+      var PS=e.P&&e.P.length?e.P.map(function(q){return{mult:+q.mult,min:+q.min,max:+q.max,mph:+q.mph||0};}):[{mult:1,min:Math.max(1,+e.nmin||3),max:Math.max(2,+e.nmax||16)},{mult:2,min:Math.max(1,(+e.nmin||3)-1),max:Math.max(2,+e.nmax||16)},{mult:3,min:1,max:Math.max(2,+e.nmax||16)}],res=null;
+      for(var p=0;p<PS.length;p++){var sel=okSearch(X.mo,X.I,X.C,x,y,z,PS[p].mult,PS[p].max,X.two?0:(PS[p].mph!=null?PS[p].mph:Math.max(0,+e.mph||0)));if(sel.length<PS[p].min)continue;var w=null;
         if(e.met==='ok'&&sel.length>1){var r=okKrige(X.mo,X.C,X.z0,sel,x,y,z,dc.D,dc.cbb);if(r)w=Array.prototype.slice.call(r.w,0,sel.length);}
         if(!w){var pw=Math.max(0.5,+e.p||2);w=sel.map(function(si){var c=X.C[si],d=Math.sqrt(meDn(X.mo,c.x-x,c.y-y,c.z-z,1));return 1/Math.pow(Math.max(d,1e-3),pw);});}
         res={w:w,sel:sel,p:p+1};break;}
@@ -175,7 +176,7 @@ function slPreset(k){var P=SLPRE[k];if(!P)return;if(SL.L.length&&!confirm('Ganti
   if(k==='sdx')SL.L.forEach(function(l){l.est.mode=/bijih/i.test(l.name)?'2d':'3d';l.est.on=/bijih/i.test(l.name);});slDirty();}
 function slSetO(k,v){SL.o[k]=v;slDirty(['ra','rb','cut','pel','el','comp'].indexOf(k)>=0);if(k==='ra'||k==='rb')slApply(true);}
 function slSetL(i,k,v){var l=SL.L[i];if(!l)return;l[k]=v;slDirty(['name','col','dens','moist','vis'].indexOf(k)>=0);}
-function slSetE(i,k,v){var l=SL.L[i];if(!l)return;l.est[k]=v;slDirty(true);}
+function slSetE(i,k,v){var l=SL.L[i];if(!l)return;l.est[k]=v;if(['az','r1','r2','r3','nug','nmin','nmax','mph'].indexOf(k)>=0){l.est.m=null;l.est.P=null;l.est.vsrc='manual';}slDirty(true);}
 function slCodeT(i,c,on){var l=SL.L[i];if(!l)return;SL.L.forEach(function(o){o.codes=o.codes.filter(function(x){return x!==c;});});if(on)l.codes.push(c);slDirty();}
 function slAdd(){SL.L.push(slNewL({},SL.L.length));slDirty();}
 function slDel(i){if(!confirm('Hapus lapisan '+SL.L[i].name+'?'))return;SL.L.splice(i,1);slDirty();}
@@ -209,7 +210,7 @@ function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.
   var els=slEls();h+='<h4>&#9314; Estimasi per lapisan</h4><div class=f><label>Unsur</label><div class=chips>'+E.map(function(e){return '<label class=sw style="margin:0 8px 0 0;display:inline-flex"><input type=checkbox '+(els.indexOf(e)>=0?'checked':'')+' onchange="slElT(\''+slE(e)+'\',this.checked)">'+slE(e)+'</label>';}).join('')+'</div></div>'+
     '<div class="g3 f"><div><label>Komposit (m, 0 = per lapisan)</label><input type=number step=any value="'+o.comp+'" onchange="slSetO(\'comp\',+this.value)"></div><div><label>Rasio: pembilang</label><select onchange="slSetO(\'ra\',this.value)"><option value="">—</option>'+els.map(function(e){return '<option'+(e===o.ra?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div><div><label>penyebut</label><select onchange="slSetO(\'rb\',this.value)"><option value="">—</option>'+els.map(function(e){return '<option'+(e===o.rb?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div></div>';
   if(L.length)h+='<div class=gmlist><table class=pltb><tr><th>Lapisan</th><th>Aktif</th><th>Mode</th><th>Metode</th><th>Unfold</th><th>Az</th><th>R mayor / minor / vert</th><th>Nug</th><th>Min / Maks / per hole</th></tr>'+L.map(function(l,i){var e=l.est,n=function(k,w,st){return '<input type=number step="'+(st||'any')+'" value="'+e[k]+'" style="width:'+(w||40)+'px" onchange="slSetE('+i+',\''+k+'\',+this.value)">';},s=function(k,O){return '<select onchange="slSetE('+i+',\''+k+'\',this.value)">'+O.map(function(q){return '<option value="'+q[0]+'"'+(e[k]===q[0]?' selected':'')+'>'+q[1]+'</option>';}).join('')+'</select>';};
-      return '<tr><td>'+slE(l.name)+'</td><td><input type=checkbox '+(e.on?'checked':'')+' onchange="slSetE('+i+',\'on\',this.checked)"></td><td>'+s('mode',[['3d','Blok 3D'],['2d','Akumulasi 2D']])+'</td><td>'+s('met',[['ok','OK'],['idw','IDW']])+'</td><td>'+(e.mode==='2d'?'-':s('unf',[['prop','Proporsional'],['top','Dari atap']]))+'</td><td>'+n('az',38)+'</td><td style="white-space:nowrap">'+n('r1')+n('r2')+(e.mode==='2d'?'':n('r3',34))+'</td><td>'+n('nug',38)+'</td><td style="white-space:nowrap">'+n('nmin',30,1)+n('nmax',30,1)+(e.mode==='2d'?'':n('mph',30,1))+'</td></tr>';}).join('')+'</table></div>'+
+      return '<tr><td>'+slE(l.name)+(e.m?'<div class=hint title="'+slE(e.vsrc||'')+'">variogram: Geostatistik</div>':'')+'</td><td><input type=checkbox '+(e.on?'checked':'')+' onchange="slSetE('+i+',\'on\',this.checked)"></td><td>'+s('mode',[['3d','Blok 3D'],['2d','Akumulasi 2D']])+'</td><td>'+s('met',[['ok','OK'],['idw','IDW']])+'</td><td>'+(e.mode==='2d'?'-':s('unf',[['prop','Proporsional'],['top','Dari atap']]))+'</td><td>'+n('az',38)+'</td><td style="white-space:nowrap">'+n('r1')+n('r2')+(e.mode==='2d'?'':n('r3',34))+'</td><td>'+n('nug',38)+'</td><td style="white-space:nowrap">'+n('nmin',30,1)+n('nmax',30,1)+(e.mode==='2d'?'':n('mph',30,1))+'</td></tr>';}).join('')+'</table></div>'+
     '<div class=hint>Unfold <b>proporsional</b>: posisi relatif antara atap &amp; lantai lapisan (cocok laterit, ketebalan bervariasi). <b>Dari atap</b>: kedalaman di bawah atap. <b>Akumulasi 2D</b>: tebal × kadar per hole, kadar blok = &Sigma;(w·T·kadar)/&Sigma;(w·T) — untuk lapisan tipis / sedex. R vertikal di ruang unfold (m).</div>';
   h+='<div class="g2 f"><button class=btn-pri id=slBtn onclick="slRun()"'+(window.BX&&BX.m?'':' disabled title="Import block model GC dulu"')+'>'+(SL.job?'&#9632; Batalkan':'&#9654; Jalankan estimasi lapisan')+'</button><span id=slPct class=hint></span></div><div class=prog style="height:5px;background:var(--bd,#ddd);border-radius:3px"><div id=slBar style="height:5px;width:0;background:#e8590c;border-radius:3px"></div></div>'+(SL.msg?'<div class="box gmstate" style="margin-top:6px">'+SL.msg+'</div>':'');
   /* ④ Laporan */
@@ -218,7 +219,8 @@ function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.
   if(!Q)h+='<div class=hint>'+(SL.S&&window.BX&&BX.m?'Block model berubah sejak estimasi terakhir — jalankan ulang.':'Jalankan estimasi lapisan dulu.')+'</div>';
   else h+='<div class=gmlist><table class=pltb><tr><th>Lapisan</th><th>Volume</th><th>WMT</th><th>DMT</th>'+Q.els.map(function(e){return '<th>'+slE(e)+'</th>';}).join('')+(Q.ra&&Q.rb?'<th>'+slE(Q.ra+'/'+Q.rb)+'</th>':'')+'</tr>'+Q.rows.map(function(r){return '<tr><td>'+slE(r.name)+'</td><td>'+slN(r.vol,0)+'</td><td>'+slN(r.wmt,0)+'</td><td><b>'+slN(r.dmt,0)+'</b></td>'+r.avg.map(function(v){return '<td>'+slN(v,3)+'</td>';}).join('')+(Q.ra&&Q.rb?'<td>'+slN(r.rat,2)+'</td>':'')+'</tr>';}).join('')+'</table></div>'+
     '<div class=hint>WMT = volume × densitas basah; DMT = WMT × (1 − kadar air). Kadar rata-rata ditimbang DMT. Blok di-assign ke lapisan dari titik tengahnya.</div><button style="width:100%" onclick="slRepCsv()">&#8681; Laporan CSV</button>';
-  b.innerHTML=h;try{uiSecTabs(b,'sl',['① Lapisan','② Permukaan','③ Estimasi','④ Laporan']);}catch(e){}}
+  try{h+=slValHtml();}catch(e){console.error(e);}
+  b.innerHTML=h;try{uiSecTabs(b,'sl',['① Lapisan','② Permukaan','③ Estimasi','④ Laporan','⑤ Validasi']);}catch(e){}}
 /* ---------- pasang: rail, panel, tree, 3D / 2D, simpan ---------- */
 function gxRail(id,html,title,after,body,h3){var side=$('side');if(!side||$('p'+id))return;var s=document.createElement('section');s.id='p'+id;s.hidden=true;s.innerHTML='<h3>'+h3+'</h3><div id='+body+'></div>';side.appendChild(s);
   var ref=$(after);if(ref&&ref.parentNode){var bt=document.createElement('button');bt.className='rb';bt.id='rb'+id;bt.title=title;bt.innerHTML=html;bt.onclick=function(){uiTab(id);};ref.parentNode.insertBefore(bt,ref.nextSibling);}}
@@ -244,3 +246,57 @@ function gxRail(id,html,title,after,body,h3){var side=$('side');if(!side||$('p'+
     try{if(window.SL&&SL.L.length)T.push({name:'lapisan',key:['urutan'],cols:['urutan','nama','kode_log','densitas','kadar_air_pct','mode_estimasi','unfold','volume_grid_m3'],
       rows:SL.L.map(function(l,i){return[i+1,l.name,(l.codes||[]).map(function(c){return slCodeName(SL.ci,c);}).join(' '),+l.dens,+l.moist,l.est&&l.est.on?l.est.mode:'-',l.est?l.est.unf:'',SL.R&&SL.R.vol[i]!=null?Math.round(SL.R.vol[i]):null];})});}catch(e){}
     return T;};}else if((n||0)<40)setTimeout(function(){w((n||0)+1);},250);})();
+
+/* ================= 0.21.1: GEOSTATISTIK PER LAPISAN (ruang unfold) & VALIDASI =================
+   Geostatistik → pilih "Lapisan (unfold)": komposit lapisan (koordinat pulih sesar, Z = unfold; akumulasi 2D: nilai = tebal × kadar, Z = 0)
+   dipakai Statistik / Variogram / Anisotropi (bidang datar: arah 0° = timur) / Model / KNA. "Simpan ke lapisan" mengisi
+   model variogram, pass, diskretisasi & top-cut lapisan (③ Estimasi). Validasi: swath komposit vs blok, grade-tonase DMT. */
+GS.sl=null;
+function slGsComps(k,ei){var R=slEnsure();if(!R)throw new Error(SL.err||'permukaan lapisan belum ada');var l=SL.L[k];if(!l)return[];var el=elements[ei],e=l.est,two=e.mode==='2d',tc0=e.tc;e.tc=null;var C;try{C=slComps(R,k,[el]);}finally{e.tc=tc0;}
+  return C.filter(function(c){return isFinite(c.v[0]);}).map(function(c){var v=two?c.v[0]*c.T:c.v[0];return{id:c.id,f:c.f,t:c.t,d:(c.f+c.t)/2,len:c.len,v:v,x:c.x,y:c.y,z:c.z,s:c.x,w:c.y,fc:c.fc};});}
+function slGsS(){return{g:{m:'U',u:[1,0,0],w:[0,1,0],n:[0,0,1],c:[0,0,0],az:90,dip:0},pos:0,thick:0,K:[],K2:null};}
+function slGsLabel(k){var l=SL.L[k],e=l?l.est:{},R=SL.R;return 'Lapisan '+(l?l.name:'?')+' — '+(e.mode==='2d'?'akumulasi 2D (tebal × kadar)':'unfold '+(e.unf==='top'||slIsBase(k)?'dari atap':'proporsional'))+(R&&R.nRest?' · sesar dipulihkan':'');}
+(function(){
+  var _gc=gsComps;gsComps=function(ids,ei){if(GS.sl==null||!SL.L[GS.sl])return _gc.apply(this,arguments);return slGsComps(GS.sl,ei);};window.gsComps=gsComps;
+  var _gr=gsRun;gsRun=function(){if(GS.sl==null||!SL.L[GS.sl])return _gr.apply(this,arguments);var _sk=secK,_sl=secLabel,k=GS.sl;
+    secK=function(){return slGsS();};secLabel=function(){return slGsLabel(k);};window.secK=secK;window.secLabel=secLabel;
+    try{var r=_gr.apply(this,arguments);if(GS.R){GS.R.sl=k;GS.R.slMode=SL.L[k].est.mode;}return r;}catch(e){console.error(e);try{$('gsSum').innerHTML='<span class=warn>'+slE(e.message)+'</span>';}catch(e2){}}
+    finally{secK=_sk;secLabel=_sl;window.secK=_sk;window.secLabel=_sl;}};window.gsRun=gsRun;
+  if(typeof okRun==='function'){var _or=okRun;okRun=function(){if(GS.sl!=null){try{$('okMsg').innerHTML='<span class=warn>Uji estimasi grid tidak tersedia untuk sumber Lapisan (ruang unfold). Pakai KNA, lalu <b>Simpan ke lapisan</b> dan jalankan estimasi di Geomodeller Stratified-Laterite ③.</span>';}catch(e){}return;}return _or.apply(this,arguments);};window.okRun=okRun;}
+  var _gb=window.gsBar;window.gsBar=function(){if(_gb)_gb.apply(this,arguments);var b=$('gsDomBar');if(!b||!SL.L.length)return;var on=GS.sl!=null&&SL.L[GS.sl];
+    var h='<span style="margin-left:10px">Lapisan</span><select onchange="slGsSet(this.value)"><option value="">— (domain / sayatan)</option>'+SL.L.map(function(l,i){return '<option value='+i+(on&&GS.sl===i?' selected':'')+'>'+slE(l.name)+(l.est.mode==='2d'?' (akumulasi 2D)':' (unfold)')+'</option>';}).join('')+'</select>'+(on?'<small>'+slE(slGsLabel(GS.sl))+'</small>':'');
+    b.insertAdjacentHTML('beforeend',h);if(on){b.classList.add('on');var s0=b.querySelector('select');if(s0)s0.disabled=true;}};
+  var _td=window.gsToDomHtml;if(_td){gsToDomHtml=function(){if(GS.sl==null||!SL.L[GS.sl])return _td.apply(this,arguments);var l=SL.L[GS.sl];
+      return '<div class=box style="margin-top:8px"><b>Simpan parameter ke lapisan</b><div class=note>Model variogram (tab Model), pass &amp; diskretisasi (di atas) dan top-cut disimpan ke lapisan <b>'+slE(l.name)+'</b> untuk dipakai <b>Geomodeller Stratified-Laterite &#9314; Estimasi</b>. Satu model dipakai semua unsur lapisan itu.</div><button class=btn-pri onclick="slFromGs()">&#8681; Simpan ke lapisan '+slE(l.name)+'</button><div id=slGsMsg class=note></div></div>';};window.gsToDomHtml=gsToDomHtml;}
+})();
+function slGsSet(v){GS.sl=v===''||v==null?null:+v;try{gsBar();}catch(e){}try{gsRun();}catch(e){console.error(e);}try{if(GS.tab==='E'&&$('gsDomBox'))$('gsDomBox').innerHTML=gsToDomHtml();}catch(e){}}
+function slFromGs(){var k=GS.sl,l=SL.L[k];if(!l||!GS.R||GS.R.sl!==k){alert('Jalankan Geostatistik dengan sumber Lapisan dulu.');return;}var m=okModel();if(!m){alert('Lakukan fitting model variogram dulu (tab Model).');return;}
+  /* jangkauan vertikal (ruang unfold) dari variogram downhole bila Minor tidak diisi di tab Model */
+  var Md=GS.R.M&&GS.R.M.d,vsrc='downhole';if(!m.minorSet&&Md&&Md.length){m.Cn=m.Cn.map(function(c,i){return Math.max(0.2,+(Md[i]!=null?Md[i]:Md[0])||c);});}else vsrc=m.minorSet?'minor (tab Model)':'-';
+  var P=okPasses(),e=l.est,az=(Math.atan2(m.vM[0],m.vM[1])*180/Math.PI+360)%360;e.m={vM:m.vM,vS:m.vS,vN:m.vN,c0:m.c0,cs:m.cs,A:m.A,B:m.B,Cn:m.Cn};if(P.length)e.P=P;e.nd=okNd();
+  e.az=Math.round(az);e.r1=Math.round(Math.max.apply(null,m.A)*10)/10;e.r2=Math.round(Math.max.apply(null,m.B)*10)/10;e.r3=Math.round(Math.max.apply(null,m.Cn)*100)/100;e.nug=Math.round(m.c0*1000)/1000;
+  if(P.length){e.nmin=P[0].min;e.nmax=P[0].max;e.mph=P[0].mph;}e.met='ok';e.tc=e.tc||{};if(GS.R.slMode!=='2d'){if(GS.R.tc)e.tc[GS.R.el]=GS.R.tc;else delete e.tc[GS.R.el];}
+  e.vsrc='vertikal: '+vsrc+' · '+GS.R.el+' · '+(GS.R.label||'')+' · '+new Date().toISOString().slice(0,16).replace('T',' ');slDirty(true);
+  try{$('slGsMsg').innerHTML='&#10003; Tersimpan ke '+slE(l.name)+': az '+e.az+'&deg;, range '+e.r1+' / '+e.r2+' / '+e.r3+' m, nugget '+e.nug+'. Lanjut di Geomodeller Stratified-Laterite &#9314;.';}catch(x){}}
+/* ---------- ⑤ validasi ---------- */
+SL.v={k:0,el:'',dir:'x',bw:25,cuts:'0,0.5,1,1.2,1.5,1.8,2'};
+function slVal(){var m=window.BX&&BX.m,S=SL.S,R=SL.R;if(!m||!S||S.key!==slBmKey(m)||!R)return null;var v=SL.v,k=Math.min(SL.L.length-1,+v.k||0),l=SL.L[k],el=S.els.indexOf(v.el)>=0?v.el:S.els[0];if(!l)return null;
+  var E=S.V[el],C=slComps(R,k,[el]),two=l.est.mode==='2d',dir=v.dir,bw=Math.max(0.1,+v.bw||25),sw={},key=function(x,y,z){var q=dir==='x'?x:dir==='y'?y:z;return Math.floor(q/bw);};
+  var Tm=C.Tref||1,sc=0,sl=0;C.forEach(function(c){var g=c.v[0];if(!isFinite(g))return;var w=two?c.T:c.len;sc+=g*w;sl+=w;var kk=key(c.x+offX,c.y+offY,two?0:c.z),b=sw[kk]||(sw[kk]={c:0,cw:0,e:0,ne:0,nc:0});b.c+=g*w;b.cw+=w;b.nc++;});
+  var se=0,ne=0;for(var i=0;i<m.n;i++){if(S.lay[i]!==k||!(E[i]>=0))continue;se+=E[i];ne++;var z=0;if(!two&&dir==='z'){var la=slLayerAt(R,m.x[i]-offX,m.y[i]-offY,m.z[i]);if(!la)continue;var th=la.top-la.bot,unf=(l.est.unf==='top'||slIsBase(k));z=unf?la.top-la.q[2]:(th>0.01?(la.top-la.q[2])/th*Tm:Tm/2);}
+    var xx=m.x[i],yy=m.y[i];if(dir!=='z'&&R.nRest){var qq=slRest(m.x[i]-offX,m.y[i]-offY,m.z[i]);xx=qq[0]+offX;yy=qq[1]+offY;}
+    var kk=key(xx,yy,z),b=sw[kk]||(sw[kk]={c:0,cw:0,e:0,ne:0,nc:0});b.e+=E[i];b.ne++;}
+  var rows=Object.keys(sw).map(Number).sort(function(a,b){return a-b;}).map(function(kk){var b=sw[kk];return[(kk+0.5)*bw,b.cw?b.c/b.cw:null,b.ne?b.e/b.ne:null,null,b.nc];});
+  var cuts=String(v.cuts).split(/[;, ]+/).map(Number).filter(function(x){return isFinite(x);}).sort(function(a,b){return a-b;}),dens=+l.dens||0,ms=+l.moist||0,gt=cuts.map(function(c){var vol=0,mt=0;for(var i=0;i<m.n;i++){if(S.lay[i]!==k||!(E[i]>=c)||!(E[i]>=0))continue;var vv=m.sx[i]*m.sy[i]*m.sz[i];vol+=vv;mt+=vv*dens*(1-ms/100)*E[i];}var dmt=vol*dens*(1-ms/100);return[c,vol,dmt,dmt>0?mt/dmt:NaN];});
+  return{k:k,l:l,el:el,two:two,nC:C.length,cm:sl?sc/sl:NaN,em:ne?se/ne:NaN,ne:ne,sw:rows,gt:gt,dir:dir,bw:bw};}
+function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){return h+'<div class=hint>Jalankan estimasi lapisan dulu.</div>';}var v=SL.v;
+  h+='<div class="g3 f"><div><label>Lapisan</label><select onchange="SL.v.k=+this.value;slPanel()">'+SL.L.map(function(l,i){return '<option value='+i+(i===+v.k?' selected':'')+'>'+slE(l.name)+'</option>';}).join('')+'</select></div>'+
+    '<div><label>Unsur</label><select onchange="SL.v.el=this.value;slPanel()">'+S.els.map(function(e){return '<option'+(e===v.el?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div>'+
+    '<div><label>Swath / bin (m)</label><div style="display:flex;gap:3px"><select onchange="SL.v.dir=this.value;slPanel()"><option value=x'+(v.dir==='x'?' selected':'')+'>Easting</option><option value=y'+(v.dir==='y'?' selected':'')+'>Northing</option><option value=z'+(v.dir==='z'?' selected':'')+'>Unfold Z</option></select><input type=number step=any value="'+v.bw+'" style="width:46px" onchange="SL.v.bw=+this.value;slPanel()"></div></div></div>';
+  var Q=null;try{Q=slVal();}catch(e){console.error(e);}if(!Q)return h+'<div class=hint>Block model berubah sejak estimasi terakhir — jalankan ulang.</div>';
+  var d=isFinite(Q.cm)&&Q.cm?100*(Q.em-Q.cm)/Q.cm:NaN;
+  h+='<div class="box gmstate">'+slE(Q.l.name)+' · '+slE(Q.el)+': komposit '+Q.nC+' (rata-rata '+(Q.two?'tertimbang tebal':'tertimbang panjang')+' <b>'+slN(Q.cm,3)+'</b>) vs blok '+Q.ne+' (rata-rata <b>'+slN(Q.em,3)+'</b>)'+(isFinite(d)?' · selisih <b class="'+(Math.abs(d)>10?'warn':'')+'">'+(d>0?'+':'')+slN(d,1)+'%</b>':'')+'</div>';
+  var svg='';try{svg=meSwathSvg(Q.sw,Q.el).replace('jarak sepanjang strike (m), bin 10 m',(Q.dir==='x'?'Easting':Q.dir==='y'?'Northing':'Z unfold')+' (m), bin '+Q.bw+' m').replace('- - GC lama','').replace('estimasi baru','blok (sl_'+Q.el+')');}catch(e){}
+  h+=svg+'<div class=gmlist><table class=pltb><tr><th>Cut-off '+slE(Q.el)+' &ge;</th><th>Volume</th><th>DMT</th><th>Kadar</th></tr>'+Q.gt.map(function(r){return '<tr><td>'+slN(r[0],2)+'</td><td>'+slN(r[1],0)+'</td><td>'+slN(r[2],0)+'</td><td>'+slN(r[3],3)+'</td></tr>';}).join('')+'</table></div>'+
+    '<div class="f"><label>Cut-off grade-tonase</label><input type=text value="'+slE(v.cuts)+'" onchange="SL.v.cuts=this.value;slPanel()"></div><div class=hint>Swath: rata-rata komposit (oranye) vs rata-rata blok (biru) per bin; kurva blok sebaiknya mengikuti komposit tetapi lebih halus. Selisih global &gt; 10% perlu dicek (top-cut, range, jumlah sampel). Koordinat swath = ruang pulih sesar.</div>';
+  return h;}
