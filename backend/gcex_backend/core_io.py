@@ -338,9 +338,16 @@ def photo_path(p: Project, pid: int) -> Path:
 
 
 # ---------------------------------------------------------------- gambar
-def _open_img(path: Path):
+# foto panorama / gabungan core box bisa > 178 MP (batas bawaan Pillow); file lokal milik pengguna, bukan unggahan asing
+_MAX_PX = 1_500_000_000
+
+
+def _open_img(path: Path, max_px: int = 0):
     from PIL import Image, ImageOps
+    Image.MAX_IMAGE_PIXELS = _MAX_PX
     im = Image.open(path)
+    if max_px and im.format == "JPEG":
+        im.draft("RGB", (max_px, max_px))  # decode JPEG langsung di skala 1/2..1/8: lebih cepat & hemat memori
     im = ImageOps.exif_transpose(im)
     if im.mode not in ("RGB", "L"):
         im = im.convert("RGB")
@@ -348,7 +355,7 @@ def _open_img(path: Path):
 
 
 def resized_jpeg(path: Path, max_px: int, quality: int = 88) -> bytes:
-    im = _open_img(path)
+    im = _open_img(path, max_px)
     if max_px and max(im.size) > max_px:
         im.thumbnail((max_px, max_px))
     b = io.BytesIO()

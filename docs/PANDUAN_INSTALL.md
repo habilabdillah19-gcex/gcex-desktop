@@ -394,3 +394,11 @@ Release v0.21.0 berisi installer **GC-Ex Drill Hole Ultimate 0.21.0**. GC-Ex Blo
 - **Geomodeller Stratified-Laterite Deposit** (rel kiri: *Geomodeller Strata-Laterit*): preset laterit nikel / bauksit / sedex; lapisan dari kolom log geologi + densitas & kadar air; permukaan atap (topografi − kedalaman kontak) & ketebalan isopach (grid, ekstrapolasi terbatas); estimasi per lapisan di koordinat **unfold** (OK / IDW blok 3D atau akumulasi 2D), multi-unsur & rasio (mis. SiO2/MgO) ke atribut block model `sl_*`; laporan volume / WMT / DMT / kadar dengan cut-off; export grid CSV & DXF permukaan.
 - Database proyek SQLite: tabel baru `sesar` dan `lapisan`.
 - Tutorial `GC-Ex_Tutorial_Modelling_Estimasi.pdf` diperbarui (bab Sesar 3D & Geomodeller Stratified-Laterite); data latihan baru `SIM_LAT_*` (laterit nikel fiktif dengan sesar F1) + generator `make_sim_laterit.py`.
+
+## 36. Folder foto besar (Core-Ex 0.21.1)
+
+- Ukuran folder (GB) tidak dimuat ke memori: Core-Ex hanya mendaftar nama & ukuran file, lalu membuka foto satu per satu saat dilihat / dianalisis AI. Uji 30 Okt 2026: 4.501 foto (24 MP + satu panorama 117 MP), 45,6 GB nominal → scan 0,4 s, buka ulang 0,2 s, buka folder di UI 0,9 s, tabel tetap lancar digulir.
+- Thumbnail & pratinjau JPEG kini didecode langsung di skala kecil: ±2× lebih cepat, memori backend ±100 MB (sebelumnya ±470 MB setelah 60 thumbnail 24 MP).
+- Foto panorama / gabungan di atas 178 MP tidak lagi ditolak (batas dinaikkan ke 1,5 miliar piksel).
+- Cache thumbnail & pratinjau ada di `%APPDATA%\Core-Ex\cache` (±10 KB per thumbnail, ±100–300 KB per pratinjau). Untuk puluhan ribu foto, sisakan beberapa GB di drive C:.
+- Database `_GCEx_Core\gcex_core.db` hanya berisi teks & angka (ribuan foto = beberapa MB), aman di drive jaringan.
