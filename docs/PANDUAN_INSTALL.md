@@ -409,3 +409,10 @@ Release v0.21.0 berisi installer **GC-Ex Drill Hole Ultimate 0.21.0**. GC-Ex Blo
 - Half core wajib nomor sampel (terisi otomatis dari kolom Sample di assay bila ada). Core loss menghitung **Core Recovery** foto otomatis: (interval − core loss) / interval; berlabel *tanda*, tidak ditimpa AI.
 - Disimpan di `_GCEx_Core/gcex_core.db` (tabel `marks`) bersama riwayat perubahan; ikut sheet Excel **Interval** dan export CSV dari panel.
 - Proyek lama terbuka seperti biasa; tabel dan kolom baru dibuat otomatis.
+
+## 38. Overlay berlapis & interpretasi per baris (Core-Ex 0.23.0)
+
+- Overlay foto kini berupa **lapisan**: kolom assay, kolom logging geologi apa pun, interpretasi per baris (Litologi, Alterasi, Pelapukan, Oksidasi, RQD, Recovery, Rekahan/m, GSI, RMR) dan isian kartu foto. Preset, urutan, warna & kelas disimpan di proyek.
+- AI menilai **tiap baris core** dan membaginya mengikuti batas geologi aktual (±1 m per segmen). Nilai lama per box tetap ada di kartu.
+- Semua hasil AI bisa diedit: di kartu / tabel segmen, atau langsung di foto (**Edit segmen**: klik segmen, tarik batas, belah, gabung, tambah, hapus). Editan tidak ditimpa AI.
+- Foto yang dianalisis versi sebelumnya belum punya segmen: jalankan **Analisis ulang** (isian yang sudah diedit tetap aman). Jawaban AI lebih panjang, jadi waktu per foto sedikit bertambah.

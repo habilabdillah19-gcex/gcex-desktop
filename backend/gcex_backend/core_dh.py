@@ -532,6 +532,16 @@ def photo_detail(p: core_io.Project, pid: int) -> dict:
     return out
 
 
+def tray_info(p: core_io.Project, pid: int) -> tuple[int, Optional[float]]:
+    """Jumlah baris core di foto (area core foto / bawaan proyek) dan panjang box (m) bila From/To ada."""
+    ensure(p)
+    with p.conn() as c:
+        r = c.execute("SELECT from_m, to_m, tray FROM photos WHERE id=?", (pid,)).fetchone()
+    t = json.loads(r["tray"]) if r and r["tray"] else (json.loads(core_io.get_meta(p).get("tray_default") or "null") or TRAY_DEFAULT)
+    ln = (r["to_m"] - r["from_m"]) if r and r["from_m"] is not None and r["to_m"] is not None and r["to_m"] > r["from_m"] else None
+    return int(t.get("rows", 4)), ln
+
+
 def set_tray(p: core_io.Project, pid: Optional[int], tray: Optional[dict], scope: str) -> None:
     ensure(p)
     if tray is not None:
@@ -610,7 +620,8 @@ def search(p: core_io.Project, q: str, limit: int = 60) -> dict:
                 if len(res) > limit * 3:
                     break
     from . import core_marks
-    res = core_marks.search(p, q) + res  # tanda half core / core loss di foto
+    from . import core_segs
+    res = core_marks.search(p, q) + core_segs.search(p, q) + res  # tanda half core / core loss di foto
     return {"results": res[:limit], "total": len(res)}
 
 

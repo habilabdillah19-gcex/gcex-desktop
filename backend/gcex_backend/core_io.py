@@ -270,7 +270,17 @@ def get_row(p: Project, pid: int) -> dict:
     out = [_row_out(r)]
     core_dh.enrich(p, out)
     core_marks.enrich(p, out)
+    _seg_count(p, out)
     return out[0]
+
+
+def _seg_count(p: Project, rows_: list[dict]) -> None:
+    from . import core_segs
+    core_segs.ensure(p)
+    with p.conn() as c:
+        n = {r[0]: (r[1], r[2]) for r in c.execute("SELECT photo_id, COUNT(*), SUM(src='manual' OR edited<>'[]') FROM segs GROUP BY photo_id")}
+    for r in rows_:
+        r["n_segs"], r["n_segs_ed"] = n.get(r["id"], (0, 0))
 
 
 def summary(p: Project) -> dict:
@@ -443,16 +453,23 @@ def ai_schema() -> dict:
             "condition": {"type": ["string", "null"], "enum": ["WET", "DRY", None]},
             "recovery_pct": num, "rqd_pct": num, "gsi": txt, "rmr": num, "notes": txt,
             "confidence": {"type": "string", "enum": ["rendah", "sedang", "tinggi"]},
+            "segments": {"type": "array", "items": {"type": "object", "properties": {
+                "row": {"type": "integer"}, "start": {"type": "number"}, "end": {"type": "number"},
+                "lithology": txt, "alteration": txt, "color": txt,
+                "weathering": {"type": ["string", "null"], "enum": WEATHERING + [None]},
+                "oxidation": {"type": ["string", "null"], "enum": OXIDATION + [None]},
+                "rqd_pct": num, "recovery_pct": num, "ff_per_m": num, "gsi": txt, "rmr": num, "notes": txt},
+                "required": ["row", "start", "end", "lithology", "weathering", "rqd_pct", "recovery_pct"]}},
         },
         "required": ["hole_id", "box_no", "from_m", "to_m", "drill_start", "photo_date", "lithology", "color", "weathering", "oxidation", "alteration",
-                     "condition", "recovery_pct", "rqd_pct", "gsi", "rmr", "notes", "confidence"],
+                     "condition", "recovery_pct", "rqd_pct", "gsi", "rmr", "notes", "confidence", "segments"],
     }
 
 
 GEO_LABEL = {"lithology": "Litologi", "alteration": "Alterasi", "oxidation": "Oksidasi", "color": "Warna", "weathering": "Pelapukan"}
 
 
-def ai_prompt(extra: str = "", logged: Optional[dict] = None) -> str:
+def ai_prompt(extra: str = "", logged: Optional[dict] = None, rows: int = 4, box_len: Optional[float] = None) -> str:
     # Tata letak foto core box standar: papan label putih di atas kotak, 4 baris core di kotak besi/kayu,
     # blok penanda run, papan skala catur hitam-putih di bawah. Contoh nilai di bawah fiktif.
     p = (
@@ -485,6 +502,15 @@ def ai_prompt(extra: str = "", logged: Optional[dict] = None) -> str:
         "5. notes: ringkas (maks 2 kalimat) tentang struktur (rekahan, kekar, sesar, zona hancur / rubble), vein dan "
         "mineralisasi yang terlihat, sebut baris core bila perlu (mis. 'baris 3 zona hancur').\n"
         "6. confidence: seberapa yakin Anda atas pembacaan papan label dan deskripsi (rendah / sedang / tinggi).\n"
+        f"7. segments: nilai PER BARIS CORE dan mengikuti BATAS GEOLOGI AKTUAL. Kotak berisi {rows} baris "
+        "(row 1 = baris paling atas / paling dangkal). Untuk setiap baris, bagi core dari kiri ke kanan menjadi segmen "
+        "di setiap perubahan nyata litologi, warna, pelapukan, oksidasi, alterasi, vein, atau zona rekahan / hancur. "
+        "start dan end = posisi di sepanjang baris itu (0 = ujung kiri core, 1 = ujung kanan core); segmen satu baris "
+        "harus menutup 0 sampai 1 tanpa celah dan tidak boleh menyeberang ke baris lain. "
+        + (f"Panjang satu baris kira-kira {box_len / rows:.2f} m; " if box_len else "")
+        + "segmen tidak lebih panjang dari ~1 m (bagi bila perlu). Tiap segmen: litologi, warna, pelapukan (W1-W6), "
+        "oksidasi, alterasi, rqd_pct dan recovery_pct segmen itu, ff_per_m (jumlah rekahan alami per meter), gsi, "
+        "rmr, notes singkat. Nilai geoteknik segmen boleh berbeda dari nilai box. Bila tidak bisa dinilai isi null.\n"
         "Jawab HANYA dengan JSON sesuai skema."
     )
     if logged:
@@ -509,13 +535,14 @@ def _parse_json(text: str) -> dict:
         return json.loads(m.group(0))
 
 
-def ollama_analyze(host: str, model: str, img: bytes, extra: str = "", timeout: float = 900, logged: Optional[dict] = None) -> dict:
+def ollama_analyze(host: str, model: str, img: bytes, extra: str = "", timeout: float = 900, logged: Optional[dict] = None,
+                   rows: int = 4, box_len: Optional[float] = None) -> dict:
     body = {
         "model": model,
-        "messages": [{"role": "user", "content": ai_prompt(extra, logged), "images": [base64.b64encode(img).decode()]}],
+        "messages": [{"role": "user", "content": ai_prompt(extra, logged, rows, box_len), "images": [base64.b64encode(img).decode()]}],
         "stream": False,
         "format": ai_schema(),
-        "options": {"temperature": 0, "num_ctx": 8192},
+        "options": {"temperature": 0, "num_ctx": 16384},
         "keep_alive": "15m",
     }
     j = _http((host or DEFAULT_HOST).rstrip("/") + "/api/chat", body, timeout=timeout)
@@ -590,10 +617,12 @@ def ai_start(p: Project, ids: list[int], host: str, model: str, extra: str, max_
                     f = photo_path(p, pid)
                     st["current"], st["current_id"] = f.name, pid
                     st["message"] = f"Menganalisis {f.name}"
-                    from . import core_dh
+                    from . import core_dh, core_segs
                     logged = core_dh.logged_for_photo(p, pid)  # logging geologist diutamakan; AI fokus geoteknik
-                    res = ollama_analyze(host, model, resized_jpeg(f, max_px), extra, logged=logged)
+                    rows_n, box_len = core_dh.tray_info(p, pid)
+                    res = ollama_analyze(host, model, resized_jpeg(f, max_px), extra, logged=logged, rows=rows_n, box_len=box_len)
                     apply_ai(p, pid, res, model, time.time() - t0, protect=set(logged))
+                    core_segs.apply_ai_segments(p, pid, res.get("segments"), rows_n, model)
                     st["done"] += 1
                 except Exception as e:  # noqa: BLE001 - satu foto gagal tidak menghentikan antrean
                     log.warning("AI gagal untuk id %s: %s", pid, e)
@@ -674,8 +703,8 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     ws.freeze_panes = "D2"
     ws.auto_filter.ref = ws.dimensions
     marks = core_marks.table(p)
+    names = {r["name"] for r in data}
     if ids:
-        names = {r["name"] for r in data}
         marks = [m for m in marks if m[7] in names]
     mw = wb.create_sheet("Interval")
     mw.append(core_marks.HEAD)
@@ -690,12 +719,32 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     mw.freeze_panes = "A2"
     if marks:
         mw.auto_filter.ref = mw.dimensions
+    from . import core_segs
+    sg = core_segs.table(p)
+    if ids:
+        sg = [x for x in sg if x[-3] in names]
+    sw = wb.create_sheet("Segmen")
+    sw.append(core_segs.HEAD)
+    for i, _ in enumerate(core_segs.HEAD, 1):
+        cell = sw.cell(row=1, column=i)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = hf
+    for x in sg:
+        sw.append(x)
+        if x[-5] == "AI" and not x[-4]:
+            for j in range(5, 5 + len(core_segs.SEG_FIELDS)):
+                if sw.cell(row=sw.max_row, column=j).value is not None:
+                    sw.cell(row=sw.max_row, column=j).fill = ai_fill
+    sw.freeze_panes = "B2"
+    if sg:
+        sw.auto_filter.ref = sw.dimensions
     from .legal_mark import COPYRIGHT, mark_workbook
     info = wb.create_sheet("Keterangan")
     for line in [["Core-Ex — log foto core box"], [COPYRIGHT], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
                  [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
                  ["Litologi, alterasi, oksidasi, warna, pelapukan: diambil dari LOGGING GEOLOGIST (tabel Geologi) bila ada di rentang foto; AI visual hanya mengisi bila logging tidak ada. Lihat kolom 'Sumber isian geologi'."],
                  ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."],
+                 ["Sheet 'Segmen' = interpretasi per baris core / batas geologi (AI dan editan geologist). Sel biru muda = nilai AI yang belum diedit."],
                  ["Sheet 'Interval' = tanda half core (dengan nomor sampel) dan core loss yang digambar geologist di foto. Bila foto punya tanda, Core Recovery (%) = (interval foto - total core loss) / interval foto."],
                  ["Kolom '<unsur> rata-rata' = rata-rata tertimbang panjang assay lab di rentang From-To foto; 'maks' = nilai interval tertinggi."]]:
         info.append(line)
@@ -808,6 +857,7 @@ def api_rows(b: FolderBody) -> dict:
     rs = rows(p)
     core_dh.enrich(p, rs)
     core_marks.enrich(p, rs)
+    _seg_count(p, rs)
     return {"ok": True, "rows": rs, "summary": summary(p), "dh": core_dh.summary(p)}
 
 

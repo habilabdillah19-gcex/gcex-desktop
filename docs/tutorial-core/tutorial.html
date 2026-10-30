@@ -69,13 +69,14 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>5. Periksa, edit, verifikasi</div>
     <div>6. Overlay assay di foto & atur area core</div>
     <div>6b. Tandai half core & core loss</div>
+    <div>6c. Overlay berlapis & edit interpretasi per baris</div>
     <div>7. Cari cepat & kueri kadar</div>
     <div>8. Filter kadar</div>
     <div>9. Data baru: assay ulang per hole</div>
     <div>10. Impor JSON dashboard lama & export Excel</div>
     <div>11. Kunci jawaban & masalah umum</div>
   </div>
-  <div class="meta">Core-Ex 0.22.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">Core-Ex 0.23.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -235,6 +236,31 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
       <div class="note">Half core wajib nomor sampel. Mengetik Recovery sendiri mengalahkan hitungan dari tanda sampai tanda foto itu diubah lagi. Bila pita tidak tepat di atas core, atur dulu <b>Atur area core</b>.</div>
     </div>
   </div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 6c</div>
+  <h2>Overlay berlapis &amp; edit interpretasi per baris</h2>
+  <p>AI kini menilai tiap baris core dan membaginya mengikuti batas geologi aktual. Hasilnya, bersama assay dan logging, bisa ditumpuk sebagai lapisan di foto dan diedit langsung oleh geologist.</p>
+  <ol>
+    <li>Buka <code>IMG_0001.jpg</code>, nyalakan overlay. Lapisan bawaan: Assay Au, Logging Lith, Pelapukan dan RQD per baris. Pita <b>putus-putus</b> = nilai AI yang belum diedit.</li>
+    <li>Pilih <b>Preset → Geoteknik</b>: RQD, Recovery, Rekahan/m dan Pelapukan per segmen. Batas kelas bisa diketik, warna kode bisa diklik di legenda.</li>
+  </ol>
+  <div class="two">
+    <figure><img src="gambar/t24_overlay_lapisan.png"><figcaption>Gambar 24 – Lapisan bawaan: Au, Lith (logging), Pelapukan &amp; RQD per baris (AI).</figcaption></figure>
+    <figure><img src="gambar/t25_overlay_geoteknik.png"><figcaption>Gambar 25 – Preset Geoteknik.</figcaption></figure>
+  </div>
+</section>
+
+<section class="page">
+  <ol start="3">
+    <li>Klik <b>Edit segmen</b>. Klik segmen pertama di baris 1 → ubah <b>RQD</b> menjadi <code>12</code>, <b>Pelapukan</b> <code>W4</code>, catatan "zona hancur" → <b>Simpan</b>. Label berubah dari <span class="tag t-ai">AI</span> menjadi <span class="tag t-ed">diedit</span>.</li>
+    <li>Tarik <b>garis batas kuning</b> di akhir segmen itu ke kanan: batas bergeser (dibulatkan 0,05 m) dan segmen sebelahnya ikut menyesuaikan.</li>
+    <li>Tarik di area kosong untuk menambah segmen manual; tombol <b>Belah</b>, <b>Gabung</b>, <b>Hapus</b> ada di formulir. Esc = selesai.</li>
+  </ol>
+  <figure><img src="gambar/t26_edit_segmen.png" style="width:125mm"><figcaption>Gambar 26 – Mode Edit segmen: garis batas kuning bisa ditarik; formulir menampilkan semua nilai segmen.</figcaption></figure>
+  <figure><img src="gambar/t27_daftar_segmen.png" style="width:130mm"><figcaption>Gambar 27 – Tabel segmen di kartu foto; segmen yang disentuh geologist berlabel diedit.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> segmen yang diedit tetap sama setelah <b>Analisis ulang</b>; Excel mendapat sheet <b>Segmen</b>.</div>
 </section>
 
 <section class="page">

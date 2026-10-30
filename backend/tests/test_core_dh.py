@@ -186,7 +186,7 @@ def test_geologist_logging_has_priority_over_ai(prj, monkeypatch):
     # AI dijalankan: prompt memuat logging, isian logging dilindungi, geoteknik terisi
     sent = {}
 
-    def fake(host, model, img, extra="", timeout=900, logged=None):
+    def fake(host, model, img, extra="", timeout=900, logged=None, **kw):
         sent["logged"] = logged
         sent["prompt"] = core_io.ai_prompt(extra, logged)
         return {"lithology": "Andesit", "alteration": "Propilitik", "rqd_pct": 75, "gsi": "55-65", "confidence": "sedang"}

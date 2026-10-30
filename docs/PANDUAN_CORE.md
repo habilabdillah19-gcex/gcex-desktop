@@ -4,7 +4,7 @@
 
 Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 30 Oktober 2026 (versi 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: Core-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
+Pembaruan terakhir: 30 Oktober 2026 (versi 0.23.0: overlay berlapis & interpretasi AI per baris yang bisa diedit di foto; 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: Core-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 
@@ -146,6 +146,33 @@ Tombol **lapisan** (ikon tumpukan) di pojok kanan atas pratinjau menyalakan over
 **Atur area core**: kotak biru menandai area baris core di foto (bawaan: cocok dengan foto standar proyek, papan label di atas, 4 baris). Tarik sudut untuk mengubah ukuran, tengah untuk menggeser, isi jumlah baris, lalu simpan untuk **foto ini**, **semua foto lubang ini**, atau **bawaan proyek**.
 
 Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris; baris 1 = paling dangkal, kiri → kanan. Ini **perkiraan**: bila core hilang (recovery rendah) atau panjang tiap baris tidak sama, posisi pita bisa bergeser dari penanda kedalaman di core block. Pakai penanda di core block sebagai acuan akhir.
+
+## 6a. Overlay berlapis & interpretasi per baris
+
+**Lapisan overlay.** Panel Overlay berisi daftar lapisan; tiap lapisan menjadi satu pita tipis di setiap baris core, ditumpuk berurutan.
+
+| Sumber | Isi | Penempatan |
+|---|---|---|
+| Assay | kolom unsur (Au, Ag, Cu, …) | per interval sampel |
+| Logging | kolom apa pun dari data Geologi (Lith, Alterasi, Mineralogy, Vein, RQD / Weathering bila ada) | per interval logging |
+| Interpretasi per baris | Litologi, Alterasi, Warna, Pelapukan, Oksidasi, RQD, Recovery, Rekahan/m, GSI, RMR, Catatan dari AI atau geologist | per segmen (batas geologi aktual) |
+| Kartu foto | isian kartu (satu nilai per box) | sepanjang box |
+
+- **+ Lapisan** menambah, **↑ ↓ ×** mengurutkan / menghapus, centang menyalakan / mematikan. **Preset**: *Assay + logging*, *Geologi: AI vs logging*, *Geoteknik* (RQD, Recovery, Rekahan/m, Pelapukan), *Kartu foto*.
+- Warna: angka = kelas (RQD 25/50/75/90, Recovery 50/75/90/95, RMR 21/41/61/81, Rekahan/m terbalik); batas kelas bisa diketik. Pelapukan W1–W6, Oksidasi dan GSI = palet berurutan (segar → lapuk). Kode teks (Lith, Alterasi) = warna per kode, klik kotak warna di legenda untuk mengganti.
+- Pita **putus-putus** = nilai AI yang belum diedit; garis penuh = logging / editan geologist.
+- Susunan lapisan, kelas dan warna disimpan di proyek (`gcex_core.db`), jadi sama untuk semua rekan.
+
+**Interpretasi per baris (AI).** Saat AI dijalankan, selain nilai per box, AI membagi tiap baris core menjadi segmen di setiap perubahan nyata litologi, warna, pelapukan, oksidasi, alterasi, vein atau zona rekahan, maksimal ±1 m per segmen, lalu menilai geologi dan geoteknik tiap segmen. Kedalaman segmen = From foto + posisi di box, jadi ikut benar bila From/To dikoreksi.
+
+**Mengedit segmen di foto** (Overlay → **Edit segmen**):
+- **Klik segmen** → formulir semua nilai (Litologi … RMR, Catatan) + From/To; **Simpan** (Enter).
+- **Tarik garis batas kuning** untuk menggeser batas; segmen tetangga ikut sehingga tidak ada celah / tumpang tindih. Dibulatkan 0,05 m.
+- **Tarik di area kosong** untuk segmen baru (manual); segmen lain yang tertimpa dipotong.
+- **Belah di …** (di titik yang diklik), **Gabung dengan berikutnya**, **Hapus**. Esc = selesai.
+- Kartu foto bagian *Interpretasi per baris* menampilkan tabel segmen; klik baris untuk mengedit.
+
+Aturan: segmen yang diedit / ditambah geologist **tidak pernah ditimpa AI**; analisis ulang hanya mengganti segmen AI yang belum diedit dan memotongnya di sekitar segmen editan. Foto terverifikasi tidak disentuh. Setiap perubahan tercatat di riwayat. Excel mendapat sheet **Segmen**; cari cepat juga menelusuri isi segmen.
 
 ## 6b. Tanda interval: half core & core loss
 

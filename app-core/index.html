@@ -213,8 +213,23 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
 /* ---------- overlay assay ---------- */
 #vwrap{position:absolute;left:0;top:0;transform-origin:0 0}
 #vwrap img{position:static;display:block}
-#vsvg,#vcal,#vmk{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#vsvg,#vcal,#vmk,#vseg{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
 #vmk.edit{pointer-events:auto;cursor:crosshair}
+#vseg{pointer-events:auto;cursor:crosshair;display:none}
+#ovLayers{max-height:150px;overflow:auto;margin:3px 0}
+.ovl{display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:1px dashed var(--bd2);flex-wrap:wrap}
+.ovl.off{opacity:.5}
+.ovl label{display:inline-flex;gap:4px;align-items:center;min-width:190px}
+.ovl .lg{display:flex;flex-wrap:wrap;gap:2px 8px;flex:1;align-items:center}
+.ovl .lg span{display:inline-flex;align-items:center;gap:3px}
+.ovl .lg b{width:14px;height:10px;border:1px solid #141a26;display:inline-block}
+.ovl .lg input[type=color]{width:22px;height:16px;padding:0;border:1px solid #141a26;background:none;cursor:pointer}
+.ovl label{min-width:0!important}
+.ovl .ovb button{font-size:10px;padding:0 5px}
+#sgForm{border-top:1px solid var(--bd2);padding-top:4px;margin-top:3px}
+#sgForm .sgf label{display:inline-flex;gap:3px;align-items:center;font-size:11px}
+#sgForm .sgf label.ai input{background:#e2eaf6}
+#sgForm .err{color:#b4462f}
 #vmk.edit [data-mk]{cursor:pointer}
 #vcal{pointer-events:auto;display:none}
 #vtools button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
@@ -319,7 +334,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <div id="left">
     <div id="viewer">
       <div class="ph" id="vph"><div><svg class="i" style="width:40px;height:40px;opacity:.6"><use href="#i-core"/></svg><div style="margin-top:8px">Pilih foto di tabel untuk melihat pratinjau.<br>Scroll = zoom, tarik = geser, klik ganda = pas layar.</div></div></div>
-      <div id="vwrap"><img id="vimg" alt="" style="display:none"><svg id="vsvg"></svg><svg id="vmk"></svg><svg id="vcal"></svg></div>
+      <div id="vwrap"><img id="vimg" alt="" style="display:none"><svg id="vsvg"></svg><svg id="vmk"></svg><svg id="vseg"></svg><svg id="vcal"></svg></div>
       <div id="vtools">
         <button id="vZin" title="Perbesar"><svg class="i"><use href="#i-zin"/></svg></button>
         <button id="vZout" title="Perkecil"><svg class="i"><use href="#i-zout"/></svg></button>
@@ -333,9 +348,13 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
     </div>
     <div id="vsplitH" title="Tarik untuk mengubah tinggi pratinjau"></div>
       <div id="ovp">
-        <div class="r"><span class="t">Overlay</span> Assay <select id="ovEl"></select> kelas <input id="ovCls" style="width:120px" title="batas kelas, dipisah koma"> <label><input type="checkbox" id="ovLbl" checked> nilai</label>
-          · Geologi <select id="ovGeo"></select> <button class="btn sm" id="ovCal" style="margin-left:auto"><svg class="i"><use href="#i-crop"/></svg>Atur area core</button></div>
-        <div class="r"><div class="lg" id="ovLeg"></div><span id="ovInfo" style="color:var(--mu);margin-left:auto"></span></div>
+        <div class="r"><span class="t">Overlay</span><select id="ovPre"></select><select id="ovAdd"></select><label><input type="checkbox" id="ovLbl" checked> nilai</label>
+          <button class="btn sm" id="sgMode" title="Edit segmen interpretasi per baris (AI / manual) langsung di foto">Edit segmen</button>
+          <button class="btn sm" id="ovCal" style="margin-left:auto"><svg class="i"><use href="#i-crop"/></svg>Atur area core</button></div>
+        <div id="ovLayers"></div>
+        <div class="r" id="sgHint" style="display:none;color:var(--mu)"></div>
+        <div id="sgForm" style="display:none"></div>
+        <div class="r"><span id="ovInfo" style="color:var(--mu);margin-left:auto"></span></div>
       </div>
       <div id="calp">
         <div class="r"><span class="t">Area core box</span> Tarik kotak biru menutupi semua baris core (sudut = ukuran, tengah = geser). Baris 1 = paling dangkal, kiri → kanan.</div>
@@ -497,7 +516,7 @@ async function openFolder(folder) {
   try {
     $('#sSum').textContent = 'Membuka folder & memindai foto…';
     const j = await api('/core/open', { folder, by: user() });
-    S.folder = j.folder; S.meta = j.meta || {}; S.fields = j.fields; S.wea = j.weathering; S.oxi = j.oxidation;
+    S.folder = j.folder; S.meta = j.meta || {}; OV.layers = null; S.fields = j.fields; S.wea = j.weathering; S.oxi = j.oxidation;
     S.fields.forEach(f => FIELD_LABEL[f.key] = f.label);
     const rec = [j.folder].concat(LS.get('recent', []).filter(x => x.toLowerCase() !== j.folder.toLowerCase())).slice(0, 8);
     LS.set('recent', rec);
@@ -516,7 +535,7 @@ async function openFolder(folder) {
 async function loadRows(keepScroll) {
   const j = await api('/core/rows', { folder: S.folder });
   S.rows = j.rows; S.byId = new Map(S.rows.map(r => [r.id, r]));
-  S.dh = j.dh || S.dh; dhColsChanged();
+  S.dh = j.dh || S.dh; dhColsChanged(); if (!OV.layers) ovLoadCfg();
   fillHoles(); applyFilter(keepScroll); showSummary(j.summary);
 }
 function showSummary(s) {
@@ -691,6 +710,7 @@ function showCard(r) {
       <button class="btn" id="cShow" ${D && D.showFile ? '' : 'style="display:none"'}><svg class="i"><use href="#i-folder"/></svg>Tampilkan file</button>
     </div>
     <div class="note">${hasLog ? 'Isian bertanda <b>logging</b> berasal dari logging geologist dan diutamakan; AI tidak menimpanya. ' : ''}${r.verified ? 'Diverifikasi oleh <b>' + esc(r.verified_by || '-') + '</b> · ' + esc(r.verified_at || '') : 'Sel biru muda = isian AI yang belum dicek. Isian yang Anda edit tidak akan ditimpa AI.'}${r.edited_by ? '<br>Terakhir diedit: ' + esc(r.edited_by) + ' · ' + esc(r.edited_at || '') : ''}</div>
+    <div class="lab" id="cSeg"></div>
     <div class="lab" id="cMk"></div>
     <div class="lab" id="cLab"></div>
     <details class="hist" id="cHist"><summary>Riwayat perubahan &amp; jawaban asli AI</summary><div class="hlist" id="cHL">Memuat…</div></details>`;
@@ -708,7 +728,7 @@ function showCard(r) {
         + (j.ai ? '<div style="margin-top:6px"><b>Jawaban asli AI:</b><pre class="mono" style="white-space:pre-wrap;font-size:11px">' + esc(JSON.stringify(j.ai, null, 1)) + '</pre></div>' : '');
     } catch (err) { $('#cHL').textContent = err.message; }
   };
-  renderLab(r); renderMkList(r);
+  renderLab(r); renderMkList(r); renderSegList(r);
 }
 
 /* =============================== simpan editan =============================== */
@@ -789,7 +809,7 @@ function zoomAt(f, cx, cy) { const ns = Math.max(0.05, Math.min(20, V.s * f)); V
 const vw = $('#viewer');
 vw.addEventListener('wheel', e => { if ($('#vimg').style.display === 'none') return; e.preventDefault(); const b = vw.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - b.left, e.clientY - b.top); }, { passive: false });
 vw.addEventListener('mousedown', e => {
-  if (e.target.closest('#vtools,#ovp,#calp,#mkp') || e.button !== 0 || CAL.on) return;
+  if (e.target.closest('#vtools,#ovp,#calp,#mkp') || e.button !== 0 || CAL.on || SG.mode) return;
   const sx = e.clientX - V.x, sy = e.clientY - V.y; vw.classList.add('drag');
   const mv = ev => { V.x = ev.clientX - sx; V.y = ev.clientY - sy; apply(); };
   const up = () => { vw.classList.remove('drag'); removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
@@ -1009,15 +1029,13 @@ function dhColsChanged() {
   fe.value = nc.includes(cur) ? cur : (nc.find(n => /^au/i.test(n)) || '');
   if (!OV.el || !nc.includes(OV.el)) OV.el = nc.find(n => /^au/i.test(n)) || nc[0] || '';
   if (!OV.geo || !gc.includes(OV.geo)) OV.geo = gc.find(n => /lith|lito/i.test(n)) || gc[0] || '';
-  $('#ovEl').innerHTML = '<option value="">(tidak)</option>' + nc.map(n => `<option>${esc(n)}</option>`).join(''); $('#ovEl').value = OV.el;
-  $('#ovGeo').innerHTML = '<option value="">(tidak)</option>' + gc.map(n => `<option>${esc(n)}</option>`).join(''); $('#ovGeo').value = OV.geo;
-  $('#ovCls').value = OV.el ? classes(OV.el).join(', ') : '';
   $('#ovLbl').checked = OV.lbl;
+  if (OV.layers) { ovDefaults(); ovSync(); ovPanel(); }
 }
 let detTok = 0;
 async function loadDetail(r) {
-  const tok = ++detTok; S.det = null; renderLab(r); mkLoad(r);
-  try { const j = await api('/core/dh/photo', { folder: S.folder, id: r.id }); if (tok !== detTok) return; S.det = j; renderLab(r); drawOverlay(); drawMarks(); }
+  const tok = ++detTok; S.det = null; renderLab(r); mkLoad(r); sgLoad(r);
+  try { const j = await api('/core/dh/photo', { folder: S.folder, id: r.id }); if (tok !== detTok) return; S.det = j; renderLab(r); ovPanel(); drawOverlay(); drawMarks(); }
   catch (e) { if (tok === detTok) $('#cLab').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
 }
 function renderLab(r) {
@@ -1058,62 +1076,313 @@ function depthSegs(a, b, f, t, tr) {
   }
   return out;
 }
+/* =============================== overlay berlapis: assay, logging, segmen AI/manual, kartu foto =============================== */
+// kunci lapisan: 'a:<kolom assay>' | 'g:<kolom geologi>' | 's:<isian segmen>' | 'c:<isian kartu foto>'
+const SEGF = [['lithology', 's', 'Litologi'], ['alteration', 's', 'Alterasi'], ['color', 's', 'Warna'], ['weathering', 'o', 'Pelapukan'], ['oxidation', 'o', 'Oksidasi'],
+  ['rqd_pct', 'n', 'RQD (%)'], ['recovery_pct', 'n', 'Recovery (%)'], ['ff_per_m', 'n', 'Rekahan / m'], ['gsi', 'o', 'GSI'], ['rmr', 'n', 'RMR'], ['notes', 's', 'Catatan']];
+const CARDF = [['lithology', 's', 'Litologi'], ['alteration', 's', 'Alterasi'], ['color', 's', 'Warna'], ['weathering', 'o', 'Pelapukan'], ['oxidation', 'o', 'Oksidasi'],
+  ['recovery_pct', 'n', 'Recovery (%)'], ['rqd_pct', 'n', 'RQD (%)'], ['gsi', 'o', 'GSI'], ['rmr', 'n', 'RMR'], ['condition', 's', 'Kondisi']];
+const RAMP = ['#b2182b', '#ef8a62', '#fddbc7', '#a6d96a', '#1a9850'];
+const WEA_P = ['#1a9850', '#91cf60', '#fee08b', '#fc8d59', '#d73027', '#7f0000'];
+const OXI_P = ['#4575b4', '#91bfdb', '#fee090', '#fc8d59', '#d73027'];
+const NUM_BRK = { rqd_pct: [25, 50, 75, 90], recovery_pct: [50, 75, 90, 95], rmr: [21, 41, 61, 81], ff_per_m: [2, 5, 10, 20] };
+const SRC_LBL = { a: 'Assay', g: 'Logging', s: 'Interpretasi per baris', c: 'Kartu foto' };
+OV.layers = null; OV.colors = {};
+function ovMeta(k) {
+  const [src, col] = [k[0], k.slice(2)];
+  let kind = 's', label = col;
+  if (src === 'a') kind = 'grade';
+  else if (src === 'g') {
+    const c = ((S.dh && S.dh.columns && S.dh.columns.geology) || []).find(x => x.name === col);
+    kind = /weath|lapuk/i.test(col) ? 'o' : /oxid|oks/i.test(col) ? 'o' : /^gsi$/i.test(col) ? 'o' : c && c.type === 'n' ? (/rqd|rec|rmr|ff|frac/i.test(col) ? 'n' : 'grade') : 's';
+  } else { const f = (src === 's' ? SEGF : CARDF).find(x => x[0] === col); if (f) { kind = f[1]; label = f[2]; } }
+  return { src, col, kind, label: SRC_LBL[src] + ' · ' + label };
+}
+function ovAvail() {
+  const out = [];
+  numCols().forEach(n => out.push('a:' + n));
+  geoCols().forEach(n => out.push('g:' + n));
+  SEGF.forEach(f => out.push('s:' + f[0]));
+  CARDF.forEach(f => out.push('c:' + f[0]));
+  return out;
+}
+const PRESETS = {
+  'Assay + logging': () => [numCols().find(n => /^au/i.test(n)) || numCols()[0], geoCols().find(n => /lith|lito/i.test(n)) || geoCols()[0]].map((c, i) => c ? (i ? 'g:' : 'a:') + c : null),
+  'Geologi: AI vs logging': () => ['s:lithology', geoCols().find(n => /lith|lito/i.test(n)) ? 'g:' + geoCols().find(n => /lith|lito/i.test(n)) : null, 's:alteration', geoCols().find(n => /alt/i.test(n)) ? 'g:' + geoCols().find(n => /alt/i.test(n)) : null, 's:weathering'],
+  'Geoteknik': () => ['s:rqd_pct', 's:recovery_pct', 's:ff_per_m', 's:weathering'],
+  'Kartu foto (per box)': () => ['c:rqd_pct', 'c:recovery_pct', 'c:weathering', 'c:lithology'],
+};
+function ovDefaults() {
+  if (OV.layers && !OV.auto) { const av = new Set(ovAvail()); OV.layers = OV.layers.filter(l => av.has(l.k)); return; }
+  OV.auto = true;
+  const ks = PRESETS['Assay + logging']().filter(Boolean).concat(['s:weathering', 's:rqd_pct']);
+  OV.layers = ks.map(k => ({ k, on: true }));
+}
+function ovLoadCfg() {
+  let c = null; try { c = JSON.parse((S.meta && S.meta.ov_layers) || 'null'); } catch (e) {}
+  c = c || LS.get('ovCfg', null);
+  OV.layers = c && c.layers ? c.layers : null; OV.auto = false; OV.colors = (c && c.colors) || {};
+  if (c && c.cls) Object.assign(OV.cls, c.cls);
+  ovDefaults(); ovSync(); ovPanel();
+}
+let ovSaveT = 0;
+function ovSave() {
+  OV.auto = false; ovSync();
+  const cfg = { layers: OV.layers, colors: OV.colors, cls: OV.cls };
+  LS.set('ovCfg', cfg); LS.set('ovCls', OV.cls);
+  clearTimeout(ovSaveT);
+  ovSaveT = setTimeout(() => { if (S.folder) api('/core/meta', { folder: S.folder, values: { ov_layers: JSON.stringify(cfg) } }).then(j => { S.meta = j.meta; }).catch(() => {}); }, 600);
+}
+function ovSync() { // OV.el / OV.geo dipakai pewarnaan tabel Data lab
+  const on = (OV.layers || []).filter(l => l.on);
+  const a = on.find(l => l.k[0] === 'a'), g = on.find(l => l.k[0] === 'g');
+  OV.el = a ? a.k.slice(2) : (numCols().find(n => /^au/i.test(n)) || '');
+  OV.geo = g ? g.k.slice(2) : (geoCols().find(n => /lith|lito/i.test(n)) || '');
+}
+/* warna & kelas */
+function ovBreaks(k, m) {
+  if (OV.cls[k]) return OV.cls[k];
+  if (m.kind === 'grade') return classes(m.col);
+  return NUM_BRK[m.col] || (/rqd|rec/i.test(m.col) ? NUM_BRK.rqd_pct : /rmr/i.test(m.col) ? NUM_BRK.rmr : /ff|frac/i.test(m.col) ? NUM_BRK.ff_per_m : [25, 50, 75, 90]);
+}
+function ordIdx(col, v) {
+  const s = String(v);
+  if (/gsi/i.test(col)) { const n = s.match(/\d+(\.\d+)?/g); if (!n) return -1; const x = n.map(Number).reduce((a, b) => a + b) / n.length; return Math.min(4, Math.floor(x / 20)); }
+  if (/oxi|oks/i.test(col)) { const L = ['un', 'slight', 'moder', 'strong', 'complete']; const i = L.findIndex(w => s.toLowerCase().startsWith(w)); if (i >= 0) return i; const m = s.match(/(\d)/); return m ? Math.min(4, +m[1] - 1) : -1; }
+  const m = s.match(/W\s*([1-6])/i); if (m) return +m[1] - 1;
+  const L = ['fresh', 'slight', 'moder', 'high', 'complete', 'residual']; return L.findIndex(w => s.toLowerCase().includes(w));
+}
+function ovColor(k, m, v) {
+  if (v == null || v === '') return null;
+  if (OV.colors[k] && OV.colors[k][String(v)]) return OV.colors[k][String(v)];
+  if (m.kind === 'grade') return BLUES[gradeIdxB(ovBreaks(k, m), +v)];
+  if (m.kind === 'n') { const b = ovBreaks(k, m), i = gradeIdxB(b, +v); return (/ff|frac/i.test(m.col) ? RAMP.slice().reverse() : RAMP)[i]; }
+  if (m.kind === 'o') { const i = ordIdx(m.col, v); if (i < 0) return geoColor(v); return (/gsi/i.test(m.col) ? RAMP : /oxi|oks/i.test(m.col) ? OXI_P : WEA_P)[i]; }
+  return geoColor(v);
+}
+function gradeIdxB(c, v) { let i = 0; while (i < c.length && v >= c[i]) i++; return i; }
+function shortV(m, v) { if (typeof v === 'number') return fmt(v); const s = String(v); const w = s.match(/^(W[1-6])/i); return w ? w[1].toUpperCase() : s.replace(/\s*\(.*\)$/, ''); }
+/* nilai per lapisan untuk foto ini: daftar {f0, f1 (pecahan box), v, ai, ed} */
+function ovItems(l, r) {
+  const m = ovMeta(l.k), a = r.from_m, b = r.to_m, L = b - a, out = [];
+  const fr = (f, t) => [Math.max(0, (f - a) / L), Math.min(1, (t - a) / L)];
+  if (m.src === 'a' || m.src === 'g') for (const x of ((S.det && S.det[m.src === 'a' ? 'assay' : 'geology']) || [])) { const v = x[m.col]; if (v == null) continue; const [f0, f1] = fr(x.f, x.t); if (f1 > f0) out.push({ f0, f1, v }); }
+  if (m.src === 's') for (const s of SG.list) { const v = s[m.col]; if (v == null || v === '') continue; out.push({ f0: s.f0, f1: s.f1, v, ai: s.src === 'ai' && !s.edited.includes(m.col), id: s.id }); }
+  if (m.src === 'c') { const lg = r.log && r.log[m.col] != null; const v = lg ? r.log[m.col] : r[m.col]; if (v != null && v !== '') out.push({ f0: 0, f1: 1, v, ai: !lg && r.status === 'done' && !r.verified && !r.edited.includes(m.col) && !(m.col === 'recovery_pct' && r.rec_src === 'tanda'), box: true }); }
+  return { m, items: out };
+}
+function fracSegs(f0, f1, rows) { return depthSegs(0, 1, f0, f1, { rows }); }
 function drawOverlay() {
   const svg = $('#vsvg'), r = S.view[S.cur];
   $('#vOv').classList.toggle('on', OV.on);
   $('#ovp').style.display = OV.on && !CAL.on ? 'block' : 'none';
-  if (!OV.on || !r || !V.iw || r.missing) { svg.innerHTML = ''; svg.style.display = 'none'; return; }
+  if (!OV.on || !r || !V.iw || r.missing) { svg.innerHTML = ''; svg.style.display = 'none'; drawSegEdit(); return; }
   svg.style.display = 'block';
   svg.setAttribute('width', V.iw); svg.setAttribute('height', V.ih); svg.setAttribute('viewBox', `0 0 ${V.iw} ${V.ih}`);
   const d = S.det, info = $('#ovInfo');
-  // legenda
-  const cl = OV.el ? classes(OV.el) : [];
-  $('#ovLeg').innerHTML = OV.el ? BLUES.slice(0, cl.length + 1).map((c, i) => `<span><b style="background:${c}"></b>${i === 0 ? '< ' + cl[0] : i === cl.length ? '≥ ' + cl[i - 1] : cl[i - 1] + '–' + cl[i]}</span>`).join('') : '';
-  if (!d || r.from_m == null || r.to_m == null || !r.hole_id) { svg.innerHTML = ''; info.textContent = !S.dh || !S.dh.assay ? ' belum ada data bor' : ' Hole / From / To belum diisi'; return; }
+  if (!d || r.from_m == null || r.to_m == null || !(r.to_m > r.from_m)) { svg.innerHTML = ''; info.textContent = 'Isi Hole / From / To foto agar overlay bisa ditempatkan.'; drawSegEdit(); return; }
   const tr = d.tray, W = V.iw, H = V.ih, X0 = tr.x0 * W, Y0 = tr.y0 * H, BW = (tr.x1 - tr.x0) * W, RH = (tr.y1 - tr.y0) * H / tr.rows;
-  const fs = Math.max(10, Math.min(RH * 0.2, W / 45)), sw = Math.max(1.5, W / 900);
-  let h = `<g font-family="Courier Prime, Courier New, monospace" font-weight="700">`;
-  for (let i = 0; i < tr.rows; i++) h += `<rect x="${X0}" y="${Y0 + i * RH}" width="${BW}" height="${RH}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-dasharray="${sw * 4} ${sw * 3}" stroke-width="${sw}"/>`;
-  const a = r.from_m, b = r.to_m;
-  let nA = 0, nG = 0;
-  if (OV.geo) for (const x of d.geology) {
-    const v = x[OV.geo]; if (v == null) continue; nG++;
-    for (const sgm of depthSegs(a, b, x.f, x.t, tr)) {
-      const x0 = X0 + sgm.u0 * BW, w = (sgm.u1 - sgm.u0) * BW, y = Y0 + (sgm.row + 1) * RH - RH * 0.16;
-      h += `<rect x="${x0}" y="${y}" width="${w}" height="${RH * 0.16}" fill="${geoColor(v)}" stroke="#141a26" stroke-width="${sw}"/>`;
-      if (w > fs * 2) h += `<text x="${x0 + w / 2}" y="${y + RH * 0.08}" font-size="${fs * 0.8}" fill="#141a26" text-anchor="middle" dominant-baseline="central">${esc(String(v).slice(0, Math.max(2, Math.floor(w / (fs * 0.5)))))}</text>`;
+  const lay = (OV.layers || []).filter(l => l.on), n = lay.length, lh = Math.min(RH * 0.2, RH * 0.72 / Math.max(1, n));
+  const fs = Math.max(9, Math.min(lh * 0.62, W / 50)), sw = Math.max(1.2, W / 1000);
+  let h = `<g font-family="Courier Prime, Courier New, monospace" font-weight="700">`, cnt = [];
+  for (let i = 0; i < tr.rows; i++) h += `<rect x="${X0}" y="${Y0 + i * RH}" width="${BW}" height="${RH}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-dasharray="${sw * 4} ${sw * 3}" stroke-width="${sw}"/>`;
+  lay.forEach((l, li) => {
+    const { m, items } = ovItems(l, r); cnt.push(items.length);
+    for (const it of items) {
+      const col = ovColor(l.k, m, it.v); if (!col) continue;
+      fracSegs(it.f0, it.f1, tr.rows).forEach((sg, si) => {
+        const x0 = X0 + sg.u0 * BW, w = Math.max(sw, (sg.u1 - sg.u0) * BW), y = Y0 + sg.row * RH + li * lh;
+        h += `<rect x="${x0}" y="${y}" width="${w}" height="${lh * 0.92}" fill="${col}" fill-opacity="${m.kind === 's' ? 0.85 : 0.9}" stroke="${it.ai ? '#fff' : '#141a26'}" stroke-width="${sw * (it.ai ? 1.4 : 0.9)}" ${it.ai ? `stroke-dasharray="${sw * 4} ${sw * 3}"` : ''}/>`;
+        if (OV.lbl && w > fs * 1.6 && (si === 0 || it.box)) {
+          const t = shortV(m, it.v), mx = Math.max(2, Math.floor(w / (fs * 0.62)));
+          h += `<text x="${x0 + w / 2}" y="${y + lh * 0.46}" font-size="${fs}" fill="#141a26" stroke="#fff" stroke-width="${fs * 0.22}" paint-order="stroke" text-anchor="middle" dominant-baseline="central">${esc(t.slice(0, mx))}</text>`;
+        }
+      });
     }
-  }
-  if (OV.el) for (const x of d.assay) {
-    const v = x[OV.el]; if (v == null) continue; nA++;
-    const k = gradeIdx(OV.el, v), col = BLUES[k];
-    const segs = depthSegs(a, b, x.f, x.t, tr);
-    segs.forEach((sgm, si) => {
-      const x0 = X0 + sgm.u0 * BW, w = (sgm.u1 - sgm.u0) * BW, y = Y0 + sgm.row * RH;
-      h += `<rect x="${x0}" y="${y}" width="${w}" height="${RH}" fill="${col}" fill-opacity="${k ? 0.32 : 0.12}"/>`;
-      h += `<rect x="${x0}" y="${y}" width="${w}" height="${RH * 0.2}" fill="${col}" stroke="#141a26" stroke-width="${sw}"/>`;
-      h += `<line x1="${x0}" x2="${x0}" y1="${y}" y2="${y + RH}" stroke="#fff" stroke-width="${sw * 1.6}"/><line x1="${x0}" x2="${x0}" y1="${y}" y2="${y + RH}" stroke="#141a26" stroke-width="${sw * .7}"/>`;
-      if (OV.lbl && si === 0 && w > fs * 1.5) h += `<text x="${x0 + w / 2}" y="${y + RH * 0.1}" font-size="${fs}" fill="${k >= 3 ? '#fff' : '#141a26'}" text-anchor="middle" dominant-baseline="central">${fmt(v)}</text>`;
-    });
-  }
-  // label kedalaman di awal & akhir tiap baris
+  });
   for (let i = 0; i < tr.rows; i++) {
-    const d0 = a + (b - a) * i / tr.rows, d1 = a + (b - a) * (i + 1) / tr.rows, y = Y0 + i * RH + RH * 0.36;
+    const a = r.from_m, b = r.to_m, d0 = a + (b - a) * i / tr.rows, d1 = a + (b - a) * (i + 1) / tr.rows, y = Y0 + i * RH + RH * 0.97;
     for (const [xx, dd, an] of [[X0 + sw * 4, d0, 'start'], [X0 + BW - sw * 4, d1, 'end']])
-      h += `<text x="${xx}" y="${y}" font-size="${fs * 0.85}" text-anchor="${an}" dominant-baseline="central" fill="#fff" stroke="#141a26" stroke-width="${fs * 0.22}" paint-order="stroke">${dd.toFixed(2)}</text>`;
+      h += `<text x="${xx}" y="${y}" font-size="${Math.max(9, Math.min(RH * 0.16, W / 45)) * 0.8}" text-anchor="${an}" dominant-baseline="text-after-edge" fill="#fff" stroke="#141a26" stroke-width="${fs * 0.22}" paint-order="stroke">${dd.toFixed(2)}</text>`;
   }
   svg.innerHTML = h + '</g>';
-  info.textContent = ` ${nA} assay · ${nG} geologi`;
+  info.textContent = n ? lay.map((l, i) => ovMeta(l.k).label.split(' · ')[1] + ' ' + cnt[i]).join(' · ') : 'Tambahkan lapisan.';
+  drawSegEdit();
 }
-$('#vOv').onclick = () => { OV.on = !OV.on; LS.set('ov', OV.on); if (OV.on && (!S.dh || !S.dh.assay)) toast('Belum ada data assay: klik Data bor untuk import.', 4000); drawOverlay(); };
-$('#ovEl').onchange = e => { OV.el = e.target.value; LS.set('ovEl', OV.el); $('#ovCls').value = OV.el ? classes(OV.el).join(', ') : ''; drawOverlay(); if (S.view[S.cur]) renderLab(S.view[S.cur]); };
-$('#ovGeo').onchange = e => { OV.geo = e.target.value; LS.set('ovGeo', OV.geo); drawOverlay(); if (S.view[S.cur]) renderLab(S.view[S.cur]); };
+/* panel lapisan + legenda */
+function ovPanel() {
+  if (!OV.layers) return;
+  const av = ovAvail(), used = new Set(OV.layers.map(l => l.k));
+  const grp = { a: [], g: [], s: [], c: [] }; av.filter(k => !used.has(k)).forEach(k => grp[k[0]].push(k));
+  $('#ovAdd').innerHTML = '<option value="">+ Lapisan…</option>' + Object.entries(grp).filter(([, v]) => v.length).map(([s, v]) => `<optgroup label="${SRC_LBL[s]}">${v.map(k => `<option value="${esc(k)}">${esc(ovMeta(k).label.split(' · ')[1])}</option>`).join('')}</optgroup>`).join('');
+  $('#ovPre').innerHTML = '<option value="">Preset…</option>' + Object.keys(PRESETS).map(p => `<option>${esc(p)}</option>`).join('');
+  const r = S.view[S.cur];
+  $('#ovLayers').innerHTML = OV.layers.map((l, i) => {
+    const m = ovMeta(l.k);
+    let lg = '';
+    if (m.kind === 'grade' || m.kind === 'n') {
+      const b = ovBreaks(l.k, m), P = m.kind === 'grade' ? BLUES : (/ff|frac/i.test(m.col) ? RAMP.slice().reverse() : RAMP);
+      lg = P.slice(0, b.length + 1).map((c, j) => `<span><b style="background:${c}"></b>${j === 0 ? '<' + b[0] : j === b.length ? '≥' + b[j - 1] : b[j - 1] + '–' + b[j]}</span>`).join('') + ` <input data-ovcls="${i}" value="${esc(b.join(', '))}" title="batas kelas, dipisah koma" style="width:96px">`;
+    } else {
+      const vals = new Set();
+      if (r) ovItems(l, r).items.forEach(it => vals.add(String(it.v)));
+      if (m.kind === 'o' && /weath|lapuk/i.test(m.col) && !vals.size) ['W1', 'W2', 'W3', 'W4', 'W5'].forEach(v => vals.add(v));
+      lg = [...vals].slice(0, 14).map(v => `<span><input type="color" data-ovc="${i}" data-v="${esc(v)}" value="${ovColor(l.k, m, v)}" title="ubah warna ${esc(v)}">${esc(shortV(m, v))}</span>`).join('') || '<span style="color:var(--mu)">tidak ada nilai di foto ini</span>';
+    }
+    return `<div class="ovl${l.on ? '' : ' off'}"><label><input type="checkbox" data-ovon="${i}" ${l.on ? 'checked' : ''}><b>${esc(m.label)}</b></label><span class="lg">${lg}</span><span class="ovb"><button data-ovup="${i}" title="naik">↑</button><button data-ovdn="${i}" title="turun">↓</button><button data-ovrm="${i}" title="hapus lapisan">×</button></span></div>`;
+  }).join('') || '<div style="color:var(--mu)">Belum ada lapisan. Pilih <b>+ Lapisan</b> atau <b>Preset</b>.</div>';
+}
+$('#ovLayers').addEventListener('change', e => {
+  const t = e.target, L = OV.layers;
+  if (t.dataset.ovon != null) L[+t.dataset.ovon].on = t.checked;
+  else if (t.dataset.ovcls != null) {
+    const l = L[+t.dataset.ovcls], v = t.value.split(/[,;\s]+/).map(Number).filter(x => !isNaN(x)).sort((a, b) => a - b).slice(0, 4), key = l.k[0] === 'a' ? l.k.slice(2) : l.k;
+    if (v.length) OV.cls[key] = v; else delete OV.cls[key];
+    if (l.k[0] === 'a') { renderRows(); if (S.view[S.cur]) renderLab(S.view[S.cur]); }
+  } else if (t.dataset.ovc != null) { const l = L[+t.dataset.ovc]; (OV.colors[l.k] = OV.colors[l.k] || {})[t.dataset.v] = t.value; }
+  else return;
+  ovSave(); ovPanel(); drawOverlay();
+});
+$('#ovLayers').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return; const L = OV.layers;
+  if (t.dataset.ovrm != null) L.splice(+t.dataset.ovrm, 1);
+  else if (t.dataset.ovup != null) { const i = +t.dataset.ovup; if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; }
+  else if (t.dataset.ovdn != null) { const i = +t.dataset.ovdn; if (i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; }
+  else return;
+  ovSave(); ovPanel(); drawOverlay();
+});
+$('#ovAdd').onchange = e => { const k = e.target.value; if (!k) return; OV.layers.push({ k, on: true }); ovSave(); ovPanel(); drawOverlay(); };
+$('#ovPre').onchange = e => { const p = PRESETS[e.target.value]; if (!p) return; const av = new Set(ovAvail()); OV.layers = p().filter(k => k && av.has(k)).map(k => ({ k, on: true })); ovSave(); ovPanel(); drawOverlay(); };
+$('#vOv').onclick = () => { OV.on = !OV.on; LS.set('ov', OV.on); if (!OV.on && SG.mode) sgSetMode(false); ovPanel(); drawOverlay(); };
 $('#ovLbl').onchange = e => { OV.lbl = e.target.checked; LS.set('ovLbl', OV.lbl); drawOverlay(); };
-$('#ovCls').onchange = e => {
-  const v = e.target.value.split(/[,;\s]+/).map(Number).filter(x => !isNaN(x)).sort((a, b) => a - b).slice(0, 4);
-  if (v.length) OV.cls[OV.el] = v; else delete OV.cls[OV.el];
-  LS.set('ovCls', OV.cls); e.target.value = classes(OV.el).join(', '); drawOverlay(); renderRows(); if (S.view[S.cur]) renderLab(S.view[S.cur]);
-};
+
+/* =============================== segmen per baris (AI / manual): edit di foto =============================== */
+const SG = { list: [], pid: null, mode: false, sel: null, drag: null, clickF: null, form: null };
+async function sgLoad(r) {
+  SG.pid = r.id; SG.list = []; SG.sel = null; sgFormClose();
+  try { const j = await api('/core/segs/list', { folder: S.folder, id: r.id }); if (SG.pid !== r.id) return; SG.list = j.segs; }
+  catch (e) { /* proyek lama tanpa segmen */ }
+  renderSegList(r); ovPanel(); drawOverlay();
+}
+function sgApply(j) { SG.list = j.segs; const r = S.view[S.cur]; if (r && j.row) Object.assign(r, j.row); renderSegList(r); ovPanel(); drawOverlay(); renderRows(); }
+function sgSetMode(on) {
+  const r = S.view[S.cur];
+  if (on && (!r || r.from_m == null || r.to_m == null || !S.det)) { toast('Isi From dan To foto dulu, lalu tunggu data foto dimuat.', 4000); on = false; }
+  if (on && MK.mode) mkSetMode(false);
+  if (on && !OV.on) { OV.on = true; LS.set('ov', true); }
+  if (on && V.rot) { V.rot = 0; fit(); apply(); }
+  SG.mode = on; $('#sgMode').classList.toggle('pri', on); $('#sgMode').textContent = on ? 'Selesai edit segmen' : 'Edit segmen';
+  $('#sgHint').style.display = on ? '' : 'none';
+  $('#sgHint').innerHTML = 'Klik segmen untuk mengedit nilainya · tarik <b>garis batas</b> untuk menggeser · tarik di area kosong untuk segmen baru · Esc = selesai.';
+  if (!on) sgFormClose();
+  drawOverlay();
+}
+function sgPos(e) {
+  const tr = S.det && S.det.tray; if (!tr) return null;
+  const b = vw.getBoundingClientRect(), ix = (e.clientX - b.left - V.x) / V.s, iy = (e.clientY - b.top - V.y) / V.s;
+  const X0 = tr.x0 * V.iw, Y0 = tr.y0 * V.ih, BW = (tr.x1 - tr.x0) * V.iw, RH = (tr.y1 - tr.y0) * V.ih / tr.rows;
+  const row = Math.max(0, Math.min(tr.rows - 1, Math.floor((iy - Y0) / RH))), u = Math.max(0, Math.min(1, (ix - X0) / BW));
+  const r = S.view[S.cur], L = r.to_m - r.from_m;
+  let f = (row + u) / tr.rows; f = Math.round(f * L / 0.05) * 0.05 / L; // 0,05 m
+  return Math.max(0, Math.min(1, f));
+}
+const sgDepth = f => { const r = S.view[S.cur]; return Math.round((r.from_m + f * (r.to_m - r.from_m)) * 100) / 100; };
+function drawSegEdit() {
+  const svg = $('#vseg'), r = S.view[S.cur], tr = S.det && S.det.tray;
+  if (!SG.mode || !r || !tr || !V.iw || CAL.on) { svg.innerHTML = ''; svg.style.display = 'none'; return; }
+  svg.style.display = 'block'; svg.setAttribute('width', V.iw); svg.setAttribute('height', V.ih); svg.setAttribute('viewBox', `0 0 ${V.iw} ${V.ih}`);
+  const W = V.iw, X0 = tr.x0 * W, Y0 = tr.y0 * V.ih, BW = (tr.x1 - tr.x0) * W, RH = (tr.y1 - tr.y0) * V.ih / tr.rows, sw = Math.max(1.5, 2 / V.s);
+  const pt = f => { const s = f * tr.rows, row = Math.min(tr.rows - 1, Math.floor(s + 1e-9)); return { row, x: X0 + (s - row) * BW }; };
+  let h = `<rect width="${W}" height="${V.ih}" fill="transparent"/>`;
+  const list = SG.list.slice(), dr = SG.drag;
+  if (dr && dr.type === 'new') list.push({ id: 'n', f0: Math.min(dr.a, dr.b), f1: Math.max(dr.a, dr.b) });
+  for (const s of list) {
+    const sel = SG.sel === s.id || s.id === 'n';
+    fracSegs(s.f0, s.f1, tr.rows).forEach(g => {
+      h += `<rect data-sg="${s.id}" x="${X0 + g.u0 * BW}" y="${Y0 + g.row * RH}" width="${(g.u1 - g.u0) * BW}" height="${RH}" fill="${sel ? '#2a5ea8' : '#fff'}" fill-opacity="${sel ? 0.22 : 0.04}" stroke="${sel ? '#2a5ea8' : '#fff'}" stroke-opacity="${sel ? 1 : 0.6}" stroke-width="${sw * (sel ? 2.2 : 1)}" style="cursor:pointer"/>`;
+    });
+  }
+  const seen = new Set();
+  for (const s of SG.list) for (const [side, f] of [['start', s.f0], ['end', s.f1]]) {
+    const key = f.toFixed(4); if (seen.has(key) && side === 'end') continue; seen.add(key);
+    const p = pt(side === 'end' && f > 0 && Math.abs(f * tr.rows - Math.round(f * tr.rows)) < 1e-6 ? f - 1e-6 : f);
+    h += `<line x1="${p.x}" x2="${p.x}" y1="${Y0 + p.row * RH}" y2="${Y0 + (p.row + 1) * RH}" stroke="#141a26" stroke-width="${sw * 5}" stroke-opacity=".001" data-bd="${s.id}" data-side="${side}" style="cursor:ew-resize"/>`
+      + `<line x1="${p.x}" x2="${p.x}" y1="${Y0 + p.row * RH}" y2="${Y0 + (p.row + 1) * RH}" stroke="#ffd43b" stroke-width="${sw * 1.6}" pointer-events="none"/>`
+      + `<rect x="${p.x - sw * 3}" y="${Y0 + p.row * RH + RH / 2 - sw * 7}" width="${sw * 6}" height="${sw * 14}" rx="${sw}" fill="#ffd43b" stroke="#141a26" stroke-width="${sw * .8}" pointer-events="none"/>`;
+  }
+  svg.innerHTML = h;
+}
+$('#vseg').addEventListener('mousedown', e => {
+  if (!SG.mode || e.button !== 0) return;
+  e.preventDefault(); e.stopPropagation();
+  const t = e.target, f0 = sgPos(e); if (f0 == null) return;
+  if (t.dataset.bd) { // geser batas
+    const sid = +t.dataset.bd, side = t.dataset.side, s = SG.list.find(x => x.id === sid), old = side === 'start' ? s.f0 : s.f1;
+    const nb = SG.list.find(x => x.id !== sid && Math.abs((side === 'start' ? x.f1 : x.f0) - old) < 2e-3);
+    SG.drag = { type: 'bd' };
+    const mv = ev => { const f = sgPos(ev); if (f == null) return; if (side === 'start') { s.f0 = Math.min(f, s.f1 - 0.005); if (nb) nb.f1 = s.f0; } else { s.f1 = Math.max(f, s.f0 + 0.005); if (nb) nb.f0 = s.f1; } drawOverlay(); };
+    const up = async () => {
+      removeEventListener('mousemove', mv); removeEventListener('mouseup', up); SG.drag = null;
+      try { sgApply(await api('/core/segs/bound', { folder: S.folder, by: user(), seg_id: sid, side, f: side === 'start' ? s.f0 : s.f1 })); toast('Batas digeser ke ' + fmt(sgDepth(side === 'start' ? s.f0 : s.f1)) + ' m'); }
+      catch (er) { say(er.message); sgLoad(S.view[S.cur]); }
+    };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up); return;
+  }
+  if (t.dataset.sg && t.dataset.sg !== 'n') { SG.sel = +t.dataset.sg; SG.clickF = f0; sgForm(SG.list.find(x => x.id === SG.sel)); drawSegEdit(); return; }
+  SG.drag = { type: 'new', a: f0, b: f0 };
+  const mv = ev => { const f = sgPos(ev); if (f != null) { SG.drag.b = f; drawSegEdit(); } };
+  const up = () => {
+    removeEventListener('mousemove', mv); removeEventListener('mouseup', up);
+    const d = SG.drag; SG.drag = null; drawSegEdit();
+    if (!d || Math.abs(d.b - d.a) < 0.004) return;
+    SG.sel = null; sgForm({ id: null, f0: Math.min(d.a, d.b), f1: Math.max(d.a, d.b), edited: [] });
+  };
+  addEventListener('mousemove', mv); addEventListener('mouseup', up);
+});
+function sgForm(s) {
+  if (!s) return;
+  SG.form = s;
+  const opt = (id, list) => `<datalist id="${id}">${(list || []).map(x => `<option>${esc(x)}</option>`).join('')}</datalist>`;
+  const fld = ([k, t, lbl]) => {
+    const ai = s.id && s.src === 'ai' && !(s.edited || []).includes(k) && s[k] != null;
+    const list = k === 'weathering' ? 'dlW' : k === 'oxidation' ? 'dlO' : '';
+    return `<label class="${ai ? 'ai' : ''}" title="${ai ? 'Nilai AI (belum diedit)' : ''}">${esc(lbl)} <input data-sgf="${k}" ${t === 'n' ? 'type="number" step="0.1"' : ''} ${list ? 'list="' + list + '"' : ''} value="${esc(s[k] == null ? '' : s[k])}" style="width:${k === 'notes' ? 220 : t === 'n' ? 62 : 130}px"></label>`;
+  };
+  $('#sgForm').style.display = 'block';
+  $('#sgForm').innerHTML = `<div class="r"><b>${s.id ? 'Segmen ' + (s.src === 'ai' && !(s.edited || []).length ? '<span class="tag ai">AI</span>' : '<span class="tag ed">diedit</span>') : 'Segmen baru'}</b>
+      <label>From <input id="sgF" type="number" step="0.01" value="${sgDepth(s.f0)}" style="width:70px"></label><label>To <input id="sgT" type="number" step="0.01" value="${sgDepth(s.f1)}" style="width:70px"></label></div>
+    <div class="r sgf">${SEGF.map(fld).join('')}</div>
+    <div class="r"><button class="btn sm pri" id="sgSave">Simpan</button>${s.id ? `<button class="btn sm" id="sgSplit" title="Belah di titik yang diklik">Belah di ${fmt(sgDepth(SG.clickF != null && SG.clickF > s.f0 && SG.clickF < s.f1 ? SG.clickF : (s.f0 + s.f1) / 2))} m</button><button class="btn sm" id="sgMerge">Gabung dengan berikutnya</button><button class="btn sm" id="sgDel">Hapus</button>` : ''}<button class="btn sm" id="sgCancel">Tutup</button><span class="err" id="sgErr"></span></div>`;
+  $('#sgSave').onclick = sgSave; $('#sgCancel').onclick = () => { sgFormClose(); SG.sel = null; drawSegEdit(); };
+  if (s.id) {
+    $('#sgSplit').onclick = async () => { try { const f = SG.clickF != null && SG.clickF > s.f0 && SG.clickF < s.f1 ? SG.clickF : (s.f0 + s.f1) / 2; sgApply(await api('/core/segs/split', { folder: S.folder, by: user(), seg_id: s.id, f })); sgFormClose(); } catch (e) { $('#sgErr').textContent = e.message; } };
+    $('#sgMerge').onclick = async () => { try { sgApply(await api('/core/segs/merge', { folder: S.folder, by: user(), seg_id: s.id })); sgForm(SG.list.find(x => x.id === s.id)); } catch (e) { $('#sgErr').textContent = e.message; } };
+    $('#sgDel').onclick = async () => { if (!ask('Hapus segmen ' + fmt(sgDepth(s.f0)) + '–' + fmt(sgDepth(s.f1)) + ' m?')) return; try { sgApply(await api('/core/segs/delete', { folder: S.folder, by: user(), seg_id: s.id })); sgFormClose(); SG.sel = null; } catch (e) { $('#sgErr').textContent = e.message; } };
+  }
+  $('#sgForm').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); sgSave(); } else if (e.key === 'Escape') { e.stopPropagation(); sgFormClose(); } };
+}
+function sgFormClose() { SG.form = null; const f = $('#sgForm'); if (f) { f.style.display = 'none'; f.innerHTML = ''; } }
+async function sgSave() {
+  const s = SG.form, r = S.view[S.cur]; if (!s || !r) return;
+  const attrs = {}; $('#sgForm').querySelectorAll('[data-sgf]').forEach(i => { const k = i.dataset.sgf, old = s[k] == null ? '' : String(s[k]); if (!s.id ? i.value !== '' : i.value !== old) attrs[k] = i.value; });
+  const seg = { attrs }, F = +$('#sgF').value, T = +$('#sgT').value;
+  if (!s.id || Math.abs(F - sgDepth(s.f0)) > 0.004 || Math.abs(T - sgDepth(s.f1)) > 0.004) { seg.from_m = F; seg.to_m = T; }
+  if (s.id && !Object.keys(attrs).length && seg.from_m == null) { sgFormClose(); return; }
+  try { const j = await api('/core/segs/save', { folder: S.folder, by: user(), photo_id: r.id, seg_id: s.id, seg }); sgApply(j); SG.sel = j.id; sgForm(SG.list.find(x => x.id === j.id)); toast('Segmen disimpan'); }
+  catch (e) { $('#sgErr').textContent = e.message; }
+}
+$('#sgMode').onclick = () => sgSetMode(!SG.mode);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && SG.mode && !SG.form) sgSetMode(false); });
+function renderSegList(r) {
+  const el = $('#cSeg'); if (!el || !r || SG.pid !== r.id) return;
+  if (!SG.list.length) { el.innerHTML = '<h4>Interpretasi <em>per baris</em></h4><div class="note">Belum ada segmen. Jalankan AI (versi ini menilai tiap baris core mengikuti batas geologi) atau tambahkan sendiri: overlay → <b>Edit segmen</b> → tarik di foto.</div>'; return; }
+  const ai = SG.list.filter(s => s.src === 'ai' && !s.edited.length).length;
+  el.innerHTML = `<h4>Interpretasi <em>per baris</em> · ${SG.list.length} segmen <button class="btn sm" id="cSegGo" style="float:right">Edit di foto</button></h4>
+    <div class="tw"><table><tr><th>From</th><th>To</th><th>Litologi</th><th>Pelapukan</th><th>RQD</th><th>Rec</th><th>FF/m</th><th></th></tr>${SG.list.map(s => `<tr data-sgr="${s.id}" style="cursor:pointer"><td class="n">${fmt(s.from_m)}</td><td class="n">${fmt(s.to_m)}</td><td>${esc(s.lithology || '')}</td><td>${s.weathering ? `<i class="sw" style="background:${ovColor('s:weathering', ovMeta('s:weathering'), s.weathering)}"></i>` + esc(shortV({}, s.weathering)) : ''}</td><td class="n">${fmt(s.rqd_pct)}</td><td class="n">${fmt(s.recovery_pct)}</td><td class="n">${fmt(s.ff_per_m)}</td><td>${s.src === 'ai' && !s.edited.length ? '<span class="tag ai">AI</span>' : '<span class="tag ed">diedit</span>'}</td></tr>`).join('')}</table></div>
+    <div class="note">${ai} segmen masih nilai AI (garis putus-putus di overlay). Segmen yang diedit tidak ditimpa saat AI dijalankan ulang.</div>`;
+  $('#cSegGo').onclick = () => sgSetMode(true);
+  el.querySelectorAll('[data-sgr]').forEach(tr => tr.onclick = () => { sgSetMode(true); SG.sel = +tr.dataset.sgr; SG.clickF = null; sgForm(SG.list.find(x => x.id === SG.sel)); drawSegEdit(); });
+}
 
 /* =============================== atur area core box =============================== */
 const CAL = { on: false, t: null };
@@ -1123,7 +1392,7 @@ function calStart() {
   CAL.on = true; CAL.t = Object.assign({}, S.det.tray);
   V.rot = 0; fit(); apply();
   $('#calRows').value = CAL.t.rows; $('#calp').style.display = 'block'; $('#ovp').style.display = 'none';
-  $('#vsvg').style.display = 'none'; $('#vmk').style.display = 'none'; calDraw();
+  $('#vsvg').style.display = 'none'; $('#vmk').style.display = 'none'; $('#vseg').style.display = 'none'; calDraw();
 }
 function calEnd() { CAL.on = false; $('#calp').style.display = 'none'; $('#vcal').style.display = 'none'; $('#vcal').innerHTML = ''; drawOverlay(); drawMarks(); }
 function calDraw() {
@@ -1213,6 +1482,7 @@ function mkSetMode(on) {
   const r = S.view[S.cur];
   if (on && (!r || r.from_m == null || r.to_m == null)) { toast('Isi From dan To foto ini dulu: kedalaman tanda dihitung dari interval box.', 4000); on = false; }
   if (on && !S.det) { toast('Tunggu data foto dimuat…'); on = false; }
+  if (on && SG.mode) sgSetMode(false);
   MK.mode = on; $('#mkMode').classList.toggle('pri', on); $('#mkMode').textContent = on ? 'Selesai menandai' : 'Mulai menandai';
   if (on && V.rot) { V.rot = 0; fit(); apply(); }
   if (on) { MK.show = true; $('#mkShow').checked = true; }
@@ -1366,7 +1636,7 @@ async function runSearch() {
   try {
     const j = await api('/core/dh/search', { folder: S.folder, q, limit: 80 });
     qRes = j.results; qSel = qRes.length ? 0 : -1;
-    const lab = { foto: 'Foto', assay: 'Assay', geologi: 'Geologi', tanda: 'Tanda' };
+    const lab = { foto: 'Foto', assay: 'Assay', geologi: 'Geologi', tanda: 'Tanda', segmen: 'Segmen' };
     box.innerHTML = `<div class="qh">${j.total} hasil${j.total > qRes.length ? ' · tampil ' + qRes.length : ''}${j.numeric ? ' · urut nilai tertinggi' : ''}</div>` + (qRes.length ? qRes.map((x, i) =>
       `<a data-i="${i}" class="${i === 0 ? 'on' : ''}"><i>${lab[x.type]}</i><span><b>${esc(x.hole || '')}</b> ${x.f != null ? fmt(x.f) + '–' + fmt(x.t) + ' m' : ''} · ${esc(x.text)}</span><small>${x.photo_id ? '→ ' + esc(x.photo) : 'tidak ada foto core box untuk interval ini'}</small></a>`).join('')
       : '<div class="qh" style="border:0">Tidak ditemukan. Coba Hole ID, kata di log (mis. pyrite, QV), nama file, atau Au>=1.</div>');
