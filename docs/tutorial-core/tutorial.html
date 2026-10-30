@@ -68,13 +68,14 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>4. Baca kartu foto: geoteknik vs logging</div>
     <div>5. Periksa, edit, verifikasi</div>
     <div>6. Overlay assay di foto & atur area core</div>
+    <div>6b. Tandai half core & core loss</div>
     <div>7. Cari cepat & kueri kadar</div>
     <div>8. Filter kadar</div>
     <div>9. Data baru: assay ulang per hole</div>
     <div>10. Impor JSON dashboard lama & export Excel</div>
     <div>11. Kunci jawaban & masalah umum</div>
   </div>
-  <div class="meta">Core-Ex 0.18.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">Core-Ex 0.22.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -217,6 +218,26 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 </section>
 
 <section class="page">
+  <div class="part">Latihan 6b</div>
+  <h2>Tandai half core &amp; core loss</h2>
+  <p>Interval half core (dibelah untuk sampel) dan core loss ditandai langsung di foto. Core loss otomatis menghitung Core Recovery foto.</p>
+  <ol>
+    <li>Buka <code>IMG_0001.jpg</code> (LTH-101 box 11, 36,30–40,10 m). Klik tombol <b>tanda</b> (ikon pita bergaris) di pojok kanan atas pratinjau.</li>
+    <li>Jenis <b>Half core</b> → <b>Mulai menandai</b>. Tarik di baris core ke-2 dari ujung kiri sampai tengah. Formulir terisi <b>From 37,25 · To 37,75</b> dan No. sampel <b>LT-0036</b> (diambil dari kolom Sample di assay). Isi catatan, lalu <b>Simpan</b>.</li>
+    <li>Ganti jenis ke <b>Core loss</b>, tarik di baris ke-3 dari 70% sampai 95% panjang baris (38,85–39,10 m), isi catatan, <b>Simpan</b>.</li>
+  </ol>
+  <figure><img src="gambar/t21_tanda_form.png" style="width:120mm"><figcaption>Gambar 21 – Menandai half core: kedalaman dan nomor sampel terisi otomatis, bisa diketik ulang.</figcaption></figure>
+  <div class="two">
+    <figure><img src="gambar/t22_tanda_foto.png"><figcaption>Gambar 22 – Tanda di foto: half core (oranye) dan core loss (merah). Core Recovery berlabel <b>tanda</b>.</figcaption></figure>
+    <div>
+      <figure><img src="gambar/t23_tanda_kartu.png"><figcaption>Gambar 23 – Daftar tanda di kartu foto, lengkap dengan Edit / Hapus.</figcaption></figure>
+      <div class="check"><b>✓ Cek:</b> Core loss 0,25 m dari interval 3,80 m → Core Recovery <b>93,4%</b>. Tabel menampilkan kolom <i>Loss m</i> dan <i>Half m</i>; Excel mendapat sheet <b>Interval</b>.</div>
+      <div class="note">Half core wajib nomor sampel. Mengetik Recovery sendiri mengalahkan hitungan dari tanda sampai tanda foto itu diubah lagi. Bila pita tidak tepat di atas core, atur dulu <b>Atur area core</b>.</div>
+    </div>
+  </div>
+</section>
+
+<section class="page">
   <div class="part">Latihan 7</div>
   <h2>Cari cepat &amp; kueri kadar</h2>
   <ol>
@@ -270,6 +291,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td>IMG_0001 itu foto apa?</td><td>LTH-101 box 11, 36,30–40,10 m</td></tr>
     <tr><td>Zona berkadar tinggi?</td><td>LTH-101 zona QV 36,8–41,2 m, Au sampai 12,4 g/t</td></tr>
     <tr><td>Hasil <code>Au&gt;=3</code>?</td><td>3 interval: 12,4 · 3,6 · 3,6 g/t, semua di IMG_0001</td></tr>
+    <tr><td>Recovery IMG_0001 setelah core loss 38,85–39,10 m?</td><td>(3,80 − 0,25) / 3,80 = 93,4%</td></tr>
     <tr><td>Lubang yang sudah dilogging?</td><td>Hanya LTH-101; isian geologi LTH-102 dari AI</td></tr>
     <tr><td>Nilai di bawah limit deteksi?</td><td>18 nilai di import pertama, dibaca setengah limit (<code>&lt;0.01</code> → 0,005)</td></tr>
   </table>

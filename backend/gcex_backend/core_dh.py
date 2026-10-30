@@ -609,6 +609,8 @@ def search(p: core_io.Project, q: str, limit: int = 60) -> dict:
                             "photo_id": ph[0]["id"] if ph else None, "photo": ph[0]["name"] if ph else None})
                 if len(res) > limit * 3:
                     break
+    from . import core_marks
+    res = core_marks.search(p, q) + res  # tanda half core / core loss di foto
     return {"results": res[:limit], "total": len(res)}
 
 

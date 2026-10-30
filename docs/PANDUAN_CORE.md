@@ -4,7 +4,7 @@
 
 Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 29 Oktober 2026 (versi 0.18.1: Core-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
+Pembaruan terakhir: 30 Oktober 2026 (versi 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: Core-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 
@@ -147,6 +147,23 @@ Tombol **lapisan** (ikon tumpukan) di pojok kanan atas pratinjau menyalakan over
 
 Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris; baris 1 = paling dangkal, kiri → kanan. Ini **perkiraan**: bila core hilang (recovery rendah) atau panjang tiap baris tidak sama, posisi pita bisa bergeser dari penanda kedalaman di core block. Pakai penanda di core block sebagai acuan akhir.
 
+## 6b. Tanda interval: half core & core loss
+
+Tombol **tanda** (ikon pita bergaris, di sebelah tombol overlay) membuka panel *Tanda interval*.
+
+1. Pilih **Jenis**: *Half core*, *Core loss*, atau **+ Jenis lain…** (mis. *Rusak pengangkutan*, *Sampel geotek*).
+2. Klik **Mulai menandai**, lalu **tarik di sepanjang baris core** dari awal sampai akhir interval. Tanda boleh menyambung ke baris berikutnya. Kedalaman From–To dihitung dari posisi di foto (interval box dibagi rata ke baris core, sama seperti overlay) dan dibulatkan 0,05 m; angka bisa diketik ulang.
+3. Isi formulir lalu **Simpan** (Enter):
+   - **Half core** wajib **No. sampel**. Bila data assay punya kolom *Sample* / *Sampel* / *Sample_No*, nomor sampel yang paling banyak beririsan terisi otomatis (pilihan lain ada di daftar).
+   - **Catatan** bebas untuk semua jenis.
+4. Klik tanda yang sudah ada (saat mode menandai) untuk mengedit; tombol **Edit** / **Hapus** juga ada di kartu foto bagian *Tanda interval*. **Esc** = berhenti menandai.
+
+**Core Recovery otomatis.** Bila foto punya tanda, Core Recovery (%) = (interval foto − total core loss) / interval foto. Isian ini berlabel merah **tanda**, tidak ditimpa AI, dan dihitung ulang setiap tanda atau From/To foto berubah. Mengetik Recovery sendiri mengalahkan hitungan ini sampai tanda foto itu diubah lagi. Bagian core loss di luar rentang foto tidak dihitung.
+
+**Hasil.** Tabel mendapat kolom *Loss m* dan *Half m*; cari cepat menemukan tanda (mis. `core loss`, `half core`, nomor sampel); Excel mendapat sheet **Interval** (Hole, From, To, Panjang, Jenis, No. sampel, Catatan, Foto, oleh, waktu) serta kolom *Core loss (m)*, *Half core (m)*, *Sampel half core*; tombol **CSV** di panel mengekspor semua tanda proyek. Setiap perubahan tercatat di riwayat foto.
+
+Bila pita tanda tidak tepat di atas core, atur dulu **Atur area core** (bagian 6).
+
 ## 7. Dikerjakan bersama (beberapa geologist)
 
 - Hasil kerja disimpan di subfolder `_GCEx_Core` **di dalam folder foto** (`gcex_core.db`). Geologist lain yang membuka folder yang sama (mis. di drive jaringan) melihat dan melanjutkan pekerjaan yang sama. Nama Anda dicatat pada setiap editan dan verifikasi.
@@ -180,6 +197,7 @@ Cara posisi dihitung: interval box (From–To foto) dibagi rata ke jumlah baris;
 | Data lab kosong di kartu foto | Hole ID / From / To foto belum diisi, atau Hole ID di foto berbeda dengan di file lab (mis. `LTH-101A`). Perbaiki Hole ID di kartu; data lab langsung dicocokkan ulang. |
 | "Tidak ada baris yang bisa diimport" | Baris header salah (isi nomor baris yang berisi nama kolom) atau kolom From / To bukan angka. Lihat alasan di pesan. |
 | Pita overlay tidak pas dengan core | Klik **Atur area core**, sesuaikan kotak & jumlah baris, simpan untuk semua foto lubang ini. |
+| "Interval half core wajib diisi nomor sampel" | Isi No. sampel; bila assay punya kolom Sample, pilih dari daftar. |
 | `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di Core-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
 | Bar "Backend tidak aktif" | Menu **Bantuan → Buka folder log**, kirim `backend.log` dan file log terbaru. |
 

@@ -195,7 +195,7 @@ def get_project(folder: str) -> Project:
         with p.conn() as c:
             c.executescript(_DDL)
             have = {x[1] for x in c.execute("PRAGMA table_info(photos)")}
-            for col, ddl in (("from_name", "TEXT DEFAULT '[]'"), ("drill_start", "TEXT"), ("photo_date", "TEXT")):
+            for col, ddl in (("from_name", "TEXT DEFAULT '[]'"), ("drill_start", "TEXT"), ("photo_date", "TEXT"), ("rec_src", "TEXT")):
                 if col not in have:
                     c.execute(f"ALTER TABLE photos ADD COLUMN {col} {ddl}")
             c.execute("INSERT OR IGNORE INTO meta VALUES ('schema', ?)", (str(SCHEMA_VERSION),))
@@ -260,6 +260,19 @@ def rows(p: Project) -> list[dict]:
     return rs
 
 
+def get_row(p: Project, pid: int) -> dict:
+    """Satu baris foto lengkap (data bor + ringkasan tanda), sama seperti di /rows."""
+    from . import core_dh, core_marks
+    with p.conn() as c:
+        r = c.execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone()
+    if not r:
+        raise KeyError(f"Foto id {pid} tidak ada")
+    out = [_row_out(r)]
+    core_dh.enrich(p, out)
+    core_marks.enrich(p, out)
+    return out[0]
+
+
 def summary(p: Project) -> dict:
     with p.conn() as c:
         q = lambda s: c.execute(s).fetchone()[0]  # noqa: E731
@@ -300,7 +313,13 @@ def update(p: Project, pid: int, values: dict, by: str) -> dict:
             c.execute("INSERT INTO history (photo_id, field, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
                       (pid, k, None if r[k] is None else str(r[k]), None if nv is None else str(nv), "manual", by, now()))
             edited.add(k)
+            if k == "recovery_pct":  # edit manual mengalahkan hitungan dari tanda core loss
+                c.execute("UPDATE photos SET rec_src=NULL WHERE id=?", (pid,))
         c.execute("UPDATE photos SET edited=?, edited_at=?, edited_by=? WHERE id=?", (json.dumps(sorted(edited)), now(), by, pid))
+        if ("from_m" in values or "to_m" in values) and "recovery_pct" not in values:
+            from . import core_marks
+            core_marks.ensure(p)
+            core_marks.recompute_recovery(p, c, pid, by)
         return _row_out(c.execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone())
 
 
@@ -514,6 +533,8 @@ def apply_ai(p: Project, pid: int, res: dict, model: str, secs: float, protect: 
         if not r:
             return
         edited = set(json.loads(r["edited"] or "[]")) | set(json.loads(r["from_name"] or "[]")) | set(protect or ())
+        if r["rec_src"] == "tanda":  # recovery dihitung dari tanda core loss: tidak ditimpa AI
+            edited.add("recovery_pct")
         sets, vals = [], []
         if not r["verified"]:
             for k, _t, _l in FIELDS:
@@ -601,9 +622,10 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
-    from . import core_dh
+    from . import core_dh, core_marks
     data = rows(p)
     core_dh.enrich(p, data)
+    core_marks.enrich(p, data)
     els = [c["name"] for c in core_dh.columns(p)["assay"] if c["type"] == "n"]
     if ids:
         s = set(ids)
@@ -611,7 +633,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "Core Log"
-    head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + [f"{e} rata-rata" for e in els] + [f"{e} maks" for e in els] + ["Interval (m)", "Sumber isian geologi", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
+    head = ["No", "File Foto", "Subfolder"] + [l for _k, _t, l in FIELDS] + [f"{e} rata-rata" for e in els] + [f"{e} maks" for e in els] + ["Interval (m)", "Core loss (m)", "Half core (m)", "Sampel half core", "Sumber isian geologi", "Status AI", "Model AI", "Keyakinan AI", "Diverifikasi", "Diverifikasi oleh", "Tanggal verifikasi", "Diedit oleh"]
     ws.append(head)
     hf = PatternFill("solid", fgColor="141A26")
     for i, _ in enumerate(head, 1):
@@ -629,8 +651,10 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
             s_ = "logging" if k in lg else "manual" if k in r["edited"] else "AI" if r["status"] == "done" and r[k] is not None else None
             if s_:
                 src.append(f"{GEO_LABEL[k]}: {s_}")
+        if r.get("rec_src") == "tanda":
+            src.append("Recovery: tanda core loss")
         line = [n, r["name"], "" if sub == "." else sub] + [lg.get(k, r[k]) for k, _t, _l in FIELDS] + [g.get(e) for e in els] + [gm.get(e) for e in els] + [
-            iv, "; ".join(src), {"done": "Selesai", "error": "Gagal", "pending": "Belum"}.get(r["status"], r["status"]), r["ai_model"], r["ai_conf"],
+            iv, r.get("loss_m"), r.get("half_m"), r.get("half_samples") or None, "; ".join(src), {"done": "Selesai", "error": "Gagal", "pending": "Belum"}.get(r["status"], r["status"]), r["ai_model"], r["ai_conf"],
             "Ya" if r["verified"] else "Belum", r["verified_by"], r["verified_at"], r["edited_by"]]
         ws.append(line)
         c = ws.cell(row=n + 1, column=2)
@@ -638,22 +662,41 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
         c.font = Font(color="1F5FA8", underline="single")
         if not r["verified"]:  # isian AI yang belum diverifikasi diberi warna
             for j, (k, _t, _l) in enumerate(FIELDS):
-                if k not in r["edited"] and k not in r["from_name"] and k not in lg and r["status"] == "done" and r[k] is not None:
+                if k not in r["edited"] and k not in r["from_name"] and k not in lg and r["status"] == "done" and r[k] is not None \
+                        and not (k == "recovery_pct" and r.get("rec_src") == "tanda"):
                     ws.cell(row=n + 1, column=4 + j).fill = ai_fill
     # No, File, Subfolder, Hole, Box, From, To, Start Drill, Tgl Foto, Litologi, Warna, Pelapukan, Oksidasi, Alterasi, Kondisi,
     # Recovery, RQD, GSI, RMR, Catatan, Interval, Status, Model, Keyakinan, Diverifikasi, oleh, tanggal, Diedit oleh
     widths = [5, 30, 14, 12, 7, 9, 9, 12, 12, 18, 26, 24, 20, 22, 9, 10, 9, 9, 8, 50, 10, 10, 16, 10, 11, 14, 18, 14]
-    widths = widths[:3 + len(FIELDS)] + [11] * (2 * len(els)) + widths[3 + len(FIELDS):3 + len(FIELDS) + 1] + [34] + widths[3 + len(FIELDS) + 1:]
+    widths = widths[:3 + len(FIELDS)] + [11] * (2 * len(els)) + widths[3 + len(FIELDS):3 + len(FIELDS) + 1] + [11, 11, 18, 34] + widths[3 + len(FIELDS) + 1:]
     for i, w in enumerate(widths[:len(head)], 1):
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "D2"
     ws.auto_filter.ref = ws.dimensions
+    marks = core_marks.table(p)
+    if ids:
+        names = {r["name"] for r in data}
+        marks = [m for m in marks if m[7] in names]
+    mw = wb.create_sheet("Interval")
+    mw.append(core_marks.HEAD)
+    for i, _ in enumerate(core_marks.HEAD, 1):
+        cell = mw.cell(row=1, column=i)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = hf
+    for m in marks:
+        mw.append(m)
+    for i, w in enumerate([12, 9, 9, 11, 12, 14, 40, 34, 14, 18], 1):
+        mw.column_dimensions[get_column_letter(i)].width = w
+    mw.freeze_panes = "A2"
+    if marks:
+        mw.auto_filter.ref = mw.dimensions
     from .legal_mark import COPYRIGHT, mark_workbook
     info = wb.create_sheet("Keterangan")
     for line in [["Core-Ex — log foto core box"], [COPYRIGHT], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
                  [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
                  ["Litologi, alterasi, oksidasi, warna, pelapukan: diambil dari LOGGING GEOLOGIST (tabel Geologi) bila ada di rentang foto; AI visual hanya mengisi bila logging tidak ada. Lihat kolom 'Sumber isian geologi'."],
                  ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."],
+                 ["Sheet 'Interval' = tanda half core (dengan nomor sampel) dan core loss yang digambar geologist di foto. Bila foto punya tanda, Core Recovery (%) = (interval foto - total core loss) / interval foto."],
                  ["Kolom '<unsur> rata-rata' = rata-rata tertimbang panjang assay lab di rentang From-To foto; 'maks' = nilai interval tertinggi."]]:
         info.append(line)
     info.column_dimensions["A"].width = 24
@@ -760,10 +803,11 @@ def api_rescan(b: FolderBody) -> dict:
 
 @router.post("/rows")
 def api_rows(b: FolderBody) -> dict:
-    from . import core_dh  # data bor: rata-rata & maksimum kadar per foto
+    from . import core_dh, core_marks  # data bor: kadar per foto; tanda half core / core loss
     p = get_project(b.folder)
     rs = rows(p)
     core_dh.enrich(p, rs)
+    core_marks.enrich(p, rs)
     return {"ok": True, "rows": rs, "summary": summary(p), "dh": core_dh.summary(p)}
 
 

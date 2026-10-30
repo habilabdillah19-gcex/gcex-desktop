@@ -107,6 +107,15 @@ body.dark .fld.ai{border-color:#2d4166}
 .tag.ed{border:1px solid var(--ink);color:var(--ink)}
 .tag.fn{background:var(--hatch),var(--pn2);color:var(--ink)}
 .tag.lgt{background:var(--ink);color:var(--pn)}
+.tag.mk{background:#b4462f;color:#fff}
+#mkp .err{color:#b4462f}
+#mkForm{display:none;gap:6px;align-items:center;flex-wrap:wrap}
+#mkForm label{display:inline-flex;gap:4px;align-items:center}
+.mklist{margin:6px 0;font-size:11.5px}
+.mklist .mi{display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px dashed var(--bd2)}
+.mklist .mi b.k{font-size:10px;padding:0 5px;border-radius:3px;color:#fff;white-space:nowrap}
+.mklist .mi span{flex:1;min-width:0}
+.mklist button{font-size:10.5px;padding:1px 6px}
 .fld.lg{border-color:var(--ink);background:var(--card)}
 .fld.lg input{cursor:default}
 .sect{grid-column:span 2;font-family:var(--serif);font-weight:800;font-size:15px;margin-top:6px;padding-bottom:2px;border-bottom:1px solid var(--ink)}
@@ -204,17 +213,19 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
 /* ---------- overlay assay ---------- */
 #vwrap{position:absolute;left:0;top:0;transform-origin:0 0}
 #vwrap img{position:static;display:block}
-#vsvg,#vcal{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#vsvg,#vcal,#vmk{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#vmk.edit{pointer-events:auto;cursor:crosshair}
+#vmk.edit [data-mk]{cursor:pointer}
 #vcal{pointer-events:auto;display:none}
 #vtools button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
-#ovp,#calp{background:var(--pn2);color:var(--tx);border-bottom:1.5px solid var(--ink);padding:6px 12px;font-size:11.5px;display:none;flex:none}
-#ovp .r,#calp .r{display:flex;align-items:center;gap:6px;margin:2px 0;flex-wrap:wrap}
-#ovp select,#ovp input,#calp input{background:var(--card);border:1px solid var(--bd2);border-radius:3px;padding:1px 4px;font-size:11.5px;color:var(--tx)}
+#ovp,#calp,#mkp{background:var(--pn2);color:var(--tx);border-bottom:1.5px solid var(--ink);padding:6px 12px;font-size:11.5px;display:none;flex:none}
+#ovp .r,#calp .r,#mkp .r{display:flex;align-items:center;gap:6px;margin:2px 0;flex-wrap:wrap}
+#ovp select,#ovp input,#calp input,#mkp select,#mkp input{background:var(--card);border:1px solid var(--bd2);border-radius:3px;padding:1px 4px;font-size:11.5px;color:var(--tx)}
 #ovp .lg{display:flex;flex-wrap:wrap;gap:3px 8px}
 #ovp .lg span{display:inline-flex;align-items:center;gap:4px}
 #ovp .lg b{width:14px;height:10px;border:1px solid #141a26;display:inline-block}
-#ovp .t,#calp .t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
-#calp button,#ovp button{font-size:11px;padding:2px 7px}
+#ovp .t,#calp .t,#mkp .t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
+#calp button,#ovp button,#mkp button{font-size:11px;padding:2px 7px}
 /* ---------- data lab di kartu ---------- */
 .lab{margin-top:14px;border-top:1.5px solid var(--ink);padding-top:9px}
 .lab h4{font-family:var(--serif);font-weight:800;font-size:16px;margin-bottom:6px}
@@ -272,6 +283,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></symbol>
   <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M9 8v8M15 8v8M10 16l4-8"/></symbol>
   <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14h14M2 6h14v14"/></symbol>
   <symbol id="i-core" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M8 4v5M14 9v5M10 14v6"/></symbol>
 </svg>
@@ -307,7 +319,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
   <div id="left">
     <div id="viewer">
       <div class="ph" id="vph"><div><svg class="i" style="width:40px;height:40px;opacity:.6"><use href="#i-core"/></svg><div style="margin-top:8px">Pilih foto di tabel untuk melihat pratinjau.<br>Scroll = zoom, tarik = geser, klik ganda = pas layar.</div></div></div>
-      <div id="vwrap"><img id="vimg" alt="" style="display:none"><svg id="vsvg"></svg><svg id="vcal"></svg></div>
+      <div id="vwrap"><img id="vimg" alt="" style="display:none"><svg id="vsvg"></svg><svg id="vmk"></svg><svg id="vcal"></svg></div>
       <div id="vtools">
         <button id="vZin" title="Perbesar"><svg class="i"><use href="#i-zin"/></svg></button>
         <button id="vZout" title="Perkecil"><svg class="i"><use href="#i-zout"/></svg></button>
@@ -315,6 +327,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
         <button id="vRot" title="Putar 90°"><svg class="i"><use href="#i-rot"/></svg></button>
         <button id="vFull" title="Muat resolusi penuh (untuk membaca label kecil)"><svg class="i"><use href="#i-open"/></svg></button>
         <button id="vOv" title="Overlay hasil assay & geologi di foto"><svg class="i"><use href="#i-layers"/></svg></button>
+        <button id="vMk" title="Tandai interval half core / core loss di foto"><svg class="i"><use href="#i-mark"/></svg></button>
       </div>
       <div id="vinfo" style="display:none"></div>
     </div>
@@ -327,6 +340,20 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
       <div id="calp">
         <div class="r"><span class="t">Area core box</span> Tarik kotak biru menutupi semua baris core (sudut = ukuran, tengah = geser). Baris 1 = paling dangkal, kiri → kanan.</div>
         <div class="r">Jumlah baris <input id="calRows" type="number" min="1" max="12" style="width:50px"> ·<button class="btn sm pri" data-sc="photo">Simpan foto ini</button><button class="btn sm" data-sc="hole">Semua foto lubang ini</button><button class="btn sm" data-sc="default">Bawaan proyek</button><button class="btn sm" id="calX">Batal</button></div>
+      </div>
+      <div id="mkp">
+        <div class="r"><span class="t">Tanda interval</span> Jenis <select id="mkKind"></select>
+          <button class="btn sm" id="mkMode">Mulai menandai</button><label title="Tampilkan tanda di foto"><input type="checkbox" id="mkShow" checked> tampil</label>
+          <button class="btn sm" id="mkCsv" style="margin-left:auto" title="Semua tanda di proyek (CSV)"><svg class="i"><use href="#i-xls"/></svg>CSV</button><button class="btn sm" id="mkX">Tutup</button></div>
+        <div id="mkHint" style="color:var(--mu);margin:2px 0"></div>
+        <div class="r" id="mkForm">
+          <b id="mkFT"></b>
+          <label>From <input id="mkF" type="number" step="0.01" style="width:70px"></label><label>To <input id="mkT" type="number" step="0.01" style="width:70px"></label>
+          <label id="mkSL">No. sampel <input id="mkS" list="dlSmp" style="width:100px"></label><datalist id="dlSmp"></datalist>
+          <label>Catatan <input id="mkN" style="width:170px"></label>
+          <button class="btn sm pri" id="mkSave">Simpan</button><button class="btn sm" id="mkDel">Hapus</button><button class="btn sm" id="mkCancel">Batal</button>
+          <span class="err" id="mkErr"></span>
+        </div>
       </div>
     <div id="card"><div class="note">Belum ada foto dipilih.</div></div>
   </div>
@@ -545,7 +572,7 @@ const COLS = [
   { k: 'lithology', l: 'Litologi', w: 150, e: 1 }, { k: 'color', l: 'Warna', w: 200, e: 1 }, { k: 'weathering', l: 'Pelapukan', w: 150, e: 1, dl: 'dlW' },
   { k: 'oxidation', l: 'Oksidasi', w: 140, e: 1, dl: 'dlO' }, { k: 'alteration', l: 'Alterasi', w: 130, e: 1 },
   { k: 'recovery_pct', l: 'Rec %', w: 60, e: 1, n: 1 }, { k: 'rqd_pct', l: 'RQD %', w: 60, e: 1, n: 1 }, { k: 'gsi', l: 'GSI', w: 64, e: 1 },
-  { k: 'rmr', l: 'RMR', w: 56, e: 1, n: 1 }, { k: 'ai_conf', l: 'Keyakinan', w: 80 }, { k: 'notes', l: 'Catatan', w: 260, e: 1 }
+  { k: 'rmr', l: 'RMR', w: 56, e: 1, n: 1 }, { k: 'loss_m', l: 'Loss m', w: 64, n: 1 }, { k: 'half_m', l: 'Half m', w: 64, n: 1 }, { k: 'ai_conf', l: 'Keyakinan', w: 80 }, { k: 'notes', l: 'Catatan', w: 260, e: 1 }
 ];
 function cols() {
   const el = $('#fEl').value;
@@ -586,10 +613,12 @@ function cellHtml(c, r, i) {
     case 'name': return `<span title="${esc(r.rel)}">${esc(r.name)}</span>`;
     case '_iv': return r.from_m != null && r.to_m != null ? (r.to_m - r.from_m).toFixed(2) : '';
     case 'ai_conf': return esc(r.ai_conf || '');
+    case 'loss_m': return r.loss_m ? `<span title="Total core loss yang ditandai di foto" style="color:#b4462f;font-weight:700">${fmt(r.loss_m)}</span>` : '';
+    case 'half_m': return r.half_m ? `<span title="Sampel half core: ${esc(r.half_samples || '')}">${fmt(r.half_m)}</span>` : '';
     case '_g': { const el = $('#fEl').value, v = r.g && r.g[el], m = r.gmax && r.gmax[el]; return v == null ? '' : `<span title="maks ${fmt(m)}" style="${gradeStyle(el, v)}">${fmt(v)}</span>`; }
   }
   if (r.log && r.log[c.k] != null) return `<span class="logv" title="Logging geologist: ${esc(r.log[c.k])}">${esc(r.log[c.k])}</span>`;
-  const isAi = r.status === 'done' && !r.verified && !r.edited.includes(c.k) && !r.from_name.includes(c.k) && r[c.k] != null;
+  const isAi = r.status === 'done' && !r.verified && !r.edited.includes(c.k) && !r.from_name.includes(c.k) && r[c.k] != null && !(c.k === 'recovery_pct' && r.rec_src === 'tanda');
   return `<input class="ce${isAi ? ' ai' : ''}${c.n ? ' num' : ''}" data-f="${c.k}" data-id="${r.id}" ${c.n ? 'type="number" step="0.01"' : ''} ${c.dl ? 'list="' + c.dl + '"' : ''} value="${esc(fmt(r[c.k]))}" ${r.verified ? 'title="Sudah diverifikasi"' : ''}>`;
 }
 let rafR = 0;
@@ -626,8 +655,9 @@ function selChanged() {
 function showCard(r) {
   const fld = (k, cls, input) => {
     const lg = r.log && r.log[k] != null;
-    const ed = !lg && r.edited.includes(k), fn = !lg && !ed && r.from_name.includes(k), ai = !lg && r.status === 'done' && !r.verified && !ed && !fn && r[k] != null;
-    const tag = lg ? '<span class="tag lgt" title="Dari logging geologist (tabel Geologi). Diutamakan di atas AI. Ubah di data Geologi.">logging</span>' : ed ? '<span class="tag ed">diedit</span>' : fn ? '<span class="tag fn" title="Dibaca dari nama file; tidak ditimpa AI">nama file</span>' : ai ? '<span class="tag ai">AI</span>' : '';
+    const mk = k === 'recovery_pct' && r.rec_src === 'tanda';
+    const ed = !lg && !mk && r.edited.includes(k), fn = !lg && !mk && !ed && r.from_name.includes(k), ai = !lg && !mk && r.status === 'done' && !r.verified && !ed && !fn && r[k] != null;
+    const tag = mk ? '<span class="tag mk" title="Dihitung dari tanda core loss di foto: (interval - core loss) / interval. Edit manual mengalahkan nilai ini.">tanda</span>' : lg ? '<span class="tag lgt" title="Dari logging geologist (tabel Geologi). Diutamakan di atas AI. Ubah di data Geologi.">logging</span>' : ed ? '<span class="tag ed">diedit</span>' : fn ? '<span class="tag fn" title="Dibaca dari nama file; tidak ditimpa AI">nama file</span>' : ai ? '<span class="tag ai">AI</span>' : '';
     return `<div class="fld ${cls || ''}${ai ? ' ai' : ''}${lg ? ' lg' : ''}"><label>${esc(FIELD_LABEL[k] || k)}${tag}</label>${input}</div>`;
   };
   const inp = (k, ty, list) => r.log && r.log[k] != null
@@ -661,6 +691,7 @@ function showCard(r) {
       <button class="btn" id="cShow" ${D && D.showFile ? '' : 'style="display:none"'}><svg class="i"><use href="#i-folder"/></svg>Tampilkan file</button>
     </div>
     <div class="note">${hasLog ? 'Isian bertanda <b>logging</b> berasal dari logging geologist dan diutamakan; AI tidak menimpanya. ' : ''}${r.verified ? 'Diverifikasi oleh <b>' + esc(r.verified_by || '-') + '</b> · ' + esc(r.verified_at || '') : 'Sel biru muda = isian AI yang belum dicek. Isian yang Anda edit tidak akan ditimpa AI.'}${r.edited_by ? '<br>Terakhir diedit: ' + esc(r.edited_by) + ' · ' + esc(r.edited_at || '') : ''}</div>
+    <div class="lab" id="cMk"></div>
     <div class="lab" id="cLab"></div>
     <details class="hist" id="cHist"><summary>Riwayat perubahan &amp; jawaban asli AI</summary><div class="hlist" id="cHL">Memuat…</div></details>`;
   $('#cPrev').onclick = () => select(S.cur - 1);
@@ -677,7 +708,7 @@ function showCard(r) {
         + (j.ai ? '<div style="margin-top:6px"><b>Jawaban asli AI:</b><pre class="mono" style="white-space:pre-wrap;font-size:11px">' + esc(JSON.stringify(j.ai, null, 1)) + '</pre></div>' : '');
     } catch (err) { $('#cHL').textContent = err.message; }
   };
-  renderLab(r);
+  renderLab(r); renderMkList(r);
 }
 
 /* =============================== simpan editan =============================== */
@@ -739,7 +770,7 @@ function showImage(r) {
   $('#vinfo').style.display = 'block';
   $('#vinfo').textContent = r.rel + (r.missing ? ' (file hilang)' : '');
   if (r.missing) { img.style.display = 'none'; $('#vph').style.display = 'grid'; $('#vph').innerHTML = '<div>File foto tidak ditemukan di folder.<br>Klik <b>Pindai ulang</b> setelah file dikembalikan.</div>'; return; }
-  img.onload = () => { if (V.id !== r.id) return; V.iw = img.naturalWidth; V.ih = img.naturalHeight; img.style.display = 'block'; if (!V.keep) fit(); V.keep = false; apply(); drawOverlay(); };
+  img.onload = () => { if (V.id !== r.id) return; V.iw = img.naturalWidth; V.ih = img.naturalHeight; img.style.display = 'block'; if (!V.keep) fit(); V.keep = false; apply(); drawOverlay(); drawMarks(); };
   img.onerror = () => { $('#vph').style.display = 'grid'; $('#vph').innerHTML = '<div>Foto tidak bisa dibuka.</div>'; img.style.display = 'none'; };
   img.src = imgUrl(r.id, 2000);
   loadDetail(r);
@@ -758,7 +789,7 @@ function zoomAt(f, cx, cy) { const ns = Math.max(0.05, Math.min(20, V.s * f)); V
 const vw = $('#viewer');
 vw.addEventListener('wheel', e => { if ($('#vimg').style.display === 'none') return; e.preventDefault(); const b = vw.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - b.left, e.clientY - b.top); }, { passive: false });
 vw.addEventListener('mousedown', e => {
-  if (e.target.closest('#vtools,#ovp,#calp') || e.button !== 0 || CAL.on) return;
+  if (e.target.closest('#vtools,#ovp,#calp,#mkp') || e.button !== 0 || CAL.on) return;
   const sx = e.clientX - V.x, sy = e.clientY - V.y; vw.classList.add('drag');
   const mv = ev => { V.x = ev.clientX - sx; V.y = ev.clientY - sy; apply(); };
   const up = () => { vw.classList.remove('drag'); removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
@@ -985,9 +1016,8 @@ function dhColsChanged() {
 }
 let detTok = 0;
 async function loadDetail(r) {
-  const tok = ++detTok; S.det = null; renderLab(r);
-  if (!S.dh || !(S.dh.assay || S.dh.geology || S.dh.collar)) { drawOverlay(); return; }
-  try { const j = await api('/core/dh/photo', { folder: S.folder, id: r.id }); if (tok !== detTok) return; S.det = j; renderLab(r); drawOverlay(); }
+  const tok = ++detTok; S.det = null; renderLab(r); mkLoad(r);
+  try { const j = await api('/core/dh/photo', { folder: S.folder, id: r.id }); if (tok !== detTok) return; S.det = j; renderLab(r); drawOverlay(); drawMarks(); }
   catch (e) { if (tok === detTok) $('#cLab').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
 }
 function renderLab(r) {
@@ -1093,9 +1123,9 @@ function calStart() {
   CAL.on = true; CAL.t = Object.assign({}, S.det.tray);
   V.rot = 0; fit(); apply();
   $('#calRows').value = CAL.t.rows; $('#calp').style.display = 'block'; $('#ovp').style.display = 'none';
-  $('#vsvg').style.display = 'none'; calDraw();
+  $('#vsvg').style.display = 'none'; $('#vmk').style.display = 'none'; calDraw();
 }
-function calEnd() { CAL.on = false; $('#calp').style.display = 'none'; $('#vcal').style.display = 'none'; $('#vcal').innerHTML = ''; drawOverlay(); }
+function calEnd() { CAL.on = false; $('#calp').style.display = 'none'; $('#vcal').style.display = 'none'; $('#vcal').innerHTML = ''; drawOverlay(); drawMarks(); }
 function calDraw() {
   const g = $('#vcal'), W = V.iw, H = V.ih, t = CAL.t;
   g.style.display = 'block'; g.setAttribute('width', W); g.setAttribute('height', H); g.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1136,6 +1166,189 @@ document.querySelectorAll('#calp [data-sc]').forEach(b => b.onclick = async () =
   } catch (e) { say(e.message); }
 });
 
+/* =============================== tanda interval: half core / core loss =============================== */
+const MK = { open: false, mode: false, show: LS.get('mkShow', true), list: [], pid: null, drag: null, edit: null, kind: LS.get('mkKind', 'halfcore') };
+const MK_LBL = { halfcore: 'Half core', coreloss: 'Core loss' };
+const MK_COL = { halfcore: '#d08a1e', coreloss: '#b4462f' };
+const mkLabel = k => MK_LBL[k] || k;
+const mkColor = k => MK_COL[k] || '#7a5aa6';
+function mkKinds() {
+  const ks = ['halfcore', 'coreloss'].concat(LS.get('mkKinds', []), MK.list.map(m => m.kind));
+  return [...new Set(ks)];
+}
+function mkFillKinds() {
+  const cur = MK.kind;
+  $('#mkKind').innerHTML = mkKinds().map(k => `<option value="${esc(k)}">${esc(mkLabel(k))}</option>`).join('') + '<option value="__new">+ Jenis lain…</option>';
+  $('#mkKind').value = mkKinds().includes(cur) ? cur : 'halfcore';
+}
+async function mkLoad(r) {
+  MK.pid = r.id; MK.list = []; mkFormClose(); drawMarks(); renderMkList(r);
+  try {
+    const j = await api('/core/marks/list', { folder: S.folder, id: r.id });
+    if (MK.pid !== r.id) return;
+    MK.list = j.marks; drawMarks(); renderMkList(r); mkFillKinds();
+  } catch (e) { const el = $('#cMk'); if (el) el.innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
+}
+function renderMkList(r) {
+  const el = $('#cMk'); if (!el || !r) return;
+  const ms = MK.pid === r.id ? MK.list : [];
+  const loss = ms.filter(m => m.kind === 'coreloss').reduce((a, m) => a + m.len_m, 0);
+  let h = '<h4>Tanda <em>interval</em>' + (ms.length ? ' · ' + ms.length : '') + ' <button class="btn sm" id="cMkGo" style="float:right"><svg class="i"><use href="#i-mark"/></svg>Tandai di foto</button></h4>';
+  if (!ms.length) h += '<div class="note">Belum ada tanda. Klik <b>Tandai di foto</b>, pilih jenis (half core / core loss), lalu tarik di sepanjang baris core.</div>';
+  else {
+    h += '<div class="mklist">' + ms.map(m => `<div class="mi"><b class="k" style="background:${mkColor(m.kind)}">${esc(m.label)}</b><span><b>${fmt(m.from_m)}–${fmt(m.to_m)} m</b> (${fmt(m.len_m)} m)${m.sample_no ? ' · sampel <b>' + esc(m.sample_no) + '</b>' : ''}${m.note ? ' · ' + esc(m.note) : ''} <small style="color:var(--mu)">· ${esc(m.edited_by || m.by || '')}</small></span><button class="btn sm" data-mke="${m.id}">Edit</button><button class="btn sm" data-mkd="${m.id}">Hapus</button></div>`).join('') + '</div>';
+    if (r.from_m != null && r.to_m != null) h += `<div class="note">Core loss total <b>${fmt(Math.round(loss * 100) / 100)} m</b> dari interval ${fmt(r.to_m - r.from_m)} m → Core Recovery <b>${fmt(r.recovery_pct)}%</b>${r.rec_src === 'tanda' ? ' (dihitung dari tanda)' : ' (diisi manual, mengalahkan tanda)'}.</div>`;
+  }
+  el.innerHTML = h;
+  $('#cMkGo').onclick = () => { mkOpen(true); mkSetMode(true); };
+  el.querySelectorAll('[data-mke]').forEach(b => b.onclick = () => { mkOpen(true); mkEdit(MK.list.find(m => m.id === +b.dataset.mke)); });
+  el.querySelectorAll('[data-mkd]').forEach(b => b.onclick = () => mkDelete(+b.dataset.mkd));
+}
+function mkOpen(on) {
+  MK.open = on; $('#mkp').style.display = on ? 'block' : 'none'; $('#vMk').classList.toggle('on', on);
+  if (!on) { mkSetMode(false); mkFormClose(); }
+  mkFillKinds(); mkHint(); drawMarks();
+}
+function mkSetMode(on) {
+  const r = S.view[S.cur];
+  if (on && (!r || r.from_m == null || r.to_m == null)) { toast('Isi From dan To foto ini dulu: kedalaman tanda dihitung dari interval box.', 4000); on = false; }
+  if (on && !S.det) { toast('Tunggu data foto dimuat…'); on = false; }
+  MK.mode = on; $('#mkMode').classList.toggle('pri', on); $('#mkMode').textContent = on ? 'Selesai menandai' : 'Mulai menandai';
+  if (on && V.rot) { V.rot = 0; fit(); apply(); }
+  if (on) { MK.show = true; $('#mkShow').checked = true; }
+  mkHint(); drawMarks();
+}
+function mkHint() {
+  $('#mkHint').innerHTML = MK.mode
+    ? 'Tarik di sepanjang baris core dari awal sampai akhir interval (boleh menyambung ke baris berikutnya). Klik tanda yang ada untuk mengedit. Esc = berhenti. Kedalaman dibulatkan 0,05 m dan bisa diketik ulang.'
+    : 'Klik <b>Mulai menandai</b>. Half core wajib nomor sampel; core loss otomatis menghitung Core Recovery foto.';
+}
+/* titik layar -> posisi s (0..rows) di sepanjang baris core -> kedalaman */
+function mkPos(e) {
+  const r = S.view[S.cur], tr = S.det && S.det.tray; if (!r || !tr) return null;
+  const b = vw.getBoundingClientRect(), ix = (e.clientX - b.left - V.x) / V.s, iy = (e.clientY - b.top - V.y) / V.s;
+  const X0 = tr.x0 * V.iw, Y0 = tr.y0 * V.ih, BW = (tr.x1 - tr.x0) * V.iw, RH = (tr.y1 - tr.y0) * V.ih / tr.rows;
+  const row = Math.max(0, Math.min(tr.rows - 1, Math.floor((iy - Y0) / RH))), u = Math.max(0, Math.min(1, (ix - X0) / BW));
+  const sPos = row + u, dep = r.from_m + sPos / tr.rows * (r.to_m - r.from_m);
+  return { row, u, s: sPos, d: Math.round(dep * 20) / 20 };
+}
+vw.addEventListener('mousedown', e => {
+  if (!MK.mode || e.button !== 0 || CAL.on || e.target.closest('#vtools,#ovp,#calp,#mkp')) return;
+  e.preventDefault(); e.stopPropagation();
+  const hit = e.target.closest && e.target.closest('[data-mk]');
+  if (hit) { mkEdit(MK.list.find(m => m.id === +hit.dataset.mk)); return; }
+  const p0 = mkPos(e); if (!p0) return;
+  MK.drag = { a: p0, b: p0 }; mkFormClose(); drawMarks();
+  const mv = ev => { const p = mkPos(ev); if (p) { MK.drag.b = p; drawMarks(); } };
+  const up = () => {
+    removeEventListener('mousemove', mv); removeEventListener('mouseup', up);
+    const d = MK.drag; MK.drag = null;
+    if (!d || Math.abs(d.b.s - d.a.s) < 0.01) { drawMarks(); return; }
+    const [p, q] = d.a.s <= d.b.s ? [d.a, d.b] : [d.b, d.a];
+    let f = p.d, t = q.d; if (t <= f) t = Math.round((f + 0.05) * 100) / 100;
+    mkEdit({ id: null, kind: MK.kind, from_m: f, to_m: t, sample_no: '', note: '', row0: p.row, x0: p.u, row1: q.row, x1: q.u });
+  };
+  addEventListener('mousemove', mv); addEventListener('mouseup', up);
+}, true);
+/* nomor sampel assay di rentang tanda (kolom Sample / Sampel / Sample_No / Sample_ID) */
+function mkSamples(f, t) {
+  const rows = (S.det && S.det.assay) || [];
+  const key = rows.length ? Object.keys(rows[0]).concat(...rows.map(x => Object.keys(x))).find(k => /^(sample|sampel|samp)([ _.-]?(no|id|number|nomor))?$/i.test(k)) : null;
+  if (!key) return { best: '', all: [] };
+  let best = '', ov = 0;
+  for (const x of rows) { const o = Math.min(t, x.t) - Math.max(f, x.f); if (x[key] != null && o > ov) { ov = o; best = String(x[key]); } }
+  return { best, all: [...new Set(rows.map(x => x[key]).filter(v => v != null).map(String))] };
+}
+function mkEdit(m) {
+  if (!m) return;
+  MK.edit = Object.assign({}, m);
+  const isHalf = m.kind === 'halfcore', sm = mkSamples(m.from_m, m.to_m);
+  $('#mkForm').style.display = 'flex';
+  $('#mkFT').innerHTML = `<b class="tag" style="background:${mkColor(m.kind)};color:#fff">${esc(mkLabel(m.kind))}</b>`;
+  $('#mkF').value = m.from_m; $('#mkT').value = m.to_m; $('#mkN').value = m.note || '';
+  $('#mkSL').style.display = isHalf ? '' : 'none';
+  $('#mkS').value = m.sample_no || (isHalf ? sm.best : '');
+  $('#dlSmp').innerHTML = sm.all.map(v => `<option value="${esc(v)}">`).join('');
+  $('#mkDel').style.display = m.id ? '' : 'none'; $('#mkErr').textContent = '';
+  drawMarks();
+  setTimeout(() => (isHalf && !$('#mkS').value ? $('#mkS') : $('#mkN')).focus(), 0);
+}
+function mkFormClose() { MK.edit = null; const f = $('#mkForm'); if (f) f.style.display = 'none'; }
+async function mkSave() {
+  const r = S.view[S.cur], m = MK.edit; if (!r || !m) return;
+  const body = { folder: S.folder, by: user(), photo_id: r.id, mark_id: m.id || null,
+    mark: { kind: m.kind, from_m: $('#mkF').value, to_m: $('#mkT').value, sample_no: m.kind === 'halfcore' ? $('#mkS').value.trim() : '', note: $('#mkN').value.trim(), row0: m.row0, x0: m.x0, row1: m.row1, x1: m.x1 } };
+  try {
+    const j = await api('/core/marks/save', body);
+    MK.list = j.marks; Object.assign(r, j.row); mkFormClose();
+    showCard(r); renderRows(); drawMarks();
+    toast(mkLabel(m.kind) + ' disimpan' + (r.rec_src === 'tanda' ? ' · Core Recovery ' + fmt(r.recovery_pct) + '%' : ''));
+  } catch (e) { $('#mkErr').textContent = e.message; }
+}
+async function mkDelete(id) {
+  const r = S.view[S.cur], m = MK.list.find(x => x.id === id); if (!r || !m) return;
+  if (!ask('Hapus tanda ' + mkLabel(m.kind) + ' ' + fmt(m.from_m) + '–' + fmt(m.to_m) + ' m?')) return;
+  try { const j = await api('/core/marks/delete', { folder: S.folder, by: user(), mark_id: id }); MK.list = j.marks; Object.assign(r, j.row); mkFormClose(); showCard(r); renderRows(); drawMarks(); toast('Tanda dihapus'); }
+  catch (e) { say(e.message); }
+}
+function drawMarks() {
+  const svg = $('#vmk'), r = S.view[S.cur], tr = S.det && S.det.tray;
+  svg.classList.toggle('edit', MK.mode);
+  const showAny = (MK.show || MK.mode) && r && V.iw && !r.missing && !CAL.on && tr && r.from_m != null && r.to_m != null && (MK.list.length || MK.drag || MK.edit);
+  if (!showAny) { svg.innerHTML = ''; svg.style.display = MK.mode && r && V.iw ? 'block' : 'none'; if (MK.mode && r && V.iw) { svg.setAttribute('width', V.iw); svg.setAttribute('height', V.ih); svg.setAttribute('viewBox', `0 0 ${V.iw} ${V.ih}`); svg.innerHTML = `<rect width="${V.iw}" height="${V.ih}" fill="transparent"/>`; } return; }
+  svg.style.display = 'block'; svg.setAttribute('width', V.iw); svg.setAttribute('height', V.ih); svg.setAttribute('viewBox', `0 0 ${V.iw} ${V.ih}`);
+  const W = V.iw, H = V.ih, X0 = tr.x0 * W, Y0 = tr.y0 * H, BW = (tr.x1 - tr.x0) * W, RH = (tr.y1 - tr.y0) * H / tr.rows;
+  const a = r.from_m, b = r.to_m, fs = Math.max(10, Math.min(RH * 0.2, W / 45)), sw = Math.max(1.5, W / 900);
+  let h = `<rect width="${W}" height="${H}" fill="transparent" pointer-events="${MK.mode ? 'all' : 'none'}"/><defs>`;
+  for (const [k, c] of Object.entries(MK_COL).concat([['x', '#7a5aa6']])) h += `<pattern id="mkp-${k}" width="${sw * 9}" height="${sw * 9}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${sw * 9}" height="${sw * 9}" fill="${c}" fill-opacity=".22"/><line x1="0" y1="0" x2="0" y2="${sw * 9}" stroke="${c}" stroke-width="${sw * 3}"/></pattern>`;
+  h += '</defs><g font-family="Courier Prime, Courier New, monospace" font-weight="700">';
+  const band = (m, sel, tmp) => {
+    const segs = depthSegs(a, b, m.from_m, m.to_m, tr), c = mkColor(m.kind), pat = MK_COL[m.kind] ? m.kind : 'x';
+    segs.forEach((sg, i) => {
+      const x0 = X0 + sg.u0 * BW, w = Math.max(sw * 2, (sg.u1 - sg.u0) * BW), y = Y0 + sg.row * RH + RH * 0.22, hh = RH * 0.56;
+      h += `<g ${m.id ? `data-mk="${m.id}"` : ''}><rect x="${x0}" y="${y}" width="${w}" height="${hh}" fill="url(#mkp-${pat})" stroke="${c}" stroke-width="${sw * (sel ? 3.5 : 2)}" ${tmp ? `stroke-dasharray="${sw * 5} ${sw * 3}"` : ''}/>`;
+      if (i === 0) {
+        const t = (m.kind === 'halfcore' ? 'HC' : m.kind === 'coreloss' ? 'LOSS' : mkLabel(m.kind)) + ' ' + fmt(m.from_m) + '–' + fmt(m.to_m) + (m.sample_no ? ' ' + m.sample_no : '');
+        h += `<text x="${x0 + sw * 3}" y="${y + hh / 2}" font-size="${fs * 0.85}" dominant-baseline="central" fill="#fff" stroke="${c}" stroke-width="${fs * 0.25}" paint-order="stroke">${esc(t)}</text>`;
+      }
+      h += '</g>';
+    });
+  };
+  for (const m of MK.list) if (!(MK.edit && MK.edit.id === m.id)) band(m, false, false);
+  if (MK.edit) band(Object.assign({}, MK.edit, { from_m: +$('#mkF').value || MK.edit.from_m, to_m: +$('#mkT').value || MK.edit.to_m }), true, !MK.edit.id);
+  if (MK.drag) { const [p, q] = MK.drag.a.s <= MK.drag.b.s ? [MK.drag.a, MK.drag.b] : [MK.drag.b, MK.drag.a]; band({ kind: MK.kind, from_m: a + p.s / tr.rows * (b - a), to_m: a + q.s / tr.rows * (b - a) }, true, true); }
+  svg.innerHTML = h + '</g>';
+}
+$('#vMk').onclick = () => mkOpen(!MK.open);
+$('#mkX').onclick = () => mkOpen(false);
+$('#mkMode').onclick = () => mkSetMode(!MK.mode);
+$('#mkShow').checked = MK.show;
+$('#mkShow').onchange = e => { MK.show = e.target.checked; LS.set('mkShow', MK.show); drawMarks(); };
+$('#mkKind').onchange = e => {
+  let k = e.target.value;
+  if (k === '__new') {
+    k = (askText('Nama jenis tanda baru (mis. Rusak pengangkutan, Duplikat, Sampel geotek):', '') || '').trim();
+    if (k) { LS.set('mkKinds', [...new Set(LS.get('mkKinds', []).concat([k]))]); }
+    else k = MK.kind;
+  }
+  MK.kind = k; LS.set('mkKind', k); mkFillKinds();
+  if (MK.edit && !MK.edit.id) mkEdit(Object.assign(MK.edit, { kind: k }));
+};
+['#mkF', '#mkT'].forEach(s => $(s).oninput = () => { if (MK.edit) { const sm = mkSamples(+$('#mkF').value, +$('#mkT').value); if (MK.edit.kind === 'halfcore' && !MK.edit.id && sm.best) $('#mkS').value = sm.best; drawMarks(); } });
+$('#mkSave').onclick = mkSave;
+$('#mkCancel').onclick = () => { mkFormClose(); drawMarks(); };
+$('#mkDel').onclick = () => MK.edit && MK.edit.id && mkDelete(MK.edit.id);
+$('#mkForm').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); mkSave(); } else if (e.key === 'Escape') { e.stopPropagation(); mkFormClose(); drawMarks(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && MK.mode && !MK.edit) mkSetMode(false); });
+$('#mkCsv').onclick = async () => {
+  if (!S.folder) return;
+  try {
+    const buf = await api('/core/marks/csv', { folder: S.folder }, true), name = 'Core-Ex_Interval_Tanda_' + new Date().toISOString().slice(0, 10) + '.csv';
+    if (D && D.saveFile) { const p = await D.saveFile(name, buf, [{ name: 'CSV', extensions: ['csv'] }]); if (p) toast('Disimpan: ' + p); }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'text/csv' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+  } catch (e) { say('Gagal export CSV:\n' + e.message); }
+};
+
 /* =============================== cari cepat (Ctrl+K) =============================== */
 let qT = 0, qSel = -1, qRes = [];
 $('#qq').addEventListener('input', () => { clearTimeout(qT); qT = setTimeout(runSearch, 220); });
@@ -1153,7 +1366,7 @@ async function runSearch() {
   try {
     const j = await api('/core/dh/search', { folder: S.folder, q, limit: 80 });
     qRes = j.results; qSel = qRes.length ? 0 : -1;
-    const lab = { foto: 'Foto', assay: 'Assay', geologi: 'Geologi' };
+    const lab = { foto: 'Foto', assay: 'Assay', geologi: 'Geologi', tanda: 'Tanda' };
     box.innerHTML = `<div class="qh">${j.total} hasil${j.total > qRes.length ? ' · tampil ' + qRes.length : ''}${j.numeric ? ' · urut nilai tertinggi' : ''}</div>` + (qRes.length ? qRes.map((x, i) =>
       `<a data-i="${i}" class="${i === 0 ? 'on' : ''}"><i>${lab[x.type]}</i><span><b>${esc(x.hole || '')}</b> ${x.f != null ? fmt(x.f) + '–' + fmt(x.t) + ' m' : ''} · ${esc(x.text)}</span><small>${x.photo_id ? '→ ' + esc(x.photo) : 'tidak ada foto core box untuk interval ini'}</small></a>`).join('')
       : '<div class="qh" style="border:0">Tidak ditemukan. Coba Hole ID, kata di log (mis. pyrite, QV), nama file, atau Au>=1.</div>');
@@ -1166,7 +1379,7 @@ function gotoResult(x) {
   if (!x.photo_id) { toast('Interval ' + (x.hole || '') + ' ' + fmt(x.f) + '–' + fmt(x.t) + ' m belum punya foto core box di folder ini.', 4500); return; }
   let i = S.view.findIndex(r => r.id === x.photo_id);
   if (i < 0) { $('#fClr').click(); i = S.view.findIndex(r => r.id === x.photo_id); }
-  if (i >= 0) { select(i); if (x.type === 'assay' && !OV.on) { OV.on = true; LS.set('ov', true); drawOverlay(); } }
+  if (i >= 0) { select(i); if (x.type === 'assay' && !OV.on) { OV.on = true; LS.set('ov', true); drawOverlay(); } if (x.type === 'tanda') { MK.show = true; $('#mkShow').checked = true; } }
 }
 
 /* =============================== dialog Data bor (header dinamis) =============================== */

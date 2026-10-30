@@ -402,3 +402,10 @@ Release v0.21.0 berisi installer **GC-Ex Drill Hole Ultimate 0.21.0**. GC-Ex Blo
 - Foto panorama / gabungan di atas 178 MP tidak lagi ditolak (batas dinaikkan ke 1,5 miliar piksel).
 - Cache thumbnail & pratinjau ada di `%APPDATA%\Core-Ex\cache` (±10 KB per thumbnail, ±100–300 KB per pratinjau). Untuk puluhan ribu foto, sisakan beberapa GB di drive C:.
 - Database `_GCEx_Core\gcex_core.db` hanya berisi teks & angka (ribuan foto = beberapa MB), aman di drive jaringan.
+
+## 37. Tanda half core & core loss (Core-Ex 0.22.0)
+
+- Tombol **tanda** di pratinjau foto → pilih jenis (Half core / Core loss / jenis lain) → **Mulai menandai** → tarik di sepanjang baris core. Kedalaman dihitung dari posisi di foto (dibulatkan 0,05 m) dan bisa diketik ulang.
+- Half core wajib nomor sampel (terisi otomatis dari kolom Sample di assay bila ada). Core loss menghitung **Core Recovery** foto otomatis: (interval − core loss) / interval; berlabel *tanda*, tidak ditimpa AI.
+- Disimpan di `_GCEx_Core/gcex_core.db` (tabel `marks`) bersama riwayat perubahan; ikut sheet Excel **Interval** dan export CSV dari panel.
+- Proyek lama terbuka seperti biasa; tabel dan kolom baru dibuat otomatis.
