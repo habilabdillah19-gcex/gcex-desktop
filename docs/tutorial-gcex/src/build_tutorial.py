@@ -61,7 +61,7 @@ def ch(title, body, key=None): CH.append((title, body))
 # ================= ISI =================
 ch('Tentang tutorial ini', f'''
 <p>Tutorial ini mengajarkan alur kerja <b>pemodelan vein dan estimasi block model</b> di <b>GC-Ex Drillhole</b>
-(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.21.1</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
+(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.23.1</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
 dibagikan, dan semua gambar adalah tangkapan layar dari satu kali jalannya latihan tersebut. Jika rekan Anda mengikuti langkah
 yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <h3>Alur kerja</h3>
@@ -72,7 +72,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 </div>
 <h3>Yang dibutuhkan</h3>
 <ul>
-<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.21.1.exe</code>) dan lisensi aktif.</li>
+<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.23.1.exe</code>) dan lisensi aktif.</li>
 <li>Aplikasi berjalan sepenuhnya offline; tidak perlu browser atau file Plotly terpisah.</li>
 <li>Folder <code>data_simulasi</code> dari paket tutorial ini.</li>
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_VeinA</code> (boleh di OneDrive / SharePoint / drive jaringan).</li>
@@ -81,7 +81,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <p>Langkah bernomor = yang harus diklik / diisi. Kotak <span class="tag tip">Tips</span> berisi jalan pintas,
 <span class="tag why">Mengapa?</span> menjelaskan alasan geologinya, dan <span class="tag warn">Perhatian</span> berisi hal yang sering keliru.
 Nama tombol dan menu ditulis <b>tebal</b> persis seperti di layar.</p>
-''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.21.1 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
+''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.23.1 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
 
 ch('Data simulasi', f'''
 <p>Data ini <b>sintetis</b> (bukan data perusahaan), dibuat agar meniru kasus vein emas epitermal sempit berbentuk sigmoidal.</p>
@@ -545,7 +545,7 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<tr><td><b>Tahap 2</b><br>Solid vein RBF</td><td><b>Sudah tersedia</b> ({{B:Membangun solid}}): permukaan HW dan FW per domain dimodelkan terpisah (RBF), solid dengan tebal minimum 1 m, potong tegas searah strike (radius pengaruh 15 m), pinch-out / potong topografi searah dip, orientasi & elipsoid per domain, dibangun ulang otomatis, export OBJ / DXF / Surpac STR+DTM.</td></tr>'
  + '<tr><td><b>Tahap 3</b><br>Model Estimation</td><td><b>Sudah tersedia</b> ({{B:Model Estimation}}, {{B:Koreksi setelah}}): parameter per domain dari Geostatistik, Ordinary Kriging blok GC di dalam solid, koreksi hanya sekitar bor baru, blok tambahan, atribut baru, riwayat run, export .mdl / CSV.</td></tr>'
  + '<tr><td><b>Pembaruan 23 Okt</b></td><td><b>Sudah tersedia</b>: validasi data ({{B:Validasi data}}), RBF halus &amp; anti-spike, vein bercabang ({{B:Vein bercabang}}), struktur geologi ({{B:Struktur geologi}}), menu Map ({{B:Map:}}).</td></tr>'
- + '<tr><td><b>Versi 0.21</b></td><td><b>Sudah tersedia</b>: Sesar 3D ({{B:Sesar 3D}}) dan Geomodeller Stratified-Laterite ({{B:Geomodeller Stratified}}); menu Geological Modelling berganti nama menjadi Geomodeller Vein. <b>0.21.1</b>: Geostatistik per lapisan (ruang unfold), Simpan ke lapisan, validasi swath &amp; grade-tonase per lapisan.</td></tr>'
+ + '<tr><td><b>Versi 0.21</b></td><td><b>Sudah tersedia</b>: Sesar 3D ({{B:Sesar 3D}}) dan Geomodeller Stratified-Laterite ({{B:Geomodeller Stratified}}); menu Geological Modelling berganti nama menjadi Geomodeller Vein. <b>0.23.1</b>: Geostatistik per lapisan (ruang unfold), Simpan ke lapisan, validasi swath &amp; grade-tonase per lapisan.</td></tr>'
  + '<tr><td><b>Usulan berikutnya</b><br>(belum disepakati)</td><td>Klasifikasi blok (measured / indicated) dari pass, SoR dan jarak sampel; tabel grade-tonnage per domain dan per bench; rekonsiliasi GC lama vs model baru per periode.</td></tr></table>'
  + '<h3>Ringkasan angka latihan (untuk mengecek hasil peserta)</h3>'
  + kv([('Import awal', f"{N['nHole']} hole, {N['nAssay']:,} assay, block model GC {N['bx']:,} blok"),
@@ -627,7 +627,7 @@ table.kv td{{border-bottom:1px solid var(--ln);padding:1.3mm 2mm;vertical-align:
 ul{{margin:1mm 0 3mm;padding-left:5mm}}li{{margin:.6mm 0}}
 </style></head><body>
 <div class="cover"><div class="top"><div class="logo">GC-Ex</div><h1>Tutorial Pemodelan Vein &amp;<br>Estimasi Block Model</h1>
-<div class="sub">GC-Ex Drill Hole Ultimate 0.21.1 &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
+<div class="sub">GC-Ex Drill Hole Ultimate 0.23.1 &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
 <div class="img"><img src="{FIG['model_3d'][0]}"></div>
 <div class="meta">Edisi {today.day} {bulan} {today.year} &middot; untuk pelatihan internal geologist grade control<br>
 Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya latihan</div></div>

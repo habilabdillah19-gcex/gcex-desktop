@@ -417,9 +417,9 @@ Release v0.21.0 berisi installer **GC-Ex Drill Hole Ultimate 0.21.0**. GC-Ex Blo
 - Semua hasil AI bisa diedit: di kartu / tabel segmen, atau langsung di foto (**Edit segmen**: klik segmen, tarik batas, belah, gabung, tambah, hapus). Editan tidak ditimpa AI.
 - Foto yang dianalisis versi sebelumnya belum punya segmen: jalankan **Analisis ulang** (isian yang sudah diedit tetap aman). Jawaban AI lebih panjang, jadi waktu per foto sedikit bertambah.
 
-## 36. Geostatistik & validasi per lapisan (GC-Ex Drill Hole Ultimate 0.21.1)
+## 36. Geostatistik & validasi per lapisan (GC-Ex Drill Hole Ultimate 0.23.1)
 
-Release v0.21.1 berisi installer **GC-Ex Drill Hole Ultimate 0.21.1** (Block Model 0.20.3 dan Core-Ex 0.19.0 tetap di rilis sebelumnya).
+Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor versi dinaikkan ke 0.23.1 karena 0.21.1–0.23.0 sudah dipakai Core-Ex; Block Model 0.20.3 dan Core-Ex tetap di rilisnya masing-masing).
 
 - Panel **Geostatistik** → pilihan **Lapisan** (mis. *Saprolit (unfold)*): komposit lapisan dengan X, Y dipulihkan dari sesar post dan Z = posisi unfold (lapisan akumulasi 2D: nilai = tebal × kadar, Z = 0). Statistik, variogram (bidang datar, 0° = timur; downhole = vertikal), model dan KNA berlaku; uji estimasi grid dinonaktifkan.
 - Tab Uji estimasi → **Simpan ke lapisan**: model variogram, pass, diskretisasi dan top-cut disimpan ke lapisan; tabel ③ Estimasi terisi (azimuth, range mayor / minor / vertikal dari variogram downhole, nugget) dan bertanda *variogram: Geostatistik*. Mengetik parameter manual menonaktifkan model tersimpan.
