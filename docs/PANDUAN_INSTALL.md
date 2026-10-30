@@ -383,3 +383,14 @@ Release v0.20.3 berisi installer **GC-Ex Block Model 0.20.3** dan **GC-Ex Drill 
 - File .db bisa dibuka dengan **DB Browser for SQLite**, Excel (ODBC), QGIS, Python, dll. Contoh: `SELECT * FROM rekap_flitch;` atau `SELECT domain, COUNT(*), AVG(Au) FROM assay_domain GROUP BY domain;`.
 - Hanya di aplikasi desktop (memakai backend GC-Ex); file proyek `.prj` tetap dipakai untuk mengirim proyek ke rekan.
 
+## 35. Sesar 3D & Geomodeller Stratified-Laterite (GC-Ex Drill Hole Ultimate 0.21.0)
+
+Release v0.21.0 berisi installer **GC-Ex Drill Hole Ultimate 0.21.0**. GC-Ex Block Model tetap 0.20.3 dan Core-Ex tetap 0.19.0 (installer ada di rilis sebelumnya).
+
+- Menu **Geological Modelling** berganti nama menjadi **Geomodeller Vein System Deposit** (rel kiri: *Geomodeller Vein*); isi & cara kerja sama.
+- **Sesar 3D** (rel kiri, sesudah Sayatan; Project Tree → Struktur Geologi → Sesar (bidang 3D)): sesar dari garis struktur di Peta atau koordinat manual + dip / dip direction → bidang 3D (panjang searah strike = panjang jejak). Atribut: jenis (normal / naik / mendatar dekstral / sinistral / oblik trend-plunge), offset (net slip), waktu **pre / syn / post** mineralisasi, urutan umur (1 = tertua), relasi *memotong* (divalidasi; tombol urutkan otomatis), batas keras, taper ujung. Export CSV & DXF.
+  - Post + offset: kontak & sampel dipulihkan (sesar termuda dulu) → solid vein / permukaan lapisan & estimasi dikerjakan di ruang pulih → hasil digeser kembali, terpotong di bidang sesar.
+  - Batas keras: sampel tidak dipakai menyeberang sesar. Syn: bidang sesar mengarahkan orientasi solid vein (jarak pengaruh).
+- **Geomodeller Stratified-Laterite Deposit** (rel kiri: *Geomodeller Strata-Laterit*): preset laterit nikel / bauksit / sedex; lapisan dari kolom log geologi + densitas & kadar air; permukaan atap (topografi − kedalaman kontak) & ketebalan isopach (grid, ekstrapolasi terbatas); estimasi per lapisan di koordinat **unfold** (OK / IDW blok 3D atau akumulasi 2D), multi-unsur & rasio (mis. SiO2/MgO) ke atribut block model `sl_*`; laporan volume / WMT / DMT / kadar dengan cut-off; export grid CSV & DXF permukaan.
+- Database proyek SQLite: tabel baru `sesar` dan `lapisan`.
+- Tutorial `GC-Ex_Tutorial_Modelling_Estimasi.pdf` diperbarui (bab Sesar 3D & Geomodeller Stratified-Laterite); data latihan baru `SIM_LAT_*` (laterit nikel fiktif dengan sesar F1) + generator `make_sim_laterit.py`.

@@ -99,7 +99,7 @@ def main():
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
     items = []
     if has_gcex:
-        items += [(D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"), (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py"), (D / "tutorial-gcex" / "tambah_unsur_bm.py", "Generator/tambah_unsur_bm.py")]
+        items += [(D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"), (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py"), (D / "tutorial-gcex" / "make_sim_laterit.py", "Generator/make_sim_laterit.py"), (D / "tutorial-gcex" / "tambah_unsur_bm.py", "Generator/tambah_unsur_bm.py")]
     if has_core:
         items += [(D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"), (D / "referensi", "Core-Ex_Referensi")]
         if core_dummy and core_dummy.exists():

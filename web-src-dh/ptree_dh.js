@@ -1,5 +1,5 @@
 /* ================= GC-Ex Drillhole: isi PROJECT TREE (urut alur kerja) =================
-   1 Proyek · 2 Data Spasial · 3 Database Bor · 4 Peta (Mapping) · 5 Struktur Geologi · 6 Geological Modelling ·
+   1 Proyek · 2 Data Spasial · 3 Database Bor · 4 Peta (Mapping) · 5 Struktur Geologi · 6 Geomodeller Vein System Deposit · 6b Geomodeller Stratified-Laterite Deposit ·
    (Sayatan & Penampang dipindah ke menu Sayatan di bilah atas) ·
    7 Block Model · 8 Model Estimation · 9 Validasi BM · 10 Reporting BM · 11 Geostatistik · 12 Layout & Ekspor · Pengaturan tampilan.
    Juga: hapus tabel / hole dari database bor (PTD.drop) dengan jalur simpan yang sama seperti upsert (bisa dibatalkan). */
@@ -89,6 +89,11 @@
     man.forEach(function(f){kids.push(node(f,'Titik manual (3D)'));});gm.forEach(function(f){kids.push(node(f,'Flag struktur (Geological Modelling)'));});
     kids.push({id:'st.map',t:'Dari Peta (Mapping)',ic:'map',fold:1,tab:'Map',sub:'Titik struktur',b:mp.reduce(function(a,f){return a+cnt(f.id);},0)||'',hint:'Titik struktur yang ditaruh di peta + titik pick-up berkolom Dip / Dip_Azimuth (Plunge / Trend)',
       kids:mp.map(function(f){return node(f,f.kind==='mapst'?'Titik struktur (klik di peta)':String(f.name).replace(/\s*\((Map pick-up|Mapping pick-up)\)\s*$/,'')+' (pick-up)');}).concat(nL?[{id:'st.mapln',t:'Garis struktur peta (sesar, kekar, vein, sumbu lipatan)',ic:'digit',tab:'Map',sub:'Digitasi',b:nL}]:[])});
+    var FF=ok(function(){return FLT.F;},[]),TMS={pre:'pre',syn:'syn',post:'post'};
+    kids.push({id:'st.flt',t:'Sesar (bidang 3D)',ic:'section',fold:1,tab:'FLT',b:FF.length||'',chk:ok(function(){return FLT.lay!==false;},true),onChk:function(v){FLT.lay=v;fltDirty(false);},hint:'Bidang sesar 3D: dip / dip direction, vektor gerak, offset, pre / syn / post mineralisasi, urutan umur',
+      menu:function(){return[{t:'Buka menu Sesar 3D',fn:function(){uiTab('FLT');}},{t:'+ Sesar dari koordinat…',fn:function(){uiTab('FLT');fltManual();}},{t:'Urutkan umur otomatis',fn:A('fltAutoAge')},{t:'Export CSV sesar',fn:A('fltCsv')},{t:'Export DXF bidang sesar',fn:A('fltDxf')}];},
+      kids:FF.map(function(f){return{id:'st.flt.'+f.id,t:f.name+' · '+TMS[f.tm]+(f.tm==='post'&&+f.off>0?' · '+f.off+' m':''),ic:'string',tab:'FLT',b:'umur '+f.age,chk:f.on!==false,onChk:function(v){fltSet(f.id,'on',v);},
+        go:function(){FLT.sel=f.id;uiTab('FLT');},rename:function(nm){fltSet(f.id,'name',nm);},menu:function(){return[{t:'Edit atribut',fn:function(){FLT.sel=f.id;uiTab('FLT');}},{sep:1},{t:'Hapus sesar',danger:1,fn:function(){fltDel(f.id);}}];}};})});
     if(csv.length)kids.push({id:'st.csv',t:'File CSV struktur',ic:'table',fold:1,tab:'Model',sub:'Struktur',b:csv.reduce(function(a,f){return a+cnt(f.id);},0)||'',kids:csv.map(function(f){return node(f);})});
     return{id:'st',step:'5',t:'Struktur Geologi',ic:'folder',fold:1,tab:'Model',sub:'Struktur',b:P.length||'',chk:ok(function(){return !!STR.lay;}),onChk:function(v){STR.lay=v;updatePlot();},
       hint:'Satu basis data struktur: titik manual, flag Geological Modelling, Peta (Mapping) dan file CSV — dipakai RBF, OK dinamis, Map & 3D',
@@ -116,9 +121,15 @@
       return{id:'gm.'+d.id,t:d.name,ic:'dom',tab:'GM',mark:d.id===act?'aktif':'',b:ns?ns+' string':'',chk:d.vis!==false,onChk:function(v){d.vis=v;gmDirty();},
         go:function(){if(GM.act!==d.id){GM.act=d.id;gmPanel();}},rename:function(nm){gmRename(d.id,nm);},
         menu:function(){return[{t:'Jadikan domain aktif',dis:d.id===act,fn:function(){GM.act=d.id;gmPanel();}},{sep:1},{t:'Hapus domain…',danger:1,fn:function(){gmDelDom(d.id);}}];},kids:ch.map(kid)};};
-    return{id:'gm',step:'6',t:'Geological Modelling',ic:'folder',fold:1,tab:'GM',b:D.length?D.length+' domain':'',hint:'Domain vein → flag interval → string kontrol HW/FW → solid',
+    return{id:'gm',step:'6',t:'Geomodeller Vein System Deposit',ic:'folder',fold:1,tab:'GM',b:D.length?D.length+' domain':'',hint:'Domain vein → flag interval → string kontrol HW/FW → solid',
       menu:function(){return[{t:'+ Domain baru…',fn:function(){var r=U.ask('Nama domain baru:','');if(r!=null){gmAddDom(r);uiTab('GM');}}},{sep:1},{t:'Export flag (CSV)',fn:A('gmFlagCsv')},{t:'Export string kontrol (STR)',fn:function(){gmStrExport('str');}},{t:'Export string kontrol (DXF)',fn:function(){gmStrExport('dxf');}}];},
       kids:[{id:'gm.add',t:'+ Tambah domain…',ic:'dom',hint:'Domain vein / zona baru; dikerjakan di Properti setelah dipilih',go:function(){var r=U.ask('Nama domain baru:','');if(r!=null&&String(r).trim()){gmAddDom(String(r).trim());uiTab('GM');}}}].concat(D.filter(function(d){return !d.par;}).map(kid))};}
+  function fSL(){var LL=ok(function(){return SL.L;},[]),so=function(id,t,ic,k){return{id:id,t:t,ic:ic,tab:'SL',go:function(){uiTab('SL');setTimeout(function(){try{uiSecOpen('sl',k);}catch(e){}},40);}};};
+    return{id:'sl',step:'6b',t:'Geomodeller Stratified-Laterite Deposit',ic:'folder',fold:1,tab:'SL',b:LL.length?LL.length+' lapisan':'',chk:ok(function(){return SL.lay!==false;},true),onChk:function(v){SL.lay=v;updatePlot();},
+      hint:'Laterit Ni / bauksit / stratiform (sedex): lapisan dari log geologi → permukaan atap / lantai → estimasi unfold per lapisan → laporan WMT / DMT',
+      menu:function(){return[{t:'Preset laterit nikel',fn:function(){uiTab('SL');slPreset('lat');}},{t:'Preset bauksit',fn:function(){uiTab('SL');slPreset('bx');}},{t:'Preset stratiform (sedex)',fn:function(){uiTab('SL');slPreset('sdx');}},{sep:1},{t:'Jalankan estimasi lapisan',fn:A('slRun')},{t:'Laporan CSV',fn:A('slRepCsv')}];},
+      kids:LL.map(function(l,i){return{id:'sl.l.'+l.id,t:l.name,ic:'dom',chk:l.vis!==false,onChk:function(v){slSetL(i,'vis',v);},tab:'SL',b:(l.codes||[]).length?'':'kode?',rename:function(nm){slSetL(i,'name',nm);},go:function(){uiTab('SL');setTimeout(function(){try{uiSecOpen('sl',1);}catch(e){}},40);}};})
+        .concat([so('sl.1','① Lapisan & kode log','attr',1),so('sl.2','② Permukaan (atap / lantai)','topo',2),so('sl.3','③ Estimasi unfold per lapisan','est',3),so('sl.4','④ Laporan WMT / DMT','report',4)])};}
   function fBM(){var m=window.BX&&BX.m,V=ok(function(){return BXV;},[]),cur=m?ok(function(){return bxvKey(m.src);},''):'',at=m?Object.keys(m.num||{}).concat(Object.keys(m.cat||{})):[],ca=ok(function(){return BX.ui.attr;},'');
     return{id:'bm',step:'7',t:'Block Model',ic:'folder',fold:1,tab:'BM',b:m?N(m.n)+' blok':'',chk:m?U.cb('bxShow'):undefined,onChk:function(v){U.setCb('bxShow',v);},
       menu:function(){return[{t:'Import block model…',fn:A('bxDlg')},{t:'Tambah versi block model…',fn:A('bmAdd')},{t:'Export block model GC (.mdl)',fn:A('bxMdlExport'),dis:!m},{sep:1},{t:'Hapus dari tampilan',danger:1,dis:!m,fn:A('bxClear')}];},
@@ -129,7 +140,7 @@
   var sub=function(id,t,ic,tb,re){return{id:id,t:t,ic:ic,tab:tb,sub:re};};
   function nodes(){var L=[],add=function(f,id,t){try{L.push(f());}catch(e){console.warn('tree',id,e);L.push({id:id,t:t,ic:'folder',fold:1});}};
     add(fProj,'proj','Proyek');add(fSpatial,'sp','Data Spasial');add(fDb,'db','Database Bor');add(fMapping,'mp','Peta (Mapping)');add(fStruct,'st','Struktur Geologi');
-    add(fGM,'gm','Geological Modelling');add(fBM,'bm','Block Model');
+    add(fGM,'gm','Geomodeller Vein System Deposit');add(fSL,'sl','Geomodeller Stratified-Laterite Deposit');add(fBM,'bm','Block Model');
     /* 0.20: domain aktif juga dari node Geostatistik & Model Estimation */
     var actD=ok(function(){return GM.act;}),tops=ok(function(){return gmTops();},[]);
     var gsDom=function(d){var ch=ok(function(){return gmKids(d.id);},[]);return{id:'gs.d.'+d.id,t:d.name,ic:'dom',mark:d.id===actD&&ok(function(){return GS.domOnly!==false;},true)?'aktif':'',

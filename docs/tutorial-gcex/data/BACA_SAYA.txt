@@ -22,3 +22,10 @@ Bor baris 1-2 (dangkal) menembus dua vein (Utama dulu, Cabang di bawahnya); bari
 STRUKTUR & PICK-UP (latihan menu Struktur & Map):
 SIM_struktur.csv        : 19 titik struktur (No, X, Y, Z, Dip, Dip_Azimuth, Keterangan): kontak HW di singkapan, 3 dari core oriented, 5 kekar
 SIM_pickup_survey.csv   : 114 titik pick-up (ID, East, North, RL, Code): VEIN_HW / VEIN_FW singkapan QV_Utama, TOE / CREST pit kecil
+
+LATERIT NIKEL + SESAR (latihan Geomodeller Stratified-Laterite & Sesar 3D, proyek terpisah; dibuat: python make_sim_laterit.py):
+SIM_LAT_collar/survey/assay/geologi.csv : 169 bor vertikal grid 25 m (LAT-001..169), sampel 1 m; Ni, Co, Fe, MgO, SiO2 (%); Zona TS / LIM / SAP / BRK
+SIM_LAT_topo_xyz.csv                    : topografi grid 10 m
+SIM_LAT_BM_GC.csv                       : block model GC 12,5 x 12,5 x 1 m (11180 blok), atribut SG
+SIM_LAT_sesar.csv                       : jejak sesar F1 (2 titik X,Y), dip 65 ke 100, normal, offset 12 m, post-mineralisasi; jejak pada elevasi tetap Z 190
+Geometri: limonit 0-10 m, saprolit 2-13 m di atas bedrock; F1 menurunkan blok timur (hanging wall) +-11 m. Koordinat sekitar E 412000, N 9620000 (fiktif).

@@ -25,6 +25,15 @@ for f in sorted(os.listdir(IMG)):
     j = f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=82, optimize=True)
     FIG[f[3:-4]] = (j, im.width / im.height)
 
+IMGL = os.path.join(HERE, 'img_lat')
+NL = json.load(open(os.path.join(IMGL, 'notes.json'), encoding='utf-8'))
+for f in sorted(os.listdir(IMGL)):
+    if not f.endswith('.png'): continue
+    im = Image.open(os.path.join(IMGL, f)).convert('RGB')
+    if im.width > 1700: im = im.resize((1700, round(im.height * 1700 / im.width)), Image.LANCZOS)
+    j = 'L' + f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=82, optimize=True)
+    FIG[f[3:-4]] = (j, im.width / im.height)
+
 fig_no = [0]; FNUM = {}
 def fig(key, cap, w=None):
     j, ar = FIG[key]; fig_no[0] += 1; FNUM[key] = fig_no[0]
@@ -52,7 +61,7 @@ def ch(title, body, key=None): CH.append((title, body))
 # ================= ISI =================
 ch('Tentang tutorial ini', f'''
 <p>Tutorial ini mengajarkan alur kerja <b>pemodelan vein dan estimasi block model</b> di <b>GC-Ex Drillhole</b>
-(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.20</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
+(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.21</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
 dibagikan, dan semua gambar adalah tangkapan layar dari satu kali jalannya latihan tersebut. Jika rekan Anda mengikuti langkah
 yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <h3>Alur kerja</h3>
@@ -63,7 +72,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 </div>
 <h3>Yang dibutuhkan</h3>
 <ul>
-<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.20.0.exe</code>) dan lisensi aktif.</li>
+<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.21.0.exe</code>) dan lisensi aktif.</li>
 <li>Aplikasi berjalan sepenuhnya offline; tidak perlu browser atau file Plotly terpisah.</li>
 <li>Folder <code>data_simulasi</code> dari paket tutorial ini.</li>
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_VeinA</code> (boleh di OneDrive / SharePoint / drive jaringan).</li>
@@ -72,7 +81,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <p>Langkah bernomor = yang harus diklik / diisi. Kotak <span class="tag tip">Tips</span> berisi jalan pintas,
 <span class="tag why">Mengapa?</span> menjelaskan alasan geologinya, dan <span class="tag warn">Perhatian</span> berisi hal yang sering keliru.
 Nama tombol dan menu ditulis <b>tebal</b> persis seperti di layar.</p>
-''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.20 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
+''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.21 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
 
 ch('Data simulasi', f'''
 <p>Data ini <b>sintetis</b> (bukan data perusahaan), dibuat agar meniru kasus vein emas epitermal sempit berbentuk sigmoidal.</p>
@@ -86,7 +95,10 @@ ch('Data simulasi', f'''
 <tr><td>SIM_struktur.csv</td><td>19 titik struktur (No, X, Y, Z, Dip, Dip_Azimuth, Keterangan): kontak HW di singkapan, dari core oriented, dan kekar.</td></tr>
 <tr><td>SIM_pickup_survey.csv</td><td>114 titik pick-up survei (ID, East, North, RL, Code): VEIN_HW / VEIN_FW singkapan QV_Utama, TOE / CREST pit kecil.</td></tr>
 <tr><td>SIM_split_*.csv</td><td>Proyek terpisah vein bercabang (latihan domain induk).</td></tr>
-<tr><td>SIM_rusak_collar.csv, SIM_rusak_assay.csv</td><td>Database dengan kesalahan sengaja untuk latihan validasi.</td></tr></table>
+<tr><td>SIM_rusak_collar.csv, SIM_rusak_assay.csv</td><td>Database dengan kesalahan sengaja untuk latihan validasi.</td></tr>
+<tr><td>SIM_LAT_collar / survey / assay / geologi.csv</td><td>Proyek terpisah <b>laterit nikel</b>: {NL['nHole']} bor vertikal grid 25 m, sampel 1 m ({NL['nAssay']:,} sampel), unsur Ni, Co, Fe, MgO, SiO2 (%), kolom <code>Zona</code>: TS (tanah penutup), LIM, SAP, BRK.</td></tr>
+<tr><td>SIM_LAT_topo_xyz.csv, SIM_LAT_BM_GC.csv</td><td>Topografi grid 10 m dan block model GC 12,5 &times; 12,5 &times; 1 m ({NL['nBlok']:,} blok) untuk latihan {{B:Geomodeller Stratified}}.</td></tr>
+<tr><td>SIM_LAT_sesar.csv</td><td>Jejak sesar F1 (dua titik X, Y) beserta dip 65&deg; ke 100&deg;, normal, offset 12 m, post-mineralisasi, untuk latihan {{B:Sesar 3D}}.</td></tr></table>
 <h3>Geometri yang perlu diingat</h3>
 {kv([('Vein utama (QV_Utama)','strike 045&deg;, dip 70&deg; ke 135&deg; (tenggara), sigmoidal, tebal 1&ndash;3,2 m, ore shoot di tengah'),
      ('Vein kedua (QV_HW1)','sejajar, &plusmn;22 m di sisi hanging wall, lebih tipis dan lebih rendah kadar'),
@@ -125,7 +137,7 @@ ch('Validasi data bor', '<p>Saat file database dipilih, GC-Ex memeriksa datanya 
  + fig('validasi_rusak', 'Database dengan kesalahan sengaja: 4 dibuang (collar tanpa koordinat, collar ganda, From &ge; To, assay tanpa collar) dan 3 peringatan (Sample ID ganda, tumpang tindih, nilai Au &minus;99).', '78%')
  + warn('Interval tumpang tindih adalah yang paling berbahaya bagi estimasi: panjangnya dihitung dua kali dan kadarnya ikut berbobot ganda. Selesaikan semua peringatan tumpang tindih sebelum Geostatistik / Model Estimation.'))
 
-ch('Mengenal tampilan', '<p>Menu utama ada di <b>rel kiri</b>, diurutkan mengikuti alur kerja: <b>Data &rarr; Geologi &rarr; Sayatan &rarr; Geological Modelling &rarr; Block Model &rarr; Model Estimation</b>. Di bawah garis pemisah ada menu pendukung: Data Spasial, Data Referensi, Digitasi, Plan Bor, Warna, Overlay, Tampilan. Tombol di <b>bar atas</b>: Proyek, arah pandang (Top / Front / Side / Iso / <b>&perp; Tegak lurus</b> sayatan), <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> (pindah section tanpa membuka menu Sayatan), <b>Layer</b> (ikon tumpukan; juga untuk menyembunyikan drillhole), PNG, dan <b>Geostatistik</b>.</p>'
+ch('Mengenal tampilan', '<p>Menu utama ada di <b>rel kiri</b>, diurutkan mengikuti alur kerja: <b>Data &rarr; Geologi &rarr; Sayatan &rarr; Geomodeller Vein &rarr; Block Model &rarr; Model Estimation</b>. Di bawah garis pemisah ada menu pendukung: Data Spasial, Data Referensi, Digitasi, Plan Bor, Warna, Overlay, Tampilan. Tombol di <b>bar atas</b>: Proyek, arah pandang (Top / Front / Side / Iso / <b>&perp; Tegak lurus</b> sayatan), <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> (pindah section tanpa membuka menu Sayatan), <b>Layer</b> (ikon tumpukan; juga untuk menyembunyikan drillhole), PNG, dan <b>Geostatistik</b>.</p>'
  + fig('header', 'Bar atas: arah pandang + <b>&perp; Tegak lurus</b>, <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> untuk berpindah section langsung dari sini, lalu Ortho, Layer, Gelap, PNG dan Geostatistik. Drillhole disembunyikan / ditampilkan lewat panel <b>Layer</b>.')
  + '<h3>Warna kadar</h3>' + steps('Klik <b>Warna</b> di rel kiri.', 'Aktifkan <b>Klasifikasi diskrit (kelas kadar)</b> dan isi <b>Batas kelas</b>: <code>0.3,0.5,1,3</code>.', 'Legenda kanan atas menampilkan jumlah interval per kelas ([[menu_warna]]).')
  + fig('menu_warna', 'Menu Warna: kelas kadar Au &lt;0,3 / 0,3&ndash;0,5 / 0,5&ndash;1 / 1&ndash;3 / &ge;3 g/t. Kotak <b>Ringkasan</b> di kiri bawah memberi statistik data yang sedang tampil.')
@@ -155,9 +167,9 @@ ch('Geologi: pita litologi', steps(
  + fig('geologi_lith', 'Pita litologi di samping trace bor: interval QV (oranye arsir) bertepatan dengan kadar tinggi &mdash; acuan pertama untuk flag domain.')
  + tip('Bagian <b>Domain untuk analisis</b> di menu ini nanti dipakai untuk memilih domain vein sebelum statistik dan estimasi ({{B:Filter domain}}).'))
 
-ch('Geological Modelling: membuat domain vein', steps(
- 'Klik <b>Geological Modelling</b> di rel kiri.',
- 'Di Project Tree, klik <b>+ Tambah domain&hellip;</b> di bawah <b>Geological Modelling</b>, ketik <code>QV_Utama</code>, OK. Ulangi untuk <code>QV_HW1</code>.',
+ch('Geomodeller Vein: membuat domain vein', steps(
+ 'Klik <b>Geomodeller Vein</b> di rel kiri.',
+ 'Di Project Tree, klik <b>+ Tambah domain&hellip;</b> di bawah <b>Geomodeller Vein</b>, ketik <code>QV_Utama</code>, OK. Ulangi untuk <code>QV_HW1</code>.',
  'Klik nama domain di Project Tree untuk menjadikannya <b>domain aktif</b> (bertanda <i>AKTIF</i>). Panel Properti hanya menampilkan domain aktif: warna bisa diubah dengan klik kotak warna; centang kanan = tampil / sembunyi. Flag, String, Solid dan Struktur selalu bekerja pada domain aktif.')
  + fig2('gm_domain', 'Dua domain vein dibuat. Di bawah nama: jumlah hole &middot; run &middot; panjang &middot; kadar rata-rata.',
         'gm_usulan_param', 'Bagian <b>Usulan otomatis dari kadar</b> dibuka dengan parameter latihan.')
@@ -174,7 +186,7 @@ ch('Flag otomatis dari kadar', steps(
 
 ch('Koreksi flag secara interaktif', steps(
  f"Buat sayatan sepanjang lubang <b>{N['contohHole']}</b> (azimuth 315&deg;) dan buka <b>Sayatan 2D</b>.",
- 'Di Geological Modelling pilih domain aktif <b>QV_HW1</b>, lalu klik <b>&#9998; Flag</b>. Kotak biru <i>Flag aktif: QV_HW1</i> muncul dengan petunjuk mouse.',
+ 'Di Geomodeller Vein pilih domain aktif <b>QV_HW1</b>, lalu klik <b>&#9998; Flag</b>. Kotak biru <i>Flag aktif: QV_HW1</i> muncul dengan petunjuk mouse.',
  '<b>Klik</b> satu interval = flag / lepas. <b>Tarik sepanjang lubang</b> = flag satu rentang ([[flag_tarik_hw1]]). <b>Shift + tarik</b> = kotak, semua interval di dalam kotak.',
  'Lepas mouse: interval berganti warna domain QV_HW1 ([[flag_hasil_hw1]]). Salah? Tekan <b>Ctrl+Z</b> atau klik <b>&#8630; Urungkan</b>.',
  'Untuk menghapus flag, klik <b>&#9003; Hapus flag</b> lalu klik / tarik interval. Tekan <b>Esc</b> atau <b>Selesai</b> untuk keluar dari mode.',
@@ -215,7 +227,7 @@ ch('Membangun solid vein (RBF)', '<p>Dari string kontrol dan titik kontak bor, G
        ('Searah dip, atas','<b>dipotong topografi</b> (bila topografi ada) atau pinch-out 15 m.'),
        ('Tepi model','mengikuti <b>convex hull</b> data di bidang vein: mulus, tanpa &ldquo;gigi sisir&rdquo; walaupun ada lubang bor tunggal di antara section.'),
        ('Tebal','tidak lebih tipis dari <b>tebal minimum</b> 1 m (= interval sampel).')])
- + steps('Di Geological Modelling gulir ke tab <b>Solid</b> (Model vein HW / FW &rarr; solid RBF).',
+ + steps('Di Geomodeller Vein gulir ke tab <b>Solid</b> (Model vein HW / FW &rarr; solid RBF).',
    'Klik <b>&#9654; Bangun solid domain aktif</b>, atau <b>&#9654;&#9654; Semua domain</b>. Kotak centang di daftar domain menyalakan / mematikan solid per domain.',
    'Buka <b>Parameter domain aktif</b> bila perlu mengubah ([[solid_param]]). <b>Batas model</b>: radius pengaruh searah strike, pinch-out searah dip, ujung atas (topografi / pinch-out), tebal minimum. <b>Orientasi vein</b>: otomatis dari data, atau isi <b>Dip</b> dan <b>Dip dir</b> sendiri (klik <i>pakai &amp; ubah</i> untuk mulai dari nilai otomatis). <b>Elipsoid RBF</b>: sumbu mayor, semi-mayor dan pitch. <b>Struktur</b>: pakai titik struktur (lihat {{B:Struktur geologi}}). <b>RBF &amp; mesh</b>: resolusi, <b>Kehalusan permukaan</b>, sumber titik, <b>Anti-spike</b>. Tombol <b>Pakai parameter ini untuk semua domain</b> menyalin ke domain lain; <b>&#8634; Bawaan</b> mengembalikan nilai awal.',
    'Baca kotak ringkasan ([[solid_panel]]): volume, tonase, tebal, jumlah titik, selisih model di kontak bor, dan <b>interval flag di dalam solid</b>.')
@@ -249,7 +261,7 @@ ch('Membangun solid vein (RBF)', '<p>Dari string kontrol dan titik kontak bor, G
 ch('Memakai wireframe dari Leapfrog', steps(
  'Klik <b>Data Referensi</b> &rarr; <b>Import model vein / solid</b> dan pilih <code>QV_Utama_Leapfrog.obj</code> (format lain: Leapfrog .msh, Surpac .dtm/.str, DXF 3DFACE).',
  f"Wireframe tampil di 3D ([[wireframe_import]]): <b>{N['wf']}</b>.",
- 'Kembali ke <b>Geological Modelling</b>, buka bagian <b>Wireframe luar</b>. Pilih wireframe dan domain tujuan, lalu klik <b>&#9986; Iris jadi string HW/FW (section ini)</b> atau <b>&#9986; Semua section</b>. Loop irisan dipecah otomatis menjadi string HW dan FW ([[wireframe_iris]]).',
+ 'Kembali ke <b>Geomodeller Vein</b>, buka bagian <b>Wireframe luar</b>. Pilih wireframe dan domain tujuan, lalu klik <b>&#9986; Iris jadi string HW/FW (section ini)</b> atau <b>&#9986; Semua section</b>. Loop irisan dipecah otomatis menjadi string HW dan FW ([[wireframe_iris]]).',
  f"Klik <b>&#9873; Flag interval bor di dalam wireframe</b>: {clean(N['wfFlag'])}",
  f"Karena flag QV_Utama bertambah, solid QV_Utama ikut <b>dibangun ulang otomatis</b> ({clean(N['solidWf'])}).")
  + fig('wireframe_import', 'Wireframe QV_Utama hasil Leapfrog di atas data bor. Slider di daftar model mengatur transparansi.')
@@ -272,7 +284,7 @@ ch('Menambah bor infill dengan upsert', '<p><b>Upsert</b> = tambah atau perbarui
  + why('String yang pernah diedit manual dilewati (tidak ditimpa) supaya interpretasi geologist tidak hilang. Hapus tanda edit atau edit lagi secara manual bila memang perlu diubah.'))
 
 ch('Filter domain & statistik', steps(
- 'Menu <b>Geologi</b> &rarr; <b>Domain untuk analisis</b>: pilih <b>Domain vein (Geological Modelling)</b>, lalu centang <b>QV_Utama</b> saja ([[domain_filter]]).',
+ 'Menu <b>Geologi</b> &rarr; <b>Domain untuk analisis</b>: pilih <b>Domain vein (Geomodeller Vein)</b>, lalu centang <b>QV_Utama</b> saja ([[domain_filter]]).',
  'Atur sayatan <b>sejajar bidang vein</b>: strike 45&deg;, dip 70&deg;, tebal slab 40 m (&plusmn;20 m), posisi 0.',
  'Klik <b>Geostatistik</b> di bar atas lalu <b>&#8635; Hitung</b>. Tab <b>Statistik</b> ([[geostat_statistik]]).')
  + fig2('domain_filter', 'Filter <b>Domain vein</b>. Filter berlaku untuk tampilan assay, ringkasan, geostatistik, KNA dan estimasi OK.',
@@ -280,7 +292,7 @@ ch('Filter domain & statistik', steps(
  + fig('geostat_statistik', f"Statistik komposit 1 m domain QV_Utama: n = {N['gsN']}, rata-rata {N['gsMean']} g/t, declustered 2,075 g/t, CV 1,24, maksimum 17,47 g/t.")
  + why('Rata-rata <i>declustered</i> lebih rendah dari rata-rata biasa karena sampel kadar tinggi di ore shoot dibor lebih rapat. Gunakan histogram skala log dan persentil P95&ndash;P99 untuk memutuskan perlu tidaknya top-cut.'))
 
-ch('Domain aktif di Geostatistik & Model Estimation (versi 0.20)', '<p>Mulai GC-Ex Drill Hole Ultimate <b>0.20</b>, satu <b>domain aktif</b> dipakai bersama oleh Geological Modelling, Geostatistik dan Model Estimation. Domain bisa diaktifkan dari node domain di bawah <b>Geological Modelling</b>, <b>Geostatistik</b> atau <b>Model Estimation</b> di Project Tree, sehingga tidak perlu kembali ke Geological Modelling.</p>'
+ch('Domain aktif di Geostatistik & Model Estimation (versi 0.20)', '<p>Mulai GC-Ex Drill Hole Ultimate <b>0.20</b>, satu <b>domain aktif</b> dipakai bersama oleh Geomodeller Vein, Geostatistik dan Model Estimation. Domain bisa diaktifkan dari node domain di bawah <b>Geomodeller Vein</b>, <b>Geostatistik</b> atau <b>Model Estimation</b> di Project Tree, sehingga tidak perlu kembali ke Geomodeller Vein.</p>'
  + steps('Project Tree &rarr; <b>Geostatistik</b> &rarr; klik <b>QV_Utama</b>. Panel Geostatistik terbuka dengan bilah <b>Domain: QV_Utama</b> &mdash; komposit hanya dari interval bor yang di-flag ke QV_Utama (beserta cabangnya; untuk selubung: interval halo) ([[dom20_gs]]).',
    'Untuk melihat semua sampel (perilaku lama), pilih <b>Semua data (tanpa filter domain)</b> di node Geostatistik atau di bilah Domain.',
    'Setelah fitting, <b>Simpan ke domain</b> otomatis memilih domain aktif.',
@@ -328,7 +340,7 @@ ch('Uji estimasi & simpan parameter ke domain', '<p>Tab <b>Uji estimasi</b> di G
  + why('Uji estimasi mengisi seluruh kotak grid, termasuk blok jauh dari data, sehingga SoR / KE rata-rata rendah. Itu wajar untuk uji. Estimasi produksi di Model Estimation hanya mengisi blok di dalam solid vein.')
  + tip('Yang disimpan ke domain: model variogram dan arah elipsoid (tab Model), pass &amp; diskretisasi, top-cut, panjang komposit, unsur, dan label sayatan sumbernya. Semua bisa diedit lagi di Model Estimation.'))
 
-ch('Model Estimation: estimasi block model GC', '<p>Menu <b>Model Estimation</b> (rel kiri, di bawah Geological Modelling) mengestimasi <b>block model GC</b> per domain vein. Aturannya:</p><ul>'
+ch('Model Estimation: estimasi block model GC', '<p>Menu <b>Model Estimation</b> (rel kiri, di bawah Geomodeller Vein) mengestimasi <b>block model GC</b> per domain vein. Aturannya:</p><ul>'
  '<li><b>Sampel</b> = komposit dari interval yang di-flag domain itu saja (batas keras).</li>'
  '<li><b>Blok</b> = blok GC yang titik pusatnya di dalam solid domain ({{B:Membangun solid}}).</li>'
  '<li><b>Koreksi</b>: blok di dalam solid diestimasi ulang. <b>Penambahan</b>: bagian solid tanpa blok GC diisi blok baru seukuran blok dominan.</li>'
@@ -352,7 +364,7 @@ ch('Model Estimation: estimasi block model GC', '<p>Menu <b>Model Estimation</b>
 
 ch('Koreksi setelah bor baru', '<p>Inilah pemakaian sehari-hari: setiap ada bor baru, GC-Ex hanya mengestimasi ulang blok yang <b>lingkungan kriging-nya</b> berubah, yaitu blok yang memakai komposit dari hole baru / berubah, ditambah blok yang baru masuk solid. Blok lain tetap nilai run sebelumnya.</p>'
  + steps('Menu <b>Data</b> &rarr; <b>Tambah / perbarui data bor (upsert)</b>: pilih <code>SIM_upsert2_*.csv</code> (2 bor infill SIM-INF-05 dan 06 di ujung timur).',
-   f"Geological Modelling: <b>Usulkan ke domain aktif</b> dengan <b>Jangan timpa flag lain</b> (dilusi 2 m): {clean(N['autoInfill2']).split('. Periksa')[0]}. Lalu <b>&#10148;&#10148; Semua section</b>; solid QV_Utama diperbarui otomatis.",
+   f"Geomodeller Vein: <b>Usulkan ke domain aktif</b> dengan <b>Jangan timpa flag lain</b> (dilusi 2 m): {clean(N['autoInfill2']).split('. Periksa')[0]}. Lalu <b>&#10148;&#10148; Semua section</b>; solid QV_Utama diperbarui otomatis.",
    'Buka <b>Model Estimation</b>. Kotak status di bagian &#9314; menyebut hole yang berubah ([[me_tertunda]]): ' + clean(N['mePending']).replace('\n','; ') + '.',
    'Klik <b>&#9654; Jalankan estimasi</b>. Validasi menunjukkan berapa blok yang dikoreksi ([[me_koreksi]]).',
    'Untuk melihat blok mana yang diperbarui, warnai block model dengan <code>est_run</code> ([[me_run]]).')
@@ -368,7 +380,7 @@ SPM = N['splitMe'] if isinstance(N.get('splitMe'), list) else json.loads(N['spli
 ch('Vein bercabang: domain induk', '<p>Vein yang <b>bercabang</b> (split / splay) tidak bisa digambarkan dengan satu permukaan HW dan satu FW. Di GC-Ex tiap cabang dibuat sebagai <b>domain sendiri</b> dengan string HW / FW sendiri, lalu dijadikan <b>cabang dari domain induk</b>. Solidnya digabung, dan Model Estimation memperlakukan induk + cabang sebagai <b>satu domain</b> &mdash; mirip seam split pada batubara.</p>'
  + '<p>Latihan ini memakai proyek terpisah dengan data <code>SIM_split_*</code>: vein <b>QVS_Utama</b> dan <b>QVS_Cabang</b> yang lepas dari sisi footwall pada &plusmn;66 m searah dip, makin menjauh ke atas. Bor dangkal menembus dua vein, bor dalam hanya satu (vein sudah menyatu).</p>'
  + steps('Buat proyek baru, import <code>SIM_split_collar/survey/assay/geologi.csv</code>, topografi dan <code>SIM_split_BM_GC.csv</code>.',
-   'Geological Modelling: buat domain <b>QVS_Utama</b> dan <b>QVS_Cabang</b>. Usulan otomatis Au &ge; 0,5 untuk QVS_Utama (lingkup semua hole).',
+   'Geomodeller Vein: buat domain <b>QVS_Utama</b> dan <b>QVS_Cabang</b>. Usulan otomatis Au &ge; 0,5 untuk QVS_Utama (lingkup semua hole).',
    f"Di Sayatan 2D, flag run <b>bawah</b> pada lubang yang menembus dua vein ke <b>QVS_Cabang</b> ([[split_flag]]). Di data latihan ada {N['splitFlag']} lubang seperti itu.",
    'Di kartu domain QVS_Cabang pilih <b>&#8627; cabang dari QVS_Utama</b> ([[split_domain]]). Kartu QVS_Utama berubah menjadi <b>induk dari 1 cabang</b>, dan kartu cabang bergeser ke kanan.',
    '<b>&#10148;&#10148; Semua section</b> untuk masing-masing domain, lalu <b>&#9654;&#9654; Semua domain</b> di tab Solid.')
@@ -381,7 +393,7 @@ ch('Vein bercabang: domain induk', '<p>Vein yang <b>bercabang</b> (split / splay
        ('Solid gabungan', f"<b>{fN(SP['vol'])} m&sup3;</b> (tumpang tindih di percabangan {fN(SP['ov'])} m&sup3; tidak dihitung dua kali)")])
  + fig('split_panel', 'Tab Solid: kotak <b>Solid gabungan per domain induk</b> menampilkan volume gabungan tanpa tumpang tindih.')
  + fig('split_3d', 'Tampilan 3D: solid induk (oranye) dan cabang (biru).')
- + '<h3>Geostatistik & Model Estimation</h3>' + steps('Di menu Geologi pilih atribut filter <b>Domain induk (Geological Modelling)</b> dan centang QVS_Utama: sampel induk + cabang ikut ' + f"({N['splitGs']} komposit). Atribut <b>Domain vein</b> tetap ada bila ingin melihat cabang terpisah.",
+ + '<h3>Geostatistik & Model Estimation</h3>' + steps('Di menu Geologi pilih atribut filter <b>Domain induk (Geomodeller Vein)</b> dan centang QVS_Utama: sampel induk + cabang ikut ' + f"({N['splitGs']} komposit). Atribut <b>Domain vein</b> tetap ada bila ingin melihat cabang terpisah.",
    'Jalankan Geostatistik seperti biasa, lalu <b>Simpan ke domain</b>. Hanya domain induk yang ditawarkan, karena cabang memakai parameter induknya.',
    'Menu Model Estimation menampilkan satu baris <b>QVS_Utama + 1 cabang</b> dengan solid gabungan ([[split_me]]). Run memakai sampel kedua vein dan mengestimasi blok di kedua solid; atribut <code>domain_est</code> berisi QVS_Utama.')
  + fig('split_me', f"Model Estimation untuk kelompok QVS_Utama: {SPM[0]['nIn']:,} blok di dalam solid gabungan, {SPM[0]['nAdd']} blok tambahan, {SPM[0]['nComp']} komposit.".replace(',', '.'), '78%')
@@ -396,7 +408,7 @@ ch('Struktur geologi (dip / dip azimuth)', '<p>Arah dip vein bisa berubah: misal
    'Klik baris titik untuk memilihnya; nilai X, Y, Z, Dip, Dip az, No dan Keterangan bisa diubah langsung.')
  + fig('struktur_panel', f"Panel Struktur geologi: {N['strN']} titik dari SIM_struktur.csv; titik pertama terpilih dan bisa diedit.", '78%')
  + fig('struktur_3d', 'Tampilan 3D: tiap struktur berupa cakram berorientasi (hijau = dari file) dengan garis strike (hitam) dan tanda arah dip: deretan di singkapan, dua di kedalaman (core oriented), dan kekar. Item Layer <b>Struktur geologi</b> menyalakan / menyembunyikannya.')
- + '<h3>Flag struktur di Sayatan 2D</h3>' + steps('Geological Modelling &rarr; bagian <b>&#9316; Flag struktur</b>. Isi <b>Dip</b> 65, <b>Dip az</b> 135 dan keterangan.',
+ + '<h3>Flag struktur di Sayatan 2D</h3>' + steps('Geomodeller Vein &rarr; bagian <b>&#9316; Flag struktur</b>. Isi <b>Dip</b> 65, <b>Dip az</b> 135 dan keterangan.',
    'Klik <b>&#9998; Flag struktur</b>, lalu klik di Sayatan 2D pada posisi pengukuran ([[struktur_flag]]). Titik ditaruh di bidang sayatan untuk <b>domain aktif</b>.',
    'Klik berikutnya <b>memakai nilai yang sama</b> sampai Anda mengubahnya; nomor bertambah otomatis. Garis pendek di penampang = dip semu (perpotongan bidang struktur dengan bidang sayatan). <b>Esc</b> = selesai.')
  + fig('struktur_flag', 'Flag struktur di Sayatan 2D: dua titik 65/135 untuk QV_Utama (oranye) dan dua struktur dari file di dekat sayatan (hijau), masing-masing tampil sebagai garis dip semu berlabel dip/az.')
@@ -410,6 +422,65 @@ ch('Struktur geologi (dip / dip azimuth)', '<p>Arah dip vein bisa berubah: misal
  + warn('Struktur hanya mengarahkan kemiringan, bukan posisi. Struktur dari singkapan yang salah ukur bisa menarik permukaan; periksa daftar &ldquo;Struktur dipakai&rdquo; di ringkasan solid.'))
 
 MF = N['mapF'] if isinstance(N.get('mapF'), list) else json.loads(N['mapF'])
+L0 = NL['srf0']; L1 = NL['srf1']; LP = NL['lap0']; LC = NL['lap15']; TRF = NL['jejakF1']
+def nf(v, d=0): return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.', ',').replace('X', '.')
+ch('Sesar 3D: bidang, offset & urutan umur', '<p>Menu <b>Sesar 3D</b> (rel kiri, sesudah Sayatan) mengubah garis sesar menjadi <b>bidang 3D</b> yang ikut dipakai pemodelan dan estimasi. Panjang bidang searah strike = panjang jejak yang Anda digitasi; jangkauan searah dip diatur dengan <b>Atas jejak</b> dan <b>Bawah</b>.</p>'
+ + kv([('Bidang','jejak (garis struktur di Peta atau koordinat) + <b>dip</b> dan <b>dip direction</b>; elevasi jejak dari topografi aktif atau Z tetap'),
+       ('Gerak','jenis normal / naik / mendatar dekstral / sinistral (otomatis) atau <b>oblik</b>: trend &amp; plunge garis gores; <b>offset</b> = net slip hanging wall (m)'),
+       ('Waktu','<b>pre</b>-mineralisasi (referensi), <b>syn</b>-mineralisasi (mengontrol bentuk ore body), <b>post</b>-mineralisasi (memotong &amp; menggeser ore body)'),
+       ('Urutan umur','angka 1 = tertua; centang <b>Memotong</b> untuk sesar yang lebih tua. Tombol <b>Urutkan umur otomatis</b> menyusun pre &lt; syn &lt; post lalu relasi memotong; urutan melingkar / tidak logis diberi peringatan')])
+ + '<h3>Membuat sesar F1 (data laterit)</h3>' + steps('Buka proyek laterit (import <code>SIM_LAT_*</code>, lihat {{B:Geomodeller Stratified}}). Klik <b>Sesar 3D</b> di rel kiri ([[flt_kosong]]).',
+   'Cara biasa: digitasi garis struktur jenis <i>Sesar normal</i> di menu <b>Map</b>, lalu di Sesar 3D pilih garisnya dan klik <b>+ Dari garis Peta</b>. Untuk latihan, klik <b>+ Koordinat manual</b> dan isi <code>%s,%s;%s,%s</code> (dari SIM_LAT_sesar.csv).' % (TRF[0][0], TRF[0][1], TRF[1][0], TRF[1][1]),
+   'Di <b>Atribut sesar</b> isi: waktu <b>Post-mineralisasi</b>, urutan umur 1, dip <b>65</b>, dip direction <b>100</b>, atas 20 m, bawah 120 m, jenis <b>Normal</b>, offset <b>12</b> m, elevasi jejak <b>Tetap</b> Z <b>190</b> ([[flt_atribut]]).',
+   'Bagian <b>Pengaruh ke pemodelan</b> merangkum sesar yang dipulihkan, batas keras dan sesar syn ([[flt_pengaruh]]).')
+ + fig2('flt_kosong', 'Menu Sesar 3D sebelum ada sesar.', 'flt_atribut', 'Atribut sesar F1: post, dip 65/100, normal, offset 12 m.')
+ + fig('flt_pengaruh', 'Ringkasan pengaruh: 1 sesar post dengan offset dipulihkan; tidak ada peringatan urutan umur.', '52%')
+ + fig('flt_3d', 'Bidang F1 di 3D dengan permukaan lapisan yang terpotong dan tergeser (hanging wall timur turun).')
+ + fig('flt_map', 'Jejak F1 di Map dengan tanda arah dip dan label waktu / offset.')
+ + '<h3>Apa yang dilakukan GC-Ex dengan sesar</h3>'
+ + kv([('Post + offset &gt; 0','kontak / sampel di hanging wall <b>dipulihkan</b> (digeser balik searah vektor gerak), mulai sesar <b>termuda</b>. Model vein / lapisan dan estimasi dikerjakan di ruang pulih, lalu hasilnya <b>digeser kembali</b>. Mesh terpotong rapi di bidang sesar.'),
+       ('Batas keras','bawaan untuk post <b>tanpa</b> offset (offset belum diketahui); bisa dinyalakan untuk syn / post lain. Sampel tidak dipakai menyeberang bidang sesar (Model Estimation, estimasi lapisan, interpolasi ketebalan).'),
+       ('Syn-mineralisasi','titik-semu orientasi di bidang sesar dalam <b>jarak pengaruh</b> data domain: solid RBF vein mengikuti bidang sesar (vein yang mengisi sesar). Di Geomodeller Stratified-Laterite, centang Batas keras untuk <i>growth fault</i> (ketebalan berbeda di kedua sisi).'),
+       ('Pre-mineralisasi','hanya referensi tampilan; ikut tergeser oleh sesar post yang lebih muda'),
+       ('Sesar memotong sesar','bidang sesar tua digeser oleh sesar muda (tampilan 3D / Sayatan) dan dipulihkan lebih dulu')])
+ + why('Ore body yang terpotong sesar post bila diinterpolasi langsung akan &ldquo;dijembatani&rdquo; melintasi bidang sesar (lapisan melandai palsu, kadar tercampur). Dengan pemulihan, data dari kedua sisi bersambung lagi seperti sebelum tersesarkan.')
+ + warn('Pemulihan memakai translasi kaku (tanpa rotasi / lipatan). Offset di ujung jejak bisa dikecilkan bertahap dengan <b>Taper ujung</b>. Simpan &amp; export: CSV sesar dan DXF bidang (3DFACE), tabel <code>sesar</code> di gcex_proyek.db.'))
+
+ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex) berlapis mengikuti permukaan: lapisan tipis secara vertikal tetapi luas ke samping. Menu <b>Geomodeller Stratified-Laterite</b> (rel kiri, di bawah Geomodeller Vein) memodelkan lapisan dari log geologi, lalu mengestimasi per lapisan di koordinat <b>unfold</b>. Menu vein yang lama sekarang bernama <b>Geomodeller Vein</b> (Geomodeller Vein System Deposit).</p>'
+ + '<h3>Import data laterit</h3>' + steps('Buat folder proyek baru, import <code>SIM_LAT_collar / survey / assay / geologi.csv</code>, topografi <code>SIM_LAT_topo_xyz.csv</code> dan block model <code>SIM_LAT_BM_GC.csv</code> seperti {{B:Membuat folder}}.',
+   'Di menu Geologi pilih atribut <b>Zona</b> untuk melihat profil TS / LIM / SAP / BRK ([[lat_geologi]]).')
+ + fig('lat_geologi', f"Data laterit: {NL['nHole']} bor vertikal, pita geologi Zona.")
+ + '<h3>&#9312; Lapisan</h3>' + steps('Klik <b>Geomodeller Strata-Laterit</b> di rel kiri. Pilih <b>Kolom geologi</b> = Zona.',
+   'Pilih <b>Preset</b> = <i>Laterit nikel</i>: lapisan Limonit, Saprolit, Bedrock dibuat dan kode log dicocokkan otomatis ([[sl_lapisan]]). Periksa / ubah kode lewat daftar centang tiap lapisan ([[sl_kode]]).',
+   'Isi <b>densitas basah</b> (t/m&sup3;) dan <b>kadar air</b> (%) per lapisan. Lapisan terakhir = <b>dasar</b> (bedrock): hanya atapnya yang dimodelkan.')
+ + fig2('sl_lapisan', 'Preset laterit nikel: urutan lapisan, densitas, kadar air.', 'sl_kode', 'Kode log per lapisan (centang).')
+ + '<h3>&#9313; Permukaan lapisan</h3>' + steps('Bagian <b>Permukaan</b> dibangun otomatis: atap lapisan pertama dari <b>topografi &minus; kedalaman kontak</b> (atau elevasi kontak bor), lalu <b>ketebalan (isopach)</b> tiap lapisan ditumpuk ke bawah sehingga permukaan tidak pernah bersilangan ([[sl_permukaan]]).',
+   'Atur <b>sel grid</b> (5 m), <b>ekstrapolasi maksimum</b> dari bor terdekat (30 m), pangkat IDW dan jumlah tetangga. Hole yang berhenti di dalam lapisan tidak dipakai untuk ketebalan (tebal minimum).',
+   'Tampilan 3D: permukaan atap tiap lapisan dan titik kontak bor ([[sl_permukaan_3d]]). Export: <b>Grid CSV</b> (atap &amp; tebal) dan <b>DXF permukaan</b>.')
+ + fig('sl_permukaan', f"Ringkasan permukaan: {L0['nh']} hole, grid {L0['nx']} &times; {L0['ny']} @ {L0['cell']} m; tebal rata-rata limonit {nf(L0['st'][0][2],2)} m, saprolit {nf(L0['st'][1][2],2)} m.", '52%')
+ + fig('sl_permukaan_3d', 'Permukaan atap Limonit, Saprolit dan Bedrock di 3D.')
+ + '<h3>Sesar memotong lapisan</h3>' + steps('Pada Sayatan 2D arah 100&deg; lewat E 412.150 N 9.620.150, tanpa sesar permukaan &ldquo;melandai&rdquo; melewati zona sesar ([[sl_sayatan_tanpa_sesar]]).',
+   'Setelah F1 dibuat ({{B:Sesar 3D}}), permukaan dibangun ulang otomatis: kontak dipulihkan, digrid, lalu digeser kembali, sehingga lapisan <b>terpotong tegas</b> di bidang sesar ([[sl_sayatan_sesar]], [[sl_permukaan_sesar]]).')
+ + fig('sl_sayatan_tanpa_sesar', 'Tanpa sesar: permukaan menjembatani zona sesar.')
+ + fig('sl_sayatan_sesar', 'Dengan F1 (post, offset 12 m): hanging wall timur turun &plusmn;11 m; lapisan terpotong di bidang sesar.')
+ + fig('sl_permukaan_sesar', f"Ringkasan setelah F1: 1 sesar post dipulihkan; {L1['st'][1][1]} hole saprolit ditandai &ldquo;berhenti / terpotong sesar&rdquo; (atap dan lantai di blok sesar berbeda: kontaknya dipakai, ketebalannya tidak).", '52%')
+ + '<h3>&#9314; Estimasi per lapisan</h3>' + steps('Pilih <b>unsur</b> (Ni, Co, Fe, MgO, SiO2), panjang <b>komposit</b> 1 m, dan <b>rasio</b> SiO2 / MgO ([[sl_estimasi]]).',
+   'Per lapisan: <b>Mode</b> Blok 3D (OK atau IDW) atau <b>Akumulasi 2D</b>; <b>Unfold</b> proporsional atau dari atap; azimuth &amp; range mayor / minor / vertikal (vertikal di ruang unfold, mis. 3 m); nugget; jumlah sampel.',
+   'Klik <b>&#9654; Jalankan estimasi lapisan</b>. Hasil masuk ke block model GC sebagai atribut <code>sl_lapisan</code>, <code>sl_ni</code>, <code>sl_co</code>, &hellip;, <code>sl_pass</code>, <code>sl_ns</code>, <code>sl_rasio</code> ([[sl_estimasi_hasil]], [[sl_bm_2d]], [[sl_bm_lapisan_3d]]).')
+ + fig2('sl_estimasi', 'Parameter estimasi per lapisan.', 'sl_estimasi_hasil', 'Hasil run: ' + clean(NL['slMsg']).replace('&#10003; ', ''))
+ + fig('sl_bm_2d', 'Block model GC berwarna sl_ni di Sayatan 2D: blok hanging wall ikut turun di timur sesar F1.')
+ + fig('sl_bm_lapisan_3d', 'Atribut sl_lapisan di 3D.')
+ + why('<b>Unfold proporsional</b>: setiap sampel / blok diberi posisi relatif antara atap dan lantai lapisannya (0 = atap, 1 = lantai), jadi sampel di puncak bukit dan di lembah yang sama-sama &ldquo;bagian atas saprolit&rdquo; dianggap berdekatan. Tanpa unfold, pencarian sampel memakai elevasi absolut dan bisa mengambil sampel dari lapisan lain di topografi yang miring.')
+ + '<h3>&#9315; Laporan</h3>' + steps('Bagian <b>Laporan</b>: volume, <b>WMT</b> (volume &times; densitas basah), <b>DMT</b> (WMT &times; (1 &minus; kadar air)), kadar rata-rata (ditimbang DMT) dan rasio ([[sl_laporan]]).',
+   'Isi <b>cut-off</b> Ni &ge; 1,5 untuk tonase bijih ([[sl_laporan_cut]]). <b>&#8681; Laporan CSV</b> untuk Excel.')
+ + fig2('sl_laporan', f"Tanpa cut-off: Limonit {nf(LP[0][4])} DMT @ Ni {nf(LP[0][5][0],3)}%; Saprolit {nf(LP[1][4])} DMT @ Ni {nf(LP[1][5][0],3)}%.", 'sl_laporan_cut', f"Cut-off Ni &ge; 1,5: Limonit {nf(LC[0][2])} DMT @ {nf(LC[0][3][0],3)}%; Saprolit {nf(LC[1][2])} DMT @ {nf(LC[1][3][0],3)}%.")
+ + '<h3>Bauksit &amp; stratiform (sedex)</h3>'
+ + kv([('Preset Bauksit','Overburden, Bauksit, Kaolin / lempung, Batuan dasar; pakai unsur Al2O3, SiO2 reaktif, Fe2O3 dan rasio Al2O3 / SiO2'),
+       ('Preset Stratiform (sedex)','Hanging wall, Lapisan bijih (Akumulasi 2D), Footwall; lapisan tidak harus mengikuti topografi; sesar post dipulihkan, growth fault = syn + batas keras'),
+       ('Akumulasi 2D','per bor: tebal lapisan T dan kadar rata-rata g; kadar blok = &Sigma;(w &middot; T &middot; g) / &Sigma;(w &middot; T): cocok untuk lapisan tipis yang tebalnya berubah')])
+ + fig('tree', 'Project Tree: Struktur Geologi &rsaquo; Sesar (bidang 3D) dan Geomodeller Stratified-Laterite Deposit dengan node lapisan &amp; tahap &#9312;&ndash;&#9315;.', '40%')
+ + tip('Semua pengaturan lapisan, sesar dan hasil estimasi tersimpan per proyek; tabel <code>sesar</code> dan <code>lapisan</code> ikut ke database proyek SQLite (gcex_proyek.db).'))
+
 ch('Map: peta geologi 2D', '<p>Menu <b>Map</b> di rel kiri mengganti area grafik dengan peta 2D (Easting / Northing; Z tidak dipakai), seperti Global Mapper. Scroll = zoom, tarik = geser; koordinat kursor tampil di kiri bawah.</p>'
  + '<h3>Layer peta</h3>' + steps('Klik <b>Map</b> di rel kiri ([[map_layer]]).', 'Centang layer: orthofoto, kontur topografi (interval diatur), desain pit, collar, jejak bor, domain vein, struktur (simbol USGS), fitur digitasi, titik pick-up, label.')
  + fig('map_layer', 'Map dengan kontur topografi 5 m, collar dan jejak bor, titik tengah domain QV_Utama dan simbol struktur USGS (strike + tick arah dip + angka dip).')
@@ -444,7 +515,7 @@ ch('Export database & block model', steps(
  f"Hasil: {clean(N['exportDb'])} File ZIP berisi: <code>{', '.join(N['zipIsi'])}</code>.",
  'Kolom <code>Ore_Domain</code> di assay &amp; geologi berisi domain dari flag, siap dipakai sebagai interval selection di Leapfrog atau Surpac.',
  'Block model hasil Model Estimation: <b>&#8681; Export .mdl (Surpac)</b> di Model Estimation (bila block model dibuka dari file .mdl). Header &amp; atribut asli tetap, atribut baru ditambahkan di akhir, blok tambahan disisipkan sesuai urutan octree Surpac. Block model dari CSV: <b>&#8681; CSV blok domain</b> ' + f"({clean(N['meCsv'])}).",
- 'String kontrol: <b>&#8681; Export STR</b> / <b>&#8681; Export DXF</b>; flag: <b>&#8681; Export flag (CSV)</b>; solid: <b>OBJ / DXF / STR+DTM</b> di Geological Modelling.')
+ 'String kontrol: <b>&#8681; Export STR</b> / <b>&#8681; Export DXF</b>; flag: <b>&#8681; Export flag (CSV)</b>; solid: <b>OBJ / DXF / STR+DTM</b> di Geomodeller Vein.')
  + tip('Jika menu <b>Proyek &rarr; Salin setiap export ke folder proyek/export</b> aktif, salinan export juga tersimpan di folder proyek, misalnya <code>export/2026-10-22/GCEx_Database_VeinA_Simulasi_20261022.zip</code>.')
  + warn('Export .mdl dengan atribut &amp; blok tambahan sudah diuji dibaca ulang oleh GC-Ex dan dibandingkan per record dengan file asli (model Z3, 590.478 blok). Uji buka di Surpac tetap disarankan sebelum dipakai produksi.'))
 
@@ -462,6 +533,7 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<tr><td><b>Tahap 2</b><br>Solid vein RBF</td><td><b>Sudah tersedia</b> ({{B:Membangun solid}}): permukaan HW dan FW per domain dimodelkan terpisah (RBF), solid dengan tebal minimum 1 m, potong tegas searah strike (radius pengaruh 15 m), pinch-out / potong topografi searah dip, orientasi & elipsoid per domain, dibangun ulang otomatis, export OBJ / DXF / Surpac STR+DTM.</td></tr>'
  + '<tr><td><b>Tahap 3</b><br>Model Estimation</td><td><b>Sudah tersedia</b> ({{B:Model Estimation}}, {{B:Koreksi setelah}}): parameter per domain dari Geostatistik, Ordinary Kriging blok GC di dalam solid, koreksi hanya sekitar bor baru, blok tambahan, atribut baru, riwayat run, export .mdl / CSV.</td></tr>'
  + '<tr><td><b>Pembaruan 23 Okt</b></td><td><b>Sudah tersedia</b>: validasi data ({{B:Validasi data}}), RBF halus &amp; anti-spike, vein bercabang ({{B:Vein bercabang}}), struktur geologi ({{B:Struktur geologi}}), menu Map ({{B:Map:}}).</td></tr>'
+ + '<tr><td><b>Versi 0.21</b></td><td><b>Sudah tersedia</b>: Sesar 3D ({{B:Sesar 3D}}) dan Geomodeller Stratified-Laterite ({{B:Geomodeller Stratified}}); menu Geological Modelling berganti nama menjadi Geomodeller Vein.</td></tr>'
  + '<tr><td><b>Usulan berikutnya</b><br>(belum disepakati)</td><td>Klasifikasi blok (measured / indicated) dari pass, SoR dan jarak sampel; tabel grade-tonnage per domain dan per bench; rekonsiliasi GC lama vs model baru per periode.</td></tr></table>'
  + '<h3>Ringkasan angka latihan (untuk mengecek hasil peserta)</h3>'
  + kv([('Import awal', f"{N['nHole']} hole, {N['nAssay']:,} assay, block model GC {N['bx']:,} blok"),
@@ -491,7 +563,7 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<tr><td>Solid cabang tidak menyambung ke induk</td><td>Pastikan <b>Sambung ke induk</b> menyala dan perbesar <b>Jarak sambung</b> sampai mencapai lubang yang sudah menembus vein gabungan.</td></tr>'
  + '<tr><td>Solid berupa beberapa bagian terpisah</td><td>Celah data searah strike lebih dari 2 &times; radius pengaruh. Perbesar radius pengaruh bila memang satu vein menerus.</td></tr>'
  + '<tr><td>Block model hilang setelah membuka proyek</td><td>File di <code>sumber/</code> dipindah / diganti; salin ulang lewat menu Proyek.</td></tr>'
- + '<tr><td>Model Estimation: domain tidak siap</td><td>Perlu solid (Geological Modelling &#9315;) dan parameter (Geostatistik &rarr; Uji estimasi &rarr; Simpan ke domain).</td></tr>'
+ + '<tr><td>Model Estimation: domain tidak siap</td><td>Perlu solid (Geomodeller Vein &#9315;) dan parameter (Geostatistik &rarr; Uji estimasi &rarr; Simpan ke domain).</td></tr>'
  + '<tr><td>&ldquo;blok hasil tersimpan tidak ditemukan&rdquo;</td><td>Block model GC yang dibuka berbeda dari saat run (file sumber diganti). Jalankan ulang dengan opsi semua blok.</td></tr></table>')
 
 # ================= HTML =================
@@ -543,7 +615,7 @@ table.kv td{{border-bottom:1px solid var(--ln);padding:1.3mm 2mm;vertical-align:
 ul{{margin:1mm 0 3mm;padding-left:5mm}}li{{margin:.6mm 0}}
 </style></head><body>
 <div class="cover"><div class="top"><div class="logo">GC-Ex</div><h1>Tutorial Pemodelan Vein &amp;<br>Estimasi Block Model</h1>
-<div class="sub">GC-Ex Drill Hole Ultimate 0.20 &middot; langkah demi langkah dengan data simulasi VeinA</div></div>
+<div class="sub">GC-Ex Drill Hole Ultimate 0.21 &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
 <div class="img"><img src="{FIG['model_3d'][0]}"></div>
 <div class="meta">Edisi {today.day} {bulan} {today.year} &middot; untuk pelatihan internal geologist grade control<br>
 Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya latihan</div></div>

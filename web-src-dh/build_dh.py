@@ -26,7 +26,7 @@ SHARED = os.path.join(W, '..', 'web-src') + os.sep
 s = open(W + 'gcex_dh_base.html', encoding='utf-8').read()
 mods = [SHARED + 'mdlbig.js', SHARED + 'guide.js', SHARED + 'desk_text.js', W + 'mdlbig_dh.js', W + 'deskflush_dh.js', SHARED + 'prj.js', SHARED + 'wm.js']
 if shutil.which('node'):
-    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js']:
+    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js']:
         r = subprocess.run(['node', '--check', m], capture_output=True, text=True)
         assert r.returncode == 0, 'Galat sintaks di ' + m + ':\n' + r.stderr[:800]
     print('Cek sintaks modul: OK')
@@ -60,7 +60,7 @@ print('UI 0.12 (Mapping / Layout / Sayatan): OK')
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
 s = s.replace("  if(!DOM.on)b+='<p class=gg-why>&#9432; Belum ada filter dom", "  if(!DOM.on&&!(window.gsDomCodes&&gsDomCodes()))b+='<p class=gg-why>&#9432; Belum ada filter dom")
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan
@@ -77,6 +77,18 @@ import palette_patch
 s, npal = palette_patch.patch(s, earthy=True)
 s = palette_patch.layout(s)
 print('Palet earthy:', npal, 'tempat')
+# 0.21: Sesar 3D (filter batas keras di pencarian sampel, blok di ruang pulih) & ganti nama menu Geological Modelling
+for a, b in [('if(d<=1)cand.push([d,L[t]]);', 'if(d<=1&&(!window.OKF||OKF(c)))cand.push([d,L[t]]);'),
+             ('var x=it.x-offX,y=it.y-offY,z=it.z,res=null,cbb=dc.cbb;', 'var x=it.x-offX,y=it.y-offY,z=it.z,res=null,cbb=dc.cbb;if(window.fltQ){var _fq=fltQ(x,y,z);x=_fq[0];y=_fq[1];z=_fq[2];}'),
+             ('var near=function(x,y,z){', 'var near=function(x,y,z){if(window.fltQ){var _fq=fltQ(x,y,z);x=_fq[0];y=_fq[1];z=_fq[2];}')]:
+    assert s.count(a) == 1, 'titik patch sesar: ' + a
+    s = s.replace(a, b)
+s = s.replace("<h3>Geological Modelling</h3>", "<h3>Geomodeller Vein System Deposit</h3>")
+s = s.replace("title='Geological Modelling: domain vein", "title='Geomodeller Vein System Deposit: domain vein")
+s = s.replace("Geological<br>Modelling</button>", "Geomodeller<br>Vein</button>")
+n_gm = s.count('Geological Modelling')
+s = s.replace('Geological Modelling', 'Geomodeller Vein')
+print('Menu Geomodeller Vein / Stratified-Laterite / Sesar 3D: OK (' + str(n_gm) + ' teks)')
 import brand_build
 s = brand_build.apply(s, 'dh', OUT, open(SHARED + 'theme_earthy.css', encoding='utf-8').read() + '\n')
 print('Identitas GC-Ex 0.19: OK')
