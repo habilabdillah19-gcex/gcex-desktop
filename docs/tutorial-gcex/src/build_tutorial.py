@@ -100,22 +100,24 @@ ch('Data simulasi', f'''
 <tr><td>SIM_upsert_*.csv</td><td>4 lubang infill (SIM-INF-01 s/d 04) untuk latihan <b>upsert</b>.</td></tr>
 <tr><td>SIM_upsert2_*.csv</td><td>2 lubang infill tahap 2 (SIM-INF-05, 06) untuk latihan <b>koreksi Model Estimation</b>.</td></tr>
 <tr><td>SIM_topo_xyz.csv, SIM_topo_xyz_nov.csv</td><td>Topografi titik XYZ grid 5 m; versi bulan berikutnya untuk latihan Data Spasial.</td></tr>
-<tr><td>SIM_BM_GC.csv</td><td>Block model GC lama ukuran 2,5 m ({N['bx']:,} blok) dengan atribut AU, SG, DOMAIN.</td></tr>
-<tr><td>QV_Utama_Leapfrog.obj</td><td>Contoh wireframe vein utama hasil Leapfrog (tertutup, 18.696 segitiga).</td></tr>
+<tr><td>SIM_BM_GC.csv</td><td>Block model GC kosong 10 &times; 10 &times; 5 m ({N['bx']:,} blok) di sekitar array vein.</td></tr>
+<tr><td>QV_Lensa2_Leapfrog.obj</td><td>Contoh wireframe lensa 2 hasil Leapfrog (tertutup, 21.596 segitiga).</td></tr>
 <tr><td>SIM_struktur.csv</td><td>19 titik struktur (No, X, Y, Z, Dip, Dip_Azimuth, Keterangan): kontak HW di singkapan, dari core oriented, dan kekar.</td></tr>
-<tr><td>SIM_pickup_survey.csv</td><td>114 titik pick-up survei (ID, East, North, RL, Code): VEIN_HW / VEIN_FW singkapan QV_Utama, TOE / CREST pit kecil.</td></tr>
+<tr><td>SIM_pickup_survey.csv</td><td>114 titik pick-up survei (ID, East, North, RL, Code): VEIN_HW / VEIN_FW singkapan QV_Lensa2, TOE / CREST pit kecil.</td></tr>
 <tr><td>SIM_split_*.csv</td><td>Proyek terpisah vein bercabang (latihan domain induk).</td></tr>
 <tr><td>SIM_rusak_collar.csv, SIM_rusak_assay.csv</td><td>Database dengan kesalahan sengaja untuk latihan validasi.</td></tr>
 <tr><td>SIM_LAT_collar / survey / assay / geologi.csv</td><td>Proyek terpisah <b>laterit nikel</b>: {NL['nHole']} bor vertikal grid 25 m, sampel 1 m ({NL['nAssay']:,} sampel), unsur Ni, Co, Fe, MgO, SiO2 (%), kolom <code>Zona</code>: TS (tanah penutup), LIM, SAP, BRK.</td></tr>
 <tr><td>SIM_LAT_topo_xyz.csv, SIM_LAT_BM_GC.csv</td><td>Topografi grid 10 m dan block model GC 12,5 &times; 12,5 &times; 1 m ({NL['nBlok']:,} blok) untuk latihan {{B:Geomodeller Stratified}}.</td></tr>
 <tr><td>SIM_LAT_sesar.csv</td><td>Jejak sesar F1 (dua titik X, Y) beserta dip 65&deg; ke 100&deg;, normal, offset 12 m, post-mineralisasi, untuk latihan {{B:Sesar 3D}}.</td></tr></table>
 <h3>Geometri yang perlu diingat</h3>
-{kv([('Vein utama (QV_Utama)','strike 045&deg;, dip 70&deg; ke 135&deg; (tenggara), sigmoidal, tebal 1&ndash;3,2 m, ore shoot di tengah'),
-     ('Vein kedua (QV_HW1)','sejajar, &plusmn;22 m di sisi hanging wall, lebih tipis dan lebih rendah kadar'),
+<p>Endapannya adalah <b>array 4 lensa vein en-echelon</b> (QV_Lensa1 s/d QV_Lensa4) ditambah satu splay di sisi hanging wall. Tutorial ini menelusuri <b>lensa 2 beserta splay-nya</b>; lensa lain dikerjakan dengan cara yang persis sama. Model geologi lengkapnya, beserta kunci jawabannya, ada di <i>Tutorial Tambahan GC-Ex 0.24</i> dan <code>data/JAWABAN_MODEL.txt</code>.</p>
+{kv([('Vein utama (QV_Lensa2)','strike 045&deg;, dip 70&deg; ke 135&deg; (bidang acuan; permukaannya sigmoidal sehingga bidang rata-rata data &plusmn;66&deg;), tebal median 1 m dan membengkak sampai &plusmn;5 m di zona dilatan'),
+     ('Ore shoot','pitch 55&deg; dari garis strike di dalam bidang vein &mdash; mengontrol tebal DAN kadar sekaligus'),
+     ('Splay hangingwall (QV_Splay_HW)','sejajar, &plusmn;26 m di sisi hanging wall, lebih tipis dan lebih rendah kadar'),
      ('Arah bor','azimuth 315&deg;, dip &minus;55&deg; s/d &minus;65&deg; (dari sisi hanging wall)'),
-     ('Koordinat','sekitar E 505.000, N 9.012.000; elevasi 190&ndash;320 m'),
+     ('Koordinat','sekitar E 505.000, N 9.012.000; elevasi 150&ndash;330 m, paleo-muka air tanah RL 250 m (zona bonanza)'),
      ('Dip survey','negatif = ke bawah')])}
-''' + why('Karena bor datang dari sisi hanging wall, lubang yang cukup panjang akan menembus <b>QV_HW1 dulu</b> (lebih dangkal), baru <b>QV_Utama</b>. Ini dipakai pada {{B:Koreksi flag}} untuk latihan koreksi flag.'))
+''' + why('Karena bor datang dari sisi hanging wall, lubang yang cukup panjang akan menembus <b>QV_Splay_HW dulu</b> (lebih dangkal), baru <b>QV_Lensa2</b>. Ini dipakai pada {{B:Koreksi flag}} untuk latihan koreksi flag.'))
 
 ch('Membuat folder proyek & import data', steps(
  'Buka <b>GC-Ex Drill Hole Ultimate</b> dari menu Start. Halaman muka <b>Import data</b> tampil penuh ([[jendela_awal]]); isi <b>Nama project site</b> bila perlu (tampil di bilah atas, disimpan per proyek).',
@@ -179,49 +181,49 @@ ch('Geologi: pita litologi', steps(
 
 ch('Geomodeller Vein: membuat domain vein', steps(
  'Klik <b>Geomodeller Vein</b> di rel kiri.',
- 'Di Project Tree, klik <b>+ Tambah domain&hellip;</b> di bawah <b>Geomodeller Vein</b>, ketik <code>QV_Utama</code>, OK. Ulangi untuk <code>QV_HW1</code>.',
+ 'Di Project Tree, klik <b>+ Tambah domain&hellip;</b> di bawah <b>Geomodeller Vein</b>, ketik <code>QV_Lensa2</code>, OK. Ulangi untuk <code>QV_Splay_HW</code>.',
  'Klik nama domain di Project Tree untuk menjadikannya <b>domain aktif</b> (bertanda <i>AKTIF</i>). Panel Properti hanya menampilkan domain aktif: warna bisa diubah dengan klik kotak warna; centang kanan = tampil / sembunyi. Flag, String, Solid dan Struktur selalu bekerja pada domain aktif.')
  + fig2('gm_domain', 'Dua domain vein dibuat. Di bawah nama: jumlah hole &middot; run &middot; panjang &middot; kadar rata-rata.',
         'gm_usulan_param', 'Bagian <b>Usulan otomatis dari kadar</b> dibuka dengan parameter latihan.')
- + why('Nama domain bebas per proyek. Nama ini dipakai juga untuk string kontrol (<code>QV_Utama_HW_01</code>), kolom <code>Ore_Domain</code> saat export, dan filter estimasi &mdash; jadi pilih nama yang baku di tim.'))
+ + why('Nama domain bebas per proyek. Nama ini dipakai juga untuk string kontrol (<code>QV_Lensa2_HW_01</code>), kolom <code>Ore_Domain</code> saat export, dan filter estimasi &mdash; jadi pilih nama yang baku di tim.'))
 
 ch('Flag otomatis dari kadar', steps(
- 'Pastikan domain aktif = <b>QV_Utama</b>.',
+ 'Pastikan domain aktif = <b>QV_Lensa2</b>.',
  'Buka <b>&#9660; Usulan otomatis dari kadar</b> dan isi: <b>Unsur</b> Au, <b>Cut-off</b> 0.5, <b>Panjang min.</b> 1 m, <b>Dilusi internal maks.</b> 1 m, <b>Lingkup</b> Semua hole, aktifkan <b>Jangan timpa flag lain</b> ([[gm_usulan_param]]).',
  'Klik <b>Usulkan ke domain aktif</b>.',
  f"Hasil ([[gm_usulan_hasil]]): <b>{clean(N['auto']).split('. Periksa')[0]}</b>.")
- + fig('gm_usulan_hasil', 'Interval hasil usulan diberi pita warna domain QV_Utama di penampang 2D. Angka di samping trace = kadar Au.')
+ + fig('gm_usulan_hasil', 'Interval hasil usulan diberi pita warna domain QV_Lensa2 di penampang 2D. Angka di samping trace = kadar Au.')
  + why('Usulan menggabungkan sampel &ge; cut-off yang dipisah waste &le; dilusi maksimum, dan membuang run lebih pendek dari panjang minimum. Hasilnya <b>hanya usulan</b>: geologist tetap wajib memeriksa tiap section.')
- + warn(f"Usulan memasukkan semua run kadar ke domain aktif. Pada data ini ada <b>{N['holeDuaVein']} hole</b> yang menembus dua vein (contoh <b>{N['contohHole']}</b>), sehingga intercept dangkal (QV_HW1) ikut masuk QV_Utama. Ini dikoreksi pada bab berikut."))
+ + warn(f"Usulan memasukkan semua run kadar ke domain aktif. Pada data ini ada <b>{N['holeDuaVein']} hole</b> yang menembus dua vein (contoh <b>{N['contohHole']}</b>), sehingga intercept dangkal (QV_Splay_HW) ikut masuk QV_Lensa2. Ini dikoreksi pada bab berikut."))
 
 ch('Koreksi flag secara interaktif', steps(
  f"Buat sayatan sepanjang lubang <b>{N['contohHole']}</b> (azimuth 315&deg;) dan buka <b>Sayatan 2D</b>.",
- 'Di Geomodeller Vein pilih domain aktif <b>QV_HW1</b>, lalu klik <b>&#9998; Flag</b>. Kotak biru <i>Flag aktif: QV_HW1</i> muncul dengan petunjuk mouse.',
+ 'Di Geomodeller Vein pilih domain aktif <b>QV_Splay_HW</b>, lalu klik <b>&#9998; Flag</b>. Kotak biru <i>Flag aktif: QV_Splay_HW</i> muncul dengan petunjuk mouse.',
  '<b>Klik</b> satu interval = flag / lepas. <b>Tarik sepanjang lubang</b> = flag satu rentang ([[flag_tarik_hw1]]). <b>Shift + tarik</b> = kotak, semua interval di dalam kotak.',
- 'Lepas mouse: interval berganti warna domain QV_HW1 ([[flag_hasil_hw1]]). Salah? Tekan <b>Ctrl+Z</b> atau klik <b>&#8630; Urungkan</b>.',
+ 'Lepas mouse: interval berganti warna domain QV_Splay_HW ([[flag_hasil_hw1]]). Salah? Tekan <b>Ctrl+Z</b> atau klik <b>&#8630; Urungkan</b>.',
  'Untuk menghapus flag, klik <b>&#9003; Hapus flag</b> lalu klik / tarik interval. Tekan <b>Esc</b> atau <b>Selesai</b> untuk keluar dari mode.',
  'Ulangi untuk hole lain yang menembus dua vein, section demi section.')
- + fig('flag_tarik_hw1', 'Menarik mouse sepanjang intercept dangkal pada SIM-S04-2 untuk memindahkannya ke domain QV_HW1.')
- + fig('flag_hasil_hw1', 'Setelah dilepas: intercept dangkal berwarna biru (QV_HW1), intercept dalam tetap oranye (QV_Utama). Satu interval hanya boleh punya satu domain.')
+ + fig('flag_tarik_hw1', 'Menarik mouse sepanjang intercept dangkal pada SIM-S04-2 untuk memindahkannya ke domain QV_Splay_HW.')
+ + fig('flag_hasil_hw1', 'Setelah dilepas: intercept dangkal berwarna biru (QV_Splay_HW), intercept dalam tetap oranye (QV_Lensa2). Satu interval hanya boleh punya satu domain.')
  + '<p>Setelah semua hole dikoreksi, statistik di panel domain menjadi:</p>'
- + kv([('QV_Utama', f"{st['QV_Utama'][1]} hole &middot; {st['QV_Utama'][3]} m &middot; Au rata-rata {st['QV_Utama'][4]} g/t"),
-       ('QV_HW1', f"{st['QV_HW1'][1]} hole &middot; {st['QV_HW1'][3]} m &middot; Au rata-rata {st['QV_HW1'][4]} g/t")])
+ + kv([('QV_Lensa2', f"{st['QV_Lensa2'][1]} hole &middot; {st['QV_Lensa2'][3]} m &middot; Au rata-rata {st['QV_Lensa2'][4]} g/t"),
+       ('QV_Splay_HW', f"{st['QV_Splay_HW'][1]} hole &middot; {st['QV_Splay_HW'][3]} m &middot; Au rata-rata {st['QV_Splay_HW'][4]} g/t")])
  + tip('Flag disimpan per <b>kedalaman</b> (from&ndash;to), bukan per nomor baris. Karena itu flag tetap aman ketika data assay hole tersebut diganti lewat upsert ({{B:Menambah bor}}).'))
 
 ch('String kontrol hanging wall / footwall', '<p>String kontrol adalah garis batas vein per section: <b>HW</b> (hanging wall, garis penuh) dan <b>FW</b> (footwall, garis putus-putus). String ini terpisah dari menu Digitasi dan akan dipakai, diperbaiki dan ditambah setiap ada bor baru.</p>'
  + steps('Atur sayatan tegak lurus strike (135&deg;) dengan <b>Tebal</b> = jarak antar section, di sini <b>20 m</b>.',
-   'Domain aktif <b>QV_Utama</b>, lalu di tab <b>String</b> klik <b>&#10148;&#10148; Semua section</b>. GC-Ex menarik garis HW dan FW melalui titik kontak flag di tiap section.',
-   f"Hasil: <b>{clean(N['strUtama'])}</b> Untuk QV_HW1: <b>{clean(N['strHW1'])}</b>",
-   'Periksa per section (Maju / Mundur). Nama string otomatis: <code>QV_Utama_HW_05</code>, <code>QV_Utama_FW_05</code>, dst.')
- + fig('string_section', 'Section offset &minus;20 m: string HW (penuh) dan FW (putus-putus) QV_Utama (oranye) serta QV_HW1 (biru), melalui titik kontak flag.')
+   'Domain aktif <b>QV_Lensa2</b>, lalu di tab <b>String</b> klik <b>&#10148;&#10148; Semua section</b>. GC-Ex menarik garis HW dan FW melalui titik kontak flag di tiap section.',
+   f"Hasil: <b>{clean(N['strUtama'])}</b> Untuk QV_Splay_HW: <b>{clean(N['strHW1'])}</b>",
+   'Periksa per section (Maju / Mundur). Nama string otomatis: <code>QV_Lensa2_HW_05</code>, <code>QV_Lensa2_FW_05</code>, dst.')
+ + fig('string_section', 'Section offset &minus;20 m: string HW (penuh) dan FW (putus-putus) QV_Lensa2 (oranye) serta QV_Splay_HW (biru), melalui titik kontak flag.')
  + fig2('string_panel', 'Panel domain sesudah penarikan string. Jumlah hole / run per domain terlihat langsung.',
-        'wireframe_panel', 'Panel yang sama setelah wireframe Leapfrog dipakai untuk flag ({{B:Memakai wireframe}}): QV_Utama bertambah jadi 33 hole.')
+        'wireframe_panel', 'Panel yang sama setelah wireframe Leapfrog dipakai untuk flag ({{B:Memakai wireframe}}): QV_Lensa2 bertambah jadi 33 hole.')
  + '<h3>Mengedit string langsung di layar</h3>' + steps('Buka <b>Sayatan 2D</b> pada section string yang ingin diperbaiki. Tidak perlu menekan tombol edit.',
    'Arahkan kursor ke string: string tersorot, <b>kotak</b> muncul di setiap titik dan <b>bulatan</b> di tengah setiap segmen, dengan nama string di dekatnya ([[string_hover]]).',
    '<b>Tarik kotak</b> = pindah titik (snap ke kontak bor); <b>tarik bulatan</b> = sisip titik baru; <b>Shift+klik</b> kotak = hapus titik; <b>Ctrl+klik</b> = tambah titik di ujung terdekat.',
    'Selesai: klik area kosong grafik, atau tekan <b>Enter / Esc</b>. Menarik di area kosong tetap menggeser tampilan seperti biasa. Solid RBF dibangun ulang otomatis.',
    'Untuk menggambar string baru pilih HW / FW lalu <b>&#9998; Digit</b>. Edit langsung bisa dimatikan lewat centang <b>Edit string langsung di layar</b>; tombol <b>&#9998;</b> di daftar string tetap ada.')
- + fig('string_hover', 'Kursor di atas string FW QV_Utama: titik dan bulatan tengah muncul tanpa membuka mode edit.')
+ + fig('string_hover', 'Kursor di atas string FW QV_Lensa2: titik dan bulatan tengah muncul tanpa membuka mode edit.')
  + fig('string_edit', 'Titik tengah ditarik langsung. String yang sudah diedit tangan diberi tanda dan <b>tidak ditimpa</b> saat Tarik otomatis diulang.')
  + fig('model_3d', 'Tampilan 3D (preset Layer <b>Pemodelan</b>): flag domain dan seluruh string HW / FW tiap section membentuk kerangka vein sigmoidal.')
  + why('String HW dan FW dimodelkan terpisah, seperti pada vein modelling di Leapfrog. Pada tahap berikutnya (RBF) keduanya menjadi permukaan HW dan FW, lalu solid di antaranya dengan tebal minimum 1 m.'))
@@ -229,7 +231,7 @@ ch('String kontrol hanging wall / footwall', '<p>String kontrol adalah garis bat
 SOL = {r[0]: r for r in (json.loads(N['solid']) if isinstance(N['solid'], str) else N['solid'])}
 SOLI = {r[0]: r for r in (json.loads(N['solidInfill']) if isinstance(N['solidInfill'], str) else N['solidInfill'])}
 def fN(v, d=0): return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.', ',').replace('X', '.')
-su, sh = SOL['QV_Utama'], SOL['QV_HW1']
+su, sh = SOL['QV_Lensa2'], SOL['QV_Splay_HW']
 ch('Membangun solid vein (RBF)', '<p>Dari string kontrol dan titik kontak bor, GC-Ex membangun <b>permukaan hanging wall</b> dan <b>permukaan footwall</b> secara terpisah (interpolasi RBF <i>thin-plate spline</i>, mengikuti bentuk sigmoidal), lalu <b>solid vein</b> di antara keduanya. Model <b>dibangun ulang otomatis</b> setiap string atau flag berubah.</p>'
  + '<h3>Aturan batas model</h3>' + kv([('Searah strike','diperpanjang sejauh <b>radius pengaruh</b> (bawaan 15 m) dari data terluar lalu <b>dipotong tegas</b> (ada dinding penutup). <b>Tidak ada pinch-out</b> searah strike.'),
        ('Celah data searah strike','bila jarak antar data &gt; 2 &times; radius pengaruh (bawaan &gt; 30 m), model <b>diputus</b> menjadi bagian terpisah, tidak disambung paksa.'),
@@ -241,20 +243,20 @@ ch('Membangun solid vein (RBF)', '<p>Dari string kontrol dan titik kontak bor, G
    'Klik <b>&#9654; Bangun solid domain aktif</b>, atau <b>&#9654;&#9654; Semua domain</b>. Kotak centang di daftar domain menyalakan / mematikan solid per domain.',
    'Buka <b>Parameter domain aktif</b> bila perlu mengubah ([[solid_param]]). <b>Batas model</b>: radius pengaruh searah strike, pinch-out searah dip, ujung atas (topografi / pinch-out), tebal minimum. <b>Orientasi vein</b>: otomatis dari data, atau isi <b>Dip</b> dan <b>Dip dir</b> sendiri (klik <i>pakai &amp; ubah</i> untuk mulai dari nilai otomatis). <b>Elipsoid RBF</b>: sumbu mayor, semi-mayor dan pitch. <b>Struktur</b>: pakai titik struktur (lihat {{B:Struktur geologi}}). <b>RBF &amp; mesh</b>: resolusi, <b>Kehalusan permukaan</b>, sumber titik, <b>Anti-spike</b>. Tombol <b>Pakai parameter ini untuk semua domain</b> menyalin ke domain lain; <b>&#8634; Bawaan</b> mengembalikan nilai awal.',
    'Baca kotak ringkasan ([[solid_panel]]): volume, tonase, tebal, jumlah titik, selisih model di kontak bor, dan <b>interval flag di dalam solid</b>.')
- + fig('solid_panel', f"Tab Solid setelah <b>Semua domain</b>: QV_Utama {fN(su[1])} m&sup3; (tebal rata-rata {fN(su[2],2)} m), QV_HW1 {fN(sh[1])} m&sup3;. Semua {su[8]} interval flag QV_Utama berada di dalam solid; mesh tertutup rapat.")
- + kv([('Bidang rata-rata QV_Utama', f'dip {su[10]}&deg; ke {su[11]}&deg; (vein sigmoidal 70&deg;/135&deg;; bentuk S membuat rata-ratanya lebih landai)'),
+ + fig('solid_panel', f"Tab Solid setelah <b>Semua domain</b>: QV_Lensa2 {fN(su[1])} m&sup3; (tebal rata-rata {fN(su[2],2)} m), QV_Splay_HW {fN(sh[1])} m&sup3;. Semua {su[8]} interval flag QV_Lensa2 berada di dalam solid; mesh tertutup rapat.")
+ + kv([('Bidang rata-rata QV_Lensa2', f'dip {su[10]}&deg; ke {su[11]}&deg; (vein sigmoidal 70&deg;/135&deg;; bentuk S membuat rata-ratanya lebih landai)'),
        ('Titik model', f'{su[4]} titik HW / {su[5]} titik FW, termasuk {su[6]} pasang kontak bor'),
        ('Volume / luas bidang', f'{fN(su[1])} m&sup3; / {fN(su[12])} m&sup2;'),
        ('Tebal di zona data', f'rata-rata {fN(su[2],2)} m, maksimum {fN(su[3],2)} m, minimum 1,00 m (dipaksa)'),
        ('Waktu hitung', f'{fN(su[13],2)} detik')])
- + fig('solid_param', 'Parameter domain aktif QV_Utama: radius pengaruh strike 15 m (potong tegas), pinch-out dip 15 m, atas dipotong topografi, orientasi otomatis, elipsoid isotropik.', '78%')
- + fig('solid_3d', 'Solid QV_Utama (oranye) dan QV_HW1 (biru) di 3D bersama lubang bor: tepi bawah mulus mengikuti data, ujung strike dipotong tegas 15 m dari section terluar. Item <b>Solid vein (RBF)</b> di panel Layer menyalakan / menyembunyikannya.')
- + fig('solid_2d', 'Sayatan 2D section tengah: solid terisi warna domain di antara string HW (penuh) dan FW (putus-putus). Di atas dan di bawah kontak terakhir vein menipis (pinch-out) sepanjang 15 m. QV_HW1 hanya ditembus satu lubang di section ini, sehingga berbentuk lensa.')
+ + fig('solid_param', 'Parameter domain aktif QV_Lensa2: radius pengaruh strike 15 m (potong tegas), pinch-out dip 15 m, atas dipotong topografi, orientasi otomatis, elipsoid isotropik.', '78%')
+ + fig('solid_3d', 'Solid QV_Lensa2 (oranye) dan QV_Splay_HW (biru) di 3D bersama lubang bor: tepi bawah mulus mengikuti data, ujung strike dipotong tegas 15 m dari section terluar. Item <b>Solid vein (RBF)</b> di panel Layer menyalakan / menyembunyikannya.')
+ + fig('solid_2d', 'Sayatan 2D section tengah: solid terisi warna domain di antara string HW (penuh) dan FW (putus-putus). Di atas dan di bawah kontak terakhir vein menipis (pinch-out) sepanjang 15 m. QV_Splay_HW hanya ditembus satu lubang di section ini, sehingga berbentuk lensa.')
  + why('Tebal minimum 1 m menjaga vein tidak lebih tipis dari interval sampel, sehingga setiap sampel yang di-flag pasti masuk solid. Searah strike data berupa section, sehingga batasnya ditentukan radius pengaruh dan dipotong tegas: tidak ada dasar geologi untuk menipiskan vein di antara section. Searah dip, pinch-out menghindari vein terpotong lurus di bawah bor terdalam.')
  + '<h3>Orientasi & elipsoid RBF</h3>' + steps('<b>Orientasi otomatis</b> dihitung dari sebaran titik HW / FW. Bila vein melengkung kuat atau data sedikit, pilih <b>Diisi manual</b> dan isi dip / dip direction hasil pengukuran (strike = dip dir &minus; 90&deg;, tangan kanan).',
    '<b>Elipsoid RBF</b> mengatur arah kemenerusan permukaan di bidang vein, seperti elipsoid di Leapfrog. Mayor = semi-mayor (bawaan 50 : 50) berarti isotropik. Contoh: mayor 100, semi-mayor 25, pitch 0&deg; membuat permukaan lebih menerus searah strike; pitch 90&deg; = searah dip.',
    'Centang <b>Tampilkan elipsoid di 3D</b> untuk melihat bentuknya di tengah domain ([[solid_ell]]): merah = mayor, hijau = semi-mayor, biru = arah HW.')
- + fig('solid_ell', 'Elipsoid RBF QV_Utama (mayor 100 m searah strike, semi-mayor 25 m) ditampilkan di 3D.')
+ + fig('solid_ell', 'Elipsoid RBF QV_Lensa2 (mayor 100 m searah strike, semi-mayor 25 m) ditampilkan di 3D.')
  + warn('Yang berpengaruh pada RBF adalah <b>rasio</b> mayor : semi-mayor dan pitch, bukan ukuran mutlaknya. Tebal vein tetap dari jarak permukaan HW&ndash;FW.')
  + tip('Hanya string yang <b>tampil</b> (centang di daftar string) yang dipakai model. Untuk menguji interpretasi lain, sembunyikan string tertentu: solid langsung dihitung ulang tanpa string itu.')
  + warn('Tebal diukur tegak lurus <b>bidang rata-rata</b> vein, bukan tegak lurus permukaan lokal. Pada bagian vein yang sangat melengkung tebal sebenarnya sedikit lebih kecil dari angka di panel.')
@@ -269,13 +271,13 @@ ch('Membangun solid vein (RBF)', '<p>Dari string kontrol dan titik kontak bor, G
    'Satu domain = satu file; beberapa domain dikemas dalam satu ZIP. File STR+DTM bisa dibaca ulang di menu <b>Data Referensi</b>.'), 'solid')
 
 ch('Memakai wireframe dari Leapfrog', steps(
- 'Klik <b>Data Referensi</b> &rarr; <b>Import model vein / solid</b> dan pilih <code>QV_Utama_Leapfrog.obj</code> (format lain: Leapfrog .msh, Surpac .dtm/.str, DXF 3DFACE).',
+ 'Klik <b>Data Referensi</b> &rarr; <b>Import model vein / solid</b> dan pilih <code>QV_Lensa2_Leapfrog.obj</code> (format lain: Leapfrog .msh, Surpac .dtm/.str, DXF 3DFACE).',
  f"Wireframe tampil di 3D ([[wireframe_import]]): <b>{N['wf']}</b>.",
  'Kembali ke <b>Geomodeller Vein</b>, buka bagian <b>Wireframe luar</b>. Pilih wireframe dan domain tujuan, lalu klik <b>&#9986; Iris jadi string HW/FW (section ini)</b> atau <b>&#9986; Semua section</b>. Loop irisan dipecah otomatis menjadi string HW dan FW ([[wireframe_iris]]).',
  f"Klik <b>&#9873; Flag interval bor di dalam wireframe</b>: {clean(N['wfFlag'])}",
- f"Karena flag QV_Utama bertambah, solid QV_Utama ikut <b>dibangun ulang otomatis</b> ({clean(N['solidWf'])}).")
- + fig('wireframe_import', 'Wireframe QV_Utama hasil Leapfrog di atas data bor. Slider di daftar model mengatur transparansi.')
- + fig('wireframe_iris', 'Irisan wireframe pada section &minus;20 m (hijau tua) berdampingan dengan string QV_Utama hasil flag. Keduanya bisa dibandingkan dan diedit.')
+ f"Karena flag QV_Lensa2 bertambah, solid QV_Lensa2 ikut <b>dibangun ulang otomatis</b> ({clean(N['solidWf'])}).")
+ + fig('wireframe_import', 'Wireframe QV_Lensa2 hasil Leapfrog di atas data bor. Slider di daftar model mengatur transparansi.')
+ + fig('wireframe_iris', 'Irisan wireframe pada section &minus;20 m (hijau tua) berdampingan dengan string QV_Lensa2 hasil flag. Keduanya bisa dibandingkan dan diedit.')
  + tip('Setelah selesai, sembunyikan wireframe besar lewat panel <b>Layer</b> (Wireframe / solid) agar tidak menutupi bor.')
  + warn('Pengecekan <i>di dalam wireframe</i> memakai sinar vertikal. Wireframe harus tertutup; jika ada tepi terbuka GC-Ex memberi peringatan dan hasil flag perlu diperiksa.'))
 
@@ -287,28 +289,28 @@ ch('Menambah bor infill dengan upsert', '<p><b>Upsert</b> = tambah atau perbarui
  + fig('upsert_pratinjau', 'Pratinjau upsert: 4 collar baru, 4 hole diganti untuk survey/assay/geologi, 0 hole lama terpengaruh.')
  + fig('upsert_hasil', 'Sesudah upsert: 37 lubang. Tombol <b>&#8630; Batalkan upsert terakhir</b> muncul di menu Data. Block model GC tetap termuat.')
  + '<h3>Memperbarui flag dan string</h3>' + steps(
-   f"Domain aktif QV_Utama, <b>Lingkup</b> semua hole, <b>Jangan timpa flag lain</b> aktif, lalu <b>Usulkan ke domain aktif</b>: {clean(N['autoInfill']).split('. Periksa')[0]}.",
-   'Koreksi intercept QV_HW1 pada hole infill seperti {{B:Koreksi flag}}.',
+   f"Domain aktif QV_Lensa2, <b>Lingkup</b> semua hole, <b>Jangan timpa flag lain</b> aktif, lalu <b>Usulkan ke domain aktif</b>: {clean(N['autoInfill']).split('. Periksa')[0]}.",
+   'Koreksi intercept QV_Splay_HW pada hole infill seperti {{B:Koreksi flag}}.',
    f"Klik <b>&#10148;&#10148; Semua section</b> lagi: <b>{clean(N['strUpd'])}</b>")
- + fig('upsert_string_baru', f"Section tengah setelah infill: string QV_Utama diperbarui melewati kontak bor baru dan solid ikut diperbarui otomatis ({clean(N['solidInfillMsg'])}): volume QV_Utama {fN(SOLI['QV_Utama'][1])} m&sup3;, {SOLI['QV_Utama'][8]}/{SOLI['QV_Utama'][8]} interval flag di dalam solid.")
+ + fig('upsert_string_baru', f"Section tengah setelah infill: string QV_Lensa2 diperbarui melewati kontak bor baru dan solid ikut diperbarui otomatis ({clean(N['solidInfillMsg'])}): volume QV_Lensa2 {fN(SOLI['QV_Lensa2'][1])} m&sup3;, {SOLI['QV_Lensa2'][8]}/{SOLI['QV_Lensa2'][8]} interval flag di dalam solid.")
  + why('String yang pernah diedit manual dilewati (tidak ditimpa) supaya interpretasi geologist tidak hilang. Hapus tanda edit atau edit lagi secara manual bila memang perlu diubah.'))
 
 ch('Filter domain & statistik', steps(
- 'Menu <b>Geologi</b> &rarr; <b>Domain untuk analisis</b>: pilih <b>Domain vein (Geomodeller Vein)</b>, lalu centang <b>QV_Utama</b> saja ([[domain_filter]]).',
+ 'Menu <b>Geologi</b> &rarr; <b>Domain untuk analisis</b>: pilih <b>Domain vein (Geomodeller Vein)</b>, lalu centang <b>QV_Lensa2</b> saja ([[domain_filter]]).',
  'Atur sayatan <b>sejajar bidang vein</b>: strike 45&deg;, dip 70&deg;, tebal slab 40 m (&plusmn;20 m), posisi 0.',
  'Klik <b>Geostatistik</b> di bar atas lalu <b>&#8635; Hitung</b>. Tab <b>Statistik</b> ([[geostat_statistik]]).')
  + fig2('domain_filter', 'Filter <b>Domain vein</b>. Filter berlaku untuk tampilan assay, ringkasan, geostatistik, KNA dan estimasi OK.',
         'export_database', 'Menu Data setelah <b>Export database (CSV)</b> ({{B:Export}}).')
- + fig('geostat_statistik', f"Statistik komposit 1 m domain QV_Utama: n = {N['gsN']}, rata-rata {N['gsMean']} g/t, declustered 2,075 g/t, CV 1,24, maksimum 17,47 g/t.")
+ + fig('geostat_statistik', f"Statistik komposit 1 m domain QV_Lensa2: n = {N['gsN']}, rata-rata {N['gsMean']} g/t, declustered 2,075 g/t, CV 1,24, maksimum 17,47 g/t.")
  + why('Rata-rata <i>declustered</i> lebih rendah dari rata-rata biasa karena sampel kadar tinggi di ore shoot dibor lebih rapat. Gunakan histogram skala log dan persentil P95&ndash;P99 untuk memutuskan perlu tidaknya top-cut.'))
 
 ch('Domain aktif di Geostatistik & Model Estimation (versi 0.20)', '<p>Mulai GC-Ex Drill Hole Ultimate <b>0.20</b>, satu <b>domain aktif</b> dipakai bersama oleh Geomodeller Vein, Geostatistik dan Model Estimation. Domain bisa diaktifkan dari node domain di bawah <b>Geomodeller Vein</b>, <b>Geostatistik</b> atau <b>Model Estimation</b> di Project Tree, sehingga tidak perlu kembali ke Geomodeller Vein.</p>'
- + steps('Project Tree &rarr; <b>Geostatistik</b> &rarr; klik <b>QV_Utama</b>. Panel Geostatistik terbuka dengan bilah <b>Domain: QV_Utama</b> &mdash; komposit hanya dari interval bor yang di-flag ke QV_Utama (beserta cabangnya; untuk selubung: interval halo) ([[dom20_gs]]).',
+ + steps('Project Tree &rarr; <b>Geostatistik</b> &rarr; klik <b>QV_Lensa2</b>. Panel Geostatistik terbuka dengan bilah <b>Domain: QV_Lensa2</b> &mdash; komposit hanya dari interval bor yang di-flag ke QV_Lensa2 (beserta cabangnya; untuk selubung: interval halo) ([[dom20_gs]]).',
    'Untuk melihat semua sampel (perilaku lama), pilih <b>Semua data (tanpa filter domain)</b> di node Geostatistik atau di bilah Domain.',
    'Setelah fitting, <b>Simpan ke domain</b> otomatis memilih domain aktif.',
    'Project Tree &rarr; <b>Model Estimation</b> &rarr; klik domain: domain itu menjadi aktif dan parameternya tampil di Properti ([[dom20_me]]). Centang di node domain = ikut <b>Jalankan semua domain</b>.',
    'Bagian Jalankan: <b>&#9654; Jalankan domain aktif</b> hanya mengestimasi domain aktif; <b>&#9654; Jalankan semua domain</b> mengestimasi semua domain yang dicentang. Keduanya juga ada di menu &hellip; node Model Estimation.')
- + fig2('dom20_gs', 'Geostatistik dengan <b>domain aktif</b> QV_Utama: hanya sampel di dalam domain.', 'dom20_me', 'Model Estimation: Properti menampilkan domain aktif yang dipilih dari Project Tree.')
+ + fig2('dom20_gs', 'Geostatistik dengan <b>domain aktif</b> QV_Lensa2: hanya sampel di dalam domain.', 'dom20_me', 'Model Estimation: Properti menampilkan domain aktif yang dipilih dari Project Tree.')
  + tip('Filter <b>Domain untuk analisis</b> di menu Geologi ({{B:Filter domain}}) tetap berlaku di atas domain aktif. Bila filter itu tidak dipakai, domain aktif sudah cukup untuk memisahkan sampel per domain.'))
 
 ch('Variogram, anisotropi & model', steps(
@@ -326,7 +328,7 @@ def okp(i):
     return ('', '')
 ME1 = json.loads(N['me1']); ME2 = json.loads(N['me2']); MEB = N['meBM']
 m1 = {r[0]: r for r in ME1}; m2 = {r[0]: r for r in ME2}
-u1, h1, u2 = m1['QV_Utama'], m1['QV_HW1'], m2['QV_Utama']
+u1, h1, u2 = m1['QV_Lensa2'], m1['QV_Splay_HW'], m2['QV_Lensa2']
 kp = N.get('knaPass1', '1,4,24,4').split(',')
 ch('Kriging Neighbourhood Analysis (KNA)', steps(
  'Tab <b>KNA</b>. Isi ukuran blok pada tab Uji estimasi dulu: 5 &times; 5 &times; 2,5 m.',
@@ -339,13 +341,13 @@ ch('Uji estimasi & simpan parameter ke domain', '<p>Tab <b>Uji estimasi</b> di G
  + steps('Tab <b>Uji estimasi</b>: blok 5 &times; 5 &times; 2,5 m, <b>Diskretisasi</b> 3,3,2, <b>Batas atas</b> di bawah topo.',
    f'Pass: radius &times;1 ({okp(1)[0]}), &times;1,5 ({okp(2)[0]}), &times;2,5 ({okp(3)[0]}).',
    'Klik <b>Jalankan estimasi OK</b> dan tunggu bilah kemajuan penuh ([[estimasi_ok_hasil]]). Tampilkan hasil lewat <b>Tampilan block model</b> ([[estimasi_ok_3d]], [[estimasi_ok_2d]]).',
-   'Gulir ke bawah: kotak <b>Simpan parameter ke domain</b>. Pilih <b>QV_Utama</b> (otomatis terpilih karena filter domain) lalu klik <b>&#8681; Simpan ke domain</b> ([[simpan_ke_domain]]). Ulangi untuk QV_HW1 (latihan ini memakai parameter yang sama karena data QV_HW1 sedikit).')
+   'Gulir ke bawah: kotak <b>Simpan parameter ke domain</b>. Pilih <b>QV_Lensa2</b> (otomatis terpilih karena filter domain) lalu klik <b>&#8681; Simpan ke domain</b> ([[simpan_ke_domain]]). Ulangi untuk QV_Splay_HW (latihan ini memakai parameter yang sama karena data QV_Splay_HW sedikit).')
  + fig('estimasi_ok_hasil', 'Ringkasan uji estimasi di panel kanan dan blok hasil di 3D.')
  + kv([('Blok terestimasi / kandidat', okm.get('Blok terestimasi / kandidat','')), ('Pass 1 / 2 / 3', '%s / %s / %s blok' % (okp(1)[1], okp(2)[1], okp(3)[1])),
        ('Mean blok vs komposit', '%s vs %s g/t' % (okm.get('Mean estimasi blok'), okm.get('Mean komposit (top-cut)'))),
        ('Rata-rata SoR / KE', '%s / %s' % (okm.get('Rata-rata Slope of Regression'), okm.get('Rata-rata Kriging Efficiency')))])
  + fig('estimasi_ok_3d', 'Hasil uji estimasi di 3D, diwarnai Grade OK.')
- + fig('estimasi_ok_2d', 'Sayatan 2D section tengah: blok uji dengan bor dan string QV_Utama.')
+ + fig('estimasi_ok_2d', 'Sayatan 2D section tengah: blok uji dengan bor dan string QV_Lensa2.')
  + fig('simpan_ke_domain', f"Kotak <b>Simpan parameter ke domain</b> di bawah tab Uji estimasi: {clean(N['gsDomMsg'])}")
  + why('Uji estimasi mengisi seluruh kotak grid, termasuk blok jauh dari data, sehingga SoR / KE rata-rata rendah. Itu wajar untuk uji. Estimasi produksi di Model Estimation hanya mengisi blok di dalam solid vein.')
  + tip('Yang disimpan ke domain: model variogram dan arah elipsoid (tab Model), pass &amp; diskretisasi, top-cut, panjang komposit, unsur, dan label sayatan sumbernya. Semua bisa diedit lagi di Model Estimation.'))
@@ -357,29 +359,29 @@ ch('Model Estimation: estimasi block model GC', '<p>Menu <b>Model Estimation</b>
  '<li>Hasil ditulis ke <b>atribut baru</b>; atribut GC asli tidak diubah. Blok di luar solid tidak disentuh.</li></ul>'
  + steps('Pastikan block model GC sudah diimport (menu <b>Block Model</b>; di latihan ini <code>SIM_BM_GC.csv</code> dari folder proyek).',
    'Klik <b>Model Estimation</b>. Bagian &#9312;: pilih <b>Kadar GC asli</b> (di sini <code>AU</code>) sebagai pembanding dan nilai akhir di luar estimasi, dan <b>SG</b> untuk tonase.',
-   'Bagian &#9313;: tiap domain menunjukkan status solid dan parameter. Centang domain yang ikut run (QV_Utama_Leapfrog tidak dicentang). Buka <b>Parameter estimasi</b> untuk melihat / mengedit nugget, sill, range, pass, top-cut dan panjang komposit ([[me_panel]]).',
+   'Bagian &#9313;: tiap domain menunjukkan status solid dan parameter. Centang domain yang ikut run (QV_Lensa2_Leapfrog tidak dicentang). Buka <b>Parameter estimasi</b> untuk melihat / mengedit nugget, sill, range, pass, top-cut dan panjang komposit ([[me_panel]]).',
    'Bagian &#9314;: biarkan <b>Tambah blok baru di bagian solid tanpa blok GC</b> menyala. Kotak status menulis <b>run pertama</b>. Klik <b>&#9654; Jalankan estimasi</b>.',
    'Bagian &#9315; menampilkan validasi per domain ([[me_hasil]]). Klik <b>Tampilkan di Block Model</b> untuk melihat hasil ([[me_bm3d]], [[me_bm2d]]).')
- + fig('me_panel', 'Menu Model Estimation sebelum run: block model GC, domain dengan solid &amp; parameter, dan editor parameter QV_Utama (asal: sayatan Geostatistik).')
- + fig('me_hasil', f"Validasi run pertama. QV_Utama: {u1[3]:,} blok di solid diestimasi ulang + {u1[6]} blok tambahan; rata-rata komposit {fN(u1[10],3)} vs estimasi {fN(u1[11],3)} (GC lama {fN(u1[12],3)}). Grafik swath: komposit (titik oranye), estimasi baru (biru), GC lama (abu-abu) per 10 m sepanjang strike.".replace(',', '.'))
- + kv([('QV_Utama', f"{u1[5]:,} blok terestimasi (pass 1/2/3: {u1[9][0]}/{u1[9][1]}/{u1[9][2]}), {fN(u1[13])} m&sup3;, {fN(u1[14])} t, logam {fN(u1[15])} g (GC lama {fN(u1[16])} g)".replace(',', '.')),
-       ('QV_HW1', f"tidak ada blok GC di dalam solid &rarr; {h1[6]} blok tambahan, rata-rata estimasi {fN(h1[11],3)} g/t"),
+ + fig('me_panel', 'Menu Model Estimation sebelum run: block model GC, domain dengan solid &amp; parameter, dan editor parameter QV_Lensa2 (asal: sayatan Geostatistik).')
+ + fig('me_hasil', f"Validasi run pertama. QV_Lensa2: {u1[3]:,} blok di solid diestimasi ulang + {u1[6]} blok tambahan; rata-rata komposit {fN(u1[10],3)} vs estimasi {fN(u1[11],3)} (GC lama {fN(u1[12],3)}). Grafik swath: komposit (titik oranye), estimasi baru (biru), GC lama (abu-abu) per 10 m sepanjang strike.".replace(',', '.'))
+ + kv([('QV_Lensa2', f"{u1[5]:,} blok terestimasi (pass 1/2/3: {u1[9][0]}/{u1[9][1]}/{u1[9][2]}), {fN(u1[13])} m&sup3;, {fN(u1[14])} t, logam {fN(u1[15])} g (GC lama {fN(u1[16])} g)".replace(',', '.')),
+       ('QV_Splay_HW', f"tidak ada blok GC di dalam solid &rarr; {h1[6]} blok tambahan, rata-rata estimasi {fN(h1[11],3)} g/t"),
        ('Block model', f"{MEB[0]:,} blok GC + {MEB[1]-MEB[0]} blok tambahan = {MEB[1]:,} blok".replace(',', '.')),
        ('Waktu', f"{fN(u1[17]/1000,1)} detik")])
  + fig('me_bm3d', 'Menu Block Model setelah <b>Tampilkan di Block Model</b>: diwarnai <code>au_final</code>, hanya blok terestimasi (filter <code>est_type &ge; 1</code>).')
- + fig('me_bm2d', 'Sayatan 2D tebal 2,5 m: blok terestimasi mengikuti solid QV_Utama dan QV_HW1 di antara string HW / FW.')
+ + fig('me_bm2d', 'Sayatan 2D tebal 2,5 m: blok terestimasi mengikuti solid QV_Lensa2 dan QV_Splay_HW di antara string HW / FW.')
  + '<h3>Atribut baru di block model</h3>' + kv([('au_est','kadar hasil estimasi (&minus;99 bila tidak diestimasi)'),('au_final','au_est bila ada, selain itu kadar GC asli &mdash; dipakai untuk perencanaan'),('domain_est','nama domain vein'),('est_pass / est_nsamp','pass yang berhasil, jumlah sampel'),('est_sor / est_ke / est_kv','slope of regression, kriging efficiency, kriging variance'),('est_type','1 = koreksi blok GC, 2 = blok tambahan'),('est_date / est_run','tanggal (yyyymmdd) dan nomor run terakhir yang mengestimasi blok itu')])
  + why('Atribut GC asli dibiarkan utuh supaya perubahan bisa diaudit dan dibandingkan (rekonsiliasi). Keputusan memakai nilai baru ada di atribut <code>au_final</code>.')
  + warn('Rata-rata estimasi bisa berbeda cukup jauh dari GC lama di zona vein (di sini GC lama jauh lebih rendah karena blok GC 2,5 m mencampur vein dengan waste). Periksa swath plot dan penampang sebelum memakai hasil.'), 'me')
 
 ch('Koreksi setelah bor baru', '<p>Inilah pemakaian sehari-hari: setiap ada bor baru, GC-Ex hanya mengestimasi ulang blok yang <b>lingkungan kriging-nya</b> berubah, yaitu blok yang memakai komposit dari hole baru / berubah, ditambah blok yang baru masuk solid. Blok lain tetap nilai run sebelumnya.</p>'
  + steps('Menu <b>Data</b> &rarr; <b>Tambah / perbarui data bor (upsert)</b>: pilih <code>SIM_upsert2_*.csv</code> (2 bor infill SIM-INF-05 dan 06 di ujung timur).',
-   f"Geomodeller Vein: <b>Usulkan ke domain aktif</b> dengan <b>Jangan timpa flag lain</b> (dilusi 2 m): {clean(N['autoInfill2']).split('. Periksa')[0]}. Lalu <b>&#10148;&#10148; Semua section</b>; solid QV_Utama diperbarui otomatis.",
+   f"Geomodeller Vein: <b>Usulkan ke domain aktif</b> dengan <b>Jangan timpa flag lain</b> (dilusi 2 m): {clean(N['autoInfill2']).split('. Periksa')[0]}. Lalu <b>&#10148;&#10148; Semua section</b>; solid QV_Lensa2 diperbarui otomatis.",
    'Buka <b>Model Estimation</b>. Kotak status di bagian &#9314; menyebut hole yang berubah ([[me_tertunda]]): ' + clean(N['mePending']).replace('\n','; ') + '.',
    'Klik <b>&#9654; Jalankan estimasi</b>. Validasi menunjukkan berapa blok yang dikoreksi ([[me_koreksi]]).',
    'Untuk melihat blok mana yang diperbarui, warnai block model dengan <code>est_run</code> ([[me_run]]).')
- + fig('me_tertunda', 'Sebelum run kedua: GC-Ex mendeteksi 2 hole baru untuk QV_Utama; QV_HW1 tidak berubah sehingga tidak ada blok yang dihitung ulang.')
- + fig('me_koreksi', f"Run kedua: QV_Utama hanya {u2[4]:,} dari {u2[3]:,} blok di solid diestimasi ulang, {u2[6]} blok tambahan, {u2[7]} blok kembali ke GC karena solid berubah bentuk. QV_HW1: 0 blok.".replace(',', '.'))
+ + fig('me_tertunda', 'Sebelum run kedua: GC-Ex mendeteksi 2 hole baru untuk QV_Lensa2; QV_Splay_HW tidak berubah sehingga tidak ada blok yang dihitung ulang.')
+ + fig('me_koreksi', f"Run kedua: QV_Lensa2 hanya {u2[4]:,} dari {u2[3]:,} blok di solid diestimasi ulang, {u2[6]} blok tambahan, {u2[7]} blok kembali ke GC karena solid berubah bentuk. QV_Splay_HW: 0 blok.".replace(',', '.'))
  + fig('me_run', 'Block model diwarnai <code>est_run</code>: biru = run 1, oranye = run 2 (blok di sekitar bor infill baru).')
  + kv([('Hole berubah', u2[18]), ('Blok di solid / dikoreksi', f"{u2[3]:,} / {u2[4]:,}".replace(',', '.')), ('Kembali ke GC (keluar solid)', str(u2[7])), ('Rata-rata komposit / estimasi', f"{fN(u2[10],3)} / {fN(u2[11],3)}")])
  + tip('Setelah mengubah parameter (variogram, pass, top-cut), centang <b>Estimasi ulang semua blok di dalam solid</b>: perubahan parameter mempengaruhi semua blok, bukan hanya sekitar bor baru. GC-Ex memberi peringatan bila parameter berubah sejak run terakhir.')
@@ -421,14 +423,14 @@ ch('Struktur geologi (dip / dip azimuth)', '<p>Arah dip vein bisa berubah: misal
  + '<h3>Flag struktur di Sayatan 2D</h3>' + steps('Geomodeller Vein &rarr; bagian <b>&#9316; Flag struktur</b>. Isi <b>Dip</b> 65, <b>Dip az</b> 135 dan keterangan.',
    'Klik <b>&#9998; Flag struktur</b>, lalu klik di Sayatan 2D pada posisi pengukuran ([[struktur_flag]]). Titik ditaruh di bidang sayatan untuk <b>domain aktif</b>.',
    'Klik berikutnya <b>memakai nilai yang sama</b> sampai Anda mengubahnya; nomor bertambah otomatis. Garis pendek di penampang = dip semu (perpotongan bidang struktur dengan bidang sayatan). <b>Esc</b> = selesai.')
- + fig('struktur_flag', 'Flag struktur di Sayatan 2D: dua titik 65/135 untuk QV_Utama (oranye) dan dua struktur dari file di dekat sayatan (hijau), masing-masing tampil sebagai garis dip semu berlabel dip/az.')
+ + fig('struktur_flag', 'Flag struktur di Sayatan 2D: dua titik 65/135 untuk QV_Lensa2 (oranye) dan dua struktur dari file di dekat sayatan (hijau), masing-masing tampil sebagai garis dip semu berlabel dip/az.')
  + '<h3>Titik manual di 3D</h3>' + steps('Data Referensi &rarr; Struktur geologi &rarr; <b>+ Titik (klik di 3D)</b>. Arahkan kursor ke bor, solid atau topografi sampai info muncul, lalu klik. Atau <b>+ Titik di tengah area</b>.',
    'Geser titik terpilih dengan tombol <b>Maju / Mundur, Kiri / Kanan</b> (relatif arah pandang 3D; di Sayatan 2D relatif bidang sayatan) dan <b>Z + / Z &minus;</b>, dengan langkah yang diatur ([[struktur_manual]]).')
  + fig('struktur_manual', 'Editor titik terpilih: koordinat, dip / dip az, keterangan, dan tombol geser.', '78%')
  + '<h3>Pengaruh pada solid RBF</h3>'
  + kv([('Struktur flag domain','selalu dipakai untuk domain itu'),('Struktur file / manual',f"dipakai bila dalam radius (bawaan 25 m) dari data vein; opsi global di Data Referensi, opsi per domain di Parameter solid &rarr; Struktur"),
        ('Cara kerja','tiap struktur menjadi titik bantu kemiringan lunak di permukaan HW dan FW, sehingga permukaan mengikuti dip setempat; struktur yang hampir tegak lurus bidang vein diabaikan dan dilaporkan'),
-       ('Data latihan',f"volume QV_Utama {fN(SV[0])} m&sup3; &rarr; {fN(SV[1])} m&sup3; setelah {SV[2]} struktur file dipakai")])
+       ('Data latihan',f"volume QV_Lensa2 {fN(SV[0])} m&sup3; &rarr; {fN(SV[1])} m&sup3; setelah {SV[2]} struktur file dipakai")])
  + warn('Struktur hanya mengarahkan kemiringan, bukan posisi. Struktur dari singkapan yang salah ukur bisa menarik permukaan; periksa daftar &ldquo;Struktur dipakai&rdquo; di ringkasan solid.'))
 
 MF = N['mapF'] if isinstance(N.get('mapF'), list) else json.loads(N['mapF'])
@@ -505,7 +507,7 @@ ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> 
 
 ch('Map: peta geologi 2D', '<p>Menu <b>Map</b> di rel kiri mengganti area grafik dengan peta 2D (Easting / Northing; Z tidak dipakai), seperti Global Mapper. Scroll = zoom, tarik = geser; koordinat kursor tampil di kiri bawah.</p>'
  + '<h3>Layer peta</h3>' + steps('Klik <b>Map</b> di rel kiri ([[map_layer]]).', 'Centang layer: orthofoto, kontur topografi (interval diatur), desain pit, collar, jejak bor, domain vein, struktur (simbol USGS), fitur digitasi, titik pick-up, label.')
- + fig('map_layer', 'Map dengan kontur topografi 5 m, collar dan jejak bor, titik tengah domain QV_Utama dan simbol struktur USGS (strike + tick arah dip + angka dip).')
+ + fig('map_layer', 'Map dengan kontur topografi 5 m, collar dan jejak bor, titik tengah domain QV_Lensa2 dan simbol struktur USGS (strike + tick arah dip + angka dip).')
  + kv([('Simbol struktur USGS','miring: garis strike + tick ke arah dip + angka dip; tegak (&ge; 85&deg;): garis strike + tick dua sisi; datar (&le; 5&deg;): lingkaran bersilang')])
  + '<h3>Import titik pick-up survei</h3>' + steps('Bagian <b>Titik pick-up survei / pemetaan</b> &rarr; <b>&#8679; Import CSV titik</b>, pilih <code>SIM_pickup_survey.csv</code> (kolom <code>ID, East, North, RL, Code</code>; header fleksibel).',
    'Titik diwarnai per Code. Centang <b>garis per Code</b> untuk menyambung titik ber-Code sama (VEIN_HW, VEIN_FW, TOE, CREST) ([[map_pickup]]). Label: ID / Code / RL / tanpa label.',
@@ -560,15 +562,15 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<h3>Ringkasan angka latihan (untuk mengecek hasil peserta)</h3>'
  + kv([('Import awal', f"{N['nHole']} hole, {N['nAssay']:,} assay, block model GC {N['bx']:,} blok"),
        ('Usulan otomatis', clean(N['auto']).split('. Periksa')[0]),
-       ('Setelah koreksi', f"QV_Utama {st['QV_Utama'][1]} hole / {st['QV_Utama'][3]} m / {st['QV_Utama'][4]} g/t; QV_HW1 {st['QV_HW1'][1]} hole / {st['QV_HW1'][3]} m / {st['QV_HW1'][4]} g/t"),
-       ('String', 'QV_Utama 22 string (11 section), QV_HW1 4 string (2 section)'),
-       ('Solid RBF', f"QV_Utama {fN(su[1])} m&sup3; ({su[8]}/{su[8]} flag di dalam), QV_HW1 {fN(sh[1])} m&sup3;; setelah infill QV_Utama {fN(SOLI['QV_Utama'][1])} m&sup3;"),
+       ('Setelah koreksi', f"QV_Lensa2 {st['QV_Lensa2'][1]} hole / {st['QV_Lensa2'][3]} m / {st['QV_Lensa2'][4]} g/t; QV_Splay_HW {st['QV_Splay_HW'][1]} hole / {st['QV_Splay_HW'][3]} m / {st['QV_Splay_HW'][4]} g/t"),
+       ('String', 'QV_Lensa2 22 string (11 section), QV_Splay_HW 4 string (2 section)'),
+       ('Solid RBF', f"QV_Lensa2 {fN(su[1])} m&sup3; ({su[8]}/{su[8]} flag di dalam), QV_Splay_HW {fN(sh[1])} m&sup3;; setelah infill QV_Lensa2 {fN(SOLI['QV_Lensa2'][1])} m&sup3;"),
        ('Upsert', '4 hole baru, 359 interval; total 37 hole (+2 hole di latihan koreksi = 39)'),
-       ('Statistik QV_Utama', f"{N['gsN']} komposit, mean {N['gsMean']} g/t, CV 1,24"),
+       ('Statistik QV_Lensa2', f"{N['gsN']} komposit, mean {N['gsMean']} g/t, CV 1,24"),
        ('Variogram', 'nugget 65%, range major 108,5 m / semi 43 m / downhole 6 m'),
        ('Uji estimasi', f"{N['ok']:,} blok, mean {okm.get('Mean estimasi blok')} g/t"),
-       ('Model Estimation run 1', f"QV_Utama {u1[5]:,} blok (+{u1[6]} tambahan), mean {fN(u1[11],3)}; QV_HW1 {h1[6]} blok tambahan".replace(',', '.')),
-       ('Model Estimation run 2', f"2 bor infill &rarr; QV_Utama {u2[4]:,} dari {u2[3]:,} blok dikoreksi".replace(',', '.')),
+       ('Model Estimation run 1', f"QV_Lensa2 {u1[5]:,} blok (+{u1[6]} tambahan), mean {fN(u1[11],3)}; QV_Splay_HW {h1[6]} blok tambahan".replace(',', '.')),
+       ('Model Estimation run 2', f"2 bor infill &rarr; QV_Lensa2 {u2[4]:,} dari {u2[3]:,} blok dikoreksi".replace(',', '.')),
        ('Export', clean(N['exportDb']))])
  + '<h3>Masalah yang sering muncul</h3><table class="t"><tr><th>Gejala</th><th>Penyebab / solusi</th></tr>'
  + '<tr><td>Tombol folder proyek tidak ada / gagal</td><td>Pilih folder di drive lokal / jaringan yang bisa ditulis; buka ulang GC-Ex bila izin folder ditolak.</td></tr>'

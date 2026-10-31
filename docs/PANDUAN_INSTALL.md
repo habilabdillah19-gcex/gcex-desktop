@@ -650,3 +650,14 @@ Dua lapis perbaikan:
 2. Fungsi `note()` di ketiga skrip tangkapan layar kini menangkap kegagalan pencetakan: angkanya **tetap tercatat** ke `notes.json`, hanya barisnya di log yang diganti keterangan singkat. Pembuatan tutorial tidak boleh gagal hanya karena konsol tidak sanggup mencetak satu karakter.
 
 Ringkasan galat di CI juga diperpanjang dari 14 menjadi 30 baris terakhir, supaya traceback berikutnya terbaca utuh tanpa membuka log.
+
+## 54. GC-Ex Block Model & Drill Hole Ultimate 0.24.6
+
+Run 0.24.5 membuktikan perbaikan UTF-8 berhasil (galat `UnicodeEncodeError` hilang), tetapi tahap tangkapan layar berhenti di tempat berikutnya — dan kali ini penyebabnya memang kekeliruan saat data latihan diganti di 0.24.2:
+
+- Skrip tangkapan layar masih memuat `QV_Utama_Leapfrog.obj`, padahal berkas itu sudah berganti nama menjadi `QV_Lensa2_Leapfrog.obj`.
+- Domain yang dibuat skrip tidak lagi cocok dengan nama domain yang dipakai narasi PDF (104 acuan).
+
+Keduanya diselaraskan. Tutorial bergambar sekarang menelusuri **lensa 2 beserta splay hangingwall-nya** (`QV_Lensa2` + `QV_Splay_HW`) — pasangan yang menceritakan hal yang sama seperti versi lama (bor dari sisi hanging wall menembus splay dulu, baru vein utama), tetapi memakai domain yang benar-benar ada di data baru. Bagian "Geometri yang perlu diingat" diperbarui: endapan berupa array 4 lensa en-echelon, ore shoot ber-pitch 55° yang mengontrol tebal dan kadar sekaligus, bidang rata-rata data ±66° (bukan 70° karena permukaan vein sigmoidal), paleo-muka air tanah RL 250 m, dan rujukan ke kunci jawaban.
+
+Lensa lain dikerjakan dengan cara yang persis sama, jadi langkah-langkah tutorial tidak berubah.

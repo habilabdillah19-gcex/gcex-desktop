@@ -67,7 +67,7 @@ with sync_playwright() as pw:
     ev("uiTab('Geo');var ci=CAT.findIndex(c=>c.name==='Lith');$('geoAttr').value=ci;$('geoRib').checked=true;geoChanged();updatePlot()");pg.wait_for_timeout(500);shot('geologi_lith')
     # 7. Geological Modelling: domain
     ev("uiTab('GM');$('geoRib').checked=false;if(!$('statsCard').classList.contains('min'))uiStats();updatePlot()")
-    ev("gmAddDom('QV_Lensa1');gmAddDom('QV_Lensa2');gmAddDom('QV_Lensa3');gmAddDom('QV_Lensa4');gmAddDom('QV_Splay_HW');gmAct(GM.doms[0].id);PT.open['gm']=1;PT.render(true)")  # 0.20: + Tambah domain di Project Tree
+    ev("gmAddDom('QV_Lensa2');gmAddDom('QV_Splay_HW');gmAct(GM.doms[0].id);PT.open['gm']=1;PT.render(true)")  # vein utama + splay hangingwall-nya  # 0.20: + Tambah domain di Project Tree
     ev("gmAct(GM.doms[0].id)");shot('gm_domain',PANEL)
     # 8. usulan otomatis
     ev("GM._openAuto=true;GM.opt.el='Au';GM.opt.cut=0.5;GM.opt.minL=1;GM.opt.dil=1;GM.opt.scope='all';GM.opt.keep=true;gmPanel()")
@@ -111,7 +111,7 @@ with sync_playwright() as pw:
     ev("$('pos').value=0;$('sliceClip').checked=true;if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(700);shot('solid_2d')
     ev("$('pos').value=-20;$('sliceClip').checked=false;if(VIEW2D)toggle2D();updatePlot()")
     # 11. wireframe dari Leapfrog
-    ev("uiTab('Model')");pg.set_input_files("input[onchange='mdImport(this)']",DATA+'QV_Utama_Leapfrog.obj');pg.wait_for_function("MD.models.length>0",timeout=60000);pg.wait_for_timeout(800)
+    ev("uiTab('Model')");pg.set_input_files("input[onchange='mdImport(this)']",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.length>0",timeout=60000);pg.wait_for_timeout(800)
     shot('wireframe_import');note('wf',ev("MD.models.map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
     ev("uiTab('GM');GM._openWf=true;WF.dom='__new';gmPanel();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("WF.msg.replace(/<[^>]+>/g,'')"))
     ev("GM.doms.find(d=>/Leapfrog/.test(d.name)).col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty()");pg.wait_for_timeout(500);shot('wireframe_iris')
