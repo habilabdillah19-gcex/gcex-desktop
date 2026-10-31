@@ -502,3 +502,7 @@ Perubahan di versi ini:
 - CI: galat 403 dikenali dan dilaporkan dengan petunjuk pengaturan di atas, serta tidak dicoba ulang 3× (percuma, hanya memperlambat).
 - Core-Ex Qt (satu jendela): bila data dan pemutusan soket tiba bersamaan, `readyRead` bisa terlewat sehingga folder dari Core-Ex kedua tidak diteruskan. Sekarang sisa buffer juga dibaca saat soket terputus, pengiriman memproses event loop lebih dulu, dan pesan dijaga agar tidak dikirim dua kali. (Penyebab uji `test_single_instance_forwards_folder` gagal di Windows.)
 - Catatan: kuota penyimpanan artefak GitHub Actions penuh, jadi installer cadangan di tab Actions sementara tidak terunggah. Kuota dihitung ulang tiap 6–12 jam; setelah Release bisa terbit lagi, installer tetap tersedia dari Release.
+
+## 47. Core-Ex 0.23.10
+
+- CI: perbaikan langkah **Core-Ex Qt - pasang PySide6 & uji pytest-qt**. Pola ringkasan galat yang ditambahkan di 0.23.8 memakai `\"` di dalam string PowerShell berkutip ganda; PowerShell tidak mengenal `\"` sebagai escape, sehingga skrip langkah itu gagal dibaca dan langkah selalu gagal (exit 1) sebelum pytest berjalan. Pola kini memakai kutip tunggal. Isi aplikasi sama dengan 0.23.9.
