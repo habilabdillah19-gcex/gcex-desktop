@@ -690,3 +690,10 @@ Data sekarang 610 bor, jadi penantian itu tidak pernah terpenuhi dan berhenti se
 Keterangan berkas di narasi juga disesuaikan dengan isi data yang berlaku (jumlah lubang infill, titik struktur, dan titik pick-up dihitung dari berkasnya).
 
 Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringatan per langkah, dan jatah itu sebelumnya habis oleh jejak Playwright sehingga penyebab sebenarnya terpotong. Sekarang yang ditampilkan adalah baris pengecualian terakhir beserta lokasi berkas/barisnya, dan 60 baris log terakhir ditulis ke ringkasan run yang tidak dibatasi.
+
+## 57. Core-Ex 0.25.0 — ruang kerja Singkapan (Core-Ex versi Qt)
+
+- Fitur baru hanya di **Core-Ex versi Qt** (installer uji di pre-release `core-ex-qt-uji`); Core-Ex Electron di Release tidak berubah.
+- **Singkapan** (tombol di bilah atas, di samping Core box): foto singkapan / trenching dimasukkan satu per satu dan disalin ke `_GCEx_Core/singkapan`; deskripsi AI lokal (jenis foto wall / floor, litologi, alterasi, pelapukan ISRM, oksidasi / gossan, vein, struktur, GSI, spasi kekar, zona) dengan isian yang diedit tidak ditimpa AI; digitasi garis / poligon / label dengan snap, geser / sisip / hapus titik, belah & gabung garis; kadar Au / Ag / SxS manual; garis skala (panjang m); pustaka jenis fitur dengan warna & nomor string Surpac yang bisa diubah per proyek.
+- **Infografis** 3 template (Trenching dengan kadar, Mapping dinding tanpa kadar, Overlay saja), kotak kadar & komposit bisa ditarik, posisi legenda, bar skala, ekspor PNG / PDF resolusi penuh.
+- Panduan: PANDUAN_CORE bagian 6c. Tahap berikutnya: georeferensi dari titik survey (2, 3, ≥4 titik), alat ukur dan ekspor STR / DXF.

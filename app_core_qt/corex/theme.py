@@ -62,6 +62,7 @@ QPushButton[pri="true"] {{ background: {c['ink']}; color: {c['pn']}; font-weight
 QPushButton[pri="true"]:hover {{ background: {c['ac2']}; border-color: {c['ac2']}; }}
 QPushButton[ok="true"] {{ background: {c['ac']}; border-color: {c['ac']}; color: #ffffff; font-weight: 700; }}
 QPushButton[sm="true"] {{ padding: 2px 8px; font-size: 8.6pt; }}
+QPushButton:checked {{ background: {c['ink']}; color: {c['pn']}; border-color: {c['ink']}; font-weight: 700; }}
 QPushButton#pill {{ border-radius: 12px; border-color: {c['bd2']}; padding: 4px 11px; }}
 QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox, QPlainTextEdit, QTextEdit {{ background: {c['pn']}; border: 1px solid {c['bd2']}; border-radius: 4px; padding: 3px 6px; selection-background-color: {c['ac']}; }}
 QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {{ border: 1px solid {c['ac']}; }}

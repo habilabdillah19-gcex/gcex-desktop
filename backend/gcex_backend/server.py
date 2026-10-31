@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, access_io, core_dh, core_io, core_marks, core_segs, excel_io, mdl_io, xlsx_patch
+from . import __version__, access_io, core_dh, core_io, core_marks, core_outcrop, core_segs, excel_io, mdl_io, xlsx_patch
 
 log = logging.getLogger("gcex")
 app = FastAPI(title="GC-Ex Backend", version=__version__)
@@ -44,6 +44,7 @@ app.include_router(core_io.router)
 app.include_router(core_dh.router)
 app.include_router(core_marks.router)
 app.include_router(core_segs.router)
+app.include_router(core_outcrop.router)
 
 
 @app.get("/health")

@@ -191,6 +191,27 @@ Tombol **tanda** (ikon pita bergaris, di sebelah tombol overlay) membuka panel *
 
 Bila pita tanda tidak tepat di atas core, atur dulu **Atur area core** (bagian 6).
 
+## 6c. Singkapan: foto mapping & trenching (Core-Ex versi Qt)
+
+Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk foto singkapan, dinding / lantai pit dan trenching hasil mapping lapangan. Memakai folder proyek yang sama dengan Core box.
+
+1. **+ Foto** — pilih foto satu atau beberapa. Foto **disalin** ke `_GCEx_Core/singkapan/foto` di folder proyek (foto asli tidak diubah), jadi rekan yang membuka folder yang sama melihat hasil yang sama.
+2. **Deskripsi** — isi Judul, Lokasi, Tanggal, lalu **Deskripsikan dengan AI** (Ollama, model vision yang sama dengan Core box). AI mengisi jenis foto (wall / floor), litologi, alterasi, pelapukan ISRM W1–W6, oksidasi / gossan, vein, struktur, GSI, spasi kekar, pembagian zona dan catatan. Isian biru muda = isian AI yang belum dicek; isian yang Anda edit tidak ditimpa saat AI dijalankan ulang. Riwayat perubahan & jawaban asli AI ada di bawah tab.
+3. **Digitasi (tab Fitur)** — pilih jenis di bilah atas (kontak litologi / alterasi, zona litologi / alterasi / oksida, sesar, kekar, vein, zona vein, breksi / diatrema, channel sampel, garis skala, label), klik **✎ Gambar**, klik titik demi titik di foto, klik ganda / Enter untuk selesai (Backspace = hapus titik terakhir, Esc = batal).
+   - **Edit**: klik fitur, tarik kotak putih untuk menggeser titik, klik ganda di garis untuk menyisipkan titik, Delete untuk menghapus titik / fitur, **Belah di titik** dan **Gabung** untuk garis.
+   - **Snap** (aktif bawaan) menempelkan titik ke titik / garis fitur lain, sehingga kontak antar-poligon tidak bercelah.
+   - **Garis skala**: tarik di sepanjang benda yang panjangnya diketahui (pita ukur, tongkat) dan isi *Panjang m*. Skala ini dipakai bar skala infografis dan perkiraan spasi kekar oleh AI. (Georeferensi dengan titik survey menyusul di versi berikutnya.)
+   - Kadar **Au / Ag / SxS** dan *Teks lain* diisi manual per fitur (mis. channel sampel atau zona).
+   - **Atur jenis fitur & nomor string…** — ubah nama, warna dan nomor string Surpac per jenis, atau tambah jenis sendiri (mis. dike). Satu nomor string untuk satu jenis.
+4. **Infografis** — pilih template:
+   - *Trenching / channel (dengan kadar)*: pita judul kuning, kotak kadar per fitur (tarik kotaknya untuk memindahkan), kotak komposit, legenda, bar skala.
+   - *Mapping dinding (tanpa kadar)*: pita judul navy, legenda, bar skala, strip deskripsi ringkas (litologi, alterasi, pelapukan, vein, struktur, GSI).
+   - *Overlay saja*: garis & poligon tanpa judul.
+
+   **Ekspor PNG / PDF** memakai foto resolusi penuh (maks. 6000 px) dan sama persis dengan tampilan di layar.
+
+Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemiringan yang terlihat di satu dinding hanyalah *apparent dip*.
+
 ## 7. Dikerjakan bersama (beberapa geologist)
 
 - Hasil kerja disimpan di subfolder `_GCEx_Core` **di dalam folder foto** (`gcex_core.db`). Geologist lain yang membuka folder yang sama (mis. di drive jaringan) melihat dan melanjutkan pekerjaan yang sama. Nama Anda dicatat pada setiap editan dan verifikasi.

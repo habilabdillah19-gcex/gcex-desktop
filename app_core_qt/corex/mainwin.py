@@ -88,6 +88,17 @@ class MainWindow(QMainWindow):
             br.addWidget(x)
         h.addLayout(br)
         h.addStretch(1)
+        # ruang kerja: Core box (foto core) | Singkapan (foto singkapan / trenching hasil mapping)
+        self.bModeCore = btn("Core box", "Interpretasi foto core box", sm=True)
+        self.bModeOc = btn("Singkapan", "Foto singkapan / trenching hasil mapping: deskripsi AI, digitasi, infografis", sm=True)
+        for b_ in (self.bModeCore, self.bModeOc):
+            b_.setCheckable(True)
+            b_.setEnabled(False)
+            h.addWidget(b_)
+        self.bModeCore.setChecked(True)
+        self.bModeCore.clicked.connect(lambda: self.set_mode("core"))
+        self.bModeOc.clicked.connect(lambda: self.set_mode("oc"))
+        h.addSpacing(6)
         self.q = SearchBox()
         self.q.setEnabled(False)
         self.q.picked.connect(self.goto_result)
@@ -116,6 +127,7 @@ class MainWindow(QMainWindow):
         self.bDH.clicked.connect(self.open_dh)
         # ---- filter
         fb = QFrame()
+        self.fbar = fb
         fb.setObjectName("fbar")
         f = QHBoxLayout(fb)
         f.setContentsMargins(14, 6, 14, 6)
@@ -248,6 +260,10 @@ class MainWindow(QMainWindow):
         sp.setSizes(SET.get("qt_hsplit", [520, 920]))
         sp.splitterMoved.connect(lambda *_: SET.set("qt_hsplit", sp.sizes()))
         self.stack.addWidget(sp)
+        from .outcrop import OutcropPage
+        self.outcrop = OutcropPage(self)
+        self.stack.addWidget(self.outcrop)
+        self.mode = "core"
         self.bSelAll.clicked.connect(lambda: self._sel_all(True))
         self.bSelNone.clicked.connect(lambda: self._sel_all(False))
         self.bSelVer.clicked.connect(lambda: ask(self, f"Verifikasi {len(self.model.sel)} foto terpilih?\n\nVerifikasi berarti Anda sudah memeriksa isiannya.")
@@ -295,7 +311,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+K"), self, activated=lambda: (self.q.setFocus(), self.q.selectAll()) if self.q.isEnabled() else None)
         QShortcut(QKeySequence("Ctrl+Return"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Ctrl+Enter"), self, activated=self.verify_current)
-        QShortcut(QKeySequence("Escape"), self, activated=lambda: self.interp.escape())
+        QShortcut(QKeySequence("Escape"), self, activated=lambda: self.outcrop.escape() if self.mode == "oc" else self.interp.escape())
 
     def _start_page(self) -> QWidget:
         w = QWidget()
@@ -424,6 +440,25 @@ class MainWindow(QMainWindow):
     def _cur_index(self) -> int:
         return next((i for i, r in enumerate(self.view) if r["id"] == self.cur_id), -1)
 
+    def set_mode(self, mode: str) -> None:
+        """Pindah ruang kerja Core box / Singkapan (folder proyek sama)."""
+        self.mode = mode
+        self.bModeCore.setChecked(mode == "core")
+        self.bModeOc.setChecked(mode == "oc")
+        if not self.folder:
+            return
+        oc = mode == "oc"
+        self.fbar.setVisible(not oc)
+        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q):
+            b_.setVisible(not oc)
+        if oc:
+            if self.outcrop.folder != self.folder:
+                self.outcrop.open(self.folder)
+            self.stack.setCurrentWidget(self.outcrop)
+        else:
+            self.stack.setCurrentIndex(1)
+        SET.set("qt_mode", mode)
+
     def set_zoom(self, z: float) -> None:
         """Tampilan > Ukuran tampilan: skala seluruh antarmuka (Qt menetapkannya saat aplikasi mulai -> buka ulang)."""
         old = shell.zoom_now()
@@ -487,9 +522,10 @@ class MainWindow(QMainWindow):
         self._recent()
         self.prj.setText(j["folder"])
         self.setWindowTitle(f"{APP_NAME} — {Path(j['folder']).name}")
-        self.stack.setCurrentIndex(1)
-        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q):
+        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q, self.bModeCore, self.bModeOc):
             b_.setEnabled(True)
+        self.outcrop.folder = ""
+        self.set_mode(self.mode)
         self.q.folder = self.folder
         self.model.thumbs.reset(self.folder)
         self.model.sel.clear()
