@@ -39,7 +39,7 @@ async def _err(request: Request, exc: Exception):  # cadangan untuk galat lain: 
     return _json_err(request, exc)
 
 
-# Core-Ex: foto core box + AI lokal (Ollama)
+# DB-Ex: foto core box + AI lokal (Ollama)
 app.include_router(core_io.router)
 app.include_router(core_dh.router)
 app.include_router(core_marks.router)

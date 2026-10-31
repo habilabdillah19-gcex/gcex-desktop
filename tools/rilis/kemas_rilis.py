@@ -1,9 +1,9 @@
 """Kemas satu rilis GC-Ex lengkap untuk GitHub Release (dipanggil CI setelah ketiga installer dibangun).
 
 Isi folder keluaran (semua diunggah ke Release v<versi>):
-  GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, Core-Ex-Setup-<v>.exe   installer (dipasang terpisah)
-  GC-Ex-<v>_1_Dokumen.zip            README, panduan teknis, tutorial PDF (GC-Ex, Core-Ex, aktivasi lisensi)
-  GC-Ex-<v>_2_Data-Latihan.zip       data dummy / simulasi (GC-Ex Drillhole & Block Model, Core-Ex) + generatornya
+  GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, DB-Ex-Setup-<v>.exe   installer (dipasang terpisah)
+  GC-Ex-<v>_1_Dokumen.zip            README, panduan teknis, tutorial PDF (GC-Ex, DB-Ex, aktivasi lisensi)
+  GC-Ex-<v>_2_Data-Latihan.zip       data dummy / simulasi (GC-Ex Drillhole & Block Model, DB-Ex) + generatornya
   GC-Ex-<v>_3_Lisensi-dan-Tentang.zip  TENTANG.txt, syarat penggunaan, lisensi pihak ketiga, penafian merek,
                                      alat pembuat lisensi untuk admin (TANPA kunci privat)
   GC-Ex-<v>_CATATAN_RILIS.md         isi rilis, daftar perubahan (commit) sejak rilis sebelumnya, SHA-256 tiap file
@@ -23,7 +23,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-APPS = [("GC-Ex-Setup", "GC-Ex Block Model"), ("GC-Ex-Drillhole-Setup", "GC-Ex Drillhole"), ("Core-Ex-Setup", "Core-Ex")]
+APPS = [("GC-Ex-Setup", "GC-Ex Block Model"), ("GC-Ex-Drillhole-Setup", "GC-Ex Drillhole"), ("DB-Ex-Setup", "DB-Ex")]
 KUNCI_PRIVAT = ("KUNCI_PRIVAT", "private", ".pem", ".key")
 
 
@@ -80,7 +80,7 @@ def main():
             inst.append((f.name, nm))
     if not inst:
         raise SystemExit(f"tidak ada installer versi {ver} di {dist}")
-    has_core = any(n.startswith("Core-Ex") for n, _ in inst)
+    has_core = any(n.startswith("DB-Ex") for n, _ in inst)
     has_gcex = any(n.startswith("GC-Ex") for n, _ in inst)
 
     D = ROOT / "docs"
@@ -93,24 +93,24 @@ def main():
         (D / "tutorial-aktivasi" / "BACA_SAYA.md", "Tutorial/Aktivasi_tutorial_BACA_SAYA.md"),
     ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_0.24_Tambahan.pdf", "Tutorial/GC-Ex_Tutorial_0.24_Tambahan.pdf")] if has_gcex else [])
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
-          (D / "Core-Ex_Tutorial_Penggunaan.pdf", "Tutorial/Core-Ex_Tutorial_Penggunaan.pdf"),
-          (D / "tutorial-core" / "README.md", "Tutorial/Core-Ex_tutorial_README.md")] if has_core else []))
+          (D / "DB-Ex_Tutorial_Penggunaan.pdf", "Tutorial/DB-Ex_Tutorial_Penggunaan.pdf"),
+          (D / "tutorial-core" / "README.md", "Tutorial/DB-Ex_tutorial_README.md")] if has_core else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
     items = []
     if has_gcex:
         items += [(D / "tutorial-gcex" / "data", "GC-Ex_Drillhole_BlockModel_SIM"), (D / "tutorial-gcex" / "make_sim_data.py", "Generator/make_sim_data.py"), (D / "tutorial-gcex" / "make_sim_laterit.py", "Generator/make_sim_laterit.py"), (D / "tutorial-gcex" / "tambah_unsur_bm.py", "Generator/tambah_unsur_bm.py")]
     if has_core:
-        items += [(D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"), (D / "referensi", "Core-Ex_Referensi")]
+        items += [(D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"), (D / "referensi", "DB-Ex_Referensi")]
         if core_dummy and core_dummy.exists():
-            items.append((core_dummy, "Core-Ex_Data_Dummy"))
+            items.append((core_dummy, "DB-Ex_Data_Dummy"))
     zip_dir(dat, items)
     # ---- 3 lisensi & tentang
     tentang = outd / "TENTANG.txt"
     pk = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     tentang.write_text(
         f"GC-Ex (Grade Control Excellence) {ver}\r\n"
-        f"Aplikasi: GC-Ex Block Model, GC-Ex Drillhole, Core-Ex (dipasang terpisah)\r\n"
+        f"Aplikasi: GC-Ex Block Model, GC-Ex Drillhole, DB-Ex (dipasang terpisah)\r\n"
         f"Commit sumber: {sha}\r\nBuild GitHub Actions run: {run}\r\nTanggal build: {now}\r\n"
         f"Electron {pk.get('devDependencies', {}).get('electron', '?')}\r\n"
         f"Offline: aplikasi tidak memeriksa / memasang pembaruan lewat internet. Versi baru diminta ke admin.\r\n"
@@ -146,7 +146,7 @@ def main():
          "## Isi rilis", "",
          "| File | Isi | Ukuran |", "|---|---|---|"]
     desc = {n: f"Installer {a}" for n, a in inst}
-    desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, Core-Ex, aktivasi lisensi)"
+    desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, DB-Ex, aktivasi lisensi)"
     desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm in inst) + ") + generator"
     desc[lis.name] = "Tentang, syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat)"
     for h, n, s in sums:

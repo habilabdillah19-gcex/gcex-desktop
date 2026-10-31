@@ -1,4 +1,4 @@
-"""Uji integrasi data bor Core-Ex: header dinamis, import Collar/Survey/Assay/Geologi,
+"""Uji integrasi data bor DB-Ex: header dinamis, import Collar/Survey/Assay/Geologi,
 kadar per foto, detail foto (overlay), area core box, cari cepat."""
 import base64
 import sys

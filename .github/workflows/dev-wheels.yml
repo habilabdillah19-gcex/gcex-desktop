@@ -1,4 +1,4 @@
-name: Dev wheels (Linux, untuk pengembangan Core-Ex Qt)
+name: Dev wheels (Linux, untuk pengembangan DB-Ex Qt)
 
 # Hanya dijalankan manual. Mengunduh wheel PySide6 + pytest-qt untuk lingkungan pengembangan Linux (Python 3.13)
 # lalu menaruhnya di pre-release "dev-wheels" (privat). Tidak dipakai pengguna akhir.
@@ -23,5 +23,5 @@ jobs:
         run: |
           gh release view dev-wheels -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create dev-wheels -R "$GITHUB_REPOSITORY" --prerelease --title "Dev wheels (bukan rilis aplikasi)" \
-              --notes "Wheel PySide6 untuk pengembangan Core-Ex Qt di Linux. Bukan rilis aplikasi." --target main
+              --notes "Wheel PySide6 untuk pengembangan DB-Ex Qt di Linux. Bukan rilis aplikasi." --target main
           gh release upload dev-wheels wh/*.whl -R "$GITHUB_REPOSITORY" --clobber

@@ -1,4 +1,4 @@
-"""Core-Ex: segmen interpretasi per baris core (AI / manual) mengikuti batas geologi aktual.
+"""DB-Ex: segmen interpretasi per baris core (AI / manual) mengikuti batas geologi aktual.
 
 - Satu segmen = potongan sepanjang box, disimpan sebagai pecahan panjang box f0..f1 (0 = awal baris 1, 1 = akhir baris
   terakhir). Kedalaman = From foto + f x (To - From), jadi segmen ikut benar bila From/To foto dikoreksi.

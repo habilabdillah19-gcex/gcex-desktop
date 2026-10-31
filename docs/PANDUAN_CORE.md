@@ -1,27 +1,27 @@
-# Panduan Core-Ex
+# Panduan DB-Ex
 
-**Core-Ex** (Core Excellence) adalah aplikasi keluarga GC-Ex untuk foto core box; dahulu bernama *GC-Ex Core Interpretation*.
+**DB-Ex** (Database Excellence) adalah aplikasi keluarga GC-Ex untuk foto core box; dahulu bernama *Core-Ex* (sampai 0.30.0) dan *GC-Ex Core Interpretation*. Nama **DB-Ex** = *Database Excellence*: ke depan aplikasi ini juga akan membaca formulir lapangan tulisan tangan dengan AI vision menjadi Excel / SQL / CSV.
 
 Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 30 Oktober 2026 (versi 0.23.0: overlay berlapis & interpretasi AI per baris yang bisa diedit di foto; 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: Core-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru Core-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
+Pembaruan terakhir: 30 Oktober 2026 (versi 0.23.0: overlay berlapis & interpretasi AI per baris yang bisa diedit di foto; 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: DB-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru DB-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 
 | Bagian | Fungsi | Berjalan di |
 |---|---|---|
-| Jendela Core-Ex | Tabel log, pratinjau foto, kartu interpretasi, verifikasi, export Excel | komputer ini |
-| Backend Core-Ex (FastAPI) | Membaca ribuan foto dari folder, membuat thumbnail, menyimpan hasil di database, mengantre AI, membuat Excel | komputer ini, hanya `127.0.0.1` |
+| Jendela DB-Ex | Tabel log, pratinjau foto, kartu interpretasi, verifikasi, export Excel | komputer ini |
+| Backend DB-Ex (FastAPI) | Membaca ribuan foto dari folder, membuat thumbnail, menyimpan hasil di database, mengantre AI, membuat Excel | komputer ini, hanya `127.0.0.1` |
 | Ollama + model vision | "Melihat" foto lalu menulis deskripsi (litologi, warna, pelapukan, oksidasi, alterasi, RQD, GSI, RMR, catatan) | komputer ini, `127.0.0.1:11434` |
 
 Backend dan Ollama hanya mendengar di `127.0.0.1`, jadi tidak bisa diakses dari komputer lain di jaringan.
 
 ## 2. Memasang
 
-### 2a. Core-Ex
+### 2a. DB-Ex
 
-1. Unduh `Core-Ex-Setup-<versi>.exe` dari GitHub (tab **Actions** → run terbaru → **Artifacts** → `Core-Ex-Setup-Windows`).
-2. Jalankan installer. Tidak perlu hak admin. Shortcut **Core-Ex** muncul di desktop dan Start menu.
+1. Unduh `DB-Ex-Setup-<versi>.exe` dari GitHub (tab **Actions** → run terbaru → **Artifacts** → `DB-Ex-Setup-Windows`).
+2. Jalankan installer. Tidak perlu hak admin. Shortcut **DB-Ex** muncul di desktop dan Start menu.
 3. Aplikasi bisa dipasang berdampingan dengan GC-Ex Block Model dan GC-Ex Drillhole.
 
 ### 2b. Ollama (mesin AI lokal) — sekali per komputer
@@ -39,7 +39,7 @@ Untuk komputer **tanpa internet** di site:
 
 1. Salin `OllamaSetup.exe` dan seluruh folder `%USERPROFILE%\.ollama\models` dari komputer di atas ke flashdisk / hard disk.
 2. Di komputer site: pasang `OllamaSetup.exe`, lalu tempel folder `models` ke `%USERPROFILE%\.ollama\models` (buat foldernya bila belum ada).
-3. Ollama tidak perlu dibuka manual: saat Core-Ex dibuka dan Ollama belum aktif, Core-Ex menjalankannya otomatis (bisa dimatikan di dialog **Jalankan AI** → *Jalankan Ollama otomatis…*). Bila masih mati, klik tombol **Jalankan Ollama** di dialog AI, atau buka Ollama dari Start menu (ikon llama di system tray). Titik di kanan atas berubah biru: **AI lokal: qwen3-vl:8b**.
+3. Ollama tidak perlu dibuka manual: saat DB-Ex dibuka dan Ollama belum aktif, DB-Ex menjalankannya otomatis (bisa dimatikan di dialog **Jalankan AI** → *Jalankan Ollama otomatis…*). Bila masih mati, klik tombol **Jalankan Ollama** di dialog AI, atau buka Ollama dari Start menu (ikon llama di system tray). Titik di kanan atas berubah biru: **AI lokal: qwen3-vl:8b**.
 
 Bila folder model ingin disimpan di drive lain (mis. `D:\OllamaModels`), atur variabel lingkungan `OLLAMA_MODELS` ke folder itu lalu jalankan ulang Ollama.
 
@@ -81,7 +81,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 
 AI diberi tahu tata letak foto core box proyek (contoh fiktif: `docs/referensi/contoh_corebox_fiktif_LTH-101_box11.jpg`):
 
-| Tulisan di papan | Kolom di Core-Ex |
+| Tulisan di papan | Kolom di DB-Ex |
 |---|---|
 | HOLE ID: LTH-101 | Hole ID |
 | START DRILL: 05-03-25 | Start Drill |
@@ -104,7 +104,7 @@ Kotak berisi 4 baris core (atas = dangkal, kiri → kanan); papan catur di bawah
 Tombol **Data bor** di bilah atas. Pilih tab tabel, lalu **Pilih file CSV / Excel…** (.csv, .txt, .tsv, .xlsx, .xlsm; .xls lama: simpan ulang sebagai .xlsx).
 
 1. **Baris header** dan **sheet** dideteksi otomatis (baris judul laporan lab di atas header dilewati). Bisa diganti bila salah.
-2. **Kolom utama**: pilih kolom file untuk tiap isian. Nama header bebas; Core-Ex menebak dari nama umum (Hole_ID / BHID / DHID, From / Depth_From, Easting / X, RL / Z, Dip / Inclination, Azimuth / Bearing, …).
+2. **Kolom utama**: pilih kolom file untuk tiap isian. Nama header bebas; DB-Ex menebak dari nama umum (Hole_ID / BHID / DHID, From / Depth_From, Easting / X, RL / Z, Dip / Inclination, Azimuth / Bearing, …).
 
    | Tabel | Wajib | Opsional |
    |---|---|---|
@@ -113,12 +113,12 @@ Tombol **Data bor** di bilah atas. Pilih tab tabel, lalu **Pilih file CSV / Exce
    | Assay | Hole ID, From, To | kolom unsur apa pun |
    | Geologi | Hole ID, From, To | kolom apa pun (Lith, Alteration, Mineralogy, Vein, …) |
 
-3. **Kolom lain yang ikut**: centang kolom yang dipakai, beri **nama di Core-Ex** (mis. `Au (ppm)` → `Au`, `Sample No` → `Sample`) dan pilih **angka / teks**. Kolom dengan nama sama di import berikutnya dianggap kolom yang sama.
+3. **Kolom lain yang ikut**: centang kolom yang dipakai, beri **nama di DB-Ex** (mis. `Au (ppm)` → `Au`, `Sample No` → `Sample`) dan pilih **angka / teks**. Kolom dengan nama sama di import berikutnya dianggap kolom yang sama.
 4. Pratinjau di atas menandai kolom yang dipakai (biru = kolom utama, coret = tidak dipakai).
 5. **Cara import**: *Tambah / perbarui per hole* (hole di file diganti seluruhnya, hole lain tetap; untuk data bor baru / sampel ulang) atau *Ganti semua*.
 6. Ringkasan hasil: jumlah baris, baris yang dilewati beserta alasannya (Hole ID kosong, From ≥ To, …), nilai di bawah limit deteksi, interval tumpang tindih, hole yang tidak ada di Collar, dan jumlah hole yang cocok dengan foto.
 
-**Logging → isian kartu foto** (tab Geologi): pilih kolom logging untuk Litologi, Alterasi, Oksidasi, Warna, Pelapukan. Core-Ex menebak dari nama kolom (Lith / Lithology / Litologi, Alteration / Alt_Int / Alterasi, Ox / Oxidation, Colour / Warna, Weathering); pilih "— tidak dari logging —" bila isian itu tetap dari AI / manual.
+**Logging → isian kartu foto** (tab Geologi): pilih kolom logging untuk Litologi, Alterasi, Oksidasi, Warna, Pelapukan. DB-Ex menebak dari nama kolom (Lith / Lithology / Litologi, Alteration / Alt_Int / Alterasi, Ox / Oxidation, Colour / Warna, Weathering); pilih "— tidak dari logging —" bila isian itu tetap dari AI / manual.
 
 Pemetaan kolom **disimpan di proyek**: file berikutnya dengan susunan header yang sama langsung memakai pemetaan terakhir. Bila format Excel berubah, cukup pilih ulang kolomnya.
 
@@ -191,7 +191,11 @@ Tombol **tanda** (ikon pita bergaris, di sebelah tombol overlay) membuka panel *
 
 Bila pita tanda tidak tepat di atas core, atur dulu **Atur area core** (bagian 6).
 
-## 6c. Singkapan: foto mapping & trenching (Core-Ex versi Qt)
+## 6b2. Infografis foto core box
+
+**File › Ekspor infografis foto (PNG / PDF)** (Ctrl+E) di ruang kerja Core box menyimpan foto yang dipilih sebagai *plate* bergaya editorial: foto utuh (papan judul core box tetap terbaca) dengan overlay lapisan yang sedang aktif persis seperti di layar, pita atas berisi kicker (Foto core box · Box n) dan judul serif *Hole · dari – ke m*, pita bawah berisi caption logging (litologi, alterasi, pelapukan, recovery, RQD, catatan) dan kredit (nama folder proyek), serta legenda warna lapisan overlay. Di ruang kerja Singkapan perintah yang sama mengekspor infografis singkapan.
+
+## 6c. Singkapan: foto mapping & trenching (DB-Ex versi Qt)
 
 Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk foto singkapan, dinding / lantai pit dan trenching hasil mapping lapangan. Memakai folder proyek yang sama dengan Core box.
 
@@ -227,6 +231,8 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
    - **Atur unsur & kelas warna…**: daftar unsur (bawaan Au, Ag, Cu, Pb, Zn, As, S, SxS, C), satuan (ppm, ppb, %, g/t, oz/t), desimal, *Tampil* di kotak kadar, batas kelas (mis. `0.2; 0.5; 1`). Kadar semua unsur tetap tersimpan & ikut ekspor walau tidak ditampilkan;
    - **⇩ Tabel sampel (CSV)**: semua sampel di semua foto (Sample ID, dari, ke, panjang, koordinat E/N/RL awal & akhir bila foto digeoreferensi, kadar, baris KOMPOSIT per garis) untuk Excel / database assay.
 
+   **Gaya** (tab Infografis): *Editorial dokumenter alam* (bawaan) — kicker kapital oker & judul serif di atas gradasi gelap, panel data gelap transparan dengan batang warna kelas kadar, garis penunjuk putih tipis bertitik di ujung fitur, *Caption* serif miring (kosong = ringkasan deskripsi untuk template dinding) dan *Kredit foto* di kaki (kosong = tanggal · lokasi); atau *Klasik* (pita judul kuning / navy, kotak kuning).
+
    **Kompas** (tab Infografis): *otomatis dari georef* — foto dinding menampilkan huruf arah kamera menghadap (mis. W) di atas mawar angin, foto lantai menampilkan panah utara yang diputar sesuai foto; tanpa georef pilih arah pandang manual (N, NE, … NW). Posisi kompas bisa dipilih; bila bertabrakan dengan legenda, kompas digeser ke sampingnya.
 
    **Ekspor PNG / PDF** memakai foto resolusi penuh (maks. 6000 px) dan sama persis dengan tampilan di layar.
@@ -255,7 +261,7 @@ Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemirin
 - Hasil kerja disimpan di subfolder `_GCEx_Core` **di dalam folder foto** (`gcex_core.db`). Geologist lain yang membuka folder yang sama (mis. di drive jaringan) melihat dan melanjutkan pekerjaan yang sama. Nama Anda dicatat pada setiap editan dan verifikasi.
 - Foto asli tidak pernah diubah, dipindah, atau diganti namanya.
 - Folder boleh dipindah ke drive lain asalkan subfolder `_GCEx_Core` ikut tersalin.
-- Bila folder tidak bisa ditulisi (hanya-baca), Core-Ex memberi tahu dan menyimpan hasil di komputer ini saja.
+- Bila folder tidak bisa ditulisi (hanya-baca), DB-Ex memberi tahu dan menyimpan hasil di komputer ini saja.
 - **Pindai ulang** mendaftarkan foto baru yang ditambahkan ke folder; foto yang dihapus ditandai **File hilang** (hasilnya tetap tersimpan).
 - Sebaiknya satu folder dikerjakan satu orang pada satu waktu; dua orang mengedit foto yang sama bersamaan = editan terakhir yang berlaku.
 
@@ -284,10 +290,10 @@ Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemirin
 | "Tidak ada baris yang bisa diimport" | Baris header salah (isi nomor baris yang berisi nama kolom) atau kolom From / To bukan angka. Lihat alasan di pesan. |
 | Pita overlay tidak pas dengan core | Klik **Atur area core**, sesuaikan kotak & jumlah baris, simpan untuk semua foto lubang ini. |
 | "Interval half core wajib diisi nomor sampel" | Isi No. sampel; bila assay punya kolom Sample, pilih dari daftar. |
-| `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di Core-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
+| `Au>=1` → "Unsur tidak ada" | Nama unsur mengikuti **nama di DB-Ex** saat import (mis. `Au`, bukan `Au_ppm`). |
 | Bar "Backend tidak aktif" | Menu **Bantuan → Buka folder log**, kirim `backend.log` dan file log terbaru. |
 
 ## 11. Hak cipta & syarat penggunaan
 
-Core-Ex adalah ciptaan Habil Abdillah (Copyright © Habil Abdillah 2026). Saat memasang dan saat pertama kali membuka aplikasi, pengguna harus menyetujui **Syarat Penggunaan, Lisensi & Penafian**. Teks lengkap dan daftar komponen open source ada di menu **Bantuan › Syarat penggunaan & penafian** dan **Bantuan › Lisensi pihak ketiga & merek dagang**. Nilai geoteknik dari AI adalah perkiraan visual dan tidak boleh menjadi satu-satunya dasar keputusan keselamatan.
+DB-Ex adalah ciptaan Habil Abdillah (Copyright © Habil Abdillah 2026). Saat memasang dan saat pertama kali membuka aplikasi, pengguna harus menyetujui **Syarat Penggunaan, Lisensi & Penafian**. Teks lengkap dan daftar komponen open source ada di menu **Bantuan › Syarat penggunaan & penafian** dan **Bantuan › Lisensi pihak ketiga & merek dagang**. Nilai geoteknik dari AI adalah perkiraan visual dan tidak boleh menjadi satu-satunya dasar keputusan keselamatan.
 

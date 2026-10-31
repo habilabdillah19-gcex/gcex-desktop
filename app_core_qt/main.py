@@ -1,4 +1,4 @@
-"""Core-Ex (Qt for Python). Pemakaian: python main.py [--folder D:\\Foto_Core] [--version 1.0.0]"""
+"""DB-Ex (Qt for Python). Pemakaian: python main.py [--folder D:\\Foto_Core] [--version 1.0.0]"""
 from __future__ import annotations
 
 import argparse
@@ -37,18 +37,18 @@ def main(argv: list[str] | None = None) -> int:
     from PySide6.QtWidgets import QApplication, QMessageBox
     from corex import shell
     if QApplication.instance() is None:
-        shell.apply_zoom_env()  # Tampilan > Ukuran tampilan (berlaku sejak Core-Ex dibuka)
+        shell.apply_zoom_env()  # Tampilan > Ukuran tampilan (berlaku sejak DB-Ex dibuka)
         QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication.instance() or QApplication(sys.argv[:1])
-    # satu jendela Core-Ex saja: bila sudah terbuka, jendela itu yang tampil (folder diteruskan), proses ini selesai
+    # satu jendela DB-Ex saja: bila sudah terbuka, jendela itu yang tampil (folder diteruskan), proses ini selesai
     folder = str(Path(a.folder).resolve()) if a.folder else ""
     inst = shell.SingleInstance()
     if os.environ.get("COREX_MULTI") != "1":
         if shell.SingleInstance.send(inst.name, {"cmd": "show", "folder": folder}):
-            log("[satu jendela] Core-Ex sudah terbuka; folder diteruskan:", folder or "-")
+            log("[satu jendela] DB-Ex sudah terbuka; folder diteruskan:", folder or "-")
             return 0
         inst.listen()
-    app.setApplicationName("Core-Ex")
+    app.setApplicationName("DB-Ex")
     app.setOrganizationName("GC-Ex")
     for ic in (Path(getattr(sys, "_MEIPASS", "")) / "icon-core.ico", HERE.parent / "build" / "icon-core.ico"):
         if ic.exists():
@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     theme.load_fonts()
     theme.apply(app, bool(SET.get("dark", False)))
     ver = app_version()
-    log("[mulai] Core-Ex Qt", ver)
+    log("[mulai] DB-Ex Qt", ver)
     if not dialogs.ensure_terms():
         return 0
     lic_on = getattr(sys, "frozen", False) or os.environ.get("GCEX_LIC") == "1"
@@ -92,7 +92,7 @@ def selftest(folder: str, out: str) -> int:
     try:
         from corex import api, lic, theme  # noqa: F401
         from PySide6.QtGui import QGuiApplication, QImage
-        app = QGuiApplication.instance() or QGuiApplication(["Core-Ex"])  # noqa: F841
+        app = QGuiApplication.instance() or QGuiApplication(["DB-Ex"])  # noqa: F841
         theme.load_fonts()
         res["fonts"] = [theme.SANS, theme.MONO]
         j = api.call("/core/open", {"folder": folder, "by": "CI"})

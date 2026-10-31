@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 100% offline: tidak ada skrip, font atau ikon dari internet. Semua data lewat backend lokal (127.0.0.1). -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob: http://127.0.0.1:* http://localhost:*; img-src 'self' data: blob: http://127.0.0.1:* http://localhost:*; font-src 'self' file: data:">
-<title>Core-Ex</title>
+<title>DB-Ex</title>
 <style>
 /* Gaya editorial: kertas abu muda, pita navy, kotak nomor biru baja, judul biru tua. Font dibundel di fonts/ (OFL):
    Inter (judul & teks) dan JetBrains Mono (angka, kode, Hole ID) -> tetap offline. */
@@ -304,7 +304,7 @@ code{background:var(--nv);color:#e9edf3;border-radius:3px;padding:0 5px;font-fam
 </svg>
 
 <div id="top">
-  <div class="brand"><span class="kick" title="Core-Ex (Core Excellence) · keluarga GC-Ex">Core Excellence</span><b>Core<em>-Ex</em></b><small id="prjName">Interpretasi foto core box · 100% offline</small></div>
+  <div class="brand"><span class="kick" title="DB-Ex (Database Excellence) · keluarga GC-Ex">Database Excellence</span><b>DB<em>-Ex</em></b><small id="prjName">Interpretasi foto core box · 100% offline</small></div>
   <div class="sp"></div>
   <div id="qwrap"><svg class="i"><use href="#i-search"/></svg><input id="qq" placeholder="Cari cepat (Ctrl+K): LTH-101, pyrite, QV, Au>=1…" autocomplete="off" disabled><div id="qres"></div></div>
   <div class="sp"></div>
@@ -395,14 +395,14 @@ code{background:var(--nv);color:#e9edf3;border-radius:3px;padding:0 5px;font-fam
   <span id="sSum">Belum ada proyek.</span>
   <div id="prog"><span id="pTxt"></span><div class="bar"><i id="pBar"></i></div><button class="btn sm" id="pStop"><svg class="i"><use href="#i-stop"/></svg>Hentikan</button></div>
   <span style="margin-left:auto" id="sBe">Backend: menghubungkan…</span>
-  <span id="wmark" title="Core-Ex (Core Excellence) · keluarga GC-Ex">Copyright © Habil Abdillah 2026</span>
+  <span id="wmark" title="DB-Ex (Database Excellence) · keluarga GC-Ex">Copyright © Habil Abdillah 2026</span>
 </div>
 
 <div id="start">
   <div class="sc">
-    <span class="kick">Core Excellence · Core Logging</span>
+    <span class="kick">Database Excellence · Core Logging</span>
     <h2>Foto core box dibaca di komputer ini, <em>bukan di cloud.</em></h2>
-    <p>Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). Core-Ex membaca Hole ID, nomor box dan kedalaman dari nama file bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.</p>
+    <p>Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). DB-Ex membaca Hole ID, nomor box dan kedalaman dari nama file bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.</p>
     <div class="steps">
       <div><b>1 · Buka folder</b>Hasil kerja disimpan di subfolder <code>_GCEx_Core</code> di folder itu, jadi rekan yang membuka folder yang sama bisa melanjutkan.</div>
       <div><b>2 · AI geoteknik</b>Model vision di Ollama, tanpa internet, menilai recovery, RQD, GSI, RMR. Logging geologist & editan Anda tidak pernah ditimpa.</div>
@@ -422,7 +422,7 @@ code{background:var(--nv);color:#e9edf3;border-radius:3px;padding:0 5px;font-fam
   <div class="bd">
     <div class="box" id="aiState">Memeriksa…</div>
     <div class="row"><label>Alamat Ollama</label><input class="fi" id="aiHost" style="flex:1" value="http://127.0.0.1:11434"><button class="btn sm" id="aiCheck"><svg class="i"><use href="#i-refresh"/></svg>Periksa</button></div>
-    <div class="row" id="aiAutoRow"><label style="display:flex;gap:6px;align-items:center;width:auto;flex:1"><input type="checkbox" id="aiAuto"> Jalankan Ollama otomatis saat Core-Ex dibuka bila belum aktif</label></div>
+    <div class="row" id="aiAutoRow"><label style="display:flex;gap:6px;align-items:center;width:auto;flex:1"><input type="checkbox" id="aiAuto"> Jalankan Ollama otomatis saat DB-Ex dibuka bila belum aktif</label></div>
     <div><span class="lbl">Model vision</span> <small style="color:var(--mu)">(hanya model yang bisa melihat gambar)</small>
       <div class="mlist box" id="aiModels" style="margin-top:5px"></div></div>
     <div class="row"><label>Ukuran foto ke AI</label><select class="fi" id="aiPx"><option value="1024">1024 px (cepat)</option><option value="1600" selected>1600 px (seimbang)</option><option value="2048">2048 px (label kecil, lambat)</option></select>
@@ -483,7 +483,7 @@ async function backendUrl() {
   if (BE) return BE;
   const q = new URLSearchParams(location.search).get('backend');
   if (q) return (BE = q.replace(/\/$/, ''));
-  if (D) { const st = await D.backend(); if (!st || !st.ok) throw new Error('Backend Core-Ex tidak aktif' + (st && st.err ? ': ' + st.err : '') + '. Buka Bantuan > Buka folder log.'); return (BE = st.url); }
+  if (D) { const st = await D.backend(); if (!st || !st.ok) throw new Error('Backend DB-Ex tidak aktif' + (st && st.err ? ': ' + st.err : '') + '. Buka Bantuan > Buka folder log.'); return (BE = st.url); }
   return (BE = 'http://127.0.0.1:8765');
 }
 async function api(path, body, bin) {
@@ -521,7 +521,7 @@ async function openFolder(folder) {
     const rec = [j.folder].concat(LS.get('recent', []).filter(x => x.toLowerCase() !== j.folder.toLowerCase())).slice(0, 8);
     LS.set('recent', rec);
     $('#prjName').textContent = j.folder;
-    document.title = 'Core-Ex — ' + j.folder.split(/[\\/]/).pop();
+    document.title = 'DB-Ex — ' + j.folder.split(/[\\/]/).pop();
     $('#start').style.display = 'none';
     ['#bRescan', '#bImport', '#bExport', '#bAI', '#bDH', '#qq'].forEach(s => $(s).disabled = false);
     S.cur = -1; S.sel.clear();
@@ -1613,7 +1613,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && MK.mode &&
 $('#mkCsv').onclick = async () => {
   if (!S.folder) return;
   try {
-    const buf = await api('/core/marks/csv', { folder: S.folder }, true), name = 'Core-Ex_Interval_Tanda_' + new Date().toISOString().slice(0, 10) + '.csv';
+    const buf = await api('/core/marks/csv', { folder: S.folder }, true), name = 'DB-Ex_Interval_Tanda_' + new Date().toISOString().slice(0, 10) + '.csv';
     if (D && D.saveFile) { const p = await D.saveFile(name, buf, [{ name: 'CSV', extensions: ['csv'] }]); if (p) toast('Disimpan: ' + p); }
     else { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'text/csv' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
   } catch (e) { say('Gagal export CSV:\n' + e.message); }
@@ -1711,7 +1711,7 @@ async function dhPreview(hr, sheet) {
     const opts = (sel) => '<option value="">— tidak ada —</option>' + j.headers.map((h, i) => `<option value="${i}" ${sel === i ? 'selected' : ''}>${esc(h || '(kolom ' + (i + 1) + ')')}</option>`).join('');
     $('#dhRoles').innerHTML = j.roles.map(r => `<label class="${r.req ? 'req' : ''}">${esc(r.label)}${r.req ? ' *' : ''}<select class="fi" data-role="${r.key}">${opts(j.guess.roles[r.key])}</select></label>`).join('');
     $('#dhColsW').style.display = DH.kind === 'survey' ? 'none' : '';
-    $('#dhCols').innerHTML = '<table><tr><th>Pakai</th><th>Kolom di file</th><th>Nama di Core-Ex</th><th>Jenis</th><th>Contoh</th></tr>' + j.guess.cols.map((c, k) =>
+    $('#dhCols').innerHTML = '<table><tr><th>Pakai</th><th>Kolom di file</th><th>Nama di DB-Ex</th><th>Jenis</th><th>Contoh</th></tr>' + j.guess.cols.map((c, k) =>
       `<tr><td><input type="checkbox" data-c="${k}" data-f="use" ${c.use ? 'checked' : ''}></td><td>${esc(c.src)}</td><td><input type="text" data-c="${k}" data-f="name" value="${esc(c.name)}"></td><td><select class="fi" data-c="${k}" data-f="type"><option value="n" ${c.type === 'n' ? 'selected' : ''}>angka</option><option value="s" ${c.type === 's' ? 'selected' : ''}>teks</option></select></td><td style="color:var(--mu)">${esc(j.sample.slice(0, 3).map(r => r[c.i]).filter(v => v !== '' && v != null).join(' · ')).slice(0, 40)}</td></tr>`).join('') + '</table>';
     $('#dhRoles').onchange = dhPvTable; $('#dhCols').onchange = dhPvTable;
     dhPvTable();

@@ -1,15 +1,15 @@
 {
   "appId": "com.gcex.core",
-  "productName": "Core-Ex",
+  "productName": "DB-Ex",
   "copyright": "Copyright © 2026 Habil Abdillah",
   "extraMetadata": {
-    "version": "0.30.0",
+    "version": "0.31.0",
     "name": "gcex-core",
-    "productName": "Core-Ex",
-    "description": "Core-Ex (Core Excellence) - dokumentasi & interpretasi foto core box dengan AI lokal (offline), keluarga GC-Ex",
+    "productName": "DB-Ex",
+    "description": "DB-Ex (Database Excellence) - dokumentasi & interpretasi foto core box dengan AI lokal (offline), keluarga GC-Ex",
     "gcex": {
       "page": "app-core/index.html",
-      "title": "Core-Ex",
+      "title": "DB-Ex",
       "icon": "build/icon-core.ico",
       "theme": "core"
     }
@@ -58,8 +58,8 @@
       }
     ],
     "icon": "build/icon-core.ico",
-    "artifactName": "Core-Ex-Setup-${version}.${ext}",
-    "legalTrademarks": "Core-Ex, Core Excellence dan GC-Ex adalah nama produk milik Habil Abdillah"
+    "artifactName": "DB-Ex-Setup-${version}.${ext}",
+    "legalTrademarks": "DB-Ex, Database Excellence dan GC-Ex adalah nama produk milik Habil Abdillah"
   },
   "nsis": {
     "oneClick": false,
@@ -67,8 +67,8 @@
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Core-Ex",
-    "uninstallDisplayName": "Core-Ex ${version}",
+    "shortcutName": "DB-Ex",
+    "uninstallDisplayName": "DB-Ex ${version}",
     "license": "legal/SYARAT_PENGGUNAAN.txt"
   },
   "electronFuses": {

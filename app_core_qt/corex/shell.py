@@ -1,4 +1,4 @@
-"""Perilaku jendela yang dulu diurus Electron: satu jendela Core-Ex saja (membuka Core-Ex lagi -> jendela lama tampil &
+"""Perilaku jendela yang dulu diurus Electron: satu jendela DB-Ex saja (membuka DB-Ex lagi -> jendela lama tampil &
 folder diteruskan), ukuran tampilan (skala antarmuka), buka ulang aplikasi."""
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from .util import SET, log
 
-# ukuran tampilan (QT_SCALE_FACTOR); 1.0 = bawaan. Berlaku setelah Core-Ex dibuka ulang (Qt menetapkan skala saat mulai).
+# ukuran tampilan (QT_SCALE_FACTOR); 1.0 = bawaan. Berlaku setelah DB-Ex dibuka ulang (Qt menetapkan skala saat mulai).
 ZOOMS = [0.8, 0.9, 1.0, 1.1, 1.25, 1.5]
 ZOOM_DEF = 1.0
 
@@ -49,7 +49,7 @@ def server_name() -> str:
 
 
 class SingleInstance(QObject):
-    """Core-Ex yang pertama mendengarkan; yang kedua mengirim pesan JSON (mis. folder) lalu keluar."""
+    """DB-Ex yang pertama mendengarkan; yang kedua mengirim pesan JSON (mis. folder) lalu keluar."""
     message = Signal(dict)
 
     def __init__(self, name: str | None = None) -> None:
@@ -81,7 +81,7 @@ class SingleInstance(QObject):
         srv = QLocalServer(self)
         srv.setSocketOptions(QLocalServer.UserAccessOption)
         if not srv.listen(self.name):
-            QLocalServer.removeServer(self.name)  # sisa soket dari Core-Ex yang berhenti tidak normal (Linux / macOS)
+            QLocalServer.removeServer(self.name)  # sisa soket dari DB-Ex yang berhenti tidak normal (Linux / macOS)
             if not srv.listen(self.name):
                 log("[satu jendela] gagal mendengarkan:", srv.errorString())
                 return False
@@ -122,7 +122,7 @@ class SingleInstance(QObject):
             c.disconnected.connect(c.deleteLater)
 
     def _deliver(self, msg: dict) -> None:
-        log("[satu jendela] pesan dari Core-Ex kedua:", msg)
+        log("[satu jendela] pesan dari DB-Ex kedua:", msg)
         if self._ready:
             self.message.emit(msg)
         else:
@@ -142,7 +142,7 @@ class SingleInstance(QObject):
 
 
 def restart(folder: str = "") -> bool:
-    """Jalankan Core-Ex baru (dipanggil setelah jendela ditutup & server satu-jendela dilepas)."""
+    """Jalankan DB-Ex baru (dipanggil setelah jendela ditutup & server satu-jendela dilepas)."""
     if getattr(sys, "frozen", False):
         prog, args = sys.executable, []
     else:

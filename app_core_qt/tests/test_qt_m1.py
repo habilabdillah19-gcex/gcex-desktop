@@ -1,4 +1,4 @@
-"""Uji Core-Ex Qt (offscreen): lisensi (Ed25519 & ID komputer sama dengan license.js), jembatan API, jendela utama
+"""Uji DB-Ex Qt (offscreen): lisensi (Ed25519 & ID komputer sama dengan license.js), jembatan API, jendela utama
 (buka folder, edit sel, verifikasi, filter, cari, export, AI dengan Ollama palsu)."""
 import base64
 import json
@@ -49,7 +49,7 @@ def test_license_store(tmp_path, monkeypatch):
     bad = _key(k, {"id": "L1", "n": "Uji", "m": "ZZZZ-BBBB-CCCC-DDDD", "a": ["core"]})
     assert "komputer lain" in st.activate(bad)["reason"]
     dh_only = _key(k, {"id": "L2", "n": "Uji", "m": "AAAA-BBBB-CCCC-DDDD", "a": ["dh"]})
-    assert "tidak berlaku untuk Core-Ex" in st.activate(dh_only)["reason"]
+    assert "tidak berlaku untuk DB-Ex" in st.activate(dh_only)["reason"]
     old = _key(k, {"id": "L3", "n": "Uji", "m": "AAAA-BBBB-CCCC-DDDD", "a": ["*"], "e": "2020-01-01"})
     assert st.activate(old).get("expired")
     good = _key(k, {"id": "L4", "n": "Uji", "o": "PT Fiktif", "m": "AAAA-BBBB-CCCC-DDDD", "a": ["core", "dh"], "e": "2099-12-31"})

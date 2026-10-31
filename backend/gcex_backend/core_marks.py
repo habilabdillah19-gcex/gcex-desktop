@@ -1,4 +1,4 @@
-"""Core-Ex: tanda interval di foto core box (half core, core loss, jenis lain).
+"""DB-Ex: tanda interval di foto core box (half core, core loss, jenis lain).
 
 - Satu tanda = satu interval kedalaman (From-To) pada satu foto, opsional dengan posisi di foto
   (baris core awal/akhir + posisi 0..1 di sepanjang baris, mengikuti area core / tray foto itu).
@@ -239,4 +239,4 @@ def api_delete(b: DelBody) -> dict:
 @router.post("/csv")
 def api_csv(b: ListBody) -> Response:
     return Response(to_csv(core_io.get_project(b.folder)), media_type="text/csv",
-                    headers={"Content-Disposition": 'attachment; filename="Core-Ex_Interval_Tanda.csv"'})
+                    headers={"Content-Disposition": 'attachment; filename="DB-Ex_Interval_Tanda.csv"'})

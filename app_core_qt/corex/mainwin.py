@@ -1,4 +1,4 @@
-"""Jendela utama Core-Ex (Qt): bilah atas, filter, tabel foto, pratinjau, kartu, bilah status + progres AI."""
+"""Jendela utama DB-Ex (Qt): bilah atas, filter, tabel foto, pratinjau, kartu, bilah status + progres AI."""
 from __future__ import annotations
 
 import datetime as _dt
@@ -75,10 +75,10 @@ class MainWindow(QMainWindow):
         h.setSpacing(8)
         br = QVBoxLayout()
         br.setSpacing(0)
-        k = QLabel("CORE EXCELLENCE")
+        k = QLabel("DATABASE EXCELLENCE")
         k.setObjectName("kick")
-        k.setToolTip("Core-Ex (Core Excellence) · keluarga GC-Ex")
-        b = QLabel(f"Core<span style='color:{theme.C['sb']}'>-Ex</span>")
+        k.setToolTip("DB-Ex (Database Excellence) · keluarga GC-Ex")
+        b = QLabel(f"DB<span style='color:{theme.C['sb']}'>-Ex</span>")
         b.setObjectName("brand")
         b.setTextFormat(Qt.RichText)
         self.prj = QLabel("Interpretasi foto core box · 100% offline")
@@ -297,7 +297,7 @@ class MainWindow(QMainWindow):
         sb.addPermanentWidget(self.sBe)
         self.wmark = QLabel(COPYRIGHT)
         self.wmark.setObjectName("wmark")
-        self.wmark.setToolTip("Core-Ex (Core Excellence) · keluarga GC-Ex")
+        self.wmark.setToolTip("DB-Ex (Database Excellence) · keluarga GC-Ex")
         sb.addPermanentWidget(self.wmark)
         self.toastL = QLabel(self)
         self.toastL.setStyleSheet(f"background:{theme.C['ink']};color:{theme.C['pn']};padding:8px 14px;border-radius:5px")
@@ -324,13 +324,13 @@ class MainWindow(QMainWindow):
         v = QVBoxLayout(c)
         v.setContentsMargins(28, 22, 28, 24)
         v.setSpacing(12)
-        k = QLabel("CORE EXCELLENCE · CORE LOGGING")
+        k = QLabel("DATABASE EXCELLENCE · CORE LOGGING")
         k.setObjectName("kick")
         hd = QLabel(f"Foto core box dibaca di komputer ini, <span style='color:{theme.C['sb']}'>bukan di cloud.</span>")
         hd.setObjectName("startH")
         hd.setWordWrap(True)
         hd.setTextFormat(Qt.RichText)
-        p = QLabel("Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). Core-Ex membaca Hole ID, nomor box dan kedalaman dari nama file "
+        p = QLabel("Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). DB-Ex membaca Hole ID, nomor box dan kedalaman dari nama file "
                    "bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.")
         p.setWordWrap(True)
         steps = QHBoxLayout()
@@ -380,6 +380,10 @@ class MainWindow(QMainWindow):
             a.setShortcut(QKeySequence(sc))
             a.triggered.connect(fn)
             m.addAction(a)
+        a = QAction("Ekspor infografis foto (PNG / PDF)…", self)
+        a.setShortcut(QKeySequence("Ctrl+E"))
+        a.triggered.connect(lambda: self.outcrop.export("png") if self.mode == "oc" else self.interp.export_infographic())
+        m.addAction(a)
         m.addSeparator()
         m.addAction("Keluar", self.close)
         v = mb.addMenu("&Tampilan")
@@ -410,7 +414,7 @@ class MainWindow(QMainWindow):
         h = mb.addMenu("&Bantuan")
         from .util import open_path, res_dir, user_dir
         guide = lambda: open_path(res_dir("docs") / "PANDUAN_CORE.html") if (res_dir("docs") / "PANDUAN_CORE.html").exists() else open_path(res_dir("docs"))  # noqa: E731
-        h.addAction("Panduan Core-Ex", guide)
+        h.addAction("Panduan DB-Ex", guide)
         h.addAction("Panduan AI lokal (Ollama)", guide)  # dirujuk pesan dialog AI: "Bantuan → Panduan AI lokal"
         h.addAction("Buka folder log", lambda: open_path(user_dir() / "logs"))
         h.addSeparator()
@@ -418,7 +422,7 @@ class MainWindow(QMainWindow):
         h.addAction("Lisensi pihak ketiga (open source) & merek dagang", lambda: open_path(res_dir("legal")))
         if self.store:
             h.addAction("Lisensi GC-Ex…", lambda: dialogs.LicenseDlg(self, self.store, "info").exec())
-        h.addAction("Tentang Core-Ex", lambda: dialogs.about(self, self.store, self.version))
+        h.addAction("Tentang DB-Ex", lambda: dialogs.about(self, self.store, self.version))
 
     # ================================================================ util
     def toast(self, m: str, ms: int = 2600) -> None:
@@ -469,13 +473,13 @@ class MainWindow(QMainWindow):
         SET.set("qt_zoom", z)
         log("[tampilan] ukuran", z)
         busy = self.poll.isActive()
-        if ask(self, f"Ukuran tampilan {round(z * 100)}% dipakai setelah Core-Ex dibuka ulang.\n\nBuka ulang sekarang?"
+        if ask(self, f"Ukuran tampilan {round(z * 100)}% dipakai setelah DB-Ex dibuka ulang.\n\nBuka ulang sekarang?"
                + (" Folder yang sedang dibuka akan dibuka lagi." if self.folder else "")
                + ("\n\nAI sedang berjalan dan akan berhenti; foto yang belum selesai bisa dianalisis lagi nanti." if busy else "")):
             self.restart_after = True
             self.close()
         else:
-            self.toast(f"Ukuran tampilan {round(z * 100)}% dipakai saat Core-Ex dibuka berikutnya", 4000)
+            self.toast(f"Ukuran tampilan {round(z * 100)}% dipakai saat DB-Ex dibuka berikutnya", 4000)
 
     def toggle_full(self) -> None:
         if self.isFullScreen():
@@ -485,7 +489,7 @@ class MainWindow(QMainWindow):
         self.aFull.setChecked(self.isFullScreen())
 
     def from_instance(self, msg: dict) -> None:
-        """Core-Ex dibuka lagi saat sudah berjalan: tampilkan jendela ini, buka folder yang diminta."""
+        """DB-Ex dibuka lagi saat sudah berjalan: tampilkan jendela ini, buka folder yang diminta."""
         if self.isMinimized():
             self.showMaximized()
         self.raise_()

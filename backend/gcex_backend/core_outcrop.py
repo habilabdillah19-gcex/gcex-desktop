@@ -1,4 +1,4 @@
-"""Core-Ex: ruang kerja Singkapan (foto singkapan / trenching hasil mapping lapangan).
+"""DB-Ex: ruang kerja Singkapan (foto singkapan / trenching hasil mapping lapangan).
 
 - Foto dimasukkan satu per satu dan DISALIN ke <folder proyek>/_GCEx_Core/singkapan/foto, jadi rekan yang membuka
   folder yang sama melihat hasil yang sama (folder hanya-baca -> penyimpanan lokal, sama dengan Core box).
@@ -1164,7 +1164,7 @@ def export_items(s: Store, ids: list[int]) -> tuple[list[dict], list[str]]:
 
 def to_str(items: list[dict], name: str = "singkapan") -> bytes:
     """Surpac STR teks: string, Y (northing), X (easting), Z, D1 jenis, D2 nama, D3 foto, D4.. kadar."""
-    L = [f"{_clean_txt(name) or 'singkapan'},{time.strftime('%d-%b-%y')},Core-Ex singkapan,", "0, 0.000, 0.000, 0.000,"]
+    L = [f"{_clean_txt(name) or 'singkapan'},{time.strftime('%d-%b-%y')},DB-Ex singkapan,", "0, 0.000, 0.000, 0.000,"]
     for it in sorted(items, key=lambda x: x["string"]):
         pts = it["xyz"] + ([it["xyz"][0]] if it["shape"] == "poly" else [])
         sm = it.get("sample") or {}

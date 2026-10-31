@@ -12,15 +12,15 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QBrush, QColor, QFont, QImage, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QCompleter, QDoubleSpinBox, QFileDialog, QFrame, QGraphicsObject, QGridLayout, QSizePolicy,
                                QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPushButton, QSpinBox, QVBoxLayout, QWidget)
 
-from . import api, theme
+from . import api, oc_paint, theme
 from .card import LISTS, _esc, btn
 from .dialogs import ask, say
 from .table import fmt
-from .util import SET, run_bg
+from .util import SET, log, run_bg, show_in_folder
 
 BLUES = ["#dbe7f5", "#9fbfe6", "#5a8fd0", "#2a5ea8", "#141a26"]
 GEOC = ["#c9b48a", "#8fa3b8", "#b98a6a", "#7f9a86", "#a690b5", "#c7a0a0", "#6f7f99", "#b8b06d", "#8a8f96", "#d1a86a"]
@@ -910,6 +910,65 @@ class Interp:
             halo_text(p, X0 + v.px(4), y, f"{d0:.2f}", ds, "#ffffff", "#141a26", "l")
             halo_text(p, X0 + BW - v.px(4), y, f"{d1:.2f}", ds, "#ffffff", "#141a26", "r")
 
+    # ---------------------------------------------------------------- infografis foto core box
+    def infographic(self) -> tuple[dict, list]:
+        """Judul, kicker, caption (logging) & legenda lapisan overlay untuk infografis foto core box."""
+        r = self.r or {}
+        hole = r.get("hole_id") or ""
+        if self.has_iv():
+            title = f"{hole}  {r['from_m']:.2f} – {r['to_m']:.2f} m".strip()
+        else:
+            title = hole or r.get("name") or ""
+        kick = "Foto core box" + (f" · Box {r['box_no']}" if r.get("box_no") not in (None, "") else "")
+        parts = [r.get(k) for k in ("lithology", "alteration", "weathering")]
+        cap = "; ".join(str(x) for x in parts if x)
+        nums = [f"Recovery {r['recovery_pct']:g}%" if r.get("recovery_pct") is not None else "",
+                f"RQD {r['rqd_pct']:g}%" if r.get("rqd_pct") is not None else ""]
+        nums = " · ".join(x for x in nums if x)
+        cap = ". ".join(x for x in (cap, nums, str(r.get("notes") or "").strip()) if x)
+        info = {"style": "editorial", "template": "core", "title": title, "kicker": kick, "caption": cap,
+                "credit": " · ".join(x for x in (Path(self.win.folder).name if self.win.folder else "", "DB-Ex") if x),
+                "show_legend": True, "show_scale": False, "legend_pos": "br"}
+        leg: list = []
+        if self.ov.on and self.has_iv() and self.det:
+            for l in [x for x in (self.ov.layers or []) if x["on"]]:
+                m, items = self.ov.items(l, r, self.det, self.segs)
+                seen = {}
+                for it in items:
+                    c = self.ov.color(l["k"], m, it["v"])
+                    if c and short_v(it["v"]) not in seen and len(seen) < 8:
+                        seen[short_v(it["v"])] = c
+                if seen:
+                    leg.append({"name": m.get("short") or l["k"][2:], "shape": "head"})
+                    leg += [{"name": k, "color": c, "shape": "class"} for k, c in seen.items()]
+        return info, leg
+
+    def export_infographic(self) -> None:
+        r = self.r
+        if not r or r.get("missing"):
+            say(self.win, "Pilih foto core box dulu.", warn=True)
+            return
+        from PySide6.QtWidgets import QFileDialog
+        info, leg = self.infographic()
+        base = re.sub(r"[^\w.-]+", "_", info["title"] or r.get("name") or "core")[:80]
+        p, filt = QFileDialog.getSaveFileName(self.win, "Ekspor infografis foto core box",
+                                              str(Path(SET.get("lastSaveDir", str(Path.home()))) / f"{base}.png"), "PNG (*.png);;PDF (*.pdf)")
+        if not p:
+            return
+        fmt = "pdf" if p.lower().endswith(".pdf") or (not p.lower().endswith(".png") and "PDF" in filt) else "png"
+        if not p.lower().endswith("." + fmt):
+            p += "." + fmt
+        SET.set("lastSaveDir", str(Path(p).parent))
+        try:
+            im = render_core(self, api.image_file(self.win.folder, r["id"], 0), info, leg)
+            (oc_paint.save_png if fmt == "png" else lambda i, o: oc_paint.save_pdf(i, o, info["title"]))(im, p)
+        except Exception as e:  # noqa: BLE001
+            say(self.win, "Gagal ekspor infografis:\n" + str(e), warn=True)
+            return
+        self.win.toast("Tersimpan: " + p, 5000)
+        show_in_folder(p)
+        log("[core] ekspor infografis", p)
+
     def _ov_info(self) -> None:
         if not self.ov.on:
             return
@@ -1506,7 +1565,7 @@ class Interp:
     def mark_csv(self) -> None:
         if not self.win.folder:
             return
-        name = f"Core-Ex_Interval_Tanda_{_dt.date.today().isoformat()}.csv"
+        name = f"DB-Ex_Interval_Tanda_{_dt.date.today().isoformat()}.csv"
         p, _ = QFileDialog.getSaveFileName(self.win, "Simpan tanda interval (CSV)", str(Path(SET.get("lastSaveDir", str(Path.home()))) / name), "CSV (*.csv)")
         if not p:
             return
@@ -1695,3 +1754,31 @@ def _clear(lay) -> None:
 
 
 __all__ = ["Interp", "Ov", "depth_segs", "QPainterPath", "QBrush"]
+
+
+def render_core(it: "Interp", path, info: dict, leg: list, max_side: int = 4000) -> QImage:
+    """Plate infografis: foto core box resolusi penuh + overlay lapisan (sama dengan di layar) di tengah, pita gelap di atas
+    (kicker, judul serif) dan di bawah (caption logging, kredit) agar papan judul / isi foto tidak tertutup."""
+    ph = oc_paint.load_image(path, max_side).convertToFormat(QImage.Format_RGB32)
+    W, H = ph.width(), ph.height()
+    U = max(W, H) / 1000.0
+    top, bot = int(150 * U), int((110 if info.get("caption") else 60) * U)
+    im = QImage(W, H + top + bot, QImage.Format_RGB32)
+    im.fill(QColor("#101318"))
+    p = QPainter(im)
+    try:
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.TextAntialiasing)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        p.drawImage(0, top, ph)
+        v = it.viewer
+        if it.ov.on and v.w and v.h:
+            p.save()
+            p.translate(0, top)
+            p.scale(W / v.w, H / v.h)
+            it.paint_overlay(p)
+            p.restore()
+        oc_paint.paint_scene(p, W, H + top + bot, [], {}, info, legend_extra=leg)
+    finally:
+        p.end()
+    return im

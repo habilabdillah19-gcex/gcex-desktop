@@ -1,4 +1,4 @@
-GC-Ex (GC-Ex Block Model, GC-Ex Drillhole & Core-Ex)
+GC-Ex (GC-Ex Block Model, GC-Ex Drillhole & DB-Ex)
 PENAFIAN MEREK DAGANG / TRADEMARK DISCLAIMER
 ======================================================================
 
@@ -33,7 +33,7 @@ memakai logo pihak-pihak tersebut. Kecocokan dengan perangkat lunak pihak lain
 diupayakan tetapi tidak dijamin, dan dapat berubah bila format file mereka
 berubah.
 
-"GC-Ex", "Grade Control Excellence", "Core-Ex" dan "Core Excellence" adalah nama
+"GC-Ex", "Grade Control Excellence", "DB-Ex" dan "Database Excellence" adalah nama
 produk milik Habil Abdillah.
 
 Hasil perhitungan
@@ -76,7 +76,7 @@ relationship. GC-Ex does not use the logos of these parties. Compatibility
 with third-party software is pursued but not guaranteed and may change if
 their file formats change.
 
-"GC-Ex", "Grade Control Excellence", "Core-Ex" and "Core Excellence" are product
+"GC-Ex", "Grade Control Excellence", "DB-Ex" and "Database Excellence" are product
 names of Habil Abdillah.
 
 Results

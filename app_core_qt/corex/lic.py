@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Optional
 
 PUBKEY_B64 = "MCowBQYDK2VwAyEA9r0X96ABXcPSrjl0edVsTn836jFZxwBDmFvX4aie0ug="  # SPKI DER, sama dengan license.js
-APPS = {"bm": "GC-Ex Block Model", "dh": "GC-Ex Drillhole", "core": "Core-Ex"}
+APPS = {"bm": "GC-Ex Block Model", "dh": "GC-Ex Drillhole", "core": "DB-Ex"}
 B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 # ---------------------------------------------------------------- Ed25519 verify (RFC 8032)

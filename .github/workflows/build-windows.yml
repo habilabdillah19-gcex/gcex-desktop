@@ -39,7 +39,7 @@ jobs:
           $ok = $false
           for ($i=0; $i -lt 40; $i++) { try { $r = Invoke-RestMethod http://127.0.0.1:8799/health; if ($r.ok) { $ok = $true; break } } catch {}; Start-Sleep -Milliseconds 500 }
           if (-not $ok) { Stop-Process -Id $p.Id -Force; throw "backend.exe tidak merespons /health" }
-          # Core-Ex: proyek foto + thumbnail (Pillow ikut terbundel) + cek Ollama (tidak ada di server: harus tetap menjawab)
+          # DB-Ex: proyek foto + thumbnail (Pillow ikut terbundel) + cek Ollama (tidak ada di server: harus tetap menjawab)
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/foto_core/LTH-1" | Out-Null
           python -c "from PIL import Image; Image.new('RGB',(1200,500),(120,100,80)).save(r'$env:RUNNER_TEMP/foto_core/LTH-1/LTH-1_Box1_0.0-3.5.jpg')"
           $body = @{ folder = "$env:RUNNER_TEMP/foto_core"; by = "CI" } | ConvertTo-Json
@@ -130,13 +130,13 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
-      - name: Panduan Core-Ex (HTML)
+      - name: Panduan DB-Ex (HTML)
         run: python docs/md2html.py docs/PANDUAN_CORE.md docs/PANDUAN_CORE.html
-      - name: Bangun installer Core-Ex
+      - name: Bangun installer DB-Ex
         run: npm run dist:core
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-      - name: Cek isi Core-Ex
+      - name: Cek isi DB-Ex
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
@@ -148,8 +148,8 @@ jobs:
       # 3 installer terpisah, dokumen (panduan teknis & tutorial), data latihan dummy, lisensi & tentang, catatan rilis
       # (daftar commit sejak rilis sebelumnya) dan SHA256SUMS; kode sumber zip/tar.gz otomatis dari tag.
       # Aplikasi TIDAK membaca release ini (tanpa auto-update); admin mengunduh lalu mengirim ke pelanggan.
-      # ---------- Core-Ex Qt (PySide6): uji, bangun, uji jalan, installer NSIS ----------
-      - name: Core-Ex Qt - pasang PySide6 & uji pytest-qt
+      # ---------- DB-Ex Qt (PySide6): uji, bangun, uji jalan, installer NSIS ----------
+      - name: DB-Ex Qt - pasang PySide6 & uji pytest-qt
         shell: pwsh
         env:
           QT_QPA_PLATFORM: offscreen
@@ -159,31 +159,31 @@ jobs:
           $rc = $LASTEXITCODE
           if ($rc -ne 0) {
             Select-String -Path qt_test.log -Pattern 'FAILED|ERROR|Error|assert|Exception|File "' | Select-Object -First 50 | ForEach-Object { Write-Host ("::warning::qt-test " + $_.Line.Trim()) }
-            Write-Host "::warning::uji Core-Ex Qt gagal (exit $rc) - lanjut untuk diagnosis build"
+            Write-Host "::warning::uji DB-Ex Qt gagal (exit $rc) - lanjut untuk diagnosis build"
           }
           # WAJIB: tanpa exit 0, GitHub menambahkan "exit $LASTEXITCODE" di akhir skrip, sehingga langkah ini
           # tetap GAGAL walau sudah ditangani di atas -> job berhenti dan langkah Release dilewati
           # (Release 0.23.4 & 0.23.5 tidak terbit karena ini). Hasil uji tetap terlihat sebagai ::warning::.
           exit 0
-      - name: Core-Ex Qt - bangun (PyInstaller)
+      - name: DB-Ex Qt - bangun (PyInstaller)
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Core-Ex Qt masih tahap percobaan: installer rilis tetap versi Electron. Karena itu
+          # DB-Ex Qt masih tahap percobaan: installer rilis tetap versi Electron. Karena itu
           # kegagalan di sini TIDAK boleh menahan Release GC-Ex - ditandai lalu dilewati.
           trap {
-            Write-Host ("::warning::build Core-Ex Qt gagal: " + $_.Exception.Message)
-            Write-Host "::warning::langkah Core-Ex Qt berikutnya dilewati; Release GC-Ex tetap jalan"
+            Write-Host ("::warning::build DB-Ex Qt gagal: " + $_.Exception.Message)
+            Write-Host "::warning::langkah DB-Ex Qt berikutnya dilewati; Release GC-Ex tetap jalan"
             "QT_BUILD=gagal" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
             exit 0
           }
           $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
           Set-Content -Path app_core_qt/version.txt -Value $v -NoNewline -Encoding ascii
-          pyinstaller --noconfirm --onedir --windowed --name Core-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
+          pyinstaller --noconfirm --onedir --windowed --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
             --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
-          if ($LASTEXITCODE -ne 0) { throw "PyInstaller Core-Ex Qt gagal" }
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller DB-Ex Qt gagal" }
           # Teks lisensi GNU diambil dari gnu.org. Satu gangguan jaringan dulu menggagalkan SELURUH
           # rilis, jadi: coba 3x, lalu ambil salinan dari rilis sebelumnya (selalu terjangkau dari
           # runner), baru menyerah. Teksnya tidak pernah diubah - hanya disalin.
@@ -215,91 +215,91 @@ jobs:
             }
             if (-not $ok) { throw "teks lisensi $n tidak dapat diperoleh (gnu.org maupun rilis sebelumnya)" }
           }
-          $d = "dist-qt/Core-Ex"
+          $d = "dist-qt/DB-Ex"
           New-Item -ItemType Directory -Force "$d/legal","$d/docs" | Out-Null
           Get-ChildItem legal -File | Where-Object { $_.Extension -in ".txt",".html" -and $_.Name -notin @("LISENSI_ELECTRON.txt","LISENSI_CHROMIUM.html","LISENSI_PLOTLY_BUNDEL.txt") } | Copy-Item -Destination "$d/legal"
           Copy-Item docs/PANDUAN_CORE.html "$d/docs"
           Get-ChildItem $d | Format-Table Name, Length
           "{0:N1} MB" -f ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
           exit 0
-      - name: Core-Ex Qt - uji mandiri exe (backend, Pillow, Excel, font) & gerbang lisensi
+      - name: DB-Ex Qt - uji mandiri exe (backend, Pillow, Excel, font) & gerbang lisensi
         shell: pwsh
         run: |
-          if ($env:QT_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build Core-Ex Qt gagal"; exit 0 }
-          $exe = "dist-qt/Core-Ex/Core-Ex.exe"
+          if ($env:QT_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build DB-Ex Qt gagal"; exit 0 }
+          $exe = "dist-qt/DB-Ex/DB-Ex.exe"
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/qt_core/LTH-1" | Out-Null
           python -c "from PIL import Image; Image.new('RGB',(1200,500),(120,100,80)).save(r'$env:RUNNER_TEMP/qt_core/LTH-1/LTH-1_Box1_0.0-3.5.jpg')"
           $p = Start-Process -FilePath $exe -ArgumentList "--selftest","$env:RUNNER_TEMP/qt_core","$env:RUNNER_TEMP/qt_self.json" -PassThru -Wait
           Get-Content "$env:RUNNER_TEMP/qt_self.json" -Raw | Write-Host
-          if ($p.ExitCode -ne 0) { throw "uji mandiri Core-Ex Qt gagal (exit $($p.ExitCode))" }
-          $sd = Join-Path $env:APPDATA "Core-Ex"; New-Item -ItemType Directory -Force -Path $sd | Out-Null
+          if ($p.ExitCode -ne 0) { throw "uji mandiri DB-Ex Qt gagal (exit $($p.ExitCode))" }
+          $sd = Join-Path $env:APPDATA "DB-Ex"; New-Item -ItemType Directory -Force -Path $sd | Out-Null
           $tv = (Select-String -Path app_core_qt/corex/dialogs.py -Pattern 'TERMS_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
           Set-Content -Path (Join-Path $sd "settings.json") -Value ('{"termsAccepted":"' + $tv + '"}') -Encoding utf8
           $log = Join-Path $sd "logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
           $p = Start-Process -FilePath $exe -PassThru
           $ok = $false; for ($i=0; $i -lt 60; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
           $alive = -not $p.HasExited
-          # satu jendela: Core-Ex kedua meneruskan folder ke jendela pertama lalu selesai sendiri
+          # satu jendela: DB-Ex kedua meneruskan folder ke jendela pertama lalu selesai sendiri
           $p2 = Start-Process -FilePath $exe -ArgumentList "--folder","$env:RUNNER_TEMP/qt_core" -PassThru
           $null = $p2.Handle  # agar ExitCode terbaca setelah WaitForExit
           $one = $p2.WaitForExit(20000) -and $p2.ExitCode -eq 0
           if (-not $p2.HasExited) { Stop-Process -Id $p2.Id -Force -ErrorAction SilentlyContinue }
           Start-Sleep -Milliseconds 800
           $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue
-          $one = $one -and ($t -match 'pesan dari Core-Ex kedua') -and -not $p.HasExited
+          $one = $one -and ($t -match 'pesan dari DB-Ex kedua') -and -not $p.HasExited
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           Write-Host $t
-          if (-not $ok -or -not $alive) { Write-Host "::error::Core-Ex Qt tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
-          # peringatan saja (installer Qt belum dirilis): tidak menghentikan rilis Block Model / Drillhole / Core-Ex Electron
-          if (-not $one) { Write-Host "::warning::Core-Ex Qt kedua tidak meneruskan ke jendela pertama (satu jendela) - periksa log di atas" }
-          else { Write-Host "Core-Ex Qt: Core-Ex kedua diteruskan ke jendela pertama (satu jendela)" }
-          Write-Host "Core-Ex Qt: jendela aktivasi lisensi tampil, aplikasi berjalan"
-      - name: Core-Ex Qt - installer (NSIS) & uji pasang / copot
+          if (-not $ok -or -not $alive) { Write-Host "::error::DB-Ex Qt tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
+          # peringatan saja (installer Qt belum dirilis): tidak menghentikan rilis Block Model / Drillhole / DB-Ex Electron
+          if (-not $one) { Write-Host "::warning::DB-Ex Qt kedua tidak meneruskan ke jendela pertama (satu jendela) - periksa log di atas" }
+          else { Write-Host "DB-Ex Qt: DB-Ex kedua diteruskan ke jendela pertama (satu jendela)" }
+          Write-Host "DB-Ex Qt: jendela aktivasi lisensi tampil, aplikasi berjalan"
+      - name: DB-Ex Qt - installer (NSIS) & uji pasang / copot
         shell: pwsh
         run: |
-          if ($env:QT_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build Core-Ex Qt gagal"; exit 0 }
+          if ($env:QT_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build DB-Ex Qt gagal"; exit 0 }
           $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
           $mk = (Get-Command makensis -ErrorAction SilentlyContinue).Source
           if (-not $mk) { foreach ($c in @("${env:ProgramFiles(x86)}\NSIS\makensis.exe", "$env:ProgramFiles\NSIS\makensis.exe")) { if (Test-Path $c) { $mk = $c; break } } }
           if (-not $mk) { choco install nsis -y --no-progress | Out-Null; foreach ($c in @("${env:ProgramFiles(x86)}\NSIS\makensis.exe", "$env:ProgramFiles\NSIS\makensis.exe")) { if (Test-Path $c) { $mk = $c; break } } }
           if (-not $mk) { throw "makensis tidak ditemukan" }
           Write-Host "makensis: $mk"
-          $out = "$PWD\dist-qt\Core-Ex-Qt-Setup-$v.exe"
-          & $mk /V2 "/DVERSION=$v" "/DSRC=$PWD\dist-qt\Core-Ex" "/DOUT=$out" "/DROOT=$PWD" tools\corex_qt\installer.nsi
+          $out = "$PWD\dist-qt\DB-Ex-Qt-Setup-$v.exe"
+          & $mk /V2 "/DVERSION=$v" "/DSRC=$PWD\dist-qt\DB-Ex" "/DOUT=$out" "/DROOT=$PWD" tools\corex_qt\installer.nsi
           if ($LASTEXITCODE -ne 0) { throw "makensis gagal" }
           $p = Start-Process -FilePath $out -ArgumentList "/S" -PassThru -Wait
-          $inst = Join-Path $env:LOCALAPPDATA "Programs\Core-Ex"
-          foreach ($f in @("Core-Ex.exe","Uninstall Core-Ex.exe","legal/LISENSI_QT_LGPL-3.0.txt","legal/SYARAT_PENGGUNAAN.txt","docs/PANDUAN_CORE.html","_internal/fonts/Inter-Variable.ttf")) {
+          $inst = Join-Path $env:LOCALAPPDATA "Programs\DB-Ex"
+          foreach ($f in @("DB-Ex.exe","Uninstall DB-Ex.exe","legal/LISENSI_QT_LGPL-3.0.txt","legal/SYARAT_PENGGUNAAN.txt","docs/PANDUAN_CORE.html","_internal/fonts/Inter-Variable.ttf")) {
             if (-not (Test-Path "$inst/$f")) { throw "installer: tidak ada $f" } else { Write-Host "OK $f" }
           }
-          Start-Process -FilePath "$inst\Uninstall Core-Ex.exe" -ArgumentList "/S" -Wait
+          Start-Process -FilePath "$inst\Uninstall DB-Ex.exe" -ArgumentList "/S" -Wait
           Start-Sleep -Seconds 3
-          if (Test-Path "$inst\Core-Ex.exe") { throw "uninstaller tidak menghapus Core-Ex.exe" }
+          if (Test-Path "$inst\DB-Ex.exe") { throw "uninstaller tidak menghapus DB-Ex.exe" }
           Write-Host ("installer OK: " + [math]::Round((Get-Item $out).Length / 1MB, 1) + " MB")
       - uses: actions/upload-artifact@v6
         continue-on-error: true
         with:
-          name: Core-Ex-Qt-Setup-Windows
-          path: dist-qt/Core-Ex-Qt-Setup-*.exe
+          name: DB-Ex-Qt-Setup-Windows
+          path: dist-qt/DB-Ex-Qt-Setup-*.exe
           retention-days: 7
-      # installer uji Core-Ex Qt juga ke pre-release "core-ex-qt-uji" (privat, tidak memakai kuota artifact Actions yang
-      # bisa penuh). Hanya installer terbaru yang disimpan. Bukan rilis resmi: Release v<versi> tetap berisi Core-Ex Electron.
-      - name: Core-Ex Qt - unggah installer uji ke pre-release core-ex-qt-uji
+      # installer uji DB-Ex Qt juga ke pre-release "core-ex-qt-uji" (privat, tidak memakai kuota artifact Actions yang
+      # bisa penuh). Hanya installer terbaru yang disimpan. Bukan rilis resmi: Release v<versi> tetap berisi DB-Ex Electron.
+      - name: DB-Ex Qt - unggah installer uji ke pre-release core-ex-qt-uji
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $f = Get-ChildItem dist-qt -Filter "Core-Ex-Qt-Setup-*.exe" | Select-Object -First 1
-          if (-not $f) { Write-Host "::warning::installer Core-Ex Qt tidak ada, pre-release tidak diperbarui"; exit 0 }
+          $f = Get-ChildItem dist-qt -Filter "DB-Ex-Qt-Setup-*.exe" | Select-Object -First 1
+          if (-not $f) { Write-Host "::warning::installer DB-Ex Qt tidak ada, pre-release tidak diperbarui"; exit 0 }
           $t = "core-ex-qt-uji"
           gh release view $t -R $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $t -R $env:GITHUB_REPOSITORY --prerelease --target $env:GITHUB_SHA --title "Core-Ex Qt (installer uji, bukan rilis resmi)" `
-              --notes "Installer uji Core-Ex versi Qt (PySide6) dari build terakhir main. Untuk dicoba sebelum Core-Ex 1.0.0; Release v<versi> resmi masih memuat Core-Ex versi Electron."
+            gh release create $t -R $env:GITHUB_REPOSITORY --prerelease --target $env:GITHUB_SHA --title "DB-Ex Qt (installer uji, bukan rilis resmi)" `
+              --notes "Installer uji DB-Ex versi Qt (PySide6) dari build terakhir main. Untuk dicoba sebelum DB-Ex 1.0.0; Release v<versi> resmi masih memuat DB-Ex versi Electron."
           }
-          $old = gh release view $t -R $env:GITHUB_REPOSITORY --json assets --jq ".assets[].name" | Where-Object { $_ -like "Core-Ex-Qt-Setup-*.exe" -and $_ -ne $f.Name }
+          $old = gh release view $t -R $env:GITHUB_REPOSITORY --json assets --jq ".assets[].name" | Where-Object { ($_ -like "DB-Ex-Qt-Setup-*.exe" -or $_ -like "Core-Ex-Qt-Setup-*.exe") -and $_ -ne $f.Name }
           foreach ($o in $old) { gh release delete-asset $t $o -R $env:GITHUB_REPOSITORY --yes }
           gh release upload $t $f.FullName -R $env:GITHUB_REPOSITORY --clobber
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal mengunggah $($f.Name) ke pre-release $t"; exit 0 }
@@ -406,9 +406,9 @@ jobs:
           $v = ($vs | Sort-Object { [version]$_ } -Descending | Select-Object -First 1)
           Write-Host ("versi aplikasi: " + ($vs -join ', ') + " -> rilis v" + $v)
           $tag = "v$v"
-          python docs/tutorial-core/buat_data_dummy.py build-rel/Core-Ex_Data_Dummy
-          if ($LASTEXITCODE -ne 0) { throw "gagal membuat data dummy Core-Ex" }
-          python tools/rilis/kemas_rilis.py $v dist rilis build-rel/Core-Ex_Data_Dummy 2>&1 | Tee-Object -FilePath kemas.log
+          python docs/tutorial-core/buat_data_dummy.py build-rel/DB-Ex_Data_Dummy
+          if ($LASTEXITCODE -ne 0) { throw "gagal membuat data dummy DB-Ex" }
+          python tools/rilis/kemas_rilis.py $v dist rilis build-rel/DB-Ex_Data_Dummy 2>&1 | Tee-Object -FilePath kemas.log
           if ($LASTEXITCODE -ne 0) { Get-Content kemas.log -Tail 12 | ForEach-Object { Write-Host ("::error::kemas " + $_) }; throw "gagal mengemas rilis" }
           $files = @(Get-ChildItem rilis -File | ForEach-Object { $_.FullName })
           gh release view $tag *> $null
@@ -457,8 +457,8 @@ jobs:
       - uses: actions/upload-artifact@v6
         continue-on-error: true
         with:
-          name: Core-Ex-Setup-Windows
-          path: dist/Core-Ex-Setup-*.exe
+          name: DB-Ex-Setup-Windows
+          path: dist/DB-Ex-Setup-*.exe
           retention-days: 7
 
       # audit keamanan (informasi, tidak menggagalkan build): environment Python terpisah supaya tidak ikut ke daftar lisensi

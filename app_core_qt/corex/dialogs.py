@@ -14,7 +14,7 @@ TERMS_VERSION = "2026-10-29"  # sama dengan electron/main.js: persetujuan lama t
 
 
 class Dlg(QDialog):
-    """Dialog bergaya Core-Ex: pita judul navy dengan tepi biru baja."""
+    """Dialog bergaya DB-Ex: pita judul navy dengan tepi biru baja."""
 
     def __init__(self, parent, title: str, html_title: str | None = None, w: int = 620):
         super().__init__(parent)
@@ -243,7 +243,7 @@ class AiDlg(Dlg):
         r.addWidget(self.host, 1)
         r.addWidget(chk)
         b.addLayout(r)
-        self.auto = QCheckBox("Jalankan Ollama otomatis saat Core-Ex dibuka bila belum aktif")
+        self.auto = QCheckBox("Jalankan Ollama otomatis saat DB-Ex dibuka bila belum aktif")
         self.auto.setChecked(bool(SET.get("autoOllama", True)))
         self.auto.toggled.connect(lambda v: SET.set("autoOllama", v))
         b.addWidget(self.auto)
@@ -391,9 +391,9 @@ def about(parent, store: lic.Store | None, version: str) -> None:
     c = store.check(core_app()) if store else None
     I = c.get("info") if c else None
     m = QMessageBox(parent)
-    m.setWindowTitle("Tentang Core-Ex")
+    m.setWindowTitle("Tentang DB-Ex")
     m.setIcon(QMessageBox.Information)
-    m.setText(f"<b>{APP_NAME}</b> - Core Excellence (keluarga GC-Ex)")
+    m.setText(f"<b>{APP_NAME}</b> - Database Excellence (keluarga GC-Ex)")
     m.setInformativeText(
         f"Versi {version}\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang."
         + (f"\n\nDilisensikan kepada: {I['n']}" + (f" ({I['o']})" if I.get("o") else "") + f"\nBerlaku sampai: {I.get('e') or 'tanpa batas waktu'}" if I and c["ok"] else "")

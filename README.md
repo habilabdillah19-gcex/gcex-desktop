@@ -6,12 +6,12 @@ Satu repositori, tiga aplikasi Windows 64-bit dengan backend Python yang sama:
 |---|---|---|---|
 | GC-Ex Block Model | `app/index.html` | `web-src/` (`python build.py`) | `GC-Ex-Setup-<versi>.exe` |
 | GC-Ex Drillhole | `app-dh/index.html` | `web-src-dh/` (`python build_dh.py`) | `GC-Ex-Drillhole-Setup-<versi>.exe` |
-| Core-Ex | `app-core/index.html` | langsung `app-core/index.html` (satu file, tanpa build) | `Core-Ex-Setup-<versi>.exe` |
+| DB-Ex | `app-core/index.html` | langsung `app-core/index.html` (satu file, tanpa build) | `DB-Ex-Setup-<versi>.exe` |
 
 Ketiga aplikasi bisa dipasang berdampingan; masing-masing punya penyimpanan sendiri
-(`%APPDATA%\\GC-Ex`, `%APPDATA%\\GC-Ex Drillhole`, `%APPDATA%\\Core-Ex`).
+(`%APPDATA%\\GC-Ex`, `%APPDATA%\\GC-Ex Drillhole`, `%APPDATA%\\DB-Ex`).
 
-**Core-Ex** (Core Excellence; dahulu GC-Ex Core Interpretation) — interpretasi foto core box 100% offline: folder foto (ribuan foto, bersubfolder)
+**DB-Ex** (Database Excellence; dahulu Core-Ex / GC-Ex Core Interpretation; DB = Database) — interpretasi foto core box 100% offline: folder foto (ribuan foto, bersubfolder)
 dibaca backend, Hole / Box / kedalaman dari nama file, deskripsi oleh model vision lokal di **Ollama**
 (`core_dh.py`: import Collar/Survey/Assay/Geologi CSV/Excel dengan header dinamis, cari cepat, overlay assay di foto)
 (`127.0.0.1:11434`, mis. `qwen3-vl:8b`), verifikasi geologist, export Excel. Hasil disimpan di
@@ -27,8 +27,8 @@ as-mined & register poligon, rekonsiliasi dengan Surpac, serta koneksi ke MS Acc
 gcex-desktop/
 ├─ app/index.html          Tampilan GC-Ex Block Model (sama dengan versi HTML offline)
 ├─ app-dh/index.html       Tampilan GC-Ex Drillhole Ultimate + modul desktop
-├─ app-core/index.html     Tampilan Core-Ex (offline penuh: tanpa CDN, ikon & font lokal)
-├─ builder-core.json       Konfigurasi installer Core-Ex
+├─ app-core/index.html     Tampilan DB-Ex (offline penuh: tanpa CDN, ikon & font lokal)
+├─ builder-core.json       Konfigurasi installer DB-Ex
 ├─ web-src-dh/             Sumber Drillhole: gcex_dh_base.html + mdlbig_dh.js + deskflush_dh.js + build_dh.py
 ├─ builder-dh.json         Konfigurasi installer GC-Ex Drillhole
 ├─ electron/main.js        Jendela aplikasi, menu, log, menjalankan & menghentikan backend
@@ -39,7 +39,7 @@ gcex-desktop/
 │  │                             (hanya kolom input; rumus, link, grafik, makro tetap utuh; cadangan dulu)
 │  ├─ gcex_backend/access_io.py  Baca tabel / tambah baris ke database MS Access (.accdb/.mdb)
 │  ├─ gcex_backend/mdl_io.py     Block model .mdl besar: cache kolom di disk, potongan RL/XY, ringkasan per RL
-│  ├─ gcex_backend/core_io.py    Core-Ex: proyek foto (SQLite), thumbnail, antrean AI Ollama, Excel
+│  ├─ gcex_backend/core_io.py    DB-Ex: proyek foto (SQLite), thumbnail, antrean AI Ollama, Excel
 │  ├─ gcex_backend/server.py     API: /health /info /excel/* (termasuk /excel/register-write) /mdl/* /access/*
 │  ├─ run_backend.py             Titik masuk (dipakai Electron & PyInstaller)
 │  └─ tests/                     Uji otomatis
@@ -113,6 +113,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 4k | **Core-Ex Qt: Singkapan — kadar multi-unsur per interval**: daftar unsur assay per proyek (satuan, desimal, tampil, batas kelas warna); tabel sampel per fitur (Sample ID, dari–ke m, kadar; tempel dari Excel, <batas deteksi); garis trenching dibagi interval dengan kotak kadar per sampel (bisa ditarik), segmen berwarna kelas kadar + legenda kelas, komposit otomatis tertimbang panjang; ekspor STR per interval & tabel sampel CSV (koordinat awal-akhir bila georef) | sumber + installer uji (Core-Ex 0.28.0; installer rilis masih Electron) |
 | 4l | **Core-Ex Qt: Singkapan — simbol & label gaya peta**: titik *Strike / dip terukur* (simbol T + N100/80, ikut STR), *Label zona (rentang)* berkurung dengan garis penunjuk ke kotak putih, label kotak putih, kompas arah pandang (otomatis dari georef: dinding = arah kamera, lantai = panah utara; atau manual); kotak kadar interval kini di atas garis dengan dua ketinggian bergantian | sumber + installer uji (Core-Ex 0.29.0; installer rilis masih Electron) |
 | 4m | **Core-Ex Qt: Singkapan — channel / trenching ke database bor**: ekspor CSV Collar · Survey · Assay · Geologi dari semua garis Channel sampel yang tergeoreferensi (collar di ujung kiri foto, EOH di kanan, dip 0, azimuth per segmen dari georef; geologi dari zona yang dipotong garis, label zona & struktur yang memotong; nilai <DL setengah / negatif / teks); garis channel selalu disimpan kiri→kanan | sumber + installer uji (Core-Ex 0.30.0; installer rilis masih Electron) |
+| 4n | **Core-Ex berganti nama menjadi DB-Ex** (Database Excellence — ke depan juga membaca formulir lapangan tulisan tangan dengan AI vision ke Excel / SQL / CSV): nama di aplikasi, installer (`DB-Ex-Setup-<versi>.exe`, `DB-Ex-Qt-Setup-<versi>.exe`), dokumen & Release; folder data `%APPDATA%\\Core-Ex` dipindah otomatis ke `%APPDATA%\\DB-Ex`, kode lisensi sama (lisensi lama tetap berlaku); installer Qt mencopot Core-Ex lama. **Gaya infografis editorial** (judul serif di atas gradasi gelap, panel data gelap, garis penunjuk tipis, caption & kredit) jadi bawaan Singkapan (klasik tetap bisa dipilih) dan **infografis foto core box** baru (File › Ekspor infografis, Ctrl+E) | sumber + installer uji (DB-Ex 0.31.0) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna
@@ -121,6 +122,6 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 - Untuk fitur MS Access: driver Access 64-bit (MS Office 64-bit, atau
   *Microsoft Access Database Engine 2016 Redistributable* x64). Menu **Bantuan → Tentang GC-Ex**
   dan endpoint `/info` menunjukkan apakah driver terdeteksi.
-- Untuk Core-Ex: Ollama (dipasang terpisah) + satu model vision; lihat `docs/PANDUAN_CORE.md`
+- Untuk DB-Ex: Ollama (dipasang terpisah) + satu model vision; lihat `docs/PANDUAN_CORE.md`
   untuk pemasangan tanpa internet. Tanpa Ollama, log tetap bisa diisi & diverifikasi manual.
 - Log ada di `%APPDATA%\GC-Ex\logs` (menu **Bantuan → Buka folder log**).

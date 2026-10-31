@@ -1,5 +1,5 @@
 GC-Ex - LISENSI FONT / FONT LICENSES (SIL Open Font License 1.1)
-Core-Ex memakai Inter dan JetBrains Mono (file TTF asli, tanpa perubahan). Playfair Display dan Courier
+DB-Ex memakai Inter dan JetBrains Mono (file TTF asli, tanpa perubahan). Playfair Display dan Courier
 Prime hanya dipakai di dokumen tutorial PDF.
 
 === Inter ===

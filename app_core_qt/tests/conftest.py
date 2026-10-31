@@ -1,4 +1,4 @@
-"""Penyiapan bersama uji Qt Core-Ex.
+"""Penyiapan bersama uji Qt DB-Ex.
 
 Tugas latar (mis. pemeriksaan Ollama lewat util.run_bg) bisa selesai SETELAH jendela uji ditutup.
 Kalau hasilnya tiba saat uji berikutnya sedang menjalankan event loop, slot-nya menyentuh widget yang

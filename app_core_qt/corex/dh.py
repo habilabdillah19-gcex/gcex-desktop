@@ -75,7 +75,7 @@ class DhDlg(Dlg):
         self.colsLab = QLabel("<b>Kolom lain yang ikut</b> <span style='color:%s'>— centang, beri nama tampilan (mis. Au_ppm → Au), pilih angka / teks</span>" % theme.C["mu"])
         v.addWidget(self.colsLab, 4, 0, 1, 2)
         self.colsT = QTableWidget(0, 5)
-        self.colsT.setHorizontalHeaderLabels(["Pakai", "Kolom di file", "Nama di Core-Ex", "Jenis", "Contoh"])
+        self.colsT.setHorizontalHeaderLabels(["Pakai", "Kolom di file", "Nama di DB-Ex", "Jenis", "Contoh"])
         self.colsT.verticalHeader().hide()
         self.colsT.setMaximumHeight(200)
         v.addWidget(self.colsT, 5, 0, 1, 2)

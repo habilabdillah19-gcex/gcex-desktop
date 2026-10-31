@@ -12,7 +12,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const PUBKEY = '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA9r0X96ABXcPSrjl0edVsTn836jFZxwBDmFvX4aie0ug=\n-----END PUBLIC KEY-----\n';
-const APPS = { bm: 'GC-Ex Block Model', dh: 'GC-Ex Drillhole', core: 'Core-Ex' };
+const APPS = { bm: 'GC-Ex Block Model', dh: 'GC-Ex Drillhole', core: 'DB-Ex' };
 const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 let _mid = null;

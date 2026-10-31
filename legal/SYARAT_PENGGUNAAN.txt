@@ -1,7 +1,7 @@
 GC-Ex - SYARAT PENGGUNAAN, LISENSI & PENAFIAN
 GC-Ex - TERMS OF USE, LICENSE & DISCLAIMER
 Berlaku untuk / applies to: GC-Ex Block Model, GC-Ex Drillhole dan
-Core-Ex (Core Excellence; dahulu GC-Ex Core Interpretation).
+DB-Ex (Database Excellence; dahulu Core-Ex / GC-Ex Core Interpretation).
 Versi syarat / terms version: 2026-10-29.
 
 Copyright (c) 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.
@@ -16,7 +16,7 @@ BAHASA INDONESIA
 
 1. HAK CIPTA DAN KEPEMILIKAN
    GC-Ex ("Perangkat Lunak"), termasuk kode program, tampilan, ikon, nama
-   "GC-Ex", "Grade Control Excellence", "Core-Ex" dan "Core Excellence", dokumentasi dan panduannya, adalah
+   "GC-Ex", "Grade Control Excellence", "DB-Ex" dan "Database Excellence", dokumentasi dan panduannya, adalah
    ciptaan Habil Abdillah dan dilindungi sebagai Program Komputer menurut
    Undang-Undang Republik Indonesia Nomor 28 Tahun 2014 tentang Hak Cipta.
    Perangkat Lunak dilisensikan, bukan dijual.
@@ -52,7 +52,7 @@ BAHASA INDONESIA
    tersebut atas komponen yang bersangkutan.
 
 5. PERANGKAT LUNAK TERPISAH: OLLAMA DAN MODEL AI
-   Core-Ex dapat memakai Ollama dan model AI (misalnya
+   DB-Ex dapat memakai Ollama dan model AI (misalnya
    Qwen3-VL) yang dipasang sendiri oleh pengguna. Keduanya bukan bagian
    dari Perangkat Lunak, tidak dibundel, dan tunduk pada lisensinya
    masing-masing (Ollama: MIT; Qwen3-VL: Apache-2.0; model lain: periksa
@@ -119,7 +119,7 @@ ENGLISH
 
 1. COPYRIGHT AND OWNERSHIP
    GC-Ex (the "Software"), including its program code, user interface,
-   icons, the names "GC-Ex", "Grade Control Excellence", "Core-Ex" and "Core Excellence", documentation
+   icons, the names "GC-Ex", "Grade Control Excellence", "DB-Ex" and "Database Excellence", documentation
    and guides, is the work of Habil Abdillah and is protected as a Computer
    Program under Law of the Republic of Indonesia No. 28 of 2014 on
    Copyright. The Software is licensed, not sold.
@@ -149,7 +149,7 @@ ENGLISH
    under those open source licenses for the respective components.
 
 5. SEPARATE SOFTWARE: OLLAMA AND AI MODELS
-   Core-Ex can use Ollama and AI models (e.g. Qwen3-VL)
+   DB-Ex can use Ollama and AI models (e.g. Qwen3-VL)
    installed by the user. They are not part of the Software, are not
    bundled, and are governed by their own licenses (Ollama: MIT; Qwen3-VL:
    Apache-2.0; other models: check before use). The user is responsible for

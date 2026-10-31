@@ -1,4 +1,4 @@
-"""Panggil rute FastAPI Core-Ex langsung di proses yang sama (tanpa HTTP / port): validasi & logika sama persis dengan
+"""Panggil rute FastAPI DB-Ex langsung di proses yang sama (tanpa HTTP / port): validasi & logika sama persis dengan
 aplikasi web, jadi satu backend dipakai dua antarmuka."""
 from __future__ import annotations
 

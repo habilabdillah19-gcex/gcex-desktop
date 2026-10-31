@@ -1,4 +1,4 @@
-"""Uji tanda interval Core-Ex: half core (wajib nomor sampel), core loss -> recovery otomatis, riwayat, AI, Excel, CSV, cari."""
+"""Uji tanda interval DB-Ex: half core (wajib nomor sampel), core loss -> recovery otomatis, riwayat, AI, Excel, CSV, cari."""
 import io
 import sys
 from pathlib import Path

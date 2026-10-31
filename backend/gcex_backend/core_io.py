@@ -1,4 +1,4 @@
-"""Core-Ex: proyek foto core box, interpretasi AI lokal (Ollama), log geoteknik.
+"""DB-Ex: proyek foto core box, interpretasi AI lokal (Ollama), log geoteknik.
 
 Semua berjalan di komputer sendiri (offline):
 - Proyek = satu folder foto (boleh bersubfolder, mis. per lubang bor). Database SQLite disimpan di
@@ -203,7 +203,7 @@ def get_project(folder: str) -> Project:
         if not local:
             readme = f / PRJ_DIR / "BACA_SAYA.txt"
             if not readme.exists():
-                readme.write_text("Folder ini dibuat oleh Core-Ex.\n"
+                readme.write_text("Folder ini dibuat oleh DB-Ex.\n"
                                   "gcex_core.db = hasil interpretasi & verifikasi semua foto di folder induknya.\n"
                                   "Jangan dihapus / diedit manual. Salin seluruh folder foto (termasuk folder ini)\n"
                                   "untuk memindahkan proyek ke komputer lain.\n", encoding="utf-8")
@@ -740,7 +740,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
         sw.auto_filter.ref = sw.dimensions
     from .legal_mark import COPYRIGHT, mark_workbook
     info = wb.create_sheet("Keterangan")
-    for line in [["Core-Ex — log foto core box"], [COPYRIGHT], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
+    for line in [["DB-Ex — log foto core box"], [COPYRIGHT], ["Folder proyek", str(p.folder)], ["Dibuat", now()],
                  [], ["Sel biru muda = isian AI yang belum diedit / diverifikasi geologist."],
                  ["Litologi, alterasi, oksidasi, warna, pelapukan: diambil dari LOGGING GEOLOGIST (tabel Geologi) bila ada di rentang foto; AI visual hanya mengisi bila logging tidak ada. Lihat kolom 'Sumber isian geologi'."],
                  ["RQD, GSI, RMR dan recovery dari AI adalah perkiraan visual dari foto, bukan pengukuran. Wajib diverifikasi."],
@@ -750,7 +750,7 @@ def export_xlsx(p: Project, ids: Optional[list[int]] = None) -> bytes:
         info.append(line)
     info.column_dimensions["A"].width = 24
     info.column_dimensions["B"].width = 80
-    mark_workbook(wb, "Core-Ex")
+    mark_workbook(wb, "DB-Ex")
     b = io.BytesIO()
     wb.save(b)
     return b.getvalue()

@@ -126,7 +126,14 @@ def test_draw_snap_edit_and_export(qtbot, prj, tmp_path, monkeypatch):
         qtbot.waitUntil(lambda out=out: out.exists() and out.stat().st_size > 2000, timeout=15000)
     from PySide6.QtGui import QImage as QI
     im = QI(str(tmp_path / "info.png"))
-    assert im.width() == 1200 and im.pixelColor(600, 10).name() == "#f2c230"  # pita judul kuning template trenching
+    # gaya bawaan editorial: gradasi gelap di bagian judul (foto uji berwarna hijau keabuan terang)
+    assert im.width() == 1200 and im.pixelColor(600, 10).lightness() < 70
+    pg.save_info({"style": "klasik"})
+    klas = tmp_path / "klasik"
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(klas), ""))
+    pg.export("png")
+    qtbot.waitUntil(lambda: (tmp_path / "klasik.png").exists(), timeout=15000)
+    assert QI(str(tmp_path / "klasik.png")).pixelColor(600, 10).name() == "#f2c230"  # pita judul kuning template trenching
     pg.save_info({"template": "wall"})
     wall = tmp_path / "dinding"
     monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(wall), ""))
@@ -532,3 +539,52 @@ def test_export_drillhole_channel(qtbot, prj, tmp_path, monkeypatch):
     assert c[1] == f"{100 + 0.1 * 24:.3f}" and c[5] == "90.0" and c[6] == "0"
     assert files["survey"][1].endswith(",0.00,90.0,0") and files["assay"][1].split(",")[1:5] == ["0.00", "2.50", "S-01", "-0.01"]
     assert files["geology"][0].startswith("HOLE_ID,FROM,TO,LITHOLOGY") and len(files["geology"]) == 2
+
+
+def test_core_box_infographic_and_styles(qtbot, prj, tmp_path, monkeypatch):
+    """Infografis foto core box (gaya editorial) lewat File > Ekspor infografis; Singkapan: gaya editorial & klasik."""
+    from PySide6.QtGui import QImage, QPainter
+    w = _win(qtbot)
+    w.open_folder(prj)
+    qtbot.waitUntil(lambda: len(w.view) == 3 and w.cur_id is not None, timeout=8000)
+    w.save_field(w.cur_id, "hole_id", "LTH-101")
+    w.save_field(w.cur_id, "lithology", "Andesit porfiri")
+    r = w.by_id[w.cur_id]
+    w.interp.row_changed(r)
+    info, leg = w.interp.infographic()
+    assert info["title"].startswith("LTH-101") and "0.00 – 3.50 m" in info["title"] and "Andesit" in info["caption"]
+    out = tmp_path / "core.png"
+    monkeypatch.setattr("PySide6.QtWidgets.QFileDialog.getSaveFileName", lambda *a, **k: (str(out), "PNG (*.png)"))
+    monkeypatch.setattr("corex.layers.show_in_folder", lambda p: None)
+    from PySide6.QtGui import QAction
+    act = next(a for a in w.findChildren(QAction) if a.text().startswith("Ekspor infografis"))
+    assert act.shortcut().toString() == "Ctrl+E"
+    act.trigger()
+    im = QImage(str(out))
+    assert not im.isNull() and im.width() == 600
+    # gradasi gelap di atas (judul) lebih gelap dari bagian tengah foto
+    top, mid = QColor_l(im.pixel(300, 5)), QColor_l(im.pixel(300, 200))
+    assert top < mid
+    # Singkapan: kedua gaya tergambar tanpa galat
+    w.set_mode("oc")
+    pg = w.outcrop
+    src = tmp_path / "lapangan" / "s.jpg"
+    src.parent.mkdir()
+    from PIL import Image
+    Image.new("RGB", (800, 500), (150, 140, 120)).save(src)
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
+    pg.add_photo()
+    qtbot.waitUntil(lambda: pg.cur is not None and pg.view.w > 0, timeout=8000)
+    assert pg.info()["style"] == "editorial" and pg.iStyle.currentData() == "editorial"
+    for st in ("editorial", "klasik"):
+        pg.save_info({"style": st, "title": "Trenching contoh", "caption": "Tuf terubah argilik.", "credit": "Foto: uji"})
+        img = QImage(400, 250, QImage.Format_RGB32)
+        p = QPainter(img)
+        pg.canvas.paint(p, None)
+        p.end()
+    assert pg.iStyle.currentData() == "klasik"
+
+
+def QColor_l(rgb: int) -> int:
+    from PySide6.QtGui import QColor
+    return QColor(rgb).lightness()

@@ -1,4 +1,4 @@
-"""Tema Core-Ex: palet editorial (kertas abu muda, pita navy, biru baja, judul biru tua) + font Inter / JetBrains Mono (OFL, dibundel)."""
+"""Tema DB-Ex: palet editorial (kertas abu muda, pita navy, biru baja, judul biru tua) + font Inter / JetBrains Mono (OFL, dibundel)."""
 from __future__ import annotations
 
 import sys

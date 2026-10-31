@@ -1,4 +1,4 @@
-"""Buat paket data dummy tutorial Core-Ex.
+"""Buat paket data dummy tutorial DB-Ex.
 
 Pemakaian: python docs/tutorial-core/buat_data_dummy.py <folder_keluaran>
 
@@ -243,10 +243,10 @@ def main():
     (old / f"Geotech_Dashboard_{H2}.json").write_text(json.dumps({"projectName": f"Geotech_Dashboard_{H2}", "savedAt": "2026-10-20T08:00:00Z",
                                                                     "data": old_items}, indent=2), encoding="utf-8")
     (OUT / "BACA_SAYA.txt").write_text(
-        "DATA DUMMY TUTORIAL Core-Ex\n"
+        "DATA DUMMY TUTORIAL DB-Ex\n"
         "SEMUA ISI FIKTIF: nama perusahaan, lubang bor, koordinat (grid lokal), tanggal, kadar dan foto dibuat\n"
         "untuk latihan. Tidak ada foto atau data proyek nyata. Aman dibagikan.\n\n"
-        "Foto_Core/        buka folder ini di Core-Ex (Buka folder). 24 foto sintetis; IMG_0001.jpg bergaya foto HP.\n"
+        "Foto_Core/        buka folder ini di DB-Ex (Buka folder). 24 foto sintetis; IMG_0001.jpg bergaya foto HP.\n"
         "Data_Lab/         import lewat tombol Data bor:\n"
         "   Collar_Latihan.csv             -> tab Collar   (pemisah titik koma, koma desimal)\n"
         "   Survey_Latihan.csv             -> tab Survey\n"
@@ -255,7 +255,7 @@ def main():
         "   Assay_Latihan_LTH-102_ulang.csv -> tab Assay, cara 'Tambah / perbarui per hole' (latihan data baru)\n"
         "Dashboard_lama/   latihan tombol JSON (impor proyek dashboard lama)\n\n"
         "Kunci: LTH-101 zona QV 36.8-41.2 m berkadar tinggi (Au s.d. 12.4 g/t); IMG_0001 = LTH-101 box 11 (36.30-40.10 m).\n"
-        "Copyright (c) Habil Abdillah 2026 - data latihan Core-Ex.\n",
+        "Copyright (c) Habil Abdillah 2026 - data latihan DB-Ex.\n",
         encoding="utf-8")
     print("OK", OUT, sum(1 for _ in OUT.rglob("*.jpg")), "foto")
 

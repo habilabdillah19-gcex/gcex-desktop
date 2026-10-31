@@ -738,3 +738,12 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Tab Georef › **⇩ Database channel**: 4 CSV Collar · Survey · Assay · Geologi dari semua garis Channel sampel yang tergeoreferensi. Collar di ujung kiri foto, EOH di kanan, **dip 0**, azimuth dari georef; geologi dari zona yang dipotong garis, label zona & struktur; pilihan nilai di bawah batas deteksi.
 - Garis channel (dan garis berinterval) kini selalu disimpan kiri → kanan; *dari–ke* diukur dari ujung kiri.
 - Panduan: PANDUAN_CORE bagian 6c langkah 6.
+
+## 64. DB-Ex 0.31.0 — Core-Ex berganti nama menjadi DB-Ex; gaya infografis editorial
+
+- **Core-Ex sekarang bernama DB-Ex** (*Database Excellence*). Arah ke depan: selain foto core box & singkapan, DB-Ex akan membaca formulir lapangan tulisan tangan dengan AI vision dan mengubahnya ke Excel / SQL / CSV. GC-Ex (Block Model & Drillhole) tidak berubah.
+- Installer Release: `DB-Ex-Setup-<versi>.exe` (Electron); installer uji Qt: `DB-Ex-Qt-Setup-<versi>.exe` di pre-release `core-ex-qt-uji` (nama tag tetap).
+- Pengaturan, log & cache dipindah otomatis sekali dari `%APPDATA%\Core-Ex` ke `%APPDATA%\DB-Ex` saat DB-Ex pertama dibuka. Lisensi (`%APPDATA%\GC-Ex Lisensi`) dan kunci lisensi tidak berubah. Installer DB-Ex Qt mencopot Core-Ex lama (Electron maupun Qt) beserta pintasannya; data proyek (`_GCEx_Core` di folder foto) tidak tersentuh.
+- **Gaya infografis "Editorial dokumenter alam"** (bawaan): kicker kapital oker + judul serif di atas gradasi gelap, panel data gelap transparan dengan batang warna kelas, garis penunjuk putih tipis bertitik, caption serif miring & kredit foto di kaki, legenda / bar skala / kompas minimalis. Gaya *Klasik* (pita judul kuning / navy, kotak kuning) tetap bisa dipilih di tab Infografis. Kolom baru: Kicker, Caption, Kredit foto.
+- **Infografis foto core box** (baru): File › Ekspor infografis foto (PNG / PDF), Ctrl+E — plate editorial: foto utuh + overlay lapisan yang aktif, judul Hole · dari–ke, caption logging (litologi, alterasi, pelapukan, recovery, RQD, catatan), legenda lapisan.
+- Tutorial PDF DB-Ex masih memuat tangkapan layar bernama lama sampai dibuat ulang.

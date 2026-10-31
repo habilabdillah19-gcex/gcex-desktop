@@ -990,6 +990,12 @@ class OutcropPage(QWidget):
         v.setContentsMargins(12, 10, 12, 12)
         v.setSpacing(6)
         g = QFormLayout()
+        self.iStyle = QComboBox()
+        for k, t in oc_paint.STYLES.items():
+            self.iStyle.addItem(t, k)
+        self.iStyle.setToolTip("Editorial: judul serif di atas gradasi gelap, panel data gelap, garis penunjuk tipis, caption & kredit foto.\n"
+                               "Klasik: pita judul berwarna & kotak kuning.")
+        g.addRow("Gaya", self.iStyle)
         self.iTpl = QComboBox()
         for k, t in oc_paint.TEMPLATES.items():
             self.iTpl.addItem(t, k)
@@ -1003,6 +1009,15 @@ class OutcropPage(QWidget):
         g.addRow("Judul", self.iTitle)
         g.addRow("Sub judul", self.iSub)
         g.addRow("Kotak komposit", self.iComp)
+        self.iKick, self.iCredit = QLineEdit(), QLineEdit()
+        self.iKick.setPlaceholderText("baris kecil di atas judul (kosong = jenis pemetaan · lokasi)")
+        self.iCredit.setPlaceholderText("mis. Foto: Rina · 13 Okt 2026 (kosong = tanggal · lokasi)")
+        self.iCap = QPlainTextEdit()
+        self.iCap.setFixedHeight(52)
+        self.iCap.setPlaceholderText("caption di kaki foto (kosong = ringkasan deskripsi untuk template dinding)")
+        g.addRow("Kicker", self.iKick)
+        g.addRow("Caption", self.iCap)
+        g.addRow("Kredit foto", self.iCredit)
         self.iLegPos = QComboBox()
         for k, t in (("bl", "kiri bawah"), ("br", "kanan bawah"), ("tl", "kiri atas"), ("tr", "kanan atas")):
             self.iLegPos.addItem(t, k)
@@ -1018,6 +1033,15 @@ class OutcropPage(QWidget):
             c.setChecked(True)
             v.addWidget(c)
         self.iTpl.activated.connect(lambda *_: self.save_info({"template": self.iTpl.currentData()}))
+        self.iStyle.activated.connect(lambda *_: self.save_info({"style": self.iStyle.currentData()}))
+        self.iKick.editingFinished.connect(lambda: self.save_info({"kicker": self.iKick.text().strip()}))
+        self.iCredit.editingFinished.connect(lambda: self.save_info({"credit": self.iCredit.text().strip()}))
+        cap_fo = self.iCap.focusOutEvent
+
+        def cfo(ev):
+            cap_fo(ev)
+            self.save_info({"caption": self.iCap.toPlainText().strip()})
+        self.iCap.focusOutEvent = cfo
         self.iTitle.editingFinished.connect(lambda: self.save_info({"title": self.iTitle.text().strip()}))
         self.iSub.editingFinished.connect(lambda: self.save_info({"subtitle": self.iSub.text().strip()}))
         orig = self.iComp.focusOutEvent
@@ -1169,7 +1193,7 @@ class OutcropPage(QWidget):
 
     def ask_text(self, q: str, d: str = "") -> str:
         from PySide6.QtWidgets import QInputDialog
-        t, ok = QInputDialog.getText(self, "Core-Ex", q, text=d)
+        t, ok = QInputDialog.getText(self, "DB-Ex", q, text=d)
         return t.strip() if ok else ""
 
     def feat(self, fid) -> dict | None:
@@ -1182,6 +1206,11 @@ class OutcropPage(QWidget):
             i["title"] = (self.cur or {}).get("title") or ""
         if self.comp_pos:
             i["comp_u"], i["comp_v"] = self.comp_pos
+        i.setdefault("style", "editorial")
+        if not i.get("location"):
+            i["location"] = (self.cur or {}).get("location") or ""
+        if not i.get("credit"):
+            i["credit"] = " · ".join(x for x in ((self.cur or {}).get("taken"), (self.cur or {}).get("location")) if x)
         mode = i.get("compass") or "auto"
         sol = (self.geo_res or {}).get("solution") or {}
         if mode in oc_paint.COMPASS:
@@ -1419,6 +1448,13 @@ class OutcropPage(QWidget):
         self.aiInfo.setTextFormat(Qt.RichText)
         i = self.info()
         self.iTpl.setCurrentIndex(max(0, self.iTpl.findData(i.get("template"))))
+        self.iStyle.setCurrentIndex(max(0, self.iStyle.findData(i.get("style") or "editorial")))
+        ri = r.get("info") or {}
+        for e, k in ((self.iKick, "kicker"), (self.iCredit, "credit")):
+            if not e.hasFocus():
+                e.setText(ri.get(k) or "")
+        if not self.iCap.hasFocus():
+            self.iCap.setPlainText(ri.get("caption") or "")
         if not self.iTitle.hasFocus():
             self.iTitle.setText((r.get("info") or {}).get("title") or "")
             self.iTitle.setPlaceholderText(r.get("title") or "judul pita")

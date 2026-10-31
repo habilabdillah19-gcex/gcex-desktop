@@ -11,7 +11,22 @@ from PySide6.QtCore import QPointF, QRectF, QSizeF, Qt
 from PySide6.QtGui import (QBrush, QColor, QFont, QFontMetricsF, QImage, QImageReader, QPageSize, QPainter, QPainterPath, QPdfWriter,
                            QPen, QPolygonF)
 
+import threading
+
+from PySide6.QtGui import QLinearGradient
+
 from . import theme
+
+# Gaya infografis: "editorial" (bawaan: gaya majalah dokumenter alam — judul serif di atas gradasi gelap, panel data
+# gelap transparan, garis penunjuk tipis, caption & kredit) atau "klasik" (pita judul berwarna, kotak kuning).
+STYLES = {"editorial": "Editorial dokumenter alam", "klasik": "Klasik (pita judul, kotak kuning)"}
+ACCENT = "#e8a33d"  # oker hangat: garis aksen, kicker, judul panel
+SERIF = ["Georgia", "Cambria", "Constantia", "Palatino Linotype", "Book Antiqua", "DejaVu Serif", "Liberation Serif", "Times New Roman", "serif"]
+_ST = threading.local()
+
+
+def _ed() -> bool:
+    return bool(getattr(_ST, "ed", False))
 
 TEMPLATES = {
     "trench": "Trenching / channel (dengan kadar)",
@@ -224,14 +239,63 @@ def anchor(f: dict, W: float, H: float) -> QPointF:
     return centroid(P) if f["shape"] == "poly" else midpoint(P)
 
 
-def _font(px: float, bold: bool = True, mono: bool = False) -> QFont:
+def _font(px: float, bold: bool = True, mono: bool = False, serif: bool = False, italic: bool = False, track: float = 0.0) -> QFont:
     f = QFont(theme.MONO if mono else theme.SANS)
+    if serif:
+        f.setFamilies(SERIF)
     f.setPixelSize(max(1, int(px)))
     f.setBold(bold)
+    f.setItalic(italic)
+    if track:
+        f.setLetterSpacing(QFont.AbsoluteSpacing, track)
     return f
 
 
+def _shadow_text(p: QPainter, x: float, y: float, text: str, f: QFont, color: str = "#ffffff", align: str = "l", shadow: float = 0.55) -> QRectF:
+    """Teks dengan bayangan lembut (gaya editorial), y = garis dasar."""
+    fm = QFontMetricsF(f)
+    tw = fm.horizontalAdvance(text)
+    x0 = x - tw / 2 if align == "c" else (x - tw if align == "r" else x)
+    path = QPainterPath()
+    path.addText(QPointF(x0, y), f, text)
+    pe = QPen(QColor(0, 0, 0, int(255 * shadow)), max(1.0, f.pixelSize() * 0.16))
+    pe.setJoinStyle(Qt.RoundJoin)
+    p.strokePath(path, pe)
+    p.fillPath(path, QBrush(QColor(color)))
+    return QRectF(x0, y - fm.ascent(), tw, fm.height())
+
+
+def _scrim(p: QPainter, y0: float, y1: float, W: float, top_alpha: float, bottom_alpha: float) -> None:
+    g = QLinearGradient(0, y0, 0, y1)
+    g.setColorAt(0, QColor(8, 10, 14, int(255 * top_alpha)))
+    g.setColorAt(1, QColor(8, 10, 14, int(255 * bottom_alpha)))
+    p.setPen(Qt.NoPen)
+    p.setBrush(QBrush(g))
+    p.drawRect(QRectF(0, y0, W, y1 - y0))
+
+
+def leader(p: QPainter, a: QPointF, b: QPointF, U: float, color: str = "#f2c230") -> None:
+    """Garis penunjuk: editorial = garis putih tipis + titik di ujung fitur; klasik = putus-putus berwarna."""
+    if _ed():
+        p.setPen(QPen(QColor(0, 0, 0, 120), 3.0 * U, Qt.SolidLine, Qt.RoundCap))
+        p.drawLine(a, b)
+        p.setPen(QPen(QColor("#ffffff"), 1.4 * U, Qt.SolidLine, Qt.RoundCap))
+        p.drawLine(a, b)
+        p.setBrush(QColor("#ffffff"))
+        p.setPen(QPen(QColor(0, 0, 0, 160), 1.0 * U))
+        p.drawEllipse(a, 3.2 * U, 3.2 * U)
+        return
+    p.setPen(QPen(QColor("#141a26"), 3.6 * U, Qt.DashLine))
+    p.drawLine(a, b)
+    p.setPen(QPen(QColor(color), 2.0 * U, Qt.DashLine))
+    p.drawLine(a, b)
+
+
 def _halo(p: QPainter, x: float, y: float, text: str, px: float, fill: str = "#ffffff", stroke: str = "#141a26", align: str = "c") -> QRectF:
+    if _ed():
+        f = _font(px * 0.92, bold=True, track=px * 0.06)
+        fm = QFontMetricsF(f)
+        return _shadow_text(p, x, y + fm.ascent() / 2 - fm.descent() / 2, text, f, fill if fill != "#141a26" else "#ffffff", align[0] if align in ("l", "r") else "c")
     f = _font(px)
     fm = QFontMetricsF(f)
     tw = fm.horizontalAdvance(text)
@@ -245,7 +309,41 @@ def _halo(p: QPainter, x: float, y: float, text: str, px: float, fill: str = "#f
     return QRectF(x0, y - fm.height() / 2, tw, fm.height())
 
 
-def _box(p: QPainter, c: QPointF, lines: list[str], px: float, bg: str = "#f2c230", fg: str = "#141a26", align=Qt.AlignRight) -> QRectF:
+def _box(p: QPainter, c: QPointF, lines: list[str], px: float, bg: str = "#f2c230", fg: str = "#141a26", align=Qt.AlignRight,
+         head: bool = False, bar: str | None = None) -> QRectF:
+    if _ed():
+        # panel data gelap transparan; baris pertama (head) kapital oker; batang warna kelas di kiri
+        fh = _font(px * 0.78, bold=True, track=px * 0.08)
+        fb = _font(px, bold=False)
+        fmh, fmb = QFontMetricsF(fh), QFontMetricsF(fb)
+        hl = [lines[0]] if head and lines else []
+        bl = lines[1:] if head else lines
+        tw = max([fmh.horizontalAdvance(t) for t in hl] + [fmb.horizontalAdvance(t) for t in bl] + [px])
+        pad = px * 0.7
+        bw = px * 0.32 if bar else 0
+        hh = (fmh.height() * 1.15 if hl else 0) + fmb.height() * 1.08 * len(bl)
+        w, h = tw + 2 * pad + bw, hh + 2 * pad * 0.75
+        r = QRectF(c.x() - w / 2, c.y() - h / 2, w, h)
+        p.setPen(QPen(QColor(255, 255, 255, 70), max(1.0, px * 0.06)))
+        p.setBrush(QColor(12, 15, 21, 205))
+        p.drawRect(r)
+        if bar:
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(bar))
+            p.drawRect(QRectF(r.left(), r.top(), bw, r.height()))
+        y = r.top() + pad * 0.75
+        al = Qt.AlignHCenter if align == Qt.AlignHCenter else Qt.AlignLeft
+        for t in hl:
+            p.setFont(fh)
+            p.setPen(QColor(ACCENT))
+            p.drawText(QRectF(r.left() + bw + pad, y, tw, fmh.height()), al | Qt.AlignVCenter, t)
+            y += fmh.height() * 1.15
+        p.setFont(fb)
+        p.setPen(QColor("#f4f1ea"))
+        for t in bl:
+            p.drawText(QRectF(r.left() + bw + pad, y, tw, fmb.height()), al | Qt.AlignVCenter, t)
+            y += fmb.height() * 1.08
+        return r
     f = _font(px)
     fm = QFontMetricsF(f)
     tw = max(fm.horizontalAdvance(t) for t in lines)
@@ -335,10 +433,24 @@ def nice_len(m: float) -> float:
 def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict, info: dict, *, desc: dict | None = None,
                 m_per_unit: float | None = None, sel: int | None = None, sel_vertex: int | None = None, handle: float = 0,
                 hide: set | None = None, draft: list | None = None, draft_kind: dict | None = None, boxes_out: list | None = None,
-                show_info: bool = True, elements: list | None = None, chains: dict | None = None) -> None:
+                show_info: bool = True, elements: list | None = None, chains: dict | None = None, legend_extra: list | None = None) -> None:
     """Gambar seluruh lapisan dalam koordinat gambar W x H.
     m_per_unit: meter per satuan gambar ini (untuk bar skala), sel / sel_vertex / handle / draft: hanya untuk editor.
     boxes_out: diisi [(fid, QRectF)] kotak kadar / label agar bisa digeser di editor."""
+    _ST.ed = (info.get("style") or "editorial") == "editorial"
+    try:
+        _paint_scene(p, W, H, feats, kinds, info, desc=desc, m_per_unit=m_per_unit, sel=sel, sel_vertex=sel_vertex, handle=handle,
+                     hide=hide, draft=draft, draft_kind=draft_kind, boxes_out=boxes_out, show_info=show_info, elements=elements, chains=chains,
+                     legend_extra=legend_extra)
+    finally:
+        _ST.ed = False
+
+
+def _paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict, info: dict, *, desc: dict | None = None,
+                 m_per_unit: float | None = None, sel: int | None = None, sel_vertex: int | None = None, handle: float = 0,
+                 hide: set | None = None, draft: list | None = None, draft_kind: dict | None = None, boxes_out: list | None = None,
+                 show_info: bool = True, elements: list | None = None, chains: dict | None = None, legend_extra: list | None = None) -> None:
+    ed = _ed()
     U = max(W, H) / 1000.0
     tpl = info.get("template") or "trench"
     p.setRenderHint(QPainter.Antialiasing)
@@ -416,8 +528,11 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             c = QPointF(bu * W, bv * H) if bu is not None and bv is not None else QPointF(mid.x(), min(H * 0.92, mid.y() + n.y() * 0.10 * H))
 
             def draw_zl(mid=mid, c=c, txt=f.get("name") or "", fid=f["id"]):
-                p.setPen(QPen(QColor("#ffffff"), 2.0 * U, Qt.DashLine))
-                p.drawLine(mid, c)
+                if ed:
+                    leader(p, mid, c, U)
+                else:
+                    p.setPen(QPen(QColor("#ffffff"), 2.0 * U, Qt.DashLine))
+                    p.drawLine(mid, c)
                 if txt:
                     r = _box(p, c, _wrap(txt, 26), 12.5 * U, bg="#ffffff", align=Qt.AlignHCenter)
                     if boxes_out is not None:
@@ -487,13 +602,10 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                     c = QPointF(min(W * 0.93, max(W * 0.07, q.x() + n.x() * d)), min(H * 0.88, max(H * 0.14, q.y() + n.y() * d)))
                 cc = class_color(cel, (x.get("grades") or {}).get(ckey)) if cel else None
 
-                def draw_box(q=q, c=c, lines=lines, cc=cc, fid=f["id"], key=f"s{i}"):
-                    p.setPen(QPen(QColor("#141a26"), 3.6 * U, Qt.DashLine))
-                    p.drawLine(q, c)
-                    p.setPen(QPen(QColor("#f2c230"), 2.0 * U, Qt.DashLine))
-                    p.drawLine(q, c)
-                    r = _box(p, c, lines, 13 * U, align=Qt.AlignLeft)
-                    if cc:
+                def draw_box(q=q, c=c, lines=lines, cc=cc, fid=f["id"], key=f"s{i}", hd=show_ids and bool(x.get("id") or x.get("from") is not None)):
+                    leader(p, q, c, U)
+                    r = _box(p, c, lines, 13 * U, align=Qt.AlignLeft, head=hd, bar=cc)
+                    if cc and not ed:
                         p.setPen(QPen(QColor(cc), 3.2 * U))
                         p.setBrush(Qt.NoBrush)
                         p.drawRect(r.adjusted(-1.6 * U, -1.6 * U, 1.6 * U, 1.6 * U))
@@ -510,10 +622,9 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                 bu, bv = f["attrs"].get("box_u"), f["attrs"].get("box_v")
                 c = QPointF(bu * W, bv * H) if bu is not None and bv is not None else QPointF(a.x(), min(H * 0.86, a.y() + 0.16 * H))
 
-                def draw_one(a=a, c=c, lines=lines, fid=f["id"]):
-                    p.setPen(QPen(QColor("#f2c230"), 2.0 * U, Qt.DashLine))
-                    p.drawLine(a, c)
-                    r = _box(p, c, lines, 14 * U)
+                def draw_one(a=a, c=c, lines=lines, fid=f["id"], hd=bool(sm and show_ids and (sm[0].get("id")))):
+                    leader(p, a, c, U)
+                    r = _box(p, c, lines, 14 * U, head=hd, align=Qt.AlignLeft if ed else Qt.AlignRight)
                     if boxes_out is not None:
                         boxes_out.append((fid, r, "box"))
                 later.append(draw_one)
@@ -538,9 +649,40 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                 p.drawRect(QRectF(c.x() - handle, c.y() - handle, 2 * handle, 2 * handle))
     if not show_info or tpl == "overlay":
         return
-    # ---- pita judul
+    # ---- judul
     title = info.get("title") or ""
-    if title:
+    top_used = 0.0
+    if ed and (title or info.get("kicker")):
+        kick = (info.get("kicker") or {"trench": "Channel sampling · trenching", "wall": "Pemetaan dinding singkapan", "core": "Foto core box"}.get(tpl, "")).upper()
+        if info.get("location") and not info.get("kicker"):
+            kick += " · " + str(info["location"]).upper()
+        ft = _font(34 * U, bold=True, serif=True)
+        for _ in range(12):  # judul panjang: perkecil sampai muat lebar foto
+            if QFontMetricsF(ft).horizontalAdvance(title) <= W - 60 * U or ft.pixelSize() <= 16 * U:
+                break
+            ft = _font(ft.pixelSize() * 0.9, bold=True, serif=True)
+        fk = _font(12 * U, bold=True, track=2.6 * U)
+        fs = _font(16 * U, bold=False, serif=True, italic=True)
+        x0 = 30 * U
+        hh = 28 * U + (QFontMetricsF(fk).height() + 8 * U if kick else 0) + QFontMetricsF(ft).height() + (QFontMetricsF(fs).height() + 4 * U if info.get("subtitle") else 0)
+        _scrim(p, 0, hh + 60 * U, W, 0.78, 0.0)
+        y = 24 * U
+        if kick:
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(ACCENT))
+            p.drawRect(QRectF(x0, y, 34 * U, 3 * U))
+            y += 10 * U + QFontMetricsF(fk).ascent()
+            _shadow_text(p, x0, y, kick, fk, ACCENT, shadow=0.35)
+            y += QFontMetricsF(fk).descent() + 6 * U
+        if title:
+            y += QFontMetricsF(ft).ascent()
+            _shadow_text(p, x0, y, title, ft, "#ffffff", shadow=0.45)
+            y += QFontMetricsF(ft).descent()
+        if info.get("subtitle"):
+            y += 4 * U + QFontMetricsF(fs).ascent()
+            _shadow_text(p, x0, y, info["subtitle"], fs, "#e9e4d8", shadow=0.4)
+        top_used = hh
+    elif title:
         bg, fg = BAND.get(tpl, BAND["trench"])
         bh = 46 * U if not info.get("subtitle") else 64 * U
         p.setPen(Qt.NoPen)
@@ -564,15 +706,53 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             g = [f"{e['key']} " + unit_txt(fmt_grade(cp["grades"][e["key"]], e), e["unit"]) for e in elements
                  if e.get("show") and e["key"] in cp["grades"]]
             nm = f.get("name") or (kinds.get(f["kind"]) or {}).get("name", "")
-            comp.append(f"Komposit {nm} {cp['length']:g} m" + (": " + " · ".join(g) if g else ""))
+            comp.append(("" if ed else "Komposit ") + f"{nm} {cp['length']:g} m" + (": " + " · ".join(g) if g else ""))
     if tpl == "trench" and comp:
-        cu, cv = info.get("comp_u", 0.5), info.get("comp_v", 0.92)
-        r = _box(p, QPointF(cu * W, cv * H), comp, 16 * U, align=Qt.AlignHCenter)
+        cu, cv = (info.get("comp_u", 0.5), info.get("comp_v", 0.92)) if not ed else \
+            (info.get("comp_u", 0.72), info.get("comp_v", (top_used + 40 * U) / H))
+        r = _box(p, QPointF(cu * W, cv * H), (["Komposit"] if ed else []) + comp, 16 * U if not ed else 14 * U,
+                 align=Qt.AlignHCenter, head=ed)
         if boxes_out is not None:
             boxes_out.append((-1, r, "comp"))
-    # ---- deskripsi ringkas (template dinding)
+    # ---- caption & kredit (editorial) / deskripsi ringkas (template dinding, klasik)
     bottom = H
-    if tpl == "wall" and info.get("show_desc", True) and desc:
+    if ed:
+        cap = str(info.get("caption") or "").strip()
+        if not cap and tpl == "wall" and info.get("show_desc", True) and desc:
+            parts = [desc.get(k) for k in ("lithology", "alteration", "weathering", "veins", "structures")]
+            cap = ". ".join(str(x).rstrip(".") for x in parts if x) + ("." if any(parts) else "")
+            if desc.get("gsi"):
+                cap += f" GSI {desc['gsi']}."
+        credit = str(info.get("credit") or "").strip()
+        fc = _font(15 * U, bold=False, serif=True, italic=True)
+        fcr = _font(10.5 * U, bold=True, track=1.6 * U)
+        fmc = QFontMetricsF(fc)
+        lines = []
+        if cap:
+            maxw = W * 0.62
+            cur = ""
+            for wd in cap.split():
+                t = (cur + " " + wd).strip()
+                if cur and fmc.horizontalAdvance(t) > maxw:
+                    lines.append(cur)
+                    cur = wd
+                else:
+                    cur = t
+            if cur:
+                lines.append(cur)
+            lines = lines[:4]
+        hh = (fmc.height() * 1.15 * len(lines) if lines else 0) + (QFontMetricsF(fcr).height() + 6 * U if credit or lines else 0) + (24 * U if lines or credit else 0)
+        if hh:
+            _scrim(p, H - hh - 70 * U, H, W, 0.0, 0.78)
+            y = H - hh + 10 * U
+            for ln in lines:
+                y += fmc.ascent()
+                _shadow_text(p, 30 * U, y, ln, fc, "#f4f1ea", shadow=0.35)
+                y += fmc.descent() + fmc.height() * 0.15
+            if credit:
+                _shadow_text(p, W - 30 * U, H - 14 * U, credit.upper(), fcr, "#cfc8b8", align="r", shadow=0.3)
+            bottom = H - hh
+    elif tpl == "wall" and info.get("show_desc", True) and desc:
         parts = [(lbl, desc.get(k)) for k, lbl in (("lithology", "Litologi"), ("alteration", "Alterasi"), ("weathering", "Pelapukan"),
                                                    ("veins", "Vein"), ("structures", "Struktur"), ("gsi", "GSI"))]
         txt = "   ·   ".join(f"{l}: {v}" for l, v in parts if v)
@@ -603,6 +783,7 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                 for _i, x in (intervals(f["attrs"]) if f["shape"] == "line" else [])):
             names = names + [{"name": f"{ckey} ({cel['unit']})", "shape": "head"}] + \
                 [{"name": lab, "color": col, "shape": "class"} for lab, col in class_labels(cel)]
+        names = names + list(legend_extra or [])
         if names:
             fh = 12.5 * U
             fnt = _font(fh, bold=False)
@@ -613,16 +794,21 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             top = 52 * U if (info.get("title") and tpl != "overlay") else 14 * U
             x0 = 14 * U if pos[1] == "l" else W - w - 14 * U
             y0 = bottom - h - (44 * U if pos == "br" and m_per_unit and info.get("show_scale", True) else 14 * U) if pos[0] == "b" else top + (16 * U if info.get("subtitle") else 0)
-            p.setPen(QPen(QColor("#141a26"), 1.2 * U))
-            p.setBrush(QColor(255, 255, 255, 225))
+            if ed:
+                y0 = max(y0, top_used + 8 * U) if pos[0] == "t" else y0
+                p.setPen(QPen(QColor(255, 255, 255, 60), 1.0 * U))
+                p.setBrush(QColor(12, 15, 21, 190))
+            else:
+                p.setPen(QPen(QColor("#141a26"), 1.2 * U))
+                p.setBrush(QColor(255, 255, 255, 225))
             leg_rect = QRectF(x0, y0, w, h)
             p.drawRect(leg_rect)
             p.setFont(fnt)
             for i, n in enumerate(names):
                 y = y0 + 7 * U + i * fm.height() * 1.25 + fm.height() * 0.62
                 if n.get("shape") == "head":
-                    p.setFont(_font(fh))
-                    p.setPen(QColor("#141a26"))
+                    p.setFont(_font(fh * (0.85 if ed else 1), track=1.2 * U if ed else 0))
+                    p.setPen(QColor(ACCENT if ed else "#141a26"))
                     p.drawText(QRectF(x0 + 8 * U, y - fm.height() / 2, w, fm.height()), Qt.AlignVCenter | Qt.AlignLeft, n["name"])
                     p.setFont(fnt)
                     continue
@@ -638,7 +824,7 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                 else:
                     p.setPen(QPen(QColor(n["color"]), 4 * U, Qt.DashLine if n.get("key") in ("kekar", "kontak_alt") else Qt.SolidLine))
                     p.drawLine(QPointF(x0 + 8 * U, y), QPointF(x0 + 30 * U, y))
-                p.setPen(QColor("#141a26"))
+                p.setPen(QColor("#f4f1ea" if ed else "#141a26"))
                 p.drawText(QRectF(x0 + 36 * U, y - fm.height() / 2, w, fm.height()), Qt.AlignVCenter | Qt.AlignLeft, n["name"])
     # ---- kompas / arah pandang
     cp = info.get("_compass")
@@ -646,6 +832,8 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
         cpos = info.get("compass_pos") or "tl"
         top = 52 * U if (info.get("title") and tpl != "overlay") else 14 * U
         top += 16 * U if info.get("subtitle") and tpl != "overlay" else 0
+        if ed:
+            top = top_used + 6 * U
         cw, ch = 44 * U, 70 * U
         x0 = 18 * U if cpos[1] == "l" else W - cw - 18 * U
         y0 = top + 4 * U if cpos[0] == "t" else bottom - ch - (52 * U if cpos == "br" and m_per_unit else 14 * U)
@@ -653,7 +841,22 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             x0 = leg_rect.right() + 14 * U if cpos[1] == "l" else leg_rect.left() - cw - 14 * U
         _compass(p, x0, y0, U, cp)
     # ---- bar skala
-    if info.get("show_scale", True) and m_per_unit:
+    if info.get("show_scale", True) and m_per_unit and ed:
+        L = nice_len(0.16 * W * m_per_unit)
+        bw = L / m_per_unit
+        x1, y = W - 30 * U, bottom - 30 * U
+        x0 = x1 - bw
+        for i in range(4):
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(0, 0, 0, 150))
+            p.drawRect(QRectF(x0 + bw * i / 4 - 1 * U, y - 1 * U, bw / 4 + 2 * U, 7 * U))
+        for i in range(4):
+            p.setBrush(QColor("#ffffff") if i % 2 == 0 else QColor(30, 34, 42))
+            p.drawRect(QRectF(x0 + bw * i / 4, y, bw / 4, 5 * U))
+        fsb = _font(11 * U, bold=True, track=1.2 * U)
+        _shadow_text(p, x0, y - 6 * U, "0", fsb, "#ffffff", align="c", shadow=0.5)
+        _shadow_text(p, x1, y - 6 * U, f"{fmtv(float(L))} m", fsb, "#ffffff", align="c", shadow=0.5)
+    elif info.get("show_scale", True) and m_per_unit:
         L = nice_len(0.18 * W * m_per_unit)
         bw = L / m_per_unit
         x1, y = W - 20 * U, bottom - 22 * U
@@ -720,8 +923,8 @@ def save_pdf(im: QImage, out: str | Path, title: str = "") -> None:
 
 def _pdf(im: QImage, out: str, title: str) -> None:
     w = QPdfWriter(str(out))
-    w.setTitle(title or "Core-Ex Singkapan")
-    w.setCreator("Core-Ex (GC-Ex)")
+    w.setTitle(title or "DB-Ex Singkapan")
+    w.setCreator("DB-Ex (GC-Ex)")
     wmm = 297.0 if im.width() >= im.height() else 210.0
     w.setPageSize(QPageSize(QSizeF(wmm, wmm * im.height() / im.width()), QPageSize.Millimeter))
     w.setPageMargins(__import__("PySide6.QtCore", fromlist=["QMarginsF"]).QMarginsF(0, 0, 0, 0))

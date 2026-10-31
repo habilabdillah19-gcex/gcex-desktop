@@ -1,4 +1,4 @@
-"""Uji ruang kerja Singkapan Core-Ex: tambah foto (disalin ke proyek), deskripsi AI (skema JSON, editan tidak ditimpa),
+"""Uji ruang kerja Singkapan DB-Ex: tambah foto (disalin ke proyek), deskripsi AI (skema JSON, editan tidak ditimpa),
 fitur garis / poligon / label (validasi, belah, gabung), pustaka jenis fitur & nomor string, skala dari garis skala."""
 import json
 import sys

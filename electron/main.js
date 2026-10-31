@@ -1,5 +1,5 @@
 // GC-Ex Desktop - proses utama Electron
-// Tugas: membuka jendela GC-Ex (app/index.html = Block Model, app-dh/index.html = Drillhole, app-core/index.html = Core-Ex),
+// Tugas: membuka jendela GC-Ex (app/index.html = Block Model, app-dh/index.html = Drillhole, app-core/index.html = DB-Ex),
 // menjalankan backend Python (FastAPI),
 // memberi izin folder proyek tanpa dialog berulang, menu, log, dan menutup backend saat keluar.
 'use strict';
@@ -13,7 +13,7 @@ const { spawn } = require('child_process');
 const watermark = require('./watermark');
 
 // Aplikasi mana yang dijalankan (Block Model / Drillhole) ditentukan oleh field "gcex" di package.json
-// (diisi electron-builder lewat extraMetadata). Saat pengembangan: set GCEX_APP=dh untuk Drillhole, GCEX_APP=core untuk Core-Ex.
+// (diisi electron-builder lewat extraMetadata). Saat pengembangan: set GCEX_APP=dh untuk Drillhole, GCEX_APP=core untuk DB-Ex.
 let PKG = {};
 try { PKG = require('../package.json'); } catch (e) {}
 const G = Object.assign({ page: 'app/index.html', title: 'GC-Ex Block Model', icon: 'build/icon.ico', theme: 'bm' }, PKG.gcex || {});
@@ -23,14 +23,16 @@ if (process.env.GCEX_APP === 'dh' && !app.isPackaged) {
   app.setPath('userData', path.join(app.getPath('appData'), 'GC-Ex Drillhole'));
 }
 if (process.env.GCEX_APP === 'core' && !app.isPackaged) {
-  Object.assign(G, { page: 'app-core/index.html', title: 'Core-Ex', icon: 'build/icon-core.ico', theme: 'core' });
-  app.setName('Core-Ex');
-  app.setPath('userData', path.join(app.getPath('appData'), 'Core-Ex'));
+  Object.assign(G, { page: 'app-core/index.html', title: 'DB-Ex', icon: 'build/icon-core.ico', theme: 'core' });
+  app.setName('DB-Ex');
+  app.setPath('userData', path.join(app.getPath('appData'), 'DB-Ex'));
 }
 const APP_NAME = G.title;
-// 0.18.0: GC-Ex Core Interpretation berganti nama menjadi Core-Ex; pengaturan, cache & log lama dipindahkan sekali ke folder baru
+// 0.18.0: GC-Ex Core Interpretation -> Core-Ex; 0.31.0: Core-Ex -> DB-Ex. Pengaturan, cache & log lama dipindahkan sekali ke folder baru
 if (G.theme === 'core') {
-  try { const ud = app.getPath('userData'), old = path.join(path.dirname(ud), 'GC-Ex Core Interpretation'); if (!fs.existsSync(ud) && fs.existsSync(old)) fs.renameSync(old, ud); } catch (e) { /* tetap jalan dengan folder baru */ }
+  for (const nm of ['Core-Ex', 'GC-Ex Core Interpretation']) {
+    try { const ud = app.getPath('userData'), old = path.join(path.dirname(ud), nm); if (!fs.existsSync(ud) && fs.existsSync(old)) fs.renameSync(old, ud); } catch (e) { /* tetap jalan dengan folder baru */ }
+  }
 }
 // lisensi (kunci terikat komputer); diwajibkan pada aplikasi terpasang. Saat pengembangan: set GCEX_LIC=1 untuk menguji.
 const LIC = require('./license').create(app.getPath('appData'));
@@ -245,8 +247,8 @@ ipcMain.handle('gcex:openFolder', async (e, opt) => {
 });
 ipcMain.handle('gcex:showFile', (e, p) => { if (p && fs.existsSync(p)) shell.showItemInFolder(p); });
 
-// ---------- Ollama (AI lokal Core-Ex): cari & jalankan bila belum aktif ----------
-// Core-Ex hanya memakai Ollama yang terpasang terpisah; fungsi ini menyalakannya (aplikasi tray Ollama, atau "ollama serve"
+// ---------- Ollama (AI lokal DB-Ex): cari & jalankan bila belum aktif ----------
+// DB-Ex hanya memakai Ollama yang terpasang terpisah; fungsi ini menyalakannya (aplikasi tray Ollama, atau "ollama serve"
 // tersembunyi) lalu menunggu sampai http://127.0.0.1:11434 menjawab. Tidak memasang / mengunduh apa pun.
 function ollamaHostOk(host) { return /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/i.test(String(host || 'http://127.0.0.1:11434').trim()); }
 async function ollamaUp(host, ms) {
@@ -482,7 +484,7 @@ function buildMenu() {
       { label: 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
       { label: 'Tentang GC-Ex', click: async () => {
           const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
-          const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true, message: APP_NAME + (G.theme === 'core' ? ' - Core Excellence (keluarga GC-Ex)' : ' - Grade Control Excellence'),
+          const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true, message: APP_NAME + (G.theme === 'core' ? ' - Database Excellence (keluarga GC-Ex)' : ' - Grade Control Excellence'),
             detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +
               (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') +
               '\n\nMemakai komponen open source: ' + (G.theme === 'core' ? '' : 'Plotly.js (MIT), ') + 'Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, Pillow (MIT-CMU), lxml, openpyxl, pyodbc (MIT / BSD)' + (G.theme === 'core' ? ', font Inter & JetBrains Mono (SIL OFL 1.1).\nAI lokal memakai Ollama (MIT, dipasang terpisah); model AI mengikuti lisensi masing-masing.' : '.') +

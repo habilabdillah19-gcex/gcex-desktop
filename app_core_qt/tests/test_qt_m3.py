@@ -1,4 +1,4 @@
-"""Uji Core-Ex Qt: perilaku jendela yang dulu diurus Electron (satu jendela, ukuran tampilan, layar penuh, buka ulang),
+"""Uji DB-Ex Qt: perilaku jendela yang dulu diurus Electron (satu jendela, ukuran tampilan, layar penuh, buka ulang),
 pintasan tanpa bentrok, daftar pilihan di sel tabel."""
 import os
 import sys
@@ -12,7 +12,7 @@ from test_qt_m1 import _win, prj  # noqa: E402,F401  (fixture proyek & jendela u
 
 
 def _send_bg(name: str, payload: dict, timeout_ms: int = 3000) -> list:
-    """Kirim dari PROSES lain, persis seperti Core-Ex kedua (thread lain dalam satu proses tidak andal untuk named
+    """Kirim dari PROSES lain, persis seperti DB-Ex kedua (thread lain dalam satu proses tidak andal untuk named
     pipe Windows). Hasil: [] selama proses berjalan, lalu [True] / [False]."""
     import json
     import subprocess
@@ -49,7 +49,7 @@ def test_single_instance_forwards_folder(qtbot):
     r2 = _send_bg(a.name, {"cmd": "show", "folder": ""})
     qtbot.waitUntil(lambda: len(got) == 2 and r2 == [True], timeout=8000)
     a.close()
-    r3 = _send_bg(a.name, {"cmd": "show"}, 300)  # tidak ada Core-Ex lain -> jalan sebagai jendela pertama
+    r3 = _send_bg(a.name, {"cmd": "show"}, 300)  # tidak ada DB-Ex lain -> jalan sebagai jendela pertama
     qtbot.waitUntil(lambda: r3 == [False], timeout=5000)
     b = SingleInstance(a.name)
     assert b.listen()  # nama bisa dipakai lagi setelah dilepas
@@ -80,7 +80,7 @@ def test_zoom_setting_and_restart(qtbot, prj, monkeypatch):
     assert os.environ.pop("QT_SCALE_FACTOR") == "1.25"
     util.SET.set("qt_zoom", "rusak")
     assert shell.zoom_now() == shell.ZOOM_DEF
-    # buka ulang: jendela ditutup, Core-Ex baru dijalankan dengan folder yang sama
+    # buka ulang: jendela ditutup, DB-Ex baru dijalankan dengan folder yang sama
     started = []
     monkeypatch.setattr("corex.shell.QProcess.startDetached", lambda prog, args: started.append((prog, args)) or True)
     monkeypatch.setattr("corex.mainwin.ask", lambda *a: True)
@@ -153,3 +153,17 @@ def test_closed_window_pending_callbacks(qtbot, prj):
     for _ in range(30):
         QApplication.processEvents()
         qtbot.wait(20)
+
+
+def test_user_dir_migrates_from_core_ex(tmp_path, monkeypatch):
+    """0.31.0: Core-Ex berganti nama menjadi DB-Ex; folder data lama (%APPDATA%\\Core-Ex) dipindah sekali, isinya utuh."""
+    from corex import util
+    monkeypatch.delenv("COREX_USERDATA", raising=False)
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    old = tmp_path / "Core-Ex"
+    old.mkdir()
+    (old / "settings.json").write_text('{"user": "Rina"}')
+    d = util.user_dir()
+    assert d == tmp_path / "DB-Ex" and (d / "settings.json").read_text() == '{"user": "Rina"}' and not old.exists()
+    old.mkdir()  # folder baru sudah ada: folder lama tidak menimpa
+    assert util.user_dir() == d and old.exists()

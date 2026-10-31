@@ -1,4 +1,4 @@
-"""Pengaturan (settings.json di folder data Core-Ex, sama dengan versi Electron), pekerja latar (QThreadPool), log & Ollama."""
+"""Pengaturan (settings.json di folder data DB-Ex, sama dengan versi Electron), pekerja latar (QThreadPool), log & Ollama."""
 from __future__ import annotations
 
 import datetime as _dt
@@ -21,7 +21,18 @@ def appdata() -> Path:
 
 
 def user_dir() -> Path:
-    d = Path(os.environ.get("COREX_USERDATA") or (appdata() / "Core-Ex"))
+    env = os.environ.get("COREX_USERDATA")
+    d = Path(env or (appdata() / "DB-Ex"))
+    if not env and not d.exists():
+        # 0.31.0: Core-Ex berganti nama menjadi DB-Ex; pengaturan, cache & log lama dipindahkan sekali ke folder baru
+        for old in ("Core-Ex", "GC-Ex Core Interpretation"):
+            o = appdata() / old
+            if o.is_dir():
+                try:
+                    o.rename(d)
+                    break
+                except OSError:
+                    pass
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -103,7 +114,7 @@ def alive(o: Any) -> bool:
 
 
 def _safe(cb: Callable) -> Callable:
-    """Hasil tugas latar bisa datang setelah jendela / dialog pemanggilnya ditutup (mis. buka ulang Core-Ex saat cek Ollama
+    """Hasil tugas latar bisa datang setelah jendela / dialog pemanggilnya ditutup (mis. buka ulang DB-Ex saat cek Ollama
     masih berjalan): widget yang sudah dihapus diabaikan, bukan galat."""
     def f(*a):
         try:

@@ -7,14 +7,14 @@
 - Karena itu:
   - **Naikkan versi** aplikasi yang berubah (patch / minor) pada setiap push yang mengubah isi, termasuk perubahan dokumen /
     data latihan saja. Versi per aplikasi: Block Model = `package.json`; Drillhole = `builder-dh.json` `extraMetadata.version`;
-    Core-Ex = `builder-core.json` `extraMetadata.version` (bila kosong ikut package.json). Release memakai versi tertinggi dan
+    DB-Ex = `builder-core.json` `extraMetadata.version` (bila kosong ikut package.json). Release memakai versi tertinggi dan
     hanya berisi installer yang bertanda versi itu (aplikasi lain tetap di rilis sebelumnya), dan tambahkan baris versi di `README.md` + bagian di `docs/PANDUAN_INSTALL.md`.
   - **Jangan memakai `[skip ci]`** di pesan commit (commit itu tidak akan masuk Release).
   - Sebelum push: `git fetch` + `git pull --rebase` (beberapa sesi push paralel); bila versi sudah dipakai sesi lain, naikkan lagi.
-- Isi Release: 3 installer terpisah (GC-Ex Block Model, GC-Ex Drillhole, Core-Ex — tidak dibundel), `_1_Dokumen.zip`,
+- Isi Release: 3 installer terpisah (GC-Ex Block Model, GC-Ex Drillhole, DB-Ex — tidak dibundel), `_1_Dokumen.zip`,
   `_2_Data-Latihan.zip`, `_3_Lisensi-dan-Tentang.zip`, `_CATATAN_RILIS.md` (commit sejak rilis sebelumnya), `SHA256SUMS.txt`,
   plus kode sumber otomatis dari tag. File baru yang perlu ikut rilis didaftarkan di `tools/rilis/kemas_rilis.py`.
-- Lokasi: tutorial & data simulasi GC-Ex di `docs/tutorial-gcex/`, Core-Ex di `docs/tutorial-core/`, panduan di `docs/`,
+- Lokasi: tutorial & data simulasi GC-Ex di `docs/tutorial-gcex/`, DB-Ex di `docs/tutorial-core/`, panduan di `docs/`,
   lisensi & syarat di `legal/`, alat lisensi admin di `tools/lisensi/`.
 
 ## Lain-lain

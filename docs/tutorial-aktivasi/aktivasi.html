@@ -62,7 +62,7 @@ ul{margin:1mm 0 3mm;padding-left:5mm}li{margin:.8mm 0}
     <div class="kick">GC-Ex · Panduan</div>
     <h1>Tutorial Aktivasi Lisensi</h1>
     <div class="lead">Cara mengaktifkan GC-Ex di komputer pengguna, serta cara penerbit membuat dan mengelola kunci lisensi.</div>
-    <div class="apps"><span>GC-Ex Block Model</span><span>GC-Ex Drillhole</span><span>Core-Ex</span></div>
+    <div class="apps"><span>GC-Ex Block Model</span><span>GC-Ex Drillhole</span><span>DB-Ex</span></div>
   </div>
   <div class="toc">
     <b>Isi</b>
@@ -90,7 +90,7 @@ ul{margin:1mm 0 3mm;padding-left:5mm}li{margin:.8mm 0}
   <h3>Yang perlu diketahui</h3>
   <ul>
     <li><b>Satu kunci, satu komputer.</b> Kunci hanya berlaku di komputer yang ID-nya tercantum di dalam kunci.</li>
-    <li><b>Satu kunci bisa mencakup beberapa aplikasi.</b> Penerbit memilih Block Model, Drillhole, Core-Ex, atau Semua. Ketiga aplikasi memakai satu file lisensi bersama, jadi cukup aktivasi sekali.</li>
+    <li><b>Satu kunci bisa mencakup beberapa aplikasi.</b> Penerbit memilih Block Model, Drillhole, DB-Ex, atau Semua. Ketiga aplikasi memakai satu file lisensi bersama, jadi cukup aktivasi sekali.</li>
     <li><b>Masa berlaku.</b> Kunci bisa bertanggal kedaluwarsa (bawaan 1 tahun) atau tanpa batas waktu. GC-Ex mengingatkan 14 hari sebelum lisensi berakhir.</li>
     <li><b>Lokasi file lisensi:</b> <code>%APPDATA%\GC-Ex Lisensi\lisensi.json</code>.</li>
     <li><b>ID Komputer berubah</b> bila Windows di-install ulang atau GC-Ex dipindah ke komputer lain. Saat itu, minta kunci baru.</li>
@@ -104,7 +104,7 @@ ul{margin:1mm 0 3mm;padding-left:5mm}li{margin:.8mm 0}
 
   <div class="step"><div class="num">1</div><div>
     <h4>Pasang dan buka GC-Ex</h4>
-    <p>Jalankan installer (mis. <code>Core-Ex-Setup-Windows.exe</code>) lalu buka aplikasinya. Baca dan setujui Syarat Penggunaan yang muncul pertama kali.</p>
+    <p>Jalankan installer (mis. <code>DB-Ex-Setup-Windows.exe</code>) lalu buka aplikasinya. Baca dan setujui Syarat Penggunaan yang muncul pertama kali.</p>
   </div></div>
 
   <div class="step"><div class="num">2</div><div>
@@ -206,7 +206,7 @@ ul{margin:1mm 0 3mm;padding-left:5mm}li{margin:.8mm 0}
   <table>
     <tr><th style="width:40%">Situasi</th><th>Yang dilakukan penerbit</th></tr>
     <tr><td>Perpanjangan</td><td>Buat kunci baru dengan ID Komputer yang sama dan tanggal berlaku baru.</td></tr>
-    <tr><td>Menambah aplikasi (mis. Core-Ex)</td><td>Buat kunci baru dengan centang aplikasi yang lengkap. Kunci baru menggantikan yang lama.</td></tr>
+    <tr><td>Menambah aplikasi (mis. DB-Ex)</td><td>Buat kunci baru dengan centang aplikasi yang lengkap. Kunci baru menggantikan yang lama.</td></tr>
     <tr><td>Pengguna ganti komputer / install ulang Windows</td><td>Minta ID Komputer yang baru, lalu buat kunci baru. Catat di arsip bahwa kunci lama tidak dipakai lagi.</td></tr>
     <tr><td>Nama/organisasi pemegang berubah</td><td>Buat kunci baru dengan data yang diperbarui.</td></tr>
   </table>
@@ -234,7 +234,7 @@ ul{margin:1mm 0 3mm;padding-left:5mm}li{margin:.8mm 0}
   <div class="part">5</div>
   <h2>Pertanyaan umum</h2>
   <div class="qa"><b>Apakah aktivasi perlu internet?</b><br>Tidak. Seluruh proses, baik aktivasi di GC-Ex maupun pembuatan kunci, berjalan offline. ID dan kunci cukup dikirim lewat media apa pun.</div>
-  <div class="qa"><b>Saya punya Block Model, Drillhole dan Core-Ex. Apakah harus aktivasi tiga kali?</b><br>Tidak, bila kuncinya mencakup ketiganya. Ketiga aplikasi membaca file lisensi yang sama, jadi aktivasi cukup di salah satu aplikasi.</div>
+  <div class="qa"><b>Saya punya Block Model, Drillhole dan DB-Ex. Apakah harus aktivasi tiga kali?</b><br>Tidak, bila kuncinya mencakup ketiganya. Ketiga aplikasi membaca file lisensi yang sama, jadi aktivasi cukup di salah satu aplikasi.</div>
   <div class="qa"><b>Apakah update GC-Ex menghapus lisensi?</b><br>Tidak. Lisensi disimpan di <code>%APPDATA%\GC-Ex Lisensi</code>, terpisah dari folder instalasi. Uninstall dan install ulang GC-Ex juga tidak menghapusnya.</div>
   <div class="qa"><b>Apakah ganti RAM, SSD atau kartu jaringan mengubah ID Komputer?</b><br>Umumnya tidak. ID diambil dari identitas instalasi Windows, sehingga yang mengubahnya adalah install ulang Windows atau pindah komputer.</div>
   <div class="qa"><b>Apakah satu kunci bisa dipakai di dua komputer?</b><br>Tidak. Setiap komputer perlu kunci sendiri dengan ID Komputer masing-masing.</div>
