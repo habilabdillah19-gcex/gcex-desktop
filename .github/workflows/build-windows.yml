@@ -243,6 +243,29 @@ jobs:
           name: Core-Ex-Qt-Setup-Windows
           path: dist-qt/Core-Ex-Qt-Setup-*.exe
           retention-days: 7
+      # installer uji Core-Ex Qt juga ke pre-release "core-ex-qt-uji" (privat, tidak memakai kuota artifact Actions yang
+      # bisa penuh). Hanya installer terbaru yang disimpan. Bukan rilis resmi: Release v<versi> tetap berisi Core-Ex Electron.
+      - name: Core-Ex Qt - unggah installer uji ke pre-release core-ex-qt-uji
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $f = Get-ChildItem dist-qt -Filter "Core-Ex-Qt-Setup-*.exe" | Select-Object -First 1
+          if (-not $f) { Write-Host "::warning::installer Core-Ex Qt tidak ada, pre-release tidak diperbarui"; exit 0 }
+          $t = "core-ex-qt-uji"
+          gh release view $t -R $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $t -R $env:GITHUB_REPOSITORY --prerelease --target $env:GITHUB_SHA --title "Core-Ex Qt (installer uji, bukan rilis resmi)" `
+              --notes "Installer uji Core-Ex versi Qt (PySide6) dari build terakhir main. Untuk dicoba sebelum Core-Ex 1.0.0; Release v<versi> resmi masih memuat Core-Ex versi Electron."
+          }
+          $old = gh release view $t -R $env:GITHUB_REPOSITORY --json assets --jq ".assets[].name" | Where-Object { $_ -like "Core-Ex-Qt-Setup-*.exe" -and $_ -ne $f.Name }
+          foreach ($o in $old) { gh release delete-asset $t $o -R $env:GITHUB_REPOSITORY --yes }
+          gh release upload $t $f.FullName -R $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal mengunggah $($f.Name) ke pre-release $t"; exit 0 }
+          Write-Host "::notice::installer uji $($f.Name) tersedia di pre-release $t"
+          exit 0
 
       - name: Kemas & terbitkan GitHub Release
         if: github.ref == 'refs/heads/main'

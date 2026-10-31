@@ -592,3 +592,8 @@ Verifikasi (dari data yang dihasilkan, bukan dari model): kipas variogram GT per
 **Tutorial Tambahan GC-Ex 0.24** (`GCEx_Tutorial_0.24_Tambahan.pdf`, 12 halaman) ikut di `_1_Dokumen.zip`: model data latihan & daftar berkas, latihan terpandu menemukan kembali geometri endapan (orientasi, pitch, pemulihan sesar, zonasi vertikal, top-cut), klasifikasi keyakinan sumber daya, topografi & orthofoto resolusi tinggi, serta daftar bagian tutorial lama yang perlu disesuaikan. Semua gambarnya **dihitung dari model dan berkas data**, bukan tangkapan layar, sehingga dapat dibangun ulang di mesin mana pun: `python docs/tutorial-gcex/src/build_tutorial_024.py`.
 
 > Catatan: dua tutorial bergambar yang lama (*Modelling & Estimasi*, *Block Model*) dibangun dari tangkapan layar aplikasi dan **belum** diperbarui ke data baru — langkah kerjanya tetap berlaku, yang berubah hanya nama domain dan angka di layar (daftarnya ada di bab 5 tutorial tambahan). Membangun ulang keduanya memerlukan mesin tempat GC-Ex dapat membuka folder proyek; skripnya kini memberi pesan jelas bila tangkapan layar belum tersedia.
+
+## 52. Core-Ex 0.24.3
+
+- Installer uji **Core-Ex versi Qt** (`Core-Ex-Qt-Setup-<versi>.exe`) kini diterbitkan setiap build `main` ke pre-release privat **core-ex-qt-uji** di halaman Releases (hanya versi terbaru yang disimpan). Sebelumnya installer ini hanya tersedia sebagai artifact Actions, yang tertolak saat kuota penyimpanan Actions akun penuh ("Artifact storage quota has been hit").
+- Pre-release ini **bukan rilis resmi**: Release `v<versi>` tetap memuat Core-Ex versi Electron sampai Core-Ex 1.0.0. Versi Core-Ex dinaikkan ke 0.24.3 agar menjadi versi tertinggi dan Release ini terbit; isi aplikasi Core-Ex sama dengan 0.23.11.
