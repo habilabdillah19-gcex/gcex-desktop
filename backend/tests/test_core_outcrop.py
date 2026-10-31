@@ -181,7 +181,7 @@ def test_georef_wall_and_floor_and_export(st):
     vein_no = next(k["string"] for k in co.kinds(s) if k["key"] == "vein")
     vl = [x for x in lines if x.startswith(f"{vein_no},")]
     sn, y, x, z = [float(t) for t in vl[0].split(",")[:4]]
-    assert abs(x - P[0]["e"]) < 2.1 and abs(y - 2000) < 2 and "au=3.2" in vl[0] and "V1" in vl[0]
+    assert abs(x - P[0]["e"]) < 2.1 and abs(y - 2000) < 2 and "Au=3.2" in vl[0] and "V1" in vl[0]
     zl = [x for x in lines if x.startswith(f"{next(k['string'] for k in co.kinds(s) if k['key'] == 'zona_alt')},")]
     assert len(zl) == 5 and zl[0].split(",")[1:4] == zl[-1].split(",")[1:4]
     dxf = co.to_dxf(items).decode()
@@ -298,3 +298,57 @@ def test_ai_delineation_parse(st, monkeypatch):
     assert f["pts"][1] == [1.0, 1.0]
     assert not any(x["kind"] == "vein" for x in j["features"])  # usulan AI lama diganti
     assert any(h["what"] == "usulan delineasi AI" for h in co.history(s, pid))
+
+
+def test_elements_samples_intervals_composite_export(st):
+    s, tmp = st
+    els = co.elements(s)
+    assert [e["key"] for e in els][:2] == ["Au", "Ag"] and els[0]["classes"] == [0.2, 0.5, 1.0]
+    with pytest.raises(ValueError, match="naik"):
+        co.save_elements(s, [{"key": "Au", "classes": "0.5; 0.2"}], "Rina")
+    els = co.save_elements(s, [dict(e) for e in els] + [{"key": "Hg", "unit": "ppb", "dec": 0, "show": True, "classes": "100;500"}], "Rina")
+    assert els[-1] == {"key": "Hg", "unit": "ppb", "dec": 0, "show": True, "classes": [100.0, 500.0]}
+    pid = co.add_photo(s, str(_img(tmp, size=(1000, 800))), "Rina")["id"]
+    # garis trenching mendatar 20 m di dinding tegak (georef 4 titik) dibagi 3 interval + satu baris <DL
+    pts = [{"name": f"G{i}", "u": u, "v": v, "e": 1000 + u * 20, "n": 3000.0, "rl": 100 + (1 - v) * 16}
+           for i, (u, v) in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])]
+    co.save_georef(s, pid, pts, "wall", "Rina")
+    smp = [{"id": "TR1-002", "from": "2", "to": "4,5", "grades": {"Au": "1,25", "Ag": 12, "Hg": "<50"}},
+           {"id": "TR1-001", "from": 0, "to": 2, "grades": {"Au": "<0.01", "Ag": "0.8"}},
+           {"id": "TR1-003", "from": 4.5, "to": 10, "grades": {"Au": 0.3}},
+           {"id": "", "from": None, "to": None, "grades": {}}]
+    j = co.save_feature(s, pid, None, {"kind": "channel", "pts": [[0.1, 0.5], [0.5, 0.5], [0.9, 0.5]], "name": "TR-01",
+                                       "attrs": {"samples": smp}}, "Rina")
+    f = next(x for x in j["features"] if x["kind"] == "channel")
+    sm = f["attrs"]["samples"]
+    assert [x["id"] for x in sm] == ["TR1-001", "TR1-002", "TR1-003"] and sm[0]["grades"]["Au"] == "<0.01" and sm[1]["to"] == 4.5
+    cp = co.composite(sm)
+    assert cp["length"] == 10 and abs(cp["grades"]["Au"] - (0.005 * 2 + 1.25 * 2.5 + 0.3 * 5.5) / 10) < 1e-9
+    assert abs(cp["grades"]["Ag"] - (0.8 * 2 + 12 * 2.5) / 4.5) < 1e-9  # unsur tanpa nilai tidak ikut bobot
+    for bad, msg in (([{"id": "A", "from": 0, "to": 2}, {"id": "B", "from": 1.5, "to": 3}], "tumpang"),
+                     ([{"id": "A", "from": 2, "to": 1}], "lebih besar"), ([{"id": "A", "from": 0}], "DAN"),
+                     ([{"id": "A", "grades": {"Au": "tinggi"}}], "batas deteksi"), ([{"id": "A", "grades": {"Au": -1}}], "negatif"),
+                     ([{"id": "A", "from": 0, "to": 1}, {"id": "A", "from": 1, "to": 2}], "kembar")):
+        with pytest.raises(ValueError, match=msg):
+            co.save_feature(s, pid, f["id"], {"kind": "channel", "pts": f["pts"], "attrs": {"samples": bad}}, "Rina")
+    assert co.samples_of({"au_ppm": 0.4, "sxs_pct": 1.2}) == [{"id": "", "from": None, "to": None, "grades": {"Au": 0.4, "SxS": 1.2}}]
+    # panjang 3D garis = 16 m; interval dipetakan sepanjang garis
+    g = co.georef_info(s, pid)
+    assert abs(g["measure"][f["id"]]["length_m"] - 16) < 1e-6 and len(g["measure"][f["id"]]["seg_m"]) == 2
+    items, _ = co.export_items(s, [pid])
+    ch = [i for i in items if i["kind"] == "channel"]
+    assert [i["sample"]["id"] for i in ch] == ["TR1-001", "TR1-002", "TR1-003"]
+    assert abs(ch[0]["xyz"][0][0] - 1002) < 1e-6 and abs(ch[0]["xyz"][-1][0] - 1004) < 1e-6
+    assert len(ch[2]["xyz"]) == 3 and abs(ch[2]["xyz"][1][0] - 1010) < 1e-6  # melewati titik tengah garis
+    txt = co.to_str(items).decode()
+    l2 = next(x for x in txt.splitlines() if "TR1-002" in x)
+    assert "2-4.5m" in l2 and "Au=1.25" in l2 and "Hg=<50" in l2
+    assert "TR1-003" in co.to_dxf(items).decode()
+    csv = co.samples_csv(s, [pid]).decode("utf-8-sig").splitlines()
+    head = csv[0].split(",")
+    assert head[:4] == ["Foto", "Jenis fitur", "Nama fitur", "Sample ID"] and "Hg" in head and len(csv) == 5
+    r1 = csv[1].split(",")
+    assert r1[3] == "TR1-001" and r1[7] == "1002.000" and r1[head.index("Au")] == "<0.01"
+    assert csv[4].split(",")[3] == "KOMPOSIT" and csv[4].split(",")[6] == "10"
+    with pytest.raises(ValueError, match="Belum ada sampel"):
+        co.samples_csv(s, [co.add_photo(s, str(_img(tmp, "kosong.jpg")), "Rina")["id"]])

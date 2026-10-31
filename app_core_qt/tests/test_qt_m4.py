@@ -55,15 +55,20 @@ def test_draw_snap_edit_and_export(qtbot, prj, tmp_path, monkeypatch):
     # atribut kadar lewat form
     pg.tool.select(vein["id"])
     pg.fName.setText("Qz-Cly-Oxide Vein")
-    pg.fAu.setText("0,42")
-    pg.fAg.setText("7")
-    pg.fSxs.setText("1.88")
+    cols = [pg.sT.horizontalHeaderItem(c).text().split()[0] for c in range(pg.sT.columnCount())]
+    assert pg.sT.isColumnHidden(1) is False and cols[3:6] == ["Au", "Ag", "Cu"]
+    pg.sT.setRowCount(1)
+    from PySide6.QtWidgets import QTableWidgetItem
+    for c, v in ((0, "TC-01"), (cols.index("Au"), "0,42"), (cols.index("Ag"), "7"), (cols.index("SxS"), "1.88")):
+        pg.sT.setItem(0, c, QTableWidgetItem(v))
     pg.save_form()
     vein = pg.feat(vein["id"])
-    assert vein["attrs"] == {"au_ppm": 0.42, "ag_ppm": 7.0, "sxs_pct": 1.88} and vein["name"] == "Qz-Cly-Oxide Vein"
-    pg.fAu.setText("tinggi")
+    assert vein["attrs"]["samples"] == [{"id": "TC-01", "from": None, "to": None, "grades": {"Au": 0.42, "Ag": 7.0, "SxS": 1.88}}]
+    assert vein["name"] == "Qz-Cly-Oxide Vein"
+    pg.sT.setItem(0, cols.index("Au"), QTableWidgetItem("tinggi"))
     pg.save_form()
-    assert "angka" in pg.fErr.text()
+    assert "batas deteksi" in pg.fErr.text()
+    pg.sT.setItem(0, cols.index("Au"), QTableWidgetItem("0,42"))
     # geser titik dengan alat pilih (tarik kotak putih)
     pg.tool.select(vein["id"])
     assert pg.tool.press(_pt(pg, 0.6, 0.5), None)
@@ -345,3 +350,78 @@ def test_auto_proposals_color_and_ai(qtbot, prj, tmp_path, monkeypatch, fake_oll
     pg.bRej.click()
     assert not any(f["attrs"].get("_draft") for f in pg.feats) and {f["kind"] for f in pg.feats} == {"zona_oks", "vein"}
     assert "Belum ada usulan" in pg.auInfo.text()
+
+
+def test_trench_intervals_multi_element(qtbot, prj, tmp_path, monkeypatch):
+    """Garis trenching dibagi interval dari-ke: tabel sampel (tambah, tempel Excel), kotak per interval yang bisa ditarik,
+    warna kelas Au + legenda, komposit otomatis, daftar unsur, ekspor CSV."""
+    from PySide6.QtGui import QGuiApplication, QImage, QPainter
+    w, pg = _open_oc(qtbot, prj, tmp_path, monkeypatch)
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a[1])))
+    _draw(pg, "channel", [(0.05, 0.6), (0.5, 0.6), (0.95, 0.6)])
+    ch = pg.feats[-1]
+    pg.tool.select(ch["id"])
+    assert pg.sBox.isVisible() and "dianggap sepanjang" in pg.sHead.text()
+    # tempel dari Excel dengan judul kolom (urutan unsur berbeda, satuan di judul, desimal koma, <DL)
+    QGuiApplication.clipboard().setText("Sample ID\tDari\tKe\tAg_ppm\tAu (ppm)\tSxS %\n"
+                                        "TC261-01\t0\t1,5\t4\t1,03\t2,97\nTC261-02\t1,5\t2,4\t7\t11\t0,19\nTC261-03\t2,4\t4\t5\t<0.01\t1,05")
+    pg.sample_paste()
+    assert pg.sT.rowCount() == 3
+    pg.save_form()
+    sm = pg.feat(ch["id"])["attrs"]["samples"]
+    assert [x["id"] for x in sm] == ["TC261-01", "TC261-02", "TC261-03"] and sm[1]["grades"] == {"Ag": 7.0, "Au": 11.0, "SxS": 0.19}
+    assert sm[2]["grades"]["Au"] == "<0.01" and sm[2]["to"] == 4
+    # + Interval melanjutkan 'ke' terakhir & menaikkan nomor sampel
+    pg.tool.select(ch["id"])
+    pg.sample_add()
+    assert [pg.sT.item(3, c).text() for c in range(3)] == ["TC261-04", "4", "5.6"]
+    pg.sample_del()
+    assert pg.sT.rowCount() == 3
+    # infografis: 3 kotak interval + komposit otomatis + kelas warna Au di legenda
+    pg.save_info({"template": "trench", "grade_color": "Au"})
+    assert pg.iColor.currentData() == "Au"
+    img = QImage(600, 400, QImage.Format_RGB32)
+    p = QPainter(img)
+    pg.canvas.paint(p, None)
+    p.end()
+    sboxes = [b for b in pg.boxes if b[2].startswith("s")]
+    assert len(sboxes) == 3 and any(b[2] == "comp" for b in pg.boxes)
+    assert "3 sampel 4 m" in pg.fList.item(pg.feats.index(pg.feat(ch["id"]))).text()
+    # tarik kotak interval ke-2: posisi tersimpan per sampel
+    fid, r, k = sboxes[1]
+    pg.tool.press(r.center(), None)
+    pg.tool.move(QPointF(r.center().x() + 30, r.center().y() + 10))
+    pg.tool.release(QPointF(r.center().x() + 30, r.center().y() + 10))
+    sm = pg.feat(ch["id"])["attrs"]["samples"]
+    assert "bu" in sm[int(k[1:])] and all("bu" not in x for i, x in enumerate(sm) if i != int(k[1:]))
+    # Simpan form tidak menghapus posisi kotak
+    pg.tool.select(ch["id"])
+    pg.save_form()
+    assert "bu" in pg.feat(ch["id"])["attrs"]["samples"][int(k[1:])]
+    # komposit otomatis tertimbang panjang (Au <0.01 dihitung 0.005)
+    from corex import oc_paint
+    cp = oc_paint.composite(pg.feat(ch["id"])["attrs"]["samples"])
+    assert abs(cp["grades"]["Au"] - (1.03 * 1.5 + 11 * 0.9 + 0.005 * 1.6) / 4) < 1e-9
+    # daftar unsur: tampilkan Cu, batas kelas Ag
+    from corex.outcrop import ElementsDlg
+    d = ElementsDlg(pg, pg.elements)
+    qtbot.addWidget(d)
+    r_cu = next(i for i, e in enumerate(d.els) if e["key"] == "Cu")
+    d.t.cellWidget(r_cu, 3).setChecked(True)
+    d.t.item(1, 4).setText("5; 10")
+    els = d.result_elements()
+    monkeypatch.setattr("corex.outcrop.ElementsDlg.exec", lambda self: ElementsDlg.Accepted)
+    monkeypatch.setattr("corex.outcrop.ElementsDlg.result_elements", lambda self: els)
+    pg.edit_elements()
+    assert next(e for e in pg.elements if e["key"] == "Cu")["show"] and pg.iColor.findData("Ag") >= 0
+    # ekspor CSV & PNG (kotak interval ikut)
+    monkeypatch.setattr("corex.outcrop.show_in_folder", lambda p: None)
+    out = tmp_path / "sampel.csv"
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(out), ""))
+    pg.export_samples()
+    rows = out.read_text(encoding="utf-8-sig").splitlines()
+    assert rows[1].split(",")[3] == "TC261-01" and rows[-1].split(",")[3] == "KOMPOSIT"
+    png = tmp_path / "trench.png"
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(png), ""))
+    pg.export("png")
+    qtbot.waitUntil(lambda: png.exists(), timeout=15000)

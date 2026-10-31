@@ -96,7 +96,7 @@ class OcCanvas(QGraphicsObject):
         boxes: list = []
         oc_paint.paint_scene(p, v.w, v.h, pg.feats, pg.kmap, pg.info(), desc=pg.cur.get("desc"), m_per_unit=pg.m_per_unit(),
                              sel=t.sel, sel_vertex=t.vsel, handle=v.px(5), draft=t.draft_pts(), draft_kind=pg.kmap.get(t.kind),
-                             boxes_out=boxes, show_info=pg.cbInfo.isChecked())
+                             boxes_out=boxes, show_info=pg.cbInfo.isChecked(), elements=pg.elements, chains=pg.chains())
         pg.boxes = boxes
         if pg.geo_visible():
             paint_geo(p, v, pg.geo.get("points") or [], pg.geo_row(), pg.geo_err())
@@ -305,6 +305,13 @@ class OcTool:
                 f["attrs"]["box_u"], f["attrs"]["box_v"] = round(c.x() / v.w, 4), round(c.y() / v.h, 4)
             elif f:
                 f["pts"][0] = self.norm(c)
+        elif d["type"].startswith("s") and d["type"][1:].isdigit():
+            f = self.pg.feat(d["fid"])
+            sm = (f or {}).get("attrs", {}).get("samples") or []
+            i = int(d["type"][1:])
+            if 0 <= i < len(sm):
+                c = QPointF(pt.x() - d["off"].x(), pt.y() - d["off"].y())
+                sm[i]["bu"], sm[i]["bv"] = round(max(0.0, min(1.0, c.x() / v.w)), 4), round(max(0.0, min(1.0, c.y() / v.h)), 4)
         elif d["type"] == "comp":
             c = QPointF(pt.x() - d["off"].x(), pt.y() - d["off"].y())
             self.pg.comp_pos = (round(c.x() / v.w, 4), round(c.y() / v.h, 4))
@@ -506,6 +513,79 @@ class KindsDlg(Dlg):
         return self.kinds
 
 
+# ================================================================ dialog daftar unsur assay
+class ElementsDlg(Dlg):
+    def __init__(self, parent, elements: list[dict]):
+        super().__init__(parent, "Unsur assay & kelas warna", "Unsur assay <span style='color:#a9c3dd'>&amp; kelas warna</span>", 620)
+        self.els = [dict(e) for e in elements]
+        n = QLabel("Centang <b>Tampil</b> untuk unsur yang muncul di kotak kadar & komposit. <b>Batas kelas</b> (naik, dipisah titik koma, "
+                   "mis. 0.2; 0.5; 1) dipakai bila interval diwarnai menurut unsur itu. Kadar semua unsur tetap tersimpan & ikut ekspor.")
+        n.setWordWrap(True)
+        n.setObjectName("note")
+        n.setTextFormat(Qt.RichText)
+        self.body.addWidget(n)
+        self.t = QTableWidget(0, 5)
+        self.t.setHorizontalHeaderLabels(["Unsur", "Satuan", "Desimal", "Tampil", "Batas kelas"])
+        self.t.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+        self.t.verticalHeader().hide()
+        self.t.setMinimumHeight(340)
+        self.body.addWidget(self.t)
+        r = QHBoxLayout()
+        add, rm = btn("+ Unsur", sm=True), btn("Hapus baris", sm=True)
+        r.addWidget(add)
+        r.addWidget(rm)
+        r.addStretch(1)
+        self.body.addLayout(r)
+        add.clicked.connect(self._add)
+        rm.clicked.connect(lambda: (self._read(), self.els.pop(self.t.currentRow()) if 0 <= self.t.currentRow() < len(self.els) else None, self._fill()))
+        ok, cl = btn("Simpan", pri=True), btn("Batal")
+        self.foot.addStretch(1)
+        self.foot.addWidget(cl)
+        self.foot.addWidget(ok)
+        ok.clicked.connect(self.accept)
+        cl.clicked.connect(self.reject)
+        self._fill()
+
+    def _fill(self) -> None:
+        self.t.setRowCount(0)
+        for e in self.els:
+            r = self.t.rowCount()
+            self.t.insertRow(r)
+            self.t.setItem(r, 0, QTableWidgetItem(e["key"]))
+            u = QComboBox()
+            for x in ("ppm", "ppb", "%", "g/t", "oz/t"):
+                u.addItem(x)
+            u.setCurrentText(e.get("unit") or "ppm")
+            self.t.setCellWidget(r, 1, u)
+            sp = QSpinBox()
+            sp.setRange(0, 4)
+            sp.setValue(int(e.get("dec", 2)))
+            self.t.setCellWidget(r, 2, sp)
+            cb = QCheckBox()
+            cb.setChecked(bool(e.get("show")))
+            self.t.setCellWidget(r, 3, cb)
+            self.t.setItem(r, 4, QTableWidgetItem("; ".join(f"{x:g}" for x in e.get("classes") or [])))
+
+    def _read(self) -> None:
+        for r, e in enumerate(self.els):
+            e["key"] = self.t.item(r, 0).text().strip() if self.t.item(r, 0) else e["key"]
+            e["unit"] = self.t.cellWidget(r, 1).currentText()
+            e["dec"] = self.t.cellWidget(r, 2).value()
+            e["show"] = self.t.cellWidget(r, 3).isChecked()
+            e["classes"] = self.t.item(r, 4).text().strip() if self.t.item(r, 4) else ""
+
+    def _add(self) -> None:
+        self._read()
+        self.els.append({"key": "", "unit": "ppm", "dec": 0, "show": False, "classes": []})
+        self._fill()
+        self.t.setCurrentCell(len(self.els) - 1, 0)
+        self.t.editItem(self.t.item(len(self.els) - 1, 0))
+
+    def result_elements(self) -> list[dict]:
+        self._read()
+        return [e for e in self.els if str(e["key"]).strip()]
+
+
 # ================================================================ halaman Singkapan
 class OutcropPage(QWidget):
     changed = Signal()
@@ -524,6 +604,7 @@ class OutcropPage(QWidget):
         self.boxes: list = []
         self.comp_pos: tuple | None = None
         self.ai_busy = False
+        self.elements: list[dict] = list(oc_paint.DEFAULT_ELEMENTS)
         self.geo: dict = {"points": [], "kind": None}
         self.geo_res: dict = {}
         self._build()
@@ -792,13 +873,37 @@ class OutcropPage(QWidget):
         self.fName = QLineEdit()
         self.fName.setPlaceholderText("mis. PROPYLITIC (CHL-SME) PYRITIC TUFF")
         g.addWidget(self.fName, 2, 1, 1, 3)
-        self.fAu, self.fAg, self.fSxs, self.fLen = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
-        for i, (lab, e) in enumerate((("Au ppm", self.fAu), ("Ag ppm", self.fAg), ("SxS %", self.fSxs))):
-            g.addWidget(QLabel(lab), 3 + i // 2, (i % 2) * 2)
-            g.addWidget(e, 3 + i // 2, (i % 2) * 2 + 1)
+        self.fLen = QLineEdit()
         self.lenL = QLabel("Panjang m")
-        g.addWidget(self.lenL, 4, 2)
-        g.addWidget(self.fLen, 4, 3)
+        g.addWidget(self.lenL, 3, 0)
+        g.addWidget(self.fLen, 3, 1)
+        self.sBox = QFrame()
+        sv = QVBoxLayout(self.sBox)
+        sv.setContentsMargins(0, 2, 0, 0)
+        sv.setSpacing(4)
+        self.sHead = QLabel()
+        self.sHead.setObjectName("note")
+        self.sHead.setWordWrap(True)
+        self.sHead.setTextFormat(Qt.RichText)
+        sv.addWidget(self.sHead)
+        self.sT = QTableWidget(0, 3)
+        self.sT.verticalHeader().setDefaultSectionSize(24)
+        self.sT.verticalHeader().hide()
+        self.sT.setMinimumHeight(150)
+        self.sT.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        sv.addWidget(self.sT)
+        sr = QHBoxLayout()
+        self.bSAdd = btn("+ Interval", "Tambah baris sampel; 'dari' melanjutkan 'ke' baris terakhir", sm=True)
+        self.bSDel = btn("Hapus baris", sm=True)
+        self.bSPaste = btn("Tempel dari Excel", "Tempel baris: Sample ID, Dari, Ke, lalu kadar sesuai urutan kolom (atau sertakan baris judul kolom)", sm=True)
+        for b in (self.bSAdd, self.bSDel, self.bSPaste):
+            sr.addWidget(b)
+        sr.addStretch(1)
+        sv.addLayout(sr)
+        g.addWidget(self.sBox, 4, 0, 1, 4)
+        self.bSAdd.clicked.connect(self.sample_add)
+        self.bSDel.clicked.connect(self.sample_del)
+        self.bSPaste.clicked.connect(self.sample_paste)
         g.addWidget(QLabel("Teks lain"), 5, 0)
         self.fTxt = QPlainTextEdit()
         self.fTxt.setFixedHeight(46)
@@ -827,7 +932,7 @@ class OutcropPage(QWidget):
         self.bJoin.clicked.connect(self.join_sel)
         self.bVDel.clicked.connect(self.delete_vertex)
         self.bFDel.clicked.connect(self.delete_selected)
-        for e in (self.fName, self.fAu, self.fAg, self.fSxs, self.fLen):
+        for e in (self.fName, self.fLen):
             e.returnPressed.connect(self.save_form)
         kb = btn("Atur jenis fitur & nomor string…", sm=True)
         kb.clicked.connect(self.edit_kinds)
@@ -873,7 +978,9 @@ class OutcropPage(QWidget):
         self.iLeg, self.iScale, self.iNames, self.iDesc = (QCheckBox("Legenda"), QCheckBox("Bar skala (perlu garis skala)"),
                                                             QCheckBox("Nama fitur di foto"), QCheckBox("Deskripsi ringkas (template dinding)"))
         self.iFill = QCheckBox("Isi poligon (warna tipis)")
-        for c in (self.iLeg, self.iScale, self.iNames, self.iDesc, self.iFill):
+        self.iIds = QCheckBox("Sample ID && dari–ke di kotak kadar")
+        self.iAuto = QCheckBox("Komposit otomatis (rata-rata tertimbang panjang)")
+        for c in (self.iLeg, self.iScale, self.iNames, self.iDesc, self.iFill, self.iIds, self.iAuto):
             c.setChecked(True)
             v.addWidget(c)
         self.iTpl.activated.connect(lambda *_: self.save_info({"template": self.iTpl.currentData()}))
@@ -885,8 +992,25 @@ class OutcropPage(QWidget):
             orig(ev)
             self.save_info({"composite": self.iComp.toPlainText().strip()})
         self.iComp.focusOutEvent = fo
-        for c, k in ((self.iLeg, "show_legend"), (self.iScale, "show_scale"), (self.iNames, "show_names"), (self.iDesc, "show_desc"), (self.iFill, "fill")):
+        for c, k in ((self.iLeg, "show_legend"), (self.iScale, "show_scale"), (self.iNames, "show_names"), (self.iDesc, "show_desc"), (self.iFill, "fill"),
+                     (self.iIds, "show_ids"), (self.iAuto, "auto_comp")):
             c.toggled.connect(lambda on, k=k: self.save_info({k: on}))
+        cr = QHBoxLayout()
+        cr.addWidget(QLabel("Warnai interval menurut"))
+        self.iColor = QComboBox()
+        self.iColor.setToolTip("Segmen interval & bingkai kotak kadar diberi warna kelas kadar unsur ini (batas kelas di Atur unsur)")
+        cr.addWidget(self.iColor, 1)
+        v.addLayout(cr)
+        self.iColor.activated.connect(lambda *_: self.save_info({"grade_color": self.iColor.currentData() or ""}))
+        er = QHBoxLayout()
+        self.bElem = btn("Atur unsur & kelas warna…", "Daftar unsur assay: satuan, desimal, tampil di kotak kadar, batas kelas warna", sm=True)
+        self.bCsv = btn("⇩ Tabel sampel (CSV)", "Semua sampel di semua foto: ID, dari, ke, panjang, koordinat awal-akhir (bila georef), kadar, komposit", sm=True)
+        er.addWidget(self.bElem)
+        er.addWidget(self.bCsv)
+        er.addStretch(1)
+        v.addLayout(er)
+        self.bElem.clicked.connect(self.edit_elements)
+        self.bCsv.clicked.connect(self.export_samples)
         r = QHBoxLayout()
         self.bPng = btn("⇩ Ekspor PNG", pri=True, sm=True)
         self.bPdf = btn("⇩ Ekspor PDF", sm=True)
@@ -896,8 +1020,9 @@ class OutcropPage(QWidget):
         v.addLayout(r)
         self.bPng.clicked.connect(lambda: self.export("png"))
         self.bPdf.clicked.connect(lambda: self.export("pdf"))
-        n = QLabel("Kotak kadar muncul untuk fitur yang punya Au / Ag / SxS / teks lain (tab Fitur) pada template Trenching; "
-                   "tarik kotaknya di foto untuk memindahkan. Kotak komposit juga bisa ditarik. Ekspor memakai foto resolusi penuh "
+        n = QLabel("Kotak kadar muncul untuk fitur yang punya sampel / kadar (tab Fitur) pada template Trenching: satu kotak per "
+                   "interval dari–ke di garis channel / trenching, atau satu kotak untuk zona. Unsur yang tampil diatur di Atur unsur. "
+                   "Tarik kotaknya di foto untuk memindahkan; kotak komposit juga bisa ditarik. Ekspor memakai foto resolusi penuh "
                    "(maks. 6000 px), sama persis dengan tampilan di layar.")
         n.setObjectName("note")
         n.setWordWrap(True)
@@ -1049,6 +1174,7 @@ class OutcropPage(QWidget):
         self.desc_fields = j["desc_fields"]
         self._build_desc()
         self._kinds(j["kinds"])
+        self._elements(j.get("elements"))
         self.photos = j["photos"]
         self._fill_list()
         self._summary(j["summary"])
@@ -1150,6 +1276,7 @@ class OutcropPage(QWidget):
         j = api.call("/core/outcrop/open", {"folder": self.folder})
         self.photos = j["photos"]
         self._kinds(j["kinds"])
+        self._elements(j.get("elements"))
         self._summary(j["summary"])
         want = select if select is not None else (self.cur["id"] if self.cur else None)
         self._fill_list()
@@ -1234,11 +1361,13 @@ class OutcropPage(QWidget):
         if not self.iComp.hasFocus():
             self.iComp.setPlainText(i.get("composite") or "")
         self.iLegPos.setCurrentIndex(max(0, self.iLegPos.findData(i.get("legend_pos") or "bl")))
-        for c, k in ((self.iLeg, "show_legend"), (self.iScale, "show_scale"), (self.iNames, "show_names"), (self.iDesc, "show_desc"), (self.iFill, "fill")):
+        for c, k in ((self.iLeg, "show_legend"), (self.iScale, "show_scale"), (self.iNames, "show_names"), (self.iDesc, "show_desc"), (self.iFill, "fill"),
+                     (self.iIds, "show_ids"), (self.iAuto, "auto_comp")):
             c.blockSignals(True)
             c.setChecked(i.get(k, True))
             c.blockSignals(False)
         self.iComp.setEnabled(i.get("template") == "trench")
+        self.iColor.setCurrentIndex(max(0, self.iColor.findData(i.get("grade_color") or "")))
         self.iDesc.setEnabled(i.get("template") == "wall")
         self.geo_refresh()
         self.feat_list()
@@ -1352,7 +1481,14 @@ class OutcropPage(QWidget):
             k = self.kmap.get(f["kind"], {"name": f["kind"], "color": "#7a5aa6"})
             pm = QPixmap(14, 14)
             pm.fill(QColor(k["color"]))
-            g = oc_paint.grade_lines(f["attrs"])
+            sm = oc_paint.samples_of(f["attrs"])
+            iv = oc_paint.intervals(f["attrs"])
+            if len(iv) > 1:
+                cp = oc_paint.composite(sm)
+                e0 = next((e for e in self.elements if e.get("show") and e["key"] in cp["grades"]), None)
+                g = [f"{len(iv)} sampel {cp['length']:g} m" + (f" · {e0['key']} {oc_paint.fmt_grade(cp['grades'][e0['key']], e0)}" if e0 else "")]
+            else:
+                g = oc_paint.sample_lines(sm[0], self.elements, False) if sm else []
             it = QListWidgetItem(QIcon(pm), ("◌ usulan · " if f["attrs"].get("_draft") else "") + f"{k['name']}" + (f" · {f['name']}" if f.get("name") else "")
                                  + (f" · {', '.join(g[:2])}" if g else "") + (f" · {_f(f['attrs'].get('length_m'))} m" if f['attrs'].get('length_m') else ""))
             self.fList.addItem(it)
@@ -1394,15 +1530,14 @@ class OutcropPage(QWidget):
         self.fKind.blockSignals(False)
         a = f["attrs"]
         self.fName.setText(f.get("name") or "")
-        self.fAu.setText(_f(a.get("au_ppm")))
-        self.fAg.setText(_f(a.get("ag_ppm")))
-        self.fSxs.setText(_f(a.get("sxs_pct")))
         self.fLen.setText(_f(a.get("length_m")))
+        self.sample_fill(f)
         self.fTxt.setPlainText(a.get("teks") or "")
         self.bFAcc.setVisible(bool(a.get("_draft")))
         sk = f["kind"] == "skala"
         self.lenL.setVisible(sk)
         self.fLen.setVisible(sk)
+        self.sBox.setVisible(not sk and f["shape"] != "point")
         self.bSplit.setVisible(f["shape"] == "line")
         self.bJoin.setVisible(f["shape"] == "line")
         self.bVDel.setVisible(f["shape"] != "point")
@@ -1449,17 +1584,22 @@ class OutcropPage(QWidget):
         f = self.feat(self.tool.sel)
         if not f:
             return
-        a = {k: v for k, v in f["attrs"].items() if k not in ("_draft", "_pct", "_conf")}  # Simpan = menerima usulan
+        a = {k: v for k, v in f["attrs"].items() if k not in ("_draft", "_pct", "_conf", "au_ppm", "ag_ppm", "sxs_pct")}  # Simpan = menerima usulan
         try:
-            for k, e in (("au_ppm", self.fAu), ("ag_ppm", self.fAg), ("sxs_pct", self.fSxs), ("length_m", self.fLen)):
-                v = _num(e.text())
-                if v is None:
-                    a.pop(k, None)
-                else:
-                    a[k] = v
+            v = _num(self.fLen.text())
         except ValueError:
-            self.fErr.setText("Au, Ag, SxS dan panjang harus angka (koma atau titik desimal).")
+            self.fErr.setText("Panjang garis skala harus angka (koma atau titik desimal).")
             return
+        if v is None:
+            a.pop("length_m", None)
+        else:
+            a["length_m"] = v
+        if f["shape"] != "point" and f["kind"] != "skala":
+            sm = self.sample_read(f)
+            if sm:
+                a["samples"] = sm
+            else:
+                a.pop("samples", None)
         t = self.fTxt.toPlainText().strip()
         if t:
             a["teks"] = t
@@ -1570,6 +1710,7 @@ class OutcropPage(QWidget):
             p += "." + fmt
         SET.set("lastSaveDir", str(Path(p).parent))
         feats = [dict(f) for f in self.feats if not f["attrs"].get("_draft")]  # usulan belum diterima tidak ikut
+        els, chains = list(self.elements), self.chains()
         kmap, info, desc = dict(self.kmap), self.info(), dict(self.cur.get("desc") or {})
         mpp = self.m_per_px()
         w0 = self.cur["w"]
@@ -1577,12 +1718,207 @@ class OutcropPage(QWidget):
         self.toast("Menyusun infografis…", 6000)
 
         def work():
-            im = oc_paint.render(src, feats, kmap, info, desc, mpp, w0)
+            im = oc_paint.render(src, feats, kmap, info, desc, mpp, w0, elements=els, chains=chains)
             (oc_paint.save_png if fmt == "png" else lambda i, o: oc_paint.save_pdf(i, o, title))(im, p)
             return p
 
         run_bg(work, ok=lambda path: (self.toast("Tersimpan: " + path, 5000), show_in_folder(path), log("[singkapan] ekspor", path)),
                err=lambda e: say(self, "Gagal ekspor:\n" + e, warn=True))
+
+    # ---------------------------------------------------------------- unsur & sampel
+    def _elements(self, els) -> None:
+        if els:
+            self.elements = els
+        cur = self.iColor.currentData()
+        self.iColor.blockSignals(True)
+        self.iColor.clear()
+        self.iColor.addItem("tidak diwarnai", "")
+        for e in self.elements:
+            if e.get("classes"):
+                self.iColor.addItem(f"{e['key']} ({e['unit']}): " + " · ".join(l for l, _c in oc_paint.class_labels(e)), e["key"])
+        self.iColor.setCurrentIndex(max(0, self.iColor.findData(cur)))
+        self.iColor.blockSignals(False)
+
+    def chains(self) -> dict:
+        """Panjang tiap segmen garis dalam meter: dari georef (3D) bila ada, kalau tidak dari garis skala."""
+        out = {}
+        sol = self.geo_res.get("solution") or {}
+        meas = self.geo_res.get("measure") or {}
+        if sol.get("ok"):
+            for fid, m in meas.items():
+                if m.get("seg_m"):
+                    out[int(fid)] = m["seg_m"]
+        elif self.scale and self.cur:
+            w, h, k = self.cur["w"], self.cur["h"], self.scale["m_per_px"]
+            for f in self.feats:
+                if f["shape"] == "line":
+                    P = f["pts"]
+                    out[f["id"]] = [(((P[i + 1][0] - P[i][0]) * w) ** 2 + ((P[i + 1][1] - P[i][1]) * h) ** 2) ** 0.5 * k for i in range(len(P) - 1)]
+        return out
+
+    def _scols(self, f: dict) -> list[str]:
+        sm = oc_paint.samples_of(f["attrs"])
+        keys = [e["key"] for e in self.elements]
+        keys += [k for x in sm for k in (x.get("grades") or {}) if k not in keys]
+        return keys
+
+    def sample_fill(self, f: dict) -> None:
+        line = f["shape"] == "line"
+        keys = self._scols(f)
+        units = {e["key"]: e["unit"] for e in self.elements}
+        t = self.sT
+        t.blockSignals(True)
+        t.clear()
+        t.setColumnCount(3 + len(keys))
+        t.setHorizontalHeaderLabels(["Sample ID", "Dari m", "Ke m"] + [f"{k} {units.get(k, '')}".strip() for k in keys])
+        t.setColumnHidden(1, not line)
+        t.setColumnHidden(2, not line)
+        sm = oc_paint.samples_of(f["attrs"])
+        t.setRowCount(0)
+        for x in sm:
+            r = t.rowCount()
+            t.insertRow(r)
+            it = QTableWidgetItem(x.get("id") or "")
+            it.setData(Qt.UserRole, {k: x[k] for k in ("bu", "bv") if k in x})
+            t.setItem(r, 0, it)
+            t.setItem(r, 1, QTableWidgetItem("" if x.get("from") is None else f"{x['from']:g}"))
+            t.setItem(r, 2, QTableWidgetItem("" if x.get("to") is None else f"{x['to']:g}"))
+            for c, k in enumerate(keys):
+                v = (x.get("grades") or {}).get(k)
+                t.setItem(r, 3 + c, QTableWidgetItem("" if v is None else (v if isinstance(v, str) else f"{v:g}")))
+        if not sm and not line:
+            t.insertRow(0)
+        t.resizeColumnsToContents()
+        t.blockSignals(False)
+        L = None
+        m = (self.geo_res.get("measure") or {}).get(f["id"]) or {}
+        if m.get("length_m"):
+            L = f"panjang garis {m['length_m']:.2f} m (georef)"
+        elif line and f["id"] in self.chains():
+            L = f"panjang garis {sum(self.chains()[f['id']]):.2f} m (garis skala)"
+        warn = ""
+        if line and L:
+            tot = sum(m["seg_m"]) if m.get("seg_m") else sum(self.chains()[f["id"]])
+            far = max((x["to"] for _i, x in oc_paint.intervals(f["attrs"])), default=0)
+            if far > tot * 1.02:
+                warn = (f"<br><span style='color:{theme.C['er']}'>⚠ Interval terjauh {far:g} m melebihi panjang garis {tot:.2f} m: "
+                        "periksa dari–ke, garis skala / georef, atau panjangkan garis.</span>")
+        self.sHead.setText("<b>SAMPEL / KADAR</b> · " + ("interval dari–ke diukur dari ujung awal garis (titik pertama yang digambar)"
+                                                         + (f"; {L}" if L else "; tanpa georef / garis skala, garis dianggap sepanjang interval terjauh")
+                                                         if line else "satu sampel untuk fitur ini")
+                           + ". Nilai di bawah deteksi: tulis &lt;0.01." + warn)
+
+    def sample_read(self, f: dict) -> list[dict]:
+        keys = self._scols(f)
+        t = self.sT
+        out = []
+        for r in range(t.rowCount()):
+            def cell(c):
+                it = t.item(r, c)
+                return it.text().strip() if it else ""
+            g = {k: cell(3 + i) for i, k in enumerate(keys) if cell(3 + i)}
+            x = {"id": cell(0), "from": cell(1) or None, "to": cell(2) or None, "grades": g}
+            if f["shape"] != "line":
+                x["from"] = x["to"] = None
+            meta = t.item(r, 0).data(Qt.UserRole) if t.item(r, 0) else None
+            if isinstance(meta, dict):
+                x.update(meta)
+            if x["id"] or x["from"] or g:
+                out.append(x)
+        return out
+
+    def sample_add(self) -> None:
+        f = self.feat(self.tool.sel)
+        if not f:
+            return
+        t = self.sT
+        r = t.rowCount()
+        fr = to = ""
+        if f["shape"] == "line":
+            try:
+                last_to = float((t.item(r - 1, 2).text() if r and t.item(r - 1, 2) else "0").replace(",", ".") or 0)
+                last_fr = float((t.item(r - 1, 1).text() if r and t.item(r - 1, 1) else "0").replace(",", ".") or 0)
+            except ValueError:
+                last_to = last_fr = 0.0
+            step = (last_to - last_fr) if r and last_to > last_fr else 1.0
+            fr, to = f"{last_to:g}", f"{last_to + step:g}"
+        prev = t.item(r - 1, 0).text() if r and t.item(r - 1, 0) else ""
+        m = re.match(r"^(.*?)(\d+)$", prev)
+        nid = f"{m.group(1)}{int(m.group(2)) + 1:0{len(m.group(2))}d}" if m else ""
+        t.insertRow(r)
+        for c, v in enumerate((nid, fr, to)):
+            t.setItem(r, c, QTableWidgetItem(v))
+        t.setCurrentCell(r, 3 if nid else 0)
+
+    def sample_del(self) -> None:
+        r = self.sT.currentRow()
+        if r >= 0:
+            self.sT.removeRow(r)
+
+    def sample_paste(self) -> None:
+        f = self.feat(self.tool.sel)
+        if not f:
+            return
+        txt = QGuiApplication.clipboard().text() or ""
+        rows = [re.split(r"\t|;", ln) if ("\t" in ln or ";" in ln) else re.split(r"\s*,\s*|\s{2,}", ln.strip()) for ln in txt.splitlines() if ln.strip()]
+        if not rows:
+            say(self, "Clipboard kosong. Salin baris dari Excel: Sample ID, Dari, Ke, lalu kadar.", warn=True)
+            return
+        keys = self._scols(f)
+        line = f["shape"] == "line"
+        norm = lambda h: re.sub(r"[^a-z0-9]", "", re.sub(r"\(.*?\)|_?(ppm|ppb|pct|gpt|g/t|%)$", "", h.strip().lower()))  # noqa: E731
+        head = [norm(c) for c in rows[0]]
+        alias = {"sampleid": 0, "sample": 0, "id": 0, "sampel": 0, "noSampel".lower(): 0, "dari": 1, "from": 1, "ke": 2, "to": 2}
+        kn = {k.lower(): 3 + i for i, k in enumerate(keys)}
+        cols = [alias.get(h, kn.get(h)) for h in head]
+        if sum(c is not None for c in cols) >= 2 and not any(re.fullmatch(r"[<>]?\d+([.,]\d+)?", c.strip()) for c in rows[0][1:] if c.strip()):
+            rows = rows[1:]  # baris judul kolom
+        else:
+            cols = ([0, 1, 2] if line else [0]) + list(range(3, 3 + len(keys)))
+        t = self.sT
+        if t.rowCount() and not ask(self, f"Ganti {t.rowCount()} baris sampel yang ada dengan {len(rows)} baris dari clipboard?"):
+            return
+        t.setRowCount(0)
+        for cells in rows:
+            r = t.rowCount()
+            t.insertRow(r)
+            for c, v in zip(cols, cells):
+                if c is not None:
+                    t.setItem(r, c, QTableWidgetItem(v.strip()))
+        self.toast(f"{len(rows)} baris ditempel — periksa lalu Simpan")
+
+    def edit_elements(self) -> None:
+        d = ElementsDlg(self, self.elements)
+        if d.exec() != Dlg.Accepted:
+            return
+        try:
+            j = api.call("/core/outcrop/elements", {"folder": self.folder, "elements": d.result_elements(), "by": self.by()})
+        except api.ApiError as e:
+            say(self, "Daftar unsur tidak disimpan:\n" + str(e), warn=True)
+            return
+        self._elements(j["elements"])
+        self.feat_list()
+        self.canvas.update()
+
+    def export_samples(self) -> None:
+        if not self.folder:
+            return
+        p, _ = QFileDialog.getSaveFileName(self, "Ekspor tabel sampel", str(Path(SET.get("lastSaveDir", str(Path.home()))) / "sampel_singkapan.csv"), "CSV (*.csv)")
+        if not p:
+            return
+        if not p.lower().endswith(".csv"):
+            p += ".csv"
+        SET.set("lastSaveDir", str(Path(p).parent))
+        try:
+            data = api.call("/core/outcrop/export/samples", {"folder": self.folder, "ids": []})
+            tmp = Path(p + ".tmp")
+            tmp.write_bytes(data)
+            tmp.replace(p)
+        except (api.ApiError, OSError) as e:
+            say(self, "Gagal ekspor:\n" + str(e), warn=True)
+            return
+        self.toast("Tabel sampel tersimpan: " + p, 5000)
+        show_in_folder(p)
 
     # ---------------------------------------------------------------- usulan otomatis
     def auto_propose(self) -> None:

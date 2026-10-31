@@ -38,6 +38,132 @@ def grade_lines(a: dict) -> list[str]:
     return out
 
 
+# ---------------------------------------------------------------- kadar multi-unsur & interval sampel
+# warna kelas kadar menurut jumlah kelas (rendah -> tinggi); kuning dihindari agar tidak tertukar dengan garis channel
+CLASS_SETS = {1: ["#2f9e44"], 2: ["#2f9e44", "#e03131"], 3: ["#2f9e44", "#f76707", "#e03131"],
+              4: ["#1971c2", "#2f9e44", "#f76707", "#e03131"], 5: ["#1971c2", "#2f9e44", "#f76707", "#e03131", "#9c36b5"]}
+LEGACY = {"au_ppm": "Au", "ag_ppm": "Ag", "sxs_pct": "SxS"}
+DEFAULT_ELEMENTS = [{"key": "Au", "unit": "ppm", "dec": 2, "show": True, "classes": [0.2, 0.5, 1.0]},
+                    {"key": "Ag", "unit": "ppm", "dec": 1, "show": True, "classes": []},
+                    {"key": "SxS", "unit": "%", "dec": 2, "show": True, "classes": []}]
+
+
+def samples_of(a: dict) -> list[dict]:
+    sm = a.get("samples")
+    if isinstance(sm, list) and sm:
+        return sm
+    g = {LEGACY[k]: a[k] for k in LEGACY if a.get(k) is not None}
+    return [{"id": "", "from": None, "to": None, "grades": g}] if g else []
+
+
+def intervals(a: dict) -> list[tuple[int, dict]]:
+    return [(i, x) for i, x in enumerate(samples_of(a)) if x.get("from") is not None]
+
+
+def gnum(v) -> float | None:
+    if v is None or v == "":
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    t = str(v).strip().replace(",", ".")
+    try:
+        return float(t[1:]) / 2 if t.startswith("<") else float(t[1:] if t.startswith(">") else t)
+    except ValueError:
+        return None
+
+
+def fmt_grade(v, e: dict | None) -> str:
+    if isinstance(v, str):
+        return v
+    d = int((e or {}).get("dec", 2))
+    t = f"{v:.{d}f}"
+    return t
+
+
+def unit_txt(v: str, unit: str) -> str:
+    return f"{v}%" if unit == "%" else f"{v} {unit}"
+
+
+def class_color(e: dict | None, v) -> str | None:
+    cl = (e or {}).get("classes") or []
+    x = gnum(v)
+    if not cl or x is None:
+        return None
+    i = sum(1 for t in cl if x >= t)
+    return CLASS_SETS[min(5, len(cl) + 1)][min(i, 4)]
+
+
+def class_labels(e: dict) -> list[tuple[str, str]]:
+    cl = e.get("classes") or []
+    if not cl:
+        return []
+    cols = CLASS_SETS[min(5, len(cl) + 1)]
+    f = lambda x: f"{x:g}"  # noqa: E731
+    labs = [f"< {f(cl[0])}"] + [f"{f(a)} – {f(b)}" for a, b in zip(cl, cl[1:])] + [f"≥ {f(cl[-1])}"]
+    return list(zip(labs, cols))
+
+
+def sample_lines(x: dict, elements: list[dict], show_ids: bool = True) -> list[str]:
+    out = []
+    if show_ids and (x.get("id") or x.get("from") is not None):
+        h = x.get("id") or ""
+        if x.get("from") is not None:
+            h = (h + "  " if h else "") + f"{x['from']:g}–{x['to']:g} m"
+        out.append(h)
+    g = x.get("grades") or {}
+    for e in elements:
+        if e.get("show") and g.get(e["key"]) is not None:
+            out.append(f"{e['key']}: " + unit_txt(fmt_grade(g[e["key"]], e), e["unit"]))
+    return out
+
+
+def composite(samples: list[dict]) -> dict:
+    iv = [x for x in samples if x.get("from") is not None]
+    if not iv:
+        return {}
+    out = {"from": min(x["from"] for x in iv), "to": max(x["to"] for x in iv), "length": sum(x["to"] - x["from"] for x in iv), "grades": {}}
+    for k in {k for x in iv for k in (x.get("grades") or {})}:
+        num = den = 0.0
+        for x in iv:
+            v = gnum((x.get("grades") or {}).get(k))
+            if v is not None:
+                num, den = num + v * (x["to"] - x["from"]), den + (x["to"] - x["from"])
+        if den > 0:
+            out["grades"][k] = num / den
+    return out
+
+
+def chainer(P: list[QPointF], seg_m: list[float] | None, total_hint: float):
+    """Fungsi jarak (m dari titik pertama) -> (titik, sudut segmen). seg_m = panjang tiap segmen dalam meter (georef /
+    garis skala); tanpa itu garis dianggap sepanjang interval terjauh (total_hint)."""
+    import math
+    px = [((P[i + 1].x() - P[i].x()) ** 2 + (P[i + 1].y() - P[i].y()) ** 2) ** 0.5 for i in range(len(P) - 1)]
+    if not seg_m or len(seg_m) != len(px) or sum(seg_m) <= 0:
+        k = (total_hint or 1.0) / (sum(px) or 1.0)
+        seg_m = [l * k for l in px]
+
+    def at(c: float):
+        acc = 0.0
+        for i, l in enumerate(seg_m):
+            if (acc + l >= c or i == len(seg_m) - 1) and l > 0:
+                t = max(0.0, min(1.0, (c - acc) / l))
+                a, b = P[i], P[i + 1]
+                return QPointF(a.x() + (b.x() - a.x()) * t, a.y() + (b.y() - a.y()) * t), math.atan2(b.y() - a.y(), b.x() - a.x())
+            acc += l
+        return P[-1], 0.0
+
+    def sub(c0: float, c1: float) -> list[QPointF]:
+        out = [at(c0)[0]]
+        acc = 0.0
+        for i, l in enumerate(seg_m):
+            acc += l
+            if c0 < acc < c1 and i + 1 < len(P) - 1:
+                out.append(P[i + 1])
+        out.append(at(c1)[0])
+        return out
+    return at, sub, sum(seg_m)
+
+
 def centroid(pts: list[QPointF]) -> QPointF:
     if len(pts) < 3:
         return QPointF(sum(p.x() for p in pts) / len(pts), sum(p.y() for p in pts) / len(pts))
@@ -137,7 +263,7 @@ def nice_len(m: float) -> float:
 def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict, info: dict, *, desc: dict | None = None,
                 m_per_unit: float | None = None, sel: int | None = None, sel_vertex: int | None = None, handle: float = 0,
                 hide: set | None = None, draft: list | None = None, draft_kind: dict | None = None, boxes_out: list | None = None,
-                show_info: bool = True) -> None:
+                show_info: bool = True, elements: list | None = None, chains: dict | None = None) -> None:
     """Gambar seluruh lapisan dalam koordinat gambar W x H.
     m_per_unit: meter per satuan gambar ini (untuk bar skala), sel / sel_vertex / handle / draft: hanya untuk editor.
     boxes_out: diisi [(fid, QRectF)] kotak kadar / label agar bisa digeser di editor."""
@@ -146,6 +272,12 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
     p.setRenderHint(QPainter.Antialiasing)
     p.setRenderHint(QPainter.TextAntialiasing)
     hide = hide or set()
+    elements = elements or DEFAULT_ELEMENTS
+    emap = {e["key"]: e for e in elements}
+    ckey = info.get("grade_color") or ""
+    cel = emap.get(ckey)
+    show_ids = info.get("show_ids", True)
+    later: list = []  # kotak kadar digambar setelah semua garis agar tidak tertimpa
     # ---- fitur
     for f in feats:
         if f["id"] in hide:
@@ -211,18 +343,77 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
         if f["kind"] == "skala" and f["attrs"].get("length_m"):
             a = anchor(f, W, H)
             _halo(p, a.x(), a.y() - 14 * U, f"{fmtv(f['attrs']['length_m'])} m", 12 * U)
-        # kotak kadar (template trenching)
-        if show_info and tpl == "trench" and f["shape"] != "point":
-            lines = grade_lines(f["attrs"])
+        # kadar per interval di garis channel / trenching
+        iv = intervals(f["attrs"]) if f["shape"] == "line" else []
+        if show_info and tpl == "trench" and iv:
+            import math
+            at, sub, _tot = chainer(P, (chains or {}).get(f["id"]), max(x["to"] for _i, x in iv))
+            if cel:  # warnai segmen interval menurut kelas kadar
+                for _i, x in iv:
+                    cc = class_color(cel, (x.get("grades") or {}).get(ckey))
+                    if cc:
+                        seg = QPolygonF(sub(x["from"], x["to"]))
+                        p.setPen(QPen(QColor("#141a26"), 10.0 * U, Qt.SolidLine, Qt.FlatCap, Qt.RoundJoin))
+                        p.drawPolyline(seg)
+                        p.setPen(QPen(QColor(cc), 6.4 * U, Qt.SolidLine, Qt.FlatCap, Qt.RoundJoin))
+                        p.drawPolyline(seg)
+            for c in sorted({x["from"] for _i, x in iv} | {x["to"] for _i, x in iv}):
+                q, ang = at(c)
+                n = QPointF(-math.sin(ang), math.cos(ang))
+                a, b = QPointF(q.x() - n.x() * 11 * U, q.y() - n.y() * 11 * U), QPointF(q.x() + n.x() * 11 * U, q.y() + n.y() * 11 * U)
+                p.setPen(QPen(QColor("#141a26"), 4.6 * U, Qt.SolidLine, Qt.FlatCap))
+                p.drawLine(a, b)
+                p.setPen(QPen(QColor("#ffffff"), 2.2 * U, Qt.SolidLine, Qt.FlatCap))
+                p.drawLine(a, b)
+            for j, (i, x) in enumerate(iv):
+                lines = sample_lines(x, elements, show_ids)
+                if not lines:
+                    continue
+                q, ang = at((x["from"] + x["to"]) / 2)
+                n = QPointF(-math.sin(ang), math.cos(ang))
+                if n.y() > 0:
+                    n = QPointF(-n.x(), -n.y())  # sisi atas garis lebih dulu
+                if j % 2:
+                    n = QPointF(-n.x(), -n.y())
+                if x.get("bu") is not None and x.get("bv") is not None:
+                    c = QPointF(x["bu"] * W, x["bv"] * H)
+                else:
+                    d = 0.15 * H
+                    c = QPointF(min(W * 0.93, max(W * 0.07, q.x() + n.x() * d)), min(H * 0.88, max(H * 0.14, q.y() + n.y() * d)))
+                cc = class_color(cel, (x.get("grades") or {}).get(ckey)) if cel else None
+
+                def draw_box(q=q, c=c, lines=lines, cc=cc, fid=f["id"], key=f"s{i}"):
+                    p.setPen(QPen(QColor("#141a26"), 3.6 * U, Qt.DashLine))
+                    p.drawLine(q, c)
+                    p.setPen(QPen(QColor("#f2c230"), 2.0 * U, Qt.DashLine))
+                    p.drawLine(q, c)
+                    r = _box(p, c, lines, 13 * U, align=Qt.AlignLeft)
+                    if cc:
+                        p.setPen(QPen(QColor(cc), 3.2 * U))
+                        p.setBrush(Qt.NoBrush)
+                        p.drawRect(r.adjusted(-1.6 * U, -1.6 * U, 1.6 * U, 1.6 * U))
+                    if boxes_out is not None:
+                        boxes_out.append((fid, r, key))
+                later.append(draw_box)
+        # kotak kadar satu sampel (template trenching)
+        elif show_info and tpl == "trench" and f["shape"] != "point":
+            sm = samples_of(f["attrs"])
+            lines = (sample_lines(sm[0], elements, show_ids) if sm else []) + \
+                [t for t in str(f["attrs"].get("teks") or "").splitlines() if t.strip()]
             if lines:
                 a = anchor(f, W, H)
                 bu, bv = f["attrs"].get("box_u"), f["attrs"].get("box_v")
                 c = QPointF(bu * W, bv * H) if bu is not None and bv is not None else QPointF(a.x(), min(H * 0.86, a.y() + 0.16 * H))
-                p.setPen(QPen(QColor("#f2c230"), 2.0 * U, Qt.DashLine))
-                p.drawLine(a, c)
-                r = _box(p, c, lines, 14 * U)
-                if boxes_out is not None:
-                    boxes_out.append((f["id"], r, "box"))
+
+                def draw_one(a=a, c=c, lines=lines, fid=f["id"]):
+                    p.setPen(QPen(QColor("#f2c230"), 2.0 * U, Qt.DashLine))
+                    p.drawLine(a, c)
+                    r = _box(p, c, lines, 14 * U)
+                    if boxes_out is not None:
+                        boxes_out.append((fid, r, "box"))
+                later.append(draw_one)
+    for fn in later:
+        fn()
     # ---- garis yang sedang digambar
     if draft:
         k = draft_kind or {"color": "#ffd43b", "shape": "line"}
@@ -257,9 +448,21 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             p.setFont(_font(14 * U, bold=False))
             p.drawText(QRectF(0, 40 * U, W, 22 * U), Qt.AlignCenter, info["subtitle"])
     # ---- kotak komposit
-    if tpl == "trench" and info.get("composite"):
+    comp = [x for x in str(info.get("composite") or "").splitlines() if x.strip()]
+    if tpl == "trench" and info.get("auto_comp", True):
+        for f in feats:
+            if f["shape"] != "line" or (f.get("attrs") or {}).get("_draft") or f["id"] in hide:
+                continue
+            cp = composite(samples_of(f["attrs"]))
+            if not cp or len(intervals(f["attrs"])) < 2:
+                continue
+            g = [f"{e['key']} " + unit_txt(fmt_grade(cp["grades"][e["key"]], e), e["unit"]) for e in elements
+                 if e.get("show") and e["key"] in cp["grades"]]
+            nm = f.get("name") or (kinds.get(f["kind"]) or {}).get("name", "")
+            comp.append(f"Komposit {nm} {cp['length']:g} m" + (": " + " · ".join(g) if g else ""))
+    if tpl == "trench" and comp:
         cu, cv = info.get("comp_u", 0.5), info.get("comp_v", 0.92)
-        r = _box(p, QPointF(cu * W, cv * H), [x for x in str(info["composite"]).splitlines() if x.strip()] or ["-"], 16 * U, align=Qt.AlignHCenter)
+        r = _box(p, QPointF(cu * W, cv * H), comp, 16 * U, align=Qt.AlignHCenter)
         if boxes_out is not None:
             boxes_out.append((-1, r, "comp"))
     # ---- deskripsi ringkas (template dinding)
@@ -288,11 +491,16 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
         for f in feats:
             if f["kind"] not in NO_LEGEND and f["kind"] not in used and not (f.get("attrs") or {}).get("_draft"):
                 used.append(f["kind"])
-        if used:
+        names = [(kinds.get(k) or {"name": k, "color": "#7a5aa6", "shape": "line"}) for k in used]
+        if tpl == "trench" and cel and cel.get("classes") and any(
+                (x.get("grades") or {}).get(ckey) is not None for f in feats if not (f.get("attrs") or {}).get("_draft")
+                for _i, x in (intervals(f["attrs"]) if f["shape"] == "line" else [])):
+            names = names + [{"name": f"{ckey} ({cel['unit']})", "shape": "head"}] + \
+                [{"name": lab, "color": col, "shape": "class"} for lab, col in class_labels(cel)]
+        if names:
             fh = 12.5 * U
             fnt = _font(fh, bold=False)
             fm = QFontMetricsF(fnt)
-            names = [(kinds.get(k) or {"name": k, "color": "#7a5aa6", "shape": "line"}) for k in used]
             w = max(fm.horizontalAdvance(n["name"]) for n in names) + 44 * U
             h = fm.height() * 1.25 * len(names) + 14 * U
             pos = info.get("legend_pos") or "bl"
@@ -305,7 +513,16 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             p.setFont(fnt)
             for i, n in enumerate(names):
                 y = y0 + 7 * U + i * fm.height() * 1.25 + fm.height() * 0.62
-                if n.get("shape") == "poly":
+                if n.get("shape") == "head":
+                    p.setFont(_font(fh))
+                    p.setPen(QColor("#141a26"))
+                    p.drawText(QRectF(x0 + 8 * U, y - fm.height() / 2, w, fm.height()), Qt.AlignVCenter | Qt.AlignLeft, n["name"])
+                    p.setFont(fnt)
+                    continue
+                if n.get("shape") == "class":
+                    p.setPen(QPen(QColor(n["color"]), 7 * U, Qt.SolidLine, Qt.FlatCap))
+                    p.drawLine(QPointF(x0 + 8 * U, y), QPointF(x0 + 30 * U, y))
+                elif n.get("shape") == "poly":
                     c = QColor(n["color"])
                     c.setAlphaF(0.45)
                     p.setBrush(c)
@@ -346,12 +563,13 @@ def load_image(path: str | Path, max_side: int = 0) -> QImage:
 
 
 def render(path: str | Path, feats: list[dict], kinds: dict, info: dict, desc: dict | None, m_per_px: float | None,
-           orig_w: int, max_side: int = 6000) -> QImage:
+           orig_w: int, max_side: int = 6000, elements: list | None = None, chains: dict | None = None) -> QImage:
     im = load_image(path, max_side).convertToFormat(QImage.Format_RGB32)
     W, H = im.width(), im.height()
     p = QPainter(im)
     try:
-        paint_scene(p, W, H, feats, kinds, info, desc=desc, m_per_unit=(m_per_px * orig_w / W) if m_per_px else None)
+        paint_scene(p, W, H, feats, kinds, info, desc=desc, m_per_unit=(m_per_px * orig_w / W) if m_per_px else None,
+                    elements=elements, chains=chains)
     finally:
         p.end()
     return im

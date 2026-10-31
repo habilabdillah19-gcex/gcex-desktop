@@ -205,12 +205,24 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
      - *Zona warna (cepat, tanpa AI)*: foto dibagi menjadi beberapa zona menurut warna (atur *zona*: 2 = oksida vs segar, 3–4 bila ada beberapa zona). Zona merah / coklat / kuning diberi jenis *Zona oksida / gossan*, lainnya *Zona litologi*. Langit, vegetasi, orang dan bayangan bisa ikut menjadi zona: hapus saja.
      - *AI vision (Ollama)*: model vision mengusulkan kontak, sesar, kekar, vein dan zona beserta jenis & namanya (20–120 detik). Hasil bergantung model; model yang mendukung *grounding* (mis. keluarga Qwen-VL) paling baik. Catatan tambahan di panel AI ikut dikirim.
      - Usulan tampil **titik-titik** dan bertanda *◌ usulan* di daftar. Usulan **tidak ikut** legenda, ekspor PNG / PDF, maupun STR / DXF sampai diterima. Edit seperti fitur biasa (geser / sisip / hapus titik, ganti jenis & nama), lalu **✓ Terima usulan** atau **Simpan** (Simpan juga menerima). **Terima semua** / **Buang semua** untuk seluruh usulan di foto. Menjalankan ulang satu cara mengganti usulan lama dari cara itu saja.
-   - Kadar **Au / Ag / SxS** dan *Teks lain* diisi manual per fitur (mis. channel sampel atau zona).
+   - **Sampel / kadar** (tabel di form fitur) — kadar diisi manual atau ditempel dari Excel:
+     - **Garis channel / trenching** dibagi menjadi beberapa **interval**: tiap baris = *Sample ID, Dari m, Ke m* lalu kadar per unsur. Jarak *dari–ke* diukur dari ujung awal garis (titik pertama yang digambar). **+ Interval** menambah baris yang melanjutkan *ke* terakhir dan menaikkan nomor sampel. Panjang garis diambil dari georef (3D) atau garis skala; tanpa keduanya garis dianggap sepanjang interval terjauh. Bila interval lebih panjang dari garis, muncul peringatan merah.
+     - **Zona / poligon** dan garis tanpa interval memakai satu baris sampel tanpa dari–ke.
+     - **Tempel dari Excel**: salin baris dengan kolom *Sample ID, Dari, Ke*, lalu kadar. Bila baris judul kolom ikut disalin (mis. `Au (ppm)`, `Ag_ppm`, `SxS %`), kolom dicocokkan menurut nama unsur; tanpa judul, urutannya mengikuti tabel.
+     - Nilai di bawah batas deteksi ditulis `<0.01` (dihitung setengah batas deteksi di komposit); desimal boleh koma. Interval tidak boleh tumpang-tindih, Sample ID tidak boleh kembar.
+   - *Teks lain* menambah baris bebas di kotak kadar fitur zona / satu sampel.
    - **Atur jenis fitur & nomor string…** — ubah nama, warna dan nomor string Surpac per jenis, atau tambah jenis sendiri (mis. dike). Satu nomor string untuk satu jenis.
 4. **Infografis** — pilih template:
    - *Trenching / channel (dengan kadar)*: pita judul kuning, kotak kadar per fitur (tarik kotaknya untuk memindahkan), kotak komposit, legenda, bar skala.
    - *Mapping dinding (tanpa kadar)*: pita judul navy, legenda, bar skala, strip deskripsi ringkas (litologi, alterasi, pelapukan, vein, struktur, GSI).
    - *Overlay saja*: garis & poligon tanpa judul.
+
+   **Kadar di template Trenching**:
+   - garis berinterval mendapat tanda batas interval dan **satu kotak kadar per sampel** (Sample ID, dari–ke, unsur yang dicentang), ditempatkan di atas / bawah garis bergantian; tarik kotaknya untuk memindahkan;
+   - **Warnai interval menurut** satu unsur: segmen garis & bingkai kotak diberi warna kelas kadar, kelasnya masuk legenda;
+   - **Komposit otomatis**: rata-rata tertimbang panjang per unsur untuk tiap garis berinterval, ditambahkan ke kotak komposit (teks bebas tetap bisa diisi);
+   - **Atur unsur & kelas warna…**: daftar unsur (bawaan Au, Ag, Cu, Pb, Zn, As, S, SxS, C), satuan (ppm, ppb, %, g/t, oz/t), desimal, *Tampil* di kotak kadar, batas kelas (mis. `0.2; 0.5; 1`). Kadar semua unsur tetap tersimpan & ikut ekspor walau tidak ditampilkan;
+   - **⇩ Tabel sampel (CSV)**: semua sampel di semua foto (Sample ID, dari, ke, panjang, koordinat E/N/RL awal & akhir bila foto digeoreferensi, kadar, baris KOMPOSIT per garis) untuk Excel / database assay.
 
    **Ekspor PNG / PDF** memakai foto resolusi penuh (maks. 6000 px) dan sama persis dengan tampilan di layar.
 
@@ -221,7 +233,7 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
    - Hasil: metode, RMS (m), orientasi bidang (dip → arah dip), skala di tengah foto, dan peringatan (titik segaris, titik menyimpang dari bidang, jenis bidang tidak cocok).
    - **Ukuran 3D** tampil di form fitur (tab Fitur): panjang 3D dan *apparent dip* (ujung ke ujung) untuk garis, luas & keliling untuk poligon.
 6. **Ekspor digitasi 3D** (tab Georef) — **STR** Surpac atau **DXF** R12, untuk foto ini atau semua foto (foto yang belum digeoreferensi dilewati dan disebutkan).
-   - STR: kolom Y = northing, X = easting, Z = RL; nomor string per jenis fitur (Atur jenis fitur & nomor string…); D1 jenis, D2 nama fitur, D3 judul foto, lalu kadar (`au=`, `ag=`, `sxs=`). Poligon ditutup; label menjadi titik tunggal; garis skala tidak ikut.
+   - STR: kolom Y = northing, X = easting, Z = RL; nomor string per jenis fitur (Atur jenis fitur & nomor string…); D1 jenis, D2 Sample ID (atau nama fitur), D3 judul foto, lalu dari–ke dan kadar (`Au=1.03`, `Ag=4`, …). Garis berinterval diekspor **satu segmen per interval sampel**. Poligon ditutup; label menjadi titik tunggal; garis skala tidak ikut.
    - DXF: satu layer per jenis fitur (warna mengikuti pustaka), 3D polyline, nama fitur sebagai TEXT.
    - Koordinat berada **di bidang foto**: tonjolan / cekungan singkapan tidak terukur, jadi hasilnya sebaik kerataan dinding dan sebaran titik kontrol.
 

@@ -716,3 +716,11 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Tab Fitur › **Usulan otomatis**: *Zona warna* (tanpa AI, beberapa detik) membagi foto menjadi zona oksida / gossan vs batuan segar; *AI vision* (Ollama) mengusulkan kontak, sesar, kekar, vein dan zona beserta jenisnya.
 - Usulan berupa draf titik-titik yang tidak ikut legenda / ekspor sampai diterima: edit, lalu **✓ Terima usulan** / Simpan, atau **Terima semua** / **Buang semua**.
 - Panduan: PANDUAN_CORE bagian 6c langkah 3.
+
+## 61. Core-Ex 0.28.0 — Singkapan: kadar multi-unsur per interval (Core-Ex versi Qt)
+
+- Fitur baru hanya di **Core-Ex versi Qt** (installer uji di pre-release `core-ex-qt-uji`); Core-Ex Electron di Release tidak berubah.
+- Tabel **Sampel / kadar** di form fitur menggantikan kolom tetap Au / Ag / SxS: garis channel / trenching dibagi interval *dari–ke* (m), zona memakai satu sampel; isi manual atau tempel dari Excel (judul kolom dicocokkan menurut unsur), nilai `<0.01` diterima. Data lama Au / Ag / SxS terbaca otomatis.
+- Infografis Trenching: kotak kadar per interval (bisa ditarik), tanda batas interval, warna segmen menurut kelas kadar satu unsur + legenda kelas, komposit otomatis tertimbang panjang.
+- **Atur unsur & kelas warna** (satuan, desimal, tampil, batas kelas) dan **⇩ Tabel sampel (CSV)**. Ekspor STR / DXF: satu segmen per interval dengan Sample ID & kadar semua unsur.
+- Panduan: PANDUAN_CORE bagian 6c langkah 3–4.

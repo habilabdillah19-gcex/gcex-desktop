@@ -330,6 +330,186 @@ def _clean_pts(shape: str, pts: Any) -> list[list[float]]:
 ATTR_NUM = ("au_ppm", "ag_ppm", "sxs_pct", "length_m")
 
 
+# ---------------------------------------------------------------- unsur assay & sampel per interval
+# Kadar diisi manual / ditempel per sampel. Garis channel / trenching boleh dibagi menjadi beberapa interval
+# (dari-ke meter dari ujung awal garis); poligon / garis tanpa interval memakai satu sampel tanpa dari-ke.
+# Nilai: angka, atau teks "<0.01" / ">100" (di bawah / di atas batas deteksi); hitungan memakai setengah batas
+# deteksi untuk "<" dan batasnya untuk ">".
+UNITS = ["ppm", "ppb", "%", "g/t", "oz/t"]
+DEFAULT_ELEMENTS = [
+    {"key": "Au", "unit": "ppm", "dec": 2, "show": True, "classes": [0.2, 0.5, 1.0]},
+    {"key": "Ag", "unit": "ppm", "dec": 1, "show": True, "classes": []},
+    {"key": "Cu", "unit": "ppm", "dec": 0, "show": False, "classes": []},
+    {"key": "Pb", "unit": "ppm", "dec": 0, "show": False, "classes": []},
+    {"key": "Zn", "unit": "ppm", "dec": 0, "show": False, "classes": []},
+    {"key": "As", "unit": "ppm", "dec": 0, "show": False, "classes": []},
+    {"key": "S", "unit": "%", "dec": 2, "show": False, "classes": []},
+    {"key": "SxS", "unit": "%", "dec": 2, "show": True, "classes": []},
+    {"key": "C", "unit": "%", "dec": 2, "show": False, "classes": []},
+]
+LEGACY = {"au_ppm": "Au", "ag_ppm": "Ag", "sxs_pct": "SxS"}
+MAX_SAMPLES = 300
+
+
+def elements(s: Store) -> list[dict]:
+    with s.conn() as c:
+        r = c.execute("SELECT value FROM meta WHERE key='elements'").fetchone()
+    if r:
+        try:
+            v = json.loads(r["value"])
+            if isinstance(v, list) and v:
+                return v
+        except ValueError:
+            pass
+    return [dict(e) for e in DEFAULT_ELEMENTS]
+
+
+def save_elements(s: Store, lst: list[dict], by: str) -> list[dict]:
+    clean, seen = [], set()
+    for e in lst:
+        key = re.sub(r"[^A-Za-z0-9_]", "", str(e.get("key") or ""))[:10]
+        if not key:
+            continue
+        if key.lower() in seen:
+            raise ValueError(f"Unsur {key} tercantum dua kali.")
+        seen.add(key.lower())
+        unit = e.get("unit") if e.get("unit") in UNITS else "ppm"
+        try:
+            dec = max(0, min(4, int(e.get("dec", 2))))
+        except (TypeError, ValueError):
+            dec = 2
+        cl = e.get("classes") or []
+        if isinstance(cl, str):
+            cl = [x for x in re.split(r"[;\s]+", cl.replace(",", ".")) if x]
+        try:
+            cl = [float(x) for x in cl]
+        except (TypeError, ValueError):
+            raise ValueError(f"Batas kelas {key} harus angka, dipisah titik koma (mis. 0.2; 0.5; 1).") from None
+        if any(b <= a for a, b in zip(cl, cl[1:])):
+            raise ValueError(f"Batas kelas {key} harus naik (mis. 0.2; 0.5; 1).")
+        if len(cl) > 4:
+            raise ValueError(f"Batas kelas {key} maksimal 4 (5 kelas warna).")
+        clean.append({"key": key, "unit": unit, "dec": dec, "show": bool(e.get("show")), "classes": cl})
+    if not clean:
+        raise ValueError("Daftar unsur kosong.")
+    with s.lock, s.conn() as c:
+        old = c.execute("SELECT value FROM meta WHERE key='elements'").fetchone()
+        c.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('elements', ?)", (json.dumps(clean, ensure_ascii=False),))
+        c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (NULL,'daftar unsur',?,?, 'edit', ?, ?)",
+                  (old["value"] if old else None, json.dumps(clean, ensure_ascii=False), by, core_io.now()))
+    return elements(s)
+
+
+def grade_num(v: Any) -> Optional[float]:
+    if v is None or v == "":
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    t = str(v).strip().replace(",", ".")
+    if t.startswith("<"):
+        return float(t[1:]) / 2
+    if t.startswith(">"):
+        return float(t[1:])
+    return float(t)
+
+
+def _clean_grade(k: str, v: Any) -> Any:
+    if v is None or (isinstance(v, str) and not v.strip()):
+        return None
+    if isinstance(v, (int, float)):
+        x = float(v)
+    else:
+        t = str(v).strip().replace(",", ".").replace(" ", "")
+        if t[:1] in "<>":
+            try:
+                if float(t[1:]) <= 0:
+                    raise ValueError
+            except ValueError:
+                raise ValueError(f"Nilai {k} '{v}' tidak dikenal; pakai angka atau <batas deteksi (mis. <0.01).") from None
+            return t
+        try:
+            x = float(t)
+        except ValueError:
+            raise ValueError(f"Nilai {k} '{v}' harus angka atau <batas deteksi (mis. <0.01).") from None
+    if x < 0:
+        raise ValueError(f"Nilai {k} tidak boleh negatif (pakai <batas deteksi untuk di bawah deteksi).")
+    return x
+
+
+def _clean_samples(lst: Any) -> list[dict]:
+    if not isinstance(lst, list):
+        raise ValueError("Data sampel harus berupa daftar.")
+    if len(lst) > MAX_SAMPLES:
+        raise ValueError(f"Maksimal {MAX_SAMPLES} sampel per fitur.")
+    out = []
+    for i, x in enumerate(lst):
+        if not isinstance(x, dict):
+            continue
+        sid = str(x.get("id") or "").strip()[:40]
+        lab = sid or f"baris {i + 1}"
+        fr, to = x.get("from"), x.get("to")
+        try:
+            fr = None if fr in (None, "") else float(str(fr).replace(",", "."))
+            to = None if to in (None, "") else float(str(to).replace(",", "."))
+        except ValueError:
+            raise ValueError(f"Sampel {lab}: dari / ke harus angka (meter).") from None
+        if (fr is None) != (to is None):
+            raise ValueError(f"Sampel {lab}: isi dari DAN ke (meter), atau kosongkan keduanya.")
+        if fr is not None and (fr < 0 or to <= fr):
+            raise ValueError(f"Sampel {lab}: 'ke' harus lebih besar dari 'dari' ({fr:g} - {to:g} m).")
+        g = {}
+        for k, v in (x.get("grades") or {}).items():
+            k = re.sub(r"[^A-Za-z0-9_]", "", str(k))[:10]
+            cv = _clean_grade(k, v)
+            if k and cv is not None:
+                g[k] = cv
+        if not sid and fr is None and not g:
+            continue  # baris kosong
+        q: dict[str, Any] = {"id": sid, "from": fr, "to": to, "grades": g}
+        for k in ("bu", "bv"):
+            if isinstance(x.get(k), (int, float)):
+                q[k] = max(0.0, min(1.0, round(float(x[k]), 4)))
+        out.append(q)
+    iv = sorted((q for q in out if q["from"] is not None), key=lambda q: q["from"])
+    for a, b in zip(iv, iv[1:]):
+        if b["from"] < a["to"] - 1e-6:
+            raise ValueError(f"Interval {a['id'] or ''} ({a['from']:g}-{a['to']:g} m) dan {b['id'] or ''} ({b['from']:g}-{b['to']:g} m) tumpang-tindih.")
+    ids = [q["id"] for q in out if q["id"]]
+    dup = {x for x in ids if ids.count(x) > 1}
+    if dup:
+        raise ValueError("Sample ID kembar: " + ", ".join(sorted(dup)))
+    return iv + [q for q in out if q["from"] is None]
+
+
+def samples_of(attrs: dict) -> list[dict]:
+    """Sampel fitur; atribut lama (au_ppm / ag_ppm / sxs_pct) dibaca sebagai satu sampel."""
+    sm = attrs.get("samples")
+    if isinstance(sm, list) and sm:
+        return sm
+    g = {LEGACY[k]: attrs[k] for k in LEGACY if attrs.get(k) is not None}
+    return [{"id": "", "from": None, "to": None, "grades": g}] if g else []
+
+
+def composite(samples: list[dict]) -> dict:
+    """Rata-rata tertimbang panjang per unsur untuk interval yang punya dari-ke (nilai <DL = setengah DL)."""
+    iv = [x for x in samples if x.get("from") is not None]
+    if not iv:
+        return {}
+    out: dict[str, Any] = {"from": min(x["from"] for x in iv), "to": max(x["to"] for x in iv), "length": sum(x["to"] - x["from"] for x in iv),
+                           "n": len(iv), "grades": {}}
+    keys = {k for x in iv for k in x["grades"]}
+    for k in sorted(keys):
+        num = den = 0.0
+        for x in iv:
+            v = grade_num(x["grades"].get(k))
+            if v is not None:
+                L = x["to"] - x["from"]
+                num, den = num + v * L, den + L
+        if den > 0:
+            out["grades"][k] = num / den
+    return out
+
+
 def _clean_attrs(a: Any) -> dict:
     if not isinstance(a, dict):
         return {}
@@ -337,6 +517,12 @@ def _clean_attrs(a: Any) -> dict:
     for k, v in a.items():
         k = str(k)[:40]
         if v is None or (isinstance(v, str) and not v.strip()):
+            continue
+        if k == "samples":
+            v = _clean_samples(v)
+            if not v:
+                continue
+            out[k] = v
             continue
         if k in ATTR_NUM:
             try:
@@ -615,7 +801,7 @@ def _summary(s: Store) -> dict:
 @router.post("/open")
 def api_open(b: FBody) -> dict:
     s = store(b.folder)
-    return {"ok": True, "photos": photos(s), "kinds": kinds(s), "desc_fields": [{"key": k, "label": l} for k, l in DESC],
+    return {"ok": True, "photos": photos(s), "kinds": kinds(s), "elements": elements(s), "desc_fields": [{"key": k, "label": l} for k, l in DESC],
             "summary": _summary(s), "root": str(s.root)}
 
 
@@ -846,7 +1032,8 @@ def measure(sol: dict, w: int, h: int, f: dict) -> dict:
     P = np.array(to_world(sol, w, h, f["pts"]))
     m: dict[str, Any] = {}
     if f["shape"] == "line" and len(P) >= 2:
-        m["length_m"] = float(sum(np.linalg.norm(P[i + 1] - P[i]) for i in range(len(P) - 1)))
+        m["seg_m"] = [float(np.linalg.norm(P[i + 1] - P[i])) for i in range(len(P) - 1)]
+        m["length_m"] = float(sum(m["seg_m"]))
         d = P[-1] - P[0]
         hz = math.hypot(d[0], d[1])
         if hz > 1e-6 or abs(d[2]) > 1e-6:
@@ -931,9 +1118,19 @@ def export_items(s: Store, ids: list[int]) -> tuple[list[dict], list[str]]:
             if f["kind"] in NO_EXPORT or (f.get("attrs") or {}).get("_draft"):
                 continue  # garis skala & usulan yang belum diterima tidak ikut
             k = ks.get(f["kind"]) or {"name": f["kind"], "string": 50, "color": "#7a5aa6"}
-            items.append({"photo": r.get("title") or r["name"], "kind": f["kind"], "kname": k["name"], "string": int(k["string"]),
-                          "color": k["color"], "shape": f["shape"], "name": f.get("name") or "", "attrs": f["attrs"],
-                          "xyz": to_world(sol, r["w"], r["h"], f["pts"])})
+            xyz = to_world(sol, r["w"], r["h"], f["pts"])
+            base = {"photo": r.get("title") or r["name"], "kind": f["kind"], "kname": k["name"], "string": int(k["string"]),
+                    "color": k["color"], "shape": f["shape"], "name": f.get("name") or "", "attrs": f["attrs"], "xyz": xyz, "fid": f["id"]}
+            sm = samples_of(f["attrs"])
+            iv = [x for x in sm if x.get("from") is not None]
+            if f["shape"] == "line" and iv:
+                # satu segmen per interval sampel (dari-ke diukur sepanjang garis 3D dari ujung awal)
+                for x in iv:
+                    seg = chain_slice(xyz, x["from"], x["to"])
+                    if len(seg) >= 2:
+                        items.append(dict(base, xyz=seg, sample=x))
+            else:
+                items.append(dict(base, sample=sm[0] if sm else None))
     return items, skipped
 
 
@@ -942,11 +1139,12 @@ def to_str(items: list[dict], name: str = "singkapan") -> bytes:
     L = [f"{_clean_txt(name) or 'singkapan'},{time.strftime('%d-%b-%y')},Core-Ex singkapan,", "0, 0.000, 0.000, 0.000,"]
     for it in sorted(items, key=lambda x: x["string"]):
         pts = it["xyz"] + ([it["xyz"][0]] if it["shape"] == "poly" else [])
-        a = it["attrs"]
-        d = [_clean_txt(it["kname"]), _clean_txt(it["name"]), _clean_txt(it["photo"])]
-        for k in ("au_ppm", "ag_ppm", "sxs_pct"):
-            if a.get(k) is not None:
-                d.append(f"{k[:-4] if k != 'sxs_pct' else 'sxs'}={a[k]:g}")
+        sm = it.get("sample") or {}
+        d = [_clean_txt(it["kname"]), _clean_txt(sm.get("id") or it["name"]), _clean_txt(it["photo"])]
+        if sm.get("from") is not None:
+            d.append(f"{sm['from']:g}-{sm['to']:g}m")
+        for k, v in (sm.get("grades") or {}).items():
+            d.append(f"{k}={v:g}" if isinstance(v, float) else f"{k}={v}")
         for x, y, z in pts:
             L.append(f"{it['string']}, {y:.3f}, {x:.3f}, {z:.3f}, " + ", ".join(d))
         L.append("0, 0.000, 0.000, 0.000,")
@@ -989,9 +1187,10 @@ def to_dxf(items: list[dict]) -> bytes:
         for x, y, z in it["xyz"]:
             o += ["0", "VERTEX", "8", L, "10", f"{x:.3f}", "20", f"{y:.3f}", "30", f"{z:.3f}", "70", "32"]
         o += ["0", "SEQEND", "8", L]
-        if it["name"]:
+        lab = (it.get("sample") or {}).get("id") or it["name"]
+        if lab:
             x, y, z = it["xyz"][len(it["xyz"]) // 2]
-            o += ["0", "TEXT", "8", L, "10", f"{x:.3f}", "20", f"{y:.3f}", "30", f"{z:.3f}", "40", "0.3", "1", _clean_txt(it["name"])]
+            o += ["0", "TEXT", "8", L, "10", f"{x:.3f}", "20", f"{y:.3f}", "30", f"{z:.3f}", "40", "0.3", "1", _clean_txt(lab)]
     o += ["0", "ENDSEC", "0", "EOF"]
     return ("\r\n".join(o) + "\r\n").encode("ascii", "replace")
 
@@ -1033,6 +1232,100 @@ def api_export(b: ExpBody):
     if b.fmt == "dxf":
         return Response(to_dxf(items), media_type="application/dxf")
     return Response(to_str(items, b.name), media_type="text/plain")
+
+
+def chain_slice(xyz: list, a: float, b: float) -> list[list[float]]:
+    """Potongan polyline 3D dari jarak a sampai b (meter, diukur dari titik pertama)."""
+    P = [np.array(p, dtype=float) for p in xyz]
+    L = [float(np.linalg.norm(P[i + 1] - P[i])) for i in range(len(P) - 1)]
+    tot = sum(L)
+    a, b = max(0.0, min(a, tot)), max(0.0, min(b, tot))
+    if b - a < 1e-6:
+        return []
+
+    def at(c: float) -> np.ndarray:
+        acc = 0.0
+        for i, l in enumerate(L):
+            if acc + l >= c - 1e-9 and l > 0:
+                return P[i] + (P[i + 1] - P[i]) * ((c - acc) / l)
+            acc += l
+        return P[-1]
+    out = [at(a)]
+    acc = 0.0
+    for i, l in enumerate(L):
+        acc += l
+        if a < acc < b:
+            out.append(P[i + 1])
+    out.append(at(b))
+    return [[round(float(v), 3) for v in p] for p in out]
+
+
+def samples_csv(s: Store, ids: list[int]) -> bytes:
+    """Tabel sampel semua fitur (foto terpilih / semua): ID, dari, ke, panjang, koordinat awal-akhir (bila georef), kadar,
+    plus baris komposit per garis berinterval."""
+    import csv
+    import io
+    els = [e["key"] for e in elements(s)]
+    rows = []
+    extra: list[str] = []
+    for pid in ids or [p["id"] for p in photos(s)]:
+        r = photo(s, pid)
+        sol = georef_solve(r.get("georef"), r["w"], r["h"], plane_kind(r))
+        ok = bool(sol and sol.get("ok"))
+        ks = {k["key"]: k for k in kinds(s)}
+        for f in features(s, pid):
+            if (f.get("attrs") or {}).get(DRAFT):
+                continue
+            sm = samples_of(f["attrs"])
+            if not sm:
+                continue
+            xyz = to_world(sol, r["w"], r["h"], f["pts"]) if ok else None
+            kname = (ks.get(f["kind"]) or {}).get("name", f["kind"])
+            for x in sm:
+                for k in x["grades"]:
+                    if k not in els and k not in extra:
+                        extra.append(k)
+                c0 = c1 = None
+                if xyz and f["shape"] == "line" and x.get("from") is not None:
+                    seg = chain_slice(xyz, x["from"], x["to"])
+                    if seg:
+                        c0, c1 = seg[0], seg[-1]
+                rows.append((r.get("title") or r["name"], kname, f.get("name") or "", x, c0, c1))
+            cp = composite(sm)
+            if cp and len([x for x in sm if x.get("from") is not None]) > 1:
+                rows.append((r.get("title") or r["name"], kname, f.get("name") or "",
+                             {"id": "KOMPOSIT", "from": cp["from"], "to": cp["to"], "grades": cp["grades"], "_len": cp["length"]}, None, None))
+    keys = els + extra
+    b = io.StringIO()
+    w = csv.writer(b)
+    w.writerow(["Foto", "Jenis fitur", "Nama fitur", "Sample ID", "Dari (m)", "Ke (m)", "Panjang (m)", "E awal", "N awal", "RL awal",
+                "E akhir", "N akhir", "RL akhir"] + keys)
+
+    def num(v):
+        return "" if v is None else (f"{v:.4g}" if isinstance(v, float) else str(v))
+    for foto, kname, nm, x, c0, c1 in rows:
+        ln = x.get("_len", (x["to"] - x["from"]) if x.get("from") is not None else None)
+        w.writerow([foto, kname, nm, x.get("id") or "", num(x.get("from")), num(x.get("to")), num(ln)]
+                   + ([f"{v:.3f}" for v in c0] if c0 else ["", "", ""]) + ([f"{v:.3f}" for v in c1] if c1 else ["", "", ""])
+                   + [num(x["grades"].get(k)) for k in keys])
+    if not rows:
+        raise ValueError("Belum ada sampel / kadar yang diisi di fitur mana pun.")
+    return ("﻿" + b.getvalue()).encode("utf-8")
+
+
+class ElemBody(FBody):
+    elements: list[dict[str, Any]]
+
+
+@router.post("/elements")
+def api_elements(b: ElemBody) -> dict:
+    return {"ok": True, "elements": save_elements(store(b.folder), b.elements, b.by)}
+
+
+@router.post("/export/samples")
+def api_export_samples(b: ExpBody):
+    from fastapi.responses import Response
+    return Response(samples_csv(store(b.folder), b.ids), media_type="text/csv")
 
 
 # ================================================================ delineasi otomatis (usulan / draf)
