@@ -502,3 +502,33 @@ def test_strike_dip_zone_label_compass(qtbot, prj, tmp_path, monkeypatch):
     pg.export_geo("str", False)
     t = out.read_text()
     assert "N100/75" in t and "Intermediate" not in t
+
+
+def test_export_drillhole_channel(qtbot, prj, tmp_path, monkeypatch):
+    """Tombol database channel: 4 CSV (collar, survey, assay, geology), collar di ujung kiri walau digambar kanan->kiri."""
+    w, pg = _open_oc(qtbot, prj, tmp_path, monkeypatch)
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a[1])))
+    _draw(pg, "channel", [(0.9, 0.5), (0.1, 0.5)])
+    ch = pg.feats[-1]
+    assert ch["pts"][0][0] < ch["pts"][-1][0]  # disimpan kiri -> kanan
+    from PySide6.QtWidgets import QTableWidgetItem
+    pg.tool.select(ch["id"])
+    assert "ujung KIRI" in pg.sHead.text()
+    pg.sT.setRowCount(1)
+    for c, v in enumerate(("S-01", "0", "2,5")):
+        pg.sT.setItem(0, c, QTableWidgetItem(v))
+    pg.sT.setItem(0, 3, QTableWidgetItem("<0.01"))
+    pg.save_form()
+    from corex import api
+    pts = [{"name": f"G{i}", "u": u, "v": v, "e": 100 + u * 24, "n": 500.0, "rl": 50 + (1 - v) * 16}
+           for i, (u, v) in enumerate([(0.05, 0.05), (0.95, 0.05), (0.95, 0.95), (0.05, 0.95)])]
+    api.call("/core/outcrop/georef", {"folder": pg.folder, "id": pg.cur["id"], "points": pts, "kind": "wall", "by": "Rina"})
+    monkeypatch.setattr("PySide6.QtWidgets.QInputDialog.getItem", lambda *a, **k: (a[3][1], True))  # negatif DL
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(tmp_path / "db_collar.csv"), ""))
+    monkeypatch.setattr("corex.outcrop.show_in_folder", lambda p: None)
+    pg.export_drillhole()
+    files = {k: (tmp_path / f"db_{k}.csv").read_text(encoding="utf-8-sig").splitlines() for k in ("collar", "survey", "assay", "geology")}
+    c = files["collar"][1].split(",")
+    assert c[1] == f"{100 + 0.1 * 24:.3f}" and c[5] == "90.0" and c[6] == "0"
+    assert files["survey"][1].endswith(",0.00,90.0,0") and files["assay"][1].split(",")[1:5] == ["0.00", "2.50", "S-01", "-0.01"]
+    assert files["geology"][0].startswith("HOLE_ID,FROM,TO,LITHOLOGY") and len(files["geology"]) == 2

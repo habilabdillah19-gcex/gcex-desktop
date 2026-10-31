@@ -299,6 +299,18 @@ def update_photo(s: Store, pid: int, values: dict, by: str) -> dict:
 
 
 # ---------------------------------------------------------------- fitur (garis / poligon / titik)
+def _ltr(kind: str, shape: str, pts: list, attrs: dict) -> list:
+    """Garis channel / berinterval selalu kiri -> kanan foto: collar (0 m) di ujung kiri, EOH di ujung kanan."""
+    if shape != "line" or len(pts) < 2:
+        return pts
+    if kind != "channel" and not any(isinstance(x, dict) and x.get("from") is not None for x in (attrs or {}).get("samples") or []):
+        return pts
+    a, b = pts[0], pts[-1]
+    if a[0] > b[0] + 1e-9 or (abs(a[0] - b[0]) <= 1e-9 and a[1] > b[1]):
+        return list(reversed(pts))
+    return pts
+
+
 def _feat(r: sqlite3.Row) -> dict:
     d = dict(r)
     d["pts"] = json.loads(d["pts"])
@@ -306,6 +318,7 @@ def _feat(r: sqlite3.Row) -> dict:
         d["attrs"] = json.loads(d["attrs"] or "{}")
     except ValueError:
         d["attrs"] = {}
+    d["pts"] = _ltr(d["kind"], d["shape"], d["pts"], d["attrs"])
     return d
 
 
@@ -556,6 +569,7 @@ def save_feature(s: Store, pid: int, fid: Optional[int], f: dict, by: str) -> di
     shape = ks[kind]["shape"]
     pts = _clean_pts(shape, f.get("pts") or [])
     attrs = _clean_attrs(f.get("attrs"))
+    pts = _ltr(kind, shape, pts, attrs)
     name = (str(f.get("name") or "").strip() or None)
     with s.lock, s.conn() as c:
         if fid:
@@ -1342,6 +1356,213 @@ def api_elements(b: ElemBody) -> dict:
 def api_export_samples(b: ExpBody):
     from fastapi.responses import Response
     return Response(samples_csv(store(b.folder), b.ids), media_type="text/csv")
+
+
+# ---------------------------------------------------------------- channel / trenching -> database bor (Collar, Survey, Assay, Geologi)
+# Satu garis Channel sampel (atau garis berinterval) = satu "lubang". Collar = ujung KIRI garis di foto, EOH = ujung kanan.
+# Dip = 0 (mutlak, mendatar); azimuth = arah tiap segmen garis dari kiri ke kanan (koordinat georef). Kedalaman = jarak
+# sepanjang garis 3D (sama dengan dari-ke sampel yang diukur pita dari ujung kiri).
+GEO_COLS = [("zona_lito", "LITHOLOGY"), ("zona_alt", "ALTERATION"), ("zona_oks", "OXIDATION"), ("zona_vein", "VEIN"), ("breksi", "BRECCIA")]
+STRUCT_KINDS = ("sesar", "kekar", "vein", "kontak_lito", "kontak_alt")
+DL_MODES = ("half", "neg", "text")
+
+
+def _seg_hits(a: tuple, b: tuple, P: list) -> list[float]:
+    """Parameter t (0..1) perpotongan segmen a-b dengan sisi-sisi polyline / poligon P (koordinat piksel)."""
+    out = []
+    ax, ay = a
+    dx, dy = b[0] - ax, b[1] - ay
+    for (cx, cy), (ex, ey) in zip(P, P[1:]):
+        fx, fy = ex - cx, ey - cy
+        den = dx * fy - dy * fx
+        if abs(den) < 1e-12:
+            continue
+        t = ((cx - ax) * fy - (cy - ay) * fx) / den
+        u = ((cx - ax) * dy - (cy - ay) * dx) / den
+        if -1e-9 <= t <= 1 + 1e-9 and -1e-9 <= u <= 1 + 1e-9:
+            out.append(min(1.0, max(0.0, t)))
+    return out
+
+
+def _inside(pt: tuple, poly: list) -> bool:
+    x, y = pt
+    c = False
+    n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            c = not c
+    return c
+
+
+def _dl(v: Any, mode: str) -> str:
+    if v is None:
+        return ""
+    if isinstance(v, (int, float)):
+        return f"{v:g}"
+    t = str(v)
+    if mode == "text" or not t.startswith("<"):
+        return t[1:] if t.startswith(">") and mode != "text" else t
+    x = float(t[1:])
+    return f"{x / 2:g}" if mode == "half" else f"{-x:g}"
+
+
+def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
+    import csv
+    import io
+    if dl_mode not in DL_MODES:
+        raise ValueError("Pilihan nilai di bawah deteksi tidak dikenal.")
+    els = elements(s)
+    ekeys = [e["key"] for e in els]
+    units = {e["key"]: e["unit"] for e in els}
+    ks = {k["key"]: k for k in kinds(s)}
+    collar, survey, assay, geol, skipped, used = [], [], [], [], [], set()
+    extra: list[str] = []
+    for pid in ids or [p["id"] for p in photos(s)]:
+        r = photo(s, pid)
+        feats = [f for f in features(s, pid) if not (f.get("attrs") or {}).get(DRAFT)]
+        holes = [f for f in feats if f["shape"] == "line" and (f["kind"] == "channel" or any(x.get("from") is not None for x in samples_of(f["attrs"])))]
+        if not holes:
+            continue
+        title = r.get("title") or r["name"]
+        sol = georef_solve(r.get("georef"), r["w"], r["h"], plane_kind(r))
+        if not sol or not sol.get("ok"):
+            skipped.append(f"{title}: {len(holes)} channel dilewati — {(sol or {}).get('msg') or 'foto belum digeoreferensi'}")
+            continue
+        W, H = r["w"], r["h"]
+        desc = r.get("desc") or {}
+        for n, f in enumerate(holes, 1):
+            hid = re.sub(r"[^\w.-]+", "_", (f.get("name") or f"{title}_CH{n}").strip())[:40] or f"CH{f['id']}"
+            base, k = hid, 2
+            while hid in used:
+                hid, k = f"{base}_{k}", k + 1
+            used.add(hid)
+            xyz = np.array(to_world(sol, W, H, f["pts"]))
+            seg = [float(np.linalg.norm(xyz[i + 1] - xyz[i])) for i in range(len(xyz) - 1)]
+            cum = [0.0]
+            for L in seg:
+                cum.append(cum[-1] + L)
+            sm = samples_of(f["attrs"])
+            iv = [x for x in sm if x.get("from") is not None]
+            eoh = max([cum[-1]] + [x["to"] for x in iv])
+            azs = []
+            for i in range(len(seg)):
+                d = xyz[i + 1] - xyz[i]
+                azs.append((math.degrees(math.atan2(d[0], d[1])) + 360) % 360 if math.hypot(d[0], d[1]) > 1e-6 else (azs[-1] if azs else 0.0))
+            collar.append([hid, f"{xyz[0][0]:.3f}", f"{xyz[0][1]:.3f}", f"{xyz[0][2]:.3f}", f"{eoh:.2f}", f"{azs[0]:.1f}", "0",
+                           "CHANNEL", title, r.get("taken") or "", r.get("location") or ""])
+            for i, a in enumerate(azs):
+                if i == 0 or abs(((a - azs[i - 1]) + 180) % 360 - 180) > 0.05:
+                    survey.append([hid, f"{cum[i]:.2f}", f"{a:.1f}", "0"])
+            for x in (iv or sm):
+                for kk in x.get("grades") or {}:
+                    if kk not in ekeys and kk not in extra:
+                        extra.append(kk)
+            for x in iv:
+                assay.append((hid, x, f))
+            # ---- geologi: titik potong garis dengan zona / label zona / struktur, lalu isi tiap sub-interval
+            Ppx = [(u * W, v * H) for u, v in f["pts"]]
+
+            def chain(i: int, t: float) -> float:
+                return cum[i] + seg[i] * t
+            zones = [g for g in feats if g["shape"] == "poly" and g["kind"] in dict(GEO_COLS)]
+            cuts = {0.0, cum[-1]}
+            for g in zones:
+                Q = [(u * W, v * H) for u, v in g["pts"]]
+                Q = Q + [Q[0]]
+                for i in range(len(Ppx) - 1):
+                    for t in _seg_hits(Ppx[i], Ppx[i + 1], Q):
+                        cuts.add(round(chain(i, t), 4))
+            # label zona (rentang): ujung-ujungnya diproyeksikan ke garis channel
+            spans = []
+            for g in feats:
+                if g["kind"] != "label_zona" or len(g["pts"]) < 2 or not g.get("name"):
+                    continue
+                ends = []
+                for u, v in (g["pts"][0], g["pts"][-1]):
+                    best = None
+                    for i in range(len(Ppx) - 1):
+                        (ax, ay), (bx, by) = Ppx[i], Ppx[i + 1]
+                        dx, dy = bx - ax, by - ay
+                        L2 = dx * dx + dy * dy or 1e-12
+                        t = max(0.0, min(1.0, ((u * W - ax) * dx + (v * H - ay) * dy) / L2))
+                        dd = (ax + t * dx - u * W) ** 2 + (ay + t * dy - v * H) ** 2
+                        if best is None or dd < best[0]:
+                            best = (dd, chain(i, t))
+                    ends.append(best[1])
+                a0, a1 = sorted(ends)
+                if a1 - a0 > 1e-3:
+                    spans.append((a0, a1, g["name"]))
+                    cuts.update((round(a0, 4), round(a1, 4)))
+            structs = []
+            for g in feats:
+                if g["shape"] != "line" or g["kind"] not in STRUCT_KINDS or g["id"] == f["id"]:
+                    continue
+                Q = [(u * W, v * H) for u, v in g["pts"]]
+                for i in range(len(Ppx) - 1):
+                    for t in _seg_hits(Ppx[i], Ppx[i + 1], Q):
+                        nm = (ks.get(g["kind"]) or {}).get("name", g["kind"]) + (f" {g['name']}" if g.get("name") else "")
+                        structs.append((chain(i, t), nm))
+            cuts = sorted(c for c in cuts if 0 <= c <= cum[-1] + 1e-6)
+            rows = []
+            for c0, c1 in zip(cuts, cuts[1:]):
+                if c1 - c0 < 1e-3:
+                    continue
+                cm = (c0 + c1) / 2
+                i = next((j for j in range(len(seg)) if cum[j + 1] >= cm - 1e-9), len(seg) - 1)
+                t = (cm - cum[i]) / seg[i] if seg[i] > 0 else 0
+                pm = (Ppx[i][0] + (Ppx[i + 1][0] - Ppx[i][0]) * t, Ppx[i][1] + (Ppx[i + 1][1] - Ppx[i][1]) * t)
+                vals = {}
+                for kind_, col in GEO_COLS:
+                    hit = [g for g in zones if g["kind"] == kind_ and _inside(pm, [(u * W, v * H) for u, v in g["pts"]])]
+                    vals[col] = " / ".join(g.get("name") or (ks.get(kind_) or {}).get("name", kind_) for g in hit)
+                vals["ZONE"] = " / ".join(nm for a0, a1, nm in spans if a0 - 1e-6 <= cm <= a1 + 1e-6)
+                vals["STRUCTURE"] = "; ".join(nm for c, nm in structs if c0 - 1e-6 <= c < c1 - 1e-6 or (c1 >= cum[-1] - 1e-6 and abs(c - c1) < 1e-6))
+                rows.append([c0, c1, vals])
+            # isi kolom yang tidak punya zona sama sekali dari deskripsi foto (satu nilai untuk seluruh lubang)
+            for col, dk in (("LITHOLOGY", "lithology"), ("ALTERATION", "alteration"), ("OXIDATION", "oxidation"), ("VEIN", "veins")):
+                if not any(rw[2][col] for rw in rows) and desc.get(dk):
+                    for rw in rows:
+                        rw[2][col] = desc[dk]
+            # gabungkan sub-interval berurutan yang isinya sama
+            merged = []
+            for rw in rows:
+                if merged and merged[-1][2] == rw[2] and abs(merged[-1][1] - rw[0]) < 1e-6:
+                    merged[-1][1] = rw[1]
+                else:
+                    merged.append(rw)
+            for c0, c1, vals in merged:
+                geol.append([hid, f"{c0:.2f}", f"{c1:.2f}"] + [vals[c] for _k, c in GEO_COLS] + [vals["ZONE"], vals["STRUCTURE"],
+                                                                                                desc.get("weathering") or ""])
+    if not collar:
+        raise ValueError("Tidak ada garis Channel sampel tergeoreferensi untuk diekspor." + (" " + "; ".join(skipped) if skipped else ""))
+    keys = ekeys + extra
+
+    def out(head: list, rows: list) -> str:
+        b = io.StringIO()
+        w = csv.writer(b, lineterminator="\r\n")
+        w.writerow(head)
+        w.writerows(rows)
+        return b.getvalue()
+    arows = [[hid, f"{x['from']:.2f}", f"{x['to']:.2f}", x.get("id") or ""] + [_dl((x.get("grades") or {}).get(k2), dl_mode) for k2 in keys]
+             for hid, x, _f in assay]
+    return {
+        "collar": out(["HOLE_ID", "EAST", "NORTH", "RL", "MAX_DEPTH", "AZIMUTH", "DIP", "TYPE", "PHOTO", "DATE", "LOCATION"], collar),
+        "survey": out(["HOLE_ID", "DEPTH", "AZIMUTH", "DIP"], survey),
+        "assay": out(["HOLE_ID", "FROM", "TO", "SAMPLE_ID"] + [f"{k2}_{units.get(k2, '').replace('/', '').replace('%', 'pct') or 'val'}" for k2 in keys], arows),
+        "geology": out(["HOLE_ID", "FROM", "TO"] + [c for _k, c in GEO_COLS] + ["ZONE", "STRUCTURE", "WEATHERING"], geol),
+        "holes": len(collar), "samples": len(arows), "geology_rows": len(geol), "skipped": skipped}
+
+
+class DhBody(FBody):
+    ids: list[int] = []
+    dl: str = "half"
+
+
+@router.post("/export/drillhole")
+def api_export_drillhole(b: DhBody) -> dict:
+    return {"ok": True, **drillhole_tables(store(b.folder), b.ids, b.dl)}
 
 
 # ================================================================ delineasi otomatis (usulan / draf)

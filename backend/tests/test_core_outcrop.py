@@ -371,3 +371,51 @@ def test_orientation_point_and_zone_label(st):
     items, _ = co.export_items(s, [pid])
     assert [i["kind"] for i in items] == ["orientasi"]  # label zona = anotasi, tidak diekspor
     assert "N100/80" in co.to_str(items).decode()
+
+
+def test_channel_to_drillhole_tables(st):
+    """Channel -> Collar / Survey / Assay / Geologi: collar di ujung kiri, dip 0, azimuth kiri->kanan, geologi dari zona."""
+    s, tmp = st
+    pid = co.add_photo(s, str(_img(tmp, size=(1000, 800))), "Rina")["id"]
+    co.update_photo(s, pid, {"title": "Trench B7", "taken": "2026-10-13", "desc:lithology": "Tuf lapili", "desc:weathering": "W2"}, "Rina")
+    # dinding tegak berarah 090 (E naik ke kanan foto), lebar 20 m, tinggi 16 m
+    pts = [{"name": f"G{i}", "u": u, "v": v, "e": 1000 + u * 20, "n": 3000.0, "rl": 100 + (1 - v) * 16}
+           for i, (u, v) in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])]
+    co.save_georef(s, pid, pts, "wall", "Rina")
+    # garis digambar dari KANAN ke kiri -> disimpan kiri ke kanan
+    smp = [{"id": "S1", "from": 0, "to": 4, "grades": {"Au": 0.3, "Ag": 2}}, {"id": "S2", "from": 4, "to": 10, "grades": {"Au": "<0.01"}}]
+    j = co.save_feature(s, pid, None, {"kind": "channel", "name": "TR-B7", "pts": [[0.9, 0.5], [0.1, 0.5]], "attrs": {"samples": smp}}, "Rina")
+    ch = next(f for f in j["features"] if f["kind"] == "channel")
+    assert ch["pts"] == [[0.1, 0.5], [0.9, 0.5]]
+    # zona alterasi menutup x 0.3..0.6 (4..10 m), zona oksida 0.5..0.9; sesar memotong di x 0.45 (7 m); label zona 0.1..0.3
+    co.save_feature(s, pid, None, {"kind": "zona_alt", "name": "Argilik", "pts": [[0.3, 0.2], [0.6, 0.2], [0.6, 0.8], [0.3, 0.8]]}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "zona_oks", "name": "Gossan", "pts": [[0.5, 0.3], [0.9, 0.3], [0.9, 0.7], [0.5, 0.7]]}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "sesar", "name": "F1", "pts": [[0.45, 0.1], [0.45, 0.9]]}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "label_zona", "name": "Propilitik", "pts": [[0.1, 0.55], [0.3, 0.55]]}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "channel", "pts": [[0.1, 0.9], [0.5, 0.95]]}, "Rina")  # channel tanpa sampel
+    t = co.drillhole_tables(s, [pid], "half")
+    assert t["holes"] == 2 and t["samples"] == 2 and not t["skipped"]
+    col = [r.split(",") for r in t["collar"].strip().split("\r\n")]
+    assert col[0][:7] == ["HOLE_ID", "EAST", "NORTH", "RL", "MAX_DEPTH", "AZIMUTH", "DIP"]
+    assert col[1][:7] == ["TR-B7", "1002.000", "3000.000", "108.000", "16.00", "90.0", "0"] and col[1][8] == "Trench B7"
+    assert col[2][0] == "Trench_B7_CH2" and col[2][6] == "0"
+    sv = t["survey"].strip().split("\r\n")
+    assert sv[1] == "TR-B7,0.00,90.0,0"
+    asy = [r.split(",") for r in t["assay"].strip().split("\r\n")]
+    assert asy[0][:6] == ["HOLE_ID", "FROM", "TO", "SAMPLE_ID", "Au_ppm", "Ag_ppm"]
+    assert asy[1][:6] == ["TR-B7", "0.00", "4.00", "S1", "0.3", "2"] and asy[2][4] == "0.005"
+    assert co.drillhole_tables(s, [pid], "neg")["assay"].split("\r\n")[2].split(",")[4] == "-0.01"
+    assert co.drillhole_tables(s, [pid], "text")["assay"].split("\r\n")[2].split(",")[4] == "<0.01"
+    geo = [r.split(",") for r in t["geology"].strip().split("\r\n") if r.startswith("TR-B7")]
+    head = t["geology"].split("\r\n")[0].split(",")
+    iv = [(float(r[1]), float(r[2])) for r in geo]
+    assert iv == [(0, 4), (4, 8), (8, 10), (10, 16)]  # struktur tidak membelah interval, dicatat di kolom STRUCTURE
+    A, O, Z, S = (head.index(c) for c in ("ALTERATION", "OXIDATION", "ZONE", "STRUCTURE"))
+    assert [r[A] for r in geo] == ["", "Argilik", "Argilik", ""] and [r[O] for r in geo] == ["", "", "Gossan", "Gossan"]
+    assert geo[0][Z] == "Propilitik" and geo[1][S] == "Sesar F1" and geo[0][head.index("LITHOLOGY")] == "Tuf lapili"
+    # foto tanpa georef dilaporkan
+    p2 = co.add_photo(s, str(_img(tmp, "b.jpg")), "Rina")["id"]
+    co.save_feature(s, p2, None, {"kind": "channel", "pts": [[0.1, 0.5], [0.9, 0.5]]}, "Rina")
+    assert "georef" in co.drillhole_tables(s, [], "half")["skipped"][0]
+    with pytest.raises(ValueError, match="Tidak ada garis Channel"):
+        co.drillhole_tables(s, [p2])

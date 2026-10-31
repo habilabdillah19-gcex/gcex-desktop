@@ -731,3 +731,10 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Jenis fitur baru: **Strike / dip terukur** (simbol T + N100/80, ikut STR) dan **Label zona (rentang)** (kurung + garis penunjuk + kotak putih). Label biasa bisa memakai kotak putih.
 - **Kompas** di infografis: otomatis dari georef (dinding = arah kamera menghadap, lantai = panah utara) atau manual.
 - Kotak kadar interval ditempatkan di atas garis dengan dua ketinggian bergantian.
+
+## 63. Core-Ex 0.30.0 — Singkapan: channel / trenching ke database bor (Core-Ex versi Qt)
+
+- Fitur baru hanya di **Core-Ex versi Qt** (installer uji di pre-release `core-ex-qt-uji`).
+- Tab Georef › **⇩ Database channel**: 4 CSV Collar · Survey · Assay · Geologi dari semua garis Channel sampel yang tergeoreferensi. Collar di ujung kiri foto, EOH di kanan, **dip 0**, azimuth dari georef; geologi dari zona yang dipotong garis, label zona & struktur; pilihan nilai di bawah batas deteksi.
+- Garis channel (dan garis berinterval) kini selalu disimpan kiri → kanan; *dari–ke* diukur dari ujung kiri.
+- Panduan: PANDUAN_CORE bagian 6c langkah 6.

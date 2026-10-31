@@ -1135,7 +1135,12 @@ class OutcropPage(QWidget):
         g.addWidget(self.gDxf, 0, 1)
         g.addWidget(self.gStrAll, 1, 0)
         g.addWidget(self.gDxfAll, 1, 1)
+        self.gDh = btn("⇩ Database channel: Collar · Survey · Assay · Geologi (CSV)",
+                       "Setiap garis Channel sampel = satu lubang: collar di ujung kiri foto, EOH di kanan, dip 0, azimuth dari georef.\n"
+                       "Geologi dari zona yang dipotong garis, label zona & struktur yang memotong. Semua foto tergeoreferensi.", sm=True)
+        g.addWidget(self.gDh, 2, 0, 1, 2)
         v.addLayout(g)
+        self.gDh.clicked.connect(self.export_drillhole)
         n2 = QLabel("STR: kolom Y = northing, X = easting, Z = RL; D1 jenis, D2 nama fitur, D3 foto, D4.. kadar. Poligon ditutup, "
                     "label menjadi titik tunggal, garis skala tidak ikut. DXF R12: satu layer per jenis fitur (3D polyline). "
                     "Koordinat berada di bidang foto; tonjolan / cekungan singkapan tidak terukur.")
@@ -1889,7 +1894,7 @@ class OutcropPage(QWidget):
             if far > tot * 1.02:
                 warn = (f"<br><span style='color:{theme.C['er']}'>⚠ Interval terjauh {far:g} m melebihi panjang garis {tot:.2f} m: "
                         "periksa dari–ke, garis skala / georef, atau panjangkan garis.</span>")
-        self.sHead.setText("<b>SAMPEL / KADAR</b> · " + ("interval dari–ke diukur dari ujung awal garis (titik pertama yang digambar)"
+        self.sHead.setText("<b>SAMPEL / KADAR</b> · " + ("interval dari–ke diukur dari ujung KIRI garis (collar), ke kanan (EOH)"
                                                          + (f"; {L}" if L else "; tanpa georef / garis skala, garis dianggap sepanjang interval terjauh")
                                                          if line else "satu sampel untuk fitur ini")
                            + ". Nilai di bawah deteksi: tulis &lt;0.01." + warn)
@@ -2258,6 +2263,47 @@ class OutcropPage(QWidget):
             return
         self.geo_save()
         self.toast(f"{n_upd} titik diperbarui, {n_new} titik baru" + (" — klik posisinya di foto (⊕ Titik di foto)" if n_new else ""), 5000)
+
+    def export_drillhole(self) -> None:
+        if not self.folder:
+            return
+        from PySide6.QtWidgets import QInputDialog
+        opts = [("half", "setengah batas deteksi (<0.01 → 0.005)"), ("neg", "negatif batas deteksi (<0.01 → -0.01)"),
+                ("text", "teks asli (<0.01)")]
+        cur = SET.get("ocDlMode", "half")
+        lab, ok = QInputDialog.getItem(self, "Ekspor database channel", "Nilai di bawah batas deteksi di tabel Assay:",
+                                       [t for _k, t in opts], next((i for i, (k, _t) in enumerate(opts) if k == cur), 0), False)
+        if not ok:
+            return
+        mode = next(k for k, t in opts if t == lab)
+        SET.set("ocDlMode", mode)
+        try:
+            j = api.call("/core/outcrop/export/drillhole", {"folder": self.folder, "ids": [], "dl": mode})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        if j["skipped"] and not ask(self, "Sebagian channel dilewati:\n\n" + "\n".join(j["skipped"][:12]) + f"\n\nTetap ekspor {j['holes']} channel?"):
+            return
+        p, _ = QFileDialog.getSaveFileName(self, "Simpan database channel (nama dasar; 4 file CSV)",
+                                           str(Path(SET.get("lastSaveDir", str(Path.home()))) / "channel_singkapan.csv"), "CSV (*.csv)")
+        if not p:
+            return
+        base = re.sub(r"(_(collar|survey|assay|geology))?\.csv$", "", p, flags=re.I)
+        SET.set("lastSaveDir", str(Path(base).parent))
+        written = []
+        try:
+            for k in ("collar", "survey", "assay", "geology"):
+                out = Path(f"{base}_{k}.csv")
+                tmp = Path(str(out) + ".tmp")
+                tmp.write_bytes(("﻿" + j[k]).encode("utf-8"))
+                tmp.replace(out)
+                written.append(out)
+        except OSError as e:
+            say(self, "Gagal menulis file:\n" + str(e), warn=True)
+            return
+        log("[singkapan] ekspor database channel", base)
+        self.toast(f"{j['holes']} channel · {j['samples']} sampel · {j['geology_rows']} interval geologi → {Path(base).name}_*.csv", 6000)
+        show_in_folder(str(written[0]))
 
     def export_geo(self, fmt: str, all_photos: bool) -> None:
         if not self.folder or (not all_photos and not self.cur):
