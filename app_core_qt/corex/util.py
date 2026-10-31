@@ -84,14 +84,27 @@ class _Task(QRunnable):
 _KEEP: set = set()
 
 
+def _safe(cb: Callable) -> Callable:
+    """Hasil tugas latar bisa datang setelah jendela / dialog pemanggilnya ditutup (mis. buka ulang Core-Ex saat cek Ollama
+    masih berjalan): widget yang sudah dihapus diabaikan, bukan galat."""
+    def f(*a):
+        try:
+            return cb(*a)
+        except RuntimeError as e:
+            if "already deleted" not in str(e):
+                raise
+            log("[tugas] hasil diabaikan, jendela sudah ditutup:", str(e)[:120])
+    return f
+
+
 def run_bg(fn: Callable, *args, ok: Callable | None = None, err: Callable | None = None, **kw) -> None:
     """Jalankan fn di thread pool; ok(hasil) / err(pesan) dipanggil di thread GUI."""
     t = _Task(fn, args, kw)
     _KEEP.add(t.sig)
     if ok:
-        t.sig.ok.connect(ok)
+        t.sig.ok.connect(_safe(ok))
     if err:
-        t.sig.err.connect(err)
+        t.sig.err.connect(_safe(err))
     t.sig.ok.connect(lambda *_: _KEEP.discard(t.sig))
     t.sig.err.connect(lambda *_: _KEEP.discard(t.sig))
     t.setAutoDelete(True)

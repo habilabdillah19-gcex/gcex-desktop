@@ -35,9 +35,19 @@ def main(argv: list[str] | None = None) -> int:
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QGuiApplication, QIcon
     from PySide6.QtWidgets import QApplication, QMessageBox
+    from corex import shell
     if QApplication.instance() is None:
+        shell.apply_zoom_env()  # Tampilan > Ukuran tampilan (berlaku sejak Core-Ex dibuka)
         QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication.instance() or QApplication(sys.argv[:1])
+    # satu jendela Core-Ex saja: bila sudah terbuka, jendela itu yang tampil (folder diteruskan), proses ini selesai
+    folder = str(Path(a.folder).resolve()) if a.folder else ""
+    inst = shell.SingleInstance()
+    if os.environ.get("COREX_MULTI") != "1":
+        if shell.SingleInstance.send(inst.name, {"cmd": "show", "folder": folder}):
+            log("[satu jendela] Core-Ex sudah terbuka; folder diteruskan:", folder or "-")
+            return 0
+        inst.listen()
     app.setApplicationName("Core-Ex")
     app.setOrganizationName("GC-Ex")
     for ic in (Path(getattr(sys, "_MEIPASS", "")) / "icon-core.ico", HERE.parent / "build" / "icon-core.ico"):
@@ -65,10 +75,16 @@ def main(argv: list[str] | None = None) -> int:
                                                                 "Minta kunci perpanjangan ke penerbit GC-Ex, lalu masukkan lewat Bantuan > Lisensi GC-Ex."))
     from corex.mainwin import MainWindow
     w = MainWindow(ver, store)
-    w.show()
-    if a.folder:
-        QTimer.singleShot(100, lambda: w.open_folder(a.folder))
-    return app.exec()
+    w.showMaximized()  # sama dengan versi Electron: jendela dibuka penuh
+    inst.message.connect(w.from_instance)
+    inst.ready()
+    if folder:
+        QTimer.singleShot(100, lambda: w.open_folder(folder))
+    rc = app.exec()
+    inst.close()
+    if getattr(w, "restart_after", False):
+        shell.restart(w.folder)
+    return rc
 
 
 def selftest(folder: str, out: str) -> int:

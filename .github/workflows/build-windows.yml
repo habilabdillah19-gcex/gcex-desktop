@@ -197,9 +197,20 @@ jobs:
           $p = Start-Process -FilePath $exe -PassThru
           $ok = $false; for ($i=0; $i -lt 60; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
           $alive = -not $p.HasExited
+          # satu jendela: Core-Ex kedua meneruskan folder ke jendela pertama lalu selesai sendiri
+          $p2 = Start-Process -FilePath $exe -ArgumentList "--folder","$env:RUNNER_TEMP/qt_core" -PassThru
+          $null = $p2.Handle  # agar ExitCode terbaca setelah WaitForExit
+          $one = $p2.WaitForExit(20000) -and $p2.ExitCode -eq 0
+          if (-not $p2.HasExited) { Stop-Process -Id $p2.Id -Force -ErrorAction SilentlyContinue }
+          Start-Sleep -Milliseconds 800
+          $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue
+          $one = $one -and ($t -match 'pesan dari Core-Ex kedua') -and -not $p.HasExited
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           Write-Host $t
           if (-not $ok -or -not $alive) { Write-Host "::error::Core-Ex Qt tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
+          # peringatan saja (installer Qt belum dirilis): tidak menghentikan rilis Block Model / Drillhole / Core-Ex Electron
+          if (-not $one) { Write-Host "::warning::Core-Ex Qt kedua tidak meneruskan ke jendela pertama (satu jendela) - periksa log di atas" }
+          else { Write-Host "Core-Ex Qt: Core-Ex kedua diteruskan ke jendela pertama (satu jendela)" }
           Write-Host "Core-Ex Qt: jendela aktivasi lisensi tampil, aplikasi berjalan"
       - name: Core-Ex Qt - installer (NSIS) & uji pasang / copot
         shell: pwsh

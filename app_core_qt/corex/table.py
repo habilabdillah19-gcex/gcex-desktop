@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QFont, QImage, QPainter, QPixmap
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QStyledItemDelegate, QTableView
+from PySide6.QtWidgets import QAbstractItemView, QCompleter, QHeaderView, QLineEdit, QStyledItemDelegate, QTableView
 
 from . import api, theme
 from .theme import C
@@ -19,6 +19,10 @@ COLS = [("_sel", "", 30, 0, 0), ("_no", "No", 46, 0, 1), ("_th", "Foto", 64, 0, 
         ("oxidation", "Oksidasi", 130, 1, 0), ("alteration", "Alterasi", 130, 1, 0), ("recovery_pct", "Rec %", 60, 1, 1),
         ("rqd_pct", "RQD %", 60, 1, 1), ("gsi", "GSI", 64, 1, 0), ("rmr", "RMR", 56, 1, 1), ("loss_m", "Loss m", 64, 0, 1),
         ("half_m", "Half m", 64, 0, 1), ("ai_conf", "Keyakinan", 80, 0, 0), ("notes", "Catatan", 260, 1, 0)]
+# pilihan isian (sama dengan datalist versi HTML): dipakai kartu & sel tabel
+WEA = ["W1 (Fresh)", "W2 (Slightly Weathered)", "W3 (Moderately Weathered)", "W4 (Highly Weathered)", "W5 (Completely Weathered)", "W6 (Residual Soil)"]
+OXI = ["Unoxidized", "Slightly Oxidized", "Moderately Oxidized", "Strongly Oxidized", "Completely Oxidized"]
+LISTS = {"weathering": WEA, "oxidation": OXI, "condition": ["WET", "DRY"]}
 BLUES = ["#dbe7f5", "#9fbfe6", "#5a8fd0", "#2a5ea8", "#141a26"]
 ROW_H = 34
 
@@ -257,6 +261,16 @@ class PhotoModel(QAbstractTableModel):
 
 
 class StatusDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, opt, ix):  # noqa: N802
+        ed = super().createEditor(parent, opt, ix)
+        k = ix.model().cols()[ix.column()][0]
+        if isinstance(ed, QLineEdit) and k in LISTS:  # Pelapukan / Oksidasi: daftar pilihan seperti di kartu
+            c = QCompleter(LISTS[k], ed)
+            c.setCaseSensitivity(Qt.CaseInsensitive)
+            c.setFilterMode(Qt.MatchContains)
+            ed.setCompleter(c)
+        return ed
+
     def paint(self, p: QPainter, opt, ix) -> None:
         m: PhotoModel = ix.model()
         k = m.cols()[ix.column()][0]

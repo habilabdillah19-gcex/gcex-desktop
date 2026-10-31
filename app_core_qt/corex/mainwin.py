@@ -11,7 +11,7 @@ from PySide6.QtGui import QAction, QKeySequence, QShortcut
 from PySide6.QtWidgets import (QApplication, QComboBox, QFileDialog, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QMainWindow,
                                QProgressBar, QPushButton, QSplitter, QStackedWidget, QVBoxLayout, QWidget)
 
-from . import APP_NAME, COPYRIGHT, api, dialogs, lic, theme
+from . import APP_NAME, COPYRIGHT, api, dialogs, lic, shell, theme
 from .card import Card, _esc, btn
 from .dialogs import ask, say
 from .search import SearchBox
@@ -31,6 +31,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APP_NAME)
         self.resize(1440, 900)
         self.folder = ""
+        self.restart_after = False
         self.rows: list[dict] = []
         self.by_id: dict[int, dict] = {}
         self.view: list[dict] = []
@@ -289,7 +290,6 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+K"), self, activated=lambda: (self.q.setFocus(), self.q.selectAll()) if self.q.isEnabled() else None)
         QShortcut(QKeySequence("Ctrl+Return"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Ctrl+Enter"), self, activated=self.verify_current)
-        QShortcut(QKeySequence("Ctrl+O"), self, activated=self.choose_folder)
         QShortcut(QKeySequence("Escape"), self, activated=lambda: self.interp.escape())
 
     def _start_page(self) -> QWidget:
@@ -362,12 +362,35 @@ class MainWindow(QMainWindow):
         m.addSeparator()
         m.addAction("Keluar", self.close)
         v = mb.addMenu("&Tampilan")
+        zm = v.addMenu("Ukuran tampilan")
+        from PySide6.QtGui import QActionGroup
+        self.zoomGrp = QActionGroup(self)
+        for z in shell.ZOOMS:
+            a = QAction(f"{round(z * 100)}%" + (" (bawaan)" if z == shell.ZOOM_DEF else ""), self, checkable=True)
+            a.setChecked(abs(z - shell.zoom_now()) < 1e-3)
+            a.triggered.connect(lambda _=False, z=z: self.set_zoom(z))
+            self.zoomGrp.addAction(a)
+            zm.addAction(a)
+        for t, sc, fn in (("Perbesar", ("Ctrl+=", "Ctrl++"), lambda: self.set_zoom(shell.zoom_step(+1))),
+                          ("Perkecil", ("Ctrl+-",), lambda: self.set_zoom(shell.zoom_step(-1))),
+                          (f"Ukuran bawaan ({round(shell.ZOOM_DEF * 100)}%)", ("Ctrl+0",), lambda: self.set_zoom(shell.ZOOM_DEF))):
+            a = QAction(t, self)
+            a.setShortcuts([QKeySequence(x) for x in sc])
+            a.triggered.connect(fn)
+            v.addAction(a)
+        v.addSeparator()
+        self.aFull = QAction("Layar penuh", self, checkable=True)
+        self.aFull.setShortcut(QKeySequence("F11"))
+        self.aFull.triggered.connect(self.toggle_full)
+        v.addAction(self.aFull)
+        v.addSeparator()
         v.addAction("Tema gelap / terang", self.toggle_dark)
         v.addAction("Ganti nama pengguna…", lambda: self.user(True))
         h = mb.addMenu("&Bantuan")
         from .util import open_path, res_dir, user_dir
-        h.addAction("Panduan Core-Ex", lambda: open_path(res_dir("docs") / "PANDUAN_CORE.html") if (res_dir("docs") / "PANDUAN_CORE.html").exists()
-                    else open_path(res_dir("docs")))
+        guide = lambda: open_path(res_dir("docs") / "PANDUAN_CORE.html") if (res_dir("docs") / "PANDUAN_CORE.html").exists() else open_path(res_dir("docs"))  # noqa: E731
+        h.addAction("Panduan Core-Ex", guide)
+        h.addAction("Panduan AI lokal (Ollama)", guide)  # dirujuk pesan dialog AI: "Bantuan → Panduan AI lokal"
         h.addAction("Buka folder log", lambda: open_path(user_dir() / "logs"))
         h.addSeparator()
         h.addAction("Syarat penggunaan & penafian", lambda: open_path(res_dir("legal") / "SYARAT_PENGGUNAAN.txt"))
@@ -395,6 +418,41 @@ class MainWindow(QMainWindow):
 
     def _cur_index(self) -> int:
         return next((i for i, r in enumerate(self.view) if r["id"] == self.cur_id), -1)
+
+    def set_zoom(self, z: float) -> None:
+        """Tampilan > Ukuran tampilan: skala seluruh antarmuka (Qt menetapkannya saat aplikasi mulai -> buka ulang)."""
+        old = shell.zoom_now()
+        for a in self.zoomGrp.actions():
+            a.setChecked(a.text().startswith(f"{round(z * 100)}%"))
+        if abs(z - old) < 1e-3:
+            return
+        SET.set("qt_zoom", z)
+        log("[tampilan] ukuran", z)
+        busy = self.poll.isActive()
+        if ask(self, f"Ukuran tampilan {round(z * 100)}% dipakai setelah Core-Ex dibuka ulang.\n\nBuka ulang sekarang?"
+               + (" Folder yang sedang dibuka akan dibuka lagi." if self.folder else "")
+               + ("\n\nAI sedang berjalan dan akan berhenti; foto yang belum selesai bisa dianalisis lagi nanti." if busy else "")):
+            self.restart_after = True
+            self.close()
+        else:
+            self.toast(f"Ukuran tampilan {round(z * 100)}% dipakai saat Core-Ex dibuka berikutnya", 4000)
+
+    def toggle_full(self) -> None:
+        if self.isFullScreen():
+            self.showMaximized()
+        else:
+            self.showFullScreen()
+        self.aFull.setChecked(self.isFullScreen())
+
+    def from_instance(self, msg: dict) -> None:
+        """Core-Ex dibuka lagi saat sudah berjalan: tampilkan jendela ini, buka folder yang diminta."""
+        if self.isMinimized():
+            self.showMaximized()
+        self.raise_()
+        self.activateWindow()
+        f = (msg or {}).get("folder") or ""
+        if f and Path(f).is_dir() and Path(f).resolve() != (Path(self.folder).resolve() if self.folder else None):
+            self.open_folder(f)
 
     def toggle_dark(self) -> None:
         d = not SET.get("dark", False)

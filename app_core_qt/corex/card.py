@@ -9,11 +9,7 @@ from PySide6.QtWidgets import (QCompleter, QFrame, QGridLayout, QHBoxLayout, QLa
                                QSizePolicy, QToolButton, QVBoxLayout, QWidget)
 
 from . import theme
-from .table import fmt, status_text
-
-WEA = ["W1 (Fresh)", "W2 (Slightly Weathered)", "W3 (Moderately Weathered)", "W4 (Highly Weathered)", "W5 (Completely Weathered)", "W6 (Residual Soil)"]
-OXI = ["Unoxidized", "Slightly Oxidized", "Moderately Oxidized", "Strongly Oxidized", "Completely Oxidized"]
-LISTS = {"weathering": WEA, "oxidation": OXI, "condition": ["WET", "DRY"]}
+from .table import LISTS, OXI, WEA, fmt, status_text  # noqa: F401 (WEA / OXI dipakai modul lain)
 NUM = {"from_m", "to_m", "recovery_pct", "rqd_pct", "rmr"}
 TAG_TIP = {"mk": "Dihitung dari tanda core loss di foto: (interval - core loss) / interval. Edit manual mengalahkan nilai ini.",
            "lgt": "Dari logging geologist (tabel Geologi). Diutamakan di atas AI. Ubah di data Geologi.",

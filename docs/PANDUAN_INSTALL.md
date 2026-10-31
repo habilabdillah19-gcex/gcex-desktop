@@ -451,3 +451,15 @@ Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor ver
 - Installer Core-Ex masih versi Electron (isi sama). Kode Core-Ex Qt: formulir tanda & segmen dipecah beberapa baris agar muat di panel sempit, daftar lapisan & pemetaan kolom tidak lagi bertumpuk saat diganti, pemeriksaan Ollama yang lama diabaikan.
 - CI: ringkasan galat uji Core-Ex Qt dan galat pengemasan rilis ditulis sebagai anotasi run (mudah dibaca tanpa membuka log).
 
+## 43. Core-Ex 0.23.6
+
+- Installer Core-Ex di Release masih versi Electron (isi sama). Kode Core-Ex Qt kini memuat sisa perilaku versi Electron / HTML yang belum dipindahkan:
+  - **Satu jendela**: membuka Core-Ex lagi (atau `Core-Ex.exe --folder D:\Foto_Core`) menampilkan jendela yang sudah terbuka dan membuka folder yang diminta di sana, bukan jendela kedua.
+  - Jendela dibuka penuh (maximized) seperti versi Electron.
+  - **Tampilan › Ukuran tampilan** 80 / 90 / 100 / 110 / 125 / 150 % (Ctrl+= perbesar, Ctrl+- perkecil, Ctrl+0 bawaan). Skala dipakai setelah Core-Ex dibuka ulang; Core-Ex menawarkan buka ulang langsung dan membuka lagi folder yang sedang dikerjakan.
+  - **Tampilan › Layar penuh** (F11).
+  - Sel Pelapukan dan Oksidasi di tabel memakai daftar pilihan (W1–W6, Unoxidized–Completely Oxidized) seperti kartu foto.
+  - **Bantuan › Panduan AI lokal (Ollama)** (dirujuk pesan di dialog AI).
+  - Perbaikan: pintasan Ctrl+O (Buka folder) terdaftar dua kali sehingga tidak berfungsi.
+  - Perbaikan: hasil pemeriksaan latar (mis. cek Ollama) yang datang setelah jendela / dialog ditutup tidak lagi menimbulkan galat.
+- CI: uji pytest-qt baru (satu jendela, ukuran tampilan, layar penuh, pintasan tidak bentrok, daftar pilihan di sel) dan uji exe: Core-Ex kedua diteruskan ke jendela pertama (peringatan bila gagal, tidak menghentikan rilis).
