@@ -124,8 +124,10 @@ with sync_playwright() as pw:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]"%role,DATA+f);pg.wait_for_timeout(600)
     ev("document.getElementById('upsBan').scrollIntoView({block:'start'})");shot('upsert_pratinjau',{'x':240,'y':0,'width':1120,'height':720})
     note('upsPrev',ev("document.getElementById('upsSum').innerText"))
+    nBefore=ev('collars.length')          # jangan patok angka tetap: ukuran data latihan bisa berubah
     pg.click('#btnUps');pg.wait_for_timeout(2500)
-    pg.wait_for_function("document.getElementById('imp').classList.contains('off')&&window.collars&&collars.length===37",timeout=180000);pg.wait_for_timeout(3000)
+    pg.wait_for_function("document.getElementById('imp').classList.contains('off')&&window.collars&&collars.length>%d"%nBefore,timeout=180000);pg.wait_for_timeout(3000)
+    note('upsTambah',ev('collars.length')-nBefore)
     note('upsToast',ev("(document.getElementById('fpToast')||{}).innerText||''"));shot('upsert_hasil')
     note('bxAfterUps',ev("window.BX&&BX.m?BX.m.n:0"));ev("var t=document.getElementById('fpToast');if(t)t.style.display='none'")
     ev("uiTab('GM');GM.opt.scope='all';GM.opt.keep=true;gmAct(GM.doms[0].id);gmAuto()");note('autoInfill',ev("GM.lastAuto.replace(/<[^>]+>/g,'')"))
@@ -173,8 +175,9 @@ with sync_playwright() as pw:
     ev("if(VIEW2D)toggle2D();$('sliceClip').checked=false;uiTab('Data')");pg.click('#upsBox button.btn-pri');pg.wait_for_timeout(400)
     for role,f in [('collar','SIM_upsert2_collar.csv'),('survey','SIM_upsert2_survey.csv'),('assay','SIM_upsert2_assay.csv'),('geo','SIM_upsert2_geologi.csv')]:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]"%role,DATA+f);pg.wait_for_timeout(600)
+    nBefore2=ev('collars.length')
     pg.click('#btnUps');pg.wait_for_timeout(2500)
-    pg.wait_for_function("document.getElementById('imp').classList.contains('off')&&window.collars&&collars.length===39",timeout=180000);pg.wait_for_timeout(3000)
+    pg.wait_for_function("document.getElementById('imp').classList.contains('off')&&window.collars&&collars.length>%d"%nBefore2,timeout=180000);pg.wait_for_timeout(3000)
     ev("var t=document.getElementById('fpToast');if(t)t.style.display='none'")
     ev("uiTab('GM');GM.opt.scope='all';GM.opt.keep=true;GM.opt.dil=2;gmAct(GM.doms[0].id);gmAuto();GM.opt.dil=1")
     note('autoInfill2',ev("GM.lastAuto.replace(/<[^>]+>/g,'')"))

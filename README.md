@@ -105,6 +105,7 @@ Unduh dari halaman run tersebut, bagian **Artifacts**.
 | 3x | CI: pembuatan tutorial bergambar di runner Windows dipaksa UTF-8 dan pencatatan angka hasil tidak lagi menggagalkan seluruh tahap bila konsol tidak dapat mencetaknya (konsol Windows bawaannya cp1252, teks panel GC-Ex memuat karakter di luar itu) | selesai (Block Model & Drill Hole Ultimate 0.24.5) |
 | 3y | Tutorial bergambar disesuaikan dengan data latihan baru: wireframe contoh `QV_Lensa2_Leapfrog.obj` (dulu `QV_Utama_Leapfrog.obj`), domain yang ditelusuri `QV_Lensa2` + `QV_Splay_HW` (vein utama & splay hangingwall-nya), dan penjelasan geometri diperbarui (array 4 lensa, pitch ore shoot 55°, paleo-muka air tanah RL 250 m) | selesai (Block Model & Drill Hole Ultimate 0.24.6) |
 | 3z | CI: **kegagalan Core-Ex Qt tidak lagi menahan Release GC-Ex** (installer Qt masih tahap percobaan), dan pengambilan teks lisensi GNU dari gnu.org dicoba 3× lalu jatuh ke salinan dari rilis sebelumnya — satu gangguan jaringan dulu menggagalkan seluruh rilis | selesai (Block Model & Drill Hole Ultimate 0.24.7) |
+| 4a | Skrip tangkapan layar tutorial tidak lagi mematok jumlah bor (`collars.length===37`) yang berasal dari data latihan lama — penantian upsert kini relatif (menunggu jumlah bor bertambah), dan keterangan berkas di narasi memakai hitungan data yang berlaku | selesai (Block Model & Drill Hole Ultimate 0.24.8) |
 | 4 | Proyek dapat dipindahkan antar laptop (folder proyek), pembaruan otomatis, code signing | rencana |
 
 ## Kebutuhan di laptop pengguna

@@ -97,13 +97,13 @@ ch('Data simulasi', f'''
 <p>Data ini <b>sintetis</b> (bukan data perusahaan), dibuat agar meniru kasus vein emas epitermal sempit berbentuk sigmoidal.</p>
 <table class="t"><tr><th>File</th><th>Isi</th></tr>
 <tr><td>SIM_collar.csv, SIM_survey.csv, SIM_assay.csv, SIM_geologi.csv</td><td>33 lubang bor di 11 section (jarak 20 m) tegak lurus strike, 3 lubang per section, sampel 1 m. Unsur Au, Ag, SxS; geologi Lith / Alt / Ox.</td></tr>
-<tr><td>SIM_upsert_*.csv</td><td>4 lubang infill (SIM-INF-01 s/d 04) untuk latihan <b>upsert</b>.</td></tr>
-<tr><td>SIM_upsert2_*.csv</td><td>2 lubang infill tahap 2 (SIM-INF-05, 06) untuk latihan <b>koreksi Model Estimation</b>.</td></tr>
+<tr><td>SIM_upsert_*.csv</td><td>7 lubang infill (SIM-INF-*) untuk latihan <b>upsert</b>.</td></tr>
+<tr><td>SIM_upsert2_*.csv</td><td>7 lubang infill tahap 2 untuk latihan <b>koreksi Model Estimation</b>.</td></tr>
 <tr><td>SIM_topo_xyz.csv, SIM_topo_xyz_nov.csv</td><td>Topografi titik XYZ grid 5 m; versi bulan berikutnya untuk latihan Data Spasial.</td></tr>
 <tr><td>SIM_BM_GC.csv</td><td>Block model GC kosong 10 &times; 10 &times; 5 m ({N['bx']:,} blok) di sekitar array vein.</td></tr>
 <tr><td>QV_Lensa2_Leapfrog.obj</td><td>Contoh wireframe lensa 2 hasil Leapfrog (tertutup, 21.596 segitiga).</td></tr>
-<tr><td>SIM_struktur.csv</td><td>19 titik struktur (No, X, Y, Z, Dip, Dip_Azimuth, Keterangan): kontak HW di singkapan, dari core oriented, dan kekar.</td></tr>
-<tr><td>SIM_pickup_survey.csv</td><td>114 titik pick-up survei (ID, East, North, RL, Code): VEIN_HW / VEIN_FW singkapan QV_Lensa2, TOE / CREST pit kecil.</td></tr>
+<tr><td>SIM_struktur.csv</td><td>96 titik struktur (Easting, Northing, RL, Jenis, Dip, Dip_Azimuth, Plunge, Trend, Catatan): kontak vein di singkapan dan bidang sesar.</td></tr>
+<tr><td>SIM_pickup_survey.csv</td><td>142 titik pick-up survei (Kode, Easting, Northing, RL, Tebal_m, Keterangan): singkapan vein tiap lensa.</td></tr>
 <tr><td>SIM_split_*.csv</td><td>Proyek terpisah vein bercabang (latihan domain induk).</td></tr>
 <tr><td>SIM_rusak_collar.csv, SIM_rusak_assay.csv</td><td>Database dengan kesalahan sengaja untuk latihan validasi.</td></tr>
 <tr><td>SIM_LAT_collar / survey / assay / geologi.csv</td><td>Proyek terpisah <b>laterit nikel</b>: {NL['nHole']} bor vertikal grid 25 m, sampel 1 m ({NL['nAssay']:,} sampel), unsur Ni, Co, Fe, MgO, SiO2 (%), kolom <code>Zona</code>: TS (tanah penutup), LIM, SAP, BRK.</td></tr>

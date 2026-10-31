@@ -355,8 +355,23 @@ jobs:
             Write-Host "== $nama"
             & cmd /c "$cmd 2>&1" | Tee-Object -FilePath "tut.log"
             if ($LASTEXITCODE -ne 0) {
-              Get-Content tut.log -Tail 30 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
+              # GitHub hanya menampilkan 10 anotasi peringatan per langkah, jadi jangan buang jatahnya
+              # untuk 30 baris terakhir yang biasanya hanya jejak Playwright. Ambil yang menjelaskan:
+              # baris pengecualian terakhir + konteks berkas/baris di sekitarnya.
+              $L = Get-Content tut.log
+              $pick = @()
+              $exc = $L | Select-String -Pattern '^\s*\w*(Error|Exception|TimeoutError)\b|AssertionError|KeyError|IndexError' |
+                     Select-Object -Last 3
+              $loc = $L | Select-String -Pattern '^\s+File ".*", line \d+' | Select-Object -Last 3
+              $pick += $loc | ForEach-Object { $_.Line.Trim() }
+              $pick += $exc | ForEach-Object { $_.Line.Trim() }
+              if (-not $pick) { $pick = ($L | Select-Object -Last 6) }
+              $pick | Select-Object -Last 8 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
               Write-Host "::warning::$nama gagal - PDF lama di repo tetap dipakai"
+              # log penuh ke ringkasan run (tanpa batas 10 baris)
+              "### Galat $nama`n`n```" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+              ($L | Select-Object -Last 60) -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+              "```" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
               return $false
             }
             return $true

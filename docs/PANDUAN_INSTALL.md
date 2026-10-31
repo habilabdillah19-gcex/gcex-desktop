@@ -674,3 +674,19 @@ Dua perbaikan, keduanya mengikuti prinsip yang sama dengan perbaikan 0.23.7: lan
 2. **Kegagalan Core-Ex Qt tidak menahan Release GC-Ex.** Core-Ex Qt masih tahap percobaan — installer yang terbit masih versi Electron — jadi kegagalan build Qt kini ditandai sebagai peringatan, langkah Qt berikutnya melewati diri, dan rilis GC-Ex tetap berjalan.
 
 Karena run 0.24.6 berhenti di langkah 22, perbaikan tutorial di versi itu (`QV_Lensa2` + `QV_Splay_HW`, wireframe `QV_Lensa2_Leapfrog.obj`) **belum pernah diuji**; pengujiannya ikut di rilis ini.
+
+## 56. GC-Ex Block Model & Drill Hole Ultimate 0.24.8
+
+Dengan rilis 0.24.7 rantai rilis sudah tahan gangguan, dan tangkapan layar tutorial berhasil sampai **gambar ke-29** (sebelumnya berhenti di ke-3): import wireframe, flagging dari wireframe, dan pembangunan solid semuanya berjalan dengan domain `QV_Lensa2` + `QV_Splay_HW`.
+
+Berhentinya di bab *upsert*, karena skrip mematok jumlah bor dari data latihan lama:
+
+```js
+collars.length===37     // 33 bor + 4 infill — data lama
+```
+
+Data sekarang 610 bor, jadi penantian itu tidak pernah terpenuhi dan berhenti setelah 3 menit. Dua tempat diperbaiki (upsert tahap 1 dan 2): jumlah bor dicatat sebelum upsert, lalu ditunggu **bertambah** — tidak lagi bergantung pada angka tetap, sehingga ukuran data latihan boleh berubah kapan saja tanpa merusak tutorial.
+
+Keterangan berkas di narasi juga disesuaikan dengan isi data yang berlaku (jumlah lubang infill, titik struktur, dan titik pick-up dihitung dari berkasnya).
+
+Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringatan per langkah, dan jatah itu sebelumnya habis oleh jejak Playwright sehingga penyebab sebenarnya terpotong. Sekarang yang ditampilkan adalah baris pengecualian terakhir beserta lokasi berkas/barisnya, dan 60 baris log terakhir ditulis ke ringkasan run yang tidak dibatasi.
