@@ -705,3 +705,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Ukuran 3D per fitur (panjang, apparent dip, luas / keliling) di form fitur; bar skala infografis memakai skala georef bila tidak ada garis skala.
 - Ekspor **STR Surpac** (Y, X, Z; nomor string per jenis; D1 jenis, D2 nama, D3 foto, kadar) dan **DXF R12** (layer per jenis, 3D polyline) dalam E, N, RL, per foto atau semua foto.
 - Panduan: PANDUAN_CORE bagian 6c langkah 5–6.
+
+## 59. Core-Ex 0.26.1 — perbaikan CI rilis
+
+- Langkah pembuatan tutorial bergambar di CI gagal di-parse PowerShell sejak 0.24.8, sehingga Release v0.24.8 dan v0.25.0 tidak terbit. Sudah diperbaiki; isi aplikasi sama dengan 0.26.0.

@@ -369,9 +369,10 @@ jobs:
               $pick | Select-Object -Last 8 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
               Write-Host "::warning::$nama gagal - PDF lama di repo tetap dipakai"
               # log penuh ke ringkasan run (tanpa batas 10 baris)
-              "### Galat $nama`n`n```" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+              # pagar kode ditulis dengan kutip tunggal: backtick di string kutip ganda adalah karakter escape PowerShell
+              ('### Galat ' + $nama + "`n`n" + '```') | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
               ($L | Select-Object -Last 60) -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-              "```" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+              '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
               return $false
             }
             return $true
