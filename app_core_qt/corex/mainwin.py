@@ -198,7 +198,7 @@ class MainWindow(QMainWindow):
         class PanelArea(QScrollArea):  # tinggi mengikuti isi panel, maks. 340 px (sisanya untuk kartu)
             def sizeHint(self):  # noqa: N802
                 w = self.widget()
-                return _QS(200, min(340, w.sizeHint().height() + 2) if w and w.isVisible() else 0)
+                return _QS(200, min(420, w.sizeHint().height() + 2) if w and w.isVisible() else 0)
 
             def minimumSizeHint(self):  # noqa: N802
                 return self.sizeHint()
@@ -227,10 +227,12 @@ class MainWindow(QMainWindow):
         self.bSelAI = btn("AI untuk terpilih", sm=True)
         for x in (self.selInfo, self.bSelAll, self.bSelNone, self.bSelVer, self.bSelUnver, self.bSelAI):
             bk.addWidget(x)
-        bk.addStretch(1)
         hint = QLabel("↑ ↓ pindah foto · Ctrl+Enter verifikasi & lanjut · klik ganda sel untuk mengedit")
         hint.setObjectName("note")
-        bk.addWidget(hint)
+        from PySide6.QtWidgets import QSizePolicy as _SP
+        hint.setSizePolicy(_SP.Ignored, _SP.Preferred)
+        hint.setMinimumWidth(1)
+        bk.addWidget(hint, 1)
         rv.addLayout(bk)
         self.table = PhotoTable(self.model)
         rv.addWidget(self.table, 1)
@@ -334,6 +336,8 @@ class MainWindow(QMainWindow):
         while self.recentW.count():
             x = self.recentW.takeAt(0).widget()
             if x:
+                x.hide()
+                x.setParent(None)
                 x.deleteLater()
         rec = SET.get("recent", [])
         if rec:

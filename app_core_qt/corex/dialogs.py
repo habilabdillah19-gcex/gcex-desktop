@@ -225,7 +225,8 @@ class AiDlg(Dlg):
     status = Signal(object)  # hasil /core/ollama
 
     def __init__(self, parent):
-        super().__init__(parent, "AI lokal · Ollama", "AI <span style='color:#a9c3dd'>lokal</span> · Ollama", 640)
+        super().__init__(parent, "AI lokal · Ollama", "AI <span style='color:#a9c3dd'>lokal</span> · Ollama", 680)
+        self.setMinimumHeight(760)
         b = self.body
         self.state = box("Memeriksa…")
         b.addWidget(self.state)
@@ -306,7 +307,9 @@ class AiDlg(Dlg):
     def check(self, no_auto: bool = False) -> None:
         host = self.host.text().strip() or api.DEFAULT_HOST
         self.status.emit({"wait": True, "text": "AI lokal: memeriksa…"})
-        run_bg(api.call, "/core/ollama", {"host": host}, ok=lambda j: self._got(j, no_auto),
+        self._tok = getattr(self, "_tok", 0) + 1
+        tok = self._tok
+        run_bg(api.call, "/core/ollama", {"host": host}, ok=lambda j: tok == self._tok and self._got(j, no_auto),
                err=lambda e: (set_box(self.state, _esc(e), "er"), self.status.emit({"ok": False, "text": "AI lokal: ?"})))
 
     def _got(self, j: dict, no_auto: bool) -> None:
@@ -335,6 +338,8 @@ class AiDlg(Dlg):
             w = self.ml.takeAt(0).widget()
             if w:
                 self.grp.removeButton(w) if isinstance(w, QRadioButton) else None
+                w.hide()
+                w.setParent(None)
                 w.deleteLater()
         for m in j["models"]:
             size = f"{m['size'] / 1e9:.1f} GB" if m.get("size") else ""

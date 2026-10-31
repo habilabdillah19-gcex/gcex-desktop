@@ -659,16 +659,25 @@ class Interp:
         self.mkShowCb = QCheckBox("tampil")
         self.mkShowCb.setChecked(self.mk_show)
         bcsv, bcl = btn("CSV", "Semua tanda di proyek (CSV)", sm=True), btn("Tutup", sm=True)
-        v.addLayout(_row(QLabel("<b>TANDA INTERVAL</b>"), "Jenis", self.mkKind, self.bMkMode, self.mkShowCb, bcsv, bcl))
+        v.addLayout(_row(QLabel("<b>TANDA INTERVAL</b>"), "Jenis", self.mkKind, self.bMkMode))
+        v.addLayout(_row(self.mkShowCb, bcsv, bcl))
         self.mkHint = QLabel()
         self.mkHint.setObjectName("note")
         self.mkHint.setWordWrap(True)
         self.mkHint.setTextFormat(Qt.RichText)
         v.addWidget(self.mkHint)
         self.mkForm = QWidget()
-        g = QHBoxLayout(self.mkForm)
-        g.setContentsMargins(0, 0, 0, 0)
+        g0 = QVBoxLayout(self.mkForm)
+        g0.setContentsMargins(0, 0, 0, 0)
+        g0.setSpacing(4)
+        g = QHBoxLayout()
         g.setSpacing(6)
+        g2 = QHBoxLayout()
+        g2.setSpacing(6)
+        g3 = QHBoxLayout()
+        g3.setSpacing(6)
+        for x in (g, g2, g3):
+            g0.addLayout(x)
         self.mkFT = QLabel()
         self.mkF, self.mkT = QDoubleSpinBox(), QDoubleSpinBox()
         for x in (self.mkF, self.mkT):
@@ -683,8 +692,14 @@ class Interp:
         self.mkN = QLineEdit()
         self.mkN.setMinimumWidth(120)
         bs, self.bMkDel, bc = btn("Simpan", pri=True, sm=True), btn("Hapus", sm=True), btn("Batal", sm=True)
-        for x in (self.mkFT, QLabel("From"), self.mkF, QLabel("To"), self.mkT, self.mkSL, self.mkS, QLabel("Catatan"), self.mkN, bs, self.bMkDel, bc):
+        for x in (self.mkFT, QLabel("From"), self.mkF, QLabel("To"), self.mkT):
             g.addWidget(x)
+        g.addStretch(1)
+        for x in (self.mkSL, self.mkS, QLabel("Catatan"), self.mkN):
+            g2.addWidget(x)
+        for x in (bs, self.bMkDel, bc):
+            g3.addWidget(x)
+        g3.addStretch(1)
         self.mkErr = QLabel()
         self.mkErr.setObjectName("err")
         self.mkErr.setWordWrap(True)
@@ -1053,6 +1068,8 @@ class Interp:
         while self.ovL.count():
             w = self.ovL.takeAt(0).widget()
             if w:
+                w.hide()
+                w.setParent(None)
                 w.deleteLater()
         if not ov.layers:
             l = QLabel("Belum ada lapisan. Pilih <b>+ Lapisan</b> atau <b>Preset</b>.")
@@ -1220,6 +1237,8 @@ class Interp:
                 it = lay.takeAt(0)
                 w = it.widget()
                 if w:
+                    w.hide()
+                    w.setParent(None)
                     w.deleteLater()
                 elif it.layout():
                     _clear(it.layout())
@@ -1262,8 +1281,8 @@ class Interp:
             self.sgEd[k] = e
             ll = QLabel(lbl)
             ll.setObjectName("note")
-            g.addWidget(ll, i // 3, (i % 3) * 2)
-            g.addWidget(e, i // 3, (i % 3) * 2 + 1)
+            g.addWidget(ll, i // 2, (i % 2) * 2)
+            g.addWidget(e, i // 2, (i % 2) * 2 + 1)
         lay.addLayout(g)
         bs = btn("Simpan", pri=True, sm=True)
         bs.clicked.connect(self.seg_save)
@@ -1281,7 +1300,11 @@ class Interp:
         bc.clicked.connect(lambda: (self.seg_form_close(), setattr(self, "sg_sel", None), self.update()))
         self.sgErr = QLabel()
         self.sgErr.setObjectName("err")
-        lay.addLayout(_row(*bts, bc, self.sgErr))
+        lay.addLayout(_row(*bts[:2], bc))
+        if len(bts) > 2:
+            lay.addLayout(_row(*bts[2:]))
+        self.sgErr.setWordWrap(True)
+        lay.addWidget(self.sgErr)
         self.sgForm.show()
         self.update()
 
@@ -1664,6 +1687,8 @@ def _clear(lay) -> None:
     while lay.count():
         it = lay.takeAt(0)
         if it.widget():
+            it.widget().hide()
+            it.widget().setParent(None)
             it.widget().deleteLater()
         elif it.layout():
             _clear(it.layout())

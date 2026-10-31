@@ -135,6 +135,8 @@ class DhDlg(Dlg):
         while self.glL.count():
             w = self.glL.takeAt(0).widget()
             if w:
+                w.hide()
+                w.setParent(None)
                 w.deleteLater()
         self.glW.setVisible(self.kind == "geology" and bool(cols))
         if self.kind != "geology" or not cols:
@@ -216,6 +218,8 @@ class DhDlg(Dlg):
         while self.rolesL.count():
             w = self.rolesL.takeAt(0).widget()
             if w:
+                w.hide()
+                w.setParent(None)
                 w.deleteLater()
         self.roles: dict[str, QComboBox] = {}
         for i, r in enumerate(j["roles"]):

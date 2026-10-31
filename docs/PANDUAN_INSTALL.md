@@ -446,3 +446,8 @@ Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor ver
 - Installer Qt memasang ke folder yang sama (`%LOCALAPPDATA%\Programs\Core-Ex`) dan mencopot Core-Ex versi Electron lebih dulu. Lisensi, pengaturan dan folder `_GCEx_Core` tidak tersentuh.
 - Qt for Python / Qt 6 berlisensi LGPL-3.0 (dinamis, file Qt bisa diganti); teks lisensinya ikut di folder `legal`.
 
+## 42. Core-Ex 0.23.5
+
+- Installer Core-Ex masih versi Electron (isi sama). Kode Core-Ex Qt: formulir tanda & segmen dipecah beberapa baris agar muat di panel sempit, daftar lapisan & pemetaan kolom tidak lagi bertumpuk saat diganti, pemeriksaan Ollama yang lama diabaikan.
+- CI: ringkasan galat uji Core-Ex Qt dan galat pengemasan rilis ditulis sebagai anotasi run (mudah dibaca tanpa membuka log).
+
