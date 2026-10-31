@@ -661,3 +661,16 @@ Run 0.24.5 membuktikan perbaikan UTF-8 berhasil (galat `UnicodeEncodeError` hila
 Keduanya diselaraskan. Tutorial bergambar sekarang menelusuri **lensa 2 beserta splay hangingwall-nya** (`QV_Lensa2` + `QV_Splay_HW`) — pasangan yang menceritakan hal yang sama seperti versi lama (bor dari sisi hanging wall menembus splay dulu, baru vein utama), tetapi memakai domain yang benar-benar ada di data baru. Bagian "Geometri yang perlu diingat" diperbarui: endapan berupa array 4 lensa en-echelon, ore shoot ber-pitch 55° yang mengontrol tebal dan kadar sekaligus, bidang rata-rata data ±66° (bukan 70° karena permukaan vein sigmoidal), paleo-muka air tanah RL 250 m, dan rujukan ke kunci jawaban.
 
 Lensa lain dikerjakan dengan cara yang persis sama, jadi langkah-langkah tutorial tidak berubah.
+
+## 55. GC-Ex Block Model & Drill Hole Ultimate 0.24.7
+
+Run 0.24.6 gagal **sebelum** sampai ke langkah tutorial: langkah *Core-Ex Qt — bangun (PyInstaller)* berhenti, sehingga sembilan langkah sesudahnya termasuk Release ikut dilewati dan v0.24.6 tidak terbit.
+
+Penyebabnya bukan kode: di tengah langkah itu ada pengambilan teks lisensi GNU (LGPL-3.0 dan GPL-3.0) langsung dari `gnu.org` — **setiap build**, tanpa salinan di repo. Satu gangguan jaringan menggagalkan seluruh rilis.
+
+Dua perbaikan, keduanya mengikuti prinsip yang sama dengan perbaikan 0.23.7: langkah yang tidak menentukan isi rilis tidak boleh menahan rilis.
+
+1. **Pengambilan teks lisensi tahan gangguan.** Dicoba sampai 3× dengan jeda; bila tetap gagal, salinannya diambil dari `_3_Lisensi-dan-Tentang.zip` rilis terakhir (GitHub selalu terjangkau dari runner); baru setelah keduanya gagal langkah itu menyerah. Teksnya hanya disalin, tidak pernah diubah.
+2. **Kegagalan Core-Ex Qt tidak menahan Release GC-Ex.** Core-Ex Qt masih tahap percobaan — installer yang terbit masih versi Electron — jadi kegagalan build Qt kini ditandai sebagai peringatan, langkah Qt berikutnya melewati diri, dan rilis GC-Ex tetap berjalan.
+
+Karena run 0.24.6 berhenti di langkah 22, perbaikan tutorial di versi itu (`QV_Lensa2` + `QV_Splay_HW`, wireframe `QV_Lensa2_Leapfrog.obj`) **belum pernah diuji**; pengujiannya ikut di rilis ini.

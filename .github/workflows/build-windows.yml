@@ -167,17 +167,53 @@ jobs:
           exit 0
       - name: Core-Ex Qt - bangun (PyInstaller)
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          # Core-Ex Qt masih tahap percobaan: installer rilis tetap versi Electron. Karena itu
+          # kegagalan di sini TIDAK boleh menahan Release GC-Ex - ditandai lalu dilewati.
+          trap {
+            Write-Host ("::warning::build Core-Ex Qt gagal: " + $_.Exception.Message)
+            Write-Host "::warning::langkah Core-Ex Qt berikutnya dilewati; Release GC-Ex tetap jalan"
+            "QT_BUILD=gagal" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            exit 0
+          }
           $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
           Set-Content -Path app_core_qt/version.txt -Value $v -NoNewline -Encoding ascii
           pyinstaller --noconfirm --onedir --windowed --name Core-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
             --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller Core-Ex Qt gagal" }
+          # Teks lisensi GNU diambil dari gnu.org. Satu gangguan jaringan dulu menggagalkan SELURUH
+          # rilis, jadi: coba 3x, lalu ambil salinan dari rilis sebelumnya (selalu terjangkau dari
+          # runner), baru menyerah. Teksnya tidak pernah diubah - hanya disalin.
           foreach ($n in @("lgpl-3.0","gpl-3.0")) {
             $f = if ($n -eq "lgpl-3.0") { "legal/LISENSI_QT_LGPL-3.0.txt" } else { "legal/LISENSI_QT_GPL-3.0.txt" }
-            Invoke-WebRequest -UseBasicParsing ("https://www.gnu.org/licenses/" + $n + ".txt") -OutFile $f
-            if (-not (Test-Path $f) -or (Get-Item $f).Length -lt 5000) { throw "gagal mengambil teks $n" }
+            $ok = $false
+            for ($i = 1; $i -le 3 -and -not $ok; $i++) {
+              try {
+                Invoke-WebRequest -UseBasicParsing ("https://www.gnu.org/licenses/" + $n + ".txt") -OutFile $f -TimeoutSec 40
+                if ((Test-Path $f) -and (Get-Item $f).Length -ge 5000) { $ok = $true; break }
+              } catch { Write-Host ("::warning::gnu.org coba-$i " + $_.Exception.Message) }
+              Start-Sleep -Seconds 10
+            }
+            if (-not $ok) {
+              Write-Host "::warning::gagal mengambil $n dari gnu.org - mencoba salinan dari rilis sebelumnya"
+              $tag = gh release list -R $env:GITHUB_REPOSITORY --limit 20 --json tagName,isPrerelease --jq '[.[]|select(.isPrerelease==false)][0].tagName'
+              if ($tag) {
+                $tmp = Join-Path $env:RUNNER_TEMP "lis"
+                New-Item -ItemType Directory -Force $tmp | Out-Null
+                gh release download $tag -R $env:GITHUB_REPOSITORY -p "*_3_Lisensi-dan-Tentang.zip" -D $tmp --clobber
+                $z = Get-ChildItem $tmp -Filter *.zip | Select-Object -First 1
+                if ($z) {
+                  Expand-Archive $z.FullName -DestinationPath "$tmp/x" -Force
+                  $src = Get-ChildItem "$tmp/x" -Recurse -Filter ([System.IO.Path]::GetFileName($f)) | Select-Object -First 1
+                  if ($src -and $src.Length -ge 5000) { Copy-Item $src.FullName $f -Force; $ok = $true
+                    Write-Host "::notice::teks $n diambil dari rilis $tag" }
+                }
+              }
+            }
+            if (-not $ok) { throw "teks lisensi $n tidak dapat diperoleh (gnu.org maupun rilis sebelumnya)" }
           }
           $d = "dist-qt/Core-Ex"
           New-Item -ItemType Directory -Force "$d/legal","$d/docs" | Out-Null
@@ -185,9 +221,11 @@ jobs:
           Copy-Item docs/PANDUAN_CORE.html "$d/docs"
           Get-ChildItem $d | Format-Table Name, Length
           "{0:N1} MB" -f ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+          exit 0
       - name: Core-Ex Qt - uji mandiri exe (backend, Pillow, Excel, font) & gerbang lisensi
         shell: pwsh
         run: |
+          if ($env:QT_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build Core-Ex Qt gagal"; exit 0 }
           $exe = "dist-qt/Core-Ex/Core-Ex.exe"
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/qt_core/LTH-1" | Out-Null
           python -c "from PIL import Image; Image.new('RGB',(1200,500),(120,100,80)).save(r'$env:RUNNER_TEMP/qt_core/LTH-1/LTH-1_Box1_0.0-3.5.jpg')"
@@ -219,6 +257,7 @@ jobs:
       - name: Core-Ex Qt - installer (NSIS) & uji pasang / copot
         shell: pwsh
         run: |
+          if ($env:QT_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build Core-Ex Qt gagal"; exit 0 }
           $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
           $mk = (Get-Command makensis -ErrorAction SilentlyContinue).Source
           if (-not $mk) { foreach ($c in @("${env:ProgramFiles(x86)}\NSIS\makensis.exe", "$env:ProgramFiles\NSIS\makensis.exe")) { if (Test-Path $c) { $mk = $c; break } } }
