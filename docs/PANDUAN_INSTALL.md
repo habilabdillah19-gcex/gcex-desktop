@@ -568,3 +568,27 @@ Hasil ukur (ortho sintetis 8.000 × 8.000 px @ 5 cm, topografi 200.000 titik, Ch
 > **Hasil laporan tidak berubah.** Grid elevasi dipakai **hanya untuk tampilan** (menempelkan warna ortho ke topografi). Semua perhitungan *Reporting BM*, estimasi dan validasi tetap memanggil `topoZ()` asli. Grid itu pun dibangun dengan memanggil `topoZ()` asli pada simpul-simpulnya: pada uji 300 titik acak, selisihnya rata-rata **4 mm** dan maksimum **3,8 cm** pada permukaan dengan relief 30 m.
 
 Catatan pemakaian: saat zoom/geser, tampilan disegarkan ±0,3 detik setelah gerakan berhenti (bukan tiap frame), dan mesh dibuat sedikit lebih luas dari layar supaya geseran kecil tidak menyisakan tepi kosong. Klik ganda / autoscale mengembalikan tampilan ke seluruh area.
+
+## 51. GC-Ex Block Model & Drill Hole Ultimate 0.24.2
+
+**Data latihan simulasi diganti, dan tutorial tambahan 0.24 ditambahkan.**
+
+Data latihan lama (±33 bor, ±2.500 baris assay, 2 vein) diganti endapan emas **epitermal low-sulphidation** terkontrol zona geser yang jauh lebih besar dan dibuat taat kaidah geologi, supaya setiap latihan punya jawaban yang diketahui:
+
+| Unsur model | Isi |
+|---|---|
+| Array vein | **4 lensa sigmoidal en-echelon** (right-stepping) + 1 splay hangingwall |
+| Ore shoot | **pitch 55°** dari garis strike di dalam bidang vein, sama untuk semua lensa |
+| Zona dilatan | tebal **dan** kadar maksimum dikontrol satu struktur yang sama (jog dilatan = ore shoot) |
+| Zonasi vertikal | paleo-muka air tanah RL 250 m: zona didih bertekstur colloform, Ag/Au naik ke atas (4,3 → 19), Pb–Zn naik ke bawah, As penanda vein |
+| Pelapukan | tudung tercuci 15 m teratas, selimut supergen tepat di atas muka air tanah, transisi, batuan segar |
+| Sesar | pasca-mineralisasi strike 110°/dip 65°, offset 12 m, panjang ±150 m — hanya memotong lensa 2 & 3 |
+| Efek nugget | 5% sampel Au dilonjakkan → CV Au 1,9 (perlu top-cut), Ag jauh lebih jinak |
+
+Ukuran: **610 bor resource + 459 bor grade control**, ±98.000 baris assay dengan Au, Ag, Cu, Pb, Zn, S, As, SG; logging Lith, Alt, Ox, Texture, RQD, Recovery. Ditambah subset latihan cepat, dua tahap data upsert, vein bercabang + block model 2,5 m, database dengan 9 kesalahan sengaja, QAQC (CRM/duplikat/blank), struktur & pick-up, dua versi topografi, block model kosong, wireframe, dan `JAWABAN_MODEL.txt` sebagai kunci jawaban. `make_sim_data.py --besar` menghasilkan ±300.000 baris assay untuk uji beban.
+
+Verifikasi (dari data yang dihasilkan, bukan dari model): kipas variogram GT per bor menemukan kembali **pitch 55°**; bidang terbaik seluruh intersep memberi **dip ~66°, dip-azimuth ~139°** (bidang acuan 70°/135° — bedanya karena vein sigmoidal, dan ini dijelaskan di tutorial); kadar Au memuncak di **RL 250 m** bersamaan tekstur colloform; CRM bias ~0% (sd 3,7–5,6%), duplikat HARD rata ~8%, blank < 0,02 g/t.
+
+**Tutorial Tambahan GC-Ex 0.24** (`GCEx_Tutorial_0.24_Tambahan.pdf`, 12 halaman) ikut di `_1_Dokumen.zip`: model data latihan & daftar berkas, latihan terpandu menemukan kembali geometri endapan (orientasi, pitch, pemulihan sesar, zonasi vertikal, top-cut), klasifikasi keyakinan sumber daya, topografi & orthofoto resolusi tinggi, serta daftar bagian tutorial lama yang perlu disesuaikan. Semua gambarnya **dihitung dari model dan berkas data**, bukan tangkapan layar, sehingga dapat dibangun ulang di mesin mana pun: `python docs/tutorial-gcex/src/build_tutorial_024.py`.
+
+> Catatan: dua tutorial bergambar yang lama (*Modelling & Estimasi*, *Block Model*) dibangun dari tangkapan layar aplikasi dan **belum** diperbarui ke data baru — langkah kerjanya tetap berlaku, yang berubah hanya nama domain dan angka di layar (daftarnya ada di bab 5 tutorial tambahan). Membangun ulang keduanya memerlukan mesin tempat GC-Ex dapat membuka folder proyek; skripnya kini memberi pesan jelas bila tangkapan layar belum tersedia.

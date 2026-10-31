@@ -11,6 +11,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 IMG = os.path.join(HERE, 'img')
 OUT = os.path.join(HERE, 'build')
 os.makedirs(OUT, exist_ok=True)
+if not os.path.isdir(IMG) or not os.path.exists(os.path.join(IMG, 'notes.json')):
+    raise SystemExit(
+        "Tangkapan layar belum ada di %s.\n"
+        "Tutorial bergambar ini dibangun dari tangkapan layar aplikasi, jadi jalankan dulu:\n"
+        "    python docs/tutorial-gcex/src/tutorial_shots.py\n"
+        "Langkah itu membuka GC-Ex di Chromium dan memerlukan browser yang dapat membuka folder\n"
+        "proyek (File System Access API). Di lingkungan terbatas (mis. kontainer CI Linux) langkah\n"
+        "ini dapat menghentikan renderer; pakai mesin Windows tempat GC-Ex biasa dipakai.\n"
+        "Tutorial yang TIDAK memerlukan tangkapan layar: build_tutorial_024.py" % IMG)
+
 N = json.load(open(os.path.join(IMG, 'notes.json'), encoding='utf-8'))
 PDF = os.path.join(HERE, '..', 'GCEx_Tutorial_Modelling_Estimasi.pdf')
 

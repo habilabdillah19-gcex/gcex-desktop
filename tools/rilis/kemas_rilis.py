@@ -91,7 +91,7 @@ def main():
         (D / "PANDUAN_INSTALL.md", "Panduan_Teknis/PANDUAN_INSTALL.md"),
         (D / "GC-Ex_Tutorial_Aktivasi_Lisensi.pdf", "Tutorial/GC-Ex_Tutorial_Aktivasi_Lisensi.pdf"),
         (D / "tutorial-aktivasi" / "BACA_SAYA.md", "Tutorial/Aktivasi_tutorial_BACA_SAYA.md"),
-    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf")] if has_gcex else [])
+    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_0.24_Tambahan.pdf", "Tutorial/GC-Ex_Tutorial_0.24_Tambahan.pdf")] if has_gcex else [])
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
           (D / "Core-Ex_Tutorial_Penggunaan.pdf", "Tutorial/Core-Ex_Tutorial_Penggunaan.pdf"),
           (D / "tutorial-core" / "README.md", "Tutorial/Core-Ex_tutorial_README.md")] if has_core else []))

@@ -1,0 +1,48 @@
+KUNCI JAWABAN MODEL SIMULASI GC-Ex  (data sintetis, bukan proyek nyata)
+======================================================================
+Endapan emas epitermal low-sulphidation, terkontrol zona geser. Semua angka di bawah ini adalah
+PARAMETER MODEL yang dipakai membuat datanya, plus ANGKA HASIL UKUR dari data yang jadi — supaya
+Anda tahu sampai berapa dekat hasil pemodelan Anda masuk akal.
+
+1. PARAMETER MODEL
+------------------
+Zona geser              : strike 45 deg, dip 70 deg ke azimuth 135  (bidang acuan datar)
+Array vein              : 4 lensa sigmoidal EN-ECHELON right-stepping + 1 splay hangingwall
+Pitch ore shoot         : 55 deg dari garis strike, DI DALAM bidang vein, sama untuk semua lensa
+Zona dilatan = ore shoot: tebal maksimum DAN kadar maksimum dikontrol satu struktur yang sama
+Paleo-muka air tanah    : RL 250 m; zona didih (bonanza, tekstur colloform) +-25 m
+Sesar pasca-mineralisasi: strike 110 deg, dip 65 deg, offset dip-slip 12 m, panjang +-150 m
+                          (hanya memotong bagian tengah array = lensa 2 & 3; lensa 1 & 4 utuh)
+Pelapukan               : tudung tercuci 15 m teratas, selimut supergen tepat di atas muka air tanah
+Zonasi vertikal         : Ag/Au naik ke atas, Pb-Zn naik ke bawah, As penanda vein
+Efek nugget Au          : 5% sampel dilonjakkan (emas kasar)
+
+2. ANGKA HASIL UKUR DARI DATA INI
+---------------------------------
+Bidang terbaik seluruh intersep : dip ~66 deg, dip-azimuth ~139 deg
+  -> WAJAR kalau Anda mendapat dip ~64-66, BUKAN 70. Permukaan vein sigmoidal (melengkung), jadi
+     bidang rata-rata bagian yang terbor memang lebih landai dari bidang acuan 70 deg.
+Pitch dari kipas variogram GT   : 55 deg (gabungan 4 lensa; per lensa 50-65 deg)
+  -> Ukur dengan GT (kadar x tebal) PER BOR, bukan per sampel, dan gabungkan keempat lensa:
+     satu lensa saja terlalu sedikit datanya untuk menembus efek nugget Au.
+  -> Pada lensa 2 & 3 arahnya kacau bila sesar BELUM dipulihkan. Itu latihan Sesar 3D.
+Au di dalam vein                : mean ~4,8 g/t, median ~2,2 g/t, CV ~2,0, maks ~150 g/t
+  -> CV 2 berarti top-cut memang perlu; coba 30-60 g/t dan lihat pengaruhnya ke estimasi.
+Puncak kadar                    : RL 230-270 m (zona didih), Au rata-rata ~10 g/t
+Ag/Au                           : ~4,4 di RL 150-170  ->  ~17 di RL 290-310
+Pb, Zn                          : naik ke bawah (Zn ~0,06% di atas  ->  ~0,93% di bawah)
+As                              : ~480 ppm di vein vs ~29 ppm di batuan dinding
+Tebal intersep per bor          : median 1,0 m, p90 3,5 m, maks ~5,5 m (endapan vein sempit)
+Tekstur colloform (COLL)        : hampir 100% di RL 230-270, 0% di luarnya
+QAQC                            : CRM bias ~0% (sd 3,7-5,6%), duplikat HARD rata ~8%, blank < 0,02 g/t
+
+3. YANG SEHARUSNYA ANDA TEMUKAN KEMBALI
+---------------------------------------
+[ ] Domain vein: 4 lensa terpisah yang saling bertumpang sepanjang strike (JANGAN disatukan jadi
+    satu vein menerus — itu akan melebarkan tonase dan menghaluskan kadar).
+[ ] Orientasi elipsoid pencarian: major searah pitch 55 deg di dalam bidang vein, semi searah strike,
+    minor tegak lurus bidang vein (rasio kira-kira 3 : 2 : 1).
+[ ] Zona kadar tinggi memanjang searah pitch, memusat di sekitar RL 250 m.
+[ ] Variogram Au bernugget tinggi; Ag lebih jinak. Top-cut Au diperlukan.
+[ ] Tanpa pemulihan sesar, lensa 2 & 3 tampak bergeser 12 m dan domainnya pecah.
+[ ] Klasifikasi: bagian dalam (b > ~140 m menurun dip) hampir tidak terbor -> wajar jadi Inferred.

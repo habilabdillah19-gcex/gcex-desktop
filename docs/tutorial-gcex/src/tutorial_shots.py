@@ -58,7 +58,7 @@ with sync_playwright() as pw:
     ev("uiTab('Geo');var ci=CAT.findIndex(c=>c.name==='Lith');$('geoAttr').value=ci;$('geoRib').checked=true;geoChanged();updatePlot()");pg.wait_for_timeout(500);shot('geologi_lith')
     # 7. Geological Modelling: domain
     ev("uiTab('GM');$('geoRib').checked=false;if(!$('statsCard').classList.contains('min'))uiStats();updatePlot()")
-    ev("gmAddDom('QV_Utama');gmAddDom('QV_HW1');gmAct(GM.doms[0].id);PT.open['gm']=1;PT.render(true)")  # 0.20: + Tambah domain di Project Tree
+    ev("gmAddDom('QV_Lensa1');gmAddDom('QV_Lensa2');gmAddDom('QV_Lensa3');gmAddDom('QV_Lensa4');gmAddDom('QV_Splay_HW');gmAct(GM.doms[0].id);PT.open['gm']=1;PT.render(true)")  # 0.20: + Tambah domain di Project Tree
     ev("gmAct(GM.doms[0].id)");shot('gm_domain',PANEL)
     # 8. usulan otomatis
     ev("GM._openAuto=true;GM.opt.el='Au';GM.opt.cut=0.5;GM.opt.minL=1;GM.opt.dil=1;GM.opt.scope='all';GM.opt.keep=true;gmPanel()")
