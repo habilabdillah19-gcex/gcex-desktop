@@ -481,3 +481,24 @@ Perbaikan Core-Ex Qt:
 
 - Installer Core-Ex di Release masih versi Electron. Perbaikan Core-Ex Qt (melengkapi 0.23.7): penjadwalan tata letak panel, hasil cek Ollama di dialog AI, fokus formulir tanda, pesan sementara dan menu cari kini terikat ke jendelanya, sehingga tidak lagi menimbulkan galat `Internal C++ object (QWidget) already deleted` bila jendela sudah ditutup lebih dulu (mis. saat buka ulang Core-Ex). Hasil tugas latar yang datang setelah jendela ditutup diabaikan dan dicatat di log.
 - CI: uji satu jendela mengirim pesan dari thread lain (named pipe Windows menunggu event loop), ringkasan galat uji Core-Ex Qt kini menyertakan lokasi file.
+
+## 46. Core-Ex 0.23.9
+
+**Penyebab sebenarnya Release v0.23.3–v0.23.7 tidak terbit: izin, bukan kode.** Setelah perbaikan 0.23.7, build berhasil sampai langkah Release, dan pesan galatnya akhirnya terlihat:
+
+```
+gh HTTP 403: Resource not accessible by integration
+    https://api.github.com/repos/.../releases
+```
+
+Artinya `GITHUB_TOKEN` yang dipakai CI tidak diberi izin menulis, sehingga `gh release create` ditolak. Workflow sendiri sudah meminta `permissions: contents: write`, jadi batasnya ada di **pengaturan repo**:
+
+> GitHub → repo ini → **Settings › Actions › General › Workflow permissions** → pilih **Read and write permissions** → Save.
+
+Setelah itu jalankan ulang build terakhir (tab **Actions** → run terakhir → **Re-run all jobs**) — Release akan terbit tanpa perlu push baru. Repo baru di GitHub secara bawaan memakai izin *read-only*, dan itulah yang terjadi sejak v0.23.3.
+
+Perubahan di versi ini:
+
+- CI: galat 403 dikenali dan dilaporkan dengan petunjuk pengaturan di atas, serta tidak dicoba ulang 3× (percuma, hanya memperlambat).
+- Core-Ex Qt (satu jendela): bila data dan pemutusan soket tiba bersamaan, `readyRead` bisa terlewat sehingga folder dari Core-Ex kedua tidak diteruskan. Sekarang sisa buffer juga dibaca saat soket terputus, pengiriman memproses event loop lebih dulu, dan pesan dijaga agar tidak dikirim dua kali. (Penyebab uji `test_single_instance_forwards_folder` gagal di Windows.)
+- Catatan: kuota penyimpanan artefak GitHub Actions penuh, jadi installer cadangan di tab Actions sementara tidak terunggah. Kuota dihitung ulang tiap 6–12 jam; setelah Release bisa terbit lagi, installer tetap tersedia dari Release.

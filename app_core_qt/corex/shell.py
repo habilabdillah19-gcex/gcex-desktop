@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QProcess, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QProcess, QThread, Signal
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from .util import SET, log
@@ -68,6 +68,11 @@ class SingleInstance(QObject):
         s.write((json.dumps(payload) + "\n").encode("utf-8"))
         s.flush()
         s.waitForBytesWritten(timeout_ms)
+        # bila pengirim & penerima satu proses DAN satu thread (mis. di uji), server tidak akan pernah
+        # membaca tanpa event loop diputar dulu. Dari thread lain processEvents() tidak boleh dipakai.
+        app = QCoreApplication.instance()
+        if app is not None and QThread.currentThread() is app.thread():
+            app.processEvents()
         s.waitForReadyRead(timeout_ms)  # jawaban "ok" -> jendela lama sudah menerima
         s.disconnectFromServer()
         return True
@@ -89,10 +94,18 @@ class SingleInstance(QObject):
             c = self.server.nextPendingConnection()
             buf = bytearray()
 
-            def read(c=c, buf=buf):
-                buf.extend(bytes(c.readAll()))
+            done = []
+
+            def read(c=c, buf=buf, done=done):
+                if done:
+                    return
+                try:
+                    buf.extend(bytes(c.readAll()))
+                except RuntimeError:  # soket sudah dihapus
+                    return
                 if b"\n" not in buf:
                     return
+                done.append(True)
                 line = bytes(buf).split(b"\n", 1)[0]
                 try:
                     msg = json.loads(line.decode("utf-8") or "{}")
@@ -104,6 +117,8 @@ class SingleInstance(QObject):
                 self._deliver(msg if isinstance(msg, dict) else {})
 
             c.readyRead.connect(read)
+            # bila data dan pemutusan tiba bersamaan, readyRead bisa terlewat -> baca sisa buffer saat putus
+            c.disconnected.connect(read)
             c.disconnected.connect(c.deleteLater)
 
     def _deliver(self, msg: dict) -> None:

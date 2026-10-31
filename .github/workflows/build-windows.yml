@@ -278,6 +278,11 @@ jobs:
             }
             if ($LASTEXITCODE -eq 0) { $ok = $true; break }
             $o | Select-Object -Last 10 | ForEach-Object { Write-Host ("::warning::gh coba-$i " + $_) }
+            if ($o -match "403" -or $o -match "not accessible by integration") {
+              # bukan gangguan jaringan: token GITHUB_TOKEN tidak punya izin tulis -> mencoba ulang tidak ada gunanya
+              Write-Host "::error::GITHUB_TOKEN tidak boleh membuat Release (HTTP 403). Buka Settings > Actions > General > Workflow permissions di repo ini dan pilih 'Read and write permissions', lalu jalankan ulang build. Workflow sudah meminta contents: write, jadi batasnya ada di pengaturan repo."
+              break
+            }
             Start-Sleep -Seconds 20
           }
           if (-not $ok) { $o | Select-Object -Last 10 | ForEach-Object { Write-Host ("::error::gh " + $_) }; throw "gagal membuat release $tag setelah 3 percobaan" }
