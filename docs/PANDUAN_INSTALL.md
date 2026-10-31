@@ -724,3 +724,10 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Infografis Trenching: kotak kadar per interval (bisa ditarik), tanda batas interval, warna segmen menurut kelas kadar satu unsur + legenda kelas, komposit otomatis tertimbang panjang.
 - **Atur unsur & kelas warna** (satuan, desimal, tampil, batas kelas) dan **⇩ Tabel sampel (CSV)**. Ekspor STR / DXF: satu segmen per interval dengan Sample ID & kadar semua unsur.
 - Panduan: PANDUAN_CORE bagian 6c langkah 3–4.
+
+## 62. Core-Ex 0.29.0 — Singkapan: simbol & label gaya peta (Core-Ex versi Qt)
+
+- Fitur baru hanya di **Core-Ex versi Qt** (installer uji di pre-release `core-ex-qt-uji`).
+- Jenis fitur baru: **Strike / dip terukur** (simbol T + N100/80, ikut STR) dan **Label zona (rentang)** (kurung + garis penunjuk + kotak putih). Label biasa bisa memakai kotak putih.
+- **Kompas** di infografis: otomatis dari georef (dinding = arah kamera menghadap, lantai = panah utara) atau manual.
+- Kotak kadar interval ditempatkan di atas garis dengan dua ketinggian bergantian.

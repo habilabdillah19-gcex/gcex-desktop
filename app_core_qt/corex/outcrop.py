@@ -277,7 +277,12 @@ class OcTool:
             return True
         for fid, r, k in reversed(self.pg.boxes):
             if r.contains(pt):
-                self.drag = {"type": k, "fid": fid, "off": QPointF(pt.x() - r.center().x(), pt.y() - r.center().y()), "moved": False}
+                ref = r.center()
+                f0 = self.pg.feat(fid) if k == "pt" else None
+                if f0:  # label / simbol: geser titiknya sendiri, bukan pusat kotak teks
+                    v = self.pg.view
+                    ref = QPointF(f0["pts"][0][0] * v.w, f0["pts"][0][1] * v.h)
+                self.drag = {"type": k, "fid": fid, "off": QPointF(pt.x() - ref.x(), pt.y() - ref.y()), "moved": False}
                 if fid > 0:
                     self.select(fid)
                 return True
@@ -411,13 +416,24 @@ class OcTool:
         pts = self.pts
         self.mode, self.pts, self.hover_pt = "select", [], None
         if len(pts) >= need:
-            name = ""
-            if shape == "point":
-                name = self.pg.ask_text("Teks label:", "")
+            name, attrs = "", {}
+            if kind == "orientasi":
+                t = self.pg.ask_text("Strike / dip (mis. N100/80 atau 100/80):", "")
+                m = re.match(r"^\s*N?\s*(\d+(?:[.,]\d+)?)\s*[/ ]\s*(\d+(?:[.,]\d+)?)", t or "", re.I)
+                if not m:
+                    if t:
+                        say(self.pg, "Format strike / dip tidak dikenal. Contoh: N100/80", warn=True)
+                    self.pg.draw_done()
+                    return
+                attrs = {"strike": float(m.group(1).replace(",", ".")), "dip": float(m.group(2).replace(",", "."))}
+            elif shape == "point" or kind == "label_zona":
+                name = self.pg.ask_text("Teks label:" if shape == "point" else "Nama zona (mis. Intermediate Argillic Zone):", "")
                 if not name:
                     self.pg.draw_done()
                     return
-            self.pg.new_feat(kind, pts, name)
+                if shape == "point" and self.pg.cbLabelBox.isChecked():
+                    attrs = {"style": "box"}
+            self.pg.new_feat(kind, pts, name, attrs)
         self.pg.draw_done()
 
     def select(self, fid) -> None:
@@ -664,6 +680,11 @@ class OutcropPage(QWidget):
         self.cbSnap.setChecked(True)
         self.cbSnap.setToolTip("Tempelkan titik ke titik / garis fitur lain agar kontak tidak bercelah")
         th.addWidget(self.cbSnap)
+        self.cbLabelBox = QCheckBox("Label kotak")
+        self.cbLabelBox.setChecked(bool(SET.get("ocLabelBox", True)))
+        self.cbLabelBox.setToolTip("Label baru memakai kotak putih (seperti label zona), bukan teks berhalo")
+        self.cbLabelBox.toggled.connect(lambda on: SET.set("ocLabelBox", on))
+        th.addWidget(self.cbLabelBox)
         self.cbInfo = QCheckBox("Infografis")
         self.cbInfo.setChecked(True)
         self.cbInfo.setToolTip("Tampilkan judul, kotak kadar, legenda, bar skala seperti hasil ekspor")
@@ -877,6 +898,19 @@ class OutcropPage(QWidget):
         self.lenL = QLabel("Panjang m")
         g.addWidget(self.lenL, 3, 0)
         g.addWidget(self.fLen, 3, 1)
+        self.sdW = QWidget()
+        sdl = QHBoxLayout(self.sdW)
+        sdl.setContentsMargins(0, 0, 0, 0)
+        self.fStrike, self.fDip = QLineEdit(), QLineEdit()
+        self.fStrike.setPlaceholderText("0–360")
+        self.fDip.setPlaceholderText("0–90")
+        for lab, e in (("Strike °", self.fStrike), ("Dip °", self.fDip)):
+            sdl.addWidget(QLabel(lab))
+            sdl.addWidget(e)
+            e.returnPressed.connect(self.save_form)
+        g.addWidget(self.sdW, 3, 0, 1, 4)
+        self.fBoxStyle = QCheckBox("Kotak putih (gaya label zona)")
+        g.addWidget(self.fBoxStyle, 3, 2, 1, 2)
         self.sBox = QFrame()
         sv = QVBoxLayout(self.sBox)
         sv.setContentsMargins(0, 2, 0, 0)
@@ -995,6 +1029,23 @@ class OutcropPage(QWidget):
         for c, k in ((self.iLeg, "show_legend"), (self.iScale, "show_scale"), (self.iNames, "show_names"), (self.iDesc, "show_desc"), (self.iFill, "fill"),
                      (self.iIds, "show_ids"), (self.iAuto, "auto_comp")):
             c.toggled.connect(lambda on, k=k: self.save_info({k: on}))
+        kr = QHBoxLayout()
+        kr.addWidget(QLabel("Kompas"))
+        self.iCompass = QComboBox()
+        self.iCompass.addItem("otomatis dari georef", "auto")
+        for d in oc_paint.COMPASS:
+            self.iCompass.addItem(f"arah pandang {d}", d)
+        self.iCompass.addItem("tidak ditampilkan", "off")
+        self.iCompass.setToolTip("Dinding: huruf = arah kamera menghadap (dihitung dari georef). Lantai: panah utara diputar sesuai georef.\n"
+                                 "Tanpa georef pilih arah manual.")
+        kr.addWidget(self.iCompass, 1)
+        self.iCompPos = QComboBox()
+        for k, t in (("tl", "kiri atas"), ("tr", "kanan atas"), ("bl", "kiri bawah"), ("br", "kanan bawah")):
+            self.iCompPos.addItem(t, k)
+        kr.addWidget(self.iCompPos)
+        v.addLayout(kr)
+        self.iCompass.activated.connect(lambda *_: self.save_info({"compass": self.iCompass.currentData()}))
+        self.iCompPos.activated.connect(lambda *_: self.save_info({"compass_pos": self.iCompPos.currentData()}))
         cr = QHBoxLayout()
         cr.addWidget(QLabel("Warnai interval menurut"))
         self.iColor = QComboBox()
@@ -1126,6 +1177,16 @@ class OutcropPage(QWidget):
             i["title"] = (self.cur or {}).get("title") or ""
         if self.comp_pos:
             i["comp_u"], i["comp_v"] = self.comp_pos
+        mode = i.get("compass") or "auto"
+        sol = (self.geo_res or {}).get("solution") or {}
+        if mode in oc_paint.COMPASS:
+            i["_compass"] = {"mode": "view", "letter": mode}
+        elif mode == "auto" and sol.get("ok"):
+            if (self.geo_res.get("kind") or "wall") == "floor":
+                if sol.get("up_az") is not None:
+                    i["_compass"] = {"mode": "north", "rot": -sol["up_az"]}
+            elif sol.get("view_az") is not None:
+                i["_compass"] = {"mode": "view", "az": sol["view_az"]}
         return i
 
     def m_per_px(self) -> float | None:
@@ -1368,6 +1429,8 @@ class OutcropPage(QWidget):
             c.blockSignals(False)
         self.iComp.setEnabled(i.get("template") == "trench")
         self.iColor.setCurrentIndex(max(0, self.iColor.findData(i.get("grade_color") or "")))
+        self.iCompass.setCurrentIndex(max(0, self.iCompass.findData(i.get("compass") or "auto")))
+        self.iCompPos.setCurrentIndex(max(0, self.iCompPos.findData(i.get("compass_pos") or "tl")))
         self.iDesc.setEnabled(i.get("template") == "wall")
         self.geo_refresh()
         self.feat_list()
@@ -1489,6 +1552,8 @@ class OutcropPage(QWidget):
                 g = [f"{len(iv)} sampel {cp['length']:g} m" + (f" · {e0['key']} {oc_paint.fmt_grade(cp['grades'][e0['key']], e0)}" if e0 else "")]
             else:
                 g = oc_paint.sample_lines(sm[0], self.elements, False) if sm else []
+            if f["kind"] == "orientasi":
+                g = [oc_paint.sd_text(f["attrs"])]
             it = QListWidgetItem(QIcon(pm), ("◌ usulan · " if f["attrs"].get("_draft") else "") + f"{k['name']}" + (f" · {f['name']}" if f.get("name") else "")
                                  + (f" · {', '.join(g[:2])}" if g else "") + (f" · {_f(f['attrs'].get('length_m'))} m" if f['attrs'].get('length_m') else ""))
             self.fList.addItem(it)
@@ -1537,7 +1602,12 @@ class OutcropPage(QWidget):
         sk = f["kind"] == "skala"
         self.lenL.setVisible(sk)
         self.fLen.setVisible(sk)
-        self.sBox.setVisible(not sk and f["shape"] != "point")
+        self.sBox.setVisible(not sk and f["shape"] != "point" and f["kind"] != "label_zona")
+        self.sdW.setVisible(f["kind"] == "orientasi")
+        self.fStrike.setText(_f(a.get("strike")))
+        self.fDip.setText(_f(a.get("dip")))
+        self.fBoxStyle.setVisible(f["kind"] == "label")
+        self.fBoxStyle.setChecked(a.get("style") == "box")
         self.bSplit.setVisible(f["shape"] == "line")
         self.bJoin.setVisible(f["shape"] == "line")
         self.bVDel.setVisible(f["shape"] != "point")
@@ -1545,8 +1615,8 @@ class OutcropPage(QWidget):
         self.bVDel.setEnabled(self.tool.vsel is not None)
         self.fErr.setText("")
 
-    def new_feat(self, kind: str, pts: list, name: str = "") -> None:
-        f = {"kind": kind, "pts": pts, "name": name, "attrs": {}}
+    def new_feat(self, kind: str, pts: list, name: str = "", attrs: dict | None = None) -> None:
+        f = {"kind": kind, "pts": pts, "name": name, "attrs": dict(attrs or {})}
         try:
             j = api.call("/core/outcrop/feature/save", {"folder": self.folder, "photo_id": self.cur["id"], "feat": f, "by": self.by()})
         except api.ApiError as e:
@@ -1594,7 +1664,23 @@ class OutcropPage(QWidget):
             a.pop("length_m", None)
         else:
             a["length_m"] = v
-        if f["shape"] != "point" and f["kind"] != "skala":
+        if f["kind"] == "orientasi":
+            try:
+                for k, e in (("strike", self.fStrike), ("dip", self.fDip)):
+                    x = _num(e.text())
+                    if x is None:
+                        a.pop(k, None)
+                    else:
+                        a[k] = x
+            except ValueError:
+                self.fErr.setText("Strike dan dip harus angka (derajat).")
+                return
+        if f["kind"] == "label":
+            if self.fBoxStyle.isChecked():
+                a["style"] = "box"
+            else:
+                a.pop("style", None)
+        if f["shape"] != "point" and f["kind"] not in ("skala", "label_zona"):
             sm = self.sample_read(f)
             if sm:
                 a["samples"] = sm

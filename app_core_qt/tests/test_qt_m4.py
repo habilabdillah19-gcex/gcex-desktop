@@ -425,3 +425,80 @@ def test_trench_intervals_multi_element(qtbot, prj, tmp_path, monkeypatch):
     monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(png), ""))
     pg.export("png")
     qtbot.waitUntil(lambda: png.exists(), timeout=15000)
+
+
+def test_strike_dip_zone_label_compass(qtbot, prj, tmp_path, monkeypatch):
+    """Simbol strike/dip (N100/80), label zona berkurung + kotak putih, label kotak, kompas arah pandang (manual & georef)."""
+    from PySide6.QtGui import QImage, QPainter
+    w, pg = _open_oc(qtbot, prj, tmp_path, monkeypatch)
+    said = []
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: said.append(a[1]))
+    # strike / dip: format N100/80, 100 / 80 dan salah
+    for txt, ok in (("N100/80", True), ("45 / 30", True), ("tegak", False)):
+        monkeypatch.setattr(pg, "ask_text", lambda *a, t=txt: t)
+        n0 = len(pg.feats)
+        _draw(pg, "orientasi", [(0.5, 0.3)])
+        assert (len(pg.feats) == n0 + 1) is ok
+    o = [f for f in pg.feats if f["kind"] == "orientasi"]
+    assert o[0]["attrs"] == {"strike": 100.0, "dip": 80.0} and o[1]["attrs"]["strike"] == 45 and said
+    pg.tool.select(o[0]["id"])
+    assert pg.sdW.isVisible() and not pg.sBox.isVisible() and pg.fStrike.text() == "100"
+    pg.fDip.setText("75")
+    pg.save_form()
+    assert pg.feat(o[0]["id"])["attrs"]["dip"] == 75
+    assert "N100/75" in pg.fList.item(pg.feats.index(pg.feat(o[0]["id"]))).text()
+    # label zona (rentang) + kotak putih yang bisa ditarik
+    monkeypatch.setattr(pg, "ask_text", lambda *a: "Intermediate Argillic Zone (Fine Grain Sulfide Rich)")
+    _draw(pg, "label_zona", [(0.2, 0.7), (0.45, 0.7)])
+    zl = pg.feats[-1]
+    assert zl["name"].startswith("Intermediate") and not pg.sBox.isVisible()
+    # label kotak (default dicentang)
+    monkeypatch.setattr(pg, "ask_text", lambda *a: "PROPYLITIC (CHL-SME-PY) TUFF")
+    pg.cbLabelBox.setChecked(True)
+    _draw(pg, "label", [(0.85, 0.4)])
+    lb = pg.feats[-1]
+    assert lb["attrs"] == {"style": "box"}
+    pg.tool.select(lb["id"])
+    assert pg.fBoxStyle.isVisible() and pg.fBoxStyle.isChecked()
+    # kompas manual
+    pg.save_info({"compass": "W", "compass_pos": "tl"})
+    assert pg.info()["_compass"] == {"mode": "view", "letter": "W"} and pg.iCompass.currentData() == "W"
+    img = QImage(600, 400, QImage.Format_RGB32)
+    p = QPainter(img)
+    pg.canvas.paint(p, None)
+    p.end()
+    zb = next(b for b in pg.boxes if b[0] == zl["id"] and b[2] == "box")
+    pg.tool.press(zb[1].center(), None)
+    pg.tool.move(QPointF(zb[1].center().x() + 25, zb[1].center().y() + 15))
+    pg.tool.release(QPointF(zb[1].center().x() + 25, zb[1].center().y() + 15))
+    assert "box_u" in pg.feat(zl["id"])["attrs"]
+    # menggeser simbol strike/dip memindahkan titiknya tanpa melompat
+    ob = next(b for b in pg.boxes if b[0] == o[0]["id"])
+    before = list(pg.feat(o[0]["id"])["pts"][0])
+    q = QPointF(before[0] * pg.view.w, before[1] * pg.view.h + 2)
+    pg.tool.press(q, None)
+    hit = pg.tool.drag["fid"]  # dua simbol di titik yang sama: yang teratas terambil
+    assert hit in (o[0]["id"], o[1]["id"])
+    pg.tool.move(QPointF(q.x() + 12, q.y()))
+    pg.tool.release(QPointF(q.x() + 12, q.y()))
+    after = pg.feat(hit)["pts"][0]
+    assert abs(after[0] - before[0] - 12 / pg.view.w) < 2e-3 and abs(after[1] - before[1]) < 2e-3 and ob
+    # kompas otomatis dari georef (dinding berarah 090 -> kamera menghadap N)
+    pg.save_info({"compass": "auto"})
+    pts = [{"name": f"G{i}", "u": u, "v": v, "e": 100 + u * 30, "n": 500.0, "rl": 50 + (1 - v) * 20}
+           for i, (u, v) in enumerate([(0.05, 0.05), (0.95, 0.05), (0.95, 0.95), (0.05, 0.95)])]
+    from corex import api
+    api.call("/core/outcrop/georef", {"folder": pg.folder, "id": pg.cur["id"], "points": pts, "kind": "wall", "by": "Rina"})
+    pg.geo_refresh()
+    cp = pg.info()["_compass"]
+    assert cp["mode"] == "view" and min(abs(cp["az"]), abs(cp["az"] - 360)) < 0.5
+    from corex import oc_paint
+    assert oc_paint.az_letter(cp["az"]) == "N" and oc_paint.az_letter(268) == "W"
+    # ekspor STR membawa N100/75; label zona tidak ikut
+    monkeypatch.setattr("corex.outcrop.show_in_folder", lambda p: None)
+    out = tmp_path / "s.str"
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(out), ""))
+    monkeypatch.setattr("corex.outcrop.ask", lambda *a, **k: True)
+    pg.export_geo("str", False)
+    t = out.read_text()
+    assert "N100/75" in t and "Intermediate" not in t

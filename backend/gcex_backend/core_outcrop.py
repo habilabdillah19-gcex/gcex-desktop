@@ -45,6 +45,8 @@ DEFAULT_KINDS = [
     ("zona_vein", "Zona vein", "poly", "#e8c547", 9),
     ("breksi", "Breksi / diatrema", "poly", "#a61e4d", 10),
     ("channel", "Channel sampel", "line", "#ffd43b", 11),
+    ("orientasi", "Strike / dip terukur", "point", "#ffd43b", 12),
+    ("label_zona", "Label zona (rentang)", "line", "#ffffff", 92),
     ("skala", "Garis skala", "line", "#ffffff", 90),
     ("label", "Label", "point", "#ffffff", 91),
 ]
@@ -327,7 +329,7 @@ def _clean_pts(shape: str, pts: Any) -> list[list[float]]:
     return out[:1] if shape == "point" else out
 
 
-ATTR_NUM = ("au_ppm", "ag_ppm", "sxs_pct", "length_m")
+ATTR_NUM = ("au_ppm", "ag_ppm", "sxs_pct", "length_m", "strike", "dip")
 
 
 # ---------------------------------------------------------------- unsur assay & sampel per interval
@@ -538,6 +540,10 @@ def _clean_attrs(a: Any) -> dict:
         out[k] = v
     if "length_m" in out and out["length_m"] <= 0:
         raise ValueError("Panjang garis skala harus lebih dari 0 m.")
+    if "strike" in out and not 0 <= out["strike"] <= 360:
+        raise ValueError("Strike harus 0-360°.")
+    if "dip" in out and not 0 <= out["dip"] <= 90:
+        raise ValueError("Dip harus 0-90°.")
     return out
 
 
@@ -1012,7 +1018,15 @@ def georef_solve(gr: Optional[dict], w: int, h: int, kind: str) -> Optional[dict
         warn.append(f"Bidang hasil hitung landai (dip {dip:.0f}°) padahal jenis foto 'dinding'. Periksa jenis foto / koordinat titik.")
     if kind == "floor" and dip > 45:
         warn.append(f"Bidang hasil hitung curam (dip {dip:.0f}°) padahal jenis foto 'lantai'. Periksa jenis foto / koordinat titik.")
+    # arah pandang kamera (dinding) / arah atas foto (lantai), azimut derajat
+    g0 = c + to_pl(cx, cy)[0] * e1 + to_pl(cx, cy)[1] * e2
+    gx = c + to_pl(cx + 10, cy)[0] * e1 + to_pl(cx + 10, cy)[1] * e2
+    gy = c + to_pl(cx, cy + 10)[0] * e1 + to_pl(cx, cy + 10)[1] * e2
+    R, Uimg = gx - g0, gy - g0
+    view_az = (math.degrees(math.atan2(-R[1], R[0])) + 360) % 360 if math.hypot(R[0], R[1]) > 1e-9 else None
+    up_az = (math.degrees(math.atan2(Uimg[0], Uimg[1])) + 360) % 360 if math.hypot(Uimg[0], Uimg[1]) > 1e-9 else None
     out.update(ok=True, method=method, rms=rms, residuals=res, dip=dip, dip_dir=ddir, m_per_px=m_per_px, warn=warn,
+               view_az=view_az, up_az=up_az,
                H=H.tolist(), c=c.tolist(), e1=e1.tolist(), e2=e2.tolist())
     return out
 
@@ -1097,7 +1111,7 @@ def georef_info(s: Store, pid: int) -> dict:
 
 
 # ---------------------------------------------------------------- ekspor STR / DXF (koordinat 3D E, N, RL)
-NO_EXPORT = {"skala"}
+NO_EXPORT = {"skala", "label_zona"}
 
 
 def _clean_txt(t: Any) -> str:
@@ -1143,6 +1157,8 @@ def to_str(items: list[dict], name: str = "singkapan") -> bytes:
         d = [_clean_txt(it["kname"]), _clean_txt(sm.get("id") or it["name"]), _clean_txt(it["photo"])]
         if sm.get("from") is not None:
             d.append(f"{sm['from']:g}-{sm['to']:g}m")
+        if it["attrs"].get("strike") is not None:
+            d.append(f"N{it['attrs']['strike']:03.0f}/{it['attrs'].get('dip', 0):.0f}")
         for k, v in (sm.get("grades") or {}).items():
             d.append(f"{k}={v:g}" if isinstance(v, float) else f"{k}={v}")
         for x, y, z in pts:
@@ -1332,7 +1348,7 @@ def api_export_samples(b: ExpBody):
 # Usulan disimpan sebagai fitur biasa dengan attrs["_draft"] = sumbernya ("warna" atau "ai:<model>").
 # Draf digambar putus-putus, tidak ikut ekspor STR / DXF / infografis sampai diterima geologist.
 DRAFT = "_draft"
-AUTO_SKIP = {"skala", "label", "channel"}
+AUTO_SKIP = {"skala", "label", "channel", "orientasi", "label_zona"}
 
 
 def is_draft(f: dict) -> bool:

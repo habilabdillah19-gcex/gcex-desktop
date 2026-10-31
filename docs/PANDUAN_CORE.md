@@ -211,6 +211,9 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
      - **Tempel dari Excel**: salin baris dengan kolom *Sample ID, Dari, Ke*, lalu kadar. Bila baris judul kolom ikut disalin (mis. `Au (ppm)`, `Ag_ppm`, `SxS %`), kolom dicocokkan menurut nama unsur; tanpa judul, urutannya mengikuti tabel.
      - Nilai di bawah batas deteksi ditulis `<0.01` (dihitung setengah batas deteksi di komposit); desimal boleh koma. Interval tidak boleh tumpang-tindih, Sample ID tidak boleh kembar.
    - *Teks lain* menambah baris bebas di kotak kadar fitur zona / satu sampel.
+   - **Strike / dip terukur** (jenis titik): klik posisinya lalu isi mis. `N100/80` atau `100/80`. Digambar sebagai simbol T dengan panah dip dan teks N100/80; nilainya bisa diubah di form (Strike °, Dip °) dan ikut ekspor STR.
+   - **Label zona (rentang)** (jenis garis): tarik dari batas kiri ke batas kanan zona (mis. di bawah garis trenching), lalu isi nama zona. Digambar sebagai kurung putih dengan garis penunjuk ke kotak putih; tarik kotaknya untuk memindahkan. Tidak ikut ekspor STR / DXF.
+   - **Label kotak** (centang di bilah atas, aktif bawaan): label baru memakai kotak putih; bisa diubah per label di form (*Kotak putih*).
    - **Atur jenis fitur & nomor string…** — ubah nama, warna dan nomor string Surpac per jenis, atau tambah jenis sendiri (mis. dike). Satu nomor string untuk satu jenis.
 4. **Infografis** — pilih template:
    - *Trenching / channel (dengan kadar)*: pita judul kuning, kotak kadar per fitur (tarik kotaknya untuk memindahkan), kotak komposit, legenda, bar skala.
@@ -218,11 +221,13 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
    - *Overlay saja*: garis & poligon tanpa judul.
 
    **Kadar di template Trenching**:
-   - garis berinterval mendapat tanda batas interval dan **satu kotak kadar per sampel** (Sample ID, dari–ke, unsur yang dicentang), ditempatkan di atas / bawah garis bergantian; tarik kotaknya untuk memindahkan;
+   - garis berinterval mendapat tanda batas interval dan **satu kotak kadar per sampel** (Sample ID, dari–ke, unsur yang dicentang), ditempatkan di atas garis dengan dua ketinggian bergantian (sisi bawah dibiarkan untuk label zona); tarik kotaknya untuk memindahkan;
    - **Warnai interval menurut** satu unsur: segmen garis & bingkai kotak diberi warna kelas kadar, kelasnya masuk legenda;
    - **Komposit otomatis**: rata-rata tertimbang panjang per unsur untuk tiap garis berinterval, ditambahkan ke kotak komposit (teks bebas tetap bisa diisi);
    - **Atur unsur & kelas warna…**: daftar unsur (bawaan Au, Ag, Cu, Pb, Zn, As, S, SxS, C), satuan (ppm, ppb, %, g/t, oz/t), desimal, *Tampil* di kotak kadar, batas kelas (mis. `0.2; 0.5; 1`). Kadar semua unsur tetap tersimpan & ikut ekspor walau tidak ditampilkan;
    - **⇩ Tabel sampel (CSV)**: semua sampel di semua foto (Sample ID, dari, ke, panjang, koordinat E/N/RL awal & akhir bila foto digeoreferensi, kadar, baris KOMPOSIT per garis) untuk Excel / database assay.
+
+   **Kompas** (tab Infografis): *otomatis dari georef* — foto dinding menampilkan huruf arah kamera menghadap (mis. W) di atas mawar angin, foto lantai menampilkan panah utara yang diputar sesuai foto; tanpa georef pilih arah pandang manual (N, NE, … NW). Posisi kompas bisa dipilih; bila bertabrakan dengan legenda, kompas digeser ke sampingnya.
 
    **Ekspor PNG / PDF** memakai foto resolusi penuh (maks. 6000 px) dan sama persis dengan tampilan di layar.
 

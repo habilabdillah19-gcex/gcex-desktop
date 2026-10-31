@@ -156,6 +156,7 @@ def test_georef_wall_and_floor_and_export(st):
     r = co.save_georef(s, pid, pts, None, "Rina")
     g = r["solution"]
     assert "homografi" in g["method"] and g["rms"] < 1e-3 and abs(g["m_per_px"] - 0.02) < 1e-6
+    assert abs(g["view_az"] - 330) < 0.01  # dinding berarah 060, kamera menghadap 330 (tegak lurus)
     # vein lurus dari kiri-bawah ke kanan-atas dinding: panjang & apparent dip
     co.save_feature(s, pid, None, {"kind": "vein", "pts": [[0.1, 0.9], [0.6, 0.4]], "name": "V1", "attrs": {"au_ppm": 3.2}}, "Rina")
     co.save_feature(s, pid, None, {"kind": "zona_alt", "pts": [[0.1, 0.1], [0.6, 0.1], [0.6, 0.6], [0.1, 0.6]], "name": "Argilik"}, "Rina")
@@ -205,7 +206,7 @@ def test_georef_perspective_floor_and_errors(st):
     fl = [{"name": f"F{i}", "u": u, "v": v, "e": 100 + u * 30, "n": 200 + (1 - v) * 24, "rl": 80.0}
           for i, (u, v) in enumerate([(0.1, 0.1), (0.9, 0.1), (0.9, 0.9), (0.1, 0.9)])]
     g = co.save_georef(s, pid, fl, "floor", "Rina")["solution"]
-    assert g["ok"] and g["dip"] < 1e-6 and abs(g["m_per_px"] - 0.03) < 1e-6
+    assert g["ok"] and g["dip"] < 1e-6 and abs(g["m_per_px"] - 0.03) < 1e-6 and abs(g["up_az"]) < 0.01
     g = co.save_georef(s, pid, fl, "wall", "Rina")["solution"]
     assert not g["ok"] or any("landai" in w for w in g["warn"])
     with pytest.raises(ValueError, match="kembar"):
@@ -352,3 +353,21 @@ def test_elements_samples_intervals_composite_export(st):
     assert csv[4].split(",")[3] == "KOMPOSIT" and csv[4].split(",")[6] == "10"
     with pytest.raises(ValueError, match="Belum ada sampel"):
         co.samples_csv(s, [co.add_photo(s, str(_img(tmp, "kosong.jpg")), "Rina")["id"]])
+
+
+def test_orientation_point_and_zone_label(st):
+    s, tmp = st
+    pid = co.add_photo(s, str(_img(tmp)), "Rina")["id"]
+    ks = {k["key"]: k for k in co.kinds(s)}
+    assert ks["orientasi"]["shape"] == "point" and ks["label_zona"]["shape"] == "line"
+    j = co.save_feature(s, pid, None, {"kind": "orientasi", "pts": [[0.5, 0.3]], "attrs": {"strike": "100", "dip": "80"}}, "Rina")
+    assert next(f for f in j["features"] if f["kind"] == "orientasi")["attrs"] == {"strike": 100.0, "dip": 80.0}
+    for a, m in (({"strike": 400}, "0-360"), ({"dip": 95}, "0-90")):
+        with pytest.raises(ValueError, match=m):
+            co.save_feature(s, pid, None, {"kind": "orientasi", "pts": [[0.5, 0.3]], "attrs": a}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "label_zona", "pts": [[0.2, 0.7], [0.4, 0.7]], "name": "Intermediate Argillic Zone"}, "Rina")
+    co.save_georef(s, pid, [{"name": f"G{i}", "u": u, "v": v, "e": 100 + u * 30, "n": 500, "rl": 50 + (1 - v) * 20}
+                            for i, (u, v) in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])], "wall", "Rina")
+    items, _ = co.export_items(s, [pid])
+    assert [i["kind"] for i in items] == ["orientasi"]  # label zona = anotasi, tidak diekspor
+    assert "N100/80" in co.to_str(items).decode()

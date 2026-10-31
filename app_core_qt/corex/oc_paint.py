@@ -20,7 +20,34 @@ TEMPLATES = {
 }
 BAND = {"trench": ("#f2c230", "#141a26"), "wall": ("#232f45", "#ffffff")}
 GRADE_KEYS = (("au_ppm", "Au", "ppm"), ("ag_ppm", "Ag", "ppm"), ("sxs_pct", "SxS", "%"))
-NO_LEGEND = {"skala", "label"}
+NO_LEGEND = {"skala", "label", "label_zona", "orientasi"}
+COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+
+def az_letter(az: float) -> str:
+    return COMPASS[int(((az % 360) + 22.5) // 45) % 8]
+
+
+def sd_text(a: dict) -> str:
+    st, dp = a.get("strike"), a.get("dip")
+    return f"N{st:03.0f}/{dp:.0f}" if st is not None and dp is not None else ""
+
+
+def _strike_dip(p: QPainter, c: QPointF, U: float, color: str, text: str) -> QRectF:
+    """Simbol strike/dip gaya peta di foto: garis strike mendatar + tick dip dengan panah, teks N100/80 di bawahnya."""
+    L, T = 20 * U, 15 * U
+    for wd, col in ((5.2 * U, QColor("#141a26")), (2.6 * U, QColor(color))):
+        p.setPen(QPen(col, wd, Qt.SolidLine, Qt.FlatCap))
+        p.drawLine(QPointF(c.x() - L, c.y()), QPointF(c.x() + L, c.y()))
+        p.drawLine(c, QPointF(c.x(), c.y() + T))
+    head = QPolygonF([QPointF(c.x() - 5.5 * U, c.y() + T - 1 * U), QPointF(c.x() + 5.5 * U, c.y() + T - 1 * U), QPointF(c.x(), c.y() + T + 8 * U)])
+    p.setPen(QPen(QColor("#141a26"), 1.6 * U))
+    p.setBrush(QColor(color))
+    p.drawPolygon(head)
+    r = QRectF(c.x() - L, c.y() - 4 * U, 2 * L, T + 12 * U)
+    if text:
+        r = r.united(_halo(p, c.x(), c.y() + T + 22 * U, text, 15 * U, fill=color))
+    return r
 
 
 def fmtv(v) -> str:
@@ -235,6 +262,51 @@ def _box(p: QPainter, c: QPointF, lines: list[str], px: float, bg: str = "#f2c23
     return r
 
 
+def _wrap(t: str, n: int) -> list[str]:
+    """Pecah teks label menjadi baris <= n karakter (baris baru manual tetap dihormati)."""
+    out = []
+    for para in str(t).splitlines() or [""]:
+        cur = ""
+        for w in para.split():
+            if cur and len(cur) + 1 + len(w) > n:
+                out.append(cur)
+                cur = w
+            else:
+                cur = (cur + " " + w).strip()
+        out.append(cur)
+    return [x for x in out if x] or [" "]
+
+
+def _compass(p: QPainter, x: float, y: float, U: float, cp: dict) -> QRectF:
+    """Kompas: 'view' = mawar statis + huruf arah pandang kamera di atasnya; 'north' = panah utara diputar (foto lantai)."""
+    R = 22 * U
+    c = QPointF(x + R, y + R + (20 * U if cp.get("mode") == "view" else 0))
+    p.save()
+    p.translate(c)
+    if cp.get("mode") == "north":
+        p.rotate(cp.get("rot", 0.0))
+    p.setPen(QPen(QColor("#141a26"), 1.4 * U))
+    p.setBrush(QColor(255, 255, 255, 60))
+    p.drawEllipse(QPointF(0, 0), R, R)
+    for i in range(4):
+        p.save()
+        p.rotate(90 * i)
+        big = i == 0 and cp.get("mode") == "north"
+        tip = -R * (1.15 if big else 0.95)
+        p.setBrush(QColor("#e03131") if big else QColor("#ffffff"))
+        p.drawPolygon(QPolygonF([QPointF(0, tip), QPointF(R * 0.22, -R * 0.22), QPointF(0, 0)]))
+        p.setBrush(QColor("#141a26") if not big else QColor("#a51111"))
+        p.drawPolygon(QPolygonF([QPointF(0, tip), QPointF(-R * 0.22, -R * 0.22), QPointF(0, 0)]))
+        p.restore()
+    if cp.get("mode") == "north":
+        _halo(p, 0, -R * 1.15 - 11 * U, "N", 17 * U)
+    p.restore()
+    if cp.get("mode") == "view":
+        _halo(p, c.x(), y + 9 * U, cp.get("letter") or az_letter(cp.get("az", 0)), 21 * U)
+        return QRectF(x, y, 2 * R, 2 * R + 20 * U)
+    return QRectF(x, y - 12 * U, 2 * R, 2 * R + 12 * U)
+
+
 def _line_label(p: QPainter, P: list[QPointF], text: str, px: float) -> None:
     """Nama garis sejajar segmen terpanjang, digeser sedikit ke samping agar tidak menimpa garis."""
     import math
@@ -324,9 +396,44 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             p.setPen(pe)
             p.drawPolyline(QPolygonF(P))
         # nama / label
-        if f["shape"] == "point":
+        if f["kind"] == "orientasi":
+            r = _strike_dip(p, P[0], U, k["color"], f.get("name") or sd_text(f["attrs"]))
+            if boxes_out is not None:
+                boxes_out.append((f["id"], r, "pt"))
+        elif f["kind"] == "label_zona" and len(P) >= 2:
+            # kurung rentang zona + garis penunjuk ke kotak putih
+            import math
+            a0, a1 = P[0], P[-1]
+            ang = math.atan2(a1.y() - a0.y(), a1.x() - a0.x())
+            n = QPointF(-math.sin(ang), math.cos(ang))
+            if n.y() < 0:
+                n = QPointF(-n.x(), -n.y())
+            for q in (a0, a1):
+                p.setPen(QPen(QColor("#ffffff"), 2.4 * U, Qt.SolidLine, Qt.FlatCap))
+                p.drawLine(QPointF(q.x() - n.x() * 7 * U, q.y() - n.y() * 7 * U), q)
+            mid = midpoint(P)
+            bu, bv = f["attrs"].get("box_u"), f["attrs"].get("box_v")
+            c = QPointF(bu * W, bv * H) if bu is not None and bv is not None else QPointF(mid.x(), min(H * 0.92, mid.y() + n.y() * 0.10 * H))
+
+            def draw_zl(mid=mid, c=c, txt=f.get("name") or "", fid=f["id"]):
+                p.setPen(QPen(QColor("#ffffff"), 2.0 * U, Qt.DashLine))
+                p.drawLine(mid, c)
+                if txt:
+                    r = _box(p, c, _wrap(txt, 26), 12.5 * U, bg="#ffffff", align=Qt.AlignHCenter)
+                    if boxes_out is not None:
+                        boxes_out.append((fid, r, "box"))
+            later.append(draw_zl)
+        elif f["shape"] == "point":
             t = f.get("name") or ""
-            if t:
+            if t and f["attrs"].get("style") == "box":
+                c = P[0]
+
+                def draw_lb(c=c, t=t, fid=f["id"]):
+                    r = _box(p, c, _wrap(t, 26), 13 * U, bg="#ffffff", align=Qt.AlignHCenter)
+                    if boxes_out is not None:
+                        boxes_out.append((fid, r, "pt"))
+                later.append(draw_lb)
+            elif t:
                 r = _halo(p, P[0].x(), P[0].y(), t, 15 * U)
                 if boxes_out is not None:
                     boxes_out.append((f["id"], r, "pt"))
@@ -334,7 +441,7 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                 p.setPen(QPen(QColor("#141a26"), 2 * U))
                 p.setBrush(QColor("#ffffff"))
                 p.drawEllipse(P[0], 5 * U, 5 * U)
-        elif f.get("name") and info.get("show_names", True) and f["kind"] != "skala":
+        elif f.get("name") and info.get("show_names", True) and f["kind"] not in ("skala", "label_zona"):
             if f["shape"] == "poly":
                 a = anchor(f, W, H)
                 _halo(p, a.x(), a.y(), f["name"], 15 * U)
@@ -372,13 +479,11 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                 q, ang = at((x["from"] + x["to"]) / 2)
                 n = QPointF(-math.sin(ang), math.cos(ang))
                 if n.y() > 0:
-                    n = QPointF(-n.x(), -n.y())  # sisi atas garis lebih dulu
-                if j % 2:
-                    n = QPointF(-n.x(), -n.y())
+                    n = QPointF(-n.x(), -n.y())  # kotak di sisi atas garis (sisi bawah untuk label zona), tinggi bergantian
                 if x.get("bu") is not None and x.get("bv") is not None:
                     c = QPointF(x["bu"] * W, x["bv"] * H)
                 else:
-                    d = 0.15 * H
+                    d = (0.12 if j % 2 == 0 else 0.25) * H
                     c = QPointF(min(W * 0.93, max(W * 0.07, q.x() + n.x() * d)), min(H * 0.88, max(H * 0.14, q.y() + n.y() * d)))
                 cc = class_color(cel, (x.get("grades") or {}).get(ckey)) if cel else None
 
@@ -486,6 +591,7 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             p.setFont(f)
             p.drawText(QRectF(14 * U, bottom + 7 * U, W - 28 * U, hh - 14 * U), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, txt)
     # ---- legenda
+    leg_rect = None
     if info.get("show_legend", True):
         used = []
         for f in feats:
@@ -509,7 +615,8 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
             y0 = bottom - h - (44 * U if pos == "br" and m_per_unit and info.get("show_scale", True) else 14 * U) if pos[0] == "b" else top + (16 * U if info.get("subtitle") else 0)
             p.setPen(QPen(QColor("#141a26"), 1.2 * U))
             p.setBrush(QColor(255, 255, 255, 225))
-            p.drawRect(QRectF(x0, y0, w, h))
+            leg_rect = QRectF(x0, y0, w, h)
+            p.drawRect(leg_rect)
             p.setFont(fnt)
             for i, n in enumerate(names):
                 y = y0 + 7 * U + i * fm.height() * 1.25 + fm.height() * 0.62
@@ -533,6 +640,18 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
                     p.drawLine(QPointF(x0 + 8 * U, y), QPointF(x0 + 30 * U, y))
                 p.setPen(QColor("#141a26"))
                 p.drawText(QRectF(x0 + 36 * U, y - fm.height() / 2, w, fm.height()), Qt.AlignVCenter | Qt.AlignLeft, n["name"])
+    # ---- kompas / arah pandang
+    cp = info.get("_compass")
+    if cp:
+        cpos = info.get("compass_pos") or "tl"
+        top = 52 * U if (info.get("title") and tpl != "overlay") else 14 * U
+        top += 16 * U if info.get("subtitle") and tpl != "overlay" else 0
+        cw, ch = 44 * U, 70 * U
+        x0 = 18 * U if cpos[1] == "l" else W - cw - 18 * U
+        y0 = top + 4 * U if cpos[0] == "t" else bottom - ch - (52 * U if cpos == "br" and m_per_unit else 14 * U)
+        if leg_rect is not None and leg_rect.intersects(QRectF(x0, y0, cw, ch)):
+            x0 = leg_rect.right() + 14 * U if cpos[1] == "l" else leg_rect.left() - cw - 14 * U
+        _compass(p, x0, y0, U, cp)
     # ---- bar skala
     if info.get("show_scale", True) and m_per_unit:
         L = nice_len(0.18 * W * m_per_unit)
