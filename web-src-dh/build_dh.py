@@ -11,6 +11,7 @@ Modul desktop yang disisipkan (sebelum FP.startUI, setelah semua fungsi proyek &
 - slabbar_dh.js        : bilah Maju / Mundur mengambang, hanya muncul saat sayatan / Penampang 2D aktif
 - ../web-src/ptree.js + ptree_dh.js : Project Tree (pohon proyek urut alur kerja + panel properti)
 - deskflush_dh.js      : simpan ke komputer + folder proyek dan lepas kunci sebelum jendela ditutup
+- ../web-src/hires.js  : LOD topografi & orthofoto (piramida, resolusi mengikuti zoom, gambar asli di Peta 2D)
 - cls_dh.js            : klasifikasi sumber daya (Measured / Indicated / Inferred) di Reporting BM
 - env_dh.js            : selubung mineralisasi (envelope / halo) per domain vein, soft boundary di Model Estimation
 Di browser biasa (tanpa GC-Ex Desktop) modul ini tidak mengubah apa pun.
@@ -43,6 +44,9 @@ s, nb = bigline_patch.patch(s, open(SHARED + 'bigline.js', encoding='utf-8').rea
 import ortho_patch
 s = ortho_patch.patch(s)
 print('Orthofoto latar: OK')
+import hires_patch
+s = hires_patch.patch(s)
+print('LOD topografi & orthofoto (resolusi tinggi): OK')
 print('Pembaca garis jumbo tersambung:', nb, 'tempat')
 # Geological Modelling v2: tren pitch, pinch-out bor kosong, OK orientasi dinamis
 sys.path.insert(0, W)

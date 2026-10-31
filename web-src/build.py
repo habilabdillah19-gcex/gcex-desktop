@@ -194,6 +194,9 @@ s, _nb = _blp.patch(s, open(W + 'bigline.js', encoding='utf-8').read())
 import ortho_patch as _orp
 s = _orp.patch(s)
 print('Orthofoto latar: OK')
+import hires_patch as _hrp
+s = _hrp.patch(s)
+print('LOD topografi & orthofoto (resolusi tinggi): OK')
 print('Pembaca garis jumbo tersambung:', _nb, 'tempat')
 
 # ---------- 7c. Multi-elemen: akumulasi kadar tiap elemen laporan di perhitungan & tampilan dig block ----------

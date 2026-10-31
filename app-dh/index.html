@@ -1106,7 +1106,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
     $('showTraj').checked,$('showNoData').checked,$('showCollar').checked,$('showLabel').checked,$('cmin').value,$('cmax').value,$('cscale').value,$('rev').checked]);
   var dh;if(DHC&&DHC.key===key){dh=DHC.dh;}else{dh=buildDH({vis:vis,el:el,th:th,pal:pal,classOf:classOf,cname:cname,clip:clip,K:K,cut:cut,useCls:useCls,hover:wantHover,dark:dark,lw:lw,LB:LB});DHC={key:key,dh:dh};}
   lastVals=dh.vals;var X=dh.X.slice(),Y=dh.Y.slice(),Z=dh.Z.slice();
-  var crop=$('ovCrop').checked,tp=crop?OV.topoC:OV.topoF,pt=crop?OV.pitC:OV.pitF,ms=light?(crop?OV.meshLC:OV.meshLF):(crop?OV.meshC:OV.meshF),pm=light?(crop?OV.pmLC:OV.pmLF):(crop?OV.pmC:OV.pmF),pmode=($('ovPitMode')||{}).value||'surf';
+  var crop=$('ovCrop').checked,tp=crop?OV.topoC:OV.topoF,pt=crop?OV.pitC:OV.pitF,ms=light?(crop?OV.meshLC:OV.meshLF):(crop?OV.meshC:OV.meshF),pm=light?(crop?OV.pmLC:OV.pmLF):(crop?OV.pmC:OV.pmF),pmode=($('ovPitMode')||{}).value||'surf';if(window.HR&&HR.on&&HR.ext){try{ms=HR.topoMesh(crop?OV.topoC:OV.topoF,light?4900:15000);tp=HR.topoLines(tp);}catch(_e){}}
   var wTS=!VIEW2D&&!draft&&$('ovTopoS').checked&&ms.x.length>2,wTL=!VIEW2D&&!draft&&$('ovTopoL').checked&&tp.x.length>0,wPa=!VIEW2D&&$('ovPit').checked&&pt.x.length>0,wP=wPa&&(pmode!=='surf'||draft),wPS=wPa&&!draft&&pmode!=='line'&&pm&&pm.x.length>2;
   var addB=function(b){X.push(b.x0,b.x1);Y.push(b.y0,b.y1);Z.push(b.z0,b.z1);};
   if($('ovTopoS').checked||$('ovTopoL').checked)addB(tp.b);if(wPa)addB(pt.b);var od=(VIEW2D||draft)?null:orthoTrace(crop,light);if(od&&!od.base)addB(od.b);
@@ -1114,8 +1114,8 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   if(!X.length){X=[0,1];Y=[0,1];Z=[0,1];}
   var rx=rng(X),ry=rng(Y),rz=rng(Z);
   var traces=[],op=+$('ovOp').value;
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op,function(){return{type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,intensity:ms.z,colorscale:'Earth',delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false};}));
-  if(wTL)traces.push(ovCache('tl|'+crop,function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0),function(){return{type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,intensity:ms.z,colorscale:'Earth',delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false};}));
+  if(wTL)traces.push(ovCache('tl|'+crop+'|'+((window.HR&&HR.ver)||0),function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
   if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op,function(){return{type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,intensity:pm.z,colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
@@ -1756,11 +1756,310 @@ function gsDrawC(){var h='<table><tr><th>#</th><th>Sayatan</th><th>n</th><th>Mea
 function gsCsvCmp(){var o=['NO,SAYATAN,UNSUR,TRANSFORM,N,MEAN,CV,TOPCUT,NUGGET_PCT,SILL,PITCH,RANGE_MAJOR,RANGE_SEMI,RANGE_DH,MAJOR_AZ_PL,SEMI_AZ_PL,NORMAL_AZ_PL'];
   GS.rows.forEach(function(r,i){o.push([i+1,r.sec,r.el,r.tr,r.n,fx(r.mean),fx(r.cv,3),r.tc,fx(r.nug,1),fx(r.sill,4),r.pitch,fx(r.ra,1),fx(r.rb,1),fx(r.rd,1),r.maj,r.semi,r.min].join(','));});gsDl('perbandingan_sayatan.csv',o.join('\n'));}
 var ORT=null,TIDX=null;
+/* GC-Ex — TOPOGRAFI & ORTHOFOTO RESOLUSI SANGAT TINGGI TANPA KORBAN PERFORMA (0.24 / 0.14)
+   =======================================================================================
+   Dipakai GC-Ex Drill Hole Ultimate dan GC-Ex Block Model.
+
+   Masalah sebelumnya
+   ------------------
+   - Orthofoto digambar sebagai mesh3d berwarna per-titik dengan resolusi TETAP dari kotak "Resolusi (m)"
+     dan dibatasi 300.000 titik. Zoom masuk tidak menambah detail (titiknya tetap jarang), zoom keluar
+     membuang waktu menghitung titik yang tidak terlihat. Warna diambil titik (point sample) sehingga
+     berkerlip / aliasing saat dikecilkan.
+   - Peta (Mapping) memakai satu gambar JPEG seluruh ortho yang dipaksa maksimum 3000 px sisi panjang:
+     ortho 20.000 px pun hanya tampil 3000 px, sehingga zoom masuk tampak buram.
+   - Topografi digambar dari desimasi "ambil tiap titik ke-n" ke 15.000 titik sekali saja saat proyek
+     dibuka: zoom masuk tetap kasar, dan titik yang terbuang tidak pernah kembali.
+   - topoZ(x,y) menghitung IDW ulang (mencari tetangga di indeks sel 10 m) SETIAP kali dipanggil —
+     dipanggil 300.000 kali saat menggambar ortho drape dan sekali per blok saat reporting.
+
+   Yang dilakukan modul ini
+   ------------------------
+   1. PIRAMIDA ORTHO (LOD). Level 0 = piksel asli; tiap level berikutnya rata-rata 2x2 (seperempat
+      ukuran). Total tambahan memori = 1/3 level 0. Pengambilan warna memakai level yang texel-nya
+      sepadan dengan resolusi mesh, jadi warnanya rata-rata area (anti-alias, tidak berkerlip) dan
+      pembacaannya 4^L kali lebih sedikit.
+   2. RESOLUSI MENGIKUTI TAMPILAN. Mesh ortho & desimasi topografi memakai luas area yang sedang
+      terlihat: zoom masuk otomatis makin detail pada jumlah titik yang sama; zoom keluar tidak
+      menghitung yang di luar layar.
+   3. GAMBAR ASLI DI PETA 2D. Di menu Peta (Mapping) ortho dipotong sesuai tampilan dan dikirim sebagai
+      gambar sampai 4096 px — di zoom dekat ini berarti resolusi asli penuh, tanpa mesh sama sekali.
+   4. DESIMASI TOPOGRAFI PER SEL. Satu titik per sel grid (bukan "tiap ke-n"), dihitung dari seluruh
+      data di dalam tampilan: sebaran tetap merata dan detail penuh muncul saat zoom masuk.
+   5. RASTER topoZ. Grid elevasi dibangun sekali lalu dibaca bilinear O(1).
+
+   Semua tetap jalan apa adanya bila modul gagal / data belum ada (fungsi lama dipakai sebagai cadangan). */
+var HR = window.HR = {
+  on: true,
+  ext: null,          /* {x0,x1,y0,y1} koordinat LOKAL yang sedang terlihat (null = belum tahu) */
+  extW: null,         /* idem dalam koordinat DUNIA (Easting/Northing), untuk peta 2D */
+  budget: 300000,     /* anggaran titik mesh ortho */
+  tbudget: 15000,     /* anggaran titik mesh topografi */
+  mapPx: 4096,        /* batas KERAS sisi gambar ortho di Peta 2D */
+  ver: 0              /* naik setiap tampilan berubah -> cache ikut berganti */
+};
+
+/* ============================ 1. piramida ortho ============================ */
+HR.pyr = function () {
+  var O = window.ORT;
+  if (!O || !O.m || !O.px) return null;
+  if (O._pyr && O._pyr.m === O.m) return O._pyr;
+  var m = O.m, L = [{ px: O.px, w: m.w, h: m.h, dx: m.dx, dy: m.dy }];
+  var w = m.w, h = m.h, src = O.px;
+  while (w > 256 && h > 256 && L.length < 12) {
+    var w2 = w >> 1, h2 = h >> 1, out = new Uint8Array(w2 * h2 * 3);
+    for (var r = 0; r < h2; r++) {
+      var r0 = (r << 1) * w, r1 = ((r << 1) + 1) * w;
+      for (var c = 0; c < w2; c++) {
+        var a = (r0 + (c << 1)) * 3, b = (r0 + (c << 1) + 1) * 3, d = (r1 + (c << 1)) * 3, e = (r1 + (c << 1) + 1) * 3, o = (r * w2 + c) * 3;
+        out[o] = (src[a] + src[b] + src[d] + src[e] + 2) >> 2;
+        out[o + 1] = (src[a + 1] + src[b + 1] + src[d + 1] + src[e + 1] + 2) >> 2;
+        out[o + 2] = (src[a + 2] + src[b + 2] + src[d + 2] + src[e + 2] + 2) >> 2;
+      }
+    }
+    var k = L.length;
+    L.push({ px: out, w: w2, h: h2, dx: m.dx * (1 << k), dy: m.dy * (1 << k) });
+    src = out; w = w2; h = h2;
+  }
+  O._pyr = { m: m, L: L };
+  return O._pyr;
+};
+
+/* level yang texel-nya sepadan dengan res (meter per titik mesh). Hasilnya di-cache karena
+   pemanggilnya menyampling ratusan ribu titik dengan res yang sama. */
+HR.level = function (res) {
+  var P = HR.pyr(); if (!P) return null;
+  var c = HR._lv;
+  if (c && c.P === P && c.res === res) return c.lv;
+  var d0 = P.L[0].dx || 1, k = Math.floor(Math.log(Math.max(1, res / d0)) / Math.LN2);
+  var lv = P.L[Math.max(0, Math.min(P.L.length - 1, k))];
+  HR._lv = { P: P, res: res, lv: lv };
+  return lv;
+};
+
+/* warna rata-rata area pada resolusi res; xl,yl = koordinat LOKAL.
+   Nilainya diambil dari level piramida yang texel-nya sepadan res, jadi warnanya rata-rata
+   area (anti-alias) — bukan titik tunggal yang berkerlip saat gambar dikecilkan. */
+HR.rgb = function (xl, yl, res) {
+  var O = window.ORT; if (!O || !O.m) return null;
+  var lv = HR._lv && HR._lv.res === res && HR._lv.P === O._pyr ? HR._lv.lv : HR.level(res);
+  if (!lv) return null;
+  var m = O.m, c = ((xl + offX - m.e0) / lv.dx + 0.5) | 0, r = ((m.n0 - (yl + offY)) / lv.dy + 0.5) | 0;
+  if (c < 0 || r < 0 || c >= lv.w || r >= lv.h) return null;
+  var p = (r * lv.w + c) * 3, px = lv.px;
+  return [px[p], px[p + 1], px[p + 2]];
+};
+
+/* resolusi mesh ortho dari luas tampilan + anggaran titik */
+HR.resFor = function (x0, x1, y0, y1, budget) {
+  var w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), n = Math.max(1000, budget || HR.budget);
+  var r = Math.sqrt(w * h / n);
+  var O = window.ORT, mn = (O && O.m && O.m.dx) ? O.m.dx : 0.05;   /* tidak lebih halus dari piksel asli */
+  return Math.max(mn, r);
+};
+
+/* ============================ 2. tampilan yang sedang terlihat ============================ */
+HR.setExt = function (x0, x1, y0, y1, world) {
+  if (!isFinite(x0) || !isFinite(x1) || !isFinite(y0) || !isFinite(y1) || x1 <= x0 || y1 <= y0) return;
+  var ox = world ? (window.offX || 0) : 0, oy = world ? (window.offY || 0) : 0;
+  var e = { x0: x0 - ox, x1: x1 - ox, y0: y0 - oy, y1: y1 - oy };
+  var o = HR.ext;
+  if (o && Math.abs(o.x0 - e.x0) < 1e-6 && Math.abs(o.x1 - e.x1) < 1e-6 && Math.abs(o.y0 - e.y0) < 1e-6 && Math.abs(o.y1 - e.y1) < 1e-6) return;
+  HR.ext = e;
+  HR.extW = { x0: e.x0 + (window.offX || 0), x1: e.x1 + (window.offX || 0), y0: e.y0 + (window.offY || 0), y1: e.y1 + (window.offY || 0) };
+  HR.ver++;
+};
+
+/* tampilan efektif: perpotongan extent terlihat dengan kotak data (bila belum tahu, pakai kotak data) */
+HR.box = function (b) {
+  var e = HR.on && HR.ext ? HR.ext : null;
+  if (!e) return b;
+  var mg = 0.08 * Math.max(e.x1 - e.x0, e.y1 - e.y0);  /* sedikit margin supaya geser kecil tidak kosong */
+  var q = { x0: Math.max(b.x0, e.x0 - mg), x1: Math.min(b.x1, e.x1 + mg), y0: Math.max(b.y0, e.y0 - mg), y1: Math.min(b.y1, e.y1 + mg) };
+  if (q.x1 <= q.x0 || q.y1 <= q.y0) return b;          /* tidak bertumpang -> jangan kosongkan tampilan */
+  return q;
+};
+
+/* penanda sumber supaya cache tidak tertukar antar kumpulan titik (mis. topoC vs topoF) */
+HR._hid = 0;
+HR.hid = function (o) { if (!o._hid) { o._hid = 'h' + (++HR._hid); } return o._hid + ':' + o.x.length; };
+
+/* ============================ 3. desimasi topografi per sel ============================ */
+/* src: {x,y,z} koordinat lokal (boleh berisi null sebagai pemutus garis). Hasil: titik untuk mesh. */
+HR.topoMesh = function (src, budget) {
+  if (!src || !src.x || !src.x.length) return src;
+  budget = Math.max(1000, budget || HR.tbudget);
+  var key = 'tm|' + budget + '|' + HR.ver + '|' + HR.hid(src);
+  if (HR._tm && HR._tm.key === key) return HR._tm.o;
+  var b = src.b || { x0: -1e9, x1: 1e9, y0: -1e9, y1: 1e9 }, e = HR.box(b);
+  var w = Math.max(1, e.x1 - e.x0), h = Math.max(1, e.y1 - e.y0);
+  var cell = Math.sqrt(w * h / budget), nx = Math.max(1, Math.ceil(w / cell)), ny = Math.max(1, Math.ceil(h / cell));
+  var seen = new Uint8Array(nx * ny), X = [], Y = [], Z = [], i, n = src.x.length, kept = 0;
+  for (i = 0; i < n; i++) {
+    var x = src.x[i]; if (x === null) continue;
+    var y = src.y[i];
+    if (x < e.x0 || x > e.x1 || y < e.y0 || y > e.y1) continue;
+    var cx = Math.min(nx - 1, Math.floor((x - e.x0) / cell)), cy = Math.min(ny - 1, Math.floor((y - e.y0) / cell)), k = cy * nx + cx;
+    if (seen[k]) continue;
+    seen[k] = 1; X.push(x); Y.push(y); Z.push(src.z[i]); kept++;
+  }
+  if (kept < 3) return src;
+  var o = { x: X, y: Y, z: Z, b: src.b, hr: { cell: cell, n: kept, dari: n } };
+  HR._tm = { key: key, o: o };
+  return o;
+};
+
+/* garis kontur: hanya segmen di dalam tampilan (null tetap jadi pemutus) */
+HR.topoLines = function (src) {
+  if (!src || !src.x || !src.x.length || !HR.on || !HR.ext) return src;
+  var key = 'tl|' + HR.ver + '|' + HR.hid(src);
+  if (HR._tl && HR._tl.key === key) return HR._tl.o;
+  var e = HR.box(src.b || { x0: -1e9, x1: 1e9, y0: -1e9, y1: 1e9 });
+  var X = [], Y = [], Z = [], last = true, n = src.x.length, keep = 0;
+  for (var i = 0; i < n; i++) {
+    var x = src.x[i];
+    var ok = x !== null && x >= e.x0 && x <= e.x1 && src.y[i] >= e.y0 && src.y[i] <= e.y1;
+    if (ok) { X.push(x); Y.push(src.y[i]); Z.push(src.z[i]); last = false; keep++; }
+    else if (!last) { X.push(null); Y.push(null); Z.push(null); last = true; }
+  }
+  if (keep < 2) return src;
+  var o = { x: X, y: Y, z: Z, b: src.b };
+  HR._tl = { key: key, o: o };
+  return o;
+};
+
+/* ============================ 4. raster topografi UNTUK TAMPILAN SAJA ============================
+   PENTING: raster ini TIDAK dipakai reporting / estimasi. Nilainya diambil dengan memanggil topoZ()
+   yang asli pada titik-titik grid, lalu dibaca bilinear. Jadi medannya sama dengan IDW asli, hanya
+   didekati antar simpul grid (jarak simpul <= beberapa meter) dan dipakai hanya untuk menempelkan
+   warna ortho ke topografi (drape) di tampilan 3D. Semua perhitungan tonase tetap memakai topoZ()
+   asli, supaya hasil laporan tidak berubah sedikit pun oleh modul ini. */
+HR.zGrid = function () {
+  var o = window.OV && OV.topoF;
+  if (!o || !o.x || !o.x.length || typeof window.topoZ !== 'function') return null;
+  if (HR._ras && HR._ras.src === o && HR._ras.ver === (OV._ver || 0)) return HR._ras;
+  var b = o.b, w = Math.max(1, b.x1 - b.x0), h = Math.max(1, b.y1 - b.y0);
+  var N = 384, nx = N, ny = N;                       /* 384 x 384 = 147.456 panggilan topoZ, sekali saja */
+  if (w > h) ny = Math.max(16, Math.round(N * h / w)); else nx = Math.max(16, Math.round(N * w / h));
+  var dx = w / (nx - 1), dy = h / (ny - 1), Z = new Float32Array(nx * ny), have = new Uint8Array(nx * ny);
+  for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+    var q = window.topoZ(b.x0 + i * dx, b.y0 + j * dy), k = j * nx + i;
+    if (q !== null && isFinite(q)) { Z[k] = q; have[k] = 1; }
+  }
+  HR._ras = { src: o, ver: (OV._ver || 0), b: b, nx: nx, ny: ny, dx: dx, dy: dy, z: Z, have: have };
+  return HR._ras;
+};
+
+/* elevasi cepat untuk TAMPILAN; null bila di luar jangkauan data (pemanggil boleh jatuh ke topoZ asli) */
+HR.zFast = function (x, y) {
+  var R = HR.zGrid(); if (!R) return null;
+  var fx = (x - R.b.x0) / R.dx, fy = (y - R.b.y0) / R.dy;
+  if (!(fx >= 0 && fy >= 0 && fx <= R.nx - 1 && fy <= R.ny - 1)) return null;
+  var i0 = Math.min(R.nx - 2, Math.floor(fx)), j0 = Math.min(R.ny - 2, Math.floor(fy)), tx = fx - i0, ty = fy - j0;
+  var k = j0 * R.nx + i0, k2 = k + R.nx;
+  if (!(R.have[k] && R.have[k + 1] && R.have[k2] && R.have[k2 + 1])) return null;
+  return (R.z[k] * (1 - tx) + R.z[k + 1] * tx) * (1 - ty) + (R.z[k2] * (1 - tx) + R.z[k2 + 1] * tx) * ty;
+};
+
+/* ============================ 5. gambar ortho resolusi penuh untuk Peta 2D ============================ */
+/* Potong ortho sesuai tampilan, sampai HR.mapPx px pada sisi panjang: di zoom dekat = resolusi asli. */
+HR.screenPx = function () {
+  var el = null;
+  try { el = (window.mapGd && mapGd()) || document.querySelector('.js-plotly-plot'); } catch (e) { }
+  var w = el && el.clientWidth ? el.clientWidth : 1200, h = el && el.clientHeight ? el.clientHeight : 800;
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  return Math.max(768, Math.min(HR.mapPx, Math.round(Math.max(w, h) * dpr * 1.5)));
+};
+
+HR.mapImage = function () {
+  var O = window.ORT, m = O && O.m;
+  if (!m || !O.px) return null;
+  var P = HR.pyr(); if (!P) return null;
+  var ex = HR.extW, e0 = m.e0, n0 = m.n0, W = m.w * m.dx, H = m.h * m.dy;
+  var x0 = e0, x1 = e0 + W, y1 = n0, y0 = n0 - H;
+  if (HR.on && ex) {
+    var mg = 0.05 * Math.max(ex.x1 - ex.x0, ex.y1 - ex.y0);
+    x0 = Math.max(x0, ex.x0 - mg); x1 = Math.min(x1, ex.x1 + mg);
+    y0 = Math.max(y0, ex.y0 - mg); y1 = Math.min(y1, ex.y1 + mg);
+    if (x1 - x0 < m.dx * 2 || y1 - y0 < m.dy * 2) { x0 = e0; x1 = e0 + W; y0 = n0 - H; y1 = n0; }
+  }
+  /* cukup setajam layar: membuat JPEG 4096 px untuk tampilan selebar 1200 px hanya membuang waktu */
+  var scr = HR.screenPx();
+  var res = Math.max(m.dx, (x1 - x0) / scr, (y1 - y0) / scr);
+  var key = [Math.round(x0 * 100), Math.round(x1 * 100), Math.round(y0 * 100), Math.round(y1 * 100), Math.round(res * 1000)].join('|');
+  if (O._mi && O._mi.key === key) return O._mi.o;
+  var lv = HR.level(res);
+  var w = Math.max(1, Math.min(scr, Math.round((x1 - x0) / res))), h = Math.max(1, Math.min(scr, Math.round((y1 - y0) / res)));
+  var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  var cx = cv.getContext('2d'), im = cx.createImageData(w, h), D = im.data;
+  for (var r = 0; r < h; r++) {
+    var wy = y1 - (r + 0.5) * (y1 - y0) / h, sr = Math.round((n0 - wy) / lv.dy);
+    if (sr < 0) sr = 0; if (sr >= lv.h) sr = lv.h - 1;
+    for (var c = 0; c < w; c++) {
+      var wx = x0 + (c + 0.5) * (x1 - x0) / w, sc = Math.round((wx - e0) / lv.dx);
+      if (sc < 0) sc = 0; if (sc >= lv.w) sc = lv.w - 1;
+      var s = (sr * lv.w + sc) * 3, o2 = (r * w + c) * 4;
+      D[o2] = lv.px[s]; D[o2 + 1] = lv.px[s + 1]; D[o2 + 2] = lv.px[s + 2]; D[o2 + 3] = 255;
+    }
+  }
+  cx.putImageData(im, 0, 0);
+  var o = { m: m, src: cv.toDataURL('image/jpeg', 0.9), x: x0, y: y1, sx: x1 - x0, sy: y1 - y0, px: w + 'x' + h, res: res };
+  O._mi = { key: key, o: o };
+  return o;
+};
+
+/* ============================ 6. pantau tampilan (zoom / geser) ============================ */
+(function () {
+  var tmr = null, redraw = function () {
+    tmr = null;
+    try {
+      if (window.MAP && MAP.on && window.mapRefresh) mapRefresh(true);
+      else if (window.updatePlot) { if (window.OVC) window.OVC = {}; updatePlot(); }
+    } catch (e) { }
+  };
+  var bump = function () { if (tmr) clearTimeout(tmr); tmr = setTimeout(redraw, 260); };
+  HR.fromRelayout = function (ev, world) {
+    if (!ev || !HR.on) return;
+    var v = HR.ver;
+    var sx = ev['scene.xaxis.range'], sy = ev['scene.yaxis.range'];
+    if (sx && sy) HR.setExt(sx[0], sx[1], sy[0], sy[1], false);
+    var ax = ev['xaxis.range'] || (ev['xaxis.range[0]'] !== undefined ? [ev['xaxis.range[0]'], ev['xaxis.range[1]']] : null);
+    var ay = ev['yaxis.range'] || (ev['yaxis.range[0]'] !== undefined ? [ev['yaxis.range[0]'], ev['yaxis.range[1]']] : null);
+    if (ax && ay) HR.setExt(+ax[0], +ax[1], +ay[0], +ay[1], !!world);
+    /* reset tampilan (klik ganda / autoscale): lupakan extent supaya mesh kembali menutupi seluruh area */
+    if (!sx && !ax && (ev['xaxis.autorange'] || ev['yaxis.autorange'] || ev['scene.xaxis.autorange'] ||
+      ev['scene.aspectmode'] === 'auto' || ev.autosize)) { if (HR.ext) { HR.ext = null; HR.extW = null; HR.ver++; } }
+    if (HR.ver !== v) bump();
+  };
+  HR.attach = function (gd, world) {
+    if (!gd || gd._hrOn || !gd.on) return;
+    gd._hrOn = 1;
+    try { gd.on('plotly_relayout', function (ev) { HR.fromRelayout(ev, world); }); } catch (e) { }
+  };
+  /* pasang ke grafik utama & peta begitu ada */
+  var t = setInterval(function () {
+    try {
+      var a = document.getElementById('plot') || document.getElementById('graph') || document.querySelector('.js-plotly-plot');
+      if (a) HR.attach(a, false);
+      var b = window.mapGd && mapGd(); if (b) HR.attach(b, true);
+    } catch (e) { }
+  }, 1200);
+  setTimeout(function () { clearInterval(t); }, 120000);
+})();
+
+HR.info = function () {
+  var P = HR.pyr(), R = HR.zGrid && HR._ras, o = [];
+  if (P) o.push('ortho piramida ' + P.L.length + ' level (' + P.L[0].w + 'x' + P.L[0].h + ' px @ ' + P.L[0].dx + ' m)');
+  if (R) o.push('grid topo tampilan ' + R.nx + 'x' + R.ny + ' sel @ ' + (Math.round(R.dx * 100) / 100) + ' m');
+  if (HR.ext) o.push('tampilan ' + Math.round(HR.ext.x1 - HR.ext.x0) + ' x ' + Math.round(HR.ext.y1 - HR.ext.y0) + ' m');
+  return o.join(' · ');
+};
+
 function orthoInit(){if(!window.orthoImg){var c=$('ovOrtho');if(c)c.disabled=true;$('orInfo').textContent='Tidak ada orthofoto. Tambahkan lewat tombol Import (GeoTIFF / JPG+world file).';return;}
   var a;if(orthoImg.px)a=orthoImg.px;else{var s=atob(orthoImg.b64),n=s.length;a=new Uint8Array(n);for(var i=0;i<n;i++)a[i]=s.charCodeAt(i);}
   ORT={m:orthoImg,px:a,cache:{}};orthoImg.b64=null;
-  $('orInfo').textContent=orthoImg.src+' | '+orthoImg.w+' x '+orthoImg.h+' px @ '+orthoImg.dx+' m';}
-function orthoRGB(xl,yl){var m=ORT.m,c=Math.round((xl+offX-m.e0)/m.dx),r=Math.round((m.n0-(yl+offY))/m.dy);
+  $('orInfo').textContent=orthoImg.src+' | '+orthoImg.w+' x '+orthoImg.h+' px @ '+orthoImg.dx+' m (LOD aktif: detail mengikuti zoom)';}
+function orthoRGB(xl,yl,res){if(res&&window.HR&&HR.on){var _q=HR.rgb(xl,yl,res);if(_q)return _q;}var m=ORT.m,c=Math.round((xl+offX-m.e0)/m.dx),r=Math.round((m.n0-(yl+offY))/m.dy);
   if(c<0||r<0||c>=m.w||r>=m.h)return null;var p=(r*m.w+c)*3;return[ORT.px[p],ORT.px[p+1],ORT.px[p+2]];}
 function topoIndex(){if(TIDX)return TIDX;var B=10,cells={},o=OV.topoF;
   for(var i=0;i<o.x.length;i++){if(o.x[i]===null)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
@@ -1772,15 +2071,16 @@ function topoZ(x,y){var T=topoIndex(),B=T.B,o=T.o,cx=Math.floor(x/B),cy=Math.flo
     if(np>=3)return sz/sw;}
   return null;}
 function orthoImg2D(){if(!window.ORT)return null;var m=ORT.m;if(!ORT.url){var cv=document.createElement('canvas');cv.width=m.w;cv.height=m.h;var ctx=cv.getContext('2d'),im=ctx.createImageData(m.w,m.h),p=ORT.px,d=im.data;for(var i=0,j=0;i<p.length;i+=3,j+=4){d[j]=p[i];d[j+1]=p[i+1];d[j+2]=p[i+2];d[j+3]=255;}ctx.putImageData(im,0,0);ORT.url=cv.toDataURL('image/jpeg',0.88);}return{source:ORT.url,xref:'x',yref:'y',x:m.e0-m.dx/2,y:m.n0+m.dy/2,sizex:m.w*m.dx,sizey:m.h*m.dy,xanchor:'left',yanchor:'top',sizing:'stretch',layer:'below',opacity:+(($('orOp')||{}).value||1)};}
+function HRZ(x,y){if(window.HR&&HR.on){var q=HR.zFast(x,y);if(q!==null)return q;}return topoZ(x,y);}
 function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
-  var res=+$('orRes').value;if(light)res=Math.max(res,4);var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
-  var key=res+'|'+crop+'|'+mode;if(ORT.cache[key])return ORT.cache[key];
+  var res=+$('orRes').value;if(light)res=Math.max(res,4);if(window.HR&&HR.on&&HR.ext){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
+  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0);if(ORT.cache[key])return ORT.cache[key];
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
-  if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}
+  if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
   if(x1<=x0||y1<=y0)return null;
   var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>300000){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}
   var flatZ=Math.ceil(G.z1)+5,X=[],Y=[],Z=[],C=[],id=new Int32Array(nx*ny),n=0,zmin=1e18,zmax=-1e18,i,j;
-  for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:(mode==='base')?0:topoZ(x,y),c=(z===null)?null:orthoRGB(x,y);
+  for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:(mode==='base')?0:HRZ(x,y),c=(z===null)?null:orthoRGB(x,y,res);
     if(!c){id[j*nx+i]=-1;continue;}id[j*nx+i]=n++;z+=0.3;X.push(x);Y.push(y);Z.push(z);C.push('rgb('+c[0]+','+c[1]+','+c[2]+')');if(z<zmin)zmin=z;if(z>zmax)zmax=z;}
   var I=[],J=[],K=[];
   for(j=0;j<ny-1;j++)for(i=0;i<nx-1;i++){var a=id[j*nx+i],b=id[j*nx+i+1],c2=id[(j+1)*nx+i],d=id[(j+1)*nx+i+1];
@@ -3819,7 +4119,7 @@ function mapContour(){if(typeof OV==='undefined'||!OV.topoF||!OV.topoF.x.length)
   if(!isFinite(x0)){x0=1e18;x1=-1e18;y0=1e18;y1=-1e18;OV.topoF.x.forEach(function(v,i){if(v===null)return;x0=Math.min(x0,v);x1=Math.max(x1,v);y0=Math.min(y0,OV.topoF.y[i]);y1=Math.max(y1,OV.topoF.y[i]);});}
   var cs=Math.max(2,Math.max(x1-x0,y1-y0)/220),nx=Math.ceil((x1-x0)/cs)+1,ny=Math.ceil((y1-y0)/cs)+1,X=[],Y=[],Z=[];for(var i=0;i<nx;i++)X.push(x0+i*cs+offX);for(var j=0;j<ny;j++)Y.push(y0+j*cs+offY);
   for(j=0;j<ny;j++){var row=[];for(i=0;i<nx;i++){var z=null;try{z=topoZ(x0+i*cs,y0+j*cs);}catch(e){}row.push(z!=null&&isFinite(z)?z:null);}Z.push(row);}MAPC.ct={key:key,x:X,y:Y,z:Z};return MAPC.ct;}
-function mapOrtho(){var m=window.ORT&&ORT.m;if(!m||!ORT.px)return null;if(MAPC.or&&MAPC.or.m===m)return MAPC.or;var f=Math.max(1,Math.ceil(Math.max(m.w,m.h)/3000)),w=Math.floor(m.w/f),h=Math.floor(m.h/f),c=document.createElement('canvas');c.width=w;c.height=h;
+function mapOrtho(){var m=window.ORT&&ORT.m;if(!m||!ORT.px)return null;if(window.HR&&HR.on){try{var _i=HR.mapImage();if(_i)return _i;}catch(_e){}}if(MAPC.or&&MAPC.or.m===m)return MAPC.or;var f=Math.max(1,Math.ceil(Math.max(m.w,m.h)/3000)),w=Math.floor(m.w/f),h=Math.floor(m.h/f),c=document.createElement('canvas');c.width=w;c.height=h;
   var x=c.getContext('2d'),im=x.createImageData(w,h);for(var r=0;r<h;r++)for(var q=0;q<w;q++){var s=((r*f)*m.w+q*f)*3,o=(r*w+q)*4;im.data[o]=ORT.px[s];im.data[o+1]=ORT.px[s+1];im.data[o+2]=ORT.px[s+2];im.data[o+3]=255;}x.putImageData(im,0,0);
   MAPC.or={m:m,src:c.toDataURL('image/jpeg',0.85),x:m.e0,y:m.n0,sx:m.w*m.dx,sy:m.h*m.dy};return MAPC.or;}
 /* simbol struktur USGS: miring = garis strike + tick arah dip + angka dip; tegak (>=85) = strike + tick dua sisi; datar (<=5) = lingkaran + silang */
@@ -8322,7 +8622,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.23.1';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.0';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

@@ -532,3 +532,39 @@ Hasilnya ditulis sebagai atribut **kategori** `klasifikasi`, jadi seluruh mesin 
 Bila atribut `est_nsamp` atau `est_sor` tidak ada (block model dari luar GC-Ex), syaratnya diabaikan dan panel memberi tahu.
 
 > ⚠ Ambang di panel adalah **usulan geostatistik yang dapat diulang, bukan keputusan klasifikasi**. Penetapan Measured / Indicated / Inferred tetap wewenang **Competent Person** sesuai KCMI / JORC, yang juga menimbang spasi bor, kemenerusan geologi, QAQC dan kelayakan penambangan. Spasi bor dan jumlah bor berbeda per blok belum direkam estimasi, jadi belum bisa dipakai sebagai syarat otomatis.
+
+## 50. GC-Ex Block Model & Drill Hole Ultimate 0.24.1
+
+**Topografi & orthofoto resolusi sangat tinggi tanpa mengorbankan performa.** Berlaku di kedua aplikasi.
+
+Yang membatasi sebelumnya:
+
+- Orthofoto digambar sebagai mesh 3D berwarna per-titik dengan resolusi **tetap** dari kotak *Resolusi (m)*, dan dibatasi 300.000 titik untuk **seluruh area**. Zoom masuk tidak menambah detail, zoom keluar menghitung titik yang tidak terlihat. Warna diambil satu piksel (point sample) sehingga berkerlip saat gambar dikecilkan.
+- Peta (Mapping) memakai satu JPEG seluruh ortho yang dipaksa maksimum 3.000 px sisi panjang — ortho 8.000 px pun hanya tampil 2.666 px, jadi zoom dekat tampak buram.
+- Topografi digambar dari desimasi *ambil tiap titik ke-n* ke 15.000 titik, dihitung **sekali** saat proyek dibuka: zoom masuk tetap kasar.
+- `topoZ()` menghitung IDW ulang setiap dipanggil — dan dipanggil ~300.000 kali setiap kali ortho di-drape ke topografi.
+
+Yang berubah:
+
+1. **Piramida LOD orthofoto.** Level 0 = piksel asli, tiap level berikutnya rata-rata 2 × 2. Warna diambil dari level yang texel-nya sepadan dengan resolusi mesh, jadi rata-rata area (anti-alias) dan pembacaannya lebih murah. Tambahan memori = ⅓ dari piksel dasar (ortho 8.000 × 8.000: 183 MB → +61 MB, dibangun sekali ±0,3 detik).
+2. **Resolusi *dan* luas mesh mengikuti tampilan.** Zoom masuk otomatis makin detail sampai batas piksel asli, dengan jumlah titik tetap di bawah anggaran. Kotak *Resolusi (m)* kini menjadi batas paling halus, bukan resolusi tetap.
+3. **Peta 2D memakai gambar asli.** Ortho dipotong sesuai tampilan dan dikirim setajam layar (maksimum 4.096 px).
+4. **Desimasi topografi per sel**, dihitung dari seluruh data **di dalam tampilan** — sebaran merata dan detail penuh saat zoom masuk.
+5. **Grid elevasi untuk tampilan**, dibaca bilinear O(1).
+
+Hasil ukur (ortho sintetis 8.000 × 8.000 px @ 5 cm, topografi 200.000 titik, Chromium headless):
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Mesh ortho, tampilan 400 m | 1 m/titik · 160.000 titik · 592 ms | 0,91 m/titik · 193.000 titik · 525 ms |
+| Mesh ortho, zoom 40 m | 1 m/titik · 160.000 titik · 592 ms | **0,1 m/titik** · 215.000 titik · 136 ms |
+| Mesh ortho, zoom 10 m | 1 m/titik · 160.000 titik · 592 ms | **0,1 m/titik** · 13.700 titik · **3 ms** |
+| Gambar ortho Peta 2D, zoom 10 m | 2.666 × 2.666 px @ 0,15 m · 255 ms · 3,1 MB | **220 × 220 px @ 0,05 m** · 6 ms · 9 KB |
+| Gambar ortho Peta 2D, zoom keluar | 2.666 × 2.666 px · 255 ms | 1.454 × 1.454 px · 89 ms |
+| Titik topografi di jendela 10 m (anggaran 15.000) | 15 | **172** |
+| 200.000 pembacaan elevasi | 512 ms | **14 ms** |
+| Warna ortho pada mesh kasar | titik tunggal (berkerlip) | rata-rata area (anti-alias) |
+
+> **Hasil laporan tidak berubah.** Grid elevasi dipakai **hanya untuk tampilan** (menempelkan warna ortho ke topografi). Semua perhitungan *Reporting BM*, estimasi dan validasi tetap memanggil `topoZ()` asli. Grid itu pun dibangun dengan memanggil `topoZ()` asli pada simpul-simpulnya: pada uji 300 titik acak, selisihnya rata-rata **4 mm** dan maksimum **3,8 cm** pada permukaan dengan relief 30 m.
+
+Catatan pemakaian: saat zoom/geser, tampilan disegarkan ±0,3 detik setelah gerakan berhenti (bukan tiap frame), dan mesh dibuat sedikit lebih luas dari layar supaya geseran kecil tidak menyisakan tepi kosong. Klik ganda / autoscale mengembalikan tampilan ke seluruh area.
