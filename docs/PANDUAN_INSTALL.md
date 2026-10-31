@@ -709,3 +709,10 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 59. Core-Ex 0.26.1 — perbaikan CI rilis
 
 - Langkah pembuatan tutorial bergambar di CI gagal di-parse PowerShell sejak 0.24.8, sehingga Release v0.24.8 dan v0.25.0 tidak terbit. Sudah diperbaiki; isi aplikasi sama dengan 0.26.0.
+
+## 60. Core-Ex 0.27.0 — Singkapan: delineasi otomatis (Core-Ex versi Qt)
+
+- Fitur baru hanya di **Core-Ex versi Qt** (installer uji di pre-release `core-ex-qt-uji`); Core-Ex Electron di Release tidak berubah.
+- Tab Fitur › **Usulan otomatis**: *Zona warna* (tanpa AI, beberapa detik) membagi foto menjadi zona oksida / gossan vs batuan segar; *AI vision* (Ollama) mengusulkan kontak, sesar, kekar, vein dan zona beserta jenisnya.
+- Usulan berupa draf titik-titik yang tidak ikut legenda / ekspor sampai diterima: edit, lalu **✓ Terima usulan** / Simpan, atau **Terima semua** / **Buang semua**.
+- Panduan: PANDUAN_CORE bagian 6c langkah 3.

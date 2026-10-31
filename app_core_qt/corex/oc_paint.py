@@ -154,6 +154,23 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
         col = QColor(k["color"])
         P = [QPointF(u * W, v * H) for u, v in f["pts"]]
         is_sel = f["id"] == sel
+        if (f.get("attrs") or {}).get("_draft"):  # usulan otomatis: titik-titik, tanpa label / kotak kadar
+            Q = QPolygonF(P + ([P[0]] if f["shape"] == "poly" else []))
+            if f["shape"] == "poly":
+                fill = QColor(col)
+                fill.setAlphaF(0.16)
+                p.setBrush(fill)
+                p.setPen(Qt.NoPen)
+                p.drawPolygon(QPolygonF(P))
+                p.setBrush(Qt.NoBrush)
+            p.setPen(QPen(QColor(255, 255, 255, 220), (4.2 if is_sel else 3.4) * U, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            p.drawPolyline(Q)
+            p.setPen(QPen(col, (2.6 if is_sel else 2.0) * U, Qt.DotLine, Qt.RoundCap, Qt.RoundJoin))
+            p.drawPolyline(Q)
+            if is_sel and f.get("name"):
+                a = anchor(f, W, H) if f["shape"] == "poly" else P[len(P) // 2]
+                _halo(p, a.x(), a.y(), "usulan: " + f["name"], 12 * U)
+            continue
         if f["shape"] == "poly":
             fill = QColor(col)
             fill.setAlphaF(0.10 if info.get("fill", True) else 0.0)
@@ -269,7 +286,7 @@ def paint_scene(p: QPainter, W: float, H: float, feats: list[dict], kinds: dict,
     if info.get("show_legend", True):
         used = []
         for f in feats:
-            if f["kind"] not in NO_LEGEND and f["kind"] not in used:
+            if f["kind"] not in NO_LEGEND and f["kind"] not in used and not (f.get("attrs") or {}).get("_draft"):
                 used.append(f["kind"])
         if used:
             fh = 12.5 * U

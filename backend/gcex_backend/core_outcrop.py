@@ -928,8 +928,8 @@ def export_items(s: Store, ids: list[int]) -> tuple[list[dict], list[str]]:
             skipped.append(f"{r.get('title') or r['name']}: {(sol or {}).get('msg') or 'belum digeoreferensi'}")
             continue
         for f in features(s, pid):
-            if f["kind"] in NO_EXPORT:
-                continue
+            if f["kind"] in NO_EXPORT or (f.get("attrs") or {}).get("_draft"):
+                continue  # garis skala & usulan yang belum diterima tidak ikut
             k = ks.get(f["kind"]) or {"name": f["kind"], "string": 50, "color": "#7a5aa6"}
             items.append({"photo": r.get("title") or r["name"], "kind": f["kind"], "kname": k["name"], "string": int(k["string"]),
                           "color": k["color"], "shape": f["shape"], "name": f.get("name") or "", "attrs": f["attrs"],
@@ -1033,3 +1033,393 @@ def api_export(b: ExpBody):
     if b.fmt == "dxf":
         return Response(to_dxf(items), media_type="application/dxf")
     return Response(to_str(items, b.name), media_type="text/plain")
+
+
+# ================================================================ delineasi otomatis (usulan / draf)
+# Usulan disimpan sebagai fitur biasa dengan attrs["_draft"] = sumbernya ("warna" atau "ai:<model>").
+# Draf digambar putus-putus, tidak ikut ekspor STR / DXF / infografis sampai diterima geologist.
+DRAFT = "_draft"
+AUTO_SKIP = {"skala", "label", "channel"}
+
+
+def is_draft(f: dict) -> bool:
+    return bool((f.get("attrs") or {}).get(DRAFT))
+
+
+def _load_rgb(f: Path, long_side: int) -> np.ndarray:
+    from PIL import Image, ImageFilter, ImageOps
+    with Image.open(f) as im:
+        im = ImageOps.exif_transpose(im).convert("RGB")
+        k = long_side / max(im.size)
+        im = im.resize((max(8, round(im.width * k)), max(8, round(im.height * k))), Image.BILINEAR)
+        im = im.filter(ImageFilter.GaussianBlur(1.6))
+        return np.asarray(im, dtype=np.float64) / 255.0
+
+
+def _lab(rgb: np.ndarray) -> np.ndarray:
+    c = np.where(rgb > 0.04045, ((rgb + 0.055) / 1.055) ** 2.4, rgb / 12.92)
+    M = np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]])
+    xyz = c @ M.T / np.array([0.95047, 1.0, 1.08883])
+    f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16 / 116)
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], axis=-1)
+
+
+def _kmeans(X: np.ndarray, k: int, it: int = 20) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(7)
+    sample = X[rng.choice(len(X), min(len(X), 6000), replace=False)]
+    C = [sample[0]]
+    for _ in range(1, k):  # k-means++ deterministik
+        d = np.min(((sample[:, None, :] - np.array(C)[None]) ** 2).sum(-1), axis=1)
+        C.append(sample[int(np.argmax(d))] if d.sum() == 0 else sample[rng.choice(len(sample), p=d / d.sum())])
+    C = np.array(C)
+    for _ in range(it):
+        lab = np.argmin(((X[:, None, :] - C[None]) ** 2).sum(-1), axis=1)
+        newC = np.array([X[lab == j].mean(0) if np.any(lab == j) else C[j] for j in range(k)])
+        if np.allclose(newC, C, atol=1e-3):
+            break
+        C = newC
+    return np.argmin(((X[:, None, :] - C[None]) ** 2).sum(-1), axis=1), C
+
+
+def _majority(L: np.ndarray, k: int, r: int) -> np.ndarray:
+    """Filter mayoritas (jendela (2r+1)^2) dengan integral image per kelas."""
+    H, W = L.shape
+    best = np.full((H, W), -1.0)
+    out = L.copy()
+    for j in range(k):
+        m = np.pad((L == j).astype(np.float64), ((r + 1, r), (r + 1, r)), mode="edge")
+        S = m.cumsum(0).cumsum(1)
+        cnt = S[2 * r + 1:, 2 * r + 1:] - S[:-2 * r - 1, 2 * r + 1:] - S[2 * r + 1:, :-2 * r - 1] + S[:-2 * r - 1, :-2 * r - 1]
+        upd = cnt > best
+        best[upd], out[upd] = cnt[upd], j
+    return out
+
+
+def _components(L: np.ndarray) -> tuple[np.ndarray, list[int]]:
+    """Label komponen terhubung-4 (union-find per baris, cukup cepat untuk ~250 x 250)."""
+    H, W = L.shape
+    comp = -np.ones((H, W), dtype=np.int64)
+    sizes: list[int] = []
+    for y in range(H):
+        for x in range(W):
+            if comp[y, x] >= 0:
+                continue
+            cid, v = len(sizes), L[y, x]
+            stack, n = [(y, x)], 0
+            comp[y, x] = cid
+            while stack:
+                cy, cx = stack.pop()
+                n += 1
+                for ny, nx in ((cy - 1, cx), (cy + 1, cx), (cy, cx - 1), (cy, cx + 1)):
+                    if 0 <= ny < H and 0 <= nx < W and comp[ny, nx] < 0 and L[ny, nx] == v:
+                        comp[ny, nx] = cid
+                        stack.append((ny, nx))
+            sizes.append(n)
+    return comp, sizes
+
+
+def _trace(mask: np.ndarray) -> list[tuple[float, float]]:
+    """Batas luar region terhubung-4, ditelusuri di grid sudut piksel dengan region di sisi kanan (searah jarum jam
+    di layar). Hasil dalam koordinat sudut piksel (0..W, 0..H)."""
+    H, W = mask.shape
+
+    def inside(x: int, y: int) -> bool:
+        return 0 <= x < W and 0 <= y < H and bool(mask[y, x])
+
+    # piksel (kanan, kiri) dari tepi yang berangkat dari sudut (x, y) ke arah d (0 kanan, 1 bawah, 2 kiri, 3 atas)
+    def sides(x: int, y: int, d: int) -> tuple[bool, bool]:
+        if d == 0:
+            return inside(x, y), inside(x, y - 1)
+        if d == 1:
+            return inside(x - 1, y), inside(x, y)
+        if d == 2:
+            return inside(x - 1, y - 1), inside(x - 1, y)
+        return inside(x, y - 1), inside(x - 1, y - 1)
+
+    D = ((1, 0), (0, 1), (-1, 0), (0, -1))
+    ys, xs = np.nonzero(mask)
+    i = np.lexsort((xs, ys))[0]
+    start = (int(xs[i]), int(ys[i]), 0)
+    x, y, d = start
+    pts = []
+    for _ in range(4 * (H + 1) * (W + 1)):
+        pts.append((x, y))
+        x, y = x + D[d][0], y + D[d][1]
+        for nd in ((d + 1) % 4, d, (d + 3) % 4):  # belok kanan dulu: region diagonal tidak tergabung
+            r, l_ = sides(x, y, nd)
+            if r and not l_:
+                d = nd
+                break
+        if (x, y, d) == start:
+            break
+    # buang titik kolinear
+    out = [p for k, p in enumerate(pts) if not ((pts[k - 1][0] == p[0] == pts[(k + 1) % len(pts)][0]) or
+                                                (pts[k - 1][1] == p[1] == pts[(k + 1) % len(pts)][1]))]
+    return out or pts
+
+
+def _dp(P: list, eps: float) -> list:
+    """Douglas-Peucker untuk poligon tertutup."""
+    if len(P) < 4:
+        return P
+    A = np.array(P, dtype=float)
+    far = int(np.argmax(((A - A[0]) ** 2).sum(1)))
+
+    def rec(a: np.ndarray) -> list:
+        if len(a) < 3:
+            return [tuple(a[0])]
+        s, e = a[0], a[-1]
+        d = e - s
+        n = np.hypot(*d)
+        dist = np.abs(d[0] * (a[:, 1] - s[1]) - d[1] * (a[:, 0] - s[0])) / n if n > 1e-9 else np.hypot(*(a - s).T)
+        i = int(np.argmax(dist))
+        if dist[i] <= eps:
+            return [tuple(s)]
+        return rec(a[:i + 1]) + rec(a[i:])
+    out = rec(A[:far + 1]) + rec(np.vstack([A[far:], A[:1]]))
+    return out
+
+
+def _color_name(lab: np.ndarray) -> tuple[str, bool]:
+    L, a, b = (float(x) for x in lab)
+    C = math.hypot(a, b)
+    h = (math.degrees(math.atan2(b, a)) + 360) % 360
+    tone = "gelap" if L < 35 else ("terang" if L > 70 else "")
+    if C < 8:
+        base = "abu-abu"
+    elif h < 45:
+        base = "merah kecoklatan"
+    elif h < 75:
+        base = "coklat kekuningan"
+    elif h < 110:
+        base = "kuning"
+    elif h < 200:
+        base = "kehijauan"
+    else:
+        base = "kebiruan"
+    oxid = C >= 10 and 15 <= h <= 95
+    return (f"{base} {tone}".strip(), oxid)
+
+
+def propose_color(s: Store, pid: int, k: int = 3, min_pct: float = 2.0, by: str = "") -> dict:
+    """Usulan zona dari warna: k-means di ruang Lab (terang diberi bobot rendah agar bayangan tidak jadi zona),
+    dihaluskan, region kecil digabung, batas tiap region jadi poligon. Zona merah-kuning-coklat (oksida / gossan)
+    diberi jenis zona_oks, lainnya zona_lito."""
+    r = photo(s, pid)
+    f = s.photos / r["file"]
+    if not f.exists():
+        raise ValueError("File foto singkapan hilang dari folder proyek.")
+    k = max(2, min(6, int(k)))
+    rgb = _load_rgb(f, 220)
+    H, W, _ = rgb.shape
+    lab = _lab(rgb)
+    X = (lab * np.array([0.45, 1.0, 1.0])).reshape(-1, 3)
+    lbl, C = _kmeans(X, k)
+    L = lbl.reshape(H, W)
+    for rr in (3, 3, 2):
+        L = _majority(L, k, rr)
+    min_px = max(12, int(H * W * min_pct / 100))
+    for _ in range(4):  # gabungkan region kecil ke tetangga dominan
+        comp, sizes = _components(L)
+        small = [c for c, n in enumerate(sizes) if n < min_px]
+        if not small:
+            break
+        for c in small:
+            mk = comp == c
+            ring = np.zeros_like(mk)
+            ring[1:] |= mk[:-1]
+            ring[:-1] |= mk[1:]
+            ring[:, 1:] |= mk[:, :-1]
+            ring[:, :-1] |= mk[:, 1:]
+            ring &= ~mk
+            if ring.any():
+                L[mk] = np.bincount(L[ring], minlength=k).argmax()
+    comp, sizes = _components(L)
+    meanlab = {j: lab[L == j].mean(0) for j in range(k) if np.any(L == j)}
+    regions = sorted(((n, c) for c, n in enumerate(sizes) if n >= min_px), reverse=True)[:12]
+    ks = {x["key"] for x in kinds(s)}
+    clear_drafts(s, pid, "warna")
+    made = []
+    letters = "ABCDEFGHIJKL"
+    i = -1
+    for n, c in regions:
+        mk = comp == c
+        if n > 0.97 * H * W:
+            continue  # seluruh foto satu zona: tidak ada batas
+        poly = _dp(_trace(mk), 2.0)
+        if len(poly) < 3:
+            continue
+        A = np.array(poly, dtype=float)
+        if abs(np.dot(A[:, 0], np.roll(A[:, 1], -1)) - np.dot(A[:, 1], np.roll(A[:, 0], -1))) / 2 > 0.9 * H * W:
+            continue  # zona latar (berlubang): batasnya sudah diwakili zona-zona di dalamnya
+        pts = [[min(1.0, max(0.0, x / W)), min(1.0, max(0.0, y / H))] for x, y in poly]
+        j = int(L[mk][0])
+        nm, oxid = _color_name(meanlab[j])
+        kind = "zona_oks" if oxid and "zona_oks" in ks else "zona_lito"
+        try:
+            i += 1
+            res = save_feature(s, pid, None, {"kind": kind, "pts": pts, "name": f"Usulan zona {letters[i]} ({nm})", "src": "auto:warna",
+                                              "attrs": {DRAFT: "warna", "_pct": round(100 * n / (H * W), 1)}}, by or "auto")
+            made.append(res["id"])
+        except ValueError:
+            continue
+    return {"made": made, "features": features(s, pid), "k": k}
+
+
+def clear_drafts(s: Store, pid: int, source: Optional[str] = None) -> int:
+    n = 0
+    with s.lock, s.conn() as c:
+        for row in c.execute("SELECT id, attrs FROM features WHERE photo_id=?", (pid,)).fetchall():
+            try:
+                a = json.loads(row["attrs"] or "{}")
+            except ValueError:
+                continue
+            src = a.get(DRAFT)
+            if src and (source is None or src == source or (source == "ai" and str(src).startswith("ai:"))):
+                c.execute("DELETE FROM features WHERE id=?", (row["id"],))
+                n += 1
+    return n
+
+
+def accept_drafts(s: Store, pid: int, ids: Optional[list[int]], by: str) -> list[dict]:
+    """Terima usulan (semua atau id terpilih): tanda draf dibuang, fitur menjadi fitur biasa."""
+    for f in features(s, pid):
+        if is_draft(f) and (not ids or f["id"] in ids):
+            a = {k: v for k, v in f["attrs"].items() if k not in (DRAFT, "_pct", "_conf")}
+            save_feature(s, pid, f["id"], {"kind": f["kind"], "pts": f["pts"], "name": f["name"], "attrs": a}, by)
+    return features(s, pid)
+
+
+def reject_drafts(s: Store, pid: int, ids: Optional[list[int]], by: str) -> list[dict]:
+    if not ids:
+        n = clear_drafts(s, pid)
+        with s.lock, s.conn() as c:
+            c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
+                      (pid, "usulan dibuang", f"{n} fitur", None, "hapus", by, core_io.now()))
+        return features(s, pid)
+    for f in features(s, pid):
+        if f["id"] in ids and is_draft(f):
+            delete_feature(s, f["id"], by)
+    return features(s, pid)
+
+
+# ---------------------------------------------------------------- usulan AI vision (Ollama)
+def delin_schema(keys: list[str]) -> dict:
+    return {"type": "object", "required": ["features"], "properties": {
+        "features": {"type": "array", "items": {"type": "object", "required": ["kind", "points"], "properties": {
+            "kind": {"type": "string", "enum": keys}, "name": {"type": "string"},
+            "points": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
+            "confidence": {"type": "string", "enum": ["tinggi", "sedang", "rendah"]}}}},
+        "notes": {"type": "string"}}}
+
+
+def delin_prompt(ks: list[dict], extra: str = "", desc: Optional[dict] = None) -> str:
+    lst = "\n".join(f"- {k['key']}: {k['name']} ({ {'line': 'garis', 'poly': 'poligon'}[k['shape']] })" for k in ks)
+    d = "; ".join(f"{k}: {v}" for k, v in (desc or {}).items() if v and k in ("photo_type", "lithology", "alteration", "oxidation", "veins", "structures", "zones"))
+    return ("Anda geologist lapangan yang mendelineasi foto singkapan / dinding pit / trenching tambang emas epitermal.\n"
+            "Gambarkan batas dan fitur geologi yang BENAR-BENAR terlihat di foto sebagai garis atau poligon.\n"
+            f"Jenis fitur yang boleh dipakai (kind):\n{lst}\n"
+            "Aturan:\n"
+            "- Koordinat setiap titik [x, y] dalam skala 0-1000 relatif terhadap lebar dan tinggi foto; (0,0) = kiri atas, (1000,1000) = kanan bawah.\n"
+            "- Garis: 2-12 titik mengikuti jejak fitur (kontak, sesar, kekar, vein) dari ujung ke ujung.\n"
+            "- Poligon: 4-20 titik mengelilingi zona (zona oksida, alterasi, litologi, zona vein, breksi); zona yang menyentuh tepi foto memakai titik di tepi (0 atau 1000).\n"
+            "- Maksimum 15 fitur; utamakan fitur terbesar dan paling jelas. Jangan menebak fitur yang tidak terlihat; daftar kosong boleh.\n"
+            "- name: nama singkat (mis. 'Vein kuarsa-oksida', 'Zona oksida / gossan'); confidence: tinggi / sedang / rendah.\n"
+            + (f"Deskripsi foto yang sudah ada: {d}\n" if d else "")
+            + (f"Catatan tambahan: {extra.strip()}\n" if extra and extra.strip() else "")
+            + "Jawab hanya JSON sesuai skema.")
+
+
+def apply_delin(s: Store, pid: int, res: dict, model: str, size: tuple[int, int], by: str = "") -> dict:
+    """Simpan jawaban AI sebagai draf. Koordinat 0-1000; bila model memakai piksel gambar (Qwen2.5-VL), dideteksi dari nilai > 1000."""
+    ks = {k["key"]: k for k in kinds(s) if k["key"] not in AUTO_SKIP and k["shape"] != "point"}
+    items = (res or {}).get("features") or []
+    allv = [float(v) for it in items for p in (it.get("points") or []) if isinstance(p, (list, tuple)) and len(p) >= 2
+            for v in p[:2] if isinstance(v, (int, float))]
+    px = bool(allv) and max(allv) > 1000.5
+    sw, sh = (size[0], size[1]) if px else (1000.0, 1000.0)
+    clear_drafts(s, pid, "ai")
+    made, skipped = [], 0
+    for it in items[:30]:
+        kind = it.get("kind")
+        if kind not in ks:
+            skipped += 1
+            continue
+        try:
+            pts = [[float(p[0]) / sw, float(p[1]) / sh] for p in it.get("points") or [] if len(p) >= 2]
+        except (TypeError, ValueError):
+            skipped += 1
+            continue
+        try:
+            j = save_feature(s, pid, None, {"kind": kind, "pts": pts, "name": (it.get("name") or "").strip()[:80] or None, "src": "ai:" + model,
+                                            "attrs": {DRAFT: "ai:" + model, "_conf": it.get("confidence") or ""}}, by or "AI")
+            made.append(j["id"])
+        except ValueError:
+            skipped += 1
+    with s.lock, s.conn() as c:
+        c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
+                  (pid, "usulan delineasi AI", None, f"{len(made)} fitur" + (f", {skipped} dilewati" if skipped else "")
+                   + (f" · {str(res.get('notes'))[:200]}" if res.get("notes") else ""), "ai:" + model, by or "AI", core_io.now()))
+    return {"made": made, "skipped": skipped, "features": features(s, pid), "notes": res.get("notes") or ""}
+
+
+def ai_delineate(s: Store, pid: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900) -> dict:
+    r = photo(s, pid)
+    f = s.photos / r["file"]
+    if not f.exists():
+        raise ValueError("File foto singkapan hilang dari folder proyek.")
+    img = core_io.resized_jpeg(f, max_px)
+    from io import BytesIO
+
+    from PIL import Image
+    with Image.open(BytesIO(img)) as im:
+        size = im.size
+    ks = [k for k in kinds(s) if k["key"] not in AUTO_SKIP and k["shape"] != "point"]
+    body = {"model": model, "messages": [{"role": "user", "content": delin_prompt(ks, extra, r.get("desc")), "images": [base64.b64encode(img).decode()]}],
+            "stream": False, "format": delin_schema([k["key"] for k in ks]), "options": {"temperature": 0, "num_ctx": 16384}, "keep_alive": "15m"}
+    j = core_io._http((host or core_io.DEFAULT_HOST).rstrip("/") + "/api/chat", body, timeout=timeout)
+    if j.get("error"):
+        raise RuntimeError("Ollama: " + str(j["error"]))
+    res = core_io._parse_json((j.get("message") or {}).get("content", ""))
+    return apply_delin(s, pid, res, model, size, by)
+
+
+class ColorBody(FBody):
+    id: int
+    k: int = 3
+    min_pct: float = 2.0
+
+
+class DraftBody(FBody):
+    id: int
+    ids: list[int] = []
+
+
+class DelinBody(FBody):
+    id: int
+    host: str = ""
+    model: str
+    extra: str = ""
+    max_px: int = 1600
+
+
+@router.post("/auto/color")
+def api_auto_color(b: ColorBody) -> dict:
+    return {"ok": True, **propose_color(store(b.folder), b.id, b.k, b.min_pct, b.by)}
+
+
+@router.post("/auto/ai")
+def api_auto_ai(b: DelinBody) -> dict:
+    return {"ok": True, **ai_delineate(store(b.folder), b.id, b.host, b.model, b.extra, b.max_px, b.by)}
+
+
+@router.post("/auto/accept")
+def api_auto_accept(b: DraftBody) -> dict:
+    s = store(b.folder)
+    return {"ok": True, "features": accept_drafts(s, b.id, b.ids, b.by), "scale": scale_info(s, b.id)}
+
+
+@router.post("/auto/reject")
+def api_auto_reject(b: DraftBody) -> dict:
+    s = store(b.folder)
+    return {"ok": True, "features": reject_drafts(s, b.id, b.ids, b.by), "scale": scale_info(s, b.id)}

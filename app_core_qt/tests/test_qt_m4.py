@@ -269,3 +269,79 @@ def test_georef_tab_measure_and_export(qtbot, prj, tmp_path, monkeypatch):
     monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(out), ""))
     pg.export_geo("dxf", True)
     assert out.exists() and asked and "lain" in asked[0]
+
+
+def test_auto_proposals_color_and_ai(qtbot, prj, tmp_path, monkeypatch, fake_ollama):
+    """Usulan zona warna & AI vision sebagai draf: tampil putus-putus, tidak ikut ekspor, bisa diterima / dibuang."""
+    import json
+    import numpy as np
+    w, pg = _open_oc(qtbot, prj, tmp_path, monkeypatch)
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a[1])))
+    yy, xx = np.mgrid[0:400, 0:600]
+    a = np.zeros((400, 600, 3)) + [128, 134, 126]
+    a[(xx > 330) & (yy < 230)] = [168, 98, 52]
+    src = tmp_path / "lapangan" / "zona.jpg"
+    Image.fromarray(a.astype("uint8")).save(src)
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
+    pg.add_photo()
+    qtbot.waitUntil(lambda: pg.cur and pg.cur["name"] == "zona.jpg" and pg.view.w > 0, timeout=5000)
+    pg.tabs.setCurrentIndex(1)
+    assert "Belum ada usulan" in pg.auInfo.text() and not pg.bAcc.isEnabled()
+    pg.auMeth.setCurrentIndex(0)
+    pg.auK.setValue(2)
+    pg.bAuto.click()
+    qtbot.waitUntil(lambda: not pg.auto_busy, timeout=15000)
+    drafts = [f for f in pg.feats if f["attrs"].get("_draft")]
+    assert drafts and any(f["kind"] == "zona_oks" for f in drafts) and "usulan belum diterima" in pg.auInfo.text()
+    assert pg.fList.item(0).text().startswith("◌ usulan")
+    # pilih usulan: tombol Terima tampil; Simpan dengan jenis diganti = diterima
+    ox = next(f for f in drafts if f["kind"] == "zona_oks")
+    pg.tool.select(ox["id"])
+    assert pg.bFAcc.isVisible()
+    pg.fName.setText("Zona oksida / gossan")
+    pg.save_form()
+    f = pg.feat(ox["id"])
+    assert not f["attrs"].get("_draft") and f["name"] == "Zona oksida / gossan" and not pg.bFAcc.isVisible()
+    # kanvas menggambar draf tanpa galat; ekspor PNG hanya memuat fitur yang diterima
+    from PySide6.QtGui import QImage, QPainter
+    img = QImage(300, 200, QImage.Format_RGB32)
+    p = QPainter(img)
+    pg.canvas.paint(p, None)
+    p.end()
+    seen = {}
+    monkeypatch.setattr("corex.outcrop.oc_paint.render", lambda src, feats, *a, **k: seen.setdefault("f", feats) and QImage(10, 10, QImage.Format_RGB32))
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(tmp_path / "x.png"), ""))
+    monkeypatch.setattr("corex.outcrop.show_in_folder", lambda p: None)
+    pg.export("png")
+    qtbot.waitUntil(lambda: "f" in seen, timeout=5000)
+    assert [x["id"] for x in seen["f"]] == [ox["id"]]
+    # AI vision: jawaban model (format 0-1000) menjadi usulan; usulan warna tetap ada
+    from corex.api import core_io
+    orig = core_io._http
+    ans = {"features": [{"kind": "vein", "name": "Vein kuarsa", "points": [[450, 0], [520, 1000]], "confidence": "sedang"},
+                        {"kind": "sesar", "points": [[100, 200], [300, 900]]}], "notes": "uji"}
+
+    def http(url, body=None, timeout=5.0):
+        if isinstance(body, dict) and "features" in (body.get("format") or {}).get("properties", {}):
+            return {"message": {"content": json.dumps(ans)}}
+        return orig(url, body, timeout)
+    monkeypatch.setattr(core_io, "_http", http)
+    w.ai.host.setText(fake_ollama)
+    w.ai.check(True)
+    qtbot.waitUntil(lambda: bool(w.ai.model()), timeout=5000)
+    n_color = sum(1 for f in pg.feats if f["attrs"].get("_draft") == "warna")
+    pg.auMeth.setCurrentIndex(1)
+    assert not pg.auK.isVisible()
+    pg.bAuto.click()
+    qtbot.waitUntil(lambda: not pg.auto_busy, timeout=15000)
+    ai = [f for f in pg.feats if str(f["attrs"].get("_draft", "")).startswith("ai:")]
+    assert {f["kind"] for f in ai} == {"vein", "sesar"} and sum(1 for f in pg.feats if f["attrs"].get("_draft") == "warna") == n_color
+    # terima satu lewat tombol, buang sisanya
+    v = next(f for f in ai if f["kind"] == "vein")
+    pg.tool.select(v["id"])
+    pg.bFAcc.click()
+    assert not pg.feat(v["id"])["attrs"].get("_draft")
+    monkeypatch.setattr("corex.outcrop.ask", lambda *a, **k: True)
+    pg.bRej.click()
+    assert not any(f["attrs"].get("_draft") for f in pg.feats) and {f["kind"] for f in pg.feats} == {"zona_oks", "vein"}
+    assert "Belum ada usulan" in pg.auInfo.text()

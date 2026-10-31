@@ -218,3 +218,83 @@ def test_georef_perspective_floor_and_errors(st):
     g = co.save_georef(s, pid, seg, None, "Rina")["solution"]
     assert not g["ok"] and "segaris" in g["msg"]
     assert any(h["what"] == "georef" for h in co.history(s, pid))
+
+
+def _zoned(tmp_path, name="zona.jpg"):
+    """Foto fiktif: batuan abu-abu kehijauan dengan zona oksida coklat kemerahan di kanan atas dan lensa gelap di kiri bawah."""
+    import numpy as np
+    rng = np.random.default_rng(3)
+    a = np.zeros((400, 600, 3)) + [128, 134, 126]
+    yy, xx = np.mgrid[0:400, 0:600]
+    a[(xx > 330) & (yy < 230 + 0.2 * (xx - 330))] = [168, 98, 52]
+    a[((xx - 140) / 90) ** 2 + ((yy - 300) / 60) ** 2 < 1] = [60, 62, 58]
+    a += rng.normal(0, 9, a.shape)
+    f = tmp_path / "lapangan" / name
+    f.parent.mkdir(exist_ok=True)
+    Image.fromarray(np.clip(a, 0, 255).astype("uint8")).save(f)
+    return f
+
+
+def test_color_proposals_accept_reject_and_export(st):
+    s, tmp = st
+    pid = co.add_photo(s, str(_zoned(tmp)), "Rina")["id"]
+    j = co.propose_color(s, pid, 3, by="Rina")
+    drafts = [f for f in j["features"] if co.is_draft(f)]
+    assert len(drafts) >= 2 and all(f["shape"] == "poly" for f in drafts)
+    oks = [f for f in drafts if f["kind"] == "zona_oks"]
+    assert len(oks) == 1 and ("merah" in oks[0]["name"] or "coklat" in oks[0]["name"])
+    us = [u for u, _ in oks[0]["pts"]]
+    vs = [v for _, v in oks[0]["pts"]]
+    assert 0.5 < min(us) < 0.6 and max(us) > 0.98 and min(vs) < 0.02  # zona oksida di kanan atas
+    dark = [f for f in drafts if f["kind"] == "zona_lito" and f["attrs"]["_pct"] < 20]
+    assert dark and 0.05 < min(u for u, _ in dark[0]["pts"]) < 0.12
+    # ulang: usulan warna lama diganti, tidak menumpuk; fitur manual tidak tersentuh
+    co.save_feature(s, pid, None, {"kind": "vein", "pts": [[0.1, 0.1], [0.2, 0.3]]}, "Rina")
+    j2 = co.propose_color(s, pid, 3, by="Rina")
+    assert len([f for f in j2["features"] if co.is_draft(f)]) == len(drafts) and any(f["kind"] == "vein" for f in j2["features"])
+    # draf tidak ikut ekspor; terima satu, buang sisanya
+    co.save_georef(s, pid, [{"name": f"G{i}", "u": u, "v": v, "e": 100 + u * 30, "n": 500, "rl": 50 + (1 - v) * 20}
+                            for i, (u, v) in enumerate([(0.05, 0.05), (0.95, 0.05), (0.95, 0.95), (0.05, 0.95)])], "wall", "Rina")
+    items, _ = co.export_items(s, [pid])
+    assert [i["kind"] for i in items] == ["vein"]
+    ox = next(f for f in j2["features"] if co.is_draft(f) and f["kind"] == "zona_oks")
+    feats = co.accept_drafts(s, pid, [ox["id"]], "Rina")
+    acc = next(f for f in feats if f["id"] == ox["id"])
+    assert not co.is_draft(acc) and "_pct" not in acc["attrs"]
+    feats = co.reject_drafts(s, pid, None, "Rina")
+    assert not any(co.is_draft(f) for f in feats) and {f["kind"] for f in feats} == {"vein", "zona_oks"}
+    assert {i["kind"] for i in co.export_items(s, [pid])[0]} == {"vein", "zona_oks"}
+    # foto seragam: tidak ada usulan
+    pid2 = co.add_photo(s, str(_img(tmp, "rata.jpg")), "Rina")["id"]
+    assert co.propose_color(s, pid2, 2)["made"] == []
+
+
+def test_ai_delineation_parse(st, monkeypatch):
+    s, tmp = st
+    pid = co.add_photo(s, str(_zoned(tmp)), "Rina")["id"]
+    sch = co.delin_schema(["vein", "sesar"])
+    assert sch["properties"]["features"]["items"]["properties"]["kind"]["enum"] == ["vein", "sesar"]
+    p = co.delin_prompt([k for k in co.kinds(s) if k["key"] not in co.AUTO_SKIP and k["shape"] != "point"], "fokus vein", {"lithology": "Tuf"})
+    assert "0-1000" in p and "vein:" in p and "skala" not in p.split("Aturan")[0] and "Tuf" in p and "fokus vein" in p
+    res = {"features": [{"kind": "vein", "name": "Vein kuarsa", "points": [[500, 0], [600, 1000]], "confidence": "tinggi"},
+                        {"kind": "zona_oks", "points": [[550, 0], [1000, 0], [1000, 400], [550, 300]]},
+                        {"kind": "skala", "points": [[0, 0], [100, 0]]},     # tidak boleh diusulkan AI
+                        {"kind": "kekar", "points": [[10, 10]]}],            # titik kurang
+           "notes": "zona oksida di kanan atas"}
+    calls = []
+
+    def fake_http(url, body, timeout=0):
+        calls.append(body)
+        return {"message": {"content": json.dumps(res)}}
+    monkeypatch.setattr(co.core_io, "_http", fake_http)
+    j = co.ai_delineate(s, pid, "http://x", "qwen3-vl:8b", max_px=300)
+    assert len(j["made"]) == 2 and j["skipped"] == 2 and calls[0]["format"]["required"] == ["features"]
+    v = next(f for f in j["features"] if f["kind"] == "vein")
+    assert v["pts"] == [[0.5, 0.0], [0.6, 1.0]] and v["attrs"]["_draft"] == "ai:qwen3-vl:8b" and v["src"] == "ai:qwen3-vl:8b"
+    # koordinat piksel gambar yang dikirim (gaya Qwen2.5-VL): dikenali dari nilai > 1000, dibagi ukuran gambar
+    res = {"features": [{"kind": "sesar", "points": [[0, 0], [1600, 1066]]}]}
+    j = co.apply_delin(s, pid, res, "qwen2.5vl", (1600, 1066))
+    f = next(f for f in j["features"] if f["kind"] == "sesar")
+    assert f["pts"][1] == [1.0, 1.0]
+    assert not any(x["kind"] == "vein" for x in j["features"])  # usulan AI lama diganti
+    assert any(h["what"] == "usulan delineasi AI" for h in co.history(s, pid))

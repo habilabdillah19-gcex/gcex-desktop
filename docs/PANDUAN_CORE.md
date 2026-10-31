@@ -201,6 +201,10 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
    - **Edit**: klik fitur, tarik kotak putih untuk menggeser titik, klik ganda di garis untuk menyisipkan titik, Delete untuk menghapus titik / fitur, **Belah di titik** dan **Gabung** untuk garis.
    - **Snap** (aktif bawaan) menempelkan titik ke titik / garis fitur lain, sehingga kontak antar-poligon tidak bercelah.
    - **Garis skala**: tarik di sepanjang benda yang panjangnya diketahui (pita ukur, tongkat) dan isi *Panjang m*. Skala ini dipakai bar skala infografis dan perkiraan spasi kekar oleh AI. Bila tidak ada garis skala, bar skala memakai skala dari georeferensi (langkah 5).
+   - **Usulan otomatis** (kotak di atas daftar fitur) — biar komputer membuat draf lebih dulu, lalu Anda periksa:
+     - *Zona warna (cepat, tanpa AI)*: foto dibagi menjadi beberapa zona menurut warna (atur *zona*: 2 = oksida vs segar, 3–4 bila ada beberapa zona). Zona merah / coklat / kuning diberi jenis *Zona oksida / gossan*, lainnya *Zona litologi*. Langit, vegetasi, orang dan bayangan bisa ikut menjadi zona: hapus saja.
+     - *AI vision (Ollama)*: model vision mengusulkan kontak, sesar, kekar, vein dan zona beserta jenis & namanya (20–120 detik). Hasil bergantung model; model yang mendukung *grounding* (mis. keluarga Qwen-VL) paling baik. Catatan tambahan di panel AI ikut dikirim.
+     - Usulan tampil **titik-titik** dan bertanda *◌ usulan* di daftar. Usulan **tidak ikut** legenda, ekspor PNG / PDF, maupun STR / DXF sampai diterima. Edit seperti fitur biasa (geser / sisip / hapus titik, ganti jenis & nama), lalu **✓ Terima usulan** atau **Simpan** (Simpan juga menerima). **Terima semua** / **Buang semua** untuk seluruh usulan di foto. Menjalankan ulang satu cara mengganti usulan lama dari cara itu saja.
    - Kadar **Au / Ag / SxS** dan *Teks lain* diisi manual per fitur (mis. channel sampel atau zona).
    - **Atur jenis fitur & nomor string…** — ubah nama, warna dan nomor string Surpac per jenis, atau tambah jenis sendiri (mis. dike). Satu nomor string untuk satu jenis.
 4. **Infografis** — pilih template:

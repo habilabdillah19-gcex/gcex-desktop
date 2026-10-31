@@ -733,6 +733,44 @@ class OutcropPage(QWidget):
         v = QVBoxLayout(w)
         v.setContentsMargins(12, 10, 12, 12)
         v.setSpacing(6)
+        au = QFrame()
+        au.setObjectName("fld")
+        ag = QGridLayout(au)
+        ag.setContentsMargins(8, 6, 8, 8)
+        ag.setVerticalSpacing(5)
+        hd = QLabel("<b>USULAN OTOMATIS</b>")
+        hd.setObjectName("note")
+        ag.addWidget(hd, 0, 0, 1, 4)
+        self.auMeth = QComboBox()
+        self.auMeth.addItem("Zona warna (cepat, tanpa AI)", "color")
+        self.auMeth.addItem("AI vision (Ollama): kontak, vein, zona", "ai")
+        self.auMeth.setToolTip("Zona warna: membagi foto menurut warna (oksida / gossan vs batuan segar), detik saja.\n"
+                               "AI vision: model Ollama mengusulkan garis & poligon beserta jenisnya (20–120 detik, tergantung model).")
+        self.auMeth.setMinimumContentsLength(14)
+        self.auMeth.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        ag.addWidget(self.auMeth, 1, 0, 1, 4)
+        self.auK = QSpinBox()
+        self.auK.setRange(2, 6)
+        self.auK.setValue(int(SET.get("ocAutoK", 3)))
+        self.auK.setPrefix("zona: ")
+        self.auK.setToolTip("Jumlah kelompok warna. 2 = oksida vs segar; 3–4 bila ada beberapa zona alterasi / oksidasi")
+        ag.addWidget(self.auK, 2, 0, 1, 2)
+        self.bAuto = btn("Usulkan", "Buat usulan garis / zona sebagai draf (putus-putus). Usulan lama dari cara yang sama diganti.", pri=True, sm=True)
+        ag.addWidget(self.bAuto, 2, 2, 1, 2)
+        self.auInfo = QLabel()
+        self.auInfo.setObjectName("note")
+        self.auInfo.setWordWrap(True)
+        ag.addWidget(self.auInfo, 3, 0, 1, 4)
+        self.bAcc = btn("Terima semua", "Jadikan semua usulan fitur biasa (ikut legenda, ekspor PNG / PDF, STR / DXF)", sm=True)
+        self.bRej = btn("Buang semua", "Hapus semua usulan yang belum diterima", sm=True)
+        ag.addWidget(self.bAcc, 4, 0, 1, 2)
+        ag.addWidget(self.bRej, 4, 2, 1, 2)
+        v.addWidget(au)
+        self.auMeth.currentIndexChanged.connect(lambda *_: self.auK.setVisible(self.auMeth.currentData() == "color"))
+        self.bAuto.clicked.connect(self.auto_propose)
+        self.bAcc.clicked.connect(lambda: self.auto_accept(None))
+        self.bRej.clicked.connect(lambda: self.auto_reject(None))
+        self.auto_busy = False
         self.fList = QListWidget()
         self.fList.setMinimumHeight(170)
         v.addWidget(self.fList)
@@ -772,6 +810,9 @@ class OutcropPage(QWidget):
         self.bJoin = btn("Gabung", "Gabung dengan garis lain yang ujungnya bersinggungan", sm=True)
         self.bVDel = btn("Hapus titik", "Hapus titik terpilih", sm=True)
         self.bFDel = btn("Hapus fitur", sm=True)
+        self.bFAcc = btn("✓ Terima usulan", "Jadikan usulan ini fitur biasa (Simpan juga menerima)", pri=True, sm=True)
+        self.bFAcc.clicked.connect(lambda: self.auto_accept([self.tool.sel]) if self.tool.sel is not None else None)
+        r.addWidget(self.bFAcc)
         for b in (self.bFSave, self.bSplit, self.bJoin, self.bVDel, self.bFDel):
             r.addWidget(b)
         r.addStretch(1)
@@ -1312,12 +1353,16 @@ class OutcropPage(QWidget):
             pm = QPixmap(14, 14)
             pm.fill(QColor(k["color"]))
             g = oc_paint.grade_lines(f["attrs"])
-            it = QListWidgetItem(QIcon(pm), f"{k['name']}" + (f" · {f['name']}" if f.get("name") else "")
+            it = QListWidgetItem(QIcon(pm), ("◌ usulan · " if f["attrs"].get("_draft") else "") + f"{k['name']}" + (f" · {f['name']}" if f.get("name") else "")
                                  + (f" · {', '.join(g[:2])}" if g else "") + (f" · {_f(f['attrs'].get('length_m'))} m" if f['attrs'].get('length_m') else ""))
             self.fList.addItem(it)
         i = next((i for i, f in enumerate(self.feats) if f["id"] == self.tool.sel), -1)
         self.fList.setCurrentRow(i)
         self.fList.blockSignals(False)
+        nd = sum(1 for f in self.feats if f["attrs"].get("_draft"))
+        self.auInfo.setText(f"{nd} usulan belum diterima (putus-putus di foto)" if nd else "Belum ada usulan.")
+        self.bAcc.setEnabled(bool(nd))
+        self.bRej.setEnabled(bool(nd))
         self.sel_changed()
 
     def sel_changed(self) -> None:
@@ -1354,6 +1399,7 @@ class OutcropPage(QWidget):
         self.fSxs.setText(_f(a.get("sxs_pct")))
         self.fLen.setText(_f(a.get("length_m")))
         self.fTxt.setPlainText(a.get("teks") or "")
+        self.bFAcc.setVisible(bool(a.get("_draft")))
         sk = f["kind"] == "skala"
         self.lenL.setVisible(sk)
         self.fLen.setVisible(sk)
@@ -1403,7 +1449,7 @@ class OutcropPage(QWidget):
         f = self.feat(self.tool.sel)
         if not f:
             return
-        a = dict(f["attrs"])
+        a = {k: v for k, v in f["attrs"].items() if k not in ("_draft", "_pct", "_conf")}  # Simpan = menerima usulan
         try:
             for k, e in (("au_ppm", self.fAu), ("ag_ppm", self.fAg), ("sxs_pct", self.fSxs), ("length_m", self.fLen)):
                 v = _num(e.text())
@@ -1523,7 +1569,8 @@ class OutcropPage(QWidget):
         if Path(p).suffix.lower() != "." + fmt:
             p += "." + fmt
         SET.set("lastSaveDir", str(Path(p).parent))
-        feats, kmap, info, desc = [dict(f) for f in self.feats], dict(self.kmap), self.info(), dict(self.cur.get("desc") or {})
+        feats = [dict(f) for f in self.feats if not f["attrs"].get("_draft")]  # usulan belum diterima tidak ikut
+        kmap, info, desc = dict(self.kmap), self.info(), dict(self.cur.get("desc") or {})
         mpp = self.m_per_px()
         w0 = self.cur["w"]
         title = info.get("title") or ""
@@ -1536,6 +1583,79 @@ class OutcropPage(QWidget):
 
         run_bg(work, ok=lambda path: (self.toast("Tersimpan: " + path, 5000), show_in_folder(path), log("[singkapan] ekspor", path)),
                err=lambda e: say(self, "Gagal ekspor:\n" + e, warn=True))
+
+    # ---------------------------------------------------------------- usulan otomatis
+    def auto_propose(self) -> None:
+        if not self.cur or self.auto_busy:
+            return
+        pid, folder = self.cur["id"], self.folder
+        meth = self.auMeth.currentData()
+        if meth == "color":
+            SET.set("ocAutoK", self.auK.value())
+            path, body = "/core/outcrop/auto/color", {"folder": folder, "id": pid, "k": self.auK.value(), "by": self.by()}
+            busy = "Mengelompokkan warna…"
+        else:
+            ai = self.win.ai
+            model = ai.model()
+            if not ai.info or not ai.info.get("running") or not model:
+                self.win.open_ai()
+                return
+            path = "/core/outcrop/auto/ai"
+            body = {"folder": folder, "id": pid, "host": ai.host.text().strip(), "model": model, "extra": ai.extra.toPlainText(),
+                    "max_px": int(ai.px.currentData()), "by": self.by()}
+            busy = f"AI {model} mendelineasi foto… (biasanya 20–120 detik)"
+        self.auto_busy = True
+        self.bAuto.setEnabled(False)
+        self.auInfo.setText(busy)
+
+        def done():
+            self.auto_busy = False
+            self.bAuto.setEnabled(bool(self.cur))
+
+        def ok(j):
+            done()
+            if self.cur and self.cur["id"] == pid:
+                self._feats(j)
+                self.tool.select(None)
+            n = len(j.get("made") or [])
+            msg = f"{n} usulan dibuat" + (f", {j['skipped']} dilewati" if j.get("skipped") else "")
+            self.toast(msg + (" — periksa, edit, lalu Terima" if n else ""), 5000)
+            if not n:
+                self.auInfo.setText("Tidak ada usulan: " + ("foto terlalu seragam; coba jumlah zona lebih banyak." if meth == "color"
+                                                           else (j.get("notes") or "AI tidak menemukan fitur yang jelas.")))
+
+        def err(e):
+            done()
+            self.auInfo.setText("")
+            say(self, "Usulan otomatis gagal:\n" + e, warn=True)
+
+        run_bg(api.call, path, body, ok=ok, err=err)
+
+    def auto_accept(self, ids) -> None:
+        if not self.cur:
+            return
+        try:
+            j = api.call("/core/outcrop/auto/accept", {"folder": self.folder, "id": self.cur["id"], "ids": ids or [], "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self._feats(j)
+        self.toast("Usulan diterima" if ids else "Semua usulan diterima")
+
+    def auto_reject(self, ids) -> None:
+        if not self.cur:
+            return
+        n = sum(1 for f in self.feats if f["attrs"].get("_draft"))
+        if not ids and n and not ask(self, f"Buang {n} usulan yang belum diterima?"):
+            return
+        try:
+            j = api.call("/core/outcrop/auto/reject", {"folder": self.folder, "id": self.cur["id"], "ids": ids or [], "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        if self.tool.sel is not None and not any(f["id"] == self.tool.sel for f in j["features"]):
+            self.tool.sel = None
+        self._feats(j)
 
     # ---------------------------------------------------------------- georef
     def geo_visible(self) -> bool:
