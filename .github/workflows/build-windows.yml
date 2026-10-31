@@ -158,7 +158,7 @@ jobs:
           python -m pytest -q -rfE --tb=line -p no:cacheprovider app_core_qt/tests 2>&1 | Tee-Object -FilePath qt_test.log
           $rc = $LASTEXITCODE
           if ($rc -ne 0) {
-            Select-String -Path qt_test.log -Pattern "FAILED|ERROR|Error|assert|Exception" | Select-Object -First 30 | ForEach-Object { Write-Host ("::warning::qt-test " + $_.Line.Trim()) }
+            Select-String -Path qt_test.log -Pattern "FAILED|ERROR|Error|assert|Exception|File \"" | Select-Object -First 50 | ForEach-Object { Write-Host ("::warning::qt-test " + $_.Line.Trim()) }
             Write-Host "::warning::uji Core-Ex Qt gagal (exit $rc) - lanjut untuk diagnosis build"
           }
           # WAJIB: tanpa exit 0, GitHub menambahkan "exit $LASTEXITCODE" di akhir skrip, sehingga langkah ini

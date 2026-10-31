@@ -747,7 +747,7 @@ class MainWindow(QMainWindow):
             w = QApplication.focusWidget()
             if w:
                 w.clearFocus()  # simpan isian yang sedang diketik dulu
-            QTimer.singleShot(0, lambda: self.verify([self.cur_id], True, nxt=True))
+            QTimer.singleShot(0, self, lambda: self.verify([self.cur_id], True, nxt=True))
 
     def _history(self, pid: int) -> None:
         run_bg(api.call, "/core/history", {"folder": self.folder, "id": pid, "values": {}}, ok=lambda j: self.card.set_history(pid, j),

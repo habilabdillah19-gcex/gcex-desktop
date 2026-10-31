@@ -817,7 +817,7 @@ class Interp:
             a.setFixedHeight(a.sizeHint().height())
 
     def update(self) -> None:
-        QTimer.singleShot(0, self.relayout)
+        QTimer.singleShot(0, self.win, self.relayout)  # dibatalkan bila jendela sudah ditutup
         self.canvas.prepareGeometryChange()
         self.canvas.update()
         self._ov_info()
@@ -1451,7 +1451,7 @@ class Interp:
         self.mkErr.setText("")
         self.mkForm.show()
         self.update()
-        QTimer.singleShot(0, lambda: (self.mkS if half and not self.mkS.text() else self.mkN).setFocus())
+        QTimer.singleShot(0, self.win, lambda: (self.mkS if half and not self.mkS.text() else self.mkN).setFocus())
 
     def _mk_range(self, *_) -> None:
         if self.mk_edit:

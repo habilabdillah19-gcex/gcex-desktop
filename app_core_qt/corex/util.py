@@ -76,9 +76,13 @@ class _Task(QRunnable):
             r = self.fn(*self.args, **self.kw)
         except Exception as e:  # noqa: BLE001
             log("[tugas]", traceback.format_exc())
-            self.sig.err.emit(str(e) or type(e).__name__)
-            return
-        self.sig.ok.emit(r)
+            r, e_ = None, str(e) or type(e).__name__
+        else:
+            e_ = None
+        try:  # aplikasi bisa sudah ditutup saat tugas selesai
+            self.sig.err.emit(e_) if e_ is not None else self.sig.ok.emit(r)
+        except RuntimeError:
+            pass
 
 
 _KEEP: set = set()

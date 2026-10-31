@@ -11,6 +11,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_qt_m1 import _win, prj  # noqa: E402,F401  (fixture proyek & jendela uji)
 
 
+def _send_bg(name: str, payload: dict, timeout_ms: int = 3000) -> list:
+    """Kirim dari thread lain (seperti proses Core-Ex kedua): di Windows, named pipe menunggu event loop server."""
+    import threading
+    from corex.shell import SingleInstance
+    res: list = []
+    t = threading.Thread(target=lambda: res.append(SingleInstance.send(name, payload, timeout_ms)), daemon=True)
+    t.start()
+    return res
+
+
 def test_single_instance_forwards_folder(qtbot):
     from corex.shell import SingleInstance
     a = SingleInstance("CoreEx-uji-" + uuid.uuid4().hex[:8])
@@ -18,15 +28,16 @@ def test_single_instance_forwards_folder(qtbot):
     got = []
     a.message.connect(got.append)
     # pesan yang datang sebelum jendela utama siap (mis. dialog lisensi masih terbuka) disimpan dulu
-    assert SingleInstance.send(a.name, {"cmd": "show", "folder": "D:/Foto/LTH-1"})
-    qtbot.waitUntil(lambda: bool(a.queue), timeout=3000)
+    r1 = _send_bg(a.name, {"cmd": "show", "folder": "D:/Foto/LTH-1"})
+    qtbot.waitUntil(lambda: bool(a.queue) and r1 == [True], timeout=8000)
     assert not got
     a.ready()
     assert got == [{"cmd": "show", "folder": "D:/Foto/LTH-1"}]
-    assert SingleInstance.send(a.name, {"cmd": "show", "folder": ""})
-    qtbot.waitUntil(lambda: len(got) == 2, timeout=3000)
+    r2 = _send_bg(a.name, {"cmd": "show", "folder": ""})
+    qtbot.waitUntil(lambda: len(got) == 2 and r2 == [True], timeout=8000)
     a.close()
-    assert not SingleInstance.send(a.name, {"cmd": "show"}, 300)  # tidak ada Core-Ex lain -> jalan sebagai jendela pertama
+    r3 = _send_bg(a.name, {"cmd": "show"}, 300)  # tidak ada Core-Ex lain -> jalan sebagai jendela pertama
+    qtbot.waitUntil(lambda: r3 == [False], timeout=5000)
     b = SingleInstance(a.name)
     assert b.listen()  # nama bisa dipakai lagi setelah dilepas
     b.close()
@@ -110,3 +121,22 @@ def test_table_cell_completer(qtbot, prj):
         assert ed.completer().model().index(0, 0).data() == first
     ed = dg.createEditor(w.table.viewport(), QStyleOptionViewItem(), w.model.index(0, cols.index("lithology")))
     assert ed.completer() is None
+
+
+def test_closed_window_pending_callbacks(qtbot, prj):
+    """Tata letak panel / cek Ollama yang tertunda tidak boleh menyentuh jendela yang sudah ditutup (penyebab galat CI Windows)."""
+    from PySide6.QtCore import QCoreApplication, QEvent
+    from PySide6.QtWidgets import QApplication
+    from corex.mainwin import MainWindow
+    w = MainWindow("uji")  # tidak didaftarkan ke qtbot: jendela ini sengaja dihapus di tengah uji
+    w.show()
+    w.open_folder(prj)
+    qtbot.waitUntil(lambda: w.cur_id is not None, timeout=8000)
+    w.interp.update()  # menjadwalkan relayout
+    w.ai.check(True)  # hasil datang belakangan
+    w.close()
+    w.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    for _ in range(30):
+        QApplication.processEvents()
+        qtbot.wait(20)

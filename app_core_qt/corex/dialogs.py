@@ -120,7 +120,7 @@ class LicenseDlg(Dlg):
         self.mid.setTextInteractionFlags(Qt.TextSelectableByMouse)
         cp = btn("Salin", sm=True)
         cp.clicked.connect(lambda: (QGuiApplication.clipboard().setText(self.mid.text()), cp.setText("Tersalin ✓"),
-                                    QTimer.singleShot(1500, lambda: cp.setText("Salin"))))
+                                    QTimer.singleShot(1500, cp, lambda: cp.setText("Salin"))))
         mid.addWidget(self.mid)
         mid.addWidget(cp)
         mid.addStretch(1)
@@ -184,7 +184,7 @@ class LicenseDlg(Dlg):
             I = r["info"]
             self._msg(f"✓ Lisensi aktif untuk <b>{_esc(I['n'])}</b>" + (f", berlaku sampai {_esc(I['e'])}" if I.get("e") else "") + ".")
             self.refresh()
-            QTimer.singleShot(900, self.accept)
+            QTimer.singleShot(900, self, self.accept)
         else:
             self._msg("✖ " + _esc(r["reason"]), True)
 
@@ -368,7 +368,7 @@ class AiDlg(Dlg):
             log("[ollama] start", r)
             self.check(True)
             if not r.get("ok") and (not auto or r.get("code") != "notfound"):
-                QTimer.singleShot(400, lambda: (set_box(self.state, (
+                QTimer.singleShot(400, self, lambda: (set_box(self.state, (
                     "<b>Ollama belum terpasang di komputer ini.</b> Pasang <code>OllamaSetup.exe</code> (lihat Bantuan → Panduan AI lokal), lalu klik "
                     "<b>Jalankan Ollama</b> lagi." if r.get("code") == "notfound" else "<b>Ollama belum bisa dijalankan.</b> " + _esc(r.get("msg") or "")
                     + " Coba buka Ollama dari Start menu."), "er"), self.bStart.setVisible(True)))

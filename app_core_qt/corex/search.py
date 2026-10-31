@@ -110,5 +110,5 @@ class SearchBox(QLineEdit):
                 self.clearFocus()
                 return True
         if o is self and e.type() == QEvent.FocusOut:
-            QTimer.singleShot(150, lambda: self.pop.hide() if not self.lst.underMouse() else None)
+            QTimer.singleShot(150, self, lambda: self.pop.hide() if not self.lst.underMouse() else None)
         return False
