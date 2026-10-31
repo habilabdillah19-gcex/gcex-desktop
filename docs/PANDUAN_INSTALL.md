@@ -597,3 +597,41 @@ Verifikasi (dari data yang dihasilkan, bukan dari model): kipas variogram GT per
 
 - Installer uji **Core-Ex versi Qt** (`Core-Ex-Qt-Setup-<versi>.exe`) kini diterbitkan setiap build `main` ke pre-release privat **core-ex-qt-uji** di halaman Releases (hanya versi terbaru yang disimpan). Sebelumnya installer ini hanya tersedia sebagai artifact Actions, yang tertolak saat kuota penyimpanan Actions akun penuh ("Artifact storage quota has been hit").
 - Pre-release ini **bukan rilis resmi**: Release `v<versi>` tetap memuat Core-Ex versi Electron sampai Core-Ex 1.0.0. Versi Core-Ex dinaikkan ke 0.24.3 agar menjadi versi tertinggi dan Release ini terbit; isi aplikasi Core-Ex sama dengan 0.23.11.
+
+## 52. GC-Ex Block Model & Drill Hole Ultimate 0.24.4
+
+### Kerapatan bor direkam saat estimasi
+
+Klasifikasi 0.24.2 hanya bisa memakai **jumlah komposit** (`est_nsamp`). Itu bukan ukuran kerapatan bor: 20 komposit dari **satu** lubang bor sangat berbeda artinya dengan 20 komposit dari enam lubang. Sekarang *Model Estimation* merekam tiga atribut baru per blok, dihitung dari komposit yang benar-benar dipakai kriging:
+
+| Atribut | Arti |
+|---|---|
+| `est_nhole` | jumlah **lubang bor berbeda** yang komposit-nya dipakai blok itu |
+| `est_dmin` | jarak (m) dari pusat blok ke komposit terdekat yang dipakai |
+| `est_spasi` | perkiraan **spasi bor setempat** (m): tiap lubang diwakili komposit terdekatnya ke blok, lalu dirata-ratakan jarak mendatar tiap lubang ke lubang terdekat lainnya. Bernilai −99 bila lubang yang dipakai kurang dari dua |
+
+Ketiganya ikut ke block model, tampilan 3D, reporting dan export `.mdl` seperti atribut estimasi lainnya.
+
+### Klasifikasi memakai kerapatan bor
+
+Aturan bawaan di *Reporting BM › Klasifikasi keyakinan* sekarang:
+
+- **Measured** — pass ≤ 1, komposit ≥ 12, SoR ≥ 0,75, **bor berbeda ≥ 3**, **spasi bor ≤ 25 m**
+- **Indicated** — pass ≤ 2, komposit ≥ 7, SoR ≥ 0,45, **bor berbeda ≥ 2**, **spasi bor ≤ 50 m**
+- **Inferred** — blok terestimasi lainnya
+- **Belum terklasifikasi** — blok tanpa estimasi
+
+Semua ambang tetap bisa diubah di panel. Contoh uji: blok dengan 20 komposit tetapi hanya dari **satu** lubang bor dulu jatuh ke Measured, sekarang menjadi **Inferred**. Begitu pula blok dengan tiga lubang bor tetapi spasi 80 m.
+
+> Block model yang diestimasi dengan versi sebelum 0.24.4 belum punya `est_nhole` / `est_spasi`. Panel memberi tahu hal ini, kedua syarat itu diabaikan, dan hasilnya sama seperti 0.24.2. Jalankan ulang *Model Estimation* agar kerapatan bor ikut terekam.
+
+Penetapan kelas tetap wewenang **Competent Person** (KCMI / JORC), yang juga menimbang hal-hal yang tidak terbaca dari angka: kemenerusan geologi antar bor, keyakinan pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.
+
+### Tutorial PDF dibangun otomatis di CI
+
+Build Windows sekarang membangun ulang tutorial tiap rilis, sehingga isinya selalu mengikuti aplikasi dan data latihan terbaru:
+
+1. **Data latihan** dibuat ulang (`make_sim_data.py`, `make_sim_laterit.py`).
+2. **Tutorial Tambahan 0.24** dibangun (`build_tutorial_024.py`). Tidak memerlukan tangkapan layar, jadi kegagalannya **menggagalkan** build — ini harus selalu berhasil.
+3. **Dua tutorial bergambar** dibangun dari tangkapan layar aplikasi (`tutorial_shots.py` → `build_tutorial.py`, `tutorial_bm_shots.py` → `build_tutorial_bm.py`). Langkah ini memerlukan Chromium yang dapat membuka folder proyek lewat File System Access API — itulah sebabnya hanya bisa di runner Windows, bukan kontainer Linux. Bila gagal, build **tetap lanjut** dengan peringatan dan PDF lama di repo yang dipakai, supaya rilis tidak tertahan.
+4. Daftar PDF beserta ukuran dan waktu buatnya ditulis sebagai `::notice::` di ringkasan run, jadi Anda bisa melihat mana yang benar-benar diperbarui.

@@ -61,6 +61,10 @@ print('GM v3 (basis data struktur terpadu + Map): OK')
 import ui4_patch
 s = ui4_patch.patch(s)
 print('UI 0.12 (Mapping / Layout / Sayatan): OK')
+# Model Estimation merekam spasi bor & jumlah bor per blok (dipakai klasifikasi sumber daya)
+import mecls_patch
+s = mecls_patch.patch(s)
+print('Spasi bor & jumlah bor per blok di Model Estimation: OK')
 # bilah sayatan mengambang (Maju / Mundur): di akhir sumber viewer (dijalankan sesudah viewer terbentuk)
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1

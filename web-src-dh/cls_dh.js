@@ -17,7 +17,11 @@
   var ATTR = 'klasifikasi';
   var KLS = ['Measured', 'Indicated', 'Inferred', 'Belum terklasifikasi'];
   var COL = { Measured: '#1b7f4b', Indicated: '#2c5282', Inferred: '#c98a16', 'Belum terklasifikasi': '#8a93a0' };
-  var DEF = { pM: 1, nM: 12, sM: 0.75, pI: 2, nI: 7, sI: 0.45, pX: 3, use: 'sor' };
+  /* Ambang bawaan. hM/hI = jumlah LUBANG BOR berbeda; kM/kI = spasi bor setempat maksimum (m).
+     Dua syarat terakhir inilah yang mendekati cara Competent Person menilai: bukan banyaknya
+     komposit, melainkan kerapatan dan sebaran bor di sekitar blok. */
+  var DEF = { pM: 1, nM: 12, sM: 0.75, hM: 3, kM: 25,
+              pI: 2, nI: 7, sI: 0.45, hI: 2, kI: 50, pX: 3, use: 'sor' };
 
   function clsO() {
     var o = (window.RP && RP.o) || null;
@@ -32,10 +36,12 @@
   /* atribut sumber ada / tidak */
   function src(m) {
     if (!m || !m.num) return null;
-    var A = window.meAN ? meAN() : { pass: 'est_pass', ns: 'est_nsamp', sor: 'est_sor', ke: 'est_ke' };
+    var A = window.meAN ? meAN() : { pass: 'est_pass', ns: 'est_nsamp', sor: 'est_sor', ke: 'est_ke',
+                                     nh: 'est_nhole', spasi: 'est_spasi', dmin: 'est_dmin' };
     var P = m.num[A.pass];
     if (!P) return null;
-    return { P: P, N: m.num[A.ns] || null, S: m.num[A.sor] || null, E: m.num[A.ke] || null, A: A };
+    return { P: P, N: m.num[A.ns] || null, S: m.num[A.sor] || null, E: m.num[A.ke] || null,
+             H: m.num[A.nh] || null, K: m.num[A.spasi] || null, D: m.num[A.dmin] || null, A: A };
   }
   window.clsSrc = src;
 
@@ -44,11 +50,14 @@
     var p = q.P[i];
     if (!isFinite(p) || p <= 0) return 3;                       /* tidak terestimasi */
     var n = q.N ? q.N[i] : NaN, g = q.use === 'ke' ? (q.E ? q.E[i] : NaN) : (q.S ? q.S[i] : NaN);
-    var okN = function (min) { return !isFinite(n) || n >= min; };     /* atribut tidak ada -> tidak menghalangi */
-    var okG = function (min) { return !isFinite(g) || g >= min; };
-    if (p <= o.pM && okN(o.nM) && okG(o.sM)) return 0;
-    if (p <= o.pI && okN(o.nI) && okG(o.sI)) return 1;
-    if (p <= o.pX) return 2;
+    var h = q.H ? q.H[i] : NaN, k = q.K ? q.K[i] : NaN;
+    /* atribut yang tidak ada / belum terisi (-99) tidak menghalangi, hanya tidak ikut menilai */
+    var okN = function (min) { return !isFinite(n) || n >= min; };
+    var okG = function (min) { return !isFinite(g) || g <= -90 || g >= min; };
+    var okH = function (min) { return !isFinite(h) || h <= 0 || h >= min; };
+    var okK = function (max) { return !isFinite(k) || k <= -90 || k <= max; };
+    if (p <= o.pM && okN(o.nM) && okG(o.sM) && okH(o.hM) && okK(o.kM)) return 0;
+    if (p <= o.pI && okN(o.nI) && okG(o.sI) && okH(o.hI) && okK(o.kI)) return 1;
     return 2;
   }
 
@@ -80,23 +89,33 @@
     var h = '<h4>Klasifikasi keyakinan (Measured / Indicated / Inferred)</h4>';
     if (!q) return h + '<div class=hint>Block model ini belum punya atribut <i>est_pass</i>. Jalankan <b>Model Estimation</b> dulu, lalu klasifikasi bisa dihitung di sini.</div>';
     var C = m.cat[ATTR];
-    h += '<div class=hint style="margin-top:-2px">Usulan kelas dari hasil estimasi: <b>pass</b> pencarian, <b>jumlah komposit</b> dan <b>' +
-      (o.use === 'ke' ? 'kriging efficiency' : 'slope of regression') + '</b>. Blok tanpa estimasi masuk <i>Belum terklasifikasi</i>.' +
+    h += '<div class=hint style="margin-top:-2px">Usulan kelas dari hasil estimasi: <b>pass</b> pencarian, <b>jumlah komposit</b>, <b>' +
+      (o.use === 'ke' ? 'kriging efficiency' : 'slope of regression') + '</b>, <b>jumlah lubang bor berbeda</b> dan <b>spasi bor setempat</b>. ' +
+      'Blok tanpa estimasi masuk <i>Belum terklasifikasi</i>.' +
       (q.N ? '' : ' <span class=warn>est_nsamp tidak ada</span> &rarr; syarat jumlah komposit diabaikan.') +
-      ((o.use === 'ke' ? q.E : q.S) ? '' : ' <span class=warn>' + (o.use === 'ke' ? 'est_ke' : 'est_sor') + ' tidak ada</span> &rarr; syaratnya diabaikan.') + '</div>';
+      ((o.use === 'ke' ? q.E : q.S) ? '' : ' <span class=warn>' + (o.use === 'ke' ? 'est_ke' : 'est_sor') + ' tidak ada</span> &rarr; syaratnya diabaikan.') +
+      (q.H ? '' : ' <span class=warn>est_nhole / est_spasi tidak ada</span> &rarr; block model ini diestimasi sebelum 0.24.4; jalankan ulang Model Estimation agar kerapatan bor ikut terekam.') + '</div>';
     h += '<div class="g2 f"><div><label>Ukuran keyakinan</label><select onchange="clsO().use=this.value;clsPanelUp()">' +
       '<option value="sor"' + (o.use === 'sor' ? ' selected' : '') + '>Slope of regression</option>' +
       '<option value="ke"' + (o.use === 'ke' ? ' selected' : '') + '>Kriging efficiency</option></select></div><div></div></div>';
-    h += '<div class=clsrule><b>Measured</b> bila pass &le; <span>' + o.pM + '</span>, komposit &ge; <span>' + o.nM + '</span>, ukuran &ge; <span>' + o.sM + '</span></div>' +
-      '<div class="g3 f">' + num('pM', 'Pass maks', 'Measured: pass pencarian maksimum (1 = radius penuh)') + num('nM', 'Komposit min', 'Measured: jumlah komposit minimum per blok') + num('sM', 'Ukuran min', 'Measured: SoR / KE minimum', 0.05) + '</div>';
-    h += '<div class=clsrule><b>Indicated</b> bila pass &le; <span>' + o.pI + '</span>, komposit &ge; <span>' + o.nI + '</span>, ukuran &ge; <span>' + o.sI + '</span></div>' +
-      '<div class="g3 f">' + num('pI', 'Pass maks', 'Indicated: pass pencarian maksimum') + num('nI', 'Komposit min', 'Indicated: jumlah komposit minimum') + num('sI', 'Ukuran min', 'Indicated: SoR / KE minimum', 0.05) + '</div>';
-    h += '<div class=clsrule><b>Inferred</b>: blok terestimasi lainnya (pass &le; <span>' + o.pX + '</span>)</div>';
+    var gaya = function (kelas, pk, nk, sk, hk, kk) {
+      return '<div class=clsrule><b>' + kelas + '</b> bila pass &le; <span>' + o[pk] + '</span>, komposit &ge; <span>' + o[nk] +
+        '</span>, ukuran &ge; <span>' + o[sk] + '</span>, <b>bor berbeda &ge; <span>' + o[hk] +
+        '</span></b>, <b>spasi bor &le; <span>' + o[kk] + '</span> m</b></div>' +
+        '<div class="g3 f">' + num(pk, 'Pass maks', kelas + ': pass pencarian maksimum') +
+        num(nk, 'Komposit min', kelas + ': jumlah komposit minimum per blok') +
+        num(sk, 'Ukuran min', kelas + ': SoR / KE minimum', 0.05) + '</div>' +
+        '<div class="g2 f">' + num(hk, 'Lubang bor min', kelas + ': jumlah LUBANG BOR berbeda yang komposit-nya dipakai blok ini') +
+        num(kk, 'Spasi bor maks (m)', kelas + ': perkiraan spasi bor setempat, jarak rata-rata tiap bor ke bor terdekat lainnya') + '</div>';
+    };
+    h += gaya('Measured', 'pM', 'nM', 'sM', 'hM', 'kM');
+    h += gaya('Indicated', 'pI', 'nI', 'sI', 'hI', 'kI');
+    h += '<div class=clsrule><b>Inferred</b>: blok terestimasi lainnya</div>';
     h += '<button class=btn-pri style="width:100%;margin-top:6px" onclick="clsRun()">&#9654; Hitung klasifikasi</button>';
     if (C) h += '<div class=clssum>' + KLS.map(function (k, j) {
       return '<span><i style="background:' + COL[k] + '"></i>' + k + ' <b>' + (window.rpN ? rpN(C.cnt[j]) : C.cnt[j]) + '</b> blok</span>';
     }).join('') + '</div><div class=hint>Tersedia sebagai atribut kategori <b>' + ATTR + '</b>: pilih grup <b>Per atribut kategori</b> di bagian &#9312; untuk laporan tonase per kelas, dan atribut ini juga bisa diwarnai di tampilan 3D.</div>';
-    h += '<div class=clsnote>&#9888; Ambang di atas adalah usulan geostatistik yang dapat diulang, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> (KCMI / JORC) yang juga menimbang spasi bor, kemenerusan geologi, QAQC dan kelayakan penambangan.</div>';
+    h += '<div class=clsnote>&#9888; Ambang di atas adalah usulan geostatistik yang dapat diulang, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> (KCMI / JORC), yang juga menimbang hal-hal yang tidak terbaca dari angka: kemenerusan geologi antar bor, keyakinan pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>';
     return h;
   };
 

@@ -3587,7 +3587,7 @@ function imGrpStat(top){var ids=gmGroup(top),L=[];ids.forEach(function(id){var R
      est_type 1=koreksi 2=tambahan, est_date) — atribut GC asli tidak diubah. Hasil disimpan di proyek (bagian model)
      dan diterapkan ulang ke block model GC setiap dibuka. */
 var ME={store:null,job:null,msg:'',ed:null,sel:{},undo:null,opt:{force:false,add:true},last:null};
-var MEF=['x','y','z','sx','sy','sz','dom','est','pass','sor','ke','kv','ns','type','date','run'];
+var MEF=['x','y','z','sx','sy','sz','dom','est','pass','sor','ke','kv','ns','nh','dmin','spasi','type','date','run'];
 function meKey(x,y,z){return Math.round(x*100)+'_'+Math.round(y*100)+'_'+Math.round(z*100);}
 function meEmptyB(){var B={};MEF.forEach(function(k){B[k]=[];});return B;}
 function meNew(){return{v:1,ver:Date.now(),el:'',gc:'',sg:2.6,runs:[],sig:{},par:{},dn:{},B:meEmptyB()};}
@@ -3611,8 +3611,8 @@ function meExApply(m,b,S,B,IX,n){var ex=Object.keys(S.ex||{}).filter(function(e)
     var a=B.ex[e];for(var j=0;j<IX.length;j++){var i=IX[j];if(i<0||!(B.pass[j]>0))continue;var v=a[j];if(v>-90){EST[i]=v;FIN[i]=v;}}
     m.num[L+'_est']=EST;m.num[L+'_final']=FIN;if(BX.ui){delete BX.ui.cls[L+'_est'];delete BX.ui.cls[L+'_final'];}
     if(m.mdl&&m.mdl.add)m.mdl.add.push({name:L+'_est',type:2,dec:3,def:-99},{name:L+'_final',type:2,dec:3,def:-99});});}
-function meAN(){var e=(ME.store&&ME.store.el||'au').toLowerCase();return{est:e+'_est',fin:e+'_final',dom:'domain_est',pass:'est_pass',sor:'est_sor',ke:'est_ke',kv:'est_kv',ns:'est_nsamp',type:'est_type',date:'est_date',run:'est_run'};}
-function mePack(){if(!ME.store)return null;var S=ME.store,B={};MEF.forEach(function(k){var a=S.B[k];B[k]=k==='dom'?a.slice():['x','y','z','est'].indexOf(k)>=0?Float64Array.from(a):['sx','sy','sz','sor','ke','kv'].indexOf(k)>=0?Float32Array.from(a):Int32Array.from(a);});B.ex={};Object.keys(S.B.ex||{}).forEach(function(e){B.ex[e]=Float64Array.from(S.B.ex[e]);});return Object.assign({},S,{B:B});}
+function meAN(){var e=(ME.store&&ME.store.el||'au').toLowerCase();return{est:e+'_est',fin:e+'_final',dom:'domain_est',pass:'est_pass',sor:'est_sor',ke:'est_ke',kv:'est_kv',ns:'est_nsamp',nh:'est_nhole',dmin:'est_dmin',spasi:'est_spasi',type:'est_type',date:'est_date',run:'est_run'};}
+function mePack(){if(!ME.store)return null;var S=ME.store,B={};MEF.forEach(function(k){var a=S.B[k];B[k]=k==='dom'?a.slice():['x','y','z','est'].indexOf(k)>=0?Float64Array.from(a):['sx','sy','sz','sor','ke','kv','dmin','spasi'].indexOf(k)>=0?Float32Array.from(a):Int32Array.from(a);});B.ex={};Object.keys(S.B.ex||{}).forEach(function(e){B.ex[e]=Float64Array.from(S.B.ex[e]);});return Object.assign({},S,{B:B});}
 function meLoad(o){if(!o||!o.B){ME.store=null;return;}var B={};MEF.forEach(function(k){B[k]=o.B[k]?Array.prototype.slice.call(o.B[k]):[];});B.ex={};Object.keys(o.B.ex||{}).forEach(function(e){B.ex[e]=Array.prototype.slice.call(o.B.ex[e]);});ME.store=Object.assign(meNew(),o,{B:B});ME.opt.ex=Object.assign({},ME.store.ex||{});}
 function meSaved(){ME.store.ver=Date.now();if(window.MD){MD.ver++;}if(window.SA&&SA.dirty)SA.dirty();}
 function meUser(){try{return window.FP&&FP.user?FP.user():'';}catch(e){return '';}}
@@ -3685,17 +3685,17 @@ function meApply(force){var m=window.BX&&BX.m,S=ME.store;if(!m)return false;var 
   m.cat={};Object.keys(b.cat).forEach(function(k){var c=b.cat[k];if(!na){m.cat[k]=c;return;}var a=new Uint16Array(n);a.set(c.codes);for(var i=b.n;i<n;i++)a[i]=65535;m.cat[k]={codes:a,dict:c.dict,cnt:c.cnt};});
   if(m.mdl)m.mdl.add=[];m.ext=b.ext;m.sizes=b.sizes;
   var A=meAN(),miss=0;
-  if(S&&nr){var EST=new Float64Array(n).fill(-99),PS=new Float64Array(n),SR=new Float64Array(n).fill(-99),KE=new Float64Array(n).fill(-99),KV=new Float64Array(n).fill(-99),NS=new Float64Array(n),TY=new Float64Array(n),DT=new Float64Array(n),RN=new Float64Array(n),DC=new Uint16Array(n).fill(65535);
+  if(S&&nr){var EST=new Float64Array(n).fill(-99),PS=new Float64Array(n),SR=new Float64Array(n).fill(-99),KE=new Float64Array(n).fill(-99),KV=new Float64Array(n).fill(-99),NS=new Float64Array(n),NH=new Float64Array(n),DMI=new Float64Array(n).fill(-99),SPA=new Float64Array(n).fill(-99),TY=new Float64Array(n),DT=new Float64Array(n),RN=new Float64Array(n),DC=new Uint16Array(n).fill(65535);
     var gc=meGcAttr(),G=gc&&m.num[gc],FIN=new Float64Array(n);if(G)FIN.set(G);else FIN.fill(-99);
     var bx=[1e18,-1e18,1e18,-1e18,1e18,-1e18];for(j=0;j<nr;j++)if(B.type[j]!==2){bx[0]=Math.min(bx[0],B.x[j]);bx[1]=Math.max(bx[1],B.x[j]);bx[2]=Math.min(bx[2],B.y[j]);bx[3]=Math.max(bx[3],B.y[j]);bx[4]=Math.min(bx[4],B.z[j]);bx[5]=Math.max(bx[5],B.z[j]);}
     var map=new Map();for(var i=0;i<b.n;i++){var x=b.x[i],y=b.y[i],z=b.z[i];if(x<bx[0]-0.01||x>bx[1]+0.01||y<bx[2]-0.01||y>bx[3]+0.01||z<bx[4]-0.01||z>bx[5]+0.01)continue;map.set(meKey(x,y,z),i);}
     var dict=[],dIx={},ai=0,IX=new Int32Array(nr).fill(-1);
     for(j=0;j<nr;j++){var idx=B.type[j]===2?b.n+(ai++):map.get(meKey(B.x[j],B.y[j],B.z[j]));if(idx===undefined){miss++;continue;}var dn=S.dn[B.dom[j]]||(gmDom(B.dom[j])||{}).name||String(B.dom[j]);if(dIx[dn]===undefined){dIx[dn]=dict.length;dict.push(dn);}
-      DC[idx]=dIx[dn];TY[idx]=B.type[j];PS[idx]=B.pass[j];NS[idx]=B.ns[j];DT[idx]=B.date[j];RN[idx]=B.run[j];IX[j]=idx;if(B.pass[j]>0){EST[idx]=B.est[j];SR[idx]=B.sor[j];KE[idx]=B.ke[j];KV[idx]=B.kv[j];FIN[idx]=B.est[j];}}
+      DC[idx]=dIx[dn];TY[idx]=B.type[j];PS[idx]=B.pass[j];NS[idx]=B.ns[j];NH[idx]=B.nh[j]||0;DMI[idx]=(B.dmin[j]==null?-99:B.dmin[j]);SPA[idx]=(B.spasi[j]==null?-99:B.spasi[j]);DT[idx]=B.date[j];RN[idx]=B.run[j];IX[j]=idx;if(B.pass[j]>0){EST[idx]=B.est[j];SR[idx]=B.sor[j];KE[idx]=B.ke[j];KV[idx]=B.kv[j];FIN[idx]=B.est[j];}}
     var cnt=dict.map(function(){return 0;});for(i=0;i<n;i++)if(DC[i]!==65535)cnt[DC[i]]++;
-    m.num[A.est]=EST;m.num[A.fin]=FIN;m.num[A.pass]=PS;m.num[A.sor]=SR;m.num[A.ke]=KE;m.num[A.kv]=KV;m.num[A.ns]=NS;m.num[A.type]=TY;m.num[A.date]=DT;m.num[A.run]=RN;m.cat[A.dom]={codes:DC,dict:dict,cnt:cnt};
-    if(m.mdl){var dec={};dec[A.est]=3;dec[A.fin]=3;dec[A.sor]=3;dec[A.ke]=3;dec[A.kv]=3;
-      m.mdl.add=[A.est,A.fin,A.pass,A.sor,A.ke,A.kv,A.ns,A.type,A.date,A.run].map(function(k){return{name:k,type:2,dec:dec[k]!=null?dec[k]:0,def:/_est$|_sor$|_ke$|_kv$/.test(k)?-99:0};}).concat([{name:A.dom,type:3,def:'-'}]);}
+    m.num[A.est]=EST;m.num[A.fin]=FIN;m.num[A.pass]=PS;m.num[A.sor]=SR;m.num[A.ke]=KE;m.num[A.kv]=KV;m.num[A.ns]=NS;m.num[A.nh]=NH;m.num[A.dmin]=DMI;m.num[A.spasi]=SPA;m.num[A.type]=TY;m.num[A.date]=DT;m.num[A.run]=RN;m.cat[A.dom]={codes:DC,dict:dict,cnt:cnt};
+    if(m.mdl){var dec={};dec[A.est]=3;dec[A.fin]=3;dec[A.sor]=3;dec[A.ke]=3;dec[A.kv]=3;dec[A.dmin]=2;dec[A.spasi]=2;
+      m.mdl.add=[A.est,A.fin,A.pass,A.sor,A.ke,A.kv,A.ns,A.nh,A.dmin,A.spasi,A.type,A.date,A.run].map(function(k){return{name:k,type:2,dec:dec[k]!=null?dec[k]:0,def:/_est$|_sor$|_ke$|_kv$|_dmin$|_spasi$/.test(k)?-99:0};}).concat([{name:A.dom,type:3,def:'-'}]);}
     meExApply(m,b,S,B,IX,n);
     if(na){var e=b.ext.slice();for(i=b.n;i<n;i++){e[0]=Math.min(e[0],m.x[i]);e[1]=Math.max(e[1],m.x[i]);e[2]=Math.min(e[2],m.y[i]);e[3]=Math.max(e[3],m.y[i]);e[4]=Math.min(e[4],m.z[i]);e[5]=Math.max(e[5],m.z[i]);}m.ext=e;m.sizes=b.sizes+' + '+na+' blok tambahan';}}
   m._meKey=key;m._meMiss=miss;BX.ver++;BX.sc={};if(BX.ui){if(!m.num[BX.ui.attr]&&!m.cat[BX.ui.attr])BX.ui.attr=Object.keys(m.num)[0]||Object.keys(m.cat)[0];[A.est,A.fin,A.sor,A.ke,A.kv].forEach(function(k){delete BX.ui.cls[k];});
@@ -3730,11 +3730,28 @@ function meRun(){if(ME.job){ME.job.cancel=true;return;}var m=window.BX&&BX.m;if(
     D.push({d:d,P:P,mo:mo,va:P.va==='vein'?meVAprep(d):null,C:C,z:C.map(function(c){return c.vc;}),I:okIndex(C,Math.max(5,mo.R[0]*P.P[0].mult/2)),S:S,ch:CH,ph:ph,parChg:parChg,exL:meExList(P.el),zx:(function(){var o={};meExList(P.el).forEach(function(q){o[q.e]=C.map(function(c){return c.ex?c.ex[q.e]:NaN;});});return o;})(),force:force,nIn:inIdx.length,nAff:aff,nAddC:adds.length,addOut:adds.nOut||0,rev:rev,inIdx:inIdx,cnt:P.P.map(function(){return 0;}),fail:0,nEst:0});});
   var ok=D.filter(function(x){return !x.err;});if(!ok.length){ME.msg='<span class=warn>'+D.map(function(x){return gmE(x.d.name)+': '+x.err;}).join(' &middot; ')+'</span>';mePanel();return;}
   ME.job={items:items,D:D,i:0,t0:t0,cancel:false,res:new Array(items.length),dc:{},today:today,runId:runId};ME.msg='';mePanel();setTimeout(meStep,10);}
+/* Kerapatan bor di sekitar satu blok, dari komposit yang benar-benar dipakai kriging.
+   nh    = jumlah lubang bor berbeda
+   dmin  = jarak (m) ke komposit terdekat
+   spasi = perkiraan spasi bor setempat: tiap lubang diwakili komposit terdekatnya ke blok, lalu
+           dirata-ratakan jarak MENDATAR tiap lubang ke lubang terdekat lainnya. -99 bila < 2 lubang. */
+function meSpasi(C,sel,x,y,z){var rep={},dmin=1e18,i,c,dx,dy,dz,d2;
+  for(i=0;i<sel.length;i++){c=C[sel[i]];dx=c.x-x;dy=c.y-y;dz=c.z-z;d2=dx*dx+dy*dy+dz*dz;
+    if(d2<dmin)dmin=d2;
+    var r0=rep[c.id];if(!r0||d2<r0.d2)rep[c.id]={x:c.x,y:c.y,d2:d2};}
+  var H=[];for(var k in rep)H.push(rep[k]);
+  var out={nh:H.length,dmin:H.length?Math.sqrt(dmin):-99,spasi:-99};
+  if(H.length>=2){var sum=0;
+    for(i=0;i<H.length;i++){var best=1e18;
+      for(var j=0;j<H.length;j++){if(j===i)continue;var ax=H[i].x-H[j].x,ay=H[i].y-H[j].y,a2=ax*ax+ay*ay;if(a2<best)best=a2;}
+      sum+=Math.sqrt(best);}
+    out.spasi=sum/H.length;}
+  return out;}
 function meStep(){var J=ME.job;if(!J)return;var t=performance.now();
   while(J.i<J.items.length&&performance.now()-t<45){var it=J.items[J.i],X=J.D[it.di],mo=X.mo,P=X.P,sk=it.sx+'_'+it.sy+'_'+it.sz,dc=J.dc[it.di+'|'+sk];
     if(!dc){var D2=okDisc([it.sx,it.sy,it.sz],P.nd||[3,3,2]);dc=J.dc[it.di+'|'+sk]={D:D2,cbb:okCbb(mo,D2)};}
     var x=it.x-offX,y=it.y-offY,z=it.z,res=null,cbb=dc.cbb;if(window.fltQ){var _fq=fltQ(x,y,z);x=_fq[0];y=_fq[1];z=_fq[2];}if(X.va){var mv=meVA(X,x,y,z);if(mv){mo=mv;cbb=okCbb(mo,dc.D);X.nva=(X.nva||0)+1;}}
-    for(var p=0;p<P.P.length;p++){var pp=P.P[p],sel=okSearch(mo,X.I,X.C,x,y,z,+pp.mult,+pp.max,+pp.mph||0);if(sel.length<+pp.min)continue;var r=okKrige(mo,X.C,X.z,sel,x,y,z,dc.D,cbb);if(!r)continue;res={est:r.est,pass:p+1,sor:r.sor,ke:r.ke,kv:r.kv,ns:sel.length,ex:meExEst(X,sel,r.w)};X.cnt[p]++;break;}
+    for(var p=0;p<P.P.length;p++){var pp=P.P[p],sel=okSearch(mo,X.I,X.C,x,y,z,+pp.mult,+pp.max,+pp.mph||0);if(sel.length<+pp.min)continue;var r=okKrige(mo,X.C,X.z,sel,x,y,z,dc.D,cbb);if(!r)continue;var _sp=meSpasi(X.C,sel,x,y,z);res={est:r.est,pass:p+1,sor:r.sor,ke:r.ke,kv:r.kv,ns:sel.length,nh:_sp.nh,dmin:_sp.dmin,spasi:_sp.spasi,ex:meExEst(X,sel,r.w)};X.cnt[p]++;break;}
     if(res)X.nEst++;else X.fail++;J.res[J.i]=res;J.i++;if(J.cancel)break;}
   var pc=J.items.length?Math.round(100*J.i/J.items.length):100,bar=$('meBar'),tx=$('mePct');if(bar)bar.style.width=pc+'%';if(tx)tx.textContent=pc+'% ('+J.i+'/'+J.items.length+' blok)';
   if(J.cancel){ME.job=null;ME.undo=null;ME.msg='Dibatalkan, tidak ada perubahan.';mePanel();return;}
@@ -3743,7 +3760,7 @@ function meCommit(J){var S=ME.store,B=S.B,rowOf=new Map(),r,nAdd=0;meExPrep(S);f
   var del=new Set();J.D.forEach(function(X){if(X.err)return;X.rev.forEach(function(q){del.add(q);});});
   J.items.forEach(function(it,q){var res=J.res[q],X=J.D[it.di],k=meKey(it.x,it.y,it.z),row=rowOf.get(k);if(it.type===2&&!res){if(row!==undefined)del.add(row);return;}
     if(row===undefined){row=B.x.length;MEF.forEach(function(f){B[f].push(0);});Object.keys(B.ex).forEach(function(e){B.ex[e].push(-99);});rowOf.set(k,row);if(it.i<0)nAdd++;}else del.delete(row);
-    B.x[row]=it.x;B.y[row]=it.y;B.z[row]=it.z;B.sx[row]=it.sx;B.sy[row]=it.sy;B.sz[row]=it.sz;B.dom[row]=X.d.id;B.type[row]=it.type;B.date[row]=J.today;B.run[row]=J.runId;
+    B.x[row]=it.x;B.y[row]=it.y;B.z[row]=it.z;B.sx[row]=it.sx;B.sy[row]=it.sy;B.sz[row]=it.sz;B.dom[row]=X.d.id;B.type[row]=it.type;B.date[row]=J.today;B.run[row]=J.runId;B.nh[row]=res?res.nh:0;B.dmin[row]=res?res.dmin:-99;B.spasi[row]=res?res.spasi:-99;
     Object.keys(B.ex).forEach(function(e){B.ex[e][row]=res&&res.ex&&res.ex[e]!=null?res.ex[e]:-99;});
     if(res){B.est[row]=res.est;B.pass[row]=res.pass;B.sor[row]=res.sor;B.ke[row]=res.ke;B.kv[row]=res.kv;B.ns[row]=res.ns;}else{B.est[row]=-99;B.pass[row]=0;B.sor[row]=-99;B.ke[row]=-99;B.kv[row]=-99;B.ns[row]=0;}});
   if(del.size){var keep=[];for(r=0;r<B.x.length;r++)if(!del.has(r))keep.push(r);MEF.forEach(function(f){var a=B[f];B[f]=keep.map(function(q){return a[q];});});Object.keys(B.ex||{}).forEach(function(e){var a=B.ex[e];B.ex[e]=keep.map(function(q){return a[q];});});}
@@ -6644,7 +6661,11 @@ function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){ret
   var ATTR = 'klasifikasi';
   var KLS = ['Measured', 'Indicated', 'Inferred', 'Belum terklasifikasi'];
   var COL = { Measured: '#1b7f4b', Indicated: '#2c5282', Inferred: '#c98a16', 'Belum terklasifikasi': '#8a93a0' };
-  var DEF = { pM: 1, nM: 12, sM: 0.75, pI: 2, nI: 7, sI: 0.45, pX: 3, use: 'sor' };
+  /* Ambang bawaan. hM/hI = jumlah LUBANG BOR berbeda; kM/kI = spasi bor setempat maksimum (m).
+     Dua syarat terakhir inilah yang mendekati cara Competent Person menilai: bukan banyaknya
+     komposit, melainkan kerapatan dan sebaran bor di sekitar blok. */
+  var DEF = { pM: 1, nM: 12, sM: 0.75, hM: 3, kM: 25,
+              pI: 2, nI: 7, sI: 0.45, hI: 2, kI: 50, pX: 3, use: 'sor' };
 
   function clsO() {
     var o = (window.RP && RP.o) || null;
@@ -6659,10 +6680,12 @@ function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){ret
   /* atribut sumber ada / tidak */
   function src(m) {
     if (!m || !m.num) return null;
-    var A = window.meAN ? meAN() : { pass: 'est_pass', ns: 'est_nsamp', sor: 'est_sor', ke: 'est_ke' };
+    var A = window.meAN ? meAN() : { pass: 'est_pass', ns: 'est_nsamp', sor: 'est_sor', ke: 'est_ke',
+                                     nh: 'est_nhole', spasi: 'est_spasi', dmin: 'est_dmin' };
     var P = m.num[A.pass];
     if (!P) return null;
-    return { P: P, N: m.num[A.ns] || null, S: m.num[A.sor] || null, E: m.num[A.ke] || null, A: A };
+    return { P: P, N: m.num[A.ns] || null, S: m.num[A.sor] || null, E: m.num[A.ke] || null,
+             H: m.num[A.nh] || null, K: m.num[A.spasi] || null, D: m.num[A.dmin] || null, A: A };
   }
   window.clsSrc = src;
 
@@ -6671,11 +6694,14 @@ function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){ret
     var p = q.P[i];
     if (!isFinite(p) || p <= 0) return 3;                       /* tidak terestimasi */
     var n = q.N ? q.N[i] : NaN, g = q.use === 'ke' ? (q.E ? q.E[i] : NaN) : (q.S ? q.S[i] : NaN);
-    var okN = function (min) { return !isFinite(n) || n >= min; };     /* atribut tidak ada -> tidak menghalangi */
-    var okG = function (min) { return !isFinite(g) || g >= min; };
-    if (p <= o.pM && okN(o.nM) && okG(o.sM)) return 0;
-    if (p <= o.pI && okN(o.nI) && okG(o.sI)) return 1;
-    if (p <= o.pX) return 2;
+    var h = q.H ? q.H[i] : NaN, k = q.K ? q.K[i] : NaN;
+    /* atribut yang tidak ada / belum terisi (-99) tidak menghalangi, hanya tidak ikut menilai */
+    var okN = function (min) { return !isFinite(n) || n >= min; };
+    var okG = function (min) { return !isFinite(g) || g <= -90 || g >= min; };
+    var okH = function (min) { return !isFinite(h) || h <= 0 || h >= min; };
+    var okK = function (max) { return !isFinite(k) || k <= -90 || k <= max; };
+    if (p <= o.pM && okN(o.nM) && okG(o.sM) && okH(o.hM) && okK(o.kM)) return 0;
+    if (p <= o.pI && okN(o.nI) && okG(o.sI) && okH(o.hI) && okK(o.kI)) return 1;
     return 2;
   }
 
@@ -6707,23 +6733,33 @@ function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){ret
     var h = '<h4>Klasifikasi keyakinan (Measured / Indicated / Inferred)</h4>';
     if (!q) return h + '<div class=hint>Block model ini belum punya atribut <i>est_pass</i>. Jalankan <b>Model Estimation</b> dulu, lalu klasifikasi bisa dihitung di sini.</div>';
     var C = m.cat[ATTR];
-    h += '<div class=hint style="margin-top:-2px">Usulan kelas dari hasil estimasi: <b>pass</b> pencarian, <b>jumlah komposit</b> dan <b>' +
-      (o.use === 'ke' ? 'kriging efficiency' : 'slope of regression') + '</b>. Blok tanpa estimasi masuk <i>Belum terklasifikasi</i>.' +
+    h += '<div class=hint style="margin-top:-2px">Usulan kelas dari hasil estimasi: <b>pass</b> pencarian, <b>jumlah komposit</b>, <b>' +
+      (o.use === 'ke' ? 'kriging efficiency' : 'slope of regression') + '</b>, <b>jumlah lubang bor berbeda</b> dan <b>spasi bor setempat</b>. ' +
+      'Blok tanpa estimasi masuk <i>Belum terklasifikasi</i>.' +
       (q.N ? '' : ' <span class=warn>est_nsamp tidak ada</span> &rarr; syarat jumlah komposit diabaikan.') +
-      ((o.use === 'ke' ? q.E : q.S) ? '' : ' <span class=warn>' + (o.use === 'ke' ? 'est_ke' : 'est_sor') + ' tidak ada</span> &rarr; syaratnya diabaikan.') + '</div>';
+      ((o.use === 'ke' ? q.E : q.S) ? '' : ' <span class=warn>' + (o.use === 'ke' ? 'est_ke' : 'est_sor') + ' tidak ada</span> &rarr; syaratnya diabaikan.') +
+      (q.H ? '' : ' <span class=warn>est_nhole / est_spasi tidak ada</span> &rarr; block model ini diestimasi sebelum 0.24.4; jalankan ulang Model Estimation agar kerapatan bor ikut terekam.') + '</div>';
     h += '<div class="g2 f"><div><label>Ukuran keyakinan</label><select onchange="clsO().use=this.value;clsPanelUp()">' +
       '<option value="sor"' + (o.use === 'sor' ? ' selected' : '') + '>Slope of regression</option>' +
       '<option value="ke"' + (o.use === 'ke' ? ' selected' : '') + '>Kriging efficiency</option></select></div><div></div></div>';
-    h += '<div class=clsrule><b>Measured</b> bila pass &le; <span>' + o.pM + '</span>, komposit &ge; <span>' + o.nM + '</span>, ukuran &ge; <span>' + o.sM + '</span></div>' +
-      '<div class="g3 f">' + num('pM', 'Pass maks', 'Measured: pass pencarian maksimum (1 = radius penuh)') + num('nM', 'Komposit min', 'Measured: jumlah komposit minimum per blok') + num('sM', 'Ukuran min', 'Measured: SoR / KE minimum', 0.05) + '</div>';
-    h += '<div class=clsrule><b>Indicated</b> bila pass &le; <span>' + o.pI + '</span>, komposit &ge; <span>' + o.nI + '</span>, ukuran &ge; <span>' + o.sI + '</span></div>' +
-      '<div class="g3 f">' + num('pI', 'Pass maks', 'Indicated: pass pencarian maksimum') + num('nI', 'Komposit min', 'Indicated: jumlah komposit minimum') + num('sI', 'Ukuran min', 'Indicated: SoR / KE minimum', 0.05) + '</div>';
-    h += '<div class=clsrule><b>Inferred</b>: blok terestimasi lainnya (pass &le; <span>' + o.pX + '</span>)</div>';
+    var gaya = function (kelas, pk, nk, sk, hk, kk) {
+      return '<div class=clsrule><b>' + kelas + '</b> bila pass &le; <span>' + o[pk] + '</span>, komposit &ge; <span>' + o[nk] +
+        '</span>, ukuran &ge; <span>' + o[sk] + '</span>, <b>bor berbeda &ge; <span>' + o[hk] +
+        '</span></b>, <b>spasi bor &le; <span>' + o[kk] + '</span> m</b></div>' +
+        '<div class="g3 f">' + num(pk, 'Pass maks', kelas + ': pass pencarian maksimum') +
+        num(nk, 'Komposit min', kelas + ': jumlah komposit minimum per blok') +
+        num(sk, 'Ukuran min', kelas + ': SoR / KE minimum', 0.05) + '</div>' +
+        '<div class="g2 f">' + num(hk, 'Lubang bor min', kelas + ': jumlah LUBANG BOR berbeda yang komposit-nya dipakai blok ini') +
+        num(kk, 'Spasi bor maks (m)', kelas + ': perkiraan spasi bor setempat, jarak rata-rata tiap bor ke bor terdekat lainnya') + '</div>';
+    };
+    h += gaya('Measured', 'pM', 'nM', 'sM', 'hM', 'kM');
+    h += gaya('Indicated', 'pI', 'nI', 'sI', 'hI', 'kI');
+    h += '<div class=clsrule><b>Inferred</b>: blok terestimasi lainnya</div>';
     h += '<button class=btn-pri style="width:100%;margin-top:6px" onclick="clsRun()">&#9654; Hitung klasifikasi</button>';
     if (C) h += '<div class=clssum>' + KLS.map(function (k, j) {
       return '<span><i style="background:' + COL[k] + '"></i>' + k + ' <b>' + (window.rpN ? rpN(C.cnt[j]) : C.cnt[j]) + '</b> blok</span>';
     }).join('') + '</div><div class=hint>Tersedia sebagai atribut kategori <b>' + ATTR + '</b>: pilih grup <b>Per atribut kategori</b> di bagian &#9312; untuk laporan tonase per kelas, dan atribut ini juga bisa diwarnai di tampilan 3D.</div>';
-    h += '<div class=clsnote>&#9888; Ambang di atas adalah usulan geostatistik yang dapat diulang, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> (KCMI / JORC) yang juga menimbang spasi bor, kemenerusan geologi, QAQC dan kelayakan penambangan.</div>';
+    h += '<div class=clsnote>&#9888; Ambang di atas adalah usulan geostatistik yang dapat diulang, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> (KCMI / JORC), yang juga menimbang hal-hal yang tidak terbaca dari angka: kemenerusan geologi antar bor, keyakinan pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>';
     return h;
   };
 
@@ -8622,7 +8658,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.0';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.2';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

@@ -267,6 +267,68 @@ jobs:
           Write-Host "::notice::installer uji $($f.Name) tersedia di pre-release $t"
           exit 0
 
+      # ---------- tutorial PDF ----------
+      # Dibangun di runner Windows supaya ikut terbit tiap rilis. Dua tutorial bergambar memerlukan
+      # tangkapan layar aplikasi (Chromium membuka folder proyek lewat File System Access API) -
+      # itulah sebabnya langkah ini tidak dapat dijalankan di kontainer Linux. Tutorial tambahan 0.24
+      # tidak memerlukan tangkapan layar dan selalu dibangun.
+      - name: Tutorial PDF - pasang alat
+        if: github.ref == 'refs/heads/main'
+        run: |
+          pip install playwright==1.48.0 matplotlib==3.9.2 pillow
+          python -m playwright install chromium
+      - name: Tutorial PDF - data latihan simulasi
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          python docs/tutorial-gcex/make_sim_data.py docs/tutorial-gcex/data
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal membuat data latihan vein"; }
+          python docs/tutorial-gcex/make_sim_laterit.py docs/tutorial-gcex/data
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal membuat data latihan laterit"; }
+          exit 0
+      - name: Tutorial PDF - tambahan 0.24 (tanpa tangkapan layar)
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          python docs/tutorial-gcex/src/build_tutorial_024.py 2>&1 | Tee-Object -FilePath tut024.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content tut024.log -Tail 12 | ForEach-Object { Write-Host ("::error::tut024 " + $_) }
+            throw "gagal membangun Tutorial Tambahan 0.24"
+          }
+          exit 0
+      - name: Tutorial PDF - bergambar (tangkapan layar aplikasi)
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        timeout-minutes: 40
+        run: |
+          # Tiap tahap boleh gagal tanpa menggagalkan rilis: bila tangkapan layar tidak jadi, PDF lama
+          # yang ada di repo tetap dipakai. Kegagalannya tampil sebagai ::warning:: di ringkasan run.
+          function Tahap($nama, $cmd) {
+            Write-Host "== $nama"
+            & cmd /c "$cmd 2>&1" | Tee-Object -FilePath "tut.log"
+            if ($LASTEXITCODE -ne 0) {
+              Get-Content tut.log -Tail 14 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
+              Write-Host "::warning::$nama gagal - PDF lama di repo tetap dipakai"
+              return $false
+            }
+            return $true
+          }
+          $a = Tahap "tangkapan layar Drill Hole" "python docs\tutorial-gcex\src\tutorial_shots.py"
+          if ($a) {
+            $b = Tahap "tangkapan layar laterit" "python docs\tutorial-gcex\src\tutorial_lat_shots.py"
+            if ($b) { Tahap "susun PDF Modelling & Estimasi" "python docs\tutorial-gcex\src\build_tutorial.py" | Out-Null }
+          }
+          $c = Tahap "tangkapan layar Block Model" "python docs\tutorial-gcex\src\tutorial_bm_shots.py"
+          if ($c) { Tahap "susun PDF Block Model" "python docs\tutorial-gcex\src\build_tutorial_bm.py" | Out-Null }
+          exit 0
+      - name: Tutorial PDF - daftar hasil
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          Get-ChildItem docs/tutorial-gcex/*.pdf, docs/*.pdf -ErrorAction SilentlyContinue |
+            ForEach-Object { Write-Host ("::notice::PDF " + $_.Name + " " + [math]::Round($_.Length/1MB,2) + " MB " + $_.LastWriteTime) }
+          exit 0
+
       - name: Kemas & terbitkan GitHub Release
         if: github.ref == 'refs/heads/main'
         shell: pwsh
