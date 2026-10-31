@@ -431,3 +431,11 @@ Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor ver
 - Palet editorial: latar kertas abu muda, pita navy pada judul dialog, kotak biru baja, judul bagian biru tua, blok kode navy. Tema gelap ikut disesuaikan.
 - Font: **Inter** (judul & teks) dan **JetBrains Mono** (angka, kode, label di foto), keduanya SIL OFL dan dibundel (tetap offline). Playfair Display & Courier Prime tidak lagi dipakai aplikasi (masih dipakai dokumen tutorial).
 - Fungsi tidak berubah. Langkah berikutnya: antarmuka Core-Ex native PySide6 (Core-Ex 1.0.0).
+
+## 40. Core-Ex Qt — tahap 1 (Core-Ex 0.23.3, kode sumber)
+
+- Installer Core-Ex 0.23.3 **masih versi Electron** (isi sama dengan 0.23.2). Yang baru adalah kode sumber antarmuka native PySide6 di `app_core_qt/` (pratinjau pengembang, belum dipasang installer).
+- Sudah ada: syarat penggunaan & aktivasi lisensi (kunci `GCEX1.` dan file `%APPDATA%\GC-Ex Lisensi\lisensi.json` sama, jadi lisensi lama tetap berlaku), tabel foto virtual yang bisa diedit, pratinjau foto (zoom, geser, putar, resolusi penuh), kartu interpretasi, AI lokal (Ollama dijalankan otomatis), Data bor, cari cepat Ctrl+K, export Excel, impor JSON.
+- Tahap berikutnya: overlay berlapis, tanda half core / core loss, editor segmen, kalibrasi area core; lalu installer Core-Ex 1.0.0 berbasis PySide6.
+- Menjalankan dari sumber (pengembang): `pip install PySide6-Essentials==6.8.1.1` lalu `python app_core_qt/main.py` (Python 3.11+).
+
