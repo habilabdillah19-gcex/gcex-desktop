@@ -23,7 +23,7 @@ File di folder ini / files in this folder
   LISENSI_ELECTRON.txt       lisensi Electron (disalin dari paket Electron saat build)
   LISENSI_CHROMIUM.html      lisensi Chromium, Node.js dan komponen lain yang dibawa
                              Electron (disalin dari paket Electron saat build)
-  LISENSI_FONT_OFL.txt       lisensi font Playfair Display & Courier Prime (SIL OFL 1.1)
+  LISENSI_FONT_OFL.txt       lisensi font Inter, JetBrains Mono, Playfair Display & Courier Prime (SIL OFL 1.1)
   SYARAT_PENGGUNAAN.txt      syarat penggunaan, lisensi pemakaian & penafian GC-Ex
   LISENSI_PLOTLY_BUNDEL.txt  pemberitahuan pustaka yang dibundel di dalam plotly.min.js
                              (diambil saat build bila tersedia)
@@ -70,10 +70,12 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         libtiff, libwebp: lisensi
                                         permisif masing-masing)
 
-  Playfair Display (font)     1.203     SIL OFL 1.1                   huruf judul Core-Ex
+  Inter (font)                4.001     SIL OFL 1.1                   huruf judul & teks Core-Ex
+  JetBrains Mono (font)       2.305     SIL OFL 1.1                   huruf angka & kode Core-Ex
+  Playfair Display (font)     1.203     SIL OFL 1.1                   huruf judul dokumen tutorial
                                                                       (file asli, tidak diubah)
-  Courier Prime (font)        3.018     SIL OFL 1.1                   huruf label & tabel GC-Ex Core
-                                                                      Interpretation (file asli, tidak diubah;
+  Courier Prime (font)        3.018     SIL OFL 1.1                   huruf dokumen tutorial
+                                                                      (semua font: file asli, tidak diubah;
                                                                       teks lisensi: LISENSI_FONT_OFL.txt)
 
   Tidak dibundel / not bundled:

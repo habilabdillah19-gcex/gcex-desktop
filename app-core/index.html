@@ -7,53 +7,52 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob: http://127.0.0.1:* http://localhost:*; img-src 'self' data: blob: http://127.0.0.1:* http://localhost:*; font-src 'self' file: data:">
 <title>Core-Ex</title>
 <style>
-/* Gaya "atlas lapangan": kertas terang, tinta navy, judul serif (Playfair Display), label mesin ketik (Courier Prime),
-   aksen BIRU. Font dibundel di folder fonts/ (OFL) -> tetap offline. */
-@font-face{font-family:"Playfair Display";src:url(fonts/PlayfairDisplay-wght.ttf) format("truetype");font-weight:400 900;font-style:normal}
-@font-face{font-family:"Playfair Display";src:url(fonts/PlayfairDisplay-Italic-wght.ttf) format("truetype");font-weight:400 900;font-style:italic}
-@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Regular.ttf) format("truetype");font-weight:400}
-@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Bold.ttf) format("truetype");font-weight:700}
-@font-face{font-family:"Courier Prime";src:url(fonts/CourierPrime-Italic.ttf) format("truetype");font-weight:400;font-style:italic}
+/* Gaya editorial: kertas abu muda, pita navy, kotak nomor biru baja, judul biru tua. Font dibundel di fonts/ (OFL):
+   Inter (judul & teks) dan JetBrains Mono (angka, kode, Hole ID) -> tetap offline. */
+@font-face{font-family:"Inter";src:url(fonts/Inter-Variable.ttf) format("truetype");font-weight:100 900;font-style:normal}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/JetBrainsMono-Regular.ttf) format("truetype");font-weight:400}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/JetBrainsMono-Bold.ttf) format("truetype");font-weight:700}
 :root{
-  --serif:"Playfair Display",Georgia,"Times New Roman",serif;
-  --mono:"Courier Prime","Courier New",Consolas,monospace;
-  --bg:#ecebe6;--pn:#f6f5f1;--pn2:#e4e3dd;--card:#fbfaf7;--bd:#c6c4bd;--bd2:#9d9b94;
-  --ink:#141a26;--tx:#141a26;--mu:#66645e;
-  --ac:#2a5ea8;--ac2:#1d4785;--acs:#dbe5f3;--ai:#e2eaf6;--sel:#d3dff0;
-  --ok:#1d4785;--oks:#dbe5f3;--wn:#66645e;--wns:#e4e3dd;--er:#9a3b2c;--ers:#f1dfdb;
-  --hatch:repeating-linear-gradient(135deg,transparent 0 4px,rgba(20,26,38,.28) 4px 5px);
-  --sh:0 1px 2px rgba(20,26,38,.08),0 4px 14px rgba(20,26,38,.07);
+  --serif:"Inter","Segoe UI",system-ui,Arial,sans-serif;
+  --sans:"Inter","Segoe UI",system-ui,Arial,sans-serif;
+  --mono:"JetBrains Mono",Consolas,"Courier New",monospace;
+  --bg:#f2f2f0;--pn:#ffffff;--pn2:#eef0f3;--card:#ffffff;--bd:#d6d9de;--bd2:#a9b0ba;
+  --ink:#232f45;--tx:#2b2b2b;--mu:#5d6773;--hd:#1f4e8c;--nv:#232f45;--sb:#4a7499;
+  --ac:#4a7499;--ac2:#1f4e8c;--acs:#e3ebf3;--ai:#e6eef6;--sel:#d8e4f0;
+  --ok:#1f4e8c;--oks:#e3ebf3;--wn:#5d6773;--wns:#eef0f3;--er:#a23b2a;--ers:#f4e1dd;
+  --hatch:repeating-linear-gradient(135deg,transparent 0 4px,rgba(35,47,69,.25) 4px 5px);
+  --sh:0 1px 2px rgba(35,47,69,.06),0 3px 10px rgba(35,47,69,.06);
   --rh:34px;
 }
 body.dark{
-  --bg:#11151d;--pn:#171c26;--pn2:#202633;--card:#1b212c;--bd:#323a49;--bd2:#4a5466;
-  --ink:#ece9e1;--tx:#ece9e1;--mu:#9a978f;
-  --ac:#7fa6e3;--ac2:#a7c2ee;--acs:#1f2d45;--ai:#1d2a40;--sel:#26385a;
-  --ok:#a7c2ee;--oks:#1f2d45;--wn:#9a978f;--wns:#202633;--er:#e09a8c;--ers:#3a2320;
-  --hatch:repeating-linear-gradient(135deg,transparent 0 4px,rgba(236,233,225,.25) 4px 5px);
+  --bg:#141a24;--pn:#1b2331;--pn2:#232f45;--card:#1d2636;--bd:#33405a;--bd2:#4c5b78;
+  --ink:#e9edf3;--tx:#e3e7ee;--mu:#9aa4b2;--hd:#a9c3dd;--nv:#0f1520;--sb:#4a7499;
+  --ac:#7fa4c7;--ac2:#a9c3dd;--acs:#26364f;--ai:#22324a;--sel:#2c4364;
+  --ok:#a9c3dd;--oks:#26364f;--wn:#9aa4b2;--wns:#232f45;--er:#e09a8c;--ers:#3a2320;
+  --hatch:repeating-linear-gradient(135deg,transparent 0 4px,rgba(233,237,243,.22) 4px 5px);
   --sh:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font:13px/1.45 var(--mono);background:var(--bg);color:var(--tx);display:flex;flex-direction:column;overflow:hidden}
+body{font:13px/1.45 var(--sans);background:var(--bg);color:var(--tx);display:flex;flex-direction:column;overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 svg.i{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .mono{font-family:var(--mono)}
-.kick{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mu)}
+.kick{font-family:var(--sans);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
 .dotf,.dotr,.dotx{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;flex:none}
 .dotf{background:var(--ac)}.dotr{border:2px solid var(--ink);background:transparent}
 .dotx{border-radius:2px;background:var(--hatch);border:1px solid var(--bd2)}
 
 /* ---------- bilah atas: kertas + tinta, judul serif ---------- */
-#top{background:var(--pn);color:var(--ink);display:flex;align-items:center;gap:10px;padding:8px 14px 9px;border-bottom:1.5px solid var(--ink)}
+#top{background:var(--pn);color:var(--ink);display:flex;align-items:center;gap:10px;padding:8px 14px 9px;border-bottom:3px solid var(--nv)}
 .brand{display:flex;flex-direction:column;min-width:0}
 .brand .kick{font-size:10.5px}
 .brand b{font-family:var(--serif);font-weight:800;font-size:22px;line-height:1.05;letter-spacing:-.01em;white-space:nowrap}
-.brand b em{color:var(--ac);font-style:italic;font-weight:800}
+.brand b em{color:var(--sb);font-style:normal;font-weight:800}
 .brand small{display:block;font-size:11px;color:var(--mu);max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #top .sp{flex:1}
 .tb,.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--ink);border-radius:4px;background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap;
-  font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+  font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:0}
 .tb:hover,.btn:hover{background:var(--acs);border-color:var(--ac2)}
 .tb.pri,.btn.pri{background:var(--ink);border-color:var(--ink);color:var(--pn);font-weight:700}
 .tb.pri:hover,.btn.pri:hover{background:var(--ac2);border-color:var(--ac2)}
@@ -118,8 +117,8 @@ body.dark .fld.ai{border-color:#2d4166}
 .mklist button{font-size:10.5px;padding:1px 6px}
 .fld.lg{border-color:var(--ink);background:var(--card)}
 .fld.lg input{cursor:default}
-.sect{grid-column:span 2;font-family:var(--serif);font-weight:800;font-size:15px;margin-top:6px;padding-bottom:2px;border-bottom:1px solid var(--ink)}
-.sect em{font-family:var(--mono);font-style:normal;font-weight:400;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.sect{grid-column:span 2;font-family:var(--sans);font-weight:800;font-size:15px;margin-top:6px;padding-bottom:2px;border-bottom:2px solid var(--nv);color:var(--hd)}
+.sect em{font-family:var(--sans);font-style:normal;font-weight:400;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
 .rw .logv{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--ink);padding-left:5px}
 .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;white-space:nowrap}
 .badge::before{content:"";width:9px;height:9px;border-radius:50%;flex:none}
@@ -141,7 +140,7 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 #bulk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--mu);font-size:12px}
 #tw{flex:1;overflow:auto;border:1px solid var(--bd2);border-radius:8px;background:var(--card);position:relative;box-shadow:var(--sh)}
 .tr{display:grid;grid-template-columns:var(--cols);height:var(--rh);align-items:center;border-bottom:1px solid var(--pn2);min-width:max-content;font-size:12.5px}
-.th{position:sticky;top:0;z-index:2;background:var(--pn);color:var(--ink);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;height:32px;border-bottom:1.5px solid var(--ink)}
+.th{position:sticky;top:0;z-index:2;background:var(--pn2);color:var(--ink);font-weight:700;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;height:32px;border-bottom:1px solid var(--bd2)}
 .th>div{cursor:pointer;user-select:none}
 .tr>div{padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rw{position:absolute;left:0;right:0;cursor:pointer}
@@ -156,7 +155,7 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 .num{text-align:right}
 
 /* ---------- bilah status ---------- */
-#sbar{display:flex;align-items:center;gap:14px;padding:5px 14px;background:var(--pn);border-top:1.5px solid var(--ink);color:var(--mu);font-size:11.5px;min-height:30px}
+#sbar{display:flex;align-items:center;gap:14px;padding:5px 14px;background:var(--pn);border-top:1px solid var(--bd2);color:var(--mu);font-size:11.5px;min-height:30px}
 #wmark{padding-left:12px;border-left:1px solid var(--bd);color:var(--mu);white-space:nowrap;font-family:"Segoe UI",system-ui,Arial,sans-serif;font-weight:600;font-size:11px}
 #prog{display:none;align-items:center;gap:8px;flex:1;max-width:640px}
 #prog .bar{flex:1;height:8px;background:var(--pn2);border:1px solid var(--bd2);border-radius:5px;overflow:hidden}
@@ -166,7 +165,7 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 #start{position:absolute;inset:0;top:60px;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:20px;overflow:auto}
 .sc{max-width:820px;width:100%}
 .sc h2{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.08;letter-spacing:-.015em;margin:6px 0 14px;color:var(--ink)}
-.sc h2 em{color:var(--ac);font-style:italic}
+.sc h2 em{color:var(--hd);font-style:normal}
 .sc p{color:var(--tx);margin-bottom:12px;font-size:13.5px;max-width:700px}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
 .steps div{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:11px 12px;font-size:12px;color:var(--mu);box-shadow:var(--sh)}
@@ -181,11 +180,11 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 .recent a span{color:var(--mu);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mask{position:fixed;inset:0;background:rgba(20,26,38,.35);display:none;align-items:center;justify-content:center;z-index:50}
 .mask.on{display:flex}
-.dlg{background:var(--pn);border:1px solid var(--ink);border-radius:8px;width:min(660px,94vw);max-height:90vh;overflow:auto;box-shadow:0 18px 50px rgba(20,26,38,.3)}
-.dlg header{display:flex;align-items:center;gap:8px;padding:14px 18px 10px;border-bottom:1.5px solid var(--ink)}
+.dlg{background:var(--pn);border:1px solid var(--bd);border-radius:6px;overflow:hidden;width:min(660px,94vw);max-height:90vh;overflow:auto;box-shadow:0 18px 50px rgba(20,26,38,.3)}
+.dlg header{display:flex;align-items:center;gap:8px;padding:12px 18px 12px 16px;background:var(--nv);color:#fff;border-left:12px solid var(--sb)}
 .dlg header b{flex:1;font-family:var(--serif);font-weight:800;font-size:22px}
-.dlg header b em{color:var(--ac)}
-.dlg header button{background:none;border:0;color:var(--ink);cursor:pointer;font-size:22px;line-height:1}
+.dlg header b em{color:#a9c3dd;font-style:normal}
+.dlg header button{background:none;border:0;color:#fff;cursor:pointer;font-size:22px;line-height:1}
 .dlg .bd{padding:14px 18px;display:flex;flex-direction:column;gap:11px}
 .dlg .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .dlg .row label,.dlg .lbl{min-width:130px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
@@ -198,7 +197,7 @@ details.hist summary{cursor:pointer;color:var(--mu)}
 .mlist label{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer;min-width:0;text-transform:none;letter-spacing:0;color:var(--tx);font-size:12.5px}
 .mlist label:hover{background:var(--acs)}
 .mlist small{color:var(--mu)}
-code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:0 4px;font-family:var(--mono);font-size:12px}
+code{background:var(--nv);color:#e9edf3;border-radius:3px;padding:0 5px;font-family:var(--mono);font-size:11.5px}
 /* ---------- cari cepat ---------- */
 #qwrap{position:relative;flex:1 1 420px;min-width:220px;max-width:520px}
 #qq{width:100%;background:var(--card);border:1px solid var(--ink);border-radius:20px;padding:6px 12px 6px 32px;font-size:12.5px}
@@ -233,7 +232,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
 #vmk.edit [data-mk]{cursor:pointer}
 #vcal{pointer-events:auto;display:none}
 #vtools button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
-#ovp,#calp,#mkp{background:var(--pn2);color:var(--tx);border-bottom:1.5px solid var(--ink);padding:6px 12px;font-size:11.5px;display:none;flex:none}
+#ovp,#calp,#mkp{background:var(--pn2);color:var(--tx);border-bottom:1px solid var(--bd2);padding:6px 12px;font-size:11.5px;display:none;flex:none}
 #ovp .r,#calp .r,#mkp .r{display:flex;align-items:center;gap:6px;margin:2px 0;flex-wrap:wrap}
 #ovp select,#ovp input,#calp input,#mkp select,#mkp input{background:var(--card);border:1px solid var(--bd2);border-radius:3px;padding:1px 4px;font-size:11.5px;color:var(--tx)}
 #ovp .lg{display:flex;flex-wrap:wrap;gap:3px 8px}
@@ -242,8 +241,9 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
 #ovp .t,#calp .t,#mkp .t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
 #calp button,#ovp button,#mkp button{font-size:11px;padding:2px 7px}
 /* ---------- data lab di kartu ---------- */
-.lab{margin-top:14px;border-top:1.5px solid var(--ink);padding-top:9px}
-.lab h4{font-family:var(--serif);font-weight:800;font-size:16px;margin-bottom:6px}
+.lab{margin-top:14px;border-top:1px solid var(--bd2);padding-top:9px}
+.lab h4{font-family:var(--sans);font-weight:800;font-size:15.5px;margin-bottom:6px;color:var(--hd)}
+.lab h4 em,.chd h3 em{font-style:normal;color:var(--sb)}
 .lab h4 em{color:var(--ac)}
 .lab .sub{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu);margin:8px 0 3px}
 .lab .tw{overflow:auto;max-height:220px;border:1px solid var(--bd);border-radius:5px;background:var(--card)}
@@ -256,7 +256,7 @@ code{background:var(--pn2);border:1px solid var(--bd);border-radius:3px;padding:
 .xyz b{font-weight:400;color:var(--mu)}
 /* ---------- dialog data bor ---------- */
 #mDH .dlg{width:min(980px,96vw)}
-.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--ink);padding:0 18px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd2);padding:0 18px}
 .tabs button{border:1px solid var(--bd2);border-bottom:0;background:var(--pn2);padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;font-size:12px;letter-spacing:.04em;margin-bottom:-1.5px}
 .tabs button.on{background:var(--pn);border-color:var(--ink);border-bottom:1.5px solid var(--pn);font-weight:700}
 .tabs button small{color:var(--mu);font-weight:400}
@@ -1184,7 +1184,7 @@ function drawOverlay() {
   const tr = d.tray, W = V.iw, H = V.ih, X0 = tr.x0 * W, Y0 = tr.y0 * H, BW = (tr.x1 - tr.x0) * W, RH = (tr.y1 - tr.y0) * H / tr.rows;
   const lay = (OV.layers || []).filter(l => l.on), n = lay.length, lh = Math.min(RH * 0.2, RH * 0.72 / Math.max(1, n));
   const fs = Math.max(9, Math.min(lh * 0.62, W / 50)), sw = Math.max(1.2, W / 1000);
-  let h = `<g font-family="Courier Prime, Courier New, monospace" font-weight="700">`, cnt = [];
+  let h = `<g font-family="JetBrains Mono, Consolas, monospace" font-weight="700">`, cnt = [];
   for (let i = 0; i < tr.rows; i++) h += `<rect x="${X0}" y="${Y0 + i * RH}" width="${BW}" height="${RH}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-dasharray="${sw * 4} ${sw * 3}" stroke-width="${sw}"/>`;
   lay.forEach((l, li) => {
     const { m, items } = ovItems(l, r); cnt.push(items.length);
@@ -1401,7 +1401,7 @@ function calDraw() {
   const x0 = t.x0 * W, y0 = t.y0 * H, x1 = t.x1 * W, y1 = t.y1 * H, hs = Math.max(10, W / 70) / Math.max(.2, V.s * 1.4) * 1.4, sw = Math.max(1.5, 2 / V.s);
   let h = `<rect data-h="move" x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" fill="#2a5ea8" fill-opacity=".14" stroke="#2a5ea8" stroke-width="${sw * 2}" style="cursor:move"/>`;
   for (let i = 1; i < t.rows; i++) { const y = y0 + (y1 - y0) * i / t.rows; h += `<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="#fff" stroke-width="${sw}" stroke-dasharray="${sw * 5} ${sw * 4}" pointer-events="none"/>`; }
-  for (let i = 0; i < t.rows; i++) h += `<text x="${x0 + sw * 6}" y="${y0 + (y1 - y0) * (i + .5) / t.rows}" font-size="${hs * 1.4}" fill="#fff" stroke="#141a26" stroke-width="${hs * .25}" paint-order="stroke" dominant-baseline="central" pointer-events="none" font-family="Courier Prime, monospace" font-weight="700">${i + 1} →</text>`;
+  for (let i = 0; i < t.rows; i++) h += `<text x="${x0 + sw * 6}" y="${y0 + (y1 - y0) * (i + .5) / t.rows}" font-size="${hs * 1.4}" fill="#fff" stroke="#141a26" stroke-width="${hs * .25}" paint-order="stroke" dominant-baseline="central" pointer-events="none" font-family="JetBrains Mono, Consolas, monospace" font-weight="700">${i + 1} →</text>`;
   for (const [k, x, y] of [['nw', x0, y0], ['ne', x1, y0], ['sw', x0, y1], ['se', x1, y1]])
     h += `<rect data-h="${k}" x="${x - hs / 2}" y="${y - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#2a5ea8" stroke-width="${sw * 2}" style="cursor:${k === 'nw' || k === 'se' ? 'nwse' : 'nesw'}-resize"/>`;
   g.innerHTML = h;
@@ -1571,7 +1571,7 @@ function drawMarks() {
   const a = r.from_m, b = r.to_m, fs = Math.max(10, Math.min(RH * 0.2, W / 45)), sw = Math.max(1.5, W / 900);
   let h = `<rect width="${W}" height="${H}" fill="transparent" pointer-events="${MK.mode ? 'all' : 'none'}"/><defs>`;
   for (const [k, c] of Object.entries(MK_COL).concat([['x', '#7a5aa6']])) h += `<pattern id="mkp-${k}" width="${sw * 9}" height="${sw * 9}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${sw * 9}" height="${sw * 9}" fill="${c}" fill-opacity=".22"/><line x1="0" y1="0" x2="0" y2="${sw * 9}" stroke="${c}" stroke-width="${sw * 3}"/></pattern>`;
-  h += '</defs><g font-family="Courier Prime, Courier New, monospace" font-weight="700">';
+  h += '</defs><g font-family="JetBrains Mono, Consolas, monospace" font-weight="700">';
   const band = (m, sel, tmp) => {
     const segs = depthSegs(a, b, m.from_m, m.to_m, tr), c = mkColor(m.kind), pat = MK_COL[m.kind] ? m.kind : 'x';
     segs.forEach((sg, i) => {

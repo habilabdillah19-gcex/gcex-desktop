@@ -426,3 +426,8 @@ Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor ver
 - Geomodeller Stratified-Laterite → **⑤ Validasi**: swath komposit vs blok (Easting, Northing, Z unfold), selisih rata-rata global, tabel grade-tonase DMT per cut-off.
 - Tutorial diperbarui (bab Geomodeller Stratified-Laterite: Geostatistik per lapisan & Validasi).
 
+## 39. Tampilan baru Core-Ex (0.23.2)
+
+- Palet editorial: latar kertas abu muda, pita navy pada judul dialog, kotak biru baja, judul bagian biru tua, blok kode navy. Tema gelap ikut disesuaikan.
+- Font: **Inter** (judul & teks) dan **JetBrains Mono** (angka, kode, label di foto), keduanya SIL OFL dan dibundel (tetap offline). Playfair Display & Courier Prime tidak lagi dipakai aplikasi (masih dipakai dokumen tutorial).
+- Fungsi tidak berubah. Langkah berikutnya: antarmuka Core-Ex native PySide6 (Core-Ex 1.0.0).

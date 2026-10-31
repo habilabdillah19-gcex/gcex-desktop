@@ -21,7 +21,7 @@ def apply(s, app, out_html, extra_css=''):
         ver = json.load(open(os.path.join(root, 'builder-dh.json'), encoding='utf-8')).get('extraMetadata', {}).get('version') or ver
     js = "window.GCEX_APP='%s';window.GCEX_VER='%s';\n" % (app, ver) + open(W + 'brand.js', encoding='utf-8').read() + '\n' + open(W + 'projdb.js', encoding='utf-8').read()
     s = s[:k] + '<style id="gxBrand">\n' + css + '\n</style>\n<script id="gxBrandJs">\n' + js + '\n</script>\n' + s[k:]
-    src = os.path.join(W, '..', 'app-core', 'fonts')
+    src = os.path.join(W, '..', 'docs', 'fonts')
     dst = os.path.join(os.path.dirname(os.path.abspath(out_html)), 'fonts')
     os.makedirs(dst, exist_ok=True)
     for f in []:

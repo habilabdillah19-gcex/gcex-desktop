@@ -485,7 +485,7 @@ function buildMenu() {
           const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true, message: APP_NAME + (G.theme === 'core' ? ' - Core Excellence (keluarga GC-Ex)' : ' - Grade Control Excellence'),
             detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +
               (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') +
-              '\n\nMemakai komponen open source: ' + (G.theme === 'core' ? '' : 'Plotly.js (MIT), ') + 'Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, Pillow (MIT-CMU), lxml, openpyxl, pyodbc (MIT / BSD)' + (G.theme === 'core' ? ', font Playfair Display & Courier Prime (SIL OFL 1.1).\nAI lokal memakai Ollama (MIT, dipasang terpisah); model AI mengikuti lisensi masing-masing.' : '.') +
+              '\n\nMemakai komponen open source: ' + (G.theme === 'core' ? '' : 'Plotly.js (MIT), ') + 'Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, Pydantic, NumPy, Pillow (MIT-CMU), lxml, openpyxl, pyodbc (MIT / BSD)' + (G.theme === 'core' ? ', font Inter & JetBrains Mono (SIL OFL 1.1).\nAI lokal memakai Ollama (MIT, dipasang terpisah); model AI mengikuti lisensi masing-masing.' : '.') +
               '\nLeapfrog, Surpac, GEOVIA, Micromine, AutoCAD, Microsoft Excel / Access, Ollama dan nama produk lain adalah merek dagang milik pemiliknya; GC-Ex tidak berafiliasi dengan mereka.' });
           if (r.response === 1) openLegal();
           if (r.response === 2) openLegal('SYARAT_PENGGUNAAN.txt');
