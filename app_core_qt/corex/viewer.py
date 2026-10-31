@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPixmap, QTransform
-from PySide6.QtWidgets import (QFrame, QGraphicsItem, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QHBoxLayout,
+from PySide6.QtWidgets import (QFrame, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QHBoxLayout,
                                QLabel, QToolButton, QWidget)
 
 from . import api
@@ -16,7 +16,6 @@ PREVIEW_W = 2000
 
 class Viewer(QGraphicsView):
     loaded = Signal(int)          # id foto selesai dimuat
-    imageClicked = Signal(float, float, object)  # x, y (koordinat gambar), event
 
     def __init__(self) -> None:
         super().__init__()
@@ -31,6 +30,7 @@ class Viewer(QGraphicsView):
         self.setFrameShape(QFrame.NoFrame)
         self.setBackgroundBrush(QColor(C["viewer"]))
         self.setMinimumHeight(160)
+        self.viewport().setMouseTracking(True)
         # akar: kotak berukuran gambar pratinjau; foto & semua lapisan menjadi anaknya
         self.root = QGraphicsRectItem(0, 0, 1, 1)
         self.root.setPen(Qt.NoPen)
@@ -44,6 +44,8 @@ class Viewer(QGraphicsView):
         self.full = False
         self.rot = 0
         self.locked = False         # mode edit di foto: tarik tidak menggeser
+        self.tool = None
+        self._drag_tool = False
         self.msg = QLabel(self)
         self.msg.setAlignment(Qt.AlignCenter)
         self.msg.setStyleSheet("color:#9a978f;background:transparent")
@@ -185,13 +187,51 @@ class Viewer(QGraphicsView):
     def to_img(self, pos) -> QPointF:
         return self.root.mapFromScene(self.mapToScene(pos))
 
+    # alat edit aktif (tanda / segmen / kalibrasi): menerima titik dalam koordinat gambar
+    def set_tool(self, tool) -> None:
+        self.tool = tool
+        self.set_locked(tool is not None)
+        if tool is None:
+            self.viewport().unsetCursor()
+
     def mousePressEvent(self, e) -> None:  # noqa: N802
-        if self.locked and e.button() == Qt.LeftButton and self.w:
-            it = self.itemAt(e.position().toPoint())
-            if it is None or it in (self.pix, self.root) or not (it.flags() & QGraphicsItem.ItemIsMovable or it.acceptHoverEvents()):
-                p = self.to_img(e.position().toPoint())
-                self.imageClicked.emit(p.x(), p.y(), e)
+        t = getattr(self, "tool", None)
+        if t is not None and e.button() == Qt.LeftButton and self.w:
+            self._drag_tool = bool(t.press(self.to_img(e.position().toPoint()), e))
+            if self._drag_tool:
+                e.accept()
+                return
         super().mousePressEvent(e)
+
+    def mouseMoveEvent(self, e) -> None:  # noqa: N802
+        t = getattr(self, "tool", None)
+        if t is not None and self.w:
+            p = self.to_img(e.position().toPoint())
+            if getattr(self, "_drag_tool", False):
+                t.move(p)
+                e.accept()
+                return
+            cur = t.hover(p) if hasattr(t, "hover") else None
+            if cur is not None:
+                self.viewport().setCursor(cur)
+            else:
+                self.viewport().unsetCursor()
+        super().mouseMoveEvent(e)
+
+    def mouseReleaseEvent(self, e) -> None:  # noqa: N802
+        t = getattr(self, "tool", None)
+        if t is not None and getattr(self, "_drag_tool", False):
+            self._drag_tool = False
+            t.release(self.to_img(e.position().toPoint()))
+            e.accept()
+            return
+        super().mouseReleaseEvent(e)
+
+    def px(self, n: float = 1.0) -> float:
+        """n piksel layar dalam satuan gambar (untuk tebal garis / toleransi klik)."""
+        m = self.transform()
+        s = (m.m11() ** 2 + m.m12() ** 2) ** 0.5 or 1
+        return n / s
 
     def rotation_transform(self) -> QTransform:
         return self.root.sceneTransform()

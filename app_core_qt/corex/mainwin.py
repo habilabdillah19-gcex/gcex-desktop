@@ -41,6 +41,8 @@ class MainWindow(QMainWindow):
         self.last_done = -1
         self.model = PhotoModel()
         self._build()
+        from .layers import Interp
+        self.interp = Interp(self)
         self._menu()
         self.ai = dialogs.AiDlg(self)
         self.ai.status.connect(self._ai_pill)
@@ -190,7 +192,25 @@ class MainWindow(QMainWindow):
         lv = QVBoxLayout(lw)
         lv.setContentsMargins(0, 0, 0, 0)
         lv.setSpacing(0)
-        lv.addWidget(self.panels)
+        from PySide6.QtCore import QSize as _QS
+        from PySide6.QtWidgets import QScrollArea, QSizePolicy
+
+        class PanelArea(QScrollArea):  # tinggi mengikuti isi panel, maks. 340 px (sisanya untuk kartu)
+            def sizeHint(self):  # noqa: N802
+                w = self.widget()
+                return _QS(200, min(340, w.sizeHint().height() + 2) if w and w.isVisible() else 0)
+
+            def minimumSizeHint(self):  # noqa: N802
+                return self.sizeHint()
+
+        psa = PanelArea()
+        psa.setWidgetResizable(True)
+        psa.setFrameShape(QFrame.NoFrame)
+        psa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        psa.setWidget(self.panels)
+        psa.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self._psa = psa
+        lv.addWidget(psa)
         lv.addWidget(self.card, 1)
         left.addWidget(self.viewer)
         left.addWidget(lw)
@@ -268,6 +288,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+Return"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Ctrl+Enter"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.choose_folder)
+        QShortcut(QKeySequence("Escape"), self, activated=lambda: self.interp.escape())
 
     def _start_page(self) -> QWidget:
         w = QWidget()
@@ -407,6 +428,7 @@ class MainWindow(QMainWindow):
         self.model.sel.clear()
         self.cur_id = None
         self.ai.load_meta(self.meta)
+        self.interp.ov.layers = None
         sc = j["scan"]
         self.load_rows(first=True)
         self.toast(f"{sc['total']} foto" + (f" · {sc['added']} baru" if sc["added"] else "") + (f" · {sc['missing']} hilang" if sc["missing"] else ""), 3500)
@@ -425,6 +447,7 @@ class MainWindow(QMainWindow):
             self.by_id = {r["id"]: r for r in self.rows}
             self.dh = j.get("dh") or self.dh
             self._dh_cols()
+            self.interp.dh_changed()
             self._holes()
             self.apply_filter(keep=True)
             self.show_summary(j["summary"])
@@ -432,6 +455,7 @@ class MainWindow(QMainWindow):
                 self.table.go_row(0)
             elif self.cur_id in self.by_id:
                 self.card.show_row(self.by_id[self.cur_id])
+                self.interp.row_changed(self.by_id[self.cur_id])
             if then:
                 then()
 
@@ -468,18 +492,7 @@ class MainWindow(QMainWindow):
         self.fEl.blockSignals(False)
 
     def grade_classes(self, el: str) -> list[float]:
-        cls = (self.meta.get("ov_cls") or {}) if isinstance(self.meta.get("ov_cls"), dict) else {}
-        if el in cls:
-            return cls[el]
-        if el.lower().startswith("au"):
-            return [0.1, 0.5, 1, 3]
-        if el.lower().startswith("ag"):
-            return [5, 20, 50, 100]
-        v = sorted(x for x in ((r.get("g") or {}).get(el) for r in self.rows) if x is not None)
-        if len(v) < 5:
-            return [0.1, 0.5, 1, 3]
-        q = lambda f: float(f"{v[min(len(v) - 1, int(f * len(v)))]:.2g}")  # noqa: E731
-        return sorted({q(.2), q(.4), q(.6), q(.8)})
+        return self.interp.ov.grade_classes(el)
 
     # ================================================================ filter & urutan
     def reset_filter(self) -> None:
@@ -590,7 +603,12 @@ class MainWindow(QMainWindow):
             self.on_photo(r)
 
     def on_photo(self, r: dict) -> None:
-        """Kait untuk modul lanjutan (data lab, overlay, tanda, segmen)."""
+        self.interp.load(r)
+
+    def on_grade_cls(self) -> None:
+        el = self.model.grade_el
+        self.model.grade_cls = self.interp.ov.grade_classes(el) if el else []
+        self.model.refresh_all()
 
     def _sel_all(self, on: bool) -> None:
         for r in self.view:
@@ -628,6 +646,11 @@ class MainWindow(QMainWindow):
             self.model.refresh_row(pid)
             if pid == self.cur_id:
                 self.card.show_row(r)
+        if pid == self.cur_id:
+            if k in ("hole_id", "from_m", "to_m"):
+                self.interp.load(r)
+            else:
+                self.interp.row_changed(r)
 
     def verify(self, ids: list[int], value: bool, nxt: bool = False) -> None:
         if not ids:
@@ -820,6 +843,12 @@ class MainWindow(QMainWindow):
         if i >= 0:
             self.table.go_row(i)
             self.table.setFocus()
+            if x.get("type") == "assay" and not self.interp.ov.on:
+                self.interp.bOv.setChecked(True)
+            if x.get("type") == "tanda":
+                self.interp.mkShowCb.setChecked(True)
+            if x.get("type") == "segmen" and not self.interp.ov.on:
+                self.interp.bOv.setChecked(True)
 
     # ================================================================ keyboard
     def keyPressEvent(self, e) -> None:  # noqa: N802

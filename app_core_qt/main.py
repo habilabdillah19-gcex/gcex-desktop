@@ -25,10 +25,13 @@ def app_version() -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--folder")
+    ap.add_argument("--selftest", nargs=2, metavar=("FOLDER", "OUT_JSON"), help="uji tanpa jendela (CI): buka folder, baris, thumbnail, Excel")
     a, _ = ap.parse_known_args(argv)
     from corex.util import SET, log, user_dir
     os.environ.setdefault("GCEX_CACHE", str(user_dir() / "cache"))
     os.environ.setdefault("GCEX_LOG_DIR", str(user_dir() / "logs"))
+    if a.selftest:
+        return selftest(*a.selftest)
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QGuiApplication, QIcon
     from PySide6.QtWidgets import QApplication, QMessageBox
@@ -37,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("Core-Ex")
     app.setOrganizationName("GC-Ex")
-    for ic in (Path(getattr(sys, "_MEIPASS", "")) / "core.ico", HERE.parent / "build" / "core.ico"):
+    for ic in (Path(getattr(sys, "_MEIPASS", "")) / "icon-core.ico", HERE.parent / "build" / "icon-core.ico"):
         if ic.exists():
             app.setWindowIcon(QIcon(str(ic)))
             break
@@ -66,6 +69,30 @@ def main(argv: list[str] | None = None) -> int:
     if a.folder:
         QTimer.singleShot(100, lambda: w.open_folder(a.folder))
     return app.exec()
+
+
+def selftest(folder: str, out: str) -> int:
+    res: dict = {"version": app_version()}
+    try:
+        from corex import api, lic, theme  # noqa: F401
+        from PySide6.QtGui import QGuiApplication, QImage
+        app = QGuiApplication.instance() or QGuiApplication(["Core-Ex"])  # noqa: F841
+        theme.load_fonts()
+        res["fonts"] = [theme.SANS, theme.MONO]
+        j = api.call("/core/open", {"folder": folder, "by": "CI"})
+        rows = api.call("/core/rows", {"folder": folder})["rows"]
+        res["photos"] = j["scan"]["total"]
+        res["hole"] = rows[0]["hole_id"] if rows else None
+        im = QImage(str(api.image_file(folder, rows[0]["id"], 160)))
+        res["thumb"] = [im.width(), im.height()]
+        res["xlsx"] = len(api.call("/core/export/xlsx", {"folder": folder}))
+        res["machine_id"] = lic.machine_id()
+        res["ok"] = bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
+    except Exception as e:  # noqa: BLE001
+        import traceback
+        res["ok"], res["error"] = False, traceback.format_exc()
+    Path(out).write_text(json.dumps(res, indent=1), encoding="utf-8")
+    return 0 if res.get("ok") else 1
 
 
 if __name__ == "__main__":

@@ -148,6 +148,83 @@ jobs:
       # 3 installer terpisah, dokumen (panduan teknis & tutorial), data latihan dummy, lisensi & tentang, catatan rilis
       # (daftar commit sejak rilis sebelumnya) dan SHA256SUMS; kode sumber zip/tar.gz otomatis dari tag.
       # Aplikasi TIDAK membaca release ini (tanpa auto-update); admin mengunduh lalu mengirim ke pelanggan.
+      # ---------- Core-Ex Qt (PySide6): uji, bangun, uji jalan, installer NSIS ----------
+      - name: Core-Ex Qt - pasang PySide6 & uji pytest-qt
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          pip install PySide6-Essentials==6.8.1.1 pytest-qt==4.4.0
+          python -m pytest -q app_core_qt/tests
+          if ($LASTEXITCODE -ne 0) { throw "uji Core-Ex Qt gagal" }
+      - name: Core-Ex Qt - bangun (PyInstaller)
+        shell: pwsh
+        run: |
+          $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
+          Set-Content -Path app_core_qt/version.txt -Value $v -NoNewline -Encoding ascii
+          pyinstaller --noconfirm --onedir --windowed --name Core-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
+            --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
+            --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller Core-Ex Qt gagal" }
+          foreach ($n in @("lgpl-3.0","gpl-3.0")) {
+            $f = if ($n -eq "lgpl-3.0") { "legal/LISENSI_QT_LGPL-3.0.txt" } else { "legal/LISENSI_QT_GPL-3.0.txt" }
+            Invoke-WebRequest -UseBasicParsing ("https://www.gnu.org/licenses/" + $n + ".txt") -OutFile $f
+            if (-not (Test-Path $f) -or (Get-Item $f).Length -lt 5000) { throw "gagal mengambil teks $n" }
+          }
+          $d = "dist-qt/Core-Ex"
+          New-Item -ItemType Directory -Force "$d/legal","$d/docs" | Out-Null
+          Get-ChildItem legal -File | Where-Object { $_.Extension -in ".txt",".html" -and $_.Name -notin @("LISENSI_ELECTRON.txt","LISENSI_CHROMIUM.html","LISENSI_PLOTLY_BUNDEL.txt") } | Copy-Item -Destination "$d/legal"
+          Copy-Item docs/PANDUAN_CORE.html "$d/docs"
+          Get-ChildItem $d | Format-Table Name, Length
+          "{0:N1} MB" -f ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+      - name: Core-Ex Qt - uji mandiri exe (backend, Pillow, Excel, font) & gerbang lisensi
+        shell: pwsh
+        run: |
+          $exe = "dist-qt/Core-Ex/Core-Ex.exe"
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/qt_core/LTH-1" | Out-Null
+          python -c "from PIL import Image; Image.new('RGB',(1200,500),(120,100,80)).save(r'$env:RUNNER_TEMP/qt_core/LTH-1/LTH-1_Box1_0.0-3.5.jpg')"
+          $p = Start-Process -FilePath $exe -ArgumentList "--selftest","$env:RUNNER_TEMP/qt_core","$env:RUNNER_TEMP/qt_self.json" -PassThru -Wait
+          Get-Content "$env:RUNNER_TEMP/qt_self.json" -Raw | Write-Host
+          if ($p.ExitCode -ne 0) { throw "uji mandiri Core-Ex Qt gagal (exit $($p.ExitCode))" }
+          $sd = Join-Path $env:APPDATA "Core-Ex"; New-Item -ItemType Directory -Force -Path $sd | Out-Null
+          $tv = (Select-String -Path app_core_qt/corex/dialogs.py -Pattern 'TERMS_VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          Set-Content -Path (Join-Path $sd "settings.json") -Value ('{"termsAccepted":"' + $tv + '"}') -Encoding utf8
+          $log = Join-Path $sd "logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
+          $p = Start-Process -FilePath $exe -PassThru
+          $ok = $false; for ($i=0; $i -lt 60; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
+          $alive = -not $p.HasExited
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          Write-Host $t
+          if (-not $ok -or -not $alive) { Write-Host "::error::Core-Ex Qt tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
+          Write-Host "Core-Ex Qt: jendela aktivasi lisensi tampil, aplikasi berjalan"
+      - name: Core-Ex Qt - installer (NSIS) & uji pasang / copot
+        shell: pwsh
+        run: |
+          $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
+          $mk = (Get-Command makensis -ErrorAction SilentlyContinue).Source
+          if (-not $mk) { foreach ($c in @("${env:ProgramFiles(x86)}\NSIS\makensis.exe", "$env:ProgramFiles\NSIS\makensis.exe")) { if (Test-Path $c) { $mk = $c; break } } }
+          if (-not $mk) { choco install nsis -y --no-progress | Out-Null; foreach ($c in @("${env:ProgramFiles(x86)}\NSIS\makensis.exe", "$env:ProgramFiles\NSIS\makensis.exe")) { if (Test-Path $c) { $mk = $c; break } } }
+          if (-not $mk) { throw "makensis tidak ditemukan" }
+          Write-Host "makensis: $mk"
+          $out = "$PWD\dist-qt\Core-Ex-Qt-Setup-$v.exe"
+          & $mk /V2 "/DVERSION=$v" "/DSRC=$PWD\dist-qt\Core-Ex" "/DOUT=$out" "/DROOT=$PWD" tools\corex_qt\installer.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis gagal" }
+          $p = Start-Process -FilePath $out -ArgumentList "/S" -PassThru -Wait
+          $inst = Join-Path $env:LOCALAPPDATA "Programs\Core-Ex"
+          foreach ($f in @("Core-Ex.exe","Uninstall Core-Ex.exe","legal/LISENSI_QT_LGPL-3.0.txt","legal/SYARAT_PENGGUNAAN.txt","docs/PANDUAN_CORE.html","_internal/fonts/Inter-Variable.ttf")) {
+            if (-not (Test-Path "$inst/$f")) { throw "installer: tidak ada $f" } else { Write-Host "OK $f" }
+          }
+          Start-Process -FilePath "$inst\Uninstall Core-Ex.exe" -ArgumentList "/S" -Wait
+          Start-Sleep -Seconds 3
+          if (Test-Path "$inst\Core-Ex.exe") { throw "uninstaller tidak menghapus Core-Ex.exe" }
+          Write-Host ("installer OK: " + [math]::Round((Get-Item $out).Length / 1MB, 1) + " MB")
+      - uses: actions/upload-artifact@v6
+        continue-on-error: true
+        with:
+          name: Core-Ex-Qt-Setup-Windows
+          path: dist-qt/Core-Ex-Qt-Setup-*.exe
+          retention-days: 7
+
       - name: Kemas & terbitkan GitHub Release
         if: github.ref == 'refs/heads/main'
         shell: pwsh

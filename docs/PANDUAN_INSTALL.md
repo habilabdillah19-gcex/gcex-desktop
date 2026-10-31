@@ -439,3 +439,10 @@ Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor ver
 - Tahap berikutnya: overlay berlapis, tanda half core / core loss, editor segmen, kalibrasi area core; lalu installer Core-Ex 1.0.0 berbasis PySide6.
 - Menjalankan dari sumber (pengembang): `pip install PySide6-Essentials==6.8.1.1` lalu `python app_core_qt/main.py` (Python 3.11+).
 
+## 41. Core-Ex Qt — tahap 2 & 3 (Core-Ex 0.23.4, kode sumber + uji build)
+
+- Installer di Release masih Core-Ex versi Electron. Antarmuka Qt kini lengkap setara 0.23.x: overlay berlapis (assay, logging, segmen, kartu foto; warna & kelas bisa diubah), tanda half core / core loss (tarik di foto, recovery otomatis), editor segmen per baris (klik, geser batas kuning, belah, gabung, hapus, segmen baru), atur area core box, Data lab di kartu.
+- CI membangun `Core-Ex-Qt-Setup-<versi>.exe` (PyInstaller + NSIS) sebagai artefak uji: exe diuji mandiri (backend, Pillow, Excel, font), gerbang lisensi, pasang & copot diam-diam.
+- Installer Qt memasang ke folder yang sama (`%LOCALAPPDATA%\Programs\Core-Ex`) dan mencopot Core-Ex versi Electron lebih dulu. Lisensi, pengaturan dan folder `_GCEx_Core` tidak tersentuh.
+- Qt for Python / Qt 6 berlisensi LGPL-3.0 (dinamis, file Qt bisa diganti); teks lisensinya ikut di folder `legal`.
+

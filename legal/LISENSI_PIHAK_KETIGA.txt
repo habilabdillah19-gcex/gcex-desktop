@@ -28,6 +28,9 @@ File di folder ini / files in this folder
   LISENSI_PLOTLY_BUNDEL.txt  pemberitahuan pustaka yang dibundel di dalam plotly.min.js
                              (diambil saat build bila tersedia)
   PENAFIAN_MEREK.txt         penafian merek dagang / trademark disclaimer
+  LISENSI_QT_LGPL-3.0.txt    GNU LGPL v3 untuk Qt 6 & Qt for Python (PySide6, Shiboken6),
+                             antarmuka Core-Ex 1.0+ (diambil saat build)
+  LISENSI_QT_GPL-3.0.txt     GNU GPL v3 (dirujuk oleh LGPL v3; diambil saat build)
 
 Salinan LICENSE.electron.txt dan LICENSES.chromium.html juga ada di folder
 instalasi aplikasi (disertakan otomatis oleh electron-builder).
@@ -70,6 +73,8 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         libtiff, libwebp: lisensi
                                         permisif masing-masing)
 
+  Qt 6 / Qt for Python        6.8.1     LGPL-3.0                      antarmuka Core-Ex 1.0+ (PySide6,
+  (PySide6, Shiboken6)                                                Shiboken6, pustaka Qt dinamis)
   Inter (font)                4.001     SIL OFL 1.1                   huruf judul & teks Core-Ex
   JetBrains Mono (font)       2.305     SIL OFL 1.1                   huruf angka & kode Core-Ex
   Playfair Display (font)     1.203     SIL OFL 1.1                   huruf judul dokumen tutorial
@@ -141,6 +146,25 @@ di folder instalasi).
 Teks lengkap PSF License (Python), lisensi PyInstaller (GPL-2.0 dengan
 pengecualian bootloader) dan lisensi setiap paket Python yang dibundel di
 backend tercantum di LISENSI_PYTHON.txt.
+
+
+4a. QT 6 & QT FOR PYTHON (PYSIDE6) — LGPL-3.0 (CORE-EX 1.0+)
+-------------------------------------------------------------
+
+Antarmuka Core-Ex 1.0 ke atas memakai Qt 6.8 dan Qt for Python (PySide6 &
+Shiboken6) (c) The Qt Company Ltd. dan kontributor, di bawah GNU Lesser
+General Public License v3 (LISENSI_QT_LGPL-3.0.txt, merujuk GNU GPL v3 di
+LISENSI_QT_GPL-3.0.txt). Pustaka Qt / PySide6 tidak diubah dan ditautkan
+secara dinamis: file DLL / modul .pyd ada terpisah di folder _internal\PySide6
+dan _internal\shiboken6 di folder instalasi, sehingga pengguna dapat
+menggantinya dengan versi lain yang kompatibel. Kode sumber Qt & PySide6:
+https://download.qt.io/official_releases/ dan https://code.qt.io (atau minta ke
+penerbit GC-Ex). Lisensi ini hanya berlaku untuk pustaka Qt / PySide6, bukan
+untuk kode Core-Ex.
+
+Core-Ex 1.0+ uses Qt 6 and Qt for Python (PySide6 / Shiboken6) under the GNU
+LGPL v3, unmodified and dynamically linked (replaceable files in the
+installation folder). Source: download.qt.io / code.qt.io.
 
 
 5. METODE & STANDAR YANG DIRUJUK (BUKAN KODE PIHAK KETIGA)
