@@ -510,3 +510,25 @@ Perubahan di versi ini:
 ## 48. Core-Ex 0.23.11
 
 - Uji Core-Ex Qt: uji satu jendela kini mengirim pesan dari proses Python terpisah, persis seperti Core-Ex kedua yang dibuka pengguna. Di build Windows 0.23.10 uji ini gagal karena pengirim berupa thread di proses yang sama, padahal uji exe sungguhan (Core-Ex kedua diteruskan ke jendela pertama) sudah lulus. Isi aplikasi sama dengan 0.23.10.
+## 49. GC-Ex Drill Hole Ultimate 0.24.0
+
+**Klasifikasi keyakinan sumber daya di Reporting BM.** Di bagian ① Atribut menu *Reporting BM* ada kotak baru **Klasifikasi keyakinan (Measured / Indicated / Inferred)**. Kelas diusulkan dari atribut hasil *Model Estimation* yang sudah ada:
+
+| Masukan | Arti |
+|---|---|
+| `est_pass` | pass pencarian sampel (1 = radius penuh / data rapat, 2–3 = radius diperbesar) |
+| `est_nsamp` | jumlah komposit yang dipakai blok itu |
+| `est_sor` / `est_ke` | slope of regression atau kriging efficiency (bisa dipilih) |
+
+Aturan bawaan, semuanya bisa diubah di panel:
+
+- **Measured** — pass ≤ 1, komposit ≥ 12, SoR ≥ 0,75
+- **Indicated** — pass ≤ 2, komposit ≥ 7, SoR ≥ 0,45
+- **Inferred** — blok terestimasi lainnya
+- **Belum terklasifikasi** — blok tanpa estimasi
+
+Hasilnya ditulis sebagai atribut **kategori** `klasifikasi`, jadi seluruh mesin Reporting yang sudah ada langsung bisa dipakai: pilih grup **Per atribut kategori → klasifikasi** untuk tabel tonase & kadar per kelas, export CSV ikut, dan atribut ini juga bisa diwarnai di tampilan 3D. Di bagian ③ Hasil muncul **kurva grade × tonase per kelas keyakinan** (batang bertumpuk = tonase kelas, garis putus-putus = kadar rata-rata kelas). Bila estimasi dijalankan ulang, klasifikasi ikut dihitung ulang.
+
+Bila atribut `est_nsamp` atau `est_sor` tidak ada (block model dari luar GC-Ex), syaratnya diabaikan dan panel memberi tahu.
+
+> ⚠ Ambang di panel adalah **usulan geostatistik yang dapat diulang, bukan keputusan klasifikasi**. Penetapan Measured / Indicated / Inferred tetap wewenang **Competent Person** sesuai KCMI / JORC, yang juga menimbang spasi bor, kemenerusan geologi, QAQC dan kelayakan penambangan. Spasi bor dan jumlah bor berbeda per blok belum direkam estimasi, jadi belum bisa dipakai sebagai syarat otomatis.
