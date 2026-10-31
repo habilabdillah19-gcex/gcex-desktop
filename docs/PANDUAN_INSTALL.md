@@ -506,3 +506,7 @@ Perubahan di versi ini:
 ## 47. Core-Ex 0.23.10
 
 - CI: perbaikan langkah **Core-Ex Qt - pasang PySide6 & uji pytest-qt**. Pola ringkasan galat yang ditambahkan di 0.23.8 memakai `\"` di dalam string PowerShell berkutip ganda; PowerShell tidak mengenal `\"` sebagai escape, sehingga skrip langkah itu gagal dibaca dan langkah selalu gagal (exit 1) sebelum pytest berjalan. Pola kini memakai kutip tunggal. Isi aplikasi sama dengan 0.23.9.
+
+## 48. Core-Ex 0.23.11
+
+- Uji Core-Ex Qt: uji satu jendela kini mengirim pesan dari proses Python terpisah, persis seperti Core-Ex kedua yang dibuka pengguna. Di build Windows 0.23.10 uji ini gagal karena pengirim berupa thread di proses yang sama, padahal uji exe sungguhan (Core-Ex kedua diteruskan ke jendela pertama) sudah lulus. Isi aplikasi sama dengan 0.23.10.

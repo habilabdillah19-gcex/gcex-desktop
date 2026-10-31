@@ -12,13 +12,26 @@ from test_qt_m1 import _win, prj  # noqa: E402,F401  (fixture proyek & jendela u
 
 
 def _send_bg(name: str, payload: dict, timeout_ms: int = 3000) -> list:
-    """Kirim dari thread lain (seperti proses Core-Ex kedua): di Windows, named pipe menunggu event loop server."""
-    import threading
-    from corex.shell import SingleInstance
-    res: list = []
-    t = threading.Thread(target=lambda: res.append(SingleInstance.send(name, payload, timeout_ms)), daemon=True)
-    t.start()
-    return res
+    """Kirim dari PROSES lain, persis seperti Core-Ex kedua (thread lain dalam satu proses tidak andal untuk named
+    pipe Windows). Hasil: [] selama proses berjalan, lalu [True] / [False]."""
+    import json
+    import subprocess
+    code = ("import sys, json; sys.path.insert(0, sys.argv[1]);"
+            "from PySide6.QtCore import QCoreApplication; app = QCoreApplication([]);"
+            "from corex.shell import SingleInstance;"
+            "sys.exit(0 if SingleInstance.send(sys.argv[2], json.loads(sys.argv[3]), int(sys.argv[4])) else 3)")
+    p = subprocess.Popen([sys.executable, "-c", code, str(Path(__file__).resolve().parents[1]), name, json.dumps(payload), str(timeout_ms)],
+                         env=dict(os.environ, QT_QPA_PLATFORM="offscreen"))
+
+    class Res(list):
+        def __eq__(self, other):  # noqa: D105
+            rc = p.poll()
+            self[:] = [] if rc is None else [rc == 0]
+            return list.__eq__(self, other)
+
+        __hash__ = None
+
+    return Res()
 
 
 def test_single_instance_forwards_folder(qtbot):
