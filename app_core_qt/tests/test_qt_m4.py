@@ -173,3 +173,99 @@ def test_kinds_dialog_string_numbers(qtbot, prj, tmp_path, monkeypatch):
     monkeypatch.setattr("corex.outcrop.KindsDlg.result_kinds", lambda self: ks)
     pg.edit_kinds()
     assert "dike_andesit" in pg.kmap and pg.cbKind.findData("dike_andesit") >= 0
+
+
+def test_georef_tab_measure_and_export(qtbot, prj, tmp_path, monkeypatch):
+    """Titik Pylox di foto + E,N,RL (tabel / tempel Excel) -> bidang dinding, galat, ukuran 3D, ekspor STR / DXF."""
+    import math
+    w, pg = _open_oc(qtbot, prj, tmp_path, monkeypatch)
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a[1])))
+    monkeypatch.setattr("corex.outcrop.ask", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a[1])))
+    pg.tabs.setCurrentIndex(3)
+    assert pg.geo_visible() and "Belum ada titik" in pg.gRes.text() and not pg.gStr.isEnabled()
+    # dinding fiktif berarah 060°, 24 m x 16 m dalam foto 1200 x 800
+    az = math.radians(60)
+
+    def enr(u, v):
+        s_, t = u * 24, (1 - v) * 16
+        return 5000 + s_ * math.sin(az), 2000 + s_ * math.cos(az), 250 + t
+    pg.gAdd.click()
+    assert pg.tool.mode == "geo"
+    uv = [(0.1, 0.1), (0.9, 0.1), (0.9, 0.9), (0.1, 0.9), (0.5, 0.45)]
+    for u, v in uv[:4]:
+        pg.tool.press(_pt(pg, u, v), None)
+        pg.tool.release(_pt(pg, u, v))
+    assert [q["name"] for q in pg.geo["points"]] == ["G1", "G2", "G3", "G4"] and pg.gT.rowCount() == 4
+    assert "klik di foto" not in pg.gT.item(0, 4).text()
+    # isi koordinat dengan menempel dari Excel (tab, desimal koma, ada judul kolom); G5 belum diklik
+    rows = ["Nama\tE\tN\tRL"] + [f"G{i + 1}\t" + "\t".join(f"{x:.3f}".replace(".", ",") for x in enr(*uv[i])) for i in range(5)]
+    from PySide6.QtGui import QGuiApplication
+    QGuiApplication.clipboard().setText("\n".join(rows))
+    pg.geo_paste()
+    assert len(pg.geo["points"]) == 5 and pg.gT.item(4, 4).text() == "klik di foto"
+    sol = pg.geo_res["solution"]
+    assert sol["ok"] and "homografi" in sol["method"] and sol["rms"] < 0.01 and abs(sol["dip"] - 90) < 0.1
+    # klik berikutnya menempatkan G5 (baris tanpa posisi), bukan titik baru
+    pg.tool.press(_pt(pg, *uv[4]), None)
+    pg.tool.release(_pt(pg, *uv[4]))
+    assert len(pg.geo["points"]) == 5 and pg.geo_res["solution"]["n"] == 5 and pg.geo_err()
+    # tarik penanda G5 jauh -> galat naik; kembalikan
+    pg.tool.press(_pt(pg, *uv[4]), None)
+    pg.tool.move(_pt(pg, 0.6, 0.45))
+    pg.tool.release(_pt(pg, 0.6, 0.45))
+    assert pg.geo_res["solution"]["rms"] > 0.3 and "galat terbesar" in pg.gRes.text()
+    pg.tool.press(_pt(pg, 0.6, 0.45), None)
+    pg.tool.move(_pt(pg, *uv[4]))
+    pg.tool.release(_pt(pg, *uv[4]))
+    assert pg.geo_res["solution"]["rms"] < 0.01
+    # ubah RL lewat tabel
+    said = []
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: said.append(a[1]))
+    pg.gT.item(0, 3).setText("abc")
+    assert said and "angka" in said[0]
+    assert pg.geo["points"][0]["rl"] is not None
+    pg.escape()
+    assert pg.tool.mode == "select" and not pg.gAdd.isChecked()
+    # penanda tergambar di kanvas
+    from PySide6.QtGui import QImage, QPainter
+    img = QImage(300, 200, QImage.Format_RGB32)
+    p = QPainter(img)
+    pg.canvas.paint(p, None)
+    p.end()
+    # vein lurus: panjang & apparent dip di form Fitur; bar skala dari georef (tanpa garis skala)
+    _draw(pg, "vein", [(0.1, 0.9), (0.6, 0.4)])
+    pg.tool.select(pg.feats[-1]["id"])
+    head = pg.fHead.text()
+    assert "panjang 3D" in head and "apparent dip" in head and pg.scale is None and pg.m_per_unit()
+    m = pg.geo_res["measure"][pg.feats[-1]["id"]]
+    assert abs(m["length_m"] - math.hypot(12, 8)) < 0.05 and abs(m["apparent_dip"] - math.degrees(math.atan2(8, 12))) < 0.2
+    _draw(pg, "zona_lito", [(0.1, 0.1), (0.35, 0.1), (0.35, 0.6), (0.1, 0.6)])
+    assert "luas" in pg.fHead.text()
+    # ekspor STR & DXF
+    monkeypatch.setattr("corex.outcrop.show_in_folder", lambda p: None)
+    for fmt in ("str", "dxf"):
+        out = tmp_path / f"digit.{fmt}"
+        monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, out=out, **k: (str(out)[:-4], ""))
+        assert pg.gStr.isEnabled()
+        pg.export_geo(fmt, False)
+        assert out.exists()
+    t = (tmp_path / "digit.str").read_text()
+    assert t.rstrip().endswith("END") and "Vein" in t
+    first = next(x for x in t.splitlines() if x.startswith(str(pg.kmap["vein"]["string"]) + ","))
+    sn, y, x, z = (float(a) for a in first.split(",")[:4])
+    e0, n0, rl0 = enr(0.1, 0.9)
+    assert abs(x - e0) < 0.05 and abs(y - n0) < 0.05 and abs(z - rl0) < 0.05
+    assert "AC1009" in (tmp_path / "digit.dxf").read_text()
+    # semua foto: foto kedua tanpa georef dilewati dengan konfirmasi
+    src2 = tmp_path / "lapangan" / "lain.jpg"
+    Image.new("RGB", (600, 400), (90, 90, 90)).save(src2)
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src2)], ""))
+    pg.add_photo()
+    qtbot.waitUntil(lambda: pg.cur and pg.cur["name"] == "lain.jpg", timeout=5000)
+    assert not pg.geo["points"] and not pg.gStr.isEnabled()
+    asked = []
+    monkeypatch.setattr("corex.outcrop.ask", lambda _p, m: asked.append(m) or True)
+    out = tmp_path / "semua.dxf"
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, **k: (str(out), ""))
+    pg.export_geo("dxf", True)
+    assert out.exists() and asked and "lain" in asked[0]

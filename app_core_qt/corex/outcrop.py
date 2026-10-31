@@ -1,7 +1,8 @@
 """Ruang kerja Singkapan: foto singkapan / trenching hasil mapping lapangan.
 
 Kiri: daftar foto (+ Foto). Tengah: foto dengan garis / poligon / label (editor). Kanan: tab Deskripsi (AI lokal + edit),
-Fitur (gambar, atribut, belah / gabung, pustaka jenis fitur) dan Infografis (template, judul, kotak komposit, ekspor PNG / PDF).
+Fitur (gambar, atribut, belah / gabung, pustaka jenis fitur), Infografis (template, judul, kotak komposit, ekspor PNG / PDF) dan
+Georef (titik survey Pylox / pita -> bidang dinding / lantai, galat RMS, ukuran 3D, ekspor STR Surpac / DXF dalam E, N, RL).
 Data lewat rute /core/outcrop/* (backend yang sama dengan Core box)."""
 from __future__ import annotations
 
@@ -10,7 +11,7 @@ import re
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QGuiApplication, QIcon, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout, QFrame, QGraphicsObject,
                                QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPlainTextEdit,
                                QPushButton, QScrollArea, QSizePolicy, QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget,
@@ -97,11 +98,44 @@ class OcCanvas(QGraphicsObject):
                              sel=t.sel, sel_vertex=t.vsel, handle=v.px(5), draft=t.draft_pts(), draft_kind=pg.kmap.get(t.kind),
                              boxes_out=boxes, show_info=pg.cbInfo.isChecked())
         pg.boxes = boxes
+        if pg.geo_visible():
+            paint_geo(p, v, pg.geo.get("points") or [], pg.geo_row(), pg.geo_err())
+
+
+def paint_geo(p: QPainter, v, pts: list, sel: int, errs: dict) -> None:
+    """Penanda titik georef (hanya di layar, tidak ikut ekspor): silang + lingkaran merah, nama & galat."""
+    r = v.px(9)
+    f = QFont(theme.SANS)
+    f.setPixelSize(max(1, int(v.px(12))))
+    f.setBold(True)
+    p.setFont(f)
+    for i, q in enumerate(pts):
+        if q.get("u") is None:
+            continue
+        c = QPointF(q["u"] * v.w, q["v"] * v.h)
+        col = QColor("#ffd400") if i == sel else QColor("#e0301e")
+        for wd, cc in ((v.px(4.5), QColor(255, 255, 255, 230)), (v.px(2), col)):
+            p.setPen(QPen(cc, wd))
+            p.setBrush(Qt.NoBrush)
+            p.drawEllipse(c, r, r)
+            p.drawLine(QPointF(c.x() - r * 1.7, c.y()), QPointF(c.x() + r * 1.7, c.y()))
+            p.drawLine(QPointF(c.x(), c.y() - r * 1.7), QPointF(c.x(), c.y() + r * 1.7))
+        t = q.get("name") or ""
+        e = errs.get(t)
+        if e is not None:
+            t += f"  {e:.2f} m"
+        tp = QPointF(c.x() + r * 1.4, c.y() - r * 1.2)
+        p.setPen(QPen(QColor(255, 255, 255, 235), v.px(3.5)))
+        from PySide6.QtGui import QPainterPath
+        path = QPainterPath()
+        path.addText(tp, f, t)
+        p.drawPath(path)
+        p.fillPath(path, col if i != sel else QColor("#141a26"))
 
 
 # ================================================================ alat edit
 class OcTool:
-    """mode: 'select' | 'draw'. Titik disimpan ternormalisasi 0..1; snap ke titik / garis fitur lain."""
+    """mode: 'select' | 'draw' | 'geo' (klik = tempatkan titik georef, tarik = geser). Titik ternormalisasi 0..1."""
 
     def __init__(self, page: "OutcropPage"):
         self.pg = page
@@ -198,7 +232,16 @@ class OcTool:
         return None
 
     # ---- peristiwa mouse
+    def _geo_at(self, pt: QPointF) -> int | None:
+        v, tol = self.pg.view, self.tol() * 1.4
+        for i, q in enumerate(self.pg.geo.get("points") or []):
+            if q.get("u") is not None and ((q["u"] * v.w - pt.x()) ** 2 + (q["v"] * v.h - pt.y()) ** 2) ** 0.5 < tol:
+                return i
+        return None
+
     def hover(self, pt):
+        if self.mode == "geo":
+            return Qt.SizeAllCursor if self._geo_at(pt) is not None else Qt.CrossCursor
         if self.mode == "draw":
             self.hover_pt = self.snap(self.norm(pt))
             self.pg.canvas.update()
@@ -210,6 +253,14 @@ class OcTool:
         return Qt.PointingHandCursor if self._feat_at(pt) is not None else None
 
     def press(self, pt, e) -> bool:
+        if self.mode == "geo":
+            i = self._geo_at(pt)
+            if i is None:
+                i = self.pg.geo_place(self.norm(pt))
+            else:
+                self.pg.geo_select(i)
+            self.drag = {"type": "geo", "i": i, "moved": False}
+            return True
         if self.mode == "draw":
             self.pts.append(self.snap(self.norm(pt)))
             shape = (self.pg.kmap.get(self.kind) or {}).get("shape")
@@ -240,7 +291,10 @@ class OcTool:
             return
         v = self.pg.view
         d["moved"] = True
-        if d["type"] == "v":
+        if d["type"] == "geo":
+            q = (self.pg.geo.get("points") or [])[d["i"]]
+            q["u"], q["v"] = (round(x, 6) for x in self.norm(pt))
+        elif d["type"] == "v":
             f = self.pg.feat(self.sel)
             if f:
                 f["pts"][d["i"]] = self.snap(self.norm(pt), skip=f["id"])
@@ -260,6 +314,9 @@ class OcTool:
         d, self.drag = self.drag, None
         if not d or not d.get("moved"):
             return
+        if d["type"] == "geo":
+            self.pg.geo_save()
+            return
         if d["type"] == "comp":
             u, v = self.pg.comp_pos
             self.pg.save_info({"comp_u": u, "comp_v": v})
@@ -269,6 +326,8 @@ class OcTool:
             self.pg.save_feat(f)
 
     def dbl(self, pt) -> None:
+        if self.mode == "geo":
+            return
         if self.mode == "draw":
             if self.pts and len(self.pts) > 1 and self.pts[-1] == self.pts[-2]:
                 self.pts.pop()
@@ -291,6 +350,14 @@ class OcTool:
             self.pg.save_feat(f)
 
     def key(self, k) -> bool:
+        if self.mode == "geo":
+            if k == Qt.Key_Escape:
+                self.cancel()
+                return True
+            if k == Qt.Key_Delete:
+                self.pg.geo_delete()
+                return True
+            return False
         if self.mode == "draw":
             if k in (Qt.Key_Return, Qt.Key_Enter):
                 self.finish()
@@ -312,7 +379,15 @@ class OcTool:
         return False
 
     # ---- aksi
+    def start_geo(self) -> None:
+        self.mode, self.pts, self.hover_pt = "geo", [], None
+        self.select(None)
+        self.pg.view.setFocus()
+        self.pg.hint()
+        self.pg.canvas.update()
+
     def start_draw(self, kind: str) -> None:
+        self.pg.gAdd.setChecked(False)
         self.mode, self.kind, self.pts, self.hover_pt = "draw", kind, [], None
         self.select(None)
         self.pg.view.setFocus()
@@ -449,6 +524,8 @@ class OutcropPage(QWidget):
         self.boxes: list = []
         self.comp_pos: tuple | None = None
         self.ai_busy = False
+        self.geo: dict = {"points": [], "kind": None}
+        self.geo_res: dict = {}
         self._build()
 
     # ---------------------------------------------------------------- tata letak
@@ -531,6 +608,8 @@ class OutcropPage(QWidget):
         self.tabs.addTab(self._tab_desc(), "Deskripsi")
         self.tabs.addTab(self._tab_feat(), "Fitur")
         self.tabs.addTab(self._tab_info(), "Infografis")
+        self.tabs.addTab(self._tab_geo(), "Georef")
+        self.tabs.currentChanged.connect(lambda *_: self.canvas.update())
         sp.addWidget(self.tabs)
         sp.setStretchFactor(1, 1)
         sp.setSizes(SET.get("qt_oc_split", [240, 900, 380]))
@@ -666,6 +745,7 @@ class OutcropPage(QWidget):
         g.setVerticalSpacing(5)
         self.fHead = QLabel()
         self.fHead.setTextFormat(Qt.RichText)
+        self.fHead.setWordWrap(True)
         g.addWidget(self.fHead, 0, 0, 1, 4)
         g.addWidget(QLabel("Jenis"), 1, 0)
         self.fKind = QComboBox()
@@ -784,6 +864,80 @@ class OutcropPage(QWidget):
         v.addStretch(1)
         return self._scroll(w)
 
+    def _tab_geo(self) -> QWidget:
+        w = QWidget()
+        w.setObjectName("card")
+        v = QVBoxLayout(w)
+        v.setContentsMargins(12, 10, 12, 12)
+        v.setSpacing(6)
+        n = QLabel("Titik kontrol = tanda <b>Pylox / pita</b> di singkapan yang diukur survey (total station / GNSS). "
+                   "Klik tanda itu di foto, lalu isi E, N, RL (atau tempel dari Excel: Nama, E, N, RL). "
+                   "2 titik = skala & arah saja, 3 titik = bidang miring, <b>≥4 titik = koreksi perspektif</b> (disarankan 5+ untuk cek galat).")
+        n.setObjectName("note")
+        n.setWordWrap(True)
+        n.setTextFormat(Qt.RichText)
+        v.addWidget(n)
+        r = QHBoxLayout()
+        self.gAdd = btn("⊕ Titik di foto", "Mode titik georef: klik tanda Pylox / pita di foto. Tarik penanda untuk menggeser. Esc = selesai.", pri=True, sm=True)
+        self.gAdd.setCheckable(True)
+        self.gPaste = btn("Tempel dari Excel", "Tempel baris Nama, E, N, RL (atau E, N, RL) dari clipboard", sm=True)
+        self.gDel = btn("Hapus titik", sm=True)
+        for b in (self.gAdd, self.gPaste, self.gDel):
+            r.addWidget(b)
+        r.addStretch(1)
+        v.addLayout(r)
+        self.gT = QTableWidget(0, 6)
+        self.gT.setHorizontalHeaderLabels(["Nama", "E", "N", "RL", "Di foto", "Galat m"])
+        hh = self.gT.horizontalHeader()
+        for c in range(6):
+            hh.setSectionResizeMode(c, QHeaderView.Stretch if c in (1, 2) else QHeaderView.ResizeToContents)
+        self.gT.verticalHeader().hide()
+        self.gT.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.gT.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.gT.setMinimumHeight(170)
+        v.addWidget(self.gT)
+        f = QFormLayout()
+        self.gKind = QComboBox()
+        for d, t in ((None, "otomatis (jenis foto di Deskripsi)"), ("wall", "dinding (tegak / miring)"), ("floor", "lantai (datar)")):
+            self.gKind.addItem(t, d)
+        f.addRow("Bidang foto", self.gKind)
+        v.addLayout(f)
+        self.gRes = QLabel()
+        self.gRes.setTextFormat(Qt.RichText)
+        self.gRes.setWordWrap(True)
+        self.gRes.setObjectName("fld")
+        self.gRes.setMargin(8)
+        v.addWidget(self.gRes)
+        hd = QLabel("<b>EKSPOR DIGITASI 3D (E, N, RL)</b>")
+        hd.setObjectName("note")
+        v.addWidget(hd)
+        g = QGridLayout()
+        self.gStr, self.gDxf = btn("⇩ STR foto ini", "Surpac string: nomor string per jenis fitur (Atur jenis fitur)", pri=True, sm=True), btn("⇩ DXF foto ini", sm=True)
+        self.gStrAll, self.gDxfAll = btn("⇩ STR semua foto", sm=True), btn("⇩ DXF semua foto", sm=True)
+        g.addWidget(self.gStr, 0, 0)
+        g.addWidget(self.gDxf, 0, 1)
+        g.addWidget(self.gStrAll, 1, 0)
+        g.addWidget(self.gDxfAll, 1, 1)
+        v.addLayout(g)
+        n2 = QLabel("STR: kolom Y = northing, X = easting, Z = RL; D1 jenis, D2 nama fitur, D3 foto, D4.. kadar. Poligon ditutup, "
+                    "label menjadi titik tunggal, garis skala tidak ikut. DXF R12: satu layer per jenis fitur (3D polyline). "
+                    "Koordinat berada di bidang foto; tonjolan / cekungan singkapan tidak terukur.")
+        n2.setObjectName("note")
+        n2.setWordWrap(True)
+        v.addWidget(n2)
+        v.addStretch(1)
+        self.gAdd.clicked.connect(lambda on: self.tool.start_geo() if on and self.cur else self.tool.cancel())
+        self.gPaste.clicked.connect(self.geo_paste)
+        self.gDel.clicked.connect(self.geo_delete)
+        self.gT.itemChanged.connect(self._geo_cell)
+        self.gT.itemSelectionChanged.connect(lambda: self.canvas.update())
+        self.gKind.activated.connect(lambda *_: (self.geo.__setitem__("kind", self.gKind.currentData()), self.geo_save()))
+        self.gStr.clicked.connect(lambda: self.export_geo("str", False))
+        self.gDxf.clicked.connect(lambda: self.export_geo("dxf", False))
+        self.gStrAll.clicked.connect(lambda: self.export_geo("str", True))
+        self.gDxfAll.clicked.connect(lambda: self.export_geo("dxf", True))
+        return self._scroll(w)
+
     # ---------------------------------------------------------------- util
     def by(self) -> str:
         return self.win.user()
@@ -808,10 +962,18 @@ class OutcropPage(QWidget):
             i["comp_u"], i["comp_v"] = self.comp_pos
         return i
 
+    def m_per_px(self) -> float | None:
+        """Skala foto: garis skala bila ada, kalau tidak dari georef (di tengah foto)."""
+        if self.scale:
+            return self.scale["m_per_px"]
+        sol = self.geo_res.get("solution") or {}
+        return sol.get("m_per_px") if sol.get("ok") else None
+
     def m_per_unit(self) -> float | None:
-        if not self.scale or not self.cur or not self.view.w:
+        m = self.m_per_px()
+        if not m or not self.cur or not self.view.w:
             return None
-        return self.scale["m_per_px"] * self.cur["w"] / self.view.w
+        return m * self.cur["w"] / self.view.w
 
     def set_enabled(self, on: bool) -> None:
         for w in (self.bAdd,):
@@ -821,6 +983,10 @@ class OutcropPage(QWidget):
 
     def hint(self) -> None:
         t = self.tool
+        if t.mode == "geo":
+            self.hintL.setText("<b>Titik georef</b>: klik tanda Pylox / pita di foto · tarik penanda untuk menggeser · "
+                               "Delete = hapus titik terpilih · Esc = selesai")
+            return
         if t.mode == "draw":
             k = self.kmap.get(t.kind, {})
             s = {"line": "Klik titik demi titik; klik ganda / Enter = selesai", "poly": "Klik sudut poligon; klik ganda / Enter = tutup",
@@ -969,6 +1135,9 @@ class OutcropPage(QWidget):
             return
         same = self.cur and self.cur["id"] == pid
         self.cur, self.feats, self.scale = j["photo"], j["features"], j.get("scale")
+        self.geo = dict(self.cur.get("georef") or {"points": [], "kind": None})
+        self.geo["points"] = [dict(q) for q in self.geo.get("points") or []]
+        self.geo_res = {}
         self.comp_pos = None
         self.tool.cancel()
         self.tool.select(None)
@@ -1030,6 +1199,7 @@ class OutcropPage(QWidget):
             c.blockSignals(False)
         self.iComp.setEnabled(i.get("template") == "trench")
         self.iDesc.setEnabled(i.get("template") == "wall")
+        self.geo_refresh()
         self.feat_list()
         self.canvas.update()
         if self.histBtn.isChecked():
@@ -1160,7 +1330,16 @@ class OutcropPage(QWidget):
             self.fList.blockSignals(False)
         if not f:
             return
-        self.fHead.setText(f"<b>Fitur #{f['id']}</b> · {len(f['pts'])} titik" + (f" · titik terpilih: {self.tool.vsel + 1}" if self.tool.vsel is not None else ""))
+        m = (self.geo_res.get("measure") or {}).get(f["id"]) or (self.geo_res.get("measure") or {}).get(str(f["id"])) or {}
+        ms = []
+        if m.get("length_m") is not None:
+            ms.append(f"panjang 3D <b>{m['length_m']:.2f} m</b>")
+        if m.get("apparent_dip") is not None:
+            ms.append(f"apparent dip <b>{m['apparent_dip']:.0f}°</b>" + (f" → {m['trend']:03.0f}" if m.get("trend") is not None else ""))
+        if m.get("area_m2") is not None:
+            ms.append(f"luas <b>{m['area_m2']:.2f} m²</b> · keliling {m['perimeter_m']:.2f} m")
+        self.fHead.setText(f"<b>Fitur #{f['id']}</b> · {len(f['pts'])} titik" + (f" · titik terpilih: {self.tool.vsel + 1}" if self.tool.vsel is not None else "")
+                           + (f"<br><span style='color:{theme.C['mu']}'>Georef: </span>" + " · ".join(ms) if ms else ""))
         self.fKind.blockSignals(True)
         # jenis hanya bisa diganti ke jenis dengan bentuk yang sama
         for j in range(self.fKind.count()):
@@ -1213,6 +1392,7 @@ class OutcropPage(QWidget):
         self.feats = j["features"]
         if "scale" in j:
             self.scale = j["scale"]
+        self.geo_refresh(table=False)
         if self.cur:
             self.cur["n_feat"] = len(self.feats)
             self._sync_photo()
@@ -1312,6 +1492,7 @@ class OutcropPage(QWidget):
 
     def draw_done(self) -> None:
         self.bSel.setChecked(True)
+        self.gAdd.setChecked(False)
         self.hint()
         self.canvas.update()
 
@@ -1343,7 +1524,7 @@ class OutcropPage(QWidget):
             p += "." + fmt
         SET.set("lastSaveDir", str(Path(p).parent))
         feats, kmap, info, desc = [dict(f) for f in self.feats], dict(self.kmap), self.info(), dict(self.cur.get("desc") or {})
-        mpp = self.scale["m_per_px"] if self.scale else None
+        mpp = self.m_per_px()
         w0 = self.cur["w"]
         title = info.get("title") or ""
         self.toast("Menyusun infografis…", 6000)
@@ -1356,8 +1537,224 @@ class OutcropPage(QWidget):
         run_bg(work, ok=lambda path: (self.toast("Tersimpan: " + path, 5000), show_in_folder(path), log("[singkapan] ekspor", path)),
                err=lambda e: say(self, "Gagal ekspor:\n" + e, warn=True))
 
+    # ---------------------------------------------------------------- georef
+    def geo_visible(self) -> bool:
+        return self.tool.mode == "geo" or self.tabs.currentIndex() == 3
+
+    def geo_row(self) -> int:
+        rows = self.gT.selectionModel().selectedRows() if self.gT.selectionModel() else []
+        return rows[0].row() if rows else -1
+
+    def geo_err(self) -> dict:
+        sol = self.geo_res.get("solution") or {}
+        return {r["name"]: r["err"] for r in sol.get("residuals") or []} if sol.get("ok") and sol.get("n", 0) >= 5 else {}
+
+    def geo_select(self, i: int) -> None:
+        if 0 <= i < self.gT.rowCount():
+            self.gT.selectRow(i)
+        self.canvas.update()
+
+    def geo_place(self, uv: list) -> int:
+        """Klik di foto: isi posisi baris terpilih yang belum punya posisi, kalau tidak buat titik baru."""
+        P = self.geo.setdefault("points", [])
+        i = self.geo_row()
+        if not (0 <= i < len(P) and P[i].get("u") is None):
+            i = next((k for k, q in enumerate(P) if q.get("u") is None), -1)
+        if i < 0:
+            used = {q.get("name") for q in P}
+            nm = next(f"G{k}" for k in range(1, 999) if f"G{k}" not in used)
+            P.append({"name": nm, "u": None, "v": None, "e": None, "n": None, "rl": None})
+            i = len(P) - 1
+        P[i]["u"], P[i]["v"] = round(uv[0], 6), round(uv[1], 6)
+        self.geo_save(select=i)
+        if P[i].get("e") is None:
+            self.toast(f"Titik {P[i]['name']} ditempatkan. Isi E, N, RL di tabel Georef (atau tempel dari Excel).", 4000)
+        return i
+
+    def geo_save(self, select: int | None = None) -> None:
+        if not self.cur:
+            return
+        sel = self.geo_row() if select is None else select
+        try:
+            j = api.call("/core/outcrop/georef", {"folder": self.folder, "id": self.cur["id"], "points": self.geo.get("points") or [],
+                                                  "kind": self.geo.get("kind"), "by": self.by()})
+        except api.ApiError as e:
+            say(self, "Titik georef tidak disimpan:\n" + str(e), warn=True)
+            self.geo_refresh()
+            return
+        self.cur["georef"] = j["georef"]
+        self.geo = {"points": [dict(q) for q in j["georef"]["points"]], "kind": j["georef"].get("kind")}
+        self._geo_apply(j, sel)
+
+    def geo_refresh(self, table: bool = True) -> None:
+        if not self.cur:
+            self.geo_res = {}
+            return
+        try:
+            j = api.call("/core/outcrop/georef/info", {"folder": self.folder, "id": self.cur["id"]})
+        except api.ApiError as e:
+            self.gRes.setText(_esc(e))
+            return
+        self._geo_apply(j, self.geo_row(), table)
+
+    def _geo_apply(self, j: dict, sel: int = -1, table: bool = True) -> None:
+        self.geo_res = j
+        if table:
+            self._geo_table(sel)
+        sol = j.get("solution")
+        mu, er = theme.C["mu"], theme.C["er"]
+        if not sol or not sol.get("n"):
+            t = "Belum ada titik georef. Klik <b>⊕ Titik di foto</b> lalu klik tanda Pylox / pita di foto."
+        elif not sol.get("ok"):
+            t = f"<span style='color:{er}'>{_esc(sol.get('msg'))}</span>"
+        else:
+            dd = f" → {sol['dip_dir']:03.0f}" if sol.get("dip_dir") is not None else ""
+            t = (f"<b>{_esc(sol['method'])}</b> · bidang {'dinding' if j['kind'] == 'wall' else 'lantai'}<br>"
+                 f"RMS galat <b>{sol['rms']:.3f} m</b> · orientasi bidang dip <b>{sol['dip']:.0f}°</b>{dd}<br>"
+                 f"skala di tengah foto ≈ {sol['m_per_px'] * 1000:.1f} mm / piksel")
+            if sol.get("n", 0) >= 5:
+                worst = max(sol["residuals"], key=lambda r: r["err"])
+                t += f"<br><span style='color:{mu}'>galat terbesar: {_esc(worst['name'])} {worst['err']:.3f} m</span>"
+            for wn in sol.get("warn") or []:
+                t += f"<br><span style='color:{er}'>⚠ {_esc(wn)}</span>"
+            if self.scale:
+                t += f"<br><span style='color:{mu}'>Bar skala memakai garis skala; ukuran fitur memakai georef.</span>"
+        self.gRes.setText(t)
+        ok = bool(sol and sol.get("ok"))
+        for b in (self.gStr, self.gDxf):
+            b.setEnabled(ok)
+        self.gKind.setCurrentIndex(max(0, self.gKind.findData(self.geo.get("kind"))))
+        self.sel_changed()
+        self.canvas.update()
+
+    def _geo_table(self, sel: int = -1) -> None:
+        errs = {r["name"]: r["err"] for r in ((self.geo_res.get("solution") or {}).get("residuals") or [])}
+        n_ok = (self.geo_res.get("solution") or {}).get("n", 0)
+        self.gT.blockSignals(True)
+        self.gT.setRowCount(0)
+        for q in self.geo.get("points") or []:
+            r = self.gT.rowCount()
+            self.gT.insertRow(r)
+            vals = [q.get("name") or ""] + ["" if q.get(k) is None else f"{q[k]:.3f}" for k in ("e", "n", "rl")]
+            for c, t in enumerate(vals):
+                self.gT.setItem(r, c, QTableWidgetItem(t))
+            it = QTableWidgetItem("✓" if q.get("u") is not None else "klik di foto")
+            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+            if q.get("u") is None:
+                it.setForeground(QColor(theme.C["er"]))
+            self.gT.setItem(r, 4, it)
+            e = errs.get(q.get("name"))
+            it = QTableWidgetItem(f"{e:.3f}" if e is not None and n_ok >= 5 else "")
+            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+            self.gT.setItem(r, 5, it)
+        self.gT.blockSignals(False)
+        if 0 <= sel < self.gT.rowCount():
+            self.gT.selectRow(sel)
+
+    def _geo_cell(self, it: QTableWidgetItem) -> None:
+        P = self.geo.get("points") or []
+        r, c = it.row(), it.column()
+        if not 0 <= r < len(P) or c > 3:
+            return
+        t = it.text().strip()
+        if c == 0:
+            P[r]["name"] = t or P[r]["name"]
+        else:
+            try:
+                P[r][("e", "n", "rl")[c - 1]] = _num(t)
+            except ValueError:
+                say(self, f"{('E', 'N', 'RL')[c - 1]} harus angka (koma atau titik desimal).", warn=True)
+                self._geo_table(r)
+                return
+        self.geo_save(select=r)
+
+    def geo_delete(self) -> None:
+        i = self.geo_row()
+        P = self.geo.get("points") or []
+        if 0 <= i < len(P):
+            P.pop(i)
+            self.geo_save(select=min(i, len(P) - 1))
+
+    def geo_paste(self) -> None:
+        if not self.cur:
+            return
+        txt = QGuiApplication.clipboard().text() or ""
+        P = self.geo.setdefault("points", [])
+        by = {q["name"]: q for q in P}
+        n_new = n_upd = 0
+        for line in txt.splitlines():
+            if "\t" in line or ";" in line:  # Excel / CSV regional: desimal boleh koma
+                cells = [c.strip() for c in re.split(r"[\t;]", line) if c.strip()]
+                conv = lambda c: float(c.replace(",", "."))  # noqa: E731
+            else:
+                cells = [c for c in re.split(r"[\s,]+", line.strip()) if c]
+                conv = float
+            nums = []
+            for c in cells[-3:]:
+                try:
+                    nums.append(conv(c))
+                except ValueError:
+                    nums = []
+                    break
+            if len(nums) != 3:
+                continue  # judul kolom / baris kosong
+            name = cells[0] if len(cells) >= 4 else None
+            q = by.get(name) if name else None
+            if q is None:
+                q = next((x for x in P if x.get("e") is None and not name), None)
+            if q is None:
+                used = {x["name"] for x in P}
+                q = {"name": name or next(f"G{k}" for k in range(1, 999) if f"G{k}" not in used), "u": None, "v": None}
+                P.append(q)
+                by[q["name"]] = q
+                n_new += 1
+            else:
+                n_upd += 1
+            q["e"], q["n"], q["rl"] = nums
+        if not n_new and not n_upd:
+            say(self, "Clipboard tidak berisi baris koordinat.\n\nSalin dari Excel kolom: Nama, E, N, RL (atau E, N, RL saja).", warn=True)
+            return
+        self.geo_save()
+        self.toast(f"{n_upd} titik diperbarui, {n_new} titik baru" + (" — klik posisinya di foto (⊕ Titik di foto)" if n_new else ""), 5000)
+
+    def export_geo(self, fmt: str, all_photos: bool) -> None:
+        if not self.folder or (not all_photos and not self.cur):
+            return
+        ids = [] if all_photos else [self.cur["id"]]
+        try:
+            chk = api.call("/core/outcrop/export/check", {"folder": self.folder, "ids": ids, "fmt": fmt})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        if not chk["n"]:
+            say(self, "Tidak ada fitur tergeoreferensi untuk diekspor.\n\n" + "\n".join(chk["skipped"][:12]), warn=True)
+            return
+        if chk["skipped"] and not ask(self, f"{len(chk['skipped'])} foto dilewati (belum digeoreferensi):\n\n" + "\n".join(chk["skipped"][:12])
+                                      + f"\n\nTetap ekspor {chk['n']} fitur dari foto lain?"):
+            return
+        nm = "singkapan_semua" if all_photos else (self.cur.get("title") or self.cur["name"])
+        base = re.sub(r"[^\w.-]+", "_", nm)[:80]
+        p, _ = QFileDialog.getSaveFileName(self, "Ekspor digitasi singkapan", str(Path(SET.get("lastSaveDir", str(Path.home()))) / f"{base}.{fmt}"),
+                                           "Surpac string (*.str)" if fmt == "str" else "DXF (*.dxf)")
+        if not p:
+            return
+        if Path(p).suffix.lower() != "." + fmt:
+            p += "." + fmt
+        SET.set("lastSaveDir", str(Path(p).parent))
+        try:
+            data = api.call("/core/outcrop/export", {"folder": self.folder, "ids": ids, "fmt": fmt, "name": Path(p).stem})
+            tmp = Path(p + ".tmp")
+            tmp.write_bytes(data)
+            tmp.replace(p)
+        except (api.ApiError, OSError) as e:
+            say(self, "Gagal ekspor:\n" + str(e), warn=True)
+            return
+        log("[singkapan] ekspor", fmt, p)
+        self.toast(f"{chk['n']} fitur diekspor: {p}", 5000)
+        show_in_folder(p)
+
     def escape(self) -> bool:
-        if self.tool.mode == "draw":
+        if self.tool.mode in ("draw", "geo"):
             self.tool.cancel()
             return True
         if self.tool.sel is not None:

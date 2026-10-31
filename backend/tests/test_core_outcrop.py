@@ -123,3 +123,98 @@ def test_kinds_library_and_string_numbers(st):
     with pytest.raises(ValueError, match="dipakai dua"):
         co.save_kinds(s, ks2, "Rina")
     assert json.loads(json.dumps(co.kinds(s)))  # bisa dikirim sebagai JSON
+
+
+def _wall_pts(w=1000, h=800, n=5, persp=False):
+    """Dinding fiktif berarah 060° (tegak), 20 m x 16 m; piksel -> (s, t) di bidang, opsional dengan perspektif."""
+    import math
+    az = math.radians(60)
+    e1 = (math.sin(az), math.cos(az))
+    E0, N0, RL0 = 5000.0, 2000.0, 250.0
+    uv = [(0.1, 0.1), (0.9, 0.12), (0.88, 0.9), (0.12, 0.85), (0.5, 0.5), (0.3, 0.6), (0.7, 0.3)][:n]
+    pts = []
+    for i, (u, v) in enumerate(uv):
+        s, t = u * 20, (1 - v) * 16
+        if persp:  # foto miring: bidang terlihat mengecil ke kanan (homografi)
+            k = 1 + 0.4 * u
+            s, t = s / k * 1.4, (t - 8) / k + 8
+        pts.append({"name": f"G{i + 1}", "e": E0 + s * e1[0], "n": N0 + s * e1[1], "rl": RL0 + t, "uv": (u, v), "st": (s, t)})
+    return pts
+
+
+def test_georef_wall_and_floor_and_export(st):
+    s, tmp = st
+    pid = co.add_photo(s, str(_img(tmp, size=(1000, 800))), "Rina")["id"]
+    co.update_photo(s, pid, {"desc:photo_type": "wall"}, "Rina")
+    P = _wall_pts()
+    pts = [{"name": p["name"], "u": p["uv"][0], "v": p["uv"][1], "e": p["e"], "n": p["n"], "rl": p["rl"]} for p in P]
+    g = co.save_georef(s, pid, pts[:2], None, "Rina")["solution"]
+    assert g["ok"] and "similaritas" in g["method"] and abs(g["dip"] - 90) < 1e-6 and g["warn"]
+    assert abs(g["dip_dir"] - 150) < 1e-3 or abs(g["dip_dir"] - 330) < 1e-3
+    g = co.save_georef(s, pid, pts[:3], None, "Rina")["solution"]
+    assert "affine" in g["method"] and g["rms"] < 1e-3
+    r = co.save_georef(s, pid, pts, None, "Rina")
+    g = r["solution"]
+    assert "homografi" in g["method"] and g["rms"] < 1e-3 and abs(g["m_per_px"] - 0.02) < 1e-6
+    # vein lurus dari kiri-bawah ke kanan-atas dinding: panjang & apparent dip
+    co.save_feature(s, pid, None, {"kind": "vein", "pts": [[0.1, 0.9], [0.6, 0.4]], "name": "V1", "attrs": {"au_ppm": 3.2}}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "zona_alt", "pts": [[0.1, 0.1], [0.6, 0.1], [0.6, 0.6], [0.1, 0.6]], "name": "Argilik"}, "Rina")
+    co.save_feature(s, pid, None, {"kind": "skala", "pts": [[0.1, 0.95], [0.2, 0.95]], "attrs": {"length_m": 2}}, "Rina")
+    m = co.georef_info(s, pid)["measure"]
+    vals = list(m.values())
+    ln = next(x for x in vals if "length_m" in x and "apparent_dip" in x and x["length_m"] > 12)
+    assert abs(ln["length_m"] - (10 ** 2 + 8 ** 2) ** 0.5) < 0.01 and abs(ln["apparent_dip"] - 38.66) < 0.01
+    area = next(x for x in vals if "area_m2" in x)
+    assert abs(area["area_m2"] - 80) < 0.02
+    # salah ketik satu RL 2 m -> galat terlihat
+    bad = [dict(p) for p in pts]
+    bad[4]["rl"] += 2
+    g = co.save_georef(s, pid, bad, None, "Rina")["solution"]
+    assert g["rms"] > 0.2 and max(r["err"] for r in g["residuals"]) == max(x["err"] for x in g["residuals"])
+    co.save_georef(s, pid, pts, None, "Rina")
+    # ekspor STR: urutan Y, X, Z; poligon tertutup; skala tidak ikut
+    items, skipped = co.export_items(s, [pid])
+    assert not skipped and {i["kind"] for i in items} == {"vein", "zona_alt"}
+    txt = co.to_str(items, "uji").decode()
+    lines = txt.strip().split("\r\n")
+    assert lines[-1].endswith("END") and lines[1].startswith("0,")
+    vein_no = next(k["string"] for k in co.kinds(s) if k["key"] == "vein")
+    vl = [x for x in lines if x.startswith(f"{vein_no},")]
+    sn, y, x, z = [float(t) for t in vl[0].split(",")[:4]]
+    assert abs(x - P[0]["e"]) < 2.1 and abs(y - 2000) < 2 and "au=3.2" in vl[0] and "V1" in vl[0]
+    zl = [x for x in lines if x.startswith(f"{next(k['string'] for k in co.kinds(s) if k['key'] == 'zona_alt')},")]
+    assert len(zl) == 5 and zl[0].split(",")[1:4] == zl[-1].split(",")[1:4]
+    dxf = co.to_dxf(items).decode()
+    assert "AC1009" in dxf and dxf.count("POLYLINE") == 2 and "VEIN" in dxf and dxf.strip().endswith("EOF")
+    # foto tanpa georef dilaporkan, tidak diekspor
+    pid2 = co.add_photo(s, str(_img(tmp, "lain.jpg")), "Rina")["id"]
+    items2, skipped2 = co.export_items(s, [pid, pid2])
+    assert len(items2) == len(items) and len(skipped2) == 1 and "lain" in skipped2[0]
+
+
+def test_georef_perspective_floor_and_errors(st):
+    s, tmp = st
+    pid = co.add_photo(s, str(_img(tmp, size=(1000, 800))), "Rina")["id"]
+    P = _wall_pts(n=7, persp=True)
+    pts = [{"name": p["name"], "u": p["uv"][0], "v": p["uv"][1], "e": p["e"], "n": p["n"], "rl": p["rl"]} for p in P]
+    g = co.save_georef(s, pid, pts, "wall", "Rina")["solution"]
+    assert g["ok"] and g["rms"] < 1e-3  # homografi menyerap perspektif sempurna
+    g3 = co.save_georef(s, pid, pts[:3] + pts[4:5], "wall", "Rina")["solution"]
+    assert g3["ok"]
+    # lantai: RL hampir sama -> dip ~0
+    fl = [{"name": f"F{i}", "u": u, "v": v, "e": 100 + u * 30, "n": 200 + (1 - v) * 24, "rl": 80.0}
+          for i, (u, v) in enumerate([(0.1, 0.1), (0.9, 0.1), (0.9, 0.9), (0.1, 0.9)])]
+    g = co.save_georef(s, pid, fl, "floor", "Rina")["solution"]
+    assert g["ok"] and g["dip"] < 1e-6 and abs(g["m_per_px"] - 0.03) < 1e-6
+    g = co.save_georef(s, pid, fl, "wall", "Rina")["solution"]
+    assert not g["ok"] or any("landai" in w for w in g["warn"])
+    with pytest.raises(ValueError, match="kembar"):
+        co.save_georef(s, pid, [fl[0], fl[0]], None, "Rina")
+    with pytest.raises(ValueError, match="angka"):
+        co.save_georef(s, pid, [{"name": "A", "u": 0.1, "v": 0.1, "e": "x", "n": 1, "rl": 1}], None, "Rina")
+    g = co.save_georef(s, pid, [{"name": "A", "u": 0.1, "v": 0.1, "e": "", "n": 1, "rl": 1}, {"name": "B", "e": 1, "n": 2, "rl": 3}], None, "Rina")["solution"]
+    assert not g["ok"] and "minimal 2" in g["msg"]
+    seg = [{"name": f"S{i}", "u": 0.1 * i, "v": 0.5, "e": 10 * i, "n": 0, "rl": 5 * i} for i in range(1, 4)]
+    g = co.save_georef(s, pid, seg, None, "Rina")["solution"]
+    assert not g["ok"] and "segaris" in g["msg"]
+    assert any(h["what"] == "georef" for h in co.history(s, pid))

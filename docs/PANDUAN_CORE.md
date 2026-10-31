@@ -200,7 +200,7 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
 3. **Digitasi (tab Fitur)** — pilih jenis di bilah atas (kontak litologi / alterasi, zona litologi / alterasi / oksida, sesar, kekar, vein, zona vein, breksi / diatrema, channel sampel, garis skala, label), klik **✎ Gambar**, klik titik demi titik di foto, klik ganda / Enter untuk selesai (Backspace = hapus titik terakhir, Esc = batal).
    - **Edit**: klik fitur, tarik kotak putih untuk menggeser titik, klik ganda di garis untuk menyisipkan titik, Delete untuk menghapus titik / fitur, **Belah di titik** dan **Gabung** untuk garis.
    - **Snap** (aktif bawaan) menempelkan titik ke titik / garis fitur lain, sehingga kontak antar-poligon tidak bercelah.
-   - **Garis skala**: tarik di sepanjang benda yang panjangnya diketahui (pita ukur, tongkat) dan isi *Panjang m*. Skala ini dipakai bar skala infografis dan perkiraan spasi kekar oleh AI. (Georeferensi dengan titik survey menyusul di versi berikutnya.)
+   - **Garis skala**: tarik di sepanjang benda yang panjangnya diketahui (pita ukur, tongkat) dan isi *Panjang m*. Skala ini dipakai bar skala infografis dan perkiraan spasi kekar oleh AI. Bila tidak ada garis skala, bar skala memakai skala dari georeferensi (langkah 5).
    - Kadar **Au / Ag / SxS** dan *Teks lain* diisi manual per fitur (mis. channel sampel atau zona).
    - **Atur jenis fitur & nomor string…** — ubah nama, warna dan nomor string Surpac per jenis, atau tambah jenis sendiri (mis. dike). Satu nomor string untuk satu jenis.
 4. **Infografis** — pilih template:
@@ -209,6 +209,17 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
    - *Overlay saja*: garis & poligon tanpa judul.
 
    **Ekspor PNG / PDF** memakai foto resolusi penuh (maks. 6000 px) dan sama persis dengan tampilan di layar.
+
+5. **Georef (titik survey)** — sebelum memotret, beri tanda **Pylox / pita** di singkapan dan minta survey mengukurnya (total station / GNSS).
+   - Tab **Georef** → **⊕ Titik di foto**, klik tiap tanda di foto (titik bernama G1, G2, …; tarik penanda untuk menggeser, Esc = selesai). Isi **E, N, RL** di tabel, atau salin dari Excel (kolom *Nama, E, N, RL* atau *E, N, RL*, judul kolom boleh ikut) lalu **Tempel dari Excel**: baris dicocokkan menurut nama; koordinat tanpa nama mengisi titik yang belum berkoordinat. Titik yang koordinatnya ditempel lebih dulu ditandai *klik di foto* dan terisi pada klik berikutnya.
+   - **Bidang foto**: *otomatis* mengikuti jenis foto di Deskripsi (wall / floor), atau pilih *dinding* / *lantai*.
+   - Jumlah titik menentukan cara hitung: **2 titik** = skala & arah saja (dinding dianggap tegak, lantai datar; hanya teliti bila foto tegak lurus bidang), **3 titik** = bidang boleh miring, tanpa koreksi perspektif, **≥4 titik** = bidang terbaik + **koreksi perspektif**. Dengan **5 titik atau lebih** galat tiap titik dan **RMS** dapat diperiksa — titik dengan galat besar biasanya salah klik atau salah ketik koordinat.
+   - Hasil: metode, RMS (m), orientasi bidang (dip → arah dip), skala di tengah foto, dan peringatan (titik segaris, titik menyimpang dari bidang, jenis bidang tidak cocok).
+   - **Ukuran 3D** tampil di form fitur (tab Fitur): panjang 3D dan *apparent dip* (ujung ke ujung) untuk garis, luas & keliling untuk poligon.
+6. **Ekspor digitasi 3D** (tab Georef) — **STR** Surpac atau **DXF** R12, untuk foto ini atau semua foto (foto yang belum digeoreferensi dilewati dan disebutkan).
+   - STR: kolom Y = northing, X = easting, Z = RL; nomor string per jenis fitur (Atur jenis fitur & nomor string…); D1 jenis, D2 nama fitur, D3 judul foto, lalu kadar (`au=`, `ag=`, `sxs=`). Poligon ditutup; label menjadi titik tunggal; garis skala tidak ikut.
+   - DXF: satu layer per jenis fitur (warna mengikuti pustaka), 3D polyline, nama fitur sebagai TEXT.
+   - Koordinat berada **di bidang foto**: tonjolan / cekungan singkapan tidak terukur, jadi hasilnya sebaik kerataan dinding dan sebaran titik kontrol.
 
 Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemiringan yang terlihat di satu dinding hanyalah *apparent dip*.
 

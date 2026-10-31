@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import shutil
 import sqlite3
 import threading
@@ -684,3 +685,351 @@ def api_history(b: PidBody) -> dict:
 def api_ai(b: AiOBody) -> dict:
     s = store(b.folder)
     return {"ok": True, "photo": ai_describe(s, b.id, b.host, b.model, b.extra, b.max_px)}
+
+
+# ================================================================ georeferensi (titik survey) & ekspor STR / DXF
+# Titik kontrol: tanda Pylox / pita di foto yang diukur survey (E, N, RL). Foto dianggap memotret satu BIDANG
+# (dinding = wall, lantai = floor). Bidang + transformasi piksel -> bidang dihitung dari jumlah titik:
+#   2 titik : wall = bidang tegak melalui kedua titik, floor = bidang datar (RL rata-rata); similaritas (skala, rotasi)
+#   3 titik : bidang melalui 3 titik (boleh miring); affine (tanpa koreksi perspektif)
+#   >=4     : bidang terbaik (kuadrat terkecil) + homografi (koreksi perspektif)
+# Galat tiap titik = jarak 3D antara posisi hasil hitung dan koordinat survey (meter).
+import math  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+
+def _basis(pts3: np.ndarray, kind: str) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Titik asal c, sumbu bidang e1 (mendatar), e2 (ke atas untuk wall / ke utara untuk floor), normal n."""
+    c = pts3.mean(axis=0)
+    n_pts = len(pts3)
+    if n_pts == 2:
+        if kind == "floor":
+            n = np.array([0.0, 0.0, 1.0])
+        else:
+            d = pts3[1] - pts3[0]
+            h = np.array([d[0], d[1], 0.0])
+            if np.linalg.norm(h) < 0.05:
+                raise ValueError("Dua titik georef hampir tegak lurus satu di atas yang lain: arah dinding tidak bisa ditentukan. Tambah titik ketiga.")
+            h /= np.linalg.norm(h)
+            n = np.array([-h[1], h[0], 0.0])
+    else:
+        q = pts3 - c
+        _u, s, vt = np.linalg.svd(q)
+        if s[1] < 1e-3 * max(1.0, s[0]) or s[0] < 0.05:
+            raise ValueError("Titik georef hampir segaris: bidang foto tidak bisa ditentukan. Pakai titik yang menyebar (kiri, kanan, atas, bawah).")
+        n = vt[2]
+    n = n / np.linalg.norm(n)
+    if kind == "floor":
+        if n[2] < 0:
+            n = -n
+        e2 = np.array([0.0, 1.0, 0.0]) - n * n[1]  # utara diproyeksikan ke bidang
+        if np.linalg.norm(e2) < 1e-6:
+            e2 = np.array([1.0, 0.0, 0.0]) - n * n[0]
+        e2 /= np.linalg.norm(e2)
+        e1 = np.cross(e2, n)
+    else:
+        e1 = np.cross(np.array([0.0, 0.0, 1.0]), n)
+        if np.linalg.norm(e1) < 1e-6:  # bidang hampir datar padahal disebut wall
+            e1 = np.array([1.0, 0.0, 0.0])
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(n, e1)
+        if e2[2] < 0:
+            e1, e2 = -e1, -e2
+        e2 /= np.linalg.norm(e2)
+    return c, e1 / np.linalg.norm(e1), e2, n
+
+
+def _fit(img: np.ndarray, pl: np.ndarray, n: int) -> tuple[str, np.ndarray]:
+    """Matriks 3x3 H: [s, t, w] = H @ [x, y, 1] (koordinat bidang dari piksel)."""
+    x, y = img[:, 0], img[:, 1]
+    if n == 2:  # similaritas: s = a x - b y + c ; t = b x + a y + d  (y gambar dibalik dulu: ke atas positif)
+        A = np.zeros((4, 4))
+        r = np.zeros(4)
+        for i in range(2):
+            A[2 * i] = [x[i], -y[i], 1, 0]
+            A[2 * i + 1] = [y[i], x[i], 0, 1]
+            r[2 * i], r[2 * i + 1] = pl[i, 0], pl[i, 1]
+        a, b, c, d = np.linalg.solve(A, r)
+        return "similaritas (2 titik)", np.array([[a, -b, c], [b, a, d], [0, 0, 1.0]])
+    if n == 3:
+        A = np.c_[x, y, np.ones(3)]
+        s = np.linalg.solve(A, pl[:, 0])
+        t = np.linalg.solve(A, pl[:, 1])
+        return "affine (3 titik)", np.array([s, t, [0, 0, 1.0]])
+    # homografi DLT dengan normalisasi (Hartley)
+    def norm_t(P):
+        m = P.mean(axis=0)
+        d = np.sqrt(((P - m) ** 2).sum(axis=1)).mean() or 1.0
+        k = math.sqrt(2) / d
+        return np.array([[k, 0, -k * m[0]], [0, k, -k * m[1]], [0, 0, 1.0]])
+    T1, T2 = norm_t(img), norm_t(pl)
+    a = (T1 @ np.c_[img, np.ones(len(img))].T).T
+    b = (T2 @ np.c_[pl, np.ones(len(pl))].T).T
+    rows = []
+    for (x1, y1, _), (x2, y2, _) in zip(a, b):
+        rows.append([-x1, -y1, -1, 0, 0, 0, x2 * x1, x2 * y1, x2])
+        rows.append([0, 0, 0, -x1, -y1, -1, y2 * x1, y2 * y1, y2])
+    _u, _s, vt = np.linalg.svd(np.array(rows))
+    Hn = vt[-1].reshape(3, 3)
+    H = np.linalg.inv(T2) @ Hn @ T1
+    return f"homografi / koreksi perspektif ({n} titik)", H / H[2, 2]
+
+
+def georef_solve(gr: Optional[dict], w: int, h: int, kind: str) -> Optional[dict]:
+    """Hasil georeferensi foto: metode, galat per titik & RMS (m), orientasi bidang, skala (m / piksel)."""
+    if not gr:
+        return None
+    P = [p for p in gr.get("points") or [] if all(p.get(k) not in (None, "") for k in ("u", "v", "e", "n", "rl"))]
+    out: dict[str, Any] = {"n": len(P), "kind": kind, "ok": False}
+    if len(P) < 2:
+        out["msg"] = "Perlu minimal 2 titik georef lengkap (posisi di foto + E, N, RL). Disarankan 4 titik atau lebih."
+        return out
+    img = np.array([[float(p["u"]) * w, -float(p["v"]) * h] for p in P])  # y dibalik: ke atas positif
+    pts3 = np.array([[float(p["e"]), float(p["n"]), float(p["rl"])] for p in P])
+    try:
+        c, e1, e2, nrm = _basis(pts3, kind)
+        pl = np.c_[(pts3 - c) @ e1, (pts3 - c) @ e2]
+        if len(P) >= 3 and np.linalg.matrix_rank(np.c_[img, np.ones(len(P))], tol=1e-6) < 3:
+            raise ValueError("Titik georef di foto hampir segaris; pilih titik yang menyebar.")
+        method, H = _fit(img, pl, len(P))
+    except (ValueError, np.linalg.LinAlgError) as e:
+        out["msg"] = str(e) if isinstance(e, ValueError) else "Titik georef tidak bisa dipakai (susunan titik terlalu sempit / segaris)."
+        return out
+    res = []
+    for p, xy, q in zip(P, img, pts3):
+        s, t, ww = H @ np.array([xy[0], xy[1], 1.0])
+        g = c + (s / ww) * e1 + (t / ww) * e2
+        res.append({"name": p.get("name") or "", "de": float(g[0] - q[0]), "dn": float(g[1] - q[1]), "drl": float(g[2] - q[2]),
+                    "err": float(np.linalg.norm(g - q))})
+    rms = math.sqrt(sum(r["err"] ** 2 for r in res) / len(res))
+    dip = math.degrees(math.acos(min(1.0, abs(nrm[2]))))
+    up = nrm if nrm[2] >= 0 else -nrm
+    ddir = (math.degrees(math.atan2(up[0], up[1])) + 360) % 360 if dip > 0.5 else None
+    # skala di tengah foto: panjang 1 piksel (rata-rata arah x & y) dalam meter
+    def to_pl(x, y):
+        v_ = H @ np.array([x, y, 1.0])
+        return v_[:2] / v_[2]
+    cx, cy = w / 2, -h / 2
+    m_per_px = float((np.linalg.norm(to_pl(cx + 1, cy) - to_pl(cx, cy)) + np.linalg.norm(to_pl(cx, cy - 1) - to_pl(cx, cy))) / 2)
+    warn = []
+    if len(P) == 2:
+        warn.append("2 titik: tanpa koreksi perspektif dan tanpa pemeriksaan galat. Hanya teliti bila foto diambil tegak lurus bidang.")
+    elif len(P) == 3:
+        warn.append("3 titik: tanpa koreksi perspektif dan tanpa pemeriksaan galat (selalu pas). Tambah titik ke-4 untuk koreksi perspektif.")
+    elif len(P) == 4:
+        warn.append("4 titik: perspektif dikoreksi, tetapi galat posisi di bidang selalu nol; titik ke-5 atau lebih memberi pemeriksaan galat.")
+    off = max(abs(float((q - c) @ nrm)) for q in pts3)
+    if len(P) >= 4 and off > 0.5:
+        warn.append(f"Titik survey menyimpang hingga {off:.2f} m dari bidang terbaik: permukaan tidak rata / foto mencakup lebih dari satu bidang.")
+    if kind == "wall" and dip < 45:
+        warn.append(f"Bidang hasil hitung landai (dip {dip:.0f}°) padahal jenis foto 'dinding'. Periksa jenis foto / koordinat titik.")
+    if kind == "floor" and dip > 45:
+        warn.append(f"Bidang hasil hitung curam (dip {dip:.0f}°) padahal jenis foto 'lantai'. Periksa jenis foto / koordinat titik.")
+    out.update(ok=True, method=method, rms=rms, residuals=res, dip=dip, dip_dir=ddir, m_per_px=m_per_px, warn=warn,
+               H=H.tolist(), c=c.tolist(), e1=e1.tolist(), e2=e2.tolist())
+    return out
+
+
+def to_world(sol: dict, w: int, h: int, pts: list) -> list[list[float]]:
+    H, c, e1, e2 = np.array(sol["H"]), np.array(sol["c"]), np.array(sol["e1"]), np.array(sol["e2"])
+    out = []
+    for u, v in pts:
+        s, t, ww = H @ np.array([u * w, -v * h, 1.0])
+        g = c + (s / ww) * e1 + (t / ww) * e2
+        out.append([round(float(g[0]), 3), round(float(g[1]), 3), round(float(g[2]), 3)])
+    return out
+
+
+def measure(sol: dict, w: int, h: int, f: dict) -> dict:
+    """Panjang 3D, luas (di bidang), apparent dip garis lurus ujung-ke-ujung."""
+    P = np.array(to_world(sol, w, h, f["pts"]))
+    m: dict[str, Any] = {}
+    if f["shape"] == "line" and len(P) >= 2:
+        m["length_m"] = float(sum(np.linalg.norm(P[i + 1] - P[i]) for i in range(len(P) - 1)))
+        d = P[-1] - P[0]
+        hz = math.hypot(d[0], d[1])
+        if hz > 1e-6 or abs(d[2]) > 1e-6:
+            if d[2] > 0:
+                d = -d
+            m["apparent_dip"] = math.degrees(math.atan2(-d[2], hz))
+            m["trend"] = (math.degrees(math.atan2(d[0], d[1])) + 360) % 360 if hz > 1e-6 else None
+    elif f["shape"] == "poly" and len(P) >= 3:
+        c, e1, e2 = np.array(sol["c"]), np.array(sol["e1"]), np.array(sol["e2"])
+        q = np.c_[(P - c) @ e1, (P - c) @ e2]
+        x, y = q[:, 0], q[:, 1]
+        m["area_m2"] = float(abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / 2)
+        m["perimeter_m"] = float(sum(np.linalg.norm(P[(i + 1) % len(P)] - P[i]) for i in range(len(P))))
+    return m
+
+
+def save_georef(s: Store, pid: int, points: list[dict], kind: Optional[str], by: str) -> dict:
+    clean = []
+    for i, p in enumerate(points):
+        q: dict[str, Any] = {"name": str(p.get("name") or f"G{i + 1}")[:30]}
+        for k in ("u", "v"):  # kosong = koordinat sudah ada, posisi di foto belum diklik
+            v = p.get(k)
+            q[k] = None if v in (None, "") else max(0.0, min(1.0, round(float(v), 6)))
+        for k in ("e", "n", "rl"):
+            v = p.get(k)
+            if v in (None, ""):
+                q[k] = None
+                continue
+            try:
+                q[k] = round(float(str(v).replace(",", ".")), 4)
+            except ValueError:
+                raise ValueError(f"Titik {q['name']}: {k.upper()} harus angka.") from None
+        clean.append(q)
+    names = [q["name"] for q in clean]
+    if len(names) != len(set(names)):
+        raise ValueError("Nama titik georef tidak boleh kembar.")
+    if kind not in (None, "", "wall", "floor"):
+        raise ValueError("Jenis bidang harus 'wall' atau 'floor'.")
+    r = photo(s, pid)
+    gr = {"points": clean, "kind": kind or None}
+    with s.lock, s.conn() as c:
+        c.execute("UPDATE photos SET georef_json=?, edited_by=?, edited_at=? WHERE id=?", (json.dumps(gr), by, core_io.now(), pid))
+        c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
+                  (pid, "georef", json.dumps(r.get("georef"))[:2000] if r.get("georef") else None, f"{len(clean)} titik", "edit", by, core_io.now()))
+    return georef_info(s, pid)
+
+
+def plane_kind(r: dict) -> str:
+    g = r.get("georef") or {}
+    return g.get("kind") or (r.get("desc") or {}).get("photo_type") or "wall"
+
+
+def georef_info(s: Store, pid: int) -> dict:
+    r = photo(s, pid)
+    kind = plane_kind(r)
+    sol = georef_solve(r.get("georef"), r["w"], r["h"], kind)
+    meas = {}
+    if sol and sol.get("ok"):
+        meas = {f["id"]: measure(sol, r["w"], r["h"], f) for f in features(s, pid) if f["shape"] != "point"}
+    return {"georef": r.get("georef") or {"points": [], "kind": None}, "kind": kind, "solution": sol, "measure": meas}
+
+
+# ---------------------------------------------------------------- ekspor STR / DXF (koordinat 3D E, N, RL)
+NO_EXPORT = {"skala"}
+
+
+def _clean_txt(t: Any) -> str:
+    return re.sub(r"[,\r\n]+", " ", str(t or "")).strip()[:60]
+
+
+def export_items(s: Store, ids: list[int]) -> tuple[list[dict], list[str]]:
+    """Fitur tergeoreferensi dari foto-foto terpilih; foto tanpa georef yang sah dilaporkan."""
+    ks = {k["key"]: k for k in kinds(s)}
+    items, skipped = [], []
+    for pid in ids or [p["id"] for p in photos(s)]:
+        r = photo(s, pid)
+        sol = georef_solve(r.get("georef"), r["w"], r["h"], plane_kind(r))
+        if not sol or not sol.get("ok"):
+            skipped.append(f"{r.get('title') or r['name']}: {(sol or {}).get('msg') or 'belum digeoreferensi'}")
+            continue
+        for f in features(s, pid):
+            if f["kind"] in NO_EXPORT:
+                continue
+            k = ks.get(f["kind"]) or {"name": f["kind"], "string": 50, "color": "#7a5aa6"}
+            items.append({"photo": r.get("title") or r["name"], "kind": f["kind"], "kname": k["name"], "string": int(k["string"]),
+                          "color": k["color"], "shape": f["shape"], "name": f.get("name") or "", "attrs": f["attrs"],
+                          "xyz": to_world(sol, r["w"], r["h"], f["pts"])})
+    return items, skipped
+
+
+def to_str(items: list[dict], name: str = "singkapan") -> bytes:
+    """Surpac STR teks: string, Y (northing), X (easting), Z, D1 jenis, D2 nama, D3 foto, D4.. kadar."""
+    L = [f"{_clean_txt(name) or 'singkapan'},{time.strftime('%d-%b-%y')},Core-Ex singkapan,", "0, 0.000, 0.000, 0.000,"]
+    for it in sorted(items, key=lambda x: x["string"]):
+        pts = it["xyz"] + ([it["xyz"][0]] if it["shape"] == "poly" else [])
+        a = it["attrs"]
+        d = [_clean_txt(it["kname"]), _clean_txt(it["name"]), _clean_txt(it["photo"])]
+        for k in ("au_ppm", "ag_ppm", "sxs_pct"):
+            if a.get(k) is not None:
+                d.append(f"{k[:-4] if k != 'sxs_pct' else 'sxs'}={a[k]:g}")
+        for x, y, z in pts:
+            L.append(f"{it['string']}, {y:.3f}, {x:.3f}, {z:.3f}, " + ", ".join(d))
+        L.append("0, 0.000, 0.000, 0.000,")
+    L.append("0, 0.000, 0.000, 0.000, END")
+    return ("\r\n".join(L) + "\r\n").encode("utf-8")
+
+
+_ACI = [(1, (255, 0, 0)), (2, (255, 255, 0)), (3, (0, 255, 0)), (4, (0, 255, 255)), (5, (0, 0, 255)), (6, (255, 0, 255)), (7, (255, 255, 255)),
+        (8, (128, 128, 128)), (30, (255, 127, 0)), (40, (255, 191, 0)), (140, (0, 127, 255)), (170, (0, 0, 127)), (220, (255, 0, 127)),
+        (94, (0, 127, 0)), (14, (127, 0, 0)), (32, (165, 82, 0))]
+
+
+def _aci(hexc: str) -> int:
+    try:
+        r, g, b = int(hexc[1:3], 16), int(hexc[3:5], 16), int(hexc[5:7], 16)
+    except (ValueError, IndexError):
+        return 7
+    return min(_ACI, key=lambda t: (t[1][0] - r) ** 2 + (t[1][1] - g) ** 2 + (t[1][2] - b) ** 2)[0]
+
+
+def to_dxf(items: list[dict]) -> bytes:
+    """DXF R12 ASCII: satu layer per jenis fitur, 3D POLYLINE (poligon tertutup), TEXT untuk label & nama."""
+    def lay(it):
+        return re.sub(r"[^A-Za-z0-9_-]+", "_", it["kname"]).strip("_").upper()[:31] or "FITUR"
+    layers = {}
+    for it in items:
+        layers.setdefault(lay(it), _aci(it["color"]))
+    o = ["0", "SECTION", "2", "HEADER", "9", "$ACADVER", "1", "AC1009", "0", "ENDSEC", "0", "SECTION", "2", "TABLES",
+         "0", "TABLE", "2", "LAYER", "70", str(len(layers))]
+    for n, c in layers.items():
+        o += ["0", "LAYER", "2", n, "70", "0", "62", str(c), "6", "CONTINUOUS"]
+    o += ["0", "ENDTAB", "0", "ENDSEC", "0", "SECTION", "2", "ENTITIES"]
+    for it in items:
+        L = lay(it)
+        if it["shape"] == "point":
+            x, y, z = it["xyz"][0]
+            o += ["0", "TEXT", "8", L, "10", f"{x:.3f}", "20", f"{y:.3f}", "30", f"{z:.3f}", "40", "0.5", "1", _clean_txt(it["name"]) or it["kname"]]
+            continue
+        o += ["0", "POLYLINE", "8", L, "66", "1", "10", "0", "20", "0", "30", "0", "70", str(8 | (1 if it["shape"] == "poly" else 0))]
+        for x, y, z in it["xyz"]:
+            o += ["0", "VERTEX", "8", L, "10", f"{x:.3f}", "20", f"{y:.3f}", "30", f"{z:.3f}", "70", "32"]
+        o += ["0", "SEQEND", "8", L]
+        if it["name"]:
+            x, y, z = it["xyz"][len(it["xyz"]) // 2]
+            o += ["0", "TEXT", "8", L, "10", f"{x:.3f}", "20", f"{y:.3f}", "30", f"{z:.3f}", "40", "0.3", "1", _clean_txt(it["name"])]
+    o += ["0", "ENDSEC", "0", "EOF"]
+    return ("\r\n".join(o) + "\r\n").encode("ascii", "replace")
+
+
+class GeoBody(FBody):
+    id: int
+    points: list[dict[str, Any]]
+    kind: Optional[str] = None
+
+
+class ExpBody(FBody):
+    ids: list[int] = []
+    fmt: str = "str"
+    name: str = "singkapan"
+
+
+@router.post("/georef")
+def api_georef(b: GeoBody) -> dict:
+    return {"ok": True, **save_georef(store(b.folder), b.id, b.points, b.kind, b.by)}
+
+
+@router.post("/georef/info")
+def api_georef_info(b: PidBody) -> dict:
+    return {"ok": True, **georef_info(store(b.folder), b.id)}
+
+
+@router.post("/export/check")
+def api_export_check(b: ExpBody) -> dict:
+    items, skipped = export_items(store(b.folder), b.ids)
+    return {"ok": True, "n": len(items), "skipped": skipped}
+
+
+@router.post("/export")
+def api_export(b: ExpBody):
+    from fastapi.responses import Response
+    items, skipped = export_items(store(b.folder), b.ids)
+    if not items:
+        raise ValueError("Tidak ada fitur tergeoreferensi untuk diekspor." + (" " + "; ".join(skipped) if skipped else ""))
+    if b.fmt == "dxf":
+        return Response(to_dxf(items), media_type="application/dxf")
+    return Response(to_str(items, b.name), media_type="text/plain")

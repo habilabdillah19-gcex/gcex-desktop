@@ -697,3 +697,11 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - **Singkapan** (tombol di bilah atas, di samping Core box): foto singkapan / trenching dimasukkan satu per satu dan disalin ke `_GCEx_Core/singkapan`; deskripsi AI lokal (jenis foto wall / floor, litologi, alterasi, pelapukan ISRM, oksidasi / gossan, vein, struktur, GSI, spasi kekar, zona) dengan isian yang diedit tidak ditimpa AI; digitasi garis / poligon / label dengan snap, geser / sisip / hapus titik, belah & gabung garis; kadar Au / Ag / SxS manual; garis skala (panjang m); pustaka jenis fitur dengan warna & nomor string Surpac yang bisa diubah per proyek.
 - **Infografis** 3 template (Trenching dengan kadar, Mapping dinding tanpa kadar, Overlay saja), kotak kadar & komposit bisa ditarik, posisi legenda, bar skala, ekspor PNG / PDF resolusi penuh.
 - Panduan: PANDUAN_CORE bagian 6c. Tahap berikutnya: georeferensi dari titik survey (2, 3, ≥4 titik), alat ukur dan ekspor STR / DXF.
+
+## 58. Core-Ex 0.26.0 — Singkapan: georeferensi, ukuran 3D, ekspor STR / DXF (Core-Ex versi Qt)
+
+- Fitur baru hanya di **Core-Ex versi Qt** (installer uji di pre-release `core-ex-qt-uji`); Core-Ex Electron di Release tidak berubah.
+- Tab **Georef** di ruang kerja Singkapan: klik tanda Pylox / pita di foto lalu isi E, N, RL hasil pick-up survey (atau tempel dari Excel). 2 titik = similaritas, 3 titik = bidang + affine, ≥4 titik = bidang terbaik + koreksi perspektif; galat per titik & RMS (5+ titik), orientasi bidang, peringatan susunan titik.
+- Ukuran 3D per fitur (panjang, apparent dip, luas / keliling) di form fitur; bar skala infografis memakai skala georef bila tidak ada garis skala.
+- Ekspor **STR Surpac** (Y, X, Z; nomor string per jenis; D1 jenis, D2 nama, D3 foto, kadar) dan **DXF R12** (layer per jenis, 3D polyline) dalam E, N, RL, per foto atau semua foto.
+- Panduan: PANDUAN_CORE bagian 6c langkah 5–6.
