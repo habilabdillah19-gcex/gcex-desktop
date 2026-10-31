@@ -8,7 +8,15 @@ MOCK = """window.showDirectoryPicker=async function(){var r=await navigator.stor
 NOTES = {}; SEQ = [0]
 for _f in os.listdir(IMG):
     if _f.endswith('.png'): os.remove(IMG + _f)
-def note(k, v): NOTES[k] = v; print('  ', k, '=', str(v)[:200], flush=True)
+def note(k, v):
+    """Pencetakan angka hasil tidak boleh menggagalkan pembuatan tutorial: konsol Windows
+    bawaannya cp1252, sedangkan teks panel GC-Ex memuat karakter di luar cp1252."""
+    NOTES[k] = v
+    try:
+        print('  ', k, '=', str(v)[:200], flush=True)
+    except Exception as _e:
+        try: print('  ', k, '= <tidak dapat dicetak di konsol ini:', type(_e).__name__ + '>', flush=True)
+        except Exception: pass
 try: urllib.request.urlopen(P, timeout=2)
 except Exception: subprocess.Popen([sys.executable, '-m', 'http.server', str(PORT)], cwd=R + 'app-dh', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
 C = (412150.0, 9620150.0)

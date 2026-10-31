@@ -280,6 +280,9 @@ jobs:
       - name: Tutorial PDF - data latihan simulasi
         if: github.ref == 'refs/heads/main'
         shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: '1'
         run: |
           python docs/tutorial-gcex/make_sim_data.py docs/tutorial-gcex/data
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal membuat data latihan vein"; }
@@ -289,6 +292,9 @@ jobs:
       - name: Tutorial PDF - tambahan 0.24 (tanpa tangkapan layar)
         if: github.ref == 'refs/heads/main'
         shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: '1'
         run: |
           python docs/tutorial-gcex/src/build_tutorial_024.py 2>&1 | Tee-Object -FilePath tut024.log
           if ($LASTEXITCODE -ne 0) {
@@ -299,6 +305,9 @@ jobs:
       - name: Tutorial PDF - bergambar (tangkapan layar aplikasi)
         if: github.ref == 'refs/heads/main'
         shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: '1'
         timeout-minutes: 40
         run: |
           # Tiap tahap boleh gagal tanpa menggagalkan rilis: bila tangkapan layar tidak jadi, PDF lama
@@ -307,7 +316,7 @@ jobs:
             Write-Host "== $nama"
             & cmd /c "$cmd 2>&1" | Tee-Object -FilePath "tut.log"
             if ($LASTEXITCODE -ne 0) {
-              Get-Content tut.log -Tail 14 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
+              Get-Content tut.log -Tail 30 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
               Write-Host "::warning::$nama gagal - PDF lama di repo tetap dipakai"
               return $false
             }

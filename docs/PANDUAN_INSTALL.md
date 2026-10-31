@@ -635,3 +635,18 @@ Build Windows sekarang membangun ulang tutorial tiap rilis, sehingga isinya sela
 2. **Tutorial Tambahan 0.24** dibangun (`build_tutorial_024.py`). Tidak memerlukan tangkapan layar, jadi kegagalannya **menggagalkan** build — ini harus selalu berhasil.
 3. **Dua tutorial bergambar** dibangun dari tangkapan layar aplikasi (`tutorial_shots.py` → `build_tutorial.py`, `tutorial_bm_shots.py` → `build_tutorial_bm.py`). Langkah ini memerlukan Chromium yang dapat membuka folder proyek lewat File System Access API — itulah sebabnya hanya bisa di runner Windows, bukan kontainer Linux. Bila gagal, build **tetap lanjut** dengan peringatan dan PDF lama di repo yang dipakai, supaya rilis tidak tertahan.
 4. Daftar PDF beserta ukuran dan waktu buatnya ditulis sebagai `::notice::` di ringkasan run, jadi Anda bisa melihat mana yang benar-benar diperbarui.
+
+## 53. GC-Ex Block Model & Drill Hole Ultimate 0.24.5
+
+Perbaikan pembuatan tutorial bergambar di CI, dari hasil run pertama 0.24.4.
+
+Kabar baiknya: **tangkapan layar aplikasi memang berhasil di runner Windows** (tiga gambar pertama jadi), sehingga dugaan bahwa kegagalan sebelumnya adalah batasan kontainer Linux terbukti benar.
+
+Kegagalannya ada di tempat yang tidak terduga: skrip berhenti di dalam `print()`, bukan di aplikasinya. Konsol Windows bawaannya memakai cp1252, sedangkan teks panel GC-Ex yang dicatat sebagai angka hasil memuat karakter di luar cp1252 (misalnya `≥` dan titik tengah) — sehingga `UnicodeEncodeError` menghentikan seluruh tahap tangkapan layar.
+
+Dua lapis perbaikan:
+
+1. Ketiga langkah tutorial di CI dijalankan dengan `PYTHONIOENCODING=utf-8` dan `PYTHONUTF8=1`.
+2. Fungsi `note()` di ketiga skrip tangkapan layar kini menangkap kegagalan pencetakan: angkanya **tetap tercatat** ke `notes.json`, hanya barisnya di log yang diganti keterangan singkat. Pembuatan tutorial tidak boleh gagal hanya karena konsol tidak sanggup mencetak satu karakter.
+
+Ringkasan galat di CI juga diperpanjang dari 14 menjadi 30 baris terakhir, supaya traceback berikutnya terbaca utuh tanpa membuka log.
