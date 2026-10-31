@@ -161,6 +161,10 @@ jobs:
             Select-String -Path qt_test.log -Pattern "FAILED|ERROR|Error|assert|Exception" | Select-Object -First 30 | ForEach-Object { Write-Host ("::warning::qt-test " + $_.Line.Trim()) }
             Write-Host "::warning::uji Core-Ex Qt gagal (exit $rc) - lanjut untuk diagnosis build"
           }
+          # WAJIB: tanpa exit 0, GitHub menambahkan "exit $LASTEXITCODE" di akhir skrip, sehingga langkah ini
+          # tetap GAGAL walau sudah ditangani di atas -> job berhenti dan langkah Release dilewati
+          # (Release 0.23.4 & 0.23.5 tidak terbit karena ini). Hasil uji tetap terlihat sebagai ::warning::.
+          exit 0
       - name: Core-Ex Qt - bangun (PyInstaller)
         shell: pwsh
         run: |
@@ -260,8 +264,27 @@ jobs:
           $files = @(Get-ChildItem rilis -File | ForEach-Object { $_.FullName })
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { gh release delete $tag --cleanup-tag --yes; if ($LASTEXITCODE -ne 0) { throw "gagal menghapus release lama $tag" } }
-          $o = gh release create $tag @files --target $env:GITHUB_SHA --title "GC-Ex $v" --notes-file "rilis/GC-Ex-${v}_CATATAN_RILIS.md" 2>&1
-          if ($LASTEXITCODE -ne 0) { $o | Select-Object -Last 10 | ForEach-Object { Write-Host ("::error::gh " + $_) }; throw "gagal membuat release $tag" }
+          # coba sampai 3x: satu kali gangguan jaringan saat mengunggah installer besar dulu langsung
+          # menggagalkan langkah ini tanpa pesan (Release 0.23.3 tidak terbit)
+          $cr = "rilis/GC-Ex-${v}_CATATAN_RILIS.md"
+          $ok = $false
+          for ($i = 1; $i -le 3 -and -not $ok; $i++) {
+            gh release view $tag *> $null
+            if ($LASTEXITCODE -ne 0) {
+              $o = gh release create $tag @files --target $env:GITHUB_SHA --title "GC-Ex $v" --notes-file $cr 2>&1
+            } else {
+              # release sudah terbentuk tapi sebagian file gagal terunggah -> lengkapi
+              $o = gh release upload $tag @files --clobber 2>&1
+            }
+            if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+            $o | Select-Object -Last 10 | ForEach-Object { Write-Host ("::warning::gh coba-$i " + $_) }
+            Start-Sleep -Seconds 20
+          }
+          if (-not $ok) { $o | Select-Object -Last 10 | ForEach-Object { Write-Host ("::error::gh " + $_) }; throw "gagal membuat release $tag setelah 3 percobaan" }
+          # pastikan semua file benar-benar ada di Release (unggahan bisa gagal sebagian)
+          $ada = @(gh release view $tag --json assets --jq '.assets[].name')
+          $kurang = @($files | ForEach-Object { Split-Path $_ -Leaf } | Where-Object { $ada -notcontains $_ })
+          if ($kurang) { Write-Host ("::error::gh file belum terunggah: " + ($kurang -join ', ')); throw "release $tag tidak lengkap" }
           exit 0
 
       # artifact Actions (cadangan, 7 hari): bila kuota penyimpanan penuh, build tetap dianggap berhasil (installer sudah di Release)

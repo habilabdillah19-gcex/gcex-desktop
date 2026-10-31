@@ -16,7 +16,7 @@ from .card import Card, _esc, btn
 from .dialogs import ask, say
 from .search import SearchBox
 from .table import PhotoModel, PhotoTable, fmt
-from .util import SET, log, run_bg, show_in_folder
+from .util import SET, alive, log, run_bg, show_in_folder
 from .viewer import Viewer
 
 
@@ -51,8 +51,13 @@ class MainWindow(QMainWindow):
         self.poll = QTimer(self)
         self.poll.setInterval(1500)
         self.poll.timeout.connect(self.poll_ai)
-        QTimer.singleShot(50, lambda: self.ai.check())
-        QTimer.singleShot(80, self.poll_ai)
+        # timer milik jendela (bukan QTimer.singleShot lepas): ikut berhenti saat jendela ditutup, sehingga
+        # tidak ada callback yang menyentuh widget yang objek C++-nya sudah dihapus.
+        self.boot = QTimer(self)
+        self.boot.setSingleShot(True)
+        self.boot.setInterval(50)
+        self.boot.timeout.connect(lambda: (self.ai.check(), self.poll_ai()))
+        self.boot.start()
 
     # ================================================================ tata letak
     def _build(self) -> None:
@@ -750,6 +755,8 @@ class MainWindow(QMainWindow):
 
     # ================================================================ AI
     def _ai_pill(self, s: dict) -> None:
+        if not alive(self.pill):  # hasil cek AI datang setelah jendela ditutup
+            return
         dot = "◌" if s.get("wait") else ("●" if s.get("ok") else "○")
         self.pill.setText(f"{dot}  {s.get('text', '')}")
         col = theme.C["ac"] if s.get("ok") else theme.C["er"] if s.get("ok") is False else theme.C["mu"]
@@ -795,6 +802,8 @@ class MainWindow(QMainWindow):
         self.poll_ai()
 
     def poll_ai(self) -> None:
+        if not alive(self.pBar):
+            return
         try:
             j = api.call("/core/ai/status")["job"]
         except api.ApiError:

@@ -463,3 +463,16 @@ Release v0.23.1 berisi installer **GC-Ex Drill Hole Ultimate 0.23.1** (nomor ver
   - Perbaikan: pintasan Ctrl+O (Buka folder) terdaftar dua kali sehingga tidak berfungsi.
   - Perbaikan: hasil pemeriksaan latar (mis. cek Ollama) yang datang setelah jendela / dialog ditutup tidak lagi menimbulkan galat.
 - CI: uji pytest-qt baru (satu jendela, ukuran tampilan, layar penuh, pintasan tidak bentrok, daftar pilihan di sel) dan uji exe: Core-Ex kedua diteruskan ke jendela pertama (peringatan bila gagal, tidak menghentikan rilis).
+
+## 44. Core-Ex 0.23.7
+
+Perbaikan rantai rilis (CI) — Release v0.23.3, v0.23.4 dan v0.23.5 tidak pernah terbit, padahal ketiga installer sudah berhasil dibangun:
+
+- **Uji Core-Ex Qt tidak lagi membatalkan Release.** Langkah uji `pytest-qt` sudah dirancang untuk hanya memberi peringatan bila uji gagal, tetapi GitHub menambahkan `exit $LASTEXITCODE` di akhir setiap skrip PowerShell. Karena kode keluar pytest masih bukan 0, langkah itu tetap dianggap gagal, job berhenti, dan langkah **Kemas & terbitkan GitHub Release** dilewati. Sekarang langkah tersebut ditutup dengan `exit 0`; hasil uji tetap terlihat sebagai anotasi `::warning::`. (Penyebab v0.23.4 & v0.23.5.)
+- **Unggah Release lebih tahan gangguan.** `gh release create` kini dicoba sampai 3×; bila release sudah terbentuk tetapi sebagian file gagal terunggah, file dilengkapi dengan `gh release upload --clobber`. Setelah selesai, daftar file di Release dibandingkan dengan folder `rilis/` dan kekurangannya dilaporkan sebagai galat. Dulu satu kegagalan unggah langsung menghentikan langkah ini tanpa pesan apa pun. (Penyebab v0.23.3.)
+
+Perbaikan Core-Ex Qt:
+
+- Timer awal (cek Ollama & status AI) kini milik jendela, sehingga ikut berhenti saat jendela ditutup — dulu `QTimer.singleShot` lepas masih menyala setelah jendela hilang.
+- Status AI lokal dan jajak pendapat progres AI memeriksa dulu apakah widgetnya masih ada, sehingga galat `Internal C++ object (QPushButton) already deleted` tidak muncul lagi di event loop Qt.
+- Uji `pytest-qt`: setiap uji ditutup dengan menguras tugas latar, jadi hasil tugas uji sebelumnya tidak lagi menggagalkan tahap persiapan uji berikutnya (dulu uji editor segmen & tanda interval error di tahap setup).

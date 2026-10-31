@@ -84,6 +84,20 @@ class _Task(QRunnable):
 _KEEP: set = set()
 
 
+def alive(o: Any) -> bool:
+    """True bila objek Qt masih hidup (objek C++-nya belum dihapus)."""
+    if o is None:
+        return False
+    try:
+        from shiboken6 import isValid
+    except Exception:  # noqa: BLE001
+        return True
+    try:
+        return bool(isValid(o))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _safe(cb: Callable) -> Callable:
     """Hasil tugas latar bisa datang setelah jendela / dialog pemanggilnya ditutup (mis. buka ulang Core-Ex saat cek Ollama
     masih berjalan): widget yang sudah dihapus diabaikan, bukan galat."""
