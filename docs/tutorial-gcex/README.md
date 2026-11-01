@@ -27,7 +27,7 @@ geologi yang relevan bisa dilatih dan jawabannya selalu diketahui:
 | Efek nugget | 5% sampel Au dilonjakkan (emas kasar) → variogram Au bernugget tinggi, Ag jauh lebih jinak |
 
 Ukuran bawaan: **610 bor resource + 459 bor grade control**, ±98.000 baris assay 12 unsur/atribut,
-topografi 2 versi, 2 block model kosong, QAQC, struktur, pick-up, wireframe, data rusak.
+topografi 2 versi, block model kosong (untuk estimasi) dan block model berisi kadar (untuk Block Model), QAQC, struktur, pick-up, wireframe, data rusak.
 `--kecil` untuk latihan cepat (164 bor), `--besar` untuk uji beban (±300.000 baris assay).
 
 Ikut setiap GitHub Release dalam `GC-Ex-<versi>_1_Dokumen.zip` (PDF) dan `GC-Ex-<versi>_2_Data-Latihan.zip` (data).

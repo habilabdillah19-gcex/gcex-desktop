@@ -903,3 +903,28 @@ Domain itu sudah tidak ada sejak data latihan diganti — skrip kini membuat `QV
 Diperbaiki: keempat acuan diganti ke nama domain yang benar-benar dibuat, dan setiap pencarian domain diberi **cadangan** (`|| GM.doms[0]`, atau dijaga `if (d)`) sehingga nama yang tidak ketemu tidak lagi menghentikan seluruh tahap tangkapan layar. Sisa skrip juga disisir: tidak ada lagi Hole ID atau jumlah bor yang dipatok dari data lama.
 
 Kemajuan tahap tangkapan layar sejauh ini: gambar ke-3 → ke-29 → **ke-42** dari sekitar 60.
+
+## 62. GC-Ex Block Model & Drill Hole Ultimate 0.24.14
+
+**Tangkapan layar tutorial Drill Hole akhirnya selesai seluruhnya** — tidak ada lagi penanda jejak dari `tutorial_shots.py`. Kegagalan yang tersisa pindah ke dua tempat lain yang lebih sederhana, dan keduanya akibat penggantian data latihan di 0.24.2:
+
+**1. Block model latihan tidak berisi kadar.** `SIM_BM_GC.csv` yang baru sengaja dibuat **kosong** (`AU_GC = -99` di semua blok) karena dipakai GC-Ex Drill Hole untuk latihan *Model Estimation*. Tetapi GC-Ex Block Model memerlukan model yang **sudah berisi kadar** — tanpa itu tidak ada blok di atas cut-off, tidak ada dig block, dan tidak ada flitch sama sekali:
+
+```
+GAGAL setelah gambar: (belum ada)
+catatan terakhir     : flitches = []
+IndexError: list index out of range
+```
+
+Data latihan kini menyediakan **dua** block model:
+
+| Berkas | Isi | Dipakai |
+|---|---|---|
+| `SIM_BM_GC.csv` | kosong, 10 × 10 × 5 m | GC-Ex Drill Hole — latihan Model Estimation |
+| `SIM_BM_GC_kadar.csv` | **berisi kadar**, 5 × 5 × 2,5 m, 66.147 blok, kolom AU_GC / SG / DOMAIN | GC-Ex Block Model — flitch, dig block, additional flagging, as-mined |
+
+Model berisi kadar itu dihitung dari model geologi yang sama (zona didih, ore shoot, halo), dengan 6,3% blok di atas 0,5 g/t dan 73 tingkat flitch 2,5 m — cukup untuk seluruh latihan Block Model.
+
+**2. RL flitch dipatok dari topografi lama.** Skrip mencari flitch pada `RL 292,5` — nilai yang berasal dari data lama. Sekarang RL diambil dari block model yang benar-benar dimuat (bench dengan blok terbanyak), jadi ukuran dan posisi data latihan boleh berubah tanpa merusak tutorial.
+
+**3. `shot_rusak.py` tidak pernah dijalankan CI.** Gambar `validasi_rusak` (database dengan kesalahan sengaja) dipakai narasi `build_tutorial.py`, tetapi skrip pembuatnya tidak ada di urutan langkah CI — sehingga penyusunan PDF berhenti dengan `KeyError: 'validasi_rusak'`. Kini ikut dijalankan sesudah `tutorial_shots.py`.

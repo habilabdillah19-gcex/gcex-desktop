@@ -7,7 +7,7 @@ def fN(v, d=0): return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.',
 
 ch('Tentang tutorial ini', """<p>Tutorial ini mengajarkan alur kerja <b>grade control dengan block model</b> di aplikasi desktop <b>GC-Ex Block Model 0.20</b>: memotong <b>flitch</b>, membuat <b>dig block</b> otomatis &amp; manual, <b>additional flagging</b> (mis. ore sulfida), meninjau hasil <b>flitch per flitch</b> dari Project Tree, mencatat <b>as-mined</b> dan membandingkan rencana dengan aktual. Semua gambar diambil dari satu kali jalannya latihan dengan data simulasi yang ikut rilis.</p>
 <h3>Yang dibutuhkan</h3><ul><li>Windows 10 / 11 64-bit dengan <b>GC-Ex Block Model</b> terpasang (<code>GC-Ex-Setup-0.20.x.exe</code>) dan lisensi aktif.</li>
-<li>File <code>SIM_BM_GC.csv</code> dari <code>GC-Ex-&lt;versi&gt;_2_Data-Latihan.zip</code> (folder <code>GC-Ex_Drillhole_BlockModel_SIM</code>).</li>
+<li>File <code>SIM_BM_GC_kadar.csv</code> dari <code>GC-Ex-&lt;versi&gt;_2_Data-Latihan.zip</code> (folder <code>GC-Ex_Drillhole_BlockModel_SIM</code>).</li>
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_BM</code>.</li></ul>
 <h3>Alur kerja di Project Tree</h3><table class="t"><tr><th>Langkah</th><th>Node</th><th>Isi</th></tr>
 <tr><td>1–3</td><td>Proyek &middot; Data Spasial &middot; Block Model</td><td>folder proyek, permukaan, block model &amp; warna kelas</td></tr>
@@ -15,7 +15,7 @@ ch('Tentang tutorial ini', """<p>Tutorial ini mengajarkan alur kerja <b>grade co
 <tr><td>6–8</td><td>Dig Block &middot; Laporan &middot; Layout</td><td>dig block, additional flagging, running grade, dig plan PDF / STR</td></tr>
 <tr><td>9–10</td><td>As-Mined &middot; Register</td><td>poligon aktual, rencana vs aktual, register &amp; rekonsiliasi</td></tr></table>""")
 
-ch('Data latihan', f"""<p><code>SIM_BM_GC.csv</code> adalah block model GC <b>sintetis</b> (bukan data perusahaan): {fN(N['nBlok'])} blok 2,5 &times; 2,5 &times; 2,5 m di sekitar vein simulasi, atribut <b>{N['atribut']}</b>, dan <code>DOMAIN</code>.</p>
+ch('Data latihan', f"""<p><code>SIM_BM_GC_kadar.csv</code> adalah block model GC <b>sintetis</b> (bukan data perusahaan): {fN(N['nBlok'])} blok 2,5 &times; 2,5 &times; 2,5 m di sekitar vein simulasi, atribut <b>{N['atribut']}</b>, dan <code>DOMAIN</code>.</p>
 <table class="t"><tr><th>Kolom</th><th>Isi</th></tr><tr><td>AU</td><td>kadar emas (g/t)</td></tr><tr><td>SG</td><td>berat jenis</td></tr>
 <tr><td>S_PCT</td><td><b>baru</b>: sulfur (%) fiktif; naik di bawah zona oksida (RL &lt; 290) dan di dalam vein</td></tr>
 <tr><td>ZN_PPM, CU_PPM</td><td><b>baru</b>: seng &amp; tembaga (ppm) fiktif, mengikuti kadar Au</td></tr><tr><td>DOMAIN</td><td>QV_Utama / QV_HW1 / WASTE</td></tr></table>"""
@@ -25,7 +25,7 @@ ch('Halaman muka & import block model', steps(
  'Buka <b>GC-Ex Block Model</b> dari menu Start. Halaman muka <b>Import data</b> tampil penuh ([[halaman_muka]]).',
  'Isi <b>Nama project site</b> (di sini <i>Site Latihan &middot; Pit Simulasi</i>). Nama ini tampil di bilah atas di bawah <b>Grade Control Excellence</b> dan disimpan per proyek.',
  'Klik <b>Buka / pilih folder proyek</b> lalu pilih folder kosong <code>Proyek_Tutorial_BM</code>.',
- 'Pada <b>Block model</b> pilih <code>SIM_BM_GC.csv</code> ([[import]]), lalu <b>Buka block model &rarr;</b>.')
+ 'Pada <b>Block model</b> pilih <code>SIM_BM_GC_kadar.csv</code> ([[import]]), lalu <b>Buka block model &rarr;</b>.')
  + fig('halaman_muka', 'Halaman muka GC-Ex Block Model: nama project site, folder proyek, proyek tersimpan dan impor data.')
  + fig('import', 'Block model dipilih; file sumber disalin ke folder proyek <code>sumber/</code>.'))
 

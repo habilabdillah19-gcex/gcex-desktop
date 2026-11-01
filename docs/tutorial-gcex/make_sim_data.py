@@ -540,6 +540,46 @@ for z in gz:
 write('SIM_BM_GC.csv', ['X', 'Y', 'Z', 'XINC', 'YINC', 'ZINC', 'AU_GC', 'DOMAIN'], bm)
 print('block model: %d blok' % len(bm))
 
+# ---------------------------------------------------------------- block model GC BERISI KADAR
+# Dipakai GC-Ex Block Model (flitch, dig block, additional flagging, as-mined). Bedanya dengan
+# SIM_BM_GC.csv: model ini sudah BERISI kadar hasil grade control, bukan model kosong yang menunggu
+# diestimasi. Blok 5 x 5 x 2,5 m seperti lazimnya model grade control.
+BG = (5.0, 5.0, 2.5)
+gx3 = np.arange(E0 - 420, E0 + 421, BG[0])
+gy3 = np.arange(N0 - 300, N0 + 301, BG[1])
+gz3 = np.arange(150.0, 331.0, BG[2])
+bmk = []
+for z in gz3:
+    P3 = np.column_stack([np.repeat(gx3, len(gy3)), np.tile(gy3, len(gx3)), np.full(len(gx3) * len(gy3), z)])
+    P3 = P3[P3[:, 2] < topo(P3[:, 0], P3[:, 1]) - 1.0]
+    if not len(P3):
+        continue
+    ins3, d3, w3, a3, b3 = inside_all(P3)
+    dekat = d3 < 12.0                       # hanya di sekitar vein: hemat ukuran berkas
+    if not dekat.any():
+        continue
+    P3 = P3[dekat]; ins3 = ins3[dekat]; d3 = d3[dekat]; w3 = w3[dekat]; a3 = a3[dekat]; b3 = b3[dekat]
+    zt3 = topo(P3[:, 0], P3[:, 1])
+    dwt3 = P3[:, 2] - WT_RL
+    boil3 = np.exp(-(dwt3 / 25.0) ** 2)
+    gsh3 = np.full(len(P3), 0.3)
+    for k in range(len(LENSA)):
+        m3 = w3 == k
+        if m3.any():
+            gsh3[m3] = shoot(a3[m3], b3[m3], LENSA[k])
+    gb3 = np.array([LENSA[max(k, 0)]['g'] for k in w3])
+    leach3 = np.clip(1 - (zt3 - P3[:, 2]) / 15.0, 0, 1)
+    au3 = gb3 * gsh3 * (0.55 + 1.35 * boil3) * (1 - 0.35 * leach3) * np.exp(rng.normal(-0.30, 0.55, len(P3)))
+    halo3 = np.where(d3 < 2, 0.25, np.where(d3 < 6, 0.08, 0.02)) * np.exp(rng.normal(0, 0.5, len(P3)))
+    au3 = np.where(ins3, au3, halo3)
+    sg3 = np.where(ins3, 2.68, 2.62) - 0.05 * leach3 + rng.normal(0, 0.015, len(P3))
+    for i3 in range(len(P3)):
+        dom3 = LENSA[w3[i3]]['nama'] if (ins3[i3] and w3[i3] >= 0) else 'WASTE'
+        bmk.append([round(float(P3[i3, 0]), 2), round(float(P3[i3, 1]), 2), round(float(P3[i3, 2]), 2),
+                    BG[0], BG[1], BG[2], round(float(au3[i3]), 3), round(float(sg3[i3]), 3), dom3])
+write('SIM_BM_GC_kadar.csv', ['X', 'Y', 'Z', 'XINC', 'YINC', 'ZINC', 'AU_GC', 'SG', 'DOMAIN'], bmk)
+print('block model berisi kadar: %d blok' % len(bmk))
+
 # ---------------------------------------------------------------- wireframe lensa 2 (OBJ)
 V = LENSA[1]
 na, nb = 90, 60
@@ -669,7 +709,8 @@ Mulai dari mana
 1. Latihan cepat  : SIM_kecil_collar.csv / _survey / _assay / _geologi  (%d bor)
 2. Data penuh     : SIM_collar.csv / _survey / _assay / _geologi        (%d bor, %d baris assay)
 3. Topografi      : SIM_topo_xyz.csv        (Data Spasial -> topografi)
-4. Block model    : SIM_BM_GC.csv           (Block Model -> import, lalu Model Estimation)
+4. Block model    : SIM_BM_GC.csv           (KOSONG -> GC-Ex Drill Hole: Model Estimation)
+                    SIM_BM_GC_kadar.csv     (BERISI kadar -> GC-Ex Block Model: flitch, dig block, as-mined)
 5. Struktur       : SIM_struktur.csv        (basis data struktur: Dip, Dip_Azimuth, Plunge, Trend)
    Pick-up permukaan: SIM_pickup_survey.csv (Peta / Mapping)
 6. Sesar 3D       : SIM_sesar.csv           (post-mineralisasi, offset 12 m)

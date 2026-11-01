@@ -391,6 +391,8 @@ jobs:
           }
           $a = Tahap "tangkapan layar Drill Hole" "python docs\tutorial-gcex\src\tutorial_shots.py"
           if ($a) {
+            # gambar 'validasi_rusak' (database dengan kesalahan sengaja) dipakai build_tutorial.py
+            Tahap "tangkapan layar database rusak" "python docs\tutorial-gcex\src\shot_rusak.py" | Out-Null
             $b = Tahap "tangkapan layar laterit" "python docs\tutorial-gcex\src\tutorial_lat_shots.py"
             if ($b) { Tahap "susun PDF Modelling & Estimasi" "python docs\tutorial-gcex\src\build_tutorial.py" | Out-Null }
           }
