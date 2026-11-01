@@ -3,3 +3,5 @@
 opencv-python-headless==4.10.0.84
 shapely==2.0.6
 onnxruntime==1.20.1
+# Borang: halaman PDF scan borang -> gambar (PDFium; BSD-3 / Apache-2.0)
+pypdfium2==4.30.0

@@ -185,7 +185,7 @@ jobs:
           Set-Content -Path app_core_qt/version.txt -Value $v -NoNewline -Encoding ascii
           pyinstaller --noconfirm --onedir --windowed --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
-            --add-data "models;models" --hidden-import cv2 --hidden-import onnxruntime --hidden-import shapely --hidden-import shapely.geometry `
+            --add-data "models;models" --hidden-import cv2 --hidden-import onnxruntime --hidden-import shapely --hidden-import shapely.geometry --hidden-import pypdfium2 --collect-all pypdfium2 --collect-all pypdfium2_raw `
             --collect-binaries onnxruntime --exclude-module sympy --exclude-module mpmath `
             --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller DB-Ex Qt gagal" }

@@ -113,8 +113,18 @@ def selftest(folder: str, out: str) -> int:
         res["sam"] = [round(float(m.mean()), 3), round(sc, 3), len(core_vision.mask_polygon(m))]
         res["depth"] = list(core_vision.depth_map(Path(ph)).shape)
         import shapely  # noqa: F401  (ikut terbundel)
+        # Borang: PDF scan -> halaman gambar (pypdfium2 ikut terbundel), rute /core/forms terdaftar
+        import tempfile
+        import pypdfium2 as pdfium
+        from PIL import Image
+        tp = Path(tempfile.mkdtemp()) / "borang_uji.pdf"
+        Image.new("RGB", (400, 560), "white").save(tp, "PDF")
+        pg = pdfium.PdfDocument(str(tp))[0].render(scale=2).to_pil()
+        res["pdf"] = list(pg.size)
+        res["forms"] = len(api.call("/core/forms/open", {"folder": folder})["types"])
         res["ok"] = (bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
-                     and vs["sam"] and vs["depth"] and bool(vs["libs"].get("shapely")) and res["depth"][0] > 0)
+                     and vs["sam"] and vs["depth"] and bool(vs["libs"].get("shapely")) and res["depth"][0] > 0
+                     and res["pdf"][0] > 0 and res["forms"] == 2)
     except Exception as e:  # noqa: BLE001
         import traceback
         res["ok"], res["error"] = False, traceback.format_exc()

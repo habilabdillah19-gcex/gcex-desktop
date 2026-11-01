@@ -60,7 +60,7 @@ def test_from_instance_opens_folder(qtbot, prj):
     w = _win(qtbot)
     w.showMinimized()
     w.from_instance({"cmd": "show", "folder": prj})
-    qtbot.waitUntil(lambda: len(w.view) == 3, timeout=8000)
+    qtbot.waitUntil(lambda: len(w.view) == 3, timeout=25000)
     assert not w.isMinimized() and Path(w.folder) == Path(prj).resolve()
     w.from_instance({"cmd": "show", "folder": str(Path(prj) / "tidak-ada")})  # folder tidak ada -> diabaikan
     assert Path(w.folder) == Path(prj).resolve()

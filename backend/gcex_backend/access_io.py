@@ -111,3 +111,42 @@ def insert(path: str | Path, table: str, columns: list[str], rows: list[list[Any
             cn.rollback()
             raise
         return {"table": table, "added": added, "skipped_existing": skipped, "missing_columns": missing}
+
+
+def create_db(path: str | Path) -> None:
+    """Buat file .accdb kosong (Windows, lewat driver ODBC Access: SQLConfigDataSourceW CREATE_DB)."""
+    import ctypes
+    import sys
+    p = Path(path)
+    if p.exists():
+        return
+    if sys.platform != "win32":
+        raise RuntimeError("Membuat database MS Access baru hanya bisa di Windows.")
+    info = drivers()
+    if not info["access"]:
+        raise RuntimeError(info["hint"])
+    p.parent.mkdir(parents=True, exist_ok=True)
+    attrs = f'CREATE_DB="{p}" General\0\0'
+    ok = ctypes.windll.ODBCCP32.SQLConfigDataSourceW(None, 1, info["access"], attrs)  # 1 = ODBC_ADD_DSN
+    if not ok or not p.exists():
+        raise RuntimeError(f"Gagal membuat database Access baru: {p}")
+
+
+def ensure_table(path: str | Path, table: str, cols: list[tuple[str, str]], key: str | None = None) -> bool:
+    """Buat tabel bila belum ada (cols: [(nama, 'TEXT'|'NUM'|'DATE'|'BOOL')]); kolom yang belum ada ditambahkan.
+    Kembalikan True bila tabel baru dibuat."""
+    tmap = {"TEXT": "TEXT(255)", "NUM": "DOUBLE", "DATE": "DATETIME", "BOOL": "BIT"}
+    with _connect(path, readonly=False) as cn:
+        cur = cn.cursor()
+        names = {t.table_name.lower() for t in cur.tables(tableType="TABLE")}
+        if table.lower() not in names:
+            spec = ", ".join(f"{_q(n)} {tmap[t]}" + (" NOT NULL PRIMARY KEY" if key and n == key else "") for n, t in cols)
+            cur.execute(f"CREATE TABLE {_q(table)} ({spec})")
+            cn.commit()
+            return True
+        have = {c.column_name.lower() for c in cn.cursor().columns(table=table)}
+        for n, t in cols:
+            if n.lower() not in have:
+                cur.execute(f"ALTER TABLE {_q(table)} ADD COLUMN {_q(n)} {tmap[t]}")
+        cn.commit()
+        return False

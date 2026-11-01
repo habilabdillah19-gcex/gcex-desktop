@@ -91,13 +91,16 @@ class MainWindow(QMainWindow):
         # ruang kerja: Core box (foto core) | Singkapan (foto singkapan / trenching hasil mapping)
         self.bModeCore = btn("Core box", "Interpretasi foto core box", sm=True)
         self.bModeOc = btn("Singkapan", "Foto singkapan / trenching hasil mapping: deskripsi AI, digitasi, infografis", sm=True)
-        for b_ in (self.bModeCore, self.bModeOc):
+        self.bModeForm = btn("Borang", "Borang lapangan tulisan tangan (Ore Spotter, RC Drill): AI membaca, Anda periksa, "
+                             "ekspor ke Excel / CSV / SQLite / MS Access", sm=True)
+        for b_ in (self.bModeCore, self.bModeOc, self.bModeForm):
             b_.setCheckable(True)
             b_.setEnabled(False)
             h.addWidget(b_)
         self.bModeCore.setChecked(True)
         self.bModeCore.clicked.connect(lambda: self.set_mode("core"))
         self.bModeOc.clicked.connect(lambda: self.set_mode("oc"))
+        self.bModeForm.clicked.connect(lambda: self.set_mode("form"))
         h.addSpacing(6)
         self.q = SearchBox()
         self.q.setEnabled(False)
@@ -263,6 +266,9 @@ class MainWindow(QMainWindow):
         from .outcrop import OutcropPage
         self.outcrop = OutcropPage(self)
         self.stack.addWidget(self.outcrop)
+        from .forms import FormsPage
+        self.forms = FormsPage(self)
+        self.stack.addWidget(self.forms)
         self.mode = "core"
         self.bSelAll.clicked.connect(lambda: self._sel_all(True))
         self.bSelNone.clicked.connect(lambda: self._sel_all(False))
@@ -311,7 +317,8 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+K"), self, activated=lambda: (self.q.setFocus(), self.q.selectAll()) if self.q.isEnabled() else None)
         QShortcut(QKeySequence("Ctrl+Return"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Ctrl+Enter"), self, activated=self.verify_current)
-        QShortcut(QKeySequence("Escape"), self, activated=lambda: self.outcrop.escape() if self.mode == "oc" else self.interp.escape())
+        QShortcut(QKeySequence("Escape"), self, activated=lambda: self.outcrop.escape() if self.mode == "oc" else (self.forms.escape() if self.mode == "form"
+                                                                                                        else self.interp.escape()))
 
     def _start_page(self) -> QWidget:
         w = QWidget()
@@ -445,20 +452,25 @@ class MainWindow(QMainWindow):
         return next((i for i, r in enumerate(self.view) if r["id"] == self.cur_id), -1)
 
     def set_mode(self, mode: str) -> None:
-        """Pindah ruang kerja Core box / Singkapan (folder proyek sama)."""
+        """Pindah ruang kerja Core box / Singkapan / Borang (folder proyek sama)."""
         self.mode = mode
         self.bModeCore.setChecked(mode == "core")
         self.bModeOc.setChecked(mode == "oc")
+        self.bModeForm.setChecked(mode == "form")
         if not self.folder:
             return
-        oc = mode == "oc"
+        oc = mode != "core"
         self.fbar.setVisible(not oc)
         for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q):
             b_.setVisible(not oc)
-        if oc:
+        if mode == "oc":
             if self.outcrop.folder != self.folder:
                 self.outcrop.open(self.folder)
             self.stack.setCurrentWidget(self.outcrop)
+        elif mode == "form":
+            if self.forms.folder != self.folder:
+                self.forms.open(self.folder)
+            self.stack.setCurrentWidget(self.forms)
         else:
             self.stack.setCurrentIndex(1)
         SET.set("qt_mode", mode)
@@ -526,9 +538,10 @@ class MainWindow(QMainWindow):
         self._recent()
         self.prj.setText(j["folder"])
         self.setWindowTitle(f"{APP_NAME} — {Path(j['folder']).name}")
-        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q, self.bModeCore, self.bModeOc):
+        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q, self.bModeCore, self.bModeOc, self.bModeForm):
             b_.setEnabled(True)
         self.outcrop.folder = ""
+        self.forms.folder = ""
         self.set_mode(self.mode)
         self.q.folder = self.folder
         self.model.thumbs.reset(self.folder)
@@ -783,6 +796,9 @@ class MainWindow(QMainWindow):
                 self.table.go_row(i + 1)
 
     def verify_current(self) -> None:
+        if self.mode == "form":
+            self.forms.verify_next()
+            return
         if self.cur_id is not None and self.folder:
             w = QApplication.focusWidget()
             if w:

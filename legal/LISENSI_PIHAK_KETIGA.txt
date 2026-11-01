@@ -84,6 +84,10 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         tidak diubah)
   ONNX Runtime                1.20.1    MIT                           menjalankan model SAM & Depth
                                                                       Anything secara lokal (offline)
+  pypdfium2 (PDFium)          4.30.0    Apache-2.0 / BSD-3-Clause     membaca halaman PDF scan borang
+                                        (PDFium: BSD-3-Clause +       (DB-Ex Borang); pustaka dinamis
+                                        pustaka pihak ketiga          tidak diubah
+                                        permisif)
   Model SlimSAM-77            -         Apache-2.0 (turunan Segment   segmentasi zona dari klik
     (Segment Anything, ONNX              Anything, Meta AI:            (DB-Ex Singkapan); file ONNX
     Xenova/slimsam-77-uniform)          Apache-2.0)                   tidak diubah
