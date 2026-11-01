@@ -333,17 +333,19 @@ jobs:
           python docs/tutorial-gcex/make_sim_laterit.py docs/tutorial-gcex/data
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal membuat data latihan laterit"; }
           exit 0
-      - name: Tutorial PDF - tambahan 0.24 (tanpa tangkapan layar)
+      - name: Tutorial PDF - Update & Petunjuk Teknis (tanpa tangkapan layar)
         if: github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           PYTHONIOENCODING: utf-8
           PYTHONUTF8: '1'
         run: |
-          python docs/tutorial-gcex/src/build_tutorial_024.py 2>&1 | Tee-Object -FilePath tut024.log
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content tut024.log -Tail 12 | ForEach-Object { Write-Host ("::error::tut024 " + $_) }
-            throw "gagal membangun Tutorial Tambahan 0.24"
+          foreach ($b in @("build_tutorial_update.py","build_petunjuk_teknis.py")) {
+            python ("docs/tutorial-gcex/src/" + $b) 2>&1 | Tee-Object -FilePath tutdoc.log
+            if ($LASTEXITCODE -ne 0) {
+              Get-Content tutdoc.log -Tail 14 | ForEach-Object { Write-Host ("::error::tutdoc " + $_) }
+              throw ("gagal membangun " + $b)
+            }
           }
           exit 0
       - name: Tutorial PDF - bergambar (tangkapan layar aplikasi)

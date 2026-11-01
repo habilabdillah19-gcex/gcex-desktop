@@ -91,7 +91,7 @@ def main():
         (D / "PANDUAN_INSTALL.md", "Panduan_Teknis/PANDUAN_INSTALL.md"),
         (D / "GC-Ex_Tutorial_Aktivasi_Lisensi.pdf", "Tutorial/GC-Ex_Tutorial_Aktivasi_Lisensi.pdf"),
         (D / "tutorial-aktivasi" / "BACA_SAYA.md", "Tutorial/Aktivasi_tutorial_BACA_SAYA.md"),
-    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_0.24_Tambahan.pdf", "Tutorial/GC-Ex_Tutorial_0.24_Tambahan.pdf")] if has_gcex else [])
+    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "GCEx_Tutorial_Update.pdf", "Tutorial/GC-Ex_Tutorial_Update.pdf"), (D / "GCEx_Petunjuk_Teknis.pdf", "Panduan_Teknis/GC-Ex_Petunjuk_Teknis.pdf")] if has_gcex else [])
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
           (D / "DB-Ex_Tutorial_Penggunaan.pdf", "Tutorial/DB-Ex_Tutorial_Penggunaan.pdf"),
           (D / "DB-Ex_Panduan_Teknis.pdf", "Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf"),

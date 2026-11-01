@@ -812,3 +812,22 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 77. DB-Ex 0.36.1 — data simulasi Singkapan & Borang
 
 - Paket **DB-Ex_Data_Dummy** di `_2_Data-Latihan.zip` kini juga berisi data latihan bab 12–16 tutorial: `Foto_Singkapan/` (foto dinding trench sintetis, `Sampel_Trench_TR01.txt`) dan `Borang/` (scan borang fiktif `Borang_Loading_Pit_30Okt.jpg`, `Borang_ROM_31Okt.jpg`, `DDR_31Okt.jpg`, dan ketiganya dalam `Borang_Latihan_3_halaman.pdf`). Semua isi fiktif.
+## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
+
+**Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):
+
+| Berkas | Isi | Tempat di Release |
+|---|---|---|
+| `GCEx_Tutorial_Update.pdf` | Apa yang baru dan bagaimana memakainya: data latihan simulasi baru, latihan terpandu menemukan kembali geometri endapan, klasifikasi keyakinan sumber daya, kerapatan bor per blok, topografi & orthofoto resolusi tinggi, dan yang baru di GC-Ex Block Model | `_1_Dokumen.zip` → `Tutorial/` |
+| `GCEx_Petunjuk_Teknis.pdf` | Cara kerja: arsitektur, folder proyek, alur kerja data, format data bor, dua jalur estimasi (vein vs berlapis), algoritme yang dipakai, klasifikasi, LOD topografi/ortho, format impor-ekspor, Block Model, kerja bersama, batasan, masalah umum, hak cipta | `_1_Dokumen.zip` → `Panduan_Teknis/` |
+
+Keduanya **tidak memakai tangkapan layar aplikasi** — gambarnya diagram yang digambar sendiri dan grafik yang dihitung dari model & berkas data latihan. Akibatnya keduanya dapat dibangun di mesin mana pun, ikut dibangun ulang otomatis tiap rilis, dan angkanya selalu cocok dengan data yang dikirim. Membangun manual:
+
+```
+python docs/tutorial-gcex/src/build_tutorial_update.py
+python docs/tutorial-gcex/src/build_petunjuk_teknis.py
+```
+
+Berkas `GCEx_Tutorial_0.24_Tambahan.pdf` digantikan oleh `GCEx_Tutorial_Update.pdf` (isinya diteruskan dan ditambah bab kerapatan bor serta bab GC-Ex Block Model). Gaya kedua dokumen ditaruh di modul bersama `docs/tutorial-gcex/src/doc_gcex.py`.
+
+Perbaikan CI menyertai: pagar kode markdown pada penulisan ringkasan galat ditulis dengan kutip tunggal — di string PowerShell berkutip ganda, backtick adalah karakter escape sehingga tiga backtick membuat kutipnya tidak pernah tertutup dan seluruh langkah gagal diurai (penyebab run 0.24.8 gagal).

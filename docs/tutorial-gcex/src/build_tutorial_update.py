@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Menyusun 'Tutorial Tambahan GC-Ex 0.24' (HTML -> PDF A4).
+"""Menyusun 'Tutorial Update GC-Ex' (HTML -> PDF A4) untuk GC-Ex Drill Hole Ultimate & Block Model.
 
 BEDANYA dengan build_tutorial.py / build_tutorial_bm.py: tutorial ini TIDAK memakai tangkapan layar
 aplikasi, jadi bisa dibangun di mesin mana pun (termasuk CI Linux) tanpa menjalankan GC-Ex.
 Semua gambarnya dihitung langsung dari model data simulasi (make_sim_data.py) dan dari berkas CSV
 yang dihasilkannya, sehingga angka di gambar selalu cocok dengan data latihan yang dikirim.
 
-Jalankan:  python docs/tutorial-gcex/src/build_tutorial_024.py
-Hasil:     docs/tutorial-gcex/GCEx_Tutorial_0.24_Tambahan.pdf
+Pendamping 'Petunjuk Teknis GC-Ex' (build_petunjuk_teknis.py): kalau petunjuk teknis menjawab
+*bagaimana cara kerjanya*, dokumen ini menjawab *apa yang baru dan bagaimana memakainya*.
+
+Jalankan:  python docs/tutorial-gcex/src/build_tutorial_update.py
+Hasil:     docs/GCEx_Tutorial_Update.pdf
 """
 import csv
 import datetime
@@ -19,13 +22,13 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-from playwright.sync_api import sync_playwright
+import doc_gcex as D
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TUT = os.path.abspath(os.path.join(HERE, '..'))
 DATA = os.path.join(TUT, 'data')
-FIGD = os.path.join(HERE, 'fig_024')
-PDF = os.path.join(TUT, 'GCEx_Tutorial_0.24_Tambahan.pdf')
+FIGD = os.path.join(HERE, 'fig_update')
+PDF = os.path.join(os.path.abspath(os.path.join(TUT, '..')), 'GCEx_Tutorial_Update.pdf')
 os.makedirs(FIGD, exist_ok=True)
 
 INK, ACC, ACC2, MUT = '#1b2a3a', '#1f4e8c', '#c98a16', '#6b7682'
@@ -288,51 +291,28 @@ fign = [0]
 
 def fig_html(key, cap):
     fign[0] += 1
-    return ('<figure><img src="fig_024/%s"><figcaption><b>Gambar %d.</b> %s</figcaption></figure>'
+    return ('<figure><img src="fig_update/%s"><figcaption><b>Gambar %d.</b> %s</figcaption></figure>'
             % (F[key], fign[0], cap))
 
 
-CSS = """
-@page { size: A4; margin: 18mm 16mm 16mm 16mm; }
-body { font-family: 'Segoe UI', Arial, sans-serif; color: #1b2a3a; font-size: 10pt; line-height: 1.5; }
-h1 { font-size: 20pt; color: #1f4e8c; margin: 0 0 2mm; }
-h2 { font-size: 13pt; color: #1f4e8c; border-bottom: 1.5pt solid #1f4e8c; padding-bottom: 1mm;
-     margin: 9mm 0 3mm; page-break-after: avoid; }
-h3 { font-size: 11pt; margin: 5mm 0 1.5mm; page-break-after: avoid; }
-p { margin: 0 0 2.5mm; text-align: justify; }
-figure { margin: 4mm 0; page-break-inside: avoid; }
-figure img { width: 100%; border: 0.5pt solid #d6dde6; }
-figcaption { font-size: 8pt; color: #6b7682; margin-top: 1.2mm; }
-table { border-collapse: collapse; width: 100%; font-size: 8.6pt; margin: 3mm 0; page-break-inside: avoid; }
-th, td { border: 0.5pt solid #d6dde6; padding: 1.4mm 2mm; text-align: left; vertical-align: top; }
-th { background: #eef2f7; color: #1f4e8c; }
-code { background: #f3f6f9; padding: 0 1mm; font-size: 9pt; }
-.lead { font-size: 10.5pt; color: #42526b; }
-.box { border-left: 3pt solid #1f4e8c; background: #f7f9fb; padding: 2.5mm 3mm; margin: 3mm 0; }
-.warn { border-left: 3pt solid #c98a16; background: #fdf8ee; padding: 2.5mm 3mm; margin: 3mm 0; }
-.cover { text-align: center; padding-top: 55mm; }
-.cover .sub { color: #6b7682; font-size: 11pt; margin-top: 3mm; }
-.toc { font-size: 9.5pt; } .toc li { margin: 1mm 0; }
-ol.steps > li { margin: 0 0 2mm; }
-.page { page-break-after: always; }
-small { color: #6b7682; }
-"""
+VBM, VDH = D.versi()
+
 
 B = []
-B.append('<div class="cover page"><h1>Tutorial Tambahan GC-Ex 0.24</h1>'
-         '<div class="sub">Klasifikasi keyakinan sumber daya &middot; Topografi &amp; orthofoto resolusi tinggi'
-         '<br>Data latihan simulasi baru: array vein en-echelon ber-<i>ore shoot</i></div>'
-         '<p style="margin-top:22mm"><small>Pelengkap <i>Tutorial Modelling &amp; Estimasi</i> dan '
-         '<i>Tutorial Block Model</i>. Semua gambar di dokumen ini dihitung langsung dari model dan berkas '
-         'data latihan, bukan tangkapan layar, sehingga angkanya selalu cocok dengan data yang Anda terima.'
-         f'<br>Disusun otomatis {e(TGL)}.</small></p></div>')
-
-B.append('<h2>Isi</h2><ol class="toc">'
-         '<li>Data latihan simulasi baru &mdash; model geologi &amp; daftar berkas</li>'
-         '<li>Latihan terpandu: menemukan kembali geometri endapan</li>'
-         '<li>Klasifikasi keyakinan sumber daya di Reporting BM</li>'
-         '<li>Topografi &amp; orthofoto resolusi sangat tinggi</li>'
-         '<li>Bagian tutorial lama yang perlu disesuaikan</li></ol>')
+B.append(D.cover(
+    'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
+    'Tutorial Update GC-', 'Ex',
+    'Apa yang baru di GC-Ex Drill Hole Ultimate dan GC-Ex Block Model, dan bagaimana memakainya: '
+    'data latihan simulasi baru, klasifikasi keyakinan sumber daya, kerapatan bor per blok, serta '
+    'topografi &amp; orthofoto resolusi tinggi. Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
+    ['1. Data latihan simulasi baru', '2. Latihan terpandu: menemukan kembali geometri endapan',
+     '3. Klasifikasi keyakinan sumber daya', '4. Kerapatan bor per blok',
+     '5. Topografi &amp; orthofoto resolusi tinggi', '6. GC-Ex Block Model: yang baru',
+     '7. Bagian tutorial lama yang perlu disesuaikan'],
+    'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
+    'Semua gambar di dokumen ini <b>dihitung langsung dari model dan berkas data latihan</b>, bukan '
+    'tangkapan layar, sehingga angkanya selalu cocok dengan data yang Anda terima.<br>'
+    'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.' % (VBM, VDH, D.tanggal())))
 
 # ---- 1
 B.append('<h2>1. Data latihan simulasi baru</h2>')
@@ -451,6 +431,12 @@ B.append('<table><tr><th>Atribut</th><th>Arti</th></tr>'
          'efficiency (dapat dipilih)</td></tr></table>')
 B.append(fig_html('klas', 'Alur penentuan kelas. Blok diuji berurutan dari syarat terketat; yang tidak '
                           'memenuhi turun ke kelas berikutnya.'))
+B.append(D.tabel(['Kelas', 'Syarat bawaan (semuanya dapat diubah di panel)'], [
+    ['<b>Measured</b>', 'pass &le; 1, komposit &ge; 12, SoR &ge; 0,75, lubang bor berbeda &ge; 3, spasi bor &le; 25 m'],
+    ['<b>Indicated</b>', 'pass &le; 2, komposit &ge; 7, SoR &ge; 0,45, lubang bor berbeda &ge; 2, spasi bor &le; 50 m'],
+    ['<b>Inferred</b>', 'blok terestimasi lainnya'],
+    ['Belum terklasifikasi', 'blok tanpa estimasi']]))
+B.append('<p>Dua syarat terakhir dijelaskan di bab 4.</p>')
 B.append('<h3>Langkah</h3><ol class="steps">'
          '<li>Jalankan <b>Model Estimation</b> seperti biasa.</li>'
          '<li>Buka <b>Reporting BM</b> &rsaquo; bagian <b>&#9312; Atribut</b>. Di bawahnya ada kotak '
@@ -473,7 +459,36 @@ B.append('<p><b>Latihan.</b> Pada data simulasi, bagian dalam endapan (lebih dar
          '<b>Measured</b>. Kalau hasilnya tidak begitu, ambang Anda terlalu longgar.</p>')
 
 # ---- 4
-B.append('<div class="page"></div><h2>4. Topografi &amp; orthofoto resolusi sangat tinggi</h2>')
+B.append('<div class="page"></div><h2>4. Kerapatan bor per blok</h2>')
+B.append('<p class="lead">Jumlah komposit saja bukan ukuran kerapatan bor. Dua puluh komposit dari '
+         '<b>satu</b> lubang bor tidak sama artinya dengan dua puluh komposit dari enam lubang &mdash; '
+         'padahal justru kerapatan bor itulah yang dipakai Competent Person untuk menetapkan kelas.</p>')
+B.append('<p>Karena itu <b>Model Estimation</b> kini merekam tiga atribut baru per blok, dihitung dari '
+         'komposit yang benar-benar dipakai kriging:</p>')
+B.append(D.tabel(['Atribut', 'Arti'], [
+    ['<code>est_nhole</code>', 'jumlah <b>lubang bor berbeda</b> yang komposit-nya dipakai blok itu'],
+    ['<code>est_dmin</code>', 'jarak (m) dari pusat blok ke komposit terdekat yang dipakai'],
+    ['<code>est_spasi</code>', 'perkiraan <b>spasi bor setempat</b> (m): tiap lubang diwakili komposit '
+     'terdekatnya ke blok, lalu dirata-ratakan jarak mendatar tiap lubang ke lubang terdekat lainnya. '
+     'Bernilai &minus;99 bila lubang yang dipakai kurang dari dua']]))
+B.append('<p>Ketiganya ikut ke block model, tampilan 3D, reporting dan export <code>.mdl</code> seperti '
+         'atribut estimasi lainnya &mdash; jadi dapat juga Anda pakai sebagai filter atau pewarnaan sendiri, '
+         'bukan hanya untuk klasifikasi.</p>')
+B.append('<p>Contoh perbedaannya pada uji dengan kisi bor teratur:</p>')
+B.append(D.tabel(['Keadaan blok', 'Kelas menurut aturan lama', 'Kelas sekarang'], [
+    ['4 bor, spasi 20 m, 16 komposit', 'Measured', 'Measured'],
+    ['<b>1 bor</b>, 20 komposit', 'Measured', '<b>Inferred</b>'],
+    ['3 bor, <b>spasi 80 m</b>, 16 komposit', 'Measured', '<b>Inferred</b>'],
+    ['2 bor, spasi 40 m, 10 komposit', 'Indicated', 'Indicated']]))
+B.append('<div class=warn>&#9888; Block model yang diestimasi dengan versi sebelum 0.24.4 belum punya '
+         '<code>est_nhole</code> / <code>est_spasi</code>. Panel memberi tahu hal ini, kedua syarat itu '
+         'diabaikan, dan hasilnya sama seperti sebelumnya. Jalankan ulang <b>Model Estimation</b> agar '
+         'kerapatan bor ikut terekam.</div>')
+B.append('<p><b>Latihan.</b> Pada data simulasi, bagian dalam endapan (lebih dari &plusmn;140 m menurun dip) '
+         'hanya terbor di tiap sayatan ke-3. Jalankan klasifikasi lalu warnai block model dengan '
+         '<code>est_spasi</code>: bagian itu akan terlihat jelas renggang, dan wajar jatuh ke Inferred.</p>')
+
+B.append('<div class="page"></div><h2>5. Topografi &amp; orthofoto resolusi sangat tinggi</h2>')
 B.append('<p class="lead">Juga baru di 0.24, di <b>kedua</b> aplikasi: orthofoto dan topografi resolusi tinggi '
          'kini bisa ditampilkan tanpa membuat tampilan tersendat.</p>')
 B.append('<p>Yang berubah di dalam: orthofoto disusun menjadi <b>piramida LOD</b> (tiap tingkat merata-ratakan '
@@ -511,7 +526,31 @@ B.append('<p><b>Latihan.</b> Import <code>SIM_topo_xyz.csv</code> sebagai topogr
          'untuk kedua versi &mdash; bedanya adalah material yang sudah tergali.</p>')
 
 # ---- 5
-B.append('<div class="page"></div><h2>5. Bagian tutorial lama yang perlu disesuaikan</h2>')
+B.append('<div class="page"></div><h2>6. GC-Ex Block Model: yang baru</h2>')
+B.append('<p class="lead">Perbaikan di GC-Ex Block Model berpusat pada satu keluhan: digitasi manual dulu '
+         'terasa seperti warga kelas dua dibanding dig block otomatis. Sekarang keduanya setara.</p>')
+B.append(D.tabel(['Yang berubah', 'Keterangan'], [
+    ['<b>Digitasi manual setara otomatis</b>', 'menekan <b>Enter</b> menutup string secara otomatis, lalu '
+     'poligonnya mendapat menu yang sama dengan hasil otomatis: edit bentuk, ubah warna, dan hitungan '
+     'grade &times; tonase'],
+    ['<b>Poligon as-mined dapat diedit</b>', 'bentuk maupun warnanya, tidak lagi hanya dapat dilihat'],
+    ['<b>Register poligon</b>', 'warna dapat diubah, tidak lagi hanya String ID'],
+    ['<b>Subnode per flitch di Project Tree</b>', 'audit atau review dapat langsung memilih flitch yang '
+     'dimaksud, tanpa menelusuri dari awal'],
+    ['<b>Tampilan 3D dig block &rarr; as-mined</b>', 'satu menu untuk melihat hasil pekerjaan dari pembuatan '
+     'dig block sampai model as-mined'],
+    ['<b>Rekap as-mined satu berkas</b>', 'hasil running as-mined murni dapat digabung menjadi satu '
+     '<code>.mdl</code>'],
+    ['<b>Penampang Sayatan seragam</b>', 'UI/UX Penampang 2D dan Sayatan 3D freehand dibuat sama dengan '
+     'GC-Ex Drill Hole Ultimate'],
+    ['<b>Tanpa jeda saat zoom</b>', 'segmen garis yang bersambung digabung dan kotak blok 2D dirapatkan, '
+     'sehingga window zoom tidak lagi tersendat'],
+    ['<b>Topografi &amp; orthofoto resolusi tinggi</b>', 'sama dengan Drill Hole Ultimate (bab 5)']]))
+B.append('<div class=box>Garis putus-putus merah yang dulu tidak bisa dihapus pada dig block berasal dari '
+         'pemutus segmen yang ditulis di setiap ruas poligon. Segmen yang bersambung kini disatukan, jadi '
+         'garis itu tidak muncul lagi dan gambarnya jauh lebih ringan.</div>')
+
+B.append('<div class="page"></div><h2>7. Bagian tutorial lama yang perlu disesuaikan</h2>')
 B.append('<p>Dua tutorial bergambar yang lama masih berlaku untuk alur kerjanya, tetapi beberapa nama dan '
          'angkanya mengikuti data simulasi versi sebelumnya:</p>')
 B.append('<table><tr><th>Di tutorial lama</th><th>Sekarang</th></tr>'
@@ -529,24 +568,6 @@ B.append('<table><tr><th>Di tutorial lama</th><th>Sekarang</th></tr>'
 B.append('<p>Langkah-langkah menu, urutan kerja dan penjelasan konsep di kedua tutorial itu tidak berubah. '
          'Yang perlu Anda sesuaikan hanya nama domain yang diketik dan angka yang muncul di layar.</p>')
 
-HTML = ('<html><head><meta charset="utf-8"><style>%s</style></head><body>%s</body></html>'
-        % (CSS, '\n'.join(B)))
-tmp = os.path.join(HERE, '_tutorial_024.html')
-open(tmp, 'w', encoding='utf-8').write(HTML)
-
-with sync_playwright() as pw:
-    b = pw.chromium.launch(args=['--disable-dev-shm-usage'])
-    pg = b.new_page()
-    pg.goto('file://' + tmp)
-    pg.wait_for_timeout(700)
-    pg.pdf(path=PDF, format='A4', print_background=True,
-           margin={'top': '0', 'bottom': '0', 'left': '0', 'right': '0'},
-           display_header_footer=True,
-           header_template='<div></div>',
-           footer_template='<div style="font-size:7pt;color:#6b7682;width:100%;text-align:center;'
-                           'font-family:Arial">Tutorial Tambahan GC-Ex 0.24 &middot; halaman '
-                           '<span class="pageNumber"></span> / <span class="totalPages"></span></div>')
-    b.close()
-os.remove(tmp)
-print('OK', PDF, os.path.getsize(PDF), 'byte')
+sz = D.render(B, PDF, 'Tutorial Update GC-Ex %s / %s' % (VBM, VDH))
+print('OK', PDF, sz, 'byte')
 print('angka:', NOTE)
