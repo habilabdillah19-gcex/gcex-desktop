@@ -882,3 +882,24 @@ catatan terakhir     : upsPrev = Pratinjau: Collar: 7 baru, ...
 ```
 
 Penanda itu diisi otomatis oleh fungsi `shot()` dan `note()` yang sudah ada, dan dicetak lewat `sys.excepthook` sehingga tidak perlu mengubah susunan skrip. CI ikut menampilkan kedua baris itu sebagai anotasi, jadi langkah penyebabnya langsung terlihat tanpa membuka log.
+
+## 61. GC-Ex Block Model & Drill Hole Ultimate 0.24.13
+
+Penanda jejak 0.24.12 langsung menjawab pertanyaannya:
+
+```
+GAGAL setelah gambar: 42_me_panel.png
+catatan terakhir     : gsDomMsg = ✓ Tersimpan ke QV_Lensa2. Lanjut di menu Model Estimation.
+```
+
+Dua baris sesudah gambar ke-42 masih mencari domain bernama `QV_Utama`:
+
+```js
+var d = GM.doms.find(x => x.name === 'QV_Utama');  PT.select('gs.d.' + d.id)
+```
+
+Domain itu sudah tidak ada sejak data latihan diganti — skrip kini membuat `QV_Lensa2` dan `QV_Splay_HW`. Saat itu saya hanya mengganti baris `gmAddDom` dan nama berkas `.obj`, tidak menyisir seluruh skripnya; empat acuan nama lama tertinggal, dan dua di antaranya membaca `.id` dari hasil pencarian yang kosong.
+
+Diperbaiki: keempat acuan diganti ke nama domain yang benar-benar dibuat, dan setiap pencarian domain diberi **cadangan** (`|| GM.doms[0]`, atau dijaga `if (d)`) sehingga nama yang tidak ketemu tidak lagi menghentikan seluruh tahap tangkapan layar. Sisa skrip juga disisir: tidak ada lagi Hole ID atau jumlah bor yang dipatok dari data lama.
+
+Kemajuan tahap tangkapan layar sejauh ini: gambar ke-3 → ke-29 → **ke-42** dari sekitar 60.

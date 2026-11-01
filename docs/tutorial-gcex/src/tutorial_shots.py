@@ -88,7 +88,7 @@ with sync_playwright() as pw:
     shot('gm_usulan_param',PANEL)
     ev("gmAuto()");note('auto',ev("(GM.lastAuto||'(tidak ada)').replace(/<[^>]+>/g,'')"));pg.wait_for_timeout(500);shot('gm_usulan_hasil')
     E2=ev("""(()=>{var r=[];GM.flags&&Object.keys(GM.flags).forEach(id=>{GM.flags[id].forEach(f=>{r.push([id,f[0],f[1]]);});});return r.length;})()""");note('nRunAuto',E2)
-    # 9. koreksi flag: hole yang menembus dua vein -> intercept dangkal = QV_HW1
+    # 9. koreksi flag: hole yang menembus dua vein -> intercept dangkal = QV_Splay_HW
     two=ev("""(()=>{var o=[];Object.keys(GM.flags).forEach(id=>{var L=GM.flags[id];if(L.length>=2&&L[L.length-1][0]-L[0][1]>8)o.push([id,L[0][0],L[0][1]]);});return o;})()""");note('holeDuaVein',len(two))
     hid=two[0][0];note('contohHole',hid)
     ev("""(()=>{var c=collars.find(c=>c[0]===%r),az=315*Math.PI/180;$('sMode').value='P';$('p1e').value=(c[1]-20*Math.sin(az)).toFixed(1);$('p1n').value=(c[2]-20*Math.cos(az)).toFixed(1);$('p2e').value=(c[1]+110*Math.sin(az)).toFixed(1);$('p2n').value=(c[2]+110*Math.cos(az)).toFixed(1);
@@ -128,7 +128,7 @@ with sync_playwright() as pw:
     ev("uiTab('Model')");pg.set_input_files("input[onchange='mdImport(this)']",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.length>0",timeout=60000);pg.wait_for_timeout(800)
     shot('wireframe_import');note('wf',ev("MD.models.map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
     ev("uiTab('GM');GM._openWf=true;WF.dom='__new';gmPanel();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
-    ev("GM.doms.find(d=>/Leapfrog/.test(d.name)).col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty()");pg.wait_for_timeout(500);shot('wireframe_iris')
+    ev("var w=GM.doms.find(d=>/Leapfrog/.test(d.name));if(w)w.col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty()");pg.wait_for_timeout(500);shot('wireframe_iris')
     ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));note('solidWf',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));shot('wireframe_panel',PANEL)
     ev("var d=GM.doms.find(d=>/Leapfrog/.test(d.name));if(d){d.vis=false;gmDirty();}")
     ev("try{lyrSet('wf',false)}catch(e){MD.models.forEach(m=>m.vis=false);updatePlot()}")
@@ -151,7 +151,7 @@ with sync_playwright() as pw:
     ev("gmAct(GM.doms[0].id);gmDraft(true)");note('strUpd',ev("(GM.lastStr||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("$('pos').value=0;if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(500);shot('upsert_string_baru')
     note('solidInfill',ev(SOL));note('solidInfillMsg',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
-    # 13. geostatistik domain QV_Utama: sayatan sejajar bidang vein (strike 45, dip 70), slab tebal
+    # 13. geostatistik domain QV_Lensa2: sayatan sejajar bidang vein (strike 45, dip 70), slab tebal
     ev("""(()=>{var cx=505000,cy=9012000,az=45*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-130*Math.sin(az)).toFixed(1);$('p1n').value=(cy-130*Math.cos(az)).toFixed(1);$('p2e').value=(cx+130*Math.sin(az)).toFixed(1);$('p2n').value=(cy+130*Math.cos(az)).toFixed(1);
       $('dipS').value=70;$('dipN').value=70;modeChanged();$('pos').value=0;$('thick').value=40;$('sliceClip').checked=true;if(VIEW2D)toggle2D();updatePlot();
       uiTab('Geo');$('domAttr').value=GMCI;domAttrChanged();domAll(false);domSet(0,true);domChips();})()""")
@@ -176,8 +176,8 @@ with sync_playwright() as pw:
     # 13c. Model Estimation
     ev("if(GS.open)gsToggle();$('domAttr').value=-1;domAttrChanged();$('bmShow').checked=false;$('sliceClip').checked=false;if(VIEW2D)toggle2D();uiTab('ME');ME._openPar=true;mePanel()");pg.wait_for_timeout(400);shot('me_panel',PANEL)
     # 0.20: domain aktif dari node Geostatistik & Model Estimation di Project Tree
-    ev("var d=GM.doms.find(x=>x.name==='QV_Utama');PT.open['gs']=1;PT.select('gs.d.'+d.id)");pg.wait_for_timeout(1800);shot('dom20_gs',{'x':1040,'y':0,'width':560,'height':560})
-    ev("var d=GM.doms.find(x=>x.name==='QV_Utama');PT.open['me']=1;PT.select('me.d.'+d.id);if(GS.open)gsToggle()");pg.wait_for_timeout(800);shot('dom20_me',PANEL)
+    ev("var d=GM.doms.find(x=>x.name==='QV_Lensa2')||GM.doms[0];PT.open['gs']=1;PT.select('gs.d.'+d.id)");pg.wait_for_timeout(1800);shot('dom20_gs',{'x':1040,'y':0,'width':560,'height':560})
+    ev("var d=GM.doms.find(x=>x.name==='QV_Lensa2')||GM.doms[0];PT.open['me']=1;PT.select('me.d.'+d.id);if(GS.open)gsToggle()");pg.wait_for_timeout(800);shot('dom20_me',PANEL)
     ev("var d=GM.doms.find(x=>/Leapfrog/.test(x.name));if(d)ME.sel[d.id]=false;meRun()");pg.wait_for_function("!ME.job",timeout=900000);pg.wait_for_timeout(600)
     MER="JSON.stringify(ME.store.runs.filter(q=>q.id===Math.max.apply(null,ME.store.runs.map(r=>r.id))).map(q=>[q.dom,q.first,q.nHole,q.nIn,q.nAff,q.nEst,q.nAddC,q.nRev,q.nFail,q.cnt,q.v?+q.v.comp.toFixed(3):null,q.v?+q.v.mean.toFixed(3):null,q.v&&q.v.gc!=null?+q.v.gc.toFixed(3):null,q.v?Math.round(q.v.vol):0,q.v?Math.round(q.v.ton):0,q.v?Math.round(q.v.metal):0,q.v?Math.round(q.v.metalGc):0,q.ms,(q.holes||[]).join(' ')]))"
     note('me1',ev(MER));note('meBM',ev("[BX.m._meBase.n,BX.m.n,meGcAttr()]"))
