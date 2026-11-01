@@ -278,7 +278,7 @@ Cara tulis cepat di lapangan dipahami program (sel yang diisi program ditandai *
 - **Jam menit saja**: *19.02* lalu *05* → 19:05; menit lebih kecil dari baris atas → jam berikutnya (*19.55* lalu *03* → 20:03).
 - **Nomor truk singkat** (borang loading pit): *4026* lalu *26* → 4026; *4026* lalu *45* → 4045.
 - Baris yang hanya mengganti Pit / Elevation tanpa truk tidak dijadikan baris; nilainya dibawa ke baris berikutnya. Sel Pit, Elevation, Tujuan, Asal, Status dan Keterangan yang kosong diisi dari baris atas.
-- **Shift II melewati tengah malam**: kolom *Tanggal muat* = tanggal borang + 1 untuk jam sebelum 12:00. Validasi menandai jam di luar shift (shift I 05:00–21:00, shift II 17:00–09:00) dan jam yang mundur.
+- **Shift II melewati tengah malam**: kolom *Tanggal muat* = tanggal borang + 1 untuk jam sebelum 12:00. Validasi menandai jam di luar shift (shift I / DS 06:00–18:00, shift II / NS 18:00–06:00) dan jam yang mundur.
 
 Langkah:
 

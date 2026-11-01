@@ -95,6 +95,7 @@ TYPES: dict[str, dict] = {
 }
 KELAS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "SCAT", "OX-MO", "SF-MO"]
 ORE_TYPES = ("ore", "rom")
+SHIFT_DS = (6, 18)  # shift I / siang (DS) 06:00-18:00, shift II / malam (NS) 18:00-06:00
 # sel kosong hasil AI -> diisi dari baris atas (ditandai kuning); tanda ulang -> nilai baris atas
 CARRY = {"ore": ("pit", "elevasi", "tujuan"), "rom": ("asal", "tujuan", "status", "keterangan")}
 DITTO = {"ore": ("start", "finish", "pit", "elevasi", "kelas", "tujuan"),
@@ -694,10 +695,10 @@ def validate(d: dict, rs: list[dict], others: Optional[list[dict]] = None) -> di
                 bad(r, tk or "start", "jam loading kosong")
             elif jam:
                 hh = int(jam[:2])
-                if ks == "DS" and (hh < 5 or hh >= 21):
-                    bad(r, k_jam, f"jam {jam} di luar shift siang (I) — periksa jam / shift")
-                elif ks == "NS" and 9 <= hh < 17:
-                    bad(r, k_jam, f"jam {jam} di luar shift malam (II) — periksa jam / shift")
+                if ks == "DS" and not SHIFT_DS[0] <= hh < SHIFT_DS[1]:
+                    bad(r, k_jam, f"jam {jam} di luar shift siang (I, {SHIFT_DS[0]:02d}:00-{SHIFT_DS[1]:02d}:00) — periksa jam / shift")
+                elif ks == "NS" and SHIFT_DS[0] <= hh < SHIFT_DS[1]:
+                    bad(r, k_jam, f"jam {jam} di luar shift malam (II, {SHIFT_DS[1]:02d}:00-{SHIFT_DS[0]:02d}:00) — periksa jam / shift")
                 mins = hh * 60 + int(jam[3:]) + (1440 if ks == "NS" and hh < 12 else 0)
                 if prev_t is not None and mins < prev_t[0]:
                     bad(r, k_jam, f"jam mundur dari {prev_t[1]}")

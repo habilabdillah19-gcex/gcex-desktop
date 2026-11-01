@@ -160,6 +160,10 @@ def test_rom_crusher_fill_and_derive(st, monkeypatch):
     assert D[2]["tujuan"] == "Crusher" and D[2]["rehandling"] == ""
     v = cf.validate(cf.doc(s, did), rs)
     assert "tidak urut" not in str(v) and not v["header"]
+    # jam shift site: I / DS 06-18, II / NS 18-06
+    late = [dict(r, data=dict(r["data"], finish=t)) for r, t in zip(rs, ("05:59", "17:59", "18:00"))]
+    bad = cf.validate(cf.doc(s, did), late)["rows"]
+    assert "06:00-18:00" in bad[rs[0]["id"]]["finish"] and "finish" not in bad.get(rs[1]["id"], {}) and "finish" in bad[rs[2]["id"]]
     recs = cf.records(cf.doc(s, did), rs)
     assert (recs[0]["unit"], recs[0]["jenis"], recs[2]["jenis"], recs[2]["material"], recs[0]["kode_shift"]) == \
         ("7101", "DIRECT", "REHANDLING", "SCAT", "DS")
