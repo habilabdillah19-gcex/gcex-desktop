@@ -14,6 +14,6 @@ tutorial (bagian Pengantar).
 
 ## Tutorial PDF bergambar
 
-`docs/DB-Ex_Tutorial_Penggunaan.pdf` (11 latihan, 20 tangkapan layar) dibuat dari `tutorial.html` di folder ini.
+`docs/DB-Ex_Tutorial_Penggunaan.pdf` (latihan 0–11, 27 tangkapan layar) dibuat dari `tutorial.html` di folder ini.
 Gambar di `gambar/` diambil dari DB-Ex yang menjalankan paket data dummy ini dengan backend lokal dan Ollama tiruan
 (jawaban AI contoh), dengan nama pemeriksa fiktif "Rina W.". Cetak ulang: buka `tutorial.html` di Chrome/Edge → Cetak → Simpan sebagai PDF (A4, grafik latar aktif).

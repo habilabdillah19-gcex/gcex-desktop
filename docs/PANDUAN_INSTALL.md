@@ -747,3 +747,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - **Gaya infografis "Editorial dokumenter alam"** (bawaan): kicker kapital oker + judul serif di atas gradasi gelap, panel data gelap transparan dengan batang warna kelas, garis penunjuk putih tipis bertitik, caption serif miring & kredit foto di kaki, legenda / bar skala / kompas minimalis. Gaya *Klasik* (pita judul kuning / navy, kotak kuning) tetap bisa dipilih di tab Infografis. Kolom baru: Kicker, Caption, Kredit foto.
 - **Infografis foto core box** (baru): File › Ekspor infografis foto (PNG / PDF), Ctrl+E — plate editorial: foto utuh + overlay lapisan yang aktif, judul Hole · dari–ke, caption logging (litologi, alterasi, pelapukan, recovery, RQD, catatan), legenda lapisan.
 - Tutorial PDF DB-Ex masih memuat tangkapan layar bernama lama sampai dibuat ulang.
+
+## 65. DB-Ex 0.31.1 — tutorial PDF DB-Ex dibuat ulang
+
+- `DB-Ex_Tutorial_Penggunaan.pdf` (di `_1_Dokumen.zip`) dibuat ulang: semua tangkapan layar memakai nama DB-Ex, judul sampul "Tutorial DB-Ex". Isi latihan tidak berubah.
