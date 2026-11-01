@@ -8,7 +8,7 @@ PT. CONTOH TAMBANG, lubang LTH-101 / LTH-102, koordinat grid lokal, tanggal, kad
 python docs/tutorial-core/buat_data_dummy.py D:\Latihan\DB-Ex_Data_Dummy
 ```
 
-Butuh Python + Pillow + openpyxl (`pip install pillow openpyxl`). Hasilnya selalu sama (seed tetap), sehingga kunci
+Butuh Python + Pillow + openpyxl + numpy (`pip install pillow openpyxl numpy`). Hasilnya selalu sama (seed tetap), sehingga kunci
 jawaban di tutorial berlaku di setiap komputer. Isi paket dijelaskan di `BACA_SAYA.txt` di dalam paket dan di dokumen
 tutorial (bagian Pengantar).
 

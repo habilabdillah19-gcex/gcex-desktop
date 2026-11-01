@@ -83,7 +83,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>16. Ekspor ke database &amp; dashboard</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.36.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.36.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -110,6 +110,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
       <tr><td><code>Data_Lab\Geologi_Latihan.txt</code> (hanya LTH-101)</td><td>Latihan 2 – tab Geologi</td></tr>
       <tr><td><code>Data_Lab\Assay_Latihan_LTH-102_ulang.csv</code></td><td>Latihan 9 – assay ulang</td></tr>
       <tr><td><code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code></td><td>Latihan 10 – impor JSON lama</td></tr>
+      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code></td><td>Latihan 12–16 (DB-Ex versi Qt)</td></tr>
     </table>
   </div></div>
   <div class="note"><b>Prinsip DB-Ex.</b> AI visual menilai parameter <b>geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, catatan struktur). Isian <b>geologi</b> (litologi, alterasi, oksidasi, warna) diambil dari <b>logging geologist</b> bila ada; AI hanya mengisinya bila logging tidak ada. Urutan prioritas: logging geologist &gt; editan manual &gt; AI.</div>
@@ -340,15 +341,23 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td><b>Singkapan</b></td><td>Foto singkapan / dinding trench: digitasi zona, garis, channel sampling, georeferensi</td><td>Infografis PNG / PDF, STR / DXF, CSV sampel, Collar–Survey–Assay–Geologi</td></tr>
     <tr><td><b>Borang</b></td><td>Foto / scan / PDF borang: Ore Spotter loading pit, Ore ke ROM / crusher, RC Daily Drilling Report, RC Drill / Chiptray</td><td>Excel + pivot, CSV, SQLite, MS Access, sheet dashboard drilling</td></tr>
   </table>
-  <div class="note"><b>Data latihan bab 12–16.</b> Foto trench, scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
+  <table>
+    <tr><th style="width:48%">File di DB-Ex_Data_Dummy</th><th>Dipakai di</th></tr>
+    <tr><td><code>Foto_Singkapan\Trench_Latihan_TR01.jpg</code>, <code>Sampel_Trench_TR01.txt</code></td><td>Latihan 12 – Singkapan</td></tr>
+    <tr><td><code>Borang\Borang_Loading_Pit_30Okt.jpg</code></td><td>Latihan 13 – Ore Spotter Loading Pit</td></tr>
+    <tr><td><code>Borang\Borang_ROM_31Okt.jpg</code></td><td>Latihan 14 – Ore ke Stockpile / Crusher</td></tr>
+    <tr><td><code>Borang\DDR_31Okt.jpg</code></td><td>Latihan 15–16 – Daily Drilling Report</td></tr>
+    <tr><td><code>Borang\Borang_Latihan_3_halaman.pdf</code></td><td>ketiga borang dalam satu PDF (dipecah per halaman)</td></tr>
+  </table>
+  <div class="note"><b>Catatan.</b> Foto trench, scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
 </section>
 
 <section class="page">
   <div class="part">Latihan 12</div>
   <h2>Singkapan: digitasi, channel sampling &amp; infografis</h2>
-  <div class="step"><div class="num">1</div><div>Klik <b>Singkapan</b> → <b>+ Foto</b>, pilih foto dinding trench (mis. <code>Trench_Latihan_TR01.jpg</code>).</div></div>
+  <div class="step"><div class="num">1</div><div>Klik <b>Singkapan</b> → <b>+ Foto</b>, pilih <code>D:\Latihan\DB-Ex_Data_Dummy\Foto_Singkapan\Trench_Latihan_TR01.jpg</code>.</div></div>
   <div class="step"><div class="num">2</div><div>Pilih jenis fitur di bilah gambar (Zona alterasi, Vein, Label zona, Label, Strike / dip, Channel sampel), klik <b>✎ Gambar</b>, klik titik-titik di foto; Enter / klik ganda = selesai. <b>✦ SAM</b> membuat batas zona otomatis dari satu klik di dalam zona.</div></div>
-  <div class="step"><div class="num">3</div><div>Pilih garis <b>Channel sampel</b>; di tab <b>Fitur</b> isi tabel sampel (Sample ID, Dari, Ke, kadar per unsur) atau <b>Tempel dari Excel</b>. Garis dibagi per interval (diukur dari ujung kiri = collar, ke kanan = EOH) dan diwarnai kelas Au; komposit tertimbang panjang dihitung otomatis.</div></div>
+  <div class="step"><div class="num">3</div><div>Pilih garis <b>Channel sampel</b>; di tab <b>Fitur</b> isi tabel sampel (Sample ID, Dari, Ke, kadar per unsur) atau buka <code>Sampel_Trench_TR01.txt</code>, salin semua isinya lalu <b>Tempel dari Excel</b>. Garis dibagi per interval (diukur dari ujung kiri = collar, ke kanan = EOH) dan diwarnai kelas Au; komposit tertimbang panjang dihitung otomatis.</div></div>
   <figure><img src="gambar/q01_singkapan.png" style="width:165mm"><figcaption>Gambar 28 – Ruang kerja Singkapan: zona argilik, vein, label, strike/dip N120/70 dan channel sampel 4 interval dengan kotak kadar.</figcaption></figure>
 </section>
 
@@ -362,7 +371,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="part">Latihan 13</div>
   <h2>Borang Ore Spotter: Loading Pit → ROM / Stockpile</h2>
-  <div class="step"><div class="num">1</div><div>Klik <b>Borang</b>. Pilih jenis <b>Ore Spotter: Loading Pit → ROM / Stockpile</b>, klik <b>+ Borang</b>, pilih foto / scan / PDF (PDF dipecah satu borang per halaman). Putar dengan <b>↻</b> bila miring.</div></div>
+  <div class="step"><div class="num">1</div><div>Klik <b>Borang</b>. Pilih jenis <b>Ore Spotter: Loading Pit → ROM / Stockpile</b>, klik <b>+ Borang</b>, pilih <code>Borang\Borang_Loading_Pit_30Okt.jpg</code> (foto / scan / PDF; PDF dipecah satu borang per halaman). Putar dengan <b>↻</b> bila miring.</div></div>
   <figure><img src="gambar/q03_borang_baru.png" style="width:135mm"><figcaption>Gambar 30 – Borang baru: scan di tengah, tabel kosong di kanan.</figcaption></figure>
   <div class="step"><div class="num">2</div><div>Klik <b>✦ Baca dengan AI</b> (Ollama lokal, 30–180 detik per borang). Bila AI gagal, tabel <b>tidak diisi apa pun</b> — tidak ada data contoh.</div></div>
   <div class="step"><div class="num">3</div><div>Program merapikan cara tulis cepat di lapangan dan menandainya <span style="background:#fff3bf">&nbsp;kuning&nbsp;</span>:
@@ -397,7 +406,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="part">Latihan 14</div>
   <h2>Borang Ore ke Stockpile / Crusher (Rehandling / Direct)</h2>
-  <p>Borang spotter di ROM / crusher: Unit, Start / Finish Loading, Asal Material, Tujuan, Rehandling Tumpukan (sub-kolom yang dicentang), kelas material + ton (termasuk SCAT), Status Baru / Lama, Keterangan (Direct / Rehandling / OPP). Langkahnya sama dengan Latihan 13.</p>
+  <p>Borang spotter di ROM / crusher: Unit, Start / Finish Loading, Asal Material, Tujuan, Rehandling Tumpukan (sub-kolom yang dicentang), kelas material + ton (termasuk SCAT), Status Baru / Lama, Keterangan (Direct / Rehandling / OPP). Langkahnya sama dengan Latihan 13, dengan file <code>Borang\Borang_ROM_31Okt.jpg</code>.</p>
   <figure><img src="gambar/q07_borang_rom.png" style="width:160mm"><figcaption>Gambar 34 – Borang ROM: <i>DT 7101</i> → unit 7101, jam <i>05</i> → 08:05, tanda ulang 〃 dan = diisi dari baris atas.</figcaption></figure>
   <table>
     <tr><th style="width:30%">Kolom turunan</th><th>Isi</th></tr>
@@ -410,7 +419,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="part">Latihan 15</div>
   <h2>RC Drilling: Daily Drilling Report</h2>
-  <div class="step"><div class="num">1</div><div>Pilih jenis <b>RC Drilling: Daily Drilling Report</b> → <b>+ Borang</b> → <b>✦ Baca dengan AI</b>. Satu borang berisi header dan <b>dua tabel</b>: <b>Aktivitas</b> (jam mulai–selesai + uraian) dan <b>Meterage / lubang</b> (From, To, Hole ID, Az, Dip). Pindah tabel di kotak <b>Tabel:</b>.</div></div>
+  <div class="step"><div class="num">1</div><div>Pilih jenis <b>RC Drilling: Daily Drilling Report</b> → <b>+ Borang</b> → <code>Borang\DDR_31Okt.jpg</code> → <b>✦ Baca dengan AI</b>. Satu borang berisi header dan <b>dua tabel</b>: <b>Aktivitas</b> (jam mulai–selesai + uraian) dan <b>Meterage / lubang</b> (From, To, Hole ID, Az, Dip). Pindah tabel di kotak <b>Tabel:</b>.</div></div>
   <div class="step"><div class="num">2</div><div>Isi <b>Location</b> (tidak tertulis di borang). Drill rig dirapikan ke <b>Merek 00N</b> (<i>hansin - sdr - 101</i> → <b>Hanjin 101</b>) — nilai ini yang masuk kolom <b>EqType</b> dashboard. Hole ID selalu memakai <b>garis bawah</b> (XX-100-S-05 → XX_100_S_05).</div></div>
   <figure><img src="gambar/q08_ddr_aktivitas.png" style="width:150mm"><figcaption>Gambar 35 – Tabel aktivitas: kategori diisi otomatis dari kata kunci (kuning), ringkasan jam borang vs aktivitas di atas tabel.</figcaption></figure>
 </section>

@@ -808,3 +808,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - **Tutorial DB-Ex** (`Tutorial/DB-Ex_Tutorial_Penggunaan.pdf` di `_1_Dokumen.zip`) mendapat bab 12–16 untuk DB-Ex versi Qt: Singkapan, Borang Ore Spotter (Loading Pit, ROM / Crusher), RC Daily Drilling Report, ekspor ke database & dashboard drilling.
 - **Penjelasan Teknis DB-Ex** (`Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf`): Panduan DB-Ex dalam bentuk PDF dengan sampul, daftar isi dan nomor halaman.
 - Cara membuat ulang (pengembang): `python docs/tutorial-core/tutorial_shots_qt.py` lalu `python docs/tutorial-core/buat_pdf.py`.
+
+## 77. DB-Ex 0.36.1 — data simulasi Singkapan & Borang
+
+- Paket **DB-Ex_Data_Dummy** di `_2_Data-Latihan.zip` kini juga berisi data latihan bab 12–16 tutorial: `Foto_Singkapan/` (foto dinding trench sintetis, `Sampel_Trench_TR01.txt`) dan `Borang/` (scan borang fiktif `Borang_Loading_Pit_30Okt.jpg`, `Borang_ROM_31Okt.jpg`, `DDR_31Okt.jpg`, dan ketiganya dalam `Borang_Latihan_3_halaman.pdf`). Semua isi fiktif.
