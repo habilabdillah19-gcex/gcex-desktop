@@ -768,3 +768,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Fitur baru hanya di **DB-Ex versi Qt** (installer uji `DB-Ex-Qt-Setup-<versi>.exe` di pre-release `core-ex-qt-uji`). Pembaca PDF (**pypdfium2 / PDFium**, Apache-2.0 / BSD-3) ikut installer; AI memakai Ollama lokal yang sama (tanpa internet).
 - Tombol **Borang** di bilah atas: tambah foto / scan / PDF borang **Ore Spotter / Truck Count** atau **RC Drill / Chiptray Log**, **✦ Baca dengan AI**, periksa berdampingan (kuning = AI ragu, merah = galat validasi), centang ✓ per baris (Ctrl+Enter), pivot, lalu ekspor ke **Excel, CSV, SQLite (.db) atau MS Access (.accdb)**. Langkah lengkap: *Panduan DB-Ex* bagian 6d.
 - MS Access butuh driver Access 64-bit (MS Office 64-bit atau Microsoft Access Database Engine 2016 x64). Database & tabel dibuat otomatis.
+
+## 69. DB-Ex 0.33.1 — rilis ruang kerja Borang
+
+- Isi sama dengan 0.33.0 (Borang: Ore Spotter / Truck Count & RC Drill / Chiptray Log). Build 0.33.0 terhenti di uji otomatis sebelum installer dibuat; 0.33.1 memperbaikinya. Pasang `DB-Ex-Qt-Setup-0.33.1.exe`.

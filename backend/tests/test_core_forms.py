@@ -60,6 +60,7 @@ def _ai(monkeypatch, res):
 
 
 def test_add_pdf_pages_and_rotation(st):
+    pytest.importorskip("pypdfium2")  # pustaka visi DB-Ex Qt (requirements-vision); diuji lagi di langkah Qt & selftest exe
     s, tmp = st
     pages = [Image.new("RGB", (800, 1100), "white"), Image.new("RGB", (800, 1100), (250, 250, 250))]
     pdf = tmp / "scan" / "rc_log.pdf"
