@@ -45,6 +45,7 @@ td{padding:1.8mm 2.5mm;border-bottom:1px solid var(--bd);vertical-align:top}
 tr{break-inside:avoid}tr:nth-child(even) td{background:#f6f8fb}
 ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 .tag{display:inline-block;font-size:7.5pt;padding:0 1.5mm;border-radius:1mm;font-weight:700;vertical-align:1px}
+.dash td,.dash th{white-space:nowrap;padding:1.2mm 1.2mm}.dash td.rm{white-space:normal}
 .t-ai{background:#2c5ea8;color:#fff}.t-log{background:#1e2a38;color:#fff}.t-ed{background:#2f6b3a;color:#fff}
 </style>
 </head>
@@ -55,7 +56,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div class="band">
       <div class="kick">Database Excellence · keluarga GC-Ex</div>
       <h1>Tutorial DB<em>-Ex</em></h1>
-      <div class="lead">Latihan langkah demi langkah memakai DB-Ex: dokumentasi foto core box, data bor, AI lokal untuk geoteknik, pencarian, overlay assay, dan export Excel. Seluruh latihan memakai paket data dummy DB-Ex_Data_Dummy.</div>
+      <div class="lead">Latihan langkah demi langkah memakai DB-Ex: foto core box, data bor, AI lokal untuk geoteknik, overlay assay, singkapan &amp; trenching, serta borang lapangan (Ore Spotter, Daily Drilling Report) ke Excel, SQLite dan MS Access. Seluruh data latihan fiktif.</div>
     </div>
     <img src="gambar/t02_folder.png">
   </div>
@@ -74,9 +75,15 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>8. Filter kadar</div>
     <div>9. Data baru: assay ulang per hole</div>
     <div>10. Impor JSON dashboard lama & export Excel</div>
-    <div>11. Kunci jawaban & masalah umum</div>
+    <div>11. Kunci jawaban</div>
+    <div>12. Singkapan (versi Qt)</div>
+    <div>13. Borang Ore Spotter: Loading Pit</div>
+    <div>14. Borang Ore ke Stockpile / Crusher</div>
+    <div>15. RC Daily Drilling Report</div>
+    <div>16. Ekspor ke database &amp; dashboard</div>
+    <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.31.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.36.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -323,6 +330,133 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
   </table>
 </section>
 
+<section class="page">
+  <div class="part">Bagian II · DB-Ex versi Qt</div>
+  <h2>Tiga ruang kerja dalam satu proyek</h2>
+  <p>Bab 12–16 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya tiga tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching) dan <b>Borang</b> (borang lapangan tulisan tangan). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
+  <table>
+    <tr><th style="width:24%">Ruang kerja</th><th>Untuk</th><th style="width:30%">Hasil</th></tr>
+    <tr><td><b>Core box</b></td><td>Foto core box, data bor, AI geoteknik, overlay assay</td><td>Excel core log, infografis core box</td></tr>
+    <tr><td><b>Singkapan</b></td><td>Foto singkapan / dinding trench: digitasi zona, garis, channel sampling, georeferensi</td><td>Infografis PNG / PDF, STR / DXF, CSV sampel, Collar–Survey–Assay–Geologi</td></tr>
+    <tr><td><b>Borang</b></td><td>Foto / scan / PDF borang: Ore Spotter loading pit, Ore ke ROM / crusher, RC Daily Drilling Report, RC Drill / Chiptray</td><td>Excel + pivot, CSV, SQLite, MS Access, sheet dashboard drilling</td></tr>
+  </table>
+  <div class="note"><b>Data latihan bab 12–16.</b> Foto trench, scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 12</div>
+  <h2>Singkapan: digitasi, channel sampling &amp; infografis</h2>
+  <div class="step"><div class="num">1</div><div>Klik <b>Singkapan</b> → <b>+ Foto</b>, pilih foto dinding trench (mis. <code>Trench_Latihan_TR01.jpg</code>).</div></div>
+  <div class="step"><div class="num">2</div><div>Pilih jenis fitur di bilah gambar (Zona alterasi, Vein, Label zona, Label, Strike / dip, Channel sampel), klik <b>✎ Gambar</b>, klik titik-titik di foto; Enter / klik ganda = selesai. <b>✦ SAM</b> membuat batas zona otomatis dari satu klik di dalam zona.</div></div>
+  <div class="step"><div class="num">3</div><div>Pilih garis <b>Channel sampel</b>; di tab <b>Fitur</b> isi tabel sampel (Sample ID, Dari, Ke, kadar per unsur) atau <b>Tempel dari Excel</b>. Garis dibagi per interval (diukur dari ujung kiri = collar, ke kanan = EOH) dan diwarnai kelas Au; komposit tertimbang panjang dihitung otomatis.</div></div>
+  <figure><img src="gambar/q01_singkapan.png" style="width:165mm"><figcaption>Gambar 28 – Ruang kerja Singkapan: zona argilik, vein, label, strike/dip N120/70 dan channel sampel 4 interval dengan kotak kadar.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">4</div><div>Tab <b>Infografis</b>: gaya, judul, kompas arah pandang, warna kelas kadar. <b>File → Ekspor infografis</b> (Ctrl+E) menyimpan PNG / PDF siap laporan.</div></div>
+  <figure><img src="gambar/q02_infografis.png" style="width:165mm"><figcaption>Gambar 29 – Infografis hasil ekspor: kotak kadar per interval, komposit, legenda kelas Au dan kompas.</figcaption></figure>
+  <div class="step"><div class="num">5</div><div>Tab <b>Georef</b>: titik kontrol survey (u, v → E, N, RL) membuat foto berkoordinat. Ekspor STR / DXF, tabel sampel dan database channel (<b>Collar, Survey, Assay, Geologi</b>) bawaannya memakai <b>koordinat georef</b>; menempel ke topografi / DTM as-built hanya bila dipilih.</div></div>
+  <div class="note">Koordinat ada di <b>bidang foto</b>; kemiringan yang terlihat di satu dinding adalah <i>apparent dip</i>. Rincian teknis georef, topografi dan Depth Anything ada di <i>Panduan Teknis DB-Ex</i> bagian 6c.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 13</div>
+  <h2>Borang Ore Spotter: Loading Pit → ROM / Stockpile</h2>
+  <div class="step"><div class="num">1</div><div>Klik <b>Borang</b>. Pilih jenis <b>Ore Spotter: Loading Pit → ROM / Stockpile</b>, klik <b>+ Borang</b>, pilih foto / scan / PDF (PDF dipecah satu borang per halaman). Putar dengan <b>↻</b> bila miring.</div></div>
+  <figure><img src="gambar/q03_borang_baru.png" style="width:135mm"><figcaption>Gambar 30 – Borang baru: scan di tengah, tabel kosong di kanan.</figcaption></figure>
+  <div class="step"><div class="num">2</div><div>Klik <b>✦ Baca dengan AI</b> (Ollama lokal, 30–180 detik per borang). Bila AI gagal, tabel <b>tidak diisi apa pun</b> — tidak ada data contoh.</div></div>
+  <div class="step"><div class="num">3</div><div>Program merapikan cara tulis cepat di lapangan dan menandainya <span style="background:#fff3bf">&nbsp;kuning&nbsp;</span>:
+    <ul>
+      <li><b>jam menit saja</b>: 19.08 lalu 13 → 19:13; 23.35 → 03.53 lewat tengah malam;</li>
+      <li><b>nomor truk singkat</b>: 7123 lalu 32 → 7132;</li>
+      <li><b>tanda ulang</b> (〃, ", =, garis) → nilai baris atas; <i>〃 A1</i> di tujuan → <i>ROM A1</i>;</li>
+      <li>baris yang hanya mengganti <b>Elevation</b> tidak jadi baris; elevasinya dibawa ke baris berikutnya.</li>
+    </ul></div></div>
+</section>
+
+<section class="page">
+  <figure style="margin-top:0"><img src="gambar/q04_borang_ai.png" style="width:165mm"><figcaption>Gambar 31 – Hasil AI: kuning = AI ragu / diisi program, merah = galat validasi (tonase <i>3l</i> bukan angka). Baris 2 sudah dicentang ✓.</figcaption></figure>
+  <div class="step"><div class="num">4</div><div><b>Periksa berdampingan</b>: cocokkan tiap baris dengan scan, perbaiki sel langsung di tabel (tersimpan otomatis), lalu centang <b>✓</b>. <b>Ctrl+Enter</b> = verifikasi baris terpilih &amp; lanjut ke baris berikutnya; <b>✓ Verifikasi semua</b> untuk sekaligus.</div></div>
+  <table>
+    <tr><th style="width:34%">Validasi (merah)</th><th>Contoh</th></tr>
+    <tr><td>Jam di luar shift / mundur</td><td>Shift I = DS 06:00–18:00, shift II = NS 18:00–06:00</td></tr>
+    <tr><td>Tonase</td><td>kosong, bukan angka, di luar 0–400 t</td></tr>
+    <tr><td>Kelas material</td><td>bukan OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, SF-MO</td></tr>
+    <tr><td>Nomor baris, truk, tujuan</td><td>nomor tidak urut, truk kosong / singkat tanpa nomor lengkap di atasnya</td></tr>
+  </table>
+  <div class="check"><b>✓ Cek:</b> setelah <i>3l</i> diganti <b>31</b>, ringkasan menulis <b>validasi bersih</b>. Kolom <b>Tgl muat</b> baris jam 03:53 = tanggal borang + 1 (shift II melewati tengah malam).</div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">5</div><div>Tab <b>Pivot</b>: ritase &amp; tonase per shift, per front (pit · elevasi · excavator) dan per tujuan dumping × kelas material.</div></div>
+  <figure><img src="gambar/q05_borang_pivot.png" style="width:140mm"><figcaption>Gambar 32 – Pivot borang loading pit.</figcaption></figure>
+  <div class="step"><div class="num">6</div><div>Tab <b>Ekspor</b>: <i>Borang ini</i> atau <i>Semua borang jenis ini</i>. Bawaannya <b>hanya baris terverifikasi</b>. Pilih Excel, CSV, <b>SQLite (.db)</b> atau <b>MS Access (.accdb)</b>; database dan tabel dibuat otomatis.</div></div>
+  <figure><img src="gambar/q06_borang_ekspor.png" style="width:140mm"><figcaption>Gambar 33 – Ekspor ke SQLite: 10 baris baru di tabel ORE_LOADING_PIT.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 14</div>
+  <h2>Borang Ore ke Stockpile / Crusher (Rehandling / Direct)</h2>
+  <p>Borang spotter di ROM / crusher: Unit, Start / Finish Loading, Asal Material, Tujuan, Rehandling Tumpukan (sub-kolom yang dicentang), kelas material + ton (termasuk SCAT), Status Baru / Lama, Keterangan (Direct / Rehandling / OPP). Langkahnya sama dengan Latihan 13.</p>
+  <figure><img src="gambar/q07_borang_rom.png" style="width:160mm"><figcaption>Gambar 34 – Borang ROM: <i>DT 7101</i> → unit 7101, jam <i>05</i> → 08:05, tanda ulang 〃 dan = diisi dari baris atas.</figcaption></figure>
+  <table>
+    <tr><th style="width:30%">Kolom turunan</th><th>Isi</th></tr>
+    <tr><td>Tanggal muat</td><td>tanggal borang, +1 hari untuk jam 00:00–11:59 di shift II</td></tr>
+    <tr><td>Oksida / Sulfida, Grade</td><td>dari kelas: OX-LG → OKSIDA, LG</td></tr>
+    <tr><td>Direct / Rehandling</td><td>dari Keterangan</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 15</div>
+  <h2>RC Drilling: Daily Drilling Report</h2>
+  <div class="step"><div class="num">1</div><div>Pilih jenis <b>RC Drilling: Daily Drilling Report</b> → <b>+ Borang</b> → <b>✦ Baca dengan AI</b>. Satu borang berisi header dan <b>dua tabel</b>: <b>Aktivitas</b> (jam mulai–selesai + uraian) dan <b>Meterage / lubang</b> (From, To, Hole ID, Az, Dip). Pindah tabel di kotak <b>Tabel:</b>.</div></div>
+  <div class="step"><div class="num">2</div><div>Isi <b>Location</b> (tidak tertulis di borang). Drill rig dirapikan ke <b>Merek 00N</b> (<i>hansin - sdr - 101</i> → <b>Hanjin 101</b>) — nilai ini yang masuk kolom <b>EqType</b> dashboard. Hole ID selalu memakai <b>garis bawah</b> (XX-100-S-05 → XX_100_S_05).</div></div>
+  <figure><img src="gambar/q08_ddr_aktivitas.png" style="width:150mm"><figcaption>Gambar 35 – Tabel aktivitas: kategori diisi otomatis dari kata kunci (kuning), ringkasan jam borang vs aktivitas di atas tabel.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">3</div><div><b>Kategori &amp; kelompok jam</b> (aturan site). Kategori bisa diganti dari daftar; kelompok jam ikut berubah.
+  <table>
+    <tr><th style="width:22%">Kelompok</th><th>Kategori</th></tr>
+    <tr><td><b>WH</b></td><td>DRILLING, TRAVELING ANTAR TITIK BOR, PERSIAPAN, P2H, P5M</td></tr>
+    <tr><td><b>DL</b></td><td>ISTIRAHAT, STANDBY, WAIT BLASTING, TRAVELING KE LOKASI (dan LAIN-LAIN)</td></tr>
+    <tr><td><b>MNTC / BD / RAIN</b></td><td>MAINTENANCE / BREAKDOWN / HUJAN</td></tr>
+    <tr><td><b>STD</b></td><td>STANDBY TIDAK ADA OPERATOR, STANDBY TIDAK ADA LOKASI</td></tr>
+  </table>
+  Kotak ringkasan membandingkan jam di borang dengan jumlah durasi aktivitas per kelompok (merah bila selisih &gt; 0,5 jam), lalu total meter, jumlah lubang, meter per jam drilling dan HM running.</div></div>
+  <figure><img src="gambar/q09_ddr_meterage.png" style="width:150mm"><figcaption>Gambar 36 – Tabel Meterage / lubang: Hole ID baku garis bawah, kolom turunan Meter.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> WH 4,75 / 4,76 · DL 3,5 / 3,42 · STD 3 / 3 → tidak ada yang merah; 3 lubang, 90 m, 28,39 m/jam drilling.</div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">4</div><div>Tab <b>Pivot</b>: jam per kelompok, jam per kategori, meter per rig &amp; shift, meter per lubang.</div></div>
+  <figure><img src="gambar/q10_ddr_pivot.png" style="width:135mm"><figcaption>Gambar 37 – Pivot Daily Drilling Report.</figcaption></figure>
+  <div class="part" style="margin-top:4mm">Latihan 16</div>
+  <h2>Ekspor ke database &amp; dashboard drilling</h2>
+  <p>Ekspor Excel Daily Drilling Report berisi sheet <b>Data_Dashboard</b> (pertama) dengan kolom sama seperti sheet <i>Data</i> dashboard drilling, lalu <code>DDR_Aktivitas</code>, <code>DDR_Meterage</code>, <code>DDR_Ringkasan_Shift</code>, sheet pivot dan Audit. Satu baris per lubang; jam shift hanya di baris pertama shift agar total jam tidak berlipat; Azimuth &amp; Dip di dua kolom paling kanan.</p>
+  <table class="dash" style="font-size:7pt">
+    <tr><th>Date</th><th>EqType</th><th>Location</th><th>Shift</th><th>Prospect</th><th>BHID</th><th>Interval_m</th><th>WH</th><th>Maint</th><th>BD</th><th>Delay</th><th>Standby</th><th>Rain</th><th>Remarks</th><th>Azimuth</th><th>Dip</th></tr>
+    <tr><td>31-Oct-2026</td><td>Hanjin 101</td><td>Area Latihan</td><td>S01</td><td>XX</td><td>XX_100_S_05</td><td>30</td><td>4.75</td><td></td><td></td><td>3.5</td><td>3</td><td></td><td class="rm">area drillpad longsor, menunggu area baru</td><td>70</td><td>60</td></tr>
+    <tr><td>31-Oct-2026</td><td>Hanjin 101</td><td>Area Latihan</td><td>S01</td><td>XX</td><td>XX_100_S_01</td><td>30</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>60</td><td>60</td></tr>
+    <tr><td>31-Oct-2026</td><td>Hanjin 101</td><td>Area Latihan</td><td>S01</td><td>XX</td><td>XX_100_S_02</td><td>30</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>60</td><td>60</td></tr>
+  </table>
+  <p>Salin baris <code>Data_Dashboard</code> lalu tempel di bawah data terakhir sheet <i>Data</i>. Shift tanpa lubang tetap ditulis satu baris berisi jam saja.</p>
+</section>
+
+<section class="page">
+  <h2>Tabel database Borang</h2>
+  <table>
+    <tr><th style="width:30%">Jenis borang</th><th>Tabel SQLite / MS Access</th><th style="width:30%">Sheet Excel</th></tr>
+    <tr><td>Ore Spotter: Loading Pit</td><td><code>ORE_LOADING_PIT</code> + view pivot</td><td>Data_Loading_Pit + Pivot_*</td></tr>
+    <tr><td>Ore ke Stockpile / Crusher</td><td><code>ORE_ROM_CRUSHER</code> + view pivot</td><td>Data_ROM_Crusher + Pivot_*</td></tr>
+    <tr><td>RC Daily Drilling Report</td><td><code>DDR_DASHBOARD</code>, <code>DDR_AKTIVITAS</code>, <code>DDR_METERAGE</code>, <code>DDR_SHIFT</code> + view pivot</td><td>Data_Dashboard, DDR_*, Pivot_*</td></tr>
+    <tr><td>RC Drill / Chiptray Log</td><td><code>RC_INTERVAL</code></td><td>Interval_Geodatabase</td></tr>
+  </table>
+  <p>Setiap tabel punya kolom <b>VERIFIED</b>, <b>SRC_DOC</b> (nama borang) dan <b>SRC_KEY</b> (borang:baris). Ekspor ulang tidak menggandakan baris: SQLite memperbarui baris yang sama, MS Access melewati baris yang sudah ada. CSV Daily Drilling Report = satu ZIP berisi satu CSV per tabel. MS Access butuh driver Access 64-bit (MS Office 64-bit / Access Database Engine).</p>
+  <div class="warn">Hasil AI adalah <b>usulan</b>. Data yang masuk database / dashboard hanya baris yang sudah <b>diverifikasi</b> geologist atau petugas data terhadap scan aslinya.</div>
+</section>
+
 <section>
   <h2>Masalah umum</h2>
   <table>
@@ -335,6 +469,10 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td>"Tidak ada baris yang bisa diimport"</td><td>Baris header salah atau kolom From / To bukan angka.</td></tr>
     <tr><td><code>Au&gt;=1</code> → "Unsur tidak ada"</td><td>Pakai nama di DB-Ex saat import (<code>Au</code>, bukan <code>Au (ppm)</code>).</td></tr>
     <tr><td>Pita overlay tidak pas</td><td><b>Atur area core</b>, sesuaikan kotak &amp; jumlah baris, simpan untuk semua foto lubang ini.</td></tr>
+    <tr><td>Borang: "AI gagal membaca borang"</td><td>Ollama tertutup / model belum ada / memori habis. Tabel sengaja dibiarkan kosong; jalankan lagi, atau isi manual (<b>+ Baris</b>).</td></tr>
+    <tr><td>Borang: banyak sel merah jam</td><td>Shift di header salah (I / II) atau jam memang di luar shift (lembur). Perbaiki header; sisanya periksa terhadap scan.</td></tr>
+    <tr><td>Borang: ekspor "Tidak ada baris"</td><td>Baris belum diverifikasi. Centang ✓ / Verifikasi semua, atau centang <i>Sertakan baris yang belum diverifikasi</i>.</td></tr>
+    <tr><td>Ekspor MS Access gagal</td><td>Driver Access 64-bit belum terpasang; pasang Microsoft Access Database Engine 2016 x64, atau ekspor ke SQLite / Excel.</td></tr>
     <tr><td>"Backend tidak aktif"</td><td>Bantuan → Buka folder log, kirim <code>backend.log</code> ke admin.</td></tr>
   </table>
   <p class="meta" style="margin-top:6mm">DB-Ex dilindungi UU No. 28 Tahun 2014 tentang Hak Cipta dan dilisensikan, bukan dijual. Ketentuan lengkap: Bantuan → Syarat penggunaan &amp; penafian. Ollama, Qwen dan nama produk lain adalah merek pemiliknya masing-masing.<br>Copyright © Habil Abdillah 2026.</p>

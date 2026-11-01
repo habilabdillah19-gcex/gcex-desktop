@@ -1,5 +1,5 @@
 """Ubah panduan Markdown sederhana menjadi satu file HTML mandiri (offline) untuk dibundel di installer.
-Mendukung: judul #-####, paragraf, daftar - / 1., tabel |, blok kode ```, `kode`, **tebal**, [tautan](url).
+Mendukung: judul #-####, paragraf, daftar - / 1., tabel |, blok kode ```, `kode`, **tebal**, *miring*, [tautan](url).
 
 Pemakaian: python docs/md2html.py docs/PANDUAN_CORE.md docs/PANDUAN_CORE.html
 """
@@ -19,6 +19,7 @@ def inline(t: str) -> str:
     t = html.escape(t, quote=False)
     t = re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
     t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+    t = re.sub(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])", r"<i>\1</i>", t)
     t = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', t)
     return t
 
@@ -66,7 +67,10 @@ def convert(md: str) -> str:
                         i += 1
                     items[-1].append("\0<pre><code>" + html.escape("\n".join(buf)) + "</code></pre>")
                 else:
-                    items[-1].append(("\0<br>" if re.match(r"^(-|\d+\.) ", t) else "") + re.sub(r"^- ", "• ", t))
+                    if re.match(r"^(-|\d+\.) ", t):  # butir bersarang: baris baru + format inline
+                        items[-1].append("\0<br>" + inline(re.sub(r"^- ", "• ", t)))
+                    else:
+                        items[-1].append(t)
                 i += 1
                 while i < len(lines) and not lines[i].strip() and i + 1 < len(lines) and lines[i + 1].startswith("   "):
                     i += 1

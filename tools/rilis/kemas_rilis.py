@@ -94,6 +94,7 @@ def main():
     ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_0.24_Tambahan.pdf", "Tutorial/GC-Ex_Tutorial_0.24_Tambahan.pdf")] if has_gcex else [])
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
           (D / "DB-Ex_Tutorial_Penggunaan.pdf", "Tutorial/DB-Ex_Tutorial_Penggunaan.pdf"),
+          (D / "DB-Ex_Panduan_Teknis.pdf", "Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf"),
           (D / "tutorial-core" / "README.md", "Tutorial/DB-Ex_tutorial_README.md")] if has_core else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"

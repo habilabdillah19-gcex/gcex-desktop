@@ -4,7 +4,7 @@
 
 Repositori dokumentasi core box: foto, interpretasi AI lokal, data lab (Collar, Survey, Assay, Geologi) dan pencarian cepat dalam satu aplikasi. Semua berjalan **di komputer sendiri**; tidak butuh internet, tidak ada foto atau data yang dikirim ke luar.
 
-Pembaruan terakhir: 30 Oktober 2026 (versi 0.23.0: overlay berlapis & interpretasi AI per baris yang bisa diedit di foto; 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: DB-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru DB-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
+Pembaruan terakhir: 1 November 2026 (versi 0.36.0: tutorial & penjelasan teknis PDF; 0.35.x: Borang — Ore Spotter loading pit & ROM / crusher, RC Daily Drilling Report ke database & dashboard drilling; 0.32.0: Singkapan dengan SAM, Depth Anything & topografi opsional; 0.23.0: overlay berlapis & interpretasi AI per baris yang bisa diedit di foto; 0.22.0: tanda half core / core loss di foto, Core Recovery otomatis; 0.18.1: DB-Ex menjalankan Ollama otomatis / tombol Jalankan Ollama; 0.18.0: nama baru DB-Ex; 0.16.0: data bor dengan header dinamis, cari cepat, filter kadar, overlay assay di foto).
 
 ## 1. Cara kerja singkat
 

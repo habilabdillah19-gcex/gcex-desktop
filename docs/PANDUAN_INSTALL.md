@@ -802,3 +802,9 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 
 - Hole ID di Borang (Daily Drilling Report, RC Drill / Chiptray) selalu ditulis dengan **garis bawah** dan huruf besar: Z2-265-S-05 → Z2_265_S_05.
 - Drill rig dirapikan ke format **Hanjin 007** (merek + nomor 3 digit) untuk kolom **EqType** dashboard drilling; isian yang dirapikan dari hasil AI ditandai kuning.
+
+## 76. DB-Ex 0.36.0 — tutorial & penjelasan teknis PDF
+
+- **Tutorial DB-Ex** (`Tutorial/DB-Ex_Tutorial_Penggunaan.pdf` di `_1_Dokumen.zip`) mendapat bab 12–16 untuk DB-Ex versi Qt: Singkapan, Borang Ore Spotter (Loading Pit, ROM / Crusher), RC Daily Drilling Report, ekspor ke database & dashboard drilling.
+- **Penjelasan Teknis DB-Ex** (`Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf`): Panduan DB-Ex dalam bentuk PDF dengan sampul, daftar isi dan nomor halaman.
+- Cara membuat ulang (pengembang): `python docs/tutorial-core/tutorial_shots_qt.py` lalu `python docs/tutorial-core/buat_pdf.py`.
