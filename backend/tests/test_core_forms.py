@@ -289,16 +289,16 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     hole = [r for r in rs if r["tbl"] == "hole"]
     assert len(act) == 10 and len(hole) == 3 and hole[2]["unc"] == ["az"]
     assert (act[0]["data"]["mulai"], act[0]["data"]["selesai"]) == ("06:50", "07:00")
-    assert [r["data"]["kategori"] for r in act] == ["TRAVELING", "SAFETY TALK", "TRAVELING", "P2H", "PERSIAPAN", "DRILLING", "TRAVELING",
-                                                   "ISTIRAHAT", "STANDBY", "STANDBY"]
+    assert [r["data"]["kategori"] for r in act] == ["TRAVELING KE LOKASI", "P5M", "TRAVELING KE LOKASI", "P2H", "PERSIAPAN", "DRILLING",
+                                                   "WAIT BLASTING", "ISTIRAHAT", "STANDBY", "STANDBY"]
     assert "kategori" in act[0]["unc"]
     d = cf.doc(s, did)
     v = cf.validate(d, rs)
     assert "di luar shift siang" in v["rows"][act[9]["id"]]["selesai"]  # lembur sampai 19:00
     sm = cf.ddr_summary(d, rs)
-    assert (sm["wh"], sm["dl"], sm["wh_akt"], sm["dl_akt"], sm["jam_aktivitas"]) == (5.0, 7.0, 5.17, 7.0, 12.17)
+    assert (sm["wh"], sm["dl"], sm["wh_akt"], sm["dl_akt"], sm["jam_aktivitas"]) == (5.0, 7.0, 4.75, 7.42, 12.17)
     assert (sm["meter"], sm["n_lubang"], sm["jam_drilling"], sm["hm_running"], sm["m_per_jam"]) == (90.0, 3, 3.17, 3.2, 28.39)
-    assert "wh" not in v["header"]  # selisih 0.17 jam masih dalam toleransi
+    assert "wh" not in v["header"] and "dl" not in v["header"]  # selisih <= 0.5 jam masih dalam toleransi
     # edit tabel meterage saja tidak menyentuh tabel aktivitas
     hr = [{"id": r["id"], "data": dict(r["data"]), "verified": True} for r in hole]
     hr[2]["data"]["az"] = "65"
@@ -315,7 +315,7 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     cf.save_rows(s, did, ar, "Rina")
     cf.verify_all(s, did, True, "Rina")
     pv = {p["key"]: p for p in cf.pivots(cf.records(cf.doc(s, did), cf.rows(s, did)), "ddr")}
-    assert {(x["kelompok"], x["jam"]) for x in pv["PIVOT_JAM_KELOMPOK"]["rows"]} == {("WH", 5.17), ("DL", 7.0)}
+    assert {(x["kelompok"], x["jam"]) for x in pv["PIVOT_JAM_KELOMPOK"]["rows"]} == {("WH", 4.75), ("DL", 7.42)}
     assert pv["PIVOT_METER_RIG"]["rows"][0]["meter"] == 90.0 and pv["PIVOT_METER_RIG"]["rows"][0]["lubang"] == 3
     c = cf.collect(s, [did], "ddr")
     assert len(c["recs"]) == 14 and c["recs"][-1]["_tbl"] == "_shift" and c["recs"][-1]["_verified"]
@@ -330,5 +330,18 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     assert (r1["added"], r2["added"], r2["updated"]) == (13, 0, 13) and r1["table"] == "DDR_AKTIVITAS, DDR_METERAGE, DDR_SHIFT"
     cn = sqlite3.connect(str(db))
     assert cn.execute("SELECT METER, LUBANG FROM DDR_METERAGE_PIVOT_METER_RIG").fetchone() == (90.0, 3)
-    assert cn.execute("SELECT WH, WH_AKT, METER FROM DDR_SHIFT").fetchone() == (5.0, 5.17, 90.0)
+    assert cn.execute("SELECT WH, WH_AKT, METER FROM DDR_SHIFT").fetchone() == (5.0, 4.75, 90.0)
     cn.close()
+
+
+def test_ddr_kategori_kelompok_site():
+    k = cf.ddr_kat
+    assert k("Traveling unit ke titik bor berikutnya") == "TRAVELING ANTAR TITIK BOR" and k("Pindah lubang") == "TRAVELING ANTAR TITIK BOR"
+    assert k("Traveling to ROM") == "TRAVELING KE LOKASI" and k("Traveling to pit") == "TRAVELING KE LOKASI"
+    assert k("Standby tidak ada operator") == "STANDBY TIDAK ADA OPERATOR" and k("Standby, tidak ada lokasi") == "STANDBY TIDAK ADA LOKASI"
+    assert k("Standby area titik bor longsor") == "STANDBY" and k("Waiting blasting") == "WAIT BLASTING" and k("PSM") == "P5M"
+    assert [cf.DDR_GROUP[x] for x in ("TRAVELING ANTAR TITIK BOR", "TRAVELING KE LOKASI", "WAIT BLASTING", "STANDBY TIDAK ADA OPERATOR",
+                                      "STANDBY TIDAK ADA LOKASI", "P5M", "HUJAN")] == ["WH", "DL", "DL", "STD", "STD", "WH", "RAIN"]
+    assert cf.kat_norm("safety talk") == "P5M" and cf.kat_norm("drilling") == "DRILLING" and cf.kat_norm("Tidak ada operator") == \
+        "STANDBY TIDAK ADA OPERATOR"
+    assert set(cf.DDR_GROUP) == set(cf.DDR_KAT_NAMES)

@@ -788,3 +788,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Jenis borang baru **RC Drilling: Daily Drilling Report** di ruang kerja Borang (DB-Ex versi Qt): AI membaca header (rig, driller, shift, jam WH / DL / MNTC / BD / RAIN / STD, HM engine, bit, catatan), tabel aktivitas dan tabel meterage dalam satu borang.
 - Kategori aktivitas diisi otomatis dari kata kunci (bisa diganti dari daftar); ringkasan membandingkan jam di borang dengan jumlah durasi aktivitas.
 - Ekspor ke tabel **DDR_AKTIVITAS**, **DDR_METERAGE**, **DDR_SHIFT** (Excel, CSV dalam ZIP, SQLite, MS Access) beserta pivot jam per kelompok / kategori dan meter per rig / lubang. Langkah lengkap: *Panduan DB-Ex* bagian 6d.
+
+## 73. DB-Ex 0.35.1 — kelompok jam Daily Drilling Report
+
+- Kategori & kelompok jam aktivitas mengikuti aturan site: **WH** = drilling, traveling antar titik bor, persiapan, P2H, P5M; **DL** = istirahat, standby, wait blasting, traveling ke lokasi; **MNTC / BD / RAIN** = maintenance, breakdown, hujan; **STD** = standby tidak ada operator, standby tidak ada lokasi.

@@ -127,15 +127,26 @@ CARRY = {"ore": ("pit", "elevasi", "tujuan"), "rom": ("asal", "tujuan", "status"
 DITTO = {"ore": ("start", "finish", "pit", "elevasi", "kelas", "tujuan"),
          "rom": ("start", "finish", "asal", "tujuan", "rehandling", "kelas", "status", "keterangan")}
 # Daily Drilling Report: kategori aktivitas (urutan = prioritas kata kunci) dan kelompok jam di borang (WH / DL / MNTC / BD / RAIN / STD)
-DDR_KAT = [("P2H", r"\bp2h\b|pre.?start"), ("SAFETY TALK", r"\bp5m\b|\bpsm\b|safety|toolbox"),
+# sesuai aturan site: WH = drilling, traveling antar titik bor, persiapan, P2H, P5M; DL = istirahat, standby, wait blasting, traveling
+# ke lokasi; MNTC / BD / RAIN = maintenance / breakdown / hujan; STD = standby tidak ada operator / tidak ada lokasi.
+_TRV = r"(travel|moving|pindah|mobili|jalan|geser)"
+DDR_KAT = [("P2H", r"\bp2h\b|pre.?start"), ("P5M", r"\bp5m\b|\bpsm\b|safety|toolbox"),
            ("ISTIRAHAT", r"\brest|istirahat|makan|ishoma|sholat|shalat"), ("HUJAN", r"hujan|\brain"),
            ("BREAKDOWN", r"break ?down|\bbd\b|rusak|perbaikan|repair"), ("MAINTENANCE", r"service|servis|maint|mntc|ganti|greas"),
-           ("DRILLING", r"drilling|pemboran|ngebor|\bdrill\b|reaming"), ("TRAVELING", r"travel|moving|pindah|mobili|jalan"),
+           ("STANDBY TIDAK ADA OPERATOR", r"(tidak ada|tdk ada|tanpa|no|belum ada|kurang)\s*(operator|driller|helper|crew)"),
+           ("STANDBY TIDAK ADA LOKASI", r"(tidak ada|tdk ada|tanpa|no|belum ada)\s*(lokasi|location|titik|area|drill ?pad|point)"),
+           ("DRILLING", r"drilling|pemboran|ngebor|\bdrill\b|reaming"), ("WAIT BLASTING", r"blast|peledakan"),
+           ("TRAVELING ANTAR TITIK BOR", _TRV + r".*(titik|antar|lubang|\bhole|next)|(titik|lubang|hole).*" + _TRV),
+           ("TRAVELING KE LOKASI", _TRV),
            ("PERSIAPAN", r"start engine|clean|compres|kompres|set ?up|persiapan|pemanasan|rig up|leveling"),
-           ("STANDBY", r"stand ?by|stamby|waiting|tunggu|menunggu|\bstd\b"), ("BLASTING", r"blast|peledakan")]
+           ("STANDBY", r"stand ?by|stamby|waiting|tunggu|menunggu|\bstd\b")]
 DDR_KAT_NAMES = [k for k, _r in DDR_KAT] + ["LAIN-LAIN"]
-DDR_GROUP = {"DRILLING": "WH", "TRAVELING": "WH", "PERSIAPAN": "WH", "P2H": "WH", "SAFETY TALK": "WH", "ISTIRAHAT": "DL", "STANDBY": "DL",
-             "BLASTING": "DL", "MAINTENANCE": "MNTC", "BREAKDOWN": "BD", "HUJAN": "RAIN", "LAIN-LAIN": "DL"}
+DDR_GROUP = {"DRILLING": "WH", "TRAVELING ANTAR TITIK BOR": "WH", "PERSIAPAN": "WH", "P2H": "WH", "P5M": "WH",
+             "ISTIRAHAT": "DL", "STANDBY": "DL", "WAIT BLASTING": "DL", "TRAVELING KE LOKASI": "DL", "LAIN-LAIN": "DL",
+             "MAINTENANCE": "MNTC", "BREAKDOWN": "BD", "HUJAN": "RAIN", "STANDBY TIDAK ADA OPERATOR": "STD", "STANDBY TIDAK ADA LOKASI": "STD"}
+KAT_ALIAS = {"SAFETY TALK": "P5M", "PSM": "P5M", "BLASTING": "WAIT BLASTING", "TRAVEL": "TRAVELING KE LOKASI",
+             "TRAVELING": "TRAVELING KE LOKASI", "ANTAR TITIK": "TRAVELING ANTAR TITIK BOR", "TIDAK ADA OPERATOR": "STANDBY TIDAK ADA OPERATOR",
+             "TIDAK ADA LOKASI": "STANDBY TIDAK ADA LOKASI", "MNTC": "MAINTENANCE", "BD": "BREAKDOWN", "RAIN": "HUJAN", "REST": "ISTIRAHAT"}
 HOURS = ("wh", "dl", "mntc", "bd", "rain", "std")
 QAQC = {"STD": "STD", "STANDARD": "STD", "CRM": "STD", "STANDAR": "STD", "BLANK": "BLANK", "BLK": "BLANK", "DUP": "DUP", "DUPLICATE": "DUP",
         "DUPLIKAT": "DUP", "FD": "DUP", "FIELD DUP": "DUP"}
@@ -366,6 +377,7 @@ def kat_norm(v: Any) -> str:
     t = str(v or "").strip().upper()
     if not t:
         return ""
+    t = KAT_ALIAS.get(t, t)
     return next((k for k in DDR_KAT_NAMES if k == t or k.replace(" ", "") == t.replace(" ", "")), t)
 
 
