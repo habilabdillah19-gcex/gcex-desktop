@@ -69,6 +69,11 @@ class OcView(Viewer):
             return
         super().mouseDoubleClickEvent(e)
 
+    def focusNextPrevChild(self, nxt: bool) -> bool:  # noqa: N802
+        if getattr(self.tool, "mode", "") == "sam":
+            return False  # Tab dipakai SAM (ganti ukuran zona), bukan pindah fokus
+        return super().focusNextPrevChild(nxt)
+
     def keyPressEvent(self, e) -> None:  # noqa: N802
         t = self.tool
         if t is not None and hasattr(t, "key") and t.key(e.key()):
@@ -100,6 +105,33 @@ class OcCanvas(QGraphicsObject):
         pg.boxes = boxes
         if pg.geo_visible():
             paint_geo(p, v, pg.geo.get("points") or [], pg.geo_row(), pg.geo_err())
+        if t.mode == "sam":
+            paint_sam(p, v, pg.sam_poly, t.sam_pts, (pg.kmap.get(pg.cbKind.currentData()) or {}).get("color", "#e8a33d"))
+
+
+def paint_sam(p: QPainter, v, poly: list, pts: list, color: str) -> None:
+    """Pratinjau SAM: poligon hasil mask (garis putus-putus + isi tipis) dan titik klik (hijau = zona, merah = bukan)."""
+    from PySide6.QtGui import QPolygonF
+    if poly:
+        P = QPolygonF([QPointF(u * v.w, w_ * v.h) for u, w_ in poly])
+        c = QColor(color)
+        c.setAlphaF(0.28)
+        p.setBrush(c)
+        p.setPen(QPen(QColor("#ffffff"), v.px(4)))
+        p.drawPolygon(P)
+        pe = QPen(QColor(color), v.px(2.4), Qt.DashLine)
+        p.setPen(pe)
+        p.setBrush(Qt.NoBrush)
+        p.drawPolygon(P)
+    for u, w_, lab in pts:
+        c = QPointF(u * v.w, w_ * v.h)
+        p.setPen(QPen(QColor("#141a26"), v.px(1.6)))
+        p.setBrush(QColor("#2f9e44") if lab else QColor("#e03131"))
+        p.drawEllipse(c, v.px(6), v.px(6))
+        p.setPen(QPen(QColor("#ffffff"), v.px(2)))
+        p.drawLine(QPointF(c.x() - v.px(3), c.y()), QPointF(c.x() + v.px(3), c.y()))
+        if lab:
+            p.drawLine(QPointF(c.x(), c.y() - v.px(3)), QPointF(c.x(), c.y() + v.px(3)))
 
 
 def paint_geo(p: QPainter, v, pts: list, sel: int, errs: dict) -> None:
@@ -146,6 +178,7 @@ class OcTool:
         self.sel: int | None = None
         self.vsel: int | None = None
         self.drag: dict | None = None
+        self.sam_pts: list = []
 
     # ---- konversi
     def norm(self, pt: QPointF) -> list[float]:
@@ -240,6 +273,8 @@ class OcTool:
         return None
 
     def hover(self, pt):
+        if self.mode == "sam":
+            return Qt.CrossCursor
         if self.mode == "geo":
             return Qt.SizeAllCursor if self._geo_at(pt) is not None else Qt.CrossCursor
         if self.mode == "draw":
@@ -253,6 +288,12 @@ class OcTool:
         return Qt.PointingHandCursor if self._feat_at(pt) is not None else None
 
     def press(self, pt, e) -> bool:
+        if self.mode == "sam":
+            neg = bool(e is not None and e.modifiers() & (Qt.ShiftModifier | Qt.AltModifier))
+            u, v = self.norm(pt)
+            self.sam_pts.append([round(u, 5), round(v, 5), 0 if neg else 1])
+            self.pg.sam_update()
+            return True
         if self.mode == "geo":
             i = self._geo_at(pt)
             if i is None:
@@ -362,6 +403,21 @@ class OcTool:
             self.pg.save_feat(f)
 
     def key(self, k) -> bool:
+        if self.mode == "sam":
+            if k in (Qt.Key_Return, Qt.Key_Enter):
+                self.pg.sam_save()
+                return True
+            if k == Qt.Key_Tab:
+                self.pg.sam_level(+1)
+                return True
+            if k == Qt.Key_Backspace and self.sam_pts:
+                self.sam_pts.pop()
+                self.pg.sam_update()
+                return True
+            if k == Qt.Key_Escape:
+                self.cancel()
+                return True
+            return False
         if self.mode == "geo":
             if k == Qt.Key_Escape:
                 self.cancel()
@@ -391,6 +447,14 @@ class OcTool:
         return False
 
     # ---- aksi
+    def start_sam(self) -> None:
+        self.pg.gAdd.setChecked(False)
+        self.mode, self.pts, self.hover_pt, self.sam_pts = "sam", [], None, []
+        self.select(None)
+        self.pg.view.setFocus()
+        self.pg.hint()
+        self.pg.canvas.update()
+
     def start_geo(self) -> None:
         self.mode, self.pts, self.hover_pt = "geo", [], None
         self.select(None)
@@ -406,7 +470,8 @@ class OcTool:
         self.pg.hint()
 
     def cancel(self) -> None:
-        self.mode, self.pts, self.hover_pt = "select", [], None
+        self.mode, self.pts, self.hover_pt, self.sam_pts = "select", [], None, []
+        self.pg.sam_poly = []
         self.pg.draw_done()
 
     def finish(self) -> None:
@@ -529,6 +594,98 @@ class KindsDlg(Dlg):
         return self.kinds
 
 
+def topo_report_html(j: dict) -> str:
+    er, mu = theme.C["er"], theme.C["mu"]
+    t = j.get("topo") or {}
+    h = f"<b>{_esc(t.get('name'))}</b> · survey {_esc(t.get('survey_date'))}" + (f" · foto {_esc(j['photo_date'])}" if j.get("photo_date") else "")
+    if j.get("coverage") is not None:
+        h += f"<br>Cakupan DTM di foto: <b>{j['coverage'] * 100:.0f}%</b>"
+    if j.get("ctrl_med") is not None:
+        h += f" · titik survey ke DTM: median <b>{j['ctrl_med']:.2f} m</b>"
+    pc = j.get("pct") or {}
+    if sum((j.get("counts") or {}).values()):
+        h += (f"<br>Titik fitur: {pc.get('dtm', 0) * 100:.0f}% di DTM · {pc.get('depth', 0) * 100:.0f}% Depth Anything · "
+              f"{pc.get('bidang', 0) * 100:.0f}% tetap di bidang georef")
+    if j.get("offset_med") is not None:
+        h += f"<br><span style='color:{mu}'>Geseran dari georef: median {j['offset_med']:.2f} m, maks {j['offset_max']:.2f} m</span>"
+    if j.get("fit"):
+        f = j["fit"]
+        h += f"<br><span style='color:{mu}'>Kalibrasi Depth Anything: {f['n']} titik, RMS {f['rms']:.2f} m</span>"
+    for w in j.get("warn") or []:
+        h += f"<br><span style='color:{er}'>⚠ {_esc(w)}</span>"
+    return h
+
+
+class TopoDlg(Dlg):
+    def __init__(self, parent, name: str):
+        super().__init__(parent, "Impor topografi", "Impor <span style='color:#a9c3dd'>topografi / DTM as-built</span>", 460)
+        f = QFormLayout()
+        self.eName = QLineEdit(name)
+        self.eDate = QLineEdit(_dt.date.today().isoformat())
+        self.eDate.setPlaceholderText("YYYY-MM-DD")
+        f.addRow("Nama versi", self.eName)
+        f.addRow("Tanggal survey", self.eDate)
+        self.body.addLayout(f)
+        n = QLabel("Tanggal survey dipakai untuk membandingkan dengan tanggal foto: foto yang lebih baru dari topografi diberi peringatan.")
+        n.setWordWrap(True)
+        n.setObjectName("note")
+        self.body.addWidget(n)
+        ok, cl = btn("Impor", pri=True), btn("Batal")
+        self.foot.addStretch(1)
+        self.foot.addWidget(cl)
+        self.foot.addWidget(ok)
+        ok.clicked.connect(self.accept)
+        cl.clicked.connect(self.reject)
+
+    def values(self) -> tuple[str, str]:
+        return self.eName.text().strip(), self.eDate.text().strip()
+
+
+class CoordDlg(Dlg):
+    """Sumber koordinat ekspor. Bawaan selalu georef (bidang foto dari titik survey)."""
+
+    def __init__(self, parent, what: str, topos: list[dict], sel: int | None, depth: bool):
+        super().__init__(parent, "Koordinat ekspor", f"Koordinat <span style='color:#a9c3dd'>{_esc(what)}</span>", 520)
+        from PySide6.QtWidgets import QRadioButton
+        self.rGeo = QRadioButton("Georef — bidang foto dari titik survey (bawaan, disarankan)")
+        self.rTopo = QRadioButton("Tempel ke topografi / DTM as-built")
+        self.rGeo.setChecked(True)
+        self.body.addWidget(self.rGeo)
+        self.body.addWidget(self.rTopo)
+        self.cbT = QComboBox()
+        for t in topos:
+            self.cbT.addItem(f"{t['survey_date']} · {t['name']}", t["id"])
+        if sel is not None:
+            self.cbT.setCurrentIndex(max(0, self.cbT.findData(sel)))
+        self.cDepth = QCheckBox("Isi area di luar DTM dengan Depth Anything")
+        self.cDepth.setChecked(depth)
+        self.body.addWidget(self.cbT)
+        self.body.addWidget(self.cDepth)
+        n = QLabel("Topografi survey bisa lebih tua dari foto (diperbarui ~seminggu sekali). Tempel hanya bila topografi sudah memuat "
+                   "permukaan yang difoto; periksa dulu dengan <b>Cek terhadap foto ini</b> di tab Georef.")
+        n.setWordWrap(True)
+        n.setTextFormat(Qt.RichText)
+        n.setObjectName("note")
+        self.body.addWidget(n)
+        if not topos:
+            self.rTopo.setEnabled(False)
+            self.rTopo.setText("Tempel ke topografi (belum ada DTM di proyek)")
+        for w in (self.cbT, self.cDepth):
+            w.setEnabled(False)
+        self.rTopo.toggled.connect(lambda on: [w.setEnabled(on) for w in (self.cbT, self.cDepth)])
+        ok, cl = btn("Ekspor", pri=True), btn("Batal")
+        self.foot.addStretch(1)
+        self.foot.addWidget(cl)
+        self.foot.addWidget(ok)
+        ok.clicked.connect(self.accept)
+        cl.clicked.connect(self.reject)
+
+    def result_opt(self) -> dict:
+        if not self.rTopo.isChecked() or self.cbT.currentData() is None:
+            return {"coord": "georef"}
+        return {"coord": "topo", "topo_id": self.cbT.currentData(), "depth": self.cDepth.isChecked()}
+
+
 # ================================================================ dialog daftar unsur assay
 class ElementsDlg(Dlg):
     def __init__(self, parent, elements: list[dict]):
@@ -621,6 +778,13 @@ class OutcropPage(QWidget):
         self.comp_pos: tuple | None = None
         self.ai_busy = False
         self.elements: list[dict] = list(oc_paint.DEFAULT_ELEMENTS)
+        self.sam_poly: list = []
+        self.sam_lv = 1
+        self.sam_score = 0.0
+        self.sam_busy = False
+        self.sam_again = False
+        self.vis: dict = {}
+        self.topos: list[dict] = []
         self.geo: dict = {"points": [], "kind": None}
         self.geo_res: dict = {}
         self._build()
@@ -676,6 +840,9 @@ class OutcropPage(QWidget):
         th.addWidget(self.cbKind)
         self.bDraw = btn("✎ Gambar", "Klik titik demi titik di foto. Klik ganda / Enter = selesai, Backspace = hapus titik terakhir, Esc = batal.", pri=True, sm=True)
         th.addWidget(self.bDraw)
+        self.bSam = btn("✦ SAM", "Segment Anything: klik di dalam zona -> batas zona otomatis (jenis poligon yang dipilih).\n"
+                        "Shift+klik = bukan zona, Tab = ganti ukuran (kecil / sedang / besar), Enter = simpan, Esc = selesai.", sm=True)
+        th.addWidget(self.bSam)
         self.cbSnap = QCheckBox("Snap")
         self.cbSnap.setChecked(True)
         self.cbSnap.setToolTip("Tempelkan titik ke titik / garis fitur lain agar kontak tidak bercelah")
@@ -720,6 +887,7 @@ class OutcropPage(QWidget):
         self.bDel.clicked.connect(self.delete_photo)
         self.lst.currentRowChanged.connect(self._pick)
         self.bDraw.clicked.connect(lambda: self.tool.start_draw(self.cbKind.currentData()) if self.cur else None)
+        self.bSam.clicked.connect(self.sam_start)
         self.bSel.clicked.connect(lambda: (self.tool.cancel(), self.bSel.setChecked(True)))
         self.cbInfo.toggled.connect(lambda *_: self.canvas.update())
         self.set_enabled(False)
@@ -1149,6 +1317,40 @@ class OutcropPage(QWidget):
         self.gRes.setObjectName("fld")
         self.gRes.setMargin(8)
         v.addWidget(self.gRes)
+        th_ = QLabel("<b>TOPOGRAFI / DTM AS-BUILT (OPSIONAL)</b>")
+        th_.setObjectName("note")
+        v.addWidget(th_)
+        nt = QLabel("Koordinat yang benar tetap <b>georef</b>. Topografi survey biasanya diperbarui seminggu sekali, jadi menempel ke DTM "
+                    "hanya dipakai bila dipilih saat ekspor. Impor DTM Surpac (.dtm + .str) beserta <b>tanggal survey</b>-nya.")
+        nt.setObjectName("note")
+        nt.setWordWrap(True)
+        nt.setTextFormat(Qt.RichText)
+        v.addWidget(nt)
+        self.tList = QListWidget()
+        self.tList.setMaximumHeight(96)
+        v.addWidget(self.tList)
+        tr = QHBoxLayout()
+        self.tAdd = btn("+ Impor DTM…", "Pilih file .dtm beserta file .str pasangannya (nama file jangan diubah)", sm=True)
+        self.tDel = btn("Hapus", sm=True)
+        self.tChk = btn("Cek terhadap foto ini", "QC: cakupan DTM, jarak titik survey ke DTM, tanggal survey vs foto", sm=True)
+        for b_ in (self.tAdd, self.tDel, self.tChk):
+            tr.addWidget(b_)
+        tr.addStretch(1)
+        v.addLayout(tr)
+        self.tDepth = QCheckBox("Isi area di luar DTM dengan Depth Anything (dikalibrasi ke meter)")
+        self.tDepth.setToolTip("Kedalaman relatif dari satu foto (AI lokal) diubah ke meter memakai titik yang kena DTM / titik georef.\n"
+                               "Dipakai untuk bagian foto yang tidak tercakup DTM (atau DTM lebih tua dari foto).")
+        v.addWidget(self.tDepth)
+        self.tRes = QLabel()
+        self.tRes.setTextFormat(Qt.RichText)
+        self.tRes.setWordWrap(True)
+        self.tRes.setObjectName("fld")
+        self.tRes.setMargin(8)
+        self.tRes.hide()
+        v.addWidget(self.tRes)
+        self.tAdd.clicked.connect(self.topo_import)
+        self.tDel.clicked.connect(self.topo_delete)
+        self.tChk.clicked.connect(self.topo_check)
         hd = QLabel("<b>EKSPOR DIGITASI 3D (E, N, RL)</b>")
         hd.setObjectName("note")
         v.addWidget(hd)
@@ -1239,11 +1441,18 @@ class OutcropPage(QWidget):
     def set_enabled(self, on: bool) -> None:
         for w in (self.bAdd,):
             w.setEnabled(bool(self.folder))
-        for w in (self.bDel, self.bDraw, self.cbKind, self.bAI, self.tabs, self.bSel):
+        for w in (self.bDel, self.bDraw, self.bSam, self.cbKind, self.bAI, self.tabs, self.bSel):
             w.setEnabled(on)
 
     def hint(self) -> None:
         t = self.tool
+        if t.mode == "sam":
+            k = self.kmap.get(self.cbKind.currentData(), {})
+            lv = ("kecil", "sedang", "besar")[self.sam_lv]
+            sc = f" · skor {self.sam_score:.2f}" if self.sam_poly else ""
+            self.hintL.setText(f"<b>SAM · {_esc(k.get('name', ''))}</b> ({lv}{sc}): klik di dalam zona · Shift+klik = bukan zona · "
+                               "Tab = ukuran · Backspace = hapus titik · Enter = simpan · Esc = selesai")
+            return
         if t.mode == "geo":
             self.hintL.setText("<b>Titik georef</b>: klik tanda Pylox / pita di foto · tarik penanda untuk menggeser · "
                                "Delete = hapus titik terpilih · Esc = selesai")
@@ -1273,6 +1482,8 @@ class OutcropPage(QWidget):
         self.photos = j["photos"]
         self._fill_list()
         self._summary(j["summary"])
+        self.vis = {}
+        self.topo_reload()
         self.set_enabled(False)
         if self.photos:
             self.lst.setCurrentRow(0)
@@ -2030,6 +2241,9 @@ class OutcropPage(QWidget):
     def export_samples(self) -> None:
         if not self.folder:
             return
+        co_ = self.coord_opt("tabel sampel (CSV)")
+        if co_ is None:
+            return
         p, _ = QFileDialog.getSaveFileName(self, "Ekspor tabel sampel", str(Path(SET.get("lastSaveDir", str(Path.home()))) / "sampel_singkapan.csv"), "CSV (*.csv)")
         if not p:
             return
@@ -2037,7 +2251,7 @@ class OutcropPage(QWidget):
             p += ".csv"
         SET.set("lastSaveDir", str(Path(p).parent))
         try:
-            data = api.call("/core/outcrop/export/samples", {"folder": self.folder, "ids": []})
+            data = api.call("/core/outcrop/export/samples", {"folder": self.folder, "ids": [], **co_})
             tmp = Path(p + ".tmp")
             tmp.write_bytes(data)
             tmp.replace(p)
@@ -2046,6 +2260,88 @@ class OutcropPage(QWidget):
             return
         self.toast("Tabel sampel tersimpan: " + p, 5000)
         show_in_folder(p)
+
+    # ---------------------------------------------------------------- SAM (Segment Anything)
+    def vision(self) -> dict:
+        if not self.vis:
+            try:
+                self.vis = api.call("/core/outcrop/vision/status", {"folder": self.folder})
+            except api.ApiError:
+                self.vis = {"sam": False, "depth": False}
+        return self.vis
+
+    def sam_start(self) -> None:
+        if not self.cur:
+            return
+        if not self.vision().get("sam"):
+            say(self, "SAM tidak tersedia di DB-Ex ini (model / pustaka ONNX Runtime & OpenCV tidak ditemukan).\n"
+                      "Pasang ulang DB-Ex dari installer terbaru.", warn=True)
+            return
+        k = self.kmap.get(self.cbKind.currentData()) or {}
+        if k.get("shape") != "poly":
+            i = self.cbKind.findData("zona_alt")
+            if i >= 0:
+                self.cbKind.setCurrentIndex(i)
+            self.toast("SAM membuat poligon: jenis diganti ke zona (bisa diubah di bilah atas sebelum Enter)", 4000)
+        self.sam_poly, self.sam_lv = [], 1
+        self.tool.start_sam()
+        self.toast("Menyiapkan SAM untuk foto ini… (beberapa detik, sekali per foto)", 4000)
+        pid, folder = self.cur["id"], self.folder
+        run_bg(api.call, "/core/outcrop/sam/embed", {"folder": folder, "id": pid}, ok=lambda j: self.hint(),
+               err=lambda e: say(self, "SAM gagal:\n" + e, warn=True))
+
+    def sam_level(self, step: int) -> None:
+        self.sam_lv = (self.sam_lv + step) % 3
+        self.sam_update()
+
+    def sam_update(self) -> None:
+        t = self.tool
+        if t.mode != "sam" or not self.cur:
+            return
+        if not t.sam_pts:
+            self.sam_poly = []
+            self.canvas.update()
+            self.hint()
+            return
+        if self.sam_busy:
+            self.sam_again = True
+            return
+        self.sam_busy = True
+        pid = self.cur["id"]
+        body = {"folder": self.folder, "id": pid, "points": [list(x) for x in t.sam_pts], "level": self.sam_lv}
+
+        def ok(j):
+            self.sam_busy = False
+            if self.cur and self.cur["id"] == pid and self.tool.mode == "sam":
+                self.sam_poly, self.sam_score = j["poly"], j["score"]
+                self.canvas.update()
+                self.hint()
+            if self.sam_again:
+                self.sam_again = False
+                self.sam_update()
+
+        def err(e):
+            self.sam_busy = False
+            self.sam_again = False
+            say(self, "SAM gagal:\n" + e, warn=True)
+        run_bg(api.call, "/core/outcrop/sam/mask", body, ok=ok, err=err)
+
+    def sam_save(self) -> None:
+        kind = self.cbKind.currentData()
+        if not self.sam_poly or len(self.sam_poly) < 3:
+            self.toast("Klik di dalam zona dulu sampai batasnya tampil", 3000)
+            return
+        if (self.kmap.get(kind) or {}).get("shape") != "poly":
+            say(self, "SAM menghasilkan poligon: pilih jenis zona (poligon) di bilah atas.", warn=True)
+            return
+        poly = self.sam_poly
+        self.tool.sam_pts, self.sam_poly = [], []
+        self.new_feat(kind, poly, "")
+        self.tool.mode = "sam"  # tetap di mode SAM untuk zona berikutnya
+        self.tool.sel = None
+        self.canvas.update()
+        self.hint()
+        self.toast("Zona disimpan. Klik zona berikutnya, atau Esc untuk selesai.", 3000)
 
     # ---------------------------------------------------------------- usulan otomatis
     def auto_propose(self) -> None:
@@ -2300,6 +2596,82 @@ class OutcropPage(QWidget):
         self.geo_save()
         self.toast(f"{n_upd} titik diperbarui, {n_new} titik baru" + (" — klik posisinya di foto (⊕ Titik di foto)" if n_new else ""), 5000)
 
+    # ---------------------------------------------------------------- topografi (opsional)
+    def topo_reload(self) -> None:
+        try:
+            self.topos = api.call("/core/outcrop/topo/list", {"folder": self.folder})["topo"] if self.folder else []
+        except api.ApiError:
+            self.topos = []
+        self.tList.clear()
+        for t in self.topos:
+            it = QListWidgetItem(f"{t['survey_date']} · {t['name']} · {t['n_tri']:,} segitiga".replace(",", "."))
+            it.setData(Qt.UserRole, t["id"])
+            it.setToolTip(", ".join(t.get("files") or []))
+            self.tList.addItem(it)
+        if self.topos:
+            self.tList.setCurrentRow(0)
+        for w in (self.tDel, self.tChk):
+            w.setEnabled(bool(self.topos))
+
+    def topo_sel(self) -> int | None:
+        it = self.tList.currentItem()
+        return it.data(Qt.UserRole) if it else None
+
+    def topo_import(self) -> None:
+        if not self.folder:
+            return
+        fs, _ = QFileDialog.getOpenFileNames(self, "Impor DTM topografi (.dtm + .str)", SET.get("ocTopoDir", str(Path.home())),
+                                             "DTM Surpac (*.dtm *.str)")
+        if not fs:
+            return
+        SET.set("ocTopoDir", str(Path(fs[0]).parent))
+        d = TopoDlg(self, Path(next((f for f in fs if f.lower().endswith(".dtm")), fs[0])).stem)
+        if d.exec() != Dlg.Accepted:
+            return
+        name, date = d.values()
+        self.toast("Membaca DTM… (DTM besar bisa beberapa detik)", 6000)
+
+        def ok(j):
+            self.topo_reload()
+            a = j["added"]
+            self.toast(f"Topografi {a['name']} ({a['survey_date']}) diimpor: {a['n_tri']:,} segitiga".replace(",", "."), 5000)
+        run_bg(api.call, "/core/outcrop/topo/add", {"folder": self.folder, "paths": fs, "survey_date": date, "name": name, "by": self.by()},
+               ok=ok, err=lambda e: say(self, "DTM tidak diimpor:\n" + e, warn=True))
+
+    def topo_delete(self) -> None:
+        tid = self.topo_sel()
+        t = next((x for x in self.topos if x["id"] == tid), None)
+        if not t or not ask(self, f"Hapus topografi {t['name']} ({t['survey_date']}) dari proyek?"):
+            return
+        try:
+            api.call("/core/outcrop/topo/delete", {"folder": self.folder, "tid": tid, "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self.topo_reload()
+
+    def topo_check(self) -> None:
+        tid = self.topo_sel()
+        if not self.cur or not tid:
+            return
+        self.tRes.show()
+        self.tRes.setText("Memeriksa topografi terhadap foto ini…" + (" (Depth Anything: beberapa detik)" if self.tDepth.isChecked() else ""))
+        pid = self.cur["id"]
+
+        def ok(j):
+            if not self.cur or self.cur["id"] != pid:
+                return
+            self.tRes.setText(topo_report_html(j))
+        run_bg(api.call, "/core/outcrop/topo/check", {"folder": self.folder, "id": pid, "topo_id": tid, "depth": self.tDepth.isChecked()},
+               ok=ok, err=lambda e: self.tRes.setText(f"<span style='color:{theme.C['er']}'>{_esc(e)}</span>"))
+
+    def coord_opt(self, what: str) -> dict | None:
+        """Dialog sumber koordinat untuk ekspor. Bawaan SELALU georef; None = batal."""
+        d = CoordDlg(self, what, self.topos, self.topo_sel(), self.tDepth.isChecked())
+        if d.exec() != Dlg.Accepted:
+            return None
+        return d.result_opt()
+
     def export_drillhole(self) -> None:
         if not self.folder:
             return
@@ -2313,8 +2685,11 @@ class OutcropPage(QWidget):
             return
         mode = next(k for k, t in opts if t == lab)
         SET.set("ocDlMode", mode)
+        co_ = self.coord_opt("database channel (Collar, Survey, Assay, Geologi)")
+        if co_ is None:
+            return
         try:
-            j = api.call("/core/outcrop/export/drillhole", {"folder": self.folder, "ids": [], "dl": mode})
+            j = api.call("/core/outcrop/export/drillhole", {"folder": self.folder, "ids": [], "dl": mode, **co_})
         except api.ApiError as e:
             say(self, str(e), warn=True)
             return
@@ -2345,15 +2720,18 @@ class OutcropPage(QWidget):
         if not self.folder or (not all_photos and not self.cur):
             return
         ids = [] if all_photos else [self.cur["id"]]
+        co_ = self.coord_opt(f"{fmt.upper()} {'semua foto' if all_photos else 'foto ini'}")
+        if co_ is None:
+            return
         try:
-            chk = api.call("/core/outcrop/export/check", {"folder": self.folder, "ids": ids, "fmt": fmt})
+            chk = api.call("/core/outcrop/export/check", {"folder": self.folder, "ids": ids, "fmt": fmt, **co_})
         except api.ApiError as e:
             say(self, str(e), warn=True)
             return
         if not chk["n"]:
             say(self, "Tidak ada fitur tergeoreferensi untuk diekspor.\n\n" + "\n".join(chk["skipped"][:12]), warn=True)
             return
-        if chk["skipped"] and not ask(self, f"{len(chk['skipped'])} foto dilewati (belum digeoreferensi):\n\n" + "\n".join(chk["skipped"][:12])
+        if chk["skipped"] and not ask(self, f"{len(chk['skipped'])} catatan (foto dilewati / peringatan topografi):\n\n" + "\n".join(chk["skipped"][:12])
                                       + f"\n\nTetap ekspor {chk['n']} fitur dari foto lain?"):
             return
         nm = "singkapan_semua" if all_photos else (self.cur.get("title") or self.cur["name"])
@@ -2366,7 +2744,7 @@ class OutcropPage(QWidget):
             p += "." + fmt
         SET.set("lastSaveDir", str(Path(p).parent))
         try:
-            data = api.call("/core/outcrop/export", {"folder": self.folder, "ids": ids, "fmt": fmt, "name": Path(p).stem})
+            data = api.call("/core/outcrop/export", {"folder": self.folder, "ids": ids, "fmt": fmt, "name": Path(p).stem, **co_})
             tmp = Path(p + ".tmp")
             tmp.write_bytes(data)
             tmp.replace(p)
@@ -2378,7 +2756,7 @@ class OutcropPage(QWidget):
         show_in_folder(p)
 
     def escape(self) -> bool:
-        if self.tool.mode in ("draw", "geo"):
+        if self.tool.mode in ("draw", "geo", "sam"):
             self.tool.cancel()
             return True
         if self.tool.sel is not None:

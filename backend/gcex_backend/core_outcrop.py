@@ -1132,8 +1132,167 @@ def _clean_txt(t: Any) -> str:
     return re.sub(r"[,\r\n]+", " ", str(t or "")).strip()[:60]
 
 
-def export_items(s: Store, ids: list[int]) -> tuple[list[dict], list[str]]:
-    """Fitur tergeoreferensi dari foto-foto terpilih; foto tanpa georef yang sah dilaporkan."""
+# ---------------------------------------------------------------- sumber koordinat: georef (bawaan) atau tempel ke topografi
+# Kebenaran posisi = georef (titik survey di bidang foto). "Tempel ke topografi" OPSIONAL: titik bidang diproyeksikan ke DTM
+# as-built (lantai: vertikal; dinding: sepanjang normal bidang). Di luar DTM boleh diisi Depth Anything yang dikalibrasi ke
+# meter (titik yang kena DTM / titik georef); sisanya tetap di bidang georef. Topografi survey bisa lebih tua dari foto,
+# jadi QC melaporkan jarak titik survey ke DTM dan tanggal.
+def _photo_date(r: dict) -> str:
+    t = str(r.get("taken") or "")[:10].replace(":", "-")
+    return t if re.match(r"^\d{4}-\d{2}-\d{2}$", t) else ""
+
+
+def surface_ctx(s: Store, r: dict, sol: dict, opt: Optional[dict]) -> dict:
+    """Konteks per foto untuk opsi koordinat; opt = {"coord": "georef"|"topo", "topo_id", "depth": bool, "maxd", "step"}."""
+    from . import core_topo, core_vision
+    opt = dict(opt or {})
+    ctx: dict[str, Any] = {"mode": opt.get("coord") or "georef", "sol": sol, "w": r["w"], "h": r["h"], "warn": [], "r": r}
+    if ctx["mode"] != "topo":
+        return ctx
+    kind = plane_kind(r)
+    n = np.cross(np.array(sol["e1"]), np.array(sol["e2"]))
+    n = n / np.linalg.norm(n)
+    d = np.array([0.0, 0.0, 1.0]) if kind == "floor" else n
+    ctx.update(d=d, maxd=float(opt.get("maxd") or 10.0), step=float(opt.get("step") or 0.5), V=None, T=None, fit=None, dm=None)
+    tid = opt.get("topo_id")
+    topo = None
+    if tid:
+        topo = next((t for t in core_topo.topo_list(s) if t["id"] == int(tid)), None)
+        if not topo:
+            raise ValueError(f"Topografi #{tid} tidak ada di proyek.")
+        ctx["V"], ctx["T"] = core_topo.topo_tin(s, int(tid))
+        ctx["topo"] = topo
+        pd = _photo_date(r)
+        if pd and pd > topo["survey_date"]:
+            ctx["warn"].append(f"Foto ({pd}) lebih baru dari topografi \"{topo['name']}\" ({topo['survey_date']}): permukaan bisa sudah "
+                               "berubah oleh penggalian; koordinat georef tetap acuan.")
+    W, H = r["w"], r["h"]
+    # grid kalibrasi & cakupan (20 x 15 titik di foto)
+    gu, gv = np.meshgrid(np.linspace(0.03, 0.97, 20), np.linspace(0.03, 0.97, 15))
+    guv = np.c_[gu.ravel(), gv.ravel()]
+    G = np.array(to_world(sol, W, H, guv.tolist()))
+    gt = np.full(len(G), np.nan)
+    if ctx["V"] is not None:
+        gt, _ok = core_topo.ray_tin(G, np.tile(d, (len(G), 1)), ctx["V"], ctx["T"], ctx["maxd"])
+        ctx["coverage"] = float(np.mean(~np.isnan(gt)))
+        if ctx["coverage"] < 0.5:
+            ctx["warn"].append(f"Hanya {ctx['coverage'] * 100:.0f}% foto tercakup DTM (dalam {ctx['maxd']:g} m dari bidang georef).")
+    # jarak titik survey (georef) ke DTM: indikator topografi belum diperbarui
+    P = [p for p in ((r.get("georef") or {}).get("points") or []) if all(p.get(k) not in (None, "") for k in ("u", "v", "e", "n", "rl"))]
+    cuv = np.array([[p["u"], p["v"]] for p in P]) if P else np.zeros((0, 2))
+    cq = np.array([[p["e"], p["n"], p["rl"]] for p in P]) if P else np.zeros((0, 3))
+    cg = np.array(to_world(sol, W, H, cuv.tolist())) if len(P) else np.zeros((0, 3))
+    c_off = (cq - cg) @ d if len(P) else np.zeros(0)
+    ctx["ctrl"] = []
+    if ctx["V"] is not None and len(P):
+        ct, _ok = core_topo.ray_tin(cq, np.tile(d, (len(cq), 1)), ctx["V"], ctx["T"], ctx["maxd"])
+        ctx["ctrl"] = [{"name": p.get("name") or "", "dist": None if np.isnan(t) else float(abs(t))} for p, t in zip(P, ct)]
+        ds = [c["dist"] for c in ctx["ctrl"] if c["dist"] is not None]
+        if ds:
+            ctx["ctrl_med"] = float(np.median(ds))
+            if ctx["ctrl_med"] > 0.5:
+                ctx["warn"].append(f"Titik survey berjarak median {ctx['ctrl_med']:.2f} m dari DTM: topografi kemungkinan belum memuat "
+                                   "galian / permukaan terbaru.")
+    # Depth Anything: isi di luar DTM, dikalibrasi t = a * kedalaman_relatif + b
+    if opt.get("depth"):
+        try:
+            dm = core_vision.depth_map(s.photos / r["file"], s.root / "depth" / f"{r['id']}.npy")
+        except Exception as e:  # noqa: BLE001
+            ctx["warn"].append(f"Depth Anything tidak dipakai: {e}")
+            dm = None
+        if dm is not None:
+            xs, ys = [], []
+            ok = ~np.isnan(gt)
+            if ok.any():
+                xs += list(core_vision.sample(dm, guv[ok]))
+                ys += list(gt[ok])
+            if len(P):
+                xs += list(core_vision.sample(dm, cuv))
+                ys += list(c_off)
+            X, Y = np.array(xs, float), np.array(ys, float)
+            fit = None
+            if len(X) >= 3 and X.std() > 0.02:
+                keep = np.ones(len(X), bool)
+                for _ in range(3):
+                    A = np.c_[X[keep], np.ones(keep.sum())]
+                    a, b = np.linalg.lstsq(A, Y[keep], rcond=None)[0]
+                    res = Y - (a * X + b)
+                    mad = np.median(np.abs(res[keep])) * 1.4826 + 1e-6
+                    nk = np.abs(res) <= max(2.5 * mad, 0.05)
+                    if nk.sum() < 3 or (nk == keep).all():
+                        break
+                    keep = nk
+                rms = float(np.sqrt(np.mean((Y[keep] - (a * X[keep] + b)) ** 2)))
+                fit = {"a": float(a), "b": float(b), "rms": rms, "n": int(keep.sum())}
+            if fit:
+                ctx["dm"], ctx["fit"] = dm, fit
+                if fit["rms"] > 0.75:
+                    ctx["warn"].append(f"Kalibrasi Depth Anything kurang baik (RMS {fit['rms']:.2f} m dari {fit['n']} titik).")
+            else:
+                ctx["warn"].append("Depth Anything tidak bisa dikalibrasi ke meter: perlu titik yang kena DTM atau >= 4 titik georef "
+                                   "yang tidak sebidang. Area di luar DTM tetap di bidang georef.")
+    return ctx
+
+
+def surface_xyz(ctx: dict, uv: list, closed: bool = False, dense: bool = True) -> tuple[list[list[float]], list[str], list[list[float]]]:
+    """Koordinat 3D titik-titik foto menurut opsi; kembalikan (xyz, sumber per titik 'georef'|'dtm'|'depth'|'bidang', uv dipakai)."""
+    from . import core_topo, core_vision
+    sol, W, H = ctx["sol"], ctx["w"], ctx["h"]
+    if ctx["mode"] != "topo":
+        return to_world(sol, W, H, uv), ["georef"] * len(uv), [list(p) for p in uv]
+    U = [list(p) for p in uv]
+    if dense and len(U) >= 2:  # rapatkan (langkah ~step m di bidang) agar garis mengikuti permukaan
+        Q = U + ([U[0]] if closed else [])
+        Wd = to_world(sol, W, H, Q)
+        out = [Q[0]]
+        for i in range(len(Q) - 1):
+            L = float(np.linalg.norm(np.array(Wd[i + 1]) - np.array(Wd[i])))
+            k = max(1, int(math.ceil(L / ctx["step"])))
+            for j in range(1, k + 1):
+                out.append([Q[i][0] + (Q[i + 1][0] - Q[i][0]) * j / k, Q[i][1] + (Q[i + 1][1] - Q[i][1]) * j / k])
+        U = out[:-1] if closed else out
+    G = np.array(to_world(sol, W, H, U))
+    t = np.full(len(G), np.nan)
+    if ctx.get("V") is not None:
+        t, _ok = core_topo.ray_tin(G, np.tile(ctx["d"], (len(G), 1)), ctx["V"], ctx["T"], ctx["maxd"])
+    src = np.where(np.isnan(t), "bidang", "dtm").astype(object)
+    if ctx.get("fit") and np.isnan(t).any():
+        m = np.isnan(t)
+        rv = core_vision.sample(ctx["dm"], np.array(U)[m])
+        t[m] = ctx["fit"]["a"] * rv + ctx["fit"]["b"]
+        src[m] = "depth"
+    t = np.nan_to_num(t, nan=0.0)
+    X = G + t[:, None] * ctx["d"][None, :]
+    return [[round(float(v), 3) for v in p] for p in X], list(src), U
+
+
+def coord_report(s: Store, pid: int, opt: dict) -> dict:
+    """QC tempel ke topografi untuk satu foto (tanpa menyimpan apa pun)."""
+    r = photo(s, pid)
+    sol = georef_solve(r.get("georef"), r["w"], r["h"], plane_kind(r))
+    if not sol or not sol.get("ok"):
+        raise ValueError("Foto belum digeoreferensi: tempel ke topografi butuh georef yang sah.")
+    ctx = surface_ctx(s, r, sol, dict(opt, coord="topo"))
+    cnt = {"dtm": 0, "depth": 0, "bidang": 0}
+    off = []
+    for f in features(s, pid):
+        if (f.get("attrs") or {}).get(DRAFT) or f["kind"] in NO_EXPORT:
+            continue
+        xyz, src, U = surface_xyz(ctx, f["pts"], f["shape"] == "poly")
+        G = np.array(to_world(sol, r["w"], r["h"], U))
+        for p, g, sc in zip(xyz, G, src):
+            cnt[sc] = cnt.get(sc, 0) + 1
+            off.append(float(np.linalg.norm(np.array(p) - g)))
+    tot = sum(cnt.values()) or 1
+    return {"topo": ctx.get("topo"), "coverage": ctx.get("coverage"), "ctrl": ctx.get("ctrl"), "ctrl_med": ctx.get("ctrl_med"),
+            "fit": ctx.get("fit"), "counts": cnt, "pct": {k: v / tot for k, v in cnt.items()},
+            "offset_med": float(np.median(off)) if off else None, "offset_max": float(max(off)) if off else None,
+            "photo_date": _photo_date(r), "warn": ctx["warn"]}
+
+
+def export_items(s: Store, ids: list[int], opt: Optional[dict] = None) -> tuple[list[dict], list[str]]:
+    """Fitur tergeoreferensi dari foto-foto terpilih; foto tanpa georef yang sah dilaporkan.
+    opt["coord"] = "georef" (bawaan, di bidang foto) atau "topo" (tempel ke DTM, opsional)."""
     ks = {k["key"]: k for k in kinds(s)}
     items, skipped = [], []
     for pid in ids or [p["id"] for p in photos(s)]:
@@ -1142,11 +1301,14 @@ def export_items(s: Store, ids: list[int]) -> tuple[list[dict], list[str]]:
         if not sol or not sol.get("ok"):
             skipped.append(f"{r.get('title') or r['name']}: {(sol or {}).get('msg') or 'belum digeoreferensi'}")
             continue
+        ctx = surface_ctx(s, r, sol, opt)
+        for w_ in ctx["warn"]:
+            skipped.append(f"{r.get('title') or r['name']}: {w_}")
         for f in features(s, pid):
             if f["kind"] in NO_EXPORT or (f.get("attrs") or {}).get("_draft"):
                 continue  # garis skala & usulan yang belum diterima tidak ikut
             k = ks.get(f["kind"]) or {"name": f["kind"], "string": 50, "color": "#7a5aa6"}
-            xyz = to_world(sol, r["w"], r["h"], f["pts"])
+            xyz = surface_xyz(ctx, f["pts"], f["shape"] == "poly", dense=f["shape"] != "point")[0]
             base = {"photo": r.get("title") or r["name"], "kind": f["kind"], "kname": k["name"], "string": int(k["string"]),
                     "color": k["color"], "shape": f["shape"], "name": f.get("name") or "", "attrs": f["attrs"], "xyz": xyz, "fid": f["id"]}
             sm = samples_of(f["attrs"])
@@ -1235,6 +1397,13 @@ class ExpBody(FBody):
     ids: list[int] = []
     fmt: str = "str"
     name: str = "singkapan"
+    coord: str = "georef"  # bawaan: koordinat georef di bidang foto; "topo" = tempel ke DTM (opsional)
+    topo_id: Optional[int] = None
+    depth: bool = False
+
+
+def _opt(b) -> dict:
+    return {"coord": b.coord, "topo_id": b.topo_id, "depth": b.depth}
 
 
 @router.post("/georef")
@@ -1249,14 +1418,14 @@ def api_georef_info(b: PidBody) -> dict:
 
 @router.post("/export/check")
 def api_export_check(b: ExpBody) -> dict:
-    items, skipped = export_items(store(b.folder), b.ids)
+    items, skipped = export_items(store(b.folder), b.ids, _opt(b))
     return {"ok": True, "n": len(items), "skipped": skipped}
 
 
 @router.post("/export")
 def api_export(b: ExpBody):
     from fastapi.responses import Response
-    items, skipped = export_items(store(b.folder), b.ids)
+    items, skipped = export_items(store(b.folder), b.ids, _opt(b))
     if not items:
         raise ValueError("Tidak ada fitur tergeoreferensi untuk diekspor." + (" " + "; ".join(skipped) if skipped else ""))
     if b.fmt == "dxf":
@@ -1290,7 +1459,7 @@ def chain_slice(xyz: list, a: float, b: float) -> list[list[float]]:
     return [[round(float(v), 3) for v in p] for p in out]
 
 
-def samples_csv(s: Store, ids: list[int]) -> bytes:
+def samples_csv(s: Store, ids: list[int], opt: Optional[dict] = None) -> bytes:
     """Tabel sampel semua fitur (foto terpilih / semua): ID, dari, ke, panjang, koordinat awal-akhir (bila georef), kadar,
     plus baris komposit per garis berinterval."""
     import csv
@@ -1302,6 +1471,7 @@ def samples_csv(s: Store, ids: list[int]) -> bytes:
         r = photo(s, pid)
         sol = georef_solve(r.get("georef"), r["w"], r["h"], plane_kind(r))
         ok = bool(sol and sol.get("ok"))
+        ctx = surface_ctx(s, r, sol, opt) if ok else None
         ks = {k["key"]: k for k in kinds(s)}
         for f in features(s, pid):
             if (f.get("attrs") or {}).get(DRAFT):
@@ -1309,7 +1479,7 @@ def samples_csv(s: Store, ids: list[int]) -> bytes:
             sm = samples_of(f["attrs"])
             if not sm:
                 continue
-            xyz = to_world(sol, r["w"], r["h"], f["pts"]) if ok else None
+            xyz = surface_xyz(ctx, f["pts"], f["shape"] == "poly")[0] if ok else None
             kname = (ks.get(f["kind"]) or {}).get("name", f["kind"])
             for x in sm:
                 for k in x["grades"]:
@@ -1355,7 +1525,7 @@ def api_elements(b: ElemBody) -> dict:
 @router.post("/export/samples")
 def api_export_samples(b: ExpBody):
     from fastapi.responses import Response
-    return Response(samples_csv(store(b.folder), b.ids), media_type="text/csv")
+    return Response(samples_csv(store(b.folder), b.ids, _opt(b)), media_type="text/csv")
 
 
 # ---------------------------------------------------------------- channel / trenching -> database bor (Collar, Survey, Assay, Geologi)
@@ -1408,7 +1578,7 @@ def _dl(v: Any, mode: str) -> str:
     return f"{x / 2:g}" if mode == "half" else f"{-x:g}"
 
 
-def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
+def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half", opt: Optional[dict] = None) -> dict:
     import csv
     import io
     if dl_mode not in DL_MODES:
@@ -1432,13 +1602,17 @@ def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
             continue
         W, H = r["w"], r["h"]
         desc = r.get("desc") or {}
+        ctx = surface_ctx(s, r, sol, opt)
+        for w_ in ctx["warn"]:
+            skipped.append(f"{title}: {w_}")
         for n, f in enumerate(holes, 1):
             hid = re.sub(r"[^\w.-]+", "_", (f.get("name") or f"{title}_CH{n}").strip())[:40] or f"CH{f['id']}"
             base, k = hid, 2
             while hid in used:
                 hid, k = f"{base}_{k}", k + 1
             used.add(hid)
-            xyz = np.array(to_world(sol, W, H, f["pts"]))
+            xyz_l, _src, U = surface_xyz(ctx, f["pts"])
+            xyz = np.array(xyz_l)
             seg = [float(np.linalg.norm(xyz[i + 1] - xyz[i])) for i in range(len(xyz) - 1)]
             cum = [0.0]
             for L in seg:
@@ -1451,7 +1625,8 @@ def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
                 d = xyz[i + 1] - xyz[i]
                 azs.append((math.degrees(math.atan2(d[0], d[1])) + 360) % 360 if math.hypot(d[0], d[1]) > 1e-6 else (azs[-1] if azs else 0.0))
             collar.append([hid, f"{xyz[0][0]:.3f}", f"{xyz[0][1]:.3f}", f"{xyz[0][2]:.3f}", f"{eoh:.2f}", f"{azs[0]:.1f}", "0",
-                           "CHANNEL", title, r.get("taken") or "", r.get("location") or ""])
+                           "CHANNEL", title, r.get("taken") or "", r.get("location") or "",
+                           "GEOREF" if ctx["mode"] != "topo" else "TOPO:" + str((ctx.get("topo") or {}).get("name") or "-")])
             for i, a in enumerate(azs):
                 if i == 0 or abs(((a - azs[i - 1]) + 180) % 360 - 180) > 0.05:
                     survey.append([hid, f"{cum[i]:.2f}", f"{a:.1f}", "0"])
@@ -1462,7 +1637,7 @@ def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
             for x in iv:
                 assay.append((hid, x, f))
             # ---- geologi: titik potong garis dengan zona / label zona / struktur, lalu isi tiap sub-interval
-            Ppx = [(u * W, v * H) for u, v in f["pts"]]
+            Ppx = [(u * W, v * H) for u, v in U]
 
             def chain(i: int, t: float) -> float:
                 return cum[i] + seg[i] * t
@@ -1548,7 +1723,7 @@ def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
     arows = [[hid, f"{x['from']:.2f}", f"{x['to']:.2f}", x.get("id") or ""] + [_dl((x.get("grades") or {}).get(k2), dl_mode) for k2 in keys]
              for hid, x, _f in assay]
     return {
-        "collar": out(["HOLE_ID", "EAST", "NORTH", "RL", "MAX_DEPTH", "AZIMUTH", "DIP", "TYPE", "PHOTO", "DATE", "LOCATION"], collar),
+        "collar": out(["HOLE_ID", "EAST", "NORTH", "RL", "MAX_DEPTH", "AZIMUTH", "DIP", "TYPE", "PHOTO", "DATE", "LOCATION", "COORD_SRC"], collar),
         "survey": out(["HOLE_ID", "DEPTH", "AZIMUTH", "DIP"], survey),
         "assay": out(["HOLE_ID", "FROM", "TO", "SAMPLE_ID"] + [f"{k2}_{units.get(k2, '').replace('/', '').replace('%', 'pct') or 'val'}" for k2 in keys], arows),
         "geology": out(["HOLE_ID", "FROM", "TO"] + [c for _k, c in GEO_COLS] + ["ZONE", "STRUCTURE", "WEATHERING"], geol),
@@ -1558,11 +1733,14 @@ def drillhole_tables(s: Store, ids: list[int], dl_mode: str = "half") -> dict:
 class DhBody(FBody):
     ids: list[int] = []
     dl: str = "half"
+    coord: str = "georef"
+    topo_id: Optional[int] = None
+    depth: bool = False
 
 
 @router.post("/export/drillhole")
 def api_export_drillhole(b: DhBody) -> dict:
-    return {"ok": True, **drillhole_tables(store(b.folder), b.ids, b.dl)}
+    return {"ok": True, **drillhole_tables(store(b.folder), b.ids, b.dl, _opt(b))}
 
 
 # ================================================================ delineasi otomatis (usulan / draf)
@@ -1953,3 +2131,91 @@ def api_auto_accept(b: DraftBody) -> dict:
 def api_auto_reject(b: DraftBody) -> dict:
     s = store(b.folder)
     return {"ok": True, "features": reject_drafts(s, b.id, b.ids, b.by), "scale": scale_info(s, b.id)}
+
+
+# ---------------------------------------------------------------- API topografi & visi (SAM / Depth Anything)
+class TopoAddBody(FBody):
+    paths: list[str]
+    survey_date: str
+    name: str = ""
+
+
+class TopoIdBody(FBody):
+    tid: int
+
+
+class TopoCheckBody(FBody):
+    id: int
+    topo_id: Optional[int] = None
+    depth: bool = False
+
+
+class SamBody(FBody):
+    id: int
+    points: list[list[float]] = []
+    level: int = 1
+
+
+@router.post("/topo/list")
+def api_topo_list(b: FBody) -> dict:
+    from . import core_topo
+    return {"ok": True, "topo": core_topo.topo_list(store(b.folder))}
+
+
+@router.post("/topo/add")
+def api_topo_add(b: TopoAddBody) -> dict:
+    from . import core_topo
+    s = store(b.folder)
+    t = core_topo.topo_add(s, b.paths, b.survey_date, b.name, b.by)
+    return {"ok": True, "added": t, "topo": core_topo.topo_list(s)}
+
+
+@router.post("/topo/delete")
+def api_topo_delete(b: TopoIdBody) -> dict:
+    from . import core_topo
+    return {"ok": True, "topo": core_topo.topo_delete(store(b.folder), b.tid, b.by)}
+
+
+@router.post("/topo/check")
+def api_topo_check(b: TopoCheckBody) -> dict:
+    return {"ok": True, **coord_report(store(b.folder), b.id, {"topo_id": b.topo_id, "depth": b.depth})}
+
+
+@router.post("/vision/status")
+def api_vision_status(b: FBody) -> dict:
+    from . import core_vision
+    return {"ok": True, **core_vision.status()}
+
+
+@router.post("/sam/embed")
+def api_sam_embed(b: PidBody) -> dict:
+    from . import core_vision
+    s = store(b.folder)
+    r = photo(s, b.id)
+    t0 = time.time()
+    core_vision.sam_embed(s.photos / r["file"], f"{s.root}|{r['file']}")
+    return {"ok": True, "secs": round(time.time() - t0, 2)}
+
+
+@router.post("/sam/mask")
+def api_sam_mask(b: SamBody) -> dict:
+    """Mask SAM dari titik klik -> poligon ternormalisasi (belum disimpan)."""
+    from . import core_vision
+    s = store(b.folder)
+    r = photo(s, b.id)
+    if not b.points:
+        raise ValueError("Klik minimal satu titik di dalam zona.")
+    e = core_vision.sam_embed(s.photos / r["file"], f"{s.root}|{r['file']}")
+    m, sc, areas = core_vision.sam_mask(e, [[float(u), float(v), int(l)] for u, v, l in b.points], b.level)
+    poly = core_vision.mask_polygon(m)
+    return {"ok": True, "poly": poly, "score": sc, "areas": areas, "area": float(m.mean())}
+
+
+@router.post("/depth")
+def api_depth(b: PidBody) -> dict:
+    from . import core_vision
+    s = store(b.folder)
+    r = photo(s, b.id)
+    t0 = time.time()
+    d = core_vision.depth_map(s.photos / r["file"], s.root / "depth" / f"{r['id']}.npy")
+    return {"ok": True, "shape": list(d.shape), "secs": round(time.time() - t0, 2)}

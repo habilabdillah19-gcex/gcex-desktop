@@ -755,3 +755,10 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 66. DB-Ex 0.31.2 — persiapan pustaka visi (pengembang)
 
 - Tidak ada perubahan aplikasi. Workflow manual untuk pengembang: *Dev models* (memeriksa lisensi & isi model ONNX Segment Anything dan Depth Anything V2 Small) dan *Dev wheels* (OpenCV, Shapely, ONNX Runtime) sebagai persiapan fitur SAM, Depth Anything dan tempel ke topografi.
+
+## 67. DB-Ex 0.32.0 — SAM, Depth Anything & topografi opsional (DB-Ex versi Qt)
+
+- Fitur baru hanya di **DB-Ex versi Qt** (installer uji `DB-Ex-Qt-Setup-<versi>.exe` di pre-release `core-ex-qt-uji`). Tidak perlu memasang apa pun: **OpenCV, Shapely, ONNX Runtime** serta model **SlimSAM-77** (Segment Anything) dan **Depth Anything V2 Small** (keduanya Apache-2.0) sudah di dalam installer; semuanya berjalan offline di CPU. Installer menjadi lebih besar (± 150–250 MB).
+- **✦ SAM** di bilah atas Singkapan: klik di dalam zona → batas zona otomatis; Shift+klik = bukan zona; Tab = ukuran (kecil / sedang / besar); Enter = simpan; Esc = selesai.
+- **Topografi / DTM as-built (opsional)** di tab Georef: impor Surpac .dtm + .str beserta tanggal survey; *Cek terhadap foto ini* melaporkan cakupan DTM, jarak titik survey ke DTM dan peringatan bila foto lebih baru dari topografi.
+- **Ekspor** STR / DXF / tabel sampel / database channel menanyakan sumber koordinat; **bawaan: georef** (bidang foto dari titik survey). *Tempel ke topografi* hanya bila dipilih; area di luar DTM opsional diisi Depth Anything yang dikalibrasi ke meter. Collar memuat kolom COORD_SRC (GEOREF / TOPO:<nama>).

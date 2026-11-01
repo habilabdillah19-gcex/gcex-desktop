@@ -18,3 +18,6 @@ legal/LISENSI_QT_GPL-3.0.txt
 app_core_qt/version.txt
 dist-qt/
 build-pyqt/
+
+# model ONNX (diunduh tools/ai_models/unduh_model.py, tidak masuk git)
+models/

@@ -8,9 +8,18 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PIL import Image  # noqa: E402
-from PySide6.QtCore import QPointF  # noqa: E402
+from PySide6.QtCore import QPointF, Qt  # noqa: E402
 
 from test_qt_m1 import _win, fake_ollama, prj  # noqa: E402,F401
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _coord_default(monkeypatch):
+    """Dialog sumber koordinat ekspor: terima pilihan bawaan (georef) tanpa jendela modal."""
+    from corex.dialogs import Dlg
+    monkeypatch.setattr("corex.outcrop.CoordDlg.exec", lambda self: Dlg.Accepted)
 
 
 def _open_oc(qtbot, prj, tmp_path, monkeypatch):
@@ -588,3 +597,78 @@ def test_core_box_infographic_and_styles(qtbot, prj, tmp_path, monkeypatch):
 def QColor_l(rgb: int) -> int:
     from PySide6.QtGui import QColor
     return QColor(rgb).lightness()
+
+
+def test_sam_tool_topo_and_coord_dialog(qtbot, prj, tmp_path, monkeypatch):
+    """SAM: klik di zona -> pratinjau -> Enter simpan poligon; topografi: impor, cek, ekspor bawaan georef vs tempel DTM."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend" / "tests"))
+    from test_core_outcrop import _wall_dtm
+    from corex.outcrop import CoordDlg
+    w, pg = _open_oc(qtbot, prj, tmp_path, monkeypatch)
+    monkeypatch.setattr("corex.outcrop.say", lambda *a, **k: (_ for _ in ()).throw(AssertionError(a[1])))
+    # ---- dialog koordinat: bawaan georef, tanpa DTM opsi tempel nonaktif
+    d = CoordDlg(pg, "STR", [], None, False)
+    qtbot.addWidget(d)
+    assert d.rGeo.isChecked() and not d.rTopo.isEnabled() and d.result_opt() == {"coord": "georef"}
+    d = CoordDlg(pg, "STR", [{"id": 7, "survey_date": "2026-10-13", "name": "T41"}], 7, True)
+    qtbot.addWidget(d)
+    assert d.result_opt() == {"coord": "georef"} and not d.cbT.isEnabled()
+    d.rTopo.setChecked(True)
+    assert d.cbT.isEnabled() and d.result_opt() == {"coord": "topo", "topo_id": 7, "depth": True}
+    # ---- SAM (bila model tersedia)
+    if pg.vision().get("sam"):
+        import numpy as np
+        from PIL import Image as Im
+        a = np.zeros((400, 600, 3), np.uint8) + 120
+        a[100:300, 250:450] = (200, 90, 40)
+        src = tmp_path / "lapangan" / "kotak.png"
+        Im.fromarray(a).save(src)
+        monkeypatch.setattr("corex.outcrop.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
+        pg.add_photo()
+        qtbot.waitUntil(lambda: pg.cur and pg.cur["name"] == "kotak.png" and pg.view.w > 0, timeout=8000)
+        pg.cbKind.setCurrentIndex(pg.cbKind.findData("vein"))  # garis -> SAM mengganti ke zona
+        pg.bSam.click()
+        assert pg.tool.mode == "sam" and pg.kmap[pg.cbKind.currentData()]["shape"] == "poly"
+        pg.tool.press(_pt(pg, 0.58, 0.5), None)
+        qtbot.waitUntil(lambda: bool(pg.sam_poly) and not pg.sam_busy, timeout=60000)
+        us = [p[0] for p in pg.sam_poly]
+        assert abs(min(us) - 0.417) < 0.04 and abs(max(us) - 0.75) < 0.04 and "SAM" in pg.hintL.text()
+        n0 = len(pg.feats)
+        pg.tool.key(Qt.Key_Return)
+        assert len(pg.feats) == n0 + 1 and pg.feats[-1]["shape"] == "poly" and pg.tool.mode == "sam" and not pg.sam_poly
+        from PySide6.QtGui import QImage, QPainter
+        img = QImage(300, 200, QImage.Format_RGB32)
+        p = QPainter(img)
+        pg.canvas.paint(p, None)
+        p.end()
+        assert pg.escape() and pg.tool.mode == "select"
+    # ---- topografi: impor DTM fiktif lewat dialog, cek, ekspor
+    pts = [{"name": f"G{i}", "u": u, "v": v, "e": 1000 + u * 20, "n": 3000.0, "rl": 100 + (1 - v) * 16}
+           for i, (u, v) in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])]
+    from corex import api
+    api.call("/core/outcrop/georef", {"folder": pg.folder, "id": pg.cur["id"], "points": pts, "kind": "wall", "by": "Rina"})
+    _draw(pg, "kontak_lito", [(0.02, 0.5), (0.5, 0.5)])
+    files = _wall_dtm(tmp_path)
+    monkeypatch.setattr("corex.outcrop.QFileDialog.getOpenFileNames", lambda *a, **k: (files, ""))
+    from corex.dialogs import Dlg
+    monkeypatch.setattr("corex.outcrop.TopoDlg.exec", lambda self: Dlg.Accepted)
+    monkeypatch.setattr("corex.outcrop.TopoDlg.values", lambda self: ("Topo M41", "2026-10-13"))
+    pg.topo_import()
+    qtbot.waitUntil(lambda: pg.tList.count() == 1, timeout=15000)
+    assert "Topo M41" in pg.tList.item(0).text() and pg.tChk.isEnabled()
+    pg.tabs.setCurrentIndex(3)
+    pg.topo_check()
+    qtbot.waitUntil(lambda: "Cakupan DTM" in pg.tRes.text(), timeout=15000)
+    assert "titik survey ke DTM" in pg.tRes.text()
+    monkeypatch.setattr("corex.outcrop.show_in_folder", lambda p: None)
+    for opt, name in (({"coord": "georef"}, "geo"), ({"coord": "topo", "topo_id": pg.topo_sel(), "depth": False}, "topo")):
+        monkeypatch.setattr("corex.outcrop.CoordDlg.result_opt", lambda self, o=opt: o)
+        out = tmp_path / f"k_{name}.str"
+        monkeypatch.setattr("corex.outcrop.QFileDialog.getSaveFileName", lambda *a, out=out, **k: (str(out), ""))
+        monkeypatch.setattr("corex.outcrop.ask", lambda *a, **k: True)
+        pg.export_geo("str", False)
+    geo = [ln for ln in (tmp_path / "k_geo.str").read_text().splitlines() if ln.startswith("1,")]
+    topo = [ln for ln in (tmp_path / "k_topo.str").read_text().splitlines() if ln.startswith("1,")]
+    assert len(geo) == 2 and len(topo) > 10 and all(abs(float(ln.split(",")[1]) - 3000) < 1e-6 for ln in geo)
+    assert any(abs(float(ln.split(",")[1]) - 3000) > 0.05 for ln in topo)

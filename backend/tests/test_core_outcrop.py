@@ -419,3 +419,96 @@ def test_channel_to_drillhole_tables(st):
     assert "georef" in co.drillhole_tables(s, [], "half")["skipped"][0]
     with pytest.raises(ValueError, match="Tidak ada garis Channel"):
         co.drillhole_tables(s, [p2])
+
+
+def _wall_dtm(tmp, x1=1012.0, amp=0.5):
+    """DTM Surpac teks fiktif: dinding tegak bergelombang y = 3000 + amp*sin((x-1000)/3), x 995..x1, RL 80..125."""
+    import math
+    xs = [995 + i * 1.0 for i in range(int(x1 - 995) + 1)]
+    zs = [80 + j * 1.5 for j in range(31)]
+    pts = [(x, 3000 + amp * math.sin((x - 1000) / 3), z) for x in xs for z in zs]
+    st = ["wall_topo.str,13-Oct-26,,", "0, 0.000, 0.000, 0.000,"] + [f"1, {y:.3f}, {x:.3f}, {z:.3f}," for x, y, z in pts] + \
+        ["0, 0.000, 0.000, 0.000,", "0, 0.000, 0.000, 0.000, END"]
+    nz = len(zs)
+    tri = []
+    for i in range(len(xs) - 1):
+        for j in range(nz - 1):
+            a, b, c, d = i * nz + j + 1, (i + 1) * nz + j + 1, (i + 1) * nz + j + 2, i * nz + j + 2
+            tri += [(a, b, c), (a, c, d)]
+    dt = ["wall_topo.str,13-Oct-26,,", "0, 0.000, 0.000, 0.000, END", "OBJECT, 1,", "TRISOLATION, 1, neighbours=no,validated=true,closed=no"] + \
+        [f"{k + 1}, {a}, {b}, {c}," for k, (a, b, c) in enumerate(tri)] + ["END"]
+    d = tmp / "topo"
+    d.mkdir(exist_ok=True)
+    (d / "wall_topo.str").write_text("\n".join(st))
+    (d / "wall_topo.dtm").write_text("\n".join(dt))
+    return [str(d / "wall_topo.dtm"), str(d / "wall_topo.str")]
+
+
+def test_topo_optional_drape_and_depth(st, monkeypatch):
+    """Topografi opsional: impor DTM berversi tanggal, QC, ekspor bawaan tetap georef, opsi tempel ke DTM + Depth Anything."""
+    import math
+    import numpy as np
+    from gcex_backend import core_topo, core_vision
+    s, tmp = st
+    pid = co.add_photo(s, str(_img(tmp, size=(1000, 800))), "Rina")["id"]
+    co.update_photo(s, pid, {"taken": "2026-10-20 09:10"}, "Rina")
+    pts = [{"name": f"G{i}", "u": u, "v": v, "e": 1000 + u * 20, "n": 3000.0, "rl": 100 + (1 - v) * 16}
+           for i, (u, v) in enumerate([(0, 0), (1, 0), (1, 1), (0, 1)])]
+    co.save_georef(s, pid, pts, "wall", "Rina")
+    co.save_feature(s, pid, None, {"kind": "kontak_lito", "name": "K1", "pts": [[0.0, 0.5], [0.95, 0.5]]}, "Rina")
+    with pytest.raises(ValueError, match="tanggal survey"):
+        core_topo.topo_add(s, _wall_dtm(tmp), "", "", "Rina")
+    t = core_topo.topo_add(s, _wall_dtm(tmp), "2026-10-13", "Topo minggu 41", "Rina")
+    assert t["n_tri"] == 17 * 30 * 2 and t["survey_date"] == "2026-10-13"
+    with pytest.raises(ValueError, match="str"):
+        core_topo.topo_add(s, [_wall_dtm(tmp)[0]], "2026-10-13", "", "Rina")
+    # bawaan: georef (y = 3000 persis di bidang)
+    items, _ = co.export_items(s, [pid])
+    assert all(abs(p[1] - 3000) < 1e-6 for p in items[0]["xyz"]) and len(items[0]["xyz"]) == 2
+    # tempel ke topografi: garis dirapatkan, titik di dalam DTM (x <= 1012) mengikuti gelombang, di luar tetap di bidang
+    items, warn = co.export_items(s, [pid], {"coord": "topo", "topo_id": t["id"]})
+    P = items[0]["xyz"]
+    assert len(P) > 30 and any("lebih baru dari topografi" in w for w in warn)
+    inside = [p for p in P if p[0] <= 1011.9]
+    assert all(abs(p[1] - (3000 + 0.5 * math.sin((p[0] - 1000) / 3))) < 0.05 for p in inside)
+    assert all(abs(p[1] - 3000) < 1e-6 for p in P if p[0] > 1012.5)
+    rep = co.coord_report(s, pid, {"topo_id": t["id"]})
+    assert 0.3 < rep["coverage"] < 0.75 and rep["counts"]["dtm"] > 0 and rep["counts"]["bidang"] > 0 and rep["ctrl"]
+    assert any("lebih baru" in w for w in rep["warn"]) and rep["ctrl_med"] < 0.5
+    # Depth Anything (tiruan: kedalaman relatif = fungsi linear dari offset sebenarnya) mengisi area di luar DTM
+    def fake_depth(path, cache=None, side=518):
+        u = np.linspace(0, 1, 200)
+        off = 0.5 * np.sin((1000 + u * 20 - 1000) / 3)
+        return np.tile((0.5 + off * 0.4).astype(np.float32), (160, 1))
+    monkeypatch.setattr(core_vision, "depth_map", fake_depth)
+    rep = co.coord_report(s, pid, {"topo_id": t["id"], "depth": True})
+    assert rep["fit"] and rep["fit"]["rms"] < 0.05 and rep["counts"]["depth"] > 0 and rep["counts"]["bidang"] == 0
+    items, _ = co.export_items(s, [pid], {"coord": "topo", "topo_id": t["id"], "depth": True})
+    out = [p for p in items[0]["xyz"] if p[0] > 1012.5]
+    assert out and all(abs(p[1] - (3000 + 0.5 * math.sin((p[0] - 1000) / 3))) < 0.06 for p in out)
+    # database channel: kolom COORD_SRC
+    co.save_feature(s, pid, None, {"kind": "channel", "name": "TR-T", "pts": [[0.05, 0.6], [0.5, 0.6]]}, "Rina")
+    assert co.drillhole_tables(s, [pid])["collar"].split("\r\n")[1].endswith(",GEOREF")
+    tb = co.drillhole_tables(s, [pid], "half", {"coord": "topo", "topo_id": t["id"]})
+    assert ",TOPO:Topo minggu 41" in tb["collar"].split("\r\n")[1]
+    assert core_topo.topo_delete(s, t["id"], "Rina") == []
+
+
+def test_vision_sam_and_depth_real_models(st):
+    """SAM & Depth Anything sungguhan (dilewati bila model / pustaka tidak ada di lingkungan uji)."""
+    from gcex_backend import core_vision
+    if not core_vision.status()["sam"] or not core_vision.status()["depth"]:
+        pytest.skip("model ONNX / OpenCV tidak tersedia")
+    import numpy as np
+    s, tmp = st
+    a = np.zeros((300, 400, 3), np.uint8) + 120
+    a[80:220, 150:300] = (200, 90, 40)  # zona oksida fiktif berbentuk persegi
+    f = tmp / "lapangan" / "kotak.png"
+    f.parent.mkdir(exist_ok=True)
+    Image.fromarray(a).save(f)
+    pid = co.add_photo(s, str(f), "Rina")["id"]
+    j = co.api_sam_mask(co.SamBody(folder=str(s.root.parents[1]), id=pid, points=[[0.55, 0.5, 1]], level=1))
+    us, vs = [p[0] for p in j["poly"]], [p[1] for p in j["poly"]]
+    assert abs(min(us) - 0.375) < 0.03 and abs(max(us) - 0.75) < 0.03 and abs(min(vs) - 0.267) < 0.03 and abs(max(vs) - 0.733) < 0.03
+    d = co.api_depth(co.PidBody(folder=str(s.root.parents[1]), id=pid))
+    assert d["shape"][0] % 14 == 0 and (s.root / "depth" / f"{pid}.npy").exists()

@@ -1,0 +1,5 @@
+# Pustaka visi DB-Ex (Qt) — ruang kerja Singkapan: SAM & Depth Anything (ONNX Runtime), kontur / poligon (OpenCV, Shapely).
+# Hanya untuk build DB-Ex Qt; backend Electron GC-Ex tidak memakainya (diimpor lewat importlib).
+opencv-python-headless==4.10.0.84
+shapely==2.0.6
+onnxruntime==1.20.1

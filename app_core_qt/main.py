@@ -103,7 +103,18 @@ def selftest(folder: str, out: str) -> int:
         res["thumb"] = [im.width(), im.height()]
         res["xlsx"] = len(api.call("/core/export/xlsx", {"folder": folder}))
         res["machine_id"] = lic.machine_id()
-        res["ok"] = bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
+        # visi Singkapan: OpenCV, Shapely, ONNX Runtime + model SAM & Depth Anything harus ikut terbundel dan jalan
+        from gcex_backend import core_vision
+        vs = core_vision.status()
+        res["vision"] = vs
+        ph = api.image_file(folder, rows[0]["id"], 0)
+        e = core_vision.sam_embed(Path(ph), "selftest")
+        m, sc, _a = core_vision.sam_mask(e, [[0.5, 0.5, 1]], 1)
+        res["sam"] = [round(float(m.mean()), 3), round(sc, 3), len(core_vision.mask_polygon(m))]
+        res["depth"] = list(core_vision.depth_map(Path(ph)).shape)
+        import shapely  # noqa: F401  (ikut terbundel)
+        res["ok"] = (bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
+                     and vs["sam"] and vs["depth"] and bool(vs["libs"].get("shapely")) and res["depth"][0] > 0)
     except Exception as e:  # noqa: BLE001
         import traceback
         res["ok"], res["error"] = False, traceback.format_exc()

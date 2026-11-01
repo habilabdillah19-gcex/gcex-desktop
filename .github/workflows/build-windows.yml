@@ -154,7 +154,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          pip install PySide6-Essentials==6.8.1.1 pytest-qt==4.4.0
+          pip install PySide6-Essentials==6.8.1.1 pytest-qt==4.4.0 -r backend/requirements-vision.txt
+          # model ONNX (SAM & Depth Anything, Apache-2.0) dari Hugging Face pada revisi tetap, dicek SHA256 -> models/ (ikut installer)
+          python tools/ai_models/unduh_model.py models
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::unduh model AI gagal - uji SAM / Depth Anything dilewati" }
           python -m pytest -q -rfE --tb=line -p no:cacheprovider app_core_qt/tests 2>&1 | Tee-Object -FilePath qt_test.log
           $rc = $LASTEXITCODE
           if ($rc -ne 0) {
@@ -182,6 +185,8 @@ jobs:
           Set-Content -Path app_core_qt/version.txt -Value $v -NoNewline -Encoding ascii
           pyinstaller --noconfirm --onedir --windowed --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
+            --add-data "models;models" --hidden-import cv2 --hidden-import onnxruntime --hidden-import shapely --hidden-import shapely.geometry `
+            --collect-binaries onnxruntime --exclude-module sympy --exclude-module mpmath `
             --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller DB-Ex Qt gagal" }
           # Teks lisensi GNU diambil dari gnu.org. Satu gangguan jaringan dulu menggagalkan SELURUH

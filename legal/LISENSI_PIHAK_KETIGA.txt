@@ -75,6 +75,22 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
 
   Qt 6 / Qt for Python        6.8.1     LGPL-3.0                      antarmuka DB-Ex 1.0+ (PySide6,
   (PySide6, Shiboken6)                                                Shiboken6, pustaka Qt dinamis)
+  OpenCV (opencv-python-      4.10.0    Apache-2.0 (termasuk          kontur & poligon zona dari mask
+    headless)                           pustaka dibundel di wheel:    SAM (DB-Ex Singkapan)
+                                        lisensi permisif masing-
+                                        masing)
+  Shapely                     2.0.6     BSD-3-Clause (membawa GEOS:   perbaikan / geometri poligon
+                                        LGPL-2.1, pustaka dinamis     (DB-Ex Singkapan)
+                                        tidak diubah)
+  ONNX Runtime                1.20.1    MIT                           menjalankan model SAM & Depth
+                                                                      Anything secara lokal (offline)
+  Model SlimSAM-77            -         Apache-2.0 (turunan Segment   segmentasi zona dari klik
+    (Segment Anything, ONNX              Anything, Meta AI:            (DB-Ex Singkapan); file ONNX
+    Xenova/slimsam-77-uniform)          Apache-2.0)                   tidak diubah
+  Model Depth Anything V2     -         Apache-2.0 (hanya varian      kedalaman relatif satu foto
+    Small (ONNX, onnx-                  Small; varian Base / Large    (tempel ke topografi, opsional);
+    community/depth-anything-           berlisensi non-komersial dan  file ONNX tidak diubah
+    v2-small)                           TIDAK dipakai)
   Inter (font)                4.001     SIL OFL 1.1                   huruf judul & teks DB-Ex
   JetBrains Mono (font)       2.305     SIL OFL 1.1                   huruf angka & kode DB-Ex
   Playfair Display (font)     1.203     SIL OFL 1.1                   huruf judul dokumen tutorial
@@ -165,6 +181,25 @@ untuk kode DB-Ex.
 DB-Ex 1.0+ uses Qt 6 and Qt for Python (PySide6 / Shiboken6) under the GNU
 LGPL v3, unmodified and dynamically linked (replaceable files in the
 installation folder). Source: download.qt.io / code.qt.io.
+
+
+4b. MODEL AI VISI (SAM & DEPTH ANYTHING) — APACHE-2.0
+------------------------------------------------------
+
+DB-Ex (versi Qt) membundel dua model ONNX yang dijalankan lokal tanpa internet:
+  - SlimSAM-77 (Zigeng Chen dkk., "SlimSAM: 0.1% Data Makes Segment Anything
+    Slim", turunan Segment Anything (c) Meta Platforms, Inc.), ekspor ONNX
+    huggingface.co/Xenova/slimsam-77-uniform — Apache License 2.0.
+  - Depth Anything V2 Small (Lihe Yang dkk., "Depth Anything V2", 2024), ekspor
+    ONNX huggingface.co/onnx-community/depth-anything-v2-small — Apache License
+    2.0. Varian Base / Large / Giant berlisensi CC-BY-NC-4.0 dan tidak dipakai.
+File model tidak diubah; SHA256 & revisi sumber tercatat di
+tools/ai_models/models.json (kode sumber). Teks Apache License 2.0:
+https://www.apache.org/licenses/LICENSE-2.0 (juga di LISENSI_PYTHON.txt).
+Hasil AI (batas zona, kedalaman) adalah usulan yang wajib diperiksa geologist.
+
+DB-Ex (Qt) bundles two unmodified ONNX models run locally: SlimSAM-77 (derived
+from Meta's Segment Anything) and Depth Anything V2 Small, both Apache-2.0.
 
 
 5. METODE & STANDAR YANG DIRUJUK (BUKAN KODE PIHAK KETIGA)
