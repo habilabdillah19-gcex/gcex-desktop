@@ -831,3 +831,25 @@ python docs/tutorial-gcex/src/build_petunjuk_teknis.py
 Berkas `GCEx_Tutorial_0.24_Tambahan.pdf` digantikan oleh `GCEx_Tutorial_Update.pdf` (isinya diteruskan dan ditambah bab kerapatan bor serta bab GC-Ex Block Model). Gaya kedua dokumen ditaruh di modul bersama `docs/tutorial-gcex/src/doc_gcex.py`.
 
 Perbaikan CI menyertai: pagar kode markdown pada penulisan ringkasan galat ditulis dengan kutip tunggal — di string PowerShell berkutip ganda, backtick adalah karakter escape sehingga tiga backtick membuat kutipnya tidak pernah tertutup dan seluruh langkah gagal diurai (penyebab run 0.24.8 gagal).
+
+## 58. GC-Ex Block Model & Drill Hole Ultimate 0.24.10
+
+**Setiap Release kini memuat installer ketiga aplikasi pada versinya masing-masing.**
+
+Sebelumnya pengemas rilis hanya menyertakan installer yang nomor versinya **sama persis** dengan tag Release (yaitu versi tertinggi di antara ketiga aplikasi). Akibatnya, selama DB-Ex terus naik versi lebih cepat, installer GC-Ex tidak pernah ikut terbit:
+
+| Rilis | Installer di dalamnya |
+|---|---|
+| v0.33.1 | DB-Ex-Setup-0.33.1.exe saja |
+| v0.35.0 | DB-Ex-Setup-0.35.0.exe saja |
+| v0.35.3 | DB-Ex-Setup-0.35.3.exe saja |
+
+Padahal CI **membangun ketiga installer di setiap run** — pengemas yang membuangnya. Jadi perbaikan GC-Ex sejak v0.24.7 (klasifikasi keyakinan dengan kerapatan bor, LOD topografi & orthofoto, perbaikan digitasi manual dan as-mined di Block Model) tidak pernah sampai ke pengguna.
+
+Sekarang: bila installer dengan versi tag ada, itu yang dipakai; bila tidak, dipakai installer terbaru aplikasi itu yang ada di folder `dist`. Versi tiap aplikasi disebut di catatan rilis, misalnya:
+
+> Versi tiap aplikasi di rilis ini: GC-Ex Block Model 0.24.10, GC-Ex Drillhole 0.24.10, DB-Ex 0.36.1.
+
+Tag Release tetap memakai versi tertinggi seperti sebelumnya, dan aturan di `CLAUDE.md` disesuaikan agar tidak lagi bertentangan dengan perilaku pengemas.
+
+Diuji dengan installer tiruan pada versi yang berbeda-beda (GC-Ex 0.24.9, DB-Ex 0.36.1): ketiganya masuk ke folder rilis, tabel isi rilis menyebut versi masing-masing, dan `SHA256SUMS.txt` mencakup semuanya.

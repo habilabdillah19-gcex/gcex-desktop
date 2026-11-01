@@ -72,16 +72,24 @@ def main():
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7))).strftime("%Y-%m-%d %H:%M WIB")
 
     # ---- installer
+    # Setiap rilis memuat installer KETIGA aplikasi pada versinya masing-masing. CI memang membangun
+    # ketiganya di tiap run, jadi tidak ada gunanya membuang yang nomor versinya kebetulan bukan yang
+    # tertinggi: dulu perbaikan GC-Ex tidak pernah sampai ke pengguna selama DB-Ex terus naik versi.
+    # Tag rilis tetap memakai versi tertinggi; versi tiap aplikasi disebut di catatan rilis.
     inst = []
     for stem, nm in APPS:
         f = dist / f"{stem}-{ver}.exe"
-        if f.exists():  # aplikasi lain yang versinya tidak naik tidak ikut rilis ini
+        if not f.exists():                       # versinya tidak naik -> pakai yang ada di folder dist
+            kand = sorted(dist.glob(f"{stem}-*.exe"), key=lambda q: q.stat().st_mtime)
+            f = kand[-1] if kand else None
+        if f is not None and f.exists():
             shutil.copy2(f, outd / f.name)
-            inst.append((f.name, nm))
+            v_app = f.stem[len(stem) + 1:] or "?"
+            inst.append((f.name, nm, v_app))
     if not inst:
-        raise SystemExit(f"tidak ada installer versi {ver} di {dist}")
-    has_core = any(n.startswith("DB-Ex") for n, _ in inst)
-    has_gcex = any(n.startswith("GC-Ex") for n, _ in inst)
+        raise SystemExit(f"tidak ada installer satu pun di {dist}")
+    has_core = any(n.startswith("DB-Ex") for n, _, _ in inst)
+    has_gcex = any(n.startswith("GC-Ex") for n, _, _ in inst)
 
     D = ROOT / "docs"
     # ---- 1 dokumen
@@ -146,14 +154,16 @@ def main():
          f"Commit `{sha[:7]}` · build GitHub Actions run {run} · {now}", "",
          "## Isi rilis", "",
          "| File | Isi | Ukuran |", "|---|---|---|"]
-    desc = {n: f"Installer {a}" for n, a in inst}
+    desc = {n: f"Installer {a} {v}" for n, a, v in inst}
     desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, DB-Ex, aktivasi lisensi)"
-    desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm in inst) + ") + generator"
+    desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm, _ in inst) + ") + generator"
     desc[lis.name] = "Tentang, syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat)"
     for h, n, s in sums:
         L.append(f"| `{n}` | {desc.get(n, '')} | {s / 1048576:.1f} MB |")
     L += ["| Source code (zip / tar.gz) | Kode sumber commit ini (otomatis dari GitHub) | |", "",
-          ("Rilis ini hanya berisi " + ", ".join(nm for _, nm in inst) + "; aplikasi lain tetap memakai rilis sebelumnya. " if len(inst) < len(APPS) else "") + "Aplikasi dipasang satu per satu (installer terpisah). Aplikasi offline, tanpa pembaruan otomatis: "
+          "Versi tiap aplikasi di rilis ini: " + ", ".join(f"{nm} {v}" for _, nm, v in inst) + ". "
+          + ("Aplikasi yang tidak ada installernya di sini tetap memakai rilis sebelumnya. " if len(inst) < len(APPS) else "")
+          + "Aplikasi dipasang satu per satu (installer terpisah). Aplikasi offline, tanpa pembaruan otomatis: "
           "pelanggan meminta versi baru ke admin.", "",
           f"## Perubahan sejak {prev or 'awal'}", "", log or "- (tidak ada commit baru)", "",
           "## SHA-256", "", "```"] + [f"{h}  {n}" for h, n, _ in sums] + ["```", ""]
