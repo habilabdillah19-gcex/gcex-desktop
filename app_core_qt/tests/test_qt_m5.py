@@ -42,7 +42,7 @@ def _open_forms(qtbot, prj, tmp_path, monkeypatch):
     w.set_mode("form")
     pg = w.forms
     assert w.stack.currentWidget() is pg and not w.fbar.isVisible() and w.bModeForm.isChecked()
-    assert pg.cbNew.count() == 3 and pg.lst.count() == 0
+    assert pg.cbNew.count() == 4 and pg.lst.count() == 0
     src = _scan(tmp_path)
     monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
     pg.cbNew.setCurrentIndex(pg.cbNew.findData("ore"))
@@ -139,3 +139,54 @@ def test_forms_ai_failure_and_rc_row(qtbot, prj, tmp_path, monkeypatch):
     pg.add_row(None)
     d = pg.cur["rows"][1]["data"]
     assert (d["sample_id"], d["from_m"], d["to_m"]) == ("DX 100008 ZA", "7", "8")
+
+
+DDR_AI = {"header": {"tanggal": "31-10-26", "shift": "I", "rig": "RIG-X1", "driller": "Driller A", "wh": "5", "dl": "1"},
+          "rows": [{"mulai": "0700", "selesai": "0710", "aktivitas": "P2H", "kategori": ""},
+                   {"mulai": "0710", "selesai": "1200", "aktivitas": "Start drilling", "kategori": ""},
+                   {"mulai": "1200", "selesai": "1300", "aktivitas": "Istirahat", "kategori": ""}],
+          "lubang": [{"from_m": "0", "to_m": "30", "hole_id": "XX-1", "az": "60", "dip": "60"},
+                     {"from_m": "0", "to_m": "24", "hole_id": "XX-2", "az": "60", "dip": "60"}]}
+
+
+def test_forms_daily_drilling_report(qtbot, prj, tmp_path, monkeypatch):
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    pg.cbNew.setCurrentIndex(pg.cbNew.findData("ddr"))
+    src = tmp_path / "lapangan" / "DDR_fiktif.png"
+    Image.new("RGB", (900, 1300), "white").save(src)
+    monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
+    pg.add_files()
+    qtbot.waitUntil(lambda: bool(pg.cur) and pg.cur["doc"]["type"] == "ddr", timeout=8000)
+    _fake_ai(w, monkeypatch, DDR_AI)
+    pg.run_ai()
+    qtbot.waitUntil(lambda: not pg.ai_busy and pg.t.rowCount() == 3, timeout=8000)
+    assert not pg.tblRow.isHidden() and pg.cbTbl.count() == 2 and "Aktivitas (3)" in pg.cbTbl.itemText(0)
+    cols = [k for k, _l in pg.cols(pg.types["ddr"])]
+    kc = 1 + cols.index("kategori")
+    assert [pg.t.item(i, kc).text() for i in range(3)] == ["P2H", "DRILLING", "ISTIRAHAT"]
+    assert isinstance(pg.t.itemDelegateForColumn(kc), type(pg._katDel))
+    assert pg.t.item(1, len(cols) + 1).text() == "4.83"  # durasi turunan (jam)
+    assert not pg.sumInfo.isHidden() and "54 m" in pg.sumInfo.text() and "2</b> lubang" in pg.sumInfo.text()
+    # tabel meterage: edit tidak menyentuh aktivitas
+    pg.cbTbl.setCurrentIndex(1)
+    assert pg.tbl == "hole" and pg.t.rowCount() == 2 and pg.t.horizontalHeaderItem(3).text() == "Hole ID"
+    hc = 1 + [k for k, _l in pg.cols(pg.types["ddr"])].index("to_m")
+    pg.t.item(1, hc).setText("30")
+    qtbot.waitUntil(lambda: "60 m" in pg.sumInfo.text(), timeout=4000)
+    assert sum(1 for r in pg.cur["rows"] if not r["tbl"]) == 3 and pg.tbl == "hole"
+    # kegiatan baru mulai saat kegiatan terakhir selesai
+    pg.cbTbl.setCurrentIndex(0)
+    pg.add_row(None)
+    assert pg.t.rowCount() == 4 and pg.t.item(3, 1 + cols.index("mulai")).text() == "13:00"
+    assert not pg.pv[3].isHidden() and "lubang" in pg.pvLab[3].text().lower()
+    monkeypatch.setattr("corex.forms.ask", lambda *a, **k: True)
+    pg.verify_all(True)
+    z = tmp_path / "keluar" / "ddr.zip"
+    z.parent.mkdir(exist_ok=True)
+    monkeypatch.setattr("corex.forms.QFileDialog.getSaveFileName", lambda *a, **k: (str(tmp_path / "keluar" / "ddr"), ""))
+    monkeypatch.setattr("corex.forms.show_in_folder", lambda p: None)
+    monkeypatch.setattr("corex.forms.ask", lambda *a, **k: True)
+    pg.export("csv")
+    qtbot.waitUntil(lambda: z.exists(), timeout=6000)
+    import zipfile
+    assert "DDR_METERAGE.csv" in zipfile.ZipFile(z).namelist()

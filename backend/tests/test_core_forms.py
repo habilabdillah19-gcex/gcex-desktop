@@ -255,3 +255,80 @@ def test_exports_xlsx_csv_sqlite_access(st, monkeypatch):
 def io_bytes(b):
     import io
     return io.BytesIO(b)
+
+
+DDR_AI = {"header": {"tanggal": "31-10-26", "shift": "I", "rig": "RIG-X1", "driller": "Driller A", "client": "Klien A", "dhp_id": "KTR",
+                     "wh": "5hr", "dl": "7hrs", "mntc": "", "bd": "", "rain": "", "std": "", "hm_start": "1200.5", "hm_finish": "1203.7",
+                     "hm_running": "", "catatan": "area drillpad longsor, menunggu area baru", "ragu": ["dhp_id"]},
+          "rows": [{"mulai": "0650", "selesai": "0700", "aktivitas": "Traveling to ROM", "kategori": ""},
+                   {"mulai": "07.00", "selesai": "07.05", "aktivitas": "P5M", "kategori": ""},
+                   {"mulai": "0705", "selesai": "0710", "aktivitas": "Traveling to pit", "kategori": ""},
+                   {"mulai": "0710", "selesai": "0725", "aktivitas": "P2H", "kategori": ""},
+                   {"mulai": "0725", "selesai": "0840", "aktivitas": "Start engine + cleaning siklon", "kategori": ""},
+                   {"mulai": "0840", "selesai": "1150", "aktivitas": "Start drilling + cleaning siklon", "kategori": ""},
+                   {"mulai": "1150", "selesai": "1200", "aktivitas": "Traveling unit ke jarak aman blasting", "kategori": ""},
+                   {"mulai": "1200", "selesai": "1300", "aktivitas": "Restaem", "kategori": ""},
+                   {"mulai": "1300", "selesai": "1500", "aktivitas": "Standby area titik bor longsor", "kategori": ""},
+                   {"mulai": "1500", "selesai": "1900", "aktivitas": "Waiting informasi area titik bor", "kategori": "", "ragu": ["selesai"]}],
+          "lubang": [{"from_m": "0", "to_m": "30", "hole_id": "XX-100-S-05", "az": "70", "dip": "60"},
+                     {"from_m": "0", "to_m": "30", "hole_id": "XX-100-S-01", "az": "60", "dip": "60"},
+                     {"from_m": "0", "to_m": "30", "hole_id": "XX-100-S-02", "az": "60", "dip": "60", "ragu": ["az"]}]}
+
+
+def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
+    from openpyxl import load_workbook
+    import zipfile
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
+    calls = _ai(monkeypatch, DDR_AI)
+    cf.ai_read(s, did, "http://x", "m")
+    sch = calls[0]["format"]
+    assert sch["required"] == ["header", "rows", "lubang"] and "lubang" in calls[0]["messages"][0]["content"]
+    rs = cf.rows(s, did)
+    act = [r for r in rs if r["tbl"] == ""]
+    hole = [r for r in rs if r["tbl"] == "hole"]
+    assert len(act) == 10 and len(hole) == 3 and hole[2]["unc"] == ["az"]
+    assert (act[0]["data"]["mulai"], act[0]["data"]["selesai"]) == ("06:50", "07:00")
+    assert [r["data"]["kategori"] for r in act] == ["TRAVELING", "SAFETY TALK", "TRAVELING", "P2H", "PERSIAPAN", "DRILLING", "TRAVELING",
+                                                   "ISTIRAHAT", "STANDBY", "STANDBY"]
+    assert "kategori" in act[0]["unc"]
+    d = cf.doc(s, did)
+    v = cf.validate(d, rs)
+    assert "di luar shift siang" in v["rows"][act[9]["id"]]["selesai"]  # lembur sampai 19:00
+    sm = cf.ddr_summary(d, rs)
+    assert (sm["wh"], sm["dl"], sm["wh_akt"], sm["dl_akt"], sm["jam_aktivitas"]) == (5.0, 7.0, 5.17, 7.0, 12.17)
+    assert (sm["meter"], sm["n_lubang"], sm["jam_drilling"], sm["hm_running"], sm["m_per_jam"]) == (90.0, 3, 3.17, 3.2, 28.39)
+    assert "wh" not in v["header"]  # selisih 0.17 jam masih dalam toleransi
+    # edit tabel meterage saja tidak menyentuh tabel aktivitas
+    hr = [{"id": r["id"], "data": dict(r["data"]), "verified": True} for r in hole]
+    hr[2]["data"]["az"] = "65"
+    cf.save_rows(s, did, hr, "Rina", "hole")
+    rs = cf.rows(s, did)
+    assert len([r for r in rs if r["tbl"] == ""]) == 10 and [r for r in rs if r["tbl"] == "hole"][2]["data"]["az"] == "65"
+    # kategori diubah pengguna -> WH/DL dari aktivitas berubah, selisih besar ditandai di header
+    ar = [{"id": r["id"], "data": dict(r["data"]), "verified": False} for r in rs if r["tbl"] == ""]
+    ar[9]["data"]["kategori"] = "drilling"
+    rs2 = cf.save_rows(s, did, ar, "Rina")
+    assert [r for r in rs2 if r["tbl"] == ""][9]["data"]["kategori"] == "DRILLING"
+    assert "wh" in cf.validate(cf.doc(s, did), rs2)["header"]
+    ar[9]["data"]["kategori"] = ""  # kosong -> diisi lagi dari kata kunci
+    cf.save_rows(s, did, ar, "Rina")
+    cf.verify_all(s, did, True, "Rina")
+    pv = {p["key"]: p for p in cf.pivots(cf.records(cf.doc(s, did), cf.rows(s, did)), "ddr")}
+    assert {(x["kelompok"], x["jam"]) for x in pv["PIVOT_JAM_KELOMPOK"]["rows"]} == {("WH", 5.17), ("DL", 7.0)}
+    assert pv["PIVOT_METER_RIG"]["rows"][0]["meter"] == 90.0 and pv["PIVOT_METER_RIG"]["rows"][0]["lubang"] == 3
+    c = cf.collect(s, [did], "ddr")
+    assert len(c["recs"]) == 14 and c["recs"][-1]["_tbl"] == "_shift" and c["recs"][-1]["_verified"]
+    wb = load_workbook(io_bytes(cf.to_xlsx("ddr", c["recs"])))
+    assert wb.sheetnames[:3] == ["DDR_Aktivitas", "DDR_Meterage", "DDR_Ringkasan_Shift"] and "Pivot_Jam_Kelompok" in wb.sheetnames
+    assert wb["DDR_Meterage"].max_row == 4 and wb["DDR_Ringkasan_Shift"].max_row == 2 and wb["Audit"].max_row == 14
+    z = zipfile.ZipFile(io_bytes(cf.to_csv("ddr", c["recs"])))
+    assert sorted(z.namelist()) == ["DDR_AKTIVITAS.csv", "DDR_METERAGE.csv", "DDR_SHIFT.csv"]
+    db = tmp / "out" / "ddr.db"
+    r1 = cf.to_sqlite(str(db), "ddr", c["recs"])
+    r2 = cf.to_sqlite(str(db), "ddr", c["recs"])
+    assert (r1["added"], r2["added"], r2["updated"]) == (13, 0, 13) and r1["table"] == "DDR_AKTIVITAS, DDR_METERAGE, DDR_SHIFT"
+    cn = sqlite3.connect(str(db))
+    assert cn.execute("SELECT METER, LUBANG FROM DDR_METERAGE_PIVOT_METER_RIG").fetchone() == (90.0, 3)
+    assert cn.execute("SELECT WH, WH_AKT, METER FROM DDR_SHIFT").fetchone() == (5.0, 5.17, 90.0)
+    cn.close()

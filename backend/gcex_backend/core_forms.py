@@ -8,6 +8,9 @@ Jenis borang:
   rehandling, kelas + ton, status Baru / Lama, keterangan).
   Keduanya: tanda ulang, jam "menit saja" dan nomor truk singkat diselesaikan program (ditandai kuning); kolom turunan tanggal
   muat (shift malam lewat tengah malam), oksida / sulfida, grade; pivot ritase & tonase.
+- "ddr": RC Drilling Daily Drilling Report — header (tanggal, shift, rig, driller, client, jam WH / DL / MNTC / BD / RAIN / STD, HM
+  engine, bit, catatan) + tabel utama aktivitas (mulai, selesai, uraian, kategori otomatis dari kata kunci) + tabel kedua 'hole'
+  (meterage: from, to, hole ID, az, dip). Ekspor tiga tabel: DDR_AKTIVITAS, DDR_METERAGE, DDR_SHIFT (ringkasan) + pivot jam & meter.
 - "rc": RC Drill / Chiptray Log — header (Hole ID, tanggal) + interval (Sample ID, From, To, Remark QAQC).
 
 Prinsip: hasil AI = usulan. Sel yang diragukan AI ditandai, validasi otomatis menandai yang janggal, geologist mengedit dan
@@ -84,6 +87,29 @@ TYPES: dict[str, dict] = {
                  "TANDA ULANG: bila sel berisi tanda ulang (\" atau = atau ,, ) atau dilewati garis tegak / garis miring yang menyambung "
                  "dari baris di atas, tulis tepat \"〃\" (jangan menyalin nilai di atas sendiri; program yang mengisinya)."),
     },
+    "ddr": {
+        "name": "RC Drilling: Daily Drilling Report",
+        "header": [("tanggal", "Date", "date"), ("shift", "Shift (I / II)", "text"), ("rig", "Drill rig", "text"),
+                   ("driller", "Driller", "text"), ("client", "Client", "text"), ("dhp_id", "DHP ID", "text"),
+                   ("wh", "WH (jam kerja)", "num"), ("dl", "DL (delay)", "num"), ("mntc", "MNTC (maintenance)", "num"),
+                   ("bd", "BD (breakdown)", "num"), ("rain", "RAIN (hujan)", "num"), ("std", "STD (standby)", "num"),
+                   ("hm_start", "HM engine start", "num"), ("hm_finish", "HM engine finish", "num"), ("hm_running", "HM running", "num"),
+                   ("bit_type", "Bit / reamer: type", "text"), ("bit_serial", "Bit: serial no.", "text"), ("bit_on", "Bit: on", "text"),
+                   ("bit_off", "Bit: off", "text"), ("bit_drilled", "Bit: drilled (m)", "num"), ("catatan", "Catatan", "text"),
+                   ("geologist", "Geologist approval", "text")],
+        "rows": [("mulai", "Mulai", "time"), ("selesai", "Selesai", "time"), ("aktivitas", "Drilling details / formation description", "text"),
+                 ("kategori", "Kategori", "text")],
+        "tables": {"hole": {"name": "Meterage / lubang", "ai": "lubang",
+                            "rows": [("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("hole_id", "Hole ID", "text"),
+                                     ("az", "Az", "num"), ("dip", "Dip", "num")]}},
+        "hint": ("Borang 'Daily Drilling Report' pemboran RC, portrait. Header kanan atas: Client, DHP_ID, Driller, Date, Drill Rig, Shift "
+                 "(I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang' (satu objek per lubang). Kolom kanan "
+                 "'DRILLING DETAILS and FORMATION DESCRIPTION': tiap kegiatan diawali rentang jam, mis. 0650-0700 atau 07.00-07.05, lalu "
+                 "uraian (boleh dua baris tulisan) -> isi 'rows' dengan satu objek per kegiatan: mulai, selesai, aktivitas (gabungkan "
+                 "baris lanjutan uraian), kategori kosongkan (""). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
+                 "ENGINE (start, finish, HM running), Geologist approval; catatan di bawah tabel: WH, DL, MNTC, BD, RAIN, STD (jam, "
+                 "mis. 5hr -> 5) dan tulisan bebas -> 'catatan'."),
+    },
     "rc": {
         "name": "RC Drill / Chiptray Log",
         "header": [("hole_id", "Hole ID", "text"), ("tanggal", "Tanggal pengeboran", "date")],
@@ -100,6 +126,17 @@ SHIFT_DS = (6, 18)  # shift I / siang (DS) 06:00-18:00, shift II / malam (NS) 18
 CARRY = {"ore": ("pit", "elevasi", "tujuan"), "rom": ("asal", "tujuan", "status", "keterangan")}
 DITTO = {"ore": ("start", "finish", "pit", "elevasi", "kelas", "tujuan"),
          "rom": ("start", "finish", "asal", "tujuan", "rehandling", "kelas", "status", "keterangan")}
+# Daily Drilling Report: kategori aktivitas (urutan = prioritas kata kunci) dan kelompok jam di borang (WH / DL / MNTC / BD / RAIN / STD)
+DDR_KAT = [("P2H", r"\bp2h\b|pre.?start"), ("SAFETY TALK", r"\bp5m\b|\bpsm\b|safety|toolbox"),
+           ("ISTIRAHAT", r"\brest|istirahat|makan|ishoma|sholat|shalat"), ("HUJAN", r"hujan|\brain"),
+           ("BREAKDOWN", r"break ?down|\bbd\b|rusak|perbaikan|repair"), ("MAINTENANCE", r"service|servis|maint|mntc|ganti|greas"),
+           ("DRILLING", r"drilling|pemboran|ngebor|\bdrill\b|reaming"), ("TRAVELING", r"travel|moving|pindah|mobili|jalan"),
+           ("PERSIAPAN", r"start engine|clean|compres|kompres|set ?up|persiapan|pemanasan|rig up|leveling"),
+           ("STANDBY", r"stand ?by|stamby|waiting|tunggu|menunggu|\bstd\b"), ("BLASTING", r"blast|peledakan")]
+DDR_KAT_NAMES = [k for k, _r in DDR_KAT] + ["LAIN-LAIN"]
+DDR_GROUP = {"DRILLING": "WH", "TRAVELING": "WH", "PERSIAPAN": "WH", "P2H": "WH", "SAFETY TALK": "WH", "ISTIRAHAT": "DL", "STANDBY": "DL",
+             "BLASTING": "DL", "MAINTENANCE": "MNTC", "BREAKDOWN": "BD", "HUJAN": "RAIN", "LAIN-LAIN": "DL"}
+HOURS = ("wh", "dl", "mntc", "bd", "rain", "std")
 QAQC = {"STD": "STD", "STANDARD": "STD", "CRM": "STD", "STANDAR": "STD", "BLANK": "BLANK", "BLK": "BLANK", "DUP": "DUP", "DUPLICATE": "DUP",
         "DUPLIKAT": "DUP", "FD": "DUP", "FIELD DUP": "DUP"}
 
@@ -157,6 +194,8 @@ def store(folder: str) -> Store:
         s.scans.mkdir(exist_ok=True)
         with s.conn() as c:
             c.executescript(_DDL)
+            if "tbl" not in {r[1] for r in c.execute("PRAGMA table_info(rows)")}:  # tabel tambahan per borang (0.35)
+                c.execute("ALTER TABLE rows ADD COLUMN tbl TEXT DEFAULT ''")
         _STORES[key] = s
         return s
 
@@ -305,6 +344,70 @@ def shift_code(t: Any) -> str:
     return ""
 
 
+def tcols(ftype: str, tbl: str = "") -> list:
+    """Kolom tabel borang: tabel utama ('') atau tabel tambahan (mis. 'hole' di Daily Drilling Report)."""
+    t = TYPES[ftype]
+    return t["rows"] if not tbl else t["tables"][tbl]["rows"]
+
+
+def tables(ftype: str) -> list[str]:
+    return [""] + list(TYPES[ftype].get("tables") or {})
+
+
+def ddr_kat(text: Any) -> str:
+    t = str(text or "").lower()
+    for k, rx in DDR_KAT:
+        if re.search(rx, t):
+            return k
+    return "LAIN-LAIN"
+
+
+def kat_norm(v: Any) -> str:
+    t = str(v or "").strip().upper()
+    if not t:
+        return ""
+    return next((k for k in DDR_KAT_NAMES if k == t or k.replace(" ", "") == t.replace(" ", "")), t)
+
+
+def ddr_dur(a: Any, b: Any) -> Optional[float]:
+    """Durasi jam antara dua jam (melewati tengah malam bila selesai < mulai)."""
+    ta, tb = parse_time(a), parse_time(b)
+    if not ta or not tb:
+        return None
+    m = (int(tb[:2]) * 60 + int(tb[3:])) - (int(ta[:2]) * 60 + int(ta[3:]))
+    return round((m + 1440 if m < 0 else m) / 60, 2)
+
+
+def parse_hours(v: Any) -> Optional[float]:
+    """'5hr', '7 hrs', '2,5 jam', '1:30' -> jam."""
+    t = str(v or "").strip().lower()
+    if not t:
+        return None
+    m = re.match(r"^(\d{1,2}):(\d{2})$", t)
+    if m:
+        return int(m.group(1)) + int(m.group(2)) / 60
+    m = re.match(r"^(\d+(?:[.,]\d+)?)\s*(h|hr|hrs|jam|j)?\.?$", t)
+    return float(m.group(1).replace(",", ".")) if m else parse_num(t)
+
+
+def fill_ddr(lst: list[dict]) -> list[tuple[dict, list[str]]]:
+    """Daily Drilling Report: jam dinormalisasi (0650 -> 06:50), kategori kosong diisi dari kata kunci uraian (ditandai kuning)."""
+    out = []
+    for d in lst:
+        x = dict(d)
+        f = []
+        for k in ("mulai", "selesai"):
+            if parse_time(x.get(k)):
+                x[k] = parse_time(x.get(k))
+        if not str(x.get("kategori") or "").strip() and str(x.get("aktivitas") or "").strip():
+            x["kategori"] = ddr_kat(x.get("aktivitas"))
+            f.append("kategori")
+        elif x.get("kategori"):
+            x["kategori"] = kat_norm(x["kategori"])
+        out.append((x, f))
+    return out
+
+
 # ---------------------------------------------------------------- dokumen
 def docs(s: Store) -> list[dict]:
     with s.conn() as c:
@@ -347,6 +450,7 @@ def rows(s: Store, did: int) -> list[dict]:
             d["unc"] = json.loads(d.pop("unc_json") or "[]")
             d["edited"] = json.loads(d.pop("edited_json") or "[]")
             d["verified"] = bool(d["verified"])
+            d["tbl"] = d.get("tbl") or ""
             out.append(d)
         return out
 
@@ -458,16 +562,20 @@ def update_doc(s: Store, did: int, values: dict, by: str) -> dict:
     return doc(s, did)
 
 
-def save_rows(s: Store, did: int, lst: list[dict], by: str) -> list[dict]:
-    """Simpan seluruh tabel borang (urutan = urutan daftar). Baris: {id?, data, verified?}. Sel yang berubah dari isian AI
-    ditandai 'diedit' dan tidak lagi ragu. Baris yang tidak ada di daftar dihapus."""
+def save_rows(s: Store, did: int, lst: list[dict], by: str, tbl: str = "") -> list[dict]:
+    """Simpan seluruh satu tabel borang (urutan = urutan daftar; tbl '' = tabel utama). Baris: {id?, data, verified?}. Sel yang
+    berubah dari isian AI ditandai 'diedit' dan tidak lagi ragu. Baris tabel itu yang tidak ada di daftar dihapus."""
     d = doc(s, did)
-    keys = [k for k, _l, _t in TYPES[d["type"]]["rows"]]
-    old = {r["id"]: r for r in rows(s, did)}
+    if tbl not in tables(d["type"]):
+        raise ValueError(f"Tabel '{tbl}' tidak ada di borang ini.")
+    keys = [k for k, _l, _t in tcols(d["type"], tbl)]
+    old = {r["id"]: r for r in rows(s, did) if r["tbl"] == tbl}
     keep = set()
     datas = [{k: ("" if (r.get("data") or {}).get(k) is None else str((r.get("data") or {}).get(k)).strip()) for k in keys} for r in lst]
     if d["type"] in ORE_TYPES:  # tanda ulang / jam menit saja / nomor truk singkat yang diketik pengguna -> nilai lengkap
         datas = [x for x, _f in fill_ore(d["type"], datas, False)]
+    if d["type"] == "ddr" and not tbl:
+        datas = [x for x, _f in fill_ddr(datas)]
     with s.lock, s.conn() as c:
         for i, r in enumerate(lst):
             data = datas[i]
@@ -488,12 +596,12 @@ def save_rows(s: Store, did: int, lst: list[dict], by: str) -> list[dict]:
                           (i, json.dumps(data, ensure_ascii=False), json.dumps(unc), json.dumps(ed), int(ver), vb, va, rid))
                 keep.add(rid)
             else:
-                nid = c.execute("INSERT INTO rows (doc_id, idx, data_json, edited_json, verified, verified_by, verified_at, src, by, at) "
-                                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                nid = c.execute("INSERT INTO rows (doc_id, idx, data_json, edited_json, verified, verified_by, verified_at, src, by, at, tbl) "
+                                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                                 (did, i, json.dumps(data, ensure_ascii=False), json.dumps(keys), int(ver), by if ver else None,
-                                 core_io.now() if ver else None, "manual", by, core_io.now())).lastrowid
+                                 core_io.now() if ver else None, "manual", by, core_io.now(), tbl)).lastrowid
                 keep.add(nid)
-                _hist(c, did, f"baris {i + 1}", None, json.dumps(data, ensure_ascii=False), "tambah", by)
+                _hist(c, did, f"baris {i + 1}" + (f" ({tbl})" if tbl else ""), None, json.dumps(data, ensure_ascii=False), "tambah", by)
         for rid in set(old) - keep:
             c.execute("DELETE FROM rows WHERE id=?", (rid,))
             _hist(c, did, "hapus baris", json.dumps(old[rid]["data"], ensure_ascii=False), None, "hapus", by)
@@ -526,10 +634,16 @@ def ai_schema(ftype: str) -> dict:
         rp["kelas"] = {"type": "string", "enum": [""] + KELAS + ["〃"]}
     if ftype == "rom":
         rp["status"] = {"type": "string", "enum": ["", "Baru", "Lama", "〃"]}
-    return {"type": "object", "required": ["header", "rows"], "properties": {
-        "header": {"type": "object", "properties": {**hp, "ragu": {"type": "array", "items": {"type": "string", "enum": list(hp)}}}},
-        "rows": {"type": "array", "items": {"type": "object", "properties": rp, "required": [k for k, _l, _t in t["rows"]]}},
-        "catatan": {"type": "string"}}}
+    props = {"header": {"type": "object", "properties": {**hp, "ragu": {"type": "array", "items": {"type": "string", "enum": list(hp)}}}},
+             "rows": {"type": "array", "items": {"type": "object", "properties": rp, "required": [k for k, _l, _t in t["rows"]]}},
+             "catatan": {"type": "string"}}
+    req = ["header", "rows"]
+    for _tb, tt in (t.get("tables") or {}).items():
+        xp = {k: {"type": "string"} for k, _l, _t in tt["rows"]}
+        xp["ragu"] = {"type": "array", "items": {"type": "string", "enum": [k for k, _l, _t in tt["rows"]]}}
+        props[tt["ai"]] = {"type": "array", "items": {"type": "object", "properties": xp, "required": [k for k, _l, _t in tt["rows"]]}}
+        req.append(tt["ai"])
+    return {"type": "object", "required": req, "properties": props}
 
 
 def ai_prompt(ftype: str, extra: str = "") -> str:
@@ -538,7 +652,9 @@ def ai_prompt(ftype: str, extra: str = "") -> str:
     r = ", ".join(f"{k} ({lab})" for k, lab, _ in t["rows"])
     return (f"Anda petugas data entry geologi tambang. Baca formulir lapangan tulisan tangan pada gambar ini dengan teliti.\n{t['hint']}\n"
             f"Isi 'header' dengan field: {h}.\nIsi 'rows' dengan SATU objek per baris tabel yang terisi, field: {r}. Urutkan dari atas ke bawah. "
-            "Lewati baris kosong; jangan mengarang baris yang tidak ada.\n"
+            + "".join(f"Isi '{tt['ai']}' ({tt['name']}) dengan satu objek per baris terisi, field: "
+                      + ", ".join(f"{k} ({lab})" for k, lab, _ in tt["rows"]) + ". " for tt in (t.get("tables") or {}).values())
+            + "Lewati baris kosong; jangan mengarang baris yang tidak ada.\n"
             "Salin angka & kode persis seperti tertulis (jangan dibulatkan / diterjemahkan). "
             + ("" if ftype in ORE_TYPES else "Bila tulisan sama dengan baris di atasnya (tanda ulang \" atau ditto), isi dengan nilai baris di atasnya. ")
             + "Bila satu sel tidak terbaca jelas, tetap isi tebakan terbaik "
@@ -603,19 +719,65 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
     if d["type"] in ORE_TYPES and out_rows:
         res_f = fill_ore(d["type"], [dict(x, _u=u) for x, u in out_rows], True)
         out_rows = [({k: v for k, v in x.items() if k != "_u"}, list(dict.fromkeys(x["_u"] + f))) for x, f in res_f]
+    if d["type"] == "ddr" and out_rows:
+        out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(fill_ddr([x for x, _u in out_rows]), out_rows)]
+    extra = []
+    for tb, tt in (t.get("tables") or {}).items():
+        xk = [k for k, _l, _tt in tt["rows"]]
+        for r in (res or {}).get(tt["ai"]) or []:
+            if isinstance(r, dict):
+                data = {k: str(r.get(k) if r.get(k) is not None else "").strip() for k in xk}
+                if any(data.values()):
+                    extra.append((tb, data, [k for k in (r.get("ragu") or []) if k in xk]))
     with s.lock, s.conn() as c:
         c.execute("DELETE FROM rows WHERE doc_id=?", (did,))
         for i, (data, unc) in enumerate(out_rows):
-            c.execute("INSERT INTO rows (doc_id, idx, data_json, unc_json, src, by, at) VALUES (?,?,?,?,?,?,?)",
+            c.execute("INSERT INTO rows (doc_id, idx, data_json, unc_json, src, by, at, tbl) VALUES (?,?,?,?,?,?,?,'')",
                       (did, i, json.dumps(data, ensure_ascii=False), json.dumps(unc), "ai:" + model, by or "AI", core_io.now()))
+        for i, (tb, data, unc) in enumerate(extra):
+            c.execute("INSERT INTO rows (doc_id, idx, data_json, unc_json, src, by, at, tbl) VALUES (?,?,?,?,?,?,?,?)",
+                      (did, i, json.dumps(data, ensure_ascii=False), json.dumps(unc), "ai:" + model, by or "AI", core_io.now(), tb))
         c.execute("UPDATE docs SET header_json=?, hdr_unc=?, status='done', error=NULL, ai_model=?, ai_at=?, ai_secs=?, ai_note=?, ai_json=? "
                   "WHERE id=?", (json.dumps(h, ensure_ascii=False), json.dumps(hunc), model, core_io.now(), round(secs, 1),
                                  str((res or {}).get("catatan") or "")[:500], json.dumps(res, ensure_ascii=False)[:200000], did))
-        _hist(c, did, "AI membaca", None, f"{len(out_rows)} baris", "ai:" + model, by or "AI")
+        _hist(c, did, "AI membaca", None, f"{len(out_rows)} baris" + (f" + {len(extra)} baris tabel lain" if extra else ""), "ai:" + model,
+              by or "AI")
     return {"doc": doc(s, did), "rows": rows(s, did)}
 
 
 # ---------------------------------------------------------------- turunan, validasi, pivot
+def ddr_common(d: dict) -> dict:
+    h = d["header"]
+    tg = parse_date(h.get("tanggal"))
+    return {"tanggal": tg.isoformat() if tg else str(h.get("tanggal") or ""), "shift": h.get("shift") or "", "kode_shift": shift_code(h.get("shift")),
+            "rig": str(h.get("rig") or "").strip(), "driller": str(h.get("driller") or "").strip(), "client": str(h.get("client") or "").strip(),
+            "dhp_id": str(h.get("dhp_id") or "").strip()}
+
+
+def ddr_summary(d: dict, rs: list[dict]) -> dict:
+    """Satu baris ringkasan shift Daily Drilling Report: jam di borang (WH ... STD) vs jumlah durasi aktivitas per kelompok, meter, HM, bit."""
+    h = d["header"]
+    recs = records(d, rs)
+    act = [r for r in recs if r["_tbl"] == ""]
+    hole = [r for r in recs if r["_tbl"] == "hole"]
+    out = {"_row": 0, "_idx": 0, "_verified": bool(rs) and all(r["verified"] for r in rs), "_doc": d["id"], "_uid": d["uid"],
+           "_name": d["name"], "_key": f"{d['uid']}:shift", "_tbl": "_shift", **ddr_common(d)}
+    for k in HOURS:
+        out[k] = parse_hours(h.get(k))
+        out[k + "_akt"] = round(sum(r["durasi"] or 0 for r in act if r["kelompok"] == k.upper()), 2)
+    out.update({"jam_borang": round(sum(out[k] or 0 for k in HOURS), 2), "jam_aktivitas": round(sum(r["durasi"] or 0 for r in act), 2),
+                "jam_drilling": round(sum(r["durasi"] or 0 for r in act if r["kategori"] == "DRILLING"), 2),
+                "n_lubang": len({r["hole_id"] for r in hole if r["hole_id"]}), "meter": round(sum(r["meter"] or 0 for r in hole), 2),
+                "hm_start": parse_num(h.get("hm_start")), "hm_finish": parse_num(h.get("hm_finish")), "hm_running": parse_num(h.get("hm_running")),
+                "bit_type": h.get("bit_type") or "", "bit_serial": h.get("bit_serial") or "", "bit_on": h.get("bit_on") or "",
+                "bit_off": h.get("bit_off") or "", "bit_drilled": parse_num(h.get("bit_drilled")), "catatan": h.get("catatan") or "",
+                "geologist": h.get("geologist") or ""})
+    if out["hm_running"] is None and out["hm_start"] is not None and out["hm_finish"] is not None:
+        out["hm_running"] = round(out["hm_finish"] - out["hm_start"], 2)
+    out["m_per_jam"] = round(out["meter"] / out["jam_drilling"], 2) if out["jam_drilling"] else None
+    return out
+
+
 def records(d: dict, rs: list[dict]) -> list[dict]:
     """Baris lengkap (header disebar ke tiap baris) + kolom turunan + nilai ternormalisasi."""
     h = d["header"]
@@ -623,8 +785,20 @@ def records(d: dict, rs: list[dict]) -> list[dict]:
     for r in rs:
         x = dict(r["data"])
         rec: dict[str, Any] = {"_row": r["id"], "_idx": r["idx"], "_verified": r["verified"], "_doc": d["id"], "_uid": d["uid"],
-                               "_name": d["name"], "_key": f"{d['uid']}:{r['id']}"}
-        if d["type"] in ORE_TYPES:
+                               "_name": d["name"], "_key": f"{d['uid']}:{r['id']}", "_tbl": r.get("tbl") or ""}
+        if d["type"] == "ddr":
+            rec.update(ddr_common(d))
+            if rec["_tbl"] == "hole":
+                f_, t_ = parse_num(x.get("from_m")), parse_num(x.get("to_m"))
+                rec.update({"hole_id": str(x.get("hole_id") or "").strip().upper().replace(" ", ""), "from_m": f_, "to_m": t_,
+                            "meter": round(t_ - f_, 2) if f_ is not None and t_ is not None else None,
+                            "az": parse_num(x.get("az")), "dip": parse_num(x.get("dip"))})
+            else:
+                kat = kat_norm(x.get("kategori")) or ddr_kat(x.get("aktivitas"))
+                rec.update({"mulai": parse_time(x.get("mulai")) or x.get("mulai") or "", "selesai": parse_time(x.get("selesai")) or x.get("selesai") or "",
+                            "durasi": ddr_dur(x.get("mulai"), x.get("selesai")), "aktivitas": re.sub(r"\s+", " ", str(x.get("aktivitas") or "")).strip(),
+                            "kategori": kat, "kelompok": DDR_GROUP.get(kat, "DL")})
+        elif d["type"] in ORE_TYPES:
             tg = parse_date(h.get("tanggal"))
             ks = shift_code(h.get("shift"))
             jam = parse_time(x.get("finish")) or parse_time(x.get("start"))
@@ -670,7 +844,76 @@ def validate(d: dict, rs: list[dict], others: Optional[list[dict]] = None) -> di
     h = d["header"]
     if h.get("tanggal") and not parse_date(h.get("tanggal")):
         hdr["tanggal"] = "tanggal tidak dikenali (mis. 30-Oct-26 atau 30/10/2026)"
-    if d["type"] in ORE_TYPES:
+    if d["type"] == "ddr":
+        ks = shift_code(h.get("shift"))
+        if not ks:
+            hdr["shift"] = "shift harus I / II (siang / malam)"
+        if not str(h.get("rig") or "").strip():
+            hdr["rig"] = "drill rig kosong"
+        for k in HOURS + ("hm_start", "hm_finish", "hm_running", "bit_drilled"):
+            if str(h.get(k) or "").strip() and (parse_hours(h.get(k)) if k in HOURS else parse_num(h.get(k))) is None:
+                hdr[k] = "harus angka" + (" (jam)" if k in HOURS else "")
+        hs, hf = parse_num(h.get("hm_start")), parse_num(h.get("hm_finish"))
+        if hs is not None and hf is not None and hf < hs:
+            hdr["hm_finish"] = "HM finish lebih kecil dari HM start"
+        act = [r for r in rs if not r.get("tbl")]
+        hole = [r for r in rs if r.get("tbl") == "hole"]
+        prev = None
+        for r in act:
+            x = r["data"]
+            for k in ("mulai", "selesai"):
+                if not x.get(k):
+                    bad(r, k, "jam kosong")
+                elif not parse_time(x.get(k)):
+                    bad(r, k, "jam tidak valid (HH:MM)")
+            a, b = parse_time(x.get("mulai")), parse_time(x.get("selesai"))
+            if a and b:
+                dur = ddr_dur(a, b)
+                if a == b:
+                    bad(r, "selesai", "durasi nol")
+                elif dur and dur > 12:
+                    bad(r, "selesai", f"durasi {dur:g} jam — periksa jam")
+                for k, t in (("mulai", a), ("selesai", b)):
+                    hh, mm = int(t[:2]), int(t[3:])
+                    inside = SHIFT_DS[0] <= hh < SHIFT_DS[1] or (hh == SHIFT_DS[1] and mm == 0)
+                    if ks == "DS" and not inside and k not in out.get(r["id"], {}):
+                        bad(r, k, f"di luar shift siang (I, {SHIFT_DS[0]:02d}:00-{SHIFT_DS[1]:02d}:00) — lembur / periksa jam")
+                    elif ks == "NS" and SHIFT_DS[0] < hh < SHIFT_DS[1] and k not in out.get(r["id"], {}):
+                        bad(r, k, f"di luar shift malam (II, {SHIFT_DS[1]:02d}:00-{SHIFT_DS[0]:02d}:00) — periksa jam")
+                if prev and prev != a and "mulai" not in out.get(r["id"], {}):
+                    bad(r, "mulai", f"tidak menyambung dengan kegiatan sebelumnya (selesai {prev})")
+            prev = b or prev
+            if not str(x.get("aktivitas") or "").strip():
+                bad(r, "aktivitas", "uraian kegiatan kosong")
+            if x.get("kategori") and kat_norm(x.get("kategori")) not in DDR_KAT_NAMES:
+                bad(r, "kategori", "kategori bukan " + " / ".join(DDR_KAT_NAMES))
+        seen: dict[str, int] = {}
+        for r in hole:
+            x = r["data"]
+            f_, t_ = parse_num(x.get("from_m")), parse_num(x.get("to_m"))
+            if f_ is None:
+                bad(r, "from_m", "From harus angka")
+            if t_ is None:
+                bad(r, "to_m", "To harus angka")
+            if f_ is not None and t_ is not None and t_ <= f_:
+                bad(r, "to_m", "To harus lebih besar dari From")
+            hid = str(x.get("hole_id") or "").strip().upper().replace(" ", "")
+            if not hid:
+                bad(r, "hole_id", "Hole ID kosong")
+            elif hid in seen and f_ is not None and seen[hid] is not None and f_ < seen[hid] - 1e-6:
+                bad(r, "from_m", f"tumpang-tindih dengan baris {hid} sebelumnya (berakhir {seen[hid]:g} m)")
+            if hid:
+                seen[hid] = t_
+            az, dp = parse_num(x.get("az")), parse_num(x.get("dip"))
+            if x.get("az") and (az is None or not 0 <= az <= 360):
+                bad(r, "az", "azimuth 0-360")
+            if x.get("dip") and (dp is None or not -90 <= dp <= 90):
+                bad(r, "dip", "dip -90..90")
+        sm = ddr_summary(d, rs)
+        for k in HOURS:
+            if sm[k] is not None and act and abs(sm[k] - sm[k + "_akt"]) > 0.5 and k not in hdr:
+                hdr[k] = f"{k.upper()} {sm[k]:g} jam, jumlah aktivitas kelompok {k.upper()} {sm[k + '_akt']:g} jam — periksa kategori / jam"
+    elif d["type"] in ORE_TYPES:
         ks = shift_code(h.get("shift"))
         if not ks:
             hdr["shift"] = "shift harus I / II (siang / malam)"
@@ -786,27 +1029,52 @@ def other_ids(s: Store, did: int) -> list[dict]:
 
 LAB = {"tanggal": "Tanggal", "shift": "Shift", "kode_shift": "Kode", "front": "Front (pit · elevasi)", "excavator": "Excavator",
        "tujuan": "Tujuan", "kelas": "Kelas material", "asal": "Asal material", "jenis": "Direct / Rehandling", "unit": "Truck",
-       "ritase": "Ritase", "tonase": "Tonase"}
+       "ritase": "Ritase", "tonase": "Tonase", "rig": "Drill rig", "kategori": "Kategori", "kelompok": "Kelompok jam", "jam": "Jam",
+       "kegiatan": "Kegiatan", "hole_id": "Hole ID", "lubang": "Lubang", "meter": "Meter", "driller": "Driller", "interval": "Interval"}
+# bagian ekspor per jenis borang: (nama bagian -> OUT / DB_TABLE / SHEET, tabel sumber: '' utama, 'hole', '_shift' ringkasan)
+PARTS = {"ore": [("ore", "")], "rom": [("rom", "")], "rc": [("rc", "")],
+         "ddr": [("ddr", ""), ("ddr_hole", "hole"), ("ddr_shift", "_shift")]}
+_ORE_AGG = [("ritase", "count", None), ("tonase", "sum", "ton")]
 PIVOTS = {
-    "ore": [("PIVOT_PER_SHIFT", "Per shift", ["tanggal", "shift", "kode_shift"]),
-            ("PIVOT_PER_FRONT", "Per front (pit · elevasi · excavator)", ["tanggal", "front", "excavator"]),
-            ("PIVOT_TUJUAN_KELAS", "Per tujuan dumping × kelas material", ["tanggal", "tujuan", "kelas"])],
-    "rom": [("PIVOT_PER_SHIFT", "Per shift", ["tanggal", "shift", "kode_shift"]),
-            ("PIVOT_ASAL_TUJUAN", "Per asal → tujuan (direct / rehandling)", ["tanggal", "asal", "tujuan", "jenis"]),
-            ("PIVOT_TUJUAN_KELAS", "Per tujuan × kelas material", ["tanggal", "tujuan", "kelas"])],
+    "ore": [("PIVOT_PER_SHIFT", "Per shift", "ore", ["tanggal", "shift", "kode_shift"], _ORE_AGG),
+            ("PIVOT_PER_FRONT", "Per front (pit · elevasi · excavator)", "ore", ["tanggal", "front", "excavator"], _ORE_AGG),
+            ("PIVOT_TUJUAN_KELAS", "Per tujuan dumping × kelas material", "ore", ["tanggal", "tujuan", "kelas"], _ORE_AGG)],
+    "rom": [("PIVOT_PER_SHIFT", "Per shift", "rom", ["tanggal", "shift", "kode_shift"], _ORE_AGG),
+            ("PIVOT_ASAL_TUJUAN", "Per asal → tujuan (direct / rehandling)", "rom", ["tanggal", "asal", "tujuan", "jenis"], _ORE_AGG),
+            ("PIVOT_TUJUAN_KELAS", "Per tujuan × kelas material", "rom", ["tanggal", "tujuan", "kelas"], _ORE_AGG)],
+    "ddr": [("PIVOT_JAM_KELOMPOK", "Jam per kelompok (WH / DL / MNTC / BD / RAIN / STD)", "ddr", ["tanggal", "rig", "shift", "kelompok"],
+             [("jam", "sum", "durasi"), ("kegiatan", "count", None)]),
+            ("PIVOT_JAM_KATEGORI", "Jam per kategori aktivitas", "ddr", ["tanggal", "rig", "shift", "kategori"],
+             [("jam", "sum", "durasi"), ("kegiatan", "count", None)]),
+            ("PIVOT_METER_RIG", "Meter per rig & shift", "ddr_hole", ["tanggal", "rig", "shift", "driller"],
+             [("lubang", "count", None), ("meter", "sum", "meter")]),
+            ("PIVOT_METER_LUBANG", "Meter per lubang", "ddr_hole", ["hole_id", "rig"], [("meter", "sum", "meter"), ("interval", "count", None)])],
 }
 
 
+def part_tbl(part: str) -> str:
+    return next(tb for ps in PARTS.values() for p, tb in ps if p == part)
+
+
+def part_recs(recs: list[dict], part: str) -> list[dict]:
+    tb = part_tbl(part)
+    return [r for r in recs if (r.get("_tbl") or "") == tb]
+
+
 def pivots(recs: list[dict], ftype: str = "ore") -> list[dict]:
-    """Pivot ritase & tonase -> [{"key", "title", "cols": [[k, label]], "rows": [dict]}] (juga untuk sheet Excel & view SQLite)."""
+    """Pivot -> [{"key", "title", "part", "cols": [[k, label]], "rows": [dict]}] (juga untuk sheet Excel & view SQLite)."""
     out = []
-    for key, title, keys in PIVOTS.get(ftype, []):
+    for key, title, part, keys, aggs in PIVOTS.get(ftype, []):
         g: dict = {}
-        for r in recs:
+        for r in part_recs(recs, part):
             g.setdefault(tuple(r.get(k) for k in keys), []).append(r)
-        rows_ = [dict(zip(keys, k), ritase=len(v), tonase=round(sum(x["ton"] or 0 for x in v), 2))
-                 for k, v in sorted(g.items(), key=lambda kv: [str(x) for x in kv[0]])]
-        out.append({"key": key, "title": title, "cols": [[k, LAB.get(k, k)] for k in keys + ["ritase", "tonase"]], "rows": rows_})
+        rows_ = []
+        for k, v in sorted(g.items(), key=lambda kv: [str(x) for x in kv[0]]):
+            x = dict(zip(keys, k))
+            for name, op, fld in aggs:
+                x[name] = len(v) if op == "count" else round(sum(y.get(fld) or 0 for y in v), 2)
+            rows_.append(x)
+        out.append({"key": key, "title": title, "part": part, "cols": [[k, LAB.get(k, k)] for k in keys + [a[0] for a in aggs]], "rows": rows_})
     return out
 
 
@@ -829,11 +1097,34 @@ OUT = {
             ("MATERIAL", "Oksida / Sulfida", "material", "TEXT"), ("GRADE", "Grade", "grade", "TEXT"), ("TON", "Ton", "ton", "NUM"),
             ("STATUS", "Status Material", "status", "TEXT"), ("KETERANGAN", "Keterangan", "keterangan", "TEXT"),
             ("JENIS", "Direct / Rehandling", "jenis", "TEXT")],
+    "ddr": [("TANGGAL", "Date", "tanggal", "DATE"), ("SHIFT", "Shift", "shift", "TEXT"), ("KODE_SHIFT", "Kode Shift", "kode_shift", "TEXT"),
+            ("RIG", "Drill Rig", "rig", "TEXT"), ("DRILLER", "Driller", "driller", "TEXT"), ("CLIENT", "Client", "client", "TEXT"),
+            ("DHP_ID", "DHP ID", "dhp_id", "TEXT"), ("MULAI", "Mulai", "mulai", "TEXT"), ("SELESAI", "Selesai", "selesai", "TEXT"),
+            ("DURASI_JAM", "Durasi (jam)", "durasi", "NUM"), ("AKTIVITAS", "Drilling Details / Formation Description", "aktivitas", "TEXT"),
+            ("KATEGORI", "Kategori", "kategori", "TEXT"), ("KELOMPOK", "Kelompok Jam", "kelompok", "TEXT")],
+    "ddr_hole": [("TANGGAL", "Date", "tanggal", "DATE"), ("SHIFT", "Shift", "shift", "TEXT"), ("KODE_SHIFT", "Kode Shift", "kode_shift", "TEXT"),
+                 ("RIG", "Drill Rig", "rig", "TEXT"), ("DRILLER", "Driller", "driller", "TEXT"), ("HOLE_ID", "Hole ID", "hole_id", "TEXT"),
+                 ("FROM_M", "From (m)", "from_m", "NUM"), ("TO_M", "To (m)", "to_m", "NUM"), ("METER", "Meter", "meter", "NUM"),
+                 ("AZ", "Az", "az", "NUM"), ("DIP", "Dip", "dip", "NUM")],
+    "ddr_shift": [("TANGGAL", "Date", "tanggal", "DATE"), ("SHIFT", "Shift", "shift", "TEXT"), ("KODE_SHIFT", "Kode Shift", "kode_shift", "TEXT"),
+                  ("RIG", "Drill Rig", "rig", "TEXT"), ("DRILLER", "Driller", "driller", "TEXT"), ("CLIENT", "Client", "client", "TEXT"),
+                  ("DHP_ID", "DHP ID", "dhp_id", "TEXT")]
+    + [(k.upper(), k.upper() + " (borang)", k, "NUM") for k in HOURS]
+    + [(k.upper() + "_AKT", k.upper() + " dari aktivitas", k + "_akt", "NUM") for k in HOURS]
+    + [("JAM_BORANG", "Total jam borang", "jam_borang", "NUM"), ("JAM_AKTIVITAS", "Total jam aktivitas", "jam_aktivitas", "NUM"),
+       ("JAM_DRILLING", "Jam drilling", "jam_drilling", "NUM"), ("N_LUBANG", "Jumlah lubang", "n_lubang", "NUM"),
+       ("METER", "Meter", "meter", "NUM"), ("M_PER_JAM", "Meter / jam drilling", "m_per_jam", "NUM"),
+       ("HM_START", "HM Start", "hm_start", "NUM"), ("HM_FINISH", "HM Finish", "hm_finish", "NUM"), ("HM_RUNNING", "HM Running", "hm_running", "NUM"),
+       ("BIT_TYPE", "Bit Type", "bit_type", "TEXT"), ("BIT_SERIAL", "Bit Serial No.", "bit_serial", "TEXT"), ("BIT_ON", "Bit On", "bit_on", "TEXT"),
+       ("BIT_OFF", "Bit Off", "bit_off", "TEXT"), ("BIT_DRILLED", "Bit Drilled (m)", "bit_drilled", "NUM"), ("CATATAN", "Catatan", "catatan", "TEXT"),
+       ("GEOLOGIST", "Geologist Approval", "geologist", "TEXT")],
     "rc": [("HOLE_ID", "HOLE_ID", "hole_id", "TEXT"), ("TANGGAL", "Tanggal", "tanggal", "DATE"), ("SAMPLE_ID", "Sample_ID", "sample_id", "TEXT"),
            ("FROM_M", "From (m)", "from_m", "NUM"), ("TO_M", "To (m)", "to_m", "NUM"), ("REMARK", "Remark (QAQC)", "remark", "TEXT")],
 }
-DB_TABLE = {"ore": "ORE_LOADING_PIT", "rom": "ORE_ROM_CRUSHER", "rc": "RC_INTERVAL"}
-SHEET = {"ore": "Data_Loading_Pit", "rom": "Data_ROM_Crusher", "rc": "Interval_Geodatabase"}
+DB_TABLE = {"ore": "ORE_LOADING_PIT", "rom": "ORE_ROM_CRUSHER", "rc": "RC_INTERVAL", "ddr": "DDR_AKTIVITAS", "ddr_hole": "DDR_METERAGE",
+            "ddr_shift": "DDR_SHIFT"}
+SHEET = {"ore": "Data_Loading_Pit", "rom": "Data_ROM_Crusher", "rc": "Interval_Geodatabase", "ddr": "DDR_Aktivitas", "ddr_hole": "DDR_Meterage",
+         "ddr_shift": "DDR_Ringkasan_Shift"}
 AUDIT = [("VERIFIED", "BOOL"), ("SRC_DOC", "TEXT"), ("SRC_KEY", "TEXT")]
 
 
@@ -847,11 +1138,15 @@ def collect(s: Store, ids: list[int], ftype: str, unverified: bool = False) -> d
         rs = rows(s, d["id"])
         v = validate(d, rs, other_ids(s, d["id"]) if ftype == "rc" else None)
         issues += v["n"]
+        took = 0
         for rec in records(d, rs):
             if rec["_verified"] or unverified:
                 recs.append(rec)
+                took += 1
             else:
                 skip += 1
+        if ftype == "ddr" and took:
+            recs.append(ddr_summary(d, rs))
     return {"recs": recs, "docs": sel, "skipped_unverified": skip, "issues": issues}
 
 
@@ -883,73 +1178,98 @@ def to_xlsx(ftype: str, recs: list[dict]) -> bytes:
                 for c in ws.iter_rows(min_row=2, min_col=i, max_col=i):
                     c[0].number_format = fmts[i]
         ws.freeze_panes = "A2"
-    cols = OUT[ftype]
-    ws = wb.active
-    ws.title = SHEET[ftype]
-    sheet(ws, [c[1] for c in cols], [[_val(r, c[2], c[3]) for c in cols] for r in recs],
-          {i: ("d-mmm-yy" if c[3] == "DATE" else None) for i, c in enumerate(cols, 1)})
+    for i, (part, _tb) in enumerate(PARTS[ftype]):
+        cols = OUT[part]
+        ws = wb.active if i == 0 else wb.create_sheet()
+        ws.title = SHEET[part]
+        sheet(ws, [c[1] for c in cols], [[_val(r, c[2], c[3]) for c in cols] for r in part_recs(recs, part)],
+              {j: ("d-mmm-yy" if c[3] == "DATE" else None) for j, c in enumerate(cols, 1)})
     for pv in pivots(recs, ftype):
         ks = [k for k, _l in pv["cols"]]
-        sheet(wb.create_sheet(pv["key"].title().replace("_", "_")[:31]), [lab for _k, lab in pv["cols"]],
-              [[(parse_date(x[k]) or x[k]) if k == "tanggal" else x[k] for k in ks] for x in pv["rows"]], {1: "d-mmm-yy"})
-    sheet(wb.create_sheet("Audit"), ["Borang", "Baris", "Diverifikasi", "Kunci sumber"],
-          [[r["_name"], r["_idx"] + 1, "ya" if r["_verified"] else "BELUM", r["_key"]] for r in recs])
+        sheet(wb.create_sheet(pv["key"].title()[:31]), [lab for _k, lab in pv["cols"]],
+              [[(parse_date(x[k]) or x[k]) if k == "tanggal" else x[k] for k in ks] for x in pv["rows"]],
+              {1: "d-mmm-yy"} if ks[0] == "tanggal" else None)
+    sheet(wb.create_sheet("Audit"), ["Borang", "Tabel", "Baris", "Diverifikasi", "Kunci sumber"],
+          [[r["_name"], {"": "utama", "hole": "meterage"}.get(r["_tbl"], r["_tbl"]), r["_idx"] + 1, "ya" if r["_verified"] else "BELUM", r["_key"]]
+           for r in recs if r.get("_tbl") != "_shift"])
     b = io.BytesIO()
     wb.save(b)
     return b.getvalue()
 
 
-def to_csv(ftype: str, recs: list[dict]) -> bytes:
+def _csv_part(part: str, recs: list[dict]) -> bytes:
     b = io.StringIO()
     w = csv.writer(b, lineterminator="\r\n")
-    cols = OUT[ftype]
+    cols = OUT[part]
     w.writerow([c[0] for c in cols] + ["VERIFIED", "SRC_DOC"])
-    for r in recs:
+    for r in part_recs(recs, part):
         row = []
         for c in cols:
             v = _val(r, c[2], c[3])
             row.append(v.isoformat() if isinstance(v, date) else ("" if v is None else (f"{v:g}" if isinstance(v, float) else v)))
         w.writerow(row + ["1" if r["_verified"] else "0", r["_name"]])
-    return ("﻿" + b.getvalue()).encode("utf-8")
+    return ("\ufeff" + b.getvalue()).encode("utf-8")
 
 
-def _db_rows(ftype: str, recs: list[dict]) -> tuple[list[str], list[list]]:
-    cols = OUT[ftype]
+def to_csv(ftype: str, recs: list[dict]) -> bytes:
+    """Satu tabel -> file CSV; borang dengan beberapa tabel (Daily Drilling Report) -> ZIP berisi satu CSV per tabel."""
+    if len(PARTS[ftype]) == 1:
+        return _csv_part(PARTS[ftype][0][0], recs)
+    import zipfile
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w", zipfile.ZIP_DEFLATED) as z:
+        for part, _tb in PARTS[ftype]:
+            z.writestr(DB_TABLE[part] + ".csv", _csv_part(part, recs))
+    return b.getvalue()
+
+
+def _db_rows(part: str, recs: list[dict]) -> tuple[list[str], list[list]]:
+    cols = OUT[part]
     names = [c[0] for c in cols] + [a for a, _t in AUDIT]
-    data = [[_val(r, c[2], c[3]) for c in cols] + [bool(r["_verified"]), r["_name"], r["_key"]] for r in recs]
+    data = [[_val(r, c[2], c[3]) for c in cols] + [bool(r["_verified"]), r["_name"], r["_key"]] for r in part_recs(recs, part)]
     return names, data
 
 
 def to_sqlite(path: str, ftype: str, recs: list[dict]) -> dict:
-    """Tambah / perbarui (kunci SRC_KEY = borang:baris) ke file SQLite; view pivot dibuat untuk Ore Spotter."""
+    """Tambah / perbarui (kunci SRC_KEY = borang:baris) ke file SQLite, satu tabel per bagian borang; view pivot ikut dibuat."""
     tmap = {"TEXT": "TEXT", "NUM": "REAL", "DATE": "TEXT", "BOOL": "INTEGER"}
-    cols = [(c[0], c[3]) for c in OUT[ftype]] + AUDIT
-    names, data = _db_rows(ftype, recs)
-    tb = DB_TABLE[ftype]
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     cn = sqlite3.connect(str(p))
+    res = {"tables": [], "added": 0, "updated": 0, "total": 0}
     try:
         with cn:
-            cn.execute(f"CREATE TABLE IF NOT EXISTS {tb} (" + ", ".join(f"{n} {tmap[t]}" + (" PRIMARY KEY" if n == "SRC_KEY" else "")
-                                                                      for n, t in cols) + ")")
-            have = {r[1].upper() for r in cn.execute(f"PRAGMA table_info({tb})")}
-            for n, t in cols:
-                if n.upper() not in have:
-                    cn.execute(f"ALTER TABLE {tb} ADD COLUMN {n} {tmap[t]}")
-            before = cn.execute(f"SELECT COUNT(*) FROM {tb}").fetchone()[0]
-            cn.executemany(f"INSERT OR REPLACE INTO {tb} ({', '.join(names)}) VALUES ({', '.join('?' for _ in names)})",
-                           [[v.isoformat() if isinstance(v, date) else (int(v) if isinstance(v, bool) else v) for v in row] for row in data])
-            after = cn.execute(f"SELECT COUNT(*) FROM {tb}").fetchone()[0]
-            dbcol = {c[2]: c[0] for c in OUT[ftype]}
-            for key, _t, keys in PIVOTS.get(ftype, []):
+            for part, _tb in PARTS[ftype]:
+                cols = [(c[0], c[3]) for c in OUT[part]] + AUDIT
+                names, data = _db_rows(part, recs)
+                tb = DB_TABLE[part]
+                cn.execute(f"CREATE TABLE IF NOT EXISTS {tb} (" + ", ".join(f"{n} {tmap[t]}" + (" PRIMARY KEY" if n == "SRC_KEY" else "")
+                                                                          for n, t in cols) + ")")
+                have = {r[1].upper() for r in cn.execute(f"PRAGMA table_info({tb})")}
+                for n, t in cols:
+                    if n.upper() not in have:
+                        cn.execute(f"ALTER TABLE {tb} ADD COLUMN {n} {tmap[t]}")
+                before = cn.execute(f"SELECT COUNT(*) FROM {tb}").fetchone()[0]
+                cn.executemany(f"INSERT OR REPLACE INTO {tb} ({', '.join(names)}) VALUES ({', '.join('?' for _ in names)})",
+                               [[v.isoformat() if isinstance(v, date) else (int(v) if isinstance(v, bool) else v) for v in row] for row in data])
+                after = cn.execute(f"SELECT COUNT(*) FROM {tb}").fetchone()[0]
+                res["tables"].append(tb)
+                if part_tbl(part) != "_shift":
+                    res["added"] += after - before
+                    res["updated"] += len(data) - (after - before)
+                    res["total"] += after
+            for key, _t, part, keys, aggs in PIVOTS.get(ftype, []):
+                dbcol = {c[2]: c[0] for c in OUT[part]}
+                tb = DB_TABLE[part]
                 vn = f"{tb}_{key}"
                 g = ", ".join(dbcol[k] for k in keys)
+                ag = ", ".join(("COUNT(*)" if op == "count" else f"ROUND(SUM({dbcol[f]}), 2)") + f" AS {n.upper()}" for n, op, f in aggs)
                 cn.execute(f"DROP VIEW IF EXISTS {vn}")
-                cn.execute(f"CREATE VIEW {vn} AS SELECT {g}, COUNT(*) AS RITASE, ROUND(SUM(TON), 2) AS TONASE FROM {tb} GROUP BY {g}")
+                cn.execute(f"CREATE VIEW {vn} AS SELECT {g}, {ag} FROM {tb} GROUP BY {g}")
     finally:
         cn.close()
-    return {"table": tb, "added": after - before, "updated": len(data) - (after - before), "total": after}
+    res["table"] = ", ".join(res["tables"])
+    return res
 
 
 def to_access(path: str, ftype: str, recs: list[dict]) -> dict:
@@ -960,11 +1280,21 @@ def to_access(path: str, ftype: str, recs: list[dict]) -> dict:
     if not Path(path).exists():
         access_io.create_db(path)
         created = True
-    tb = DB_TABLE[ftype]
-    new_tb = access_io.ensure_table(path, tb, [(c[0], c[3]) for c in OUT[ftype]] + AUDIT, key="SRC_KEY")
-    names, data = _db_rows(ftype, recs)
-    r = access_io.insert(path, tb, names, data, key_column="SRC_KEY", skip_existing=True)
-    return {"table": tb, "added": r["added"], "existing": len(r["skipped_existing"]), "db_created": created, "table_created": new_tb}
+    res = {"tables": [], "added": 0, "existing": 0, "db_created": created, "table_created": False}
+    for part, _tb in PARTS[ftype]:
+        tb = DB_TABLE[part]
+        new_tb = access_io.ensure_table(path, tb, [(c[0], c[3]) for c in OUT[part]] + AUDIT, key="SRC_KEY")
+        names, data = _db_rows(part, recs)
+        if not data:
+            continue
+        r = access_io.insert(path, tb, names, data, key_column="SRC_KEY", skip_existing=True)
+        res["tables"].append(tb)
+        res["table_created"] = res["table_created"] or bool(new_tb)
+        if part_tbl(part) != "_shift":
+            res["added"] += r["added"]
+            res["existing"] += len(r["skipped_existing"])
+    res["table"] = ", ".join(res["tables"])
+    return {k: v for k, v in res.items() if k != "tables"}
 
 
 # ---------------------------------------------------------------- API
@@ -990,6 +1320,7 @@ class UpdBody(FBody):
 class RowsBody(FBody):
     id: int
     rows: list[dict[str, Any]]
+    tbl: str = ""
 
 
 class VerBody(FBody):
@@ -1018,13 +1349,17 @@ def _full(s: Store, did: int) -> dict:
     rs = rows(s, did)
     v = validate(d, rs, other_ids(s, did) if d["type"] == "rc" else None)
     recs = records(d, rs)
-    return {"doc": d, "rows": rs, "valid": v, "recs": recs, "pivot": pivots(recs, d["type"])}
+    return {"doc": d, "rows": rs, "valid": v, "recs": recs, "pivot": pivots(recs, d["type"]),
+            "summary": ddr_summary(d, rs) if d["type"] == "ddr" else None}
 
 
 @router.post("/open")
 def api_open(b: FBody) -> dict:
     s = store(b.folder)
-    return {"ok": True, "docs": docs(s), "types": {k: {"name": t["name"], "header": t["header"], "rows": t["rows"]} for k, t in TYPES.items()},
+    return {"ok": True, "docs": docs(s), "types": {k: {"name": t["name"], "header": t["header"], "rows": t["rows"],
+                                     "tables": {tb: {"name": tt["name"], "rows": tt["rows"]} for tb, tt in (t.get("tables") or {}).items()}}
+                                 for k, t in TYPES.items()},
+            "kategori": DDR_KAT_NAMES,
             "root": str(s.root)}
 
 
@@ -1057,7 +1392,7 @@ def api_update(b: UpdBody) -> dict:
 @router.post("/rows")
 def api_rows(b: RowsBody) -> dict:
     s = store(b.folder)
-    save_rows(s, b.id, b.rows, b.by)
+    save_rows(s, b.id, b.rows, b.by, b.tbl)
     return {"ok": True, **_full(s, b.id)}
 
 
@@ -1090,7 +1425,8 @@ def api_ai(b: AiBody) -> dict:
 @router.post("/export/check")
 def api_export_check(b: ExpBody) -> dict:
     c = collect(store(b.folder), b.ids, b.type, b.unverified)
-    return {"ok": True, "n": len(c["recs"]), "docs": len(c["docs"]), "skipped_unverified": c["skipped_unverified"], "issues": c["issues"]}
+    return {"ok": True, "n": sum(1 for r in c["recs"] if r.get("_tbl") != "_shift"), "docs": len(c["docs"]),
+            "skipped_unverified": c["skipped_unverified"], "issues": c["issues"]}
 
 
 @router.post("/export")

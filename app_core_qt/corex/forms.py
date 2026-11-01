@@ -1,4 +1,5 @@
-"""Ruang kerja Borang: borang lapangan tulisan tangan (Ore Spotter loading pit, Ore ke ROM / crusher, RC Drill / Chiptray Log).
+"""Ruang kerja Borang: borang lapangan tulisan tangan (Ore Spotter loading pit, Ore ke ROM / crusher, RC Daily Drilling Report,
+RC Drill / Chiptray Log).
 
 Kiri: daftar borang (+ Borang: foto / scan / PDF, satu borang per halaman). Tengah: scan (zoom, putar). Kanan: tab Data
 (header & tabel yang bisa diedit; sel ragu AI kuning, galat validasi merah; centang ✓ = baris diverifikasi), Pivot (Ore
@@ -11,7 +12,7 @@ from pathlib import Path
 from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
-                               QLineEdit, QListWidget, QListWidgetItem, QRadioButton, QSplitter, QTableWidget,
+                               QLineEdit, QListWidget, QListWidgetItem, QRadioButton, QScrollArea, QSplitter, QStyledItemDelegate, QTableWidget,
                                QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
 
 from . import api, theme
@@ -20,9 +21,30 @@ from .dialogs import ask, say
 from .util import SET, log, run_bg, show_in_folder
 from .viewer import Viewer
 
-SHORT = {"ore": "Loading pit", "rom": "ROM / crusher", "rc": "RC Drill"}
-FILE = {"ore": "Ore_Loading_Pit", "rom": "Ore_ROM_Crusher", "rc": "RC_Drill"}
+SHORT = {"ore": "Loading pit", "rom": "ROM / crusher", "ddr": "Daily Drilling Report", "rc": "RC Drill"}
+FILE = {"ore": "Ore_Loading_Pit", "rom": "Ore_ROM_Crusher", "ddr": "RC_Daily_Drilling_Report", "rc": "RC_Drill"}
+MULTI = {"ddr"}  # borang dengan beberapa tabel: ekspor CSV = ZIP berisi satu CSV per tabel
 UNC_BG, BAD_BG, VER_BG = "#fff3bf", "#ffe3e3", "#e6f4ea"
+
+
+class ListDelegate(QStyledItemDelegate):
+    """Sel dengan pilihan daftar (mis. kategori aktivitas Daily Drilling Report); tetap bisa diketik bebas."""
+
+    def __init__(self, parent, items: list[str]):
+        super().__init__(parent)
+        self.items = items
+
+    def createEditor(self, parent, option, index):  # noqa: N802
+        cb = QComboBox(parent)
+        cb.setEditable(True)
+        cb.addItems(self.items)
+        return cb
+
+    def setEditorData(self, ed, index):  # noqa: N802
+        ed.setCurrentText(index.data() or "")
+
+    def setModelData(self, ed, model, index):  # noqa: N802
+        model.setData(index, ed.currentText())
 
 
 class ScanView(Viewer):
@@ -70,7 +92,9 @@ class FormsPage(QWidget):
         self.rootp = ""
         self.types: dict = {}
         self.docs: list[dict] = []
-        self.cur: dict | None = None      # {"doc", "rows", "valid", "recs", "pivot"}
+        self.cur: dict | None = None      # {"doc", "rows", "valid", "recs", "pivot", "summary"}
+        self.tbl = ""                     # tabel yang sedang ditampilkan ('' = utama, 'hole' = meterage DDR)
+        self.kat: list[str] = []
         self.ai_busy = False
         self._filling = False
         self._build()
@@ -159,7 +183,28 @@ class FormsPage(QWidget):
         self.hdrForm = QFormLayout(self.hdrBox)
         self.hdrForm.setContentsMargins(8, 6, 8, 6)
         self.hdrEd: dict[str, QLineEdit] = {}
-        v.addWidget(self.hdrBox)
+        self.hdrScroll = QScrollArea()
+        self.hdrScroll.setWidgetResizable(True)
+        self.hdrScroll.setFrameShape(QFrame.NoFrame)
+        self.hdrScroll.setWidget(self.hdrBox)
+        v.addWidget(self.hdrScroll)
+        self.tblRow = QWidget()
+        tr = QHBoxLayout(self.tblRow)
+        tr.setContentsMargins(0, 0, 0, 0)
+        tr.addWidget(QLabel("Tabel:"))
+        self.cbTbl = QComboBox()
+        self.cbTbl.currentIndexChanged.connect(self._tbl_changed)
+        tr.addWidget(self.cbTbl)
+        tr.addStretch(1)
+        self.tblRow.hide()
+        v.addWidget(self.tblRow)
+        self.sumInfo = QLabel()
+        self.sumInfo.setTextFormat(Qt.RichText)
+        self.sumInfo.setWordWrap(True)
+        self.sumInfo.setObjectName("fld")
+        self.sumInfo.setMargin(6)
+        self.sumInfo.hide()
+        v.addWidget(self.sumInfo)
         self.valInfo = QLabel()
         self.valInfo.setTextFormat(Qt.RichText)
         self.valInfo.setWordWrap(True)
@@ -168,6 +213,8 @@ class FormsPage(QWidget):
         self.t.verticalHeader().setDefaultSectionSize(24)
         self.t.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.t.itemChanged.connect(self._cell)
+        self._plain = QStyledItemDelegate(self.t)
+        self._katDel = ListDelegate(self.t, [])
         v.addWidget(self.t, 1)
         r = QHBoxLayout()
         self.bRow = btn("+ Baris", sm=True)
@@ -203,7 +250,7 @@ class FormsPage(QWidget):
         v.addWidget(self.pvNote)
         self.pv: list[QTableWidget] = []
         self.pvLab: list[QLabel] = []
-        for _i in range(3):
+        for _i in range(4):
             lab = QLabel()
             v.addWidget(lab)
             tw = QTableWidget(0, 0)
@@ -250,7 +297,8 @@ class FormsPage(QWidget):
         self.expInfo.setMargin(8)
         self.expInfo.hide()
         v.addWidget(self.expInfo)
-        n = QLabel("Tabel database: <b>ORE_LOADING_PIT</b>, <b>ORE_ROM_CRUSHER</b> atau <b>RC_INTERVAL</b> dengan kolom VERIFIED, SRC_DOC dan SRC_KEY (borang:baris). "
+        n = QLabel("Tabel database: <b>ORE_LOADING_PIT</b>, <b>ORE_ROM_CRUSHER</b>, <b>RC_INTERVAL</b>, atau untuk Daily Drilling Report "
+                   "<b>DDR_AKTIVITAS</b> + <b>DDR_METERAGE</b> + <b>DDR_SHIFT</b> (ringkasan jam, meter, HM, bit), dengan kolom VERIFIED, SRC_DOC dan SRC_KEY (borang:baris). "
                    "Ekspor ulang tidak menggandakan baris: SQLite memperbarui baris yang sama, MS Access melewati baris yang sudah ada.")
         n.setObjectName("note")
         n.setWordWrap(True)
@@ -290,6 +338,8 @@ class FormsPage(QWidget):
             say(self, "Gagal membuka data borang:\n" + str(e), warn=True)
             return
         self.types = j["types"]
+        self.kat = j.get("kategori") or []
+        self._katDel.items = self.kat
         self.rootp = j.get("root") or ""
         cur = self.cbNew.currentData() or SET.get("fmType", "ore")
         self.cbNew.blockSignals(True)
@@ -426,6 +476,8 @@ class FormsPage(QWidget):
             say(self, str(e), warn=True)
             return
         same = self.cur and self.cur["doc"]["id"] == did
+        if not same:
+            self.tbl = ""
         self.cur = j
         self.set_enabled(True)
         if not same:
@@ -450,7 +502,20 @@ class FormsPage(QWidget):
             self.aiInfo.setText("Belum dibaca AI. Putar scan bila perlu (↻), lalu ✦ Baca dengan AI — atau isi tabel manual.")
         self.aiInfo.setTextFormat(Qt.RichText)
         self._header(d, t)
-        self._table(d, t, c["rows"], c["valid"])
+        tbs = [("", "Aktivitas" if d["type"] == "ddr" else "Tabel utama")] + [(k, x["name"]) for k, x in (t.get("tables") or {}).items()]
+        if self.tbl not in [k for k, _n in tbs]:
+            self.tbl = ""
+        self.cbTbl.blockSignals(True)
+        self.cbTbl.clear()
+        for k, n in tbs:
+            self.cbTbl.addItem(f"{n} ({sum(1 for r in c['rows'] if (r.get('tbl') or '') == k)})", k)
+        self.cbTbl.setCurrentIndex(max(0, self.cbTbl.findData(self.tbl)))
+        self.cbTbl.blockSignals(False)
+        self.tblRow.setVisible(len(tbs) > 1)
+        self.hdrScroll.setMaximumHeight(240 if len(t["header"]) > 8 else 16777215)
+        self.hdrScroll.setMinimumHeight(min(240, 30 + 26 * len(t["header"])))
+        self._summary(c.get("summary"))
+        self._table(d, t, [r for r in c["rows"] if (r.get("tbl") or "") == self.tbl], c["valid"])
         self._pivot(c.get("pivot"))
         self.tabs.setTabEnabled(1, bool(c.get("pivot")))
 
@@ -474,18 +539,48 @@ class FormsPage(QWidget):
             e.setToolTip(v.get(k) or ("AI ragu membaca isian ini" if k in d.get("hdr_unc", []) else ""))
 
     def cols(self, t: dict) -> list[tuple[str, str]]:
-        c = [(k, lab) for k, lab, _ty in t["rows"]]
-        return c
+        spec = t["rows"] if not self.tbl else t["tables"][self.tbl]["rows"]
+        return [(k, lab) for k, lab, _ty in spec]
+
+    def _tbl_changed(self, _i: int) -> None:
+        self.tbl = self.cbTbl.currentData() or ""
+        self.refresh()
+
+    def _summary(self, sm: dict | None) -> None:
+        """Ringkasan Daily Drilling Report: jam di borang vs jumlah durasi aktivitas per kelompok, meter, m / jam drilling."""
+        self.sumInfo.setVisible(bool(sm))
+        if not sm:
+            return
+        er = theme.C["er"]
+        cells = []
+        for k in ("wh", "dl", "mntc", "bd", "rain", "std"):
+            b, a = sm.get(k), sm.get(k + "_akt") or 0
+            if b is None and not a:
+                continue
+            off = b is not None and abs(b - a) > 0.5
+            cells.append(f"<b>{k.upper()}</b> {'' if b is None else f'{b:g}'} / {a:g}" if not off else
+                         f"<span style='color:{er}'><b>{k.upper()}</b> {b:g} / {a:g}</span>")
+        self.sumInfo.setText("Jam borang / dari aktivitas: " + " · ".join(cells)
+                             + f"<br>Aktivitas {sm['jam_aktivitas']:g} jam · drilling {sm['jam_drilling']:g} jam · "
+                             f"<b>{sm['n_lubang']}</b> lubang · <b>{sm['meter']:g} m</b>"
+                             + (f" · {sm['m_per_jam']:g} m/jam" if sm.get("m_per_jam") else "")
+                             + (f" · HM {sm['hm_running']:g}" if sm.get("hm_running") is not None else ""))
 
     def _table(self, d: dict, t: dict, rows: list[dict], valid: dict) -> None:
         self._filling = True
         cols = self.cols(t)
-        derived = [("tanggal_muat", "Tgl muat")] if d["type"] in ("ore", "rom") else []
+        derived = ([("tanggal_muat", "Tgl muat")] if d["type"] in ("ore", "rom") else
+                   [("durasi", "Jam"), ("kelompok", "Kelompok")] if d["type"] == "ddr" and not self.tbl else
+                   [("meter", "Meter")] if d["type"] == "ddr" else [])
         tb = self.t
         tb.clear()
         tb.setColumnCount(1 + len(cols) + len(derived))
         tb.setHorizontalHeaderLabels(["✓"] + [lab for _k, lab in cols] + [lab for _k, lab in derived])
         tb.setRowCount(len(rows))
+        for j in range(tb.columnCount()):
+            tb.setItemDelegateForColumn(j, self._plain)
+        if "kategori" in [k for k, _l in cols]:
+            tb.setItemDelegateForColumn(1 + [k for k, _l in cols].index("kategori"), self._katDel)
         recs = {r["_row"]: r for r in self.cur["recs"]}
         bad = valid["rows"]
         for i, r in enumerate(rows):
@@ -508,7 +603,8 @@ class FormsPage(QWidget):
                     it.setToolTip("AI ragu membaca sel ini, atau diisi program dari tanda ulang / baris di atas — cocokkan dengan scan")
                 tb.setItem(i, j, it)
             for j, (k, _lab) in enumerate(derived, 1 + len(cols)):
-                it = QTableWidgetItem(str((recs.get(r["id"]) or {}).get(k) or ""))
+                dv = (recs.get(r["id"]) or {}).get(k)
+                it = QTableWidgetItem("" if dv is None else (f"{dv:g}" if isinstance(dv, float) else str(dv)))
                 it.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                 it.setForeground(QColor(theme.C["mu"]))
                 tb.setItem(i, j, it)
@@ -525,7 +621,7 @@ class FormsPage(QWidget):
 
     def _pivot(self, pv: list | None) -> None:
         """Pivot dari backend: [{key, title, cols: [[k, label]], rows}] (Ore Spotter: per shift, per front / asal, per tujuan x kelas)."""
-        self.pvNote.setText("Ritase & tonase dari borang ini (semua baris, terverifikasi maupun belum). Pivot gabungan semua borang ada di "
+        self.pvNote.setText("Pivot dari borang ini (semua baris, terverifikasi maupun belum). Pivot gabungan semua borang ada di "
                             "ekspor Excel dan view SQLite.")
         pv = pv or []
         for i, (lab, tw) in enumerate(zip(self.pvLab, self.pv)):
@@ -561,7 +657,7 @@ class FormsPage(QWidget):
         if not self.cur:
             return
         try:
-            j = api.call("/core/forms/rows", {"folder": self.folder, "id": self.cur["doc"]["id"], "rows": rows, "by": self.by()})
+            j = api.call("/core/forms/rows", {"folder": self.folder, "id": self.cur["doc"]["id"], "rows": rows, "by": self.by(), "tbl": self.tbl})
         except api.ApiError as e:
             say(self, "Perubahan tidak disimpan:\n" + str(e), warn=True)
             return
@@ -595,6 +691,9 @@ class FormsPage(QWidget):
             m = re.match(r"^(.*?)(\d+)(\D*)$", ref["data"].get("sample_id") or "")
             if m:
                 new["data"]["sample_id"] = f"{m.group(1)}{int(m.group(2)) + 1:0{len(m.group(2))}d}{m.group(3)}"
+        if self.cur["doc"]["type"] == "ddr" and not self.tbl and rows:  # kegiatan berikutnya mulai saat kegiatan sebelumnya selesai
+            ref = rows[(at if at is not None else len(rows)) - 1] if (at or len(rows)) else rows[-1]
+            new["data"] = {"mulai": ref["data"].get("selesai") or ""}
         if at is None:
             rows.append(new)
             pos = len(rows) - 1
@@ -721,7 +820,7 @@ class FormsPage(QWidget):
         if chk["issues"] and not ask(self, f"Masih ada {chk['issues']} galat validasi di borang yang diekspor. Tetap ekspor?"):
             return
         nm = re.sub(r"[^\w.-]+", "_", FILE.get(ft, ft) + (("_" + self.cur["doc"]["name"]) if ids else ""))[:80]
-        ext, filt = {"xlsx": (".xlsx", "Excel (*.xlsx)"), "csv": (".csv", "CSV (*.csv)"), "sqlite": (".db", "SQLite (*.db *.sqlite)"),
+        ext, filt = {"xlsx": (".xlsx", "Excel (*.xlsx)"), "csv": ((".zip", "CSV dalam ZIP (*.zip)") if ft in MULTI else (".csv", "CSV (*.csv)")), "sqlite": (".db", "SQLite (*.db *.sqlite)"),
                      "access": (".accdb", "MS Access (*.accdb)")}[fmt]
         start = str(Path(SET.get(f"fmDb_{fmt}") or (Path(SET.get("lastSaveDir", str(Path.home()))) / (nm + ext))))
         p, _ = QFileDialog.getSaveFileName(self, "Ekspor borang" if fmt in ("xlsx", "csv") else "Pilih / buat file database", start, filt,

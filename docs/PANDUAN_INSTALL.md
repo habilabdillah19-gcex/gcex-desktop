@@ -782,3 +782,9 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 71. DB-Ex 0.34.1 — jam shift Borang
 
 - Validasi jam borang ore memakai jam shift site: **shift I / DS 06:00–18:00**, **shift II / NS 18:00–06:00**. Jam di luar shift ditandai merah untuk dicek.
+
+## 72. DB-Ex 0.35.0 — Borang RC Drilling: Daily Drilling Report
+
+- Jenis borang baru **RC Drilling: Daily Drilling Report** di ruang kerja Borang (DB-Ex versi Qt): AI membaca header (rig, driller, shift, jam WH / DL / MNTC / BD / RAIN / STD, HM engine, bit, catatan), tabel aktivitas dan tabel meterage dalam satu borang.
+- Kategori aktivitas diisi otomatis dari kata kunci (bisa diganti dari daftar); ringkasan membandingkan jam di borang dengan jumlah durasi aktivitas.
+- Ekspor ke tabel **DDR_AKTIVITAS**, **DDR_METERAGE**, **DDR_SHIFT** (Excel, CSV dalam ZIP, SQLite, MS Access) beserta pivot jam per kelompok / kategori dan meter per rig / lubang. Langkah lengkap: *Panduan DB-Ex* bagian 6d.

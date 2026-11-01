@@ -124,7 +124,7 @@ def selftest(folder: str, out: str) -> int:
         res["forms"] = len(api.call("/core/forms/open", {"folder": folder})["types"])
         res["ok"] = (bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
                      and vs["sam"] and vs["depth"] and bool(vs["libs"].get("shapely")) and res["depth"][0] > 0
-                     and res["pdf"][0] > 0 and res["forms"] == 2)
+                     and res["pdf"][0] > 0 and res["forms"] >= 4)
     except Exception as e:  # noqa: BLE001
         import traceback
         res["ok"], res["error"] = False, traceback.format_exc()

@@ -266,10 +266,14 @@ Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemirin
 
 ## 6d. Borang: borang lapangan tulisan tangan → Excel / CSV / SQLite / MS Access (DB-Ex versi Qt)
 
-Tombol **Borang** di bilah atas (di samping *Core box* dan *Singkapan*) membuka ruang kerja borang untuk folder proyek yang sama. Foto / scan / PDF borang disalin ke `_GCEx_Core/borang/scan` di dalam folder proyek; data tersimpan di `_GCEx_Core/borang/borang.db`. Tiga jenis borang:
+Tombol **Borang** di bilah atas (di samping *Core box* dan *Singkapan*) membuka ruang kerja borang untuk folder proyek yang sama. Foto / scan / PDF borang disalin ke `_GCEx_Core/borang/scan` di dalam folder proyek; data tersimpan di `_GCEx_Core/borang/borang.db`. Empat jenis borang:
 
 - **Ore Spotter: Loading Pit → ROM / Stockpile** (borang loading / rehandling ore di front): header nama crew, lokasi (pit), excavator (EX-…), tanggal, shift I / II; baris: No, Start / Finish Loading, Pit, Elevation, kelas material (OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO — kelompok kolom tempat Truck & Tonnage ditulis), Truck, Tonnage, Tujuan Dumping.
 - **Ore ke Stockpile / Crusher (Rehandling / Direct)** (borang spotter di ROM / crusher): header crew, lokasi, tanggal, shift; baris: No, Eq. No. Unit, Start / Finish Loading, Asal Material, Tujuan, Rehandling Tumpukan (sub-kolom yang dicentang), kelas material + ton (termasuk SCAT), Status Baru / Lama, Keterangan (Direct / Rehandling / OPP).
+- **RC Drilling: Daily Drilling Report**: header Date, Shift, Drill rig, Driller, Client, DHP ID, jam **WH / DL / MNTC / BD / RAIN / STD**, HM engine (start, finish, running), bit / reamer, catatan, geologist approval. Satu borang berisi **dua tabel** — pilih di *Tabel:* di atas tabel data:
+  - **Aktivitas** (drilling details): Mulai, Selesai, uraian, **Kategori** (diisi otomatis dari kata kunci, bisa dipilih dari daftar: DRILLING, TRAVELING, PERSIAPAN, P2H, SAFETY TALK, ISTIRAHAT, STANDBY, BLASTING, MAINTENANCE, BREAKDOWN, HUJAN, LAIN-LAIN), kolom turunan Jam (durasi) dan Kelompok jam. Kelompok: DRILLING / TRAVELING / PERSIAPAN / P2H / SAFETY TALK → WH; ISTIRAHAT / STANDBY / BLASTING / lain-lain → DL; MAINTENANCE → MNTC; BREAKDOWN → BD; HUJAN → RAIN.
+  - **Meterage / lubang**: From, To, Hole ID, Az, Dip (kolom turunan Meter).
+  - Kotak ringkasan membandingkan jam di borang dengan jumlah durasi aktivitas per kelompok (merah bila selisih > 0,5 jam), total meter, jumlah lubang, meter per jam drilling dan HM running. Validasi: jam kosong / tidak valid, kegiatan tidak menyambung, di luar shift (lembur), To ≤ From, azimuth / dip di luar rentang.
 - **RC Drill / Chiptray Log**: header Hole ID, tanggal pengeboran; baris Sample ID, From, To, Remark QAQC (STD / BLANK / DUP).
 
 Cara tulis cepat di lapangan dipahami program (sel yang diisi program ditandai **kuning** agar dicek):
@@ -289,9 +293,9 @@ Langkah:
 5. Perbaiki sel langsung di tabel (tersimpan otomatis; sel yang diedit tidak lagi ditandai ragu). Centang **✓** tiap baris yang sudah dicocokkan dengan scan — **Ctrl+Enter** = verifikasi baris terpilih & lanjut ke baris berikutnya; **✓ Verifikasi semua** untuk sekaligus.
 6. Tab **Pivot** (borang ore): ritase & tonase per shift, per front (pit · elevasi · excavator) atau per asal → tujuan, dan per tujuan × kelas material.
 7. Tab **Ekspor**: *borang ini* atau *semua borang jenis ini di proyek*. Bawaan **hanya baris terverifikasi** (centang *Sertakan baris yang belum diverifikasi* bila perlu; kolom VERIFIED = 0).
-   - **Excel (.xlsx)**: sheet data (`Data_Loading_Pit`, `Data_ROM_Crusher` atau `Interval_Geodatabase`), pivot ritase & tonase, dan sheet Audit.
-   - **CSV**.
-   - **SQLite (.db)**: tabel `ORE_LOADING_PIT`, `ORE_ROM_CRUSHER` atau `RC_INTERVAL` (+ view pivot, mis. `ORE_LOADING_PIT_PIVOT_PER_SHIFT`). Ekspor ulang memperbarui baris yang sama.
+   - **Excel (.xlsx)**: sheet data (`Data_Loading_Pit`, `Data_ROM_Crusher`, `Interval_Geodatabase`, atau untuk Daily Drilling Report `DDR_Aktivitas` + `DDR_Meterage` + `DDR_Ringkasan_Shift`), pivot (ritase & tonase; DDR: jam per kelompok, jam per kategori, meter per rig & shift, meter per lubang), dan sheet Audit.
+   - **CSV** (Daily Drilling Report: file ZIP berisi DDR_AKTIVITAS.csv, DDR_METERAGE.csv, DDR_SHIFT.csv).
+   - **SQLite (.db)**: tabel `ORE_LOADING_PIT`, `ORE_ROM_CRUSHER`, `RC_INTERVAL` atau `DDR_AKTIVITAS` / `DDR_METERAGE` / `DDR_SHIFT` (+ view pivot, mis. `ORE_LOADING_PIT_PIVOT_PER_SHIFT`, `DDR_METERAGE_PIVOT_METER_RIG`). Ekspor ulang memperbarui baris yang sama.
    - **MS Access (.accdb)**: database & tabel dibuat otomatis bila belum ada; baris yang sudah ada (kolom SRC_KEY = borang:baris) dilewati. Butuh driver Access 64-bit (MS Office 64-bit / Microsoft Access Database Engine).
 
 Semua perubahan (tambah, AI, edit, verifikasi, ekspor) tercatat di riwayat borang dengan nama pengguna.
