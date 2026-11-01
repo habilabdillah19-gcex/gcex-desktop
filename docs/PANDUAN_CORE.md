@@ -266,23 +266,32 @@ Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemirin
 
 ## 6d. Borang: borang lapangan tulisan tangan → Excel / CSV / SQLite / MS Access (DB-Ex versi Qt)
 
-Tombol **Borang** di bilah atas (di samping *Core box* dan *Singkapan*) membuka ruang kerja borang untuk folder proyek yang sama. Foto / scan / PDF borang disalin ke `_GCEx_Core/borang/scan` di dalam folder proyek; data tersimpan di `_GCEx_Core/borang/borang.db`. Dua jenis borang:
+Tombol **Borang** di bilah atas (di samping *Core box* dan *Singkapan*) membuka ruang kerja borang untuk folder proyek yang sama. Foto / scan / PDF borang disalin ke `_GCEx_Core/borang/scan` di dalam folder proyek; data tersimpan di `_GCEx_Core/borang/borang.db`. Tiga jenis borang:
 
-- **Ore Spotter / Truck Count**: header (tanggal, shift Siang / Malam, spotter, pit / front, block, elevasi, jenis ore & tujuan bawaan) dan baris (jam, ID truk, jenis ore, tujuan, ton). Kolom turunan otomatis: kode shift DS / NS, kode ore, kode tujuan dan **kunci poligon** (mis. `PIT-X_250_24_30Oct26_OXLG_418`).
-- **RC Drill / Chiptray Log**: header (Hole ID, tanggal pengeboran) dan baris (Sample ID, From, To, Remark QAQC: STD / BLANK / DUP).
+- **Ore Spotter: Loading Pit → ROM / Stockpile** (borang loading / rehandling ore di front): header nama crew, lokasi (pit), excavator (EX-…), tanggal, shift I / II; baris: No, Start / Finish Loading, Pit, Elevation, kelas material (OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO — kelompok kolom tempat Truck & Tonnage ditulis), Truck, Tonnage, Tujuan Dumping.
+- **Ore ke Stockpile / Crusher (Rehandling / Direct)** (borang spotter di ROM / crusher): header crew, lokasi, tanggal, shift; baris: No, Eq. No. Unit, Start / Finish Loading, Asal Material, Tujuan, Rehandling Tumpukan (sub-kolom yang dicentang), kelas material + ton (termasuk SCAT), Status Baru / Lama, Keterangan (Direct / Rehandling / OPP).
+- **RC Drill / Chiptray Log**: header Hole ID, tanggal pengeboran; baris Sample ID, From, To, Remark QAQC (STD / BLANK / DUP).
+
+Cara tulis cepat di lapangan dipahami program (sel yang diisi program ditandai **kuning** agar dicek):
+
+- **Tanda ulang** (〃, ", =, ,, garis tegak / garis miring panjang) → nilai baris di atasnya; *〃 370* di Tujuan → *ROM 370*; Tujuan yang hanya angka → awalan baris atas (mis. *ROM*).
+- **Jam menit saja**: *19.02* lalu *05* → 19:05; menit lebih kecil dari baris atas → jam berikutnya (*19.55* lalu *03* → 20:03).
+- **Nomor truk singkat** (borang loading pit): *4026* lalu *26* → 4026; *4026* lalu *45* → 4045.
+- Baris yang hanya mengganti Pit / Elevation tanpa truk tidak dijadikan baris; nilainya dibawa ke baris berikutnya. Sel Pit, Elevation, Tujuan, Asal, Status dan Keterangan yang kosong diisi dari baris atas.
+- **Shift II melewati tengah malam**: kolom *Tanggal muat* = tanggal borang + 1 untuk jam sebelum 12:00. Validasi menandai jam di luar shift (shift I 05:00–21:00, shift II 17:00–09:00) dan jam yang mundur.
 
 Langkah:
 
 1. Pilih jenis borang di kiri, klik **+ Borang** lalu pilih foto / scan / PDF (PDF: satu borang per halaman).
 2. Bila scan miring, putar dengan **↻** di pojok scan (putaran juga dipakai saat AI membaca).
 3. Klik **✦ Baca dengan AI**. Ollama di komputer ini membaca header dan tabel (model vision yang sama dengan dialog AI; tulisan tangan biasanya 30–180 detik). Bila AI gagal, tabel **tidak diisi apa pun**: tidak ada data contoh / tiruan. Tabel juga boleh diisi manual (**+ Baris**, **Sisipkan**, **Hapus baris**; di RC, baris baru melanjutkan From / To dan nomor Sample ID).
-4. **Periksa berdampingan**: scan di tengah, data di kanan. Sel **kuning** = AI ragu membaca; sel **merah** = galat validasi (arahkan kursor untuk alasannya). Contoh validasi: jam / ton bukan angka, ton di luar 0–400, jam mundur, shift bukan Siang / Malam; RC: To ≤ From, celah / tumpang tindih interval, Sample ID ganda atau loncat (juga terhadap borang lain di proyek), remark QAQC tidak dikenal.
+4. **Periksa berdampingan**: scan di tengah, data di kanan. Sel **kuning** = AI ragu membaca atau diisi program (tanda ulang, jam menit saja, nomor truk singkat); sel **merah** = galat validasi (arahkan kursor untuk alasannya). Contoh validasi: jam / ton bukan angka, ton di luar 0–400, jam mundur atau di luar shift, kelas material tidak dikenal, nomor baris tidak urut, shift bukan I / II; RC: To ≤ From, celah / tumpang tindih interval, Sample ID ganda atau loncat (juga terhadap borang lain di proyek), remark QAQC tidak dikenal.
 5. Perbaiki sel langsung di tabel (tersimpan otomatis; sel yang diedit tidak lagi ditandai ragu). Centang **✓** tiap baris yang sudah dicocokkan dengan scan — **Ctrl+Enter** = verifikasi baris terpilih & lanjut ke baris berikutnya; **✓ Verifikasi semua** untuk sekaligus.
-6. Tab **Pivot** (Ore Spotter): ritase & tonase per shift, per front (pit · block, siang / malam) dan per tujuan dumping.
+6. Tab **Pivot** (borang ore): ritase & tonase per shift, per front (pit · elevasi · excavator) atau per asal → tujuan, dan per tujuan × kelas material.
 7. Tab **Ekspor**: *borang ini* atau *semua borang jenis ini di proyek*. Bawaan **hanya baris terverifikasi** (centang *Sertakan baris yang belum diverifikasi* bila perlu; kolom VERIFIED = 0).
-   - **Excel (.xlsx)**: sheet data siap tempel (`Import_Data_A_sampai_K` / `Interval_Geodatabase`), pivot per shift / lokasi pit / tujuan dumping, dan sheet Audit.
+   - **Excel (.xlsx)**: sheet data (`Data_Loading_Pit`, `Data_ROM_Crusher` atau `Interval_Geodatabase`), pivot ritase & tonase, dan sheet Audit.
    - **CSV**.
-   - **SQLite (.db)**: tabel `ORE_SPOTTER` / `RC_INTERVAL` (+ view `PIVOT_PER_SHIFT`, `PIVOT_PER_FRONT`, `PIVOT_PER_TUJUAN`). Ekspor ulang memperbarui baris yang sama.
+   - **SQLite (.db)**: tabel `ORE_LOADING_PIT`, `ORE_ROM_CRUSHER` atau `RC_INTERVAL` (+ view pivot, mis. `ORE_LOADING_PIT_PIVOT_PER_SHIFT`). Ekspor ulang memperbarui baris yang sama.
    - **MS Access (.accdb)**: database & tabel dibuat otomatis bila belum ada; baris yang sudah ada (kolom SRC_KEY = borang:baris) dilewati. Butuh driver Access 64-bit (MS Office 64-bit / Microsoft Access Database Engine).
 
 Semua perubahan (tambah, AI, edit, verifikasi, ekspor) tercatat di riwayat borang dengan nama pengguna.

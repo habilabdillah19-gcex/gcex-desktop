@@ -772,3 +772,9 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 69. DB-Ex 0.33.1 — rilis ruang kerja Borang
 
 - Isi sama dengan 0.33.0 (Borang: Ore Spotter / Truck Count & RC Drill / Chiptray Log). Build 0.33.0 terhenti di uji otomatis sebelum installer dibuat; 0.33.1 memperbaikinya. Pasang `DB-Ex-Qt-Setup-0.33.1.exe`.
+
+## 70. DB-Ex 0.34.0 — Borang mengikuti borang ore spotter lapangan
+
+- Jenis borang ore kini mengikuti borang lapangan: **Ore Spotter: Loading Pit → ROM / Stockpile** dan **Ore ke Stockpile / Crusher (Rehandling / Direct)**, di samping **RC Drill / Chiptray Log**. Borang ore yang ditambahkan di 0.33.x memakai kolom lama: hapus lalu tambahkan ulang scan-nya.
+- Tanda ulang (〃, ", =, garis), jam yang ditulis menitnya saja dan nomor truk singkat diisi otomatis lalu ditandai kuning untuk dicek. Langkah lengkap: *Panduan DB-Ex* bagian 6d.
+- Tabel database ekspor: `ORE_LOADING_PIT`, `ORE_ROM_CRUSHER`, `RC_INTERVAL`.

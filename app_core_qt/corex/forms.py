@@ -1,4 +1,4 @@
-"""Ruang kerja Borang: borang lapangan tulisan tangan (Ore Spotter / Truck Count, RC Drill / Chiptray Log).
+"""Ruang kerja Borang: borang lapangan tulisan tangan (Ore Spotter loading pit, Ore ke ROM / crusher, RC Drill / Chiptray Log).
 
 Kiri: daftar borang (+ Borang: foto / scan / PDF, satu borang per halaman). Tengah: scan (zoom, putar). Kanan: tab Data
 (header & tabel yang bisa diedit; sel ragu AI kuning, galat validasi merah; centang ✓ = baris diverifikasi), Pivot (Ore
@@ -20,6 +20,8 @@ from .dialogs import ask, say
 from .util import SET, log, run_bg, show_in_folder
 from .viewer import Viewer
 
+SHORT = {"ore": "Loading pit", "rom": "ROM / crusher", "rc": "RC Drill"}
+FILE = {"ore": "Ore_Loading_Pit", "rom": "Ore_ROM_Crusher", "rc": "RC_Drill"}
 UNC_BG, BAD_BG, VER_BG = "#fff3bf", "#ffe3e3", "#e6f4ea"
 
 
@@ -177,7 +179,7 @@ class FormsPage(QWidget):
             r.addWidget(b)
         r.addStretch(1)
         v.addLayout(r)
-        n = QLabel("<span style='background:%s'>&nbsp;kuning&nbsp;</span> = AI ragu, <span style='background:%s'>&nbsp;merah&nbsp;</span> = "
+        n = QLabel("<span style='background:%s'>&nbsp;kuning&nbsp;</span> = AI ragu / diisi program dari tanda ulang (〃, garis), <span style='background:%s'>&nbsp;merah&nbsp;</span> = "
                    "galat validasi (arahkan kursor untuk alasannya). Periksa tiap baris terhadap scan lalu centang <b>✓</b> "
                    "(Ctrl+Enter = verifikasi baris & lanjut). Ekspor bawaan hanya baris terverifikasi." % (UNC_BG, BAD_BG))
         n.setObjectName("note")
@@ -199,16 +201,18 @@ class FormsPage(QWidget):
         self.pvNote.setObjectName("note")
         self.pvNote.setWordWrap(True)
         v.addWidget(self.pvNote)
-        self.pv: dict[str, QTableWidget] = {}
-        for k, t in (("shift", "Per shift"), ("front", "Per front (pit · block)"), ("tujuan", "Per tujuan dumping")):
-            lab = QLabel(f"<b>{t}</b>")
+        self.pv: list[QTableWidget] = []
+        self.pvLab: list[QLabel] = []
+        for _i in range(3):
+            lab = QLabel()
             v.addWidget(lab)
             tw = QTableWidget(0, 0)
             tw.verticalHeader().hide()
             tw.setEditTriggers(QAbstractItemView.NoEditTriggers)
-            tw.setMaximumHeight(180)
+            tw.setMaximumHeight(200)
             v.addWidget(tw)
-            self.pv[k] = tw
+            self.pv.append(tw)
+            self.pvLab.append(lab)
         v.addStretch(1)
         return w
 
@@ -225,14 +229,14 @@ class FormsPage(QWidget):
         self.cUnver = QCheckBox("Sertakan baris yang belum diverifikasi (ditandai VERIFIED = 0)")
         v.addWidget(self.cUnver)
         g = QHBoxLayout()
-        self.eX = btn("⇩ Excel (.xlsx)", "Sheet data siap tempel + pivot (Ore Spotter) + Audit", pri=True, sm=True)
+        self.eX = btn("⇩ Excel (.xlsx)", "Sheet data siap tempel + pivot (borang ore) + Audit", pri=True, sm=True)
         self.eC = btn("⇩ CSV", sm=True)
         g.addWidget(self.eX)
         g.addWidget(self.eC)
         g.addStretch(1)
         v.addLayout(g)
         g2 = QHBoxLayout()
-        self.eS = btn("→ SQLite (.db)", "Tambah / perbarui ke file SQLite (dibuat bila belum ada); Ore Spotter: view pivot ikut dibuat", sm=True)
+        self.eS = btn("→ SQLite (.db)", "Tambah / perbarui ke file SQLite (dibuat bila belum ada); borang ore: view pivot ikut dibuat", sm=True)
         self.eA = btn("→ MS Access (.accdb)", "Tambahkan ke database Access (dibuat bila belum ada; tabel dibuat otomatis). "
                       "Butuh driver Access 64-bit (MS Office 64-bit / Access Database Engine).", sm=True)
         g2.addWidget(self.eS)
@@ -246,7 +250,7 @@ class FormsPage(QWidget):
         self.expInfo.setMargin(8)
         self.expInfo.hide()
         v.addWidget(self.expInfo)
-        n = QLabel("Tabel database: <b>ORE_SPOTTER</b> / <b>RC_INTERVAL</b> dengan kolom VERIFIED, SRC_DOC dan SRC_KEY (borang:baris). "
+        n = QLabel("Tabel database: <b>ORE_LOADING_PIT</b>, <b>ORE_ROM_CRUSHER</b> atau <b>RC_INTERVAL</b> dengan kolom VERIFIED, SRC_DOC dan SRC_KEY (borang:baris). "
                    "Ekspor ulang tidak menggandakan baris: SQLite memperbarui baris yang sama, MS Access melewati baris yang sudah ada.")
         n.setObjectName("note")
         n.setWordWrap(True)
@@ -307,7 +311,7 @@ class FormsPage(QWidget):
         return Path(self.rootp) if self.rootp else None
 
     def _line(self, d: dict) -> str:
-        t = {"ore": "Ore Spotter", "rc": "RC Drill"}.get(d["type"], d["type"])
+        t = SHORT.get(d["type"], d["type"])
         st = {"done": "AI", "error": "AI gagal", "pending": "belum dibaca"}.get(d["status"], d["status"])
         s = f"{d['name']}\n{t} · {st}"
         if d.get("n_rows"):
@@ -448,7 +452,7 @@ class FormsPage(QWidget):
         self._header(d, t)
         self._table(d, t, c["rows"], c["valid"])
         self._pivot(c.get("pivot"))
-        self.tabs.setTabEnabled(1, d["type"] == "ore")
+        self.tabs.setTabEnabled(1, bool(c.get("pivot")))
 
     def _header(self, d: dict, t: dict) -> None:
         keys = [k for k, _l, _t in t["header"]]
@@ -476,7 +480,7 @@ class FormsPage(QWidget):
     def _table(self, d: dict, t: dict, rows: list[dict], valid: dict) -> None:
         self._filling = True
         cols = self.cols(t)
-        derived = [("kunci_poligon", "Kunci poligon")] if d["type"] == "ore" else []
+        derived = [("tanggal_muat", "Tgl muat")] if d["type"] in ("ore", "rom") else []
         tb = self.t
         tb.clear()
         tb.setColumnCount(1 + len(cols) + len(derived))
@@ -501,7 +505,7 @@ class FormsPage(QWidget):
                     it.setToolTip(msg)
                 elif k in r["unc"]:
                     it.setBackground(QColor(UNC_BG))
-                    it.setToolTip("AI ragu membaca sel ini — cocokkan dengan scan")
+                    it.setToolTip("AI ragu membaca sel ini, atau diisi program dari tanda ulang / baris di atas — cocokkan dengan scan")
                 tb.setItem(i, j, it)
             for j, (k, _lab) in enumerate(derived, 1 + len(cols)):
                 it = QTableWidgetItem(str((recs.get(r["id"]) or {}).get(k) or ""))
@@ -519,24 +523,26 @@ class FormsPage(QWidget):
                              + (f"<span style='color:{er}'><b>{nb}</b> galat validasi</span>" if nb else "validasi bersih")
                              + "".join(f"<br><span style='color:{er}'>⚠ {_esc(m)}</span>" for m in valid["header"].values()))
 
-    def _pivot(self, pv: dict | None) -> None:
-        heads = {"shift": [("tanggal", "Tanggal"), ("shift", "Shift"), ("kode_shift", "Kode"), ("ritase", "Ritase"), ("tonase", "Tonase")],
-                 "front": [("tanggal", "Tanggal"), ("pit", "Pit / front"), ("block", "Block"), ("ritase_siang", "Siang"), ("ritase_malam", "Malam"),
-                           ("ritase", "Ritase"), ("tonase", "Tonase")],
-                 "tujuan": [("tanggal", "Tanggal"), ("tujuan", "Tujuan"), ("jenis_ore", "Jenis ore"), ("ritase", "Ritase"), ("tonase", "Tonase")]}
-        self.pvNote.setText("Pivot dari borang ini (semua baris, terverifikasi maupun belum). Pivot gabungan semua borang ada di ekspor Excel "
-                            "dan view SQLite.")
-        for k, tw in self.pv.items():
-            hs = heads[k]
-            data = (pv or {}).get(k) or []
+    def _pivot(self, pv: list | None) -> None:
+        """Pivot dari backend: [{key, title, cols: [[k, label]], rows}] (Ore Spotter: per shift, per front / asal, per tujuan x kelas)."""
+        self.pvNote.setText("Ritase & tonase dari borang ini (semua baris, terverifikasi maupun belum). Pivot gabungan semua borang ada di "
+                            "ekspor Excel dan view SQLite.")
+        pv = pv or []
+        for i, (lab, tw) in enumerate(zip(self.pvLab, self.pv)):
+            p = pv[i] if i < len(pv) else None
+            lab.setVisible(bool(p))
+            tw.setVisible(bool(p))
             tw.clear()
-            tw.setColumnCount(len(hs))
-            tw.setHorizontalHeaderLabels([h for _k, h in hs])
-            tw.setRowCount(len(data))
-            for i, x in enumerate(data):
-                for j, (kk, _h) in enumerate(hs):
+            if not p:
+                continue
+            lab.setText(f"<b>{_esc(p['title'])}</b>")
+            tw.setColumnCount(len(p["cols"]))
+            tw.setHorizontalHeaderLabels([h for _k, h in p["cols"]])
+            tw.setRowCount(len(p["rows"]))
+            for r, x in enumerate(p["rows"]):
+                for j, (kk, _h) in enumerate(p["cols"]):
                     v = x.get(kk)
-                    tw.setItem(i, j, QTableWidgetItem("" if v is None else (f"{v:g}" if isinstance(v, float) else str(v))))
+                    tw.setItem(r, j, QTableWidgetItem("" if v is None else (f"{v:g}" if isinstance(v, float) else str(v))))
             tw.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     # ---------------------------------------------------------------- edit
@@ -714,7 +720,7 @@ class FormsPage(QWidget):
             return
         if chk["issues"] and not ask(self, f"Masih ada {chk['issues']} galat validasi di borang yang diekspor. Tetap ekspor?"):
             return
-        nm = re.sub(r"[^\w.-]+", "_", ("Ore_Spotter" if ft == "ore" else "RC_Drill") + (("_" + self.cur["doc"]["name"]) if ids else ""))[:80]
+        nm = re.sub(r"[^\w.-]+", "_", FILE.get(ft, ft) + (("_" + self.cur["doc"]["name"]) if ids else ""))[:80]
         ext, filt = {"xlsx": (".xlsx", "Excel (*.xlsx)"), "csv": (".csv", "CSV (*.csv)"), "sqlite": (".db", "SQLite (*.db *.sqlite)"),
                      "access": (".accdb", "MS Access (*.accdb)")}[fmt]
         start = str(Path(SET.get(f"fmDb_{fmt}") or (Path(SET.get("lastSaveDir", str(Path.home()))) / (nm + ext))))

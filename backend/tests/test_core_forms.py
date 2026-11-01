@@ -12,13 +12,28 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from gcex_backend import core_forms as cf, core_io  # noqa: E402
 
-ORE_AI = {"header": {"tanggal": "30-Oct-26", "shift": "Siang", "spotter": "Spotter A", "pit": "PIT-X", "block": "24", "elevasi": "250",
-                     "jenis_ore": "OX-LG", "tujuan": "ROM 418", "ragu": ["spotter"]},
-          "rows": [{"jam": "06.30", "id_truk": "DT 4035", "jenis_ore": "", "tujuan": "", "ton": "30", "ragu": []},
-                   {"jam": "06:46", "id_truk": "DT4046", "jenis_ore": "OX-LG", "tujuan": "ROM 418", "ton": "30", "ragu": ["id_truk"]},
-                   {"jam": "07:05", "id_truk": "DT4051", "jenis_ore": "OX-MO", "tujuan": "Crusher", "ton": "3O", "ragu": ["ton"]},
-                   {"jam": "", "id_truk": "", "jenis_ore": "", "tujuan": "", "ton": ""}],
-          "catatan": "baris ke-3 tonase kurang jelas"}
+# borang loading pit (fiktif): jam menit saja, nomor truk singkat, tanda ulang, baris yang hanya mengganti elevasi, lewat tengah malam
+ORE_AI = {"header": {"tanggal": "30-10-2026", "shift": "II", "crew": "Spotter A", "lokasi": "Pit X", "excavator": "EX-901",
+                     "ragu": ["crew"]},
+          "rows": [{"no": "1", "start": "22.40", "finish": "", "pit": "Pit X", "elevasi": "120.5", "kelas": "OX-LG", "unit": "7101",
+                    "ton": "35", "tujuan": "ROM A1"},
+                   {"no": "2", "start": "52", "finish": "", "pit": "", "elevasi": "", "kelas": "OX-LG", "unit": "02", "ton": "31",
+                    "tujuan": "〃", "ragu": ["unit"]},
+                   {"no": "3", "start": "", "finish": "", "pit": "", "elevasi": "118.0", "kelas": "", "unit": "", "ton": "", "tujuan": ""},
+                   {"no": "4", "start": "03", "finish": "", "pit": "", "elevasi": "", "kelas": "OX-HG", "unit": "7103", "ton": "3O",
+                    "tujuan": "〃 B2"},
+                   {"no": "5", "start": "00.10", "finish": "", "pit": "", "elevasi": "", "kelas": "〃", "unit": "05", "ton": "33",
+                    "tujuan": "250"},
+                   {"no": "6", "start": "", "finish": "", "pit": "", "elevasi": "", "kelas": "", "unit": "", "ton": "", "tujuan": ""}],
+          "catatan": "baris ke-4 tonase kurang jelas"}
+# borang ROM / crusher (fiktif)
+ROM_AI = {"header": {"tanggal": "31/10/2026", "shift": "I", "crew": "Spotter B", "lokasi": "ROM A1"},
+          "rows": [{"no": "1", "unit": "DT 7101", "start": "", "finish": "08.02", "asal": "Pit X", "tujuan": "Crusher", "rehandling": "SP-1",
+                    "kelas": "SF-LG", "ton": "39", "status": "Baru", "keterangan": "Direct"},
+                   {"no": "2", "unit": "7102", "start": "", "finish": "05", "asal": "〃", "tujuan": "〃", "rehandling": "〃",
+                    "kelas": "SF-LG", "ton": "37", "status": "", "keterangan": ""},
+                   {"no": "4", "unit": "7103", "start": "", "finish": "11", "asal": "ROM A1", "tujuan": "=", "rehandling": "",
+                    "kelas": "SCAT", "ton": "32", "status": "Lama", "keterangan": "Rehandling"}]}
 RC_AI = {"header": {"hole_id": "DP-900", "tanggal": "20/01/2026"},
          "rows": [{"sample_id": "DP 900001 ZA", "from_m": "0", "to_m": "1", "remark": ""},
                   {"sample_id": "DP 900002 ZA", "from_m": "1", "to_m": "2", "remark": "std"},
@@ -83,40 +98,73 @@ def test_add_pdf_pages_and_rotation(st):
     assert [d["id"] for d in cf.docs(s)] == [made[0]["id"]]
 
 
-def test_ore_spotter_ai_validate_derive_pivot(st, monkeypatch):
+def test_ore_loading_pit_fill_validate_pivot(st, monkeypatch):
     s, tmp = st
     did = cf.add_file(s, str(_scan(tmp)), "ore", "Rina")[0]["id"]
     calls = _ai(monkeypatch, ORE_AI)
     j = cf.ai_read(s, did, "http://x", "qwen2.5vl:7b", "tulisan miring")
     assert calls[0]["format"]["required"] == ["header", "rows"] and "tulisan miring" in calls[0]["messages"][0]["content"]
-    assert len(j["rows"]) == 3 and j["doc"]["status"] == "done" and j["doc"]["hdr_unc"] == ["spotter"]  # baris kosong dilewati
+    assert "〃" in calls[0]["messages"][0]["content"]
     rs = j["rows"]
-    assert rs[1]["unc"] == ["id_truk"] and rs[2]["unc"] == ["ton"]
+    assert len(rs) == 4 and j["doc"]["status"] == "done" and j["doc"]["hdr_unc"] == ["crew"]  # baris elevasi saja & kosong tidak jadi baris
+    D = [r["data"] for r in rs]
+    assert [x["start"] for x in D] == ["22:40", "22:52", "23:03", "00:10"]       # menit saja -> jam lengkap
+    assert [x["unit"] for x in D] == ["7101", "7102", "7103", "7105"]           # nomor truk singkat
+    assert [x["elevasi"] for x in D] == ["120.5", "120.5", "118.0", "118.0"]    # elevasi dibawa ke baris berikutnya
+    assert [x["tujuan"] for x in D] == ["ROM A1", "ROM A1", "ROM B2", "ROM 250"]  # 〃, '〃 B2', angka saja
+    assert D[3]["kelas"] == "OX-HG" and D[1]["pit"] == "Pit X"
+    assert set(rs[1]["unc"]) >= {"unit", "start", "tujuan", "pit", "elevasi"} and "kelas" in rs[3]["unc"]
     d = cf.doc(s, did)
     v = cf.validate(d, rs)
     assert v["rows"][rs[2]["id"]]["ton"] == "tonase harus angka" and not v["header"]
     recs = cf.records(d, rs)
-    r0 = recs[0]
-    assert (r0["tanggal"], r0["jam"], r0["id_truk"], r0["jenis_ore"], r0["tujuan"], r0["kode_shift"], r0["kode_ore"], r0["kode_tujuan"]) == \
-        ("2026-10-30", "06:30", "DT4035", "OX-LG", "ROM 418", "DS", "OXLG", "418")
-    assert r0["kunci_poligon"] == "PIT-X_250_24_30Oct26_OXLG_418" and recs[2]["kode_tujuan"] == "CRUSHER"
+    assert (recs[0]["tanggal"], recs[0]["kode_shift"], recs[0]["tanggal_muat"], recs[3]["tanggal_muat"]) == \
+        ("2026-10-30", "NS", "2026-10-30", "2026-10-31")
+    assert (recs[2]["material"], recs[2]["grade"], recs[0]["excavator"], recs[0]["front"]) == ("OKSIDA", "HG", "EX-901", "Pit X · 120.5")
     # edit baris 3 (ton) -> tidak ragu lagi, ditandai diedit; header diedit tetap saat AI diulang
     rows = [{"id": r["id"], "data": dict(r["data"]), "verified": True} for r in rs]
     rows[2]["data"]["ton"] = "30"
     rs = cf.save_rows(s, did, rows, "Rina")
-    assert rs[2]["unc"] == [] and rs[2]["edited"] == ["ton"] and all(r["verified"] for r in rs) and rs[0]["verified_by"] == "Rina"
-    cf.update_doc(s, did, {"header": {"spotter": "Spotter B"}}, "Rina")
+    assert "ton" not in rs[2]["unc"] and rs[2]["edited"] == ["ton"] and all(r["verified"] for r in rs) and rs[0]["verified_by"] == "Rina"
+    cf.update_doc(s, did, {"header": {"crew": "Spotter C"}}, "Rina")
     assert cf.doc(s, did)["hdr_unc"] == []
-    pv = cf.pivots(cf.records(cf.doc(s, did), rs))
-    assert pv["shift"] == [{"tanggal": "2026-10-30", "shift": "Siang", "kode_shift": "DS", "ritase": 3, "tonase": 90.0}]
-    assert pv["front"][0]["ritase_siang"] == 3 and pv["front"][0]["ritase_malam"] == 0
-    assert {(x["tujuan"], x["jenis_ore"], x["ritase"]) for x in pv["tujuan"]} == {("ROM 418", "OX-LG", 2), ("Crusher", "OX-MO", 1)}
+    pv = {p["key"]: p for p in cf.pivots(cf.records(cf.doc(s, did), rs), "ore")}
+    assert pv["PIVOT_PER_SHIFT"]["rows"] == [{"tanggal": "2026-10-30", "shift": "II", "kode_shift": "NS", "ritase": 4, "tonase": 129.0}]
+    assert {(x["front"], x["ritase"]) for x in pv["PIVOT_PER_FRONT"]["rows"]} == {("Pit X · 120.5", 2), ("Pit X · 118.0", 2)}
+    assert ("ROM B2", "OX-HG", 1) in {(x["tujuan"], x["kelas"], x["ritase"]) for x in pv["PIVOT_TUJUAN_KELAS"]["rows"]}
+    # pengguna mengetik tanda ulang & menit saja -> diselesaikan saat disimpan
+    rows = [{"id": r["id"], "data": dict(r["data"]), "verified": r["verified"]} for r in rs]
+    rows.append({"id": None, "data": {"start": "15", "unit": "06", "kelas": '"', "ton": "34", "tujuan": '"'}})
+    rs = cf.save_rows(s, did, rows, "Rina")
+    assert (rs[4]["data"]["start"], rs[4]["data"]["unit"], rs[4]["data"]["kelas"], rs[4]["data"]["tujuan"]) == ("00:15", "7106", "OX-HG", "ROM 250")
+    # jam di luar shift malam & mundur
+    rows = [{"id": r["id"], "data": dict(r["data"]), "verified": r["verified"]} for r in rs]
+    rows[4]["data"]["start"] = "11:00"
+    rs = cf.save_rows(s, did, rows, "Rina")
+    assert "di luar shift malam" in cf.validate(cf.doc(s, did), rs)["rows"][rs[4]["id"]]["start"]
     _ai(monkeypatch, ORE_AI)
     cf.ai_read(s, did, "http://x", "m")
-    assert cf.doc(s, did)["header"]["spotter"] == "Spotter B"  # editan header tidak ditimpa AI
-    # header shift tidak dikenal
-    cf.update_doc(s, did, {"header": {"shift": "Sore?"}}, "Rina")
-    assert "shift" in cf.validate(cf.doc(s, did), cf.rows(s, did))["header"]
+    assert cf.doc(s, did)["header"]["crew"] == "Spotter C"  # editan header tidak ditimpa AI
+    cf.update_doc(s, did, {"header": {"shift": "Sore?", "excavator": ""}}, "Rina")
+    assert {"shift", "excavator"} <= set(cf.validate(cf.doc(s, did), cf.rows(s, did))["header"])
+
+
+def test_rom_crusher_fill_and_derive(st, monkeypatch):
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "rom", "Rina")[0]["id"]
+    _ai(monkeypatch, ROM_AI)
+    rs = cf.ai_read(s, did, "http://x", "m")["rows"]
+    D = [r["data"] for r in rs]
+    assert [x["finish"] for x in D] == ["08:02", "08:05", "08:11"]
+    assert (D[1]["asal"], D[1]["tujuan"], D[1]["rehandling"], D[1]["status"], D[1]["keterangan"]) == ("Pit X", "Crusher", "SP-1", "Baru", "Direct")
+    assert D[2]["tujuan"] == "Crusher" and D[2]["rehandling"] == ""
+    v = cf.validate(cf.doc(s, did), rs)
+    assert "tidak urut" not in str(v) and not v["header"]
+    recs = cf.records(cf.doc(s, did), rs)
+    assert (recs[0]["unit"], recs[0]["jenis"], recs[2]["jenis"], recs[2]["material"], recs[0]["kode_shift"]) == \
+        ("7101", "DIRECT", "REHANDLING", "SCAT", "DS")
+    pv = {p["key"]: p for p in cf.pivots(recs, "rom")}
+    assert {(x["asal"], x["jenis"], x["ritase"]) for x in pv["PIVOT_ASAL_TUJUAN"]["rows"]} == {("Pit X", "DIRECT", 2), ("ROM A1", "REHANDLING", 1)}
 
 
 def test_ai_failure_leaves_no_fake_data(st, monkeypatch):
@@ -164,28 +212,29 @@ def test_exports_xlsx_csv_sqlite_access(st, monkeypatch):
     rs = cf.rows(s, did)
     # bawaan: hanya baris terverifikasi
     c = cf.collect(s, [], "ore")
-    assert c["recs"] == [] and c["skipped_unverified"] == 3
+    assert c["recs"] == [] and c["skipped_unverified"] == 4
     rows = [{"id": r["id"], "data": dict(r["data"], ton="30"), "verified": i < 2} for i, r in enumerate(rs)]
     cf.save_rows(s, did, rows, "Rina")
     c = cf.collect(s, [did], "ore")
-    assert len(c["recs"]) == 2 and c["skipped_unverified"] == 1
-    assert len(cf.collect(s, [did], "ore", unverified=True)["recs"]) == 3
+    assert len(c["recs"]) == 2 and c["skipped_unverified"] == 2
+    assert len(cf.collect(s, [did], "ore", unverified=True)["recs"]) == 4
     wb = load_workbook(io_bytes(cf.to_xlsx("ore", c["recs"])))
-    assert wb.sheetnames == ["Import_Data_A_sampai_K", "Pivot_Per_Shift", "Pivot_Per_Lokasi_Pit", "Pivot_Per_Tujuan_Dumping", "Audit"]
-    ws = wb["Import_Data_A_sampai_K"]
-    assert [c.value for c in ws[1]][:3] == ["Tanggal", "Shift", "Spotter"] and ws["A2"].value.year == 2026 and ws["K2"].value == 30
-    assert ws["O2"].value == "PIT-X_250_24_30Oct26_OXLG_418"
+    assert wb.sheetnames == ["Data_Loading_Pit", "Pivot_Per_Shift", "Pivot_Per_Front", "Pivot_Tujuan_Kelas", "Audit"]
+    ws = wb["Data_Loading_Pit"]
+    hd = [c.value for c in ws[1]]
+    assert hd[:4] == ["Tanggal", "Shift", "Kode Shift", "Nama Crew"] and ws["A2"].value.year == 2026
+    assert ws.cell(2, hd.index("Tonnage") + 1).value == 30 and ws.cell(2, hd.index("Truck") + 1).value == "7101"
     assert wb["Pivot_Per_Shift"]["D2"].value == 2
     csv = cf.to_csv("ore", c["recs"]).decode("utf-8-sig").splitlines()
-    assert csv[0].startswith("TANGGAL,SHIFT,SPOTTER") and csv[1].startswith("2026-10-30,Siang")
+    assert csv[0].startswith("TANGGAL,SHIFT,KODE_SHIFT,CREW") and csv[1].startswith("2026-10-30,II,NS")
     # SQLite: dua kali ekspor tidak menggandakan baris; view pivot
     db = tmp / "out" / "borang.db"
     r1 = cf.to_sqlite(str(db), "ore", c["recs"])
     r2 = cf.to_sqlite(str(db), "ore", cf.collect(s, [did], "ore", unverified=True)["recs"])
-    assert (r1["added"], r2["added"], r2["updated"], r2["total"]) == (2, 1, 2, 3)
+    assert (r1["added"], r2["added"], r2["updated"], r2["total"]) == (2, 2, 2, 4)
     cn = sqlite3.connect(str(db))
-    assert cn.execute("SELECT RITASE, TONASE FROM PIVOT_PER_SHIFT").fetchone() == (3, 90.0)
-    assert cn.execute("SELECT COUNT(*) FROM ORE_SPOTTER WHERE VERIFIED=0").fetchone()[0] == 1
+    assert cn.execute("SELECT RITASE, TONASE FROM ORE_LOADING_PIT_PIVOT_PER_SHIFT").fetchone() == (4, 120.0)
+    assert cn.execute("SELECT COUNT(*) FROM ORE_LOADING_PIT WHERE VERIFIED=0").fetchone()[0] == 2
     cn.close()
     # MS Access (ODBC tiruan: memastikan urutan buat db -> tabel -> insert dengan kunci SRC_KEY)
     from gcex_backend import access_io
@@ -195,8 +244,8 @@ def test_exports_xlsx_csv_sqlite_access(st, monkeypatch):
     monkeypatch.setattr(access_io, "insert", lambda p, t, names, data, key_column=None, skip_existing=True:
                         log.append(("ins", t, names, len(data), key_column)) or {"added": len(data), "skipped_existing": []})
     r = cf.to_access(str(tmp / "out" / "borang.accdb"), "ore", c["recs"])
-    assert r == {"table": "ORE_SPOTTER", "added": 2, "existing": 0, "db_created": True, "table_created": True}
-    assert log[0][0] == "db" and log[1][3] == "SRC_KEY" and "KUNCI_POLIGON" in log[1][2] and log[2][4] == "SRC_KEY"
+    assert r == {"table": "ORE_LOADING_PIT", "added": 2, "existing": 0, "db_created": True, "table_created": True}
+    assert log[0][0] == "db" and log[1][3] == "SRC_KEY" and "EXCAVATOR" in log[1][2] and log[2][4] == "SRC_KEY"
 
 
 def io_bytes(b):

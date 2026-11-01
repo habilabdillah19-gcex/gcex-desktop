@@ -15,11 +15,13 @@ from PySide6.QtGui import QColor  # noqa: E402
 
 from test_qt_m1 import _win, prj  # noqa: E402,F401
 
-ORE_AI = {"header": {"tanggal": "30-Oct-26", "shift": "Siang", "spotter": "Spotter A", "pit": "PIT-X", "block": "24", "elevasi": "250",
-                     "jenis_ore": "OX-LG", "tujuan": "ROM 418", "ragu": ["spotter"]},
-          "rows": [{"jam": "06:30", "id_truk": "DT4035", "jenis_ore": "", "tujuan": "", "ton": "30", "ragu": []},
-                   {"jam": "06:46", "id_truk": "DT4046", "jenis_ore": "OX-LG", "tujuan": "ROM 418", "ton": "30", "ragu": ["id_truk"]},
-                   {"jam": "07:05", "id_truk": "DT4051", "jenis_ore": "OX-MO", "tujuan": "Crusher", "ton": "3O", "ragu": ["ton"]}]}
+ORE_AI = {"header": {"tanggal": "30-10-2026", "shift": "I", "crew": "Spotter A", "lokasi": "Pit X", "excavator": "EX-901", "ragu": ["crew"]},
+          "rows": [{"no": "1", "start": "06.30", "finish": "", "pit": "Pit X", "elevasi": "120", "kelas": "OX-LG", "unit": "7101",
+                    "ton": "30", "tujuan": "ROM A1"},
+                   {"no": "2", "start": "46", "finish": "", "pit": "", "elevasi": "", "kelas": "OX-LG", "unit": "02", "ton": "30",
+                    "tujuan": "〃", "ragu": ["unit"]},
+                   {"no": "3", "start": "07.05", "finish": "", "pit": "", "elevasi": "", "kelas": "OX-HG", "unit": "7103", "ton": "3O",
+                    "tujuan": "Crusher", "ragu": ["ton"]}]}
 
 
 def _scan(tmp):
@@ -40,7 +42,7 @@ def _open_forms(qtbot, prj, tmp_path, monkeypatch):
     w.set_mode("form")
     pg = w.forms
     assert w.stack.currentWidget() is pg and not w.fbar.isVisible() and w.bModeForm.isChecked()
-    assert pg.cbNew.count() == 2 and pg.lst.count() == 0
+    assert pg.cbNew.count() == 3 and pg.lst.count() == 0
     src = _scan(tmp_path)
     monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
     pg.cbNew.setCurrentIndex(pg.cbNew.findData("ore"))
@@ -70,18 +72,19 @@ def test_forms_ai_review_verify_export(qtbot, prj, tmp_path, monkeypatch):
     _fake_ai(w, monkeypatch, ORE_AI)
     pg.run_ai()
     qtbot.waitUntil(lambda: not pg.ai_busy and pg.t.rowCount() == 3, timeout=8000)
-    assert pg.hdrEd["pit"].text() == "PIT-X" and pg.hdrEd["spotter"].styleSheet()  # header ragu disorot
+    assert pg.hdrEd["lokasi"].text() == "Pit X" and pg.hdrEd["crew"].styleSheet()  # header ragu disorot
     cols = [k for k, _l in pg.cols(pg.types["ore"])]
-    ton, truk = 1 + cols.index("ton"), 1 + cols.index("id_truk")
-    assert pg.t.item(1, truk).background().color() == QColor("#fff3bf")  # AI ragu
+    ton, truk = 1 + cols.index("ton"), 1 + cols.index("unit")
+    assert pg.t.item(1, truk).text() == "7102" and pg.t.item(1, truk).background().color() == QColor("#fff3bf")  # singkat -> lengkap, ragu
+    assert pg.t.item(1, 1 + cols.index("start")).text() == "06:46"
     assert pg.t.item(2, ton).background().color() == QColor("#ffe3e3") and "angka" in pg.t.item(2, ton).toolTip()  # galat
-    assert pg.t.item(0, pg.t.columnCount() - 1).text().startswith("PIT-X_250_24_")  # kunci poligon turunan
+    assert pg.t.item(0, pg.t.columnCount() - 1).text() == "2026-10-30"  # tanggal muat turunan
     # perbaiki sel -> tersimpan, sorotan hilang
     pg.t.item(2, ton).setText("30")
     qtbot.waitUntil(lambda: pg.cur["valid"]["n"] == 0, timeout=4000)
-    assert pg.cur["rows"][2]["data"]["ton"] == "30" and not pg.cur["rows"][2]["unc"]
+    assert pg.cur["rows"][2]["data"]["ton"] == "30" and "ton" not in pg.cur["rows"][2]["unc"]
     # pivot per shift
-    assert pg.pv["shift"].rowCount() == 1 and pg.pv["shift"].item(0, 3).text() == "3"
+    assert pg.pv[0].rowCount() == 1 and pg.pv[0].item(0, 3).text() == "3" and "shift" in pg.pvLab[0].text()
     # verifikasi baris 1 (Ctrl+Enter), lalu ekspor: hanya baris terverifikasi
     pg.t.setCurrentCell(0, 1)
     w.verify_current()
@@ -104,10 +107,10 @@ def test_forms_ai_review_verify_export(qtbot, prj, tmp_path, monkeypatch):
     pg.export("sqlite")
     qtbot.waitUntil(lambda: "diperbarui" in pg.expInfo.text(), timeout=6000)
     with sqlite3.connect(db) as cn:
-        assert cn.execute("select count(*) from ORE_SPOTTER").fetchone()[0] == 3
+        assert cn.execute("select count(*) from ORE_LOADING_PIT").fetchone()[0] == 3
     import openpyxl
     wb = openpyxl.load_workbook(xl)
-    assert "Import_Data_A_sampai_K" in wb.sheetnames and wb["Import_Data_A_sampai_K"].max_row == 4
+    assert "Data_Loading_Pit" in wb.sheetnames and wb["Data_Loading_Pit"].max_row == 4
     # baris baru & hapus baris
     pg.add_row(None)
     assert pg.t.rowCount() == 4
@@ -131,7 +134,7 @@ def test_forms_ai_failure_and_rc_row(qtbot, prj, tmp_path, monkeypatch):
     monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
     pg.add_files()
     qtbot.waitUntil(lambda: pg.cur and pg.cur["doc"]["type"] == "rc", timeout=8000)
-    assert pg.lst.count() == 2 and not pg.tabs.isTabEnabled(1)
+    assert pg.lst.count() == 2 and not pg.tabs.isTabEnabled(1) and "RC Drill" in pg.lst.item(1).text()
     pg._save_rows([{"id": None, "data": {"sample_id": "DX 100007 ZA", "from_m": "6", "to_m": "7"}, "verified": False}])
     pg.add_row(None)
     d = pg.cur["rows"][1]["data"]
