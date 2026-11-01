@@ -8,6 +8,19 @@ DIST=R+'app-dh/';PORT=8777;P='http://localhost:%d/index.html'%PORT
 PL=None  # Plotly sudah tertanam di aplikasi
 MOCK="""window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_VeinA',{create:true});};"""
 NOTES={};SEQ=[0]
+# Penanda jejak: bila tahap ini gagal, cetak di LANGKAH MANA berhentinya. Tanpa ini log CI
+# hanya memperlihatkan pengecualian Playwright tanpa konteks.
+JEJAK = {"gambar": "(belum ada)", "catatan": "(belum ada)"}
+def _jejak_hook(t, v, tb):
+    import sys as _s, traceback as _tb
+    print("", flush=True)
+    print("GAGAL setelah gambar: %s" % JEJAK["gambar"], flush=True)
+    print("catatan terakhir     : %s" % JEJAK["catatan"], flush=True)
+    _tb.print_exception(t, v, tb)
+    _s.__excepthook__ if False else None
+import sys as _sys_jejak
+_sys_jejak.excepthook = _jejak_hook
+
 for _f in os.listdir(IMG):
     if _f.endswith('.png'):os.remove(IMG+_f)
 def note(k,v):
@@ -15,6 +28,7 @@ def note(k,v):
     konsol Windows bawaannya cp1252, sedangkan teks panel GC-Ex berisi karakter seperti
     '>=' tipografis dan titik tengah -> UnicodeEncodeError di print(), bukan di aplikasinya."""
     NOTES[k]=v
+    JEJAK['catatan'] = '%s = %s' % (k, str(v)[:90])
     try:
         print('  ',k,'=',v,flush=True)
     except Exception as _e:
@@ -32,7 +46,7 @@ with sync_playwright() as pw:
         SEQ[0]+=1;fn='%02d_%s.png'%(SEQ[0],name);pg.wait_for_timeout(500)
         if clip:pg.screenshot(path=IMG+fn,clip=clip)
         else:pg.screenshot(path=IMG+fn)
-        print('shot',fn,flush=True);return fn
+        JEJAK['gambar']=fn;print('shot',fn,flush=True);return fn
     def ev(js):return pg.evaluate(js)
     PANEL={'x':0,'y':0,'width':480,'height':940}
     pg.goto(P);pg.wait_for_timeout(900);ev("localStorage.clear();localStorage.setItem('gcex_user','Habil')");pg.reload();pg.wait_for_timeout(900)

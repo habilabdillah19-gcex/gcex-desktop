@@ -6,12 +6,26 @@ T = os.path.dirname(os.path.abspath(__file__)) + '/'; R = os.path.abspath(T + '.
 PORT = 8779; P = 'http://localhost:%d/index.html' % PORT
 MOCK = """window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_Laterit',{create:true});};"""
 NOTES = {}; SEQ = [0]
+# Penanda jejak: bila tahap ini gagal, cetak di LANGKAH MANA berhentinya. Tanpa ini log CI
+# hanya memperlihatkan pengecualian Playwright tanpa konteks.
+JEJAK = {"gambar": "(belum ada)", "catatan": "(belum ada)"}
+def _jejak_hook(t, v, tb):
+    import sys as _s, traceback as _tb
+    print("", flush=True)
+    print("GAGAL setelah gambar: %s" % JEJAK["gambar"], flush=True)
+    print("catatan terakhir     : %s" % JEJAK["catatan"], flush=True)
+    _tb.print_exception(t, v, tb)
+    _s.__excepthook__ if False else None
+import sys as _sys_jejak
+_sys_jejak.excepthook = _jejak_hook
+
 for _f in os.listdir(IMG):
     if _f.endswith('.png'): os.remove(IMG + _f)
 def note(k, v):
     """Pencetakan angka hasil tidak boleh menggagalkan pembuatan tutorial: konsol Windows
     bawaannya cp1252, sedangkan teks panel GC-Ex memuat karakter di luar cp1252."""
     NOTES[k] = v
+    JEJAK['catatan'] = '%s = %s' % (k, str(v)[:90])
     try:
         print('  ', k, '=', str(v)[:200], flush=True)
     except Exception as _e:

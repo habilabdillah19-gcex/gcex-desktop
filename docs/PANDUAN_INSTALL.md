@@ -862,3 +862,23 @@ Rilis v0.36.1 berhasil memuat ketiga installer, dan kedua dokumen PDF baru diban
 2. **Bor infill data latihan diarahkan ke lensa yang ditelusuri tutorial.** Sebelumnya 14 bor `SIM-INF-*` tersebar ke lensa 2 dan 3; padahal tutorial hanya memakai domain `QV_Lensa2` + `QV_Splay_HW`. Akibatnya langkah *usulkan ke domain aktif* pada bab upsert bisa tidak menemukan apa pun. Kini semuanya diarahkan ke lensa 2.
 3. **Penangkapan galat di CI diperbaiki lagi.** Pengecualian Playwright berbentuk `playwright._impl._errors.Error: …`, sedangkan pola sebelumnya mengharuskan baris **dimulai** kata ber-akhiran *Error*, sehingga baris penyebabnya justru terlewat dan yang tertampil hanya jejak berkas. Sekarang pola mencari di mana pun dalam baris, ditambah baris `Call log` / `waiting for` yang biasanya menjelaskan apa yang ditunggu Playwright.
 4. Pesan penjaga pada `build_tutorial.py` dan `build_tutorial_bm.py` menyebut nama berkas yang benar (`build_tutorial_update.py`).
+
+## 60. GC-Ex Block Model & Drill Hole Ultimate 0.24.12
+
+Dengan perbaikan pola penangkap galat di 0.24.11, penyebab kegagalan tahap tangkapan layar akhirnya terbaca:
+
+```
+playwright._impl._errors.Error: Page.evaluate:
+TypeError: Cannot read properties of undefined (reading 'id')
+```
+
+Artinya ada perintah yang membaca `.id` dari sesuatu yang belum ada — hampir pasti `GM.doms[0]` atau `GM.doms[1]` pada saat daftar domain belum terisi sebanyak itu. Yang belum diketahui: **di langkah mana**. Pesan Playwright tidak menyebutkan konteksnya, dan log CI hanya memperlihatkan jejak berkas pustaka.
+
+Karena itu ketiga skrip tangkapan layar kini mencetak **penanda jejak** bila berhenti karena galat:
+
+```
+GAGAL setelah gambar: 29_upsert_pratinjau.png
+catatan terakhir     : upsPrev = Pratinjau: Collar: 7 baru, ...
+```
+
+Penanda itu diisi otomatis oleh fungsi `shot()` dan `note()` yang sudah ada, dan dicetak lewat `sys.excepthook` sehingga tidak perlu mengubah susunan skrip. CI ikut menampilkan kedua baris itu sebagai anotasi, jadi langkah penyebabnya langsung terlihat tanpa membuka log.

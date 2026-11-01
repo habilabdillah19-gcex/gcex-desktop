@@ -372,8 +372,10 @@ jobs:
               $exc = $L | Select-String -Pattern '(Error|Exception)\b[^:]*:' | Select-Object -Last 4
               $loc = $L | Select-String -Pattern 'File ".*", line \d+' | Select-Object -Last 2
               $pes = $L | Select-String -Pattern 'Call log|waiting for|Timeout .*exceeded' | Select-Object -Last 2
+              $jjk = $L | Select-String -Pattern '^(GAGAL setelah gambar|catatan terakhir)' | Select-Object -Last 2
               $pick += $loc | ForEach-Object { $_.Line.Trim() }
               $pick += $pes | ForEach-Object { $_.Line.Trim() }
+              $pick += $jjk | ForEach-Object { $_.Line.Trim() }
               $pick += $exc | ForEach-Object { $_.Line.Trim() }
               if (-not $pick) { $pick = ($L | Select-Object -Last 6) }
               $pick | Select-Object -Last 8 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
