@@ -72,7 +72,7 @@ with sync_playwright() as pw:
     # 8. usulan otomatis
     ev("GM._openAuto=true;GM.opt.el='Au';GM.opt.cut=0.5;GM.opt.minL=1;GM.opt.dil=1;GM.opt.scope='all';GM.opt.keep=true;gmPanel()")
     shot('gm_usulan_param',PANEL)
-    ev("gmAuto()");note('auto',ev("GM.lastAuto.replace(/<[^>]+>/g,'')"));pg.wait_for_timeout(500);shot('gm_usulan_hasil')
+    ev("gmAuto()");note('auto',ev("(GM.lastAuto||'(tidak ada)').replace(/<[^>]+>/g,'')"));pg.wait_for_timeout(500);shot('gm_usulan_hasil')
     E2=ev("""(()=>{var r=[];GM.flags&&Object.keys(GM.flags).forEach(id=>{GM.flags[id].forEach(f=>{r.push([id,f[0],f[1]]);});});return r.length;})()""");note('nRunAuto',E2)
     # 9. koreksi flag: hole yang menembus dua vein -> intercept dangkal = QV_HW1
     two=ev("""(()=>{var o=[];Object.keys(GM.flags).forEach(id=>{var L=GM.flags[id];if(L.length>=2&&L[L.length-1][0]-L[0][1]>8)o.push([id,L[0][0],L[0][1]]);});return o;})()""");note('holeDuaVein',len(two))
@@ -91,8 +91,8 @@ with sync_playwright() as pw:
     # 10. string kontrol HW/FW: section bor tiap 20 m -> tebal slab 20
     ev("""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-90*Math.sin(az)).toFixed(1);$('p1n').value=(cy-90*Math.cos(az)).toFixed(1);$('p2e').value=(cx+90*Math.sin(az)).toFixed(1);$('p2n').value=(cy+90*Math.cos(az)).toFixed(1);
       $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=20;updatePlot();})()""")
-    ev("gmAct(GM.doms[0].id);gmDraft(true)");note('strUtama',ev("GM.lastStr.replace(/<[^>]+>/g,'')"))
-    ev("gmAct(GM.doms[1].id);gmDraft(true)");note('strHW1',ev("GM.lastStr.replace(/<[^>]+>/g,'')"));ev("gmAct(GM.doms[0].id)")
+    ev("gmAct(GM.doms[0].id);gmDraft(true)");note('strUtama',ev("(GM.lastStr||'(tidak ada)').replace(/<[^>]+>/g,'')"))
+    ev("gmAct(GM.doms[1].id);gmDraft(true)");note('strHW1',ev("(GM.lastStr||'(tidak ada)').replace(/<[^>]+>/g,'')"));ev("gmAct(GM.doms[0].id)")
     ev("$('pos').value=-20;updatePlot()");pg.wait_for_timeout(500);shot('string_section');shot('string_panel',PANEL)
     i=ev("GM.str.findIndex(s=>s.dom===GM.doms[0].id&&s.role==='FW'&&Math.abs(s.pl.pos+20)<1e-3)");ev("if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(500)
     V=ev("""(()=>{var A=dgAx(),F=p2fn(secGeom()),s=GM.str[%d],r=A.r,k=Math.floor(s.pts.length/2),p=dgPx(A,...F(...s.pts[k]));return[p[0]+r.left,p[1]+r.top];})()"""%i)
@@ -101,7 +101,7 @@ with sync_playwright() as pw:
     ev("if(VIEW2D)toggle2D();lyrPreset('gm');$('sliceClip').checked=false;updatePlot();setCam(1.2,-1.6,0.7)");pg.wait_for_timeout(600);shot('model_3d')
     # 10b. Tahap 2: solid vein HW/FW (RBF)
     SOL="JSON.stringify(GM.doms.filter(d=>IM.R[d.id]&&IM.R[d.id].st).map(d=>{var S=IM.R[d.id].st;return[d.name,Math.round(S.vol),+S.tav.toFixed(2),+S.tmax.toFixed(2),S.nH,S.nW,S.nc,S.nin,S.nfl,S.open,Math.round(S.dip),Math.round(S.ddir),Math.round(S.area),+(S.ms/1000).toFixed(2)];}))"
-    ev("uiTab('GM');GM._openIm=true;imAll(true)");note('solid',ev(SOL));note('solidMsg',ev("IM.msg.replace(/<[^>]+>/g,'')"))
+    ev("uiTab('GM');GM._openIm=true;imAll(true)");note('solid',ev(SOL));note('solidMsg',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("var h=[...document.querySelectorAll('#gmBody h4')].find(x=>/Model vein/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})");pg.wait_for_timeout(300);shot('solid_panel',PANEL)
     ev("var d=[...document.querySelectorAll('#gmBody details.gmdet')].find(x=>/Parameter domain aktif/.test(x.textContent));if(d){d.open=true;d.scrollIntoView({block:'start'});}");pg.wait_for_timeout(300);shot('solid_param',PANEL)
     ev("uiSideW(560);var h=[...document.querySelectorAll('#gmBody h4')].find(x=>/Model vein/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})");pg.wait_for_timeout(500);shot('panel_lebar');ev("uiSideW(292);localStorage.removeItem('gcex_sideW')")
@@ -113,9 +113,9 @@ with sync_playwright() as pw:
     # 11. wireframe dari Leapfrog
     ev("uiTab('Model')");pg.set_input_files("input[onchange='mdImport(this)']",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.length>0",timeout=60000);pg.wait_for_timeout(800)
     shot('wireframe_import');note('wf',ev("MD.models.map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
-    ev("uiTab('GM');GM._openWf=true;WF.dom='__new';gmPanel();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("WF.msg.replace(/<[^>]+>/g,'')"))
+    ev("uiTab('GM');GM._openWf=true;WF.dom='__new';gmPanel();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("GM.doms.find(d=>/Leapfrog/.test(d.name)).col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty()");pg.wait_for_timeout(500);shot('wireframe_iris')
-    ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("WF.msg.replace(/<[^>]+>/g,'')"));note('solidWf',ev("IM.msg.replace(/<[^>]+>/g,'')"));shot('wireframe_panel',PANEL)
+    ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));note('solidWf',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));shot('wireframe_panel',PANEL)
     ev("var d=GM.doms.find(d=>/Leapfrog/.test(d.name));if(d){d.vis=false;gmDirty();}")
     ev("try{lyrSet('wf',false)}catch(e){MD.models.forEach(m=>m.vis=false);updatePlot()}")
     # 12. upsert bor infill
@@ -130,13 +130,13 @@ with sync_playwright() as pw:
     note('upsTambah',ev('collars.length')-nBefore)
     note('upsToast',ev("(document.getElementById('fpToast')||{}).innerText||''"));shot('upsert_hasil')
     note('bxAfterUps',ev("window.BX&&BX.m?BX.m.n:0"));ev("var t=document.getElementById('fpToast');if(t)t.style.display='none'")
-    ev("uiTab('GM');GM.opt.scope='all';GM.opt.keep=true;gmAct(GM.doms[0].id);gmAuto()");note('autoInfill',ev("GM.lastAuto.replace(/<[^>]+>/g,'')"))
+    ev("uiTab('GM');GM.opt.scope='all';GM.opt.keep=true;gmAct(GM.doms[0].id);gmAuto()");note('autoInfill',ev("(GM.lastAuto||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("""(()=>{var hw=GM.doms[1].id;Object.keys(GM.flags).filter(id=>/INF/.test(id)).forEach(id=>{var L=GM.flags[id];if(L.length>=2&&L[L.length-1][0]-L[0][1]>8)gmSetRange(id,L[0][0],L[0][1],hw);});gmDirty();})()""")
     ev("""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-90*Math.sin(az)).toFixed(1);$('p1n').value=(cy-90*Math.cos(az)).toFixed(1);$('p2e').value=(cx+90*Math.sin(az)).toFixed(1);$('p2n').value=(cy+90*Math.cos(az)).toFixed(1);
       $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=20;$('sliceClip').checked=true;updatePlot();})()""")
-    ev("gmAct(GM.doms[0].id);gmDraft(true)");note('strUpd',ev("GM.lastStr.replace(/<[^>]+>/g,'')"))
+    ev("gmAct(GM.doms[0].id);gmDraft(true)");note('strUpd',ev("(GM.lastStr||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("$('pos').value=0;if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(500);shot('upsert_string_baru')
-    note('solidInfill',ev(SOL));note('solidInfillMsg',ev("IM.msg.replace(/<[^>]+>/g,'')"))
+    note('solidInfill',ev(SOL));note('solidInfillMsg',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     # 13. geostatistik domain QV_Utama: sayatan sejajar bidang vein (strike 45, dip 70), slab tebal
     ev("""(()=>{var cx=505000,cy=9012000,az=45*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-130*Math.sin(az)).toFixed(1);$('p1n').value=(cy-130*Math.cos(az)).toFixed(1);$('p2e').value=(cx+130*Math.sin(az)).toFixed(1);$('p2n').value=(cy+130*Math.cos(az)).toFixed(1);
       $('dipS').value=70;$('dipN').value=70;modeChanged();$('pos').value=0;$('thick').value=40;$('sliceClip').checked=true;if(VIEW2D)toggle2D();updatePlot();
@@ -180,10 +180,10 @@ with sync_playwright() as pw:
     pg.wait_for_function("document.getElementById('imp').classList.contains('off')&&window.collars&&collars.length>%d"%nBefore2,timeout=180000);pg.wait_for_timeout(3000)
     ev("var t=document.getElementById('fpToast');if(t)t.style.display='none'")
     ev("uiTab('GM');GM.opt.scope='all';GM.opt.keep=true;GM.opt.dil=2;gmAct(GM.doms[0].id);gmAuto();GM.opt.dil=1")
-    note('autoInfill2',ev("GM.lastAuto.replace(/<[^>]+>/g,'')"))
+    note('autoInfill2',ev("(GM.lastAuto||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-90*Math.sin(az)).toFixed(1);$('p1n').value=(cy-90*Math.cos(az)).toFixed(1);$('p2e').value=(cx+90*Math.sin(az)).toFixed(1);$('p2n').value=(cy+90*Math.cos(az)).toFixed(1);
       $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=20;$('sliceClip').checked=false;updatePlot();gmAct(GM.doms[0].id);gmDraft(true);})()""")
-    note('solidInfill2',ev("IM.msg.replace(/<[^>]+>/g,'')"))
+    note('solidInfill2',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("uiTab('ME');ME._openPar=false;var d=GM.doms.find(x=>/Leapfrog/.test(x.name));if(d)ME.sel[d.id]=false;mePanel()");pg.wait_for_timeout(300)
     note('mePending',ev("[...document.querySelectorAll('#meBody .gmstate')][1].innerText"))
     ev("var h=[...document.querySelectorAll('#meBody h4')].find(x=>/Jalankan/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})");pg.wait_for_timeout(300);shot('me_tertunda',PANEL)
@@ -192,7 +192,7 @@ with sync_playwright() as pw:
     ev("meShow();$('sliceClip').checked=false;if(VIEW2D)toggle2D();updatePlot();setCam(1.3,-1.5,0.8)");pg.wait_for_timeout(900)
     ev("meApply(true);BX.ui.attr='est_run';bxPanel();updatePlot()");pg.wait_for_timeout(800);shot('me_run')
     with pg.expect_download() as d:ev("uiTab('ME');meCsv()")
-    d.value.save_as(IMG+'_me.csv');note('meCsv',ev("ME.msg.replace(/<[^>]+>/g,'')"));os.remove(IMG+'_me.csv')
+    d.value.save_as(IMG+'_me.csv');note('meCsv',ev("(ME.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));os.remove(IMG+'_me.csv')
     # 13e. Data Spasial: topografi versi baru
     ev("$('sliceClip').checked=false;if(VIEW2D)toggle2D();BX.ui.fAttr='';$('bxShow').checked=false;$('ovTopoL').checked=true;uiTab('SP')");pg.set_input_files("#spBody input[onchange^=\"spAdd('topo'\"]",DATA+'SIM_topo_xyz_nov.csv')
     pg.wait_for_function("spL('topo').length===2&&!SPV.busy",timeout=60000);ev("spSet('topo',spL('topo')[0].id,'show',true);setCam(1.3,-1.5,0.8)");pg.wait_for_timeout(900);shot('data_spasial')

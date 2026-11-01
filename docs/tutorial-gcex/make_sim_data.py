@@ -239,10 +239,15 @@ for si, a_sec in enumerate(range(-480, 481, A_STEP)):
             mk_hole('SIM-%02d-L%d-%02d' % (si + 1, li + 1, j + 1), a, b, dipd, lens=li)
 
 # bor baru untuk latihan upsert / estimasi ulang (tidak ikut tabel utama)
+# Bor infill diarahkan ke LENSA 2 (dan sekitar splay-nya), yaitu domain yang ditelusuri tutorial
+# bergambar. Kalau disebar ke lensa lain, langkah "usulkan ke domain aktif" pada tutorial tidak
+# menemukan apa-apa dan latihan upsert kehilangan maknanya.
 upsert = []
+V2 = LENSA[1]
 for i in range(14):
-    a = float(rng.uniform(-300, 300)); b = float(rng.uniform(40, 130))
-    mk_hole('SIM-INF-%02d' % (i + 1), a, b, 58 + float(rng.uniform(-3, 3)), lens=1 if a < 0 else 2)
+    a = float(rng.uniform(V2['a'][0] + 40, V2['a'][1] - 40))
+    b = float(rng.uniform(40, 130))
+    mk_hole('SIM-INF-%02d' % (i + 1), a, b, 58 + float(rng.uniform(-3, 3)), lens=1)
     if holes:
         upsert.append(holes.pop())
 

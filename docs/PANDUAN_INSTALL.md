@@ -853,3 +853,12 @@ Sekarang: bila installer dengan versi tag ada, itu yang dipakai; bila tidak, dip
 Tag Release tetap memakai versi tertinggi seperti sebelumnya, dan aturan di `CLAUDE.md` disesuaikan agar tidak lagi bertentangan dengan perilaku pengemas.
 
 Diuji dengan installer tiruan pada versi yang berbeda-beda (GC-Ex 0.24.9, DB-Ex 0.36.1): ketiganya masuk ke folder rilis, tabel isi rilis menyebut versi masing-masing, dan `SHA256SUMS.txt` mencakup semuanya.
+
+## 59. GC-Ex Block Model & Drill Hole Ultimate 0.24.11
+
+Rilis v0.36.1 berhasil memuat ketiga installer, dan kedua dokumen PDF baru dibangun ulang di CI. Yang masih tertinggal: dua tutorial bergambar lama. Perbaikan lanjutan dari telaah run terakhir:
+
+1. **Skrip tangkapan layar tahan nilai yang belum terisi.** Ada 13 tempat yang membaca pesan terakhir sebuah menu lalu membersihkan tag HTML-nya, misalnya `GM.lastAuto.replace(…)`. Bila menunya belum pernah menghasilkan pesan, nilainya `undefined` dan seluruh tahap tangkapan layar berhenti. Semua pembacaan itu kini diberi nilai cadangan `(tidak ada)`.
+2. **Bor infill data latihan diarahkan ke lensa yang ditelusuri tutorial.** Sebelumnya 14 bor `SIM-INF-*` tersebar ke lensa 2 dan 3; padahal tutorial hanya memakai domain `QV_Lensa2` + `QV_Splay_HW`. Akibatnya langkah *usulkan ke domain aktif* pada bab upsert bisa tidak menemukan apa pun. Kini semuanya diarahkan ke lensa 2.
+3. **Penangkapan galat di CI diperbaiki lagi.** Pengecualian Playwright berbentuk `playwright._impl._errors.Error: …`, sedangkan pola sebelumnya mengharuskan baris **dimulai** kata ber-akhiran *Error*, sehingga baris penyebabnya justru terlewat dan yang tertampil hanya jejak berkas. Sekarang pola mencari di mana pun dalam baris, ditambah baris `Call log` / `waiting for` yang biasanya menjelaskan apa yang ditunggu Playwright.
+4. Pesan penjaga pada `build_tutorial.py` dan `build_tutorial_bm.py` menyebut nama berkas yang benar (`build_tutorial_update.py`).

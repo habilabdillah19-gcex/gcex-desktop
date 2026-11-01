@@ -19,7 +19,7 @@ if not os.path.isdir(IMG) or not os.path.exists(os.path.join(IMG, 'notes.json'))
         "Langkah itu membuka GC-Ex di Chromium dan memerlukan browser yang dapat membuka folder\n"
         "proyek (File System Access API). Di lingkungan terbatas (mis. kontainer CI Linux) langkah\n"
         "ini dapat menghentikan renderer; pakai mesin Windows tempat GC-Ex biasa dipakai.\n"
-        "Tutorial yang TIDAK memerlukan tangkapan layar: build_tutorial_024.py" % IMG)
+        "Tutorial yang TIDAK memerlukan tangkapan layar: build_tutorial_update.py" % IMG)
 
 N = json.load(open(os.path.join(IMG, 'notes.json'), encoding='utf-8'))
 PDF = os.path.join(HERE, '..', 'GCEx_Tutorial_Modelling_Estimasi.pdf')

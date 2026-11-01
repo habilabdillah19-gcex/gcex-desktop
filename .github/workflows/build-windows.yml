@@ -367,10 +367,13 @@ jobs:
               # baris pengecualian terakhir + konteks berkas/baris di sekitarnya.
               $L = Get-Content tut.log
               $pick = @()
-              $exc = $L | Select-String -Pattern '^\s*\w*(Error|Exception|TimeoutError)\b|AssertionError|KeyError|IndexError' |
-                     Select-Object -Last 3
-              $loc = $L | Select-String -Pattern '^\s+File ".*", line \d+' | Select-Object -Last 3
+              # Pengecualian Playwright berbentuk 'playwright._impl._errors.Error: ...', jadi polanya
+              # tidak boleh mengharuskan baris DIMULAI kata-Error. Cari di mana pun dalam baris.
+              $exc = $L | Select-String -Pattern '(Error|Exception)\b[^:]*:' | Select-Object -Last 4
+              $loc = $L | Select-String -Pattern 'File ".*", line \d+' | Select-Object -Last 2
+              $pes = $L | Select-String -Pattern 'Call log|waiting for|Timeout .*exceeded' | Select-Object -Last 2
               $pick += $loc | ForEach-Object { $_.Line.Trim() }
+              $pick += $pes | ForEach-Object { $_.Line.Trim() }
               $pick += $exc | ForEach-Object { $_.Line.Trim() }
               if (-not $pick) { $pick = ($L | Select-Object -Last 6) }
               $pick | Select-Object -Last 8 | ForEach-Object { Write-Host ("::warning::tutorial " + $_) }
