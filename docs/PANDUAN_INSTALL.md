@@ -751,3 +751,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 65. DB-Ex 0.31.1 — tutorial PDF DB-Ex dibuat ulang
 
 - `DB-Ex_Tutorial_Penggunaan.pdf` (di `_1_Dokumen.zip`) dibuat ulang: semua tangkapan layar memakai nama DB-Ex, judul sampul "Tutorial DB-Ex". Isi latihan tidak berubah.
+
+## 66. DB-Ex 0.31.2 — persiapan pustaka visi (pengembang)
+
+- Tidak ada perubahan aplikasi. Workflow manual untuk pengembang: *Dev models* (memeriksa lisensi & isi model ONNX Segment Anything dan Depth Anything V2 Small) dan *Dev wheels* (OpenCV, Shapely, ONNX Runtime) sebagai persiapan fitur SAM, Depth Anything dan tempel ke topografi.

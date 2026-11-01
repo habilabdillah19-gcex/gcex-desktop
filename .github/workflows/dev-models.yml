@@ -1,0 +1,26 @@
+name: Dev models (ONNX SAM & Depth Anything, untuk pengembangan DB-Ex)
+
+# Hanya dijalankan manual. Memeriksa lisensi & isi kandidat model ONNX di Hugging Face lalu menaruh file + laporan
+# (model_report.json: lisensi, SHA256, input/output) di pre-release "dev-wheels" (privat). Tidak dipakai pengguna akhir.
+on:
+  workflow_dispatch:
+
+jobs:
+  models:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Periksa & unduh model
+        run: |
+          pip install onnxruntime==1.20.1
+          python tools/ai_models/probe_hf.py mdl
+          ls -la mdl
+      - name: Unggah ke pre-release dev-wheels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload dev-wheels mdl/* -R "$GITHUB_REPOSITORY" --clobber
