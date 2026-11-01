@@ -928,3 +928,16 @@ Model berisi kadar itu dihitung dari model geologi yang sama (zona didih, ore sh
 **2. RL flitch dipatok dari topografi lama.** Skrip mencari flitch pada `RL 292,5` — nilai yang berasal dari data lama. Sekarang RL diambil dari block model yang benar-benar dimuat (bench dengan blok terbanyak), jadi ukuran dan posisi data latihan boleh berubah tanpa merusak tutorial.
 
 **3. `shot_rusak.py` tidak pernah dijalankan CI.** Gambar `validasi_rusak` (database dengan kesalahan sengaja) dipakai narasi `build_tutorial.py`, tetapi skrip pembuatnya tidak ada di urutan langkah CI — sehingga penyusunan PDF berhenti dengan `KeyError: 'validasi_rusak'`. Kini ikut dijalankan sesudah `tutorial_shots.py`.
+
+## 63. GC-Ex Block Model & Drill Hole Ultimate 0.24.15
+
+Setelah 0.24.14, **seluruh tangkapan layar GC-Ex lolos** dan `GCEx_Tutorial_Block_Model.pdf` terbangun segar di CI. Tinggal satu galat pada penyusunan `GCEx_Tutorial_Modelling_Estimasi.pdf`:
+
+```
+build_tutorial.py, line 233, in fN
+TypeError: unsupported format string passed to NoneType.__format__
+```
+
+**Sebabnya.** Skrip tangkapan layar menyimpan hasil Model Estimation per domain, termasuk objek validasi `q.v` (rata-rata komposit, rata-rata estimasi, kadar GC lama, volume, tonase, logam). Objek itu **bisa kosong** bila domain tersebut tidak punya pembanding kadar GC di dalam solid — dan pada data latihan baru, `QV_Splay_HW` memang demikian. Narasi tetap memformat nilainya sebagai angka, jadi penyusunan PDF berhenti.
+
+**Perbaikannya.** Pemformat angka `fN()` kini menulis `–` untuk nilai kosong, bukan melemparkan galat; dan baris ringkasan `QV_Splay_HW` punya kalimat cadangan yang hanya menyebut jumlah blok bila rata-rata estimasi tidak tersedia. Artinya **narasi tutorial tidak lagi mengandaikan setiap domain punya pembanding kadar GC** — data latihan boleh berubah bentuk tanpa mematahkan penyusunan PDF.

@@ -230,7 +230,10 @@ ch('String kontrol hanging wall / footwall', '<p>String kontrol adalah garis bat
 
 SOL = {r[0]: r for r in (json.loads(N['solid']) if isinstance(N['solid'], str) else N['solid'])}
 SOLI = {r[0]: r for r in (json.loads(N['solidInfill']) if isinstance(N['solidInfill'], str) else N['solidInfill'])}
-def fN(v, d=0): return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.', ',').replace('X', '.')
+def fN(v, d=0):
+    # q.v (validasi) bisa null bila domain tidak punya pembanding kadar GC -> jangan menggagalkan PDF
+    if v is None: return '&ndash;'
+    return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.', ',').replace('X', '.')
 su, sh = SOL['QV_Lensa2'], SOL['QV_Splay_HW']
 ch('Membangun solid vein (RBF)', '<p>Dari string kontrol dan titik kontak bor, GC-Ex membangun <b>permukaan hanging wall</b> dan <b>permukaan footwall</b> secara terpisah (interpolasi RBF <i>thin-plate spline</i>, mengikuti bentuk sigmoidal), lalu <b>solid vein</b> di antara keduanya. Model <b>dibangun ulang otomatis</b> setiap string atau flag berubah.</p>'
  + '<h3>Aturan batas model</h3>' + kv([('Searah strike','diperpanjang sejauh <b>radius pengaruh</b> (bawaan 15 m) dari data terluar lalu <b>dipotong tegas</b> (ada dinding penutup). <b>Tidak ada pinch-out</b> searah strike.'),
@@ -365,7 +368,9 @@ ch('Model Estimation: estimasi block model GC', '<p>Menu <b>Model Estimation</b>
  + fig('me_panel', 'Menu Model Estimation sebelum run: block model GC, domain dengan solid &amp; parameter, dan editor parameter QV_Lensa2 (asal: sayatan Geostatistik).')
  + fig('me_hasil', f"Validasi run pertama. QV_Lensa2: {u1[3]:,} blok di solid diestimasi ulang + {u1[6]} blok tambahan; rata-rata komposit {fN(u1[10],3)} vs estimasi {fN(u1[11],3)} (GC lama {fN(u1[12],3)}). Grafik swath: komposit (titik oranye), estimasi baru (biru), GC lama (abu-abu) per 10 m sepanjang strike.".replace(',', '.'))
  + kv([('QV_Lensa2', f"{u1[5]:,} blok terestimasi (pass 1/2/3: {u1[9][0]}/{u1[9][1]}/{u1[9][2]}), {fN(u1[13])} m&sup3;, {fN(u1[14])} t, logam {fN(u1[15])} g (GC lama {fN(u1[16])} g)".replace(',', '.')),
-       ('QV_Splay_HW', f"tidak ada blok GC di dalam solid &rarr; {h1[6]} blok tambahan, rata-rata estimasi {fN(h1[11],3)} g/t"),
+       ('QV_Splay_HW', (f"tidak ada blok GC di dalam solid &rarr; {h1[6]} blok tambahan, rata-rata estimasi {fN(h1[11],3)} g/t"
+                        if h1[11] is not None else
+                        f"tidak ada blok GC di dalam solid &rarr; {h1[6]} blok tambahan; {h1[5]} blok terestimasi")),
        ('Block model', f"{MEB[0]:,} blok GC + {MEB[1]-MEB[0]} blok tambahan = {MEB[1]:,} blok".replace(',', '.')),
        ('Waktu', f"{fN(u1[17]/1000,1)} detik")])
  + fig('me_bm3d', 'Menu Block Model setelah <b>Tampilkan di Block Model</b>: diwarnai <code>au_final</code>, hanya blok terestimasi (filter <code>est_type &ge; 1</code>).')
