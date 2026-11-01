@@ -318,20 +318,34 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     assert {(x["kelompok"], x["jam"]) for x in pv["PIVOT_JAM_KELOMPOK"]["rows"]} == {("WH", 4.75), ("DL", 7.42)}
     assert pv["PIVOT_METER_RIG"]["rows"][0]["meter"] == 90.0 and pv["PIVOT_METER_RIG"]["rows"][0]["lubang"] == 3
     c = cf.collect(s, [did], "ddr")
-    assert len(c["recs"]) == 14 and c["recs"][-1]["_tbl"] == "_shift" and c["recs"][-1]["_verified"]
+    assert len(c["recs"]) == 17 and [r["_tbl"] for r in c["recs"][13:]] == ["_shift", "_dash", "_dash", "_dash"] and c["recs"][13]["_verified"]
     wb = load_workbook(io_bytes(cf.to_xlsx("ddr", c["recs"])))
-    assert wb.sheetnames[:3] == ["DDR_Aktivitas", "DDR_Meterage", "DDR_Ringkasan_Shift"] and "Pivot_Jam_Kelompok" in wb.sheetnames
+    assert wb.sheetnames[:4] == ["Data_Dashboard", "DDR_Aktivitas", "DDR_Meterage", "DDR_Ringkasan_Shift"] and "Pivot_Jam_Kelompok" in wb.sheetnames
     assert wb["DDR_Meterage"].max_row == 4 and wb["DDR_Ringkasan_Shift"].max_row == 2 and wb["Audit"].max_row == 14
+    ws = wb["Data_Dashboard"]
+    assert [c.value for c in ws[1]][:16] == ["Date", "EqType", "Location", "Shift", "Prospect", "BHID", "Interval_m", "WH", "Maint", "BD",
+                                             "Delay", "Standby", "Rain", "Remarks", "Azimuth", "Dip"]
+    r2 = [c.value for c in ws[2]][:16]
+    assert r2[0].strftime("%d-%b-%Y") == "31-Oct-2026" and ws["A2"].number_format == "dd-mmm-yyyy"
+    assert r2[1:8] == ["RIG-X1", None, "S01", "XX", "XX-100-S-05", 30, 5] and r2[10] == 7 and r2[13].startswith("area drillpad") and r2[14:] == [70, 60]
+    r3 = [c.value for c in ws[3]][:16]
+    assert r3[5] == "XX-100-S-01" and r3[6] == 30 and r3[7] is None and r3[10] is None and r3[14:] == [60, 60]  # jam hanya di baris pertama
     z = zipfile.ZipFile(io_bytes(cf.to_csv("ddr", c["recs"])))
-    assert sorted(z.namelist()) == ["DDR_AKTIVITAS.csv", "DDR_METERAGE.csv", "DDR_SHIFT.csv"]
+    assert sorted(z.namelist()) == ["DDR_AKTIVITAS.csv", "DDR_DASHBOARD.csv", "DDR_METERAGE.csv", "DDR_SHIFT.csv"]
+    assert z.read("DDR_DASHBOARD.csv").decode("utf-8-sig").startswith("Date,EqType,Location,Shift,Prospect,BHID,Interval_m,WH,Maint")
     db = tmp / "out" / "ddr.db"
     r1 = cf.to_sqlite(str(db), "ddr", c["recs"])
     r2 = cf.to_sqlite(str(db), "ddr", c["recs"])
-    assert (r1["added"], r2["added"], r2["updated"]) == (13, 0, 13) and r1["table"] == "DDR_AKTIVITAS, DDR_METERAGE, DDR_SHIFT"
+    assert (r1["added"], r2["added"], r2["updated"]) == (13, 0, 13) and r1["table"] == "DDR_DASHBOARD, DDR_AKTIVITAS, DDR_METERAGE, DDR_SHIFT"
     cn = sqlite3.connect(str(db))
     assert cn.execute("SELECT METER, LUBANG FROM DDR_METERAGE_PIVOT_METER_RIG").fetchone() == (90.0, 3)
     assert cn.execute("SELECT WH, WH_AKT, METER FROM DDR_SHIFT").fetchone() == (5.0, 4.75, 90.0)
+    assert cn.execute("SELECT COUNT(*), SUM(INTERVAL_M), SUM(WH), SUM(DELAY) FROM DDR_DASHBOARD").fetchone() == (3, 90.0, 5.0, 7.0)
     cn.close()
+    # shift tanpa lubang (mis. standby penuh): satu baris dashboard berisi jam saja
+    cf.save_rows(s, did, [], "Rina", "hole")
+    dash = cf.ddr_dashboard(cf.doc(s, did), cf.rows(s, did))
+    assert len(dash) == 1 and dash[0]["bhid"] == "" and dash[0]["wh"] == 5.0 and dash[0]["dl"] == 7.0
 
 
 def test_ddr_kategori_kelompok_site():

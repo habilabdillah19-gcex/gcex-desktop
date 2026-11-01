@@ -89,8 +89,8 @@ TYPES: dict[str, dict] = {
     },
     "ddr": {
         "name": "RC Drilling: Daily Drilling Report",
-        "header": [("tanggal", "Date", "date"), ("shift", "Shift (I / II)", "text"), ("rig", "Drill rig", "text"),
-                   ("driller", "Driller", "text"), ("client", "Client", "text"), ("dhp_id", "DHP ID", "text"),
+        "header": [("tanggal", "Date", "date"), ("shift", "Shift (I / II)", "text"), ("rig", "Drill rig (EqType)", "text"),
+                   ("lokasi", "Location", "text"), ("driller", "Driller", "text"), ("client", "Client", "text"), ("dhp_id", "DHP ID", "text"),
                    ("wh", "WH (jam kerja)", "num"), ("dl", "DL (delay)", "num"), ("mntc", "MNTC (maintenance)", "num"),
                    ("bd", "BD (breakdown)", "num"), ("rain", "RAIN (hujan)", "num"), ("std", "STD (standby)", "num"),
                    ("hm_start", "HM engine start", "num"), ("hm_finish", "HM engine finish", "num"), ("hm_running", "HM running", "num"),
@@ -108,7 +108,8 @@ TYPES: dict[str, dict] = {
                  "uraian (boleh dua baris tulisan) -> isi 'rows' dengan satu objek per kegiatan: mulai, selesai, aktivitas (gabungkan "
                  "baris lanjutan uraian), kategori kosongkan (""). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
                  "ENGINE (start, finish, HM running), Geologist approval; catatan di bawah tabel: WH, DL, MNTC, BD, RAIN, STD (jam, "
-                 "mis. 5hr -> 5) dan tulisan bebas -> 'catatan'."),
+                 "mis. 5hr -> 5) dan tulisan bebas -> 'catatan'. 'lokasi' (nama area / prospek) biasanya tidak tertulis: kosongkan bila "
+                 "tidak ada."),
     },
     "rc": {
         "name": "RC Drill / Chiptray Log",
@@ -790,6 +791,35 @@ def ddr_summary(d: dict, rs: list[dict]) -> dict:
     return out
 
 
+def prospect_of(bhid: str) -> str:
+    """Prospek dari awalan Hole ID: Z4_295_49 / Z2-265-S-05 -> Z4 / Z2."""
+    return re.split(r"[_\-\s.]", str(bhid or "").strip(), maxsplit=1)[0].upper() if bhid else ""
+
+
+def ddr_dashboard(d: dict, rs: list[dict], hole_ids: Optional[set] = None) -> list[dict]:
+    """Baris sheet 'Data' dashboard drilling: satu baris per lubang (Date, EqType, Location, Shift S01 / S02, Prospect, BHID,
+    Interval_m, WH, Maint, BD, Delay, Standby, Rain, Remarks, Azimuth, Dip). Jam shift (dari borang; bila kosong dari jumlah
+    aktivitas per kelompok) hanya ditulis di baris pertama shift agar penjumlahan di dashboard tidak berlipat. Shift tanpa lubang
+    -> satu baris berisi jam saja. hole_ids: baris meterage yang ikut diekspor (None = semua)."""
+    sm = ddr_summary(d, rs)
+    recs = records(d, rs)
+    hole = [r for r in recs if r["_tbl"] == "hole" and (hole_ids is None or r["_row"] in hole_ids)]
+    base = {"_doc": d["id"], "_uid": d["uid"], "_name": d["name"], "_tbl": "_dash", "tanggal": sm["tanggal"], "eqtype": sm["rig"],
+            "location": str(d["header"].get("lokasi") or "").strip(), "shift_code": {"DS": "S01", "NS": "S02"}.get(sm["kode_shift"], sm["shift"])}
+    hrs = {k: (sm[k] if sm[k] is not None else (sm[k + "_akt"] or None)) for k in HOURS}
+    out = []
+    for i, r in enumerate(hole):
+        x = dict(base, _row=r["_row"], _idx=r["_idx"], _verified=r["_verified"], _key=f"{d['uid']}:dash:{r['_row']}", bhid=r["hole_id"],
+                 prospect=prospect_of(r["hole_id"]), interval_m=r["meter"], az=r["az"], dip=r["dip"])
+        if i == 0:
+            x.update({k: hrs[k] for k in HOURS}, remarks=sm["catatan"])
+        out.append(x)
+    if not any(r["_tbl"] == "hole" for r in recs) and any(r["_tbl"] == "" for r in recs):
+        out.append(dict(base, _row=0, _idx=0, _verified=sm["_verified"], _key=f"{d['uid']}:dash:jam", bhid="",
+                        prospect="", interval_m=None, az=None, dip=None, remarks=sm["catatan"], **{k: hrs[k] for k in HOURS}))
+    return out
+
+
 def records(d: dict, rs: list[dict]) -> list[dict]:
     """Baris lengkap (header disebar ke tiap baris) + kolom turunan + nilai ternormalisasi."""
     h = d["header"]
@@ -1045,7 +1075,8 @@ LAB = {"tanggal": "Tanggal", "shift": "Shift", "kode_shift": "Kode", "front": "F
        "kegiatan": "Kegiatan", "hole_id": "Hole ID", "lubang": "Lubang", "meter": "Meter", "driller": "Driller", "interval": "Interval"}
 # bagian ekspor per jenis borang: (nama bagian -> OUT / DB_TABLE / SHEET, tabel sumber: '' utama, 'hole', '_shift' ringkasan)
 PARTS = {"ore": [("ore", "")], "rom": [("rom", "")], "rc": [("rc", "")],
-         "ddr": [("ddr", ""), ("ddr_hole", "hole"), ("ddr_shift", "_shift")]}
+         "ddr": [("ddr_dash", "_dash"), ("ddr", ""), ("ddr_hole", "hole"), ("ddr_shift", "_shift")]}
+DERIVED_PARTS = ("_shift", "_dash")  # baris turunan (ringkasan / dashboard), tidak dihitung sebagai baris borang
 _ORE_AGG = [("ritase", "count", None), ("tonase", "sum", "ton")]
 PIVOTS = {
     "ore": [("PIVOT_PER_SHIFT", "Per shift", "ore", ["tanggal", "shift", "kode_shift"], _ORE_AGG),
@@ -1118,6 +1149,11 @@ OUT = {
                  ("RIG", "Drill Rig", "rig", "TEXT"), ("DRILLER", "Driller", "driller", "TEXT"), ("HOLE_ID", "Hole ID", "hole_id", "TEXT"),
                  ("FROM_M", "From (m)", "from_m", "NUM"), ("TO_M", "To (m)", "to_m", "NUM"), ("METER", "Meter", "meter", "NUM"),
                  ("AZ", "Az", "az", "NUM"), ("DIP", "Dip", "dip", "NUM")],
+    "ddr_dash": [("DRILL_DATE", "Date", "tanggal", "DATE"), ("EQTYPE", "EqType", "eqtype", "TEXT"), ("LOCATION", "Location", "location", "TEXT"),
+                 ("SHIFT", "Shift", "shift_code", "TEXT"), ("PROSPECT", "Prospect", "prospect", "TEXT"), ("BHID", "BHID", "bhid", "TEXT"),
+                 ("INTERVAL_M", "Interval_m", "interval_m", "NUM"), ("WH", "WH", "wh", "NUM"), ("MAINT", "Maint", "mntc", "NUM"),
+                 ("BD", "BD", "bd", "NUM"), ("DELAY", "Delay", "dl", "NUM"), ("STANDBY", "Standby", "std", "NUM"), ("RAIN", "Rain", "rain", "NUM"),
+                 ("REMARKS", "Remarks", "remarks", "TEXT"), ("AZIMUTH", "Azimuth", "az", "NUM"), ("DIP", "Dip", "dip", "NUM")],
     "ddr_shift": [("TANGGAL", "Date", "tanggal", "DATE"), ("SHIFT", "Shift", "shift", "TEXT"), ("KODE_SHIFT", "Kode Shift", "kode_shift", "TEXT"),
                   ("RIG", "Drill Rig", "rig", "TEXT"), ("DRILLER", "Driller", "driller", "TEXT"), ("CLIENT", "Client", "client", "TEXT"),
                   ("DHP_ID", "DHP ID", "dhp_id", "TEXT")]
@@ -1134,9 +1170,9 @@ OUT = {
            ("FROM_M", "From (m)", "from_m", "NUM"), ("TO_M", "To (m)", "to_m", "NUM"), ("REMARK", "Remark (QAQC)", "remark", "TEXT")],
 }
 DB_TABLE = {"ore": "ORE_LOADING_PIT", "rom": "ORE_ROM_CRUSHER", "rc": "RC_INTERVAL", "ddr": "DDR_AKTIVITAS", "ddr_hole": "DDR_METERAGE",
-            "ddr_shift": "DDR_SHIFT"}
+            "ddr_shift": "DDR_SHIFT", "ddr_dash": "DDR_DASHBOARD"}
 SHEET = {"ore": "Data_Loading_Pit", "rom": "Data_ROM_Crusher", "rc": "Interval_Geodatabase", "ddr": "DDR_Aktivitas", "ddr_hole": "DDR_Meterage",
-         "ddr_shift": "DDR_Ringkasan_Shift"}
+         "ddr_shift": "DDR_Ringkasan_Shift", "ddr_dash": "Data_Dashboard"}
 AUDIT = [("VERIFIED", "BOOL"), ("SRC_DOC", "TEXT"), ("SRC_KEY", "TEXT")]
 
 
@@ -1159,6 +1195,8 @@ def collect(s: Store, ids: list[int], ftype: str, unverified: bool = False) -> d
                 skip += 1
         if ftype == "ddr" and took:
             recs.append(ddr_summary(d, rs))
+            hids = {r["_row"] for r in recs if r["_doc"] == d["id"] and r["_tbl"] == "hole"}
+            recs += ddr_dashboard(d, rs, hids)
     return {"recs": recs, "docs": sel, "skipped_unverified": skip, "issues": issues}
 
 
@@ -1195,7 +1233,7 @@ def to_xlsx(ftype: str, recs: list[dict]) -> bytes:
         ws = wb.active if i == 0 else wb.create_sheet()
         ws.title = SHEET[part]
         sheet(ws, [c[1] for c in cols], [[_val(r, c[2], c[3]) for c in cols] for r in part_recs(recs, part)],
-              {j: ("d-mmm-yy" if c[3] == "DATE" else None) for j, c in enumerate(cols, 1)})
+              {j: (("dd-mmm-yyyy" if part == "ddr_dash" else "d-mmm-yy") if c[3] == "DATE" else None) for j, c in enumerate(cols, 1)})
     for pv in pivots(recs, ftype):
         ks = [k for k, _l in pv["cols"]]
         sheet(wb.create_sheet(pv["key"].title()[:31]), [lab for _k, lab in pv["cols"]],
@@ -1203,7 +1241,7 @@ def to_xlsx(ftype: str, recs: list[dict]) -> bytes:
               {1: "d-mmm-yy"} if ks[0] == "tanggal" else None)
     sheet(wb.create_sheet("Audit"), ["Borang", "Tabel", "Baris", "Diverifikasi", "Kunci sumber"],
           [[r["_name"], {"": "utama", "hole": "meterage"}.get(r["_tbl"], r["_tbl"]), r["_idx"] + 1, "ya" if r["_verified"] else "BELUM", r["_key"]]
-           for r in recs if r.get("_tbl") != "_shift"])
+           for r in recs if r.get("_tbl") not in DERIVED_PARTS])
     b = io.BytesIO()
     wb.save(b)
     return b.getvalue()
@@ -1213,7 +1251,7 @@ def _csv_part(part: str, recs: list[dict]) -> bytes:
     b = io.StringIO()
     w = csv.writer(b, lineterminator="\r\n")
     cols = OUT[part]
-    w.writerow([c[0] for c in cols] + ["VERIFIED", "SRC_DOC"])
+    w.writerow([c[1] if part == "ddr_dash" else c[0] for c in cols] + ["VERIFIED", "SRC_DOC"])
     for r in part_recs(recs, part):
         row = []
         for c in cols:
@@ -1266,7 +1304,7 @@ def to_sqlite(path: str, ftype: str, recs: list[dict]) -> dict:
                                [[v.isoformat() if isinstance(v, date) else (int(v) if isinstance(v, bool) else v) for v in row] for row in data])
                 after = cn.execute(f"SELECT COUNT(*) FROM {tb}").fetchone()[0]
                 res["tables"].append(tb)
-                if part_tbl(part) != "_shift":
+                if part_tbl(part) not in DERIVED_PARTS:
                     res["added"] += after - before
                     res["updated"] += len(data) - (after - before)
                     res["total"] += after
@@ -1302,7 +1340,7 @@ def to_access(path: str, ftype: str, recs: list[dict]) -> dict:
         r = access_io.insert(path, tb, names, data, key_column="SRC_KEY", skip_existing=True)
         res["tables"].append(tb)
         res["table_created"] = res["table_created"] or bool(new_tb)
-        if part_tbl(part) != "_shift":
+        if part_tbl(part) not in DERIVED_PARTS:
             res["added"] += r["added"]
             res["existing"] += len(r["skipped_existing"])
     res["table"] = ", ".join(res["tables"])
@@ -1437,7 +1475,7 @@ def api_ai(b: AiBody) -> dict:
 @router.post("/export/check")
 def api_export_check(b: ExpBody) -> dict:
     c = collect(store(b.folder), b.ids, b.type, b.unverified)
-    return {"ok": True, "n": sum(1 for r in c["recs"] if r.get("_tbl") != "_shift"), "docs": len(c["docs"]),
+    return {"ok": True, "n": sum(1 for r in c["recs"] if r.get("_tbl") not in DERIVED_PARTS), "docs": len(c["docs"]),
             "skipped_unverified": c["skipped_unverified"], "issues": c["issues"]}
 
 

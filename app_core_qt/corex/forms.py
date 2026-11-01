@@ -298,7 +298,9 @@ class FormsPage(QWidget):
         self.expInfo.hide()
         v.addWidget(self.expInfo)
         n = QLabel("Tabel database: <b>ORE_LOADING_PIT</b>, <b>ORE_ROM_CRUSHER</b>, <b>RC_INTERVAL</b>, atau untuk Daily Drilling Report "
-                   "<b>DDR_AKTIVITAS</b> + <b>DDR_METERAGE</b> + <b>DDR_SHIFT</b> (ringkasan jam, meter, HM, bit), dengan kolom VERIFIED, SRC_DOC dan SRC_KEY (borang:baris). "
+                   "<b>DDR_DASHBOARD</b> (sheet Excel <i>Data_Dashboard</i>: kolom sama dengan sheet Data dashboard drilling, satu baris per lubang, "
+                   "jam shift di baris pertama, Azimuth & Dip di kanan) + <b>DDR_AKTIVITAS</b> + <b>DDR_METERAGE</b> + <b>DDR_SHIFT</b> "
+                   "(ringkasan jam, meter, HM, bit), dengan kolom VERIFIED, SRC_DOC dan SRC_KEY (borang:baris). "
                    "Ekspor ulang tidak menggandakan baris: SQLite memperbarui baris yang sama, MS Access melewati baris yang sudah ada.")
         n.setObjectName("note")
         n.setWordWrap(True)

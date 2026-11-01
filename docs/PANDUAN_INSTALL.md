@@ -792,3 +792,8 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 73. DB-Ex 0.35.1 — kelompok jam Daily Drilling Report
 
 - Kategori & kelompok jam aktivitas mengikuti aturan site: **WH** = drilling, traveling antar titik bor, persiapan, P2H, P5M; **DL** = istirahat, standby, wait blasting, traveling ke lokasi; **MNTC / BD / RAIN** = maintenance, breakdown, hujan; **STD** = standby tidak ada operator, standby tidak ada lokasi.
+
+## 74. DB-Ex 0.35.2 — Daily Drilling Report ke dashboard drilling
+
+- Ekspor Daily Drilling Report kini juga menghasilkan sheet **Data_Dashboard** (tabel `DDR_DASHBOARD`) dengan kolom sama seperti sheet *Data* dashboard drilling: Date, EqType, Location, Shift, Prospect, BHID, Interval_m, WH, Maint, BD, Delay, Standby, Rain, Remarks, lalu **Azimuth** dan **Dip**. Satu baris per lubang; jam shift ditulis di baris pertama shift.
+- Header Daily Drilling Report mendapat isian **Location** (nama area / prospek), karena tidak tertulis di borang.
