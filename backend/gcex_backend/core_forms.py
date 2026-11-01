@@ -102,8 +102,8 @@ TYPES: dict[str, dict] = {
         "tables": {"hole": {"name": "Meterage / lubang", "ai": "lubang",
                             "rows": [("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("hole_id", "Hole ID", "text"),
                                      ("az", "Az", "num"), ("dip", "Dip", "num")]}},
-        "hint": ("Borang 'Daily Drilling Report' pemboran RC, portrait. Header kanan atas: Client, DHP_ID, Driller, Date, Drill Rig, Shift "
-                 "(I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang' (satu objek per lubang). Kolom kanan "
+        "hint": ("Borang 'Daily Drilling Report' pemboran RC, portrait. Header kanan atas: Client, DHP_ID, Driller, Date, Drill Rig (nama "
+                 "unit, mis. 'Hanjin SDR-07' -> tulis apa adanya), Shift (I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang' (satu objek per lubang). Kolom kanan "
                  "'DRILLING DETAILS and FORMATION DESCRIPTION': tiap kegiatan diawali rentang jam, mis. 0650-0700 atau 07.00-07.05, lalu "
                  "uraian (boleh dua baris tulisan) -> isi 'rows' dengan satu objek per kegiatan: mulai, selesai, aktivitas (gabungkan "
                  "baris lanjutan uraian), kategori kosongkan (""). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
@@ -356,6 +356,39 @@ def shift_code(t: Any) -> str:
     return ""
 
 
+RIG_BRANDS = ["Hanjin", "Hanwa"]  # merek drill rig yang dikenal (penulisan tangan dirapikan ke "Hanjin 007")
+
+
+def norm_bhid(v: Any) -> str:
+    """Hole ID baku DB-Ex: huruf besar, pemisah garis bawah (Z2-265-S-05 / z4 270.56 -> Z2_265_S_05 / Z4_270_56)."""
+    t = str(v or "").strip().upper()
+    t = re.sub(r"[\s\-./\\]+", "_", t)
+    return re.sub(r"_+", "_", t).strip("_")
+
+
+def norm_rig(v: Any) -> str:
+    """Drill rig -> 'Merek 00N' bila mereknya dikenal (hansin SDR-07 / Hanjin 7 -> Hanjin 007); selain itu dibiarkan."""
+    t = str(v or "").strip()
+    w = re.findall(r"[A-Za-z]+", t)
+    n = re.findall(r"\d+", t)
+    if not w or not n:
+        return t
+    import difflib
+    m = difflib.get_close_matches(w[0].lower(), [b.lower() for b in RIG_BRANDS], n=1, cutoff=0.6)
+    if not m:
+        return t
+    return f"{RIG_BRANDS[[b.lower() for b in RIG_BRANDS].index(m[0])]} {int(n[-1]):03d}"
+
+
+def norm_header(ftype: str, k: str, v: Any) -> str:
+    v = str(v or "").strip()
+    if ftype == "ddr" and k == "rig":
+        return norm_rig(v)
+    if ftype == "rc" and k == "hole_id":
+        return norm_bhid(v)
+    return v
+
+
 def tcols(ftype: str, tbl: str = "") -> list:
     """Kolom tabel borang: tabel utama ('') atau tabel tambahan (mis. 'hole' di Daily Drilling Report)."""
     t = TYPES[ftype]
@@ -560,7 +593,7 @@ def update_doc(s: Store, did: int, values: dict, by: str) -> dict:
             unc = [k for k in d["hdr_unc"]]
             for k, v in (values["header"] or {}).items():
                 if k in keys:
-                    v = str(v or "").strip()
+                    v = norm_header(ftype, k, v)
                     if h.get(k) != v:
                         _hist(c, did, f"header {k}", h.get(k), v, "edit", by)
                         h[k] = v
@@ -589,6 +622,9 @@ def save_rows(s: Store, did: int, lst: list[dict], by: str, tbl: str = "") -> li
         datas = [x for x, _f in fill_ore(d["type"], datas, False)]
     if d["type"] == "ddr" and not tbl:
         datas = [x for x, _f in fill_ddr(datas)]
+    if "hole_id" in keys:
+        for x in datas:
+            x["hole_id"] = norm_bhid(x["hole_id"])
     with s.lock, s.conn() as c:
         for i, r in enumerate(lst):
             data = datas[i]
@@ -717,10 +753,13 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
     with s.conn() as c:
         edited_hdr = {r["what"][7:] for r in c.execute("SELECT what FROM history WHERE doc_id=? AND what LIKE 'header %' AND src='edit'", (did,))}
     h = dict(d["header"])
+    hunc = [k for k in (rh.get("ragu") or []) if k in hk and k not in edited_hdr]
     for k in hk:
         if k not in edited_hdr and str(rh.get(k) or "").strip():
-            h[k] = str(rh[k]).strip()
-    hunc = [k for k in (rh.get("ragu") or []) if k in hk and k not in edited_hdr]
+            raw = str(rh[k]).strip()
+            h[k] = norm_header(d["type"], k, raw)
+            if h[k] != raw and k not in hunc:  # dirapikan program (mis. rig, Hole ID) -> kuning, cek terhadap scan
+                hunc.append(k)
     out_rows = []
     for r in (res or {}).get("rows") or []:
         if not isinstance(r, dict):
@@ -741,7 +780,10 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
             if isinstance(r, dict):
                 data = {k: str(r.get(k) if r.get(k) is not None else "").strip() for k in xk}
                 if any(data.values()):
-                    extra.append((tb, data, [k for k in (r.get("ragu") or []) if k in xk]))
+                    unc = [k for k in (r.get("ragu") or []) if k in xk]
+                    if "hole_id" in data and norm_bhid(data["hole_id"]) != data["hole_id"]:
+                        data["hole_id"] = norm_bhid(data["hole_id"])
+                    extra.append((tb, data, unc))
     with s.lock, s.conn() as c:
         c.execute("DELETE FROM rows WHERE doc_id=?", (did,))
         for i, (data, unc) in enumerate(out_rows):
@@ -763,7 +805,7 @@ def ddr_common(d: dict) -> dict:
     h = d["header"]
     tg = parse_date(h.get("tanggal"))
     return {"tanggal": tg.isoformat() if tg else str(h.get("tanggal") or ""), "shift": h.get("shift") or "", "kode_shift": shift_code(h.get("shift")),
-            "rig": str(h.get("rig") or "").strip(), "driller": str(h.get("driller") or "").strip(), "client": str(h.get("client") or "").strip(),
+            "rig": norm_rig(h.get("rig")), "driller": str(h.get("driller") or "").strip(), "client": str(h.get("client") or "").strip(),
             "dhp_id": str(h.get("dhp_id") or "").strip()}
 
 
@@ -832,7 +874,7 @@ def records(d: dict, rs: list[dict]) -> list[dict]:
             rec.update(ddr_common(d))
             if rec["_tbl"] == "hole":
                 f_, t_ = parse_num(x.get("from_m")), parse_num(x.get("to_m"))
-                rec.update({"hole_id": str(x.get("hole_id") or "").strip().upper().replace(" ", ""), "from_m": f_, "to_m": t_,
+                rec.update({"hole_id": norm_bhid(x.get("hole_id")), "from_m": f_, "to_m": t_,
                             "meter": round(t_ - f_, 2) if f_ is not None and t_ is not None else None,
                             "az": parse_num(x.get("az")), "dip": parse_num(x.get("dip"))})
             else:
@@ -869,7 +911,7 @@ def records(d: dict, rs: list[dict]) -> list[dict]:
                                                                                           else ket.upper())})
         else:
             tg = parse_date(h.get("tanggal"))
-            rec.update({"hole_id": (h.get("hole_id") or "").strip(), "tanggal": tg.isoformat() if tg else str(h.get("tanggal") or ""),
+            rec.update({"hole_id": norm_bhid(h.get("hole_id")), "tanggal": tg.isoformat() if tg else str(h.get("tanggal") or ""),
                         "sample_id": (x.get("sample_id") or "").strip(), "from_m": parse_num(x.get("from_m")), "to_m": parse_num(x.get("to_m")),
                         "remark": qaqc(x.get("remark"))})
         out.append(rec)
@@ -939,7 +981,7 @@ def validate(d: dict, rs: list[dict], others: Optional[list[dict]] = None) -> di
                 bad(r, "to_m", "To harus angka")
             if f_ is not None and t_ is not None and t_ <= f_:
                 bad(r, "to_m", "To harus lebih besar dari From")
-            hid = str(x.get("hole_id") or "").strip().upper().replace(" ", "")
+            hid = norm_bhid(x.get("hole_id"))
             if not hid:
                 bad(r, "hole_id", "Hole ID kosong")
             elif hid in seen and f_ is not None and seen[hid] is not None and f_ < seen[hid] - 1e-6:

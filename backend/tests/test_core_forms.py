@@ -257,7 +257,7 @@ def io_bytes(b):
     return io.BytesIO(b)
 
 
-DDR_AI = {"header": {"tanggal": "31-10-26", "shift": "I", "rig": "RIG-X1", "driller": "Driller A", "client": "Klien A", "dhp_id": "KTR",
+DDR_AI = {"header": {"tanggal": "31-10-26", "shift": "I", "rig": "hansin sdr-07", "driller": "Driller A", "client": "Klien A", "dhp_id": "KTR",
                      "wh": "5hr", "dl": "7hrs", "mntc": "", "bd": "", "rain": "", "std": "", "hm_start": "1200.5", "hm_finish": "1203.7",
                      "hm_running": "", "catatan": "area drillpad longsor, menunggu area baru", "ragu": ["dhp_id"]},
           "rows": [{"mulai": "0650", "selesai": "0700", "aktivitas": "Traveling to ROM", "kategori": ""},
@@ -288,6 +288,8 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     act = [r for r in rs if r["tbl"] == ""]
     hole = [r for r in rs if r["tbl"] == "hole"]
     assert len(act) == 10 and len(hole) == 3 and hole[2]["unc"] == ["az"]
+    assert [r["data"]["hole_id"] for r in hole] == ["XX_100_S_05", "XX_100_S_01", "XX_100_S_02"]  # Hole ID baku: garis bawah
+    assert cf.doc(s, did)["header"]["rig"] == "Hanjin 007" and "rig" in cf.doc(s, did)["hdr_unc"]
     assert (act[0]["data"]["mulai"], act[0]["data"]["selesai"]) == ("06:50", "07:00")
     assert [r["data"]["kategori"] for r in act] == ["TRAVELING KE LOKASI", "P5M", "TRAVELING KE LOKASI", "P2H", "PERSIAPAN", "DRILLING",
                                                    "WAIT BLASTING", "ISTIRAHAT", "STANDBY", "STANDBY"]
@@ -327,9 +329,9 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
                                              "Delay", "Standby", "Rain", "Remarks", "Azimuth", "Dip"]
     r2 = [c.value for c in ws[2]][:16]
     assert r2[0].strftime("%d-%b-%Y") == "31-Oct-2026" and ws["A2"].number_format == "dd-mmm-yyyy"
-    assert r2[1:8] == ["RIG-X1", None, "S01", "XX", "XX-100-S-05", 30, 5] and r2[10] == 7 and r2[13].startswith("area drillpad") and r2[14:] == [70, 60]
+    assert r2[1:8] == ["Hanjin 007", None, "S01", "XX", "XX_100_S_05", 30, 5] and r2[10] == 7 and r2[13].startswith("area drillpad") and r2[14:] == [70, 60]
     r3 = [c.value for c in ws[3]][:16]
-    assert r3[5] == "XX-100-S-01" and r3[6] == 30 and r3[7] is None and r3[10] is None and r3[14:] == [60, 60]  # jam hanya di baris pertama
+    assert r3[5] == "XX_100_S_01" and r3[6] == 30 and r3[7] is None and r3[10] is None and r3[14:] == [60, 60]  # jam hanya di baris pertama
     z = zipfile.ZipFile(io_bytes(cf.to_csv("ddr", c["recs"])))
     assert sorted(z.namelist()) == ["DDR_AKTIVITAS.csv", "DDR_DASHBOARD.csv", "DDR_METERAGE.csv", "DDR_SHIFT.csv"]
     assert z.read("DDR_DASHBOARD.csv").decode("utf-8-sig").startswith("Date,EqType,Location,Shift,Prospect,BHID,Interval_m,WH,Maint")
@@ -359,3 +361,21 @@ def test_ddr_kategori_kelompok_site():
     assert cf.kat_norm("safety talk") == "P5M" and cf.kat_norm("drilling") == "DRILLING" and cf.kat_norm("Tidak ada operator") == \
         "STANDBY TIDAK ADA OPERATOR"
     assert set(cf.DDR_GROUP) == set(cf.DDR_KAT_NAMES)
+
+
+def test_norm_bhid_rig():
+    assert cf.norm_bhid("Z2-265-S-05") == "Z2_265_S_05" and cf.norm_bhid(" z4 270.56 ") == "Z4_270_56" and cf.norm_bhid("Z4__295--49") == "Z4_295_49"
+    assert cf.norm_rig("hansin - sdr - 07") == "Hanjin 007" and cf.norm_rig("Hanjin 6") == "Hanjin 006" and cf.norm_rig("HANWA 1") == "Hanwa 001"
+    assert cf.norm_rig("Rig lain") == "Rig lain" and cf.norm_rig("XYZ-12") == "XYZ-12"
+
+
+def test_bhid_rig_on_manual_edit(st):
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
+    cf.update_doc(s, did, {"header": {"rig": "hanjin 6"}}, "Rina")
+    assert cf.doc(s, did)["header"]["rig"] == "Hanjin 006"
+    rs = cf.save_rows(s, did, [{"data": {"from_m": "0", "to_m": "17", "hole_id": "z4-315-09"}}], "Rina", "hole")
+    assert rs[0]["data"]["hole_id"] == "Z4_315_09"
+    rc = cf.add_file(s, str(_scan(tmp, "rc.jpg")), "rc", "Rina")[0]["id"]
+    cf.update_doc(s, rc, {"header": {"hole_id": "dp 900"}}, "Rina")
+    assert cf.doc(s, rc)["header"]["hole_id"] == "DP_900"

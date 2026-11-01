@@ -276,6 +276,8 @@ Tombol **Borang** di bilah atas (di samping *Core box* dan *Singkapan*) membuka 
   - Kotak ringkasan membandingkan jam di borang dengan jumlah durasi aktivitas per kelompok (merah bila selisih > 0,5 jam), total meter, jumlah lubang, meter per jam drilling dan HM running. Validasi: jam kosong / tidak valid, kegiatan tidak menyambung, di luar shift (lembur), To ≤ From, azimuth / dip di luar rentang.
 - **RC Drill / Chiptray Log**: header Hole ID, tanggal pengeboran; baris Sample ID, From, To, Remark QAQC (STD / BLANK / DUP).
 
+**Penulisan baku di seluruh Borang** (hasil AI, ketikan manual, tabel dan semua ekspor): **Hole ID memakai garis bawah**, huruf besar (Z2-265-S-05 → Z2_265_S_05, z4 270.56 → Z4_270_56); **Drill rig** dirapikan ke *Merek 00N* bila mereknya dikenal (Hanjin, Hanwa): tulisan tangan *hansin SDR-07* atau ketikan *Hanjin 7* → **Hanjin 007** — nilai ini yang masuk kolom **EqType** dashboard. Isian yang dirapikan dari hasil AI ditandai kuning.
+
 Cara tulis cepat di lapangan dipahami program (sel yang diisi program ditandai **kuning** agar dicek):
 
 - **Tanda ulang** (〃, ", =, ,, garis tegak / garis miring panjang) → nilai baris di atasnya; *〃 370* di Tujuan → *ROM 370*; Tujuan yang hanya angka → awalan baris atas (mis. *ROM*).

@@ -797,3 +797,8 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 
 - Ekspor Daily Drilling Report kini juga menghasilkan sheet **Data_Dashboard** (tabel `DDR_DASHBOARD`) dengan kolom sama seperti sheet *Data* dashboard drilling: Date, EqType, Location, Shift, Prospect, BHID, Interval_m, WH, Maint, BD, Delay, Standby, Rain, Remarks, lalu **Azimuth** dan **Dip**. Satu baris per lubang; jam shift ditulis di baris pertama shift.
 - Header Daily Drilling Report mendapat isian **Location** (nama area / prospek), karena tidak tertulis di borang.
+
+## 75. DB-Ex 0.35.3 — Hole ID garis bawah & nama drill rig baku
+
+- Hole ID di Borang (Daily Drilling Report, RC Drill / Chiptray) selalu ditulis dengan **garis bawah** dan huruf besar: Z2-265-S-05 → Z2_265_S_05.
+- Drill rig dirapikan ke format **Hanjin 007** (merek + nomor 3 digit) untuk kolom **EqType** dashboard drilling; isian yang dirapikan dari hasil AI ditandai kuning.
