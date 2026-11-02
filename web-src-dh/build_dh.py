@@ -14,6 +14,7 @@ Modul desktop yang disisipkan (sebelum FP.startUI, setelah semua fungsi proyek &
 - ../web-src/hires.js  : LOD topografi & orthofoto (piramida, resolusi mengikuti zoom, gambar asli di Peta 2D)
 - cls_dh.js            : klasifikasi sumber daya (Measured / Indicated / Inferred) di Reporting BM
 - env_dh.js            : selubung mineralisasi (envelope / halo) per domain vein, soft boundary di Model Estimation
+- aoi_dh.js            : kerangka blok AOI (block model dibuat dari nol / melengkapi cakupan .mdl impor)
 Di browser biasa (tanpa GC-Ex Desktop) modul ini tidak mengubah apa pun.
 """
 import os
@@ -28,7 +29,7 @@ SHARED = os.path.join(W, '..', 'web-src') + os.sep
 s = open(W + 'gcex_dh_base.html', encoding='utf-8').read()
 mods = [SHARED + 'mdlbig.js', SHARED + 'guide.js', SHARED + 'desk_text.js', W + 'mdlbig_dh.js', W + 'deskflush_dh.js', SHARED + 'prj.js', SHARED + 'wm.js']
 if shutil.which('node'):
-    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js', W + 'cls_dh.js']:
+    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js', W + 'cls_dh.js', W + 'aoi_dh.js']:
         r = subprocess.run(['node', '--check', m], capture_output=True, text=True)
         assert r.returncode == 0, 'Galat sintaks di ' + m + ':\n' + r.stderr[:800]
     print('Cek sintaks modul: OK')
@@ -69,7 +70,7 @@ print('Spasi bor & jumlah bor per blok di Model Estimation: OK')
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + open(W + 'cls_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + open(W + 'cls_dh.js', encoding='utf-8').read() + '\n' + open(W + 'aoi_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
 s = s.replace("  if(!DOM.on)b+='<p class=gg-why>&#9432; Belum ada filter dom", "  if(!DOM.on&&!(window.gsDomCodes&&gsDomCodes()))b+='<p class=gg-why>&#9432; Belum ada filter dom")
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan

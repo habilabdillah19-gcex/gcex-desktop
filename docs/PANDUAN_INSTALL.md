@@ -941,3 +941,49 @@ TypeError: unsupported format string passed to NoneType.__format__
 **Sebabnya.** Skrip tangkapan layar menyimpan hasil Model Estimation per domain, termasuk objek validasi `q.v` (rata-rata komposit, rata-rata estimasi, kadar GC lama, volume, tonase, logam). Objek itu **bisa kosong** bila domain tersebut tidak punya pembanding kadar GC di dalam solid — dan pada data latihan baru, `QV_Splay_HW` memang demikian. Narasi tetap memformat nilainya sebagai angka, jadi penyusunan PDF berhenti.
 
 **Perbaikannya.** Pemformat angka `fN()` kini menulis `–` untuk nilai kosong, bukan melemparkan galat; dan baris ringkasan `QV_Splay_HW` punya kalimat cadangan yang hanya menyebut jumlah blok bila rata-rata estimasi tidak tersedia. Artinya **narasi tutorial tidak lagi mengandaikan setiap domain punya pembanding kadar GC** — data latihan boleh berubah bentuk tanpa mematahkan penyusunan PDF.
+
+## 64. GC-Ex Drill Hole Ultimate 0.24.16 — kerangka blok AOI
+
+Sampai 0.24.15, GC-Ex Drill Hole **selalu memerlukan block model dari luar**: estimasi hanya mengoreksi blok yang pusatnya di dalam solid domain, dan hanya bisa *menambah* blok pada bagian solid yang belum punya blok GC. Tidak ada cara membuat kerangka blok sendiri. Akibatnya pemodelan selalu dituntun model lama, dan material **waste** di sekitar wireframe ore hanya ada bila model impornya memang memuatnya.
+
+Menu **Block Model** sekarang punya tombol **⊞ Buat kerangka blok (AOI)**.
+
+### Apa yang dibuat
+Grid persegi seluruh *area of interest* — **ore dan waste** — dari extent, ukuran blok, dan RL yang Anda tentukan. Extent awal diambil dari sebaran lubang bor (+ margin 50 m) dan diperluas bila ada block model aktif. Origin disnap ke kelipatan ukuran blok supaya bench-nya rata.
+
+### Batas yang dipakai
+| Batas | Perilaku |
+|---|---|
+| Potong topografi aktif | hanya blok yang pusatnya **di bawah** permukaan (sisa / in-situ) |
+| Di dalam desain pit | blok dipertahankan hanya **antara dasar pit dan topografi** (volume di dalam pit) |
+| Rentang RL | batas atas / bawah manual |
+| Poligon area | fitur tertutup menu **Map** atau string Surpac — sama persis dengan poligon di Reporting BM |
+
+Permukaan yang dipakai sama dengan Reporting BM: permukaan segitiga (TIN) versi aktif bila ada, kalau tidak titik topografi / desain pit. Jadi volume yang dilaporkan konsisten dengan kerangka yang dibangun.
+
+### Dua mode
+| Mode | Perilaku |
+|---|---|
+| **Pertahankan & isi kekosongan** | block model aktif dipertahankan **utuh** — seluruh blok, ukuran sub-bloknya, dan semua atributnya termasuk **kadar waste dari `.mdl`** — dan blok baru hanya dibuat pada sel AOI yang **belum tercakup** model itu |
+| **Ganti** | kerangka baru seluruh AOI, model aktif diabaikan |
+
+Mode *isi kekosongan* itulah jalur untuk melengkapi `.mdl` impor yang cakupannya lebih sempit dari AOI. Cakupan diuji per sel: setiap blok impor menandai semua sel AOI yang **ditimpa kotaknya**, jadi sub-blok Surpac yang lebih kecil maupun blok induk yang lebih besar sama-sama terbaca benar.
+
+Atribut kategori **`AOI_ASAL`** membedakan asal setiap blok: `impor` atau `kerangka`. Blok kerangka **belum punya kadar** — atribut numerik model lama diisi NaN, atribut kategori dibiarkan kosong. Pengisian kadarnya pekerjaan Model Estimation, bukan modul ini.
+
+### Sebelum menekan tombol
+Tombol **Hitung jumlah blok** menampilkan ukuran grid, jumlah blok baru, jumlah blok impor yang dipertahankan, perincian yang dibuang (di atas topografi / di luar pit / di luar poligon / sudah tercakup), dan perkiraan volume. Batas aman 4 juta blok baru; di atas itu permintaannya ditolak dengan pesan yang menyarankan memperbesar ukuran blok.
+
+### Penyimpanan proyek
+Versi block model berjenis `aoi` menyimpan **parameter saja, bukan bloknya**, sehingga file proyek tetap ringan; kerangka dibangun ulang saat versi itu diaktifkan. Untuk mode *isi kekosongan*, file `.mdl` / CSV dasarnya harus masih ada di folder `sumber/` proyek.
+
+### Diuji
+Logika pemotongan diuji terhadap hitungan tangan pada topografi sintetis (bidang miring `z = 300 − 0,1·x`) dan dasar pit RL 240, grid 10 × 10 × 5 m:
+
+| Uji | Hasil modul | Hitungan tangan |
+|---|---|---|
+| Kerangka penuh + potong topografi | 1.910 blok (90 dibuang) | 1.910 |
+| + batas desain pit | 1.110 blok (800 dibuang) | 1.110 |
+| Isi kekosongan terhadap model impor separuh AOI | 930 blok baru + 1.000 impor | 930 |
+
+Model gabungan juga diperiksa: kadar blok impor tetap (`AU = 0,2`), blok kerangka `NaN`, kategori lama kosong untuk blok baru, dan `AOI_ASAL` berisi 1.000 `impor` + 930 `kerangka`.
