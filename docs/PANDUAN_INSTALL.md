@@ -1126,3 +1126,55 @@ Baris terakhir itu buktinya: meski permukaannya miring, IDW di ruang *unfold* me
 | **Geomodeller Vein** (solid domain: vein, lensa, breksi, stockwork, skarn, massive sulphide) | ya | ya — variogram domain terdekat, IDW bila jauh |
 | **Stratified-Laterite** (laterit Ni, bauksit, stratiform / sedex) | ya | **ya — IDW di ruang *unfold*** |
 | **Sesar 3D** | ya | tidak berlaku (bukan domain kadar) |
+
+## 68. GC-Ex Drill Hole Ultimate 0.24.20 — sub-blocking di batas solid & proporsi volume `sb_frac`
+
+Blok dihitung utuh berdasarkan **titik pusatnya**: blok yang separuh di dalam vein dan separuh di luar tetap dihitung 100% ore atau 100% waste. Pada vein tebal 2–4 m dengan blok 5 × 5 × 2,5 m, kesalahan batas itu sendiri sebesar dilusi yang mau diukur — jadi angka dilusi & ore loss tidak bisa dipercaya sebelum ini dibereskan.
+
+Menu **Block Model** mendapat dua tombol baru, dan Reporting BM satu pilihan baru.
+
+### 1. ◗ Pecah blok di batas solid (sub-blocking)
+Blok yang **menyeberangi** batas solid dipecah **2 × 2 × 2** menjadi 8 anak, berulang sampai 1–3 tingkat.
+
+Pemecahan 2 × 2 × 2 (bukan 2 × 2 × 1) disengaja: block model Surpac `.mdl` adalah **octree** yang membelah ketiga sumbu bersamaan dengan tingkat yang sama, sehingga blok anak tetap jatuh tepat di kisi octree dan modelnya masih bisa ditulis balik ke `.mdl`.
+
+Uji "menyeberang" memakai **27 titik** (kisi 3 × 3 × 3 di dalam kotak blok): bila semuanya di dalam solid atau semuanya di luar, blok dibiarkan utuh. Kisi 27 titik dipilih supaya vein tipis yang melintas tengah blok **tanpa menyentuh sudut** tetap terdeteksi.
+
+**Sub-blok yang sudah ada dihormati.** Batas ukuran minimum dihitung dari ukuran blok **dominan** dibagi 2^tingkat, per sumbu; blok yang sudah lebih halus dari batas itu dibiarkan utuh. Jadi model Surpac yang memang sudah ber-sub-blok di sekitar wireframe **tidak dipecah ulang**.
+
+Atribut blok anak diwarisi dari induknya, termasuk atribut kategori. Jalankan **sebelum** estimasi: posisi blok berubah sehingga hasil estimasi lama tidak lagi cocok — panelnya memperingatkan bila sudah ada hasil.
+
+### 2. ▢ Hitung proporsi volume ore per blok (`sb_frac`)
+Sub-blocking memperkecil kesalahan batas, **tetapi tidak menghilangkannya**: blok terkecil di perbatasan masih dihitung utuh. Pengujian di bawah memperlihatkan galatnya **berayun**, bukan menuju nol dengan rapi.
+
+Jalan keluarnya: simpan **proporsi volume** tiap blok yang berada di dalam solid sebagai atribut **`sb_frac` (0–1)**. Blok di perbatasan lalu dilaporkan seadanya — 0,35 blok ore dan 0,65 blok waste — bukan dibulatkan ke salah satu. Proporsinya dihitung dengan integrasi titik-tengah: 0 bila seluruh 27 titik di luar, 1 bila seluruhnya di dalam, dan bila bercampur dicuplik **10³ = 1.000 titik** per blok.
+
+### 3. Reporting BM: "Timbang volume & tonase dengan proporsi"
+Pilihan baru di bagian constraint. Volume & tonase tiap blok dikalikan proporsinya; blok dengan proporsi 0 tidak dilaporkan. **Kadar tidak dikalikan proporsi** — kadarnya memang kadar bagian yang di dalam solid, dan kadar rata-rata ditimbang tonase yang sudah berproporsi.
+
+### Diuji — dan ini mengubah urutan prioritasnya
+**Kasus terburuk: vein mendatar tipis.** Vein tebal 4 m (RL 248–252), blok 5 × 5 × 5 m dengan bench berpusat di RL 247,5 dan 252,5 — **tidak satu pun titik pusat blok jatuh di dalam vein**. Volume sebenarnya 400 m³:
+
+| Tingkat pecah | Blok | Titik pusat | Ditimbang `sb_frac` |
+|---|---|---|---|
+| utuh | 80 | **0 m³ (−100%)** | 400,0 m³ (0,00%) |
+| 1 | 136 | 500 m³ (+25%) | 400,0 m³ (0,00%) |
+| 2 | 360 | 500 m³ (+25%) | 400,0 m³ (0,00%) |
+| 3 | 1.256 | 375 m³ (−6,3%) | 400,0 m³ (0,00%) |
+
+Perhatikan kolom tengah: sub-blocking memperbaiki bencana −100% menjadi ±25%, lalu −6% — **membaik, tetapi berayun**, karena pembulatan titik pusat tidak hilang hanya dengan memperkecil blok.
+
+**Batas melengkung: bola radius 30 m**, volume analitik 113.097 m³:
+
+| Tingkat | Blok | Titik pusat | Ditimbang `sb_frac` | Blok perbatasan | Waktu |
+|---|---|---|---|---|---|
+| utuh | 4.096 | 114.000 m³ (+0,80%) | **113.120 m³ (+0,02%)** | 632 | 77 ms |
+| 1 | 8.520 | 112.625 m³ (−0,42%) | 113.103 m³ (+0,01%) | 2.504 | 0,5 s |
+| 2 | 26.720 | 113.000 m³ (−0,09%) | 113.096 m³ (−0,00%) | 9.896 | 2,7 s |
+
+Pada bentuk simetris, galat titik pusat sebagian saling menghapus sehingga tampak kecil (+0,80%) — itulah sebabnya kasus vein tipis di atas jauh lebih penting sebagai penguji.
+
+**Kesimpulan yang jujur dari angka-angka ini:** untuk **volume** ore/waste, `sb_frac` yang menyelesaikan masalah — bahkan **tanpa** memecah blok, galatnya sudah +0,02%. Sub-blocking tetap berguna untuk hal lain: resolusi **kadar** di dekat kontak (blok lebih kecil diestimasi dari komposit yang lebih relevan), dan geometri **dig block** yang mengikuti batas ore lebih rapat. Jadi kalau yang Anda perlukan hanya volume & tonase yang benar, jalankan tombol kedua saja — lebih cepat dan tidak melipatgandakan jumlah blok.
+
+### Penyimpanan proyek
+Versi block model berjenis `sub` menyimpan **parameter dan rujukan model dasarnya**, bukan bloknya; hasil pemecahan dibangun ulang saat versi itu diaktifkan. Model dasarnya boleh berjenis `.mdl`, CSV, maupun kerangka `aoi`.

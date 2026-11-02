@@ -4697,7 +4697,7 @@ function rpUnitDef(a){return /^(cu|zn|pb|fe|s|stot|scis|c|mn)(_|$)/i.test(a)?'%'
 function rpDef(){var m=BX.m,nums=Object.keys(m.num),A=meAN(),g=m.num[A.fin]?A.fin:m.num[A.est]?A.est:(nums.filter(function(n){return /^au/i.test(n);})[0]||nums[0]);
   var at=[g],seen={},elOf=function(n){var l=n.toLowerCase();return elements.map(function(e){return e.toLowerCase();}).filter(function(e){return l===e||l.indexOf(e+'_')===0;}).sort(function(p,q){return q.length-p.length;})[0]||'';};seen[elOf(g)]=1;
   nums.filter(function(n){return /_final$/i.test(n);}).concat(nums.filter(function(n){return !/_est$|_final$|^est_/i.test(n);})).forEach(function(n){var e=elOf(n);if(!e||seen[e]||at.indexOf(n)>=0)return;seen[e]=1;at.push(n);});var u={};at.forEach(function(a){u[a]=rpUnitDef(a);});
-  return{gr:g,atts:at,unit:u,sgMode:'c',sg:(ME.store&&+ME.store.sg)||2.6,sgAttr:'',dom:'all',catAttr:'',cat:{},surf:imTopoOk()?'topo':'none',z0:'',z1:'',poly:'',fA:'',fOp:'ge',fV:'',cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:5,show:false,sx:[],polyOut:false};}
+  return{gr:g,atts:at,unit:u,sgMode:'c',sg:(ME.store&&+ME.store.sg)||2.6,sgAttr:'',dom:'all',catAttr:'',cat:{},surf:imTopoOk()?'topo':'none',z0:'',z1:'',poly:'',fA:'',fOp:'ge',fV:'',cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:5,show:false,sx:[],polyOut:false,frac:''};}
 function rpO(){if(!BX.m)return null;if(!RP.o||!RP.o._m||RP.o._m!==BX.m.name){RP.o=rpDef();RP.o._m=BX.m.name;}return RP.o;}
 /* permukaan: indeks titik generik (topografi aktif / desain pit) -> z interpolasi IDW, cache per kolom blok */
 function rpSurf(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
@@ -4750,8 +4750,10 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     if(o.surf==='pit'){if(pa&&pa.tin){var pf=rpTinFn(pa.tin);pz=function(x,y){var r=pf(x+offX,y+offY);return r?r[0]:null;};pzT=true;}else{if(!(OV.pitF&&OV.pitF.x.length))throw new Error('Desain pit belum ada (menu Data Spasial).');pz=rpSurf(OV.pitF);}}
     var SX=o.sx.map(function(q){var r=rpSurfSrc(q.k);if(!r||!r.fn)throw new Error('Batas DTM tambahan tidak ditemukan / bukan permukaan segitiga ('+q.k+'). Hapus barisnya atau import ulang.');return{fn:r.fn,n:r.n,side:q.side,c:{}};});
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),SGA=o.sgMode==='a'&&m.num[o.sgAttr]?m.num[o.sgAttr]:null,sg0=+o.sg||2.6;
+    /* proporsi volume blok di dalam solid (0..1): blok perbatasan ikut seadanya, tidak dibulatkan */
+    var FRQ=o.frac&&m.num[o.frac]?m.num[o.frac]:null,FRC=function(i){if(!FRQ)return 1;var v=FRQ[i];return isFinite(v)&&v>=0?Math.min(1,v):0;},nOutFr=0;
     var grp=o.grp,bh=Math.max(0.5,+o.bh||5),GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null,dE=m.cat[meAN().dom];
-    var n=m.n,mask=new Uint8Array(n),T=[],I=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0},pOut=!!o.polyOut;
+    var n=m.n,mask=new Uint8Array(n),T=[],I=[],FR=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0},pOut=!!o.polyOut;
     for(var i=0;i<n;i++){var x=m.x[i]-offX,y=m.y[i]-offY,z=m.z[i];
       if(z0===z0&&z<z0||z1===z1&&z>z1){nOut.z++;continue;}
       if(PL&&PL.f(m.x[i],m.y[i])===pOut){nOut.poly++;continue;}
@@ -4761,14 +4763,14 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
       if(SX.length){var bad=0;for(var s2=0;s2<SX.length;s2++){var S2=SX[s2],r2=S2.c[ck];if(r2===undefined)r2=S2.c[ck]=S2.fn(m.x[i],m.y[i]);if(r2===null){bad=1;break;}if(S2.side==='above'?z<=r2[0]:z>=r2[1]){bad=2;break;}}if(bad){if(bad===1)nOut.ext++;else nOut.surf++;continue;}}
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
-      var sg=SGA&&isFinite(SGA[i])&&SGA[i]>0?SGA[i]:sg0;mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);
+      var sg=SGA&&isFinite(SGA[i])&&SGA[i]>0?SGA[i]:sg0;var fr=FRC(i);if(FRQ&&!(fr>0)){nOutFr++;continue;}mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg*fr);I.push(i);FR.push(fr);
       Kg.push(grp==='bench'?Math.floor(z/bh):grp==='dom'?(dE&&dE.codes[i]!==65535?dE.dict[dE.codes[i]]:'(di luar domain estimasi)'):grp==='cat'?(GC&&GC.codes[i]!==65535?GC.dict[GC.codes[i]]:'(kosong)'):'Total');nb++;}
     /* agregasi: per cut-off x grup */
-    var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2];
+    var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2]*FR[j];
         atts.forEach(function(a){var v=m.num[a][i2];if(isFinite(v)&&v>-90){var q=r.s[a]||(r.s[a]={tw:0,w:0});q.tw+=t*v;q.w+=t;}});}return R;};
     var rows=cuts.map(function(c){return{c:c,G:agg(function(i2){return G[i2]>=c;})};});
     BX.rpMask=mask;BX.rpSrc='rep';BX.rpVer=(BX.rpVer||0)+1;
-    RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,surf:o.surf,surfN:(o.surf!=='none'?((ta?ta.name:'')+(tzT?' [DTM]':'')+(o.surf==='pit'?' / pit '+(pa?pa.name:'')+(pzT?' [DTM]':''):'')):''),sxD:SX.map(function(q){return (q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,sg:SGA?'atribut '+o.sgAttr:'SG '+sg0,date:new Date().toLocaleString('id-ID'),bm:m.name};
+    RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,frac:o.frac||'',nOutFr:nOutFr,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,surf:o.surf,surfN:(o.surf!=='none'?((ta?ta.name:'')+(tzT?' [DTM]':'')+(o.surf==='pit'?' / pit '+(pa?pa.name:'')+(pzT?' [DTM]':''):'')):''),sxD:SX.map(function(q){return (q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,sg:SGA?'atribut '+o.sgAttr:'SG '+sg0,date:new Date().toLocaleString('id-ID'),bm:m.name};
     RP.sec='2';if(o.show){BX.rpOnly=true;BX.sc={};updatePlot();}rpPanel();}
   catch(e){console.error(e);if(msg)msg.innerHTML='<span class=warn>'+rpE(e.message)+'</span>';else alert(e.message);}}
 function rpMetal(a,t,g,u){if(u==='%')return t*g/100;return t*g;}/* g/t & ppm -> gram; % -> ton logam */
@@ -4821,7 +4823,8 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
       '<div class=rpimps>'+(SL.length?'<button onclick="rpSx(0,\'add\')">+ Tambah batas DTM</button>':'')+imp('rpImpWf(this)','.dtm,.str,.dxf,.obj,.msh','Import DTM (.dtm + .str)','Masuk ke Data Referensi › Wireframe; langsung ditambahkan sebagai batas.')+'</div><div class=hint>Sumber: DTM segitiga di <b>Data Spasial</b> (versi topografi / pit mana saja) dan <b>Data Referensi › Wireframe</b>.</div>';
     h+='<h4>Elevasi &amp; area</h4><div class="g2 f"><div><label>Z min (RL)</label><input type=number step=any value="'+rpE(o.z0)+'" onchange="RP.o.z0=this.value" placeholder="tanpa batas"></div><div><label>Z maks (RL)</label><input type=number step=any value="'+rpE(o.z1)+'" onchange="RP.o.z1=this.value" placeholder="tanpa batas"></div></div>';
     var PLs=rpPolyList();
-    h+='<label>Poligon area (string Surpac / fitur tertutup Map)</label><div class="g3 f"><div style="grid-column:span 2">'+sel('',[['','Tanpa poligon']].concat(PLs),o.poly,"RP.o.poly=this.value")+'</div><div>'+sel('',[['in','di dalam'],['out','di luar']],o.polyOut?'out':'in',"RP.o.polyOut=this.value==='out'")+'</div></div>'+
+    (function(){var nums=Object.keys(m.num).filter(function(k){return /frac|prop/i.test(k);});if(!nums.length&&!o.frac)return;h+='<label title="Volume &amp; tonase tiap blok dikalikan proporsi ini (0&ndash;1), sehingga blok di perbatasan solid ikut seadanya alih-alih dibulatkan ke ore atau waste. Atribut sb_frac dihitung di menu Block Model: Pecah blok di batas solid / Hitung proporsi volume ore per blok.">Timbang volume &amp; tonase dengan proporsi</label><div class=f>'+sel('',[['','(tanpa pembobotan — blok dihitung utuh)']].concat(nums.map(function(k){return[k,k];})),o.frac,"RP.o.frac=this.value")+'</div>';if(o.frac)h+='<div class=hint style="margin:-4px 0 6px">Blok dengan proporsi 0 tidak dilaporkan; blok perbatasan dilaporkan sebagian. Kadar tidak dikalikan proporsi — kadar rata-rata ditimbang tonase, yang sudah berproporsi.</div>';})();
+  h+='<label>Poligon area (string Surpac / fitur tertutup Map)</label><div class="g3 f"><div style="grid-column:span 2">'+sel('',[['','Tanpa poligon']].concat(PLs),o.poly,"RP.o.poly=this.value")+'</div><div>'+sel('',[['in','di dalam'],['out','di luar']],o.polyOut?'out':'in',"RP.o.polyOut=this.value==='out'")+'</div></div>'+
       '<div class=rpimps>'+imp('rpImpStr(this)','.str,.dxf','Import string (.str)','Masuk ke Data Referensi › String Surpac; langsung dipilih sebagai poligon.')+'</div><div class=hint>String dianggap tertutup; blok masuk bila centroid di dalam salah satu segmen (pilih nomor string tertentu bila file berisi beberapa). Sumber lain: boundary tertutup di <b>Map &rsaquo; Digitasi</b>.</div>';
     h+='<h4>Filter atribut (opsional)</h4><div class="g3 f"><div>'+sel('',[['','—']].concat(nums.map(function(a){return[a,a];})),o.fA,"rpSet('fA',this.value)")+'</div><div>'+sel('',[['ge','≥'],['le','≤'],['eq','=']],o.fOp,"RP.o.fOp=this.value")+'</div><div><input type=number step=any value="'+rpE(o.fV)+'" onchange="RP.o.fV=this.value" placeholder="nilai"></div></div><div class=hint>Contoh: <i>est_pass ≤ 2</i> (hanya blok pass 1–2), atau kelas / klasifikasi bernilai angka.</div>';
     h+='<label class=sw style="margin-top:8px"><input type=checkbox '+(o.show?'checked':'')+' onchange="RP.o.show=this.checked"> Tampilkan hanya blok terlapor di 3D / Sayatan 2D</label>';
@@ -7880,6 +7883,344 @@ function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){ret
   }
 })();
 
+/* ================= SUB-BLOCKING DI BATAS SOLID =================
+   Blok utuh dihitung berdasarkan titik pusatnya: blok yang separuh di dalam vein dan separuh di luar
+   tetap dihitung 100% ore atau 100% waste. Pada vein tebal 2–4 m dengan blok 5 × 5 × 2,5 m, kesalahan
+   batas itu sendiri sebesar dilusi yang mau diukur — jadi angka dilusi & ore loss tidak bisa dipercaya
+   sebelum blok di perbatasan dipecah.
+
+   Modul ini memecah blok yang MENYEBERANGI batas solid domain menjadi 2 x 2 x 2 blok anak, berulang
+   sampai sejumlah tingkat yang dipilih. Pemecahan 2 x 2 x 2 (bukan 2 x 2 x 1) disengaja: block model
+   Surpac .mdl adalah octree yang membelah ketiga sumbu bersamaan dengan tingkat yang sama, sehingga
+   blok anak tetap jatuh tepat di kisi octree dan model masih bisa ditulis balik ke .mdl.
+
+   Uji "menyeberang" memakai 27 titik (kisi 3 x 3 x 3 di dalam kotak blok): bila semuanya di dalam
+   solid atau semuanya di luar, blok dibiarkan utuh; bila bercampur, blok dipecah. Kisi 27 titik dipilih
+   supaya vein tipis yang melintas tengah blok tanpa menyentuh sudut tetap terdeteksi.
+
+   SUB-BLOK YANG SUDAH ADA DIHORMATI: blok yang ukurannya sudah mencapai (atau lebih kecil dari) batas
+   ukuran minimum tidak dipecah lagi. Jadi model Surpac yang memang sudah ber-sub-blok di sekitar
+   wireframe tidak dipecah ulang — pekerjaan itu sudah dilakukan dan hasilnya dipakai apa adanya.
+
+   Atribut blok anak diwarisi dari induknya (kadar berlaku untuk volumenya), termasuk atribut kategori.
+   Dijalankan SEBELUM estimasi: posisi blok berubah, sehingga hasil estimasi lama tidak lagi cocok.    */
+(function () {
+  if (typeof BX === 'undefined') return;
+  var CAP = 4000000;
+  var SB = { cfg: null, msg: '', busy: false, prev: null };
+  window.SB = SB;
+
+  function sE(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function fmt(v, d) { return v == null || !isFinite(v) ? '-' : (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function nv(v, d) { var x = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(x) ? x : d; }
+
+  function defCfg() { return { lv: 2, nama: '' }; }
+  function cfg() { if (!SB.cfg) SB.cfg = defCfg(); return SB.cfg; }
+
+  /* ---------- solid seluruh domain ---------- */
+  function solids() {
+    var L = (window.gmTops ? gmTops() : (window.GM ? GM.doms : [])) || [], W = [];
+    L.forEach(function (d) {
+      var R = (typeof meGrpR === 'function') ? meGrpR(d) : null;
+      if (R && R.mesh) W.push({ name: d.name, w: R.W || (R._W || (R._W = wfInside(R.mesh))), bb: meBBox(R.mesh) });
+    });
+    return W;
+  }
+
+  /* 0 = seluruhnya di luar, 1 = seluruhnya di dalam, 2 = menyeberang batas */
+  function straddle(W, cx, cy, cz, sx, sy, sz) {
+    var hx = sx / 2, hy = sy / 2, hz = sz / 2, nIn = 0, nAll = 0, i, j, k;
+    /* lewati solid yang kotak pembatasnya tidak bersinggungan dengan blok ini */
+    var act = [];
+    for (i = 0; i < W.length; i++) {
+      var b = W[i].bb;
+      if (cx + hx < b[0] || cx - hx > b[1] || cy + hy < b[2] || cy - hy > b[3] || cz + hz < b[4] || cz - hz > b[5]) continue;
+      act.push(W[i]);
+    }
+    if (!act.length) return 0;
+    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) for (k = 0; k < 3; k++) {
+      var x = cx + (i - 1) * hx * 0.98, y = cy + (j - 1) * hy * 0.98, z = cz + (k - 1) * hz * 0.98, inside = false;
+      for (var q = 0; q < act.length && !inside; q++) if (act[q].w.f(x, y, z)) inside = true;
+      nAll++; if (inside) nIn++;
+    }
+    return nIn === 0 ? 0 : (nIn === nAll ? 1 : 2);
+  }
+
+  /* ---------- hitung / pecah ---------- */
+  function scan(c, build) {
+    var m = BX.m;
+    if (!m) throw new Error('Belum ada block model aktif.');
+    var W = solids();
+    if (!W.length) throw new Error('Belum ada solid domain yang terbangun (Geomodeller Vein ④). Sub-blocking memakai batas solid sebagai acuan.');
+    var lv = Math.max(1, Math.min(3, Math.round(+c.lv || 1))), i;
+    /* ukuran minimum dihitung dari ukuran blok DOMINAN (bukan terkecil) dibagi 2^tingkat, per sumbu.
+       Blok yang sudah lebih halus dari batas itu - mis. sub-blok bawaan Surpac - tidak dipecah lagi. */
+    var sd = domSize(m);
+    if (!sd) throw new Error('Ukuran blok tidak terbaca.');
+    var lim = [sd[0] / Math.pow(2, lv), sd[1] / Math.pow(2, lv), sd[2] / Math.pow(2, lv)];
+    var OUT = build ? { x: [], y: [], z: [], sx: [], sy: [], sz: [], src: [] } : null;
+    var n = 0, nSplit = 0, nKeep = 0, nSudah = 0, nStr = 0;
+    /* tumpukan: [cx,cy,cz,sx,sy,sz,indukAsli] */
+    var push = function (x, y, z, sx, sy, sz, p) { n++; if (n > CAP) throw new Error('Hasil melebihi ' + fmt(CAP) + ' blok. Kurangi tingkat pecah.'); if (build) { OUT.x.push(x); OUT.y.push(y); OUT.z.push(z); OUT.sx.push(sx); OUT.sy.push(sy); OUT.sz.push(sz); OUT.src.push(p); } };
+    for (i = 0; i < m.n; i++) {
+      if (!(m.sx[i] > 0)) { push(m.x[i], m.y[i], m.z[i], m.sx[i], m.sy[i], m.sz[i], i); nKeep++; continue; }
+      var st = [[m.x[i], m.y[i], m.z[i], m.sx[i], m.sy[i], m.sz[i]]], anyStr = false;
+      while (st.length) {
+        var b = st.pop(), s = straddle(W, b[0] - offX, b[1] - offY, b[2], b[3], b[4], b[5]);
+        if (s !== 2) { push(b[0], b[1], b[2], b[3], b[4], b[5], i); continue; }
+        anyStr = true;
+        /* anak hanya dibuat bila ukurannya masih >= batas minimum pada KETIGA sumbu */
+        if (b[3] / 2 < lim[0] * (1 - 1e-9) || b[4] / 2 < lim[1] * (1 - 1e-9) || b[5] / 2 < lim[2] * (1 - 1e-9)) {
+          push(b[0], b[1], b[2], b[3], b[4], b[5], i); nSudah++; continue;
+        }
+        var hx = b[3] / 2, hy = b[4] / 2, hz = b[5] / 2;
+        for (var a = -1; a <= 1; a += 2) for (var q = -1; q <= 1; q += 2) for (var r = -1; r <= 1; r += 2)
+          st.push([b[0] + a * hx / 2, b[1] + q * hy / 2, b[2] + r * hz / 2, hx, hy, hz]);
+        nSplit++;
+      }
+      if (anyStr) nStr++;
+    }
+    return { n: n, nAsal: m.n, nSplit: nSplit, nStr: nStr, nSudah: nSudah, lim: lim, sd: sd, lv: lv, nDom: W.length, OUT: OUT };
+  }
+
+  /* ukuran blok dominan (triple yang paling banyak muncul) */
+  function domSize(m) {
+    var cnt = {}, st = Math.max(1, Math.floor(m.n / 50000)), i;
+    for (i = 0; i < m.n; i += st) { if (!(m.sx[i] > 0)) continue; var k = m.sx[i] + '_' + m.sy[i] + '_' + m.sz[i]; cnt[k] = (cnt[k] || 0) + 1; }
+    var b = Object.keys(cnt).sort(function (p, q) { return cnt[q] - cnt[p]; })[0];
+    return b ? b.split('_').map(Number) : null;
+  }
+  window.sbDomSize = domSize;
+
+  function build(c, R) {
+    var m = BX.m, O = R.OUT, n = R.n, i;
+    var o = { name: c.nama || (m.name + ' (sub-blok batas solid)'), n: n,
+              x: new Float64Array(n), y: new Float64Array(n), z: new Float64Array(n),
+              sx: new Float32Array(n), sy: new Float32Array(n), sz: new Float32Array(n), num: {}, cat: {} };
+    for (i = 0; i < n; i++) { o.x[i] = O.x[i]; o.y[i] = O.y[i]; o.z[i] = O.z[i]; o.sx[i] = O.sx[i]; o.sy[i] = O.sy[i]; o.sz[i] = O.sz[i]; }
+    Object.keys(m.num).forEach(function (k) { var A = m.num[k], B = new Float32Array(n); for (var t = 0; t < n; t++) B[t] = A[O.src[t]]; o.num[k] = B; });
+    Object.keys(m.cat).forEach(function (k) {
+      var c0 = m.cat[k], C = new Uint16Array(n), cnt = c0.dict.map(function () { return 0; });
+      for (var t = 0; t < n; t++) { var v = c0.codes[O.src[t]]; C[t] = v; if (v !== 65535 && v < cnt.length) cnt[v]++; }
+      o.cat[k] = { codes: C, dict: c0.dict.slice(), cnt: cnt };
+    });
+    var s0 = Infinity, x0 = 1e18, x1 = -1e18, y0 = 1e18, y1 = -1e18, z0 = 1e18, z1 = -1e18, sz = {};
+    for (i = 0; i < n; i++) {
+      if (!(o.sx[i] > 0)) continue;
+      s0 = Math.min(s0, o.sx[i], o.sy[i]);
+      if (o.x[i] < x0) x0 = o.x[i]; if (o.x[i] > x1) x1 = o.x[i];
+      if (o.y[i] < y0) y0 = o.y[i]; if (o.y[i] > y1) y1 = o.y[i];
+      if (o.z[i] < z0) z0 = o.z[i]; if (o.z[i] > z1) z1 = o.z[i];
+      var kk = o.sx[i] + 'x' + o.sy[i] + 'x' + o.sz[i]; sz[kk] = (sz[kk] || 0) + 1;
+    }
+    o.s0 = s0; o.ext = [x0, x1, y0, y1, z0, z1];
+    var ks = Object.keys(sz).sort(function (a, b) { return sz[b] - sz[a]; });
+    o.sizes = ks.slice(0, 3).join(', ') + ' m' + (ks.length > 1 ? ' (sub-blok)' : '');
+    /* octree .mdl: origin & ukuran blok akar tetap, tingkat bertambah -> model masih bisa ditulis balik */
+    if (m.mdl) o.mdl = Object.assign({}, m.mdl, { levels: (m.mdl.levels || 0) + R.lv, add: [] });
+    o.sub = { lv: R.lv, nAsal: R.nAsal, nSplit: R.nSplit, nStr: R.nStr, nSudah: R.nSudah };
+    return o;
+  }
+
+  /* ---------- muat ulang model dasar (versi 'sub' dibangun ulang saat diaktifkan) ---------- */
+  async function baseOf(src, say) {
+    if (!src) throw new Error('model dasar tidak tercatat; import / buat ulang modelnya.');
+    if (src.kind === 'aoi') return await SA.buildAOI(src, say);
+    if (window.FP && FP.dir) { var R = await FP.loadSrc(src, SA.D, say); if (R.miss) throw new Error('file ' + src.name + ' tidak ada di folder proyek (sumber/).'); return R.m; }
+    var f = SA.srcFiles && SA.srcFiles[src.name];
+    if (!f) throw new Error('file ' + src.name + ' tidak tersedia di sesi ini; import lagi lewat "Tambah versi".');
+    if (src.kind === 'csv') { var Rr = await SA.readBMcsv(f), cf = src.cfg; ['x', 'y', 'z'].forEach(function (a) { if (cf['s' + a] < 0) cf['s' + a + 'v'] = bxInfer(Rr, cf[a]); }); return SA.buildBM(Rr, cf); }
+    return await SA.readMDL(f, function () {});
+  }
+
+  SA.buildSub = async function (src, say) {
+    var keep = BX.m;
+    if (say) say('Membaca block model dasar&hellip;');
+    var b = await baseOf(src.base, say);
+    BX.m = b;
+    try {
+      if (say) say('Memecah blok di batas solid&hellip;');
+      var c = JSON.parse(JSON.stringify(src.cfg || defCfg())), R = scan(c, true), m = build(c, R);
+      m.src = { kind: 'sub', name: src.name, cfg: c, base: src.base };
+      return m;
+    } finally { BX.m = keep; }
+  };
+
+  /* ---------- dialog ---------- */
+  SB.set = function (k, v) { var c = cfg(); c[k] = (k === 'nama') ? v : nv(v, c[k]); SB.prev = null; SB.body(); };
+
+  SB.dlg = function () {
+    var d = document.getElementById('sbDlg');
+    if (!d) { d = document.createElement('div'); d.id = 'sbDlg'; d.className = 'bxdlg'; document.body.appendChild(d); }
+    SB.msg = ''; SB.prev = null;
+    d.innerHTML = '<div class=impBox style=width:min(780px,100%)><div class=impHead><div class=impBrand><div><b>Pecah blok di batas solid (sub-blocking)</b>' +
+      '<small>Blok yang separuh di dalam vein dan separuh di luar dipecah 2 &times; 2 &times; 2, supaya volume ore / waste per blok akurat untuk dilusi &amp; ore loss.</small>' +
+      '</div></div><button class="ib ghost" onclick="SB.close()">Tutup</button></div>' +
+      '<div class=impBody id=sbBody></div>' +
+      '<div class=impFoot><div id=sbMsg class=hint></div><button class=ib id=sbGo onclick="SB.go()">Pecah blok &rarr;</button></div></div>';
+    d.style.display = 'flex'; SB.body();
+  };
+  SB.close = function () { var d = document.getElementById('sbDlg'); if (d) d.style.display = 'none'; };
+
+  SB.body = function () {
+    var b = document.getElementById('sbBody'); if (!b) return;
+    var c = cfg(), m = BX.m, W = [];
+    try { W = solids(); } catch (e) {}
+    var sd = m ? sbDomSize(m) : null;
+    var h = '';
+    if (!m) h += '<div class=hint><span class=warn>Belum ada block model aktif.</span> Import block model, atau buat kerangka blok (AOI) dulu.</div>';
+    else h += '<div class=hint><b>' + sE(m.name) + '</b> &middot; ' + fmt(m.n) + ' blok &middot; ukuran ' + sE(m.sizes) + '</div>';
+    if (!W.length) h += '<div class=hint><span class=warn>Belum ada solid domain terbangun.</span> Sub-blocking memakai batas solid sebagai acuan: bangun solid di Geomodeller Vein &#9315; dulu.</div>';
+    else h += '<div class=hint>Acuan: ' + W.length + ' solid &mdash; ' + sE(W.map(function (q) { return q.name; }).join(', ')) + '</div>';
+    h += '<div class=cmh>Tingkat pecah</div><div class=cm>' +
+      '<div><label title="Setiap tingkat membelah blok menjadi 2 x 2 x 2 (8 anak). Hanya blok yang menyeberangi batas solid yang dipecah.">Jumlah tingkat</label>' +
+      '<select onchange="SB.set(&#39;lv&#39;,this.value)">' +
+      [1, 2, 3].map(function (q) { return '<option value=' + q + (c.lv === q ? ' selected' : '') + '>' + q + ' tingkat (1 : ' + Math.pow(2, q) + ' per sumbu, 1 : ' + Math.pow(8, q) + ' per volume)</option>'; }).join('') +
+      '</select></div>' +
+      '<div><label title="Dihitung dari ukuran blok dominan model ini">Ukuran blok terkecil setelah dipecah</label><input type=text disabled value="' +
+      (sd ? sd.map(function (q) { return (q / Math.pow(2, Math.max(1, Math.min(3, c.lv)))).toFixed(3); }).join(' x ') + ' m (dari ' + sd.join(' x ') + ' m)' : '-') + '"></div></div>';
+    h += '<div class=hint>Blok yang ukurannya <b>sudah mencapai batas itu</b> tidak dipecah lagi: sub-blok yang sudah ada di model Surpac dihormati, bukan dipecah ulang.</div>';
+    h += '<div class=cmh>Perkiraan</div><div id=sbPrev class=hint>' + (SB.prev || '<button onclick="SB.hit()">Hitung jumlah blok</button>') + '</div>';
+    h += '<div class=f style="margin-top:6px"><label>Nama block model hasil</label><input type=text value="' + sE(c.nama) + '" oninput="SB.cfg.nama=this.value"></div>';
+    if (window.ME && ME.store && ME.store.B && ME.store.B.x.length)
+      h += '<div class=warn style="margin-top:6px">&#9888; Sudah ada hasil Model Estimation (' + fmt(ME.store.B.x.length) + ' baris). Posisi blok berubah setelah dipecah, sehingga hasil lama tidak lagi cocok dan harus dijalankan ulang. Lakukan sub-blocking <b>sebelum</b> estimasi.</div>';
+    b.innerHTML = h;
+    var mm = document.getElementById('sbMsg'); if (mm) mm.innerHTML = SB.msg || '';
+  };
+
+  SB.hit = function () {
+    var p = document.getElementById('sbPrev');
+    if (p) p.innerHTML = 'Menghitung&hellip;';
+    setTimeout(function () {
+      try {
+        var R = scan(cfg(), false);
+        SB.prev = fmt(R.nStr) + ' dari ' + fmt(R.nAsal) + ' blok menyeberangi batas solid &rarr; dipecah ' + fmt(R.nSplit) + ' kali' +
+          '<br>hasil: <b>' + fmt(R.n) + ' blok</b> (semula ' + fmt(R.nAsal) + ', bertambah ' + fmt(R.n - R.nAsal) + ')' +
+          '<br>ukuran terkecil ' + R.lim.map(function (q) { return q.toFixed(3); }).join(' &times; ') + ' m (dari blok dominan ' + R.sd.join(' &times; ') + ' m)' +
+          (R.nSudah ? '<br>' + fmt(R.nSudah) + ' blok sudah mencapai batas ukuran minimum &rarr; dibiarkan utuh' : '');
+      } catch (e) { SB.prev = '<span class=warn>' + sE(e.message || e) + '</span>'; }
+      SB.body();
+    }, 10);
+  };
+
+  SB.go = function () {
+    if (SB.busy) return;
+    var btn = document.getElementById('sbGo'), msg = document.getElementById('sbMsg');
+    SB.busy = true; if (btn) btn.disabled = true; if (msg) msg.innerHTML = 'Memecah blok&hellip;';
+    setTimeout(function () {
+      try {
+        var c = cfg(), base = BX.m, R = scan(c, true);
+        if (!R.nSplit) throw new Error('Tidak ada blok yang menyeberangi batas solid: tidak ada yang perlu dipecah. (Blok yang sudah cukup halus dihormati.)');
+        var m = build(c, R);
+        m.src = { kind: 'sub', name: m.name, cfg: c, base: base && base.src ? base.src : null };
+        BX.m = m; BX.ui = bxDefUI(m); BX.ver++; BX.sc = {};
+        var sh = document.getElementById('bxShow'); if (sh) sh.checked = true;
+        bxPanel();
+        if (typeof meApply === 'function') { try { meApply(true); } catch (e) {} }
+        if (typeof bxvReg === 'function') { try { bxvReg(); } catch (e) {} }
+        if (SA.dirty) { SA.bxDirty = true; SA.dirty(); }
+        var fr = SB.frac(10, true);
+        SB.close(); updatePlot();
+        if (typeof uiTab === 'function') uiTab('BM');
+        var vol = 0, FQ = m.num['sb_frac'];
+        if (FQ) for (var t = 0; t < m.n; t++) vol += m.sx[t] * m.sy[t] * m.sz[t] * FQ[t];
+        alert('Sub-blocking selesai: ' + fmt(R.nStr) + ' blok di perbatasan dipecah, hasil ' + fmt(m.n) + ' blok (semula ' + fmt(R.nAsal) + ').' +
+          (fr ? '\n\nAtribut sb_frac ikut dihitung: ' + fmt(fr.nFull) + ' blok seluruhnya di dalam solid, ' + fmt(fr.nPart) + ' di perbatasan (proporsi 0–1).' +
+                '\nVolume ore berbobot: ' + fmt(vol) + ' m\u00b3. Pilih sb_frac pada "Timbang volume & tonase" di Reporting BM.' : '') +
+          '\n\nJalankan Model Estimation sesudah ini.');
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.innerHTML = '<span class=warn>' + sE(e.message || e) + '</span>';
+      } finally { SB.busy = false; if (btn) btn.disabled = false; }
+    }, 10);
+  };
+
+  /* ================= PROPORSI VOLUME ORE PER BLOK (sb_frac) =================
+     Sub-blocking memperkecil kesalahan batas tetapi tidak menghilangkannya: blok tetap dihitung utuh
+     berdasarkan titik pusatnya, sehingga blok terkecil di perbatasan masih dihitung 100% ore atau 100%
+     waste. Uji pada vein mendatar tebal 4 m dengan blok 5 m memperlihatkannya: utuh -100%, 1 tingkat
+     +25%, 3 tingkat -6% — membaik, tetapi berayun, bukan menuju nol dengan rapi.
+
+     Jalan keluarnya: simpan PROPORSI volume blok yang berada di dalam solid sebagai atribut sb_frac
+     (0..1), lalu Reporting BM menimbang volume & tonase dengan atribut itu. Blok di perbatasan ikut
+     seadanya — 0,35 blok ore dan 0,65 blok waste — bukan dibulatkan ke salah satu.
+
+     Proporsi dihitung dengan cuplikan kisi di dalam kotak blok: 0 bila seluruh 27 titik di luar, 1 bila
+     seluruhnya di dalam, dan bila bercampur dicuplik lebih halus (nF^3 titik, bawaan 10^3 = 1.000).      */
+  SB.frac = function (nF, quiet) {   /* nF = titik cuplikan per sumbu; bawaan 10 (1.000 titik per blok perbatasan) */
+    var m = BX.m;
+    if (!m) { if (!quiet) alert('Belum ada block model aktif.'); return null; }
+    var W;
+    try { W = solids(); } catch (e) { if (!quiet) alert(e.message || e); return null; }
+    if (!W.length) { if (!quiet) alert('Belum ada solid domain terbangun (Geomodeller Vein ④).'); return null; }
+    var N = Math.max(4, Math.min(16, Math.round(+nF || 10)));
+    var F = new Float32Array(m.n), nPart = 0, nFull = 0, nNol = 0, i;
+    for (i = 0; i < m.n; i++) {
+      var cx = m.x[i] - offX, cy = m.y[i] - offY, cz = m.z[i], s = straddle(W, cx, cy, cz, m.sx[i], m.sy[i], m.sz[i]);
+      if (s === 0) { F[i] = 0; nNol++; continue; }
+      if (s === 1) { F[i] = 1; nFull++; continue; }
+      var hx = m.sx[i] / 2, hy = m.sy[i] / 2, hz = m.sz[i] / 2, nIn = 0, a, b, c;
+      for (a = 0; a < N; a++) for (b = 0; b < N; b++) for (c = 0; c < N; c++) {
+        /* titik tengah sel cuplikan: integrasi titik-tengah, bukan titik sudut */
+        var x = cx - hx + (2 * a + 1) * hx / N, y = cy - hy + (2 * b + 1) * hy / N, z = cz - hz + (2 * c + 1) * hz / N, ins = false;
+        for (var q = 0; q < W.length && !ins; q++) if (W[q].w.f(x, y, z)) ins = true;
+        if (ins) nIn++;
+      }
+      F[i] = nIn / (N * N * N); nPart++;
+    }
+    m.num['sb_frac'] = F;
+    if (m.mdl) m.mdl.add = (m.mdl.add || []).filter(function (a2) { return a2.name !== 'sb_frac'; }).concat([{ name: 'sb_frac', type: 2, dec: 3, def: 0 }]);
+    BX.sc = {}; BX.ver++;
+    if (typeof bxPanel === 'function') bxPanel();
+    if (SA.dirty) { SA.bxDirty = true; SA.dirty(); }
+    var out = { nPart: nPart, nFull: nFull, nNol: nNol, N: N };
+    if (!quiet) {
+      var vol = 0; for (i = 0; i < m.n; i++) vol += m.sx[i] * m.sy[i] * m.sz[i] * F[i];
+      alert('Atribut sb_frac dihitung (cuplikan ' + N + '\u00b3 = ' + (N * N * N) + ' titik per blok perbatasan).\n\n' +
+        fmt(nFull) + ' blok seluruhnya di dalam solid\n' + fmt(nPart) + ' blok di perbatasan (proporsi 0–1)\n' + fmt(nNol) + ' blok seluruhnya di luar\n\n' +
+        'Volume ore berbobot: ' + fmt(vol) + ' m\u00b3.\n\nDi Reporting BM pilih sb_frac pada "Timbang volume & tonase" agar blok perbatasan ikut seadanya.');
+    }
+    return out;
+  };
+
+  /* ---------- tombol di panel Block Model ---------- */
+  function addBtn() {
+    var g = document.getElementById('aoiBtn');
+    g = g ? g.parentNode : document.querySelector('#pBM .g2');
+    if (!g || document.getElementById('sbBtn')) return;
+    var w = document.createElement('div'); w.style.marginBottom = '6px';
+    w.innerHTML = '<button id=sbBtn class=mdbtn style="margin:0;border:0;width:100%" onclick="SB.dlg()">&#9707; Pecah blok di batas solid</button>' +
+      '<div class=hint style="margin-top:3px">Blok yang separuh di dalam vein dipecah 2 &times; 2 &times; 2 (berulang), supaya volume ore / waste per blok akurat untuk dilusi &amp; ore loss. Sub-blok yang sudah ada dihormati. Jalankan <b>sebelum</b> estimasi.</div>' +
+      '<button id=sbFracBtn style="width:100%;margin-top:4px" onclick="SB.frac(10)">&#9634; Hitung proporsi volume ore per blok (sb_frac)</button>' +
+      '<div class=hint style="margin-top:3px">Tanpa memecah blok: proporsi volume tiap blok yang berada di dalam solid, 0&ndash;1. Dipakai Reporting BM untuk menimbang volume &amp; tonase, sehingga blok perbatasan ikut <b>seadanya</b> alih-alih dibulatkan ke ore atau waste.</div>';
+    g.parentNode.insertBefore(w, g.nextSibling);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addBtn); else addBtn();
+  setTimeout(addBtn, 400);
+
+  /* ---------- aktifkan versi kind 'sub' ---------- */
+  if (typeof window.bmActivate === 'function') {
+    var _ba = window.bmActivate;
+    window.bmActivate = async function (id) {
+      var v = null; (window.BXV || []).forEach(function (x) { if (x.id === id) v = x; });
+      if (!v || !v.src || v.src.kind !== 'sub') return _ba.apply(this, arguments);
+      if (typeof SPV !== 'undefined' && SPV.busy) return;
+      if (BX.m && typeof bxvKey === 'function' && bxvKey(BX.m.src) === bxvKey(v.src)) return;
+      if (typeof SPV !== 'undefined') SPV.busy = true;
+      var say = function (t) { if (typeof SPV !== 'undefined') { SPV.msg = t; if (typeof spPanel === 'function') spPanel(); } };
+      try {
+        var m = await SA.buildSub(v.src, say);
+        m.name = v.name || m.name; BX.m = m; BX.ui = bxDefUI(m); BX.ver++; BX.sc = {};
+        var sh = document.getElementById('bxShow'); if (sh) sh.checked = true;
+        bxPanel(); if (SA.dirty) { SA.bxDirty = true; SA.dirty(); }
+        say('&#10003; Block model sub-blok aktif: <b>' + sE(m.name) + '</b> (' + fmt(m.n) + ' blok).');
+        updatePlot();
+      } catch (e) { console.error(e); say('<span class=warn>' + sE(e.message || e) + '</span>'); }
+      finally { if (typeof SPV !== 'undefined') SPV.busy = false; if (typeof spPanel === 'function') spPanel(); }
+    };
+  }
+})();
+
 </script>
 <script>
 (function(){'use strict';
@@ -9707,7 +10048,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.18';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.19';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
