@@ -44,7 +44,7 @@
   function fmt(v, d) { return v == null || !isFinite(v) ? '-' : (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
 
   /* ---------- parameter waste (disimpan bersama hasil estimasi di proyek) ---------- */
-  function defPar() { return { tc: 0, L: 2, mult: 1, maxd: 50, p: 2, nmax: 12, rad: 60, topo: 1, pit: 0 }; }
+  function defPar() { return { tc: 0, L: 2, mult: 1, maxd: 50, p: 2, nmax: 12, rad: 60, topo: 1, pit: 0, mode: 'auto', est: null }; }
   window.wsPar = function () {
     if (!ME.store) return defPar();
     if (!ME.store.ws) ME.store.ws = defPar();
@@ -53,6 +53,11 @@
     delete o.src; delete o.on;
     return o;
   };
+
+  /* variogram waste hasil fitting sendiri (disimpan dari Geostatistik -> "Simpan ke WASTE"); null bila belum ada */
+  window.wsOwn = function () { var o = wsPar(), e = o && o.est; return (e && e.m && e.m.cs) ? e : null; };
+  /* mode efektif: 'own' = variogram waste sendiri untuk seluruh blok, 'dom' = variogram domain terdekat */
+  window.wsMode = function () { var o = wsPar(); if (o.mode === 'dom') return 'dom'; return wsOwn() ? 'own' : 'dom'; };
 
   /* ---------- indeks titik sederhana (sel kubus) untuk cari terdekat ---------- */
   function pIndex(pts, cell) {
@@ -97,6 +102,11 @@
   /* ---------- domain yang punya parameter estimasi + titik komposit ber-flag-nya ---------- */
   function domList() {
     var o = wsPar(), L = (window.gmTops ? gmTops() : (window.GM ? GM.doms : [])) || [], out = [], pts = [], el = '';
+    if (wsMode() === 'own') {
+      var E = wsOwn(), P0 = JSON.parse(JSON.stringify(E));
+      P0.P = (P0.P || []).map(function (q) { return Object.assign({}, q, { mult: (+q.mult || 1) * (+o.mult || 1) }); });
+      return { doms: [{ d: null, name: 'WASTE (variogram sendiri)', P: P0, mo: meModel(P0) }], idx: null, el: P0.el, own: true };
+    }
     L.forEach(function (d) {
       var P0 = meParOf(d); if (!P0) return;
       var P = JSON.parse(JSON.stringify(P0));
@@ -197,7 +207,7 @@
   function prep() {
     if (!BX.m) throw new Error('Belum ada block model aktif. Import block model, atau buat kerangka blok (AOI) di menu Block Model.');
     var D = domList();
-    if (!D.doms.length) throw new Error('Belum ada domain yang punya parameter estimasi + komposit ber-flag. Simpan parameter dari menu Geostatistik dulu (variogramnya dipakai untuk blok waste di sekitar domain itu).');
+    if (!D.doms.length) throw new Error('Belum ada variogram untuk waste. Dua pilihan: (a) di Geostatistik pilih populasi WASTE, fitting model, lalu "Simpan ke WASTE" \u2014 variogram waste sendiri dipakai untuk seluruh blok waste; atau (b) simpan parameter untuk sebuah domain vein, lalu blok waste di sekitarnya memakai variogram domain terdekat.');
     var o = wsPar(), B = blocksOut(o), C = comps(D.el);
     if (C.length < 1) throw new Error('Tidak ada komposit di luar flag domain. Periksa panjang komposit dan flag domain.');
     return { D: D, o: o, B: B, C: C, CI: pIndex(C, Math.max(10, (+o.rad || 60) / 2)) };
@@ -205,16 +215,18 @@
 
   window.wsCheck = function () {
     try {
-      var J = prep(), near = 0, far = 0, i;
-      /* cuplikan 2.000 blok: cukup untuk memperkirakan pembagian krige vs IDW tanpa menunggu lama */
-      var st = Math.max(1, Math.floor(J.B.idx.length / 2000)), ns = 0;
-      for (i = 0; i < J.B.idx.length; i += st) {
-        var q = J.B.idx[i], r = J.D.idx ? J.D.idx.near(BX.m.x[q] - offX, BX.m.y[q] - offY, BX.m.z[q], +J.o.maxd * 3 + 50) : null;
-        ns++; if (r && r.d <= +J.o.maxd) near++; else far++;
+      var J = prep(), near = 0, far = 0, i, ns = 0;
+      if (J.D.own) { near = 1; ns = 1; }
+      else {
+        var st = Math.max(1, Math.floor(J.B.idx.length / 2000));
+        for (i = 0; i < J.B.idx.length; i += st) {
+          var q = J.B.idx[i], r = J.D.idx ? J.D.idx.near(BX.m.x[q] - offX, BX.m.y[q] - offY, BX.m.z[q], +J.o.maxd * 3 + 50) : null;
+          ns++; if (r && r.d <= +J.o.maxd) near++; else far++;
+        }
       }
       WS.last = { chk: true, nb: J.B.idx.length, nSol: J.B.nSol, nTopo: J.B.nTopo, nPit: J.B.nPit, nDom: J.B.nDom,
                   nc: J.C.length, el: J.D.el, nd: J.D.doms.length, doms: J.D.doms.map(function (q) { return q.name; }),
-                  pNear: ns ? near / ns : 0, pFar: ns ? far / ns : 0 };
+                  own: !!J.D.own, pNear: ns ? near / ns : 0, pFar: ns ? far / ns : 0 };
       WS.msg = '';
     } catch (e) { WS.last = null; WS.msg = '<span class=warn>' + wE(e.message || e) + '</span>'; }
     if (window.mePanel) mePanel();
@@ -263,9 +275,10 @@
     var t = performance.now(), o = J.o, maxd = +o.maxd || 0;
     while (J.i < J.items.length && performance.now() - t < 45) {
       var it = J.items[J.i], x = it.x - offX, y = it.y - offY, z = it.z, res = null, dn = '(IDW)';
-      var nr = J.D.idx ? J.D.idx.near(x, y, z, maxd) : null;
-      if (nr && nr.d <= maxd) {
-        var X = J.D.doms[J.D.idx.pts[nr.i].di], P = X.P, mo = X.mo;
+      /* variogram waste sendiri: dipakai untuk SELURUH blok waste, tanpa uji jarak ke domain */
+      var own = J.D.own, nr = own ? { d: 0, i: 0 } : (J.D.idx ? J.D.idx.near(x, y, z, maxd) : null);
+      if (own || (nr && nr.d <= maxd)) {
+        var X = own ? J.D.doms[0] : J.D.doms[J.D.idx.pts[nr.i].di], P = X.P, mo = X.mo;
         var sk = X.name + '|' + it.sx + '_' + it.sy + '_' + it.sz, dc = J.dc[sk];
         if (!dc) { var D2 = okDisc([it.sx, it.sy, it.sz], P.nd || [3, 3, 2]); dc = J.dc[sk] = { D: D2, cbb: okCbb(mo, D2) }; }
         for (var p = 0; p < P.P.length; p++) {
@@ -327,7 +340,7 @@
     var ms = Math.round(performance.now() - J.t0), cm = 0;
     J.C.forEach(function (c) { cm += c.vc; });
     S.runs.push({ id: J.runId, date: new Date().toISOString().slice(0, 16).replace('T', ' '), user: (typeof meUser === 'function' ? meUser() : ''),
-                  dom: WNAME, domId: WID, el: S.el, par: 'waste: variogram domain terdekat (<= ' + J.o.maxd + ' m), selebihnya IDW p=' + J.o.p,
+                  dom: WNAME, domId: WID, el: S.el, par: (J.D.own ? ('waste: variogram sendiri (' + (J.D.doms[0].P.src || 'fitting Geostatistik') + '), IDW p=' + J.o.p + ' bila sampel kurang') : ('waste: variogram domain terdekat (<= ' + J.o.maxd + ' m), selebihnya IDW p=' + J.o.p)),
                   first: true, force: true, parChg: false, holes: [], nHole: 0, nComp: J.C.length,
                   nIn: J.items.length, nAff: J.items.length, nEst: J.nEst, nFail: J.fail, nAddC: 0, nRev: 0,
                   cnt: J.cnt, ms: ms, waste: true, nIdw: J.nIdw, byDom: J.byDom,
@@ -364,9 +377,19 @@
       'Tiap blok memakai <b>variogram &amp; elipsoid domain terdekat</b>; blok yang jaraknya melebihi ambang di bawah diisi <b>IDW</b> ' +
       '(ditandai <code>est_pass = 9</code>). Hasil ditandai <code>domain_est = WASTE</code> dan <code>est_type = 3</code>: tidak ikut pelaporan sumber daya ' +
       'dan tidak diberi kelas keyakinan, tetapi volume &amp; tonasenya bisa dilaporkan bersama ore di Reporting BM.</div>';
-    if (!DL.length) return h + '<div class=hint><span class=warn>Belum ada domain dengan parameter estimasi.</span> Variogram domain terdekat dipakai untuk blok waste di sekitarnya; simpan dulu parameter dari menu Geostatistik. Tanpa itu seluruh blok waste akan memakai IDW &mdash; jalankan saja bila memang itu yang Anda mau.</div></div>';
+    if (!DL.length && !wsOwn()) return h + '<div class=hint><span class=warn>Belum ada variogram untuk waste.</span> Dua jalan: di <b>Geostatistik</b> pilih populasi <b>WASTE (di luar semua domain)</b>, fitting model, lalu <b>Simpan ke WASTE</b> &mdash; atau simpan parameter untuk sebuah domain vein, lalu blok waste di sekitarnya memakai variogram domain terdekat.</div></div>';
+    var OWN = wsOwn(), MD = wsMode();
+    h += '<div class=lab>Variogram yang dipakai</div><div class=f style="margin-bottom:4px"><select onchange="wsPar().mode=this.value;WS.last=null;mePanel()">' +
+      '<option value=auto' + (o.mode === 'auto' ? ' selected' : '') + '>Otomatis &mdash; variogram waste sendiri bila ada, kalau tidak domain terdekat</option>' +
+      '<option value=dom' + (o.mode === 'dom' ? ' selected' : '') + '>Variogram domain terdekat</option>' +
+      '</select></div>';
+    h += OWN
+      ? '<div class=hint style="margin:-2px 0 6px">&#10003; Variogram waste sendiri tersimpan: unsur <b>' + wE(OWN.el) + '</b> &middot; ' + wE(OWN.src || '') + ' &middot; ' + wE(OWN.date || '') +
+        '<br>' + (MD === 'own' ? 'Dipakai untuk <b>seluruh</b> blok waste; IDW hanya bila sampel di sekitar blok tidak cukup.' : 'Sedang <b>tidak</b> dipakai karena mode disetel ke domain terdekat.') + '</div>'
+      : '<div class=hint style="margin:-2px 0 6px">Belum ada variogram waste sendiri. Di <b>Geostatistik</b>: pilih populasi <b>WASTE (di luar semua domain)</b> pada bilah Domain, fitting model, lalu tab <b>Uji estimasi</b> &rarr; <b>Simpan ke WASTE</b>. Sementara itu dipakai variogram <b>domain terdekat</b>.</div>';
     h += '<div class=g2 style="margin-bottom:4px">' +
-      fld('maxd', 'Jarak maks. ke domain (m)', 'Blok dengan komposit domain terdekat dalam jarak ini dikrige memakai variogram domain itu. Lebih jauh dari ini -> IDW.', '1') +
+      (MD === 'own' ? '<div><label title="Tidak berlaku: variogram waste sendiri dipakai untuk seluruh blok waste">Jarak maks. ke domain (m)</label><input type=text disabled value="tidak dipakai"></div>'
+                    : fld('maxd', 'Jarak maks. ke domain (m)', 'Blok dengan komposit domain terdekat dalam jarak ini dikrige memakai variogram domain itu. Lebih jauh dari ini -> IDW.', '1')) +
       fld('mult', 'Pengali radius', 'Radius pencarian = radius elipsoid domain terdekat x pengali ini. Halo biasanya lebih menerus daripada vein, jadi > 1 wajar.', '0.1') +
       fld('L', 'Panjang komposit (m)', 'Komposit panjang tetap pada interval di luar flag domain. 0 = pakai interval assay apa adanya.', '0.5') +
       fld('tc', 'Top-cut', 'Batas atas kadar komposit waste (0 = tanpa top-cut). Mencegah satu assay tinggi di luar solid menarik kadar halo.', '0.1') + '</div>';
@@ -382,8 +405,9 @@
       h += '<div class=g2 style="margin-top:4px"><button onclick="wsCheck()">Periksa dulu</button><button class=btn-pri onclick="wsRun()">&#9654; Jalankan estimasi waste</button></div>';
       var L = WS.last;
       if (L && L.chk) h += '<div class=hint style="margin-top:4px"><b>' + fmt(L.nb) + '</b> blok di luar solid akan diestimasi dari <b>' + fmt(L.nc) + '</b> komposit waste (unsur ' + wE(L.el) + ').' +
-        '<br>variogram domain terdekat dari ' + L.nd + ' domain: ' + wE(L.doms.join(', ')) +
-        '<br>perkiraan pembagian: &asymp; ' + Math.round(L.pNear * 100) + '% kriging, &asymp; ' + Math.round(L.pFar * 100) + '% IDW (cuplikan)' +
+        (L.own ? '<br>variogram: <b>waste sendiri</b> &mdash; dipakai untuk seluruh blok; IDW hanya bila sampel kurang'
+               : '<br>variogram domain terdekat dari ' + L.nd + ' domain: ' + wE(L.doms.join(', ')) +
+                 '<br>perkiraan pembagian: &asymp; ' + Math.round(L.pNear * 100) + '% kriging, &asymp; ' + Math.round(L.pFar * 100) + '% IDW (cuplikan)') +
         '<br>dilewati: ' + fmt(L.nSol) + ' blok di dalam ' + L.nDom + ' solid' + (L.nTopo ? ' &middot; ' + fmt(L.nTopo) + ' di atas topografi' : '') + (L.nPit ? ' &middot; ' + fmt(L.nPit) + ' di luar pit' : '') + '</div>';
       else if (L) {
         var bd = Object.keys(L.byDom || {}).map(function (k) { return wE(k) + ' ' + fmt(L.byDom[k]); }).join(' &middot; ');

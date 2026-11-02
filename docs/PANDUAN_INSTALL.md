@@ -1178,3 +1178,44 @@ Pada bentuk simetris, galat titik pusat sebagian saling menghapus sehingga tampa
 
 ### Penyimpanan proyek
 Versi block model berjenis `sub` menyimpan **parameter dan rujukan model dasarnya**, bukan bloknya; hasil pemecahan dibangun ulang saat versi itu diaktifkan. Model dasarnya boleh berjenis `.mdl`, CSV, maupun kerangka `aoi`.
+
+## 69. GC-Ex Drill Hole Ultimate 0.24.21 — variogram waste difit sendiri
+
+Sampai 0.24.20, blok waste memakai **salinan** variogram domain terdekat. Itu pinjaman, dan secara geostatistik tidak ideal: kontinuitas halo di luar solid tidak harus sama dengan kontinuitas bijih di dalamnya. Biasanya pada halo **nugget lebih besar**, **sill lebih kecil**, dan **range lebih panjang** — kadarnya rendah dan meratanya lebih luas.
+
+Modul ini membuka seluruh mesin Geostatistik yang sudah ada untuk populasi waste, bukan membuat mesin baru.
+
+### 1. Populasi WASTE di menu Geostatistik
+Bilah **Domain** mendapat pilihan **WASTE (di luar semua domain)**. Komposit yang dipakai hanya interval yang **tidak di-flag domain apa pun** — populasi yang **sama** dengan sampel estimasi waste, jadi variogram yang difit memang variogram populasi yang diestimasi, bukan populasi lain.
+
+Seluruh alat ikut berlaku apa adanya: statistik & histogram, variogram arah & **fan**, fitting model, **KNA**, dan uji estimasi. Tidak ada yang perlu dipelajari ulang.
+
+### 2. "Simpan ke WASTE" di tab Uji estimasi
+Menyimpan model variogram + elipsoid + pass + diskretisasi + top-cut + panjang komposit ke parameter waste, ikut tersimpan di proyek. Kotaknya juga menampilkan apa yang sedang tersimpan (unsur, asal populasi, tanggal) dan tombol menghapusnya.
+
+Bila populasi yang sedang dianalisis **bukan** waste, tombolnya bertanya dulu — variogram tetap bisa disimpan, tetapi Anda diberi tahu bahwa asalnya populasi lain.
+
+### 3. Estimasi waste memakainya untuk seluruh blok
+Pilihan baru **"Variogram yang dipakai"** di bagian ⑤ Estimasi waste:
+
+| Mode | Perilaku |
+|---|---|
+| **Otomatis** (bawaan) | variogram waste sendiri bila ada; kalau tidak, variogram domain terdekat |
+| **Variogram domain terdekat** | perilaku 0.24.18–0.24.20, walaupun variogram waste tersimpan |
+
+Dengan variogram waste sendiri, **tidak ada lagi uji jarak ke domain**: variogram itu berlaku untuk seluruh blok waste, dan IDW hanya dipakai bila sampel di sekitar blok tidak cukup untuk kriging. Kolom "Jarak maks. ke domain" ikut dinonaktifkan supaya tidak menyesatkan.
+
+### Diuji
+Model tiruan: dua bor vertikal 100 m jarak 25 m, flag domain A 40–50 m dan B 45–55 m (5 g/t), waste 0,1 g/t dengan anomali 1,0 g/t di A 90–100 m; solid RL 250–260; ambang jarak domain 20 m.
+
+| Uji | Hasil | Harapan |
+|---|---|---|
+| Mode sebelum ada variogram waste | `dom` | perilaku lama terjaga |
+| Komposit Geostatistik: semua → populasi WASTE | 200 → 180 | 20 interval ber-flag dibuang |
+| Kadar yang lolos filter WASTE | 0,1 dan 1,0 g/t | **tidak ada 5 g/t** — ore tidak bocor |
+| "Simpan ke WASTE" | nugget 0,35, range 90, asal `populasi WASTE, n=91` | tersimpan dengan jejak asalnya |
+| Mode sesudah tersimpan | `own` | otomatis beralih |
+| Estimasi waste dengan variogram sendiri | **18 blok kriging, 0 IDW** | seluruh blok, tanpa uji jarak |
+| Mode dipaksa "domain terdekat" | 8 kriging + 10 IDW | perilaku 0.24.18 tetap bisa dipakai |
+
+Baris keempat dari bawah itu intinya: dengan variogram waste sendiri, blok yang sebelumnya terpaksa IDW karena jauh dari domain **kini punya model kontinuitas yang sah** dan bisa dikrige.
