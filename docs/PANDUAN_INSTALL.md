@@ -1031,3 +1031,45 @@ Model tiruan: dua lubang bor vertikal 100 m berjarak 25 m, assay 1 m; flag domai
 | `est_type` & `domain_est` hasil | 3 & WASTE | 3 & WASTE |
 | Rentang kadar estimasi waste | 0,100 – 0,100 | ~0,100 — tidak tercemar kadar vein |
 | Blok `est_type 3` di klasifikasi | *Waste (di luar solid)* | bukan Measured / Indicated / Inferred |
+
+## 66. GC-Ex Drill Hole Ultimate 0.24.18 — waste: variogram domain terdekat, IDW bila jauh
+
+Pada 0.24.17 parameter waste adalah salinan variogram **satu** domain yang dipilih tangan. Itu tidak masuk akal bila ada beberapa domain yang terpisah jauh: halo di sekitar lensa utara seharusnya mewarisi kontinuitas lensa utara, bukan lensa selatan. Sesuai permintaan pemilik, pemilihannya kini **per blok**:
+
+| Jarak blok ke komposit domain terdekat | Metode |
+|---|---|
+| ≤ ambang (**Jarak maks. ke domain**, bawaan 50 m) | **Kriging** dengan variogram & elipsoid **domain terdekat itu** |
+| > ambang | **IDW** pada komposit waste — ditandai `est_pass = 9` |
+
+Domain terdekat dicari dari **komposit ber-flag** tiap domain, bukan dari jarak ke permukaan solid. Itu disengaja: kontinuitas dibawa oleh data, dan blok yang dekat ke dinding solid tetapi jauh dari semua sampel domain itu memang tidak punya dasar untuk memakai variogramnya.
+
+### Mengapa IDW untuk yang jauh
+Variogram sebuah domain hanya berlaku di sekitar domain itu. Memakainya pada blok yang jauh berarti mengaku tahu kontinuitas di tempat yang tidak punya data domain — kriging akan tetap menghasilkan angka, lengkap dengan *slope of regression* dan *kriging efficiency* yang **menyesatkan** karena dihitung dari model yang tidak berlaku di situ. IDW tidak berpura-pura: ia hanya pembobotan jarak. Karena itu `est_sor`, `est_ke`, dan `est_kv` diisi **-99** (tidak berlaku) untuk blok IDW, dan `est_pass = 9` membuatnya mudah disaring di Reporting BM maupun tampilan 3D.
+
+Parameter IDW: **pangkat jarak** (bawaan 2 — *inverse distance squared*), **maks titik** (12), dan **radius** (60 m). Blok tanpa satu pun komposit waste dalam radius dibiarkan **tanpa kadar**, bukan dipaksa diisi.
+
+Ada satu jalur jatuh lagi: blok yang **dekat** domain tetapi komposit waste di sekitarnya tidak cukup untuk kriging (tidak memenuhi jumlah sampel minimum pass mana pun) juga diisi IDW, bukan dibiarkan kosong.
+
+Tombol **Periksa dulu** sekarang menampilkan perkiraan pembagian kriging vs IDW dari cuplikan 2.000 blok, dan daftar domain yang variogramnya akan dipakai. Setelah run, panel melaporkan jumlah blok per variogram yang dipakai (mis. `QV_Lensa2 1.240 · QV_Splay_HW 310 · (IDW) 4.880`).
+
+### Diuji
+Model tiruan: dua bor vertikal 100 m berjarak 25 m; flag domain A 40–50 m dan B 45–55 m (5 g/t); waste 0,1 g/t kecuali **zona anomali 1,0 g/t** pada A 90–100 m (RL 200–210); solid RL 250–260; ambang 20 m; block model 20 bench 5 m.
+
+| Uji | Hasil | Harapan |
+|---|---|---|
+| Komposit waste berkadar ore | 0 dari 91 | 0 — hard boundary waste |
+| Blok dalam 25 m dari solid | semua kriging (pass 1, sor 0,8) | kriging dengan variogram QV |
+| Blok RL < 215 (jauh dari domain) | semua IDW (pass 9), `sor = -99` | IDW |
+| Pembagian keseluruhan | 8 kriging + 10 IDW dari 18 blok | 2 blok sisanya di dalam solid, dilewati |
+| Blok terbawah (dekat anomali) | 0,992 | mendekati 1,0 — IDW menangkap anomali waste setempat, bukan merata 0,1 |
+
+Baris terakhir itu yang membuktikan gunanya: tanpa IDW setempat, anomali kadar di luar solid akan hilang ditelan rata-rata.
+
+### Lingkup: tipe deposit
+| Jalur | Kerangka blok AOI | Estimasi waste |
+|---|---|---|
+| **Geomodeller Vein** (solid domain — vein, lensa, breksi, stockwork, skarn, massive sulphide) | ya | **ya** |
+| **Stratified-Laterite** (lapisan, ruang *unfold*) | ya — kerangkanya geometri murni, tidak mengenal tipe deposit | **belum** |
+| **Sesar 3D** | ya | tidak berlaku (bukan domain kadar) |
+
+Estimasi waste bekerja pada jalur **solid domain**: ia mencari blok di luar seluruh solid dan menulis hasilnya ke penyimpanan Model Estimation (`ME.store`). Menu **Stratified-Laterite** punya penyimpanan (`SL.S`) dan mesin estimasinya sendiri — termasuk IDW-nya sendiri di ruang *unfold* — dan tidak memakai modul ini. Untuk laterit, material di luar lapisan yang dimodelkan (overburden di atas, bedrock di bawah lapisan dasar) belum diestimasi.
