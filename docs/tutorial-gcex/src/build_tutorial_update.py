@@ -268,8 +268,153 @@ def f_klas():
     return save(fig, 'f7_klas')
 
 
+
+# ------------------------------------------------------------------ F8 kerangka AOI pada sayatan
+def f_aoi():
+    """Sayatan E-RL: topografi, lensa vein, dan kerangka blok AOI yang dipotong topografi."""
+    fig, ax = plt.subplots(figsize=(6.6, 3.0))
+    yN = float(np.median([c[1] for c in COL.values()]))
+    xs = np.linspace(C[0] - 120, C[0] + 120, 240)
+    zt = topo(xs, np.full_like(xs, yN))
+    ax.plot(xs, zt, color=INK, lw=1.4, zorder=6, label='topografi')
+    # kerangka blok 10 x 5 m di bawah topografi
+    bx, bz = 10.0, 5.0
+    x0 = np.floor((C[0] - 120) / bx) * bx
+    zb = float(np.floor((np.min(zt) - 110) / bz) * bz)
+    nx = int((240) // bx)
+    nz = int((np.max(zt) - zb) // bz) + 1
+    pit = lambda x: np.maximum(np.min(zt) - 55, topo(x, yN) - 85 + 0.55 * np.abs(x - C[0]))
+    nIn = nPit = 0
+    for i in range(nx):
+        xc = x0 + (i + 0.5) * bx
+        tzv = float(topo(np.array([xc]), np.array([yN]))[0])
+        pzv = float(pit(np.array([xc]))[0])
+        for k in range(nz):
+            zc = zb + (k + 0.5) * bz
+            if zc > tzv:
+                continue
+            inpit = zc >= pzv
+            ax.add_patch(plt.Rectangle((xc - bx / 2, zc - bz / 2), bx, bz, fill=True,
+                                       facecolor=('#dde7f3' if inpit else '#f1f3f6'),
+                                       edgecolor='#c3ccd8', lw=0.3, zorder=1))
+            nIn += 1
+            nPit += 1 if inpit else 0
+    ax.plot(xs, pit(xs), color=ACC2, lw=1.6, ls='--', zorder=6, label='desain pit')
+    # jejak lensa pada sayatan ini
+    AAg, BBg = np.meshgrid(np.linspace(-170, 170, 300), np.linspace(-120, 120, 180))
+    first = True
+    for V in LENSA:
+        T = thick(AAg.ravel(), BBg.ravel(), V)
+        q1 = vpt(AAg.ravel()[:, None], BBg.ravel()[:, None], V, 0.0)
+        m = (T > 0.3) & (np.abs(q1[:, 1] - yN) < 2.0)
+        if m.any():
+            ax.scatter(q1[m, 0], q1[m, 2], s=1.0, color=ACC, alpha=0.75, zorder=5,
+                       label=('solid domain (vein)' if first else None))
+            first = False
+    ax.set_xlabel('Easting (m)'); ax.set_ylabel('RL (m)')
+    ax.set_title('Kerangka blok AOI pada sayatan: biru = di dalam desain pit, kelabu = di bawah topografi di luar pit')
+    ax.legend(loc='lower left', fontsize=7, framealpha=0.9)
+    NOTE['aoi_blok'] = nIn; NOTE['aoi_pit'] = nPit
+    return save(fig, 'aoi')
+
+
+# ------------------------------------------------------------------ F9 kadar waste vs jarak ke vein
+def f_waste():
+    """Dari data latihan: kadar Au sampel DI LUAR vein terhadap jaraknya ke vein terdekat."""
+    ins, dist, _, _, _ = g['inside_all'](P)
+    out = (~INV) & (dist > 0) & (dist < 40) & np.isfinite(AU)
+    d, a = dist[out], AU[out]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(6.8, 2.7))
+    ax.scatter(d, a, s=2.4, color=MUT, alpha=0.30, lw=0)
+    bins = np.array([0, 1.5, 3, 5, 8, 12, 18, 25, 40.0])
+    md, q9, xc = [], [], []
+    for i in range(len(bins) - 1):
+        m = (d >= bins[i]) & (d < bins[i + 1])
+        if m.sum() >= 8:
+            md.append(float(np.median(a[m]))); q9.append(float(np.percentile(a[m], 90)))
+            xc.append(float((bins[i] + bins[i + 1]) / 2))
+    ax.plot(xc, md, '-o', color=ACC, lw=1.8, ms=3.5, label='median')
+    ax.plot(xc, q9, '--', color=ACC2, lw=1.3, label='persentil 90')
+    ax.set_yscale('log'); ax.set_xlabel('jarak ke vein terdekat (m)'); ax.set_ylabel('Au (g/t)')
+    ax.set_title('Kadar sampel di luar solid'); ax.legend(fontsize=7)
+    # berapa logam yang ada di luar solid
+    LEN = np.array([float(x['To']) - float(x['From']) for x in ASY])
+    inM = float(np.sum(AU[INV] * LEN[INV])); outM = float(np.sum(AU[~INV] * LEN[~INV]))
+    bands, vals = [], []
+    for i in range(len(bins) - 1):
+        m = (~INV) & (dist >= bins[i]) & (dist < bins[i + 1])
+        if m.sum():
+            bands.append('%g-%g' % (bins[i], bins[i + 1])); vals.append(float(np.sum(AU[m] * LEN[m])))
+    ax2.bar(bands, vals, color=ACC, alpha=0.85)
+    ax2.set_xlabel('pita jarak ke vein (m)'); ax2.set_ylabel('Au x panjang (g/t.m)')
+    ax2.set_title('Logam dalam sampel di luar solid')
+    ax2.tick_params(axis='x', labelrotation=35, labelsize=6.5)
+    NOTE['w_med15'] = round(float(np.median(a[d < 1.5])), 3) if (d < 1.5).sum() else None
+    NOTE['w_med5'] = round(float(np.median(a[(d >= 1.5) & (d < 5)])), 3) if ((d >= 1.5) & (d < 5)).sum() else None
+    NOTE['w_med12'] = round(float(np.median(a[(d >= 5) & (d < 12)])), 3) if ((d >= 5) & (d < 12)).sum() else None
+    NOTE['w_share'] = round(100 * outM / max(1e-9, inM + outM), 1)
+    NOTE['w_n'] = int(out.sum())
+    return save(fig, 'waste')
+
+
+# ------------------------------------------------------------------ F10 proporsi volume blok di batas solid
+def f_frac():
+    """Sayatan E-RL: grid blok 5 m di atas jejak solid, tiap sel diberi proporsi volumenya di dalam solid."""
+    yN = float(np.median([c[1] for c in COL.values()]))
+    # medan 'di dalam solid' pada bidang sayatan y = yN, dihitung dari model
+    def ins_grid(xs, zs):
+        GX, GZ = np.meshgrid(xs, zs)
+        pts = np.column_stack([GX.ravel(), np.full(GX.size, yN), GZ.ravel()])
+        ins, _, _, _, _ = g['inside_all'](pts)
+        return ins.reshape(GZ.shape)
+    # cari jendela: di mana solid memotong sayatan ini
+    xs0 = np.linspace(C[0] - 160, C[0] + 160, 200)
+    zs0 = np.linspace(C[2] - 90, C[2] + 70, 140)
+    M0 = ins_grid(xs0, zs0)
+    if not M0.any():
+        yN = float(C[1]); M0 = ins_grid(xs0, zs0)
+    XX, ZZ = np.meshgrid(xs0, zs0)
+    xc0, zc0 = float(np.median(XX[M0])), float(np.median(ZZ[M0]))
+    bs, nx, nz = 5.0, 14, 11
+    x0 = np.floor((xc0 - nx * bs / 2) / bs) * bs
+    z0 = np.floor((zc0 - nz * bs / 2) / bs) * bs
+    fig, ax = plt.subplots(figsize=(6.4, 3.4))
+    nPart = nFull = 0
+    for i in range(nx):
+        for k in range(nz):
+            xc = x0 + (i + 0.5) * bs
+            zc = z0 + (k + 0.5) * bs
+            gx = xc - bs / 2 + (np.arange(8) + 0.5) * bs / 8
+            gz = zc - bs / 2 + (np.arange(8) + 0.5) * bs / 8
+            fr = float(ins_grid(gx, gz).mean())
+            if fr <= 0:
+                col = '#f6f8fa'
+            elif fr >= 0.999:
+                col = '#1f4e8c'; nFull += 1
+            else:
+                col = '#aac4e4'; nPart += 1
+            ax.add_patch(plt.Rectangle((xc - bs / 2, zc - bs / 2), bs, bs, facecolor=col,
+                                       edgecolor='#c3ccd8', lw=0.4, zorder=1))
+            if 0 < fr < 0.999:
+                ax.text(xc, zc, ('%.2f' % fr).lstrip('0'), ha='center', va='center',
+                        fontsize=5.6, color=INK, zorder=4)
+    # batas solid sebagai garis kontur, bukan sebaran titik
+    xf = np.linspace(x0, x0 + nx * bs, 320)
+    zf = np.linspace(z0, z0 + nz * bs, 260)
+    ax.contour(xf, zf, ins_grid(xf, zf).astype(float), levels=[0.5],
+               colors=[ACC2], linewidths=1.7, zorder=5)
+    ax.set_xlim(x0, x0 + nx * bs); ax.set_ylim(z0, z0 + nz * bs)
+    ax.set_xlabel('Easting (m)'); ax.set_ylabel('RL (m)'); ax.set_aspect('equal')
+    ax.set_title('Proporsi volume di dalam solid per blok 5 m\n(garis oranye = batas solid, angka = sb_frac)')
+    ax.grid(False)
+    NOTE['fr_part'] = nPart; NOTE['fr_full'] = nFull
+    return save(fig, 'frac')
+
+
+
 F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), ('kipas', f_kipas),
-                         ('zonasi', f_zonasi), ('topcut', f_topcut), ('klas', f_klas))}
+                         ('zonasi', f_zonasi), ('topcut', f_topcut), ('klas', f_klas),
+                         ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac))}
 
 # angka ringkas untuk narasi
 Q = HP[np.ones(len(HK), bool)]
@@ -303,12 +448,15 @@ B.append(D.cover(
     'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
     'Tutorial Update GC-', 'Ex',
     'Apa yang baru di GC-Ex Drill Hole Ultimate dan GC-Ex Block Model, dan bagaimana memakainya: '
-    'data latihan simulasi baru, klasifikasi keyakinan sumber daya, kerapatan bor per blok, serta '
-    'topografi &amp; orthofoto resolusi tinggi. Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
+    'data latihan simulasi baru, klasifikasi keyakinan sumber daya, kerapatan bor per blok, '
+    'topografi &amp; orthofoto resolusi tinggi, block model dari nol (kerangka AOI), estimasi '
+    '<b>waste</b> untuk jalur vein maupun laterit, serta sub-blocking dan proporsi volume di batas '
+    'solid. Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
     ['1. Data latihan simulasi baru', '2. Latihan terpandu: menemukan kembali geometri endapan',
      '3. Klasifikasi keyakinan sumber daya', '4. Kerapatan bor per blok',
      '5. Topografi &amp; orthofoto resolusi tinggi', '6. GC-Ex Block Model: yang baru',
-     '7. Bagian tutorial lama yang perlu disesuaikan'],
+     '7. Block model dari nol: kerangka AOI', '8. Estimasi waste: kadar di luar wireframe ore',
+     '9. Sub-blocking &amp; proporsi volume', '10. Bagian tutorial lama yang perlu disesuaikan'],
     'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
     'Semua gambar di dokumen ini <b>dihitung langsung dari model dan berkas data latihan</b>, bukan '
     'tangkapan layar, sehingga angkanya selalu cocok dengan data yang Anda terima.<br>'
@@ -550,7 +698,177 @@ B.append('<div class=box>Garis putus-putus merah yang dulu tidak bisa dihapus pa
          'pemutus segmen yang ditulis di setiap ruas poligon. Segmen yang bersambung kini disatukan, jadi '
          'garis itu tidak muncul lagi dan gambarnya jauh lebih ringan.</div>')
 
-B.append('<div class="page"></div><h2>7. Bagian tutorial lama yang perlu disesuaikan</h2>')
+# ---- 7  kerangka blok AOI
+B.append('<div class="page"></div><h2>7. Block model dari nol: kerangka AOI</h2>')
+B.append('<p class="lead">Sampai versi lalu, GC-Ex Drill Hole <b>selalu memerlukan block model dari luar</b>. '
+         'Estimasi hanya mengoreksi blok yang pusatnya di dalam solid domain, dan hanya bisa menambah blok pada '
+         'bagian solid yang belum punya blok. Akibatnya pemodelan selalu dituntun model lama, dan material '
+         '<b>waste</b> di sekitar wireframe ore hanya ada bila model impornya memang memuatnya.</p>')
+B.append('<p>Menu <b>Block Model</b> sekarang punya tombol <b>&#8862; Buat kerangka blok (AOI)</b>: grid persegi '
+         'seluruh <i>area of interest</i> &mdash; ore <b>dan</b> waste &mdash; dari extent, ukuran blok dan RL yang '
+         'Anda tentukan. Berlaku untuk semua tipe deposit, karena kerangkanya murni geometri dan tidak mengenal '
+         'tipe endapan.</p>')
+B.append(D.tabel(['Batas', 'Perilaku'], [
+    ['Potong topografi aktif', 'hanya blok yang pusatnya <b>di bawah</b> permukaan (sisa / in-situ)'],
+    ['Di dalam desain pit', 'blok dipertahankan hanya <b>antara dasar pit dan topografi</b>'],
+    ['Rentang RL', 'batas atas / bawah manual'],
+    ['Poligon area', 'fitur tertutup menu <b>Map</b> atau string Surpac &mdash; sama dengan poligon di Reporting BM']]))
+B.append(fig_html('aoi', 'Kerangka blok AOI pada satu sayatan data latihan: %d blok terbentuk di bawah topografi, '
+                  '%d di antaranya di dalam desain pit. Permukaan yang dipakai sama dengan Reporting BM, jadi volume '
+                  'yang dilaporkan konsisten dengan kerangka yang dibangun.' % (NOTE['aoi_blok'], NOTE['aoi_pit'])))
+B.append('<h3>Tiga keadaan, tiga mode</h3>')
+B.append(D.tabel(['Keadaan Anda', 'Mode'], [
+    ['Belum ada block model sama sekali', '<b>Ganti / penuh</b> &mdash; seluruh AOI dibuat dari nol, tanpa acuan apa pun'],
+    ['Sudah ada <code>.mdl</code>, cakupannya lebih sempit dari AOI',
+     '<b>Pertahankan &amp; isi kekosongan</b> &mdash; <code>.mdl</code> dipertahankan <b>utuh</b> beserta seluruh atributnya '
+     '(termasuk kadar waste), blok baru hanya di sel yang <b>belum tercakup</b>'],
+    ['Sudah ada <code>.mdl</code>, ingin mulai dari nol', '<b>Ganti</b>']]))
+B.append('<div class=box>Cakupan diuji <b>per sel</b>: setiap blok impor menandai semua sel AOI yang ditimpa '
+         'kotaknya. Jadi sub-blok Surpac yang lebih kecil maupun blok induk yang lebih besar sama-sama terbaca '
+         'benar. Atribut kategori <code>AOI_ASAL</code> membedakan <b>impor</b> dan <b>kerangka</b>.</div>')
+B.append('<div class=warn>Blok kerangka <b>belum punya kadar</b>: atribut numerik model lama diisi NaN, atribut '
+         'kategori dibiarkan kosong. Pengisian kadarnya pekerjaan Model Estimation &mdash; bab berikutnya.</div>')
+B.append('<p>Tombol <b>Hitung jumlah blok</b> menampilkan ukuran grid, jumlah blok baru, jumlah blok impor yang '
+         'dipertahankan, perincian yang dibuang per sebab, dan perkiraan volume &mdash; sebelum apa pun dibangun. '
+         'Versi block model berjenis <code>aoi</code> menyimpan <b>parameter saja, bukan bloknya</b>, jadi file '
+         'proyek tetap ringan dan kerangka dibangun ulang saat versi itu diaktifkan.</p>')
+
+# ---- 8  estimasi waste
+B.append('<div class="page"></div><h2>8. Estimasi waste: kadar di luar wireframe ore</h2>')
+B.append('<p class="lead">Model Estimation adalah <i>hard boundary</i> per domain: hanya blok yang pusatnya di '
+         'dalam solid vein yang diestimasi. Blok di luarnya tidak disentuh, sehingga kadar waste di sekitar '
+         'wireframe tidak pernah ada &mdash; padahal justru itu yang menentukan <b>dilusi</b>, <b>ore loss</b>, dan '
+         'tonase total material di bawah topografi / di dalam desain pit.</p>')
+B.append('<h3>Mengapa waste bukan kadar nol</h3>')
+B.append(fig_html('waste', 'Dari %s sampel data latihan yang berada <b>di luar</b> solid vein: kadar Au terhadap '
+                  'jarak ke vein terdekat (kiri) dan logam yang dikandungnya per pita jarak (kanan).'
+                  % ('{:,}'.format(NOTE['w_n']).replace(',', '.'))))
+B.append('<p>Angka dari data latihan itu sendiri:</p>')
+B.append(D.tabel(['Jarak ke vein', 'Median Au sampel di luar solid'], [
+    ['&lt; 1,5 m', '<b>%s g/t</b>' % str(NOTE['w_med15']).replace('.', ',')],
+    ['1,5 &ndash; 5 m', '%s g/t' % str(NOTE['w_med5']).replace('.', ',')],
+    ['5 &ndash; 12 m', '%s g/t' % str(NOTE['w_med12']).replace('.', ',')]]))
+B.append('<div class=box>Dari seluruh logam Au yang terkandung dalam sampel (kadar &times; panjang), '
+         '<b>%s%%</b> berada pada interval <b>di luar</b> solid vein. Halo di sekitar vein epitermal '
+         'bukan kadar nol &mdash; justru halo 0,1&ndash;0,3 g/t itulah yang menentukan apakah dilusi masih '
+         'ekonomis.</div>' % str(NOTE['w_share']).replace('.', ','))
+B.append('<h3>Cara memakainya &mdash; jalur vein</h3>')
+B.append(D.steps(
+    'Pastikan blok waste <b>sudah ada</b> di block model. Bila cakupannya belum penuh, buat / lengkapi dulu dengan '
+    '<b>kerangka blok AOI</b> (bab 7). Modul ini tidak membuat blok baru.',
+    'Menu <b>Model Estimation</b> &rarr; bagian <b>&#9317; Estimasi waste</b>.',
+    '<b>Variogram yang dipakai</b>: biarkan <b>Otomatis</b>. Bila Anda sudah memfit variogram waste sendiri '
+    '(lihat di bawah), variogram itu dipakai untuk seluruh blok waste; kalau belum, dipakai variogram '
+    '<b>domain terdekat</b> dan blok yang jauh dari semua domain diisi <b>IDW</b>.',
+    'Atur <b>panjang komposit</b> dan <b>top-cut</b> waste. Top-cut tersendiri mencegah satu assay tinggi di luar '
+    'solid menarik kadar seluruh halo.',
+    'Pilih batas: hanya blok <b>di bawah topografi</b> dan/atau <b>di dalam desain pit</b>.',
+    'Klik <b>Periksa dulu</b> &rarr; jumlah blok waste, jumlah komposit waste, perkiraan pembagian kriging vs IDW. '
+    'Lalu <b>Jalankan estimasi waste</b>.'))
+B.append(D.tabel(['Unsur', 'Aturan'], [
+    ['Sampel', 'komposit dari interval bor yang <b>tidak di-flag domain apa pun</b> &mdash; <i>hard boundary waste</i>, '
+     'sehingga kadar halo tidak tertarik naik oleh kadar vein'],
+    ['Variogram', 'waste sendiri bila ada; kalau tidak, variogram <b>domain terdekat</b> (dicari dari komposit '
+     'ber-flag tiap domain), dan <b>IDW</b> bila jaraknya melebihi ambang'],
+    ['Penanda hasil', '<code>domain_est = WASTE</code>, <code>est_type = 3</code>; blok IDW <code>est_pass = 9</code> '
+     'dengan <code>est_sor</code> / <code>est_ke</code> / <code>est_kv</code> = &minus;99']]))
+B.append('<div class=box><b>Mengapa IDW untuk blok yang jauh.</b> Variogram sebuah domain hanya berlaku di sekitar '
+         'domain itu. Memakainya pada blok yang jauh berarti mengaku tahu kontinuitas di tempat yang tidak punya '
+         'data domain &mdash; kriging akan tetap menghasilkan angka, lengkap dengan <i>slope of regression</i> dan '
+         '<i>kriging efficiency</i> yang <b>menyesatkan</b>. IDW tidak berpura-pura: ia hanya pembobotan jarak, '
+         'dan karena itu ketiga ukuran keyakinannya diisi &minus;99.</div>')
+B.append('<h3>Memfit variogram waste sendiri</h3>')
+B.append('<p>Memakai salinan variogram domain tetap sebuah pinjaman: kontinuitas halo tidak harus sama dengan '
+         'kontinuitas bijih &mdash; biasanya <b>nugget lebih besar</b>, <b>sill lebih kecil</b>, dan <b>range lebih '
+         'panjang</b>. Seluruh mesin Geostatistik kini terbuka untuk populasi waste:</p>')
+B.append(D.steps(
+    'Menu <b>Geostatistik</b>, bilah <b>Domain</b> &rarr; pilih <b>WASTE (di luar semua domain)</b>. Komposit yang '
+    'dipakai hanya interval yang tidak di-flag domain apa pun &mdash; populasi yang <b>sama</b> dengan sampel '
+    'estimasi waste.',
+    'Kerjakan seperti biasa: statistik, histogram, variogram arah &amp; <b>fan</b>, fitting model, <b>KNA</b>.',
+    'Tab <b>Uji estimasi</b> &rarr; <b>&#8681; Simpan ke WASTE</b>.',
+    'Kembali ke <b>Model Estimation</b>: mode <b>Otomatis</b> kini memakai variogram itu untuk <b>seluruh</b> blok '
+    'waste tanpa uji jarak, dan IDW hanya dipakai bila sampel di sekitar blok tidak cukup.'))
+B.append('<h3>Jalur laterit</h3>')
+B.append('<p>Pada endapan berlapis, kadar berubah mengikuti <b>kelengkungan permukaan lapisan</b>, bukan jarak '
+         'lurus 3D: dua titik berjarak sama bisa sangat berbeda bila satu sejajar permukaan dan satu memotongnya. '
+         'Karena itu menu <b>Stratified-Laterite</b> punya bagian <b>&#9316;b Estimasi waste</b> sendiri, dengan '
+         'pencarian sampel di <b>ruang unfold</b>:</p>')
+B.append(D.tabel(['Zona', 'Blok', 'Koordinat <i>unfold</i> sumbu ketiga'], [
+    ['bawah', 'di bawah permukaan terbawah model (mis. bedrock)', 'kedalaman di bawah permukaan itu'],
+    ['atas', 'di atas kontak teratas, <b>masih di bawah topografi aktif</b>', 'tinggi di atas kontak teratas'],
+    ['(luar)', 'di luar cakupan grid permukaan', 'tanpa kerangka unfold &rarr; 3D biasa (opsional, bawaan mati)']]))
+B.append('<p>Sampelnya komposit dari interval yang <b>kodenya tidak dipetakan ke lapisan mana pun</b>, dan setiap '
+         'komposit ditempatkan ke zona sesuai posisinya sendiri. Metodenya IDW anisotropis, bukan kriging: variogram '
+         'sebuah lapisan berlaku <i>di dalam</i> lapisan itu, dan di luar seluruh lapisan tidak ada domain yang '
+         'variogramnya pantas diwarisi. Hasil: <code>sl_pass = 9</code> dan kategori '
+         '<code>sl_lapisan = WASTE (di luar lapisan)</code>.</p>')
+B.append('<div class=warn>Blok di atas topografi adalah <b>udara, bukan waste</b>, jadi tidak pernah ikut. Dan '
+         'setiap kali estimasi lapisan dijalankan ulang, estimasi waste laterit ikut terhapus &mdash; jalankan ulang '
+         'sesudahnya.</div>')
+B.append('<div class=box>Blok waste <b>tidak diberi kelas keyakinan</b>. Pada atribut <code>klasifikasi</code> ada '
+         'kelas tersendiri <i>Waste (di luar solid)</i>, dan blok ini dikeluarkan dari kurva grade-tonase per kelas, '
+         'karena waste bukan sumber daya. Tetapi volume &amp; tonasenya tetap dapat dilaporkan bersama ore di '
+         'Reporting BM &mdash; itulah gunanya.</div>')
+
+# ---- 9  sub-blocking & proporsi volume
+B.append('<div class="page"></div><h2>9. Sub-blocking di batas solid &amp; proporsi volume</h2>')
+B.append('<p class="lead">Blok dihitung utuh berdasarkan <b>titik pusatnya</b>: blok yang separuh di dalam vein dan '
+         'separuh di luar tetap dihitung 100% ore atau 100% waste. Pada vein tipis, kesalahan batas itu sendiri '
+         'sebesar dilusi yang mau diukur.</p>')
+B.append(fig_html('frac', 'Jejak satu lensa pada sayatan dengan grid blok 5 m di atasnya. Dari %d sel yang '
+                  'bersinggungan dengan solid, <b>%d hanya sebagian</b> di dalamnya dan <b>%d</b> seluruhnya &mdash; '
+                  'angka pada tiap sel adalah <code>sb_frac</code>, proporsi volumenya yang di dalam solid.'
+                  % (NOTE['fr_part'] + NOTE['fr_full'], NOTE['fr_part'], NOTE['fr_full'])))
+B.append('<div class=box>Perhatikan: <b>tidak satu pun</b> blok 5 m yang seluruhnya di dalam vein. Dengan vein '
+         'setipis ini, perhitungan berbasis titik pusat tidak punya peluang untuk benar &mdash; bukan kurang teliti, '
+         'tetapi salah secara sistematis.</div>')
+B.append('<h3>Dua tombol di menu Block Model</h3>')
+B.append(D.tabel(['Tombol', 'Yang dilakukan'], [
+    ['<b>&#9707; Pecah blok di batas solid</b>',
+     'blok yang <b>menyeberangi</b> batas solid dipecah <b>2 &times; 2 &times; 2</b>, berulang 1&ndash;3 tingkat. '
+     'Uji menyeberang memakai 27 titik (kisi 3 &times; 3 &times; 3), supaya vein tipis yang melintas tengah blok '
+     'tanpa menyentuh sudut tetap terdeteksi.'],
+    ['<b>&#9634; Hitung proporsi volume ore per blok</b>',
+     'tanpa memecah blok: proporsi volume tiap blok yang di dalam solid, disimpan sebagai atribut '
+     '<code>sb_frac</code> (0&ndash;1), dicuplik 10&sup3; = 1.000 titik per blok perbatasan.']]))
+B.append('<p>Pemecahan 2 &times; 2 &times; 2 (bukan 2 &times; 2 &times; 1) disengaja: block model Surpac '
+         '<code>.mdl</code> adalah <b>octree</b> yang membelah ketiga sumbu bersamaan, sehingga blok anak tetap jatuh '
+         'tepat di kisi octree dan modelnya masih bisa ditulis balik ke <code>.mdl</code>. '
+         '<b>Sub-blok yang sudah ada dihormati</b>: batas ukuran minimum dihitung dari ukuran blok <b>dominan</b> '
+         'dibagi 2<sup>tingkat</sup> per sumbu, dan blok yang sudah lebih halus dibiarkan utuh &mdash; model Surpac '
+         'yang memang sudah ber-sub-blok di sekitar wireframe tidak dipecah ulang.</p>')
+B.append('<h3>Mana yang sebenarnya menyelesaikan masalah volume</h3>')
+B.append('<p>Diukur pada vein mendatar tebal 4 m dengan blok 5 &times; 5 &times; 5 m, yang bench-nya berpusat '
+         'tepat di luar vein sehingga <b>tidak satu pun titik pusat blok jatuh di dalam vein</b> '
+         '(volume sebenarnya 400 m&sup3;):</p>')
+B.append(D.tabel(['Tingkat pecah', 'Blok', 'Dihitung titik pusat', 'Ditimbang <code>sb_frac</code>'], [
+    ['utuh', '80', '<b>0 m&sup3; (&minus;100%)</b>', '400,0 m&sup3; (0,00%)'],
+    ['1', '136', '500 m&sup3; (+25%)', '400,0 m&sup3; (0,00%)'],
+    ['2', '360', '500 m&sup3; (+25%)', '400,0 m&sup3; (0,00%)'],
+    ['3', '1.256', '375 m&sup3; (&minus;6,3%)', '400,0 m&sup3; (0,00%)']]))
+B.append('<p>Dan pada batas melengkung (bola radius 30 m, volume analitik 113.097 m&sup3;):</p>')
+B.append(D.tabel(['Tingkat', 'Blok', 'Titik pusat', 'Ditimbang <code>sb_frac</code>', 'Waktu'], [
+    ['utuh', '4.096', '114.000 m&sup3; (+0,80%)', '<b>113.120 m&sup3; (+0,02%)</b>', '77 ms'],
+    ['1', '8.520', '112.625 m&sup3; (&minus;0,42%)', '113.103 m&sup3; (+0,01%)', '0,5 s'],
+    ['2', '26.720', '113.000 m&sup3; (&minus;0,09%)', '113.096 m&sup3; (&minus;0,00%)', '2,7 s']]))
+B.append('<div class=box>Kolom "titik pusat" membaik tetapi <b>berayun</b>: &minus;100% &rarr; +25% &rarr; &minus;6%. '
+         'Pembulatan titik pusat tidak hilang hanya dengan memperkecil blok. Untuk <b>volume</b>, '
+         '<code>sb_frac</code>-lah yang menyelesaikan masalah &mdash; bahkan <b>tanpa</b> memecah blok, galatnya '
+         'sudah +0,02%.</div>')
+B.append('<p>Jadi urutan kerjanya: kalau yang Anda perlukan hanya <b>volume &amp; tonase</b> yang benar, cukup '
+         'jalankan tombol kedua, lalu pilih <code>sb_frac</code> pada <b>Timbang volume &amp; tonase dengan '
+         'proporsi</b> di Reporting BM &mdash; lebih cepat dan tidak melipatgandakan jumlah blok. Sub-blocking tetap '
+         'berguna untuk hal lain: resolusi <b>kadar</b> di dekat kontak (blok lebih kecil diestimasi dari komposit '
+         'yang lebih relevan) dan geometri <b>dig block</b> yang mengikuti batas ore lebih rapat.</p>')
+B.append('<div class=warn>Sub-blocking mengubah posisi blok, sehingga hasil estimasi lama tidak lagi cocok. '
+         'Jalankan <b>sebelum</b> estimasi &mdash; panelnya memperingatkan bila sudah ada hasil. Urutan yang '
+         'disarankan: impor / kerangka AOI &rarr; sub-blocking (bila perlu) &rarr; <code>sb_frac</code> &rarr; '
+         'estimasi domain vein &rarr; estimasi waste.</div>')
+B.append('<div class=box>Kadar <b>tidak</b> dikalikan proporsi: kadarnya memang kadar bagian yang di dalam solid, '
+         'dan kadar rata-rata di laporan ditimbang tonase yang sudah berproporsi.</div>')
+
+B.append('<div class="page"></div><h2>10. Bagian tutorial lama yang perlu disesuaikan</h2>')
 B.append('<p>Dua tutorial bergambar yang lama masih berlaku untuk alur kerjanya, tetapi beberapa nama dan '
          'angkanya mengikuti data simulasi versi sebelumnya:</p>')
 B.append('<table><tr><th>Di tutorial lama</th><th>Sekarang</th></tr>'

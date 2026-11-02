@@ -129,14 +129,16 @@ B = []
 B.append(D.cover(
     'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
     'Petunjuk Teknis GC-', 'Ex',
-    'Cara kerja, alur data, format impor / ekspor, algoritme yang dipakai, batasan dan masalah umum. '
+    'Cara kerja, alur data, format impor / ekspor, algoritme yang dipakai, kerangka blok AOI, '
+    'estimasi waste (vein &amp; berlapis), sub-blocking di batas solid, batasan dan masalah umum. '
     'Pendamping <i>Tutorial Update GC-Ex</i>. Berlaku untuk GC-Ex Drill Hole Ultimate dan GC-Ex Block Model.',
     ['1. Cara kerja singkat', '2. Memasang & menjalankan', '3. Folder proyek dan apa yang disimpan',
      '4. Alur kerja data', '5. Data bor: format & aturan', '6. Dua jalur estimasi: vein dan berlapis',
-     '7. Algoritme yang dipakai', '8. Klasifikasi keyakinan sumber daya',
-     '9. Topografi & orthofoto resolusi tinggi', '10. Format impor / ekspor',
-     '11. GC-Ex Block Model: flitch, dig block, as-mined', '12. Dikerjakan bersama beberapa geologist',
-     '13. Batasan yang perlu diketahui', '14. Masalah umum', '15. Hak cipta & syarat penggunaan'],
+     '7. Algoritme yang dipakai', '8. Kerangka blok AOI, estimasi waste & proporsi volume',
+     '9. Klasifikasi keyakinan sumber daya',
+     '10. Topografi & orthofoto resolusi tinggi', '11. Format impor / ekspor',
+     '12. GC-Ex Block Model: flitch, dig block, as-mined', '13. Dikerjakan bersama beberapa geologist',
+     '14. Batasan yang perlu diketahui', '15. Masalah umum', '16. Hak cipta & syarat penggunaan'],
     'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
     'Semua nama perusahaan, lubang bor, koordinat dan kadar pada contoh di dokumen ini fiktif.<br>'
     'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.' % (VBM, VDH, D.tanggal())))
@@ -247,7 +249,78 @@ B.append('<p>Mutu estimasi tiap blok dicatat sebagai atribut, bukan hanya kadarn
          'menggambarkan kerapatan bor di sekitar blok.</p>')
 
 # ---- 8
-B.append('<h2>8. Klasifikasi keyakinan sumber daya</h2>')
+B.append('<div class="page"></div><h2>8. Kerangka blok AOI, estimasi waste &amp; proporsi volume</h2>')
+B.append('<h3>8.1 Kerangka blok AOI</h3>')
+B.append('<p>Block model dapat dibuat <b>tanpa acuan model lama</b>: grid persegi seluruh <i>area of interest</i> '
+         '(ore dan waste), dipotong topografi aktif, dasar desain pit, rentang RL, dan poligon area. Permukaan yang '
+         'dipakai sama dengan Reporting BM &mdash; permukaan segitiga (TIN) versi aktif bila ada, kalau tidak titik '
+         'topografi / pit &mdash; sehingga volume yang dilaporkan konsisten dengan kerangka yang dibangun.</p>')
+B.append('<p>Mode <i>isi kekosongan</i> mempertahankan block model aktif <b>utuh</b> beserta seluruh atributnya dan '
+         'hanya membuat blok baru pada sel yang belum tercakup. Cakupan diuji per sel: setiap blok impor menandai '
+         'semua sel AOI yang ditimpa kotaknya, jadi sub-blok maupun blok induk terbaca benar. Atribut kategori '
+         '<code>AOI_ASAL</code> membedakan <code>impor</code> dan <code>kerangka</code>; blok kerangka berisi NaN '
+         'pada atribut numerik dan kosong pada atribut kategori.</p>')
+B.append('<p>Versi block model berjenis <code>aoi</code> menyimpan <b>parameter saja</b>, bukan bloknya; kerangka '
+         'dibangun ulang saat versi itu diaktifkan. Batas aman 4 juta blok baru per pembangunan.</p>')
+B.append('<h3>8.2 Estimasi waste &mdash; jalur solid domain</h3>')
+B.append(D.tabel(['Unsur', 'Aturan'], [
+    ['Blok', 'blok block model aktif yang pusatnya <b>di luar semua</b> solid domain; opsional hanya di bawah '
+     'topografi aktif dan/atau di dalam desain pit'],
+    ['Sampel', 'komposit dari interval bor yang <b>tidak di-flag domain apa pun</b> (<i>hard boundary waste</i>), '
+     'dengan panjang komposit dan top-cut tersendiri'],
+    ['Variogram', '(a) variogram waste yang difit sendiri &mdash; dipakai untuk seluruh blok waste; atau '
+     '(b) variogram <b>domain terdekat</b>, dicari dari komposit ber-flag tiap domain, bila jaraknya &le; ambang'],
+    ['IDW', 'untuk blok yang jaraknya melebihi ambang, dan untuk blok yang sampelnya tidak cukup untuk kriging. '
+     'Bobot 1 / jarak<sup>p</sup>, radius dan jumlah titik dapat diatur'],
+    ['Penanda', '<code>domain_est = WASTE</code>, <code>est_type = 3</code>. Blok IDW: <code>est_pass = 9</code> dan '
+     '<code>est_sor</code> / <code>est_ke</code> / <code>est_kv</code> = &minus;99']]))
+B.append('<div class=box>Ketiga ukuran keyakinan dibiarkan &minus;99 untuk blok IDW dengan sengaja: <i>slope of '
+         'regression</i> dan <i>kriging efficiency</i> dihitung dari model variogram, dan model itu tidak berlaku di '
+         'tempat yang jauh dari domain. Angka yang dihitung dari model yang tidak berlaku lebih berbahaya daripada '
+         'kolom kosong.</div>')
+B.append('<p><b>Variogram waste sendiri.</b> Menu Geostatistik menerima populasi <b>WASTE (di luar semua domain)</b> '
+         'pada bilah Domain, sehingga seluruh alat yang ada &mdash; statistik, variogram arah &amp; fan, fitting, '
+         'KNA, uji estimasi &mdash; berlaku untuk populasi yang sama dengan sampel estimasi waste. Hasil fitting '
+         'disimpan lewat <b>Simpan ke WASTE</b> (model variogram, elipsoid, pass, diskretisasi, top-cut, panjang '
+         'komposit) dan ikut tersimpan di proyek.</p>')
+B.append('<h3>8.3 Estimasi waste &mdash; jalur berlapis (laterit)</h3>')
+B.append('<p>Jalur Stratified-Laterite punya penyimpanan (<code>SL.S</code>) dan mesin estimasinya sendiri, jadi '
+         'waste-nya dikerjakan terpisah &mdash; dan di <b>ruang unfold</b>, karena pada endapan berlapis kadar '
+         'berubah mengikuti kelengkungan permukaan, bukan jarak lurus 3D.</p>')
+B.append(D.tabel(['Zona', 'Blok', 'Sumbu ketiga <i>unfold</i>'], [
+    ['bawah', 'di bawah permukaan terbawah model', '<code>z_dasar(x,y) &minus; z_blok</code>'],
+    ['atas', 'di atas kontak teratas, masih di bawah topografi aktif', '<code>z_blok &minus; z_atap(x,y)</code>'],
+    ['(luar)', 'di luar cakupan grid permukaan', 'tanpa kerangka unfold &rarr; elevasi apa adanya (opsional)']]))
+B.append('<p>Sampel: komposit dari interval yang <b>kodenya tidak dipetakan ke lapisan mana pun</b>; tiap komposit '
+         'ditempatkan ke zona sesuai posisinya sendiri dan hanya dipakai untuk blok di zona yang sama. Metodenya IDW '
+         'anisotropis (elipsoid r1/r2 horizontal searah azimut, r3 pada sumbu unfold) &mdash; bukan kriging, karena '
+         'variogram sebuah lapisan berlaku di dalam lapisan itu dan di luar seluruh lapisan tidak ada domain yang '
+         'variogramnya pantas diwarisi. Hasil: <code>sl_pass = 9</code>, <code>sl_ns</code>, dan kategori '
+         '<code>sl_lapisan = WASTE (di luar lapisan)</code>. Blok di atas topografi adalah udara dan tidak ikut.</p>')
+B.append('<div class=warn>Estimasi lapisan yang dijalankan ulang membentuk <code>SL.S</code> baru, sehingga estimasi '
+         'waste laterit ikut terhapus dan harus dijalankan ulang sesudahnya.</div>')
+B.append('<h3>8.4 Sub-blocking di batas solid &amp; atribut <code>sb_frac</code></h3>')
+B.append('<p>Blok yang menyeberangi batas solid dapat dipecah <b>2 &times; 2 &times; 2</b>, berulang 1&ndash;3 '
+         'tingkat. Pemecahan di ketiga sumbu bersamaan disengaja: <code>.mdl</code> Surpac adalah octree dengan '
+         'tingkat yang sama di ketiga sumbu, sehingga blok anak tetap jatuh di kisi octree dan model masih bisa '
+         'ditulis balik. Uji menyeberang memakai kisi 3 &times; 3 &times; 3 (27 titik) di dalam kotak blok. Batas '
+         'ukuran minimum dihitung dari ukuran blok <b>dominan</b> dibagi 2<sup>tingkat</sup> per sumbu, sehingga '
+         'sub-blok yang sudah ada tidak dipecah ulang. Atribut blok anak diwarisi dari induknya.</p>')
+B.append('<p>Atribut <code>sb_frac</code> (0&ndash;1) menyimpan <b>proporsi volume</b> blok yang berada di dalam '
+         'solid, dihitung dengan integrasi titik-tengah 10&sup3; = 1.000 titik per blok perbatasan. Reporting BM '
+         'dapat menimbang volume &amp; tonase dengan atribut itu; blok berproporsi 0 tidak dilaporkan. Kadar tidak '
+         'dikalikan proporsi &mdash; kadar rata-rata ditimbang tonase, yang sudah berproporsi.</p>')
+B.append(D.tabel(['Pengujian', 'Titik pusat', 'Ditimbang <code>sb_frac</code>'], [
+    ['Vein mendatar tebal 4 m, blok 5 m, tanpa pemecahan', '&minus;100%', '0,00%'],
+    ['Sama, 1 tingkat pecah', '+25%', '0,00%'],
+    ['Sama, 3 tingkat pecah', '&minus;6,3%', '0,00%'],
+    ['Bola radius 30 m, blok 5 m, tanpa pemecahan', '+0,80%', '+0,02%']]))
+B.append('<div class=box>Untuk <b>volume</b>, <code>sb_frac</code> yang menyelesaikan masalah; sub-blocking membaik '
+         'tetapi berayun, karena pembulatan titik pusat tidak hilang hanya dengan memperkecil blok. Sub-blocking '
+         'tetap berguna untuk resolusi <b>kadar</b> di dekat kontak dan geometri <b>dig block</b>. Sub-blocking '
+         'mengubah posisi blok, jadi jalankan sebelum estimasi.</div>')
+
+B.append('<div class="page"></div><h2>9. Klasifikasi keyakinan sumber daya</h2>')
 B.append('<p>Di <b>Reporting BM</b>, GC-Ex dapat mengusulkan kelas Measured / Indicated / Inferred per blok '
          'dari atribut di atas, lalu melaporkan tonase dan kadar per kelas beserta kurva grade &times; tonase '
          'bertumpuk. Aturan bawaannya:</p>')
@@ -267,7 +340,7 @@ B.append('<div class=warn>&#9888; Ambang di panel adalah <b>usulan geostatistik 
          'pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>')
 
 # ---- 9
-B.append('<h2>9. Topografi &amp; orthofoto resolusi tinggi</h2>')
+B.append('<h2>10. Topografi &amp; orthofoto resolusi tinggi</h2>')
 B.append('<p>Orthofoto disusun menjadi <b>piramida LOD</b>: level 0 piksel asli, tiap level berikutnya '
          'merata-ratakan 2 &times; 2. Warna diambil dari level yang texel-nya sepadan dengan kerapatan '
          'tampilan, sehingga rata-rata area (anti-alias) dan tidak berkerlip. Resolusi <b>dan</b> luas mesh '
@@ -285,7 +358,7 @@ B.append('<div class=box><b>Hasil laporan tidak berubah.</b> Grid elevasi cepat 
          'tetap memakai fungsi elevasi aslinya.</div>')
 
 # ---- 10
-B.append('<h2>10. Format impor / ekspor</h2>')
+B.append('<h2>11. Format impor / ekspor</h2>')
 B.append(D.tabel(['Keperluan', 'Masuk', 'Keluar'], [
     ['Data bor', 'CSV, Excel (header bebas)', 'CSV, Excel'],
     ['Block model', '.mdl (Surpac), CSV', '.mdl, CSV'],
@@ -298,7 +371,7 @@ B.append('<p>Nama produk dan format pihak lain disebut semata-mata untuk menjela
          'data. Kecocokan diupayakan tetapi tidak dijamin, dan dapat berubah bila format mereka berubah.</p>')
 
 # ---- 11
-B.append('<h2>11. GC-Ex Block Model: flitch, dig block, as-mined</h2>')
+B.append('<h2>12. GC-Ex Block Model: flitch, dig block, as-mined</h2>')
 B.append(D.bullets(
     '<b>Flitch</b> — block model dipotong per ketinggian kerja; Project Tree memberi subnode tiap flitch '
     'sehingga audit atau review dapat langsung memilih flitch yang dimaksud.',
@@ -312,7 +385,7 @@ B.append(D.bullets(
     '<b>Register poligon</b> — daftar seluruh poligon dengan String ID dan warna yang dapat diubah.'))
 
 # ---- 12
-B.append('<h2>12. Dikerjakan bersama beberapa geologist</h2>')
+B.append('<h2>13. Dikerjakan bersama beberapa geologist</h2>')
 B.append('<p>Folder proyek dirancang agar dapat dibuka orang lain: berkas sumber disalin ke dalamnya, dan '
          'basis data proyek menyimpan riwayat perubahan. Yang perlu disepakati di tim:</p>')
 B.append(D.bullets(
@@ -323,7 +396,7 @@ B.append(D.bullets(
     'Parameter variogram dan pass disimpan <b>ke domain</b>, sehingga ikut berpindah bersama proyek.'))
 
 # ---- 13
-B.append('<h2>13. Batasan yang perlu diketahui</h2>')
+B.append('<h2>14. Batasan yang perlu diketahui</h2>')
 B.append(D.bullets(
     'Aplikasi <b>luring sepenuhnya</b>: tidak ada sinkronisasi antar komputer, tidak ada pembaruan otomatis.',
     'Lisensi <b>terikat komputer</b>. Ganti komputer berarti minta lisensi baru ke admin.',
@@ -337,7 +410,7 @@ B.append(D.bullets(
     '(mis. KCMI, JORC) atau keperluan komersial.'))
 
 # ---- 14
-B.append('<h2>14. Masalah umum</h2>')
+B.append('<h2>15. Masalah umum</h2>')
 B.append(D.tabel(['Gejala', 'Sebab yang biasa', 'Yang dilakukan'], [
     ['Menu atau centang layer tidak bisa diklik', 'datanya memang belum ada',
      'panel memberi keterangan <i>(belum ada data)</i>; import datanya dulu'],
@@ -357,7 +430,7 @@ B.append(D.tabel(['Gejala', 'Sebab yang biasa', 'Yang dilakukan'], [
      '0.24.4', 'jalankan ulang Model Estimation agar kerapatan bor ikut terekam']]))
 
 # ---- 15
-B.append('<h2>15. Hak cipta &amp; syarat penggunaan</h2>')
+B.append('<h2>16. Hak cipta &amp; syarat penggunaan</h2>')
 B.append('<p>GC-Ex adalah perangkat lunak independen dan <b>tidak</b> berafiliasi dengan, disponsori, atau '
          'didukung oleh pemilik merek perangkat lunak pertambangan mana pun. Nama-nama produk pihak lain '
          'dipakai semata-mata untuk menjelaskan kecocokan format berkas dan alur kerja.</p>')

@@ -1219,3 +1219,33 @@ Model tiruan: dua bor vertikal 100 m jarak 25 m, flag domain A 40–50 m dan B 4
 | Mode dipaksa "domain terdekat" | 8 kriging + 10 IDW | perilaku 0.24.18 tetap bisa dipakai |
 
 Baris keempat dari bawah itu intinya: dengan variogram waste sendiri, blok yang sebelumnya terpaksa IDW karena jauh dari domain **kini punya model kontinuitas yang sah** dan bisa dikrige.
+
+## 70. GC-Ex Drill Hole Ultimate 0.24.22 — tutorial & petunjuk teknis untuk fitur baru
+
+Tiga fitur terakhir (bagian 64–69) baru tercatat di `README.md` dan panduan ini. Sekarang masuk ke dokumen yang dibaca pengguna.
+
+### `GCEx_Tutorial_Update.pdf` — 21 halaman (dari 14)
+Tiga bab baru, dan bab lama "Bagian tutorial lama yang perlu disesuaikan" bergeser ke nomor 10:
+
+| Bab | Isi |
+|---|---|
+| **7. Block model dari nol: kerangka AOI** | tiga keadaan → tiga mode, tabel batas (topografi / pit / RL / poligon), uji cakupan per sel, `AOI_ASAL` |
+| **8. Estimasi waste: kadar di luar wireframe ore** | mengapa waste bukan kadar nol, langkah pemakaian, aturan sampel & variogram, memfit variogram waste sendiri di Geostatistik, jalur laterit dengan ruang *unfold* |
+| **9. Sub-blocking di batas solid & proporsi volume** | dua tombol, mengapa 2 × 2 × 2, sub-blok yang sudah ada dihormati, dan tabel pengukuran yang menunjukkan mana yang sebenarnya menyelesaikan masalah volume |
+
+**Tiga gambar baru, semuanya dihitung dari model & data latihan** — bukan tangkapan layar, bukan ilustrasi:
+
+1. **Kerangka blok AOI pada sayatan** — 584 blok terbentuk di bawah topografi, 233 di antaranya di dalam desain pit, dengan jejak solid vein di atasnya.
+2. **Kadar waste terhadap jarak ke vein** — dari **32.029 sampel data latihan yang berada di luar solid**: median Au **0,258 g/t** pada jarak < 1,5 m, **0,121 g/t** pada 1,5–5 m, **0,034 g/t** pada 5–12 m, berikut logam yang dikandungnya per pita jarak.
+3. **Proporsi volume per blok 5 m pada batas solid** — batas solid sebagai garis kontur dengan angka `sb_frac` di tiap sel.
+
+Dua angka dari gambar itu yang paling penting bagi pembaca, dan keduanya dihitung dari data latihan, bukan dikarang:
+
+- **37,8% dari seluruh logam Au dalam sampel berada pada interval di luar solid vein.** Halo di sekitar vein epitermal bukan kadar nol — justru halo 0,1–0,3 g/t itu yang menentukan apakah dilusi masih ekonomis.
+- Pada gambar proporsi volume, **tidak satu pun blok 5 m yang seluruhnya di dalam vein** (22 sel bersinggungan, semuanya hanya sebagian). Dengan vein setipis ini, perhitungan berbasis titik pusat bukan kurang teliti — ia salah secara sistematis.
+
+### `GCEx_Petunjuk_Teknis.pdf` — 10 halaman (dari 8)
+Bagian **8. Kerangka blok AOI, estimasi waste & proporsi volume** dengan empat sub-bagian (8.1 kerangka AOI, 8.2 waste jalur solid domain, 8.3 waste jalur berlapis, 8.4 sub-blocking & `sb_frac`); bagian 8–15 yang lama bergeser menjadi 9–16.
+
+### Dibangun di CI
+Kedua dokumen ini tidak memakai tangkapan layar aplikasi, jadi ikut dibangun otomatis setiap rilis di langkah **Tutorial PDF — Update & Petunjuk Teknis** (langkah yang wajib berhasil). Gambar-gambarnya dihitung ulang dari data latihan pada setiap build, sehingga angkanya selalu cocok dengan data yang dikirim dalam rilis yang sama.
