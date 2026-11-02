@@ -1073,3 +1073,56 @@ Baris terakhir itu yang membuktikan gunanya: tanpa IDW setempat, anomali kadar d
 | **Sesar 3D** | ya | tidak berlaku (bukan domain kadar) |
 
 Estimasi waste bekerja pada jalur **solid domain**: ia mencari blok di luar seluruh solid dan menulis hasilnya ke penyimpanan Model Estimation (`ME.store`). Menu **Stratified-Laterite** punya penyimpanan (`SL.S`) dan mesin estimasinya sendiri — termasuk IDW-nya sendiri di ruang *unfold* — dan tidak memakai modul ini. Untuk laterit, material di luar lapisan yang dimodelkan (overburden di atas, bedrock di bawah lapisan dasar) belum diestimasi.
+
+## 67. GC-Ex Drill Hole Ultimate 0.24.19 — estimasi waste jalur laterit
+
+Bagian 66 menyebut keterbatasannya terang-terangan: estimasi waste baru berlaku pada jalur **solid domain** (Geomodeller Vein). Jalur **Stratified-Laterite** punya penyimpanan (`SL.S`) dan mesin estimasinya sendiri — setiap blok dicari lapisannya lewat `slLayerAt()`, dan blok yang **tidak jatuh di lapisan mana pun** tidak pernah diestimasi. Bagian ini menutup kekurangan itu.
+
+Menu **Stratified-Laterite** sekarang punya bagian **④b Estimasi waste (di luar permukaan lapisan)**.
+
+### Dua zona, masing-masing dengan ruang *unfold* sendiri
+Inilah inti perbedaannya dengan jalur vein. Pada laterit, kadar berubah mengikuti **kelengkungan permukaan lapisan**, bukan menurut jarak lurus 3D — dua titik yang berjarak sama bisa sangat berbeda bila satu sejajar permukaan dan satu memotongnya. Karena itu pencariannya dilakukan di ruang *unfold*:
+
+| Zona | Blok | Koordinat *unfold* sumbu ketiga |
+|---|---|---|
+| **bawah** | di bawah permukaan terbawah model (mis. bedrock, bila lapisan dasar tidak dipakai) | kedalaman di bawah permukaan itu: `z_dasar(x,y) − z_blok` |
+| **atas** | di atas kontak teratas model **tetapi masih di bawah topografi aktif** | tinggi di atas kontak teratas: `z_blok − z_atap(x,y)` |
+| *(luar)* | di luar cakupan grid permukaan (permukaan NaN) | tidak ada kerangka *unfold* — memakai elevasi apa adanya (3D biasa). Opsional, bawaan **mati** |
+
+**Blok di atas topografi adalah udara, bukan waste**, jadi tidak pernah ikut. Bila topografi belum ada, zona *atas* tidak bisa dipisahkan dari udara sehingga dilewati seluruhnya — panel mengatakannya, bukan menebak.
+
+### Sampel
+Komposit dari interval geologi yang **kodenya tidak dipetakan ke lapisan mana pun** — *hard boundary waste*, sama semangatnya dengan jalur vein. Setiap komposit ditempatkan ke zona yang sesuai dengan posisinya **sendiri** terhadap permukaan, lalu dipakai hanya untuk blok di zona yang sama: sampel bedrock tidak pernah mengisi blok di atas kontak teratas, dan sebaliknya.
+
+Bila **semua** kode geologi sudah dipetakan ke lapisan, tidak ada sampel waste — dan pesannya mengatakan itu beserta dua jalan keluarnya (lepaskan kode yang memang bukan lapisan dari pemetaan, atau nyalakan saja estimasi untuk lapisan itu sendiri), bukan mengisi blok dengan angka tanpa dasar.
+
+### Metode: IDW, bukan kriging
+Di jalur vein, blok waste dekat domain memakai **variogram domain terdekat** (bagian 66). Di jalur laterit itu tidak dilakukan, dan ini keputusan sadar: variogram sebuah lapisan berlaku **di dalam** lapisan itu, di ruang *unfold*-nya sendiri; di luar seluruh lapisan tidak ada "domain terdekat" yang variogramnya pantas diwarisi. Jadi dipakai IDW dengan jarak anisotropis (elipsoid `r1`/`r2` horizontal searah azimut, `r3` pada sumbu *unfold*) — persis cara `slStep` menghitung jarak saat kriging tidak terpakai. `r3` sengaja kecil secara bawaan (3 m), karena kadar berubah cepat tegak lurus lapisan.
+
+Blok yang tetangganya kurang dari **Min titik** dibiarkan **tanpa kadar**, bukan dipaksa diisi.
+
+### Hasil
+Ditulis ke `SL.S` yang sedang aktif: `sl_<unsur>` terisi, `sl_pass = 9` (penanda IDW), `sl_ns`, dan `sl_lapisan` mendapat kategori baru **`WASTE (di luar lapisan)`**. Dengan begitu laporan volume/WMT/DMT dan tampilan 3D langsung mengenalinya sebagai material tersendiri.
+
+**Perhatian:** setiap kali estimasi lapisan (bagian ③) dijalankan ulang, `SL.S` dibentuk baru sehingga estimasi waste ini ikut terhapus — jalankan ulang sesudahnya. Peringatan itu tercetak di panelnya sendiri.
+
+### Diuji
+Model laterit tiruan dengan permukaan **miring** (atap `z = 300 − 0,2x`, dasar model 12 m di bawahnya) supaya ruang *unfold* benar-benar diuji, bukan grid datar. Lima bor 30 m berjarak 25 m; Limonit 0–5 m (Ni 1,8%), Saprolit 5–12 m (1,2%), kode `BED` di bawah 12 m **tidak dipetakan** ke lapisan dengan kadar bergradien `Ni = 0,25 + 0,002x` %; block model 20 kolom × 25 bench 2 m.
+
+| Uji | Hasil | Harapan |
+|---|---|---|
+| Blok zona bawah / udara / sudah punya lapisan | 280 / 100 / 120 | 280 / 100 / 120 |
+| Blok terisi | 224 dari 280 | 56 sisanya lebih dalam dari jangkauan sampel → dibiarkan kosong |
+| `sl_pass` blok waste | 9 | 9 |
+| Kategori `sl_lapisan` baru | WASTE (di luar lapisan) | — |
+| Blok limonit yang berubah | 0 | 0 — hasil lapisan tidak tersentuh |
+| **Galat kadar bedrock** terhadap gradien sebenarnya | rata-rata **0,0035%**, maks **0,0060%** | mendekati nol |
+
+Baris terakhir itu buktinya: meski permukaannya miring, IDW di ruang *unfold* memulihkan gradien kadar bedrock hampir tepat (mis. pada x = 97,5 m estimasi 0,448% vs sebenarnya 0,445%). Pada percobaan pertama galatnya 10× lebih besar di tepi timur — ternyata itu cacat **tiruan ujinya**, bukan modulnya: `slAt` yang asli menjepit koordinat di tepi grid, sedangkan tiruan pertama menolaknya sehingga komposit bor terakhir terbuang ke zona *luar*. Setelah tiruan disamakan dengan perilaku asli, galatnya turun ke angka di tabel.
+
+### Lingkup sesudah bagian ini
+| Jalur | Kerangka blok AOI | Estimasi waste |
+|---|---|---|
+| **Geomodeller Vein** (solid domain: vein, lensa, breksi, stockwork, skarn, massive sulphide) | ya | ya — variogram domain terdekat, IDW bila jauh |
+| **Stratified-Laterite** (laterit Ni, bauksit, stratiform / sedex) | ya | **ya — IDW di ruang *unfold*** |
+| **Sesar 3D** | ya | tidak berlaku (bukan domain kadar) |
