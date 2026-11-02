@@ -15,8 +15,11 @@
    kualitas QAQC dan kelayakan penambangan. */
 (function () {
   var ATTR = 'klasifikasi';
-  var KLS = ['Measured', 'Indicated', 'Inferred', 'Belum terklasifikasi'];
-  var COL = { Measured: '#1b7f4b', Indicated: '#2c5282', Inferred: '#c98a16', 'Belum terklasifikasi': '#8a93a0' };
+  /* kelas 4 = blok waste (est_type 3, domain_est WASTE): material di luar seluruh solid, bukan sumber daya,
+     jadi tidak pernah diberi kelas keyakinan dan tidak ikut kurva grade-tonase per kelas */
+  var KLS = ['Measured', 'Indicated', 'Inferred', 'Belum terklasifikasi', 'Waste (di luar solid)'];
+  var WKLS = 'Waste (di luar solid)';
+  var COL = { Measured: '#1b7f4b', Indicated: '#2c5282', Inferred: '#c98a16', 'Belum terklasifikasi': '#8a93a0', 'Waste (di luar solid)': '#5c6672' };
   /* Ambang bawaan. hM/hI = jumlah LUBANG BOR berbeda; kM/kI = spasi bor setempat maksimum (m).
      Dua syarat terakhir inilah yang mendekati cara Competent Person menilai: bukan banyaknya
      komposit, melainkan kerapatan dan sebaran bor di sekitar blok. */
@@ -37,17 +40,19 @@
   function src(m) {
     if (!m || !m.num) return null;
     var A = window.meAN ? meAN() : { pass: 'est_pass', ns: 'est_nsamp', sor: 'est_sor', ke: 'est_ke',
-                                     nh: 'est_nhole', spasi: 'est_spasi', dmin: 'est_dmin' };
+                                     nh: 'est_nhole', spasi: 'est_spasi', dmin: 'est_dmin', type: 'est_type' };
     var P = m.num[A.pass];
     if (!P) return null;
     return { P: P, N: m.num[A.ns] || null, S: m.num[A.sor] || null, E: m.num[A.ke] || null,
-             H: m.num[A.nh] || null, K: m.num[A.spasi] || null, D: m.num[A.dmin] || null, A: A };
+             H: m.num[A.nh] || null, K: m.num[A.spasi] || null, D: m.num[A.dmin] || null,
+             T: m.num[A.type] || null, A: A };
   }
   window.clsSrc = src;
 
-  /* kelas satu blok: 0 Measured, 1 Indicated, 2 Inferred, 3 belum */
+  /* kelas satu blok: 0 Measured, 1 Indicated, 2 Inferred, 3 belum, 4 waste */
   function klsOf(q, o, i) {
     var p = q.P[i];
+    if (q.T && q.T[i] === 3) return 4;                          /* waste: bukan sumber daya */
     if (!isFinite(p) || p <= 0) return 3;                       /* tidak terestimasi */
     var n = q.N ? q.N[i] : NaN, g = q.use === 'ke' ? (q.E ? q.E[i] : NaN) : (q.S ? q.S[i] : NaN);
     var h = q.H ? q.H[i] : NaN, k = q.K ? q.K[i] : NaN;
@@ -68,7 +73,7 @@
     var q = src(m);
     if (!q) { if (!quiet) alert('Block model ini belum punya atribut hasil Model Estimation (est_pass). Jalankan Model Estimation dulu.'); return null; }
     var o = clsO(); q.use = o.use;
-    var n = m.n, C = new Uint16Array(n), cnt = [0, 0, 0, 0];
+    var n = m.n, C = new Uint16Array(n), cnt = [0, 0, 0, 0, 0];
     for (var i = 0; i < n; i++) { var k = klsOf(q, o, i); C[i] = k; cnt[k]++; }
     m.cat[ATTR] = { codes: C, dict: KLS.slice(), cnt: cnt.slice() };
     if (window.BX) { BX.sc = {}; }
@@ -91,7 +96,7 @@
     var C = m.cat[ATTR];
     h += '<div class=hint style="margin-top:-2px">Usulan kelas dari hasil estimasi: <b>pass</b> pencarian, <b>jumlah komposit</b>, <b>' +
       (o.use === 'ke' ? 'kriging efficiency' : 'slope of regression') + '</b>, <b>jumlah lubang bor berbeda</b> dan <b>spasi bor setempat</b>. ' +
-      'Blok tanpa estimasi masuk <i>Belum terklasifikasi</i>.' +
+      'Blok tanpa estimasi masuk <i>Belum terklasifikasi</i>; blok <b>waste</b> (est_type 3, di luar seluruh solid) tidak diberi kelas keyakinan karena bukan sumber daya.' +
       (q.N ? '' : ' <span class=warn>est_nsamp tidak ada</span> &rarr; syarat jumlah komposit diabaikan.') +
       ((o.use === 'ke' ? q.E : q.S) ? '' : ' <span class=warn>' + (o.use === 'ke' ? 'est_ke' : 'est_sor') + ' tidak ada</span> &rarr; syaratnya diabaikan.') +
       (q.H ? '' : ' <span class=warn>est_nhole / est_spasi tidak ada</span> &rarr; block model ini diestimasi sebelum 0.24.4; jalankan ulang Model Estimation agar kerapatan bor ikut terekam.') + '</div>';
@@ -113,6 +118,7 @@
     h += '<div class=clsrule><b>Inferred</b>: blok terestimasi lainnya</div>';
     h += '<button class=btn-pri style="width:100%;margin-top:6px" onclick="clsRun()">&#9654; Hitung klasifikasi</button>';
     if (C) h += '<div class=clssum>' + KLS.map(function (k, j) {
+      if (k === WKLS && !C.cnt[j]) return '';
       return '<span><i style="background:' + COL[k] + '"></i>' + k + ' <b>' + (window.rpN ? rpN(C.cnt[j]) : C.cnt[j]) + '</b> blok</span>';
     }).join('') + '</div><div class=hint>Tersedia sebagai atribut kategori <b>' + ATTR + '</b>: pilih grup <b>Per atribut kategori</b> di bagian &#9312; untuk laporan tonase per kelas, dan atribut ini juga bisa diwarnai di tampilan 3D.</div>';
     h += '<div class=clsnote>&#9888; Ambang di atas adalah usulan geostatistik yang dapat diulang, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> (KCMI / JORC), yang juga menimbang hal-hal yang tidak terbaca dari angka: kemenerusan geologi antar bor, keyakinan pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>';
@@ -135,6 +141,7 @@
     if (!R || !el || R.grp !== 'cat') return;
     var X = R.cuts.map(String), g = R.gr, tr = [];
     KLS.forEach(function (k) {
+      if (k === WKLS) return;                                   /* waste bukan sumber daya */
       var T = [], Gd = [], any = false;
       R.rows.forEach(function (r) {
         var a = r.G[k];

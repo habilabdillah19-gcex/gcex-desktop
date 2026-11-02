@@ -987,3 +987,47 @@ Logika pemotongan diuji terhadap hitungan tangan pada topografi sintetis (bidang
 | Isi kekosongan terhadap model impor separuh AOI | 930 blok baru + 1.000 impor | 930 |
 
 Model gabungan juga diperiksa: kadar blok impor tetap (`AU = 0,2`), blok kerangka `NaN`, kategori lama kosong untuk blok baru, dan `AOI_ASAL` berisi 1.000 `impor` + 930 `kerangka`.
+
+## 65. GC-Ex Drill Hole Ultimate 0.24.17 — estimasi waste
+
+Pelengkap kerangka blok AOI (bagian 64). Setelah kerangka terbentuk, blok di luar wireframe ore masih **tanpa kadar**, karena Model Estimation adalah *hard boundary* per domain: hanya blok yang pusatnya di dalam solid vein yang diestimasi.
+
+Menu **Model Estimation** sekarang punya bagian **⑤ Estimasi waste (material di luar seluruh solid)**.
+
+### Aturannya
+| Unsur | Aturan |
+|---|---|
+| Blok | blok block model aktif yang pusatnya **di luar semua** solid domain |
+| Sampel | komposit dari interval bor yang **tidak di-flag domain apa pun** — *hard boundary waste* |
+| Parameter | salinan variogram & elipsoid sebuah domain pilihan, dengan **pengali radius**, **panjang komposit**, dan **top-cut** sendiri |
+| Penanda hasil | `domain_est = WASTE`, `est_type = 3` |
+| Batas opsional | hanya blok di bawah topografi aktif, dan/atau hanya di dalam desain pit |
+
+Hard boundary waste itu penting: interval ore **tidak** ikut jadi sampel, sehingga kadar halo tidak tertarik naik oleh kadar vein. Top-cut waste tersedia terpisah supaya satu assay tinggi di luar solid tidak mencemari seluruh halo.
+
+Parameter waste memakai salinan parameter domain karena variogram waste jarang difit sendiri; pengali radius disediakan karena halo biasanya **lebih menerus** daripada vein, jadi radius > 1× wajar.
+
+### Arti `est_type = 3`
+`est_type` sudah membedakan `1` (koreksi blok di dalam solid) dan `2` (blok tambahan di dalam solid). Nilai `3` membuat blok waste:
+
+- **tidak pernah** ikut pelaporan sumber daya per domain vein;
+- **tidak diberi kelas keyakinan** — kelas baru *Waste (di luar solid)* pada atribut `klasifikasi`, dan blok ini juga dikeluarkan dari kurva grade-tonase per kelas, karena waste bukan sumber daya;
+- tetap terbawa ke **Reporting BM** sebagai material, jadi volume & tonase waste di bawah topografi atau di dalam desain pit bisa dilaporkan bersama ore.
+
+Dengan itu lengkap jalur yang Anda perlukan: **volume ore dan waste di bawah topografi dan di dalam desain pit, beserta klasifikasi sumber dayanya** — klasifikasi hanya pada ore, waste dihitung sebagai material.
+
+### Prasyarat
+Blok waste harus **sudah ada** di block model aktif; modul ini tidak membuat blok baru. Bila cakupan `.mdl` impor lebih sempit dari area of interest, lengkapi dulu dengan **Buat kerangka blok (AOI)** mode *isi kekosongan* (bagian 64). Tombol **Periksa dulu** menampilkan jumlah blok waste, jumlah komposit waste, dan berapa blok dilewati per sebab sebelum estimasi dijalankan.
+
+### Diuji
+Model tiruan: dua lubang bor vertikal 100 m berjarak 25 m, assay 1 m; flag domain hole A 40–50 m dan hole B 45–55 m (kadar 5 g/t di zona flag, 0,1 g/t di luar); solid domain RL 245–260; topografi RL 290; block model 2 × 20 blok 5 m.
+
+| Uji | Hasil | Harapan |
+|---|---|---|
+| Komposit di luar flag (2 m) | 91 | 91 (tiap lubang 90 m di luar flag) |
+| Komposit berkadar > 1 g/t | 0 | 0 — interval ore tidak ikut |
+| Rata-rata kadar komposit waste | 0,100 | 0,100 |
+| Blok waste / di dalam solid / di atas topografi | 30 / 6 / 4 | 30 / 6 / 4 |
+| `est_type` & `domain_est` hasil | 3 & WASTE | 3 & WASTE |
+| Rentang kadar estimasi waste | 0,100 – 0,100 | ~0,100 — tidak tercemar kadar vein |
+| Blok `est_type 3` di klasifikasi | *Waste (di luar solid)* | bukan Measured / Indicated / Inferred |
