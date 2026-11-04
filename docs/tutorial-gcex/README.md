@@ -8,6 +8,9 @@
   butuh numpy; hasilnya selalu sama karena benihnya tetap).
 - `make_sim_laterit.py` — data simulasi endapan laterit berlapis (untuk Geomodeller Stratified-Laterite).
 - `tambah_unsur_bm.py` — menambah kolom fiktif S_PCT / ZN_PPM / CU_PPM ke `data/SIM_BM_GC.csv`.
+- `tambah_est_bm.py` — membuat `data/SIM_BM_GC_estimasi.csv`: block model latihan + kolom hasil Model
+  Estimation (`est_pass`, `est_nsamp`, `est_sor`, `est_ke`, `est_type`, **`sb_frac`**, `domain_est`).
+  Dipakai melatih pembobotan proporsi sub-blok di Reporting GC-Ex Block Model (20,1% blok sebagian).
 - `src/` — skrip pembuat gambar & PDF kedua tutorial dari aplikasi di repo.
 
 ## Model geologi data simulasi vein

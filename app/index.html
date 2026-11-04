@@ -4789,10 +4789,10 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     add(function(){return{id:'dig',step:'6',st:st.dig,t:'Dig Block',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'auto',b:s.dig?s.dig+' poligon':'',hint:'Dig block otomatis dari kelas kadar & tujuan material, atau digit manual (flitch aktif)',
         menu:function(){return[{t:'Buat dig block otomatis (flitch aktif)',fn:function(){A('dbAuto')();},dis:!m},{t:'Hapus semua dig block di flitch aktif…',danger:1,fn:A('dbDelFlitch'),dis:!s.dig}];},
         kids:[{id:'dig.auto',t:'Otomatis (kelas & tujuan)',ic:'poly',tab:'BM',sub:'Dig block',foc:'auto'},{id:'dig.man',t:'Digit manual (snap sudut blok)',ic:'digit',tab:'BM',sub:'Dig block',foc:'man'},
-          {id:'dig.str',t:'Rekap & edit string',ic:'string',tab:'Dig',hint:'Daftar string yang sudah dibuat: tampil / sembunyi, buka bidang, edit bentuk, hapus; string baru di bawahnya',b:ok(function(){return DG.S.length;},0)||''}]};},'dig','Dig Block');
+          {id:'dig.str',t:'Rekap & edit string',ic:'string',tab:'Dig',hint:'Daftar string yang sudah dibuat: tampil / sembunyi, buka bidang, edit bentuk, hapus; string baru di bawahnya',b:ok(function(){return DG.S.length;},0)||''}].concat(window.gcoDigTree?gcoDigTree():[])};},'dig','Dig Block');
     add(function(){return{id:'rep',step:'7',st:st.rep,t:'Laporan Grade × Tonnage',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'rep',hint:'Running grade & tonnage per dig block, multi-elemen',
         kids:[{id:'rep.run',t:'Running grade & tonnage',ic:'table',tab:'BM',sub:'Dig block',foc:'rep'},{id:'rep.el',t:'Elemen laporan & kadar tonase',ic:'el',tab:'BM',sub:'Dig block',foc:'el'},
-          {id:'rep.unit',t:'Satuan elemen…',ic:'attr',go:A('elUnitDlg')},{id:'rep.csv',t:'Ringkasan tonase (CSV)',ic:'export',go:A('lyCsv')},{id:'rep.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:A('bsOpen'),dim:!(window.bsOn&&bsOn()),hint:'Untuk .mdl besar yang dibuka lewat backend'}]};},'rep','Laporan');
+          {id:'rep.unit',t:'Satuan elemen…',ic:'attr',go:A('elUnitDlg')},{id:'rep.csv',t:'Ringkasan tonase (CSV)',ic:'export',go:A('lyCsv')},{id:'rep.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:A('bsOpen'),dim:!(window.bsOn&&bsOn()),hint:'Untuk .mdl besar yang dibuka lewat backend'}].concat(window.gcoRepTree?gcoRepTree():[])};},'rep','Laporan');
     add(function(){return{id:'out',step:'8',st:st.out,t:'Layout & Ekspor Dig Plan',ic:'folder',fold:1,tab:'BM',sub:'Layout',hint:'Layout & plot PDF, export STR / DXF untuk Surpac',
         kids:[sub('out.ly','Layout & plot PDF','map','BM','Layout'),{id:'out.str',t:'Export STR / DXF (Surpac)',ic:'export',tab:'BM',sub:'Dig block',foc:'exp'},{id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')}]};},'out','Layout');
     add(function(){return{id:'am',step:'9',st:st.am,t:'As-Mined',ic:'folder',fold:1,tab:'AM',sub:'Poligon',b:s.bnd?s.amc+'/'+s.bnd+' poligon':'',chk:ok(function(){return !!AM.show;}),onChk:function(v){AM.show=v;updatePlot();if(window.amPanel)amPanel();},hint:'Sesudah penambangan: sampel, pick-up, boundary aktual & hitung',
@@ -4804,7 +4804,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
             return[{id:'reg.fl',t:'Per flitch ('+ord.length+')',ic:'flitch',fold:1,kids:ord.map(function(k){var g=G[k];return{id:'reg.fl.'+k,t:'RL '+f(g.top)+' – '+f(g.bot),ic:'flitch',b:g.n+' pol · '+N(Math.round(g.t))+' t'+(g.t?' @ '+(g.m/g.t).toFixed(2):''),tab:'AM',sub:'Register',
               go:function(){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+g.top.toFixed(3));amApply();}};})}];})()).concat([sub('reg.2','Layout as-mined','map','AM','Layout'),{id:'reg.3d',t:'3D hasil kerja (dig block → as-mined)',ic:'block',chk:ok(function(){return !!(window.AM3&&AM3.on);},false),onChk:function(v){if(window.am3Toggle)am3Toggle(v);},tab:'AM',sub:'Register',hint:'Prisma dig block, poligon as-mined & sub-blok model as-mined di 3D'},
           {id:'reg.puz',t:'Rekap & model gabungan (.mdl)',ic:'block',tab:'AM',sub:'Register',menu:function(){return[{t:'Hitung semua flitch',fn:A('am3RunAll')},{t:'Export .mdl gabungan',fn:A('amMdl')},{t:'Export CSV gabungan',fn:A('am3Csv')}];}},{id:'reg.xl',t:'Kirim register ke Excel…',ic:'export',go:A('amXlSend'),dim:typeof window.amXlSend!=='function'},
-          {id:'reg.pdf',t:'Report rekonsiliasi (PDF)',ic:'report',go:A('amPdf')},{id:'reg.mdl',t:'Block model as-mined (.mdl)',ic:'block',go:A('amMdl')}])};},'reg','Register');
+          {id:'reg.pdf',t:'Report rekonsiliasi (PDF)',ic:'report',go:A('amPdf')},{id:'reg.mdl',t:'Block model as-mined (.mdl)',ic:'block',go:A('amMdl')}]).concat(window.prdTree?prdTree():[])};},'reg','Register');
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.s',t:'Sayatan',ic:'section',tab:'Slice'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     return L;}
   PT.install({app:'bm',nodes:nodes,nav:true,openDef:['bm','fl','dig','am'],
@@ -5334,13 +5334,35 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
   window.flCalc=function(g){if(!BX.m||!g.db.length)return null;var sig=[BX.ver,lyU().flMode,lyU().gAttr,BX.ui.sgCol,JSON.stringify(afRules()),JSON.stringify(lyU().destR||[]),g.db.map(function(q){return (q.id||'')+':'+q.pts.length+':'+(q.pts[0]||[]).join(',')+':'+q.d+':'+(q.dest||'');}).join(';')].join('|');
     if(FLC[g.k]&&FLC[g.k].sig===sig)return FLC[g.k].r;var L=lyU(),sv={top:L.top,bot:L.bot,fh:L.fh},it=[];
     try{L.top=+g.top;L.fh=+(g.top-g.bot).toFixed(3);L.bot='';it=lyItems(true);}catch(e){console.error(e);}finally{L.top=sv.top;L.bot=sv.bot;L.fh=sv.fh;}
-    var r={it:it.map(function(o){var t=o.ton||{};return{s:o.s,name:o.name,d:o.s.d||'',dest:o.dest||'',area:o.area,t:t.t||0,g:t.grade,af:t.af||[]};}),t:0,m:0,by:{}};
+    /* el / elw ikut disimpan supaya rekap CSV bisa memuat SEMUA unsur terpilih (bukan satu kadar
+       saja), dan centroid poligon dihitung sekali di sini untuk dipakai dispatch / fleet system. */
+    var ctr=function(R){if(!R||R.length<3)return null;var A=0,cx=0,cy=0;
+      for(var i=0,n=R.length;i<n;i++){var a=R[i],b=R[(i+1)%n],f=a[0]*b[1]-b[0]*a[1];A+=f;cx+=(a[0]+b[0])*f;cy+=(a[1]+b[1])*f;}
+      if(Math.abs(A)<1e-9){var sx=0,sy=0;R.forEach(function(q){sx+=q[0];sy+=q[1];});return[sx/R.length,sy/R.length];}
+      return[cx/(3*A),cy/(3*A)];};
+    var r={it:it.map(function(o){var t=o.ton||{},c=ctr(o.r);return{s:o.s,name:o.name,d:o.s.d||'',dest:o.dest||'',area:o.area,t:t.t||0,g:t.grade,af:t.af||[],
+      el:t.el||{},elw:t.elw||{},cx:c?c[0]:NaN,cy:c?c[1]:NaN,ton:t};}),t:0,m:0,by:{}};
     r.it.forEach(function(o){r.t+=o.t;if(isFinite(o.g))r.m+=o.g*o.t;var k=(o.d||'-')+' → '+(o.dest||'-');var b=r.by[k]||(r.by[k]={t:0,m:0,n:0});b.t+=o.t;b.n++;if(isFinite(o.g))b.m+=o.g*o.t;});
     FLC[g.k]={sig:sig,r:r};return r;};
   var tg=function(t,m){return t?N(t)+' t @ '+(m/t).toFixed(2):'0 t';};
   window.flOpen=function(g,then){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+(+g.top).toFixed(3));lyApply();if(then)setTimeout(then,150);};
-  window.flCsvAll=function(){var a=lyGradeAttr(),r=['RL_atas,RL_bawah,Nama,Material,Tujuan,Luas_m2,Ton,'+a+',Metal,Flag'];
-    flGroups().forEach(function(g){var c=flCalc(g);if(!c)return;c.it.forEach(function(o){r.push([g.top,g.bot,'"'+o.name+'"',o.d,o.dest,o.area.toFixed(2),o.t.toFixed(2),isFinite(o.g)?o.g.toFixed(4):'',isFinite(o.g)?(o.g*o.t).toFixed(2):'','"'+o.af.join('; ')+'"'].join(','));});});
+  window.flCsvAll=function(){var a=lyGradeAttr();
+    /* SEMUA unsur yang dicentang di "Elemen laporan" ikut, bukan hanya kadar utama; plus metal tiap
+       unsur yang satuannya memungkinkan, dan centroid poligon untuk dispatch / fleet system. */
+    var EL=(typeof elList==='function'?elList():[a]).filter(Boolean);
+    var MET=EL.filter(function(x){return typeof elMetU==='function'?elMetU(x):false;});
+    var hd=['RL_atas','RL_bawah','Nama','Material','Tujuan','Luas_m2','Ton']
+      .concat(EL.map(function(x){var u=(typeof elUnit==='function'&&elUnit(x))||'';return x+(u?'_'+String(u).replace('/','p').replace('%','pct'):'');}))
+      .concat(MET.map(function(x){return 'Metal_'+x;}))
+      .concat(['Centroid_X','Centroid_Y','Flag']);
+    var r=[hd.join(',')];
+    flGroups().forEach(function(g){var c=flCalc(g);if(!c)return;c.it.forEach(function(o){
+      var gv=function(x){var v=(o.el&&isFinite(o.el[x]))?o.el[x]:(x===a?o.g:NaN);return v;};
+      r.push([g.top,g.bot,'"'+o.name+'"',o.d,o.dest,o.area.toFixed(2),o.t.toFixed(2)]
+        .concat(EL.map(function(x){var v=gv(x);return isFinite(v)?v.toFixed(4):'';}))
+        .concat(MET.map(function(x){var v=gv(x),w=(o.elw&&isFinite(o.elw[x]))?o.elw[x]:o.t;
+          var mm=(typeof elMet==='function')?elMet(x,v,w):(isFinite(v)?v*w:NaN);return isFinite(mm)?mm.toFixed(3):'';}))
+        .concat([isFinite(o.cx)?o.cx.toFixed(2):'',isFinite(o.cy)?o.cy.toFixed(2):'','"'+o.af.join('; ')+'"']).join(','));});});
     var b=new Blob(['﻿'+r.join('\r\n')],{type:'text/csv'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='GCEx_RekapDigBlock_SemuaFlitch.csv';document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(l.href);l.remove();},800);};
   /* ---------- node Project Tree ---------- */
   if(window.PT&&PT.def&&PT.def.nodes){var _nodes=PT.def.nodes;
@@ -5495,6 +5517,663 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
         return M;
       }
     }];
+  };
+})();
+
+/* ============ LAPORAN PERIODE (MINGGUAN / BULANAN) — GC-Ex Block Model ============
+   Untuk Junior Grade Control / Short Term Mine Planner: menjumlahkan apa yang BENAR-BENAR tergali
+   dalam satu rentang tanggal, dari register as-mined. Bukan pelaporan sumber daya.
+
+   Sumbernya data yang sudah ada, tidak ada perhitungan baru:
+     - tiap poligon as-mined menyimpan tanggal, shift (DS / NS), pit, blok, RL flitch, kode ore dan
+       tujuan material (amBndAdd -> web-src/gcex_base.html, amD().bnd);
+     - tonase, volume dan kadar per poligon dihitung amRun() dan tersimpan di x.st;
+     - kadar multi-unsur dijumlahkan dengan elAgg() (multiel.js), sama seperti register & PDF,
+       supaya angka di laporan periode TIDAK pernah berbeda dari angka di register.
+
+   Satu hal yang harus jujur disebut: amRun() menghitung poligon pada FLITCH AKTIF saja. Poligon
+   dari flitch lain yang belum pernah dihitung tidak punya x.st, jadi tonasenya belum ada. Modul ini
+   menghitung berapa poligon yang begitu, MENAMPILKANNYA, dan menyediakan tombol untuk mengisinya
+   (membuka tiap flitch lalu menjalankan as-mined, dan mengembalikan flitch semula). Laporan tidak
+   pernah diam-diam melewatkan poligon.                                                            */
+(function () {
+  if (window.PRD || typeof BX === 'undefined') return;
+  var PRD = window.PRD = { o: { kind: 'bulan', from: '', to: '', grp: 'tgl', prev: true, tgt: '', tgtG: '', tren: true }, res: null, msg: '' };
+  var $ = function (i) { return document.getElementById(i); };
+  function E(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function N(v, d) { return (v == null || !isFinite(v)) ? '-' : (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function fn(n) { return typeof window[n] === 'function'; }
+
+  /* ---------- rentang tanggal ---------- */
+  function iso(d) { var p = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  function hari(s, n) { var d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return iso(d); }
+  function senin(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()), w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return x; }
+  function pekan(s) {
+    /* nomor pekan ISO, dipakai sebagai kunci grup "per minggu" */
+    var d = new Date(s + 'T00:00:00'); var t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7));
+    var w1 = new Date(t.getFullYear(), 0, 4);
+    var n = 1 + Math.round(((t - w1) / 86400000 - 3 + ((w1.getDay() + 6) % 7)) / 7);
+    return t.getFullYear() + '-W' + ('0' + n).slice(-2);
+  }
+  PRD.rentang = function (kind) {
+    var now = new Date(), o = PRD.o;
+    if (kind === 'minggu' || kind === 'minggu_lalu') {
+      var s = senin(now); if (kind === 'minggu_lalu') s.setDate(s.getDate() - 7);
+      var e = new Date(s); e.setDate(e.getDate() + 6);
+      return { from: iso(s), to: iso(e), lab: (kind === 'minggu' ? 'Minggu ini' : 'Minggu lalu') + ' (' + pekan(iso(s)) + ')' };
+    }
+    if (kind === 'bulan' || kind === 'bulan_lalu') {
+      var y = now.getFullYear(), m = now.getMonth() + (kind === 'bulan_lalu' ? -1 : 0);
+      var a = new Date(y, m, 1), b = new Date(y, m + 1, 0);
+      return { from: iso(a), to: iso(b), lab: (kind === 'bulan' ? 'Bulan ini' : 'Bulan lalu') + ' (' + iso(a).slice(0, 7) + ')' };
+    }
+    return { from: o.from || iso(now), to: o.to || iso(now), lab: 'Kustom' };
+  };
+  function R() { return PRD.rentang(PRD.o.kind); }
+
+  /* ---------- poligon dalam rentang ---------- */
+  function dalam(x, r) { var d = String(x.date || ''); return d >= r.from && d <= r.to; }
+  function semua() { try { return (fn('amBndAll') ? amBndAll() : []).filter(function (x) { return x.on !== false; }); } catch (e) { return []; } }
+
+  function flKunci(x) { return (+x.top).toFixed(3) + '|' + (+x.bot).toFixed(3); }
+  PRD.belum = function (r) {
+    var F = {}, n = 0;
+    semua().forEach(function (x) { if (!dalam(x, r) || x.st) return; F[flKunci(x)] = { top: +x.top, bot: +x.bot }; n++; });
+    return { fl: Object.keys(F).map(function (k) { return F[k]; }), n: n };
+  };
+
+  /* Isi tonase poligon yang belum dihitung. Memakai am3RunAll() milik aplikasi (am3d.js) -- jalur
+     yang sama dengan tombol "Hitung semua flitch" di panel As-Mined, jadi hasilnya pasti identik.
+     Catatan: am3RunAll menghitung SEMUA flitch yang punya poligon, bukan hanya yang di rentang ini. */
+  PRD.isi = function (sesudah) {
+    var r = R(), B = PRD.belum(r);
+    if (!B.fl.length) { if (sesudah) sesudah(0); return; }
+    if (fn('am3RunAll')) {
+      PRD.msg = 'Menghitung semua flitch yang punya poligon\u2026'; panel();
+      setTimeout(function () {
+        try { am3RunAll(); } catch (e) { console.error(e); }
+        PRD.msg = ''; PRD.run();
+        if (sesudah) sesudah(B.fl.length);
+      }, 60);
+      return;
+    }
+    if (!fn('lySet') || !fn('lyApply') || !fn('amRun') || !fn('lyBench')) { alert('Fungsi flitch / as-mined belum siap.'); return; }
+    var asal = null; try { asal = lyBench(); } catch (e) {}
+    var buka = function (g) { lySet('fh', +(g.top - g.bot).toFixed(3)); try { lyU().bot = ''; } catch (e) {} lySet('top', +(+g.top).toFixed(3)); lyApply(); };
+    PRD.msg = 'Menghitung ' + B.fl.length + ' flitch…'; panel();
+    var i = 0;
+    (function next() {
+      if (i >= B.fl.length) {
+        if (asal) { try { buka({ top: asal[0], bot: asal[1] }); } catch (e) {} }
+        PRD.msg = B.fl.length + ' flitch dihitung.';
+        setTimeout(function () { if (sesudah) sesudah(B.fl.length); else PRD.run(); }, 300);
+        return;
+      }
+      var g = B.fl[i++];
+      try { buka(g); } catch (e) {}
+      setTimeout(function () { try { amRun(true); } catch (e) {} setTimeout(next, 120); }, 160);
+    })();
+  };
+
+  /* ---------- kunci grup ---------- */
+  var GRP = [['tgl', 'Per tanggal'], ['minggu', 'Per minggu'], ['shift', 'Per shift (DS / NS)'],
+             ['fl', 'Per flitch (RL)'], ['dest', 'Per tujuan material'], ['ore', 'Per kode ore'], ['pit', 'Per pit'], ['none', 'Total saja']];
+  function kunci(q) {
+    var x = q.x, g = PRD.o.grp;
+    if (g === 'tgl') return String(x.date || '(tanpa tanggal)');
+    if (g === 'minggu') return x.date ? pekan(String(x.date)) : '(tanpa tanggal)';
+    if (g === 'shift') return (/^N/i.test(x.shift || '') ? 'NS (malam)' : 'DS (siang)');
+    if (g === 'fl') return 'RL ' + N(x.top, 1) + ' – ' + N(x.bot, 1);
+    if (g === 'dest') return String(q.lok || q.dest || '(tanpa tujuan)');
+    if (g === 'ore') return String(q.ore || '(tanpa kode)');
+    if (g === 'pit') return String(x.pit || '(tanpa pit)');
+    return 'Total';
+  }
+
+  /* ---------- hitung ---------- */
+  function agg(rows) {
+    var A = fn('elAgg') ? elAgg() : { t: 0, n: 0, add: function (r, t) { this.t += (+t || 0); this.n++; }, g: function () { return NaN; }, met: function () { return NaN; } };
+    var bcm = 0;
+    rows.forEach(function (q) {
+      var st = q.x.st || {};
+      A.add({ t: q.ton, el: st.el || {}, elw: st.elw || {} }, q.ton);
+      bcm += (+q.bcm || 0);
+    });
+    A.bcm = bcm;
+    return A;
+  }
+  function kumpul(r) {
+    var L = [];
+    try {
+      (fn('amAllInfo') ? amAllInfo() : []).forEach(function (q) {
+        if (!q || !q.x || !dalam(q.x, r)) return;
+        if (!q.x.st) return;                       /* belum dihitung: dilaporkan terpisah, tidak didiamkan */
+        if (!isFinite(q.ton) || q.ton <= 0) return;
+        L.push(q);
+      });
+    } catch (e) { console.error(e); }
+    return L;
+  }
+
+  PRD.run = function () {
+    if (!(BX && BX.m)) { alert('Belum ada block model.'); return; }
+    var r = R(), L = kumpul(r), B = PRD.belum(r);
+    var G = {}, urut = [];
+    L.forEach(function (q) { var k = kunci(q); if (!G[k]) { G[k] = []; urut.push(k); } G[k].push(q); });
+    urut.sort();
+    var baris = urut.map(function (k) { return { k: k, a: agg(G[k]), n: G[k].length }; });
+    var tot = agg(L);
+
+    /* periode sebelumnya dengan panjang yang sama, untuk pembanding */
+    var band = null;
+    if (PRD.o.prev) {
+      var pjg = Math.round((new Date(r.to + 'T00:00:00') - new Date(r.from + 'T00:00:00')) / 86400000) + 1;
+      var r2 = { from: hari(r.from, -pjg), to: hari(r.from, -1) };
+      band = { r: r2, a: agg(kumpul(r2)) };
+    }
+    /* tren per hari (laporan mingguan) atau per minggu (bulanan): supaya laporan periode bisa
+       menunjukkan POLA, bukan hanya satu angka total. */
+    var TR = {}, trKey = (PRD.o.kind === 'bulan' || PRD.o.kind === 'bulan_lalu') ? pekan : function (d) { return d; };
+    L.forEach(function (q) { var k = trKey(String(q.x.date || '')); TR[k] = (TR[k] || 0) + (+q.ton || 0); });
+    var tren = Object.keys(TR).sort().map(function (k) { return { k: k, t: TR[k] }; });
+
+    var tg = parseFloat(String(PRD.o.tgt).replace(',', '.')), tgG = parseFloat(String(PRD.o.tgtG).replace(',', '.'));
+    var capai = null;
+    if (isFinite(tg) && tg > 0) {
+      capai = { t: tg, p: 100 * tot.t / tg, sel: tot.t - tg, g: isFinite(tgG) ? tgG : null,
+                gAkt: (fn('amU') ? tot.g(amU().attr || '') : NaN) };
+    }
+    PRD.res = { r: r, baris: baris, tot: tot, band: band, belum: B, grp: PRD.o.grp, tren: tren, capai: capai,
+                els: fn('elAmX') ? elAmX() : [], prim: (fn('amU') ? (amU().attr || '') : ''),
+                tgl: new Date().toLocaleString('id-ID'), bm: BX.m.name };
+    PRD.msg = '';
+    panel();
+  };
+
+  /* ---------- tabel ---------- */
+  function tabel() {
+    var S = PRD.res; if (!S) return '<div class=hint>Tekan <b>Hitung</b> untuk menyusun laporan.</div>';
+    var els = S.els, lab = {};
+    GRP.forEach(function (g) { lab[g[0]] = g[1]; });
+    var hd = '<tr><th>' + E(lab[S.grp] || 'Grup') + '</th><th>Poligon</th><th>Ton</th><th>BCM</th>' +
+      (S.prim ? '<th>' + E(S.prim) + '</th>' : '') +
+      els.map(function (a) { return '<th>' + E(a) + (fn('elUnit') && elUnit(a) ? ' (' + E(elUnit(a)) + ')' : '') + '</th>'; }).join('') + '</tr>';
+    var sel = function (a) {
+      var A = a.a;
+      return '<td>' + N(a.n) + '</td><td>' + N(A.t) + '</td><td>' + N(A.bcm) + '</td>' +
+        (S.prim ? '<td>' + (fn('elF') ? elF(S.prim, A.g(S.prim)) : N(A.g(S.prim), 3)) + '</td>' : '') +
+        els.map(function (q) { return '<td>' + (fn('elF') ? elF(q, A.g(q)) : N(A.g(q), 3)) + '</td>'; }).join('');
+    };
+    var h = '<table class=pltb>' + hd +
+      S.baris.map(function (b) { return '<tr><td><b>' + E(b.k) + '</b></td>' + sel(b) + '</tr>'; }).join('') +
+      '<tr style="font-weight:700;background:var(--sf2,#eef2f7)"><td>TOTAL</td>' + sel({ a: S.tot, n: S.baris.reduce(function (s, b) { return s + b.n; }, 0) }) + '</tr>' +
+      '</table>';
+    if (S.band) {
+      var d = S.tot.t - S.band.a.t, p = S.band.a.t > 0 ? 100 * d / S.band.a.t : null;
+      h += '<div class=hint style="margin-top:4px">Periode sebelumnya (' + E(S.band.r.from) + ' … ' + E(S.band.r.to) + '): <b>' +
+        N(S.band.a.t) + '</b> ton dari ' + N(S.band.a.n) + ' poligon &middot; sekarang <b>' + N(S.tot.t) + '</b> ton &middot; selisih <b>' +
+        (d >= 0 ? '+' : '') + N(d) + ' ton' + (p === null ? '' : ' (' + (p >= 0 ? '+' : '') + N(p, 1) + '%)') + '</b></div>';
+    }
+    if (S.capai) {
+      var C = S.capai, warna = C.p >= 100 ? '#2b8a3e' : C.p >= 90 ? '#e8590c' : '#b42318';
+      h += '<div class=box><b>Target periode ' + N(C.t) + ' ton</b> &middot; aktual <b>' + N(S.tot.t) + ' ton</b> &middot; ' +
+        'pencapaian <b style="color:' + warna + '">' + N(C.p, 1) + '%</b> (' + (C.sel >= 0 ? '+' : '') + N(C.sel) + ' ton)' +
+        (C.g != null && isFinite(C.gAkt) ? '<br>Target kadar ' + N(C.g, 3) + ' &middot; aktual ' + N(C.gAkt, 3) + ' &middot; ' +
+          (C.gAkt >= C.g ? '<b style="color:#2b8a3e">di atas target</b>' : '<b style="color:#e8590c">di bawah target</b>') : '') + '</div>';
+    }
+    if (PRD.o.tren && S.tren && S.tren.length > 1) {
+      var mx = Math.max.apply(null, S.tren.map(function (x) { return x.t; })) || 1;
+      h += '<h4>Tren ' + (String(S.r.lab || '').indexOf('Bulan') === 0 ? 'per minggu' : 'per hari') + '</h4><div class=prdtren>' +
+        S.tren.map(function (x) {
+          return '<div title="' + E(x.k) + ': ' + N(x.t) + ' t"><i style="height:' + Math.max(2, Math.round(60 * x.t / mx)) + 'px"></i><small>' +
+                 E(String(x.k).replace(/^[0-9]{4}-/, '')) + '</small></div>';
+        }).join('') + '</div><div class=hint>Tertinggi ' + N(mx) + ' t. Arahkan kursor untuk melihat angkanya.</div>';
+    }
+    if (S.belum.n) {
+      h += '<div class=box><b>' + N(S.belum.n) + ' poligon belum punya tonase</b> (ada di ' + S.belum.fl.length +
+        ' flitch yang belum pernah dihitung as-mined). Poligon itu <b>tidak</b> ikut dijumlahkan di atas. ' +
+        '<button onclick="PRD.isi()">Hitung semua flitch sekarang</button></div>';
+    }
+    return h;
+  }
+
+  PRD.csv = function () {
+    var S = PRD.res; if (!S) { alert('Hitung laporannya dulu.'); return; }
+    var els = S.els, q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var H = ['Grup', 'Poligon', 'Ton', 'BCM'].concat(S.prim ? [S.prim] : []).concat(els);
+    var L = ['Laporan periode,' + q(S.r.lab), 'Rentang,' + S.r.from + ' s/d ' + S.r.to, 'Block model,' + q(S.bm),
+             'Dibuat,' + q(S.tgl), 'Dikelompokkan,' + q(S.grp), ''];
+    L.push(H.map(q).join(','));
+    var row = function (nama, a, n) {
+      return [nama, n, Math.round(a.t), Math.round(a.bcm)].concat(S.prim ? [isFinite(a.g(S.prim)) ? a.g(S.prim).toFixed(4) : ''] : '')
+        .concat(els.map(function (x) { var v = a.g(x); return isFinite(v) ? v.toFixed(4) : ''; })).map(q).join(',');
+    };
+    S.baris.forEach(function (b) { L.push(row(b.k, b.a, b.n)); });
+    L.push(row('TOTAL', S.tot, S.baris.reduce(function (s, b) { return s + b.n; }, 0)));
+    if (S.band) L.push('', 'Periode sebelumnya,' + S.band.r.from + ' s/d ' + S.band.r.to, row('TOTAL sebelumnya', S.band.a, S.band.a.n));
+    if (S.capai) L.push('', 'Target ton,' + Math.round(S.capai.t), 'Aktual ton,' + Math.round(S.tot.t),
+                        'Pencapaian persen,' + S.capai.p.toFixed(1), 'Selisih ton,' + Math.round(S.capai.sel));
+    if (S.tren && S.tren.length) { L.push('', 'Tren,Ton'); S.tren.forEach(function (x) { L.push(q(x.k) + ',' + Math.round(x.t)); }); }
+    if (S.belum.n) L.push('', 'Belum dihitung,' + S.belum.n + ' poligon di ' + S.belum.fl.length + ' flitch (tidak ikut dijumlahkan)');
+    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = 'GCEx_LaporanPeriode_' + S.r.from + '_' + S.r.to + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  };
+
+  PRD.set = function (k, v) { PRD.o[k] = v; if (k === 'kind' || k === 'from' || k === 'to' || k === 'grp') PRD.res = null; panel(); };
+
+  /* ---------- dialog ---------- */
+  function panel() {
+    var d = $('prdDlg'); if (!d || d.style.display === 'none') return;
+    var r = R(), o = PRD.o, B = PRD.belum(r);
+    var sel = function (id, opts, cur, oc) {
+      return '<select onchange="' + oc + '">' + opts.map(function (q) {
+        return '<option value="' + q[0] + '"' + (String(cur) === String(q[0]) ? ' selected' : '') + '>' + E(q[1]) + '</option>';
+      }).join('') + '</select>';
+    };
+    $('prdBody').innerHTML =
+      '<div class="g2 f"><div><label>Periode</label>' +
+      sel('k', [['minggu', 'Minggu ini'], ['minggu_lalu', 'Minggu lalu'], ['bulan', 'Bulan ini'], ['bulan_lalu', 'Bulan lalu'], ['kustom', 'Kustom…']], o.kind, "PRD.set('kind',this.value)") +
+      '<div class=hint>' + E(r.lab) + ': <b>' + E(r.from) + '</b> s/d <b>' + E(r.to) + '</b></div></div>' +
+      '<div><label>Kelompokkan</label>' + sel('g', GRP, o.grp, "PRD.set('grp',this.value)") +
+      '<div class=hint>Kadar dijumlahkan ditimbang tonase, sama seperti register.</div></div></div>' +
+      (o.kind === 'kustom' ? '<div class="g2 f"><div><label>Dari</label><input type=date value="' + E(o.from) + '" onchange="PRD.set(\'from\',this.value)"></div>' +
+        '<div><label>Sampai</label><input type=date value="' + E(o.to) + '" onchange="PRD.set(\'to\',this.value)"></div></div>' : '') +
+      '<div class="g2 f"><div><label>Target ton periode ini</label><input type=number step=any value="' + E(o.tgt) + '" placeholder="kosong = tanpa target" onchange="PRD.set(\'tgt\',this.value)"></div>' +
+      '<div><label>Target kadar</label><input type=number step=any value="' + E(o.tgtG) + '" placeholder="opsional" onchange="PRD.set(\'tgtG\',this.value)"></div></div>' +
+      '<label class=sw><input type=checkbox ' + (o.prev ? 'checked' : '') + ' onchange="PRD.set(\'prev\',this.checked)">Bandingkan dengan periode sebelumnya (panjang sama)</label>' +
+      '<label class=sw><input type=checkbox ' + (o.tren ? 'checked' : '') + ' onchange="PRD.set(\'tren\',this.checked)">Tampilkan tren (per hari untuk mingguan, per minggu untuk bulanan)</label>' +
+      (B.n ? '<div class=box><b>' + N(B.n) + ' poligon</b> dalam rentang ini belum punya tonase (' + B.fl.length +
+        ' flitch belum dihitung). <button onclick="PRD.isi()">Hitung sekarang</button></div>' : '') +
+      (PRD.msg ? '<div class=hint><b>' + E(PRD.msg) + '</b></div>' : '') +
+      '<div style="margin-top:6px">' + tabel() + '</div>';
+  }
+  PRD.dlg = function () {
+    var d = $('prdDlg');
+    if (!d) { d = document.createElement('div'); d.id = 'prdDlg'; d.className = 'bxdlg'; document.body.appendChild(d); }
+    d.innerHTML = '<div class=impBox style=width:min(960px,100%)><div class=impHead><div class=impBrand><div><b>Laporan periode (mingguan / bulanan)</b>' +
+      '<small>Menjumlahkan apa yang benar-benar tergali dari register as-mined: ton, BCM dan kadar per tanggal, minggu, shift, flitch, tujuan material, kode ore atau pit.</small>' +
+      '</div></div><button class="ib ghost" onclick="PRD.close()">Tutup</button></div>' +
+      '<div class=impBody id=prdBody></div>' +
+      '<div class=impFoot><div class=hint></div><button class=ib onclick="PRD.run()">Hitung</button>' +
+      '<button class=ib onclick="PRD.csv()">&#8681; CSV</button><button class=ib onclick="PRD.close()">Selesai</button></div></div>';
+    d.style.display = 'flex';
+    panel();
+  };
+  PRD.close = function () { var d = $('prdDlg'); if (d) d.style.display = 'none'; };
+
+  (function () {
+    var st = document.createElement('style');
+    st.textContent = '.prdtren{display:flex;align-items:flex-end;gap:3px;margin:4px 0 2px;min-height:76px}' +
+      '.prdtren>div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:14px}' +
+      '.prdtren i{display:block;width:100%;background:var(--mj,#c49a4c);border:1px solid var(--mjln,#b5893e);border-radius:2px 2px 0 0}' +
+      '.prdtren small{font-size:8.5px;color:var(--mu,#5b6478);margin-top:2px;white-space:nowrap}';
+    document.head.appendChild(st);
+  })();
+
+  /* ---------- node Project Tree, di bawah Register & Laporan As-Mined ---------- */
+  window.prdTree = function () {
+    var r = R(), n = 0, B = { n: 0, fl: [] };
+    try { n = kumpul(r).length; B = PRD.belum(r); } catch (e) {}
+    return [{
+      id: 'reg.prd', t: 'Laporan periode (mingguan / bulanan)', ic: 'report', tab: 'AM', sub: 'Register',
+      b: r.lab + (n ? ' · ' + n + ' poligon' : ''),
+      dim: !n,
+      hint: 'Ton, BCM dan kadar per tanggal / minggu / shift / flitch / tujuan material, dari register as-mined' +
+            (B.n ? ' — ' + B.n + ' poligon belum dihitung' : ''),
+      go: function () { PRD.dlg(); },
+      menu: function () {
+        return [
+          { t: 'Buka laporan periode…', fn: function () { PRD.dlg(); } },
+          { sep: 1 }, { h: 'Periode cepat' },
+          { t: 'Minggu ini', on: PRD.o.kind === 'minggu', fn: function () { PRD.o.kind = 'minggu'; PRD.res = null; PRD.dlg(); PRD.run(); } },
+          { t: 'Minggu lalu', on: PRD.o.kind === 'minggu_lalu', fn: function () { PRD.o.kind = 'minggu_lalu'; PRD.res = null; PRD.dlg(); PRD.run(); } },
+          { t: 'Bulan ini', on: PRD.o.kind === 'bulan', fn: function () { PRD.o.kind = 'bulan'; PRD.res = null; PRD.dlg(); PRD.run(); } },
+          { t: 'Bulan lalu', on: PRD.o.kind === 'bulan_lalu', fn: function () { PRD.o.kind = 'bulan_lalu'; PRD.res = null; PRD.dlg(); PRD.run(); } },
+          { sep: 1 },
+          { t: 'Hitung flitch yang belum dihitung (' + B.fl.length + ')', dis: !B.fl.length, fn: function () { PRD.isi(); } },
+          { t: '↓ Export CSV', dis: !PRD.res, fn: function () { PRD.csv(); } }
+        ];
+      }
+    }];
+  };
+})();
+
+/* ============ ALAT HARIAN GRADE CONTROL — GC-Ex Block Model ============
+   Untuk Junior Grade Control / Short Term Mine Planner. Tiga hal yang sebelumnya dikerjakan dengan
+   mata dan ingatan, sekarang dihitung:
+
+   1. PEMERIKSAAN DIG BLOCK (qcRun) — sebelum dig plan terbit, bukan ditemukan operator di pit:
+        tanpa tujuan material, lebar minimum di bawah batas selektivitas alat (mmw), luas di bawah
+        ambang, tonase nol / kadar kosong, poligon tidak tertutup, garis saling memotong (self-
+        intersect), dan nama ganda. Lebar minimum dihitung dengan rotating calipers pada convex hull
+        poligon -- bukan perkiraan luas/keliling -- jadi angkanya bisa dipertanggungjawabkan.
+
+   2. RINGKASAN HARIAN (dayBox) — satu halaman untuk flitch aktif: ton, kadar semua unsur terpilih,
+        jumlah dig block per material dan per tujuan, ditambah as-mined flitch yang sama bila sudah
+        ada, sehingga rencana vs aktual terlihat tanpa merakit beberapa tabel.
+
+   3. PRESET KELAS KADAR & TUJUAN MATERIAL (PST) — batas kelas (dbU().rules), aturan tujuan
+        (lyU().destR), lebar minimum dan ambang sulfida disimpan sebagai preset bernama di berkas
+        proyek, supaya shift siang dan malam, dan antar orang, memakai batas yang sama persis.
+
+   Semua angka memakai fungsi yang sudah ada (lyItems / flCalc / elAgg), jadi tidak pernah berbeda
+   dari rekap dig block, register, maupun PDF.                                                      */
+(function () {
+  if (window.GCO || typeof BX === 'undefined') return;
+  var GCO = window.GCO = { qc: null, pst: null, msg: '' };
+  var $ = function (i) { return document.getElementById(i); };
+  function E(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function N(v, d) { return (v == null || !isFinite(v)) ? '-' : (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function fn(n) { return typeof window[n] === 'function'; }
+
+  /* ================= geometri: lebar minimum & perpotongan sendiri ================= */
+  function hull(P) {
+    var S = P.map(function (q) { return [q[0], q[1]]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    if (S.length < 3) return S;
+    var cr = function (o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); };
+    var L = [], i;
+    for (i = 0; i < S.length; i++) { while (L.length >= 2 && cr(L[L.length - 2], L[L.length - 1], S[i]) <= 0) L.pop(); L.push(S[i]); }
+    var U = [];
+    for (i = S.length - 1; i >= 0; i--) { while (U.length >= 2 && cr(U[U.length - 2], U[U.length - 1], S[i]) <= 0) U.pop(); U.push(S[i]); }
+    return L.slice(0, -1).concat(U.slice(0, -1));
+  }
+  /* lebar minimum = jarak terkecil antara dua garis sejajar yang mengapit poligon (rotating calipers) */
+  function lebarMin(P) {
+    var H = hull(P), n = H.length;
+    if (n < 3) return 0;
+    var best = Infinity;
+    for (var i = 0; i < n; i++) {
+      var a = H[i], b = H[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+      if (L < 1e-9) continue;
+      var mx = 0;
+      for (var j = 0; j < n; j++) {
+        var d = Math.abs((H[j][0] - a[0]) * dy - (H[j][1] - a[1]) * dx) / L;
+        if (d > mx) mx = d;
+      }
+      if (mx < best) best = mx;
+    }
+    return isFinite(best) ? best : 0;
+  }
+  GCO.lebarMin = lebarMin;
+
+  function potongSendiri(P) {
+    var n = P.length;
+    if (n < 4) return 0;
+    var sg = function (p, q, r) { var v = (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); return v > 1e-9 ? 1 : v < -1e-9 ? -1 : 0; };
+    var pot = function (a, b, c, d) {
+      var d1 = sg(a, b, c), d2 = sg(a, b, d), d3 = sg(c, d, a), d4 = sg(c, d, b);
+      return d1 !== d2 && d3 !== d4;
+    };
+    var c = 0;
+    for (var i = 0; i < n; i++) {
+      for (var j = i + 1; j < n; j++) {
+        if (i === j) continue;
+        if ((j + 1) % n === i || (i + 1) % n === j) continue;   /* segmen bertetangga */
+        if (pot(P[i], P[(i + 1) % n], P[j], P[(j + 1) % n])) c++;
+      }
+    }
+    return c;
+  }
+
+  /* ================= 1. PEMERIKSAAN DIG BLOCK ================= */
+  GCO.qcRun = function (semua) {
+    if (!(BX && BX.m)) { alert('Belum ada block model.'); return; }
+    if (!fn('flGroups') || !fn('flCalc')) { alert('Modul dig block belum siap.'); return; }
+    var U = fn('dbU') ? dbU() : {}, mmw = +U.mmw || 0, amin = +U.dbMin || 0;
+    var B = fn('lyBench') ? lyBench() : null;
+    var G = flGroups().filter(function (g) {
+      if (semua) return g.db.length;
+      return g.db.length && B && Math.abs(g.top - B[0]) < 1e-6 && Math.abs(g.bot - B[1]) < 1e-6;
+    });
+    var T = [], nama = {}, nDb = 0;
+    G.forEach(function (g) {
+      var c = flCalc(g); if (!c) return;
+      c.it.forEach(function (o) {
+        nDb++;
+        var ring = (o.s && o.s.pts) ? o.s.pts.map(function (q) { return [q[0], q[1]]; }) : null;
+        var add = function (lv, apa, saran) { T.push({ lv: lv, fl: 'RL ' + N(g.top, 1) + '–' + N(g.bot, 1), nama: o.name, apa: apa, saran: saran }); };
+        if (!String(o.dest || '').trim()) add('CEGAH', 'tanpa tujuan material', 'isi Tujuan pada dig block, atau lengkapi aturan tujuan di Preset');
+        if (!isFinite(o.t) || o.t <= 0) add('CEGAH', 'tonase nol', 'poligon tidak memuat blok model: periksa posisi / flitch / filter atribut');
+        else if (!isFinite(o.g)) add('PERIKSA', 'kadar kosong', 'blok di dalamnya berkadar &minus;99 atau atribut kadar belum dipilih');
+        if (ring && mmw > 0) {
+          var w = lebarMin(ring);
+          if (w < mmw) add('CEGAH', 'lebar minimum ' + N(w, 2) + ' m &lt; batas ' + N(mmw, 2) + ' m',
+                           'tidak praktis digali: gabungkan dengan blok sebelah, atau lebarkan');
+        }
+        if (amin > 0 && isFinite(o.area) && o.area < amin) add('PERIKSA', 'luas ' + N(o.area, 1) + ' m² &lt; ambang ' + N(amin, 1) + ' m²', 'blok sangat kecil; pertimbangkan digabung');
+        if (ring) {
+          if (o.s && o.s.closed === false) add('CEGAH', 'poligon tidak tertutup', 'tutup poligonnya di Digitasi');
+          var ps = potongSendiri(ring);
+          if (ps) add('CEGAH', 'garis saling memotong (' + ps + ' tempat)', 'perbaiki bentuknya: luas dan tonase tidak bisa dipercaya');
+        }
+        var k = String(o.name || '').trim().toUpperCase();
+        if (k) { nama[k] = (nama[k] || 0) + 1; }
+      });
+    });
+    Object.keys(nama).forEach(function (k) {
+      if (nama[k] > 1) T.push({ lv: 'PERIKSA', fl: '-', nama: k, apa: 'nama dipakai ' + nama[k] + ' kali', saran: 'beri nama berbeda supaya tidak tertukar di dispatch & register' });
+    });
+    GCO.qc = { t: T, nDb: nDb, nFl: G.length, semua: !!semua, mmw: mmw, amin: amin, tgl: new Date().toLocaleString('id-ID') };
+    GCO.qcDlg();
+  };
+
+  GCO.qcDlg = function () {
+    var d = $('qcDlg');
+    if (!d) { d = document.createElement('div'); d.id = 'qcDlg'; d.className = 'bxdlg'; document.body.appendChild(d); }
+    var Q = GCO.qc || { t: [], nDb: 0, nFl: 0 };
+    var nC = Q.t.filter(function (x) { return x.lv === 'CEGAH'; }).length, nP = Q.t.length - nC;
+    var rows = Q.t.length ? Q.t.map(function (x) {
+      return '<tr><td><b style="color:' + (x.lv === 'CEGAH' ? '#b42318' : '#e8590c') + '">' + x.lv + '</b></td><td>' + E(x.fl) +
+        '</td><td>' + E(x.nama) + '</td><td>' + x.apa + '</td><td><small>' + x.saran + '</small></td></tr>';
+    }).join('') : '<tr><td colspan=5 style="color:#2b8a3e"><b>&#10003; Tidak ada temuan.</b> ' + N(Q.nDb) + ' dig block diperiksa.</td></tr>';
+    d.innerHTML = '<div class=impBox style=width:min(960px,100%)><div class=impHead><div class=impBrand><div><b>Pemeriksaan dig block</b>' +
+      '<small>Dijalankan sebelum dig plan terbit. <b>CEGAH</b> = jangan diterbitkan sebelum dibereskan; <b>PERIKSA</b> = perlu dilihat, belum tentu salah.</small>' +
+      '</div></div><button class="ib ghost" onclick="GCO.qcClose()">Tutup</button></div><div class=impBody>' +
+      '<div class=hint>' + N(Q.nDb) + ' dig block di ' + N(Q.nFl) + ' flitch' + (Q.semua ? ' (semua flitch)' : ' (flitch aktif)') +
+      ' &middot; lebar minimum alat <b>' + N(Q.mmw, 2) + ' m</b> &middot; ambang luas <b>' + N(Q.amin, 1) + ' m&sup2;</b> &middot; ' +
+      '<b style="color:#b42318">' + nC + ' cegah</b>, <b style="color:#e8590c">' + nP + ' periksa</b></div>' +
+      '<table class=pltb><tr><th>Tingkat</th><th>Flitch</th><th>Dig block</th><th>Temuan</th><th>Saran</th></tr>' + rows + '</table>' +
+      '</div><div class=impFoot><div class=hint></div>' +
+      '<button class=ib onclick="GCO.qcRun(false)">Flitch aktif</button><button class=ib onclick="GCO.qcRun(true)">Semua flitch</button>' +
+      '<button class=ib onclick="GCO.qcCsv()">&#8681; CSV</button><button class=ib onclick="GCO.qcClose()">Selesai</button></div></div>';
+    d.style.display = 'flex';
+  };
+  GCO.qcClose = function () { var d = $('qcDlg'); if (d) d.style.display = 'none'; };
+  GCO.qcCsv = function () {
+    var Q = GCO.qc; if (!Q) return;
+    var q = function (v) { v = String(v == null ? '' : v).replace(/<[^>]+>/g, '').replace(/&minus;/g, '-').replace(/&lt;/g, '<').replace(/&sup2;/g, '2'); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var L = ['Pemeriksaan dig block,' + q(Q.tgl), 'Dig block diperiksa,' + Q.nDb, 'Lebar minimum alat (m),' + Q.mmw, '', 'Tingkat,Flitch,Dig block,Temuan,Saran']
+      .concat(Q.t.map(function (x) { return [x.lv, x.fl, x.nama, x.apa, x.saran].map(q).join(','); }));
+    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = 'GCEx_PemeriksaanDigBlock.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  };
+
+  /* ================= 2. RINGKASAN HARIAN (flitch aktif) ================= */
+  function ring1(g) {
+    var c = fn('flCalc') ? flCalc(g) : null;
+    if (!c) return null;
+    var EL = fn('elList') ? elList() : [], byM = {}, byD = {}, tot = fn('elAgg') ? elAgg() : null;
+    c.it.forEach(function (o) {
+      var t = o.ton || { t: o.t, el: o.el, elw: o.elw };
+      var m = o.d || '-', dd = o.dest || '-';
+      if (!byM[m]) byM[m] = { a: fn('elAgg') ? elAgg() : null, n: 0 };
+      if (!byD[dd]) byD[dd] = { a: fn('elAgg') ? elAgg() : null, n: 0 };
+      if (byM[m].a) byM[m].a.add(t, o.t); byM[m].n++;
+      if (byD[dd].a) byD[dd].a.add(t, o.t); byD[dd].n++;
+      if (tot) tot.add(t, o.t);
+    });
+    return { EL: EL, byM: byM, byD: byD, tot: tot, n: c.it.length, g: g };
+  }
+  function amFl(g) {
+    try {
+      var L = (fn('amAllInfo') ? amAllInfo() : []).filter(function (q) {
+        return q.x && Math.abs(+q.x.top - g.top) < 1e-6 && Math.abs(+q.x.bot - g.bot) < 1e-6 && q.x.st;
+      });
+      if (!L.length) return null;
+      var A = fn('elAgg') ? elAgg() : null;
+      L.forEach(function (q) { if (A) A.add({ t: q.ton, el: (q.x.st && q.x.st.el) || {}, elw: (q.x.st && q.x.st.elw) || {} }, q.ton); });
+      return { a: A, n: L.length };
+    } catch (e) { return null; }
+  }
+
+  GCO.dayDlg = function () {
+    if (!(BX && BX.m)) { alert('Belum ada block model.'); return; }
+    var B = fn('lyBench') ? lyBench() : null;
+    var G = (fn('flGroups') ? flGroups() : []).filter(function (g) { return B && Math.abs(g.top - B[0]) < 1e-6 && Math.abs(g.bot - B[1]) < 1e-6; })[0];
+    var d = $('dayDlg');
+    if (!d) { d = document.createElement('div'); d.id = 'dayDlg'; d.className = 'bxdlg'; document.body.appendChild(d); }
+    var h;
+    if (!G || !G.db.length) {
+      h = '<div class=box>Belum ada dig block di flitch aktif' + (B ? ' (RL ' + N(B[0], 1) + '–' + N(B[1], 1) + ')' : '') +
+          '. Buat dig block dulu di langkah <b>Dig Block</b>.</div>';
+    } else {
+      var S = ring1(G), A = amFl(G), EL = S.EL;
+      var hd = function (lab) { return '<tr><th>' + lab + '</th><th>Blok</th><th>Ton</th>' + EL.map(function (a) { return '<th>' + E(a) + '</th>'; }).join('') + '</tr>'; };
+      var row = function (lab, o) {
+        return '<tr><td><b>' + E(lab) + '</b></td><td>' + N(o.n) + '</td><td>' + N(o.a ? o.a.t : 0) + '</td>' +
+          EL.map(function (a) { return '<td>' + (fn('elF') && o.a ? elF(a, o.a.g(a)) : '-') + '</td>'; }).join('') + '</tr>';
+      };
+      h = '<div class=hint>Flitch aktif <b>RL ' + N(G.top, 1) + ' – ' + N(G.bot, 1) + '</b> &middot; ' + N(S.n) + ' dig block &middot; dibuat ' + E(new Date().toLocaleString('id-ID')) + '</div>';
+      h += '<h4>Per material</h4><table class=pltb>' + hd('Material') +
+        Object.keys(S.byM).sort().map(function (k) { return row(k, S.byM[k]); }).join('') +
+        '<tr style="font-weight:700;background:var(--sf2,#eef2f7)"><td>TOTAL RENCANA</td><td>' + N(S.n) + '</td><td>' + N(S.tot ? S.tot.t : 0) + '</td>' +
+        EL.map(function (a) { return '<td>' + (fn('elF') && S.tot ? elF(a, S.tot.g(a)) : '-') + '</td>'; }).join('') + '</tr></table>';
+      h += '<h4>Per tujuan material</h4><table class=pltb>' + hd('Tujuan') +
+        Object.keys(S.byD).sort().map(function (k) { return row(k, S.byD[k]); }).join('') + '</table>';
+      if (A) {
+        var dt = (S.tot ? S.tot.t : 0), da = A.a ? A.a.t : 0, sel = da - dt;
+        h += '<h4>Rencana vs aktual (as-mined flitch ini)</h4><table class=pltb>' + hd('') +
+          row('Rencana (dig block)', { n: S.n, a: S.tot }) + row('Aktual (as-mined)', { n: A.n, a: A.a }) +
+          '<tr style="font-weight:700"><td>Selisih</td><td>' + N(A.n - S.n) + '</td><td>' + (sel >= 0 ? '+' : '') + N(sel) + '</td>' +
+          EL.map(function () { return '<td>-</td>'; }).join('') + '</tr></table>' +
+          '<div class=hint>Selisih tonase ' + (dt > 0 ? ((sel >= 0 ? '+' : '') + N(100 * sel / dt, 1) + '% dari rencana') : '-') + '.</div>';
+      } else {
+        h += '<div class=box>Belum ada as-mined terhitung untuk flitch ini, jadi perbandingan rencana vs aktual belum bisa ditampilkan. ' +
+             'Buat poligon as-mined lalu jalankan As-Mined, atau pakai <b>Laporan periode</b> untuk rekap beberapa hari.</div>';
+      }
+    }
+    d.innerHTML = '<div class=impBox style=width:min(900px,100%)><div class=impHead><div class=impBrand><div><b>Ringkasan harian — flitch aktif</b>' +
+      '<small>Ton, kadan semua unsur terpilih, jumlah dig block per material dan per tujuan, serta rencana vs aktual bila as-mined flitch ini sudah dihitung.</small>' +
+      '</div></div><button class="ib ghost" onclick="GCO.dayClose()">Tutup</button></div>' +
+      '<div class=impBody>' + h + '</div>' +
+      '<div class=impFoot><div class=hint></div><button class=ib onclick="GCO.dayCsv()">&#8681; CSV</button>' +
+      '<button class=ib onclick="GCO.dayClose()">Selesai</button></div></div>';
+    d.style.display = 'flex';
+  };
+  GCO.dayClose = function () { var d = $('dayDlg'); if (d) d.style.display = 'none'; };
+  GCO.dayCsv = function () {
+    var B = fn('lyBench') ? lyBench() : null;
+    var G = (fn('flGroups') ? flGroups() : []).filter(function (g) { return B && Math.abs(g.top - B[0]) < 1e-6 && Math.abs(g.bot - B[1]) < 1e-6; })[0];
+    if (!G) { alert('Belum ada dig block di flitch aktif.'); return; }
+    var S = ring1(G), A = amFl(G), EL = S.EL;
+    var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var L = ['Ringkasan harian,RL ' + G.top + ' - ' + G.bot, 'Dibuat,' + new Date().toLocaleString('id-ID'), '',
+             ['Kelompok', 'Nama', 'Blok', 'Ton'].concat(EL).map(q).join(',')];
+    var row = function (grp, lab, o) {
+      return [grp, lab, o.n, Math.round(o.a ? o.a.t : 0)].concat(EL.map(function (a) { var v = o.a ? o.a.g(a) : NaN; return isFinite(v) ? v.toFixed(4) : ''; })).map(q).join(',');
+    };
+    Object.keys(S.byM).sort().forEach(function (k) { L.push(row('Material', k, S.byM[k])); });
+    Object.keys(S.byD).sort().forEach(function (k) { L.push(row('Tujuan', k, S.byD[k])); });
+    L.push(row('Total', 'RENCANA', { n: S.n, a: S.tot }));
+    if (A) L.push(row('Total', 'AKTUAL as-mined', { n: A.n, a: A.a }));
+    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = 'GCEx_RingkasanHarian_RL' + G.top + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  };
+
+  /* ================= 3. PRESET KELAS KADAR & TUJUAN ================= */
+  function store() { var U = BX.ui || {}; if (!U.pst) U.pst = []; return U.pst; }
+  function ambil() {
+    var U = fn('dbU') ? dbU() : {}, L = fn('lyU') ? lyU() : {};
+    return { rules: JSON.parse(JSON.stringify(U.rules || [])), rAttr: U.rAttr || '', mmw: +U.mmw || 0,
+             mmwMode: U.mmwMode || 'grow', dbMin: +U.dbMin || 0, dbMat: U.dbMat || 'ORE',
+             sfOn: !!U.sfOn, sfOff: +U.sfOff || 0, sxsThr: +U.sxsThr || 0,
+             destR: JSON.parse(JSON.stringify(L.destR || [])), dest: L.dest || '' };
+  }
+  function terap(p) {
+    var U = fn('dbU') ? dbU() : {}, L = fn('lyU') ? lyU() : {};
+    if (p.rules) U.rules = JSON.parse(JSON.stringify(p.rules));
+    ['rAttr', 'mmw', 'mmwMode', 'dbMin', 'dbMat', 'sfOn', 'sfOff', 'sxsThr'].forEach(function (k) { if (p[k] !== undefined) U[k] = p[k]; });
+    if (p.destR) L.destR = JSON.parse(JSON.stringify(p.destR));
+    if (p.dest !== undefined) L.dest = p.dest;
+    try { if (fn('bxPanel')) bxPanel(); } catch (e) {}
+    try { if (fn('lyDestUpd')) lyDestUpd(); } catch (e) {}
+    try { if (fn('updatePlot')) updatePlot(); } catch (e) {}
+    try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
+  }
+  GCO.pstSimpan = function () {
+    var n = prompt('Nama preset (mis. "Pit A — Nov 2026" atau "Oksida kadar rendah"):', '');
+    if (n == null || !String(n).trim()) return;
+    var L = store(), nm = String(n).trim();
+    var o = { name: nm, tgl: new Date().toISOString().slice(0, 16).replace('T', ' '), p: ambil() };
+    var i = -1; L.forEach(function (x, k) { if (x.name.toLowerCase() === nm.toLowerCase()) i = k; });
+    if (i >= 0) { if (!confirm('Preset "' + nm + '" sudah ada. Ganti?')) return; L[i] = o; } else L.push(o);
+    if (window.bxDirty) bxDirty(); else if (window.SA && SA.dirty) SA.dirty();
+    try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
+    alert('Preset "' + nm + '" tersimpan: ' + (o.p.rules || []).length + ' kelas kadar, ' + (o.p.destR || []).length +
+          ' aturan tujuan, lebar minimum ' + o.p.mmw + ' m.');
+  };
+  GCO.pstTerap = function (nm) {
+    var L = store(), o = null;
+    L.forEach(function (x) { if (x.name === nm) o = x; });
+    if (!o) return;
+    if (!confirm('Pakai preset "' + nm + '"?\n\nKelas kadar, aturan tujuan, lebar minimum dan ambang sulfida akan diganti. ' +
+                 'Dig block yang sudah ada tidak dihapus, tetapi material & tujuannya dihitung ulang dengan aturan baru.')) return;
+    terap(o.p);
+    GCO.msg = 'Preset "' + nm + '" dipakai.';
+  };
+  GCO.pstHapus = function (nm) {
+    if (!confirm('Hapus preset "' + nm + '"?')) return;
+    var U = BX.ui || {}; U.pst = store().filter(function (x) { return x.name !== nm; });
+    if (window.bxDirty) bxDirty(); else if (window.SA && SA.dirty) SA.dirty();
+    try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
+  };
+
+  /* ================= node Project Tree ================= */
+  /* di bawah Dig Block: pemeriksaan + preset */
+  window.gcoDigTree = function () {
+    var L = store(), Q = GCO.qc;
+    var nC = Q ? Q.t.filter(function (x) { return x.lv === 'CEGAH'; }).length : 0;
+    return [
+      { id: 'dig.qc', t: 'Pemeriksaan dig block', ic: 'check', tab: 'BM', sub: 'Dig block',
+        b: Q ? (Q.t.length ? nC + ' cegah / ' + (Q.t.length - nC) + ' periksa' : 'bersih') : '',
+        hint: 'Jalankan sebelum dig plan terbit: tanpa tujuan, lebar di bawah batas alat, tonase nol, poligon rusak, nama ganda',
+        go: function () { GCO.qcRun(false); },
+        menu: function () {
+          return [{ t: 'Periksa flitch aktif', fn: function () { GCO.qcRun(false); } },
+                  { t: 'Periksa semua flitch', fn: function () { GCO.qcRun(true); } },
+                  { sep: 1 },
+                  { t: 'Lihat hasil terakhir', dis: !Q, fn: function () { GCO.qcDlg(); } },
+                  { t: '↓ Export CSV', dis: !Q, fn: function () { GCO.qcCsv(); } }];
+        } },
+      { id: 'dig.pst', t: 'Preset kelas kadar & tujuan', ic: 'gear', fold: 1, tab: 'BM', sub: 'Dig block',
+        b: L.length ? L.length + ' preset' : '', dim: !L.length,
+        hint: 'Batas kelas kadar, aturan tujuan material, lebar minimum dan ambang sulfida — supaya DS dan NS memakai batas yang sama',
+        menu: function () {
+          return [{ t: 'Simpan pengaturan sekarang sebagai preset…', fn: function () { GCO.pstSimpan(); } }]
+            .concat(L.length ? [{ sep: 1 }, { h: 'Pakai preset' }] : [])
+            .concat(L.map(function (x) { return { t: x.name, fn: function () { GCO.pstTerap(x.name); } }; }));
+        },
+        kids: L.map(function (x) {
+          return { id: 'dig.pst.' + x.name, t: x.name, ic: 'attr',
+                   b: (x.p.rules || []).length + ' kelas · ' + (x.p.destR || []).length + ' tujuan',
+                   hint: 'Disimpan ' + x.tgl + ' · lebar minimum ' + x.p.mmw + ' m',
+                   menu: function () { return [{ t: 'Pakai preset ini', fn: function () { GCO.pstTerap(x.name); } },
+                                               { sep: 1 },
+                                               { t: 'Hapus preset ini', danger: 1, fn: function () { GCO.pstHapus(x.name); } }]; } };
+        }) }
+    ];
+  };
+  /* di bawah Laporan Grade x Tonnage: ringkasan harian */
+  window.gcoRepTree = function () {
+    return [{ id: 'rep.day', t: 'Ringkasan harian (flitch aktif)', ic: 'report', tab: 'BM', sub: 'Dig block',
+      hint: 'Satu halaman: ton & kadar per material dan per tujuan, plus rencana vs aktual as-mined flitch ini',
+      go: function () { GCO.dayDlg(); },
+      menu: function () { return [{ t: 'Buka ringkasan harian…', fn: function () { GCO.dayDlg(); } },
+                                  { t: '↓ Export CSV', fn: function () { GCO.dayCsv(); } }]; } }];
   };
 })();
 

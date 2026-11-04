@@ -559,6 +559,60 @@ B.append(D.bullets(
     '<b>Register poligon</b> — daftar seluruh poligon dengan String ID dan warna yang dapat diubah.'))
 
 # ---- 12
+B.append('<h3>15.1 Alat harian grade control (0.24.24)</h3>')
+B.append('<p>Pemakai GC-Ex Block Model adalah <b>Junior Grade Control</b> dan <b>Short Term / Junior Mine '
+         'Planner</b>, jadi alatnya ditujukan pada <i>Daily Ore Mining &amp; Grade Control</i> &mdash; bukan '
+         'eksplorasi atau pemodelan. Karena itu Reporting Block Model <b>tidak</b> memuat klasifikasi sumber daya '
+         '(Measured / Indicated / Inferred) maupun pengelompokan per domain estimasi; keduanya tetap di GC-Ex '
+         'Drill Hole. Menaruhnya di alat harian hanya mengundang angka sumber daya terbit dari tempat yang bukan '
+         'tempatnya.</p>')
+B.append(D.tabel(['Alat', 'Cara kerjanya'], [
+    ['<b>Pemeriksaan dig block</b>', 'Dijalankan sebelum dig plan terbit, dua tingkat: <b>CEGAH</b> (lebar minimum '
+     'di bawah batas selektivitas alat, tonase nol, garis saling memotong, poligon tidak tertutup, tanpa tujuan '
+     'material) dan <b>PERIKSA</b> (luas di bawah ambang, kadar kosong, nama ganda). Lebar minimum dihitung '
+     '<i>rotating calipers</i> pada <i>convex hull</i> &mdash; jarak terkecil antara dua garis sejajar yang '
+     'mengapit poligon, bukan perkiraan luas/keliling. Diuji: persegi 10&times;2 m &rarr; tepat 2,00 m; segitiga '
+     'tipis &rarr; tepat 0,50 m'],
+    ['<b>Ringkasan harian</b>', 'Satu halaman untuk flitch aktif: ton dan kadar semua unsur terpilih per material '
+     'dan per tujuan, ditambah rencana (dig block) vs aktual (as-mined flitch itu) bila sudah dihitung'],
+    ['<b>Preset kelas kadar &amp; tujuan</b>', 'Batas kelas, aturan tujuan material, lebar minimum alat dan ambang '
+     'sulfida disimpan sebagai preset bernama di berkas proyek, supaya DS dan NS memakai batas yang sama persis. '
+     'Memakai preset menghitung ulang material &amp; tujuan dig block yang ada (selalu dengan konfirmasi)'],
+    ['<b>Rekap dig block</b>', 'CSV semua flitch kini memuat <b>semua unsur</b> terpilih + Metal tiap unsur + '
+     '<b>centroid</b> poligon (titik berat, bukan titik tengah kotak pembatas) untuk dispatch / fleet system'],
+    ['<b>Pembobotan <code>sb_frac</code></b>', 'Bila block model berasal dari Model Estimation Drill Hole dan pernah '
+     'dipecah di batas solid, tonase &amp; volume ditimbang proporsi volume blok. Tanpa ini block model yang SAMA '
+     'memberi tonase berbeda antara laporan Drill Hole dan Block Model. Pada data latihan (20,1% blok sebagian): '
+     '8,05 juta ton dengan pembobotan vs 10,75 juta ton tanpa']]))
+B.append('<h3>15.2 Laporan periode (mingguan / bulanan)</h3>')
+B.append('<p>Menjumlahkan apa yang benar-benar tergali dari <b>register as-mined</b>: tiap poligon menyimpan '
+         'tanggal, shift (DS / NS), pit, blok, RL flitch, kode ore dan tujuan material; tonase, volume dan kadarnya '
+         'dihitung mesin as-mined dan tersimpan pada poligon itu. Agregasi kadar memakai penimbang tonase yang sama '
+         'dengan register dan PDF rekonsiliasi, sehingga <b>angka laporan periode tidak pernah berbeda dari '
+         'register</b>.</p>')
+B.append(D.bullets(
+    'Periode: minggu ini / minggu lalu / bulan ini / bulan lalu / kustom. Minggu dihitung Senin&ndash;Minggu (ISO).',
+    'Pengelompokan: per tanggal, per minggu, per <b>shift</b>, per flitch, per tujuan material, per kode ore, per pit.',
+    '<b>Target</b> ton (dan kadar) periode &rarr; pencapaian persen, berwarna: hijau &ge; 100%, jingga &ge; 90%, merah di bawahnya.',
+    '<b>Tren</b>: per hari untuk laporan mingguan, per minggu untuk bulanan.',
+    '<b>Pembanding</b> periode sebelumnya dengan panjang yang sama.',
+    'Export CSV memuat tabel, total, target &amp; pencapaian, tren, dan periode pembanding.'))
+B.append('<div class=box><b>Batasan yang disebut terang-terangan di antarmuka.</b> As-mined dihitung per flitch '
+         'aktif, jadi poligon dari flitch yang belum pernah dihitung belum punya tonase. Laporan periode '
+         '<b>tidak</b> menjumlahkannya diam-diam: jumlah poligon seperti itu ditampilkan beserta tombol '
+         '<i>Hitung semua flitch</i>, yang memakai jalur yang sama dengan tombol di panel As-Mined sehingga '
+         'hasilnya identik.</div>')
+B.append('<h3>15.3 Orthofoto resolusi tinggi di plan / flitch</h3>')
+B.append('<p>Latar orthofoto pada Penampang 2D horizontal (termasuk tampilan flitch) dulu dibuat sebagai satu '
+         'JPEG seukuran ortho penuh, dibuat sekali lalu di-cache selamanya. Ortho dibatasi 2,5 juta piksel saat '
+         'import, sehingga pada flitch sempit gambarnya buram dan zoom tidak menolong. Piramida LOD '
+         '(<code>HR.mapImage</code>, sampai 4096 px, dipotong sesuai tampilan) sudah ada tetapi tidak pernah '
+         'dipanggil dari jalur 2D, dan <code>HR.extW</code> tidak pernah terisi karena pemantau zoom hanya '
+         'dipasang untuk Peta &mdash; yang tidak ada di Block Model. Keduanya diperbaiki: latar 2D memakai LOD, '
+         'pemantau zoom sendiri mengisi bentang dunia saat tampilan 2D plan, dan gambar disusun ulang tertunda '
+         'sehingga <b>zoom masuk makin tajam</b>. Node <b>Orthofoto (latar plan / flitch)</b> di bawah Flitch '
+         'Aktif menyediakan nyala/mati, opasitas, dan badge resolusi yang sedang dipakai.</p>')
+
 B.append('<h2>16. Dikerjakan bersama beberapa geologist</h2>')
 B.append('<p>Folder proyek dirancang agar dapat dibuka orang lain: berkas sumber disalin ke dalamnya, dan '
          'basis data proyek menyimpan riwayat perubahan. Yang perlu disepakati di tim:</p>')

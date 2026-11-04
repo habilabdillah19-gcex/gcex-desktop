@@ -15,6 +15,24 @@ Mulai dari mana
 6. Sesar 3D       : SIM_sesar.csv           (post-mineralisasi, offset 12 m)
 7. QAQC           : SIM_qaqc.csv            (CRM, duplikat, blank)
 8. Wireframe      : QV_Lensa2_Leapfrog.obj  (uji import solid dari luar)
+10. Block model + hasil estimasi : SIM_BM_GC_estimasi.csv
+    Sama dengan SIM_BM_GC_kadar.csv, ditambah kolom hasil Model Estimation GC-Ex Drill Hole:
+    est_pass, est_nsamp, est_sor, est_ke, est_nhole, est_spasi, est_type, sb_frac, domain_est.
+    Dipakai di GC-Ex Block Model untuk melatih:
+      - Reporting BM: pembobotan proporsi volume sub-blok (sb_frac). 20,1% blok bernilai < 1,
+        jadi tonase dengan pembobotan jelas lebih kecil daripada tanpa pembobotan.
+      - membaca block model yang berasal dari estimasi Drill Hole.
+    Dibuat ulang dengan: python docs/tutorial-gcex/tambah_est_bm.py  (hasilnya selalu sama).
+    Angka est_* di berkas ini TIRUAN; untuk latihan estimasi sebenarnya pakai GC-Ex Drill Hole.
+
+CARA MELATIH LAPORAN PERIODE (mingguan / bulanan) di GC-Ex Block Model
+    Laporan periode membaca register as-mined, yang poligonnya Anda digitasi sendiri -- jadi tidak
+    bisa disiapkan sebagai berkas. Latihan tercepat:
+      1. Import SIM_BM_GC_kadar.csv, tetapkan flitch, buat beberapa dig block.
+      2. Menu As-Mined: digitasi 2-3 poligon, isi tanggal & shift (DS / NS), jalankan As-Mined.
+      3. Pindah ke flitch di bawahnya, ulangi dengan TANGGAL BERBEDA.
+      4. Project Tree > Register & Laporan As-Mined > Laporan periode: pilih "Bulan ini",
+         kelompokkan per tanggal / shift / flitch. Isi target ton untuk melihat pencapaiannya.
 9. Upsert         : SIM_upsert_*.csv / SIM_upsert2_*.csv  (bor baru tahap 1 & 2, estimasi ulang sebagian)
 
 Set latihan lain

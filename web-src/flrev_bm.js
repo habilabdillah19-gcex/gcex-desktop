@@ -60,13 +60,35 @@
   window.flCalc=function(g){if(!BX.m||!g.db.length)return null;var sig=[BX.ver,lyU().flMode,lyU().gAttr,BX.ui.sgCol,JSON.stringify(afRules()),JSON.stringify(lyU().destR||[]),g.db.map(function(q){return (q.id||'')+':'+q.pts.length+':'+(q.pts[0]||[]).join(',')+':'+q.d+':'+(q.dest||'');}).join(';')].join('|');
     if(FLC[g.k]&&FLC[g.k].sig===sig)return FLC[g.k].r;var L=lyU(),sv={top:L.top,bot:L.bot,fh:L.fh},it=[];
     try{L.top=+g.top;L.fh=+(g.top-g.bot).toFixed(3);L.bot='';it=lyItems(true);}catch(e){console.error(e);}finally{L.top=sv.top;L.bot=sv.bot;L.fh=sv.fh;}
-    var r={it:it.map(function(o){var t=o.ton||{};return{s:o.s,name:o.name,d:o.s.d||'',dest:o.dest||'',area:o.area,t:t.t||0,g:t.grade,af:t.af||[]};}),t:0,m:0,by:{}};
+    /* el / elw ikut disimpan supaya rekap CSV bisa memuat SEMUA unsur terpilih (bukan satu kadar
+       saja), dan centroid poligon dihitung sekali di sini untuk dipakai dispatch / fleet system. */
+    var ctr=function(R){if(!R||R.length<3)return null;var A=0,cx=0,cy=0;
+      for(var i=0,n=R.length;i<n;i++){var a=R[i],b=R[(i+1)%n],f=a[0]*b[1]-b[0]*a[1];A+=f;cx+=(a[0]+b[0])*f;cy+=(a[1]+b[1])*f;}
+      if(Math.abs(A)<1e-9){var sx=0,sy=0;R.forEach(function(q){sx+=q[0];sy+=q[1];});return[sx/R.length,sy/R.length];}
+      return[cx/(3*A),cy/(3*A)];};
+    var r={it:it.map(function(o){var t=o.ton||{},c=ctr(o.r);return{s:o.s,name:o.name,d:o.s.d||'',dest:o.dest||'',area:o.area,t:t.t||0,g:t.grade,af:t.af||[],
+      el:t.el||{},elw:t.elw||{},cx:c?c[0]:NaN,cy:c?c[1]:NaN,ton:t};}),t:0,m:0,by:{}};
     r.it.forEach(function(o){r.t+=o.t;if(isFinite(o.g))r.m+=o.g*o.t;var k=(o.d||'-')+' → '+(o.dest||'-');var b=r.by[k]||(r.by[k]={t:0,m:0,n:0});b.t+=o.t;b.n++;if(isFinite(o.g))b.m+=o.g*o.t;});
     FLC[g.k]={sig:sig,r:r};return r;};
   var tg=function(t,m){return t?N(t)+' t @ '+(m/t).toFixed(2):'0 t';};
   window.flOpen=function(g,then){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+(+g.top).toFixed(3));lyApply();if(then)setTimeout(then,150);};
-  window.flCsvAll=function(){var a=lyGradeAttr(),r=['RL_atas,RL_bawah,Nama,Material,Tujuan,Luas_m2,Ton,'+a+',Metal,Flag'];
-    flGroups().forEach(function(g){var c=flCalc(g);if(!c)return;c.it.forEach(function(o){r.push([g.top,g.bot,'"'+o.name+'"',o.d,o.dest,o.area.toFixed(2),o.t.toFixed(2),isFinite(o.g)?o.g.toFixed(4):'',isFinite(o.g)?(o.g*o.t).toFixed(2):'','"'+o.af.join('; ')+'"'].join(','));});});
+  window.flCsvAll=function(){var a=lyGradeAttr();
+    /* SEMUA unsur yang dicentang di "Elemen laporan" ikut, bukan hanya kadar utama; plus metal tiap
+       unsur yang satuannya memungkinkan, dan centroid poligon untuk dispatch / fleet system. */
+    var EL=(typeof elList==='function'?elList():[a]).filter(Boolean);
+    var MET=EL.filter(function(x){return typeof elMetU==='function'?elMetU(x):false;});
+    var hd=['RL_atas','RL_bawah','Nama','Material','Tujuan','Luas_m2','Ton']
+      .concat(EL.map(function(x){var u=(typeof elUnit==='function'&&elUnit(x))||'';return x+(u?'_'+String(u).replace('/','p').replace('%','pct'):'');}))
+      .concat(MET.map(function(x){return 'Metal_'+x;}))
+      .concat(['Centroid_X','Centroid_Y','Flag']);
+    var r=[hd.join(',')];
+    flGroups().forEach(function(g){var c=flCalc(g);if(!c)return;c.it.forEach(function(o){
+      var gv=function(x){var v=(o.el&&isFinite(o.el[x]))?o.el[x]:(x===a?o.g:NaN);return v;};
+      r.push([g.top,g.bot,'"'+o.name+'"',o.d,o.dest,o.area.toFixed(2),o.t.toFixed(2)]
+        .concat(EL.map(function(x){var v=gv(x);return isFinite(v)?v.toFixed(4):'';}))
+        .concat(MET.map(function(x){var v=gv(x),w=(o.elw&&isFinite(o.elw[x]))?o.elw[x]:o.t;
+          var mm=(typeof elMet==='function')?elMet(x,v,w):(isFinite(v)?v*w:NaN);return isFinite(mm)?mm.toFixed(3):'';}))
+        .concat([isFinite(o.cx)?o.cx.toFixed(2):'',isFinite(o.cy)?o.cy.toFixed(2):'','"'+o.af.join('; ')+'"']).join(','));});});
     var b=new Blob(['﻿'+r.join('\r\n')],{type:'text/csv'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='GCEx_RekapDigBlock_SemuaFlitch.csv';document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(l.href);l.remove();},800);};
   /* ---------- node Project Tree ---------- */
   if(window.PT&&PT.def&&PT.def.nodes){var _nodes=PT.def.nodes;

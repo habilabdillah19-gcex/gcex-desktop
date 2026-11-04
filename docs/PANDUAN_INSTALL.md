@@ -1901,3 +1901,92 @@ waktu mengetik dan mencoba-coba, bukan tanggung jawab geologistnya.
 
 > Diuji di aplikasi sungguhan: **38 pemeriksaan lulus**, tanpa galat JavaScript — termasuk ambang komposit
 > ekstrem (harus dilewati tanpa menyimpan apa pun), jalan normal, dan jaminan tidak menimpa parameter yang ada.
+
+## 84. GC-Ex Block Model 0.24.24 — alat harian grade control & laporan periode
+
+Pemakai GC-Ex Block Model adalah **Junior Grade Control** dan **Short Term / Junior Mine Planner**, jadi seluruh
+tambahan ini ditujukan pada *Daily Ore Mining & Grade Control*. Reporting Block Model **tidak** memuat klasifikasi
+sumber daya (Measured / Indicated / Inferred) maupun pengelompokan per domain estimasi — keduanya tetap di GC-Ex
+Drill Hole, karena itu ranah pemodelan & estimasi.
+
+### 1. Pemeriksaan dig block (node baru, di bawah Dig Block)
+Dijalankan **sebelum dig plan terbit**, dua tingkat:
+
+| Temuan | Tingkat |
+|---|---|
+| Lebar minimum di bawah batas selektivitas alat | **CEGAH** |
+| Tonase nol (poligon tidak memuat blok) | **CEGAH** |
+| Garis saling memotong (poligon menyilang) | **CEGAH** |
+| Poligon tidak tertutup | **CEGAH** |
+| Tanpa tujuan material | **CEGAH** |
+| Luas di bawah ambang | PERIKSA |
+| Kadar kosong (blok −99 / atribut belum dipilih) | PERIKSA |
+| Nama dipakai lebih dari sekali | PERIKSA |
+
+Lebar minimum dihitung **rotating calipers pada convex hull** — jarak terkecil antara dua garis sejajar yang
+mengapit poligon, bukan perkiraan luas÷keliling. Diuji: persegi 10 × 2 m → tepat **2,00 m**; segitiga tipis →
+tepat **0,50 m**. Flitch aktif atau semua flitch, dengan export CSV.
+
+> Dua pemeriksaan jarang berbunyi pada pengaturan bawaan, dan itu wajar: *tanpa tujuan material* hanya mungkin bila
+> materialnya tidak cocok aturan tujuan mana pun **dan** tujuan cadangan kosong; *nama ganda* hanya mungkin bila
+> template nama tidak memuat `{NO}`. Keduanya tetap diperiksa untuk menjaga keadaan yang tidak biasa.
+
+### 2. Ringkasan harian flitch aktif (node baru, di bawah Laporan Grade × Tonnage)
+Satu halaman: ton & kadar **semua unsur terpilih** per material dan per tujuan, jumlah dig block, lalu **rencana
+(dig block) vs aktual (as-mined)** bila as-mined flitch itu sudah dihitung. Export CSV.
+
+### 3. Preset kelas kadar & tujuan (node baru, di bawah Dig Block)
+Batas kelas kadar, aturan tujuan material, **lebar minimum alat** dan ambang sulfida disimpan sebagai preset
+bernama di berkas proyek — supaya shift siang dan malam, dan antar orang, memakai batas yang sama persis. Memakai
+preset menghitung ulang material & tujuan dig block yang ada, selalu dengan konfirmasi.
+
+### 4. Laporan periode mingguan / bulanan (node baru, di bawah Register & Laporan As-Mined)
+Menjumlahkan apa yang **benar-benar tergali** dari register as-mined.
+
+| | |
+|---|---|
+| **Periode** | Minggu ini · Minggu lalu · Bulan ini · Bulan lalu · Kustom (minggu Senin–Minggu, ISO) |
+| **Kelompokkan** | per tanggal, minggu, **shift (DS / NS)**, flitch, tujuan material, kode ore, pit |
+| **Isi** | jumlah poligon, ton, BCM, kadar semua unsur — kadar **ditimbang tonase** |
+| **Target** | isi target ton (dan kadar) → pencapaian %, hijau ≥ 100%, jingga ≥ 90%, merah di bawahnya |
+| **Tren** | per hari untuk mingguan, per minggu untuk bulanan |
+| **Pembanding** | periode sebelumnya, panjang sama, beserta selisih ton & persen |
+| **Export** | CSV: tabel, total, target & pencapaian, tren, periode pembanding |
+
+Kadar dijumlahkan dengan mesin yang sama dengan register dan PDF rekonsiliasi, jadi **angkanya tidak pernah
+berbeda dari register**.
+
+> **Batasan yang disebut terang-terangan.** As-mined dihitung per flitch aktif, jadi poligon dari flitch yang belum
+> pernah dihitung belum punya tonase. Laporan **tidak** menjumlahkannya diam-diam: jumlahnya ditampilkan beserta
+> tombol **Hitung semua flitch** (jalur yang sama dengan tombol di panel As-Mined). Bereskan angka itu menjadi nol
+> sebelum laporan dikirim.
+
+### 5. Orthofoto resolusi tinggi di plan / flitch
+Latar orthofoto pada penampang horizontal dulu satu JPEG seukuran ortho penuh, dibuat sekali lalu dipakai terus;
+ortho dibatasi 2,5 juta piksel saat import, sehingga di flitch sempit buram dan zoom tidak menolong. Piramida LOD
+(sampai 4096 px, dipotong sesuai tampilan) **sudah ada** tetapi tidak pernah dipanggil dari jalur 2D, dan bentang
+dunia tampilan tidak pernah terisi karena pemantau zoom hanya dipasang untuk Peta — yang tidak ada di Block Model.
+Keduanya diperbaiki: **zoom masuk sekarang makin tajam**. Node **Orthofoto (latar plan / flitch)** di bawah Flitch
+Aktif: nyala/mati, opasitas 100/75/50/25%, dan badge resolusi yang sedang dipakai.
+
+### 6. Rekap dig block: multi-unsur, Metal, centroid
+Rekap semua flitch (CSV) dulu hanya satu kolom kadar. Sekarang memuat **semua unsur** yang dicentang di *Elemen
+laporan*, **Metal** tiap unsur yang satuannya memungkinkan, serta **Centroid_X / Centroid_Y** (titik berat poligon)
+untuk dispatch / fleet system.
+
+### 7. Pembobotan proporsi sub-blok (`sb_frac`)
+Bila block model berasal dari Model Estimation GC-Ex Drill Hole dan pernah dipecah di batas solid, tonase dan
+volume di Reporting **ditimbang proporsi volume blok**. Tanpa ini block model yang **sama** memberi tonase
+**berbeda** antara laporan Drill Hole dan Block Model. Pada data latihan `SIM_BM_GC_estimasi.csv` (20,1% blok
+sebagian): **8,05 juta ton** dengan pembobotan vs **10,75 juta ton** tanpa. Pilihannya hanya muncul bila atributnya
+ada dan bisa dimatikan (blok dihitung utuh, cara Surpac).
+
+### 8. Data latihan baru
+`data/SIM_BM_GC_estimasi.csv` — block model latihan + kolom hasil Model Estimation (`est_pass`, `est_nsamp`,
+`est_sor`, `est_ke`, `est_type`, **`sb_frac`**, `domain_est`), dibuat ulang dengan
+`python docs/tutorial-gcex/tambah_est_bm.py` (hasilnya selalu sama). `data/BACA_SAYA.txt` juga memuat langkah
+melatih laporan periode, karena poligon as-mined harus didigitasi sendiri dan tidak bisa disiapkan sebagai berkas.
+
+> Diuji di aplikasi sungguhan: **60 + 14 pemeriksaan lulus**, tanpa galat JavaScript. Tes pertama sempat lulus
+> dengan `nDb: 0` — pemeriksaan dig block belum pernah dijalankan pada dig block sungguhan; tes kedua menyuntikkan
+> empat dig block yang sengaja dibuat cacat dan membuktikan ketujuh aturannya memicu.
