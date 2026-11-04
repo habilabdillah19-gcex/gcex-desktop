@@ -37,9 +37,26 @@ def note(k,v):
 try:urllib.request.urlopen(P,timeout=2)
 except Exception:subprocess.Popen([sys.executable,'-m','http.server',str(PORT)],cwd=DIST,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
 DISMISS="[...document.querySelectorAll('button')].filter(b=>b.offsetParent&&/^(Mengerti|OK|Tutup)$/.test(b.textContent.trim())&&b.closest('[class*=dlg],[class*=modal],[id*=Dlg],[id*=dlg],[role=dialog]')).forEach(b=>b.click())"
+ARGS=['--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']
+CTXO=dict(viewport={'width':1600,'height':940},device_scale_factor=1.25,accept_downloads=True)
+# GCEX_SHOTS_PERSISTENT=1 -> tiap context dibuat sebagai profil tetap (user-data-dir sendiri).
+# Perlu di kontainer Linux: folder proyek ditiru dengan OPFS (navigator.storage.getDirectory),
+# dan OPFS tidak tersedia di context sementara sehingga renderer-nya mati saat tombol folder
+# proyek diklik. Di Windows (jalur CI yang sudah terbukti) biarkan kosong -> perilaku lama.
+PERSIST=os.environ.get('GCEX_SHOTS_PERSISTENT')
 with sync_playwright() as pw:
-    br=pw.chromium.launch(args=['--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'])
-    ctx=br.new_context(viewport={'width':1600,'height':940},device_scale_factor=1.25,accept_downloads=True)
+    _bersih=[]
+    if PERSIST:
+        import tempfile, shutil, atexit
+        br=None
+        def mkctx():
+            d=tempfile.mkdtemp(prefix='gcex_shots_');_bersih.append(d)
+            return pw.chromium.launch_persistent_context(d,args=ARGS,**CTXO)
+        atexit.register(lambda:[shutil.rmtree(d,ignore_errors=True) for d in _bersih])
+    else:
+        br=pw.chromium.launch(args=ARGS)
+        def mkctx(): return br.new_context(**CTXO)
+    ctx=mkctx()
     ctx.add_init_script(MOCK);pg=ctx.new_page();errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)[:300]))
     pg.on('dialog',lambda d:(d.accept('Habil') if d.type=='prompt' else d.accept()))
@@ -333,7 +350,7 @@ with sync_playwright() as pw:
     except Exception as e:
         note('err024',str(e)[:400]);print('GAGAL bagian 0.24:',e,flush=True)
     # 17. vein bercabang (proyek terpisah, data SIM_split_*)
-    ctx2=br.new_context(viewport={'width':1600,'height':940},device_scale_factor=1.25,accept_downloads=True)
+    ctx2=mkctx()
 
     ctx2.add_init_script(MOCK.replace('Proyek_Tutorial_VeinA','Proyek_Tutorial_Split'));pg=ctx2.new_page();pg.on('pageerror',lambda e:errs.append(str(e)[:300]));pg.on('dialog',lambda d:(d.accept('Habil') if d.type=='prompt' else d.accept()))
     pg.goto(P);pg.wait_for_timeout(900)
@@ -363,4 +380,4 @@ with sync_playwright() as pw:
     ev("uiTab('ME');ME.opt.add=true;meRun()");pg.wait_for_function("!ME.job",timeout=600000);pg.wait_for_timeout(500)
     note('splitMe',ev("ME.store.runs.map(q=>({dom:q.dom,nIn:q.nIn,nEst:q.nEst,nAdd:q.nAddC,nComp:q.nComp}))"));shot('split_me',PANEL)
     print('ERR',errs);json.dump(NOTES,open(IMG+'notes.json','w'),indent=1,ensure_ascii=False)
-    br.close()
+    (br.close() if br else (ctx.close(), ctx2.close()))
