@@ -1,6 +1,32 @@
 
 CH = []
 def ch(title, body, key=None): CH.append((title, body))
+
+# Urutan terbit disusun ulang (0.24.33) mengikuti urutan node Project Tree / langkah kerja nyata
+# grade control dengan block model. Bab di bawah boleh ditulis dalam urutan apa saja; daftar inilah
+# yang menentukan urutannya di PDF. Setiap entri = awal judul bab (unik).
+BAGIAN = [
+ ('Bagian I &middot; Persiapan &amp; data',
+  'Menyiapkan proyek, memasukkan block model hasil estimasi, dan mengenali tampilannya. Dikerjakan '
+  'sekali di awal, lalu hanya diulang saat block model periode berikutnya terbit.',
+  ['Tentang tutorial ini', 'Data latihan', 'Halaman muka &amp; import block model', 'Mengenal tampilan']),
+ ('Bagian II &middot; Flitch &amp; dig block',
+  'Inti pekerjaan harian grade control: memilih flitch yang sedang ditambang, membentuk <b>dig block</b>, '
+  'merapikannya, lalu menerbitkan dig plan untuk operasi. Urutannya mengikuti node Project Tree.',
+  ['Flitch aktif &amp; Sayatan 2D', 'Dig block otomatis', 'Additional flagging', 'Digit manual &amp; rekap string',
+   'Review flitch per flitch', 'Layout &amp; ekspor dig plan']),
+ ('Bagian III &middot; Pelaporan grade &times; tonase',
+  'Melaporkan tonase dan kadar dari block model dengan <i>constraint</i> &mdash; di bawah topografi, di dalam '
+  'desain pit, per bench, per kategori, per cut-off.',
+  ['Laporan grade']),
+ ('Bagian IV &middot; As-mined &amp; rekonsiliasi',
+  'Membandingkan rencana dengan aktual: permukaan as-mined, register pekerjaan, dan rekonsiliasi flitch per '
+  'flitch antara dig plan dan material yang benar-benar tergali.',
+  ['As-mined', 'Register, 3D hasil kerja']),
+ ('Bagian V &middot; Pembaruan',
+  'Ringkasan yang baru pada versi terakhir, untuk pembaca yang sudah memakai versi sebelumnya.',
+  ['Yang baru di 0.24']),
+]
 R1, R0 = N['rekap'][1], N['rekap'][0]
 AV = N['am_vs'][1]
 def fN(v, d=0): return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.', ',').replace('X', '.')

@@ -57,8 +57,36 @@ def kv(rows): return '<table class="kv">' + ''.join('<tr><td>%s</td><td>%s</td><
 
 exec(open(os.path.join(HERE, 'bm_bab.py'), encoding='utf-8').read())
 # ================= HTML =================
-toc = ''.join('<li><span>%d. %s</span></li>' % (i, t) for i, (t, _) in enumerate(CH))
-body = ''.join('<section class="ch"><h2><span>%d</span>%s</h2>%s</section>' % (i, t, b) for i, (t, b) in enumerate(CH))
+# ---------- urutan terbit per BAGIAN (lihat bm_bab.py) ----------
+_sisa = dict(CH)
+URUT = []
+_no = [0]
+for jt, ji, daftar in BAGIAN:
+    URUT.append((None, jt, ji, None))
+    for awal in daftar:
+        t_, b_ = None, None
+        for k in list(_sisa):
+            if k.startswith(awal.replace('&amp;', '&')) or k.startswith(awal):
+                t_, b_ = k, _sisa.pop(k); break
+        if t_ is None: continue        # bab opsional
+        _no[0] += 1
+        URUT.append((_no[0], jt, t_, b_))
+if _sisa:
+    print('PERINGATAN: bab belum masuk BAGIAN, ditempel di bagian terakhir:', ', '.join(_sisa))
+    for k in list(_sisa):
+        _no[0] += 1
+        URUT.append((_no[0], BAGIAN[-1][0], k, _sisa.pop(k)))
+NOMOR = {t_: n for n, _, t_, b_ in URUT if b_ is not None}
+
+toc = ''
+for n, jt, t_, b_ in URUT:
+    toc += ('<li class="pt">%s</li>' % jt) if b_ is None else ('<li><span>%d. %s</span></li>' % (n, t_))
+body = ''
+for n, jt, t_, b_ in URUT:
+    if b_ is None:
+        body += '<section class="part"><div><div class="lbl">%s</div><p>%s</p></div></section>' % (jt, t_)
+    else:
+        body += '<section class="ch"><div class="bag">%s</div><h2><span>%d</span>%s</h2>%s</section>' % (jt, n, t_, b_)
 today = datetime.date.today()
 bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][today.month-1]
 HTML = f'''<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Tutorial GC-Ex: Pemodelan Vein & Estimasi Block Model</title>
@@ -75,6 +103,11 @@ code{{font-family:'DejaVu Sans Mono',monospace;font-size:8.6pt;background:#f1f3f
 .cover .sub{{font-size:12pt;opacity:.85}}
 .cover .img{{padding:0 6mm}}.cover .img img{{width:100%;border:1px solid var(--ln);border-radius:4px}}
 .cover .meta{{color:var(--mu);font-size:9.5pt;padding:0 6mm}}
+.toc li.pt{{border:0;padding:4mm 0 1mm;font-size:11pt;font-weight:700;color:var(--nv);border-bottom:2px solid var(--ac)}}
+.part{{page-break-before:always;height:200mm;display:flex;align-items:center;justify-content:center;text-align:center}}
+.part .lbl{{font-size:20pt;font-weight:700;color:var(--nv);border-bottom:3mm solid var(--ac);display:inline-block;padding-bottom:3mm;margin-bottom:6mm}}
+.part p{{max-width:120mm;margin:0 auto;color:var(--mu);font-size:10.5pt;line-height:1.6;text-align:left}}
+.ch .bag{{font-size:8.2pt;letter-spacing:.6px;text-transform:uppercase;color:var(--mu);margin:0 0 1.5mm}}
 .toc{{page-break-after:always}}.toc h2{{font-size:16pt;color:var(--nv);border-bottom:2px solid var(--ac);padding-bottom:2mm}}
 .toc ol{{list-style:none;padding:0;columns:1}}.toc li{{padding:1.6mm 0;border-bottom:1px dotted var(--ln);font-size:10.5pt}}
 .ch{{page-break-before:always}}
@@ -113,8 +146,8 @@ Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya lati
 {body}
 </body></html>'''
 def _bab(m):
-    for i,(t,_) in enumerate(CH):
-        if t.startswith(m.group(1)):return 'Bab %d'%i
+    for t_, n in NOMOR.items():
+        if t_.startswith(m.group(1)): return 'Bab %d' % n
     raise KeyError(m.group(1))
 HTML = re.sub(r'\{\{?B:([^}]+)\}\}?', _bab, HTML)
 HTML = re.sub(r'\[\[(\w+)\]\]', lambda m: 'Gambar %d' % FNUM[m.group(1)], HTML)

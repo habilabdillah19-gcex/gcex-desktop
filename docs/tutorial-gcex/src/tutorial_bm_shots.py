@@ -35,8 +35,19 @@ def note(k, v):
 try: urllib.request.urlopen(P, timeout=2)
 except Exception: subprocess.Popen([sys.executable, '-m', 'http.server', str(PORT)], cwd=R + 'app/', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
 with sync_playwright() as pw:
-    br = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
-    ctx = br.new_context(viewport={'width': 1600, 'height': 940}, device_scale_factor=1.25, accept_downloads=True)
+    _args = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+    _o = dict(viewport={'width': 1600, 'height': 940}, device_scale_factor=1.25, accept_downloads=True)
+    # GCEX_SHOTS_PERSISTENT=1: profil tetap, perlu di Linux karena folder proyek ditiru dengan OPFS
+    # yang tidak tersedia di context sementara (lihat tutorial_shots.py).
+    if os.environ.get('GCEX_SHOTS_PERSISTENT'):
+        import tempfile, shutil, atexit
+        _ud = tempfile.mkdtemp(prefix='gcex_bm_shots_')
+        atexit.register(lambda: shutil.rmtree(_ud, ignore_errors=True))
+        br = None
+        ctx = pw.chromium.launch_persistent_context(_ud, args=_args, **_o)
+    else:
+        br = pw.chromium.launch(args=_args)
+        ctx = br.new_context(**_o)
     ctx.add_init_script(MOCK); pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
     pg.on('dialog', lambda d: (d.accept('Habil') if d.type == 'prompt' else d.accept()))
@@ -117,5 +128,5 @@ with sync_playwright() as pw:
     ev("if(window.am3Toggle)am3Toggle(true)"); pg.wait_for_timeout(2500); ev("if(VIEW2D)toggle2D();setCam(1.2,-1.4,0.9)"); pg.wait_for_timeout(2500); shot('hasil_kerja_3d')
     note('errs', errs)
     json.dump(NOTES, open(IMG + 'notes.json', 'w'), ensure_ascii=False, indent=1)
-    br.close()
+    (br.close() if br else ctx.close())
 print('selesai', SEQ[0], 'gambar')
