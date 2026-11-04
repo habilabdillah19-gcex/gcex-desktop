@@ -1592,7 +1592,7 @@ Kegagalan memindahkan tag tidak lagi menggagalkan penerbitan; ia hanya memunculk
 Melengkapi penyusun filter (bagian 77) dengan bagian yang masih kurang.
 
 ### 1. Tombol cepat topografi
-Dua tombol di panel **Data & Filter**: **Hanya di bawah topografi** dan **Hanya di atas topografi**. Dinilai **per interval dari titik tengahnya** terhadap topografi aktif. Menekan tombol yang berlawanan tidak menumpuk aturan — ia membalik aturan yang sama.
+Dua tombol cepat: **Hanya di bawah topografi** dan **Hanya di atas topografi** (sejak 0.24.30 ada di menu node **Filter data bor** di Project Tree dan di dialog *Atur filter…*; sebelumnya di panel **Data & Filter**). Dinilai **per interval dari titik tengahnya** terhadap topografi aktif. Menekan tombol yang berlawanan tidak menumpuk aturan — ia membalik aturan yang sama.
 
 ### 2. Aturan posisi di penyusun filter
 Selain atribut dan kampanye, aturan kini bisa menilai **posisi** titik tengah interval:
@@ -1635,3 +1635,37 @@ Topografi miring `z = 300 − 0,2x`; bor A (collar RL 310 di x = 0, topo 300) da
 
 ### Cara mematikan filter
 Tiga cara, semuanya di panel **Data & Filter**: hapus centang **Filter aktif** (aturannya tersimpan untuk dipakai lagi), tekan **Hapus semua & matikan**, atau hapus aturan satu per satu dengan tombol **×** — filter mati sendiri saat aturan terakhir hilang.
+
+## 80. GC-Ex Drill Hole Ultimate 0.24.30 — menu filter pindah ke Project Tree
+
+Penyusun filter (bagian 77 dan 79) dulu berupa kotak tetap di panel **Data & Filter**. Dengan beberapa aturan,
+panel itu menjadi panjang sehingga harus digulung naik-turun terus. Isinya sekarang dipindah ke **Project Tree**.
+
+### 1. Node baru: Filter data bor
+Di Project Tree, di bawah **Database Bor** (paling bawah, sesudah tabel dan rencana bor):
+
+| Bagian node | Fungsi |
+|---|---|
+| **Centang** | Menghidupkan / mematikan filter **tanpa menghapus aturan** (muncul setelah ada minimal satu aturan) |
+| **Badge** | `AND · 3 aturan · 12 hole` saat aktif, atau `3 aturan (mati)` saat dimatikan |
+| **Anak node** | Satu baris per aturan, mis. `Au (assay) ≥ 0.8` atau `Posisi → topografi aktif di bawah`; menunya memuat *Hapus aturan ini* |
+| **Menu node** | *Atur filter…*, tombol cepat topografi, *Export data terfilter* (.xlsx / CSV), *Matikan filter*, *Hapus semua aturan* |
+
+### 2. Dialog Atur filter…
+Menu **Atur filter…** (atau klik salah satu anak node lalu *Atur filter…*) membuka dialog tersendiri berisi
+penyusun aturan yang sama seperti sebelumnya: pilihan mode **AND / OR**, daftar aturan (atribut, operator, nilai
+atau rentang `antara`), tombol **+ Aturan**, dan tombol cepat topografi. Kaki dialog menampilkan ringkasan
+*"… dari … interval · … dari … hole lolos"* yang ikut berubah setiap kali aturan diubah.
+
+### 3. Cara mematikan filter
+Tiga jalan, semuanya setara:
+
+1. **Lepas centang** node *Filter data bor* — aturan tetap tersimpan dan bisa dihidupkan lagi kapan saja.
+2. Menu node → **Matikan filter (aturan disimpan)**.
+3. Menu node → **Hapus semua aturan** (filter mati dan aturannya hilang).
+
+Saat filter mati, node tampil samar dan `domOK()` kembali meloloskan seluruh data — tampilan, statistik,
+komposit, Geostatistik dan estimasi otomatis memakai semua interval lagi.
+
+> Catatan: aturan filter tetap ikut tersimpan di berkas proyek (`.dh3d` / folder proyek), termasuk status
+> hidup-matinya, sehingga keadaan filter kembali seperti saat proyek ditutup.

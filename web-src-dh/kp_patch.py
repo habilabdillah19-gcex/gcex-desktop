@@ -21,7 +21,8 @@ def _tree_body(s: str) -> str:
     b = ("          menu:function(){return[{t:'Export CSV plan bor',fn:A('plExport')},{sep:1},"
          "{t:'Hapus semua titik rencana',danger:1,fn:A('plClear')}];}}]};}")
     assert s.count(b) == 1, 'akhir kids node Database Bor tidak ditemukan tepat satu kali'
-    s = s.replace(b, b[:-4] + "])};}")
+    # 0.24.30: node "Filter data bor" (fq_dh.js) ikut masuk ke kids, di urutan paling bawah.
+    s = s.replace(b, b[:-4] + "]).concat(window.fqTree?fqTree():[])};}")
 
     # ---- titik ANALISIS dialihkan dari visHoles() ke visHolesK() (set kerja saja).
     # visHoles() tetap daftar TAMPIL supaya bor referensi masih tergambar di 3D / sayatan.

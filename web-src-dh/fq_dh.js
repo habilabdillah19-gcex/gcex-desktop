@@ -248,11 +248,11 @@
   function ubah(diam) {
     FQ.ver++; _hvV = -1;
     if (window.SA && SA.dirty) SA.dirty();
-    panel();
+    try { panel(); ringkas(); } catch (e) { console.error(e); }
+    try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
     if (!diam) {
       try { if (window.updatePlot) updatePlot(); } catch (e) {}
       try { if (window.gsRun && window.GS && GS.open) gsRun(); } catch (e) {}
-      try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
     }
   }
   window.fqUbah = ubah;
@@ -277,19 +277,13 @@
     ubah();
   };
 
+  /* 0.24.30: isi dialog, bukan kotak tetap di panel Data & Filter. Kotak lama membuat panel itu
+     panjang dan harus digulung terus; sekarang pintunya ada di node Project Tree "Filter data bor". */
   function panel() {
-    var box = document.getElementById('fqBox');
-    if (!box) {
-      var host = document.getElementById('pData');
-      if (!host) return;
-      box = document.createElement('div');
-      box.id = 'fqBox'; box.className = 'box';
-      box.style.marginTop = '8px';
-      host.appendChild(box);
-    }
+    var box = document.getElementById('fqBody');
+    if (!box) return;
     var L = katalog(), C = aktif() ? hitung() : null;
-    var h = '<div class=cmh>Filter data bor (AND / OR)</div>' +
-      '<label class=sw><input type=checkbox ' + (FQ.on ? 'checked' : '') + ' onchange="fqOn(this.checked)">Filter aktif</label>';
+    var h = '<label class=sw><input type=checkbox ' + (FQ.on ? 'checked' : '') + ' onchange="fqOn(this.checked)">Filter aktif</label>';
     if (!FQ.R.length) h += '<div class=hint>Belum ada aturan. Filter menilai tiap <b>interval</b>; sebuah hole ikut tampil bila sedikitnya satu intervalnya lolos. Berlaku juga di statistik, Geostatistik dan komposit.</div>';
     else h += '<div class=f style="margin:4px 0"><label>Gabungan aturan</label><select onchange="fqMode(this.value)">' +
       '<option value=AND' + (FQ.mode !== 'OR' ? ' selected' : '') + '>Semua aturan harus terpenuhi (AND)</option>' +
@@ -327,6 +321,71 @@
     box.innerHTML = h;
   }
   window.fqPanel = panel;
+
+  function ringkas() {
+    var m = document.getElementById('fqMsg'); if (!m) return;
+    var C = aktif() ? hitung() : null;
+    m.innerHTML = C ? ('<b>' + C.nL.toLocaleString('id-ID') + '</b> dari ' + C.nI.toLocaleString('id-ID') +
+                       ' interval &middot; <b>' + C.nH + '</b> dari ' + C.nHt + ' hole lolos')
+                    : (FQ.R.length ? 'Aturan tersimpan, tetapi filter sedang mati.' : 'Belum ada aturan.');
+  }
+
+  /* ---------- dialog ---------- */
+  window.fqDlg = function () {
+    var d = document.getElementById('fqDlg');
+    if (!d) { d = document.createElement('div'); d.id = 'fqDlg'; d.className = 'bxdlg'; document.body.appendChild(d); }
+    d.innerHTML = '<div class=impBox style=width:min(840px,100%)><div class=impHead><div class=impBrand><div><b>Filter data bor</b>' +
+      '<small>Aturan AND / OR atas atribut yang sudah ada di GC-Ex &mdash; unsur, kategori assay, atribut geologi, kampanye, data collar, interval, dan posisi terhadap topografi / DTM / solid / wireframe / poligon. Dinilai per interval.</small>' +
+      '</div></div><button class="ib ghost" onclick="fqClose()">Tutup</button></div>' +
+      '<div class=impBody id=fqBody></div>' +
+      '<div class=impFoot><div id=fqMsg class=hint></div><button class=ib onclick="fqClose()">Selesai</button></div></div>';
+    d.style.display = 'flex';
+    panel(); ringkas();
+  };
+  window.fqClose = function () {
+    var d = document.getElementById('fqDlg'); if (d) d.style.display = 'none';
+    try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
+  };
+
+  /* ---------- node Project Tree ---------- */
+  window.fqTree = function () {
+    var n = FQ.R.length, C = aktif() ? hitung() : null, aTopo = typeof window.topoZ !== 'function';
+    var kids = FQ.R.map(function (r, i) {
+      var F = fieldOf(r.f), OP = opsOf(F), on = r.op;
+      OP.forEach(function (o) { if (o[0] === r.op) on = o[1]; });
+      var v = (r.op === 'nn' || r.op === 'nl' || (F && F.p)) ? ''
+            : r.op === 'bt' ? ' ' + (r.a === '' ? '?' : r.a) + ' \u2026 ' + (r.b === '' ? '?' : r.b)
+            : ' ' + (r.a === '' || r.a == null ? '(kosong)' : r.a);
+      return { id: 'fq.r' + i, t: (F ? F.t : r.f) + ' ' + on + v, ic: 'attr', dim: !FQ.on,
+               menu: function () {
+                 return [{ t: 'Atur filter\u2026', fn: function () { fqDlg(); } }, { sep: 1 },
+                         { t: 'Hapus aturan ini', danger: 1, fn: function () { fqDel(i); } }];
+               } };
+    });
+    return [{
+      id: 'db.fq', t: 'Filter data bor', ic: 'gear', fold: 1, tab: 'Data',
+      b: n ? (FQ.on ? FQ.mode + ' \u00b7 ' + n + ' aturan' + (C ? ' \u00b7 ' + C.nH + ' hole' : '') : n + ' aturan (mati)') : '',
+      dim: !aktif(),
+      chk: n ? FQ.on : undefined, onChk: function (v) { fqOn(v); },
+      hint: aktif() ? 'Aktif \u2014 berlaku di tampilan, statistik, komposit, Geostatistik dan estimasi'
+                    : 'Tidak aktif \u2014 seluruh data dipakai',
+      menu: function () {
+        return [
+          { t: 'Atur filter\u2026 (aturan AND / OR)', fn: function () { fqDlg(); } },
+          { sep: 1 }, { h: 'Tombol cepat' },
+          { t: 'Hanya di bawah topografi', dis: aTopo, fn: function () { fqTopo('bw'); } },
+          { t: 'Hanya di atas topografi', dis: aTopo, fn: function () { fqTopo('at'); } },
+          { sep: 1 },
+          { t: 'Export data terfilter (.xlsx)\u2026', dis: !aktif(), fn: function () { fqExport('xlsx'); } },
+          { t: 'Export data terfilter (CSV)\u2026', dis: !aktif(), fn: function () { fqExport('csv'); } },
+          { sep: 1 },
+          { t: FQ.on ? 'Matikan filter (aturan disimpan)' : 'Aktifkan filter', dis: !n, fn: function () { fqOn(!FQ.on); } },
+          { t: 'Hapus semua aturan', danger: 1, dis: !n, fn: function () { fqClr(); } }
+        ];
+      },
+      kids: kids
+    }];
+  };
 
   /* ---------- tombol cepat topografi ---------- */
   window.fqTopo = function (arah) {
@@ -477,5 +536,5 @@
     };
   }
 
-  setTimeout(panel, 700);
+  /* tidak ada lagi kotak tetap di panel Data & Filter: pintunya ada di node Project Tree */
 })();
