@@ -99,7 +99,8 @@ BAGIAN = [
   '<b>semua tipe deposit</b>; pembaca jalur laterit dirujuk ke sini dari Bagian III.',
   ['Geomodeller Vein: membuat domain vein', 'Flag otomatis dari kadar', 'Koreksi flag secara interaktif',
    'String kontrol hanging wall', 'Membangun solid vein', 'Struktur geologi', 'Sesar 3D',
-   'Vein bercabang', 'Memakai wireframe dari Leapfrog', 'Filter domain &amp; statistik',
+   'Vein bercabang', 'Memakai wireframe dari Leapfrog', 'Wireframe Leapfrog menjadi domain',
+   'Filter domain &amp; statistik',
    'Domain aktif di Geostatistik', 'Variogram, anisotropi', 'Kriging Neighbourhood Analysis',
    'Uji estimasi &amp; simpan parameter', 'Block model dari nol', 'Sub-blocking',
    'Model Estimation: estimasi block model GC', 'Estimasi waste',
@@ -424,6 +425,49 @@ ch('Menambah bor infill dengan upsert', '<p><b>Upsert</b> = tambah atau perbarui
    f"Klik <b>&#10148;&#10148; Semua section</b> lagi: <b>{clean(N['strUpd'])}</b>")
  + fig('upsert_string_baru', f"Section tengah setelah infill: string QV_Lensa2 diperbarui melewati kontak bor baru dan solid ikut diperbarui otomatis ({clean(N['solidInfillMsg'])}): volume QV_Lensa2 {fN(SOLI['QV_Lensa2'][1])} m&sup3;, {SOLI['QV_Lensa2'][8]}/{SOLI['QV_Lensa2'][8]} interval flag di dalam solid.")
  + why('String yang pernah diedit manual dilewati (tidak ditimpa) supaya interpretasi geologist tidak hilang. Hapus tanda edit atau edit lagi secara manual bila memang perlu diubah.'))
+
+ch('Wireframe Leapfrog menjadi domain GC-Ex', '<p>Pekerjaan yang paling sering terjadi di tambang: model implicit dibuat rekan Anda di <b>Leapfrog Geo</b>, lalu <b>Anda</b> yang melanjutkannya di GC-Ex &mdash; memperbarui bentuknya setiap ada bor grade control baru. GC-Ex menerima wireframe itu dan menjadikannya <b>domain miliknya sendiri</b> yang bisa diedit, bukan benda asing yang sekadar ditumpangkan.</p>'
+ + '<h3>Dua mode, dua tujuan berbeda</h3>'
+ + '<table class="t"><tr><th></th><th>Mode B &mdash; <b>diserap</b></th><th>Mode A &mdash; <b>eksak</b></th></tr>'
+ + '<tr><td>Bentuk solid</td><td>rekonstruksi; kesetiaan diatur spasi section</td><td><b>identik</b> dengan mesh Leapfrog</td></tr>'
+ + '<tr><td>Bisa diedit di GC-Ex</td><td><b>ya</b> &mdash; jadi string kontrol HW / FW</td><td>tidak</td></tr>'
+ + '<tr><td>Ikut berubah saat ada bor baru</td><td><b>ya</b> (lewat Autorun Wireframe)</td><td>tidak &mdash; harus balik ke Leapfrog</td></tr>'
+ + '<tr><td>Untuk apa</td><td><b>kerja harian</b>: melanjutkan model orang lain</td><td><b>audit</b>: membandingkan tonase batas Leapfrog vs solid GC-Ex</td></tr></table>'
+ + '<p>Keduanya ada di node <b>Wireframe luar (Leapfrog / Surpac)</b> di bawah Geomodeller Vein.</p>'
+ + '<h3>Mode B &mdash; satu perintah</h3>'
+ + steps('<b>Data Referensi</b> &rarr; import wireframe-nya (<code>.msh</code>, <code>.obj</code>, <code>.dxf</code>, atau <code>.dtm</code> + <code>.str</code> Surpac).',
+         'Node <b>Wireframe luar</b> &rarr; <b>Serap wireframe &rarr; domain&hellip;</b>',
+         'Isi tiga hal saja: <b>wireframe mana</b>, <b>spasi section</b>, dan <b>nama domain</b> (kosongkan untuk ikut nama berkasnya).',
+         'Tekan <b>Serap sekarang</b>.')
+ + '<p>Yang dikerjakan GC-Ex, berurutan, dan semuanya dilaporkan:</p>'
+ + kv([('0. Wireframe', 'jumlah segitiga, <b>volume mesh</b>, dan apakah <b>tertutup rapat</b>'),
+       ('1. Domain', 'dibuat baru, atau dipakai ulang bila namanya sudah ada (= serap ulang)'),
+       ('2. Flag interval bor', 'interval yang titik tengahnya <b>di dalam</b> wireframe di-flag ke domain itu'),
+       ('3. Section', '<b>strike wireframe</b> dihitung dari verteksnya, section dipasang <b>tegak lurus strike</b>'),
+       ('4. String kontrol', 'tiap irisan tertutup dibelah menjadi string <b>HW</b> dan <b>FW</b>, ditandai <code>wf:&lt;nama berkas&gt;</code>; solid domain dinyalakan bila masih mati'),
+       ('5. Solid RBF', 'solid dibangun, lalu <b>volumenya dibandingkan dengan volume wireframe</b>')])
+ + why('Inilah yang dimaksud &ldquo;diserap&rdquo;: wireframe dibongkar menjadi <b>bahasa asli GC-Ex</b> &mdash; string kontrol HW/FW. Sesudah itu domainnya tidak bisa dibedakan dari domain yang Anda gambar sendiri: titik string bisa ditarik, section bisa ditambah, solid rebuild otomatis, dan <b>Autorun Wireframe</b> ({{B:Autorun: wireframe}}) memperbaruinya setiap ada bor baru.')
+ + '<h3>Kontrol mutu: selisih volume</h3>'
+ + '<p>Analogi dengan import <code>.mdl</code> tidak sepenuhnya tepat, dan ini perlu dipahami. Block model <code>.mdl</code> masuk <b>persis apa adanya</b>. Wireframe <b>tidak</b>: ia diresample sesuai spasi section, lalu RBF menghaluskannya. Karena itu langkah 5 selalu melaporkan:</p>'
+ + kv([('Volume wireframe &rarr; volume solid', 'beserta <b>selisih persennya</b>'),
+       ('Selisih di bawah ~10%', 'wajar untuk rekonstruksi'),
+       ('Selisih lebih besar', 'peringatan muncul: <b>rapatkan spasi section lalu serap ulang</b> ke domain yang sama')])
+ + tip('Spasi section adalah pengendali kesetiaan bentuk. Untuk vein tipis, pakai spasi serapat spasi bor atau lebih rapat. Bagian wireframe yang lebih halus daripada spasi irisan memang tidak akan terwakili &mdash; itu bukan kesalahan, itu konsekuensi resampling, dan angka selisih volume membuatnya terukur, bukan tersembunyi.')
+ + warn('Bila wireframe <b>tidak tertutup rapat</b> (GC-Ex menghitung sisi terbuka), uji titik-di-dalam tidak bisa dipercaya: flag interval bisa salah dan volumenya tidak bermakna. Rapikan dulu di Leapfrog. GC-Ex tetap memberi tahu dan tetap mau mengerjakannya, tetapi angkanya jangan dipakai.')
+ + '<h3>Serap ulang saat rekan Anda memperbarui model di Leapfrog</h3>'
+ + '<p>Serap lagi ke <b>nama domain yang sama</b>. Aturannya sama dengan autorun:</p>'
+ + '<table class="t"><tr><th>Keadaan string</th><th>Yang dilakukan</th></tr>'
+ + '<tr><td>String impor lama di section yang sama</td><td><b>diganti</b> oleh irisan wireframe baru</td></tr>'
+ + '<tr><td>String yang <b>Anda edit tangan</b></td><td><b>dilewati</b> &mdash; pekerjaan Anda tidak hilang</td></tr></table>'
+ + warn('Konsekuensinya perlu disadari: sejak wireframe diserap, <b>GC-Ex menjadi sumber kebenaran bentuknya</b>, bukan Leapfrog lagi. Bila rekan Anda terus memperbarui di Leapfrog sementara Anda mengedit di GC-Ex, kedua model itu akan berbeda. Laporan penyerapan menyebutkan berapa section yang dilewati karena sudah diedit &mdash; angka itu adalah ukuran seberapa jauh kedua model sudah berpisah. Sepakati di tim siapa yang memegang bentuk resminya.', 'Siapa pemegang bentuk resmi')
+ + '<h3>Mode A &mdash; wireframe dipakai eksak</h3>'
+ + '<p>Di anak node <b>Wireframe luar</b>, tiap domain punya menunya sendiri: <b>Pakai EKSAK: &lt;nama wireframe&gt;</b>. Domain itu lalu memakai <b>mesh Leapfrog apa adanya</b> sebagai batas &mdash; uji titik-di-dalam dan volumenya dari mesh itu, tanpa RBF. Badge-nya berubah menjadi <code>eksak: &lt;nama&gt;</code>.</p>'
+ + '<p>Karena disambungkan pada fungsi pembaca solid domain, mode eksak otomatis berlaku di <b>estimasi</b>, <b>estimasi waste</b>, <b>sub-blocking</b>, <b>filter posisi</b> dan <b>pelaporan</b> &mdash; tidak ada pengaturan lain yang perlu diubah.</p>'
+ + steps('Jalankan estimasi dengan <b>solid GC-Ex</b> hasil serap, catat tonase dan kadarnya di Reporting BM.',
+         'Node anak domain &rarr; <b>Pakai EKSAK</b>, jalankan estimasi lagi, catat angkanya.',
+         'Bandingkan. Selisih tonase menunjukkan seberapa besar pengaruh rekonstruksi terhadap angka yang dilaporkan.',
+         'Selesai audit: <b>Lepaskan dari wireframe</b> untuk kembali ke solid yang bisa diedit.')
+ + tip('Bila proyek dibuka kembali tetapi wireframe-nya belum diimport ulang di Data Referensi, domain mode eksak <b>otomatis kembali</b> memakai solid RBF-nya dan node-nya menandai <code>(hilang)</code>. Jadi proyek tidak pernah gagal dibuka karena berkas acuan yang tertinggal.'))
 
 ch('Filter domain & statistik', steps(
  'Menu <b>Geologi</b> &rarr; <b>Domain untuk analisis</b>: pilih <b>Domain vein (Geomodeller Vein)</b>, lalu centang <b>QV_Lensa2</b> saja ([[domain_filter]]).',

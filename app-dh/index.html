@@ -10037,12 +10037,14 @@ function ogFanDraw() {
           ket: 'spasi ' + N(sp, 1) + ' m &mdash; makin rapat makin setia bentuknya; untuk vein tipis pakai serapat spasi bor' });
 
     /* 4. iris wireframe menjadi string HW / FW */
-    var s0 = GM.str.length;
+    var s0 = GM.str.length, nyala = false;
+    try { if (fn('imPar')) { var Pim = imPar(d); if (!Pim.on) { Pim.on = true; d.im = Pim; nyala = true; } } } catch (e) {}
     try {
       WF.sp = sp;
       gmWfStrings(true);
       var ps = String(WF.msg || '').replace(/<[^>]+>/g, '');
-      lap({ nama: '4. String kontrol HW / FW', hasil: '<b>' + N(GM.str.length - s0) + '</b> string baru (total ' + N(GM.str.length) + ')', ket: E(ps) });
+      lap({ nama: '4. String kontrol HW / FW', hasil: '<b>' + N(GM.str.length - s0) + '</b> string baru (total ' + N(GM.str.length) + ')',
+            ket: E(ps) + (nyala ? ' &middot; <b>solid domain dinyalakan</b>' : '') });
     } catch (e) {
       lap({ nama: '4. String kontrol HW / FW', lewat: 1, hasil: 'gagal', ket: E(e.message || e) });
     }
@@ -10354,6 +10356,12 @@ function ogFanDraw() {
       try { if (fn('modeChanged')) modeChanged(); } catch (e) {}
 
       GM.act = d.id;
+      /* solid domain dinyalakan bila masih mati: "bangun wireframe" termasuk menyalakan solidnya,
+         kalau tidak string-nya terbentuk tetapi solidnya tidak pernah ada dan estimasi melewatinya. */
+      var nyala = false;
+      try {
+        if (fn('imPar')) { var Pim = imPar(d); if (!Pim.on) { Pim.on = true; d.im = Pim; nyala = true; } }
+      } catch (e) {}
       if (AR.o.ulang) {
         GM.str.forEach(function (s) { if (s.dom === d.id) s.auto = true; });   /* izinkan ditimpa */
       }
@@ -10377,7 +10385,8 @@ function ogFanDraw() {
             : '<small>solid belum terbentuk</small>',
           ket: 'strike ' + N(S.az, 0) + '&deg;, section tegak lurus (' + N(azL, 0) + '&deg;) tiap ' + N(sp, 1) + ' m' +
                (q ? ' &middot; ' + q.secN + ' section dengan &ge; 2 kontak' : '') +
-               (q && q.skip ? ' &middot; yang dilewati = string hasil edit tangan, tidak ditimpa' : '')
+               (q && q.skip ? ' &middot; yang dilewati = string hasil edit tangan, tidak ditimpa' : '') +
+               (nyala ? ' &middot; <b>solid domain dinyalakan</b> (sebelumnya mati)' : '')
         });
         setTimeout(next, 10);
       }, 350);

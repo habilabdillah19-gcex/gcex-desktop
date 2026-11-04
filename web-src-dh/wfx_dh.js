@@ -223,12 +223,14 @@
           ket: 'spasi ' + N(sp, 1) + ' m &mdash; makin rapat makin setia bentuknya; untuk vein tipis pakai serapat spasi bor' });
 
     /* 4. iris wireframe menjadi string HW / FW */
-    var s0 = GM.str.length;
+    var s0 = GM.str.length, nyala = false;
+    try { if (fn('imPar')) { var Pim = imPar(d); if (!Pim.on) { Pim.on = true; d.im = Pim; nyala = true; } } } catch (e) {}
     try {
       WF.sp = sp;
       gmWfStrings(true);
       var ps = String(WF.msg || '').replace(/<[^>]+>/g, '');
-      lap({ nama: '4. String kontrol HW / FW', hasil: '<b>' + N(GM.str.length - s0) + '</b> string baru (total ' + N(GM.str.length) + ')', ket: E(ps) });
+      lap({ nama: '4. String kontrol HW / FW', hasil: '<b>' + N(GM.str.length - s0) + '</b> string baru (total ' + N(GM.str.length) + ')',
+            ket: E(ps) + (nyala ? ' &middot; <b>solid domain dinyalakan</b>' : '') });
     } catch (e) {
       lap({ nama: '4. String kontrol HW / FW', lewat: 1, hasil: 'gagal', ket: E(e.message || e) });
     }

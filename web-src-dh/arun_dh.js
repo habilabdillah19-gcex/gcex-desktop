@@ -187,6 +187,12 @@
       try { if (fn('modeChanged')) modeChanged(); } catch (e) {}
 
       GM.act = d.id;
+      /* solid domain dinyalakan bila masih mati: "bangun wireframe" termasuk menyalakan solidnya,
+         kalau tidak string-nya terbentuk tetapi solidnya tidak pernah ada dan estimasi melewatinya. */
+      var nyala = false;
+      try {
+        if (fn('imPar')) { var Pim = imPar(d); if (!Pim.on) { Pim.on = true; d.im = Pim; nyala = true; } }
+      } catch (e) {}
       if (AR.o.ulang) {
         GM.str.forEach(function (s) { if (s.dom === d.id) s.auto = true; });   /* izinkan ditimpa */
       }
@@ -210,7 +216,8 @@
             : '<small>solid belum terbentuk</small>',
           ket: 'strike ' + N(S.az, 0) + '&deg;, section tegak lurus (' + N(azL, 0) + '&deg;) tiap ' + N(sp, 1) + ' m' +
                (q ? ' &middot; ' + q.secN + ' section dengan &ge; 2 kontak' : '') +
-               (q && q.skip ? ' &middot; yang dilewati = string hasil edit tangan, tidak ditimpa' : '')
+               (q && q.skip ? ' &middot; yang dilewati = string hasil edit tangan, tidak ditimpa' : '') +
+               (nyala ? ' &middot; <b>solid domain dinyalakan</b> (sebelumnya mati)' : '')
         });
         setTimeout(next, 10);
       }, 350);
