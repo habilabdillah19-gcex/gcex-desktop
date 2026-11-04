@@ -18,6 +18,7 @@ Modul desktop yang disisipkan (sebelum FP.startUI, setelah semua fungsi proyek &
 - waste_dh.js          : estimasi waste (domain semu WASTE, est_type 3) untuk material di luar seluruh solid
 - waste_lat_dh.js      : estimasi waste jalur laterit (IDW di ruang unfold) untuk blok di luar permukaan lapisan
 - subblk_dh.js         : sub-blocking di batas solid + atribut proporsi volume ore per blok (sb_frac)
+- kp_dh.js             : database bor per kampanye (gaya Surpac): prioritas, aktif, warna, atribut virtual, gabungan
 - wsgs_dh.js           : variogram waste difit sendiri di Geostatistik (populasi WASTE + Simpan ke WASTE)
 - prof_dh.js           : profil kadar per pita RL/E/N (tab Profil), kurva pemusatan logam (Statistik), kipas variogram GT & tebal (Ore Geometry)
 Di browser biasa (tanpa GC-Ex Desktop) modul ini tidak mengubah apa pun.
@@ -34,7 +35,7 @@ SHARED = os.path.join(W, '..', 'web-src') + os.sep
 s = open(W + 'gcex_dh_base.html', encoding='utf-8').read()
 mods = [SHARED + 'mdlbig.js', SHARED + 'guide.js', SHARED + 'desk_text.js', W + 'mdlbig_dh.js', W + 'deskflush_dh.js', SHARED + 'prj.js', SHARED + 'wm.js']
 if shutil.which('node'):
-    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js', W + 'cls_dh.js', W + 'aoi_dh.js', W + 'waste_dh.js', W + 'waste_lat_dh.js', W + 'subblk_dh.js', W + 'wsgs_dh.js', W + 'prof_dh.js']:
+    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js', W + 'cls_dh.js', W + 'aoi_dh.js', W + 'waste_dh.js', W + 'waste_lat_dh.js', W + 'subblk_dh.js', W + 'wsgs_dh.js', W + 'prof_dh.js', W + 'kp_dh.js']:
         r = subprocess.run(['node', '--check', m], capture_output=True, text=True)
         assert r.returncode == 0, 'Galat sintaks di ' + m + ':\n' + r.stderr[:800]
     print('Cek sintaks modul: OK')
@@ -76,10 +77,20 @@ import rpfrac_patch
 s = rpfrac_patch.patch(s)
 print('Reporting BM menimbang volume & tonase dengan proporsi (sb_frac): OK')
 # bilah sayatan mengambang (Maju / Mundur): di akhir sumber viewer (dijalankan sesudah viewer terbentuk)
+# Project Tree: node Database Bor dipecah per kampanye. fDb() adalah fungsi lokal di dalam IIFE
+# ptree_dh.js, jadi tidak bisa dibungkus dari modul lain; larik kids-nya disisipi di sini.
+import kp_patch
+
+
+def _rd(f):
+    t = open(f, encoding='utf-8').read()
+    return kp_patch.patch(t) if f.endswith('ptree_dh.js') else t
+
+
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(open(f, encoding='utf-8').read() for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + open(W + 'cls_dh.js', encoding='utf-8').read() + '\n' + open(W + 'aoi_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_lat_dh.js', encoding='utf-8').read() + '\n' + open(W + 'subblk_dh.js', encoding='utf-8').read() + '\n' + open(W + 'wsgs_dh.js', encoding='utf-8').read() + '\n' + open(W + 'prof_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(_rd(f) for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + open(W + 'cls_dh.js', encoding='utf-8').read() + '\n' + open(W + 'aoi_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_lat_dh.js', encoding='utf-8').read() + '\n' + open(W + 'subblk_dh.js', encoding='utf-8').read() + '\n' + open(W + 'wsgs_dh.js', encoding='utf-8').read() + '\n' + open(W + 'prof_dh.js', encoding='utf-8').read() + '\n' + open(W + 'kp_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
 s = s.replace("  if(!DOM.on)b+='<p class=gg-why>&#9432; Belum ada filter dom", "  if(!DOM.on&&!(window.gsDomCodes&&gsDomCodes()))b+='<p class=gg-why>&#9432; Belum ada filter dom")
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan

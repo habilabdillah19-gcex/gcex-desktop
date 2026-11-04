@@ -1340,3 +1340,51 @@ Retensi ketiga installer di blok rilis diturunkan dari 7 menjadi **2 hari**: cuk
 Dua butir aturan saling berlawanan — satu menyuruh menaikkan versi pada setiap push yang mengubah isi *"termasuk perubahan dokumen / data latihan saja"*, satu lagi (ditambahkan 0.24.23) hanya untuk aplikasi yang berkasnya benar-benar berubah. Butir pertama itulah yang membuat versi Block Model naik tujuh kali tanpa satu pun perubahan pada aplikasinya.
 
 Butir pertama kini disamakan: **push yang hanya mengubah dokumen, data latihan, atau CI tidak menaikkan versi aplikasi mana pun**, karena installernya identik dan Release tetap terbit ulang pada tag yang sama. Pembaruan ini sendiri mengikuti aturan barunya.
+
+## 74. GC-Ex Drill Hole Ultimate 0.24.25 — database bor per kampanye (rangka)
+
+Menirukan modul *Geological Database* GEOVIA Surpac: beberapa database bor tersambung sekaligus (`exploration_2024`, `infill_2023`, `grade_control_2025`), satu di antaranya **ACTIVE**, masing-masing berwarna sendiri di tampilan 3D.
+
+### Keputusan rancangan: satu dataset, label asal per hole
+Seluruh fitur GC-Ex — 3D, sayatan, Geostatistik, Geomodeller, Model Estimation, Reporting — membaca tabel global `collars` / `surveys` / `assays` / `geoRows`. Memecahnya menjadi beberapa penyimpanan terpisah berarti menyentuh semuanya sekaligus, dengan risiko regresi besar dan **tanpa manfaat tambahan**.
+
+Jadi datanya tetap **satu**, dan setiap hole membawa **label kampanye** asalnya. Ini juga yang tersirat dari permintaan *"kampanye sebagai atribut geologi virtual"*: begitu labelnya ada, pemisahan per kampanye datang gratis di semua mesin yang sudah ada.
+
+### Yang sudah jalan
+
+| Bagian | Isi |
+|---|---|
+| **Project Tree** | node *Database Bor* dipecah per kampanye; tiap kampanye memuat Collar / Survey / Assay / Geologi beserta jumlah barisnya |
+| **Penanda AKTIF** | kampanye aktif = tujuan import / upsert berikutnya; hole tanpa label otomatis masuk ke sana |
+| **Tampil / sembunyi** | centang per kampanye, menyaring `visHoles()` sehingga berlaku serentak di 3D, sayatan 2D, statistik, Geostatistik dan komposit |
+| **Warna per kampanye** | warnanya ditulis ke gaya kategori, jadi pewarnaan trajectory memakai warna yang sama |
+| **Prioritas** | daftar berurutan, bisa digeser naik / turun |
+| **Atribut virtual** | kategori **Kampanye** (dan **Gabungan kampanye** bila ada grup) berperilaku seperti atribut geologi biasa |
+| **Gabungan (merge)** | beberapa kampanye disatukan sebagai grup bernama; **tiap hole tetap memegang label aslinya**, jadi masih bisa difilter satu per satu |
+| **Pindah hole** | hole yang salah label bisa dipindahkan antar kampanye |
+| **Tersimpan di proyek** | daftar kampanye, prioritas, kampanye aktif dan label tiap hole ikut disimpan dan dimuat ulang |
+
+Node *Database Bor* juga mendapat perintah **Kampanye baru…** dan **Gabungkan kampanye… (merge)**.
+
+### Diuji
+Data tiruan 5 hole (3 eksplorasi + 2 grade control), 68 interval assay dan 68 interval geologi:
+
+| Uji | Hasil |
+|---|---|
+| Kampanye pertama dibuat otomatis dari nama dataset, seluruh hole berlabel | 5 dari 5 |
+| Jumlah baris per kampanye | 3 hole / 56 assay dan 2 hole / 12 assay — **total 68 = 68, cocok** |
+| Atribut virtual | `EX-01 → [[0, 100, 0]]` = `eksplorasi_2024`; `GC-01 → [[0, 30, 1]]` = `gc_2025` |
+| Atribut geologi lain | tetap diteruskan ke penangan aslinya, tidak terganggu |
+| Warna kategori | mengikuti warna kampanye |
+| Sembunyikan `gc_2025` | `visHoles` menyusut dari 5 menjadi 3 hole |
+| Geser prioritas | urutan berubah benar |
+| Gabungan 2 kampanye | grup terbentuk, atribut *Gabungan kampanye* muncul, dan `EX-01` tetap berlabel `eksplorasi_2024` |
+| Simpan & muat ulang proyek | 2 kampanye, 1 gabungan, 5 label hole — utuh |
+
+### Yang belum — jangan dianggap selesai
+| Belum ada | Keterangan |
+|---|---|
+| Pemilih kampanye di dialog import | label kampanye sekarang ditentukan oleh kampanye **AKTIF**, belum bisa dipilih saat import berlangsung |
+| Pemilihan sheet `.xlsx` berdasarkan nama | pembaca `.xlsx` sudah ada di GC-Ex, tetapi pemetaan otomatis sheet Collar / Survey / Assay / Geologi belum dibuat |
+| Penyelesaian bentrok antar kampanye | daftar prioritas sudah ada dan bisa digeser, tetapi aturan "hole yang sama di dua kampanye, yang lebih tinggi menang" **belum** dipakai saat upsert |
+| Filter kolom dinamis + rentang nilai | memerlukan penyimpanan kolom mentah hasil import, yang sekarang dibuang setelah dipetakan — pekerjaan tersendiri |

@@ -1,9 +1,9 @@
 {
   "appId": "com.gcex.drillhole",
   "productName": "GC-Ex Drillhole",
-  "copyright": "Copyright © 2026 Habil Abdillah",
+  "copyright": "Copyright \u00a9 2026 Habil Abdillah",
   "extraMetadata": {
-    "version": "0.24.24",
+    "version": "0.24.25",
     "name": "gcex-drillhole",
     "productName": "GC-Ex Drillhole",
     "description": "GC-Ex Drillhole Ultimate - aplikasi desktop",
