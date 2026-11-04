@@ -1394,3 +1394,55 @@ Data tiruan 5 hole (3 eksplorasi + 2 grade control), 68 interval assay dan 68 in
 | Pemilihan sheet `.xlsx` berdasarkan nama | pembaca `.xlsx` sudah ada di GC-Ex, tetapi pemetaan otomatis sheet Collar / Survey / Assay / Geologi belum dibuat |
 | Penyelesaian bentrok antar kampanye | daftar prioritas sudah ada dan bisa digeser, tetapi aturan "hole yang sama di dua kampanye, yang lebih tinggi menang" **belum** dipakai saat upsert |
 | Filter kolom dinamis + rentang nilai | memerlukan penyimpanan kolom mentah hasil import, yang sekarang dibuang setelah dipetakan — pekerjaan tersendiri |
+
+## 75. GC-Ex Drill Hole Ultimate 0.24.26 — set kerja vs referensi, merge, dan export .xlsx
+
+Melengkapi rangka kampanye (bagian 74) dengan alur kerja yang sebenarnya diminta: **saat kampanye grade control jadi set kerja, bor eksplorasi dan infill tetap terlihat sebagai bahan pertimbangan pemodelan — tanpa ikut mencemari angkanya.**
+
+### Tiga peran per kampanye
+| Peran | Tampil di 3D / sayatan | Ikut Geostatistik, statistik, flag, estimasi |
+|---|---|---|
+| **Set kerja** | ya | **ya** |
+| **Referensi** | ya | **tidak** |
+| **Sembunyi** | tidak | tidak |
+
+Kampanye **AKTIF** selalu ikut set kerja (ia tujuan import / upsert), jadi tidak bisa dijadikan referensi tanpa memindahkan status aktif dulu.
+
+### Pemisahannya nyata, bukan sekadar label
+Sebelumnya `visHoles()` dipakai bersama-sama oleh penggambaran **dan** analisis, sehingga menyembunyikan bor dari analisis berarti menghilangkannya dari layar juga. Sekarang:
+
+- `visHoles()` tetap **daftar tampil** — dipakai penggambaran 3D dan sayatan, hanya membuang kampanye *sembunyi*;
+- `visHolesK()` adalah **daftar set kerja**, dan **enam titik analisis** dialihkan ke sana: Geostatistik (analisis sayatan dan uji estimasi), flag otomatis dari kadar, komposit & statistik, klik flag di sayatan, serta selubung mineralisasi (*envelope*);
+- Model Estimation dan estimasi waste berjalan dari `GM.flags` / `holeData`, bukan `visHoles`, jadi disaring terpisah lewat `meRuns`.
+
+### Merge: menaikkan data referensi ke set kerja
+**Gabungkan ke set kerja… (merge)** memilih kampanye mana yang dinaikkan. Sesudahnya:
+
+- data gabungan langsung dipakai pemodelan, Geostatistik dan estimasi;
+- **tiap hole tetap memegang label kampanye aslinya** (atribut `Kampanye`), ditambah atribut penanda **`Set kerja`** berisi *set kerja* / *referensi*;
+- catatan merge (nama, kampanye yang ikut, waktu) disimpan di proyek supaya asal-usulnya terlacak;
+- hasilnya bisa diekspor.
+
+Jadi Anda tetap bisa memilah kembali: warnai per kampanye asal, atau filter hanya bor eksplorasi yang sudah masuk set kerja.
+
+### Export set kerja ke .xlsx
+**Export set kerja (.xlsx)…** menulis satu file Excel berisi empat sheet — **Collar, Survey, Assay, Geologi** — hanya untuk hole yang ikut set kerja. **Kolom `Kampanye` ikut ditulis di setiap sheet**, sehingga asal tiap hole tetap terlacak di file keluaran.
+
+Penulis `.xlsx`-nya dibuat sendiri di dalam GC-Ex: zip dengan entri **stored** (tanpa kompresi) dan SpreadsheetML *inline string*. Entri stored dipilih supaya tidak bergantung pada `CompressionStream` dan hasilnya mudah diperiksa; filenya lebih besar, tetapi tetap `.xlsx` sah.
+
+### Diuji
+Data tiruan 5 hole (3 eksplorasi/infill + 2 grade control), 68 interval assay dan 68 interval geologi, dengan `gc_2025` sebagai kampanye aktif:
+
+| Uji | Hasil |
+|---|---|
+| `eksplorasi_2024` dijadikan **referensi** | `visHoles` tetap 5 hole, `visHolesK` tinggal `GC-01, GC-02` |
+| Bor eksplorasi terlihat tetapi tidak ikut analisis | **ya** |
+| `meRuns` (estimasi) | hanya `GC-01, GC-02` |
+| Atribut penanda | `GC-01 → set kerja`, `EX-01 → referensi` |
+| **Merge** 2 kampanye | 5 hole masuk set kerja, 1 kampanye dinaikkan dari referensi |
+| Label asli sesudah merge | `EX-01` tetap `eksplorasi_2024`, penandanya berubah jadi *set kerja* |
+| Export `.xlsx` | 51,5 KB; **dibuka openpyxl**: sheet Collar / Survey / Assay / Geologi, CRC seluruh entri OK |
+| Isi sheet Assay | header `HoleID, From, To, SampleID, Au, Jenis, Kampanye`; baris pertama `EX-01, 0, 5, S0, 0,5, RC, eksplorasi_2024` |
+
+### Yang masih belum
+Pemilih kampanye di dialog import, pemetaan sheet `.xlsx` per nama saat **import**, penyelesaian bentrok antar kampanye saat upsert, dan penyusun filter AND/OR dengan rentang nilai atas atribut yang sudah diimport.

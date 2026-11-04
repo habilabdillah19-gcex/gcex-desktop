@@ -81,6 +81,9 @@ print('Reporting BM menimbang volume & tonase dengan proporsi (sb_frac): OK')
 # ptree_dh.js, jadi tidak bisa dibungkus dari modul lain; larik kids-nya disisipi di sini.
 import kp_patch
 
+s = kp_patch.patch_analisis(s, 'base')
+print('Set kerja vs referensi: titik analisis dialihkan ke visHolesK(): OK')
+
 
 def _rd(f):
     t = open(f, encoding='utf-8').read()
@@ -90,7 +93,7 @@ def _rd(f):
 VS = '<script type="text/plain" id="vsrc">'
 assert s.count(VS) == 1
 vi = s.index(VS); vj = s.index('</script>', vi)
-s = s[:vj] + '\n' + '\n'.join(_rd(f) for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + open(W + 'env_dh.js', encoding='utf-8').read() + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + open(W + 'cls_dh.js', encoding='utf-8').read() + '\n' + open(W + 'aoi_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_lat_dh.js', encoding='utf-8').read() + '\n' + open(W + 'subblk_dh.js', encoding='utf-8').read() + '\n' + open(W + 'wsgs_dh.js', encoding='utf-8').read() + '\n' + open(W + 'prof_dh.js', encoding='utf-8').read() + '\n' + open(W + 'kp_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
+s = s[:vj] + '\n' + '\n'.join(_rd(f) for f in [W + 'slabbar_dh.js', W + 'og_dh.js', W + 'ui4_dh.js', SHARED + 'ptree.js', W + 'ptree_dh.js']) + '\n' + gm2_patch.TAIL + '\n' + gm3_patch.TAIL + '\n' + kp_patch.patch_analisis(open(W + 'env_dh.js', encoding='utf-8').read(), 'env') + '\n' + open(SHARED + 'ui19.js', encoding='utf-8').read() + '\n' + open(W + 'dom20_dh.js', encoding='utf-8').read() + '\n' + open(W + 'flt_dh.js', encoding='utf-8').read() + '\n' + open(W + 'sl_dh.js', encoding='utf-8').read() + '\n' + open(W + 'cls_dh.js', encoding='utf-8').read() + '\n' + open(W + 'aoi_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_dh.js', encoding='utf-8').read() + '\n' + open(W + 'waste_lat_dh.js', encoding='utf-8').read() + '\n' + open(W + 'subblk_dh.js', encoding='utf-8').read() + '\n' + open(W + 'wsgs_dh.js', encoding='utf-8').read() + '\n' + open(W + 'prof_dh.js', encoding='utf-8').read() + '\n' + open(W + 'kp_dh.js', encoding='utf-8').read() + '\n' + s[vj:]
 s = s.replace("  if(!DOM.on)b+='<p class=gg-why>&#9432; Belum ada filter dom", "  if(!DOM.on&&!(window.gsDomCodes&&gsDomCodes()))b+='<p class=gg-why>&#9432; Belum ada filter dom")
 s = s.replace("Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah atas untuk", "Geser posisi dengan tombol <b>Maju / Mundur</b> di bilah Sayatan (atas tampilan) untuk")
 # tema Drillhole (palet terbalik): dipasang sebagai <style> terakhir supaya menimpa gaya bawaan
