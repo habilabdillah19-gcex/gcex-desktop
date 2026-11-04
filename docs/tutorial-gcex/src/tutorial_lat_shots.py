@@ -105,6 +105,18 @@ with sync_playwright() as pw:
     ev("$('bxShow').checked=true;bxSet('attr','sl_ni');updatePlot()"); pg.wait_for_timeout(600)
     ev(SEC); pg.wait_for_timeout(1500); ev(ZOOM); pg.wait_for_timeout(700); shot('sl_bm_2d')
     ev("if(VIEW2D)toggle2D();$('sliceClip').checked=false;bxSet('attr','sl_lapisan');setCam(0.95,-1.2,0.6);updatePlot()"); pg.wait_for_timeout(1500); shot('sl_bm_lapisan_3d')
+    # 5c. (0.24.19) estimasi waste jalur laterit: blok di luar permukaan lapisan, IDW di ruang unfold
+    try:
+        ev("$('bxShow').checked=false;uiTab('SL');uiSecSel('sl','all');wlCheck()"); pg.wait_for_timeout(1500)
+        note('wlCek', ev("WL.last?JSON.stringify(WL.last).slice(0,300):(WL.msg||'').replace(/<[^>]+>/g,'')"))
+        ev("var h=[...document.querySelectorAll('#slBody h4')].find(x=>/Estimasi waste/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})"); pg.wait_for_timeout(300); shot('wl_panel', PANEL)
+        ev("wlRun()"); pg.wait_for_function("!WL.job", timeout=300000); pg.wait_for_timeout(600)
+        note('wlHasil', ev("(WL.msg||'').replace(/<[^>]+>/g,'')"))
+        ev("var h=[...document.querySelectorAll('#slBody h4')].find(x=>/Estimasi waste/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})"); pg.wait_for_timeout(300); shot('wl_hasil', PANEL)
+        ev("$('bxShow').checked=true;bxSet('attr','sl_lapisan')"); ev(SEC); pg.wait_for_timeout(1200); ev(ZOOM); pg.wait_for_timeout(700); shot('wl_2d')
+        ev("if(VIEW2D)toggle2D();$('bxShow').checked=false;uiSecOpen('sl',1)")
+    except Exception as e:
+        note('errWl', str(e)[:300])
     # 6. laporan
     ev("$('bxShow').checked=false;updatePlot();uiTab('SL');SL.o.pel='Ni';SL.o.cut=0;slDirty(true);uiSecOpen('sl',4)"); pg.wait_for_timeout(600)
     note('lap0', ev("slReport().rows.map(r=>[r.name,r.n,Math.round(r.vol),Math.round(r.wmt),Math.round(r.dmt),r.avg.map(v=>isFinite(v)?+v.toFixed(3):null),isFinite(r.rat)?+r.rat.toFixed(2):null])"))

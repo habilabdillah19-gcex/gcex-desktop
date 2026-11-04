@@ -22,6 +22,7 @@ if not os.path.isdir(IMG) or not os.path.exists(os.path.join(IMG, 'notes.json'))
         "Tutorial yang TIDAK memerlukan tangkapan layar: build_tutorial_update.py" % IMG)
 
 N = json.load(open(os.path.join(IMG, 'notes.json'), encoding='utf-8'))
+VBM = json.load(open(os.path.join(HERE, '..', '..', '..', 'package.json'), encoding='utf-8')).get('version', '')
 PDF = os.path.join(HERE, '..', 'GCEx_Tutorial_Block_Model.pdf')
 
 def clean(s): return html.unescape(re.sub('<[^>]+>', '', str(s)))
@@ -104,7 +105,7 @@ table.kv td{{border-bottom:1px solid var(--ln);padding:1.3mm 2mm;vertical-align:
 ul{{margin:1mm 0 3mm;padding-left:5mm}}li{{margin:.6mm 0}}
 </style></head><body>
 <div class="cover"><div class="top"><div class="logo">GC-Ex</div><h1>Tutorial Grade Control<br>dengan Block Model</h1>
-<div class="sub">GC-Ex Block Model 0.20 &middot; flitch, dig block, additional flagging, as-mined &amp; laporan</div></div>
+<div class="sub">GC-Ex Block Model {VBM} &middot; flitch, dig block, additional flagging, as-mined &amp; laporan</div></div>
 <div class="img"><img src="{FIG['hasil_kerja_3d'][0]}"></div>
 <div class="meta">Edisi {today.day} {bulan} {today.year} &middot; untuk pelatihan internal geologist grade control<br>
 Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya latihan</div></div>
@@ -115,7 +116,7 @@ def _bab(m):
     for i,(t,_) in enumerate(CH):
         if t.startswith(m.group(1)):return 'Bab %d'%i
     raise KeyError(m.group(1))
-HTML = re.sub(r'\{\{B:([^}]+)\}\}', _bab, HTML)
+HTML = re.sub(r'\{\{?B:([^}]+)\}\}?', _bab, HTML)
 HTML = re.sub(r'\[\[(\w+)\]\]', lambda m: 'Gambar %d' % FNUM[m.group(1)], HTML)
 hp = os.path.join(OUT, 'tutorial.html'); open(hp, 'w', encoding='utf-8').write(HTML)
 with sync_playwright() as p:

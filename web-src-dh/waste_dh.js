@@ -351,7 +351,7 @@
                 mean: nv ? sum / nv : null, min: nv ? mn : null, max: nv ? mx : null,
                 nc: J.C.length, cnt: J.cnt.slice(), ms: ms, nSol: J.B.nSol, nTopo: J.B.nTopo, nPit: J.B.nPit };
     WS.msg = '&#10003; Estimasi waste selesai: <b>' + fmt(J.nEst) + '</b> blok terestimasi' + (J.fail ? ', ' + fmt(J.fail) + ' tanpa sampel' : '') +
-      ' &middot; ' + fmt(J.nEst - J.nIdw) + ' kriging (variogram domain terdekat), ' + fmt(J.nIdw) + ' IDW' +
+      ' &middot; ' + fmt(J.nEst - J.nIdw) + ' kriging (' + (J.D.own ? 'variogram WASTE sendiri' : 'variogram domain terdekat') + '), ' + fmt(J.nIdw) + ' IDW' +
       ' &middot; rata-rata ' + (nv ? (sum / nv).toFixed(3) : '-') + ' &middot; ' + (ms / 1000).toFixed(1) + ' detik.';
     if (typeof meApply === 'function') { try { meApply(true); } catch (e) {} }
     if (window.clsBuild) { try { clsBuild(true); } catch (e) {} }

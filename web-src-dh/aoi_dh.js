@@ -20,6 +20,22 @@
 
    Hasil didaftarkan sebagai versi block model (kind 'aoi'): yang disimpan hanya parameter, bukan blok,
    jadi proyek tetap ringan dan kerangka dibangun ulang saat versi itu diaktifkan.                     */
+/* 0.24.23: dialog .bxdlg (AOI, sub-blocking) memakai gaya #bxDlg — sebelumnya tanpa gaya sehingga tampil di luar layar */
+(function () {
+  if (window._bxdlgCss) return; window._bxdlgCss = 1;
+  var add = [];
+  try {
+    [].forEach.call(document.styleSheets, function (ss) {
+      var R; try { R = ss.cssRules; } catch (e) { return; }
+      [].forEach.call(R || [], function (r) {
+        if (r.selectorText && r.selectorText.indexOf('#bxDlg') >= 0)
+          add.push(r.selectorText.split(',').filter(function (s) { return s.indexOf('#bxDlg') >= 0; }).map(function (s) { return s.replace(/#bxDlg/g, '.bxdlg'); }).join(',') + '{' + r.style.cssText + '}');
+      });
+    });
+  } catch (e) {}
+  if (!add.length) add.push('.bxdlg{position:fixed;inset:0;z-index:20000;background:rgba(9,17,28,.6);display:none;align-items:center;justify-content:center;padding:16px}');
+  var st = document.createElement('style'); st.id = 'bxdlgCss'; st.textContent = add.join('\n'); document.head.appendChild(st);
+})();
 (function () {
   if (typeof BX === 'undefined' || typeof G === 'undefined') return;
   var CAP = 4000000; /* batas aman jumlah blok */

@@ -24,6 +24,14 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Pengaman versi (tolak kenaikan versi aplikasi yang isinya tidak berubah)
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tools/rilis/kemas_rilis.py --cek
+          if ($LASTEXITCODE -ne 0) { throw "pengaman versi menolak commit ini - lihat pesan di atas" }
       - name: Pasang paket Python
         run: |
           python -m pip install --upgrade pip

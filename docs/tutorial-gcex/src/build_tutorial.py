@@ -22,6 +22,10 @@ if not os.path.isdir(IMG) or not os.path.exists(os.path.join(IMG, 'notes.json'))
         "Tutorial yang TIDAK memerlukan tangkapan layar: build_tutorial_update.py" % IMG)
 
 N = json.load(open(os.path.join(IMG, 'notes.json'), encoding='utf-8'))
+VDH = json.load(open(os.path.join(HERE, '..', '..', '..', 'builder-dh.json'), encoding='utf-8')).get('extraMetadata', {}).get('version', '')
+# gambar & angka hasil hitungan langsung dari data latihan (dibuat build_tutorial_update.py -> fig_update/)
+FIGU = os.path.join(HERE, 'fig_update')
+NU = json.load(open(os.path.join(FIGU, 'notes.json'), encoding='utf-8')) if os.path.exists(os.path.join(FIGU, 'notes.json')) else {}
 PDF = os.path.join(HERE, '..', 'GCEx_Tutorial_Modelling_Estimasi.pdf')
 
 def clean(s): return html.unescape(re.sub('<[^>]+>', '', str(s)))
@@ -43,6 +47,14 @@ for f in sorted(os.listdir(IMGL)):
     if im.width > 1700: im = im.resize((1700, round(im.height * 1700 / im.width)), Image.LANCZOS)
     j = 'L' + f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=82, optimize=True)
     FIG[f[3:-4]] = (j, im.width / im.height)
+
+for k, f in (NU.get('F') or {}).items():
+    pth = os.path.join(FIGU, f)
+    if not os.path.exists(pth): continue
+    im = Image.open(pth).convert('RGB')
+    if im.width > 1700: im = im.resize((1700, round(im.height * 1700 / im.width)), Image.LANCZOS)
+    j = 'U' + f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=86, optimize=True)
+    FIG['u_' + k] = (j, im.width / im.height)
 
 fig_no = [0]; FNUM = {}
 def fig(key, cap, w=None):
@@ -71,7 +83,7 @@ def ch(title, body, key=None): CH.append((title, body))
 # ================= ISI =================
 ch('Tentang tutorial ini', f'''
 <p>Tutorial ini mengajarkan alur kerja <b>pemodelan vein dan estimasi block model</b> di <b>GC-Ex Drillhole</b>
-(aplikasi desktop <b>GC-Ex Drill Hole Ultimate 0.23.1</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
+(aplikasi desktop <b>GC-Ex Drill Hole Ultimate {VDH}</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
 dibagikan, dan semua gambar adalah tangkapan layar dari satu kali jalannya latihan tersebut. Jika rekan Anda mengikuti langkah
 yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <h3>Alur kerja</h3>
@@ -82,7 +94,7 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 </div>
 <h3>Yang dibutuhkan</h3>
 <ul>
-<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-0.23.1.exe</code>) dan lisensi aktif.</li>
+<li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-{VDH}.exe</code>) dan lisensi aktif.</li>
 <li>Aplikasi berjalan sepenuhnya offline; tidak perlu browser atau file Plotly terpisah.</li>
 <li>Folder <code>data_simulasi</code> dari paket tutorial ini.</li>
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_VeinA</code> (boleh di OneDrive / SharePoint / drive jaringan).</li>
@@ -91,12 +103,17 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 <p>Langkah bernomor = yang harus diklik / diisi. Kotak <span class="tag tip">Tips</span> berisi jalan pintas,
 <span class="tag why">Mengapa?</span> menjelaskan alasan geologinya, dan <span class="tag warn">Perhatian</span> berisi hal yang sering keliru.
 Nama tombol dan menu ditulis <b>tebal</b> persis seperti di layar.</p>
-''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate 0.23.1 dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
+''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate ' + VDH + ' dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
 
 ch('Data simulasi', f'''
 <p>Data ini <b>sintetis</b> (bukan data perusahaan), dibuat agar meniru kasus vein emas epitermal sempit berbentuk sigmoidal.</p>
 <table class="t"><tr><th>File</th><th>Isi</th></tr>
-<tr><td>SIM_collar.csv, SIM_survey.csv, SIM_assay.csv, SIM_geologi.csv</td><td>33 lubang bor di 11 section (jarak 20 m) tegak lurus strike, 3 lubang per section, sampel 1 m. Unsur Au, Ag, SxS; geologi Lith / Alt / Ox.</td></tr>
+<tr><td>SIM_collar.csv, SIM_survey.csv, SIM_assay.csv, SIM_geologi.csv</td><td>Kampanye resource: <b>{N['nHole']} lubang bor</b>, <b>{N['nAssay']:,} baris assay</b> (sampel 1 m) dengan Au, Ag, Cu, Pb, Zn, S, As_ppm, SG; logging Lith, Alt, Ox, Texture, RQD, Recovery.</td></tr>
+<tr><td>SIM_kecil_*.csv</td><td>Subset kecil untuk latihan cepat sebelum memakai data penuh.</td></tr>
+<tr><td>SIM_gc_*.csv</td><td>Kampanye <b>grade control</b>: bor tegak per bench pola 7 m.</td></tr>
+<tr><td>SIM_BM_GC_kadar.csv</td><td>Block model GC <b>berisi kadar</b> untuk tutorial GC-Ex Block Model.</td></tr>
+<tr><td>SIM_sesar.csv, SIM_qaqc.csv</td><td>Bidang sesar pasca-mineralisasi (offset 12 m) dan data QAQC (CRM, duplikat, blank).</td></tr>
+<tr><td>JAWABAN_MODEL.txt</td><td><b>Kunci jawaban</b>: parameter model yang dipakai membuat data + angka hasil ukur ({{B:Latihan terpandu}}).</td></tr>
 <tr><td>SIM_upsert_*.csv</td><td>7 lubang infill (SIM-INF-*) untuk latihan <b>upsert</b>.</td></tr>
 <tr><td>SIM_upsert2_*.csv</td><td>7 lubang infill tahap 2 untuk latihan <b>koreksi Model Estimation</b>.</td></tr>
 <tr><td>SIM_topo_xyz.csv, SIM_topo_xyz_nov.csv</td><td>Topografi titik XYZ grid 5 m; versi bulan berikutnya untuk latihan Data Spasial.</td></tr>
@@ -110,7 +127,8 @@ ch('Data simulasi', f'''
 <tr><td>SIM_LAT_topo_xyz.csv, SIM_LAT_BM_GC.csv</td><td>Topografi grid 10 m dan block model GC 12,5 &times; 12,5 &times; 1 m ({NL['nBlok']:,} blok) untuk latihan {{B:Geomodeller Stratified}}.</td></tr>
 <tr><td>SIM_LAT_sesar.csv</td><td>Jejak sesar F1 (dua titik X, Y) beserta dip 65&deg; ke 100&deg;, normal, offset 12 m, post-mineralisasi, untuk latihan {{B:Sesar 3D}}.</td></tr></table>
 <h3>Geometri yang perlu diingat</h3>
-<p>Endapannya adalah <b>array 4 lensa vein en-echelon</b> (QV_Lensa1 s/d QV_Lensa4) ditambah satu splay di sisi hanging wall. Tutorial ini menelusuri <b>lensa 2 beserta splay-nya</b>; lensa lain dikerjakan dengan cara yang persis sama. Model geologi lengkapnya, beserta kunci jawabannya, ada di <i>Tutorial Tambahan GC-Ex 0.24</i> dan <code>data/JAWABAN_MODEL.txt</code>.</p>
+<p>Endapannya adalah <b>array 4 lensa vein en-echelon</b> (QV_Lensa1 s/d QV_Lensa4) ditambah satu splay di sisi hanging wall. Tutorial ini menelusuri <b>lensa 2 beserta splay-nya</b>; lensa lain dikerjakan dengan cara yang persis sama. Model geologi lengkapnya ada di {{B:Latihan terpandu}}, kunci jawabannya di <code>data/JAWABAN_MODEL.txt</code>.</p>
+''' + (fig('u_peta', 'Jejak permukaan keempat lensa vein, collar bor, dan sesar pasca-mineralisasi. Pola <i>en-echelon</i>: tiap lensa berpindah ke sisi hanging wall, bukan satu vein menerus. (Dihitung dari berkas data latihan.)') if 'u_peta' in FIG else '') + f'''
 {kv([('Vein utama (QV_Lensa2)','strike 045&deg;, dip 70&deg; ke 135&deg; (bidang acuan; permukaannya sigmoidal sehingga bidang rata-rata data &plusmn;66&deg;), tebal median 1 m dan membengkak sampai &plusmn;5 m di zona dilatan'),
      ('Ore shoot','pitch 55&deg; dari garis strike di dalam bidang vein &mdash; mengontrol tebal DAN kadar sekaligus'),
      ('Splay hangingwall (QV_Splay_HW)','sejajar, &plusmn;26 m di sisi hanging wall, lebih tipis dan lebih rendah kadar'),
@@ -394,6 +412,91 @@ ch('Koreksi setelah bor baru', '<p>Inilah pemakaian sehari-hari: setiap ada bor 
 
 SP = N['split'] if isinstance(N.get('split'), dict) else json.loads(N['split'])
 SPM = N['splitMe'] if isinstance(N.get('splitMe'), list) else json.loads(N['splitMe'])
+
+def g(k, d=None):
+    v = N.get(k, d)
+    return d if v is None else v
+def hv(k): return k in FIG
+def figs(*pairs):
+    """gambar hanya bila tangkapan layarnya ada (tahap tangkapan layar boleh gagal tanpa menggagalkan PDF)"""
+    return ''.join(fig(k, c) if hv(k) else '' for k, c in pairs)
+AH = g('aoiHasil', {}) or {}; SBH = g('sbHasil', {}) or {}; WL0 = g('wsLast', {}) or {}
+def asal(nm):
+    for r in (AH.get('asal') or []):
+        if r[0] == nm: return r[1]
+    return None
+def fz(v, d=0): return fN(v, d) if isinstance(v, (int, float)) else '&ndash;'
+
+ch('Block model dari nol: kerangka AOI', '<p>Sampai versi 0.24.15, GC-Ex Drill Hole <b>selalu memerlukan block model dari luar</b>: estimasi hanya mengoreksi blok yang pusatnya di dalam solid domain, sehingga material <b>waste</b> di sekitar wireframe hanya ada bila model impornya memang memuatnya. Tombol <b>&#8862; Buat kerangka blok (AOI)</b> di menu <b>Block Model</b> membuat grid persegi seluruh <i>area of interest</i> &mdash; ore <b>dan</b> waste &mdash; dari extent, ukuran blok dan RL yang Anda tentukan. Kerangkanya murni geometri, jadi berlaku untuk semua tipe deposit.</p>'
+ + kv([('Belum ada block model','mode <b>Ganti</b>: seluruh AOI dibuat dari nol'),
+       ('Sudah ada .mdl, cakupannya lebih sempit','mode <b>Pertahankan &amp; isi kekosongan</b>: model impor dipertahankan <b>utuh</b> (termasuk kadar dan sub-bloknya), blok baru hanya di sel AOI yang belum tercakup'),
+       ('Batas','potong topografi aktif (hanya blok di bawah permukaan), di dalam desain pit, rentang RL, poligon area dari Map / string Surpac')])
+ + steps('Menu <b>Block Model</b> &rarr; <b>&#8862; Buat kerangka blok (AOI)</b>. Extent bawaan = seluruh data bor + block model aktif.',
+   'Latihan: perlakuan <b>Pertahankan &amp; isi kekosongan</b>, extent E 504.800&ndash;505.200, N 9.011.800&ndash;9.012.200, ukuran blok <b>10 &times; 10 &times; 5 m</b> (sama dengan model impor), centang <b>Potong topografi aktif</b>.',
+   'Klik <b>Hitung jumlah blok</b> &mdash; ukuran grid, blok baru, blok impor yang dipertahankan, dan yang dibuang per sebab muncul sebelum apa pun dibangun ([[aoi_dialog]]).',
+   'Klik <b>Buat kerangka &rarr;</b>. Atribut kategori <code>AOI_ASAL</code> membedakan <b>impor</b> dan <b>kerangka</b> ([[aoi_2d]]).')
+ + figs(('aoi_dialog', 'Dialog kerangka AOI. ' + clean(g('aoiPrev', ''))[:260]),
+        ('aoi_2d', f"Sayatan 2D berwarna AOI_ASAL: blok impor {fz(asal('impor'))} dipertahankan, {fz(asal('kerangka'))} blok kerangka baru mengisi area di luar cakupan model impor (total {fz(AH.get('n'))} blok)."))
+ + (fig('u_aoi', 'Kerangka blok AOI pada satu sayatan, dihitung langsung dari data latihan: %s blok di bawah topografi, %s di antaranya di dalam desain pit. Permukaan yang dipakai sama dengan Reporting BM.' % (NU.get('aoi_blok', '-'), NU.get('aoi_pit', '-'))) if hv('u_aoi') else '')
+ + warn('Blok kerangka <b>belum punya kadar</b> (atribut numerik NaN). Kadarnya diisi Model Estimation: domain vein untuk ore ({{B:Model Estimation}}), domain WASTE untuk sisanya ({{B:Estimasi waste}}). Versi block model berjenis <code>aoi</code> menyimpan <b>parameter</b> saja, jadi file proyek tetap ringan.'))
+
+ch('Sub-blocking & proporsi volume (sb_frac)', '<p>Blok dihitung utuh berdasarkan <b>titik pusatnya</b>: blok yang separuh di dalam vein dan separuh di luar tetap dihitung 100% ore atau 100% waste. Pada vein setebal 1&ndash;4 m dengan blok 5 m, kesalahan batas itu sendiri sebesar dilusi yang mau diukur.</p>'
+ + kv([('&#9707; Pecah blok di batas solid','blok yang <b>menyeberangi</b> batas solid dipecah <b>2 &times; 2 &times; 2</b>, 1&ndash;3 tingkat (uji 27 titik per blok). Sub-blok yang sudah ada dihormati; hasilnya tetap bisa ditulis ke .mdl Surpac (octree).'),
+       ('&#9634; Hitung proporsi volume ore per blok','tanpa memecah: proporsi volume tiap blok yang di dalam solid, atribut <code>sb_frac</code> (0&ndash;1)')])
+ + steps('Menu <b>Block Model</b> &rarr; <b>Pecah blok di batas solid</b>. Pilih <b>1 tingkat</b>, klik <b>Hitung jumlah blok</b> ([[sb_dialog]]).',
+   'Klik <b>Pecah blok &rarr;</b>. <code>sb_frac</code> ikut dihitung otomatis ([[sb_frac_2d]]).',
+   'Jalankan ulang <b>Model Estimation</b> (posisi blok berubah, hasil lama tidak cocok lagi).',
+   'Di <b>Reporting BM</b> pilih <code>sb_frac</code> pada <b>Timbang volume &amp; tonase dengan proporsi</b>: blok perbatasan dilaporkan sebagian, bukan dibulatkan ({{B:Klasifikasi}}).')
+ + figs(('sb_dialog', 'Dialog sub-blocking. ' + clean(g('sbPrev', ''))[:240]),
+        ('sb_frac_2d', f"Sayatan 2D berwarna sb_frac sesudah dipecah 1 tingkat: {fz(SBH.get('n'))} blok, {fz(SBH.get('full'))} seluruhnya di dalam solid dan {fz(SBH.get('part'))} di perbatasan (proporsi 0&ndash;1)."))
+ + (fig('u_frac', 'Jejak satu lensa pada sayatan dengan grid blok 5 m (dihitung dari data latihan): dari %s sel yang bersinggungan dengan solid, <b>%s hanya sebagian</b> di dalamnya &mdash; angka di tiap sel adalah <code>sb_frac</code>.' % (NU.get('fr_part', 0) + NU.get('fr_full', 0), NU.get('fr_part', '-'))) if hv('u_frac') else '')
+ + '<h3>Mana yang sebenarnya menyelesaikan masalah volume</h3><p>Vein mendatar tebal 4 m, blok 5 m yang pusatnya tepat di luar vein (volume sebenarnya 400 m&sup3;):</p>'
+ + '<table class="t"><tr><th>Tingkat pecah</th><th>Blok</th><th>Dihitung titik pusat</th><th>Ditimbang sb_frac</th></tr><tr><td>utuh</td><td>80</td><td><b>0 m&sup3; (&minus;100%)</b></td><td>400,0 m&sup3; (0,00%)</td></tr><tr><td>1</td><td>136</td><td>500 m&sup3; (+25%)</td><td>400,0 m&sup3;</td></tr><tr><td>2</td><td>360</td><td>500 m&sup3; (+25%)</td><td>400,0 m&sup3;</td></tr><tr><td>3</td><td>1.256</td><td>375 m&sup3; (&minus;6,3%)</td><td>400,0 m&sup3;</td></tr></table>'
+ + why('Kolom titik pusat membaik tetapi <b>berayun</b>; pembulatan tidak hilang hanya dengan memperkecil blok. Untuk <b>volume &amp; tonase</b>, <code>sb_frac</code>-lah yang menyelesaikan masalah, bahkan tanpa memecah blok. Sub-blocking tetap berguna untuk resolusi <b>kadar</b> di dekat kontak dan geometri dig block.')
+ + warn('Urutan yang disarankan: impor / kerangka AOI &rarr; sub-blocking &rarr; <code>sb_frac</code> &rarr; estimasi domain vein &rarr; estimasi waste. Kadar <b>tidak</b> dikalikan proporsi.'))
+
+ch('Estimasi waste: kadar di luar wireframe ore', '<p>Model Estimation adalah <i>hard boundary</i> per domain: blok di luar solid tidak disentuh. Padahal kadar di sekitar wireframe-lah yang menentukan <b>dilusi</b>, <b>ore loss</b>, dan tonase total di dalam pit. Bagian <b>&#9317; Estimasi waste</b> di Model Estimation mengisinya sebagai domain semu <b>WASTE</b>.</p>'
+ + (fig('u_waste', 'Dari %s sampel data latihan di <b>luar</b> solid vein: kadar Au terhadap jarak ke vein terdekat (kiri) dan logam per pita jarak (kanan). Median Au %s g/t pada &lt; 1,5 m, %s g/t pada 1,5&ndash;5 m, %s g/t pada 5&ndash;12 m; <b>%s%%</b> logam Au sampel berada di luar solid.' % (fN(NU.get('w_n', 0)), str(NU.get('w_med15', '-')).replace('.', ','), str(NU.get('w_med5', '-')).replace('.', ','), str(NU.get('w_med12', '-')).replace('.', ','), str(NU.get('w_share', '-')).replace('.', ','))) if hv('u_waste') else '')
+ + kv([('Blok','blok yang pusatnya di luar <b>semua</b> solid domain (opsional: hanya di bawah topografi / di dalam pit). Blok harus sudah ada &mdash; lengkapi dulu dengan kerangka AOI.'),
+       ('Sampel','komposit dari interval yang <b>tidak di-flag domain apa pun</b> (hard boundary waste), top-cut tersendiri'),
+       ('Variogram','variogram WASTE sendiri bila sudah difit; kalau belum, variogram <b>domain terdekat</b>, dan <b>IDW</b> bila jauh dari semua domain'),
+       ('Penanda hasil','<code>domain_est = WASTE</code>, <code>est_type = 3</code>; blok IDW <code>est_pass = 9</code> dengan SoR / KE / KV = &minus;99')])
+ + '<h3>Memfit variogram waste sendiri</h3>' + steps('Panel <b>Geostatistik</b>, bilah <b>Domain</b> &rarr; <b>WASTE (di luar semua domain)</b>. Komposit = interval tanpa flag domain, populasi yang sama dengan sampel estimasi waste ([[ws_geostat]]).',
+   'Statistik, variogram, fan, fitting model, KNA seperti biasa.',
+   'Tab <b>Uji estimasi</b> &rarr; <b>&#8681; Simpan ke WASTE</b> ([[ws_simpan]]).')
+ + figs(('ws_geostat', 'Geostatistik populasi WASTE: ' + ' · '.join(str(x) for x in (g('wsGs') or [])[:1]) + (f" — {g('wsGs')[1]} komposit, rata-rata Au {fN(g('wsGs')[2],3)} g/t, CV {fN(g('wsGs')[3],2)}" if g('wsGs') else '') + '.'),
+        ('ws_simpan', 'Simpan ke WASTE: model variogram, elipsoid, pass, diskretisasi, top-cut dan panjang komposit tersimpan ke parameter waste.'))
+ + '<h3>Menjalankan estimasi waste</h3>' + steps('Menu <b>Model Estimation</b> &rarr; <b>&#9317; Estimasi waste</b>. Variogram: <b>Otomatis</b> (memakai variogram WASTE bila ada). Centang <b>hanya di bawah topografi</b>.',
+   'Klik <b>Periksa dulu</b>: jumlah blok waste, komposit waste, dan perkiraan pembagian kriging vs IDW ([[ws_panel]]).',
+   'Klik <b>Jalankan estimasi waste</b> ([[ws_hasil]], [[ws_2d]]).')
+ + figs(('ws_panel', 'Bagian &#9317; Estimasi waste sesudah Periksa dulu.'),
+        ('ws_hasil', clean(g('wsHasil', 'Hasil estimasi waste.'))[:300]),
+        ('ws_2d', 'Sayatan 2D kadar akhir: blok ore di dalam solid (domain vein) dan halo waste di sekitarnya (domain WASTE) dalam satu block model.'))
+ + why('Variogram sebuah domain hanya berlaku di sekitar domain itu. Kriging pada blok yang jauh tetap menghasilkan angka &mdash; lengkap dengan SoR dan KE yang <b>menyesatkan</b>. IDW tidak berpura-pura, karena itu ukuran keyakinannya diisi &minus;99.')
+ + tip('Blok waste <b>tidak diberi kelas keyakinan</b> (kelas tersendiri <i>Waste (di luar solid)</i>) dan tidak ikut kurva grade-tonase per kelas, tetapi volume &amp; tonasenya tetap dilaporkan bersama ore di Reporting BM.'))
+
+KL = g('kls') or []
+def kls(nm):
+    for r in KL:
+        if r[0] == nm: return r[1]
+    return None
+SPS = g('spasi') or {}
+ch('Klasifikasi keyakinan & kerapatan bor', '<p><b>Reporting BM</b> dapat mengusulkan kelas <b>Measured / Indicated / Inferred</b> per blok dari atribut hasil Model Estimation, lalu melaporkan tonase dan kadar per kelas.</p>'
+ + '<table class="t"><tr><th>Atribut</th><th>Arti</th></tr><tr><td><code>est_pass</code></td><td>pass pencarian (1 = radius penuh)</td></tr><tr><td><code>est_nsamp</code></td><td>jumlah komposit yang dipakai</td></tr><tr><td><code>est_sor</code> / <code>est_ke</code></td><td>slope of regression / kriging efficiency</td></tr><tr><td><code>est_nhole</code></td><td>jumlah <b>lubang bor berbeda</b> yang komposit-nya dipakai</td></tr><tr><td><code>est_spasi</code></td><td>perkiraan <b>spasi bor setempat</b> (m)</td></tr><tr><td><code>est_dmin</code></td><td>jarak ke komposit terdekat yang dipakai</td></tr></table>'
+ + (fig('u_klas', 'Alur penentuan kelas: blok diuji berurutan dari syarat terketat; yang tidak memenuhi turun ke kelas berikutnya.') if hv('u_klas') else '')
+ + '<table class="t"><tr><th>Kelas</th><th>Syarat bawaan (dapat diubah di panel)</th></tr><tr><td><b>Measured</b></td><td>pass &le; 1, komposit &ge; 12, SoR &ge; 0,75, lubang bor berbeda &ge; 3, spasi bor &le; 25 m</td></tr><tr><td><b>Indicated</b></td><td>pass &le; 2, komposit &ge; 7, SoR &ge; 0,45, lubang bor berbeda &ge; 2, spasi bor &le; 50 m</td></tr><tr><td><b>Inferred</b></td><td>blok terestimasi lainnya</td></tr></table>'
+ + steps('Jalankan <b>Model Estimation</b> (dan estimasi waste bila perlu).',
+   'Buka <b>Reporting BM</b> &rarr; <b>&#9312; Atribut</b>; kotak <b>Klasifikasi keyakinan</b> ada di bawahnya ([[kls_panel]]). Pilih ukuran (SoR / KE) dan ambangnya.',
+   'Klik <b>&#9654; Hitung klasifikasi</b> &rarr; atribut kategori <code>klasifikasi</code> ([[kls_hasil_panel]]).',
+   'Pilih <code>sb_frac</code> pada <b>Timbang volume &amp; tonase dengan proporsi</b>, lalu <b>&#9654; Hitung reporting</b>: tabel per kelas dan <b>kurva grade &times; tonase bertumpuk per kelas</b> ([[kls_gt]]).')
+ + figs(('kls_panel', 'Kotak Klasifikasi keyakinan di Reporting BM &#9312;.'),
+        ('kls_hasil_panel', 'Hasil klasifikasi: ' + ', '.join('%s %s blok' % (r[0], fN(r[1])) for r in KL if r[1]) + '.'),
+        ('kls_gt', 'Grade &times; tonase bertumpuk per kelas keyakinan (volume &amp; tonase ditimbang sb_frac).'),
+        ('kls_3d', 'Atribut klasifikasi di 3D.'))
+ + '<h3>Kerapatan bor per blok</h3><p>Jumlah komposit saja bukan ukuran kerapatan: dua puluh komposit dari <b>satu</b> lubang tidak sama dengan dua puluh komposit dari enam lubang. Karena itu syarat Measured / Indicated memakai <code>est_nhole</code> dan <code>est_spasi</code>.</p>'
+ + figs(('kerapatan_3d', f"Block model berwarna est_spasi (batas kelas 15 / 25 / 40 / 60 m): median spasi bor setempat {fz(SPS.get('med'),1)} m (p10 {fz(SPS.get('p10'),1)} m, p90 {fz(SPS.get('p90'),1)} m), median {fz(SPS.get('nholeMed'))} lubang bor per blok. Bagian dalam endapan yang hanya terbor tiap sayatan ke-3 tampak jelas lebih renggang."),)
+ + warn('Ambang ini usulan geostatistik, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> sesuai KCMI / JORC.'))
+
 ch('Vein bercabang: domain induk', '<p>Vein yang <b>bercabang</b> (split / splay) tidak bisa digambarkan dengan satu permukaan HW dan satu FW. Di GC-Ex tiap cabang dibuat sebagai <b>domain sendiri</b> dengan string HW / FW sendiri, lalu dijadikan <b>cabang dari domain induk</b>. Solidnya digabung, dan Model Estimation memperlakukan induk + cabang sebagai <b>satu domain</b> &mdash; mirip seam split pada batubara.</p>'
  + '<p>Latihan ini memakai proyek terpisah dengan data <code>SIM_split_*</code>: vein <b>QVS_Utama</b> dan <b>QVS_Cabang</b> yang lepas dari sisi footwall pada &plusmn;66 m searah dip, makin menjauh ke atas. Bor dangkal menembus dua vein, bor dalam hanya satu (vein sudah menyatu).</p>'
  + steps('Buat proyek baru, import <code>SIM_split_collar/survey/assay/geologi.csv</code>, topografi dan <code>SIM_split_BM_GC.csv</code>.',
@@ -463,6 +566,23 @@ ch('Sesar 3D: bidang, offset & urutan umur', '<p>Menu <b>Sesar 3D</b> (rel kiri,
  + why('Ore body yang terpotong sesar post bila diinterpolasi langsung akan &ldquo;dijembatani&rdquo; melintasi bidang sesar (lapisan melandai palsu, kadar tercampur). Dengan pemulihan, data dari kedua sisi bersambung lagi seperti sebelum tersesarkan.')
  + warn('Pemulihan memakai translasi kaku (tanpa rotasi / lipatan). Offset di ujung jejak bisa dikecilkan bertahap dengan <b>Taper ujung</b>. Simpan &amp; export: CSV sesar dan DXF bidang (3DFACE), tabel <code>sesar</code> di gcex_proyek.db.'))
 
+
+if NU:
+    ch('Latihan terpandu: menemukan kembali geometri endapan', '<p>Data latihan dibuat dari geometri yang sudah ditentukan (<code>make_sim_data.py</code>), jadi setiap latihan punya <b>jawaban yang diketahui</b>: Anda bisa memeriksa apakah cara kerja Anda benar-benar mengembalikan geometri itu. Kunci jawabannya ada di <code>JAWABAN_MODEL.txt</code>. Semua gambar di bab ini dihitung langsung dari berkas data latihan.</p>'
+     + (fig('u_bidang', 'Bidang vein lensa 2 dibentangkan. Kiri: tebal vein. Kanan: GT model (tebal &times; kadar relatif). Keduanya memanjang searah sumbu ore shoot ber-pitch %.0f&deg;.' % NU['PITCH']) if hv('u_bidang') else '')
+     + '<h3>2a &mdash; orientasi bidang vein</h3><p>Setelah flagging domain, pasang bidang terbaik pada seluruh intersep vein. Hasil yang seharusnya: <b>dip &asymp; %.0f&deg;, dip-azimuth &asymp; %.0f&deg;</b>. Bidang acuan model %.0f&deg;/%.0f&deg;, tetapi permukaan vein sigmoidal sehingga bidang rata-rata bagian yang terbor lebih landai &mdash; keduanya benar.</p>' % (NU['dip_ukur'], NU['daz_ukur'], NU['DIP'], NU['DIPAZ'])
+     + '<h3>2b &mdash; pitch ore shoot</h3>' + steps('Hitung <b>GT = kadar &times; tebal</b> dijumlah <b>per bor</b> (menu <b>Ore Geometry</b> melakukannya sendiri).', 'Proyeksikan GT ke bidang vein, cari arah kemenerusan terbaik (kipas variogram).', '<b>Gabungkan keempat lensa</b>: kontrol strukturnya satu; satu lensa saja datanya terlalu sedikit untuk menembus efek nugget Au.')
+     + (fig('u_gt', 'GT per bor di bidang vein. Kiri (lensa utuh): pemusatan GT memanjang searah sumbu ore shoot. Kanan (lensa yang dipotong sesar): polanya pecah karena blok yang turun menggeser vein %.0f m.' % NU['FA_OFF']) if hv('u_gt') else '')
+     + (fig('u_kipas', 'Kipas variogram: lembah terdalam = arah paling menerus. GT di %s&deg;, tebal intersep di %s&deg;, berbanding pitch model %.0f&deg;.' % (NU.get('fan_gt', '-'), NU.get('fan_tb', '-'), NU['PITCH'])) if hv('u_kipas') else '')
+     + '<p>Pakai hasil itu untuk <b>elipsoid pencarian</b> estimasi: major searah pitch &asymp; %.0f&deg; di bidang vein, semi searah strike, minor tegak lurus bidang vein; nisbah &plusmn;3 : 2 : 1 ({{B:Variogram}}).</p>' % NU['PITCH']
+     + '<h3>2c &mdash; pemulihan sesar lebih dulu</h3><p>Di <b>Sesar 3D</b> masukkan bidang dari <code>SIM_sesar.csv</code> (strike 110&deg;, dip 65&deg;, offset %.0f m, post-mineralisasi) dan jalankan pemulihan sebelum pemodelan ({{B:Sesar 3D}}). Tanpa pemulihan, domain lensa 2 &amp; 3 pecah dan arah ore shoot-nya kacau; lensa 1 &amp; 4 tidak terpengaruh.</p>' % NU['FA_OFF']
+     + '<h3>2d &mdash; zonasi vertikal</h3>'
+     + (fig('u_zonasi', 'Zonasi vertikal terhadap paleo-muka air tanah RL %.0f m: Au memuncak di sekitar RL %s m bersama tekstur colloform; Ag/Au naik dari &asymp;%s di bawah menjadi &asymp;%s di atas; Pb+Zn naik ke bawah.' % (NU['WT_RL'], NU.get('zon_puncak', '-'), str(NU.get('zon_agau_bawah', '-')).replace('.', ','), str(NU.get('zon_agau_atas', '-')).replace('.', ','))) if hv('u_zonasi') else '')
+     + warn('<b>Jangan menginterpolasi menembus batas zona.</b> Zona didih, zona base-metal dan tudung tercuci adalah populasi kadar yang berbeda; dicampur dalam satu domain, variogram dan estimasinya ikut salah.')
+     + '<h3>2e &mdash; top-cut</h3>'
+     + (fig('u_topcut', 'Sebaran Au di dalam vein: rata-rata %s g/t, median %s g/t, CV %s, maksimum %s g/t. 1%% sampel teratas memuat %s%% logam &mdash; itulah alasan top-cut.' % tuple(str(NU.get(k, '-')).replace('.', ',') for k in ('au_mean', 'au_med', 'au_cv', 'au_max', 'tc_1'))) if hv('u_topcut') else '')
+     + tip('Top-cut ditentukan <b>per unsur</b>: Ag tidak perlu top-cut seagresif Au karena efek nugget-nya jauh lebih kecil.'))
+
 ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex) berlapis mengikuti permukaan: lapisan tipis secara vertikal tetapi luas ke samping. Menu <b>Geomodeller Stratified-Laterite</b> (rel kiri, di bawah Geomodeller Vein) memodelkan lapisan dari log geologi, lalu mengestimasi per lapisan di koordinat <b>unfold</b>. Menu vein yang lama sekarang bernama <b>Geomodeller Vein</b> (Geomodeller Vein System Deposit).</p>'
  + '<h3>Import data laterit</h3>' + steps('Buat folder proyek baru, import <code>SIM_LAT_collar / survey / assay / geologi.csv</code>, topografi <code>SIM_LAT_topo_xyz.csv</code> dan block model <code>SIM_LAT_BM_GC.csv</code> seperti {{B:Membuat folder}}.',
    'Di menu Geologi pilih atribut <b>Zona</b> untuk melihat profil TS / LIM / SAP / BRK ([[lat_geologi]]).')
@@ -503,6 +623,10 @@ ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> 
  + '<h3>&#9315; Laporan</h3>' + steps('Bagian <b>Laporan</b>: volume, <b>WMT</b> (volume &times; densitas basah), <b>DMT</b> (WMT &times; (1 &minus; kadar air)), kadar rata-rata (ditimbang DMT) dan rasio ([[sl_laporan]]).',
    'Isi <b>cut-off</b> Ni &ge; 1,5 untuk tonase bijih ([[sl_laporan_cut]]). <b>&#8681; Laporan CSV</b> untuk Excel.')
  + fig2('sl_laporan', f"Tanpa cut-off: Limonit {nf(LP[0][4])} DMT @ Ni {nf(LP[0][5][0],3)}%; Saprolit {nf(LP[1][4])} DMT @ Ni {nf(LP[1][5][0],3)}%.", 'sl_laporan_cut', f"Cut-off Ni &ge; 1,5: Limonit {nf(LC[0][2])} DMT @ {nf(LC[0][3][0],3)}%; Saprolit {nf(LC[1][2])} DMT @ {nf(LC[1][3][0],3)}%.")
+ + ('<h3>&#9316;b Estimasi waste laterit</h3><p>Blok yang <b>tidak jatuh di lapisan mana pun</b> (mis. tanah penutup di atas kontak teratas, bedrock di bawah permukaan terbawah bila bedrock bukan lapisan dasar) tidak pernah diestimasi oleh &#9314;. Bagian <b>&#9316;b</b> mengisinya dengan IDW anisotropis di <b>ruang unfold</b>: zona <i>atas</i> memakai tinggi di atas kontak teratas, zona <i>bawah</i> kedalaman di bawah permukaan terbawah; blok di atas topografi adalah udara dan tidak pernah ikut. Sampelnya interval yang kodenya tidak dipetakan ke lapisan mana pun.</p>'
+   + steps('Sesudah &#9314; Estimasi, buka bagian <b>&#9316;b Estimasi waste</b> &rarr; <b>Periksa dulu</b> ([[wl_panel]]).', 'Klik <b>Jalankan</b>. Hasil: <code>sl_pass = 9</code>, kategori <code>sl_lapisan = WASTE (di luar lapisan)</code> ([[wl_hasil]], [[wl_2d]]).')
+   + ''.join(fig(k, c) for k, c in (('wl_panel', 'Bagian &#9316;b sesudah Periksa dulu.'), ('wl_hasil', clean(NL.get('wlHasil', 'Hasil estimasi waste laterit.'))), ('wl_2d', 'Sayatan 2D sl_lapisan: tanah penutup di atas atap limonit kini berkadar (WASTE).')) if k in FIG)
+   + warn('Setiap kali estimasi lapisan &#9314; dijalankan ulang, estimasi waste laterit ikut terhapus &mdash; jalankan ulang sesudahnya.') if 'wl_panel' in FIG else '')
  + '<h3>Bauksit &amp; stratiform (sedex)</h3>'
  + kv([('Preset Bauksit','Overburden, Bauksit, Kaolin / lempung, Batuan dasar; pakai unsur Al2O3, SiO2 reaktif, Fe2O3 dan rasio Al2O3 / SiO2'),
        ('Preset Stratiform (sedex)','Hanging wall, Lapisan bijih (Akumulasi 2D), Footwall; lapisan tidak harus mengikuti topografi; sesar post dipulihkan, growth fault = syn + batas keras'),
@@ -539,6 +663,11 @@ ch('Mengganti topografi & block model (Data Spasial)', '<p>Topografi pick-up, or
  + tip('Hasil kerja mencatat versi yang dipakai: solid vein yang dipotong topografi dibangun ulang otomatis; uji estimasi dan Model Estimation memberi tanda bila topografi / block model aktif berbeda dari saat dijalankan.')
  + warn('Jangan mengganti data lewat import ulang di proyek folder. Pakai menu Data Spasial agar versi lama tetap ada dan hasil kerja ikut diperbarui.'))
 
+ch('Topografi & orthofoto resolusi tinggi', '<p>Mulai 0.24, orthofoto dan topografi resolusi tinggi ditampilkan tanpa membuat tampilan tersendat. Orthofoto disusun menjadi <b>piramida LOD</b>; warna diambil dari tingkat yang sepadan dengan kerapatan tampilan, dan resolusi mesh mengikuti luas area yang sedang terlihat &mdash; zoom masuk otomatis makin detail. Di <b>Peta (Mapping)</b> orthofoto dipotong sesuai tampilan, setajam layar.</p>'
+ + '<table class="t"><tr><th></th><th>Sebelum</th><th>Sesudah</th></tr><tr><td>Mesh ortho, zoom 40 m</td><td>1 m/titik &middot; 592 ms</td><td><b>0,1 m/titik</b> &middot; 136 ms</td></tr><tr><td>Mesh ortho, zoom 10 m</td><td>1 m/titik &middot; 592 ms</td><td><b>0,1 m/titik</b> &middot; <b>3 ms</b></td></tr><tr><td>Gambar ortho Peta, zoom 10 m</td><td>2.666 &times; 2.666 px &middot; 255 ms</td><td>220 &times; 220 px @ 0,05 m &middot; 6 ms</td></tr><tr><td>200.000 pembacaan elevasi</td><td>512 ms</td><td><b>14 ms</b></td></tr></table>'
+ + kv([('Resolusi (m) di panel orthofoto','sekarang <b>batas paling halus</b>, bukan resolusi tetap'),('Penyegaran','&plusmn;0,3 detik setelah zoom / geser berhenti; klik ganda / autoscale kembali ke seluruh area'),('Hasil laporan','tidak berubah: grid elevasi cepat hanya untuk tampilan; Reporting BM, estimasi dan validasi memakai fungsi elevasi aslinya (selisih rata-rata 4 mm pada uji 300 titik)')])
+ + tip('Latihan: di {{B:Mengganti topografi}} Anda sudah memasang <code>SIM_topo_xyz_nov.csv</code> sebagai versi kedua. Hitung volume sisa di Reporting BM dengan batas <b>di bawah topografi aktif</b> untuk kedua versi &mdash; bedanya adalah material yang sudah tergali.'))
+
 ch('Export database & block model', steps(
  'Menu <b>Data</b> &rarr; <b>&#8681; Export database (CSV)</b>. Pilih <b>Dip di survey</b>: negatif = ke bawah (Surpac / Leapfrog umumnya negatif).',
  f"Hasil: {clean(N['exportDb'])} File ZIP berisi: <code>{', '.join(N['zipIsi'])}</code>.",
@@ -563,7 +692,8 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<tr><td><b>Tahap 3</b><br>Model Estimation</td><td><b>Sudah tersedia</b> ({{B:Model Estimation}}, {{B:Koreksi setelah}}): parameter per domain dari Geostatistik, Ordinary Kriging blok GC di dalam solid, koreksi hanya sekitar bor baru, blok tambahan, atribut baru, riwayat run, export .mdl / CSV.</td></tr>'
  + '<tr><td><b>Pembaruan 23 Okt</b></td><td><b>Sudah tersedia</b>: validasi data ({{B:Validasi data}}), RBF halus &amp; anti-spike, vein bercabang ({{B:Vein bercabang}}), struktur geologi ({{B:Struktur geologi}}), menu Map ({{B:Map:}}).</td></tr>'
  + '<tr><td><b>Versi 0.21</b></td><td><b>Sudah tersedia</b>: Sesar 3D ({{B:Sesar 3D}}) dan Geomodeller Stratified-Laterite ({{B:Geomodeller Stratified}}); menu Geological Modelling berganti nama menjadi Geomodeller Vein. <b>0.23.1</b>: Geostatistik per lapisan (ruang unfold), Simpan ke lapisan, validasi swath &amp; grade-tonase per lapisan.</td></tr>'
- + '<tr><td><b>Usulan berikutnya</b><br>(belum disepakati)</td><td>Klasifikasi blok (measured / indicated) dari pass, SoR dan jarak sampel; tabel grade-tonnage per domain dan per bench; rekonsiliasi GC lama vs model baru per periode.</td></tr></table>'
+ + '<tr><td><b>Versi 0.24</b></td><td><b>Sudah tersedia</b>: data latihan baru &amp; {{B:Latihan terpandu}}, {{B:Klasifikasi}}, kerapatan bor per blok, {{B:Topografi &}}, {{B:Block model dari nol}}, {{B:Estimasi waste}} (vein &amp; laterit), {{B:Sub-blocking}}.</td></tr>'
+ + '<tr><td><b>Usulan berikutnya</b><br>(belum disepakati)</td><td>Tabel grade-tonnage per domain dan per bench; rekonsiliasi GC lama vs model baru per periode.</td></tr></table>'
  + '<h3>Ringkasan angka latihan (untuk mengecek hasil peserta)</h3>'
  + kv([('Import awal', f"{N['nHole']} hole, {N['nAssay']:,} assay, block model GC {N['bx']:,} blok"),
        ('Usulan otomatis', clean(N['auto']).split('. Periksa')[0]),
@@ -644,7 +774,7 @@ table.kv td{{border-bottom:1px solid var(--ln);padding:1.3mm 2mm;vertical-align:
 ul{{margin:1mm 0 3mm;padding-left:5mm}}li{{margin:.6mm 0}}
 </style></head><body>
 <div class="cover"><div class="top"><div class="logo">GC-Ex</div><h1>Tutorial Pemodelan Vein &amp;<br>Estimasi Block Model</h1>
-<div class="sub">GC-Ex Drill Hole Ultimate 0.23.1 &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
+<div class="sub">GC-Ex Drill Hole Ultimate {VDH} &middot; langkah demi langkah dengan data simulasi VeinA &amp; laterit nikel (Sesar 3D, Geomodeller Stratified-Laterite)</div></div>
 <div class="img"><img src="{FIG['model_3d'][0]}"></div>
 <div class="meta">Edisi {today.day} {bulan} {today.year} &middot; untuk pelatihan internal geologist grade control<br>
 Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya latihan</div></div>
@@ -655,7 +785,7 @@ def _bab(m):
     for i,(t,_) in enumerate(CH):
         if t.startswith(m.group(1)):return 'Bab %d'%i
     raise KeyError(m.group(1))
-HTML = re.sub(r'\{\{B:([^}]+)\}\}', _bab, HTML)
+HTML = re.sub(r'\{\{?B:([^}]+)\}\}?', _bab, HTML)   # di dalam f-string {{B:..}} menjadi {B:..}
 HTML = re.sub(r'\[\[(\w+)\]\]', lambda m: 'Gambar %d' % FNUM[m.group(1)], HTML)
 hp = os.path.join(OUT, 'tutorial.html'); open(hp, 'w', encoding='utf-8').write(HTML)
 with sync_playwright() as p:

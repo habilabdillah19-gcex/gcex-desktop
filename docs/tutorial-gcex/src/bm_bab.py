@@ -5,8 +5,8 @@ R1, R0 = N['rekap'][1], N['rekap'][0]
 AV = N['am_vs'][1]
 def fN(v, d=0): return ('{:,.%df}' % d).format(v).replace(',', 'X').replace('.', ',').replace('X', '.')
 
-ch('Tentang tutorial ini', """<p>Tutorial ini mengajarkan alur kerja <b>grade control dengan block model</b> di aplikasi desktop <b>GC-Ex Block Model 0.20</b>: memotong <b>flitch</b>, membuat <b>dig block</b> otomatis &amp; manual, <b>additional flagging</b> (mis. ore sulfida), meninjau hasil <b>flitch per flitch</b> dari Project Tree, mencatat <b>as-mined</b> dan membandingkan rencana dengan aktual. Semua gambar diambil dari satu kali jalannya latihan dengan data simulasi yang ikut rilis.</p>
-<h3>Yang dibutuhkan</h3><ul><li>Windows 10 / 11 64-bit dengan <b>GC-Ex Block Model</b> terpasang (<code>GC-Ex-Setup-0.20.x.exe</code>) dan lisensi aktif.</li>
+ch('Tentang tutorial ini', """<p>Tutorial ini mengajarkan alur kerja <b>grade control dengan block model</b> di aplikasi desktop <b>GC-Ex Block Model """ + VBM + """</b>: memotong <b>flitch</b>, membuat <b>dig block</b> otomatis &amp; manual, <b>additional flagging</b> (mis. ore sulfida), meninjau hasil <b>flitch per flitch</b> dari Project Tree, mencatat <b>as-mined</b> dan membandingkan rencana dengan aktual. Semua gambar diambil dari satu kali jalannya latihan dengan data simulasi yang ikut rilis.</p>
+<h3>Yang dibutuhkan</h3><ul><li>Windows 10 / 11 64-bit dengan <b>GC-Ex Block Model</b> terpasang (<code>GC-Ex-Setup-""" + VBM + """.exe</code>) dan lisensi aktif.</li>
 <li>File <code>SIM_BM_GC_kadar.csv</code> dari <code>GC-Ex-&lt;versi&gt;_2_Data-Latihan.zip</code> (folder <code>GC-Ex_Drillhole_BlockModel_SIM</code>).</li>
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_BM</code>.</li></ul>
 <h3>Alur kerja di Project Tree</h3><table class="t"><tr><th>Langkah</th><th>Node</th><th>Isi</th></tr>
@@ -57,7 +57,7 @@ ch('Additional flagging (garis ganda)', """<p><b>Additional flagging</b> menggan
  + tip('Kolom <b>Flag?</b> di aturan Tujuan (DEST) memakai flag ini, mis. LG + flag &rarr; stockpile sulfida. Nama flag ikut di label dig plan, PDF, daftar dig block (&#9873;) dan Project Tree. Proyek lama: pengaturan sxs &amp; batas otomatis menjadi aturan <i>Ore Sulfide</i>.'))
 
 ch('Digit manual & rekap string', steps(
- 'Dig Block &rarr; <b>Digit manual (snap sudut blok)</b>: klik <b>Mulai</b>, klik sudut-sudut blok di Sayatan 2D, klik titik pertama untuk menutup. Tonase &amp; kadar dihitung langsung.',
+ 'Dig Block &rarr; <b>Digit manual (snap sudut blok)</b>: klik <b>Mulai</b>, klik sudut-sudut blok di Sayatan 2D, klik titik pertama <b>atau tekan Enter</b> untuk menutup. Poligonnya mendapat menu yang sama dengan dig block otomatis (edit bentuk, warna, grade &times; tonase).',
  'Dig Block &rarr; <b>Rekap &amp; edit string</b> ([[rekap_string]]): tabel semua string (tampil, nomor, keterangan, titik, panjang, bidang) dengan &#9998; <b>edit bentuk</b> dan &times; hapus. String baru dibuat di bagian bawah panel.')
  + fig('rekap_string', 'Rekap &amp; edit string.'))
 
@@ -93,3 +93,16 @@ ch('Register, 3D hasil kerja & rekonsiliasi', steps(
  'Project Tree &rarr; <b>Register &amp; Laporan As-Mined &rarr; Register poligon</b> ([[register]]): kode poligon, BCM, ton, kadar, ritase; <b>Kirim register ke Excel</b>, CSV, <b>Report rekonsiliasi (PDF)</b>.',
  '<b>3D hasil kerja</b>: prisma dig block, poligon as-mined dan sub-blok model as-mined per flitch ([[hasil_kerja_3d]]). <b>Rekap &amp; model gabungan (.mdl)</b> menggabungkan semua flitch ke satu block model Surpac.')
  + fig('register', 'Register poligon as-mined.') + fig('hasil_kerja_3d', '3D hasil kerja: dig block (rencana) dan as-mined (aktual).'))
+
+ch('Yang baru di 0.24', """<p>Perbaikan GC-Ex Block Model 0.24 berpusat pada satu keluhan: digitasi manual dulu terasa kalah dari dig block otomatis. Sekarang keduanya setara, dan seluruh hasil kerja &mdash; dari dig block sampai as-mined &mdash; bisa ditinjau dan diedit dari satu tempat.</p>"""
+ + '<table class="t"><tr><th>Yang berubah</th><th>Di tutorial ini</th></tr>'
+ + '<tr><td><b>Digitasi manual setara otomatis</b>: <b>Enter</b> menutup string, poligon mendapat menu edit bentuk, warna, grade &times; tonase</td><td>{{B:Digit manual}}</td></tr>'
+ + '<tr><td><b>Poligon as-mined dapat diedit</b> (bentuk &amp; warna), <b>register poligon</b> dapat diubah warnanya</td><td>{{B:As-mined}}, {{B:Register}}</td></tr>'
+ + '<tr><td><b>Subnode per flitch di Project Tree</b> untuk audit / review langsung ke flitch yang dimaksud</td><td>{{B:Review flitch}}</td></tr>'
+ + '<tr><td><b>3D hasil kerja dig block &rarr; as-mined</b> dan <b>rekap as-mined satu berkas .mdl</b></td><td>{{B:Register}}</td></tr>'
+ + '<tr><td><b>Penampang Sayatan seragam</b> dengan GC-Ex Drill Hole Ultimate; <b>tanpa jeda saat zoom</b> (segmen garis digabung, kotak blok 2D dirapatkan; garis putus-putus merah pada dig block tidak muncul lagi)</td><td>{{B:Flitch aktif}}</td></tr>'
+ + '<tr><td><b>Topografi &amp; orthofoto resolusi tinggi</b>: piramida LOD, resolusi mengikuti zoom, Peta setajam layar</td><td>di bawah</td></tr></table>'
+ + '<h3>Topografi &amp; orthofoto resolusi tinggi</h3><p>Orthofoto disusun menjadi <b>piramida LOD</b>; warna diambil dari tingkat yang sepadan dengan kerapatan tampilan dan resolusi mesh mengikuti luas area yang terlihat, jadi zoom masuk otomatis makin detail tanpa menambah beban. Kotak <b>Resolusi (m)</b> di panel orthofoto kini berarti <b>batas paling halus</b>. Tampilan disegarkan &plusmn;0,3 detik setelah zoom / geser berhenti. Perhitungan laporan tidak berubah: grid elevasi cepat hanya dipakai untuk tampilan.</p>'
+ + '<table class="t"><tr><th></th><th>Sebelum</th><th>Sesudah</th></tr><tr><td>Mesh ortho, zoom 10 m</td><td>1 m/titik &middot; 592 ms</td><td><b>0,1 m/titik</b> &middot; <b>3 ms</b></td></tr><tr><td>200.000 pembacaan elevasi</td><td>512 ms</td><td><b>14 ms</b></td></tr></table>'
+ + tip('Klasifikasi keyakinan, kerangka blok AOI, estimasi waste dan sub-blocking ada di <b>GC-Ex Drill Hole Ultimate</b> (Tutorial Modelling &amp; Estimasi). Block model hasilnya (.mdl) dibuka di sini untuk flitch, dig block dan as-mined.'))
+

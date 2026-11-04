@@ -456,7 +456,7 @@ B.append(D.cover(
      '3. Klasifikasi keyakinan sumber daya', '4. Kerapatan bor per blok',
      '5. Topografi &amp; orthofoto resolusi tinggi', '6. GC-Ex Block Model: yang baru',
      '7. Block model dari nol: kerangka AOI', '8. Estimasi waste: kadar di luar wireframe ore',
-     '9. Sub-blocking &amp; proporsi volume', '10. Bagian tutorial lama yang perlu disesuaikan'],
+     '9. Sub-blocking &amp; proporsi volume', '10. Isi dokumen ini di tutorial bergambar'],
     'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
     'Semua gambar di dokumen ini <b>dihitung langsung dari model dan berkas data latihan</b>, bukan '
     'tangkapan layar, sehingga angkanya selalu cocok dengan data yang Anda terima.<br>'
@@ -868,24 +868,26 @@ B.append('<div class=warn>Sub-blocking mengubah posisi blok, sehingga hasil esti
 B.append('<div class=box>Kadar <b>tidak</b> dikalikan proporsi: kadarnya memang kadar bagian yang di dalam solid, '
          'dan kadar rata-rata di laporan ditimbang tonase yang sudah berproporsi.</div>')
 
-B.append('<div class="page"></div><h2>10. Bagian tutorial lama yang perlu disesuaikan</h2>')
-B.append('<p>Dua tutorial bergambar yang lama masih berlaku untuk alur kerjanya, tetapi beberapa nama dan '
-         'angkanya mengikuti data simulasi versi sebelumnya:</p>')
-B.append('<table><tr><th>Di tutorial lama</th><th>Sekarang</th></tr>'
-         '<tr><td>Domain <code>QV_Utama</code> dan <code>QV_HW1</code> (2 vein)</td>'
-         '<td><code>QV_Lensa1</code> &hellip; <code>QV_Lensa4</code> + <code>QV_Splay_HW</code> '
-         '(array 4 lensa en-echelon)</td></tr>'
-         '<tr><td><code>QV_Utama_Leapfrog.obj</code></td><td><code>QV_Lensa2_Leapfrog.obj</code></td></tr>'
-         '<tr><td>Kolom assay: Au, Ag, SxS</td><td>Au, Ag, Cu, Pb, Zn, S, As_ppm, SG</td></tr>'
-         '<tr><td>Kolom geologi: Lith, Alt, Ox</td><td>+ Texture, RQD, Recovery</td></tr>'
-         f'<tr><td>&plusmn;33 bor, &plusmn;2.500 baris assay</td><td>{NOTE["n_bor"]} bor resource + '
-         f'{NOTE["n_gc"]} bor grade control, &plusmn;{(NOTE["n_assay"]+NOTE["n_gc_assay"])//1000} ribu baris assay</td></tr>'
-         f'<tr><td>Tebal vein 1&ndash;3,2 m</td><td>median {NOTE["tb_med"]} m, p90 {NOTE["tb_p90"]} m '
-         '(endapan vein sempit, dengan pembengkakan di zona dilatan)</td></tr>'
-         '</table>')
-B.append('<p>Langkah-langkah menu, urutan kerja dan penjelasan konsep di kedua tutorial itu tidak berubah. '
-         'Yang perlu Anda sesuaikan hanya nama domain yang diketik dan angka yang muncul di layar.</p>')
+B.append('<div class="page"></div><h2>10. Isi dokumen ini di tutorial bergambar</h2>')
+B.append('<p>Semua bab di dokumen ini kini juga ada di dua tutorial bergambar, lengkap dengan <b>tangkapan layar '
+         'aplikasi</b> dan angka dari satu kali jalannya latihan. Dokumen ini tetap diterbitkan sebagai ringkasan '
+         '&ldquo;apa yang baru&rdquo;; untuk belajar langkah demi langkah, pakai tutorial bergambarnya.</p>')
+B.append(D.tabel(['Bab di dokumen ini', 'Di tutorial bergambar'], [
+    ['1. Data latihan simulasi baru', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Data simulasi</b>'],
+    ['2. Latihan terpandu', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Latihan terpandu</b>'],
+    ['3&ndash;4. Klasifikasi keyakinan &amp; kerapatan bor', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Klasifikasi keyakinan &amp; kerapatan bor</b>'],
+    ['5. Topografi &amp; orthofoto resolusi tinggi', 'kedua tutorial: bab <b>Topografi &amp; orthofoto resolusi tinggi</b>'],
+    ['6. GC-Ex Block Model: yang baru', '<i>Tutorial Block Model</i>: bab <b>Yang baru di 0.24</b>'],
+    ['7. Kerangka AOI', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Block model dari nol: kerangka AOI</b>'],
+    ['8. Estimasi waste', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Estimasi waste</b> (jalur vein) dan bab <b>Geomodeller Stratified-Laterite</b> (jalur laterit)'],
+    ['9. Sub-blocking &amp; proporsi volume', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Sub-blocking &amp; proporsi volume</b>']]))
+B.append('<p>Nama domain dan angka di kedua tutorial bergambar sudah mengikuti data latihan yang sekarang '
+         '(<code>QV_Lensa2</code>, <code>QV_Splay_HW</code>, bor dan assay sesuai berkas yang Anda terima).</p>')
 
+import json as _json
+_json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
+               STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
+           open(os.path.join(FIGD, 'notes.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 sz = D.render(B, PDF, 'Tutorial Update GC-Ex %s / %s' % (VBM, VDH))
 print('OK', PDF, sz, 'byte')
 print('angka:', NOTE)

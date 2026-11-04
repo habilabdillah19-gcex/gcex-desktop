@@ -11,6 +11,7 @@ Isi folder keluaran (semua diunggah ke Release v<versi>):
 Kode sumber (zip / tar.gz) ditambahkan GitHub otomatis dari tag v<versi> (commit yang sama).
 
 Pemakaian: python tools/rilis/kemas_rilis.py <versi> <folder_dist> <folder_keluaran> [folder_data_dummy_core]
+           python tools/rilis/kemas_rilis.py --cek   (periksa kenaikan versi terhadap rilis sebelumnya, jalankan sebelum push)
 """
 import datetime
 import hashlib
@@ -60,8 +61,97 @@ def zip_dir(out: Path, items: list[tuple[Path, str]]) -> list[str]:
     return names
 
 
+# ---- pengaman versi: nomor versi sebuah aplikasi hanya boleh naik bila ada berkas MILIK aplikasi itu yang berubah
+# sejak rilis sebelumnya. Kejadian yang dicegah: Block Model ikut dinaikkan 0.24.16 -> 0.24.22 padahal isinya identik
+# dengan 0.24.15 (perubahan hanya di Drill Hole), sehingga pengguna mengira ada pembaruan Block Model.
+# Berkas bersama keluarga (README, PANDUAN_INSTALL, Tutorial Update / Petunjuk Teknis, alat rilis, CI) tidak dihitung
+# milik aplikasi mana pun. Bila sebuah push HANYA mengubah berkas bersama, satu aplikasi boleh naik versi supaya
+# perubahan itu tetap terbit di Release (aturan CLAUDE.md: setiap pembaruan harus masuk Release).
+VERSI_APP = {
+    "GC-Ex Block Model": ("package.json", ("version",)),
+    "GC-Ex Drillhole": ("builder-dh.json", ("extraMetadata", "version")),
+    "DB-Ex": ("builder-core.json", ("extraMetadata", "version")),
+}
+MILIK = {
+    "GC-Ex Block Model": ["app/", "web-src/", "electron/", "backend/", "build/", "legal/", "package-lock.json",
+                          "docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py",
+                          "docs/tutorial-gcex/src/bm_bab.py", "docs/tutorial-gcex/src/tutorial_bm_shots.py",
+                          "docs/tutorial-gcex/src/build_bm/", "docs/tutorial-gcex/data/SIM_BM_GC_kadar.csv", "docs/tutorial-gcex/tambah_unsur_bm.py"],
+    "GC-Ex Drillhole": ["app-dh/", "web-src-dh/", "web-src/", "electron/", "backend/", "build/", "legal/", "package-lock.json",
+                        "docs/tutorial-gcex/"],
+    "DB-Ex": ["app-core/", "app_core_qt/", "electron/", "backend/", "build/", "legal/", "docs/tutorial-core/", "docs/referensi/",
+              "docs/PANDUAN_CORE", "docs/DB-Ex_", "builder-core.json"],
+}
+# berkas Block Model di docs/tutorial-gcex/ tidak dihitung milik Drillhole
+BUKAN_DH = ("docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py", "docs/tutorial-gcex/src/bm_bab.py",
+            "docs/tutorial-gcex/src/tutorial_bm_shots.py", "docs/tutorial-gcex/src/build_bm/", "docs/tutorial-gcex/data/SIM_BM_GC_kadar.csv",
+            "docs/tutorial-gcex/tambah_unsur_bm.py")
+
+
+def _ver_di(ref, app):
+    f, keys = VERSI_APP[app]
+    try:
+        o = json.loads(git("show", f"{ref}:{f}") or "{}")
+        for k in keys:
+            o = o.get(k, {}) if isinstance(o, dict) else {}
+        return o if isinstance(o, str) and o else None
+    except Exception:
+        return None
+
+
+def _vt(v):
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except Exception:
+        return ()
+
+
+def _milik(app, path):
+    if app == "GC-Ex Drillhole" and path.startswith(BUKAN_DH):
+        return False
+    if app == "DB-Ex" and path == "builder-core.json":
+        return False          # baris versinya sendiri tidak dihitung; isi DB-Ex ada di folder di atas
+    return any(path == p or path.startswith(p) for p in MILIK[app])
+
+
+def cek_versi(prev, sha):
+    """Kembalikan daftar pelanggaran (kosong = aman). prev = tag rilis sebelumnya."""
+    if not prev:
+        return []
+    ubah = [p for p in git("diff", "--name-only", f"{prev}..{sha}").splitlines() if p]
+    naik = []
+    for app in VERSI_APP:
+        a, b = _ver_di(prev, app), _ver_di(sha, app)
+        if a and b and _vt(b) > _vt(a):
+            naik.append((app, a, b))
+    punya = {app: [p for p in ubah if _milik(app, p)] for app in VERSI_APP}
+    if not any(punya.values()):
+        # hanya berkas bersama yang berubah: satu aplikasi boleh naik agar perubahan itu terbit
+        return [] if len(naik) <= 1 else [f"{app} {a} -> {b}: hanya berkas bersama keluarga GC-Ex yang berubah; naikkan SATU aplikasi saja"
+                                           for app, a, b in naik[1:]]
+    return [f"{app} {a} -> {b}: tidak ada berkas {app} yang berubah sejak {prev} (kembalikan versinya ke {a})"
+            for app, a, b in naik if not punya[app]]
+
+
+def _tag_sebelum(sha, tag=None):
+    tags = [t for t in git("tag", "--list", "v*", "--sort=-v:refname").splitlines() if t and t != tag]
+    return next((t for t in tags if subprocess.run(["git", "merge-base", "--is-ancestor", t, sha], cwd=ROOT).returncode == 0), "")
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--cek":
+        sha = git("rev-parse", "HEAD"); prev = _tag_sebelum(sha)
+        bad = cek_versi(prev, sha)
+        print(f"cek versi terhadap {prev or '(belum ada tag)'}: " + ("aman" if not bad else "DITOLAK"))
+        for b in bad:
+            print("  - " + b)
+        raise SystemExit(1 if bad else 0)
     ver, dist, outd = sys.argv[1], Path(sys.argv[2]), Path(sys.argv[3])
+    _sha = os.environ.get("GITHUB_SHA") or git("rev-parse", "HEAD")
+    _bad = cek_versi(_tag_sebelum(_sha, f"v{ver}"), _sha)
+    if _bad:
+        raise SystemExit("Pengaman versi menolak rilis ini:\n  - " + "\n  - ".join(_bad) +
+                         "\nNomor versi aplikasi hanya boleh naik bila berkas aplikasi itu berubah (lihat CLAUDE.md).")
     core_dummy = Path(sys.argv[4]) if len(sys.argv) > 4 else None
     tag = f"v{ver}"
     if outd.exists():

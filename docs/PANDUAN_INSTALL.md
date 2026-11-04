@@ -1249,3 +1249,41 @@ Bagian **8. Kerangka blok AOI, estimasi waste & proporsi volume** dengan empat s
 
 ### Dibangun di CI
 Kedua dokumen ini tidak memakai tangkapan layar aplikasi, jadi ikut dibangun otomatis setiap rilis di langkah **Tutorial PDF — Update & Petunjuk Teknis** (langkah yang wajib berhasil). Gambar-gambarnya dihitung ulang dari data latihan pada setiap build, sehingga angkanya selalu cocok dengan data yang dikirim dalam rilis yang sama.
+
+## 71. GC-Ex Block Model & Drill Hole Ultimate 0.24.23 — tutorial bergambar terkompilasi, koreksi versi, pengaman versi
+
+### Koreksi: Block Model 0.24.16–0.24.22 identik dengan 0.24.15
+Rilis 0.24.16 sampai 0.24.22 hanya mengubah GC-Ex Drill Hole Ultimate (kerangka AOI, estimasi waste, sub-blocking, variogram waste) dan dokumen bersama. Nomor versi GC-Ex Block Model ikut dinaikkan di setiap commit itu, padahal **tidak ada satu pun berkas Block Model yang berubah** (`git diff 5007a23 0601b26 -- app/ web-src/ electron/ backend/` kosong; hanya baris versi di `package.json`). Pengguna Block Model 0.24.15 tidak perlu memasang 0.24.16–0.24.22. Block Model **0.24.23** berisi perubahan dokumen saja (bab *Yang baru di 0.24* di tutorial Block Model).
+
+### Pengaman versi
+`tools/rilis/kemas_rilis.py` kini menolak rilis bila nomor versi sebuah aplikasi naik tanpa ada berkas milik aplikasi itu yang berubah sejak tag rilis sebelumnya:
+
+| Aplikasi | Berkas miliknya |
+|---|---|
+| GC-Ex Block Model | `app/`, `web-src/`, `electron/`, `backend/`, `build/`, `legal/`, tutorial Block Model (`GCEx_Tutorial_Block_Model.pdf`, `build_tutorial_bm.py`, `bm_bab.py`, `tutorial_bm_shots.py`), `SIM_BM_GC_kadar.csv` |
+| GC-Ex Drill Hole Ultimate | `app-dh/`, `web-src-dh/`, `web-src/`, `electron/`, `backend/`, `build/`, `legal/`, `docs/tutorial-gcex/` (kecuali berkas Block Model di atas) |
+| DB-Ex | `app-core/`, `app_core_qt/`, `electron/`, `backend/`, `build/`, `legal/`, `docs/tutorial-core/`, `docs/referensi/`, `docs/PANDUAN_CORE*`, `docs/DB-Ex_*` |
+
+Berkas bersama keluarga (README, panduan ini, `CLAUDE.md`, alat rilis, workflow CI) tidak dihitung milik aplikasi mana pun. Bila sebuah push **hanya** mengubah berkas bersama, **satu** aplikasi boleh naik versi supaya perubahannya tetap terbit di Release.
+
+- Sebelum push: `python tools/rilis/kemas_rilis.py --cek` (keluar 1 + daftar pelanggaran bila ditolak).
+- CI menjalankan pemeriksaan yang sama sebagai langkah pertama (gagal cepat, sebelum installer dibangun) dan sekali lagi saat mengemas Release.
+- Diuji pada riwayat: rentang `5007a23..0601b26` ditolak dengan pesan *"GC-Ex Block Model 0.24.15 -> 0.24.22: tidak ada berkas GC-Ex Block Model yang berubah"*.
+
+### Tutorial bergambar terkompilasi
+Isi *Tutorial Update GC-Ex* kini juga ada di dua tutorial bergambar, dengan tangkapan layar aplikasi dari satu kali jalannya latihan:
+
+| Tutorial | Bab baru / diperbarui |
+|---|---|
+| `GCEx_Tutorial_Modelling_Estimasi.pdf` | Data simulasi (data penuh 610 bor + peta lensa), **Block model dari nol: kerangka AOI**, **Sub-blocking & proporsi volume (sb_frac)**, **Estimasi waste** (variogram WASTE di Geostatistik, Periksa dulu, hasil di sayatan), **Klasifikasi keyakinan & kerapatan bor** (Reporting BM ditimbang `sb_frac`, kurva grade-tonase per kelas, `est_spasi` di 3D), **Latihan terpandu** (orientasi vein, pitch ore shoot, pemulihan sesar, zonasi vertikal, top-cut; gambar dihitung dari data), **Topografi & orthofoto resolusi tinggi**, estimasi waste laterit (&#9316;b) di bab Stratified-Laterite |
+| `GCEx_Tutorial_Block_Model.pdf` | **Yang baru di 0.24** (digitasi manual setara otomatis — Enter menutup string, as-mined & register dapat diedit, subnode per flitch, 3D hasil kerja, rekap .mdl, sayatan seragam, topografi & orthofoto resolusi tinggi) |
+
+`GCEx_Tutorial_Update.pdf` tetap terbit sebagai ringkasan "apa yang baru"; bab 10-nya kini memetakan tiap bab ke bab tutorial bergambar. Nomor versi di sampul kedua tutorial bergambar dibaca otomatis dari `package.json` / `builder-dh.json`. Rujukan bab di dalam f-string (`{B:...}`) yang sebelumnya tercetak mentah kini terselesaikan.
+
+Skrip: `tutorial_shots.py` bagian 16d (AOI → sub-blocking → estimasi ulang → waste → klasifikasi; gagal tidak menghentikan tangkapan layar lain), `tutorial_lat_shots.py` bagian 5c (waste laterit), `build_tutorial_update.py` menulis `fig_update/notes.json` untuk dipakai `build_tutorial.py`.
+
+### Perbaikan kecil (Drill Hole Ultimate 0.24.23)
+- Pesan hasil **Estimasi waste** selalu menulis *kriging (variogram domain terdekat)* walaupun yang dipakai variogram WASTE hasil fitting sendiri. Pesan kini menyebut sumber yang benar-benar dipakai; perhitungannya tidak berubah.
+- Dialog **Buat kerangka blok (AOI)** dan **Pecah blok di batas solid** (0.24.16 / 0.24.20) tidak punya gaya tampilan sehingga muncul di bawah batas layar dan tidak terlihat. Kini tampil sebagai jendela di tengah layar seperti dialog Import block model.
+- Skrip tangkapan layar tutorial: sayatan Geostatistik diambil dari bidang solid QV_Lensa2 (sebelumnya koordinat data latihan lama, 0 komposit), dan dialog peringatan yang tertinggal ditutup sebelum mengambil gambar.
+

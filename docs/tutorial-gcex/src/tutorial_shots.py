@@ -36,6 +36,7 @@ def note(k,v):
         except Exception:pass
 try:urllib.request.urlopen(P,timeout=2)
 except Exception:subprocess.Popen([sys.executable,'-m','http.server',str(PORT)],cwd=DIST,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);time.sleep(1)
+DISMISS="[...document.querySelectorAll('button')].filter(b=>b.offsetParent&&/^(Mengerti|OK|Tutup)$/.test(b.textContent.trim())&&b.closest('[class*=dlg],[class*=modal],[id*=Dlg],[id*=dlg],[role=dialog]')).forEach(b=>b.click())"
 with sync_playwright() as pw:
     br=pw.chromium.launch(args=['--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'])
     ctx=br.new_context(viewport={'width':1600,'height':940},device_scale_factor=1.25,accept_downloads=True)
@@ -152,10 +153,16 @@ with sync_playwright() as pw:
     ev("$('pos').value=0;if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(500);shot('upsert_string_baru')
     note('solidInfill',ev(SOL));note('solidInfillMsg',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     # 13. geostatistik domain QV_Lensa2: sayatan sejajar bidang vein (strike 45, dip 70), slab tebal
-    ev("""(()=>{var cx=505000,cy=9012000,az=45*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-130*Math.sin(az)).toFixed(1);$('p1n').value=(cy-130*Math.cos(az)).toFixed(1);$('p2e').value=(cx+130*Math.sin(az)).toFixed(1);$('p2n').value=(cy+130*Math.cos(az)).toFixed(1);
-      $('dipS').value=70;$('dipN').value=70;modeChanged();$('pos').value=0;$('thick').value=40;$('sliceClip').checked=true;if(VIEW2D)toggle2D();updatePlot();
-      uiTab('Geo');$('domAttr').value=GMCI;domAttrChanged();domAll(false);domSet(0,true);domChips();})()""")
-    pg.wait_for_timeout(500);shot('domain_filter',PANEL)
+    # bidang sayatan sejajar vein diambil dari solid QV_Lensa2 (strike = dip direction - 90, dip solid), lewat pusat solid;
+    # posisi slab dipilih yang memuat komposit domain terbanyak (data latihan tidak lagi berpusat di E 505000 / N 9012000)
+    ev("""(()=>{var d=GM.doms.find(x=>x.name==='QV_Lensa2')||GM.doms[0],R=IM.R[d.id],c=R&&R.fr?R.fr.c:[(G.x0+G.x1)/2,(G.y0+G.y1)/2,0],
+      dd=R&&R.st?R.st.ddir:135,dp=R&&R.st?Math.round(R.st.dip):70,az=(dd-90)*Math.PI/180,cx=c[0]+offX,cy=c[1]+offY;
+      $('sMode').value='P';$('p1e').value=(cx-130*Math.sin(az)).toFixed(1);$('p1n').value=(cy-130*Math.cos(az)).toFixed(1);$('p2e').value=(cx+130*Math.sin(az)).toFixed(1);$('p2n').value=(cy+130*Math.cos(az)).toFixed(1);
+      $('dipS').value=dp;$('dipN').value=dp;modeChanged();$('pos').value=0;$('thick').value=40;$('sliceClip').checked=true;if(VIEW2D)toggle2D();updatePlot();
+      uiTab('Geo');$('domAttr').value=GMCI;domAttrChanged();domAll(false);domSet(gmIdx(d.id),true);domChips();
+      var best=0,bn=-1,open=GS.open;if(!open)gsToggle();for(var q=-80;q<=80;q+=10){$('pos').value=q;GS.open=true;gsRun();var n=GS.R&&GS.R.C?GS.R.C.length:0;if(n>bn){bn=n;best=q;}}
+      $('pos').value=best;if(!open)gsToggle();updatePlot();})()""")
+    pg.wait_for_timeout(800);note('gsPos',ev("$('pos').value"));shot('domain_filter',PANEL)
     ev("if(!GS.open)gsToggle();gsRun()");pg.wait_for_timeout(1500);ev("gsTab('S')");pg.wait_for_timeout(600);shot('geostat_statistik')
     note('gsLabel',ev("GS.R&&GS.R.label"));note('gsN',ev("GS.R&&GS.R.C.length"));note('gsMean',ev("GS.R&&GS.R.st&&(+GS.R.st.wmean||+GS.R.st.mean).toFixed(3)"))
     ev("gsTab('V')");pg.wait_for_timeout(600);shot('geostat_variogram')
@@ -246,13 +253,63 @@ with sync_playwright() as pw:
     ev("MAP.kind='alt';MAP.name='SIL';MAP.col='#e8590c';mapPanel()")
     B=ev("(()=>{var A=mapAx(),P=MAP.PF[0].P.filter(p=>/VEIN/.test(p[4])),x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;P.slice(8,30).forEach(p=>{x0=Math.min(x0,p[1]);x1=Math.max(x1,p[1]);y0=Math.min(y0,p[2]);y1=Math.max(y1,p[2]);});return[[x0-8,y0-4],[x1+2,y0-10],[x1+8,y1+4],[x0-2,y1+10]].map(q=>{var p=mapPx(A,q);return[p[0]+A.r.left,p[1]+A.r.top];});})()")
     for t in B:pg.mouse.click(t[0],t[1]);pg.wait_for_timeout(150)
-    pg.keyboard.press('Enter');pg.wait_for_timeout(400);ev("mapStart();MAP.mode=null;MAP.sel=null;mapPanel();mapDraw()");note('mapF',ev("MAP.F.map(f=>f.kind+':'+f.name+':'+f.pts.length)"))
+    pg.keyboard.press('Enter');pg.wait_for_timeout(400);ev("mapStart();MAP.mode=null;MAP.sel=null;mapPanel();mapDraw()");ev(DISMISS);note('mapF',ev("MAP.F.map(f=>f.kind+':'+f.name+':'+f.pts.length)"))
     ev("var h=[...document.querySelectorAll('#mapBody h4')].find(x=>/Digitasi/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})");pg.wait_for_timeout(300);shot('map_digit')
     ev("mapZoom();MAP.title='Peta Geologi Vein A (latihan)';MAP.sub='Data simulasi GC-Ex';MAP.auth='Habil';mapPanel()");pg.wait_for_timeout(1500)
     SEQ[0]+=1;fnl='%02d_map_layout.png'%SEQ[0]
     with pg.expect_download() as dl:ev("mapLayoutOut('png')")
     dl.value.save_as(IMG+fnl);print('shot',fnl)
     ev("uiTab('GM')");pg.wait_for_timeout(800)
+    # 16d. (0.24) block model dari nol, sub-blocking, estimasi waste, klasifikasi & kerapatan bor
+    #      urutan kerja yang disarankan: kerangka AOI -> sub-blocking -> sb_frac -> estimasi domain -> estimasi waste -> klasifikasi
+    SECV="""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-70*Math.sin(az)).toFixed(1);$('p1n').value=(cy-70*Math.cos(az)).toFixed(1);$('p2e').value=(cx+70*Math.sin(az)).toFixed(1);$('p2n').value=(cy+70*Math.cos(az)).toFixed(1);
+      $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=%s;$('sliceClip').checked=true;$('bxShow').checked=true;if(!VIEW2D)toggle2D();updatePlot();})()"""
+    try:
+        ev(DISMISS);pg.wait_for_timeout(300)
+        ev("var t=document.getElementById('fpToast');if(t)t.style.display='none';if(VIEW2D)toggle2D();$('sliceClip').checked=false;$('bxShow').checked=true;uiTab('BM')")
+        note('aoiBase',ev("[BX.m.n,BX.m.sizes]"))
+        ev("AOI.dlg();AOI.set('mode','isi');AOI.set('x0',504800);AOI.set('x1',505200);AOI.set('y0',9011800);AOI.set('y1',9012200);AOI.set('bx',10);AOI.set('by',10);AOI.set('bz',5);AOI.tog('pit',0);AOI.hit()");pg.wait_for_timeout(2500)
+        note('aoiPrev',ev("(AOI.prev||'').replace(/<br>/g,' | ').replace(/<[^>]+>/g,'')"))
+        shot('aoi_dialog',{'x':330,'y':0,'width':940,'height':940})
+        ev("AOI.go()");pg.wait_for_function("!AOI.busy&&!(document.getElementById('aoiDlg')&&document.getElementById('aoiDlg').style.display==='flex')",timeout=180000);pg.wait_for_timeout(800);ev(DISMISS);pg.wait_for_timeout(300)
+        note('aoiHasil',ev("(()=>{var m=BX.m,c=m.cat.AOI_ASAL;return{n:m.n,asal:c?c.dict.map((k,i)=>[k,c.cnt[i]]):null};})()"))
+        ev("bxSet('attr','AOI_ASAL')");ev(SECV%'5');pg.wait_for_timeout(1200);shot('aoi_2d')
+        ev("if(VIEW2D)toggle2D();SB.dlg();SB.set('lv',1);SB.hit()");pg.wait_for_timeout(4000)
+        note('sbPrev',ev("(SB.prev||'').replace(/<br>/g,' | ').replace(/<[^>]+>/g,'')"))
+        shot('sb_dialog',{'x':330,'y':0,'width':940,'height':940})
+        ev("SB.go()");pg.wait_for_function("!SB.busy&&!(document.getElementById('sbDlg')&&document.getElementById('sbDlg').style.display==='flex')",timeout=300000);pg.wait_for_timeout(800);ev(DISMISS);pg.wait_for_timeout(300)
+        note('sbHasil',ev("(()=>{var m=BX.m,F=m.num.sb_frac,nf=0,np=0;if(F)for(var i=0;i<m.n;i++){if(F[i]>=0.999)nf++;else if(F[i]>0)np++;}return{n:m.n,sizes:m.sizes,full:nf,part:np};})()"))
+        ev("bxSet('attr','sb_frac')");ev(SECV%'2.5');pg.wait_for_timeout(1500);shot('sb_frac_2d')
+        # estimasi domain dijalankan ulang (posisi blok berubah)
+        ev("if(VIEW2D)toggle2D();uiTab('ME');ME.opt.force=true;var d=GM.doms.find(x=>/Leapfrog/.test(x.name));if(d)ME.sel[d.id]=false;meRun()");pg.wait_for_function("!ME.job",timeout=900000);pg.wait_for_timeout(800);ME_force=ev("ME.opt.force=false")
+        note('meUlang',ev(MER))
+        # estimasi waste: variogram waste sendiri di Geostatistik
+        ev("$('domAttr').value=-1;domAttrChanged();gxWasteAct(true)");pg.wait_for_timeout(2500)
+        note('wsGs',ev("GS.R&&GS.R.st?[GS.R.label,GS.R.C.length,+GS.R.st.mean.toFixed(3),+GS.R.st.cv.toFixed(2)]:null"))
+        ev("gsFitAuto();gsTab('V')");pg.wait_for_timeout(900);shot('ws_geostat')
+        ev("gsTab('E')");pg.wait_for_timeout(500);ev("wsFromGs()");pg.wait_for_timeout(300)
+        ev("var b=document.getElementById('gsDomBox');if(b)b.scrollIntoView({block:'center'})");pg.wait_for_timeout(300);shot('ws_simpan',{'x':1040,'y':0,'width':560,'height':940})
+        ev("gxWasteAct(false);if(GS.open)gsToggle();uiTab('ME');wsPar().topo=1;wsCheck()");pg.wait_for_timeout(2500)
+        note('wsCek',ev("WS.last?JSON.stringify(WS.last).slice(0,400):(WS.msg||'').replace(/<[^>]+>/g,'')"))
+        ev("var h=[...document.querySelectorAll('#meBody h4')].find(x=>/Estimasi waste/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})");pg.wait_for_timeout(300);shot('ws_panel',PANEL)
+        ev("wsRun()");pg.wait_for_function("!WS.job",timeout=900000);pg.wait_for_timeout(800);ev(DISMISS);pg.wait_for_timeout(300)
+        note('wsHasil',ev("(WS.msg||'').replace(/<[^>]+>/g,'')"));note('wsLast',ev("WS.last?{nb:WS.last.nb,nEst:WS.last.nEst,fail:WS.last.fail,nIdw:WS.last.nIdw}:null"))
+        ev("var h=[...document.querySelectorAll('#meBody h4')].find(x=>/Estimasi waste/.test(x.textContent));if(h)h.scrollIntoView({block:'start'})");pg.wait_for_timeout(300);shot('ws_hasil',PANEL)
+        ev("meShow();$('thr').value='0.1,0.3,0.5,1,3';$('clsMode').checked=true;bxSet('attr',meAN().fin)");ev(SECV%'2.5');pg.wait_for_timeout(1500);shot('ws_2d')
+        # klasifikasi keyakinan + kerapatan bor, laporan ditimbang sb_frac
+        ev("if(VIEW2D)toggle2D();$('sliceClip').checked=false;uiTab('Rep');RP.sec='1';rpPanel();var w=document.querySelector('.clswrap');if(w)w.scrollIntoView({block:'start'})");pg.wait_for_timeout(600);shot('kls_panel',PANEL)
+        ev("clsRun()");pg.wait_for_timeout(800)
+        note('kls',ev("(()=>{var C=BX.m.cat.klasifikasi;return C?C.dict.map((k,i)=>[k,C.cnt[i]]):null;})()"))
+        ev("var w=document.querySelector('.clssum');if(w)w.scrollIntoView({block:'center'})");pg.wait_for_timeout(300);shot('kls_hasil_panel',PANEL)
+        ev("RP.o.frac='sb_frac';rpRun()");pg.wait_for_timeout(2500)
+        note('rpKls',ev("(document.getElementById('rpBody')||{}).innerText.slice(0,900)"))
+        ev("var g=document.getElementById('clsGT');if(g)g.scrollIntoView({block:'center'})");pg.wait_for_timeout(900);shot('kls_gt',PANEL)
+        ev("BX.rpOnly=false;BX.sc={};$('bxShow').checked=true;bxSet('attr','klasifikasi');updatePlot();setCam(1.3,-1.5,0.8)");pg.wait_for_timeout(1500);shot('kls_3d')
+        note('spasi',ev("(()=>{var A=BX.m.num.est_spasi,H=BX.m.num.est_nhole;if(!A)return null;var v=[],h=[];for(var i=0;i<BX.m.n;i++){if(A[i]>0)v.push(A[i]);if(H&&H[i]>0)h.push(H[i]);}v.sort((a,b)=>a-b);h.sort((a,b)=>a-b);var q=p=>v[Math.floor(p*(v.length-1))];return{n:v.length,p10:+q(.1).toFixed(1),med:+q(.5).toFixed(1),p90:+q(.9).toFixed(1),nholeMed:h.length?h[Math.floor(h.length/2)]:null};})()"))
+        ev("$('thr').value='15,25,40,60';$('clsMode').checked=true;bxSet('attr','est_spasi');updatePlot()");pg.wait_for_timeout(1500);shot('kerapatan_3d')
+        ev("$('thr').value='0.3,0.5,1,3';bxSet('attr',meAN().fin);uiTab('GM')")
+    except Exception as e:
+        note('err024',str(e)[:400]);print('GAGAL bagian 0.24:',e,flush=True)
     # 17. vein bercabang (proyek terpisah, data SIM_split_*)
     ctx2=br.new_context(viewport={'width':1600,'height':940},device_scale_factor=1.25,accept_downloads=True)
 
