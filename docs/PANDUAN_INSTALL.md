@@ -859,6 +859,14 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Bab 19 dikerjakan di `Dinding_Pit_A.jpg`: peta oksida, usulan jejak otomatis (ditunjukkan apa adanya — masih kasar), jejak yang digambar geologist → set, scanline, Jv, RQD, GSI, lalu zona SAM. `Dinding_Pit_C.jpg` untuk latihan tambahan.
 - Foto sintetis (trench & dinding) tidak lagi ada di paket data latihan; hanya dipakai uji otomatis.
 
+## 86. DB-Ex 0.39.0 — lokasi kamera dari GPS HP (Fase 2a)
+
+- **+ Foto** di Singkapan membaca metadata lokasi foto HP (iPhone dsb.): posisi kamera dalam **UTM WGS84** (E, N, RL), ketelitian ±m, arah hadap kamera, kamera & waktu pengambilan (mengisi Tanggal). Tampil di tab Deskripsi.
+- **Sistem koordinat…**: zona proyek (mis. UTM 50S) atau otomatis dari bujur. **Peta foto…**: denah posisi & arah kamera semua foto, collar bor, lubang terdekat, tabel lokasi untuk Excel.
+- Kompas infografis *otomatis* memakai arah hadap kamera bila foto belum digeoreferensi.
+- Metadata lokasi hilang bila foto dikirim lewat aplikasi chat — pindahkan file asli (kabel / AirDrop / Bagikan → Opsi → Lokasi & Semua Data Foto). HEIC belum dibaca: pakai JPG.
+- Data latihan: foto Dinding_Pit membawa metadata GPS fiktif; tutorial Latihan 20, Panduan DB-Ex 6c butir 9.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):

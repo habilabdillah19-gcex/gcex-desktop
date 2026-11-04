@@ -272,6 +272,14 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
      - **Di foto dinding pit sungguhan** (data latihan `Dinding_Pit_A/B/C.jpg`): peta oksida dan batas oksida – segar dari SAM paling andal; deteksi jejak otomatis masih kasar (rekahan berkelok, bekas lubang ledak, bayangan ikut terdeteksi) — pakai sebagai titik awal atau gambar jejak sendiri lalu *Hitung struktur*; peta vein kuarsa sulit bila batuan induk juga pucat. Ini akan meningkat dengan model yang dilatih dari foto site sendiri (Fase 3).
      - Batasan: set ketiga yang sejajar bidang foto tidak terlihat (Jv cenderung terlalu kecil); strike / dip sebenarnya tidak bisa dari satu foto dinding rata — itu bagian Fase 2 (jejak di permukaan 3D). Angka geoteknik adalah **bantuan**, bukan pengganti penilaian geotech di lapangan.
 
+9. **Lokasi kamera dari GPS HP** (tab Deskripsi) — foto dari HP (mis. iPhone) menyimpan metadata lokasi; DB-Ex membacanya otomatis saat **+ Foto**:
+   - lintang / bujur / ketinggian → **E, N, RL dalam UTM WGS84**, **ketelitian posisi** (±m), **arah hadap kamera** (utara sejati / magnetik), kamera & lensa, waktu pengambilan (mengisi *Tanggal* bila kosong);
+   - **Sistem koordinat…**: zona proyek (mis. UTM 50S) atau otomatis dari bujur tiap foto. Konversi WGS84 → UTM dihitung DB-Ex sendiri (Transverse Mercator, galat < 1 mm);
+   - **Peta foto…**: denah posisi kamera semua foto (panah = arah hadap, lingkaran = ketelitian) bersama collar bor yang sudah diimpor, tabel lokasi (Salin tabel → Excel), lubang bor terdekat;
+   - **kompas infografis** *otomatis*: memakai georef bila ada, kalau tidak memakai arah hadap kamera dari HP;
+   - peringatan: GPS kurang teliti (> 15 m), foto di luar zona proyek, collar sangat jauh (grid lokal / sistem lain), kamera jauh dari bidang georef (foto / titik georef tertukar);
+   - GPS HP teliti beberapa meter (bukan RTK): untuk "di mana & menghadap ke mana" foto diambil, bukan untuk mengukur geometri dinding — koordinat georef dari titik survey tetap acuan. Metadata lokasi sering dibuang saat foto dikirim lewat aplikasi chat; pindahkan file asli (kabel / AirDrop, atau Bagikan → Opsi → Lokasi & Semua Data Foto → Simpan ke File). Format HEIC belum dibaca — pakai JPG (*Paling Kompatibel*).
+
 Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemiringan yang terlihat di satu dinding hanyalah *apparent dip*.
 
 ## 6d. Borang: borang lapangan tulisan tangan → Excel / CSV / SQLite / MS Access (DB-Ex versi Qt)

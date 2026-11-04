@@ -251,6 +251,29 @@ def main() -> None:
         pg.an_sam()
         until(lambda: "zona usulan dari" in pg.anSamInfo.text(), 240000)
         shot("q22_analisis_sam")
+    # =============================================================== Singkapan: lokasi kamera dari GPS HP (bab 20)
+    ph4 = src / "Foto_Singkapan" / "Dinding_Pit_C.jpg"
+    O.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(ph4)], ""))
+    pg.add_photo()
+    until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding_Pit_C"))
+    pg.lst.setCurrentRow(next(i for i, x in enumerate(pg.photos) if x["file"].startswith("Dinding_Pit_A")))
+    until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding_Pit_A"))
+    pg.tabs.setCurrentIndex(0)
+    until(lambda: pg.cam is not None)
+    shot("q23_lokasi_kamera")
+    from corex.dialogs import Dlg as _Dlg
+    _old_exec = _Dlg.exec
+
+    def _grab_exec(self):
+        self.show()
+        wait(800)
+        self.grab().save(str(IMG / "q24_peta_foto.png"))
+        print("OK q24_peta_foto")
+        self.hide()
+        return _Dlg.Accepted
+    _Dlg.exec = _grab_exec
+    pg.loc_map()
+    _Dlg.exec = _old_exec
     # =============================================================== QAQC
     import corex.qaqc as Q
     Q.show_in_folder = lambda p: None

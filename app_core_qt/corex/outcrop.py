@@ -811,6 +811,7 @@ class OutcropPage(QWidget):
         self.ovl: QImage | None = None      # peta warna (indeks oksida / kuarsa) di atas foto
         self.scan_res: dict | None = None   # scanline terakhir (garis + titik potong)
         self.an_busy = False
+        self.cam: dict | None = None        # posisi kamera dari GPS HP (EXIF) foto aktif
         self._build()
 
     # ---------------------------------------------------------------- tata letak
@@ -942,6 +943,20 @@ class OutcropPage(QWidget):
             g.addRow(lab, e)
             e.editingFinished.connect(lambda k=k, e=e: self._save_col(k, e.text()))
         v.addLayout(g)
+        self.locInfo = QLabel()
+        self.locInfo.setObjectName("note")
+        self.locInfo.setWordWrap(True)
+        self.locInfo.setTextFormat(Qt.RichText)
+        v.addWidget(self.locInfo)
+        rl = QHBoxLayout()
+        self.bLocMap = btn("Peta foto…", "Peta posisi kamera semua foto (GPS HP) bersama collar bor, dan tabel lokasinya", sm=True)
+        self.bCrs = btn("Sistem koordinat…", "Sistem koordinat proyek untuk posisi kamera dari GPS HP (UTM WGS84)", sm=True)
+        rl.addWidget(self.bLocMap)
+        rl.addWidget(self.bCrs)
+        rl.addStretch(1)
+        v.addLayout(rl)
+        self.bLocMap.clicked.connect(self.loc_map)
+        self.bCrs.clicked.connect(self.loc_crs)
         r = QHBoxLayout()
         self.bAI = btn("Deskripsikan dengan AI", "AI lokal (Ollama) mendeskripsikan singkapan: litologi, alterasi, pelapukan ISRM, vein, struktur, GSI", pri=True, sm=True)
         self.bAI.clicked.connect(self.run_ai)
@@ -1249,7 +1264,7 @@ class OutcropPage(QWidget):
         kr = QHBoxLayout()
         kr.addWidget(QLabel("Kompas"))
         self.iCompass = QComboBox()
-        self.iCompass.addItem("otomatis dari georef", "auto")
+        self.iCompass.addItem("otomatis (georef / arah kamera HP)", "auto")
         for d in oc_paint.COMPASS:
             self.iCompass.addItem(f"arah pandang {d}", d)
         self.iCompass.addItem("tidak ditampilkan", "off")
@@ -1582,6 +1597,9 @@ class OutcropPage(QWidget):
                     i["_compass"] = {"mode": "north", "rot": -sol["up_az"]}
             elif sol.get("view_az") is not None:
                 i["_compass"] = {"mode": "view", "az": sol["view_az"]}
+        elif mode == "auto" and (self.cam or {}).get("heading") is not None:  # tanpa georef: arah hadap kamera dari GPS HP
+            kind = (self.geo.get("kind") or ((self.cur or {}).get("desc") or {}).get("photo_type") or "wall")
+            i["_compass"] = {"mode": "north", "rot": -self.cam["heading"]} if kind == "floor" else {"mode": "view", "az": self.cam["heading"]}
         return i
 
     def m_per_px(self) -> float | None:
@@ -1845,6 +1863,7 @@ class OutcropPage(QWidget):
         self.iCompass.setCurrentIndex(max(0, self.iCompass.findData(i.get("compass") or "auto")))
         self.iCompPos.setCurrentIndex(max(0, self.iCompPos.findData(i.get("compass_pos") or "tl")))
         self.iDesc.setEnabled(i.get("template") == "wall")
+        self.loc_refresh()
         self.geo_refresh()
         self.feat_list()
         self.canvas.update()
@@ -2579,6 +2598,147 @@ class OutcropPage(QWidget):
         if self.tool.sel is not None and not any(f["id"] == self.tool.sel for f in j["features"]):
             self.tool.sel = None
         self._feats(j)
+
+    # ---------------------------------------------------------------- lokasi kamera (GPS HP)
+    def loc_refresh(self) -> None:
+        self.cam = None
+        if not self.cur:
+            self.locInfo.setText("")
+            return
+        try:
+            j = api.call("/core/outcrop/loc/photo", {"folder": self.folder, "id": self.cur["id"]})
+        except api.ApiError as e:
+            self.locInfo.setText(f"<span style='color:{theme.C['er']}'>Lokasi kamera: {_esc(str(e))}</span>")
+            return
+        c = self.cam = j["cam"]
+        if not c:
+            self.locInfo.setText("<b>Kamera</b>: foto tanpa data GPS (metadata lokasi tidak ada / dibuang saat dikirim).")
+            return
+        t = (f"<b>Kamera (GPS HP)</b> · {_esc(c['zone'])}: E <b>{c['e']:,.1f}</b> · N <b>{c['n']:,.1f}</b>"
+             + (f" · RL {c['rl']:,.1f}" if c.get("rl") is not None else "") + (f" · <b>±{c['hacc']:g} m</b>" if c.get("hacc") else ""))
+        if c.get("heading") is not None:
+            t += f"<br>Menghadap <b>{c['heading']:.0f}°</b> ({_esc(c.get('heading_ref') or 'sejati')})"
+        if c.get("nearest"):
+            t += f" · lubang terdekat <b>{_esc(c['nearest']['hole'])}</b> ({c['nearest']['dist']:,.0f} m)"
+        if c.get("georef_dist") is not None:
+            t += f" · ke bidang georef {c['georef_dist']:,.0f} m"
+        if c.get("camera") or c.get("taken"):
+            t += "<br><span style='color:%s'>%s</span>" % (theme.C["mu"], _esc(" · ".join(x for x in (c.get("camera"), c.get("taken"), c.get("tz")) if x)))
+        for w_ in c.get("warn") or []:
+            t += f"<br><span style='color:#B7791F'>⚠ {_esc(w_)}</span>"
+        self.locInfo.setText(t)
+
+    def loc_crs(self) -> None:
+        if not self.folder:
+            return
+        cur = api.call("/core/outcrop/loc/list", {"folder": self.folder})["crs"]
+        d = Dlg(self, "Sistem koordinat proyek", "Sistem koordinat <span style='color:#a9c3dd'>proyek</span>", 440)
+        n = QLabel("Posisi kamera dari GPS HP (WGS84) diubah ke UTM. Pilih zona proyek agar semua foto di zona yang sama "
+                   "dengan collar / topografi. <i>Otomatis</i> = zona dari bujur tiap foto.")
+        n.setWordWrap(True)
+        n.setObjectName("note")
+        d.body.addWidget(n)
+        cb = QComboBox()
+        cb.addItem("Otomatis dari bujur (WGS84)", None)
+        for south in (True, False):
+            for z in range(46, 55):
+                cb.addItem(f"UTM {z}{'S' if south else 'N'} (WGS84)", (z, south))
+        cb.setCurrentIndex(max(0, cb.findData((cur["zone"], cur["south"])) if cur.get("zone") else 0))
+        d.body.addWidget(cb)
+        from PySide6.QtWidgets import QDialogButtonBox
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        d.foot.addWidget(bb)
+        self._crsDlg, self._crsCb = d, cb
+        if d.exec() != Dlg.Accepted:
+            return
+        v = cb.currentData()
+        try:
+            api.call("/core/outcrop/loc/crs", {"folder": self.folder, "zone": v[0] if v else None, "south": v[1] if v else None, "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self.toast("Sistem koordinat: " + cb.currentText(), 3000)
+        self.loc_refresh()
+        self.canvas.update()
+
+    def loc_map(self) -> None:
+        if not self.folder:
+            return
+        d = Dlg(self, "Peta foto", "Peta <span style='color:#a9c3dd'>posisi kamera</span> (GPS HP)", 860)
+        img = QLabel()
+        img.setAlignment(Qt.AlignCenter)
+        info = QLabel()
+        info.setObjectName("note")
+        info.setWordWrap(True)
+        tw = QTableWidget(0, 9)
+        tw.setHorizontalHeaderLabels(["Foto", "Tanggal", "E", "N", "RL", "± m", "Arah", "Lubang terdekat", "Catatan"])
+        tw.verticalHeader().hide()
+        tw.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        tw.setSelectionBehavior(QAbstractItemView.SelectRows)
+        tw.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        tw.horizontalHeader().setStretchLastSection(True)
+        tw.setMinimumHeight(150)
+        d.body.addWidget(img)
+        d.body.addWidget(info)
+        d.body.addWidget(tw)
+        bCopy = btn("Salin tabel", "Salin tabel lokasi (tab) untuk ditempel di Excel", sm=True)
+        bClose = btn("Tutup", pri=True, sm=True)
+        d.foot.addWidget(bCopy)
+        d.foot.addStretch(1)
+        d.foot.addWidget(bClose)
+        bClose.clicked.connect(d.accept)
+        state: dict = {"rows": []}
+
+        def load(sel):
+            j = api.call("/core/outcrop/loc/map", {"folder": self.folder, "sel": sel})
+            state["rows"] = j["photos"]
+            if j.get("png"):
+                pm = QPixmap()
+                pm.loadFromData(__import__("base64").b64decode(j["png"]), "PNG")
+                img.setPixmap(pm.scaledToWidth(min(760, pm.width()), Qt.SmoothTransformation))
+            else:
+                img.setText("Belum ada foto dengan data GPS.")
+            info.setText(f"{j['label']} · {j['n_gps']} dari {len(j['photos'])} foto ber-GPS · {j['collars']} collar bor di proyek. "
+                         "Klik ganda baris untuk membuka fotonya. GPS HP teliti beberapa meter — koordinat georef (titik survey) tetap acuan.")
+            tw.setRowCount(len(j["photos"]))
+            for i, x in enumerate(j["photos"]):
+                c = x["cam"] or {}
+                vals = [x["title"], x.get("taken") or "", f"{c['e']:.1f}" if c else "", f"{c['n']:.1f}" if c else "",
+                        "" if c.get("rl") is None else f"{c['rl']:.1f}", "" if not c.get("hacc") else f"{c['hacc']:g}",
+                        "" if c.get("heading") is None else f"{c['heading']:.0f}°",
+                        f"{c['nearest']['hole']} ({c['nearest']['dist']:,.0f} m)" if c.get("nearest") else "",
+                        "tanpa GPS" if not c else "; ".join(c.get("warn") or [])]
+                for k, val in enumerate(vals):
+                    tw.setItem(i, k, QTableWidgetItem(val))
+            if sel is not None:
+                k = next((i for i, x in enumerate(j["photos"]) if x["id"] == sel), -1)
+                tw.selectRow(k)
+
+        def copy():
+            hd = [tw.horizontalHeaderItem(k).text() for k in range(tw.columnCount())]
+            lines = ["\t".join(hd)] + ["\t".join(tw.item(i, k).text() if tw.item(i, k) else "" for k in range(tw.columnCount()))
+                                         for i in range(tw.rowCount())]
+            QGuiApplication.clipboard().setText("\n".join(lines))
+            self.toast("Tabel lokasi disalin", 2000)
+
+        def open_row(i):
+            pid = state["rows"][i]["id"]
+            k = next((n for n, ph in enumerate(self.photos) if ph["id"] == pid), -1)
+            if k >= 0:
+                self.lst.setCurrentRow(k)
+                load(pid)
+        bCopy.clicked.connect(copy)
+        tw.cellDoubleClicked.connect(lambda r_, _c: open_row(r_))
+        try:
+            load(self.cur["id"] if self.cur else None)
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        d.resize(900, 820)
+        self._locDlg, self._locTw, self._locImg = d, tw, img
+        d.exec()
 
     # ---------------------------------------------------------------- analisis foto (Fase 1)
     def an_reset(self) -> None:

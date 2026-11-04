@@ -84,9 +84,10 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>17. QAQC sampel lab: CRM, blank &amp; duplikat</div>
     <div>18. QAQC data bor, ekspor Excel &amp; laporan PDF</div>
     <div>19. Analisis foto singkapan</div>
+    <div>20. Lokasi kamera dari GPS HP</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.38.3 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar dan nama orang di tutorial ini adalah contoh fiktif; foto dinding pit (Latihan 19) generik tanpa lokasi.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.39.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar dan nama orang di tutorial ini adalah contoh fiktif; foto dinding pit (Latihan 19) generik tanpa lokasi.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -113,7 +114,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
       <tr><td><code>Data_Lab\Geologi_Latihan.txt</code> (hanya LTH-101)</td><td>Latihan 2 – tab Geologi</td></tr>
       <tr><td><code>Data_Lab\Assay_Latihan_LTH-102_ulang.csv</code></td><td>Latihan 9 – assay ulang</td></tr>
       <tr><td><code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code></td><td>Latihan 10 – impor JSON lama</td></tr>
-      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–19 (DB-Ex versi Qt)</td></tr>
+      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–20 (DB-Ex versi Qt)</td></tr>
     </table>
   </div></div>
   <div class="note"><b>Prinsip DB-Ex.</b> AI visual menilai parameter <b>geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, catatan struktur). Isian <b>geologi</b> (litologi, alterasi, oksidasi, warna) diambil dari <b>logging geologist</b> bila ada; AI hanya mengisinya bila logging tidak ada. Urutan prioritas: logging geologist &gt; editan manual &gt; AI.</div>
@@ -337,7 +338,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="part">Bagian II · DB-Ex versi Qt</div>
   <h2>Empat ruang kerja dalam satu proyek</h2>
-  <p>Bab 12–19 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
+  <p>Bab 12–20 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
   <table>
     <tr><th style="width:24%">Ruang kerja</th><th>Untuk</th><th style="width:30%">Hasil</th></tr>
     <tr><td><b>Core box</b></td><td>Foto core box, data bor, AI geoteknik, overlay assay</td><td>Excel core log, infografis core box</td></tr>
@@ -353,7 +354,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td><code>Borang\DDR_31Okt.jpg</code></td><td>Latihan 15–16 – Daily Drilling Report</td></tr>
     <tr><td><code>Borang\Borang_Latihan_3_halaman.pdf</code></td><td>ketiga borang dalam satu PDF (dipecah per halaman)</td></tr>
     <tr><td><code>QAQC\QAQC_Latihan.xlsx</code></td><td>Latihan 17–18 – QAQC Database</td></tr>
-    <tr><td><code>Foto_Singkapan\Dinding_Pit_A.jpg</code> (latihan tambahan: <code>Dinding_Pit_C.jpg</code>)</td><td>Latihan 19 – Analisis foto singkapan</td></tr>
+    <tr><td><code>Foto_Singkapan\Dinding_Pit_A.jpg</code> (latihan tambahan: <code>Dinding_Pit_C.jpg</code>)</td><td>Latihan 19 – Analisis foto singkapan; Latihan 20 – Lokasi kamera (ketiga foto Dinding_Pit membawa metadata GPS fiktif)</td></tr>
   </table>
   <div class="note"><b>Catatan.</b> Foto singkapan adalah foto dinding pit sungguhan yang generik (tanpa lokasi, nama perusahaan maupun orang); garis, kadar dan nama sampel di atasnya fiktif. Scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
 </section>
@@ -534,6 +535,22 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
   <div class="note"><b>Yang bisa diharapkan di foto sungguhan.</b> <b>Peta oksida</b> dan <b>batas oksida – segar dari SAM</b> paling andal. <b>Deteksi jejak otomatis</b> masih kasar — gambar jejak kekar / vein sendiri; set, rose diagram, scanline, Jv, RQD dan GSI tetap dihitung otomatis. <b>Peta vein kuarsa</b> sulit bila batuan induk juga pucat. Kemampuan ini meningkat setelah model dilatih dengan foto &amp; digitasi dari site Anda sendiri.</div>
   <div class="step"><div class="num">7</div><div>Latihan tambahan: <code>Dinding_Pit_C.jpg</code> (zona argilik pucat, sesar miring, zona oksida atas) — ulangi langkah 2–6.</div></div>
   <div class="warn">Angka geoteknik (spasi, Jv, RQD, GSI) adalah <b>bantuan</b> dari satu foto. Set yang sejajar bidang foto tidak terlihat, dan strike / dip sebenarnya tidak bisa diukur dari satu dinding rata — gunakan apparent dip dari georef dan ukuran kompas di lapangan.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 20</div>
+  <h2>Lokasi kamera dari GPS HP</h2>
+  <p>Foto dari HP (mis. iPhone) menyimpan <b>metadata lokasi</b>: lintang, bujur, ketinggian, <b>ketelitian posisi</b>, <b>arah hadap kamera</b> dan waktu pengambilan. DB-Ex membacanya otomatis saat <b>+ Foto</b> dan mengubahnya ke <b>UTM WGS84</b> (mis. UTM 50S). Ketelitian GPS HP beberapa meter, bukan RTK — dipakai untuk "di mana &amp; menghadap ke mana" foto diambil; koordinat georef dari titik survey tetap acuan.</p>
+  <div class="step"><div class="num">1</div><div>Tab <b>Deskripsi</b> foto <code>Dinding_Pit_A.jpg</code>: di bawah Judul / Lokasi / Tanggal tampil <b>Kamera (GPS HP)</b> — E, N, RL, ketelitian (±6,5 m), arah hadap <b>285°</b>, kamera dan waktu. <i>Tanggal</i> terisi otomatis dari waktu pengambilan. Bila foto belum digeoreferensi, <b>kompas infografis</b> otomatis memakai arah hadap ini (huruf <b>W</b> di pojok foto).</div></div>
+  <figure><img src="gambar/q23_lokasi_kamera.png" style="width:150mm"><figcaption>Gambar 50 – Posisi &amp; arah hadap kamera dari metadata foto, kompas infografis otomatis.</figcaption></figure>
+  <div class="step"><div class="num">2</div><div><b>Sistem koordinat…</b>: pilih zona proyek (mis. <b>UTM 50S</b>) agar semua foto dihitung di zona yang sama dengan collar dan topografi. Bawaan: zona otomatis dari bujur.</div></div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">3</div><div><b>Peta foto…</b>: denah posisi kamera semua foto (segitiga, panah = arah hadap, lingkaran = ketelitian GPS) bersama <b>collar bor</b> yang sudah diimpor, dan tabel lokasi (salin ke Excel dengan <b>Salin tabel</b>). Klik ganda baris untuk membuka fotonya. Kolom <i>Lubang terdekat</i> terisi bila collar memakai sistem koordinat yang sama (UTM).</div></div>
+  <figure><img src="gambar/q24_peta_foto.png" style="width:120mm"><figcaption>Gambar 51 – Peta posisi kamera dan tabel lokasi foto (koordinat data latihan fiktif).</figcaption></figure>
+  <div class="note"><b>Peringatan otomatis</b>: ketelitian GPS rendah (&gt; 15 m, sinyal terhalang dinding pit), foto di luar zona UTM proyek, collar yang jauh sekali (grid lokal / sistem lain), dan kamera yang jauh dari bidang georef (foto / titik georef tertukar).</div>
+  <div class="warn">Metadata lokasi sering <b>dibuang</b> saat foto dikirim lewat aplikasi chat / media sosial. Pindahkan file asli lewat kabel / AirDrop, atau di iPhone: Bagikan → <b>Opsi</b> → aktifkan <b>Lokasi</b> &amp; <b>Semua Data Foto</b> → Simpan ke File. Format HEIC belum dibaca — atur kamera iPhone ke <i>Paling Kompatibel</i> (JPG). Koordinat di data latihan ini <b>fiktif</b>.</div>
 </section>
 
 <section class="page">

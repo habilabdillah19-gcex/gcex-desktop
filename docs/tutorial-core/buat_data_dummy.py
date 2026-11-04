@@ -246,6 +246,37 @@ def wall_photo(p: Path) -> None:
     im.save(p, quality=90)
 
 
+def with_gps(src: Path, dst: Path, lat: float, lon: float, alt: float, heading: float, hacc: float, taken: str,
+             camera: str = "iPhone 17 Pro") -> None:
+    """Salin foto dengan metadata GPS gaya iPhone (lintang / bujur / ketinggian / arah hadap / ketelitian / waktu).
+    Dipakai untuk data latihan Lokasi foto (koordinat FIKTIF) dan uji otomatis."""
+    from PIL.TiffImagePlugin import IFDRational
+
+    def dms(v):
+        v = abs(v)
+        d = int(v)
+        m = int((v - d) * 60)
+        sec = (v - d - m / 60) * 3600
+        return (IFDRational(d, 1), IFDRational(m, 1), IFDRational(round(sec * 10000), 10000))
+    with Image.open(src) as im:
+        im = im.convert("RGB")
+        ex = Image.Exif()
+        ex[271], ex[272] = "Apple", camera
+        ex[306] = taken.replace("-", ":")
+        sub = ex.get_ifd(0x8769)
+        sub[36867] = taken.replace("-", ":")
+        sub[36881] = "+08:00"
+        sub[0xA405] = 24
+        sub[0xA434] = f"{camera} back triple camera 6.86mm f/1.78"
+        g = ex.get_ifd(0x8825)
+        g[1], g[2] = ("S" if lat < 0 else "N"), dms(lat)
+        g[3], g[4] = ("W" if lon < 0 else "E"), dms(lon)
+        g[5], g[6] = b"\x00", IFDRational(round(alt * 100), 100)
+        g[16], g[17] = "T", IFDRational(round(heading * 100), 100)
+        g[31] = IFDRational(round(hacc * 100), 100)
+        im.save(dst, quality=90, exif=ex)
+
+
 KELAS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "OX-MO", "SF-MO"]
 KCOL = [(120, 200, 120), (120, 200, 120), (230, 110, 110), (230, 110, 110), (220, 120, 200), (220, 120, 200), (240, 220, 80), (240, 220, 80)]
 PIT_ROWS = [("19.08", "Pit X", "268.5", "OX-LG", "7123", "37", "ROM A1"), ("13", "", "", "OX-LG", "32", "31", "〃"),
@@ -409,8 +440,12 @@ def qt_data(out: Path) -> None:
     """Foto dinding pit generik (aset/) + tabel sampel channel fiktif, dan scan borang fiktif (JPG + satu PDF tiga halaman)."""
     sk = out / "Foto_Singkapan"
     sk.mkdir(parents=True, exist_ok=True)
-    for n in ("Dinding_Pit_A.jpg", "Dinding_Pit_B.jpg", "Dinding_Pit_C.jpg"):  # foto dinding pit generik (tanpa EXIF / lokasi)
-        shutil.copyfile(Path(__file__).resolve().parent / "aset" / n, sk / n)
+    # foto dinding pit generik (metadata asli dibuang); diberi metadata GPS gaya iPhone dengan koordinat FIKTIF (laut, UTM 50S)
+    # untuk latihan Lokasi kamera (bab 20)
+    for n, lat, lon, alt, hd, acc, t in (("Dinding_Pit_A.jpg", -5.50120, 117.30210, 312.4, 285.0, 6.5, "2026-10-30 09:15:00"),
+                                         ("Dinding_Pit_B.jpg", -5.50245, 117.30330, 298.7, 12.0, 4.8, "2026-10-30 10:02:00"),
+                                         ("Dinding_Pit_C.jpg", -5.50060, 117.30455, 305.2, 205.0, 9.1, "2026-10-31 08:41:00")):
+        with_gps(Path(__file__).resolve().parent / "aset" / n, sk / n, lat, lon, alt, hd, acc, t)
     (sk / "Sampel_Channel_Pit_B.txt").write_text("Sample ID\tDari\tKe\tAu (ppm)\tAg_ppm\n" + "".join(
         f"{a}\t{str(b).replace('.', ',')}\t{str(c).replace('.', ',')}\t{au}\t{ag}\n" for a, b, c, au, ag in SAMPEL_PIT_B), encoding="utf-8")
     bo = out / "Borang"
@@ -588,7 +623,7 @@ def main():
         "   Assay_Latihan_LTH-102_ulang.csv -> tab Assay, cara 'Tambah / perbarui per hole' (latihan data baru)\n"
         "Dashboard_lama/   latihan tombol JSON (impor proyek dashboard lama)\n"
         "--- DB-Ex versi Qt (tutorial bab 12-19) ---\n"
-        "Foto_Singkapan/   foto dinding pit sungguhan (generik, tanpa lokasi):\n"
+        "Foto_Singkapan/   foto dinding pit sungguhan (generik; metadata GPS gaya iPhone dengan koordinat FIKTIF, bab 20):\n"
         "   Dinding_Pit_B.jpg + Sampel_Channel_Pit_B.txt -> bab 12 Singkapan (digitasi, channel sampling, infografis)\n"
         "   Dinding_Pit_A.jpg -> bab 19 Analisis foto (peta oksida, jejak kekar & scanline, zona SAM)\n"
         "   Dinding_Pit_C.jpg -> latihan tambahan (zona argilik pucat, sesar miring, zona oksida atas)\n"

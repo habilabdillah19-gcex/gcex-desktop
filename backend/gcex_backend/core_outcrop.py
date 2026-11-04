@@ -241,6 +241,11 @@ def add_photo(s: Store, src: str, by: str) -> dict:
             pid = cur.lastrowid
             c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
                       (pid, "foto", None, sp.name, "tambah", by, core_io.now()))
+    try:  # metadata HP: posisi kamera, arah hadap, tanggal pengambilan
+        from . import core_oclokasi
+        core_oclokasi.on_add(s, pid)
+    except Exception:  # noqa: BLE001
+        pass
     return photo(s, pid)
 
 
