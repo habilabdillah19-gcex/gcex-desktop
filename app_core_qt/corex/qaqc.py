@@ -1,7 +1,7 @@
 """Ruang kerja QAQC Database (DB-Ex versi Qt): QAQC sampel lab (CRM, Blank, Duplikat) dan QAQC data bor.
 
 Bilah atas: Impor (workbook QAQC lengkap atau satu tabel), Ekspor Excel + grafik PNG, Laporan PDF. Tab: Dashboard, CRM, Blank,
-Duplikat, Batch lab, Lampiran, Data (Master_CRM bisa diedit), Data bor, Panel kontrol. Data lewat rute /core/qaqc/* (backend
+Duplikat, Batch lab, Lampiran, Data (semua tabel bisa diedit / ditempel dari Excel), Data bor, Panel kontrol. Data lewat rute /core/qaqc/* (backend
 core_qaqc); laporan PDF dicetak dengan QTextDocument (qaqc_pdf.py)."""
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import zipfile
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QImage, QPixmap
+from PySide6.QtGui import QColor, QGuiApplication, QImage, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
                                QScrollArea, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
 
@@ -20,6 +20,7 @@ from .card import _esc, btn
 from .dialogs import ask, say
 from .util import SET, log, run_bg, show_in_folder
 
+NUM_RE = re.compile(r"^\s*[<>]?\s*[-+]?(\d+([.,]\d*)?|[.,]\d+)([eE][-+]?\d+)?\s*$")
 LVL_BG = {0: "#F2F2F2", 1: "#E2EFDA", 2: "#FFF2CC", 3: "#F4CCCC"}
 CAT_BG = {"PASS": "#E2EFDA", "WARN": "#FFF2CC", "WARNING": "#FFF2CC", "FAIL": "#F4CCCC", "MERAH": "#F4CCCC", "KUNING": "#FFF2CC", "INFO": "#EEF3F8"}
 TARGETS = [("auto", "Workbook QAQC (semua sheet dikenali)"), ("master_crm", "Master_CRM"), ("assay_import", "Assay_Import"), ("crm_data", "CRM_Data"),
@@ -237,10 +238,14 @@ class QaqcPage(QWidget):
             self.cbTbl.addItem(t, t)
         r.addWidget(QLabel("Tabel:"))
         r.addWidget(self.cbTbl)
-        self.bAddM = btn("+ CRM", "Tambah baris Master_CRM", sm=True)
-        self.bSaveM = btn("Simpan Master_CRM", pri=True, sm=True)
+        self.bAddM = btn("+ Baris", "Tambah baris di bawah baris terpilih", sm=True)
+        self.bDelR = btn("Hapus baris", "Hapus baris yang dipilih (tersimpan setelah Simpan)", sm=True)
+        self.bPaste = btn("Tempel dari Excel", "Tempel sel yang disalin di Excel mulai dari sel terpilih (Ctrl+V). Bila baris pertama "
+                          "berisi judul kolom, kolom dicocokkan menurut judulnya.", sm=True)
+        self.bSaveM = btn("Simpan tabel", pri=True, sm=True)
+        self.bUndo = btn("Batal", "Buang perubahan yang belum disimpan", sm=True)
         self.bClr = btn("Kosongkan tabel…", sm=True)
-        for b_ in (self.bAddM, self.bSaveM):
+        for b_ in (self.bAddM, self.bDelR, self.bPaste, self.bSaveM, self.bUndo):
             r.addWidget(b_)
         r.addStretch(1)
         r.addWidget(self.bClr)
@@ -248,11 +253,28 @@ class QaqcPage(QWidget):
         self.dataNote = self._note()
         v.addWidget(self.dataNote)
         self.tT = table()
+        self.tT._cols = []
+        self.tT.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.tT.setSelectionMode(QAbstractItemView.ExtendedSelection)
         v.addWidget(self.tT, 1)
-        self.cbTbl.currentIndexChanged.connect(lambda *_: self.show_table())
-        self.bAddM.clicked.connect(lambda: (self.tT.insertRow(self.tT.rowCount()), self.tT.setCurrentCell(self.tT.rowCount() - 1, 0)))
-        self.bSaveM.clicked.connect(self.save_master)
+        self.tDirty = False
+        self._nbad = 0
+        self._tblShown = None
+        self._marking = False
+        self.cbTbl.currentIndexChanged.connect(lambda *_: self._switch_table())
+        self.bAddM.clicked.connect(self.add_row)
+        self.bDelR.clicked.connect(self.del_rows)
+        self.bPaste.clicked.connect(lambda: self.paste_rows())
+        self.bSaveM.clicked.connect(self.save_table)
+        self.bUndo.clicked.connect(lambda: (self._set_dirty(False), self.show_table()))
         self.bClr.clicked.connect(self.clear_table)
+        self.tT.itemChanged.connect(self._cell_changed)
+        sc = QShortcut(QKeySequence.Paste, self.tT)
+        sc.setContext(Qt.WidgetShortcut)  # editor sel tetap memakai Ctrl+V biasa
+        sc.activated.connect(lambda: self.paste_rows())
+        sc2 = QShortcut(QKeySequence.Delete, self.tT)
+        sc2.setContext(Qt.WidgetShortcut)
+        sc2.activated.connect(self._clear_cells)
         return w
 
     def _tab_dh(self) -> QWidget:
@@ -353,7 +375,8 @@ class QaqcPage(QWidget):
         self.show_dup()
         self.show_batch()
         self.show_app()
-        self.show_table()
+        if not self.tDirty:
+            self.show_table()
         self._fill_form()
         self._tab_changed(self.tabs.currentIndex())
 
@@ -458,19 +481,219 @@ class QaqcPage(QWidget):
         if not self.folder:
             return
         t = self.cbTbl.currentData()
-        master = t == "Master_CRM"
-        self.bAddM.setVisible(master)
-        self.bSaveM.setVisible(master)
 
         def ok(j):
-            cols = j["cols"]
-            fill(self.tT, [h for _k, h, _t in cols], [[r.get(k) for k, _h, _t in cols] for r in j["rows"]], edit=master)
-            self.tT.setEditTriggers(QAbstractItemView.AllEditTriggers if master else QAbstractItemView.NoEditTriggers)
+            cols = [tuple(c) for c in j["cols"]]
+            self._marking = True
+            fill(self.tT, [h for _k, h, _t in cols], [[r.get(k) for k, _h, _t in cols] for r in j["rows"]], edit=True)
+            self._marking = False
+            self.tT.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed | QAbstractItemView.AnyKeyPressed)
             self.tT._cols = cols
-            self.dataNote.setText(f"<b>{t}</b>: {len(j['rows']):,} baris. "
-                                  + ("Isi / ubah Standard_Name, Certified_Mean, Certified_SD lalu Simpan." if master else
-                                     "Impor ulang memperbarui baris dengan Sample_ID yang sama (Duplicate_Data: Duplicate_ID) dan menambah yang baru."))
+            self._tblShown = t
+            self._set_dirty(False)
+            self._mark()
         run_bg(api.call, "/core/qaqc/table", {"folder": self.folder, "table": t}, ok=ok)
+
+    # ---------------------------------------------------------------- edit manual tabel data
+    def _note_data(self) -> None:
+        t = self._tblShown or self.cbTbl.currentData()
+        n = sum(1 for i in range(self.tT.rowCount()) if not self._row_empty(i))
+        pk = "Duplicate_ID" if t == "Duplicate_Data" else "Standard_Name" if t == "Master_CRM" else "Sample_ID"
+        bad = getattr(self, "_nbad", 0)
+        msg = (f"<b>{t}</b>: {n:,} baris. Klik ganda sel untuk mengubah, <b>+ Baris</b> / <b>Hapus baris</b>, atau salin sel di Excel lalu "
+               f"<b>Ctrl+V</b> di sini. {pk} tidak boleh ganda; sel <span style='background:#F4CCCC'>&nbsp;merah&nbsp;</span> = belum valid "
+               "(arahkan kursor untuk alasannya). Urutan baris = urutan insersi di grafik kontrol.")
+        if t == "Master_CRM":
+            msg = (f"<b>{t}</b>: {n:,} CRM. Isi / ubah Standard_Name, Certified_Mean, Certified_SD (SD &gt; 0), lalu <b>Simpan tabel</b> — "
+                   "semua hasil dihitung ulang.")
+        if self.tDirty:
+            msg += " <b style='color:#B7791F'>● Belum disimpan</b>" + (f" — <b style='color:#C0392B'>{bad} sel belum valid</b>" if bad else "")
+        self.dataNote.setText(msg)
+
+    def _set_dirty(self, on: bool) -> None:
+        self.tDirty = on
+        self.bSaveM.setEnabled(on)
+        self.bUndo.setEnabled(on)
+        self._note_data()
+
+    def _switch_table(self) -> None:
+        if self.tDirty and self._tblShown and self._tblShown != self.cbTbl.currentData():
+            new = self.cbTbl.currentIndex()
+            if ask(self, f"Perubahan di {self._tblShown} belum disimpan. Simpan sekarang?\n\nBatal = buang perubahan."):
+                self.cbTbl.blockSignals(True)
+                self.cbTbl.setCurrentIndex(self.cbTbl.findData(self._tblShown))
+                self.cbTbl.blockSignals(False)
+                if not self.save_table():
+                    return
+                self.cbTbl.blockSignals(True)
+                self.cbTbl.setCurrentIndex(new)
+                self.cbTbl.blockSignals(False)
+        self._set_dirty(False)
+        self.show_table()
+
+    def _row_empty(self, i: int) -> bool:
+        return not any((self.tT.item(i, j) and self.tT.item(i, j).text().strip()) for j in range(self.tT.columnCount()))
+
+    def _rows(self) -> list[dict]:
+        cols = self.tT._cols
+        return [{k: (self.tT.item(i, j).text() if self.tT.item(i, j) else "") for j, (k, _h, _t) in enumerate(cols)}
+                for i in range(self.tT.rowCount())]
+
+    def _mark(self, server: list | None = None) -> None:
+        """Tandai sel belum valid: kunci kosong / ganda, kolom wajib kosong, angka tidak valid (+ galat dari backend)."""
+        cols = self.tT._cols
+        if not cols:
+            return
+        t = self._tblShown
+        keys = [k for k, _h, _t in cols]
+        pk = keys.index("dup_id" if t == "Duplicate_Data" else "name" if t == "Master_CRM" else "sample_id")
+        req = {"Master_CRM": ["name", "mean", "sd"], "Assay_Import": ["sample_id"], "CRM_Data": ["sample_id", "std", "grade"],
+               "Blank_Data": ["sample_id", "grade"], "Duplicate_Data": ["orig_id", "orig", "dup"]}.get(t, [])
+        msgs: dict[tuple[int, int], str] = {}
+        seen: dict[str, int] = {}
+        for i in range(self.tT.rowCount()):
+            if self._row_empty(i):
+                continue
+            val = [(self.tT.item(i, j).text().strip() if self.tT.item(i, j) else "") for j in range(len(cols))]
+            for j, (k, h, ty) in enumerate(cols):
+                if ty == "n" and val[j] and not NUM_RE.match(val[j]):
+                    msgs[(i, j)] = f"{h} bukan angka"
+                elif k in req and not val[j]:
+                    msgs[(i, j)] = f"{h} wajib diisi"
+            key = val[pk] or (val[keys.index("orig_id")] + "|DUP" if t == "Duplicate_Data" and val[keys.index("orig_id")] else "")
+            if key:
+                key = key.upper()
+                if key in seen:
+                    msgs[(i, pk)] = f"{cols[pk][1]} ganda (juga di baris {seen[key] + 1})"
+                    msgs.setdefault((seen[key], pk), f"{cols[pk][1]} ganda (juga di baris {i + 1})")
+                else:
+                    seen[key] = i
+            elif pk not in [j for (ii, j) in msgs if ii == i]:
+                msgs[(i, pk)] = f"{cols[pk][1]} wajib diisi"
+        for e in server or []:
+            if e["col"] in keys:
+                msgs[(e["row"], keys.index(e["col"]))] = e["msg"]
+        self._marking = True
+        for i in range(self.tT.rowCount()):
+            for j in range(len(cols)):
+                it = self.tT.item(i, j)
+                if it is None:
+                    it = QTableWidgetItem("")
+                    self.tT.setItem(i, j, it)
+                m = msgs.get((i, j))
+                if m:
+                    it.setBackground(QColor("#F4CCCC"))
+                    it.setForeground(QColor("#141a26"))
+                    it.setToolTip(m)
+                elif it.toolTip():
+                    it.setData(Qt.BackgroundRole, None)
+                    it.setData(Qt.ForegroundRole, None)
+                    it.setToolTip("")
+        self._marking = False
+        self._nbad = len(msgs)
+        self._note_data()
+
+    def _cell_changed(self, _it) -> None:
+        if self._marking:
+            return
+        self.tDirty = True
+        self._mark()
+        self._set_dirty(True)
+
+    def add_row(self) -> None:
+        i = self.tT.currentRow() + 1 if self.tT.currentRow() >= 0 else self.tT.rowCount()
+        self._marking = True
+        self.tT.insertRow(i)
+        for j in range(self.tT.columnCount()):
+            self.tT.setItem(i, j, QTableWidgetItem(""))
+        self._marking = False
+        self.tT.setCurrentCell(i, 0)
+        self._set_dirty(True)
+        self._mark()
+
+    def del_rows(self) -> None:
+        rows = sorted({ix.row() for ix in self.tT.selectedIndexes()} or ({self.tT.currentRow()} - {-1}), reverse=True)
+        if not rows:
+            return
+        if len(rows) > 1 and not ask(self, f"Hapus {len(rows)} baris dari {self._tblShown}?\n\nBaru benar-benar terhapus setelah Simpan tabel."):
+            return
+        for i in rows:
+            self.tT.removeRow(i)
+        self._set_dirty(True)
+        self._mark()
+
+    def _clear_cells(self) -> None:
+        self._marking = True
+        for it in self.tT.selectedItems():
+            it.setText("")
+        self._marking = False
+        self._set_dirty(True)
+        self._mark()
+
+    def paste_rows(self, text: str | None = None) -> int:
+        """Tempel blok sel dari Excel (tab / baris baru) mulai dari sel terpilih; baris ditambah bila kurang. Bila baris pertama
+        berisi judul kolom tabel ini, kolom dicocokkan menurut judul (urutan kolom di Excel boleh berbeda)."""
+        if text is None:
+            text = QGuiApplication.clipboard().text()
+        lines = [ln for ln in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+        while lines and not lines[-1].strip():
+            lines.pop()
+        if not lines or not self.tT._cols:
+            return 0
+        grid = [ln.split("\t") for ln in lines]
+        cols = self.tT._cols
+        normh = {re.sub(r"[^0-9a-z]", "", h.lower()): j for j, (_k, h, _t) in enumerate(cols)}
+        normh.update({re.sub(r"[^0-9a-z]", "", k.lower()): j for j, (k, _h, _t) in enumerate(cols)})
+        hm = [normh.get(re.sub(r"[^0-9a-z]", "", c.lower())) for c in grid[0]]
+        by_head = sum(x is not None for x in hm) >= 2
+        if by_head:
+            grid = grid[1:]
+        r0 = self.tT.currentRow() if self.tT.currentRow() >= 0 else self.tT.rowCount()
+        if by_head:
+            r0 = self.tT.rowCount() if self.tT.currentRow() < 0 or not self._row_empty(r0) else r0
+        c0 = 0 if by_head or self.tT.currentColumn() < 0 else self.tT.currentColumn()
+        self._marking = True
+        for n, row in enumerate(grid):
+            i = r0 + n
+            if i >= self.tT.rowCount():
+                self.tT.insertRow(i)
+            for m, v in enumerate(row):
+                j = hm[m] if by_head and m < len(hm) else (None if by_head else c0 + m)
+                if j is None or j >= len(cols):
+                    continue
+                it = self.tT.item(i, j)
+                if it is None:
+                    it = QTableWidgetItem("")
+                    self.tT.setItem(i, j, it)
+                it.setText(v.strip())
+        self._marking = False
+        self._set_dirty(True)
+        self._mark()
+        self.win.toast(f"{len(grid)} baris ditempel — periksa sel merah lalu Simpan tabel", 3000)
+        return len(grid)
+
+    def save_table(self) -> bool:
+        t = self._tblShown or self.cbTbl.currentData()
+        if t == "Master_CRM":
+            return self.save_master()
+        try:
+            j = api.call("/core/qaqc/save", {"folder": self.folder, "table": t, "rows": self._rows(), "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return False
+        if not j.get("ok"):
+            self._mark(j["errors"])
+            ee = j["errors"]
+            say(self, f"{t} belum disimpan: {len(ee)} sel belum valid (ditandai merah).\n\n"
+                + "\n".join(f"Baris {e['row'] + 1}: {e['msg']}" for e in ee[:8]) + ("\n…" if len(ee) > 8 else ""), warn=True)
+            return False
+        self._set_dirty(False)
+        self.win.toast(f"{t} disimpan: {j['new']} baru, {j['updated']} diubah, {j['deleted']} dihapus — QAQC dihitung ulang", 3500)
+        if j.get("warnings"):
+            say(self, f"{t} disimpan.\n\nPerlu diperiksa:\n" + "\n".join("• " + w_ for w_ in j["warnings"]), warn=True)
+        log("[qaqc] simpan", t, j["n"])
+        self.refresh()
+        return True
 
     # ---------------------------------------------------------------- aksi
     def import_files(self) -> None:
@@ -502,7 +725,7 @@ class QaqcPage(QWidget):
         run_bg(api.call, "/core/qaqc/import", {"folder": self.folder, "paths": fs, "target": tgt, "by": self.by()}, ok=ok,
                err=lambda e: (self.sum.setText(""), say(self, "Impor gagal:\n" + e, warn=True)))
 
-    def save_master(self) -> None:
+    def save_master(self) -> bool:
         cols = getattr(self.tT, "_cols", [])
         rows = []
         for i in range(self.tT.rowCount()):
@@ -511,9 +734,11 @@ class QaqcPage(QWidget):
             api.call("/core/qaqc/master", {"folder": self.folder, "rows": rows, "by": self.by()})
         except api.ApiError as e:
             say(self, str(e), warn=True)
-            return
+            return False
+        self._set_dirty(False)
         self.win.toast("Master_CRM disimpan — QAQC dihitung ulang", 3000)
         self.refresh()
+        return True
 
     def clear_table(self) -> None:
         t = self.cbTbl.currentData()
@@ -524,6 +749,7 @@ class QaqcPage(QWidget):
         except api.ApiError as e:
             say(self, str(e), warn=True)
             return
+        self._set_dirty(False)
         self.refresh()
 
     def run_dh(self) -> None:

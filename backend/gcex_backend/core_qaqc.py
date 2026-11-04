@@ -418,6 +418,93 @@ def save_master(s: Store, rows: list[dict], by: str) -> list[dict]:
     return table_rows(s, "master_crm")
 
 
+EDITABLE = ("assay_import", "crm_data", "blank_data", "dup_data")
+
+
+def save_table(s: Store, table: str, rows: list[dict], by: str) -> dict:
+    """Simpan seluruh isi satu tabel data mentah dari tabel di layar (input manual / tempel dari Excel).
+
+    Baris kosong dibuang. Kunci (Sample_ID; Duplicate_ID untuk duplikat) wajib dan tidak boleh ganda; kolom angka wajib angka
+    (koma desimal dan "<0.01" diterima seperti saat impor). Bila ada galat, TIDAK ada yang disimpan dan galat per sel
+    dikembalikan (ok False). Urutan baris di layar menjadi urutan insersi (seq) untuk grafik kontrol."""
+    if table not in EDITABLE:
+        raise ValueError("Tabel ini tidak bisa diedit di sini.")
+    keys = [k for k, _h, _t in COLS[table]]
+    head = {k: h for k, h, _t in COLS[table]}
+    typ = {k: t for k, _h, t in COLS[table]}
+    pk = dict((v[0], v[1]) for v in TABLES.values())[table]
+    req = REQUIRED[table]
+    errs: list[dict] = []
+    recs: list[tuple[int, dict]] = []
+    for i, r in enumerate(rows):
+        raw = {k: r.get(k) for k in keys}
+        if not any(str(v if v is not None else "").strip() for v in raw.values()):
+            continue
+        rec = {}
+        for k in keys:
+            v = raw[k]
+            if typ[k] == "n":
+                sv = str(v if v is not None else "").strip()
+                x = num(sv) if sv else None
+                if sv and x is None:
+                    errs.append({"row": i, "col": k, "msg": f"{head[k]} bukan angka: {sv}"})
+                rec[k] = x
+            else:
+                rec[k] = txt(v)
+        if table == "dup_data" and not rec.get("dup_id") and rec.get("orig_id"):
+            rec["dup_id"] = rec["orig_id"] + "|DUP"
+        if table == "dup_data" and rec.get("tipe"):
+            rec["tipe"] = DUP_TYPES.get(norm(rec["tipe"]), rec["tipe"])
+        for k in req:
+            if rec.get(k) in (None, "") and not any(e["row"] == i and e["col"] == k for e in errs):
+                errs.append({"row": i, "col": k, "msg": f"{head[k]} wajib diisi"})
+        recs.append((i, rec))
+    first: dict[str, int] = {}
+    for i, rec in recs:
+        key = rec.get(pk)
+        if not key:
+            continue
+        ku = key.upper()  # Z7-001 dan z7-001 dianggap sama
+        if ku in first:
+            errs.append({"row": i, "col": pk, "msg": f"{head[pk]} {key} ganda (juga di baris {first[ku] + 1})"})
+        else:
+            first[ku] = i
+    if errs:
+        return {"ok": False, "errors": errs}
+    warns = []
+    with s.lock, s.conn() as c:
+        old = {r[pk]: dict(r) for r in c.execute(f"SELECT * FROM {table}")}
+        if table in ("crm_data", "blank_data"):  # satu sampel tidak mungkin sekaligus CRM dan blank
+            other = "blank_data" if table == "crm_data" else "crm_data"
+            ids = {rec["sample_id"].upper(): rec["sample_id"] for _i, rec in recs}
+            both = sorted(ids[u] for u in set(ids) & {str(r[0]).upper() for r in c.execute(f"SELECT sample_id FROM {other}")})
+            if both:
+                warns.append(f"{len(both)} Sample_ID juga ada di {'Blank_Data' if other == 'blank_data' else 'CRM_Data'}: "
+                             + ", ".join(both[:5]) + (" …" if len(both) > 5 else ""))
+        if table == "crm_data":
+            ms = {r[0] for r in c.execute("SELECT name FROM master_crm")}
+            nomaster = sorted({rec["std"] for _i, rec in recs if rec.get("std") and rec["std"] not in ms})
+            if nomaster:
+                warns.append("Standard_Name belum ada di Master_CRM (tidak dinilai): " + ", ".join(nomaster[:6]))
+        new = sum(1 for _i, rec in recs if rec[pk] not in old)
+        upd = sum(1 for _i, rec in recs if rec[pk] in old and any(_diff(old[rec[pk]].get(k), rec.get(k)) for k in keys))
+        dele = len({k.upper() for k in old} - set(first))
+        c.execute(f"DELETE FROM {table}")
+        c.executemany(f"INSERT INTO {table} ({', '.join(keys)}, seq) VALUES ({', '.join('?' for _ in keys)}, ?)",
+                      [[rec.get(k) for k in keys] + [n] for n, (_i, rec) in enumerate(recs, 1)])
+        _hist(c, f"edit manual {table}", f"{len(recs)} baris: {new} baru, {upd} diubah, {dele} dihapus", by)
+    s.cache.clear()
+    return {"ok": True, "n": len(recs), "new": new, "updated": upd, "deleted": dele, "warnings": warns, "counts": counts(s)}
+
+
+def _diff(a: Any, b: Any) -> bool:
+    if isinstance(a, (int, float)) or isinstance(b, (int, float)):
+        if a is None or b is None:
+            return a is not b
+        return abs(float(a) - float(b)) > 1e-12
+    return (a or "") != (b or "")
+
+
 def clear_table(s: Store, table: str, by: str) -> None:
     if table not in COLS:
         raise ValueError("Tabel tidak dikenal.")
@@ -1483,6 +1570,15 @@ def api_table(b: TblBody) -> dict:
 @router.post("/master")
 def api_master(b: MasterBody) -> dict:
     return {"ok": True, "rows": save_master(store(b.folder), b.rows, b.by)}
+
+
+class SaveBody(TblBody):
+    rows: list[dict[str, Any]]
+
+
+@router.post("/save")
+def api_save(b: SaveBody) -> dict:
+    return save_table(store(b.folder), TABLES.get(b.table, (b.table,))[0], b.rows, b.by)
 
 
 @router.post("/clear")

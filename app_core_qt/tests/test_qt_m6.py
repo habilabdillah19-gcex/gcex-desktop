@@ -87,3 +87,47 @@ def test_qaqc_exports_and_drillhole(qtbot, prj, tmp_path, monkeypatch):
     pg.tabs.setCurrentIndex(7)
     pg.run_dh()
     qtbot.waitUntil(lambda: "Belum ada data bor" in pg.dhInfo.text(), timeout=5000)
+
+
+def test_qaqc_manual_edit_paste(qtbot, prj, tmp_path, monkeypatch):
+    """Tab Data: CRM_Data / Blank_Data / Duplicate_Data bisa diedit, ditambah, dihapus dan ditempel dari Excel; ID ganda ditandai."""
+    w, pg, said = _open(qtbot, prj, tmp_path, monkeypatch)
+    monkeypatch.setattr("corex.qaqc.ask", lambda *a, **k: False)
+    pg.tabs.setCurrentIndex(6)
+    pg.cbTbl.setCurrentIndex(pg.cbTbl.findData("CRM_Data"))
+    qtbot.waitUntil(lambda: pg._tblShown == "CRM_Data" and pg.tT.rowCount() == 48, timeout=8000)
+    assert not pg.tDirty and not pg.bSaveM.isEnabled() and pg._nbad == 0
+    first = pg.tT.item(0, 0).text()
+    # tempel dari Excel dengan baris judul (urutan kolom berbeda): satu baris baru + satu ID ganda
+    pg.tT.setCurrentCell(-1, -1)
+    n = pg.paste_rows(f"Lab_Grade\tSample_ID\tStandard_Name\n0,512\tZ7_MAN_001\tCRM-A\n0.5\t{first}\tCRM-A\n")
+    assert n == 2 and pg.tT.rowCount() == 50 and pg.tDirty and pg.bSaveM.isEnabled()
+    assert pg.tT.item(48, 0).text() == "Z7_MAN_001" and pg.tT.item(48, 2).text() == "0,512"
+    assert "ganda" in pg.tT.item(49, 0).toolTip() and "ganda" in pg.tT.item(0, 0).toolTip()
+    said.clear()
+    assert pg.save_table() is False and "belum disimpan" in said[-1]
+    assert pg.res["counts"]["crm_data"] == 48
+    # hapus baris ganda, ketik angka tidak valid lalu perbaiki
+    pg.tT.setCurrentCell(49, 0)
+    pg.tT.clearSelection()
+    pg.del_rows()
+    assert pg.tT.rowCount() == 49 and not pg.tT.item(0, 0).toolTip()
+    pg.tT.item(48, 2).setText("abc")
+    assert "bukan angka" in pg.tT.item(48, 2).toolTip() and pg._nbad == 1
+    pg.tT.item(48, 2).setText("0,515")
+    assert pg._nbad == 0
+    # + Baris di tengah, lalu tempel posisi (tanpa judul) mulai sel terpilih
+    pg.tT.setCurrentCell(48, 0)
+    pg.add_row()
+    assert pg.tT.rowCount() == 50 and pg.tT.currentRow() == 49
+    pg.paste_rows("Z8_MAN_002\tCRM-B\t1.47\tZ8\r\n")
+    assert pg.tT.item(49, 3).text() == "Z8" and pg._nbad == 0
+    assert pg.save_table() is True
+    qtbot.waitUntil(lambda: pg.res and pg.res["counts"]["crm_data"] == 50 and not pg.tDirty, timeout=8000)
+    # pindah tabel dengan perubahan belum disimpan -> ask (dijawab: buang)
+    qtbot.waitUntil(lambda: pg.tT.rowCount() == 50, timeout=8000)
+    pg.tT.item(0, 2).setText("9")
+    assert pg.tDirty
+    pg.cbTbl.setCurrentIndex(pg.cbTbl.findData("Duplicate_Data"))
+    qtbot.waitUntil(lambda: pg._tblShown == "Duplicate_Data" and not pg.tDirty, timeout=8000)
+    assert pg.res["counts"]["crm_data"] == 50

@@ -159,3 +159,37 @@ def test_dh_checks(prj):
     assert next(x for x in r["issues"] if x["code"] == "A6")["item"] == "S1"
     assert r["summary"][0]["severity"] == "MERAH" and r["counts"]["holes"] == 5
     assert q.dh_checks(str(d), dict(q.SETTINGS_DEFAULT, dh_dip_jump=200, dh_azi_jump=200))["red"] == r["red"]
+
+
+def test_manual_edit_save_table(prj):
+    """Input manual / tempel dari Excel: simpan seluruh tabel, validasi kunci ganda & angka, urutan = seq, peringatan silang."""
+    d, _ = prj
+    s = q.store(str(d))
+    q.save_master(s, [{"name": "CRM-X", "mean": 1.0, "sd": 0.05}], "uji")
+    rows = [{"sample_id": f"QX_{i:03d}_Z9", "std": "CRM-X", "grade": f"{1 + (i % 3 - 1) * 0.02:.2f}".replace(".", ","), "zona": ""}
+            for i in range(1, 6)]
+    j = q.save_table(s, "crm_data", rows + [{"sample_id": "", "std": "", "grade": "", "zona": ""}], "uji")
+    assert j["ok"] and j["n"] == 5 and j["new"] == 5 and j["warnings"] == []
+    # galat: ID ganda (beda huruf besar/kecil), angka tidak valid, kolom wajib kosong -> tidak ada yang disimpan
+    bad = rows + [{"sample_id": "qx_002_z9", "std": "CRM-X", "grade": "1.0"}, {"sample_id": "QX_009_Z9", "std": "CRM-X", "grade": "satu"},
+                  {"sample_id": "QX_010_Z9", "std": "", "grade": "1"}]
+    j = q.save_table(s, "crm_data", bad, "uji")
+    assert not j["ok"] and {(e["row"], e["col"]) for e in j["errors"]} == {(5, "sample_id"), (6, "grade"), (7, "std")}
+    assert q.counts(s)["crm_data"] == 5
+    # ubah satu nilai, hapus satu baris, tambah satu CRM tanpa master + Sample_ID yang juga ada di Blank_Data
+    q.upsert(s, "blank_data", [["Sample_ID", "Lab_Grade"], ["QX_100_Z9", 0.005]], 0, "uji")
+    rows2 = [dict(r) for r in rows[1:]]
+    rows2[0]["grade"] = "1.20"
+    rows2.append({"sample_id": "QX_100_Z9", "std": "CRM-Y", "grade": "<0.01"})
+    j = q.save_table(s, "crm_data", rows2, "uji")
+    assert j["ok"] and (j["new"], j["updated"], j["deleted"]) == (1, 1, 1)
+    assert any("Blank_Data" in w for w in j["warnings"]) and any("CRM-Y" in w for w in j["warnings"])
+    tr = q.table_rows(s, "crm_data")
+    assert [r["sample_id"] for r in tr][:2] == ["QX_002_Z9", "QX_003_Z9"] and tr[0]["grade"] == 1.2 and tr[-1]["grade"] == 0.005
+    res = q.analyze(s)
+    assert any(r["status"].startswith("FAIL") for r in res["crm"])  # 1.20 = Z 4,0
+    # duplikat: Duplicate_ID kosong -> Original_ID|DUP, tipe dinormalkan
+    j = q.save_table(s, "dup_data", [{"orig_id": "QX_200_Z9", "dup_id": "", "orig": "0.5", "dup": "0.52", "tipe": "pulp"}], "uji")
+    assert j["ok"] and q.table_rows(s, "dup_data")[0]["dup_id"] == "QX_200_Z9|DUP" and q.table_rows(s, "dup_data")[0]["tipe"] == "Pulp"
+    with pytest.raises(ValueError):
+        q.save_table(s, "master_crm", [], "uji")

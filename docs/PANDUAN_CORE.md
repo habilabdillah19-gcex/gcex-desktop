@@ -319,7 +319,7 @@ Tombol **QAQC** di bilah atas membuka ruang kerja QAQC untuk folder proyek yang 
 - `CRM_Data` dan `Blank_Data`: Sample_ID, Standard_Name, Lab_Grade, Zona.
 - `Duplicate_Data`: Original_ID, Duplicate_ID, Original, Duplicate, Zona, dan kolom opsional **Tipe** (lapangan / coarse / pulp).
 
-Impor bersifat **upsert**: baris dengan ID yang sama diperbarui, bukan digandakan (kunci Sample_ID; untuk duplikat Duplicate_ID). Laporan impor menyebut baris baru, diperbarui, dilewati, dan **ID ganda di dalam file** (contoh ID-nya ditampilkan) — ID ganda di workbook sumber sebaiknya dibereskan karena hanya baris terakhir yang disimpan. Zona diambil dari kolom Zona; bila kosong, dari awalan Z+angka di Sample_ID / Hole_ID.
+Impor bersifat **upsert**: baris dengan ID yang sama diperbarui, bukan digandakan, dan tidak ada baris yang dihapus (kunci Sample_ID; untuk duplikat Duplicate_ID). Laporan impor menyebut baris baru, diperbarui, dilewati, dan **ID ganda di dalam file** (contoh ID-nya ditampilkan) — ID ganda di workbook sumber sebaiknya dibereskan karena hanya baris terakhir yang disimpan. Zona diambil dari kolom Zona; bila kosong, dari awalan Z+angka di Sample_ID / Hole_ID.
 
 Langkah:
 
@@ -330,7 +330,12 @@ Langkah:
 5. Tab **Duplikat**: ringkasan per zona × kelas kadar × tipe, dan per zona × tipe tiga grafik: **scatter 1:1 ±HARD** (dengan R²), **plot presisi** (HARD vs kadar rata-rata) dan **bias RPD**.
 6. Tab **Batch lab**: ringkasan per Batch_ID (jumlah CRM / blank / duplikat dan PASS / WARNING / FAIL) untuk menelusuri batch yang perlu re-assay.
 7. Tab **Lampiran**: Appendix A (CRM gagal), B (blank gagal), C (duplikat dengan rasio maks/min ≥ 3 dan kadar maks ≥ 0,2).
-8. Tab **Data**: lihat isi tiap tabel (**Kosongkan tabel…** untuk menghapus isinya); **Master_CRM bisa diedit langsung** (**+ CRM**, ubah mean / SD) lalu **Simpan Master_CRM** — semua hasil dihitung ulang.
+8. Tab **Data** — **input manual** semua tabel (Master_CRM, Assay_Import, CRM_Data, Blank_Data, Duplicate_Data):
+   - klik ganda sel untuk mengubah; **+ Baris** (di bawah baris terpilih), **Hapus baris**, tombol Delete mengosongkan sel terpilih;
+   - **tempel dari Excel**: blok sel di Excel → Ctrl+C → klik tabel → **Ctrl+V** (atau tombol *Tempel dari Excel*). Bila baris pertama yang disalin berisi judul kolom, kolom dicocokkan menurut judul (urutan kolom boleh berbeda) dan baris ditambahkan di bawah; tanpa judul, sel ditempel mulai dari sel terpilih dan baris ditambah bila kurang;
+   - sel **merah** langsung muncul untuk kunci ganda (Sample_ID / Duplicate_ID / Standard_Name; huruf besar-kecil dianggap sama), kolom wajib kosong (Standard_Name & Lab_Grade di CRM, Lab_Grade di blank, Original_ID / Original / Duplicate di duplikat) dan angka tidak valid (koma desimal dan *<0.01* diterima). **Simpan tabel** menolak menyimpan selama ada sel merah; **Batal** membuang perubahan;
+   - beda dengan impor: impor = upsert (tidak menghapus apa pun), sedangkan *Simpan tabel* menyimpan isi tabel di layar apa adanya — baris yang dihapus ikut terhapus dan urutan baris menjadi urutan insersi di grafik kontrol. Setelah disimpan semua hasil dihitung ulang; peringatan muncul bila Sample_ID juga ada di tabel CRM / Blank lainnya atau Standard_Name belum ada di Master_CRM;
+   - **Kosongkan tabel…** menghapus seluruh isi satu tabel.
 9. Tab **Panel kontrol**: target zona, tipe duplikat, unsur & satuan, cut-off blank, HARD maksimum, batas pass-rate penilaian, batas kelas kadar duplikat, syarat Lampiran C, serta toleransi pemeriksaan data bor. *Simpan & hitung ulang*; *Kembalikan bawaan* untuk nilai awal.
 
 **QAQC data bor** (tab *Data bor*, tombol **Periksa data bor**) memeriksa data Collar / Survey / Assay / Geologi yang sudah diimpor di ruang kerja Core box (bagian 4). Tingkat **MERAH** = kesalahan struktur yang harus diperbaiki sebelum komposit / model; **KUNING** = perlu diperiksa; **INFO** = catatan.

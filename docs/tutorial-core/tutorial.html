@@ -83,7 +83,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>16. Ekspor ke database &amp; dashboard</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.37.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.37.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -480,18 +480,25 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 </section>
 
 <section class="page">
+  <div class="step"><div class="num">9</div><div><b>Input manual &amp; tempel dari Excel.</b> Tab <b>Data</b> → pilih <code>CRM_Data</code>, <code>Blank_Data</code>, <code>Duplicate_Data</code> atau <code>Assay_Import</code>. Klik ganda sel untuk mengubah; <b>+ Baris</b> menambah baris di bawah baris terpilih; <b>Hapus baris</b> menghapus baris terpilih. Untuk banyak baris: blok sel di Excel → <b>Ctrl+C</b> → klik tabel DB-Ex → <b>Ctrl+V</b> (atau <b>Tempel dari Excel</b>). Bila blok yang disalin ikut baris judul (Sample_ID, Standard_Name, Lab_Grade, …), kolom dicocokkan menurut judulnya dan baris ditambahkan di bawah; tanpa judul, sel ditempel mulai dari sel terpilih.</div></div>
+  <div class="step"><div class="num">10</div><div>Coba: salin tiga baris <code>Z8_MAN_001 · CRM-B · 1,47</code>, sebuah Sample_ID yang sudah ada, dan <code>Z8_MAN_003 · CRM-C · abc</code>. Sel <b>merah</b> langsung muncul: Sample_ID ganda (keduanya ditandai) dan Lab_Grade bukan angka. <b>Simpan tabel</b> menolak menyimpan selama masih ada sel merah — perbaiki atau hapus barisnya dulu. Koma desimal dan <code>&lt;0.01</code> diterima seperti saat impor. Di sini klik <b>Batal</b> untuk membuang perubahan latihan.</div></div>
+  <figure><img src="gambar/q18_qaqc_data_tempel.png" style="width:150mm"><figcaption>Gambar 42 – Tabel CRM_Data setelah tempel dari Excel: Sample_ID ganda dan angka tidak valid ditandai merah, status <i>Belum disimpan</i>.</figcaption></figure>
+  <div class="note"><b>Impor vs input manual.</b> Impor file = <b>upsert</b>: Sample_ID baru ditambah, yang sudah ada diperbarui, tidak ada yang terhapus. <b>Simpan tabel</b> menyimpan isi tabel di layar apa adanya: baris yang dihapus di layar ikut terhapus, dan urutan baris menjadi urutan insersi di grafik kontrol. Setelah disimpan, semua tab dihitung ulang. Bila pindah tabel sebelum menyimpan, DB-Ex bertanya dulu. Peringatan (bukan galat): Sample_ID yang juga ada di tabel CRM / Blank lainnya, atau Standard_Name yang belum ada di Master_CRM.</div>
+</section>
+
+<section class="page">
   <div class="part">Latihan 18</div>
   <h2>QAQC data bor, ekspor Excel &amp; laporan PDF</h2>
   <div class="step"><div class="num">1</div><div>Tab <b>Data bor</b> → <b>Periksa data bor</b>. DB-Ex memeriksa Collar, Survey, Assay dan Geologi yang sudah diimpor di ruang kerja Core box (Latihan 2). <b>MERAH</b> = kesalahan struktur yang harus diperbaiki di database sumber sebelum komposit / model (interval tumpang-tindih, Sample ID ganda, tanda dip terbalik, survey / assay tanpa collar); <b>KUNING</b> = perlu diperiksa (melewati EOH, EOH kosong, lompatan survey); <b>INFO</b> = catatan (celah interval, collar tanpa assay).</div></div>
-  <figure><img src="gambar/q16_qaqc_databor.png" style="width:150mm"><figcaption>Gambar 42 – QAQC data bor: ringkasan per kode dan daftar temuan per lubang (contoh data dengan kesalahan sengaja).</figcaption></figure>
+  <figure><img src="gambar/q16_qaqc_databor.png" style="width:150mm"><figcaption>Gambar 43 – QAQC data bor: ringkasan per kode dan daftar temuan per lubang (contoh data dengan kesalahan sengaja).</figcaption></figure>
   <div class="step"><div class="num">2</div><div><b>⇩ Excel + grafik PNG</b>: satu file .xlsx (<code>QAQC_Dashboard</code>, <code>CRM_Data</code>, <code>CRM_Summary</code>, <code>Duplicate_Data</code>, <code>Duplicate Summary</code>, <code>Blank_Data</code>, <code>Report_Appendix</code>, <code>Batch_Summary</code>, <code>Data_Bor_QAQC</code>, <code>Control_Panel</code>, sheet grafik) dan folder <code>&lt;nama&gt;_grafik\</code> berisi semua grafik PNG.</div></div>
 </section>
 
 <section class="page">
   <div class="step"><div class="num">3</div><div><b>⇩ Laporan PDF</b>: isi judul, penyusun dan proyek, lalu simpan. Laporan A4 bernomor halaman: status kesehatan data, Ringkasan Eksekutif (lampu lalu lintas, angka utama, tindakan prioritas), Integritas Data Bor, akurasi CRM, kontaminasi blank, presisi duplikat, ringkasan per batch, dashboard per zona, serta Lampiran A–D.</div></div>
   <div style="display:flex;gap:5mm;justify-content:center">
-    <figure style="margin:0"><img src="gambar/q17_qaqc_laporan_1.png" style="width:80mm;border:1px solid #ccd"><figcaption>Gambar 43 – Laporan PDF, halaman 1.</figcaption></figure>
-    <figure style="margin:0"><img src="gambar/q17_qaqc_laporan_2.png" style="width:80mm;border:1px solid #ccd"><figcaption>Gambar 44 – Laporan PDF, grafik kontrol CRM.</figcaption></figure>
+    <figure style="margin:0"><img src="gambar/q17_qaqc_laporan_1.png" style="width:80mm;border:1px solid #ccd"><figcaption>Gambar 44 – Laporan PDF, halaman 1.</figcaption></figure>
+    <figure style="margin:0"><img src="gambar/q17_qaqc_laporan_2.png" style="width:80mm;border:1px solid #ccd"><figcaption>Gambar 45 – Laporan PDF, grafik kontrol CRM.</figcaption></figure>
   </div>
   <div class="warn">QAQC menilai data, bukan memperbaikinya. Sampel / batch yang gagal ditelusuri ke lab dan database sumber; workbook QAQC lama dengan <b>Sample_ID ganda</b> perlu dibereskan karena hanya baris terakhir yang disimpan.</div>
 </section>

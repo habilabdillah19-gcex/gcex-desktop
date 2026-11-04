@@ -822,6 +822,12 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Installer DB-Ex Qt kini membawa **matplotlib 3.9.2** (lisensi di `LISENSI_PIHAK_KETIGA.txt`); selftest installer menguji rute QAQC dan penggambaran grafik.
 - Tutorial bab 17–18 (QAQC) + data latihan fiktif `QAQC/QAQC_Latihan.xlsx` di `_2_Data-Latihan.zip`; Panduan DB-Ex bagian 6e.
 
+## 79. DB-Ex 0.37.1 — QAQC: input manual & tempel dari Excel
+
+- Tab **Data** di QAQC kini bisa mengedit **CRM_Data, Blank_Data, Duplicate_Data dan Assay_Import** (sebelumnya hanya Master_CRM): klik ganda sel, **+ Baris**, **Hapus baris**, dan **Ctrl+V** blok sel dari Excel (dengan baris judul = kolom dicocokkan menurut judul; tanpa judul = mulai dari sel terpilih).
+- Pemeriksaan langsung (sel merah + alasan di tooltip): Sample_ID / Duplicate_ID ganda, kolom wajib kosong, angka tidak valid. **Simpan tabel** menolak menyimpan selama masih ada galat; **Batal** membuang perubahan.
+- Impor file tetap **upsert** (tidak menghapus); *Simpan tabel* menyimpan isi tabel di layar apa adanya. Tutorial Latihan 17 langkah 9–10, Panduan DB-Ex bagian 6e.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):
