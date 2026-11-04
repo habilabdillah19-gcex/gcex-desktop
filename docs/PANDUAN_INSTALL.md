@@ -1299,3 +1299,34 @@ Tiga grafik yang sebelumnya hanya ada di *Tutorial Update* (dihitung skrip dokum
 
 Tutorial *Modelling & Estimasi*: bab *Filter domain & statistik* mendapat sub-bab Kurva pemusatan logam dan Profil vertikal; Latihan terpandu 2b / 2d / 2e menampilkan versi aplikasi di samping gambar hitungan dokumen. Keterangan gambar statistik kini dari hasil hitung (sebelumnya angka tetap dari data latihan lama).
 
+## 73. Koreksi dokumen & retensi artefak CI (tanpa kenaikan versi aplikasi)
+
+Pembaruan ini **tidak menaikkan versi aplikasi mana pun**: isinya hanya dokumen dan CI, sehingga installer Block Model 0.24.23 dan Drill Hole Ultimate 0.24.24 tidak berubah. Release tetap terbit ulang pada tag yang sama, jadi ZIP dokumen ikut diperbarui.
+
+### 1. Baris *Status pengembangan* yang basi di tutorial
+Bab terakhir `GCEx_Tutorial_Modelling_Estimasi.pdf` mencantumkan **"tabel grade-tonnage per domain dan per bench"** sebagai usulan yang *belum disepakati / belum dikerjakan*. Itu keliru dan bisa membuat pembaca mencari fitur yang sebenarnya sudah ada.
+
+Reporting BM **sudah** bisa mengelompokkan laporan grade-tonase:
+
+| Grup laporan | Keterangan |
+|---|---|
+| Per bench (elevasi) | tinggi bench bebas |
+| Per domain estimasi | dari atribut `domain_est` |
+| Per domain vein | solid Geomodeller Vein |
+| Per atribut kategori | mis. `klasifikasi` (Measured / Indicated / Inferred) |
+
+Semuanya per cut-off, lengkap dengan kurva grade-tonase dan ekspor CSV. Barisnya kini dipindahkan ke daftar **"Sudah tersedia"**, dengan catatan terbuka bahwa baris itu dulu salah.
+
+**Usulan yang benar-benar masih terbuka** tinggal satu: **rekonsiliasi kadar GC lama vs hasil estimasi baru per periode** di GC-Ex Drill Hole. Rekonsiliasi *as-mined* flitch per flitch sudah ada di GC-Ex Block Model; yang belum ada adalah perbandingan periodik (mis. per bulan atau per kampanye bor) antara kadar GC yang dipakai saat penambangan dan model yang diestimasi ulang sesudahnya.
+
+### 2. Retensi artefak CI: 7 → 2 hari
+Run terakhir memunculkan galat `Failed to CreateArtifact: Artifact storage quota has been hit`. Itu **tidak menahan rilis** — langkahnya memang `continue-on-error`, dan sumber resmi installer adalah GitHub Release, bukan artefak Actions.
+
+Penyebabnya bukan cacat: setiap push mengunggah tiga installer berukuran 144–200 MB sebagai cadangan, dan dengan beberapa push per hari kuota penyimpanan (dihitung GB-hari) penuh — tercatat 65 artefak, 9,79 GB belum kedaluwarsa.
+
+Retensi ketiga installer di blok rilis diturunkan dari 7 menjadi **2 hari**: cukup untuk mengambil installer sebuah run yang baru selesai, dan memangkas pemakaian kuota sekitar 70%. Artefak uji DB-Ex Qt dibiarkan 7 hari karena ukurannya satu berkas dan dipakai untuk diagnosis lebih lama.
+
+### 3. `CLAUDE.md`: aturan versi yang saling bertentangan
+Dua butir aturan saling berlawanan — satu menyuruh menaikkan versi pada setiap push yang mengubah isi *"termasuk perubahan dokumen / data latihan saja"*, satu lagi (ditambahkan 0.24.23) hanya untuk aplikasi yang berkasnya benar-benar berubah. Butir pertama itulah yang membuat versi Block Model naik tujuh kali tanpa satu pun perubahan pada aplikasinya.
+
+Butir pertama kini disamakan: **push yang hanya mengubah dokumen, data latihan, atau CI tidak menaikkan versi aplikasi mana pun**, karena installernya identik dan Release tetap terbit ulang pada tag yang sama. Pembaruan ini sendiri mengikuti aturan barunya.

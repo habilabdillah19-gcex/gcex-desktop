@@ -5,8 +5,11 @@
   tentang / lisensi — harus muncul di **GitHub Release**. CI (`.github/workflows/build-windows.yml`) menerbitkan
   Release `v<versi package.json>` otomatis lewat `tools/rilis/kemas_rilis.py`.
 - Karena itu:
-  - **Naikkan versi** aplikasi yang berubah (patch / minor) pada setiap push yang mengubah isi, termasuk perubahan dokumen /
-    data latihan saja. Versi per aplikasi: Block Model = `package.json`; Drillhole = `builder-dh.json` `extraMetadata.version`;
+  - **Naikkan versi** aplikasi yang **isi installernya** berubah (patch / minor) pada setiap push.
+    Push yang hanya mengubah dokumen, data latihan, atau CI **TIDAK** menaikkan versi aplikasi mana pun: installernya
+    identik, dan Release tetap terbit ulang pada tag yang sama sehingga ZIP dokumen / data latihannya ikut diperbarui.
+    (Dulu aturan ini berbunyi "termasuk perubahan dokumen / data latihan saja"; itu membuat versi Block Model naik tujuh
+    kali tanpa satu pun perubahan pada aplikasinya — lihat README 0.24.23.) Versi per aplikasi: Block Model = `package.json`; Drillhole = `builder-dh.json` `extraMetadata.version`;
     DB-Ex = `builder-core.json` `extraMetadata.version` (bila kosong ikut package.json). **Tag** Release memakai versi
     tertinggi, tetapi isinya memuat installer KETIGA aplikasi pada versinya masing-masing (CI membangun ketiganya tiap run;
     versi tiap aplikasi disebut di catatan rilis). Tambahkan baris versi di `README.md` + bagian di `docs/PANDUAN_INSTALL.md`.

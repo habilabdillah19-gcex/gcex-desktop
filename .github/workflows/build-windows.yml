@@ -463,25 +463,29 @@ jobs:
           if ($kurang) { Write-Host ("::error::gh file belum terunggah: " + ($kurang -join ', ')); throw "release $tag tidak lengkap" }
           exit 0
 
-      # artifact Actions (cadangan, 7 hari): bila kuota penyimpanan penuh, build tetap dianggap berhasil (installer sudah di Release)
+      # Artifact Actions = cadangan jangka pendek saja; sumber resmi installer adalah GitHub Release.
+      # Retensi 2 hari (dulu 7): tiap push mengunggah tiga installer 144-200 MB, dan dengan beberapa push per hari
+      # kuota penyimpanan artifact (yang dihitung GB-hari) penuh sehingga unggahan ditolak. 2 hari cukup untuk
+      # mengambil installer sebuah run yang baru saja selesai, dan memangkas pemakaian kuota sekitar 70%.
+      # Kegagalan unggah tetap tidak menggagalkan build (continue-on-error), karena installer sudah ada di Release.
       - uses: actions/upload-artifact@v6
         continue-on-error: true
         with:
           name: GC-Ex-Setup-Windows
           path: dist/GC-Ex-Setup-*.exe
-          retention-days: 7
+          retention-days: 2
       - uses: actions/upload-artifact@v6
         continue-on-error: true
         with:
           name: GC-Ex-Drillhole-Setup-Windows
           path: dist/GC-Ex-Drillhole-Setup-*.exe
-          retention-days: 7
+          retention-days: 2
       - uses: actions/upload-artifact@v6
         continue-on-error: true
         with:
           name: DB-Ex-Setup-Windows
           path: dist/DB-Ex-Setup-*.exe
-          retention-days: 7
+          retention-days: 2
 
       # audit keamanan (informasi, tidak menggagalkan build): environment Python terpisah supaya tidak ikut ke daftar lisensi
       - name: Audit keamanan paket (Node & Python)
