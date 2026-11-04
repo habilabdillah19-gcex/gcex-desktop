@@ -90,3 +90,40 @@ def test_analisis_sam(qtbot, prj, tmp_path, monkeypatch):
     monkeypatch.setattr("corex.outcrop.ask", lambda *a, **k: True)
     pg.auto_reject(None)
     assert not pg.feats
+
+
+def test_analisis_trace_filter_ai_and_legend(qtbot, prj, tmp_path, monkeypatch):
+    """Legenda site (dialog, tersimpan di proyek) + Saring jejak dengan AI vision (Ollama tiruan)."""
+    import json
+    from corex import dialogs
+    from corex.api import core_io
+    w, pg = _open(qtbot, prj, tmp_path, monkeypatch)
+    assert "belum diisi" in pg.anLegInfo.text()
+    # dialog legenda: isi & simpan
+    d = dialogs.LegendDlg(pg, pg.folder)
+    d.ed["lithology"].setPlainText("andesit, tuf lapili")
+    d.ed["ignore"].setPlainText("pita ukur kuning")
+    d.save()
+    pg.legend_info()
+    assert "2 isian aktif" in pg.anLegInfo.text()
+    sent = []
+
+    def fake(url, body=None, timeout=5.0):
+        sent.append(body)
+        return {"message": {"content": json.dumps({"traces": [{"id": 1, "kind": "sesar", "name": "Sesar gouge", "confidence": "sedang"},
+                                                               {"id": 2, "kind": "bayangan"}, {"id": 3, "kind": "tekstur"}]})}}
+    monkeypatch.setattr(core_io, "_http", fake)
+    w.ai.info = {"running": True}
+    monkeypatch.setattr(w.ai, "model", lambda: "qwen3-vl:8b")
+    pg.anTrAi.setChecked(True)
+    pg.an_traces()
+    qtbot.waitUntil(lambda: "AI qwen3-vl:8b" in pg.anStInfo.text() and not pg.an_busy, timeout=30000)
+    assert "Litologi: andesit, tuf lapili" in sent[0]["messages"][0]["content"] and len(sent[0]["messages"][0]["images"]) == 2
+    assert "1 bayangan / tepi bench" in pg.anStInfo.text() and "1 tekstur batuan" in pg.anStInfo.text()
+    dr = [f for f in pg.feats if f["attrs"].get("_draft") == "struktur"]
+    assert dr[0]["kind"] == "sesar" and dr[0]["name"] == "Sesar gouge"
+    # saring ulang tanpa deteksi ulang
+    n = len(dr)
+    pg.an_traces_ai()
+    qtbot.waitUntil(lambda: len(sent) == 2 and not pg.an_busy and "AI qwen3-vl:8b" in pg.anStInfo.text(), timeout=30000)
+    assert len([f for f in pg.feats if f["attrs"].get("_draft") == "struktur"]) == n - 2

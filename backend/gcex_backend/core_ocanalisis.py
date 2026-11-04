@@ -314,7 +314,7 @@ def propose_sam(s: O.Store, pid: int, grid: str | int = "sedang", ai: Optional[d
         Image.fromarray(im).save(b, "JPEG", quality=88)
         body = {"model": model, "stream": False, "keep_alive": "15m", "options": {"temperature": 0, "num_ctx": 16384},
                 "format": ai_schema(sorted(ks)),
-                "messages": [{"role": "user", "content": ai_prompt(ks_all, len(regions), ai.get("extra") or "", r.get("desc")),
+                "messages": [{"role": "user", "content": ai_prompt(ks_all, len(regions), core_io.with_legend(s.project, ai.get("extra") or ""), r.get("desc")),
                               "images": [base64.b64encode(b.getvalue()).decode()]}]}
         j = core_io._http((ai.get("host") or core_io.DEFAULT_HOST).rstrip("/") + "/api/chat", body, timeout=float(ai.get("timeout") or 900))
         if j.get("error"):
@@ -543,7 +543,8 @@ def detect_traces(rgb: np.ndarray, sens: int = 5, min_len: float = 0.05) -> list
     return [[(s_[0], s_[1]), (s_[2], s_[3])] for s_ in S[:int(20 + 6 * sens)]]
 
 
-def propose_traces(s: O.Store, pid: int, sens: int = 5, min_len: float = 0.05, by: str = "", long_side: int = 1400) -> dict:
+def propose_traces(s: O.Store, pid: int, sens: int = 5, min_len: float = 0.05, by: str = "", long_side: int = 1400,
+                   ai: Optional[dict] = None) -> dict:
     r, f, _sol, _mpp = _ctx(s, pid)
     rgb = _rgb(f, long_side)
     H, W = rgb.shape[:2]
@@ -561,7 +562,140 @@ def propose_traces(s: O.Store, pid: int, sens: int = 5, min_len: float = 0.05, b
     with s.lock, s.conn() as c:
         c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
                   (pid, "usulan jejak struktur", None, f"{len(made)} garis (kepekaan {sens})", "auto:struktur", by or "auto", core_io.now()))
-    return {"made": made, "features": O.features(s, pid)}
+    out = {"made": made, "detected": len(made)}
+    if ai and ai.get("model") and made:
+        out["ai"] = classify_traces(s, pid, ai, by)
+        out["made"] = [d["id"] for d in _drafts_of(s, pid, "struktur")]
+    return {**out, "features": O.features(s, pid)}
+
+
+# ---------------------------------------------------------------- penyaring jejak dengan AI vision (Ollama)
+TRACE_REJECT = {"lubang_ledak": "bekas lubang ledak / half barrel (alur tegak lurus sejajar, setengah silinder)",
+                "bayangan": "bayangan, tepi bench / undakan, sudut atau lipatan permukaan dinding (bukan bidang di dalam batuan)",
+                "tekstur": "tekstur / fragmen / butir batuan atau noda warna yang kebetulan berderet, bukan bidang menerus",
+                "lain": "alat, pita ukur, kabel, pipa, vegetasi, tanda cat, tepi foto"}
+TRACE_COLORS = [(255, 64, 64), (0, 200, 255), (255, 210, 0), (60, 255, 120), (255, 80, 255), (255, 140, 0)]
+
+
+def _trace_kinds(s: O.Store) -> list[dict]:
+    """Jenis garis geologi yang boleh dipilih AI (kekar, sesar, vein, kontak, jenis garis buatan pengguna)."""
+    return [k for k in O.kinds(s) if k["shape"] == "line" and k["key"] not in O.AUTO_SKIP]
+
+
+def _numbered_traces(rgb: np.ndarray, lines: list[list[tuple[float, float]]]) -> np.ndarray:
+    """Foto dengan kandidat jejak berwarna bernomor (nomor di kotak putih, digeser bila bertumpuk)."""
+    cv2 = _cv2()
+    im = rgb.copy()
+    ls = max(im.shape[:2])
+    th = max(2, int(ls / 450))
+    sc = 0.5 if ls <= 900 else 0.75
+    used: list[tuple[int, int, int, int]] = []
+    for i, pl in enumerate(lines):
+        c = TRACE_COLORS[i % len(TRACE_COLORS)]
+        P = np.array(pl, np.float64)
+        cv2.polylines(im, [P.round().astype(np.int32)], False, (0, 0, 0), th + 2, cv2.LINE_AA)
+        cv2.polylines(im, [P.round().astype(np.int32)], False, c, th, cv2.LINE_AA)
+    for i, pl in enumerate(lines):
+        t = str(i + 1)
+        (tw, tht), _b = cv2.getTextSize(t, cv2.FONT_HERSHEY_SIMPLEX, sc, 2)
+        P = np.array(pl, np.float64)
+        best = None
+        for u in (0.5, 0.35, 0.65, 0.2, 0.8, 0.1, 0.9):
+            x, y = P[0] + (P[-1] - P[0]) * u
+            r_ = (int(x - tw / 2 - 3), int(y - tht / 2 - 4), int(x + tw / 2 + 3), int(y + tht / 2 + 4))
+            if best is None:
+                best = r_
+            if not any(r_[0] < q[2] and q[0] < r_[2] and r_[1] < q[3] and q[1] < r_[3] for q in used):
+                best = r_
+                break
+        used.append(best)
+        cv2.rectangle(im, best[:2], best[2:], (255, 255, 255), -1)
+        cv2.rectangle(im, best[:2], best[2:], TRACE_COLORS[i % len(TRACE_COLORS)], 1)
+        cv2.putText(im, t, (best[0] + 3, best[3] - 4), cv2.FONT_HERSHEY_SIMPLEX, sc, (20, 20, 20), 2, cv2.LINE_AA)
+    return im
+
+
+def trace_schema(keys: list[str]) -> dict:
+    return {"type": "object", "required": ["traces"], "properties": {
+        "traces": {"type": "array", "items": {"type": "object", "required": ["id", "kind"], "properties": {
+            "id": {"type": "integer"}, "kind": {"type": "string", "enum": keys + list(TRACE_REJECT)}, "name": {"type": "string"},
+            "confidence": {"type": "string", "enum": ["tinggi", "sedang", "rendah"]}}}},
+        "notes": {"type": "string"}}}
+
+
+def trace_prompt(ks: list[dict], n: int, extra: str = "", desc: Optional[dict] = None) -> str:
+    lst = "\n".join(f"- {k['key']}: {k['name']}" for k in ks)
+    rej = "\n".join(f"- {k}: BUKAN struktur: {v}" for k, v in TRACE_REJECT.items())
+    d = "; ".join(f"{k}: {v}" for k, v in (desc or {}).items() if v and k in ("lithology", "alteration", "veins", "structures", "zones"))
+    return ("Anda geologist struktur di tambang emas epitermal. Ada dua gambar dari foto singkapan / dinding pit yang SAMA:\n"
+            "- Gambar 1: foto asli.\n"
+            f"- Gambar 2: foto yang sama dengan {n} kandidat jejak hasil deteksi garis otomatis (garis berwarna bernomor 1 sampai {n}, "
+            "nomor di kotak putih di atas garisnya).\n"
+            "Pendeteksi otomatis sering keliru: bekas lubang ledak, bayangan, tepi bench dan tekstur batuan ikut terdeteksi. "
+            "Untuk SETIAP nomor, lihat lokasi yang sama di gambar 1 dan tentukan kind:\n"
+            f"{lst}\n{rej}\n"
+            "Pedoman: kekar = rekahan / bidang diskontinuitas menerus tanpa pergeseran terlihat; sesar = bidang dengan pergeseran, "
+            "zona hancur / gouge, atau lapisan yang terpotong; vein = urat terisi mineral (kuarsa putih, kalsit, oksida) dengan lebar; "
+            "kontak = batas dua batuan / alterasi berbeda. Bekas lubang ledak berupa alur setengah silinder lurus yang sejajar dan "
+            "berjarak teratur. Bila ragu antara struktur dan bukan struktur, pilih struktur yang paling mungkin dengan confidence rendah "
+            "(geologist akan memeriksa).\n"
+            "Isi name singkat (mis. 'Kekar curam terisi oksida', 'Vein kuarsa-hematit', 'Bekas lubang ledak') dan confidence tinggi / sedang / rendah.\n"
+            + (f"Deskripsi foto yang sudah ada: {d}\n" if d else "")
+            + (f"Catatan tambahan dari geologist: {extra.strip()}\n" if extra and extra.strip() else "")
+            + "Jawab hanya JSON sesuai skema.")
+
+
+def classify_traces(s: O.Store, pid: int, ai: dict, by: str = "", long_side: int = 1600) -> dict:
+    """Saring usulan jejak (draf "struktur") dengan AI vision: jejak geologi diberi jenis & nama, jejak semu dibuang."""
+    r, f, _sol, _mpp = _ctx(s, pid)
+    drafts = _drafts_of(s, pid, "struktur")
+    model = ai.get("model") or ""
+    if not drafts or not model:
+        return {"kept": 0, "removed": {}, "unchanged": len(drafts), "notes": "", "model": model}
+    rgb = _rgb(f, int(ai.get("max_px") or long_side))
+    H, W = rgb.shape[:2]
+    lines = [[(u * W, v * H) for u, v in d["pts"]] for d in drafts]
+    num = _numbered_traces(rgb, lines)
+    from PIL import Image
+
+    def b64(a):
+        b = io.BytesIO()
+        Image.fromarray(a).save(b, "JPEG", quality=88)
+        return base64.b64encode(b.getvalue()).decode()
+    ks_all = _trace_kinds(s)
+    keys = [k["key"] for k in ks_all]
+    body = {"model": model, "stream": False, "keep_alive": "15m", "options": {"temperature": 0, "num_ctx": 16384},
+            "format": trace_schema(keys),
+            "messages": [{"role": "user", "content": trace_prompt(ks_all, len(drafts), core_io.with_legend(s.project, ai.get("extra") or ""), r.get("desc")),
+                          "images": [b64(rgb), b64(num)]}]}
+    j = core_io._http((ai.get("host") or core_io.DEFAULT_HOST).rstrip("/") + "/api/chat", body, timeout=float(ai.get("timeout") or 900))
+    if j.get("error"):
+        raise RuntimeError("Ollama: " + str(j["error"]))
+    res = core_io._parse_json((j.get("message") or {}).get("content", ""))
+    kept, removed, seen = 0, {}, set()
+    for it in res.get("traces") or []:
+        try:
+            i = int(it.get("id")) - 1
+        except (TypeError, ValueError):
+            continue
+        if not (0 <= i < len(drafts)) or i in seen:
+            continue
+        seen.add(i)
+        d, kind = drafts[i], it.get("kind")
+        if kind in TRACE_REJECT:
+            O.delete_feature(s, d["id"], by or "AI")
+            removed[kind] = removed.get(kind, 0) + 1
+        elif kind in keys:
+            attrs = dict(d.get("attrs") or {}, _conf=it.get("confidence") or "", _ai=model)
+            nm = (it.get("name") or "").strip()[:80] or d.get("name")
+            O.save_feature(s, pid, d["id"], {"kind": kind, "pts": d["pts"], "name": nm, "attrs": attrs}, by or "AI")
+            kept += 1
+    notes = str(res.get("notes") or "")
+    with s.lock, s.conn() as c:
+        c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
+                  (pid, "saring jejak AI", None, f"{kept} dipertahankan, {sum(removed.values())} dibuang" + (f" · {notes[:200]}" if notes else ""),
+                   "ai:" + model, by or "AI", core_io.now()))
+    return {"kept": kept, "removed": removed, "unchanged": len(drafts) - len(seen), "notes": notes, "model": model}
 
 
 ISRM = [(0.02, "Sangat rapat sekali (extremely close) < 20 mm"), (0.06, "Sangat rapat (very close) 20–60 mm"),
@@ -784,6 +918,16 @@ class TrBody(FBody):
     id: int
     sens: int = 5
     min_len: float = 0.05
+    host: str = ""
+    model: str = ""
+    extra: str = ""
+
+
+class TrAiBody(FBody):
+    id: int
+    host: str = ""
+    model: str
+    extra: str = ""
 
 
 class StBody(FBody):
@@ -805,7 +949,16 @@ def api_index(b: IdxBody) -> dict:
 
 @router.post("/traces")
 def api_traces(b: TrBody) -> dict:
-    return {"ok": True, **propose_traces(O.store(b.folder), b.id, b.sens, b.min_len, b.by)}
+    ai = {"host": b.host, "model": b.model, "extra": b.extra} if b.model else None
+    return {"ok": True, **propose_traces(O.store(b.folder), b.id, b.sens, b.min_len, b.by, ai=ai)}
+
+
+@router.post("/traces/ai")
+def api_traces_ai(b: TrAiBody) -> dict:
+    """Saring usulan jejak yang sudah ada dengan AI vision."""
+    s = O.store(b.folder)
+    res = classify_traces(s, b.id, {"host": b.host, "model": b.model, "extra": b.extra}, b.by)
+    return {"ok": True, "ai": res, "made": [d["id"] for d in _drafts_of(s, b.id, "struktur")], "features": O.features(s, b.id)}
 
 
 @router.post("/struct")

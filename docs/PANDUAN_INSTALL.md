@@ -874,6 +874,12 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - **Ukur bidang**: klik titik di sepanjang jejak vein / kekar / sesar yang melintasi permukaan tidak rata → **dip, arah dip, strike sebenarnya**, RMS dan mutu. Ekspor bidang (CSV, STR Surpac) dan awan titik (PLY).
 - Data latihan `Model_3D/Dinding_M01` (dinding sintetis fiktif, 10 foto, `Titik_RTK_Dinding_M01.csv`, `KUNCI_JAWABAN.txt`); tutorial Latihan 21; Panduan DB-Ex 6c butir 10.
 
+## 88. DB-Ex 0.41.0 — Legenda site & penyaring jejak AI
+
+- **Legenda site…** (dialog AI lokal dan tab Analisis Singkapan): isi istilah resmi proyek, yaitu litologi, alterasi, oksida / vein & mineralisasi, struktur, hal yang *bukan geologi* (bekas lubang ledak, pita ukur, cat) dan catatan lain. Tersimpan di folder proyek dan otomatis ikut ke semua prompt AI geologi: analisis core box, deskripsi & delineasi singkapan, label zona SAM, penyaring jejak.
+- **Saring jejak dengan AI vision (Ollama)** di tab Analisis → 3 · Struktur & geoteknik: centang sebelum *Deteksi jejak*, atau klik **Saring ulang**. AI melihat foto asli dan foto dengan kandidat jejak bernomor; jejak geologi diberi jenis & nama, jejak semu dibuang. ±1–3 menit dengan `qwen3-vl:8b` di GPU.
+- Tidak perlu model baru: tetap `qwen3-vl:8b` (atau `qwen3-vl:4b` bila memori GPU kecil). Tutorial Latihan 19, Panduan DB-Ex bagian 3 dan 6c butir 8.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):

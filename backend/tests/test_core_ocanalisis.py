@@ -106,3 +106,34 @@ def test_sam_auto_color_and_ai_labels(wall, monkeypatch):
     assert first["kind"] == "zona_alt" and "Andesit propilitik" in first["name"] and first["attrs"]["_conf"] == "sedang"
     # usulan SAM lama diganti, bukan ditumpuk
     assert len([f for f in O.features(s, pid) if f["attrs"].get("_draft") == "sam"]) == len(mine)
+
+
+def test_trace_filter_ai_and_site_legend(wall, monkeypatch):
+    """Penyaring jejak AI (Ollama tiruan): jejak 1 jadi vein, jejak 2 bekas lubang ledak (dibuang), sisanya tetap.
+    Legenda site proyek ikut masuk prompt."""
+    s, pid, A = wall
+    leg = core_io.legend_set(s.project, {"lithology": "andesit, tuf lapili", "alteration": "propilitik, argilik", "ignore": "pita ukur kuning"})
+    assert leg["lithology"] == "andesit, tuf lapili" and core_io.legend_get(s.project)["mineral"] == ""
+    assert "Litologi: andesit, tuf lapili" in core_io.with_legend(s.project, "kode AND") and core_io.with_legend(s.project, "kode AND").endswith("kode AND")
+    sent = {}
+
+    def fake(url, body, timeout=5.0):
+        sent["body"] = body
+        return {"message": {"content": json.dumps({"traces": [{"id": 1, "kind": "vein", "name": "Vein kuarsa", "confidence": "tinggi"},
+                                                               {"id": 2, "kind": "lubang_ledak"}, {"id": 999, "kind": "kekar"}], "notes": "uji"})}}
+    monkeypatch.setattr(core_io, "_http", fake)
+    j = A.propose_traces(s, pid, 5, ai={"host": "http://x", "model": "qwen3-vl:8b"})
+    msg = sent["body"]["messages"][0]
+    assert len(msg["images"]) == 2 and "Litologi: andesit, tuf lapili" in msg["content"] and "lubang_ledak" in json.dumps(sent["body"]["format"])
+    a = j["ai"]
+    assert a["kept"] == 1 and a["removed"] == {"lubang_ledak": 1} and a["unchanged"] == j["detected"] - 2 and a["notes"] == "uji"
+    drafts = [f for f in O.features(s, pid) if f["attrs"].get("_draft") == "struktur"]
+    assert len(drafts) == j["detected"] - 1 == len(j["made"])
+    v = drafts[0]
+    assert v["kind"] == "vein" and v["name"] == "Vein kuarsa" and v["attrs"]["_conf"] == "tinggi"
+    # saring ulang jejak yang ada (tanpa deteksi ulang); legenda juga masuk prompt deskripsi / label SAM / core box
+    r = A.classify_traces(s, pid, {"model": "qwen3-vl:8b"})
+    assert r["removed"] == {"lubang_ledak": 1} and len([f for f in O.features(s, pid) if f["attrs"].get("_draft") == "struktur"]) == len(drafts) - 1
+    assert "LEGENDA SITE" in core_io.ai_prompt(core_io.with_legend(s.project, ""))
+    core_io.legend_set(s.project, {})
+    assert core_io.with_legend(s.project, "") == ""

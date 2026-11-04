@@ -275,6 +275,15 @@ class AiDlg(Dlg):
         self.extra.setPlaceholderText("Contoh: Pakai kode litologi AND (andesit), DAC (dasit), QV (quartz vein), BX (breksi).")
         self.extra.setFixedHeight(64)
         b.addWidget(self.extra)
+        r = QHBoxLayout()
+        self.bLeg = btn("Legenda site…", "Istilah resmi proyek (litologi, alterasi, oksida / vein, struktur) untuk semua prompt AI geologi", sm=True)
+        self.bLeg.clicked.connect(lambda: open_legend(self, getattr(self.parent(), "folder", "")))
+        r.addWidget(self.bLeg)
+        n = QLabel("berlaku untuk core box & singkapan, tersimpan di folder proyek")
+        n.setObjectName("note")
+        r.addWidget(n)
+        r.addStretch(1)
+        b.addLayout(r)
         b.addWidget(box("<b>AI visual untuk parameter geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, struktur) dan segmen per baris core. "
                         "Litologi, alterasi, oksidasi dan warna diambil dari <b>logging geologist</b> (Data bor › Geologi) bila ada; AI hanya mengisi bila "
                         "logging tidak ada dan tidak pernah menimpa editan Anda.", "ok"))
@@ -387,6 +396,67 @@ class AiDlg(Dlg):
         self.want = meta.get("ai_model") or ""
 
 
+# ---------------------------------------------------------------- legenda site
+LEGEND_HINT = {
+    "lithology": "Contoh: andesit porfiri, tuf lapili, breksi hidrotermal, dasit",
+    "alteration": "Contoh: propilitik (hijau klorit-epidot), argilik (putih pucat, lunak), silisifikasi (abu terang, keras)",
+    "mineral": "Contoh: hematit merah tua, limonit / goetit kuning-coklat, vein kuarsa putih, vein kuarsa-hematit, stockwork",
+    "structure": "Contoh: sesar utama berarah NW-SE dengan gouge lempung; kekar curam terisi oksida",
+    "ignore": "Contoh: bekas lubang ledak tegak, pita ukur kuning, garis cat Pylox, kabel peledakan",
+    "notes": "Contoh: kode litologi AND = andesit, TUF = tuf, QV = quartz vein",
+}
+
+
+class LegendDlg(Dlg):
+    """Legenda site proyek: istilah resmi yang otomatis masuk ke semua prompt AI geologi (core box & singkapan)."""
+
+    def __init__(self, parent, folder: str):
+        super().__init__(parent, "Legenda site", "Legenda <span style='color:#a9c3dd'>site</span>", 640)
+        self.folder = folder
+        b = self.body
+        self.setMinimumHeight(740)
+        info = box("Istilah resmi proyek. <b>Otomatis masuk ke semua prompt AI geologi</b> (core box & singkapan) dan tersimpan di folder "
+                   "proyek, jadi rekan yang membuka folder yang sama memakai legenda yang sama. Kosongkan bila tidak dipakai.")
+        info.setMinimumHeight(64)
+        b.addWidget(info)
+        self.ed: dict[str, QPlainTextEdit] = {}
+        j = api.call("/core/legend", {"folder": folder})
+        for k in j["keys"]:
+            b.addWidget(QLabel(f"<b>{_esc(k['name'])}</b>"))
+            e = QPlainTextEdit(j["legend"].get(k["key"]) or "")
+            e.setPlaceholderText(LEGEND_HINT.get(k["key"], ""))
+            e.setFixedHeight(52)
+            b.addWidget(e)
+            self.ed[k["key"]] = e
+        sv = btn("Simpan", pri=True)
+        cl = btn("Batal")
+        self.foot.addStretch(1)
+        self.foot.addWidget(cl)
+        self.foot.addWidget(sv)
+        cl.clicked.connect(self.reject)
+        sv.clicked.connect(self.save)
+
+    def save(self) -> None:
+        try:
+            api.call("/core/legend", {"folder": self.folder, "legend": {k: e.toPlainText() for k, e in self.ed.items()}})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self.accept()
+
+
+def open_legend(parent, folder: str) -> bool:
+    if not folder:
+        say(parent, "Buka folder proyek dulu: legenda site disimpan di folder proyek.", warn=True)
+        return False
+    try:
+        d = LegendDlg(parent, folder)
+    except api.ApiError as e:
+        say(parent, str(e), warn=True)
+        return False
+    return d.exec() == QDialog.Accepted
+
+
 def about(parent, store: lic.Store | None, version: str) -> None:
     c = store.check(core_app()) if store else None
     I = c.get("info") if c else None
@@ -410,4 +480,4 @@ def about(parent, store: lic.Store | None, version: str) -> None:
         open_path(res_dir("legal") / "SYARAT_PENGGUNAAN.txt")
 
 
-__all__ = ["AiDlg", "LicenseDlg", "about", "ask", "box", "ensure_terms", "say", "set_box", "COPYRIGHT", "QPushButton"]
+__all__ = ["AiDlg", "LegendDlg", "LicenseDlg", "open_legend", "about", "ask", "box", "ensure_terms", "say", "set_box", "COPYRIGHT", "QPushButton"]

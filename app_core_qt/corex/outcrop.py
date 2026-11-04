@@ -1329,6 +1329,14 @@ class OutcropPage(QWidget):
         n.setWordWrap(True)
         n.setTextFormat(Qt.RichText)
         v.addWidget(n)
+        r = QHBoxLayout()
+        self.bAnLeg = btn("Legenda site…", "Istilah resmi proyek (litologi, alterasi, oksida / vein, struktur) yang otomatis masuk ke semua prompt AI", sm=True)
+        self.bAnLeg.clicked.connect(self.open_legend)
+        self.anLegInfo = QLabel()
+        self.anLegInfo.setObjectName("note")
+        r.addWidget(self.bAnLeg)
+        r.addWidget(self.anLegInfo, 1)
+        v.addLayout(r)
 
         def box(title: str):
             fr = QFrame()
@@ -1402,20 +1410,28 @@ class OutcropPage(QWidget):
         g.addWidget(self.anTSens, 1, 0, 1, 2)
         self.bAnTr = btn("Deteksi jejak", "Jejak lurus di foto dijadikan garis usulan jenis Kekar (ganti jenisnya bila vein / sesar)", pri=True, sm=True)
         g.addWidget(self.bAnTr, 1, 2, 1, 2)
-        g.addWidget(QLabel("Scanline"), 2, 0)
+        self.anTrAi = QCheckBox("Saring jejak dengan AI vision (Ollama)")
+        self.anTrAi.setChecked(bool(SET.get("ocAnTrAi", False)))
+        self.anTrAi.setToolTip("AI lokal melihat foto asli + jejak bernomor: jejak geologi diberi jenis (kekar / sesar / vein / kontak) & nama, "
+                               "bekas lubang ledak, bayangan, tepi bench dan tekstur batuan dibuang")
+        self.anTrAi.toggled.connect(lambda v: SET.set("ocAnTrAi", v))
+        self.bAnTrAi = btn("Saring ulang", "Saring usulan jejak yang ada dengan AI vision tanpa mendeteksi ulang", sm=True)
+        g.addWidget(self.anTrAi, 2, 0, 1, 3)
+        g.addWidget(self.bAnTrAi, 2, 3, 1, 1)
+        g.addWidget(QLabel("Scanline"), 3, 0)
         self.anScan = QComboBox()
         self.anScan.setToolTip("Garis pengukuran frekuensi & spasi kekar. Gambar garis (mis. jenis Channel / Garis skala) melintang kekar untuk memakainya.")
         self.anScan.setMinimumContentsLength(10)
         self.anScan.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        g.addWidget(self.anScan, 2, 1, 1, 3)
+        g.addWidget(self.anScan, 3, 1, 1, 3)
         self.anDraft = QCheckBox("Ikutkan usulan")
         self.anDraft.setChecked(True)
-        g.addWidget(self.anDraft, 3, 0, 1, 2)
+        g.addWidget(self.anDraft, 4, 0, 1, 2)
         self.bAnSt = btn("Hitung struktur", "Set kekar, rose diagram, scanline (frekuensi, spasi, kelas ISRM), Jv, RQD & bantuan GSI", sm=True)
-        g.addWidget(self.bAnSt, 3, 2, 1, 2)
+        g.addWidget(self.bAnSt, 4, 2, 1, 2)
         self.anRose = QLabel()
         self.anRose.setAlignment(Qt.AlignCenter)
-        g.addWidget(self.anRose, 4, 0, 1, 4)
+        g.addWidget(self.anRose, 5, 0, 1, 4)
         self.anSetT = QTableWidget(0, 5)
         self.anSetT.setHorizontalHeaderLabels(["Set", "Sudut", "Jejak", "Spasi", "Dip semu"])
         self.anSetT.setToolTip("Sudut = orientasi jejak di bidang foto dari mendatar; Dip semu = apparent dip dari georef")
@@ -1425,12 +1441,12 @@ class OutcropPage(QWidget):
         self.anSetT.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.anSetT.setMaximumHeight(110)
         self.anSetT.hide()
-        g.addWidget(self.anSetT, 5, 0, 1, 4)
+        g.addWidget(self.anSetT, 6, 0, 1, 4)
         self.anStInfo = QLabel()
         self.anStInfo.setObjectName("note")
         self.anStInfo.setWordWrap(True)
         self.anStInfo.setTextFormat(Qt.RichText)
-        g.addWidget(self.anStInfo, 6, 0, 1, 4)
+        g.addWidget(self.anStInfo, 7, 0, 1, 4)
         r = QHBoxLayout()
         self.bAnAcc = btn("Terima semua usulan", "Jadikan semua usulan fitur biasa", sm=True)
         self.bAnRej = btn("Buang semua usulan", sm=True)
@@ -1445,6 +1461,7 @@ class OutcropPage(QWidget):
         self.anShow.toggled.connect(lambda *_: self.canvas.update())
         self.anIdx.currentIndexChanged.connect(lambda *_: self.an_clear_index())
         self.bAnTr.clicked.connect(self.an_traces)
+        self.bAnTrAi.clicked.connect(self.an_traces_ai)
         self.bAnSt.clicked.connect(self.an_struct)
         self.bAnAcc.clicked.connect(lambda: self.auto_accept(None))
         self.bAnRej.clicked.connect(lambda: self.auto_reject(None))
@@ -1656,6 +1673,7 @@ class OutcropPage(QWidget):
             say(self, "Gagal membuka data singkapan:\n" + str(e), warn=True)
             return
         self.desc_fields = j["desc_fields"]
+        self.legend_info()
         self._build_desc()
         self._kinds(j["kinds"])
         self._elements(j.get("elements"))
@@ -2753,6 +2771,23 @@ class OutcropPage(QWidget):
         d.exec()
 
     # ---------------------------------------------------------------- analisis foto (Fase 1)
+    def open_legend(self) -> None:
+        from .dialogs import open_legend
+        if open_legend(self, self.folder):
+            self.legend_info()
+
+    def legend_info(self) -> None:
+        """Ringkas status legenda site di tab Analisis."""
+        if not self.folder:
+            self.anLegInfo.setText("")
+            return
+        try:
+            leg = api.call("/core/legend", {"folder": self.folder})["legend"]
+        except api.ApiError:
+            leg = {}
+        n = sum(1 for v in leg.values() if v)
+        self.anLegInfo.setText(f"{n} isian aktif, ikut ke semua prompt AI" if n else "belum diisi (AI memakai istilah umum)")
+
     def an_reset(self) -> None:
         self.ovl, self.scan_res = None, None
         for lb in (self.anSamInfo, self.anIdxInfo, self.anStInfo):
@@ -2783,14 +2818,14 @@ class OutcropPage(QWidget):
         if not self.cur or self.an_busy:
             return
         self.an_busy = True
-        for b in (self.bAnSam, self.bAnIdx, self.bAnIdxP, self.bAnTr, self.bAnSt):
+        for b in (self.bAnSam, self.bAnIdx, self.bAnIdxP, self.bAnTr, self.bAnTrAi, self.bAnSt):
             b.setEnabled(False)
         info.setText(busy)
         pid = self.cur["id"]
 
         def done():
             self.an_busy = False
-            for b in (self.bAnSam, self.bAnIdx, self.bAnIdxP, self.bAnTr, self.bAnSt):
+            for b in (self.bAnSam, self.bAnIdx, self.bAnIdxP, self.bAnTr, self.bAnTrAi, self.bAnSt):
                 b.setEnabled(bool(self.cur))
 
         def _ok(j):
@@ -2859,15 +2894,57 @@ class OutcropPage(QWidget):
         self._an_run("/core/outcrop/an/index", {"kind": kind, "sens": self.anSens.value(), "propose": propose},
                      "Menghitung peta warna…", self.anIdxInfo, ok)
 
+    def _an_ai(self) -> dict | None:
+        """host / model / instruksi AI vision dari dialog AI lokal; None (dan dialog dibuka) bila Ollama belum siap."""
+        ai = self.win.ai
+        model = ai.model()
+        if not ai.info or not ai.info.get("running") or not model:
+            self.win.open_ai()
+            return None
+        return {"host": ai.host.text().strip(), "model": model, "extra": ai.extra.toPlainText()}
+
+    @staticmethod
+    def _tr_ai_text(a: dict) -> str:
+        why = {"lubang_ledak": "bekas lubang ledak", "bayangan": "bayangan / tepi bench", "tekstur": "tekstur batuan", "lain": "alat / pita / lainnya"}
+        rm = ", ".join(f"{n} {why.get(k, k)}" for k, n in (a.get("removed") or {}).items())
+        t = f"AI {a.get('model')}: {a.get('kept', 0)} jejak geologi diberi jenis" + (f", dibuang {rm}" if rm else ", tidak ada yang dibuang")
+        if a.get("unchanged"):
+            t += f", {a['unchanged']} tidak dinilai (tetap kekar)"
+        return t + (f". Catatan AI: {a['notes']}" if a.get("notes") else "") + "."
+
     def an_traces(self) -> None:
         SET.set("ocAnTSens", self.anTSens.value())
+        body, busy = {"sens": self.anTSens.value()}, "Mendeteksi jejak…"
+        if self.anTrAi.isChecked():
+            ai = self._an_ai()
+            if ai is None:
+                return
+            body.update(ai)
+            busy = f"Mendeteksi jejak, lalu AI {ai['model']} menyaringnya… (biasanya 1–3 menit)"
 
         def ok(j):
             self._feats(j)
             self.tool.select(None)
             self.toast(f"{len(j['made'])} jejak usulan — menghitung struktur…", 3000)
+            self._tr_ai = self._tr_ai_text(j["ai"]) if j.get("ai") else ""
             self.an_struct()
-        self._an_run("/core/outcrop/an/traces", {"sens": self.anTSens.value()}, "Mendeteksi jejak…", self.anStInfo, ok)
+        self._an_run("/core/outcrop/an/traces", body, busy, self.anStInfo, ok)
+
+    def an_traces_ai(self) -> None:
+        if not any(f["attrs"].get("_draft") == "struktur" for f in self.feats):
+            say(self, "Belum ada usulan jejak. Klik Deteksi jejak dulu.", warn=True)
+            return
+        ai = self._an_ai()
+        if ai is None:
+            return
+
+        def ok(j):
+            self._feats(j)
+            self.tool.select(None)
+            self._tr_ai = self._tr_ai_text(j["ai"])
+            self.toast(f"{len(j['made'])} jejak usulan tersisa — menghitung struktur…", 3000)
+            self.an_struct()
+        self._an_run("/core/outcrop/an/traces/ai", ai, f"AI {ai['model']} menyaring jejak… (biasanya 1–3 menit)", self.anStInfo, ok)
 
     def an_struct(self) -> None:
         def ok(j):
@@ -2890,7 +2967,8 @@ class OutcropPage(QWidget):
                     self.anSetT.setItem(i, c, QTableWidgetItem(val))
             self.anSetT.setVisible(bool(sets))
             sc, geo = j["scan"], j["geo"]
-            t = [f"<b>{len(j['lines'])}</b> jejak (kekar / vein / sesar){'' if self.anDraft.isChecked() else ' yang sudah diterima'}; "
+            tra, self._tr_ai = getattr(self, "_tr_ai", ""), ""
+            t = ([_esc(tra)] if tra else []) + [f"<b>{len(j['lines'])}</b> jejak (kekar / vein / sesar){'' if self.anDraft.isChecked() else ' yang sudah diterima'}; "
                  f"<b>{len(sets)}</b> set."]
             if sc["n"]:
                 t.append(f"Scanline {'otomatis' if sc['auto'] else 'pilihan'} {sc['length']:,.2f} {u}: <b>{sc['n']}</b> perpotongan, "

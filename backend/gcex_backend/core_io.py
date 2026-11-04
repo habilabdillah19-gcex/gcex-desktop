@@ -469,6 +469,40 @@ def ai_schema() -> dict:
 GEO_LABEL = {"lithology": "Litologi", "alteration": "Alterasi", "oxidation": "Oksidasi", "color": "Warna", "weathering": "Pelapukan"}
 
 
+# ---------------------------------------------------------------- legenda site (istilah resmi proyek untuk semua prompt AI geologi)
+LEGEND_KEYS = [("lithology", "Litologi"), ("alteration", "Alterasi"), ("mineral", "Oksida, vein & mineralisasi"),
+               ("structure", "Struktur"), ("ignore", "Bukan geologi (abaikan)"), ("notes", "Catatan lain")]
+
+
+def legend_get(p: Project) -> dict:
+    try:
+        d = json.loads(get_meta(p).get("site_legend") or "{}")
+    except ValueError:
+        d = {}
+    return {k: str(d.get(k) or "").strip() for k, _ in LEGEND_KEYS}
+
+
+def legend_set(p: Project, d: dict) -> dict:
+    clean = {k: str((d or {}).get(k) or "").strip()[:1500] for k, _ in LEGEND_KEYS}
+    set_meta(p, {"site_legend": json.dumps(clean, ensure_ascii=False)})
+    return clean
+
+
+def legend_text(leg: dict) -> str:
+    rows_ = [f"- {name}: {leg[k]}" for k, name in LEGEND_KEYS if (leg or {}).get(k)]
+    if not rows_:
+        return ""
+    return ("LEGENDA SITE (istilah resmi proyek ini). Pakai nama dari legenda untuk name / deskripsi bila sesuai dengan yang terlihat; "
+            "bila foto jelas memperlihatkan hal lain, tulis apa adanya dengan confidence rendah:\n" + "\n".join(rows_))
+
+
+def with_legend(p: Optional[Project], extra: str = "") -> str:
+    """Instruksi tambahan untuk prompt: legenda site proyek + catatan geologist (keduanya opsional)."""
+    lt = legend_text(legend_get(p)) if p is not None else ""
+    ex = (extra or "").strip()
+    return "\n\n".join(x for x in (lt, ex) if x)
+
+
 def ai_prompt(extra: str = "", logged: Optional[dict] = None, rows: int = 4, box_len: Optional[float] = None) -> str:
     # Tata letak foto core box standar: papan label putih di atas kotak, 4 baris core di kotak besi/kayu,
     # blok penanda run, papan skala catur hitam-putih di bawah. Contoh nilai di bawah fiktif.
@@ -604,6 +638,8 @@ def ai_start(p: Project, ids: list[int], host: str, model: str, extra: str, max_
         JOB.state = {"running": True, "folder": str(p.folder), "total": len(ids), "done": 0, "failed": 0,
                      "current": None, "current_id": None, "started": time.time(), "last_secs": None, "model": model,
                      "message": "Memulai…", "finished": None}
+
+    extra = with_legend(p, extra)
 
     def work():
         st = JOB.state
@@ -903,6 +939,19 @@ def api_ollama(b: HostBody) -> dict:
     s = ollama_status(b.host)
     s["running"] = s.pop("ok")
     return {"ok": True, **s}
+
+
+class LegendBody(BaseModel):
+    folder: str
+    legend: Optional[dict] = None
+
+
+@router.post("/legend")
+def api_legend(b: LegendBody) -> dict:
+    """Baca (legend = None) atau simpan legenda site proyek."""
+    p = get_project(b.folder)
+    leg = legend_get(p) if b.legend is None else legend_set(p, b.legend)
+    return {"ok": True, "legend": leg, "keys": [{"key": k, "name": n} for k, n in LEGEND_KEYS], "prompt": legend_text(leg)}
 
 
 @router.post("/ai/start")

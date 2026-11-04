@@ -88,6 +88,7 @@ class Store:
         self.db = root / "singkapan.db"
         self.photos = root / "foto"
         self.lock = threading.RLock()
+        self.project: Optional[core_io.Project] = None  # untuk legenda site (meta proyek Core)
 
     @contextmanager
     def conn(self):
@@ -111,9 +112,11 @@ def store(folder: str) -> Store:
     with _SLOCK:
         s = _STORES.get(key)
         if s and s.db.exists():
+            s.project = p
             return s
         root.mkdir(parents=True, exist_ok=True)
         s = Store(root)
+        s.project = p
         s.photos.mkdir(exist_ok=True)
         with s.conn() as c:
             c.executescript(_DDL)
@@ -712,6 +715,7 @@ def ai_describe(s: Store, pid: int, host: str, model: str, extra: str = "", max_
     if sc:
         scale = sc["m_per_px"] * max(r["w"], r["h"]) / min(max_px, max(r["w"], r["h"]))
     ctx = "; ".join(x for x in (r.get("title") and f"judul: {r['title']}", r.get("location") and f"lokasi: {r['location']}") if x)
+    extra = core_io.with_legend(s.project, extra)
     body = {"model": model, "messages": [{"role": "user", "content": ai_prompt(extra, scale, ctx), "images": [base64.b64encode(img).decode()]}],
             "stream": False, "format": ai_schema(), "options": {"temperature": 0, "num_ctx": 16384}, "keep_alive": "15m"}
     t0 = time.time()
@@ -2088,6 +2092,7 @@ def ai_delineate(s: Store, pid: int, host: str, model: str, extra: str = "", max
     with Image.open(BytesIO(img)) as im:
         size = im.size
     ks = [k for k in kinds(s) if k["key"] not in AUTO_SKIP and k["shape"] != "point"]
+    extra = core_io.with_legend(s.project, extra)
     body = {"model": model, "messages": [{"role": "user", "content": delin_prompt(ks, extra, r.get("desc")), "images": [base64.b64encode(img).decode()]}],
             "stream": False, "format": delin_schema([k["key"] for k in ks]), "options": {"temperature": 0, "num_ctx": 16384}, "keep_alive": "15m"}
     j = core_io._http((host or core_io.DEFAULT_HOST).rstrip("/") + "/api/chat", body, timeout=timeout)
