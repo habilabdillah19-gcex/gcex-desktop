@@ -103,12 +103,12 @@ BAGIAN = [
    'Domain aktif di Geostatistik', 'Variogram, anisotropi', 'Kriging Neighbourhood Analysis',
    'Uji estimasi &amp; simpan parameter', 'Block model dari nol', 'Sub-blocking',
    'Model Estimation: estimasi block model GC', 'Estimasi waste',
-   'Koreksi setelah bor baru', 'Latihan terpandu']),
+   'Koreksi setelah bor baru', 'Autorun: wireframe', 'Latihan terpandu']),
  ('Bagian III &middot; Deposit laterit / stratiform berlapis',
   'Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex, seam) &mdash; lapisan tipis '
   'secara vertikal tetapi luas ke samping, mengikuti bentuk permukaan. Jalurnya berbeda dari vein: '
   'node <b>Geomodeller Stratified-Laterite</b>, estimasi per lapisan di koordinat <b>unfold</b>.',
-  ['Geomodeller Stratified-Laterite', 'Estimasi waste pada laterit']),
+  ['Geomodeller Stratified-Laterite', 'Estimasi waste pada laterit', 'Autorun pada laterit']),
  ('Bagian IV &middot; Pelaporan sumber daya',
   'Berlaku untuk <b>semua tipe deposit</b>, dijalankan sesudah block model terestimasi: mengusulkan kelas '
   '<b>Measured / Indicated / Inferred</b> per blok dari atribut hasil estimasi, lalu melaporkan tonase dan '
@@ -754,6 +754,43 @@ ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> 
  + fig('tree', 'Project Tree: Struktur Geologi &rsaquo; Sesar (bidang 3D) dan Geomodeller Stratified-Laterite Deposit dengan node lapisan &amp; tahap &#9312;&ndash;&#9315;.', '40%')
  + tip('Semua pengaturan lapisan, sesar dan hasil estimasi tersimpan per proyek; tabel <code>sesar</code> dan <code>lapisan</code> ikut ke database proyek SQLite (gcex_proyek.db).'))
 
+ch('Autorun: wireframe & estimasi sekali jalan (vein)', '<p>Sesudah beberapa periode grade control, pekerjaannya jadi berulang: bor baru masuk lewat upsert, Anda flagging, lalu <b>langkah-langkah yang sama</b> dikerjakan lagi &mdash; tarik string tiap section, bangun solid, estimasi ulang, estimasi waste, segarkan laporan. Dua node <b>Autorun</b> menjahit langkah itu menjadi satu perintah. Tidak ada algoritme baru di dalamnya: yang dipanggil adalah fungsi yang sama dengan yang Anda pakai manual.</p>'
+ + '<h3>1. Autorun Wireframe (node di bawah Geomodeller Vein)</h3>'
+ + steps('Centang domain yang ikut &mdash; tiap domain muncul sebagai <b>anak node</b> dengan centangnya sendiri.',
+         'Menu node &rarr; <b>Pengaturan autorun&hellip;</b> untuk menentukan <b>spasi section</b> (lazimnya seperempat sampai separuh spasi bor). Hanya ini yang perlu diputuskan.',
+         'Menu node &rarr; <b>Jalankan untuk domain tercentang</b>.')
+ + '<p>Untuk setiap domain, GC-Ex menghitung <b>strike</b>-nya dari titik tengah kontak flag, memasang garis section <b>tegak lurus strike</b> melewati pusat data, lalu menarik string di <b>semua section</b> dengan spasi yang Anda tentukan. Solid terbangun ulang sendiri sesudahnya.</p>'
+ + '<h3>&ldquo;Dari nol&rdquo; dan &ldquo;melanjutkan&rdquo; adalah perintah yang sama</h3>'
+ + '<p>Ini yang paling perlu dipahami: keputusannya diambil <b>per section</b>, bukan per perintah.</p>'
+ + '<table class="t"><tr><th>Keadaan section</th><th>Yang dilakukan autorun</th></tr>'
+ + '<tr><td>Belum ada string</td><td><b>dibuat</b></td></tr>'
+ + '<tr><td>Ada string hasil autorun</td><td><b>diperbarui</b> mengikuti flag terbaru</td></tr>'
+ + '<tr><td>Ada string yang <b>Anda edit tangan</b></td><td><b>dilewati</b> &mdash; tidak pernah ditimpa &mdash; dan dihitung di laporan</td></tr>'
+ + '<tr><td>Kontak flag kurang dari 2</td><td>dilewati dan dihitung di laporan</td></tr></table>'
+ + why('Karena itu autorun aman dijalankan berulang kali. Sesudah upsert bor baru, perintah yang sama otomatis bersifat melanjutkan: section yang sudah Anda rapikan tangan tetap utuh, section baru dan section otomatis ikut terbarui. Menjalankannya dua kali berturut-turut tidak menambah satu string pun.')
+ + warn('Pilihan <b>Bangun ulang semua, termasuk string yang sudah diedit tangan</b> ada di Pengaturan, bawaannya <b>mati</b>, dan selalu meminta konfirmasi. Nyalakan hanya bila interpretasi lama memang mau dibuang.')
+ + '<h3>2. Autorun Estimation (node di bawah Model Estimation)</h3>'
+ + '<p>Perintah ini <b>tidak</b> melakukan fitting variogram. Ia memakai <b>parameter yang sudah Anda simpan per domain</b> ({{B:Uji estimasi}}) apa adanya, menjalankan estimasi inkremental, lanjut ke estimasi waste, lalu menyegarkan Reporting BM.</p>'
+ + '<table class="t"><tr><th>Keadaan domain</th><th>Yang dilakukan</th></tr>'
+ + '<tr><td>Solid ada + parameter tersimpan ada</td><td><b>diestimasi</b> &mdash; hanya blok yang lingkungan kriging-nya berubah ({{B:Koreksi setelah bor baru}})</td></tr>'
+ + '<tr><td>Belum ada parameter tersimpan</td><td><b>dilewati</b>, dengan alasan tertulis: <i>&ldquo;di Geostatistik: fitting model, lalu Simpan ke domain&rdquo;</i></td></tr>'
+ + '<tr><td>Solid belum dinyalakan / gagal</td><td><b>dilewati</b>, dengan sebabnya</td></tr>'
+ + '<tr><td>Tidak ada bor baru yang mempengaruhinya</td><td>dilewati &mdash; tidak ada blok yang perlu dikoreksi</td></tr></table>'
+ + why('Mengganti variogram yang sudah disetujui dengan hasil fit otomatis diam-diam adalah hal terakhir yang kita inginkan di model produksi. Jadi autorun lebih memilih <b>tidak mengerjakan</b> sebuah domain daripada mengarang parameternya. Domain baru tetap melewati Geostatistik dengan mata Anda sendiri.')
+ + '<h3>3. Laporan autorun &mdash; bagian yang membuatnya bisa dipertanggungjawabkan</h3>'
+ + '<p>Setiap autorun membuka satu halaman laporan, dan bisa diunduh sebagai CSV:</p>'
+ + kv([('Hasil', 'per domain: string baru / diperbarui / dilewati, atau blok diestimasi / ditambah'),
+       ('Sebelum &rarr; sesudah', 'volume solid (m&sup3;) dan persen perubahannya; untuk estimasi: kadar rata-rata dan tonase <b>dibanding run sebelumnya</b>'),
+       ('Catatan', 'strike dan spasi section yang dipakai, asal parameter, atau <b>alasan dilewati</b>')])
+ + tip('Kolom <b>Sebelum &rarr; sesudah</b> adalah tempat pertama yang dilihat. Volume solid yang melonjak padahal bor barunya sedikit biasanya berarti string otomatis di section bertepi data perlu dirapikan tangan. Kadar rata-rata yang berubah jauh tanpa penambahan bor yang sepadan berarti ada yang perlu ditelusuri di riwayat run &mdash; dan riwayat run bisa dibatalkan.')
+ + '<h3>Alur kerja harian sesudah ada autorun</h3>'
+ + steps('<b>Upsert</b> data bor baru ke kampanye yang sesuai ({{B:Database bor per kampanye}}).',
+         '<b>Flagging</b> interval bor baru &mdash; ini tetap pekerjaan Anda, tidak diotomatiskan.',
+         'Node <b>Autorun Wireframe</b> &rarr; jalankan. Periksa laporannya.',
+         'Node <b>Autorun Estimation</b> &rarr; jalankan. Periksa kolom sebelum &rarr; sesudah.',
+         'Bila ada domain <b>baru</b>, ia akan dilewati &mdash; kerjakan Geostatistik untuk domain itu sekali ({{B:Variogram, anisotropi}}, {{B:Uji estimasi}}), simpan parameternya, sesudah itu ia ikut autorun selamanya.')
+ + warn('Yang <b>tidak pernah</b> diotomatiskan: keputusan domain dan flag (itu geologi), interpretasi sesar, dan ambang klasifikasi Measured / Indicated / Inferred (itu ranah pelaporan). Autorun mengulang pekerjaan, bukan mengambil keputusan.'))
+
 ch('Estimasi waste pada laterit', '<p>Jalur <b>Stratified-Laterite</b> punya mesin estimasinya sendiri: setiap blok dicari lapisannya, dan blok yang <b>tidak jatuh di lapisan mana pun</b> (<code>sl_lapisan</code> kosong) tidak pernah diestimasi. Padahal untuk melaporkan volume <b>ore dan waste</b> di bawah topografi atau di dalam desain pit, blok itu justru harus punya kadar. Bagian <b>&#9317; Estimasi waste</b> di menu <b>Stratified-Laterite</b> mengisinya.</p>'
  + warn('Tiga bab yang mendahuluinya ada di <b>Bagian II</b> karena murni geometri dan berlaku untuk semua tipe deposit &mdash; bacalah dulu {{B:Block model dari nol}} (kerangka blok AOI), {{B:Sub-blocking}} (proporsi volume di batas lapisan) dan {{B:Estimasi waste}} (prinsip umum, jalur vein). Bab ini hanya menjelaskan <b>apa yang berbeda</b> pada laterit.', 'Dibaca sesudah Bagian II')
  + '<h3>Dua zona waste, masing-masing dengan ruang unfold sendiri</h3>'
@@ -771,6 +808,23 @@ ch('Estimasi waste pada laterit', '<p>Jalur <b>Stratified-Laterite</b> punya mes
          'Pilih sumber variogramnya: <b>variogram waste sendiri</b> (di Geostatistik pilih populasi waste, fitting, lalu <b>Simpan</b>) atau <b>variogram lapisan terdekat</b>; blok yang terlalu jauh dari sampel mana pun diisi <b>IDW</b>.',
          'Jalankan. Hasilnya ditandai sebagai domain semu <b>WASTE</b> dengan <code>est_type = 3</code>, jadi <b>tidak ikut</b> pelaporan sumber daya ({{B:Klasifikasi keyakinan}}).')
  + tip('Untuk laterit nikel, zona <b>bawah</b> biasanya yang paling berguna: kadar Ni di saprock/bedrock di bawah batas lapisan menentukan sampai mana alat gali boleh turun sebelum material menjadi waste. Zona <b>atas</b> dipakai bila ada penutup (overburden limonitik) yang tidak dimodelkan sebagai lapisan tetapi tetap harus dihitung tonasenya.'))
+
+ch('Autorun pada laterit: lapisan & estimasi', '<p>Jalur berlapis punya autorun-nya sendiri: node <b>Autorun Lapisan &amp; Estimasi</b> di bawah <b>Geomodeller Stratified-Laterite</b>. Prinsipnya sama dengan jalur vein ({{B:Autorun: wireframe}}) &mdash; mengulang langkah yang sudah ada, tidak mengambil keputusan geologi &mdash; hanya langkahnya berbeda.</p>'
+ + '<h3>1. Usulan lapisan dari log geologi</h3>'
+ + '<p>Bila <b>belum ada</b> lapisan berkode, menu node &rarr; <b>Usulkan lapisan dari log geologi&hellip;</b> membaca kolom geologi yang dipilih, lalu untuk tiap kode menghitung <b>kedalaman tengah rata-rata</b> (ditimbang panjang interval) dan membuat satu lapisan per kode, <b>diurutkan dari yang paling atas</b>.</p>'
+ + kv([('Yang dilewati', 'kode yang ditembus lebih sedikit dari ambang <b>Minimal hole per kode</b> (bawaan 3) &mdash; dilaporkan, tidak dijadikan lapisan'),
+       ('Urutan lapisan', 'mengikuti kedalaman tengah rata-rata, sehingga limonit di atas, saprolit di bawahnya, dan seterusnya'),
+       ('Bila lapisan sudah ada', 'pemetaan kode <b>tidak diubah</b> &mdash; autorun hanya membangun ulang permukaannya')])
+ + warn('Usulan ini berdasarkan <b>kedalaman</b>, bukan pengertian geologi. Kode yang hadir di dua posisi stratigrafi, atau kode campuran, akan salah tempat. Karena itu laporannya selalu mengingatkan: <b>periksa dan perbaiki pemetaan kodenya</b> di &#9312; Lapisan &amp; kode log sebelum mengestimasi. Yang diotomatiskan adalah pekerjaan mengetiknya, bukan penafsirannya.')
+ + '<h3>2. Permukaan atap / lantai</h3>'
+ + '<p>Sesudah lapisan ada, autorun langsung membangun permukaannya dan melaporkan ukuran gridnya. Ini langkah yang di jalur vein setara dengan solid RBF.</p>'
+ + '<h3>3. Estimasi lapisan + waste laterit</h3>'
+ + steps('Menu node &rarr; <b>Jalankan estimasi lapisan + waste</b>.',
+         'Tiap lapisan memakai <b>parameter tersimpannya sendiri</b> (metode, ruang unfold, radius) &mdash; autorun tidak mengubahnya.',
+         'Lapisan tanpa kode, atau yang estimasinya dimatikan di &#9314;, <b>dilewati</b> dengan alasannya.',
+         'Sesudah semua lapisan selesai, autorun lanjut ke <b>estimasi waste laterit</b> ({{B:Estimasi waste pada laterit}}) &mdash; zona bawah dan atas dengan ruang unfold masing-masing.')
+ + '<p>Laporannya sama bentuknya dengan jalur vein: hasil per lapisan, perbandingan, dan daftar yang dilewati beserta sebabnya, dengan tombol unduh CSV.</p>'
+ + tip('Untuk endapan laterit yang dibor rapat per periode, inilah urutan harian yang masuk akal: upsert data bor &rarr; periksa pemetaan kode bila ada kode log baru &rarr; <b>Bangun ulang permukaan lapisan</b> &rarr; <b>Jalankan estimasi lapisan + waste</b> &rarr; periksa &#9315; Laporan WMT / DMT.'))
 
 ch('Map: peta geologi 2D', '<p>Menu <b>Map</b> di rel kiri mengganti area grafik dengan peta 2D (Easting / Northing; Z tidak dipakai), seperti Global Mapper. Scroll = zoom, tarik = geser; koordinat kursor tampil di kiri bawah.</p>'
  + '<h3>Layer peta</h3>' + steps('Klik <b>Map</b> di rel kiri ([[map_layer]]).', 'Centang layer: orthofoto, kontur topografi (interval diatur), desain pit, collar, jejak bor, domain vein, struktur (simbol USGS), fitur digitasi, titik pick-up, label.')
