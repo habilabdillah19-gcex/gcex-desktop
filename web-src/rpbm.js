@@ -22,7 +22,7 @@ function rpDef(){var m=BX.m,U=BX.ui||{},nums=Object.keys(m.num),gs=nums.filter(r
   var at=[g];gs.forEach(function(n){if(at.indexOf(n)<0&&at.length<4)at.push(n);});var u={};at.forEach(function(a){u[a]=rpUnitDef(a);});
   var F=rpFl(),bh=F?Math.round((F[0]-F[1])*1000)/1000:5,ref=F?F[0]:0;
   return{gr:g,atts:at,unit:u,dom:'all',cat:{},surf:(window.OV&&OV.topoF&&OV.topoF.x&&OV.topoF.x.length)?'topo':'none',z0:'',z1:'',poly:'',polyOut:false,fA:'',fOp:'ge',fV:'',
-    cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:bh,bref:ref,catAttr:'',show:false,sx:[]};}
+    cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:bh,bref:ref,catAttr:'',show:false,sx:[],frac:true};}
 function rpO(){if(!BX.m)return null;if(!RP.o||RP.o._m!==BX.m.name){RP.o=rpDef();RP.o._m=BX.m.name;}return RP.o;}
 /* permukaan dari titik / kontur (koordinat lokal) -> z IDW, dicache per kolom blok */
 function rpSurf(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null||o.x[i]===undefined)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
@@ -81,7 +81,12 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     var SX=(o.sx||[]).map(function(q){var w=MD.models[+String(q.k).slice(3)],fn=w&&rpTinFn(w);if(!fn)throw new Error('Batas DTM tambahan tidak ditemukan. Hapus barisnya atau import ulang.');return{fn:fn,n:w.name,side:q.side,c:{}};});
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),U=BX.ui||{},SGA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null;
     if(o.poly&&!PL)throw new Error('Poligon area tidak ditemukan.');
-    var grp=o.grp,bh=Math.max(0.1,+o.bh||5),br=+o.bref||0,GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null;
+    var grp=o.grp,bh=Math.max(0.1,+o.bh||5),br=+o.bref||0;
+    var GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null;
+    /* sb_frac = proporsi volume blok yang benar-benar di dalam solid (sub-blocking GC-Ex Drill Hole).
+       TANPA pembobotan ini, blok perbatasan dihitung 100% sehingga tonase di Block Model berbeda dari
+       laporan Drill Hole untuk block model yang sama -- justru dilusi batas yang sudah diukur jadi hilang. */
+    var FRA=(o.frac!==false&&m.num['sb_frac'])?m.num['sb_frac']:null,FR=[],nPart=0;
     var n=m.n,mask=new Uint8Array(n),T=[],I=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0,sg:0},pOut=!!o.polyOut;
     for(var i=0;i<n;i++){var x=m.x[i]-offx,y=m.y[i]-offy,z=m.z[i];
       if(z0===z0&&z<z0||z1===z1&&z>z1){nOut.z++;continue;}
@@ -93,15 +98,17 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
       var sg=window.bxSGv?bxSGv(SGA?SGA[i]:NaN):(+U.sg||2.6);if(!(sg>0)){nOut.sg++;continue;}
-      mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);
+      var fr=1;if(FRA){var fv2=FRA[i];fr=(isFinite(fv2)&&fv2>=0&&fv2<=1)?fv2:1;if(fr<=0){nOut.frac=(nOut.frac||0)+1;continue;}if(fr<0.999)nPart++;}
+      mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg*fr);I.push(i);FR.push(fr);
       Kg.push(grp==='bench'?Math.floor((z-br)/bh+1e-9):grp==='cat'?(GC&&GC.codes[i]!==65535?GC.dict[GC.codes[i]]:'(kosong)'):'Total');nb++;}
-    var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2];
+    var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2]*(FR.length?FR[j]:1);
         atts.forEach(function(a){var v=m.num[a][i2];if(isFinite(v)&&v>-90){var q=r.s[a]||(r.s[a]={tw:0,w:0});q.tw+=t*v;q.w+=t;}});}return R;};
     var rows=cuts.map(function(c){return{c:c,G:agg(function(i2){return G[i2]>=c;})};});
     BX.rpMask=mask;BX.rpVer=(BX.rpVer||0)+1;
     var big=m.mdl&&m.mdl.via==='backend';
     RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,br:br,surf:o.surf,
       sxD:SX.map(function(q){return(q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,
+      frac:FRA?('proporsi volume sub-blok (sb_frac): '+rpN(nPart)+' blok sebagian'):(m.num['sb_frac']?'sb_frac ADA tetapi pembobotan dimatikan':''),nPart:nPart,
       sg:SGA?'SG kolom '+U.sgCol:'SG '+(+U.sg||2.6),date:new Date().toLocaleString('id-ID'),bm:m.name,big:big,nTot:n};
     RP.sec='2';RP.ci=Math.min(RP.ci||0,rows.length-1);if(o.show){BX.rpOnly=true;BX.sc={};updatePlot();}rpPanel();}
   catch(e){console.error(e);if(msg)msg.innerHTML='<span class=warn>'+rpE(e.message)+'</span>';else alert(e.message);}}
@@ -124,7 +131,7 @@ function rpChart(){var R=RP.res,el=$('rpGT');if(!R||!el||!window.Plotly)return;v
   var dk=document.body.classList.contains('dark')||($('darkMode')&&$('darkMode').checked),fg=dk?'#dbe3ec':'#1c2733',gr=dk?'#2a3746':'#e3e8ee';
   Plotly.react(el,[{type:'bar',x:X.map(String),y:Tn,name:'Tonase (kt)',marker:{color:'#233a7e'},hovertemplate:'≥ %{x}: %{y:,.1f} kt<extra></extra>'},{type:'scatter',mode:'lines+markers',x:X.map(String),y:Gr,name:'Kadar '+g,yaxis:'y2',line:{color:'#e8590c',width:2.5},hovertemplate:'≥ %{x}: %{y:.3f}<extra></extra>'}],
     {height:240,margin:{l:48,r:46,t:30,b:40},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{size:10,color:fg},xaxis:{title:{text:'Cut-off '+g},type:'category',gridcolor:gr},yaxis:{title:{text:'Tonase (kt)'},gridcolor:gr},yaxis2:{title:{text:'Kadar'},overlaying:'y',side:'right',showgrid:false},legend:{orientation:'h',x:0,y:1.18}},{displaylogo:false,responsive:true,displayModeBar:false});}
-function rpDesc(){var R=RP.res;if(!R)return '';return [R.lab,R.surf==='topo'?'di bawah topografi (sisa)':R.surf==='pit'?'di dalam desain pit & di bawah topografi':'',(R.sxD||[]).join(', '),(R.z0!==''||R.z1!=='')?'RL '+(R.z0||'…')+' – '+(R.z1||'…'):'',R.poly?'poligon '+R.poly:'',R.f,R.sg].filter(Boolean).join(' · ');}
+function rpDesc(){var R=RP.res;if(!R)return '';return [R.lab,R.surf==='topo'?'di bawah topografi (sisa)':R.surf==='pit'?'di dalam desain pit & di bawah topografi':'',(R.sxD||[]).join(', '),(R.z0!==''||R.z1!=='')?'RL '+(R.z0||'…')+' – '+(R.z1||'…'):'',R.poly?'poligon '+R.poly:'',R.f,R.sg,R.frac].filter(Boolean).join(' · ');}
 function rpCsv(){var R=RP.res;if(!R)return;var at=R.atts,L=['# Reporting block model GC-Ex Block Model','# Block model: '+R.bm,'# Constraint: '+rpDesc(),'# Tanggal: '+R.date];
   L.push(['CUTOFF','GRUP','BLOK','VOLUME_M3','TONASE_T'].concat(at.map(function(a){return a+'_'+(R.unit[a]||'g/t').replace('/','_');}),at.map(function(a){return 'LOGAM_'+a+'_'+(R.unit[a]==='%'?'T':'G');})).join(','));
   R.rows.forEach(function(r){var ks=Object.keys(r.G).sort(function(a,b){return R.grp==='bench'?(+b)-(+a):String(a).localeCompare(String(b));});ks.forEach(function(k){var g=r.G[k];L.push([r.c,'"'+(R.grp==='bench'?rpBenchLab(R,+k):k)+'"',g.n,g.v.toFixed(1),g.t.toFixed(1)].concat(at.map(function(a){var q=g.s[a];return q&&q.w?(q.tw/q.w).toFixed(4):'';}),at.map(function(a){var q=g.s[a];return q&&q.w?rpMetal(a,g.t,q.tw/q.w,R.unit[a]).toFixed(2):'';})).join(','));});
@@ -147,6 +154,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     h+='<div class="g2 f"><div><label>Atribut untuk cut-off</label>'+sel('',nums.map(function(a){return[a,a];}),o.gr,"rpSet('gr',this.value)")+'</div><div><label>Cut-off (pisah koma)</label><input type=text value="'+rpE(o.cuts)+'" onchange="RP.o.cuts=this.value"></div></div>';
     var U=BX.ui||{};h+='<div class=hint>Densitas: <b>'+(U.sgCol?'kolom '+rpE(U.sgCol):'SG tetap '+rpE(U.sg||2.6))+'</b> — ikut pengaturan <a href="#" onclick="PT&&PT.select(\'bm.flt\');return false">Block Model › Filter &amp; SG</a>.</div>';
     h+='<h4>Ringkasan per RL / pengelompokan</h4><div class="g2 f"><div>'+sel('',[['none','Tanpa grup'],['bench','Per RL (bench / flitch)']].concat(Object.keys(m.cat).length?[['cat','Per atribut kategori']]:[]),o.grp,"rpSet('grp',this.value)")+'</div><div>'+(o.grp==='cat'?sel('',Object.keys(m.cat).map(function(k){return[k,k];}),o.catAttr||Object.keys(m.cat)[0],"RP.o.catAttr=this.value"):'')+'</div></div>';
+    if(m.num['sb_frac'])h+='<label class=sw><input type=checkbox '+(o.frac!==false?'checked':'')+' onchange="RP.o.frac=this.checked"> Timbang volume &amp; tonase dengan proporsi sub-blok (<code>sb_frac</code>)</label><div class=hint style="margin-top:-4px">Block model ini pernah dipecah di batas solid oleh GC-Ex Drill Hole. Dengan pembobotan ini, blok perbatasan dihitung <b>sebagian</b> &mdash; angkanya sama dengan laporan di Drill Hole. Dimatikan = blok perbatasan dihitung utuh (cara Surpac).</div>';
     if(o.grp==='bench')h+='<div class="g3 f"><div><label>Tinggi (m)</label><input type=number step=any value="'+rpE(o.bh)+'" onchange="RP.o.bh=+this.value"></div><div><label>RL acuan</label><input type=number step=any value="'+rpE(o.bref)+'" onchange="RP.o.bref=+this.value" title="Batas bench / flitch dihitung dari RL ini, mis. RL atas flitch"></div><div style="align-self:end"><button onclick="rpFlNow()" title="Tinggi & RL acuan = flitch aktif">= flitch aktif</button></div></div><div class=hint>Batas RL = RL acuan ± kelipatan tinggi. Blok masuk RL menurut titik pusatnya.</div>';
     h+='<button class=btn-pri style="width:100%;margin-top:6px" onclick="RP.sec=\'c\';rpPanel()">Lanjut: constraint &rarr;</button>';}
   else if(RP.sec==='c'){

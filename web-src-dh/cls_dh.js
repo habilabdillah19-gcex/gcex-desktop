@@ -1,4 +1,8 @@
 /* GC-Ex Drill Hole Ultimate — KLASIFIKASI SUMBER DAYA (Measured / Indicated / Inferred) di Reporting BM
+   KHUSUS Drill Hole, dan memang TIDAK dipasang di GC-Ex Block Model: Block Model dipakai untuk
+   Daily Ore Mining & Grade Control oleh Junior Grade Control / Short Term Mine Planner, bukan untuk
+   pelaporan sumber daya. Klasifikasi sumber daya adalah ranah pemodelan & estimasi, dan menaruhnya
+   di alat harian justru mengundang angka sumber daya terbit dari tempat yang bukan tempatnya.
    ------------------------------------------------------------------------------------------------
    Dasar: atribut hasil Model Estimation yang sudah ada (est_pass, est_nsamp, est_sor, est_ke).
      - est_pass  : pass pencarian sampel (1 = radius penuh / data rapat, 2-3 = radius diperbesar)

@@ -6647,6 +6647,10 @@ function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){ret
   return h;}
 
 /* GC-Ex Drill Hole Ultimate — KLASIFIKASI SUMBER DAYA (Measured / Indicated / Inferred) di Reporting BM
+   KHUSUS Drill Hole, dan memang TIDAK dipasang di GC-Ex Block Model: Block Model dipakai untuk
+   Daily Ore Mining & Grade Control oleh Junior Grade Control / Short Term Mine Planner, bukan untuk
+   pelaporan sumber daya. Klasifikasi sumber daya adalah ranah pemodelan & estimasi, dan menaruhnya
+   di alat harian justru mengundang angka sumber daya terbit dari tempat yang bukan tempatnya.
    ------------------------------------------------------------------------------------------------
    Dasar: atribut hasil Model Estimation yang sudah ada (est_pass, est_nsamp, est_sor, est_ke).
      - est_pass  : pass pencarian sampel (1 = radius penuh / data rapat, 2-3 = radius diperbesar)
@@ -13046,7 +13050,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.32';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.33';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

@@ -4198,7 +4198,7 @@ function rpDef(){var m=BX.m,U=BX.ui||{},nums=Object.keys(m.num),gs=nums.filter(r
   var at=[g];gs.forEach(function(n){if(at.indexOf(n)<0&&at.length<4)at.push(n);});var u={};at.forEach(function(a){u[a]=rpUnitDef(a);});
   var F=rpFl(),bh=F?Math.round((F[0]-F[1])*1000)/1000:5,ref=F?F[0]:0;
   return{gr:g,atts:at,unit:u,dom:'all',cat:{},surf:(window.OV&&OV.topoF&&OV.topoF.x&&OV.topoF.x.length)?'topo':'none',z0:'',z1:'',poly:'',polyOut:false,fA:'',fOp:'ge',fV:'',
-    cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:bh,bref:ref,catAttr:'',show:false,sx:[]};}
+    cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:bh,bref:ref,catAttr:'',show:false,sx:[],frac:true};}
 function rpO(){if(!BX.m)return null;if(!RP.o||RP.o._m!==BX.m.name){RP.o=rpDef();RP.o._m=BX.m.name;}return RP.o;}
 /* permukaan dari titik / kontur (koordinat lokal) -> z IDW, dicache per kolom blok */
 function rpSurf(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null||o.x[i]===undefined)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
@@ -4257,7 +4257,12 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     var SX=(o.sx||[]).map(function(q){var w=MD.models[+String(q.k).slice(3)],fn=w&&rpTinFn(w);if(!fn)throw new Error('Batas DTM tambahan tidak ditemukan. Hapus barisnya atau import ulang.');return{fn:fn,n:w.name,side:q.side,c:{}};});
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),U=BX.ui||{},SGA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null;
     if(o.poly&&!PL)throw new Error('Poligon area tidak ditemukan.');
-    var grp=o.grp,bh=Math.max(0.1,+o.bh||5),br=+o.bref||0,GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null;
+    var grp=o.grp,bh=Math.max(0.1,+o.bh||5),br=+o.bref||0;
+    var GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null;
+    /* sb_frac = proporsi volume blok yang benar-benar di dalam solid (sub-blocking GC-Ex Drill Hole).
+       TANPA pembobotan ini, blok perbatasan dihitung 100% sehingga tonase di Block Model berbeda dari
+       laporan Drill Hole untuk block model yang sama -- justru dilusi batas yang sudah diukur jadi hilang. */
+    var FRA=(o.frac!==false&&m.num['sb_frac'])?m.num['sb_frac']:null,FR=[],nPart=0;
     var n=m.n,mask=new Uint8Array(n),T=[],I=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0,sg:0},pOut=!!o.polyOut;
     for(var i=0;i<n;i++){var x=m.x[i]-offx,y=m.y[i]-offy,z=m.z[i];
       if(z0===z0&&z<z0||z1===z1&&z>z1){nOut.z++;continue;}
@@ -4269,15 +4274,17 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
       var sg=window.bxSGv?bxSGv(SGA?SGA[i]:NaN):(+U.sg||2.6);if(!(sg>0)){nOut.sg++;continue;}
-      mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);
+      var fr=1;if(FRA){var fv2=FRA[i];fr=(isFinite(fv2)&&fv2>=0&&fv2<=1)?fv2:1;if(fr<=0){nOut.frac=(nOut.frac||0)+1;continue;}if(fr<0.999)nPart++;}
+      mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg*fr);I.push(i);FR.push(fr);
       Kg.push(grp==='bench'?Math.floor((z-br)/bh+1e-9):grp==='cat'?(GC&&GC.codes[i]!==65535?GC.dict[GC.codes[i]]:'(kosong)'):'Total');nb++;}
-    var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2];
+    var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2]*(FR.length?FR[j]:1);
         atts.forEach(function(a){var v=m.num[a][i2];if(isFinite(v)&&v>-90){var q=r.s[a]||(r.s[a]={tw:0,w:0});q.tw+=t*v;q.w+=t;}});}return R;};
     var rows=cuts.map(function(c){return{c:c,G:agg(function(i2){return G[i2]>=c;})};});
     BX.rpMask=mask;BX.rpVer=(BX.rpVer||0)+1;
     var big=m.mdl&&m.mdl.via==='backend';
     RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,br:br,surf:o.surf,
       sxD:SX.map(function(q){return(q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,
+      frac:FRA?('proporsi volume sub-blok (sb_frac): '+rpN(nPart)+' blok sebagian'):(m.num['sb_frac']?'sb_frac ADA tetapi pembobotan dimatikan':''),nPart:nPart,
       sg:SGA?'SG kolom '+U.sgCol:'SG '+(+U.sg||2.6),date:new Date().toLocaleString('id-ID'),bm:m.name,big:big,nTot:n};
     RP.sec='2';RP.ci=Math.min(RP.ci||0,rows.length-1);if(o.show){BX.rpOnly=true;BX.sc={};updatePlot();}rpPanel();}
   catch(e){console.error(e);if(msg)msg.innerHTML='<span class=warn>'+rpE(e.message)+'</span>';else alert(e.message);}}
@@ -4300,7 +4307,7 @@ function rpChart(){var R=RP.res,el=$('rpGT');if(!R||!el||!window.Plotly)return;v
   var dk=document.body.classList.contains('dark')||($('darkMode')&&$('darkMode').checked),fg=dk?'#dbe3ec':'#1c2733',gr=dk?'#2a3746':'#e3e8ee';
   Plotly.react(el,[{type:'bar',x:X.map(String),y:Tn,name:'Tonase (kt)',marker:{color:'#2c3b57'},hovertemplate:'≥ %{x}: %{y:,.1f} kt<extra></extra>'},{type:'scatter',mode:'lines+markers',x:X.map(String),y:Gr,name:'Kadar '+g,yaxis:'y2',line:{color:'#e8590c',width:2.5},hovertemplate:'≥ %{x}: %{y:.3f}<extra></extra>'}],
     {height:240,margin:{l:48,r:46,t:30,b:40},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{size:10,color:fg},xaxis:{title:{text:'Cut-off '+g},type:'category',gridcolor:gr},yaxis:{title:{text:'Tonase (kt)'},gridcolor:gr},yaxis2:{title:{text:'Kadar'},overlaying:'y',side:'right',showgrid:false},legend:{orientation:'h',x:0,y:1.18}},{displaylogo:false,responsive:true,displayModeBar:false});}
-function rpDesc(){var R=RP.res;if(!R)return '';return [R.lab,R.surf==='topo'?'di bawah topografi (sisa)':R.surf==='pit'?'di dalam desain pit & di bawah topografi':'',(R.sxD||[]).join(', '),(R.z0!==''||R.z1!=='')?'RL '+(R.z0||'…')+' – '+(R.z1||'…'):'',R.poly?'poligon '+R.poly:'',R.f,R.sg].filter(Boolean).join(' · ');}
+function rpDesc(){var R=RP.res;if(!R)return '';return [R.lab,R.surf==='topo'?'di bawah topografi (sisa)':R.surf==='pit'?'di dalam desain pit & di bawah topografi':'',(R.sxD||[]).join(', '),(R.z0!==''||R.z1!=='')?'RL '+(R.z0||'…')+' – '+(R.z1||'…'):'',R.poly?'poligon '+R.poly:'',R.f,R.sg,R.frac].filter(Boolean).join(' · ');}
 function rpCsv(){var R=RP.res;if(!R)return;var at=R.atts,L=['# Reporting block model GC-Ex Block Model','# Block model: '+R.bm,'# Constraint: '+rpDesc(),'# Tanggal: '+R.date];
   L.push(['CUTOFF','GRUP','BLOK','VOLUME_M3','TONASE_T'].concat(at.map(function(a){return a+'_'+(R.unit[a]||'g/t').replace('/','_');}),at.map(function(a){return 'LOGAM_'+a+'_'+(R.unit[a]==='%'?'T':'G');})).join(','));
   R.rows.forEach(function(r){var ks=Object.keys(r.G).sort(function(a,b){return R.grp==='bench'?(+b)-(+a):String(a).localeCompare(String(b));});ks.forEach(function(k){var g=r.G[k];L.push([r.c,'"'+(R.grp==='bench'?rpBenchLab(R,+k):k)+'"',g.n,g.v.toFixed(1),g.t.toFixed(1)].concat(at.map(function(a){var q=g.s[a];return q&&q.w?(q.tw/q.w).toFixed(4):'';}),at.map(function(a){var q=g.s[a];return q&&q.w?rpMetal(a,g.t,q.tw/q.w,R.unit[a]).toFixed(2):'';})).join(','));});
@@ -4323,6 +4330,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     h+='<div class="g2 f"><div><label>Atribut untuk cut-off</label>'+sel('',nums.map(function(a){return[a,a];}),o.gr,"rpSet('gr',this.value)")+'</div><div><label>Cut-off (pisah koma)</label><input type=text value="'+rpE(o.cuts)+'" onchange="RP.o.cuts=this.value"></div></div>';
     var U=BX.ui||{};h+='<div class=hint>Densitas: <b>'+(U.sgCol?'kolom '+rpE(U.sgCol):'SG tetap '+rpE(U.sg||2.6))+'</b> — ikut pengaturan <a href="#" onclick="PT&&PT.select(\'bm.flt\');return false">Block Model › Filter &amp; SG</a>.</div>';
     h+='<h4>Ringkasan per RL / pengelompokan</h4><div class="g2 f"><div>'+sel('',[['none','Tanpa grup'],['bench','Per RL (bench / flitch)']].concat(Object.keys(m.cat).length?[['cat','Per atribut kategori']]:[]),o.grp,"rpSet('grp',this.value)")+'</div><div>'+(o.grp==='cat'?sel('',Object.keys(m.cat).map(function(k){return[k,k];}),o.catAttr||Object.keys(m.cat)[0],"RP.o.catAttr=this.value"):'')+'</div></div>';
+    if(m.num['sb_frac'])h+='<label class=sw><input type=checkbox '+(o.frac!==false?'checked':'')+' onchange="RP.o.frac=this.checked"> Timbang volume &amp; tonase dengan proporsi sub-blok (<code>sb_frac</code>)</label><div class=hint style="margin-top:-4px">Block model ini pernah dipecah di batas solid oleh GC-Ex Drill Hole. Dengan pembobotan ini, blok perbatasan dihitung <b>sebagian</b> &mdash; angkanya sama dengan laporan di Drill Hole. Dimatikan = blok perbatasan dihitung utuh (cara Surpac).</div>';
     if(o.grp==='bench')h+='<div class="g3 f"><div><label>Tinggi (m)</label><input type=number step=any value="'+rpE(o.bh)+'" onchange="RP.o.bh=+this.value"></div><div><label>RL acuan</label><input type=number step=any value="'+rpE(o.bref)+'" onchange="RP.o.bref=+this.value" title="Batas bench / flitch dihitung dari RL ini, mis. RL atas flitch"></div><div style="align-self:end"><button onclick="rpFlNow()" title="Tinggi & RL acuan = flitch aktif">= flitch aktif</button></div></div><div class=hint>Batas RL = RL acuan ± kelipatan tinggi. Blok masuk RL menurut titik pusatnya.</div>';
     h+='<button class=btn-pri style="width:100%;margin-top:6px" onclick="RP.sec=\'c\';rpPanel()">Lanjut: constraint &rarr;</button>';}
   else if(RP.sec==='c'){
@@ -4777,7 +4785,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
         menu:function(){return[{t:'Buka flitch ini (Sayatan 2D)',fn:function(){open(g);}},{t:'Register as-mined flitch ini',fn:function(){open(g);uiTab('AM');}},{sep:1},{t:'Hapus semua dig block di flitch ini…',danger:1,fn:function(){open(g);setTimeout(A('dbDelFlitch'),200);}}];}};});
       return{id:'fl',step:'5',st:st.fl,t:'Flitch Aktif',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'fl',b:m?flTxt():'',hint:'Tinggi flitch, RL atas / bawah, metode tonase, lalu Terapkan flitch (Sayatan 2D)',
         menu:function(){return[{t:'Terapkan flitch (buka Sayatan 2D)',fn:A('lyApply'),dis:!m}];},
-        kids:[{id:'fl.2d',t:'Sayatan 2D',ic:'s2d',tab:'Slice',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();}}].concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,kids:fl}]:[])};},'fl','Flitch Aktif');
+        kids:[{id:'fl.2d',t:'Sayatan 2D',ic:'s2d',tab:'Slice',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();}}].concat(window.ortFlTree?ortFlTree():[]).concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,kids:fl}]:[])};},'fl','Flitch Aktif');
     add(function(){return{id:'dig',step:'6',st:st.dig,t:'Dig Block',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'auto',b:s.dig?s.dig+' poligon':'',hint:'Dig block otomatis dari kelas kadar & tujuan material, atau digit manual (flitch aktif)',
         menu:function(){return[{t:'Buat dig block otomatis (flitch aktif)',fn:function(){A('dbAuto')();},dis:!m},{t:'Hapus semua dig block di flitch aktif…',danger:1,fn:A('dbDelFlitch'),dis:!s.dig}];},
         kids:[{id:'dig.auto',t:'Otomatis (kelas & tujuan)',ic:'poly',tab:'BM',sub:'Dig block',foc:'auto'},{id:'dig.man',t:'Digit manual (snap sudut blok)',ic:'digit',tab:'BM',sub:'Dig block',foc:'man'},
@@ -5360,6 +5368,134 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
               go:function(){flOpen(g,function(){uiTab('AM');PT.goSub('AM','Register');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();});}};}))};})}]);
     }catch(e){console.error(e);}return L;};
     try{PT.render(true);}catch(e){}}
+})();
+
+/* ============ ORTHOFOTO RESOLUSI TINGGI DI PENAMPANG 2D & FLITCH (GC-Ex Block Model) ============
+   Masalah yang diperbaiki.
+   Latar orthofoto di Sayatan 2D horizontal (plan) -- termasuk tampilan FLITCH, karena flitch
+   adalah plan 2D -- dibuat oleh orthoImg2D(): satu JPEG seukuran ortho penuh, dibuat sekali lalu
+   DI-CACHE di ORT.url selamanya. Akibatnya:
+     - resolusinya tetap. Ortho dibatasi 2,5 juta piksel saat import, jadi area 1,5 km hanya punya
+       ~1 m/piksel; di flitch sempit (mis. 50 x 50 m) gambarnya buram dan zoom tidak menolong.
+     - piramida LOD di hires.js (HR.mapImage, sampai 4096 px dan dipotong sesuai tampilan) SUDAH ADA
+       di Block Model tetapi tidak pernah dipanggil dari jalur 2D -- hanya dipakai Peta Drill Hole.
+     - HR.extW (bentang dunia tampilan) tidak pernah terisi di Block Model: HR.attach memasang
+       pemantau zoom dengan world=false untuk grafik utama, dan world=true hanya untuk Peta, yang
+       tidak ada di Block Model. Tanpa HR.extW, HR.mapImage tidak tahu harus memotong di mana.
+
+   Yang dikerjakan modul ini.
+     1. orthoImg2D() memakai HR.mapImage() lebih dulu; bila tidak tersedia, kembali ke JPEG lama.
+        Jadi tidak ada jalur yang hilang -- hanya ditambah yang lebih tajam.
+     2. Memasang pemantau zoom/geser sendiri di plot 2D. Saat tampilan sedang 2D PLAN, sumbu x/y
+        adalah Easting/Northing, jadi bentangnya diteruskan sebagai bentang DUNIA (HR.setExt world
+        = true) dan HR.ext (bentang lokal untuk mesh 3D) dikosongkan supaya jalur 3D tidak tercemar.
+        Sesudah itu gambar disusun ulang (ditunda sesaat) sehingga zoom masuk benar-benar makin tajam.
+     3. Node "Orthofoto (latar plan / flitch)" di bawah Flitch Aktif: nyala/mati dan opasitas tanpa
+        harus pergi ke menu Overlay.                                                                */
+(function () {
+  if (window.ORT2D) return;
+  var O2 = window.ORT2D = { ver: 0, tmr: null };
+  var $ = function (i) { return document.getElementById(i); };
+
+  function adaOrtho() { return !!(window.ORT && ORT.m && ORT.px); }
+  function opasitas() { var e = $('orOp'); return +((e && e.value) || 1); }
+  function plan2D() {
+    if (!window.VIEW2D) return false;
+    try { return (typeof secGeom === 'function') && secGeom().m === 'H'; } catch (e) { return false; }
+  }
+  O2.plan2D = plan2D;
+
+  /* ---------- 1. latar 2D memakai piramida LOD ---------- */
+  var _lama = window.orthoImg2D;
+  window.orthoImg2D = function () {
+    try {
+      if (window.HR && HR.on && HR.mapImage && adaOrtho()) {
+        var i = HR.mapImage();
+        if (i && i.src) {
+          O2.px = i.px; O2.res = i.res;
+          return { source: i.src, xref: 'x', yref: 'y', x: i.x, y: i.y, sizex: i.sx, sizey: i.sy,
+                   xanchor: 'left', yanchor: 'top', sizing: 'stretch', layer: 'below', opacity: opasitas() };
+        }
+      }
+    } catch (e) { console.error(e); }
+    O2.px = null; O2.res = null;
+    return _lama ? _lama.apply(this, arguments) : null;
+  };
+
+  /* ---------- 2. pantau zoom / geser pada plot 2D ---------- */
+  function susunUlang() {
+    O2.tmr = null;
+    try { if (window.OVC) window.OVC = {}; if (window.updatePlot) updatePlot(); } catch (e) {}
+  }
+  function tunda() { if (O2.tmr) clearTimeout(O2.tmr); O2.tmr = setTimeout(susunUlang, 280); }
+
+  function dariRelayout(ev) {
+    if (!ev || !window.HR || !HR.on || !adaOrtho() || !plan2D()) return;
+    var ax = ev['xaxis.range'] || (ev['xaxis.range[0]'] !== undefined ? [ev['xaxis.range[0]'], ev['xaxis.range[1]']] : null);
+    var ay = ev['yaxis.range'] || (ev['yaxis.range[0]'] !== undefined ? [ev['yaxis.range[0]'], ev['yaxis.range[1]']] : null);
+    if (ax && ay) {
+      try {
+        HR.setExt(+ax[0], +ax[1], +ay[0], +ay[1], true);   /* bentang DUNIA: sumbu plan = E / N */
+        HR.ext = null;                                      /* jangan cemari jalur mesh 3D */
+        O2.ver++;
+      } catch (e) { return; }
+      tunda();
+      return;
+    }
+    if (ev['xaxis.autorange'] || ev['yaxis.autorange'] || ev.autosize) {
+      try { HR.extW = null; HR.ext = null; HR.ver++; } catch (e) {}
+      tunda();
+    }
+  }
+  O2.dariRelayout = dariRelayout;
+
+  var t = setInterval(function () {
+    try {
+      var gd = $('plotDiv') || document.querySelector('.js-plotly-plot');
+      if (gd && gd.on && !gd._ort2d) {
+        gd._ort2d = 1;
+        gd.on('plotly_relayout', dariRelayout);
+      }
+    } catch (e) {}
+  }, 1200);
+  setTimeout(function () { clearInterval(t); }, 180000);
+
+  /* ---------- 3. node Project Tree di bawah Flitch Aktif ---------- */
+  window.ortFlTree = function () {
+    if (!adaOrtho()) return [];
+    var cb = $('ovOrtho'), on = !!(cb && cb.checked);
+    var lod = O2.px ? ('LOD ' + O2.px + ' px @ ' + (O2.res ? O2.res.toFixed(2) + ' m/px' : '-')) : '';
+    return [{
+      id: 'fl.ortho', t: 'Orthofoto (latar plan / flitch)', ic: 'ortho', tab: 'Overlay',
+      chk: on, onChk: function (v) {
+        var c = $('ovOrtho'); if (!c) return;
+        c.checked = !!v;
+        try { if (typeof updatePlot === 'function') updatePlot(); } catch (e) {}
+        try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
+      },
+      b: on ? (plan2D() ? (lod || 'tampil') : 'hanya di plan 2D') : '',
+      dim: !on,
+      hint: on ? (plan2D() ? 'Dipotong sesuai tampilan dari piramida resolusi tinggi — zoom masuk makin tajam'
+                           : 'Menyala, tetapi latar ini hanya digambar pada Sayatan 2D horizontal (plan / flitch)')
+               : 'Orthofoto sebagai gambar latar di bawah blok dan dig block',
+      menu: function () {
+        var M = [{ t: on ? 'Sembunyikan orthofoto' : 'Tampilkan orthofoto', fn: function () { ortFlTree()[0].onChk(!on); } },
+                 { sep: 1 }, { h: 'Opasitas' }];
+        [100, 75, 50, 25].forEach(function (p) {
+          M.push({ t: p + '%', on: Math.round(opasitas() * 100) === p, fn: function () {
+            var e = $('orOp'); if (!e) return;
+            e.value = p / 100;
+            try { if (typeof updatePlot === 'function') updatePlot(); } catch (e2) {}
+            try { if (window.PT && PT.render) PT.render(true); } catch (e2) {}
+          } });
+        });
+        M.push({ sep: 1 }, { h: 'Resolusi' },
+               { t: O2.px ? ('Sekarang: ' + O2.px + ' px' + (O2.res ? ' (' + O2.res.toFixed(2) + ' m/piksel)' : '')) : 'Belum digambar di plan 2D', dis: 1 },
+               { t: 'Makin dekat zoom, makin tajam (dipotong sesuai tampilan)', dis: 1 });
+        return M;
+      }
+    }];
+  };
 })();
 
 </script>
