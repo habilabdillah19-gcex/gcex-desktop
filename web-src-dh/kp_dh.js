@@ -1,52 +1,53 @@
-/* ================= DATABASE BOR PER KAMPANYE (gaya GEOVIA Surpac) =================
-   Surpac menyambungkan beberapa database bor sekaligus (exploration_2024, infill_2023, gc_2025),
-   satu di antaranya AKTIF, masing-masing berwarna sendiri di tampilan 3D. GC-Ex menirukan alur itu
-   TANPA memecah penyimpanan datanya.
+/* ================= DATABASE BOR: KAMPANYE & SET MERGE (gaya GEOVIA Surpac) =================
+   Surpac menyambungkan beberapa database bor sekaligus (exploration_2024, infill_2023,
+   grade_control_2025); SATU di antaranya ACTIVE, dan yang aktif itulah sumber pemodelan. GC-Ex
+   menirukan alur itu TANPA memecah penyimpanan datanya.
 
    KEPUTUSAN RANCANGAN — satu dataset, label asal per hole:
      Seluruh fitur GC-Ex (3D, sayatan, Geostatistik, Geomodeller, Model Estimation, Reporting)
      membaca tabel global collars / surveys / assays / geoRows. Memecahnya menjadi beberapa
      penyimpanan terpisah berarti menyentuh semuanya, dengan risiko regresi besar dan tanpa manfaat
-     tambahan. Jadi datanya tetap satu, dan setiap hole membawa LABEL kampanye asalnya.
-     Ini juga yang tersirat dari permintaan "kampanye sebagai atribut geologi virtual": begitu
-     labelnya ada, pewarnaan, filter, Geostatistik dan estimasi langsung bisa dipisah per kampanye
-     tanpa mengubah satu pun tabel yang sudah ada.
+     tambahan. Jadi datanya tetap satu, dan setiap hole membawa LABEL kampanye asalnya; "database"
+     di pohon proyek adalah PANDANGAN atas data itu, bukan salinan.
 
-   Yang disediakan modul ini:
-     - daftar kampanye berprioritas (urutan bisa digeser; yang lebih tinggi menang bila satu hole
-       ada di dua kampanye), satu kampanye AKTIF sebagai tujuan import / upsert berikutnya;
-     - TIGA KEADAAN per kampanye, bukan sekadar tampil / sembunyi:
-         * set kerja  - dipakai pemodelan, Geostatistik, statistik dan estimasi;
-         * referensi  - TAMPIL di 3D / sayatan sebagai pembanding visual, tetapi TIDAK ikut
-                        populasi komposit, variogram, flag, maupun estimasi;
-         * sembunyi   - tidak digambar sama sekali.
-       Inilah inti alur kerjanya: saat kampanye grade control jadi set kerja, bor eksplorasi dan
-       infill tetap terlihat sebagai bahan pertimbangan pemodelan tanpa ikut mencemari angkanya.
-       Pemisahan ini nyata: visHoles() tetap daftar TAMPIL (dipakai penggambaran), sedangkan
-       visHolesK() daftar SET KERJA, dan seluruh titik analisis dialihkan ke visHolesK();
-     - atribut kategori VIRTUAL "Kampanye" (dan "Gabungan kampanye" bila ada grup gabungan),
-       sehingga semua mesin yang sudah ada memperlakukannya seperti atribut geologi biasa;
-     - gabungan kampanye (merge): kampanye terpilih dimasukkan ke SET KERJA sebagai satu grup
-       bernama. Tiap hole TETAP memegang label kampanye aslinya (atribut "Kampanye"), ditambah
-       penanda "Set kerja" - jadi data hasil merge bisa langsung dipakai pemodelan & estimasi,
-       bisa diekspor, dan tetap bisa dipilah kembali per kampanye asalnya;
-     - export set kerja ke .xlsx berisi empat sheet (Collar / Survey / Assay / Geologi);
-     - node Database Bor di Project Tree dipecah per kampanye, lengkap dengan jumlah baris collar /
-       survey / assay / geologi dan penanda AKTIF.
+   DUA JENIS NODE DATABASE:
+     - kampanye : berisi hole yang berlabel kampanye itu (eksplorasi_2024, gc_2025, …);
+     - merge    : database BARU hasil penggabungan beberapa kampanye — Collar / Survey / Assay /
+                  Geologi Merge. Anggotanya gabungan hole kampanye sumbernya, dihitung hidup, jadi
+                  hole baru yang masuk ke kampanye sumber otomatis ikut.
+
+   ALUR KERJANYA:
+     1. Database utama adalah grade control. Kampanye eksplorasi / infill DITAMPILKAN berdampingan
+        di jendela 3D untuk memvalidasi bor GC — centang tampil berdiri sendiri, tidak terikat mana
+        yang aktif.
+     2. Bila datanya bagus, gabungkan GC dengan eksplorasi / infill menjadi SET MERGE baru.
+     3. Set merge itu bisa dijadikan AKTIF, dan sejak itu dialah sumber pemodelan & estimasi.
+     4. Set merge bisa diekspor ke .xlsx empat sheet untuk pihak luar.
+
+   ATURAN POKOK — pemodelan, estimasi dan statistik HANYA berlaku pada DATASET AKTIF:
+     visHoles()  = daftar TAMPIL  (semua database yang dicentang) → dipakai penggambaran 3D/sayatan;
+     visHolesK() = daftar AKTIF   (anggota dataset aktif saja)    → dipakai seluruh titik analisis.
+     Bor yang hanya ditampilkan sebagai pembanding tidak pernah ikut komposit, variogram, flag
+     otomatis, maupun estimasi.
+
+   Atribut kategori VIRTUAL yang disediakan: "Kampanye" (label asal tiap hole, tetap utuh walau
+   sudah masuk set merge) dan "Dataset aktif" (ikut / tidak ikut analisis). Keduanya diperlakukan
+   seperti atribut geologi biasa oleh pewarnaan, filter, Geostatistik dan estimasi.
 
    Hole yang belum punya label — termasuk seluruh hole saat proyek lama dibuka pertama kali, dan
-   hole baru hasil upsert — otomatis masuk ke kampanye AKTIF.                                      */
+   hole baru hasil upsert — otomatis masuk ke KAMPANYE aktif (atau kampanye sumber pertama bila
+   yang aktif adalah set merge).                                                                   */
 (function () {
   if (typeof CAT === 'undefined' || typeof window.visHoles !== 'function') return;
 
   var PAL = ['#2c5282', '#c0522d', '#1b7f4b', '#7c3aed', '#c98a16', '#0f766e', '#be185d', '#57534e'];
-  var KP = { L: [], g: [], act: '', of: {}, mg: [], ver: 0, _ci: -1, _gi: -1, _si: -1 };
+  /* L = daftar database: {id,name,col,show,kind:'kp'|'mg',ids:[sumber] bila merge} */
+  var KP = { L: [], act: '', of: {}, ver: 0, _ci: -1, _si: -1 };
   window.KP = KP;
 
   function kE(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
   function uid() { return 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
   function byId(id) { for (var i = 0; i < KP.L.length; i++) if (KP.L[i].id === id) return KP.L[i]; return null; }
-  function grpOf(id) { for (var i = 0; i < KP.g.length; i++) if (KP.g[i].ids.indexOf(id) >= 0) return KP.g[i]; return null; }
   window.kpById = byId;
 
   /* nama bawaan kampanye pertama: dari nama dataset proyek bila ada */
@@ -59,16 +60,40 @@
     return 'import_awal';
   }
 
-  /* keadaan kampanye: 'kerja' (ikut analisis), 'ref' (tampil saja), 'off' (sembunyi) */
-  function st(k) {
-    if (!k) return 'off';
-    if (k.st) return k.st;
-    return k.vis === false ? 'off' : 'kerja';          /* proyek lama: vis true/false */
+  function isMg(k) { return !!(k && k.kind === 'mg'); }
+  function show(k) { return !k ? false : (k.show !== undefined ? !!k.show : (k.st ? k.st !== 'off' : k.vis !== false)); }
+  window.kpShowOf = show;
+
+  /* anggota sebuah database: himpunan HoleID. Kampanye = hole berlabel itu; merge = gabungan
+     anggota kampanye sumbernya (dihitung hidup, bukan salinan). */
+  function anggota(id, seen) {
+    var k = byId(id), out = {};
+    if (!k) return out;
+    if (!isMg(k)) {
+      (window.collars || []).forEach(function (c) { if (kpOf(c[0]) === id) out[c[0]] = 1; });
+      return out;
+    }
+    seen = seen || {};
+    if (seen[id]) return out;
+    seen[id] = 1;
+    (k.ids || []).forEach(function (x) { var m = anggota(x, seen); Object.keys(m).forEach(function (h) { out[h] = 1; }); });
+    return out;
   }
-  window.kpSt = st;
+  window.kpAnggota = anggota;
+
+  /* kampanye tempat import / upsert berikutnya mendarat: database aktif bila kampanye,
+     kalau yang aktif set merge maka kampanye sumber pertamanya */
+  function kpTujuan() {
+    var k = byId(KP.act);
+    if (k && !isMg(k)) return k.id;
+    if (k && isMg(k)) { for (var i = 0; i < (k.ids || []).length; i++) { var q = byId(k.ids[i]); if (q && !isMg(q)) return q.id; } }
+    for (var j = 0; j < KP.L.length; j++) if (!isMg(KP.L[j])) return KP.L[j].id;
+    return '';
+  }
+  window.kpTujuan = kpTujuan;
 
   function baru(nama) {
-    var k = { id: uid(), name: nama || ('kampanye_' + (KP.L.length + 1)), col: PAL[KP.L.length % PAL.length], st: 'kerja' };
+    var k = { id: uid(), name: nama || ('kampanye_' + (KP.L.length + 1)), col: PAL[KP.L.length % PAL.length], show: true, kind: 'kp' };
     KP.L.push(k);
     if (!KP.act) KP.act = k.id;
     return k;
@@ -81,10 +106,10 @@
     if (!KP.L.length && C.length) { baru(namaAwal()); }
     if (!KP.L.length) return false;
     if (!byId(KP.act)) KP.act = KP.L[0].id;
-    var n = 0;
+    var tj = kpTujuan() || KP.L[0].id, n = 0;
     for (var i = 0; i < C.length; i++) {
-      var h = C[i][0];
-      if (!KP.of[h] || !byId(KP.of[h])) { KP.of[h] = KP.act; n++; }
+      var h = C[i][0], q = KP.of[h] && byId(KP.of[h]);
+      if (!q || isMg(q)) { KP.of[h] = tj; n++; }
     }
     if (n) KP.ver++;
     catSync();
@@ -100,12 +125,10 @@
   function cnt() {
     var key = KP.ver + '|' + (window.collars || []).length + '|' + (window.assays || []).length + '|' + (window.geoRows || []).length + '|' + (window.surveys || []).length;
     if (_cnt && _cntVer === key) return _cnt;
-    var o = {};
-    KP.L.forEach(function (k) { o[k.id] = { c: 0, s: 0, a: 0, g: 0, h: {} }; });
-    (window.collars || []).forEach(function (r) { var k = o[kpOf(r[0])]; if (k) { k.c++; k.h[r[0]] = 1; } });
-    (window.surveys || []).forEach(function (r) { var k = o[kpOf(r[0])]; if (k) k.s++; });
-    (window.assays || []).forEach(function (r) { var k = o[kpOf(r[0])]; if (k) k.a++; });
-    (window.geoRows || []).forEach(function (r) { var k = o[kpOf(r[0])]; if (k) k.g++; });
+    var o = {}, M = {};
+    KP.L.forEach(function (k) { o[k.id] = { c: 0, s: 0, a: 0, g: 0 }; M[k.id] = anggota(k.id); });
+    var tally = function (arr, f) { (arr || []).forEach(function (r) { KP.L.forEach(function (k) { if (M[k.id][r[0]]) o[k.id][f]++; }); }); };
+    tally(window.collars, 'c'); tally(window.surveys, 's'); tally(window.assays, 'a'); tally(window.geoRows, 'g');
     _cnt = o; _cntVer = key;
     return o;
   }
@@ -113,7 +136,6 @@
 
   /* ---------- atribut kategori virtual ---------- */
   function idxOf(id) { for (var i = 0; i < KP.L.length; i++) if (KP.L[i].id === id) return i; return -1; }
-  function gIdxOf(id) { var g = grpOf(id); if (!g) return -1; for (var i = 0; i < KP.g.length; i++) if (KP.g[i].id === g.id) return i; return -1; }
 
   function catSync() {
     /* "Kampanye": satu kode per kampanye, urut sesuai prioritas */
@@ -125,35 +147,31 @@
       var s = GSTY['Kampanye'] || (GSTY['Kampanye'] = {});
       KP.L.forEach(function (k, i) { s[i] = Object.assign({}, s[i] || {}, { c: k.col, p: (s[i] && s[i].p) || '' }); });
     } catch (e) {}
-    /* "Gabungan kampanye": hanya ada bila sudah dibuat grup gabungan */
-    if (KP.g.length) {
-      if (KP._gi < 0) { KP._gi = CAT.length; CAT.push({ name: 'Gabungan kampanye', src: 'kpg', k: 0, d: [] }); }
-      CAT[KP._gi].d = KP.g.map(function (g) { return g.name; });
-      try {
-        var s2 = GSTY['Gabungan kampanye'] || (GSTY['Gabungan kampanye'] = {});
-        KP.g.forEach(function (g, i) { s2[i] = Object.assign({}, s2[i] || {}, { c: g.col, p: (s2[i] && s2[i].p) || '' }); });
-      } catch (e) {}
-    } else if (KP._gi >= 0) { CAT[KP._gi].d = []; }
-    /* "Set kerja": penanda apakah hole ikut analisis atau sekadar referensi.
-       Dipakai bersama atribut "Kampanye" (label asli) sesuai permintaan: label asli + penanda. */
-    if (KP._si < 0) { KP._si = CAT.length; CAT.push({ name: 'Set kerja', src: 'kps', k: 0, d: [] }); }
-    CAT[KP._si].d = ['set kerja', 'referensi'];
+    /* "Dataset aktif": penanda apakah hole ikut analisis. Dipakai bersama "Kampanye" (label asal). */
+    if (KP._si < 0) { KP._si = CAT.length; CAT.push({ name: 'Dataset aktif', src: 'kps', k: 0, d: [] }); }
+    CAT[KP._si].d = ['ikut dataset aktif', 'hanya tampil'];
     try {
-      var s3 = GSTY['Set kerja'] || (GSTY['Set kerja'] = {});
+      var s3 = GSTY['Dataset aktif'] || (GSTY['Dataset aktif'] = {});
       s3[0] = Object.assign({}, s3[0] || {}, { c: '#1b7f4b' });
       s3[1] = Object.assign({}, s3[1] || {}, { c: '#8a93a0' });
     } catch (e) {}
   }
-  function sCode(id) { var k = byId(kpOf(id)); return !k ? -1 : (st(k) === 'kerja' ? 0 : 1); }
+  var _aktM = null, _aktV = -1;
+  function aktifSet() {
+    if (_aktM && _aktV === KP.ver + '|' + (window.collars || []).length) return _aktM;
+    _aktM = anggota(KP.act); _aktV = KP.ver + '|' + (window.collars || []).length;
+    return _aktM;
+  }
+  function sCode(id) { return aktifSet()[id] ? 0 : 1; }
 
   /* interval: satu kampanye berlaku untuk SELURUH panjang hole */
   if (typeof window.geoIntervals === 'function') {
     var _gi = window.geoIntervals;
     window.geoIntervals = function (ci, id) {
-      if (ci === KP._ci || (KP._gi >= 0 && ci === KP._gi) || ci === KP._si) {
+      if (ci === KP._ci || ci === KP._si) {
         var h = (window.holeData || {})[id];
         if (!h || !(h.maxD > 0)) return [];
-        var code = ci === KP._ci ? idxOf(kpOf(id)) : (ci === KP._si ? sCode(id) : gIdxOf(kpOf(id)));
+        var code = ci === KP._ci ? idxOf(kpOf(id)) : sCode(id);
         return code < 0 ? [] : [[0, h.maxD, code]];
       }
       return _gi.apply(this, arguments);
@@ -165,7 +183,6 @@
     window.catAssay = function (ci, id, a) {
       if (ci === KP._ci) return idxOf(kpOf(id));
       if (ci === KP._si) return sCode(id);
-      if (KP._gi >= 0 && ci === KP._gi) return gIdxOf(kpOf(id));
       return _ca.apply(this, arguments);
     };
   }
@@ -176,21 +193,26 @@
   window.visHoles = function () {
     var v = _vh.apply(this, arguments);
     if (!KP.L.length) return v;
-    var off = {};
-    KP.L.forEach(function (k) { if (st(k) === 'off') off[k.id] = 1; });
-    if (!Object.keys(off).length) return v;
-    return v.filter(function (id) { return !off[kpOf(id)]; });
+    var on = {};
+    KP.L.forEach(function (k) { if (show(k) && !isMg(k)) { var m = anggota(k.id); Object.keys(m).forEach(function (h) { on[h] = 1; }); } });
+    KP.L.forEach(function (k) { if (show(k) && isMg(k)) { var m2 = anggota(k.id); Object.keys(m2).forEach(function (h) { on[h] = 1; }); } });
+    return v.filter(function (id) { return on[id]; });
   };
-  /* satu hole ikut analisis? */
+  /* satu hole ikut analisis? -> hanya bila anggota DATASET AKTIF */
   window.kpKerja = function (id) {
     if (!KP.L.length) return true;
-    var k = byId(kpOf(id));
-    return !k || st(k) === 'kerja';
+    return !!aktifSet()[id];
   };
-  /* daftar SET KERJA: dipakai Geostatistik, statistik, flag otomatis, komposit dan estimasi.
-     Kampanye 'ref' sengaja dibuang di sini supaya bor referensi tidak ikut mencemari angkanya. */
+  /* daftar DATASET AKTIF: dipakai Geostatistik, statistik, flag otomatis, komposit dan estimasi.
+     Database yang sekadar ditampilkan sebagai pembanding sengaja dibuang di sini. */
   window.visHolesK = function () {
-    return window.visHoles.apply(this, arguments).filter(window.kpKerja);
+    var v = window.visHoles.apply(this, arguments), A = aktifSet();
+    var out = v.filter(function (id) { return A[id]; });
+    /* dataset aktif yang kebetulan tidak dicentang tampil tetap dipakai analisis */
+    if (!out.length && Object.keys(A).length) {
+      out = (window.collars || []).map(function (c) { return c[0]; }).filter(function (id) { return A[id]; });
+    }
+    return out;
   };
   /* estimasi & waste berjalan dari GM.flags / holeData, bukan visHoles: saring di sana juga */
   if (typeof window.meRuns === 'function') {
@@ -205,7 +227,7 @@
 
   /* ---------- tindakan ---------- */
   function ubah(diam) {
-    KP.ver++; _cntVer = -1; catSync();
+    KP.ver++; _cntVer = -1; _aktV = -1; catSync();
     if (window.SA && SA.dirty) SA.dirty();
     if (!diam) {
       try { if (window.updatePlot) updatePlot(); } catch (e) {}
@@ -215,24 +237,9 @@
   }
   window.kpUbah = ubah;
 
-  window.kpAktif = function (id) { var k = byId(id); if (k) { KP.act = id; k.st = 'kerja'; ubah(); } };
-  window.kpSet = function (id, v) {
-    var k = byId(id); if (!k) return;
-    if (v !== 'kerja' && id === KP.act) { alert('Kampanye AKTIF selalu ikut set kerja.\n\nJadikan kampanye lain aktif dulu bila ingin yang ini jadi referensi.'); return; }
-    k.st = v; delete k.vis; ubah();
-  };
-  window.kpVis = function (id, on) { window.kpSet(id, on ? 'kerja' : 'off'); };
-  window.kpGVis = function (id, on) {
-    for (var i = 0; i < KP.g.length; i++) if (KP.g[i].id === id) {
-      KP.g[i].vis = !!on;
-      KP.g[i].ids.forEach(function (x) { var k = byId(x); if (k && (on || x !== KP.act)) k.st = on ? 'kerja' : 'ref'; });
-      ubah(); return;
-    }
-  };
-  window.kpWarna = function (id, c) {
-    var k = byId(id); if (k) { k.col = c; ubah(); return; }
-    for (var i = 0; i < KP.g.length; i++) if (KP.g[i].id === id) { KP.g[i].col = c; ubah(); return; }
-  };
+  window.kpAktif = function (id) { var k = byId(id); if (k) { KP.act = id; k.show = true; _aktV = -1; ubah(); } };
+  window.kpVis = function (id, on) { var k = byId(id); if (k) { k.show = !!on; delete k.st; delete k.vis; ubah(); } };
+  window.kpWarna = function (id, c) { var k = byId(id); if (k) { k.col = c; ubah(); } };
   window.kpGeser = function (id, d) {
     var i = idxOf(id), j = i + d;
     if (i < 0 || j < 0 || j >= KP.L.length) return;
@@ -240,7 +247,7 @@
     ubah();
   };
   window.kpRename = function (id) {
-    var k = byId(id) || KP.g.filter(function (g) { return g.id === id; })[0];
+    var k = byId(id);
     if (!k) return;
     var n = prompt('Nama kampanye:', k.name);
     if (n == null) return;
@@ -259,15 +266,16 @@
   };
   window.kpHapus = function (id) {
     var k = byId(id); if (!k) return;
-    if (KP.L.length < 2) { alert('Kampanye terakhir tidak bisa dihapus.'); return; }
+    if (KP.L.filter(function (x) { return !isMg(x); }).length < 2) { alert('Kampanye terakhir tidak bisa dihapus.'); return; }
     var c = cnt()[id] || { c: 0 };
-    var sisa = KP.L.filter(function (x) { return x.id !== id; })[0];
+    var sisa = KP.L.filter(function (x) { return x.id !== id && !isMg(x); })[0];
+    if (!sisa) { alert('Tidak ada kampanye lain sebagai tujuan pemindahan.'); return; }
     if (!confirm('Hapus kampanye "' + k.name + '" dari daftar?\n\n' + c.c + ' hole di dalamnya dipindahkan ke "' + sisa.name + '".\nData bornya TIDAK dihapus.')) return;
     Object.keys(KP.of).forEach(function (h) { if (KP.of[h] === id) KP.of[h] = sisa.id; });
     KP.L = KP.L.filter(function (x) { return x.id !== id; });
-    KP.g.forEach(function (g) { g.ids = g.ids.filter(function (x) { return x !== id; }); });
-    KP.g = KP.g.filter(function (g) { return g.ids.length > 1; });
-    if (KP.act === id) KP.act = sisa.id;
+    KP.L.forEach(function (x) { if (isMg(x)) x.ids = (x.ids || []).filter(function (q) { return q !== id; }); });
+    KP.L = KP.L.filter(function (x) { return !isMg(x) || (x.ids || []).length > 1; });
+    if (!byId(KP.act)) KP.act = sisa.id;
     ubah();
   };
   /* pindahkan hole tertentu ke kampanye lain (mis. salah label saat import) */
@@ -282,36 +290,38 @@
     alert(n + ' hole dipindahkan ke "' + k.name + '"' + (n < ids.length ? '; ' + (ids.length - n) + ' HoleID tidak ditemukan.' : '.'));
   };
 
-  /* ---------- gabungan kampanye (merge) ---------- */
+  /* ---------- merge: membuat DATABASE BARU dari beberapa kampanye ---------- */
   window.kpGabung = function () {
-    if (KP.L.length < 2) { alert('Perlu minimal dua kampanye untuk digabungkan.'); return; }
-    var daftar = KP.L.map(function (k, i) { return (i + 1) + '. ' + k.name; }).join('\n');
-    var r = prompt('Gabungkan kampanye mana saja? Tulis nomornya, pisahkan dengan koma.\n\n' + daftar + '\n\nContoh: 1,3', '');
+    sync();
+    var src = KP.L.filter(function (k) { return !isMg(k); });
+    if (src.length < 2) { alert('Perlu minimal dua kampanye untuk digabungkan.'); return; }
+    var daftar = src.map(function (k, i) { return (i + 1) + '. ' + k.name; }).join('\n');
+    var r = prompt('Set database MERGE baru dari kampanye mana saja?\nTulis nomornya, pisahkan dengan koma.\n\n' + daftar + '\n\nContoh: 1,3', '');
     if (!r) return;
     var pick = String(r).split(/[\s,;]+/).map(function (x) { return parseInt(x, 10) - 1; })
-      .filter(function (i) { return i >= 0 && i < KP.L.length; });
+      .filter(function (i) { return i >= 0 && i < src.length; });
     pick = pick.filter(function (v, i) { return pick.indexOf(v) === i; });
     if (pick.length < 2) { alert('Pilih minimal dua kampanye.'); return; }
-    var nm = prompt('Nama gabungan:', pick.map(function (i) { return KP.L[i].name; }).join('+').slice(0, 40));
+    var nm = prompt('Nama set merge:', pick.map(function (i) { return src[i].name; }).join('+').slice(0, 40));
     if (nm == null) return;
-    nm = String(nm).trim().slice(0, 40) || 'gabungan';
-    var ids = pick.map(function (i) { return KP.L[i].id; });
-    KP.g.push({ id: uid(), name: nm, col: PAL[(KP.g.length + 3) % PAL.length], vis: true, ids: ids });
-    /* merge = masukkan ke SET KERJA: sejak ini data gabungan dipakai pemodelan & estimasi */
-    var nRef = 0;
-    ids.forEach(function (x) { var k = byId(x); if (k && st(k) !== 'kerja') { k.st = 'kerja'; delete k.vis; nRef++; } });
-    KP.mg.push({ id: uid(), name: nm, ids: ids.slice(), when: new Date().toISOString().slice(0, 16).replace('T', ' ') });
+    nm = String(nm).trim().slice(0, 40) || 'merge';
+    var k = { id: uid(), name: nm, col: PAL[(KP.L.length + 3) % PAL.length], show: true, kind: 'mg',
+              ids: pick.map(function (i) { return src[i].id; }), when: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+    KP.L.push(k);
     ubah();
-    var n = 0, C2 = cnt();
-    ids.forEach(function (x) { n += (C2[x] || { c: 0 }).c; });
-    alert('Gabungan "' + nm + '" dibuat: ' + n + ' hole kini masuk SET KERJA' + (nRef ? ' (' + nRef + ' kampanye dinaikkan dari referensi)' : '') + '.\n\n' +
-          'Data gabungan ini dipakai pemodelan, Geostatistik dan estimasi, dan bisa diekspor lewat "Export set kerja (.xlsx)".\n' +
-          'Tiap hole TETAP memegang kampanye aslinya (atribut "Kampanye") ditambah penanda "Set kerja", jadi masih bisa dipilah kembali.');
+    var n = Object.keys(anggota(k.id)).length;
+    if (confirm('Set merge "' + nm + '" dibuat: ' + n + ' hole dari ' + k.ids.length + ' kampanye.\n\n' +
+                'Isinya Collar / Survey / Assay / Geologi gabungan, dan tiap hole TETAP memegang label kampanye aslinya.\n\n' +
+                'Jadikan set merge ini sebagai DATASET AKTIF sekarang?\n(Pemodelan, estimasi dan statistik hanya berlaku pada dataset aktif.)')) {
+      window.kpAktif(k.id);
+    }
   };
   window.kpGHapus = function (id) {
-    var g = KP.g.filter(function (x) { return x.id === id; })[0]; if (!g) return;
-    if (!confirm('Hapus gabungan "' + g.name + '"?\n\nKampanye di dalamnya tidak terpengaruh.')) return;
-    KP.g = KP.g.filter(function (x) { return x.id !== id; });
+    var k = byId(id); if (!k || !isMg(k)) return;
+    if (!confirm('Hapus set merge "' + k.name + '"?\n\nKampanye sumbernya tidak terpengaruh; tidak ada data bor yang dihapus.')) return;
+    KP.L = KP.L.filter(function (x) { return x.id !== id; });
+    KP.L.forEach(function (x) { if (isMg(x)) x.ids = (x.ids || []).filter(function (q) { return q !== id; }); });
+    if (KP.act === id) KP.act = (KP.L.filter(function (x) { return !isMg(x); })[0] || KP.L[0] || {}).id || '';
     ubah();
   };
 
@@ -404,9 +414,9 @@
   window.kpXlsx = xlsx;
 
   /* tabel set kerja: collar / survey / assay / geologi, hanya hole yang ikut analisis */
-  window.kpTabel = function () {
-    var ok = {}, nH = 0;
-    (window.collars || []).forEach(function (c) { if (window.kpKerja(c[0])) { ok[c[0]] = 1; nH++; } });
+  window.kpTabel = function (dbId) {
+    var A = dbId ? anggota(dbId) : aktifSet(), ok = {}, nH = 0;
+    (window.collars || []).forEach(function (c) { if (A[c[0]]) { ok[c[0]] = 1; nH++; } });
     var nm = function (id) { var k = byId(kpOf(id)); return k ? k.name : ''; };
     var col = [['HoleID', 'East', 'North', 'RL', 'Depth', 'Kampanye']];
     (window.collars || []).forEach(function (c) { if (ok[c[0]]) col.push([c[0], c[1], c[2], c[3], c[4], nm(c[0])]); });
@@ -441,88 +451,81 @@
                               { name: 'Assay', rows: as }, { name: 'Geologi', rows: ge }] };
   };
 
-  window.kpExport = function () {
+  window.kpExport = function (dbId) {
     try {
       sync();
-      var T = window.kpTabel();
-      if (!T.nH) { alert('Set kerja kosong: tidak ada kampanye berstatus "set kerja".'); return; }
+      var db = byId(dbId) || byId(KP.act);
+      if (!db) { alert('Belum ada database bor.'); return; }
+      var T = window.kpTabel(db.id);
+      if (!T.nH) { alert('Database "' + db.name + '" tidak berisi hole.'); return; }
       var u = xlsx(T.sheets);
-      var kerja = KP.L.filter(function (k) { return st(k) === 'kerja'; }).map(function (k) { return k.name; });
-      var nama = 'GCEx_setkerja_' + kerja.join('+').replace(/[^A-Za-z0-9_+-]+/g, '_').slice(0, 60) + '.xlsx';
+      var nama = 'GCEx_' + db.name.replace(/[^A-Za-z0-9_+-]+/g, '_').slice(0, 60) + '.xlsx';
       var b = new Blob([u], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       var a2 = document.createElement('a');
       a2.href = URL.createObjectURL(b); a2.download = nama; document.body.appendChild(a2); a2.click();
       setTimeout(function () { URL.revokeObjectURL(a2.href); a2.remove(); }, 2000);
-      alert('Export set kerja: ' + T.nH + ' hole dari kampanye ' + kerja.join(', ') + '.\n\n' +
+      alert('Export "' + db.name + '": ' + T.nH + ' hole.\n\n' +
             T.sheets.map(function (s2) { return s2.name + ' ' + (s2.rows.length - 1) + ' baris'; }).join(' · ') +
             '\n\nKolom "Kampanye" ikut ditulis di tiap sheet supaya asal tiap hole tetap terlacak.');
     } catch (e) { console.error(e); alert('Export gagal: ' + (e.message || e)); }
   };
 
   /* ---------- node Project Tree ---------- */
+  /* Peran sebuah database diturunkan dari status aktif + centang tampil:
+       AKTIF                      -> "set kerja" : tampil DAN satu-satunya sumber analisis
+       dicentang, bukan aktif     -> "referensi" : tampil sebagai pembanding, tidak ikut analisis
+       tidak dicentang            -> "sembunyi"  : tidak digambar                                 */
+  function peran(k) { return KP.act === k.id ? 'set kerja' : (show(k) ? 'referensi' : 'sembunyi'); }
+  window.kpPeran = peran;
+
   window.kpTree = function () {
     sync();
     if (!KP.L.length) return [];
     var N = function (n) { try { return (+n).toLocaleString('id-ID'); } catch (e) { return String(n); } };
     var C = cnt(), out = [];
-    var tabel = function (kid, t, ic, n) { return { id: kid, t: t, ic: ic, b: n ? N(n) : '', dim: !n }; };
+    var tabel = function (kid, t, ic, n, mg) {
+      return { id: kid, t: t + (mg ? ' Merge' : ''), ic: ic, b: n ? N(n) : '', dim: !n };
+    };
     KP.L.forEach(function (k, i) {
-      var c = C[k.id] || { c: 0, s: 0, a: 0, g: 0 }, aktif = KP.act === k.id, S = st(k);
-      var lbl = { kerja: 'set kerja', ref: 'referensi', off: 'sembunyi' }[S];
+      var c = C[k.id] || { c: 0, s: 0, a: 0, g: 0 }, aktif = KP.act === k.id, mg = isMg(k), pr = peran(k);
+      var sumber = mg ? (k.ids || []).map(function (x) { var q = byId(x); return q ? q.name : '?'; }) : [];
       out.push({
-        id: 'db.kp.' + k.id, t: k.name, ic: 'folder', fold: 1, tab: 'Data',
-        b: (aktif ? 'AKTIF &middot; ' : '') + lbl + ' &middot; ' + N(c.c) + ' hole',
-        mark: aktif ? 'aktif' : '', dim: S !== 'kerja',
-        chk: S !== 'off', onChk: function (v) { kpSet(k.id, v ? (aktif ? 'kerja' : 'ref') : 'off'); },
-        hint: (S === 'kerja' ? 'Ikut pemodelan, Geostatistik & estimasi'
-             : S === 'ref' ? 'Hanya tampil sebagai referensi — tidak ikut analisis' : 'Disembunyikan') +
-             ' · prioritas ' + (i + 1) + ' dari ' + KP.L.length + (aktif ? ' · tujuan import / upsert berikutnya' : ''),
+        id: 'db.kp.' + k.id, t: k.name, ic: mg ? 'db' : 'folder', fold: 1, tab: 'Data',
+        b: (aktif ? 'AKTIF &middot; ' : '') + pr + ' &middot; ' + N(c.c) + ' hole',
+        mark: aktif ? 'aktif' : '', dim: !aktif,
+        chk: show(k), onChk: function (v) { kpVis(k.id, v); },
+        hint: (mg ? 'Set merge dari ' + sumber.join(' + ') + ' \u00b7 ' : '') +
+              (aktif ? 'DATASET AKTIF — satu-satunya sumber pemodelan, estimasi dan statistik'
+                     : show(k) ? 'Referensi — tampil sebagai pembanding, tidak ikut analisis' : 'Disembunyikan'),
         menu: function () {
-          return [
-            { t: aktif ? '✓ Kampanye aktif' : 'Jadikan kampanye aktif', dis: aktif, fn: function () { kpAktif(k.id); } },
+          var L = [
+            { t: aktif ? '\u2713 Dataset aktif (sumber pemodelan & estimasi)' : 'Jadikan dataset aktif', dis: aktif, fn: function () { kpAktif(k.id); } },
+            { t: show(k) ? 'Sembunyikan dari tampilan' : 'Tampilkan sebagai referensi', dis: aktif && show(k), fn: function () { kpVis(k.id, !show(k)); } },
             { sep: 1 },
-            { h: 'Peran kampanye' },
-            { t: 'Set kerja — ikut pemodelan & estimasi', on: S === 'kerja', fn: function () { kpSet(k.id, 'kerja'); } },
-            { t: 'Referensi — tampil saja, tidak ikut analisis', on: S === 'ref', dis: aktif, fn: function () { kpSet(k.id, 'ref'); } },
-            { t: 'Sembunyikan', on: S === 'off', dis: aktif, fn: function () { kpSet(k.id, 'off'); } },
+            { t: 'Ganti nama…', fn: function () { kpRename(k.id); } },
+            { t: 'Export database ini (.xlsx)…', fn: function () { kpExport(k.id); } }
+          ];
+          if (!mg) L = L.concat([
             { sep: 1 },
             { t: 'Naikkan prioritas', dis: i === 0, fn: function () { kpGeser(k.id, -1); } },
             { t: 'Turunkan prioritas', dis: i === KP.L.length - 1, fn: function () { kpGeser(k.id, 1); } },
-            { sep: 1 },
-            { t: 'Ganti nama…', fn: function () { kpRename(k.id); } },
-            { t: 'Pindahkan hole ke sini…', fn: function () { kpPindah(k.id); } },
+            { t: 'Pindahkan hole ke sini…', fn: function () { kpPindah(k.id); } }
+          ]);
+          L = L.concat([
             { sep: 1 },
             { t: 'Kampanye baru…', fn: function () { kpTambah(); } },
-            { t: 'Gabungkan ke set kerja… (merge)', fn: function () { kpGabung(); } },
-            { t: 'Export set kerja (.xlsx)…', fn: function () { kpExport(); } },
+            { t: 'Buat set merge… (gabungkan kampanye)', fn: function () { kpGabung(); } },
             { sep: 1 },
-            { t: 'Hapus kampanye ini…', danger: 1, dis: KP.L.length < 2, fn: function () { kpHapus(k.id); } }
-          ];
+            mg ? { t: 'Hapus set merge ini…', danger: 1, fn: function () { kpGHapus(k.id); } }
+               : { t: 'Hapus kampanye ini…', danger: 1, fn: function () { kpHapus(k.id); } }
+          ]);
+          return L;
         },
-        kids: [tabel('db.kp.' + k.id + '.c', 'Collar', 'collar', c.c),
-               tabel('db.kp.' + k.id + '.s', 'Survey', 'table', c.s),
-               tabel('db.kp.' + k.id + '.a', 'Assay', 'table', c.a),
-               tabel('db.kp.' + k.id + '.g', 'Geologi', 'geo', c.g)]
-      });
-    });
-    KP.g.forEach(function (g) {
-      var n = 0;
-      g.ids.forEach(function (i) { n += (C[i] || { c: 0 }).c; });
-      out.push({
-        id: 'db.kpg.' + g.id, t: g.name, ic: 'folder', fold: 1, tab: 'Data',
-        b: 'gabungan &middot; ' + N(n) + ' hole', dim: g.vis === false,
-        chk: g.vis !== false, onChk: function (v) { kpGVis(g.id, v); },
-        hint: 'Gabungan ' + g.ids.length + ' kampanye di set kerja; tiap hole tetap memegang kampanye aslinya',
-        menu: function () {
-          return [{ t: 'Ganti nama…', fn: function () { kpRename(g.id); } },
-                  { t: 'Export set kerja (.xlsx)…', fn: function () { kpExport(); } },
-                  { sep: 1 },
-                  { t: 'Hapus gabungan…', danger: 1, fn: function () { kpGHapus(g.id); } }];
-        },
-        kids: g.ids.map(function (i) {
-          var k = byId(i), c = C[i] || { c: 0 };
-          return { id: 'db.kpg.' + g.id + '.' + i, t: k ? k.name : '(hilang)', ic: 'hole', b: N(c.c) + ' hole', dim: !k };
-        })
+        kids: [tabel('db.kp.' + k.id + '.c', 'Collar', 'collar', c.c, mg),
+               tabel('db.kp.' + k.id + '.s', 'Survey', 'table', c.s, mg),
+               tabel('db.kp.' + k.id + '.a', 'Assay', 'table', c.a, mg),
+               tabel('db.kp.' + k.id + '.g', 'Geologi', 'geo', c.g, mg)]
+          .concat(mg ? [{ id: 'db.kp.' + k.id + '.src', t: 'Sumber: ' + sumber.join(' + '), ic: 'attr', dim: 1 }] : [])
       });
     });
     return out;
@@ -533,14 +536,17 @@
     var _c = SA.collectWork;
     SA.collectWork = function () {
       var w = _c.apply(this, arguments);
-      try { w.kp = { L: KP.L, g: KP.g, act: KP.act, of: KP.of, mg: KP.mg }; } catch (e) { console.error(e); }
+      try { w.kp = { L: KP.L, act: KP.act, of: KP.of }; } catch (e) { console.error(e); }
       return w;
     };
     var _a = SA.applyWork;
     SA.applyWork = function (W) {
       try {
         var o = W && W.kp;
-        KP.L = (o && o.L) || []; KP.g = (o && o.g) || []; KP.act = (o && o.act) || ''; KP.of = (o && o.of) || {}; KP.mg = (o && o.mg) || [];
+        KP.L = (o && o.L) || []; KP.act = (o && o.act) || ''; KP.of = (o && o.of) || {};
+        /* proyek lama (0.24.25/26): grup gabungan & keadaan tiga nilai -> set merge & centang tampil */
+        ((o && o.g) || []).forEach(function (g) { KP.L.push({ id: g.id, name: g.name, col: g.col, show: g.vis !== false, kind: 'mg', ids: g.ids || [] }); });
+        KP.L.forEach(function (k) { if (k.show === undefined) { k.show = k.st ? k.st !== 'off' : k.vis !== false; } if (!k.kind) k.kind = 'kp'; });
         KP.ver++; _cntVer = -1;
       } catch (e) { console.error(e); }
       var r = _a.apply(this, arguments);

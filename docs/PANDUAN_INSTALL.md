@@ -1446,3 +1446,52 @@ Data tiruan 5 hole (3 eksplorasi/infill + 2 grade control), 68 interval assay da
 
 ### Yang masih belum
 Pemilih kampanye di dialog import, pemetaan sheet `.xlsx` per nama saat **import**, penyelesaian bentrok antar kampanye saat upsert, dan penyusun filter AND/OR dengan rentang nilai atas atribut yang sudah diimport.
+
+## 76. GC-Ex Drill Hole Ultimate 0.24.27 — set merge sebagai database baru, satu dataset aktif
+
+Penyesuaian terhadap alur kerja yang sebenarnya, setelah rujukan Surpac diperjelas. Dua hal berubah dari 0.24.26.
+
+### 1. Merge membuat DATABASE BARU, bukan sekadar menaikkan status
+Sebelumnya *merge* hanya menandai beberapa kampanye sebagai "set kerja". Sekarang merge membuat **node database tersendiri** di Project Tree, dengan empat tabelnya sendiri: **Collar Merge, Survey Merge, Assay Merge, Geologi Merge**.
+
+Anggotanya gabungan hole kampanye sumber, dihitung **hidup** — hole baru yang masuk ke kampanye sumber otomatis ikut ke set merge, tanpa perlu merge ulang. Tidak ada data yang disalin: set merge adalah **pandangan** atas satu dataset yang sama, jadi tidak ada risiko dua salinan yang berbeda isi.
+
+### 2. Satu dataset AKTIF, dan peran diturunkan darinya
+Aturan pokok Anda — *pemodelan dan estimasi/statistik hanya berlaku pada dataset yang aktif* — kini menjadi mekanismenya, bukan sekadar catatan:
+
+| Keadaan database | Peran | Tampil di 3D / sayatan | Ikut Geostatistik, statistik, flag, estimasi |
+|---|---|---|---|
+| **AKTIF** | **set kerja** | ya | **ya** |
+| dicentang, bukan aktif | **referensi** | ya | tidak |
+| tidak dicentang | **sembunyi** | tidak | tidak |
+
+Yang aktif boleh berupa kampanye **maupun** set merge. Begitu set merge dijadikan aktif, dialah sumber pemodelan dan estimasi — dan kampanye sumbernya otomatis turun menjadi referensi, tetap terlihat untuk pembanding.
+
+`visHoles()` tetap daftar **tampil**; `visHolesK()` adalah **anggota dataset aktif**, dan enam titik analisis memakainya (Geostatistik analisis sayatan & uji estimasi, flag otomatis dari kadar, komposit & statistik, klik flag di sayatan, selubung mineralisasi), ditambah `meRuns` untuk Model Estimation dan estimasi waste.
+
+### Alur kerjanya
+1. Database utama **grade control** dijadikan aktif.
+2. Kampanye **eksplorasi** dan **infill** dicentang tampil — berdampingan di jendela 3D untuk memvalidasi bor GC. Keduanya **tidak** memengaruhi angka apa pun.
+3. Bila datanya bagus: **Buat set merge…** memilih kampanye yang digabung. GC-Ex langsung menawarkan menjadikannya dataset aktif.
+4. Sejak aktif, set merge itulah sumber pemodelan, estimasi dan statistik.
+5. **Export database ini (.xlsx)** menulis set merge ke empat sheet untuk pihak luar.
+
+### Label asal tetap utuh
+Setiap hole tetap memegang atribut **`Kampanye`** (label asalnya) walaupun sudah masuk set merge, ditambah atribut **`Dataset aktif`** berisi *ikut dataset aktif* / *hanya tampil*. Jadi di dalam set merge pun Anda masih bisa mewarnai dan memfilter per kampanye asal — dan kolom `Kampanye` ikut ditulis di setiap sheet file ekspornya.
+
+### Diuji
+Data tiruan 5 hole (3 eksplorasi/infill + 2 grade control), 68 interval assay dan 68 interval geologi:
+
+| Uji | Hasil |
+|---|---|
+| `gc_2025` dijadikan aktif | perannya **set kerja**; `eksplorasi_2024` otomatis **referensi** |
+| Bor eksplorasi terlihat tetapi tidak ikut analisis | `visHoles` 5 hole, `visHolesK` hanya `GC-01, GC-02` |
+| `meRuns` (Model Estimation) | hanya `GC-01, GC-02` |
+| Atribut penanda | `GC-01 → ikut dataset aktif`, `EX-01 → hanya tampil` |
+| **Buat set merge** dari 2 kampanye | node baru `GC+EX_2025` berjenis set merge, 5 hole |
+| Set merge dijadikan aktif | perannya **set kerja**; kedua kampanye sumber turun jadi **referensi** |
+| `visHolesK` sesudahnya | kelima hole — pemodelan kini memakai data gabungan |
+| Label asal | `EX-01` tetap `eksplorasi_2024`, penandanya berubah jadi *ikut dataset aktif* |
+| Export `.xlsx` set merge | 51,5 KB, **dibuka openpyxl**: Collar 5, Survey 5, Assay 68, Geologi 68 baris; CRC seluruh entri OK |
+
+Proyek yang disimpan dengan 0.24.25/0.24.26 dimuat ulang dengan penyesuaian otomatis: grup gabungan lama menjadi set merge, dan keadaan tiga nilai menjadi centang tampil.
