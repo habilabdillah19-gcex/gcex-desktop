@@ -849,6 +849,10 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Paket data latihan mendapat tiga foto dinding pit sungguhan yang generik (`Foto_Singkapan/Dinding_Pit_A.jpg`, `_B`, `_C`): metadata EXIF / lokasi dibuang dan orang di foto dipotong. Tutorial Latihan 19 langkah 7–9 memakainya, termasuk catatan apa yang andal (peta oksida, batas oksida – segar dari SAM) dan apa yang masih kasar di foto asli (deteksi jejak otomatis, peta vein kuarsa).
 - Penyetelan dari uji di foto asli: deteksi jejak memakai peta rekahan gelap / urat terang dan hanya menyimpan garis yang didukung sepanjang panjangnya; zona SAM berupa langit / vegetasi dibuang otomatis; indeks vein kuarsa tidak lagi menangkap langit.
 
+## 84. DB-Ex 0.38.2 — tutorial terkompilasi
+
+- `DB-Ex_Tutorial_Penggunaan.pdf` dibangun ulang: sampul dan daftar isi kini memuat bab 17–19 (QAQC sampel lab, QAQC data bor & laporan PDF, Analisis foto singkapan) dengan data latihan simulasi dan foto dinding pit generik.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):
