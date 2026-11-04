@@ -94,23 +94,27 @@ BAGIAN = [
   'Endapan <b>vein</b> (epitermal, mesotermal, urat kuarsa) &mdash; benda bijih tipis, miring, dibatasi '
   'hanging wall dan footwall. Urutannya mengikuti node <b>Geomodeller Vein &rarr; Geostatistik &rarr; '
   'Model Estimation</b> di Project Tree: domain &rarr; flag &rarr; string &rarr; solid &rarr; parameter '
-  '&rarr; estimasi &rarr; koreksi.',
+  '&rarr; kerangka blok &rarr; estimasi ore &rarr; estimasi waste &rarr; koreksi. Tiga bab di bagian ini '
+  '&mdash; <b>kerangka blok AOI</b>, <b>sub-blocking</b> dan <b>estimasi waste</b> &mdash; berlaku untuk '
+  '<b>semua tipe deposit</b>; pembaca jalur laterit dirujuk ke sini dari Bagian III.',
   ['Geomodeller Vein: membuat domain vein', 'Flag otomatis dari kadar', 'Koreksi flag secara interaktif',
    'String kontrol hanging wall', 'Membangun solid vein', 'Struktur geologi', 'Sesar 3D',
    'Vein bercabang', 'Memakai wireframe dari Leapfrog', 'Filter domain &amp; statistik',
    'Domain aktif di Geostatistik', 'Variogram, anisotropi', 'Kriging Neighbourhood Analysis',
-   'Uji estimasi &amp; simpan parameter', 'Model Estimation: estimasi block model GC',
+   'Uji estimasi &amp; simpan parameter', 'Block model dari nol', 'Sub-blocking',
+   'Model Estimation: estimasi block model GC', 'Estimasi waste',
    'Koreksi setelah bor baru', 'Latihan terpandu']),
  ('Bagian III &middot; Deposit laterit / stratiform berlapis',
   'Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex, seam) &mdash; lapisan tipis '
   'secara vertikal tetapi luas ke samping, mengikuti bentuk permukaan. Jalurnya berbeda dari vein: '
   'node <b>Geomodeller Stratified-Laterite</b>, estimasi per lapisan di koordinat <b>unfold</b>.',
-  ['Geomodeller Stratified-Laterite']),
- ('Bagian IV &middot; Waste, kerangka blok &amp; pelaporan sumber daya',
-  'Berlaku untuk <b>semua tipe deposit</b>, dijalankan sesudah benda bijihnya dimodelkan: membuat kerangka '
-  'blok sendiri bila tidak ada block model dari luar, memperhalus batas solid, mengestimasi material di '
-  '<b>luar</b> wireframe ore, lalu melaporkannya per kelas keyakinan.',
-  ['Block model dari nol', 'Sub-blocking', 'Estimasi waste', 'Klasifikasi keyakinan']),
+  ['Geomodeller Stratified-Laterite', 'Estimasi waste pada laterit']),
+ ('Bagian IV &middot; Pelaporan sumber daya',
+  'Berlaku untuk <b>semua tipe deposit</b>, dijalankan sesudah block model terestimasi: mengusulkan kelas '
+  '<b>Measured / Indicated / Inferred</b> per blok dari atribut hasil estimasi, lalu melaporkan tonase dan '
+  'kadar per kelas dan per cut-off. Blok waste (<code>est_type = 3</code>) sengaja tidak ikut pelaporan '
+  'sumber daya &mdash; kadarnya untuk dilusi, ore loss dan perencanaan pit.',
+  ['Klasifikasi keyakinan']),
  ('Bagian V &middot; Data pendukung, export &amp; pemeliharaan',
   'Peta 2D, pergantian topografi / block model per periode, export ke Surpac dan perawatan folder proyek.',
   ['Map: peta geologi 2D', 'Mengganti topografi', 'Topografi &amp; orthofoto resolusi tinggi',
@@ -134,12 +138,18 @@ yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
 penambahan fitur. Bab yang berlaku untuk semua deposit dipisahkan dari bab yang khusus satu tipe:</p>
 <table class="t"><tr><th>Bagian</th><th>Untuk</th><th>Isi</th></tr>
 <tr><td><b>I</b> Persiapan &amp; database bor</td><td>semua tipe</td><td>folder proyek, import, validasi, kampanye pemboran, filter, sayatan, pita litologi</td></tr>
-<tr><td><b>II</b> Deposit vein / urat</td><td>vein, epitermal, mesotermal</td><td>Geomodeller Vein &rarr; flag &rarr; string HW/FW &rarr; solid RBF &rarr; struktur &amp; sesar &rarr; Geostatistik &rarr; Model Estimation</td></tr>
-<tr><td><b>III</b> Laterit / stratiform</td><td>laterit nikel, bauksit, sedex, seam</td><td>Geomodeller Stratified-Laterite: lapisan dari log geologi, estimasi per lapisan di ruang unfold</td></tr>
-<tr><td><b>IV</b> Waste &amp; pelaporan</td><td>semua tipe</td><td>kerangka blok AOI, sub-blocking, estimasi waste, klasifikasi Measured / Indicated / Inferred</td></tr>
+<tr><td><b>II</b> Deposit vein / urat</td><td>vein, epitermal, mesotermal</td><td>Geomodeller Vein &rarr; flag &rarr; string HW/FW &rarr; solid RBF &rarr; struktur &amp; Sesar 3D &rarr; Geostatistik &rarr; <b>kerangka blok AOI</b> &rarr; <b>sub-blocking</b> &rarr; Model Estimation &rarr; <b>estimasi waste</b> &rarr; koreksi bor baru</td></tr>
+<tr><td><b>III</b> Laterit / stratiform</td><td>laterit nikel, bauksit, sedex, seam</td><td>Geomodeller Stratified-Laterite (lapisan dari log geologi, estimasi per lapisan di ruang unfold) &rarr; estimasi waste pada laterit (dua zona unfold)</td></tr>
+<tr><td><b>IV</b> Pelaporan sumber daya</td><td>semua tipe</td><td>klasifikasi Measured / Indicated / Inferred, kerapatan bor, grade-tonase per bench / domain / cut-off</td></tr>
 <tr><td><b>V</b> Pendukung &amp; pemeliharaan</td><td>semua tipe</td><td>Map 2D, versi topografi &amp; block model, export, folder proyek &amp; backup</td></tr></table>
-<p>Jadi bila endapan Anda <b>laterit</b>, kerjakan <b>Bagian I &rarr; III &rarr; IV &rarr; V</b> dan Bagian II
-boleh dilewati; bila <b>vein</b>, <b>Bagian I &rarr; II &rarr; IV &rarr; V</b>. Bagian IV dan V sama untuk keduanya.</p>
+<p>Jadi bila endapan Anda <b>vein</b>, kerjakan <b>Bagian I &rarr; II &rarr; IV &rarr; V</b>. Bila <b>laterit</b>,
+<b>Bagian I &rarr; III &rarr; IV &rarr; V</b> &mdash; dengan satu catatan: tiga bab di Bagian II
+(<b>kerangka blok AOI</b>, <b>sub-blocking</b>, <b>estimasi waste</b>) murni geometri dan berlaku untuk semua tipe
+deposit, jadi dibaca juga oleh pembaca jalur laterit. Bab <b>Estimasi waste pada laterit</b> di Bagian III merujuk
+ke ketiganya dan hanya menjelaskan apa yang berbeda.</p>
+<p>Urutan di dalam setiap bagian mengikuti <b>urutan kerja nyata</b>, bukan urutan menu: kerangka blok dibuat
+sebelum estimasi (karena estimasi butuh blok untuk diisi), sub-blocking sebelum estimasi (karena mengubah geometri
+bloknya), dan estimasi waste sesudah estimasi ore (karena mewarisi variogram domain ore terdekat).</p>
 <h3>Yang dibutuhkan</h3>
 <ul>
 <li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-{VDH}.exe</code>) dan lisensi aktif.</li>
@@ -743,6 +753,24 @@ ch('Geomodeller Stratified-Laterite: laterit nikel', '<p>Endapan <b>laterit</b> 
        ('Akumulasi 2D','per bor: tebal lapisan T dan kadar rata-rata g; kadar blok = &Sigma;(w &middot; T &middot; g) / &Sigma;(w &middot; T): cocok untuk lapisan tipis yang tebalnya berubah')])
  + fig('tree', 'Project Tree: Struktur Geologi &rsaquo; Sesar (bidang 3D) dan Geomodeller Stratified-Laterite Deposit dengan node lapisan &amp; tahap &#9312;&ndash;&#9315;.', '40%')
  + tip('Semua pengaturan lapisan, sesar dan hasil estimasi tersimpan per proyek; tabel <code>sesar</code> dan <code>lapisan</code> ikut ke database proyek SQLite (gcex_proyek.db).'))
+
+ch('Estimasi waste pada laterit', '<p>Jalur <b>Stratified-Laterite</b> punya mesin estimasinya sendiri: setiap blok dicari lapisannya, dan blok yang <b>tidak jatuh di lapisan mana pun</b> (<code>sl_lapisan</code> kosong) tidak pernah diestimasi. Padahal untuk melaporkan volume <b>ore dan waste</b> di bawah topografi atau di dalam desain pit, blok itu justru harus punya kadar. Bagian <b>&#9317; Estimasi waste</b> di menu <b>Stratified-Laterite</b> mengisinya.</p>'
+ + warn('Tiga bab yang mendahuluinya ada di <b>Bagian II</b> karena murni geometri dan berlaku untuk semua tipe deposit &mdash; bacalah dulu {{B:Block model dari nol}} (kerangka blok AOI), {{B:Sub-blocking}} (proporsi volume di batas lapisan) dan {{B:Estimasi waste}} (prinsip umum, jalur vein). Bab ini hanya menjelaskan <b>apa yang berbeda</b> pada laterit.', 'Dibaca sesudah Bagian II')
+ + '<h3>Dua zona waste, masing-masing dengan ruang unfold sendiri</h3>'
+ + '<p>Pada laterit, jarak lurus tidak mewakili kedekatan geologi: sampel harus dicari <b>mengikuti kelengkungan permukaan lapisan</b>. Karena itu tiap zona waste diberi ruang <b>unfold</b>-nya sendiri, sama seperti estimasi ore per lapisan.</p>'
+ + '<table class="t"><tr><th>Zona</th><th>Blok yang masuk</th><th>Koordinat unfold</th></tr>'
+ + '<tr><td><b>Bawah</b></td><td>di bawah permukaan terbawah model &mdash; bedrock / saprock di bawah zona laterit</td><td><code>z = z_dasar(x,y) &minus; z_blok</code> (kedalaman di bawah permukaan itu)</td></tr>'
+ + '<tr><td><b>Atas</b></td><td>di atas kontak teratas model tetapi <b>masih di bawah topografi aktif</b> &mdash; mis. limonit penutup yang tidak dimodelkan sebagai lapisan</td><td><code>z = z_blok &minus; z_atap(x,y)</code> (tinggi di atas kontak teratas)</td></tr>'
+ + '<tr><td><i>(Luar grid)</i></td><td>di luar cakupan grid permukaan (permukaan tidak terdefinisi)</td><td>tidak ada kerangka unfold &rarr; elevasi apa adanya (3D biasa). <b>Opsional, bawaan mati</b></td></tr></table>'
+ + why('Blok di <b>atas topografi</b> adalah <b>udara</b>, bukan waste, jadi tidak pernah ikut diestimasi. Inilah bedanya dengan jalur vein, yang batas atasnya adalah permukaan solid; pada laterit batas atasnya adalah topografi itu sendiri.')
+ + '<h3>Sampelnya dari mana</h3>'
+ + '<p>Komposit diambil dari interval geologi yang kodenya <b>tidak dipetakan ke lapisan mana pun</b> &mdash; <i>hard boundary</i> waste, sama semangatnya dengan jalur vein ({{B:Estimasi waste}}): material di luar model tidak boleh diestimasi dari sampel di dalam model, dan sebaliknya. Tiap komposit ditempatkan ke zona (bawah / atas) yang sesuai dengan posisinya, lalu dikrige di ruang unfold zona itu.</p>'
+ + steps('Selesaikan dulu pemodelan lapisan dan estimasi per lapisan ({{B:Geomodeller Stratified-Laterite}}).',
+         'Pastikan ada <b>kerangka blok</b> yang mencakup seluruh AOI, bukan hanya zona laterit ({{B:Block model dari nol}}) &mdash; blok waste tidak akan ada bila kerangkanya hanya sebesar lapisan.',
+         'Buka <b>Stratified-Laterite &rarr; &#9317; Estimasi waste</b>, nyalakan zona <b>bawah</b> dan / atau <b>atas</b> sesuai keadaan endapan Anda.',
+         'Pilih sumber variogramnya: <b>variogram waste sendiri</b> (di Geostatistik pilih populasi waste, fitting, lalu <b>Simpan</b>) atau <b>variogram lapisan terdekat</b>; blok yang terlalu jauh dari sampel mana pun diisi <b>IDW</b>.',
+         'Jalankan. Hasilnya ditandai sebagai domain semu <b>WASTE</b> dengan <code>est_type = 3</code>, jadi <b>tidak ikut</b> pelaporan sumber daya ({{B:Klasifikasi keyakinan}}).')
+ + tip('Untuk laterit nikel, zona <b>bawah</b> biasanya yang paling berguna: kadar Ni di saprock/bedrock di bawah batas lapisan menentukan sampai mana alat gali boleh turun sebelum material menjadi waste. Zona <b>atas</b> dipakai bila ada penutup (overburden limonitik) yang tidak dimodelkan sebagai lapisan tetapi tetap harus dihitung tonasenya.'))
 
 ch('Map: peta geologi 2D', '<p>Menu <b>Map</b> di rel kiri mengganti area grafik dengan peta 2D (Easting / Northing; Z tidak dipakai), seperti Global Mapper. Scroll = zoom, tarik = geser; koordinat kursor tampil di kiri bawah.</p>'
  + '<h3>Layer peta</h3>' + steps('Klik <b>Map</b> di rel kiri ([[map_layer]]).', 'Centang layer: orthofoto, kontur topografi (interval diatur), desain pit, collar, jejak bor, domain vein, struktur (simbol USGS), fitur digitasi, titik pick-up, label.')

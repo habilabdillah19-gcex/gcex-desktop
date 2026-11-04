@@ -310,7 +310,7 @@ B.append('<p>Mutu estimasi tiap blok dicatat sebagai atribut, bukan hanya kadarn
 
 # ---- 8
 B.append('<div class="page"></div><h2>9. Kerangka blok AOI, estimasi waste &amp; proporsi volume</h2>')
-B.append('<h3>8.1 Kerangka blok AOI</h3>')
+B.append('<h3>9.1 Kerangka blok AOI</h3>')
 B.append('<p>Block model dapat dibuat <b>tanpa acuan model lama</b>: grid persegi seluruh <i>area of interest</i> '
          '(ore dan waste), dipotong topografi aktif, dasar desain pit, rentang RL, dan poligon area. Permukaan yang '
          'dipakai sama dengan Reporting BM &mdash; permukaan segitiga (TIN) versi aktif bila ada, kalau tidak titik '
@@ -322,7 +322,29 @@ B.append('<p>Mode <i>isi kekosongan</i> mempertahankan block model aktif <b>utuh
          'pada atribut numerik dan kosong pada atribut kategori.</p>')
 B.append('<p>Versi block model berjenis <code>aoi</code> menyimpan <b>parameter saja</b>, bukan bloknya; kerangka '
          'dibangun ulang saat versi itu diaktifkan. Batas aman 4 juta blok baru per pembangunan.</p>')
-B.append('<h3>8.2 Estimasi waste &mdash; jalur solid domain</h3>')
+B.append('<h3>9.2 Mengapa waste dihitung terpisah dari ore</h3>')
+B.append('<p>Di antarmuka, estimasi waste <b>tidak</b> terpisah: ia adalah bagian <b>&#9317;</b> di dalam menu '
+         '<b>Model Estimation</b> (dan di dalam menu <b>Stratified-Laterite</b> untuk jalur berlapis), satu run, '
+         'satu riwayat, satu block model keluar. Yang terpisah adalah <b>populasi estimasinya</b>, dan itu '
+         'disengaja:</p>')
+B.append(D.tabel(['Alasan', 'Akibat bila ore dan waste disatukan'], [
+    ['<b>Stationaritas / hard boundary</b>', 'batas wireframe ore adalah lompatan kadar, bukan gradien. Satu '
+     'populasi membuat kriging meratakan kadar melintasi batas itu: blok waste di luar vein terangkat oleh '
+     'komposit vein, blok ore di dalam tertarik turun. Yang terukur bukan dilusi nyata melainkan <b>dilusi '
+     'yang disebar interpolator</b> &mdash; justru hal yang dicegah oleh domaining'],
+    ['<b>Dua populasi statistik</b>', 'komposit di dalam vein bermean tinggi, CV ~1,2&ndash;1,9, nugget tinggi; '
+     'komposit waste mendekati batas deteksi dengan range jauh lebih panjang. Satu variogram tidak mewakili '
+     'keduanya &mdash; karena itu ada pilihan <b>variogram WASTE sendiri</b> selain mewarisi variogram domain '
+     'terdekat'],
+    ['<b>Tujuan pelaporan berbeda</b>', 'hasil waste ditandai <code>domain_est = WASTE</code>, '
+     '<code>est_type = 3</code> dan <b>tidak ikut</b> pelaporan sumber daya; kadarnya untuk dilusi, ore loss '
+     'dan perencanaan pit. Angka yang dicampur menghilangkan pemisahan ini']]))
+B.append('<p>Integrasinya tetap ada di tempat yang benar: tiap blok waste dikrige memakai <b>variogram dan '
+         'elipsoid domain ore terdekat</b> selama jaraknya di dalam ambang, sehingga kontinuitas lokalnya '
+         '<b>diwarisi</b> dari pemodelan ore, bukan ditentukan sendiri. Hanya blok yang terlalu jauh dari domain '
+         'mana pun yang jatuh ke IDW (<code>est_pass = 9</code>).</p>')
+
+B.append('<h3>9.3 Estimasi waste &mdash; jalur solid domain</h3>')
 B.append(D.tabel(['Unsur', 'Aturan'], [
     ['Blok', 'blok block model aktif yang pusatnya <b>di luar semua</b> solid domain; opsional hanya di bawah '
      'topografi aktif dan/atau di dalam desain pit'],
@@ -343,7 +365,7 @@ B.append('<p><b>Variogram waste sendiri.</b> Menu Geostatistik menerima populasi
          'KNA, uji estimasi &mdash; berlaku untuk populasi yang sama dengan sampel estimasi waste. Hasil fitting '
          'disimpan lewat <b>Simpan ke WASTE</b> (model variogram, elipsoid, pass, diskretisasi, top-cut, panjang '
          'komposit) dan ikut tersimpan di proyek.</p>')
-B.append('<h3>8.3 Estimasi waste &mdash; jalur berlapis (laterit)</h3>')
+B.append('<h3>9.4 Estimasi waste &mdash; jalur berlapis (laterit)</h3>')
 B.append('<p>Jalur Stratified-Laterite punya penyimpanan (<code>SL.S</code>) dan mesin estimasinya sendiri, jadi '
          'waste-nya dikerjakan terpisah &mdash; dan di <b>ruang unfold</b>, karena pada endapan berlapis kadar '
          'berubah mengikuti kelengkungan permukaan, bukan jarak lurus 3D.</p>')
@@ -359,7 +381,7 @@ B.append('<p>Sampel: komposit dari interval yang <b>kodenya tidak dipetakan ke l
          '<code>sl_lapisan = WASTE (di luar lapisan)</code>. Blok di atas topografi adalah udara dan tidak ikut.</p>')
 B.append('<div class=warn>Estimasi lapisan yang dijalankan ulang membentuk <code>SL.S</code> baru, sehingga estimasi '
          'waste laterit ikut terhapus dan harus dijalankan ulang sesudahnya.</div>')
-B.append('<h3>8.4 Sub-blocking di batas solid &amp; atribut <code>sb_frac</code></h3>')
+B.append('<h3>9.5 Sub-blocking di batas solid &amp; atribut <code>sb_frac</code></h3>')
 B.append('<p>Blok yang menyeberangi batas solid dapat dipecah <b>2 &times; 2 &times; 2</b>, berulang 1&ndash;3 '
          'tingkat. Pemecahan di ketiga sumbu bersamaan disengaja: <code>.mdl</code> Surpac adalah octree dengan '
          'tingkat yang sama di ketiga sumbu, sehingga blok anak tetap jatuh di kisi octree dan model masih bisa '

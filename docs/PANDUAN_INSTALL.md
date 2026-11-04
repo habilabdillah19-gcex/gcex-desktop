@@ -1688,14 +1688,20 @@ Sekarang keduanya juga ada di **menu node Database Bor** sendiri, di bagian pali
 | Bagian | Untuk | Isi |
 |---|---|---|
 | **I** Persiapan & database bor | semua tipe | folder proyek, import, validasi, **kampanye pemboran** (bab baru), upsert, **filter data bor** (bab baru), tampilan, sayatan, pita litologi |
-| **II** Deposit vein / urat | vein, epitermal, mesotermal | Geomodeller Vein → flag → string HW/FW → solid RBF → struktur & Sesar 3D → vein bercabang → wireframe → Geostatistik → Model Estimation → koreksi bor baru → latihan terpandu |
-| **III** Laterit / stratiform berlapis | laterit nikel, bauksit, sedex, seam | Geomodeller Stratified-Laterite: lapisan dari log geologi, estimasi per lapisan di ruang unfold |
-| **IV** Waste, kerangka blok & pelaporan | semua tipe | kerangka AOI, sub-blocking & `sb_frac`, estimasi waste, klasifikasi Measured / Indicated / Inferred |
+| **II** Deposit vein / urat | vein, epitermal, mesotermal | Geomodeller Vein → flag → string HW/FW → solid RBF → struktur & Sesar 3D → vein bercabang → wireframe → Geostatistik → **kerangka blok AOI** → **sub-blocking** → Model Estimation → **estimasi waste** → koreksi bor baru → latihan terpandu |
+| **III** Laterit / stratiform berlapis | laterit nikel, bauksit, sedex, seam | Geomodeller Stratified-Laterite (lapisan dari log geologi, estimasi per lapisan di ruang unfold) → **Estimasi waste pada laterit** (bab baru: dua zona unfold, bawah & atas) |
+| **IV** Pelaporan sumber daya | semua tipe | klasifikasi Measured / Indicated / Inferred, kerapatan bor, grade-tonase per bench / domain / cut-off |
 | **V** Pendukung & pemeliharaan | semua tipe | Map 2D, versi topografi & block model, orthofoto resolusi tinggi, export, folder proyek & backup |
 
-Jadi untuk endapan **laterit** dikerjakan Bagian **I → III → IV → V** (Bagian II dilewati); untuk **vein**,
-Bagian **I → II → IV → V**. Setiap bab mencantumkan nama Bagiannya di kepala halaman, dan daftar isi
-dikelompokkan per Bagian.
+Jadi untuk endapan **vein** dikerjakan Bagian **I → II → IV → V**; untuk **laterit**, **I → III → IV → V**.
+Satu catatan: tiga bab di Bagian II — **kerangka blok AOI**, **sub-blocking** dan **estimasi waste** — murni
+geometri dan berlaku untuk **semua tipe deposit**, jadi dibaca juga oleh pembaca jalur laterit; bab
+*Estimasi waste pada laterit* merujuk ke ketiganya dan hanya menjelaskan apa yang berbeda.
+
+Urutan di dalam setiap bagian mengikuti **urutan kerja nyata**, bukan urutan menu: kerangka blok dibuat sebelum
+estimasi (estimasi butuh blok untuk diisi), sub-blocking sebelum estimasi (mengubah geometri bloknya), dan
+estimasi waste sesudah estimasi ore (mewarisi variogram domain ore terdekat). Setiap bab mencantumkan nama
+Bagiannya di kepala halaman, dan daftar isi dikelompokkan per Bagian. Totalnya 39 bab.
 
 ### 3. Petunjuk Teknis & Tutorial Update
 - **Petunjuk Teknis** bagian **6 (baru)**: kampanye pemboran, tiga peran database, set merge sebagai pandangan
@@ -1707,3 +1713,19 @@ dikelompokkan per Bagian.
 > Catatan penting yang diperjelas di ketiga dokumen: pemotongan interval **tepat di permukaan** hanya terjadi
 > pada **berkas export**. Untuk statistik, komposit, Geostatistik dan **estimasi**, interval dinilai **utuh atau
 > gugur** dari **titik tengahnya**.
+
+### 4. Mengapa estimasi waste tetap dihitung terpisah dari ore
+Pertanyaan yang sering muncul. Di **antarmuka** waste tidak terpisah — ia adalah bagian **③** di dalam menu
+**Model Estimation** (dan di dalam **Stratified-Laterite** untuk jalur berlapis): satu run, satu riwayat, satu
+block model keluar. Yang terpisah adalah **populasi estimasinya**, dan itu disengaja:
+
+| Alasan | Akibat bila ore dan waste disatukan |
+|---|---|
+| **Stationaritas / hard boundary** | batas wireframe ore adalah lompatan kadar, bukan gradien. Satu populasi membuat kriging meratakan kadar melintasi batas itu — blok waste di luar vein terangkat oleh komposit vein, blok ore di dalam tertarik turun. Yang terukur bukan dilusi nyata melainkan **dilusi yang disebar interpolator** |
+| **Dua populasi statistik** | komposit vein bermean tinggi, CV ~1,2–1,9, nugget tinggi; komposit waste mendekati batas deteksi dengan range jauh lebih panjang. Satu variogram tidak mewakili keduanya |
+| **Tujuan pelaporan berbeda** | hasil waste ditandai `domain_est = WASTE`, `est_type = 3` dan **tidak ikut** pelaporan sumber daya; kadarnya untuk dilusi, ore loss dan perencanaan pit |
+
+Integrasinya tetap ada di tempat yang benar: tiap blok waste dikrige memakai **variogram dan elipsoid domain ore
+terdekat** selama jaraknya di dalam ambang, jadi kontinuitas lokalnya **diwarisi** dari pemodelan ore. Hanya blok
+yang terlalu jauh dari domain mana pun yang jatuh ke IDW (`est_pass = 9`). Penjelasan lengkapnya ada di
+**Petunjuk Teknis bagian 9.2**.
