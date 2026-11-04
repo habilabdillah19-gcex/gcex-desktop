@@ -434,19 +434,28 @@ jobs:
           python tools/rilis/kemas_rilis.py $v dist rilis build-rel/DB-Ex_Data_Dummy 2>&1 | Tee-Object -FilePath kemas.log
           if ($LASTEXITCODE -ne 0) { Get-Content kemas.log -Tail 12 | ForEach-Object { Write-Host ("::error::kemas " + $_) }; throw "gagal mengemas rilis" }
           $files = @(Get-ChildItem rilis -File | ForEach-Object { $_.FullName })
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -eq 0) { gh release delete $tag --cleanup-tag --yes; if ($LASTEXITCODE -ne 0) { throw "gagal menghapus release lama $tag" } }
+          # Release TIDAK dihapus lebih dulu. Dulu langkah ini menghapus Release lama lalu membuatnya
+          # kembali; bila run dibatalkan / gagal di ANTARA dua langkah itu, repo ditinggalkan TANPA
+          # rilis sama sekali. Itu benar-benar terjadi 4 Nov 2026: beberapa sesi mendorong beruntun,
+          # run yang sedang menerbitkan disalip dan dibatalkan sesudah penghapusan, dan v0.36.1
+          # (berisi installer GC-Ex 0.24.24 + Block Model 0.24.23) lenyap.
+          # Sekarang tag dipindahkan ke commit ini tanpa menyentuh Release-nya, lalu isinya
+          # diperbarui di tempat. Pada titik mana pun Release selalu ada.
+          $cr = "rilis/GC-Ex-${v}_CATATAN_RILIS.md"
+          git tag -f $tag $env:GITHUB_SHA
+          git push -f origin "refs/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal memindahkan tag $tag - arsip kode sumber rilis bisa tertinggal di commit lama" }
           # coba sampai 3x: satu kali gangguan jaringan saat mengunggah installer besar dulu langsung
           # menggagalkan langkah ini tanpa pesan (Release 0.23.3 tidak terbit)
-          $cr = "rilis/GC-Ex-${v}_CATATAN_RILIS.md"
           $ok = $false
           for ($i = 1; $i -le 3 -and -not $ok; $i++) {
             gh release view $tag *> $null
             if ($LASTEXITCODE -ne 0) {
               $o = gh release create $tag @files --target $env:GITHUB_SHA --title "GC-Ex $v" --notes-file $cr 2>&1
             } else {
-              # release sudah terbentuk tapi sebagian file gagal terunggah -> lengkapi
-              $o = gh release upload $tag @files --clobber 2>&1
+              # Release sudah ada: perbarui judul & catatan, lalu timpa berkasnya (--clobber)
+              $o = gh release edit $tag --title "GC-Ex $v" --notes-file $cr 2>&1
+              if ($LASTEXITCODE -eq 0) { $o = gh release upload $tag @files --clobber 2>&1 }
             }
             if ($LASTEXITCODE -eq 0) { $ok = $true; break }
             $o | Select-Object -Last 10 | ForEach-Object { Write-Host ("::warning::gh coba-$i " + $_) }
@@ -462,6 +471,15 @@ jobs:
           $ada = @(gh release view $tag --json assets --jq '.assets[].name')
           $kurang = @($files | ForEach-Object { Split-Path $_ -Leaf } | Where-Object { $ada -notcontains $_ })
           if ($kurang) { Write-Host ("::error::gh file belum terunggah: " + ($kurang -join ', ')); throw "release $tag tidak lengkap" }
+          # buang aset lama yang tidak lagi diproduksi run ini (mis. installer versi sebelumnya),
+          # dikerjakan SESUDAH semua berkas baru dipastikan ada supaya rilis tidak pernah kosong
+          $nama = @($files | ForEach-Object { Split-Path $_ -Leaf })
+          foreach ($a in $ada) {
+            if ($nama -notcontains $a) {
+              gh release delete-asset $tag $a --yes
+              if ($LASTEXITCODE -eq 0) { Write-Host ("::notice::aset lama dibuang: " + $a) }
+            }
+          }
           exit 0
 
       # Artifact Actions = cadangan jangka pendek saja; sumber resmi installer adalah GitHub Release.

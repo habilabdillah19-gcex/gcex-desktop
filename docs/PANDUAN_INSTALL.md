@@ -1560,3 +1560,29 @@ Aturan digabung dengan **AND** atau **OR**, dinilai **per interval**; sebuah hol
 | `Dataset aktif = ikut` | `EX-01, GC-01` |
 | `HoleID salah satu EX-01, GC-01` | `EX-01, GC-01` |
 | Sambungan `domOK` | 3 dari 7 interval — **sama persis** dengan hasil filter; begitu filter dimatikan kembali 7 dari 7 |
+
+## 78. CI: Release tidak lagi dihapus sebelum dibuat ulang (tanpa kenaikan versi aplikasi)
+
+Perbaikan CI; isi installer tidak berubah, jadi tidak ada versi aplikasi yang dinaikkan.
+
+### Apa yang terjadi
+Karena tag Release memakai versi **tertinggi** di antara ketiga aplikasi, beberapa push berturut-turut bisa memakai tag yang sama. Langkah penerbitan dulu bekerja begini:
+
+1. kalau Release dengan tag itu sudah ada → **hapus** (`gh release delete --cleanup-tag`);
+2. buat Release baru berisi berkas hasil build.
+
+Bila run **dibatalkan atau gagal di antara langkah 1 dan 2**, repo ditinggalkan **tanpa rilis sama sekali**.
+
+Itu benar-benar terjadi pada 4 November 2026: beberapa sesi mendorong beruntun, run yang sedang menerbitkan disalip dan dibatalkan tepat sesudah penghapusan, dan **`v0.36.1` lenyap** — padahal di dalamnya ada `GC-Ex-Drillhole-Setup-0.24.24.exe` dan `GC-Ex-Setup-0.24.23.exe`. Untuk sementara rilis terbaru mundur ke `v0.35.3` yang hanya berisi DB-Ex, sehingga installer GC-Ex tidak bisa diunduh siapa pun.
+
+### Perbaikannya
+Release **tidak pernah dihapus** lagi:
+
+1. tag dipindahkan ke commit baru dengan `git tag -f` + `git push -f` — Release-nya tidak disentuh, dan arsip kode sumbernya ikut menunjuk commit baru;
+2. judul dan catatan rilis diperbarui di tempat (`gh release edit`);
+3. berkas ditimpa dengan `gh release upload --clobber`;
+4. **sesudah** semua berkas baru dipastikan lengkap, aset lama yang tidak lagi diproduksi run ini — misalnya installer versi sebelumnya — baru dibuang satu per satu.
+
+Pada titik mana pun selama proses ini, Release selalu ada beserta isinya. Run yang dibatalkan paling buruk hanya meninggalkan rilis dengan isi campuran lama-baru, bukan rilis yang hilang.
+
+Kegagalan memindahkan tag tidak lagi menggagalkan penerbitan; ia hanya memunculkan peringatan bahwa arsip kode sumber bisa tertinggal di commit lama.
