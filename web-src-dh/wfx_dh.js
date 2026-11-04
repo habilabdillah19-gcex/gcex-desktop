@@ -157,6 +157,52 @@
     return { az: az, c: [mx, my], panjang: Math.max(50, (hi - lo) * 1.4) };
   }
 
+  /* tebal vein SEBENARNYA dari pasangan kontak HW/FW tiap intersep (median). Dipakai untuk
+     mendiagnosis selisih volume: solid RBF punya TEBAL MINIMUM, jadi vein yang lebih tipis dari
+     itu akan mengembang -- dan merapatkan spasi section tidak akan menolong sedikit pun. */
+  function tebalKontak(domId) {
+    if (!fn('gmContacts')) return null;
+    var C = gmContacts(domId);
+    if (!C || !C.L || !C.L.length) return null;
+    var T = C.L.map(function (c) {
+      return Math.hypot(c.hw.x - c.fw.x, c.hw.y - c.fw.y, c.hw.z - c.fw.z);
+    }).filter(function (v) { return isFinite(v) && v > 0; }).sort(function (a, b) { return a - b; });
+    if (!T.length) return null;
+    return { n: T.length, med: T[T.length >> 1], min: T[0], max: T[T.length - 1] };
+  }
+
+  /* diagnosis selisih volume: sebut SEBAB yang paling mungkin, bukan saran umum */
+  function diagnosa(d, Vwf, V2, st) {
+    var P = fn('imPar') ? imPar(d) : {}, minT = +P.minT || 1, aoi = +P.aoi || 0;
+    var tb = tebalKontak(d.id), tav = st && isFinite(st.tav) ? st.tav : null;
+    var sel = (Vwf && V2 != null) ? 100 * (V2 - Vwf) / Vwf : null;
+    var o = { sel: sel, minT: minT, aoi: aoi, tb: tb, tav: tav, sebab: '', saran: '' };
+    if (sel == null) return o;
+    if (sel > 15) {
+      if (tb && tb.med < minT * 0.95) {
+        o.sebab = 'tebal vein sebenarnya (median kontak HW&ndash;FW) <b>' + N(tb.med, 2) + ' m</b>, ' +
+                  'sedangkan <b>tebal minimum solid ' + N(minT, 2) + ' m</b>' +
+                  (tav != null ? ' dan tebal rata-rata solid ' + N(tav, 2) + ' m' : '') +
+                  ' &mdash; solid dipatok di tebal minimumnya, jadi mengembang sekitar ' +
+                  N(100 * (minT / tb.med - 1), 0) + '%';
+        o.saran = 'Turunkan <b>Tebal minimum</b> di Geomodeller Vein &#9315; menjadi &le; ' + N(tb.med, 2) +
+                  ' m, lalu serap ulang. <b>Merapatkan spasi section tidak akan menolong</b> untuk sebab ini.';
+      } else if (aoi > 0) {
+        o.sebab = 'solid diperpanjang searah strike oleh <b>radius pengaruh ' + N(aoi, 1) + ' m</b> di luar ' +
+                  'ujung irisan wireframe' + (tav != null ? ', tebal rata-rata solid ' + N(tav, 2) + ' m' : '');
+        o.saran = 'Kecilkan <b>radius pengaruh strike</b> di Geomodeller Vein &#9315;, atau rapatkan spasi section ' +
+                  'supaya ujung wireframe terwakili.';
+      } else {
+        o.saran = 'Rapatkan spasi section lalu serap ulang ke domain yang sama.';
+      }
+    } else if (sel < -15) {
+      o.sebab = 'bagian wireframe tidak terwakili: irisan terlalu jarang, atau ada irisan terbuka / terlalu kecil yang dilewati';
+      o.saran = 'Rapatkan spasi section lalu serap ulang ke domain yang sama.';
+    }
+    return o;
+  }
+  window.wfDiag = diagnosa;
+
   window.wfSerap = function () {
     var M = models();
     var m = M[WFX.o.mi | 0];
@@ -242,22 +288,21 @@
       try { if (fn('modeChanged')) modeChanged(); } catch (e) {}
       var V2 = null;
       try { if (fn('imSync')) imSync(); var R2 = meGrpR(d); V2 = R2 && R2.st ? R2.st.vol : null; } catch (e) {}
-      var sel = (Vwf && V2 != null) ? 100 * (V2 - Vwf) / Vwf : null;
+      var st2 = null; try { st2 = meGrpR(d).st; } catch (e) {}
+      var Dg = diagnosa(d, Vwf, V2, st2), sel = Dg.sel;
       lap({ nama: '5. Solid GC-Ex (RBF)', hasil: V2 != null ? '<b>' + N(V2) + '</b> m&sup3;' : '<span class=warn>belum terbentuk</span>',
             lewat: V2 == null,
             ket: sel != null
               ? 'volume wireframe ' + N(Vwf) + ' m&sup3; &rarr; solid ' + N(V2) + ' m&sup3; &middot; selisih <b>' +
                 (sel >= 0 ? '+' : '') + N(sel, 1) + '%</b>' +
-                (Math.abs(sel) > 10 ? ' <span class=warn>&mdash; rapatkan spasi section lalu serap ulang</span>'
-                                    : ' &mdash; dalam batas wajar untuk rekonstruksi')
+                (Dg.sebab ? '<br><span class=warn>Sebab:</span> ' + Dg.sebab : (Math.abs(sel) <= 15 ? ' &mdash; dalam batas wajar untuk rekonstruksi' : ''))
               : 'periksa string HW / FW di penampang' });
       WFX.log.pesan = 'Domain <b>' + E(d.name) + '</b> sekarang domain GC-Ex biasa: string kontrolnya bisa ditarik, ' +
         'section bisa ditambah, dan solidnya <b>ikut berubah saat ada bor baru</b> &mdash; jalankan ' +
         '<b>Autorun Wireframe</b> sesudah flagging bor baru, string hasil edit tangan tidak akan ditimpa. ' +
         'Untuk estimasi, lanjutkan ke Geostatistik lalu simpan parameternya ke domain ini.' +
-        (Math.abs(sel || 0) > 10 ? '<br><br><span class=warn>Selisih volume ' + N(sel, 1) + '% cukup besar.</span> ' +
-          'Rekonstruksi memakai irisan tiap ' + N(sp, 1) + ' m; bagian wireframe yang lebih halus dari itu tidak terwakili. ' +
-          'Rapatkan spasi section dan serap ulang ke domain yang sama.' : '');
+        (Dg.saran ? '<br><br><span class=warn>Selisih volume ' + N(sel, 1) + '%.</span> ' +
+          (Dg.sebab ? 'Sebab yang paling mungkin: ' + Dg.sebab + '.<br>' : '') + Dg.saran : '');
       kotak();
       try { gmDirty(); } catch (e) {}
       try { if (window.PT && PT.render) PT.render(true); } catch (e) {}

@@ -450,8 +450,14 @@ ch('Wireframe Leapfrog menjadi domain GC-Ex', '<p>Pekerjaan yang paling sering t
  + '<h3>Kontrol mutu: selisih volume</h3>'
  + '<p>Analogi dengan import <code>.mdl</code> tidak sepenuhnya tepat, dan ini perlu dipahami. Block model <code>.mdl</code> masuk <b>persis apa adanya</b>. Wireframe <b>tidak</b>: ia diresample sesuai spasi section, lalu RBF menghaluskannya. Karena itu langkah 5 selalu melaporkan:</p>'
  + kv([('Volume wireframe &rarr; volume solid', 'beserta <b>selisih persennya</b>'),
-       ('Selisih di bawah ~10%', 'wajar untuk rekonstruksi'),
-       ('Selisih lebih besar', 'peringatan muncul: <b>rapatkan spasi section lalu serap ulang</b> ke domain yang sama')])
+       ('Selisih di bawah ~15%', 'wajar untuk rekonstruksi'),
+       ('Selisih lebih besar', 'GC-Ex <b>menyebut sebabnya</b> dan saran yang sesuai sebab itu &mdash; bukan saran umum')])
+ + '<p>Diagnosisnya memakai angka yang terukur, yaitu <b>tebal vein sebenarnya</b>: median jarak antara pasangan titik kontak HW dan FW di setiap intersep bor.</p>'
+ + '<table class="t"><tr><th>Sebab terdeteksi</th><th>Saran</th></tr>'
+ + '<tr><td>Tebal vein sebenarnya <b>lebih tipis</b> daripada <b>Tebal minimum</b> solid</td><td>turunkan Tebal minimum di Geomodeller Vein &#9315;. <b>Merapatkan spasi section tidak akan menolong sedikit pun</b> untuk sebab ini</td></tr>'
+ + '<tr><td>Solid <b>memanjang searah strike</b> di luar ujung irisan wireframe (radius pengaruh)</td><td>kecilkan radius pengaruh strike, atau rapatkan spasi section supaya ujung wireframe terwakili</td></tr>'
+ + '<tr><td>Volume solid justru <b>kurang</b> dari volume wireframe</td><td>irisan terlalu jarang, atau ada irisan terbuka / terlalu kecil yang dilewati &mdash; rapatkan spasi section</td></tr></table>'
+ + why('Tanpa diagnosis ini, saran yang muncul akan selalu &ldquo;rapatkan spasi section&rdquo; &mdash; dan untuk vein yang lebih tipis daripada tebal minimum solid, saran itu <b>salah</b>: serapat apa pun irisannya, solid tetap dipatok di tebal minimumnya. Saran yang salah lebih berbahaya daripada tidak ada saran, karena waktu terbuang dan sebab sebenarnya tidak tersentuh.')
  + tip('Spasi section adalah pengendali kesetiaan bentuk. Untuk vein tipis, pakai spasi serapat spasi bor atau lebih rapat. Bagian wireframe yang lebih halus daripada spasi irisan memang tidak akan terwakili &mdash; itu bukan kesalahan, itu konsekuensi resampling, dan angka selisih volume membuatnya terukur, bukan tersembunyi.')
  + warn('Bila wireframe <b>tidak tertutup rapat</b> (GC-Ex menghitung sisi terbuka), uji titik-di-dalam tidak bisa dipercaya: flag interval bisa salah dan volumenya tidak bermakna. Rapikan dulu di Leapfrog. GC-Ex tetap memberi tahu dan tetap mau mengerjakannya, tetapi angkanya jangan dipakai.')
  + '<h3>Serap ulang saat rekan Anda memperbarui model di Leapfrog</h3>'
@@ -858,7 +864,10 @@ ch('Autorun pada laterit: lapisan & estimasi', '<p>Jalur berlapis punya autorun-
  + '<p>Bila <b>belum ada</b> lapisan berkode, menu node &rarr; <b>Usulkan lapisan dari log geologi&hellip;</b> membaca kolom geologi yang dipilih, lalu untuk tiap kode menghitung <b>kedalaman tengah rata-rata</b> (ditimbang panjang interval) dan membuat satu lapisan per kode, <b>diurutkan dari yang paling atas</b>.</p>'
  + kv([('Yang dilewati', 'kode yang ditembus lebih sedikit dari ambang <b>Minimal hole per kode</b> (bawaan 3) &mdash; dilaporkan, tidak dijadikan lapisan'),
        ('Urutan lapisan', 'mengikuti kedalaman tengah rata-rata, sehingga limonit di atas, saprolit di bawahnya, dan seterusnya'),
+       ('Batas jumlah', 'maksimal <b>12 lapisan</b>. Lebih dari itu dilaporkan: kolom tersebut kemungkinan <b>litologi biasa</b>, bukan kode lapisan &mdash; pilih kolom lain'),
        ('Bila lapisan sudah ada', 'pemetaan kode <b>tidak diubah</b> &mdash; autorun hanya membangun ulang permukaannya')])
+ + '<p>Pada data latihan laterit, hasilnya persis urutan stratigrafinya: <b>TS</b> 0,9 m &rarr; <b>LIM</b> 4,2 m &rarr; <b>SAP</b> 11,3 m &rarr; <b>BRK</b> 17,6 m.</p>'
+ + warn('Membangun permukaan adalah perhitungan <b>berat</b>: jumlah lapisan dikali jumlah sel grid. Bila hasilnya melebihi beberapa juta sel, GC-Ex <b>meminta konfirmasi</b> lebih dulu, menyebut ukuran gridnya, dan memperingatkan bahwa tampilan akan berhenti merespons beberapa menit. Jalan keluarnya: <b>Batal</b>, perbesar <b>Ukuran sel</b> di &#9313; Permukaan, lalu jalankan lagi.', 'Perhitungan berat')
  + warn('Usulan ini berdasarkan <b>kedalaman</b>, bukan pengertian geologi. Kode yang hadir di dua posisi stratigrafi, atau kode campuran, akan salah tempat. Karena itu laporannya selalu mengingatkan: <b>periksa dan perbaiki pemetaan kodenya</b> di &#9312; Lapisan &amp; kode log sebelum mengestimasi. Yang diotomatiskan adalah pekerjaan mengetiknya, bukan penafsirannya.')
  + '<h3>2. Permukaan atap / lantai</h3>'
  + '<p>Sesudah lapisan ada, autorun langsung membangun permukaannya dan melaporkan ukuran gridnya. Ini langkah yang di jalur vein setara dengan solid RBF.</p>'

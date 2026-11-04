@@ -253,6 +253,19 @@
     return C.length ? C[0] : -1;
   }
 
+  /* perkiraan ukuran grid permukaan, untuk memperingatkan sebelum perhitungan berat dimulai */
+  function perkiraanGrid() {
+    var C = window.collars || [], x0 = 1e18, x1 = -1e18, y0 = 1e18, y1 = -1e18;
+    C.forEach(function (c) { x0 = Math.min(x0, c[1]); x1 = Math.max(x1, c[1]); y0 = Math.min(y0, c[2]); y1 = Math.max(y1, c[2]); });
+    if (!C.length) return null;
+    var cell = Math.max(0.5, +((window.SL && SL.o && SL.o.cell) || 10));
+    var ext = +((window.SL && SL.o && SL.o.ext) || 0);
+    var nx = Math.ceil((x1 - x0 + 2 * ext) / cell) + 1, ny = Math.ceil((y1 - y0 + 2 * ext) / cell) + 1;
+    return { nx: nx, ny: ny, sel: nx * ny, cell: cell };
+  }
+
+  var MAXLAP = 12;   /* lebih dari ini hampir pasti bukan lapisan, melainkan kolom litologi biasa */
+
   window.arLap = function () {
     if (AR.busy) { alert('Autorun lain sedang berjalan.'); return; }
     if (!window.SL) { alert('Menu Stratified-Laterite belum siap.'); return; }
@@ -266,8 +279,17 @@
     if (!adaKode) {
       SL.ci = ci;
       if (AR.o.ulang || !(SL.L || []).length) SL.L = [];
-      U.forEach(function (u) {
-        if (u.nHole < Math.max(1, +AR.o.minHole || 3)) { lewat.push(u.nama + ' (' + u.nHole + ' hole)'); return; }
+      var layak = U.filter(function (u) { return u.nHole >= Math.max(1, +AR.o.minHole || 3); });
+      U.forEach(function (u) { if (u.nHole < Math.max(1, +AR.o.minHole || 3)) lewat.push(u.nama + ' (' + u.nHole + ' hole)'); });
+      if (layak.length > MAXLAP) {
+        baris({ nama: 'Terlalu banyak kode', lewat: 1,
+                ket: E((window.CAT[ci] && CAT[ci].name) || 'kolom ini') + ' punya <b>' + layak.length + '</b> kode yang layak. ' +
+                     'Endapan berlapis jarang punya lebih dari ' + MAXLAP + ' lapisan; kolom ini kemungkinan litologi biasa, ' +
+                     'bukan kode lapisan. Hanya <b>' + MAXLAP + ' teratas</b> yang diusulkan \u2014 periksa sendiri di ' +
+                     '\u2460 Lapisan &amp; kode log, atau pilih kolom lain.' });
+        layak = layak.slice(0, MAXLAP);
+      }
+      layak.forEach(function (u) {
         var l = slNewL({ name: u.nama, codes: [u.code] }, SL.L.length);
         SL.L.push(l); buat++;
         baris({ nama: u.nama, hasil: 'lapisan ke-' + SL.L.length + ' dibuat',
@@ -283,7 +305,26 @@
       });
     }
 
-    /* bangun permukaan atap / lantai */
+    /* Perhitungan permukaan berjalan SINKRON dan bisa lama (K lapisan x grid). Dua pengaman:
+       (a) peringatkan + minta konfirmasi bila besar, (b) tunda satu putaran supaya dialog
+       laporan tergambar lebih dulu -- tanpa ini aplikasi tampak membeku tanpa penjelasan. */
+    var G = perkiraanGrid(), nL = (SL.L || []).length;
+    if (G && nL && nL * G.sel > 4e6) {
+      baris({ nama: 'Permukaan atap / lantai', lewat: 1,
+              ket: '<b>' + nL + '</b> lapisan &times; grid ' + N(G.nx) + '&times;' + N(G.ny) + ' sel (@ ' + N(G.cell, 1) + ' m) = ' +
+                   N(nL * G.sel) + ' sel. Perhitungan sebesar itu membuat tampilan berhenti merespons beberapa menit.' });
+      if (!confirm('Akan membangun ' + nL + ' permukaan pada grid ' + G.nx + ' x ' + G.ny + ' sel (@ ' + G.cell + ' m).\n' +
+                   'Perhitungannya berjalan di jendela ini dan tampilan akan berhenti merespons beberapa menit.\n\n' +
+                   'Lanjutkan? (Batal = perbesar dulu "Ukuran sel" di Permukaan, atau kurangi lapisannya)')) {
+        usai('Dibatalkan sebelum membangun permukaan. Lapisan yang sudah diusulkan tetap tersimpan; perbesar ' +
+             '<b>Ukuran sel</b> di \u2461 Permukaan lalu jalankan lagi.');
+        return;
+      }
+    }
+    setTimeout(function () { bangunPermukaan(adaKode, buat); }, 60);
+  };
+
+  function bangunPermukaan(adaKode, buat) {
     var R = null, err = '';
     try { if (fn('slDirty')) slDirty(); R = fn('slEnsure') ? slEnsure() : null; err = SL.err || ''; } catch (e) { err = e.message || String(e); }
     if (R) {
@@ -297,7 +338,7 @@
                  : buat + ' lapisan diusulkan dari log geologi, diurutkan dari yang paling atas. ' +
                    '<b>Periksa dan perbaiki pemetaan kodenya</b> di ① Lapisan & kode log sebelum mengestimasi &mdash; ' +
                    'usulan ini hanya berdasarkan kedalaman, bukan pengertian geologi.');
-  };
+  }
 
   /* ================= TAHAP 1a — AUTORUN ESTIMATION UPDATE (VEIN) ================= */
 
@@ -372,6 +413,12 @@
       var c = fn('wsCheck') ? wsCheck() : null;
       if (c && c.err) { baris({ nama: 'Estimasi waste', lewat: 1, ket: E(c.err) }); return lanjutLaporan(); }
       try { wsRun(); } catch (e) { baris({ nama: 'Estimasi waste', lewat: 1, ket: 'gagal: ' + E(e.message || e) }); return lanjutLaporan(); }
+      /* wsRun bisa berhenti sendiri tanpa membuat job (mis. tidak ada blok di luar solid). Itu
+         berarti TIDAK ADA yang dijalankan -- jangan dilaporkan "selesai". */
+      if (!(window.WS && WS.job)) {
+        baris({ nama: 'Estimasi waste', lewat: 1, ket: E(String((window.WS && WS.msg) || 'tidak ada yang dijalankan').replace(/<[^>]+>/g, '')) });
+        return lanjutLaporan();
+      }
       tunggu(function () { return window.WS && WS.job; }, function (err) {
         baris({ nama: 'Estimasi waste', hasil: err ? '<span class=warn>' + err + '</span>' : 'selesai',
                 ket: (window.WS && WS.msg ? String(WS.msg).replace(/<[^>]+>/g, '') : '') +
@@ -421,6 +468,10 @@
       var c = fn('wlCheck') ? wlCheck() : null;
       if (c && c.err) { baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: E(c.err) }); return usai('Selesai.'); }
       try { wlRun(); } catch (e) { baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: 'gagal: ' + E(e.message || e) }); return usai('Selesai.'); }
+      if (!(window.WL && WL.job)) {
+        baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: E(String((window.WL && WL.msg) || 'tidak ada yang dijalankan').replace(/<[^>]+>/g, '')) });
+        return usai('Estimasi lapisan selesai. Estimasi waste laterit tidak dijalankan \u2014 lihat alasannya di baris terakhir.');
+      }
       tunggu(function () { return window.WL && WL.job; }, function (e2) {
         baris({ nama: 'Estimasi waste laterit', hasil: e2 ? '<span class=warn>' + e2 + '</span>' : 'selesai',
                 ket: (window.WL && WL.msg ? String(WL.msg).replace(/<[^>]+>/g, '') : '') +

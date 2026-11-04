@@ -9971,6 +9971,52 @@ function ogFanDraw() {
     return { az: az, c: [mx, my], panjang: Math.max(50, (hi - lo) * 1.4) };
   }
 
+  /* tebal vein SEBENARNYA dari pasangan kontak HW/FW tiap intersep (median). Dipakai untuk
+     mendiagnosis selisih volume: solid RBF punya TEBAL MINIMUM, jadi vein yang lebih tipis dari
+     itu akan mengembang -- dan merapatkan spasi section tidak akan menolong sedikit pun. */
+  function tebalKontak(domId) {
+    if (!fn('gmContacts')) return null;
+    var C = gmContacts(domId);
+    if (!C || !C.L || !C.L.length) return null;
+    var T = C.L.map(function (c) {
+      return Math.hypot(c.hw.x - c.fw.x, c.hw.y - c.fw.y, c.hw.z - c.fw.z);
+    }).filter(function (v) { return isFinite(v) && v > 0; }).sort(function (a, b) { return a - b; });
+    if (!T.length) return null;
+    return { n: T.length, med: T[T.length >> 1], min: T[0], max: T[T.length - 1] };
+  }
+
+  /* diagnosis selisih volume: sebut SEBAB yang paling mungkin, bukan saran umum */
+  function diagnosa(d, Vwf, V2, st) {
+    var P = fn('imPar') ? imPar(d) : {}, minT = +P.minT || 1, aoi = +P.aoi || 0;
+    var tb = tebalKontak(d.id), tav = st && isFinite(st.tav) ? st.tav : null;
+    var sel = (Vwf && V2 != null) ? 100 * (V2 - Vwf) / Vwf : null;
+    var o = { sel: sel, minT: minT, aoi: aoi, tb: tb, tav: tav, sebab: '', saran: '' };
+    if (sel == null) return o;
+    if (sel > 15) {
+      if (tb && tb.med < minT * 0.95) {
+        o.sebab = 'tebal vein sebenarnya (median kontak HW&ndash;FW) <b>' + N(tb.med, 2) + ' m</b>, ' +
+                  'sedangkan <b>tebal minimum solid ' + N(minT, 2) + ' m</b>' +
+                  (tav != null ? ' dan tebal rata-rata solid ' + N(tav, 2) + ' m' : '') +
+                  ' &mdash; solid dipatok di tebal minimumnya, jadi mengembang sekitar ' +
+                  N(100 * (minT / tb.med - 1), 0) + '%';
+        o.saran = 'Turunkan <b>Tebal minimum</b> di Geomodeller Vein &#9315; menjadi &le; ' + N(tb.med, 2) +
+                  ' m, lalu serap ulang. <b>Merapatkan spasi section tidak akan menolong</b> untuk sebab ini.';
+      } else if (aoi > 0) {
+        o.sebab = 'solid diperpanjang searah strike oleh <b>radius pengaruh ' + N(aoi, 1) + ' m</b> di luar ' +
+                  'ujung irisan wireframe' + (tav != null ? ', tebal rata-rata solid ' + N(tav, 2) + ' m' : '');
+        o.saran = 'Kecilkan <b>radius pengaruh strike</b> di Geomodeller Vein &#9315;, atau rapatkan spasi section ' +
+                  'supaya ujung wireframe terwakili.';
+      } else {
+        o.saran = 'Rapatkan spasi section lalu serap ulang ke domain yang sama.';
+      }
+    } else if (sel < -15) {
+      o.sebab = 'bagian wireframe tidak terwakili: irisan terlalu jarang, atau ada irisan terbuka / terlalu kecil yang dilewati';
+      o.saran = 'Rapatkan spasi section lalu serap ulang ke domain yang sama.';
+    }
+    return o;
+  }
+  window.wfDiag = diagnosa;
+
   window.wfSerap = function () {
     var M = models();
     var m = M[WFX.o.mi | 0];
@@ -10056,22 +10102,21 @@ function ogFanDraw() {
       try { if (fn('modeChanged')) modeChanged(); } catch (e) {}
       var V2 = null;
       try { if (fn('imSync')) imSync(); var R2 = meGrpR(d); V2 = R2 && R2.st ? R2.st.vol : null; } catch (e) {}
-      var sel = (Vwf && V2 != null) ? 100 * (V2 - Vwf) / Vwf : null;
+      var st2 = null; try { st2 = meGrpR(d).st; } catch (e) {}
+      var Dg = diagnosa(d, Vwf, V2, st2), sel = Dg.sel;
       lap({ nama: '5. Solid GC-Ex (RBF)', hasil: V2 != null ? '<b>' + N(V2) + '</b> m&sup3;' : '<span class=warn>belum terbentuk</span>',
             lewat: V2 == null,
             ket: sel != null
               ? 'volume wireframe ' + N(Vwf) + ' m&sup3; &rarr; solid ' + N(V2) + ' m&sup3; &middot; selisih <b>' +
                 (sel >= 0 ? '+' : '') + N(sel, 1) + '%</b>' +
-                (Math.abs(sel) > 10 ? ' <span class=warn>&mdash; rapatkan spasi section lalu serap ulang</span>'
-                                    : ' &mdash; dalam batas wajar untuk rekonstruksi')
+                (Dg.sebab ? '<br><span class=warn>Sebab:</span> ' + Dg.sebab : (Math.abs(sel) <= 15 ? ' &mdash; dalam batas wajar untuk rekonstruksi' : ''))
               : 'periksa string HW / FW di penampang' });
       WFX.log.pesan = 'Domain <b>' + E(d.name) + '</b> sekarang domain GC-Ex biasa: string kontrolnya bisa ditarik, ' +
         'section bisa ditambah, dan solidnya <b>ikut berubah saat ada bor baru</b> &mdash; jalankan ' +
         '<b>Autorun Wireframe</b> sesudah flagging bor baru, string hasil edit tangan tidak akan ditimpa. ' +
         'Untuk estimasi, lanjutkan ke Geostatistik lalu simpan parameternya ke domain ini.' +
-        (Math.abs(sel || 0) > 10 ? '<br><br><span class=warn>Selisih volume ' + N(sel, 1) + '% cukup besar.</span> ' +
-          'Rekonstruksi memakai irisan tiap ' + N(sp, 1) + ' m; bagian wireframe yang lebih halus dari itu tidak terwakili. ' +
-          'Rapatkan spasi section dan serap ulang ke domain yang sama.' : '');
+        (Dg.saran ? '<br><br><span class=warn>Selisih volume ' + N(sel, 1) + '%.</span> ' +
+          (Dg.sebab ? 'Sebab yang paling mungkin: ' + Dg.sebab + '.<br>' : '') + Dg.saran : '');
       kotak();
       try { gmDirty(); } catch (e) {}
       try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
@@ -10422,6 +10467,19 @@ function ogFanDraw() {
     return C.length ? C[0] : -1;
   }
 
+  /* perkiraan ukuran grid permukaan, untuk memperingatkan sebelum perhitungan berat dimulai */
+  function perkiraanGrid() {
+    var C = window.collars || [], x0 = 1e18, x1 = -1e18, y0 = 1e18, y1 = -1e18;
+    C.forEach(function (c) { x0 = Math.min(x0, c[1]); x1 = Math.max(x1, c[1]); y0 = Math.min(y0, c[2]); y1 = Math.max(y1, c[2]); });
+    if (!C.length) return null;
+    var cell = Math.max(0.5, +((window.SL && SL.o && SL.o.cell) || 10));
+    var ext = +((window.SL && SL.o && SL.o.ext) || 0);
+    var nx = Math.ceil((x1 - x0 + 2 * ext) / cell) + 1, ny = Math.ceil((y1 - y0 + 2 * ext) / cell) + 1;
+    return { nx: nx, ny: ny, sel: nx * ny, cell: cell };
+  }
+
+  var MAXLAP = 12;   /* lebih dari ini hampir pasti bukan lapisan, melainkan kolom litologi biasa */
+
   window.arLap = function () {
     if (AR.busy) { alert('Autorun lain sedang berjalan.'); return; }
     if (!window.SL) { alert('Menu Stratified-Laterite belum siap.'); return; }
@@ -10435,8 +10493,17 @@ function ogFanDraw() {
     if (!adaKode) {
       SL.ci = ci;
       if (AR.o.ulang || !(SL.L || []).length) SL.L = [];
-      U.forEach(function (u) {
-        if (u.nHole < Math.max(1, +AR.o.minHole || 3)) { lewat.push(u.nama + ' (' + u.nHole + ' hole)'); return; }
+      var layak = U.filter(function (u) { return u.nHole >= Math.max(1, +AR.o.minHole || 3); });
+      U.forEach(function (u) { if (u.nHole < Math.max(1, +AR.o.minHole || 3)) lewat.push(u.nama + ' (' + u.nHole + ' hole)'); });
+      if (layak.length > MAXLAP) {
+        baris({ nama: 'Terlalu banyak kode', lewat: 1,
+                ket: E((window.CAT[ci] && CAT[ci].name) || 'kolom ini') + ' punya <b>' + layak.length + '</b> kode yang layak. ' +
+                     'Endapan berlapis jarang punya lebih dari ' + MAXLAP + ' lapisan; kolom ini kemungkinan litologi biasa, ' +
+                     'bukan kode lapisan. Hanya <b>' + MAXLAP + ' teratas</b> yang diusulkan \u2014 periksa sendiri di ' +
+                     '\u2460 Lapisan &amp; kode log, atau pilih kolom lain.' });
+        layak = layak.slice(0, MAXLAP);
+      }
+      layak.forEach(function (u) {
         var l = slNewL({ name: u.nama, codes: [u.code] }, SL.L.length);
         SL.L.push(l); buat++;
         baris({ nama: u.nama, hasil: 'lapisan ke-' + SL.L.length + ' dibuat',
@@ -10452,7 +10519,26 @@ function ogFanDraw() {
       });
     }
 
-    /* bangun permukaan atap / lantai */
+    /* Perhitungan permukaan berjalan SINKRON dan bisa lama (K lapisan x grid). Dua pengaman:
+       (a) peringatkan + minta konfirmasi bila besar, (b) tunda satu putaran supaya dialog
+       laporan tergambar lebih dulu -- tanpa ini aplikasi tampak membeku tanpa penjelasan. */
+    var G = perkiraanGrid(), nL = (SL.L || []).length;
+    if (G && nL && nL * G.sel > 4e6) {
+      baris({ nama: 'Permukaan atap / lantai', lewat: 1,
+              ket: '<b>' + nL + '</b> lapisan &times; grid ' + N(G.nx) + '&times;' + N(G.ny) + ' sel (@ ' + N(G.cell, 1) + ' m) = ' +
+                   N(nL * G.sel) + ' sel. Perhitungan sebesar itu membuat tampilan berhenti merespons beberapa menit.' });
+      if (!confirm('Akan membangun ' + nL + ' permukaan pada grid ' + G.nx + ' x ' + G.ny + ' sel (@ ' + G.cell + ' m).\n' +
+                   'Perhitungannya berjalan di jendela ini dan tampilan akan berhenti merespons beberapa menit.\n\n' +
+                   'Lanjutkan? (Batal = perbesar dulu "Ukuran sel" di Permukaan, atau kurangi lapisannya)')) {
+        usai('Dibatalkan sebelum membangun permukaan. Lapisan yang sudah diusulkan tetap tersimpan; perbesar ' +
+             '<b>Ukuran sel</b> di \u2461 Permukaan lalu jalankan lagi.');
+        return;
+      }
+    }
+    setTimeout(function () { bangunPermukaan(adaKode, buat); }, 60);
+  };
+
+  function bangunPermukaan(adaKode, buat) {
     var R = null, err = '';
     try { if (fn('slDirty')) slDirty(); R = fn('slEnsure') ? slEnsure() : null; err = SL.err || ''; } catch (e) { err = e.message || String(e); }
     if (R) {
@@ -10466,7 +10552,7 @@ function ogFanDraw() {
                  : buat + ' lapisan diusulkan dari log geologi, diurutkan dari yang paling atas. ' +
                    '<b>Periksa dan perbaiki pemetaan kodenya</b> di ① Lapisan & kode log sebelum mengestimasi &mdash; ' +
                    'usulan ini hanya berdasarkan kedalaman, bukan pengertian geologi.');
-  };
+  }
 
   /* ================= TAHAP 1a — AUTORUN ESTIMATION UPDATE (VEIN) ================= */
 
@@ -10541,6 +10627,12 @@ function ogFanDraw() {
       var c = fn('wsCheck') ? wsCheck() : null;
       if (c && c.err) { baris({ nama: 'Estimasi waste', lewat: 1, ket: E(c.err) }); return lanjutLaporan(); }
       try { wsRun(); } catch (e) { baris({ nama: 'Estimasi waste', lewat: 1, ket: 'gagal: ' + E(e.message || e) }); return lanjutLaporan(); }
+      /* wsRun bisa berhenti sendiri tanpa membuat job (mis. tidak ada blok di luar solid). Itu
+         berarti TIDAK ADA yang dijalankan -- jangan dilaporkan "selesai". */
+      if (!(window.WS && WS.job)) {
+        baris({ nama: 'Estimasi waste', lewat: 1, ket: E(String((window.WS && WS.msg) || 'tidak ada yang dijalankan').replace(/<[^>]+>/g, '')) });
+        return lanjutLaporan();
+      }
       tunggu(function () { return window.WS && WS.job; }, function (err) {
         baris({ nama: 'Estimasi waste', hasil: err ? '<span class=warn>' + err + '</span>' : 'selesai',
                 ket: (window.WS && WS.msg ? String(WS.msg).replace(/<[^>]+>/g, '') : '') +
@@ -10590,6 +10682,10 @@ function ogFanDraw() {
       var c = fn('wlCheck') ? wlCheck() : null;
       if (c && c.err) { baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: E(c.err) }); return usai('Selesai.'); }
       try { wlRun(); } catch (e) { baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: 'gagal: ' + E(e.message || e) }); return usai('Selesai.'); }
+      if (!(window.WL && WL.job)) {
+        baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: E(String((window.WL && WL.msg) || 'tidak ada yang dijalankan').replace(/<[^>]+>/g, '')) });
+        return usai('Estimasi lapisan selesai. Estimasi waste laterit tidak dijalankan \u2014 lihat alasannya di baris terakhir.');
+      }
       tunggu(function () { return window.WL && WL.job; }, function (e2) {
         baris({ nama: 'Estimasi waste laterit', hasil: e2 ? '<span class=warn>' + e2 + '</span>' : 'selesai',
                 ket: (window.WL && WL.msg ? String(WL.msg).replace(/<[^>]+>/g, '') : '') +

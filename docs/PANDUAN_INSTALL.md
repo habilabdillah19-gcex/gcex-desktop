@@ -1760,3 +1760,72 @@ Integrasinya tetap ada di tempat yang benar: tiap blok waste dikrige memakai **v
 terdekat** selama jaraknya di dalam ambang, jadi kontinuitas lokalnya **diwarisi** dari pemodelan ore. Hanya blok
 yang terlalu jauh dari domain mana pun yang jatuh ke IDW (`est_pass = 9`). Penjelasan lengkapnya ada di
 **Petunjuk Teknis bagian 9.2**.
+
+## 82. GC-Ex Drill Hole Ultimate 0.24.32 — Autorun & wireframe Leapfrog sebagai domain
+
+Empat node baru di Project Tree. Semuanya perintah, bukan panel — jadi panel kerja tidak bertambah panjang.
+
+### 1. Autorun Wireframe (di bawah Geomodeller Vein)
+Centang domain → *Jalankan untuk domain tercentang*. Untuk tiap domain: strike dihitung dari kontak flag →
+section dipasang tegak lurus strike → string ditarik di **semua** section → **solid dinyalakan** bila masih mati →
+solid rebuild sendiri.
+
+| Keadaan section | Yang dilakukan |
+|---|---|
+| Belum ada string | dibuat |
+| Ada string hasil autorun | diperbarui mengikuti flag terbaru |
+| Ada string yang **diedit tangan** | **dilewati**, dihitung di laporan |
+| Kontak flag < 2 | dilewati, dihitung di laporan |
+
+Jadi "dari nol" dan "melanjutkan" adalah perintah yang sama — keputusannya per section. Diuji idempoten:
+jalan kedua `made 0, rep 44`; dengan satu string diedit tangan `skip 1` dan titiknya tidak berubah.
+
+### 2. Autorun Estimation (update) (di bawah Model Estimation)
+Memakai **parameter tersimpan per domain apa adanya** — tidak ada fitting variogram otomatis. Domain tanpa
+parameter **dilewati** dengan alasan tertulis (*"di Geostatistik: fitting model, lalu Simpan ke domain"*).
+Sesudah domain selesai, lanjut ke estimasi waste lalu menyegarkan Reporting BM. Laporannya membandingkan
+kadar rata-rata dan tonase **dengan run sebelumnya**.
+
+### 3. Autorun Lapisan & Estimasi (di bawah Stratified-Laterite)
+Usulan lapisan dari kode log menurut **kedalaman tengah rata-rata** (ditimbang panjang interval), lalu permukaan
+atap/lantai, lalu estimasi unfold per lapisan + waste laterit. Diuji pada data laterit: TS 0,9 m → LIM 4,2 m →
+SAP 11,3 m → BRK 17,6 m — urutan stratigrafi yang benar.
+
+Pengaman: maksimal **12 lapisan** diusulkan (lebih dari itu dilaporkan sebagai "kemungkinan kolom litologi biasa,
+bukan kode lapisan"); bila lapisan × grid melebihi 4 juta sel muncul **konfirmasi** yang menyebut ukuran grid dan
+memperingatkan tampilan akan berhenti merespons; perhitungan beratnya ditunda supaya dialog laporan tergambar
+lebih dulu. Bila lapisan sudah ada, **pemetaan kode tidak diubah** — hanya permukaannya dibangun ulang.
+
+### 4. Wireframe luar (Leapfrog / Surpac) (di bawah Geomodeller Vein)
+Dua mode untuk dua tujuan berbeda:
+
+| | **Mode B — diserap** | **Mode A — eksak** |
+|---|---|---|
+| Jalur | mesh → irisan per section → string HW/FW → solid RBF | domain dikunci ke mesh; uji titik-di-dalam memakai mesh itu |
+| Bentuk | rekonstruksi (diresample + dihaluskan RBF) | **identik** dengan mesh Leapfrog |
+| Bisa diedit | **ya** — sudah jadi string kontrol GC-Ex | tidak |
+| Ikut bor baru | **ya**, lewat Autorun Wireframe | tidak |
+| Untuk | kerja harian: melanjutkan model geologist lain | audit: bandingkan tonase batas Leapfrog vs solid GC-Ex |
+
+Mode B satu perintah dengan tiga isian (wireframe, spasi section, nama domain). Mode A dipilih per domain di
+anak node. Mode A disambungkan pada **satu** fungsi pembaca solid domain (`meGrpR`), sehingga otomatis berlaku di
+estimasi, estimasi waste, sub-blocking, filter posisi dan pelaporan. Bila wireframe belum diimport ulang saat
+proyek dibuka, domain itu **otomatis kembali** memakai solid RBF dan node-nya menandai `(hilang)`.
+
+### 5. Kontrol mutu penyerapan — dengan diagnosis sebab
+Laporan penyerapan membandingkan **volume wireframe vs volume solid hasil serap** beserta selisih persennya, lalu
+**menyebut sebab yang paling mungkin** dan saran yang sesuai sebab itu:
+
+| Sebab terdeteksi | Saran |
+|---|---|
+| Tebal vein sebenarnya (median kontak HW–FW) < tebal minimum solid | turunkan **Tebal minimum**; *merapatkan spasi section tidak akan menolong* |
+| Solid memanjang di luar ujung irisan | kecilkan **radius pengaruh strike**, atau rapatkan spasi section |
+| Volume solid justru **kurang** | irisan terlalu jarang / ada irisan terbuka yang dilewati — rapatkan spasi |
+
+Mesh yang **tidak tertutup rapat** juga dilaporkan (jumlah sisi terbuka): pada mesh bocor uji titik-di-dalam tidak
+bisa dipercaya, sehingga flag interval maupun volumenya tidak bermakna.
+
+> Diuji di aplikasi sungguhan dengan data latihan dan berkas `QV_Lensa2_Leapfrog.obj`: **45 + 31 + 23 pemeriksaan
+> lulus, tanpa galat JavaScript.** Tiga cacat ditemukan dan diperbaiki sebelum rilis: autorun membuat string tanpa
+> menyalakan solid domainnya; *Autorun Lapisan* pada kolom litologi bisa membekukan aplikasi tanpa penjelasan; dan
+> langkah waste melaporkan "selesai" padahal tidak ada yang dijalankan.
