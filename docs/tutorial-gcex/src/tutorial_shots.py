@@ -165,6 +165,19 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(800);note('gsPos',ev("$('pos').value"));shot('domain_filter',PANEL)
     ev("if(!GS.open)gsToggle();gsRun()");pg.wait_for_timeout(1500);ev("gsTab('S')");pg.wait_for_timeout(600);shot('geostat_statistik')
     note('gsLabel',ev("GS.R&&GS.R.label"));note('gsN',ev("GS.R&&GS.R.C.length"));note('gsMean',ev("GS.R&&GS.R.st&&(+GS.R.st.wmean||+GS.R.st.mean).toFixed(3)"))
+    note('gsSt',ev("GS.R&&GS.R.st?{dec:isFinite(GS.R.dec)?+GS.R.dec.toFixed(3):null,cv:+GS.R.st.cv.toFixed(2),max:+GS.R.st.max.toFixed(2)}:null"))
+    # 0.24.24: kurva pemusatan logam (tab Statistik) & profil vertikal (tab Profil)
+    try:
+        ev("var e=document.getElementById('gMetal');if(e)e.scrollIntoView({block:'center'})");pg.wait_for_timeout(700);shot('geostat_logam')
+        note('mc',ev("(function(){var M=mcCalc(GS.R);return M?M.pts.map(q=>[q.p,+q.thr.toFixed(3),+q.m.toFixed(1)]):null;})()"))
+        try:WT=json.load(open(T+'fig_update/notes.json',encoding='utf-8')).get('WT_RL',250)
+        except Exception:WT=250
+        ev("gsTab('P');PF.S=pfDef();PF.bw=10;PF.ref='%s';PF.refLbl='paleo-muka air tanah';pfPanel()"%WT);pg.wait_for_timeout(1500)
+        ev("var e=document.getElementById('pfPlot');if(e)e.scrollIntoView({block:'center'})");pg.wait_for_timeout(700);shot('geostat_profil')
+        note('pf',ev("({lbl:PF.last.S.map(pfLbl),n:PF.last.nInt,rows:PF.last.rows.map(r=>[r.q,r.n].concat(r.v.map(v=>isFinite(v)?+v.toFixed(3):null)))})"))
+        ev("gsTab('S')");pg.wait_for_timeout(500)
+    except Exception as e:
+        note('errPf',str(e)[:300])
     ev("gsTab('V')");pg.wait_for_timeout(600);shot('geostat_variogram')
     ev("gsFitAuto()");pg.wait_for_timeout(800);ev("gsTab('F')");pg.wait_for_timeout(600);shot('geostat_anisotropi')
     ev("gsTab('M')");pg.wait_for_timeout(600);shot('geostat_model');note('model',ev("($('gsParam')||{}).textContent||''")[:900])
@@ -260,6 +273,15 @@ with sync_playwright() as pw:
     with pg.expect_download() as dl:ev("mapLayoutOut('png')")
     dl.value.save_as(IMG+fnl);print('shot',fnl)
     ev("uiTab('GM')");pg.wait_for_timeout(800)
+    # 16c. (0.24.24) Ore Geometry: kipas variogram GT & tebal intersep di bidang vein
+    try:
+        ev(DISMISS);ev("if(GS.open)gsToggle();if(VIEW2D)toggle2D();uiTab('OG');OG.sec='3'");pg.wait_for_timeout(2500)
+        ev("if(!OG.R)ogRunIc();ogPanel()");pg.wait_for_timeout(3500);ev("ogPanel()");pg.wait_for_timeout(1500)
+        ev("var e=document.getElementById('ogFanBox');if(e)e.scrollIntoView({block:'center'})");pg.wait_for_timeout(700);shot('og_kipas',PANEL)
+        note('ogFan',ev("(document.getElementById('ogFanTx')||{}).innerText||''"));note('ogN',ev("OG.R?[OG.R.nHit,OG.R.H.length,OG.R.el]:null"))
+        ev("uiTab('GM')");pg.wait_for_timeout(500)
+    except Exception as e:
+        note('errOg',str(e)[:300])
     # 16d. (0.24) block model dari nol, sub-blocking, estimasi waste, klasifikasi & kerapatan bor
     #      urutan kerja yang disarankan: kerangka AOI -> sub-blocking -> sb_frac -> estimasi domain -> estimasi waste -> klasifikasi
     SECV="""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-70*Math.sin(az)).toFixed(1);$('p1n').value=(cy-70*Math.cos(az)).toFixed(1);$('p2e').value=(cx+70*Math.sin(az)).toFixed(1);$('p2n').value=(cy+70*Math.cos(az)).toFixed(1);

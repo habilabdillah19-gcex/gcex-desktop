@@ -1287,3 +1287,15 @@ Skrip: `tutorial_shots.py` bagian 16d (AOI → sub-blocking → estimasi ulang �
 - Dialog **Buat kerangka blok (AOI)** dan **Pecah blok di batas solid** (0.24.16 / 0.24.20) tidak punya gaya tampilan sehingga muncul di bawah batas layar dan tidak terlihat. Kini tampil sebagai jendela di tengah layar seperti dialog Import block model.
 - Skrip tangkapan layar tutorial: sayatan Geostatistik diambil dari bidang solid QV_Lensa2 (sebelumnya koordinat data latihan lama, 0 komposit), dan dialog peringatan yang tertinggal ditutup sebelum mengambil gambar.
 
+## 72. GC-Ex Drill Hole Ultimate 0.24.24 — profil kadar, pemusatan logam, kipas variogram GT
+
+Tiga grafik yang sebelumnya hanya ada di *Tutorial Update* (dihitung skrip dokumen dari data latihan) kini bisa dibuat langsung di aplikasi dari data proyek sendiri.
+
+| Grafik | Tempat | Isi |
+|---|---|---|
+| **Profil kadar (zonasi)** | Geostatistik → tab **Profil** | Rata-rata tertimbang panjang per pita RL / Easting / Northing (lebar pita diatur). Hingga 6 panel: unsur, rasio dua unsur (rasio rata-rata, mis. Ag/Au), jumlah dua unsur (mis. Pb+Zn), % panjang kode geologi (mis. tekstur colloform). Garis acuan + label (mis. paleo-muka air tanah). Filter hole, filter domain Geologi, domain aktif Geostatistik, dan opsional hanya slab sayatan. Ekspor CSV & PNG. |
+| **Pemusatan logam** | Geostatistik → tab **Statistik** (di atas tabel top-cut) | Kurva % sampel teratas terhadap % logam terkumpul dari komposit yang sedang dianalisis; titik 1 / 5 / 10 %; tabel ambang kadar 1 / 2,5 / 5 / 10 % dengan tombol **Pakai sebagai top-cut**. |
+| **Kipas variogram GT & tebal** | Ore Geometry → **③ Ore shoot** | Variogram ternormalisasi (nilai log) GT per bor dan tebal intersep di bidang vein, 36 arah dari garis strike (toleransi ±12,5°, perataan 3 arah); lembah terdalam = arah paling menerus, ditandai otomatis; sumbu shoot yang digambar ikut tampil sebagai garis. |
+
+Tutorial *Modelling & Estimasi*: bab *Filter domain & statistik* mendapat sub-bab Kurva pemusatan logam dan Profil vertikal; Latihan terpandu 2b / 2d / 2e menampilkan versi aplikasi di samping gambar hitungan dokumen. Keterangan gambar statistik kini dari hasil hitung (sebelumnya angka tetap dari data latihan lama).
+
