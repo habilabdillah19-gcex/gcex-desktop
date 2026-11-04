@@ -277,6 +277,182 @@ def with_gps(src: Path, dst: Path, lat: float, lon: float, alt: float, heading: 
         im.save(dst, quality=90, exif=ex)
 
 
+# ================================================================ data latihan Model 3D (fotogrametri, bab 21)
+# Dinding pit FIKTIF berbentuk zig-zag (empat bidang tegak) dengan tekstur foto dinding pit generik, satu vein
+# kuarsa (bidang) dan satu set kekar (bidang sejajar), lima titik cat RTK. Difoto dari 10 posisi sambil berjalan sejajar
+# dinding (kamera virtual 24 mm). Koordinat lokal digeser ke UTM 50S fiktif (laut).
+M3D_ORIGIN = (533500.0, 9391900.0, 300.0)        # E, N, RL titik (0, 0, 0) model
+M3D_PLAN = [(0.0, 0.0), (8.0, 0.0), (14.0, 3.5), (21.0, -1.0), (30.0, 0.0)]   # jejak kaki dinding (x timur, y utara)
+M3D_H, M3D_LEAN = 10.0, 90.0                      # tinggi dinding (m), kemiringan muka dinding (tegak: sudut zig-zag rapat)
+M3D_VEIN = {"dip": 62.0, "ddir": 120.0, "p": (15.0, 1.0, 5.0), "w": 0.22}      # kunci jawaban vein
+M3D_JOINT = {"dip": 78.0, "ddir": 255.0, "p": (3.0, 0.0, 2.0), "w": 0.035, "spacing": 3.2}
+M3D_GCP = [("RTK01", 2.0, 1.5), ("RTK02", 9.0, 7.5), ("RTK03", 14.5, 2.0), ("RTK04", 21.0, 8.0), ("RTK05", 28.0, 2.5)]  # (nama, jarak sepanjang dinding, tinggi)
+
+
+def _m3d_facets():
+    """Bidang dinding: titik bawah A, B (kaki dinding) dan vektor ke atas (condong ke belakang / menjauhi kamera)."""
+    out, s0 = [], 0.0
+    t = 1 / math.tan(math.radians(M3D_LEAN))
+    for (x0, y0), (x1, y1) in zip(M3D_PLAN, M3D_PLAN[1:]):
+        A, B = np.array([x0, y0, 0.0]), np.array([x1, y1, 0.0])
+        d = B - A
+        L = float(np.linalg.norm(d))
+        nrm = np.array([-d[1], d[0], 0.0]) / L       # normal mendatar menghadap utara (menjauhi kamera di selatan)
+        up = np.array([0, 0, 1.0]) + nrm * t
+        out.append({"A": A, "B": B, "L": L, "up": up, "s0": s0})
+        s0 += L
+    return out
+
+
+def _plane(dip: float, ddir: float, p) -> tuple:
+    """Normal satuan bidang geologi (mengarah ke atas) dari dip / arah dip, dan titik di bidang."""
+    d, a = math.radians(dip), math.radians(ddir)
+    n = np.array([math.sin(d) * math.sin(a), math.sin(d) * math.cos(a), math.cos(d)])
+    return n, np.array(p, float)
+
+
+def m3d_point(s: float, z: float) -> np.ndarray:
+    """Titik di permukaan dinding dari jarak sepanjang kaki dinding s dan tinggi z."""
+    for f in _m3d_facets():
+        if s <= f["s0"] + f["L"] or f is _m3d_facets()[-1]:
+            u = (s - f["s0"]) / f["L"]
+            return f["A"] + u * (f["B"] - f["A"]) + f["up"] * z
+    raise ValueError
+
+
+def _m3d_texture(tex: np.ndarray, S: np.ndarray, Z: np.ndarray, P: np.ndarray) -> np.ndarray:
+    """Warna permukaan di titik dunia P (… x 3) dengan koordinat dinding (S, Z): tekstur + vein + kekar + titik cat."""
+    th, tw = tex.shape[:2]
+    total = sum(f["L"] for f in _m3d_facets())
+    u = np.clip(S / total * (tw - 1), 0, tw - 1)
+    v = np.clip((1 - Z / M3D_H) * (th - 1), 0, th - 1)
+    col = tex[v.astype(int), u.astype(int)].astype(np.float32)
+    nv, pv = _plane(M3D_VEIN["dip"], M3D_VEIN["ddir"], M3D_VEIN["p"])
+    dv = np.abs((P - pv) @ nv)
+    vein = dv < M3D_VEIN["w"] / 2
+    col[vein] = col[vein] * 0.15 + np.array([236, 232, 220], np.float32) * 0.85
+    halo = (dv >= M3D_VEIN["w"] / 2) & (dv < M3D_VEIN["w"] * 1.6)
+    col[halo] = col[halo] * 0.55 + np.array([170, 105, 50], np.float32) * 0.45        # selubung oksida
+    nj, pj = _plane(M3D_JOINT["dip"], M3D_JOINT["ddir"], M3D_JOINT["p"])
+    dj = ((P - pj) @ nj) % M3D_JOINT["spacing"]
+    joint = np.minimum(dj, M3D_JOINT["spacing"] - dj) < M3D_JOINT["w"] / 2
+    col[joint] = col[joint] * 0.35
+    for _n, gs, gz in M3D_GCP:
+        g = m3d_point(gs, gz)
+        dd = np.linalg.norm(P - g, axis=-1)
+        col[dd < 0.16] = (235, 40, 170)
+        col[(dd >= 0.16) & (dd < 0.20)] = (250, 250, 250)
+    return col
+
+
+def m3d_cameras(n: int = 10) -> list[dict]:
+    """10 posisi kamera berjalan sejajar dinding (±10 m di selatan dinding), tinggi mata 1,6 m, menghadap utara ± sedikit."""
+    cams = []
+    for i in range(n):
+        x = 1.5 + i * 27.0 / (n - 1)
+        y = -10.5 + 0.8 * math.sin(i * 1.3)
+        yaw = math.radians(-10 + 20 * (x - 1.5) / 27)        # sedikit menoleh ke tengah dinding
+        pitch = math.radians(20.0)
+        C = np.array([x, y, 1.6])
+        fwd = np.array([math.sin(yaw) * math.cos(pitch), math.cos(yaw) * math.cos(pitch), math.sin(pitch)])
+        right = np.cross(fwd, [0, 0, 1.0])
+        right /= np.linalg.norm(right)
+        down = np.cross(fwd, right)
+        R = np.vstack([right, down, fwd])                   # baris = sumbu kamera (x kanan, y bawah, z depan) di dunia
+        cams.append({"C": C, "R": R, "heading": (math.degrees(math.atan2(fwd[0], fwd[1])) + 360) % 360})
+    return cams
+
+
+def m3d_render(tex: np.ndarray, cam: dict, W: int = 1600, H: int = 1200, f35: float = 24.0) -> np.ndarray:
+    """Render satu foto: sinar per piksel -> perpotongan terdekat dengan bidang dinding -> warna tekstur (+ langit / lantai)."""
+    f = f35 / 36.0 * W
+    jj, ii = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32))
+    dirs_c = np.stack([(jj - W / 2) / f, (ii - H / 2) / f, np.ones_like(jj)], -1)
+    D = dirs_c @ cam["R"]                                  # ke dunia
+    C = cam["C"]
+    best = np.full((H, W), np.inf, np.float32)
+    S = np.zeros((H, W), np.float32)
+    Z = np.zeros((H, W), np.float32)
+    for fc in _m3d_facets():
+        e1 = (fc["B"] - fc["A"]) / fc["L"]
+        n = np.cross(e1, fc["up"])
+        n /= np.linalg.norm(n)
+        den = D @ n
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t = ((fc["A"] - C) @ n) / den
+        P = C + D * t[..., None]
+        rel = P - fc["A"]
+        z = rel[..., 2] / fc["up"][2]
+        u = (rel - z[..., None] * fc["up"]) @ e1
+        ok = (t > 0) & (u >= -1e-3) & (u <= fc["L"] + 1e-3) & (z >= 0) & (z <= M3D_H) & (t < best)
+        best[ok] = t[ok]
+        S[ok] = fc["s0"] + u[ok]
+        Z[ok] = z[ok]
+    hit = np.isfinite(best)
+    img = np.zeros((H, W, 3), np.float32)
+    P = C + D * np.where(hit, best, 0)[..., None]
+    img[hit] = _m3d_texture(tex, S[hit], Z[hit], P[hit])
+    sky = (~hit) & (D[..., 2] > 0)
+    img[sky] = np.array([150, 185, 225], np.float32) * (0.85 + 0.15 * (ii[sky] / H))[:, None]
+    gnd = (~hit) & (D[..., 2] <= 0)
+    tg = -C[2] / np.minimum(D[gnd][:, 2], -1e-6)
+    G = C + D[gnd] * tg[:, None]
+    rng = np.random.default_rng(3)
+    gn = rng.normal(0, 1, (64, 64)).astype(np.float32)
+    gidx = ((G[:, 0] * 6).astype(int) % 64, (G[:, 1] * 6).astype(int) % 64)
+    img[gnd] = (np.array([128, 122, 112], np.float32) * (0.85 + 0.08 * gn[gidx][:, None]))
+    yy = (ii - H / 2) / H
+    xx = (jj - W / 2) / W
+    img *= (1 - 0.18 * (xx ** 2 + yy ** 2))[..., None]        # vinyet lensa
+    img += rng.normal(0, 2.0, img.shape).astype(np.float32)
+    return np.clip(img, 0, 255).astype(np.uint8)
+
+
+def utm_to_ll(E: float, N: float, zone: int = 50, south: bool = True) -> tuple[float, float]:
+    """UTM -> lintang / bujur (iterasi Newton memakai fungsi maju core_oclokasi; cukup untuk metadata latihan)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+    from gcex_backend.core_oclokasi import to_utm
+    lat, lon = (N - (10000000 if south else 0)) / 110574.0, zone * 6 - 183 + (E - 500000) / 111320.0
+    for _ in range(8):
+        e, n, _z, _s = to_utm(lat, lon, zone, south)
+        lat += (N - n) / 110574.0
+        lon += (E - e) / (111320.0 * math.cos(math.radians(lat)))
+    return lat, lon
+
+
+def model3d_data(out: Path, n: int = 10, W: int = 1600, H: int = 1200) -> Path:
+    """Folder Model_3D/Dinding_M01: 10 foto (metadata GPS fiktif ±3–6 m) + Titik_RTK_Dinding_M01.csv (koordinat titik cat)."""
+    d = out / "Model_3D" / "Dinding_M01"
+    d.mkdir(parents=True, exist_ok=True)
+    src = Path(__file__).resolve().parent / "aset" / "Dinding_Pit_C.jpg"
+    tex = np.asarray(Image.open(src).convert("RGB"))
+    tex = tex[int(tex.shape[0] * 0.25):int(tex.shape[0] * 0.75)]          # pita tengah foto: batuan bertekstur
+    tex = np.asarray(Image.fromarray(tex).resize((3000, 1000)))
+    E0, N0, RL0 = M3D_ORIGIN
+    rng = np.random.default_rng(21)
+    for i, cam in enumerate(m3d_cameras(n), 1):
+        im = Image.fromarray(m3d_render(tex, cam, W, H))
+        tmp = d / f"_tmp_{i}.jpg"
+        im.save(tmp, quality=92)
+        e = E0 + cam["C"][0] + rng.normal(0, 3)
+        nn = N0 + cam["C"][1] + rng.normal(0, 3)
+        lat, lon = utm_to_ll(e, nn)
+        with_gps(tmp, d / f"IMG_{7100 + i:04d}.jpg", lat, lon, RL0 + cam["C"][2] + rng.normal(0, 4), cam["heading"],
+                 round(float(rng.uniform(3, 6)), 1), f"2026-11-02 09:{10 + i:02d}:00")
+        tmp.unlink()
+    rows = ["Nama,E,N,RL"]
+    for nm, gs, gz in M3D_GCP:
+        g = m3d_point(gs, gz)
+        rows.append(f"{nm},{E0 + g[0]:.3f},{N0 + g[1]:.3f},{RL0 + g[2]:.3f}")
+    (d / "Titik_RTK_Dinding_M01.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    (d / "KUNCI_JAWABAN.txt").write_text(
+        "Model 3D latihan (FIKTIF)\n"
+        f"Vein kuarsa : dip {M3D_VEIN['dip']:.0f}° ke arah {M3D_VEIN['ddir']:.0f}° (strike {(M3D_VEIN['ddir'] - 90) % 360:.0f}°, aturan tangan kanan)\n"
+        f"Set kekar   : dip {M3D_JOINT['dip']:.0f}° ke arah {M3D_JOINT['ddir']:.0f}°, spasi {M3D_JOINT['spacing']:.1f} m\n"
+        "Muka dinding: tegak, zig-zag empat bidang\n", encoding="utf-8")
+    return d
+
+
 KELAS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "OX-MO", "SF-MO"]
 KCOL = [(120, 200, 120), (120, 200, 120), (230, 110, 110), (230, 110, 110), (220, 120, 200), (220, 120, 200), (240, 220, 80), (240, 220, 80)]
 PIT_ROWS = [("19.08", "Pit X", "268.5", "OX-LG", "7123", "37", "ROM A1"), ("13", "", "", "OX-LG", "32", "31", "〃"),
@@ -446,6 +622,7 @@ def qt_data(out: Path) -> None:
                                          ("Dinding_Pit_B.jpg", -5.50245, 117.30330, 298.7, 12.0, 4.8, "2026-10-30 10:02:00"),
                                          ("Dinding_Pit_C.jpg", -5.50060, 117.30455, 305.2, 205.0, 9.1, "2026-10-31 08:41:00")):
         with_gps(Path(__file__).resolve().parent / "aset" / n, sk / n, lat, lon, alt, hd, acc, t)
+    model3d_data(out)
     (sk / "Sampel_Channel_Pit_B.txt").write_text("Sample ID\tDari\tKe\tAu (ppm)\tAg_ppm\n" + "".join(
         f"{a}\t{str(b).replace('.', ',')}\t{str(c).replace('.', ',')}\t{au}\t{ag}\n" for a, b, c, au, ag in SAMPEL_PIT_B), encoding="utf-8")
     bo = out / "Borang"
@@ -627,6 +804,8 @@ def main():
         "   Dinding_Pit_B.jpg + Sampel_Channel_Pit_B.txt -> bab 12 Singkapan (digitasi, channel sampling, infografis)\n"
         "   Dinding_Pit_A.jpg -> bab 19 Analisis foto (peta oksida, jejak kekar & scanline, zona SAM)\n"
         "   Dinding_Pit_C.jpg -> latihan tambahan (zona argilik pucat, sesar miring, zona oksida atas)\n"
+        "Model_3D/Dinding_M01/  10 foto dinding pit sintetis (zig-zag) + Titik_RTK_Dinding_M01.csv + KUNCI_JAWABAN.txt\n"
+        "                  (Singkapan -> Model 3D: bangun, titik cat RTK, ukur strike / dip vein; bab 21)\n"
         "Borang/           scan borang fiktif (Borang -> + Borang):\n"
         "   Borang_Loading_Pit_30Okt.jpg   -> jenis Ore Spotter: Loading Pit -> ROM / Stockpile (shift II, lewat tengah malam)\n"
         "   Borang_ROM_31Okt.jpg           -> jenis Ore ke Stockpile / Crusher (Rehandling / Direct)\n"

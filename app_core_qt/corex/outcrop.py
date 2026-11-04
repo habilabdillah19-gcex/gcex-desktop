@@ -868,6 +868,8 @@ class OutcropPage(QWidget):
         self.bSam = btn("✦ SAM", "Segment Anything: klik di dalam zona -> batas zona otomatis (jenis poligon yang dipilih).\n"
                         "Shift+klik = bukan zona, Tab = ganti ukuran (kecil / sedang / besar), Enter = simpan, Esc = selesai.", sm=True)
         th.addWidget(self.bSam)
+        self.bM3d = btn("◈ Model 3D…", "Fotogrametri: 3–10 foto satu dinding -> model 3D, titik cat RTK, strike / dip sebenarnya", sm=True)
+        th.addWidget(self.bM3d)
         self.cbSnap = QCheckBox("Snap")
         self.cbSnap.setChecked(True)
         self.cbSnap.setToolTip("Tempelkan titik ke titik / garis fitur lain agar kontak tidak bercelah")
@@ -914,6 +916,7 @@ class OutcropPage(QWidget):
         self.lst.currentRowChanged.connect(self._pick)
         self.bDraw.clicked.connect(lambda: self.tool.start_draw(self.cbKind.currentData()) if self.cur else None)
         self.bSam.clicked.connect(self.sam_start)
+        self.bM3d.clicked.connect(self.open_model3d)
         self.bSel.clicked.connect(lambda: (self.tool.cancel(), self.bSel.setChecked(True)))
         self.cbInfo.toggled.connect(lambda *_: self.canvas.update())
         self.set_enabled(False)
@@ -1616,7 +1619,7 @@ class OutcropPage(QWidget):
         return m * self.cur["w"] / self.view.w
 
     def set_enabled(self, on: bool) -> None:
-        for w in (self.bAdd,):
+        for w in (self.bAdd, self.bM3d):
             w.setEnabled(bool(self.folder))
         for w in (self.bDel, self.bDraw, self.bSam, self.cbKind, self.bAI, self.tabs, self.bSel):
             w.setEnabled(on)
@@ -2598,6 +2601,15 @@ class OutcropPage(QWidget):
         if self.tool.sel is not None and not any(f["id"] == self.tool.sel for f in j["features"]):
             self.tool.sel = None
         self._feats(j)
+
+    # ---------------------------------------------------------------- model 3D (fotogrametri)
+    def open_model3d(self) -> None:
+        if not self.folder:
+            return
+        from .oc3d import Model3DDialog
+        d = Model3DDialog(self)
+        self._m3d = d
+        d.exec()
 
     # ---------------------------------------------------------------- lokasi kamera (GPS HP)
     def loc_refresh(self) -> None:

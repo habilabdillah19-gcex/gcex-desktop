@@ -274,6 +274,70 @@ def main() -> None:
     _Dlg.exec = _grab_exec
     pg.loc_map()
     _Dlg.exec = _old_exec
+    # =============================================================== Singkapan: Model 3D (bab 21)
+    import buat_data_dummy as B
+    import numpy as np
+    from corex.oc3d import Model3DDialog
+    import corex.oc3d as M3
+    M3.say = lambda *a, **k: print("SAY", a[1:2])
+    m3src = src / "Model_3D" / "Dinding_M01"
+    d3 = Model3DDialog(pg)
+    d3.resize(1500, 900)
+    d3.show()
+    M3.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: (sorted(str(p) for p in m3src.glob("IMG_*.jpg")), ""))
+    d3.new_model()
+    d3.build()
+    until(lambda: not d3.busy and bool(d3.m.get("recon")), 400000)
+    d3.paste_gcps((m3src / "Titik_RTK_Dinding_M01.csv").read_text(encoding="utf-8"))
+
+    def tuv(i, X, W=1600, H=1200):
+        cam = B.m3d_cameras(10)[i]
+        f = 24 / 36 * W
+        xc = cam["R"] @ (np.array(X) - cam["C"])
+        return (f * xc[0] / xc[2] + W / 2) / W, (f * xc[1] / xc[2] + H / 2) / H, xc[2]
+    for i in range(10):
+        d3.lst.setCurrentRow(i)
+        until(lambda i=i: d3.view.w > 0 and d3.img == i)
+        d3.detect()
+        for k, (nm, gs, gz) in enumerate(B.M3D_GCP):
+            u, v, z = tuv(i, B.m3d_point(gs, gz))
+            if z > 0 and 0.02 < u < 0.98 and 0.02 < v < 0.98:
+                d3.gT.selectRow(k)
+                d3.tool.press(QPointF(u * d3.view.w, v * d3.view.h), None)
+    d3.lst.setCurrentRow(3)
+    until(lambda: d3.view.w > 0 and d3.img == 3)
+    d3.detect()
+    d3.gT.selectRow(2)
+    wait(600)
+    d3.grab().save(str(IMG / "q25_m3d_rtk.png"))
+    print("OK q25_m3d_rtk")
+    nv, pv = B._plane(B.M3D_VEIN["dip"], B.M3D_VEIN["ddir"], B.M3D_VEIN["p"])
+    tr = []
+    for ss in np.linspace(0.1, 29.9, 200):
+        P = np.array([B.m3d_point(ss, zz) for zz in np.linspace(0.2, 9.8, 200)])
+        dd = (P - pv) @ nv
+        tr += [P[k] for k in np.where(np.diff(np.sign(dd)) != 0)[0]]
+    d3.tabs.setCurrentIndex(1)
+    d3.lst.setCurrentRow(4)
+    until(lambda: d3.view.w > 0 and d3.img == 4)
+    d3.targets = []
+    d3.cbKind.setCurrentIndex(0)
+    d3.eName.setText("Vein utama")
+    d3.start_measure()
+    for X in tr[::4]:
+        u, v, z = tuv(4, X)
+        if z > 0 and 0.02 < u < 0.98 and 0.02 < v < 0.98:
+            d3.tool.press(QPointF(u * d3.view.w, v * d3.view.h), None)
+    d3.finish_measure()
+    wait(600)
+    d3.grab().save(str(IMG / "q26_m3d_ukur.png"))
+    print("OK q26_m3d_ukur")
+    d3.tabs.setCurrentIndex(2)
+    until(lambda: d3.vImg.pixmap() is not None and not d3.vImg.pixmap().isNull(), 30000)
+    wait(600)
+    d3.grab().save(str(IMG / "q27_m3d_tampilan.png"))
+    print("OK q27_m3d_tampilan")
+    d3.close()
     # =============================================================== QAQC
     import corex.qaqc as Q
     Q.show_in_folder = lambda p: None

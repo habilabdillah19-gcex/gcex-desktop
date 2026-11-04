@@ -147,11 +147,12 @@ def selftest(folder: str, out: str) -> int:
         import cv2
         for x0 in range(20, 360, 60):
             cv2.line(a, (x0, 239), (x0 + 80, 0), (30, 30, 30), 2)
+        res["sift"] = len(cv2.SIFT_create().detect(cv2.cvtColor(a, cv2.COLOR_RGB2GRAY), None))  # Model 3D (fotogrametri)
         res["an"] = [round(float(core_ocanalisis.index_mask(a, "oks", 5).mean()), 2), len(core_ocanalisis.detect_traces(a, 5, 0.2))]
         res["ok"] = (bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
                      and vs["sam"] and vs["depth"] and bool(vs["libs"].get("shapely")) and res["depth"][0] > 0
                      and res["pdf"][0] > 0 and res["forms"] >= 4
-                     and res["qaqc"] is not None and res["chart_png"] > 1000 and res["an"][0] > 0.2 and res["an"][1] >= 1)
+                     and res["qaqc"] is not None and res["chart_png"] > 1000 and res["an"][0] > 0.2 and res["an"][1] >= 1 and res["sift"] > 0)
     except Exception as e:  # noqa: BLE001
         import traceback
         res["ok"], res["error"] = False, traceback.format_exc()

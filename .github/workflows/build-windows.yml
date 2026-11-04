@@ -166,7 +166,7 @@ jobs:
           # model ONNX (SAM & Depth Anything, Apache-2.0) dari Hugging Face pada revisi tetap, dicek SHA256 -> models/ (ikut installer)
           python tools/ai_models/unduh_model.py models
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::unduh model AI gagal - uji SAM / Depth Anything dilewati" }
-          python -m pytest -q -rfE --tb=line -p no:cacheprovider app_core_qt/tests backend/tests/test_core_forms.py backend/tests/test_core_qaqc.py backend/tests/test_core_ocanalisis.py backend/tests/test_core_oclokasi.py 2>&1 | Tee-Object -FilePath qt_test.log
+          python -m pytest -q -rfE --tb=line -p no:cacheprovider app_core_qt/tests backend/tests/test_core_forms.py backend/tests/test_core_qaqc.py backend/tests/test_core_ocanalisis.py backend/tests/test_core_oclokasi.py backend/tests/test_core_oc3d.py 2>&1 | Tee-Object -FilePath qt_test.log
           $rc = $LASTEXITCODE
           if ($rc -ne 0) {
             Select-String -Path qt_test.log -Pattern 'FAILED|ERROR|Error|assert|Exception|File "' | Select-Object -First 50 | ForEach-Object { Write-Host ("::warning::qt-test " + $_.Line.Trim()) }

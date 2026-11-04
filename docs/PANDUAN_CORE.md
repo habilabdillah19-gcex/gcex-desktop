@@ -280,6 +280,14 @@ Ruang kerja **Singkapan** (tombol di bilah atas, di samping **Core box**) untuk 
    - peringatan: GPS kurang teliti (> 15 m), foto di luar zona proyek, collar sangat jauh (grid lokal / sistem lain), kamera jauh dari bidang georef (foto / titik georef tertukar);
    - GPS HP teliti beberapa meter (bukan RTK): untuk "di mana & menghadap ke mana" foto diambil, bukan untuk mengukur geometri dinding — koordinat georef dari titik survey tetap acuan. Metadata lokasi sering dibuang saat foto dikirim lewat aplikasi chat; pindahkan file asli (kabel / AirDrop, atau Bagikan → Opsi → Lokasi & Semua Data Foto → Simpan ke File). Format HEIC belum dibaca — pakai JPG (*Paling Kompatibel*).
 
+10. **Model 3D (fotogrametri)** — tombol **◈ Model 3D…** di bilah atas Singkapan; untuk **strike / dip sebenarnya**:
+   - **Foto**: 3–**10** foto satu dinding (batas 10 agar cukup di PC 8 GB RAM), berjalan sejajar dinding, tumpang-tindih ±70 %, kamera utama 1× tanpa zoom, 1–2 foto miring dari ujung dinding. Foto disalin ke `_GCEx_Core/singkapan/model3d/mNNN/foto`.
+   - **Bangun model 3D**: fitur SIFT, pencocokan antar foto (diverifikasi matriks esensial), rekonstruksi bertahap (pasangan awal + PnP), triangulasi dan penghalusan kamera / titik → awan titik berwarna (galat reproyeksi ditampilkan). Panjang fokus dari EXIF (ekuivalen 35 mm; tanpa EXIF dianggap 26 mm). Offline, OpenCV + NumPy.
+   - **Titik RTK** (tab pertama): tabel *Nama, E, N, RL* (tempel dari Excel / impor CSV), pilih titik lalu klik titik catnya di **minimal 2 foto**; *Deteksi titik cat* mengusulkan posisi bercak pink / magenta / kuning neon (klik di dekatnya agar menempel), Delete menghapus klik di foto aktif. ≥ 3 titik lengkap → transformasi similaritas 7 parameter ke UTM, galat per titik & RMS. Tanpa RTK, posisi kamera dari GPS HP dipakai (**kasar**: skala & arah bisa melenceng, dip bisa > 10°).
+   - **Ukur bidang**: klik titik-titik di sepanjang jejak vein / kekar / sesar yang melintasi permukaan tidak rata, atau sebar titik di satu bidang tersingkap → titik 3D di permukaan (kedalaman dari awan titik terdekat) → bidang terbaik (SVD): **dip, arah dip, strike (aturan tangan kanan)**, pusat E/N/RL, RMS bidang, mutu (*baik / sedang / lemah / tidak pasti* dari kelurusan & kerataan titik).
+   - **Tampilan & ekspor**: denah & tampak awan titik dengan kamera dan simbol bidang; **Bidang (CSV)**, **Bidang (STR Surpac)** (D1 jenis, D2 nama, D3 dip, D4 arah dip, D5 strike), **Awan titik (PLY)** berkoordinat UTM.
+   - Data latihan `Model_3D/Dinding_M01` (dinding sintetis zig-zag, 10 foto, 5 titik cat RTK fiktif) dengan kunci jawaban vein 62° / 120°.
+
 Penting: deskripsi AI dan garis yang digambar di foto adalah alat bantu; kemiringan yang terlihat di satu dinding hanyalah *apparent dip*.
 
 ## 6d. Borang: borang lapangan tulisan tangan → Excel / CSV / SQLite / MS Access (DB-Ex versi Qt)

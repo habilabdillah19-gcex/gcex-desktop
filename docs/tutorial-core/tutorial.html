@@ -85,9 +85,10 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>18. QAQC data bor, ekspor Excel &amp; laporan PDF</div>
     <div>19. Analisis foto singkapan</div>
     <div>20. Lokasi kamera dari GPS HP</div>
+    <div>21. Model 3D &amp; strike / dip sebenarnya</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.39.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar dan nama orang di tutorial ini adalah contoh fiktif; foto dinding pit (Latihan 19) generik tanpa lokasi.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.40.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar dan nama orang di tutorial ini adalah contoh fiktif; foto dinding pit (Latihan 19) generik tanpa lokasi.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -114,7 +115,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
       <tr><td><code>Data_Lab\Geologi_Latihan.txt</code> (hanya LTH-101)</td><td>Latihan 2 – tab Geologi</td></tr>
       <tr><td><code>Data_Lab\Assay_Latihan_LTH-102_ulang.csv</code></td><td>Latihan 9 – assay ulang</td></tr>
       <tr><td><code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code></td><td>Latihan 10 – impor JSON lama</td></tr>
-      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–20 (DB-Ex versi Qt)</td></tr>
+      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–21 (DB-Ex versi Qt)</td></tr>
     </table>
   </div></div>
   <div class="note"><b>Prinsip DB-Ex.</b> AI visual menilai parameter <b>geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, catatan struktur). Isian <b>geologi</b> (litologi, alterasi, oksidasi, warna) diambil dari <b>logging geologist</b> bila ada; AI hanya mengisinya bila logging tidak ada. Urutan prioritas: logging geologist &gt; editan manual &gt; AI.</div>
@@ -338,7 +339,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="part">Bagian II · DB-Ex versi Qt</div>
   <h2>Empat ruang kerja dalam satu proyek</h2>
-  <p>Bab 12–20 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
+  <p>Bab 12–21 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
   <table>
     <tr><th style="width:24%">Ruang kerja</th><th>Untuk</th><th style="width:30%">Hasil</th></tr>
     <tr><td><b>Core box</b></td><td>Foto core box, data bor, AI geoteknik, overlay assay</td><td>Excel core log, infografis core box</td></tr>
@@ -354,6 +355,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td><code>Borang\DDR_31Okt.jpg</code></td><td>Latihan 15–16 – Daily Drilling Report</td></tr>
     <tr><td><code>Borang\Borang_Latihan_3_halaman.pdf</code></td><td>ketiga borang dalam satu PDF (dipecah per halaman)</td></tr>
     <tr><td><code>QAQC\QAQC_Latihan.xlsx</code></td><td>Latihan 17–18 – QAQC Database</td></tr>
+    <tr><td><code>Model_3D\Dinding_M01\</code> (10 foto, <code>Titik_RTK_Dinding_M01.csv</code>, <code>KUNCI_JAWABAN.txt</code>)</td><td>Latihan 21 – Model 3D (dinding sintetis fiktif)</td></tr>
     <tr><td><code>Foto_Singkapan\Dinding_Pit_A.jpg</code> (latihan tambahan: <code>Dinding_Pit_C.jpg</code>)</td><td>Latihan 19 – Analisis foto singkapan; Latihan 20 – Lokasi kamera (ketiga foto Dinding_Pit membawa metadata GPS fiktif)</td></tr>
   </table>
   <div class="note"><b>Catatan.</b> Foto singkapan adalah foto dinding pit sungguhan yang generik (tanpa lokasi, nama perusahaan maupun orang); garis, kadar dan nama sampel di atasnya fiktif. Scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
@@ -551,6 +553,29 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
   <figure><img src="gambar/q24_peta_foto.png" style="width:120mm"><figcaption>Gambar 51 – Peta posisi kamera dan tabel lokasi foto (koordinat data latihan fiktif).</figcaption></figure>
   <div class="note"><b>Peringatan otomatis</b>: ketelitian GPS rendah (&gt; 15 m, sinyal terhalang dinding pit), foto di luar zona UTM proyek, collar yang jauh sekali (grid lokal / sistem lain), dan kamera yang jauh dari bidang georef (foto / titik georef tertukar).</div>
   <div class="warn">Metadata lokasi sering <b>dibuang</b> saat foto dikirim lewat aplikasi chat / media sosial. Pindahkan file asli lewat kabel / AirDrop, atau di iPhone: Bagikan → <b>Opsi</b> → aktifkan <b>Lokasi</b> &amp; <b>Semua Data Foto</b> → Simpan ke File. Format HEIC belum dibaca — atur kamera iPhone ke <i>Paling Kompatibel</i> (JPG). Koordinat di data latihan ini <b>fiktif</b>.</div>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 21</div>
+  <h2>Model 3D dinding (fotogrametri) &amp; strike / dip sebenarnya</h2>
+  <p>Dari satu foto, kemiringan jejak di dinding hanyalah <i>apparent dip</i>. <b>Model 3D</b> menyusun permukaan dinding dari <b>3–10 foto</b> yang saling tumpang-tindih (Structure-from-Motion, offline). Titik cat yang diukur RTK membuat model berskala dan berkoordinat UTM, sehingga bidang vein / kekar / sesar bisa diukur <b>strike / dip sebenarnya</b>.</p>
+  <div class="note"><b>Cara memotret (maks. 10 foto).</b> Berjalan sejajar dinding, satu foto setiap beberapa langkah, tumpang-tindih ±70 % dengan foto sebelahnya; kamera utama 1× (tanpa zoom / 0,5×); tambah 1–2 foto miring dari ujung dinding. Pasang <b>4–6 titik cat</b> warna mencolok tersebar (kiri–kanan, atas–bawah), ukur RTK, dan pastikan tiap titik terlihat di ≥ 3 foto.</div>
+  <div class="step"><div class="num">1</div><div>Singkapan → <b>◈ Model 3D…</b> → <b>+ Model baru…</b> → pilih ke-10 foto <code>Model_3D\Dinding_M01\IMG_7101…7110.jpg</code> (dinding fiktif berbentuk zig-zag). Klik <b>Bangun model 3D</b> (±1 menit): fitur SIFT, pencocokan antar foto, kamera &amp; awan titik. Bilah atas: ±15.900 titik 3D, kamera 10/10, galat reproyeksi ±0,3 px. Tanpa titik RTK, model memakai GPS HP (<b>kasar</b>).</div></div>
+  <div class="step"><div class="num">2</div><div>Tab <b>Titik RTK</b> → <b>Impor CSV…</b> → <code>Titik_RTK_Dinding_M01.csv</code> (Nama, E, N, RL; atau salin dari Excel → <b>Tempel dari Excel</b>). Pilih <b>RTK01</b> di tabel, lalu klik titik cat pink-nya di setiap foto yang melihatnya (<b>Deteksi titik cat</b> memberi lingkaran biru; klik di dekatnya agar menempel). Ulangi untuk RTK02–05. Kolom <i>Foto</i> = jumlah foto yang sudah diklik (minimal 2).</div></div>
+  <figure><img src="gambar/q25_m3d_rtk.png" style="width:150mm"><figcaption>Gambar 52 – Titik RTK: koordinat dari CSV, titik cat diklik di foto (silang), usulan deteksi (lingkaran biru), galat tiap titik.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="check"><b>✓ Cek:</b> bilah atas menulis <b>georef RTK (5 titik, RMS ±0,01 m)</b>. Galat satu titik yang jauh lebih besar dari lainnya = salah klik / salah koordinat.</div>
+  <div class="step"><div class="num">3</div><div>Tab <b>Ukur bidang</b> → jenis <i>Vein</i>, nama “Vein utama” → <b>✎ Ukur bidang</b>. Di foto <code>IMG_7105</code>, klik 8–12 titik di sepanjang vein putih <b>yang melewati sudut dinding</b> (permukaan tidak rata) → Enter. Hasil: <b>dip ±62° ke arah ±118°</b> (kunci jawaban: 62° / 120°, <code>KUNCI_JAWABAN.txt</code>), RMS bidang, dan mutu.</div></div>
+  <figure><img src="gambar/q26_m3d_ukur.png" style="width:150mm"><figcaption>Gambar 53 – Ukur bidang: titik di sepanjang jejak vein yang melintasi sudut dinding → dip / arah dip / strike sebenarnya.</figcaption></figure>
+  <div class="note"><b>Mutu pengukuran.</b> <i>Baik</i> = titik menyebar di permukaan yang menghadap beberapa arah; <i>sedang</i> = jejak hanya sedikit melengkung (arah dip bisa melenceng beberapa derajat); <i>tidak pasti</i> = titik hampir segaris di dinding rata (sama dengan apparent dip). Untuk kekar yang tersingkap sebagai <b>bidang</b>, sebar titik di permukaan bidang itu.</div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">4</div><div>Tab <b>Tampilan &amp; ekspor</b>: denah dan tampak dinding dari awan titik (posisi kamera = segitiga biru, bidang terukur = simbol strike / dip merah). Ekspor <b>Bidang (CSV)</b> untuk Excel / stereonet, <b>Bidang (STR Surpac)</b> (D1 jenis, D2 nama, D3 dip, D4 arah dip, D5 strike) dan <b>Awan titik (PLY)</b> berkoordinat UTM.</div></div>
+  <figure><img src="gambar/q27_m3d_tampilan.png" style="width:150mm"><figcaption>Gambar 54 – Denah &amp; tampak awan titik dengan bidang terukur, dan tombol ekspor.</figcaption></figure>
+  <div class="warn">Tanpa titik RTK, skala &amp; arah model berasal dari GPS HP (±3–8 m per foto) — strike / dip bisa melenceng lebih dari 10° (di data latihan: dip 51° alih-alih 62°). Pakai titik cat RTK untuk angka yang dipertanggungjawabkan. Model 3D memakai maks. 10 foto agar cukup di PC lapangan 8 GB RAM.</div>
 </section>
 
 <section class="page">
