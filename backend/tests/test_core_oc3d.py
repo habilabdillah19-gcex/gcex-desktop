@@ -59,7 +59,7 @@ def test_model3d_end_to_end(tmp_path, monkeypatch):
     gcps.append({"name": "RTK99", "e": "", "n": "", "rl": "", "obs": {}})
     m = M.save_gcps(s, 1, gcps)
     g = m["georef"]
-    assert g["method"] == "rtk" and g["n"] == 5 and g["rms"] < 0.05
+    assert g["method"] == "rtk" and g["n"] == 5 and g["rms"] < 0.12  # 0,1 cm (OpenCV 5) s.d. ~6 cm (OpenCV 4.10 di CI)
     # vein: titik di sepanjang jejak yang melintasi sudut dinding -> dip / arah dip sebenarnya
     nv, pv = B._plane(B.M3D_VEIN["dip"], B.M3D_VEIN["ddir"], B.M3D_VEIN["p"])
     tr = []

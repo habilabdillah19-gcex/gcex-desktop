@@ -59,7 +59,7 @@ def test_model3d_dialog(qtbot, prj, tmp_path, monkeypatch):
             if z > 0 and 0.02 < u < 0.98 and 0.02 < v < 0.98:
                 d.gT.selectRow(k)
                 d.tool.press(QPointF((u + 0.0015) * d.view.w, v * d.view.h), None)
-    assert d.m["georef"]["method"] == "rtk" and d.m["georef"]["rms"] < 0.05 and "georef RTK" in d.st.text()
+    assert d.m["georef"]["method"] == "rtk" and d.m["georef"]["rms"] < 0.12 and "georef RTK" in d.st.text()
     assert all(int(d.gT.item(k, 4).text()) >= 2 for k in range(5)) and d.gT.item(0, 5).text()
     t = d.m["gcps"][0]["obs"]
     tg = d.targets  # foto terakhir

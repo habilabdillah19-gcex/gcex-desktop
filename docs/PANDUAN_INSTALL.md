@@ -869,7 +869,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 
 ## 87. DB-Ex 0.40.0 — Model 3D (fotogrametri, Fase 2b)
 
-- Tombol **◈ Model 3D…** di ruang kerja Singkapan: 3–10 foto satu dinding → model 3D offline (tanpa internet, tanpa GPU), ±1 menit untuk 10 foto, memori puncak ±0,6 GB.
+- Tombol **◈ Model 3D…** di ruang kerja Singkapan: 3–10 foto satu dinding → model 3D offline (tanpa internet, tanpa GPU), ±1–1,5 menit untuk 10 foto (termasuk penyesuaian berkas), memori puncak ±0,6 GB.
 - **Titik cat RTK**: koordinat ditempel dari Excel / CSV, titik cat diklik di ≥ 2 foto (deteksi bercak cat otomatis membantu) → model berskala & berkoordinat UTM, galat tiap titik dan RMS. Tanpa RTK dipakai GPS HP (kasar).
 - **Ukur bidang**: klik titik di sepanjang jejak vein / kekar / sesar yang melintasi permukaan tidak rata → **dip, arah dip, strike sebenarnya**, RMS dan mutu. Ekspor bidang (CSV, STR Surpac) dan awan titik (PLY).
 - Data latihan `Model_3D/Dinding_M01` (dinding sintetis fiktif, 10 foto, `Titik_RTK_Dinding_M01.csv`, `KUNCI_JAWABAN.txt`); tutorial Latihan 21; Panduan DB-Ex 6c butir 10.

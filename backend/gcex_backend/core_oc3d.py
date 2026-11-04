@@ -153,6 +153,138 @@ def _proj(K, R, t, X):
     return x[:, :2] / x[:, 2:3], x[:, 2]
 
 
+def _rodrigues(w: np.ndarray) -> np.ndarray:
+    th = float(np.linalg.norm(w))
+    if th < 1e-12:
+        return np.eye(3)
+    k = w / th
+    Kx = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+    return np.eye(3) + math.sin(th) * Kx + (1 - math.cos(th)) * Kx @ Kx
+
+
+def bundle_adjust(Ks: dict, cams: dict, X: np.ndarray, oc: np.ndarray, op: np.ndarray, uv: np.ndarray, fixed: int,
+                  scale_cam: Optional[int] = None, iters: int = 15, huber: float = 2.0) -> tuple[dict, np.ndarray]:
+    """Penyesuaian berkas (bundle adjustment) Levenberg-Marquardt dengan komplemen Schur, NumPy saja (tanpa SciPy).
+    Kamera: rotasi (pembaruan sudut kecil) + translasi, K tetap; kamera `fixed` dikunci (datum) dan jarak kamera `scale_cam`
+    ke kamera datum dijaga (skala), agar sistem tidak singular dan konvergensi cepat. Bobot Huber untuk pencilan.
+    oc / op / uv: indeks kamera, indeks titik, piksel pengamatan."""
+    cids = sorted(cams)
+    free = [c for c in cids if c != fixed]
+    ci = {c: k for k, c in enumerate(free)}
+    nf, npnt = len(free), len(X)
+    Rs = {c: np.array(cams[c][0], float) for c in cids}
+    ts = {c: np.array(cams[c][1], float).ravel() for c in cids}
+    Kf = np.array([[Ks[c][0, 0], Ks[c][1, 1], Ks[c][0, 2], Ks[c][1, 2]] for c in oc])
+    X = X.copy()
+
+    def resid(Rs, ts, X):
+        Ra = np.stack([Rs[c] for c in oc])
+        ta = np.stack([ts[c] for c in oc])
+        xc = np.einsum("nij,nj->ni", Ra, X[op]) + ta
+        z = np.where(np.abs(xc[:, 2]) < 1e-9, 1e-9, xc[:, 2])
+        pr = np.c_[Kf[:, 0] * xc[:, 0] / z + Kf[:, 2], Kf[:, 1] * xc[:, 1] / z + Kf[:, 3]]
+        return pr - uv, xc, Ra
+
+    def cost(r):
+        e = np.hypot(r[:, 0], r[:, 1])
+        return float(np.sum(np.where(e <= huber, e * e, 2 * huber * e - huber * huber)))
+    r, xc, Ra = resid(Rs, ts, X)
+    c0 = cost(r)
+    lam = 1e-3
+    for _it in range(iters):
+        e = np.hypot(r[:, 0], r[:, 1])
+        wgt = np.where(e <= huber, 1.0, huber / np.maximum(e, 1e-12))
+        x, y, z = xc[:, 0], xc[:, 1], xc[:, 2]
+        fx, fy = Kf[:, 0], Kf[:, 1]
+        Jpr = np.zeros((len(oc), 2, 3))
+        Jpr[:, 0, 0] = fx / z
+        Jpr[:, 0, 2] = -fx * x / z ** 2
+        Jpr[:, 1, 1] = fy / z
+        Jpr[:, 1, 2] = -fy * y / z ** 2
+        RX = xc - np.stack([ts[c] for c in oc])
+        skew = np.zeros((len(oc), 3, 3))  # d xc / d w = -[RX]x
+        skew[:, 0, 1], skew[:, 0, 2], skew[:, 1, 0] = RX[:, 2], -RX[:, 1], -RX[:, 2]
+        skew[:, 1, 2], skew[:, 2, 0], skew[:, 2, 1] = RX[:, 0], RX[:, 1], -RX[:, 0]
+        Jc = np.concatenate([Jpr @ skew, Jpr], axis=2)  # 2x6
+        Jp = Jpr @ Ra  # 2x3
+        Jcw, Jpw = Jc * wgt[:, None, None], Jp * wgt[:, None, None]
+        U = np.zeros((nf, 6, 6))
+        gc = np.zeros((nf, 6))
+        V = np.zeros((npnt, 3, 3))
+        gp = np.zeros((npnt, 3))
+        np.add.at(V, op, np.einsum("nki,nkj->nij", Jpw, Jp))
+        np.add.at(gp, op, np.einsum("nki,nk->ni", Jpw, r))
+        fm = np.array([c != fixed for c in oc])
+        cidx = np.array([ci.get(c, -1) for c in oc])
+        np.add.at(U, cidx[fm], np.einsum("nki,nkj->nij", Jcw[fm], Jc[fm]))
+        np.add.at(gc, cidx[fm], np.einsum("nki,nk->ni", Jcw[fm], r[fm]))
+        Wo = np.einsum("nki,nkj->nij", Jcw[fm], Jp[fm])  # 6x3 per pengamatan (satu pengamatan per pasangan kamera-titik)
+        while True:
+            Vd = V + lam * (np.einsum("nii->ni", V)[:, :, None] * np.eye(3) + 1e-9 * np.eye(3))
+            Vinv = np.linalg.inv(Vd)
+            Ud = U + lam * (np.einsum("nii->ni", U)[:, :, None] * np.eye(6) + 1e-9 * np.eye(6))
+            S = np.zeros((nf * 6, nf * 6))
+            for k in range(nf):
+                S[k * 6:k * 6 + 6, k * 6:k * 6 + 6] = Ud[k]
+            if scale_cam in ci:  # kunci skala: translasi kamera skala tidak boleh berubah searah vektor t-nya
+                k = ci[scale_cam]
+                u = ts[scale_cam] / max(np.linalg.norm(ts[scale_cam]), 1e-12)
+                S[k * 6 + 3:k * 6 + 6, k * 6 + 3:k * 6 + 6] += 1e6 * (np.trace(U[k]) / 6 + 1.0) * np.outer(u, u)
+            b = -gc.reshape(-1).copy()
+            WVi = np.einsum("nij,njk->nik", Wo, Vinv[op[fm]])  # 6x3
+            gpi = np.einsum("nij,nj->ni", Vinv, -gp)  # V^-1 (-gp)
+            # kurangi W V^-1 W^T untuk tiap pasangan kamera yang melihat titik yang sama
+            pf, cf = op[fm], cidx[fm]
+            order = np.argsort(pf, kind="stable")
+            pf_s, cf_s = pf[order], cf[order]
+            WVi_s, Wo_s = WVi[order], Wo[order]
+            starts = np.r_[0, np.flatnonzero(np.diff(pf_s)) + 1, len(pf_s)]
+            np.add.at(b.reshape(nf, 6), cf_s, -np.einsum("nij,nj->ni", Wo_s, gpi[pf_s]))
+            # semua pasangan pengamatan (a, b) dalam satu titik, tervektor
+            sz = np.diff(starts)
+            gid = np.repeat(np.arange(len(sz)), sz)
+            rep = sz[gid]
+            A = np.repeat(np.arange(len(pf_s)), rep)
+            Bo = np.arange(len(A)) - np.repeat(np.cumsum(rep) - rep, rep)
+            Bi = starts[gid[A]] + Bo
+            S4 = np.zeros((nf * nf, 6, 6))
+            for q0 in range(0, len(A), 200000):  # per potongan agar memori kecil
+                a_, b_ = A[q0:q0 + 200000], Bi[q0:q0 + 200000]
+                np.add.at(S4, cf_s[a_] * nf + cf_s[b_], np.einsum("nij,nkj->nik", WVi_s[a_], Wo_s[b_]))
+            S -= S4.reshape(nf, nf, 6, 6).transpose(0, 2, 1, 3).reshape(nf * 6, nf * 6)
+            try:
+                dc = np.linalg.solve(S, b).reshape(nf, 6)
+            except np.linalg.LinAlgError:
+                lam *= 10
+                if lam > 1e8:
+                    break
+                continue
+            rhs = -gp.copy()
+            np.add.at(rhs, pf, -np.einsum("nij,ni->nj", Wo, dc[cf]))
+            dp = np.einsum("nij,nj->ni", Vinv, rhs)
+            Rn, tn = dict(Rs), dict(ts)
+            for c in free:
+                d = dc[ci[c]]
+                Rn[c] = _rodrigues(d[:3]) @ Rs[c]
+                tn[c] = ts[c] + d[3:]
+            Xn = X + dp
+            rn, xcn, Ran = resid(Rn, tn, Xn)
+            cn = cost(rn) if np.all(np.isfinite(rn)) else float("inf")
+            if cn < c0:
+                Rs, ts, X, r, xc, Ra = Rn, tn, Xn, rn, xcn, Ran
+                done = (c0 - cn) < 1e-6 * c0
+                c0 = cn
+                lam = max(lam / 3, 1e-7)
+                break
+            lam *= 10
+            if lam > 1e8:
+                done = True
+                break
+        if lam > 1e8 or done:
+            break
+    return {c: (Rs[c], ts[c]) for c in cids}, X
+
+
 def reconstruct(paths: list[Path], photos: list[dict], progress=None) -> dict:
     """SfM bertahap. Hasil: kamera (K, R, t), titik 3D, warna, pengamatan per titik (indeks foto, u, v dalam piksel kerja)."""
     cv2 = _cv2()
@@ -324,6 +456,34 @@ def reconstruct(paths: list[Path], photos: list[dict], progress=None) -> dict:
             else:
                 pts[ti] = X
         tri_tracks()
+    # penyesuaian berkas (bundle adjustment) penuh: semua kamera + titik bersama-sama, lalu buang pencilan dan ulangi sekali
+    for rnd in range(2):
+        if len(cams) < 3 or len(pts) < 50:
+            break
+        ids = sorted(pts)
+        oc_, op_, uv_ = [], [], []
+        for k, t_ in enumerate(ids):
+            for i in tracks[t_]:
+                if i in cams:
+                    oc_.append(i)
+                    op_.append(k)
+                    uv_.append(kps[i][tracks[t_][i]])
+        if progress:
+            progress(f"Penyesuaian berkas {rnd + 1}/2: {len(cams)} kamera, {len(ids)} titik")
+        cams, Xb = bundle_adjust(Ks, cams, np.array([pts[t_] for t_ in ids]), np.array(oc_), np.array(op_), np.array(uv_, float),
+                                 i0, j0, iters=20 if rnd == 0 else 10)
+        for k, t_ in enumerate(ids):
+            X = Xb[k]
+            errs = []
+            for i in tracks[t_]:
+                if i in cams:
+                    xc = cams[i][0] @ X + cams[i][1]
+                    pr = Ks[i] @ xc
+                    errs.append(np.hypot(*(pr[:2] / pr[2] - kps[i][tracks[t_][i]])) if xc[2] > 0 else 1e9)
+            if np.all(np.isfinite(X)) and max(errs) <= 2.0:
+                pts[t_] = X
+            else:
+                del pts[t_]
     if len(cams) < 2 or len(pts) < 50:
         raise ValueError("Rekonstruksi gagal: terlalu sedikit titik 3D. Foto kurang tumpang-tindih / terlalu kabur / dinding terlalu polos.")
     ids = sorted(pts)
@@ -521,7 +681,7 @@ def plane_fit(P: np.ndarray) -> dict:
     span = float(sv[0] / math.sqrt(len(P)))
     lin = float(sv[1] / sv[0]) if sv[0] > 0 else 0.0           # 0 = titik segaris (orientasi tak tentu)
     flat = float(sv[2] / sv[1]) if sv[1] > 0 else 1.0          # 0 = sangat rata
-    if lin < 0.03:
+    if lin < 0.04:  # derau titik permukaan sendiri ~0,03 pada garis lurus
         q, note = "tidak pasti", "Titik hampir segaris: jejak harus melintasi permukaan yang tidak rata (sudut / tonjolan dinding)."
     elif flat > 0.5:
         q, note = "lemah", "Titik tidak membentuk bidang yang jelas (sebaran 3D besar)."
