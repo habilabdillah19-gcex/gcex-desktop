@@ -33,5 +33,6 @@ def patch_tree(s: str) -> str:
     c = ("sub('me.4','Hasil','report','ME','Hasil')])});")
     assert s.count(c) == 1, 'akhir kids node Model Estimation tidak ditemukan tepat satu kali'
     s = s.replace(c, "sub('me.4','Hasil','report','ME','Hasil')])"
-                     ".concat(window.arEstTree?arEstTree():[])});")
+                     ".concat(window.arEstTree?arEstTree():[])"
+                     ".concat(window.ar3Tree?ar3Tree():[])});")
     return s

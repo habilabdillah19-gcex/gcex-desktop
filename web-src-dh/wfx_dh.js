@@ -202,6 +202,7 @@
     return o;
   }
   window.wfDiag = diagnosa;
+  window.wfTebal = tebalKontak;
 
   window.wfSerap = function () {
     var M = models();
