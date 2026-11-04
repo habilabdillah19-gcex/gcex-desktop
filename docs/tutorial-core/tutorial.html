@@ -83,7 +83,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>16. Ekspor ke database &amp; dashboard</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.37.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.37.2 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -475,8 +475,8 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="step"><div class="num">6</div><div>Tab <b>Blank</b> (urutan blank terhadap cut-off) dan <b>Batch lab</b> (PASS / WARNING / FAIL per Batch_ID dari <code>Assay_Import</code>) untuk menelusuri batch yang perlu re-assay.</div></div>
   <div class="step"><div class="num">7</div><div>Tab <b>Data</b> → <code>Master_CRM</code>: ubah <b>Certified_SD</b> CRM-A dari 0,015 menjadi 0,030, klik <b>Simpan Master_CRM</b>. Semua tab dihitung ulang: WARNING CRM-A hilang, tetapi CRM yang tertukar tetap FAIL. Kembalikan nilainya ke 0,015.</div></div>
-  <div class="step"><div class="num">8</div><div>Tab <b>Panel kontrol</b>: pilih <b>Target zona</b> Z7 → <b>Simpan &amp; hitung ulang</b>. Dashboard, ekspor dan laporan hanya memuat Z7. Batas lain (cut-off blank, HARD maksimum, batas pass-rate, kelas kadar, syarat Lampiran C) diatur di sini; <b>Kembalikan bawaan</b> untuk nilai awal.</div></div>
-  <figure><img src="gambar/q15_qaqc_panel.png" style="width:140mm"><figcaption>Gambar 41 – Panel kontrol: batas penilaian dan interpretasi R².</figcaption></figure>
+  <div class="step"><div class="num">8</div><div>Tab <b>Panel kontrol</b>: pilih <b>Target zona</b> Z7 → <b>Simpan &amp; hitung ulang</b>. Dashboard, ekspor dan laporan hanya memuat Z7. Batas lain (cut-off blank, HARD maksimum, batas pass-rate, kelas kadar, syarat Lampiran C) diatur di sini; <b>Kembalikan bawaan</b> untuk nilai awal. <b>Filter Batch_ID / Sample_ID</b>: isi <i>dari – sampai</i> (mis. LAB26000 s.d. LAB26002), centang batch lewat <b>Pilih batch…</b>, atau tempel satu kolom Sample_ID dari Excel ke kotak daftar → <b>Simpan &amp; hitung ulang</b>; semua tab, Excel dan laporan PDF hanya memuat sampel dalam filter. <b>Hapus filter</b> untuk kembali ke semua data.</div></div>
+  <figure><img src="gambar/q15_qaqc_panel.png" style="width:140mm"><figcaption>Gambar 41 – Panel kontrol: filter Batch_ID LAB26000 s.d. LAB26005 aktif (lihat bilah atas), batas penilaian dan interpretasi R².</figcaption></figure>
 </section>
 
 <section class="page">

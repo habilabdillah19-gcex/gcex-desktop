@@ -337,6 +337,11 @@ Langkah:
    - beda dengan impor: impor = upsert (tidak menghapus apa pun), sedangkan *Simpan tabel* menyimpan isi tabel di layar apa adanya — baris yang dihapus ikut terhapus dan urutan baris menjadi urutan insersi di grafik kontrol. Setelah disimpan semua hasil dihitung ulang; peringatan muncul bila Sample_ID juga ada di tabel CRM / Blank lainnya atau Standard_Name belum ada di Master_CRM;
    - **Kosongkan tabel…** menghapus seluruh isi satu tabel.
 9. Tab **Panel kontrol**: target zona, tipe duplikat, unsur & satuan, cut-off blank, HARD maksimum, batas pass-rate penilaian, batas kelas kadar duplikat, syarat Lampiran C, serta toleransi pemeriksaan data bor. *Simpan & hitung ulang*; *Kembalikan bawaan* untuk nilai awal.
+10. **Filter Batch_ID & Sample_ID** (Panel kontrol) — memproses / menampilkan hanya sebagian data:
+   - **Batch_ID dari – sampai** (pilih dari daftar batch di Assay_Import atau ketik) dan/atau **daftar Batch_ID** (tombol *Pilih batch…* untuk mencentang batch);
+   - **Sample_ID dari – sampai** dan/atau **daftar Sample_ID** — tempel satu kolom Sample_ID dari Excel (judul kolom ikut tersalin tidak masalah);
+   - rentang memakai **urutan nomor** (LAB26005 < LAB26012; LT_9 < LT_10), kedua batas ikut; batas boleh awalan saja (mis. *sampai LT_00600* mencakup LT_00600_Z8). Rentang dan daftar digabung: sampel lolos bila masuk salah satunya. Filter batch DAN filter Sample_ID DAN zona harus terpenuhi. Duplikat lolos bila Original_ID atau Duplicate_ID masuk filter. Sampel yang Batch_ID-nya tidak ada di Assay_Import tidak lolos filter batch;
+   - filter berlaku untuk semua tab, grafik, ekspor Excel (baris *Filter aktif* di sheet Control_Panel) dan laporan PDF (baris *Filter* di bawah judul); data di database tidak berubah. Bilah atas dan dashboard menampilkan filter yang aktif beserta jumlah sampel di luar filter. **Hapus filter** mengembalikan ke semua data.
 
 **QAQC data bor** (tab *Data bor*, tombol **Periksa data bor**) memeriksa data Collar / Survey / Assay / Geologi yang sudah diimpor di ruang kerja Core box (bagian 4). Tingkat **MERAH** = kesalahan struktur yang harus diperbaiki sebelum komposit / model; **KUNING** = perlu diperiksa; **INFO** = catatan.
 

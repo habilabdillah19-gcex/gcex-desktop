@@ -193,3 +193,45 @@ def test_manual_edit_save_table(prj):
     assert j["ok"] and q.table_rows(s, "dup_data")[0]["dup_id"] == "QX_200_Z9|DUP" and q.table_rows(s, "dup_data")[0]["tipe"] == "Pulp"
     with pytest.raises(ValueError):
         q.save_table(s, "master_crm", [], "uji")
+
+
+def test_filter_batch_sample(prj):
+    """Filter Batch_ID (rentang / daftar) dan Sample_ID (rentang / daftar tempel Excel) memengaruhi semua hasil & laporan."""
+    from buat_data_dummy import qaqc_data
+    d, tmp = prj
+    s = q.store(str(d))
+    q.import_file(s, str(qaqc_data(tmp / "dummy")), "auto", "uji")
+    base = q.analyze(s)
+    assert base["filter_text"] == "" and len(base["batches"]) == 24 and base["all_batches"][:2] == ["LAB26000", "LAB26001"]
+    assert q.nat_key("LAB26005") < q.nat_key("LAB26012") < q.nat_key("LAB26100") and q.nat_key("LT_9_Z7") < q.nat_key("LT_10_Z7")
+    assert q.id_list("Sample_ID\nA1\r\nA2 ; a1,\tB3\n") == ["A1", "A2", "B3"]
+    # rentang batch
+    q.save_settings(s, {"batch_from": "LAB26003", "batch_to": "LAB26005"}, "uji")
+    r = q.analyze(s)
+    assert {b["batch"] for b in r["batches"]} == {"LAB26003", "LAB26004", "LAB26005"}
+    assert all(x["batch"] in ("LAB26003", "LAB26004", "LAB26005") for x in r["crm"] + r["blank"])
+    assert "Batch LAB26003 s.d. LAB26005" in r["filter_text"] and r["warnings"][0].startswith("Filter aktif")
+    assert sum(r["filtered_out"].values()) > 0
+    # daftar batch ditambah ke rentang (lolos bila masuk salah satu)
+    q.save_settings(s, {"batch_list": "LAB26110\nLAB26111"}, "uji")
+    assert {b["batch"] for b in q.analyze(s)["batches"]} == {"LAB26003", "LAB26004", "LAB26005", "LAB26110", "LAB26111"}
+    # daftar Sample_ID saja
+    sids = [x["sample_id"] for x in base["crm"]][:5]
+    q.save_settings(s, {"batch_from": "", "batch_to": "", "batch_list": "", "sid_list": "Sample_ID\n" + "\n".join(sids)}, "uji")
+    r = q.analyze(s)
+    assert sorted(x["sample_id"] for x in r["crm"]) == sorted(sids) and not r["blank"] and not r["dup"]
+    # rentang Sample_ID dengan awalan saja sebagai batas atas
+    first = sorted((x["sample_id"] for x in base["crm"]), key=q.nat_key)
+    q.save_settings(s, {"sid_list": "", "sid_from": first[0], "sid_to": first[3].rsplit("_", 1)[0]}, "uji")
+    r = q.analyze(s)
+    assert [x["sample_id"] for x in sorted(r["crm"], key=lambda x: q.nat_key(x["sample_id"]))] == first[:4]
+    # tidak ada yang lolos -> peringatan; laporan & Excel mencantumkan filter
+    q.save_settings(s, {"sid_from": "ZZZ", "sid_to": "ZZZ9"}, "uji")
+    r = q.analyze(s)
+    assert not r["dashboard"] and any("Tidak ada sampel QAQC yang lolos" in w for w in r["warnings"])
+    q.save_settings(s, {"sid_from": "", "sid_to": "", "batch_list": "LAB26004"}, "uji")
+    rep = q.report(s, str(d), "Uji", "Rina W.", "Latihan")
+    assert "Filter: <b>Batch 1 ID daftar (LAB26004)</b>" in rep["html"]
+    import openpyxl
+    wb = openpyxl.load_workbook(io.BytesIO(q.to_xlsx(s, str(d))))
+    assert wb["Control_Panel"]["A2"].value == "Filter aktif" and "LAB26004" in wb["Control_Panel"]["B2"].value

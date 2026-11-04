@@ -828,6 +828,12 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Pemeriksaan langsung (sel merah + alasan di tooltip): Sample_ID / Duplicate_ID ganda, kolom wajib kosong, angka tidak valid. **Simpan tabel** menolak menyimpan selama masih ada galat; **Batal** membuang perubahan.
 - Impor file tetap **upsert** (tidak menghapus); *Simpan tabel* menyimpan isi tabel di layar apa adanya. Tutorial Latihan 17 langkah 9–10, Panduan DB-Ex bagian 6e.
 
+## 80. DB-Ex 0.37.2 — QAQC: filter Batch_ID & Sample_ID
+
+- Panel kontrol QAQC mendapat **filter Batch_ID** (dari–sampai, atau centang lewat *Pilih batch…*) dan **filter Sample_ID** (dari–sampai, atau daftar yang ditempel dari satu kolom Excel). Rentang memakai urutan nomor (LAB26005 < LAB26012), batas ikut dihitung.
+- Semua tab, grafik, ekspor Excel dan laporan PDF hanya memuat sampel dalam filter; filter yang aktif tercantum di bilah atas, dashboard, sheet Control_Panel dan di bawah judul laporan. Data di database tidak berubah; **Hapus filter** kembali ke semua data.
+- Kotak isian Panel kontrol kini berbingkai sehingga jelas bisa diketik.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):

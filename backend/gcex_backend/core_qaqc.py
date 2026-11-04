@@ -40,7 +40,10 @@ router = APIRouter(prefix="/core/qaqc")
 SUB = "qaqc"
 
 SETTINGS_DEFAULT: dict[str, Any] = {
-    "zone": "ALL", "dup_type": "ALL", "element": "Au", "unit": "g/t",
+    "zone": "ALL", "dup_type": "ALL",
+    "batch_from": "", "batch_to": "", "batch_list": "",    # filter batch lab (kosong = semua)
+    "sid_from": "", "sid_to": "", "sid_list": "",          # filter Sample_ID (kosong = semua)
+    "element": "Au", "unit": "g/t",
     "blank_cutoff": 0.01, "hard_max": 10.0,
     "crm_good": 0.95, "crm_ok": 0.90,             # Memuaskan / Memadai dengan catatan (pass-rate CRM)
     "dup_good": 0.90, "dup_ok": 0.50,             # Memuaskan / Marginal (pass-rate duplikat)
@@ -52,6 +55,10 @@ SETTINGS_DEFAULT: dict[str, Any] = {
 }
 SETTINGS_LABEL = {
     "zone": "Target zona (ALL = semua)", "dup_type": "Tipe duplikat (ALL / lapangan / coarse / pulp)",
+    "batch_from": "Filter Batch_ID: dari", "batch_to": "Filter Batch_ID: sampai",
+    "batch_list": "Filter Batch_ID: daftar (satu per baris / koma)",
+    "sid_from": "Filter Sample_ID: dari", "sid_to": "Filter Sample_ID: sampai",
+    "sid_list": "Filter Sample_ID: daftar (tempel dari Excel)",
     "element": "Unsur", "unit": "Satuan",
     "blank_cutoff": "Cut-off blank", "hard_max": "HARD maksimum (%)",
     "crm_good": "CRM Memuaskan bila pass-rate >=", "crm_ok": "CRM Memadai dengan catatan bila pass-rate >=",
@@ -590,6 +597,65 @@ def overall(crm_lvl: int, dup_lvl: int, blk_lvl: int) -> tuple[str, int]:
     return "Memuaskan", 1
 
 
+FILTER_KEYS = ("batch_from", "batch_to", "batch_list", "sid_from", "sid_to", "sid_list")
+
+
+def nat_key(v: Any) -> tuple:
+    """Kunci urut alami: LAB26005 < LAB26012, LT_00470_Z7 < LT_00810_Z8 (angka dibandingkan sebagai angka)."""
+    return tuple((0, int(t), "") if t.isdigit() else (1, 0, t) for t in re.findall(r"\d+|[^\d]+", str(v or "").strip().lower()))
+
+
+def id_list(v: Any) -> list[str]:
+    """Daftar ID dari teks (baris baru, koma, titik koma, tab, spasi) — mis. satu kolom yang ditempel dari Excel."""
+    out, seen = [], set()
+    for t in re.split(r"[\s,;]+", str(v or "")):
+        t = t.strip().strip('"').strip("'")
+        if t and t.lower() not in ("sample_id", "batch_id", "sampleid", "batchid") and t.upper() not in seen:
+            seen.add(t.upper())
+            out.append(t)
+    return out
+
+
+class IdFilter:
+    """Filter rentang (dari–sampai, urutan alami, batas inklusif; batas boleh awalan) ATAU daftar ID. Kosong = semua lolos."""
+
+    def __init__(self, lo: Any, hi: Any, lst: Any):
+        self.lo, self.hi = str(lo or "").strip(), str(hi or "").strip()
+        self.lst = id_list(lst)
+        self.set = {x.upper() for x in self.lst}
+        self.klo, self.khi = nat_key(self.lo), nat_key(self.hi)
+        self.on = bool(self.lo or self.hi or self.lst)
+
+    def in_range(self, v: str) -> bool:
+        if not (self.lo or self.hi):
+            return False
+        k = nat_key(v)
+        return (not self.lo or k >= self.klo) and (not self.hi or k <= self.khi or k[:len(self.khi)] == self.khi)
+
+    def ok(self, *vals: Optional[str]) -> bool:
+        if not self.on:
+            return True
+        for v in vals:
+            if v and (str(v).upper() in self.set or self.in_range(str(v))):
+                return True
+        return False
+
+    def text(self, name: str) -> str:
+        parts = []
+        if self.lo or self.hi:
+            parts.append(f"{self.lo or '…'} s.d. {self.hi or '…'}")
+        if self.lst:
+            parts.append(f"{len(self.lst)} ID daftar ({', '.join(self.lst[:3])}{' …' if len(self.lst) > 3 else ''})")
+        return f"{name} " + " + ".join(parts) if parts else ""
+
+
+def filters(st: dict) -> tuple[IdFilter, IdFilter, str]:
+    fb = IdFilter(st.get("batch_from"), st.get("batch_to"), st.get("batch_list"))
+    fs = IdFilter(st.get("sid_from"), st.get("sid_to"), st.get("sid_list"))
+    txt_ = "; ".join(t for t in (fb.text("Batch"), fs.text("Sample_ID")) if t)
+    return fb, fs, txt_
+
+
 def _zone_ok(z: str, st: dict) -> bool:
     t = str(st.get("zone") or "ALL").upper()
     return t in ("ALL", "SEMUA", "") or z.upper() == t
@@ -604,6 +670,8 @@ def analyze(s: Store) -> dict:
     batch = {r["sample_id"]: (r["batch"] or "") for r in table_rows(s, "assay_import")}
     batch_of = lambda sid: batch.get(sid) or "N/A"  # noqa: E731
     warn: list[str] = []
+    fb, fs, ftxt = filters(st)
+    nflt = {"crm": 0, "blank": 0, "dup": 0}
 
     # ---- CRM
     crm = []
@@ -614,6 +682,9 @@ def analyze(s: Store) -> dict:
         if z_ == "UNKNOWN" and r["zona"]:
             z_ = r["zona"].upper()
         if not _zone_ok(z_, st):
+            continue
+        if not (fb.ok(batch_of(sid)) and fs.ok(sid)):
+            nflt["crm"] += 1
             continue
         rec = {"sample_id": sid, "std": std, "grade": lab, "zona": z_, "seq": r["seq"], "batch": batch_of(sid),
                "mean": None, "sd": None, "status": "", "cat": "", "z": None}
@@ -667,6 +738,9 @@ def analyze(s: Store) -> dict:
             z_ = r["zona"].upper()
         if not sid or lab is None or not _zone_ok(z_, st):
             continue
+        if not (fb.ok(batch_of(sid)) and fs.ok(sid)):
+            nflt["blank"] += 1
+            continue
         ok = lab <= cut
         blank.append({"sample_id": sid, "std": r["std"] or "Blank", "grade": lab, "zona": z_, "seq": r["seq"], "batch": batch_of(sid),
                       "status": "PASS" if ok else "FAIL (>Cut-Off)", "cat": "PASS" if ok else "FAIL", "ratio": lab / cut if cut > 0 else None})
@@ -691,9 +765,13 @@ def analyze(s: Store) -> dict:
         tp = (r["tipe"] or "").strip() or "Tidak Ditentukan"
         if not _zone_ok(zz, st) or (ttype not in ("ALL", "SEMUA") and tp.upper() != ttype):
             continue
+        bd = batch.get(r["dup_id"]) or batch.get(r["orig_id"]) or "N/A"
+        if not (fb.ok(bd) and fs.ok(r["orig_id"], r["dup_id"])):
+            nflt["dup"] += 1
+            continue
         o, d = r["orig"], r["dup"]
         rec = {"orig_id": r["orig_id"], "dup_id": r["dup_id"], "orig": o, "dup": d, "zona": zz, "tipe": tp, "seq": r["seq"],
-               "batch": batch.get(r["dup_id"]) or batch.get(r["orig_id"]) or "N/A", "status": "", "cat": "",
+               "batch": bd, "status": "", "cat": "",
                "hard": None, "rpd": None, "mean": None}
         if o is not None and d is not None and o > 0 and d > 0:
             mg = (o + d) / 2
@@ -802,7 +880,15 @@ def analyze(s: Store) -> dict:
            "crm_summary": crm_sum, "crm_total": crm_total, "blank": blank, "blank_summary": blank_sum, "dup": dup, "dup_valid": len(valid),
            "dup_groups": dgroups, "dup_summary": dsum, "dup_stat": dstat, "dashboard": dash, "totals": totals,
            "app_a": app_a, "app_b": app_b, "app_c": app_c, "batches": batches, "warnings": warn, "counts": counts(s),
-           "zones": zones, "dup_types": sorted({(r["tipe"] or "").strip() for r in table_rows(s, "dup_data") if (r["tipe"] or "").strip()})}
+           "zones": zones, "dup_types": sorted({(r["tipe"] or "").strip() for r in table_rows(s, "dup_data") if (r["tipe"] or "").strip()}),
+           "filter_text": ftxt, "filtered_out": nflt,
+           "all_batches": sorted({b for b in batch.values() if b}, key=nat_key)}
+    if ftxt:
+        n_in = len(crm) + len(blank) + len(dup)
+        res["warnings"].insert(0, f"Filter aktif — {ftxt}: {n_in:,} sampel QAQC diproses, "
+                               f"{sum(nflt.values()):,} di luar filter (CRM {nflt['crm']}, blank {nflt['blank']}, duplikat {nflt['dup']}).")
+        if not n_in:
+            res["warnings"].insert(1, "Tidak ada sampel QAQC yang lolos filter. Periksa isian filter di Panel kontrol.")
     s.cache["res"] = res
     return res
 
@@ -1251,7 +1337,9 @@ def to_xlsx(s: Store, folder: Optional[str] = None) -> bytes:
     # Master_CRM, Assay_Import, Control_Panel
     sheet("Master_CRM", [h for _k, h, _t in COLS["master_crm"]], [[r[k] for k, _h, _t in COLS["master_crm"]] for r in table_rows(s, "master_crm")])
     sheet("Assay_Import", [h for _k, h, _t in COLS["assay_import"]], [[r[k] for k, _h, _t in COLS["assay_import"]] for r in table_rows(s, "assay_import")])
-    cp = [[SETTINGS_LABEL.get(k, k), st[k]] for k in SETTINGS_DEFAULT]
+    cp = [[SETTINGS_LABEL.get(k, k), (", ".join(id_list(st[k])) if k.endswith("_list") else st[k])] for k in SETTINGS_DEFAULT]
+    if res.get("filter_text"):
+        cp.insert(0, ["Filter aktif", res["filter_text"]])
     if res["dup_stat"]:
         ds = res["dup_stat"]
         cp += [["Interpretasi R² (Precision):", f"R² = {ds['r2']:.4f} -> {ds['r2_label']}"],
@@ -1338,7 +1426,9 @@ def report(s: Store, folder: str, title: str = "", author: str = "", project: st
     o = []
     o.append(f'<h1 style="color:#1F3A5F">{_e(title or "Laporan QAQC Sampel & Data Bor")}</h1>')
     o.append(f'<p style="color:#5d6773">Dibuat: <b>{date.today().isoformat()}</b> &nbsp;&nbsp; Disiapkan oleh: <b>{_e(author or "DB-Ex QAQC")}</b>'
-             f' &nbsp;&nbsp; Proyek: <b>{_e(project)}</b> &nbsp;&nbsp; Zona: <b>{_e(st["zone"])}</b> &nbsp;&nbsp; Unsur: <b>{_e(el)}</b></p><hr>')
+             f' &nbsp;&nbsp; Proyek: <b>{_e(project)}</b> &nbsp;&nbsp; Zona: <b>{_e(st["zone"])}</b> &nbsp;&nbsp; Unsur: <b>{_e(el)}</b>'
+             + (f'<br>Filter: <b>{_e(res["filter_text"])}</b> (hanya sampel QAQC dalam filter yang dinilai)' if res.get("filter_text") else "")
+             + '</p><hr>')
     o.append(f'<table width="100%" cellpadding="10" cellspacing="0"><tr><td bgcolor="{hcol[0]}"><b><font size="+1" color="{hcol[1]}">'
              f'KESEHATAN DATA: {health}</font></b></td></tr></table>')
     # 1. ringkasan eksekutif

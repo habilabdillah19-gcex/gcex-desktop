@@ -12,13 +12,14 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication, QImage, QKeySequence, QPixmap, QShortcut
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-                               QScrollArea, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QFrame, QHBoxLayout,
+                               QHeaderView, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPlainTextEdit, QScrollArea, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
 
 from . import api, theme
 from .card import _esc, btn
 from .dialogs import ask, say
 from .util import SET, log, run_bg, show_in_folder
+from gcex_backend.core_qaqc import FILTER_KEYS, id_list
 
 NUM_RE = re.compile(r"^\s*[<>]?\s*[-+]?(\d+([.,]\d*)?|[.,]\d+)([eE][-+]?\d+)?\s*$")
 LVL_BG = {0: "#F2F2F2", 1: "#E2EFDA", 2: "#FFF2CC", 3: "#F4CCCC"}
@@ -304,7 +305,8 @@ class QaqcPage(QWidget):
                                "mengikuti workbook QAQC: cut-off blank 0,01; HARD maksimum 10 %; CRM Memuaskan ≥ 95 %; duplikat Memuaskan ≥ 90 %, "
                                "Marginal ≥ 50 %; blank Memuaskan ≥ 99 %."))
         box = QFrame()
-        box.setObjectName("fld")
+        box.setObjectName("pbox")  # bukan "fld": kotak isian harus tampak berbingkai agar jelas bisa diketik
+        box.setStyleSheet(f"QFrame#pbox {{ border: 1px solid {theme.C['bd']}; border-radius: 6px; }}")
         self.form = QFormLayout(box)
         self.form.setContentsMargins(10, 8, 10, 8)
         self.ed: dict[str, QWidget] = {}
@@ -367,7 +369,8 @@ class QaqcPage(QWidget):
         c = j["counts"]
         has = bool(c["crm_data"] or c["blank_data"] or c["dup_data"])
         self.sum.setText(f"Master_CRM {c['master_crm']} · Assay_Import {c['assay_import']:,} · CRM {c['crm_data']:,} · Blank {c['blank_data']:,} · "
-                         f"Duplikat {c['dup_data']:,} · Zona: {_esc(self.st['zone'])}")
+                         f"Duplikat {c['dup_data']:,} · Zona: {_esc(self.st['zone'])}"
+                         + (f" · <b style='color:#B7791F'>Filter: {_esc(j['filter_text'])}</b>" if j.get("filter_text") else ""))
         self.set_enabled(has)
         self.show_dash()
         self.show_crm()
@@ -394,6 +397,12 @@ class QaqcPage(QWidget):
     def show_dash(self) -> None:
         j = self.res
         d = j["dashboard"]
+        if not d and j.get("filter_text"):
+            self.dHead.setText(f"Tidak ada sampel QAQC dalam filter <b>{_esc(j['filter_text'])}</b>. Ubah atau hapus filter di tab "
+                               "<b>Panel kontrol</b>.")
+            fill(self.dT, [], [])
+            self.dWarn.setText("".join(f"<span style='color:{theme.C['er']}'>⚠ {_esc(w)}</span><br>" for w in j["warnings"]))
+            return
         if not d:
             self.dHead.setText("Belum ada data QAQC. Pilih <b>Workbook QAQC</b> lalu <b>⇪ Impor…</b> (sheet Master_CRM, Assay_Import, CRM_Data, "
                                "Blank_Data, Duplicate_Data), atau impor tabel satu per satu.")
@@ -780,31 +789,62 @@ class QaqcPage(QWidget):
         if self.ed:
             return
         for k, lab in self.labels.items():
-            if k in ("zone", "dup_type"):
+            if k in ("zone", "dup_type", "batch_from", "batch_to"):
                 e = QComboBox()
                 e.setEditable(True)
+                e.setMaximumWidth(320)
+                cell = e
+            elif k.endswith("_list"):
+                e = QPlainTextEdit()
+                e.setMaximumWidth(320)
+                e.setFixedHeight(64)
+                e.setPlaceholderText("kosong = semua" + ("; tempel satu kolom Sample_ID dari Excel" if k == "sid_list" else ""))
+                cell = QWidget()
+                h = QHBoxLayout(cell)
+                h.setContentsMargins(0, 0, 0, 0)
+                h.addWidget(e)
+                if k == "batch_list":
+                    self.bPickB = btn("Pilih batch…", "Pilih Batch_ID dari Assay_Import", sm=True)
+                    self.bPickB.clicked.connect(self.pick_batches)
+                    h.addWidget(self.bPickB, 0, Qt.AlignTop)
+                h.addStretch(1)
             else:
                 e = QLineEdit()
-            e.setMaximumWidth(320)
-            self.form.addRow(lab, e)
+                e.setMaximumWidth(320)
+                cell = e
+            if k in ("batch_from", "batch_to", "sid_from", "sid_to"):
+                e.setToolTip("Rentang menurut urutan nomor (LAB26005 s.d. LAB26012), batas ikut dihitung. Boleh diisi awalan saja, "
+                             "mis. LT_00470. Rentang dan daftar digabung (lolos bila masuk salah satunya).")
+            self.form.addRow(lab, cell)
             self.ed[k] = e
+        self.bClrF = btn("Hapus filter", "Kosongkan semua filter Batch_ID & Sample_ID lalu hitung ulang", sm=True)
+        self.bClrF.clicked.connect(self.clear_filter)
+        self.form.addRow("", self.bClrF)
 
     def _fill_form(self) -> None:
         zones = ["ALL"] + (self.res or {}).get("zones", []) if self.res else ["ALL"]
         types = ["ALL"] + (self.res or {}).get("dup_types", []) if self.res else ["ALL"]
+        bats = [""] + list((self.res or {}).get("all_batches", []))
         for k, e in self.ed.items():
             v = self.st.get(k)
             if isinstance(e, QComboBox):
                 e.blockSignals(True)
                 e.clear()
-                e.addItems(list(dict.fromkeys((zones if k == "zone" else types) + [str(v)])))
+                src = zones if k == "zone" else types if k == "dup_type" else bats
+                e.addItems(list(dict.fromkeys(src + [str(v)])))
                 e.setCurrentText(str(v))
                 e.blockSignals(False)
+            elif isinstance(e, QPlainTextEdit):
+                e.setPlainText("\n".join(id_list(v)))
             else:
                 e.setText(f"{v:g}" if isinstance(v, float) else str(v))
 
+    def _form_values(self) -> dict:
+        return {k: (e.currentText() if isinstance(e, QComboBox) else e.toPlainText() if isinstance(e, QPlainTextEdit) else e.text())
+                for k, e in self.ed.items()}
+
     def save_settings(self) -> None:
-        vals = {k: (e.currentText() if isinstance(e, QComboBox) else e.text()) for k, e in self.ed.items()}
+        vals = self._form_values()
         try:
             api.call("/core/qaqc/settings", {"folder": self.folder, "values": vals, "by": self.by()})
         except api.ApiError as e:
@@ -812,6 +852,51 @@ class QaqcPage(QWidget):
             return
         self.win.toast("Panel kontrol disimpan — QAQC dihitung ulang", 3000)
         self.refresh()
+
+    def clear_filter(self) -> None:
+        for k in FILTER_KEYS:
+            e = self.ed.get(k)
+            if isinstance(e, QComboBox):
+                e.setCurrentText("")
+            elif isinstance(e, QPlainTextEdit):
+                e.setPlainText("")
+        self.save_settings()
+
+    def pick_batches(self) -> None:
+        bats = list((self.res or {}).get("all_batches", []))
+        if not bats:
+            say(self, "Belum ada Batch_ID. Batch diambil dari tabel Assay_Import (kolom Batch_ID).", warn=True)
+            return
+        cur = {x.upper() for x in id_list(self.ed["batch_list"].toPlainText())}
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Pilih Batch_ID")
+        v = QVBoxLayout(dlg)
+        v.addWidget(QLabel(f"{len(bats)} batch di Assay_Import. Centang batch yang ingin diproses:"))
+        lw = QListWidget()
+        for b_ in bats:
+            it = QListWidgetItem(b_)
+            it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
+            it.setCheckState(Qt.Checked if b_.upper() in cur else Qt.Unchecked)
+            lw.addItem(it)
+        v.addWidget(lw, 1)
+        r = QHBoxLayout()
+        ball, bnone = btn("Semua", sm=True), btn("Tidak ada", sm=True)
+        ball.clicked.connect(lambda: [lw.item(i).setCheckState(Qt.Checked) for i in range(lw.count())])
+        bnone.clicked.connect(lambda: [lw.item(i).setCheckState(Qt.Unchecked) for i in range(lw.count())])
+        r.addWidget(ball)
+        r.addWidget(bnone)
+        r.addStretch(1)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(dlg.accept)
+        bb.rejected.connect(dlg.reject)
+        r.addWidget(bb)
+        v.addLayout(r)
+        dlg.resize(360, 460)
+        self._pickDlg = dlg
+        if dlg.exec() != QDialog.Accepted:
+            return
+        sel = [lw.item(i).text() for i in range(lw.count()) if lw.item(i).checkState() == Qt.Checked]
+        self.ed["batch_list"].setPlainText("\n".join(sel))
 
     def reset_settings(self) -> None:
         from gcex_backend.core_qaqc import SETTINGS_DEFAULT

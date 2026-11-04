@@ -131,3 +131,40 @@ def test_qaqc_manual_edit_paste(qtbot, prj, tmp_path, monkeypatch):
     pg.cbTbl.setCurrentIndex(pg.cbTbl.findData("Duplicate_Data"))
     qtbot.waitUntil(lambda: pg._tblShown == "Duplicate_Data" and not pg.tDirty, timeout=8000)
     assert pg.res["counts"]["crm_data"] == 50
+
+
+def test_qaqc_filter_batch_sample(qtbot, prj, tmp_path, monkeypatch):
+    """Panel kontrol: filter Batch_ID (rentang, pilih dari daftar) dan Sample_ID (daftar tempel Excel); Hapus filter."""
+    w, pg, said = _open(qtbot, prj, tmp_path, monkeypatch)
+    pg.tabs.setCurrentIndex(8)
+    assert pg.ed["batch_from"].count() == 25 and pg.ed["batch_from"].itemText(1) == "LAB26000"
+    pg.ed["batch_from"].setCurrentText("LAB26000")
+    pg.ed["batch_to"].setCurrentText("LAB26002")
+    pg.save_settings()
+    qtbot.waitUntil(lambda: pg.res and pg.res["filter_text"].startswith("Batch LAB26000 s.d. LAB26002"), timeout=8000)
+    assert pg.bT.rowCount() == 3 and "Filter:" in pg.sum.text() and "Filter aktif" in pg.dWarn.text()
+    # pilih batch dari daftar (dialog dijawab otomatis)
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QDialog
+
+    def answer():
+        dlg = pg._pickDlg
+        lw = dlg.findChild(QListWidget)
+        lw.item(lw.count() - 1).setCheckState(Qt.Checked)
+        dlg.accept()
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QListWidget
+    QTimer.singleShot(300, answer)
+    pg.pick_batches()
+    assert pg.ed["batch_list"].toPlainText() == "LAB26111"
+    assert isinstance(pg._pickDlg, QDialog)
+    pg.save_settings()
+    qtbot.waitUntil(lambda: pg.res and len(pg.res["batches"]) == 4, timeout=8000)
+    # daftar Sample_ID ditempel dari Excel (dengan judul kolom)
+    pg.clear_filter()
+    qtbot.waitUntil(lambda: pg.res and not pg.res["filter_text"], timeout=8000)
+    assert pg.ed["batch_from"].currentText() == "" and pg.bT.rowCount() == 24
+    pg.ed["sid_list"].setPlainText("Sample_ID\nZZ_TIDAK_ADA\n")
+    pg.save_settings()
+    qtbot.waitUntil(lambda: pg.res and pg.res["filter_text"].startswith("Sample_ID 1 ID daftar"), timeout=8000)
+    assert "Tidak ada sampel QAQC dalam filter" in pg.dHead.text() and pg.ed["sid_list"].toPlainText() == "ZZ_TIDAK_ADA"
