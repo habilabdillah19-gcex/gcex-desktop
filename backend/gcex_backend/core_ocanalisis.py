@@ -147,7 +147,7 @@ def sam_regions(path: Path, key: str, grid: int = 16, iou_min: float = 0.80, sta
     return out_L, regions
 
 
-def merge_regions(L: np.ndarray, rgb: np.ndarray, de: float = 12.0, gap: int = 4) -> tuple[np.ndarray, list[dict]]:
+def merge_regions(L: np.ndarray, rgb: np.ndarray, de: float = 15.0, gap: int = 5) -> tuple[np.ndarray, list[dict]]:
     """Gabungkan zona SAM bertetangga yang warnanya mirip (ΔE Lab < de). SAM sering memecah satu zona geologi menjadi
     blok-blok di antara kekar; blok sewarna yang hanya dipisah jejak kekar tipis (<= gap piksel) disatukan, celahnya diisi."""
     cv2 = _cv2()
@@ -187,7 +187,7 @@ def merge_regions(L: np.ndarray, rgb: np.ndarray, de: float = 12.0, gap: int = 4
     return out, regions
 
 
-def grow_regions(L: np.ndarray, rgb: np.ndarray, de: float = 16.0, it: int = 80) -> np.ndarray:
+def grow_regions(L: np.ndarray, rgb: np.ndarray, de: float = 18.0, it: int = 80) -> np.ndarray:
     """Tumbuhkan zona ke piksel yang belum ber-zona (tidak tercakup mask SAM) bila warnanya dekat dengan rata-rata zona."""
     cv2 = _cv2()
     ids = [i for i in np.unique(L) if i >= 0]
@@ -229,6 +229,11 @@ def _region_label(rgb: np.ndarray, mk: np.ndarray, ks: set) -> tuple[str, str]:
     if cs:
         (_x, _y), (a, b), _ang = cv2.minAreaRect(max(cs, key=cv2.contourArea))
         elong = max(a, b) / max(1e-6, min(a, b))
+    hue = (math.degrees(math.atan2(float(lab[2]), float(lab[1]))) + 360) % 360
+    if float(lab[2]) < -6 and L > 55:
+        return "abaikan", "langit"
+    if 100 <= hue <= 170 and C > 14 and L < 60:
+        return "abaikan", "vegetasi"
     if oxid and "zona_oks" in ks:
         return "zona_oks", f"oksida / gossan ({nm})"
     if L > 68 and C < 14 and elong > 3.0 and "zona_vein" in ks:
@@ -365,7 +370,8 @@ def index_mask(rgb: np.ndarray, kind: str, sens: int = 5) -> np.ndarray:
     elif kind == "kuarsa":
         sig = max(3.0, 0.02 * max(rgb.shape[:2]))
         Lloc = L - cv2.GaussianBlur(L.astype(np.float32), (0, 0), sig)
-        m = (L >= 80 - 1.6 * sens) & (C <= 8 + 0.8 * sens) & (Lloc >= 9 - 0.6 * sens)
+        # putih / krem (vein kuarsa sering bernoda oksida tipis), lebih terang dari sekitarnya; langit (kebiruan) tidak ikut
+        m = (L >= 80 - 1.6 * sens) & (C <= 10 + 1.0 * sens) & (b > -2.0) & (Lloc >= 9 - 0.6 * sens)
     else:
         raise ValueError("Jenis indeks tidak dikenal (oks / kuarsa).")
     m = cv2.morphologyEx(m.astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
@@ -441,21 +447,51 @@ def _adiff(a: float, b: float) -> float:
     return min(d, 180 - d)
 
 
-def detect_traces(rgb: np.ndarray, sens: int = 5, min_len: float = 0.05) -> list[tuple[float, float, float, float]]:
-    """Jejak lurus (kekar / vein / kontak) dalam piksel peta kerja: Canny otomatis + HoughLinesP, segmen segaris digabung."""
+def _line_mask(rgb: np.ndarray, sens: int) -> np.ndarray:
+    """Peta jejak: celah / rekahan gelap (kekar, rekahan terisi oksida) lewat black-hat dan urat terang (kuarsa) lewat
+    top-hat pada kecerahan. Bintik kecil (tekstur batuan / kerikil) dibuang."""
+    cv2 = _cv2()
+    H, W = rgb.shape[:2]
+    ls = max(H, W)
+    g = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+    g = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(g)
+    g = cv2.GaussianBlur(g, (5, 5), 1.2)
+    r = max(9, int(0.016 * ls) | 1)
+    ker = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (r, r))
+    pct = 100 - (3.0 + 0.8 * sens)  # porsi piksel terkuat yang dianggap jejak
+    m = np.zeros((H, W), bool)
+    for op in (cv2.MORPH_BLACKHAT, cv2.MORPH_TOPHAT):
+        f = cv2.morphologyEx(g, op, ker)
+        m |= f > max(16.0, float(np.percentile(f, pct)))
+    m = cv2.morphologyEx(m.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    n, comp, stats, _c = cv2.connectedComponentsWithStats(m, connectivity=8)
+    small = stats[:, cv2.CC_STAT_AREA] < 0.0002 * H * W
+    small[0] = True
+    return ~small[comp]
+
+
+def _support(mask: np.ndarray, s_: list[float]) -> float:
+    """Porsi titik di sepanjang segmen yang jatuh di peta jejak (yang sudah dilebarkan)."""
+    H, W = mask.shape
+    n = max(2, int(math.hypot(s_[2] - s_[0], s_[3] - s_[1]) / 2))
+    xs = np.clip(np.linspace(s_[0], s_[2], n).round().astype(int), 0, W - 1)
+    ys = np.clip(np.linspace(s_[1], s_[3], n).round().astype(int), 0, H - 1)
+    return float(mask[ys, xs].mean())
+
+
+def detect_traces(rgb: np.ndarray, sens: int = 5, min_len: float = 0.05) -> list[list[tuple[float, float]]]:
+    """Jejak lurus kekar / vein / kontak (polyline 2 titik, piksel peta kerja): peta jejak gelap / terang -> HoughLinesP ->
+    segmen segaris yang berdekatan digabung hanya bila hasil gabungan tetap didukung peta jejak di sepanjang panjangnya
+    (mencegah garis panjang acak yang menyambung tekstur batuan)."""
     cv2 = _cv2()
     sens = max(1, min(10, int(sens)))
     H, W = rgb.shape[:2]
-    g = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
-    g = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(g)
-    g = cv2.GaussianBlur(g, (5, 5), 1.4)
-    v = float(np.median(g))
-    k = 1.35 - 0.07 * sens
-    lo, hi = max(5.0, 0.66 * v * k), min(255.0, 1.33 * v * k)
-    ed = cv2.Canny(g, lo, hi)
     ls = max(W, H)
-    seg = cv2.HoughLinesP(ed, 1, np.pi / 180, threshold=max(15, int(60 - 4 * sens)), minLineLength=max(10, int(0.5 * min_len * ls)),
-                          maxLineGap=max(3, int(0.008 * ls)))
+    m = _line_mask(rgb, sens)
+    k = max(3, int(0.004 * ls) | 1)
+    md = cv2.dilate(m.astype(np.uint8), np.ones((k, k), np.uint8)).astype(bool)
+    seg = cv2.HoughLinesP(m.astype(np.uint8) * 255, 1, np.pi / 180, threshold=max(12, int(0.02 * ls)),
+                          minLineLength=max(10, int(0.5 * min_len * ls)), maxLineGap=max(3, int(0.006 * ls)))
     if seg is None:
         return []
     S = [list(map(float, x)) for x in np.asarray(seg).reshape(-1, 4)]
@@ -464,10 +500,11 @@ def detect_traces(rgb: np.ndarray, sens: int = 5, min_len: float = 0.05) -> list
     def ang(s_):
         return math.degrees(math.atan2(-(s_[3] - s_[1]), s_[2] - s_[0])) % 180
 
-    S = [s_ for s_ in S if not ((min(s_[0], s_[2]) < border and max(s_[0], s_[2]) < border) or (min(s_[1], s_[3]) < border and max(s_[1], s_[3]) < border)
+    S = [s_ for s_ in S if not ((max(s_[0], s_[2]) < border) or (max(s_[1], s_[3]) < border)
                                 or (min(s_[0], s_[2]) > W - border) or (min(s_[1], s_[3]) > H - border))]
+    need = 0.6 - 0.02 * sens
     merged = True
-    while merged:  # gabung segmen segaris yang berdekatan
+    while merged:
         merged = False
         S.sort(key=lambda s_: -math.hypot(s_[2] - s_[0], s_[3] - s_[1]))
         out: list[list[float]] = []
@@ -475,7 +512,7 @@ def detect_traces(rgb: np.ndarray, sens: int = 5, min_len: float = 0.05) -> list
             a = ang(s_)
             done = False
             for o in out:
-                if _adiff(a, ang(o)) > 4:
+                if _adiff(a, ang(o)) > 5:
                     continue
                 d = np.array([o[2] - o[0], o[3] - o[1]])
                 n_ = np.linalg.norm(d)
@@ -487,20 +524,23 @@ def detect_traces(rgb: np.ndarray, sens: int = 5, min_len: float = 0.05) -> list
                 q0 = np.array(o[:2])
                 if max(abs((p0 - q0) @ nrm), abs((p1 - q0) @ nrm)) > 0.006 * ls:
                     continue
-                t = sorted([0.0, n_, float((p0 - q0) @ d), float((p1 - q0) @ d)])
                 ts = sorted([float((p0 - q0) @ d), float((p1 - q0) @ d)])
-                if ts[0] > n_ + 0.03 * ls or ts[1] < -0.03 * ls:
+                if ts[0] > n_ + 0.02 * ls or ts[1] < -0.02 * ls:
                     continue
+                t = sorted([0.0, n_] + ts)
                 a0, a1 = q0 + t[0] * d, q0 + t[-1] * d
-                o[:] = [float(a0[0]), float(a0[1]), float(a1[0]), float(a1[1])]
+                cand = [float(a0[0]), float(a0[1]), float(a1[0]), float(a1[1])]
+                if _support(md, cand) < need:
+                    continue
+                o[:] = cand
                 done = merged = True
                 break
             if not done:
                 out.append(list(s_))
         S = out
-    S = [s_ for s_ in S if math.hypot(s_[2] - s_[0], s_[3] - s_[1]) >= min_len * ls]
+    S = [s_ for s_ in S if math.hypot(s_[2] - s_[0], s_[3] - s_[1]) >= min_len * ls and _support(md, s_) >= need]
     S.sort(key=lambda s_: -math.hypot(s_[2] - s_[0], s_[3] - s_[1]))
-    return [tuple(s_) for s_ in S[:int(20 + 6 * sens)]]
+    return [[(s_[0], s_[1]), (s_[2], s_[3])] for s_ in S[:int(20 + 6 * sens)]]
 
 
 def propose_traces(s: O.Store, pid: int, sens: int = 5, min_len: float = 0.05, by: str = "", long_side: int = 1400) -> dict:
@@ -511,9 +551,9 @@ def propose_traces(s: O.Store, pid: int, sens: int = 5, min_len: float = 0.05, b
     kind = _kind_ok(s, "kekar", "kontak_lito")
     O.clear_drafts(s, pid, "struktur")
     made = []
-    for i, (x0, y0, x1, y1) in enumerate(tr, 1):
+    for i, pl in enumerate(tr, 1):
         try:
-            j = O.save_feature(s, pid, None, {"kind": kind, "pts": [[x0 / W, y0 / H], [x1 / W, y1 / H]], "name": f"Usulan jejak {i}",
+            j = O.save_feature(s, pid, None, {"kind": kind, "pts": [[x / W, y / H] for x, y in pl], "name": f"Usulan jejak {i}",
                                               "src": "auto:struktur", "attrs": {O.DRAFT: "struktur"}}, by or "auto")
             made.append(j["id"])
         except ValueError:

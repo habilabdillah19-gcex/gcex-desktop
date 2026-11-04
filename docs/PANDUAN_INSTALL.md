@@ -844,6 +844,11 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - SAM kini memakai memori jauh lebih sedikit (puncak ±1,9 GB, sebelumnya bisa >4 GB) — penting untuk PC lapangan 8 GB RAM.
 - Data latihan baru `Foto_Singkapan/Dinding_Latihan_W01.jpg` (fiktif), tutorial Latihan 19, Panduan DB-Ex bagian 6c butir 8.
 
+## 83. DB-Ex 0.38.1 — foto dinding pit sungguhan untuk latihan
+
+- Paket data latihan mendapat tiga foto dinding pit sungguhan yang generik (`Foto_Singkapan/Dinding_Pit_A.jpg`, `_B`, `_C`): metadata EXIF / lokasi dibuang dan orang di foto dipotong. Tutorial Latihan 19 langkah 7–9 memakainya, termasuk catatan apa yang andal (peta oksida, batas oksida – segar dari SAM) dan apa yang masih kasar di foto asli (deteksi jejak otomatis, peta vein kuarsa).
+- Penyetelan dari uji di foto asli: deteksi jejak memakai peta rekahan gelap / urat terang dan hanya menyimpan garis yang didukung sepanjang panjangnya; zona SAM berupa langit / vegetasi dibuang otomatis; indeks vein kuarsa tidak lagi menangkap langit.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):

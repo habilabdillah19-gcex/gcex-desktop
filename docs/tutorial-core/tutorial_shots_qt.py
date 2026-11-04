@@ -231,6 +231,20 @@ def main() -> None:
         pg.an_sam()
         until(lambda: "zona usulan dari" in pg.anSamInfo.text(), 240000)
         shot("q21_analisis_sam")
+        # foto dinding pit sungguhan (generik): peta oksida & zona SAM
+        ph3 = src / "Foto_Singkapan" / "Dinding_Pit_A.jpg"
+        O.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(ph3)], ""))
+        pg.add_photo()
+        until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding_Pit") and pg.view.w > 0)
+        pg.tabs.setCurrentIndex(4)
+        pg.anIdx.setCurrentIndex(0)
+        pg.an_index(False)
+        until(lambda: pg.ovl is not None and not pg.an_busy, 30000)
+        shot("q22_analisis_pit_oksida")
+        pg.an_clear_index()
+        pg.an_sam()
+        until(lambda: "zona usulan dari" in pg.anSamInfo.text(), 240000)
+        shot("q23_analisis_pit_sam")
     # =============================================================== QAQC
     import corex.qaqc as Q
     Q.show_in_folder = lambda p: None

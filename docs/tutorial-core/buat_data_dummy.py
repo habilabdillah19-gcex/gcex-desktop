@@ -410,6 +410,8 @@ def qt_data(out: Path) -> None:
     sk.mkdir(parents=True, exist_ok=True)
     outcrop_photo(sk / "Trench_Latihan_TR01.jpg")
     wall_photo(sk / "Dinding_Latihan_W01.jpg")
+    for n in ("Dinding_Pit_A.jpg", "Dinding_Pit_B.jpg", "Dinding_Pit_C.jpg"):  # foto dinding pit generik (tanpa EXIF / lokasi)
+        shutil.copyfile(Path(__file__).resolve().parent / "aset" / n, sk / n)
     (sk / "Sampel_Trench_TR01.txt").write_text("Sample ID\tDari\tKe\tAu (ppm)\tAg_ppm\n" + "".join(
         f"{a}\t{str(b).replace('.', ',')}\t{str(c).replace('.', ',')}\t{au}\t{ag}\n" for a, b, c, au, ag in SAMPEL_TR01), encoding="utf-8")
     bo = out / "Borang"
@@ -589,6 +591,7 @@ def main():
         "--- DB-Ex versi Qt (tutorial bab 12-19) ---\n"
         "Foto_Singkapan/   Trench_Latihan_TR01.jpg (Singkapan -> + Foto); Sampel_Trench_TR01.txt (salin -> Tempel dari Excel)\n"
         "                  Dinding_Latihan_W01.jpg (tab Analisis: peta warna, jejak kekar & scanline, zona SAM; bab 19)\n"
+        "                  Dinding_Pit_A/B/C.jpg (foto dinding pit generik: zona oksida vs segar, rekahan terisi oksida, vein; bab 19)\n"
         "Borang/           scan borang fiktif (Borang -> + Borang):\n"
         "   Borang_Loading_Pit_30Okt.jpg   -> jenis Ore Spotter: Loading Pit -> ROM / Stockpile (shift II, lewat tengah malam)\n"
         "   Borang_ROM_31Okt.jpg           -> jenis Ore ke Stockpile / Crusher (Rehandling / Direct)\n"
