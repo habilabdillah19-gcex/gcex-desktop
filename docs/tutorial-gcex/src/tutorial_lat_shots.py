@@ -38,8 +38,19 @@ SEC = """(()=>{var cx=%f,cy=%f,az=100*Math.PI/180;$('sMode').value='P';$('p1e').
   $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=14;$('sliceClip').checked=true;if(!VIEW2D)toggle2D();updatePlot();})()""" % C
 ZOOM = "try{Plotly.relayout('plotDiv',{'xaxis.range':[-5,155],'yaxis.range':[150,200]});}catch(e){}"
 with sync_playwright() as pw:
-    br = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
-    ctx = br.new_context(viewport={'width': 1600, 'height': 940}, device_scale_factor=1.25, accept_downloads=True)
+    _args = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+    _o = dict(viewport={'width': 1600, 'height': 940}, device_scale_factor=1.25, accept_downloads=True)
+    # GCEX_SHOTS_PERSISTENT=1: profil tetap, perlu di Linux karena folder proyek ditiru dengan OPFS
+    # yang tidak tersedia di context sementara (lihat tutorial_shots.py).
+    if os.environ.get('GCEX_SHOTS_PERSISTENT'):
+        import tempfile, shutil, atexit
+        _ud = tempfile.mkdtemp(prefix='gcex_lat_shots_')
+        atexit.register(lambda: shutil.rmtree(_ud, ignore_errors=True))
+        br = None
+        ctx = pw.chromium.launch_persistent_context(_ud, args=_args, **_o)
+    else:
+        br = pw.chromium.launch(args=_args)
+        ctx = br.new_context(**_o)
     ctx.add_init_script(MOCK); pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
     pg.on('dialog', lambda d: (d.accept('Habil') if d.type == 'prompt' else d.accept()))
@@ -134,5 +145,5 @@ with sync_playwright() as pw:
     ev("PT.open['st']=1;PT.open['st.flt']=1;PT.open['sl']=1;PT.render(true);PT.select('sl')"); pg.wait_for_timeout(600); shot('tree', {'x': 0, 'y': 40, 'width': 320, 'height': 520})
     note('errs', errs)
     json.dump(NOTES, open(IMG + 'notes.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    br.close()
+    (br.close() if br else ctx.close())
 print('selesai', SEQ[0], 'gambar')
