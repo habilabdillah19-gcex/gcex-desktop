@@ -1837,3 +1837,60 @@ bisa dipercaya, sehingga flag interval maupun volumenya tidak bermakna.
 > lulus, tanpa galat JavaScript.** Tiga cacat ditemukan dan diperbaiki sebelum rilis: autorun membuat string tanpa
 > menyalakan solid domainnya; *Autorun Lapisan* pada kolom litologi bisa membekukan aplikasi tanpa penjelasan; dan
 > langkah waste melaporkan "selesai" padahal tidak ada yang dijalankan.
+
+## 83. GC-Ex Drill Hole Ultimate 0.24.33 — Autorun Estimasi dari Nol (Tahap 3)
+
+Melengkapi autorun 0.24.32. Yang sebelumnya hanya bisa **memperbarui** domain yang sudah berparameter; node baru
+**Autorun Estimasi dari Nol** (di bawah Model Estimation) menangani domain yang **belum punya parameter sama sekali**.
+
+### 1. Yang dikerjakan
+Rekomendasi otomatis (lag / transform / top-cut) → **fitting model variogram** → **KNA** dipindai lalu kombinasi
+terbaik diterapkan → parameter **disimpan ke domain**. Bila belum ada block model, **kerangka AOI** dibuat lebih dulu.
+
+### 2. Pilihan, dengan usulan dari data Anda
+
+| Pilihan | Usulan dan dari mana |
+|---|---|
+| **Blok X / Y** | ≈ **⅓ spasi bor** (median jarak tiap collar ke collar terdekat). Data latihan: spasi 14,5 m → blok 5 m |
+| **Blok Z** | ≈ **tebal vein median** (jarak pasangan kontak HW–FW). Data latihan: 3 m |
+| **Sub-blocking + N** | disarankan bila tebal vein < **3×** tinggi blok |
+| **Minimal komposit** | bawaan 30 — di bawah ini domain dilewati |
+| **Nugget maksimal** | bawaan 80% — di atas ini ditandai perlu ditinjau |
+| **Simpan ke domain** | bawaan nyala |
+| **Langsung estimasi** | bawaan **mati** |
+
+### 3. Tiga putusan per domain
+
+| Putusan | Artinya |
+|---|---|
+| **✓ tersimpan** | lolos semua gerbang mutu |
+| **⚠ perlu ditinjau** | parameter **tersimpan tetapi belum layak produksi** — alasannya ditulis |
+| **✖ dilewati** | tidak ada yang disimpan sama sekali |
+
+### 4. Gerbang mutu
+
+| Pemeriksaan | Putusan |
+|---|---|
+| Komposit < ambang; solid belum ada; domain **sudah berparameter** | **dilewati** — parameter yang sudah disetujui tidak pernah ditimpa |
+| Nugget > ambang (80%) | perlu ditinjau — estimasi akan sangat merata |
+| **Nugget < 5%** | perlu ditinjau — pada kadar logam nugget nol praktis tidak pernah terjadi |
+| **Range mayor ≈ range semi** (< 1,05×) | perlu ditinjau — anisotropi tidak terselesaikan, elipsoid bulat |
+| Komposit < 50 | perlu ditinjau — variogram masih rapuh untuk produksi |
+| Range mayor < 2× panjang komposit, atau > 3× bentang data | perlu ditinjau — model belum terbentuk / tidak terkekang |
+
+> Tiga gerbang yang dicetak tebal ditambahkan **setelah** uji pertama memperlihatkan variogram yang jelas tidak
+> terbentuk — nugget 0%, range mayor sama dengan range semi, 31 komposit — justru lolos sebagai "tersimpan".
+> Memeriksa nugget yang terlalu *tinggi* saja tidak cukup, dan kesalahan seperti itu tidak terlihat lagi di angka
+> tonase akhir.
+
+### 5. Alur yang disarankan
+1. Jalankan **Autorun Estimasi dari Nol**, lihat laporannya (bisa diunduh CSV).
+2. Buka tiap domain bertanda **perlu ditinjau** di **Geostatistik**, periksa variogramnya, perbaiki (mis. pasang
+   orientasi manual bila anisotropinya tidak terselesaikan), lalu **Simpan ke domain** lagi.
+3. Setelah bersih, jalankan **Autorun Estimation (update)**.
+
+Angka sumber daya tidak boleh dilaporkan dari parameter yang belum pernah dilihat sendiri. Autorun ini memangkas
+waktu mengetik dan mencoba-coba, bukan tanggung jawab geologistnya.
+
+> Diuji di aplikasi sungguhan: **38 pemeriksaan lulus**, tanpa galat JavaScript — termasuk ambang komposit
+> ekstrem (harus dilewati tanpa menyimpan apa pun), jalan normal, dan jaminan tidak menimpa parameter yang ada.

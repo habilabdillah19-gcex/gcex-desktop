@@ -300,6 +300,35 @@ B.append(D.tabel(['Pengaman', 'Mekanismenya'], [
     ['Dapat diperiksa', 'laporan memuat <b>sebelum &rarr; sesudah</b>: volume solid dan persen perubahannya; untuk '
      'estimasi, kadar rata-rata dan tonase dibanding run sebelumnya. Bisa diunduh CSV, dan riwayat run tetap bisa '
      'dibatalkan']]))
+B.append('<h3>7.2 Autorun Estimasi dari Nol: usulan + gerbang mutu</h3>')
+B.append('<p>Autorun update memakai parameter yang sudah disetujui. Untuk domain baru, autorun harus '
+         '<b>mengusulkan</b> parameter statistik &mdash; jalur yang berbeda sifatnya, karena usulan bisa salah. '
+         'Yang dipanggil: <code>gsrAuto</code> (rekomendasi lag / transform / top-cut) &rarr; <code>gsFitAuto</code> '
+         '(fitting model) &rarr; <code>knaRun</code> + <code>knaApply</code> (pindai lingkungan kriging, terapkan '
+         'yang terbaik) &rarr; <code>meFromGs</code> (simpan ke domain); <code>AOI.go</code> lebih dulu bila belum '
+         'ada block model.</p>')
+B.append('<p>Usulan ukuran blok diambil dari data, bukan dari angka hafalan: <b>blok X/Y &asymp; sepertiga spasi '
+         'bor</b> (median jarak tiap collar ke collar terdekat), <b>blok Z &asymp; tebal vein median</b> (jarak '
+         'pasangan kontak HW&ndash;FW). Sub-blocking disarankan bila tebal vein kurang dari 3&times; tinggi blok. '
+         'Semuanya dapat diubah pengguna, dan alasan usulannya ditampilkan.</p>')
+B.append(D.tabel(['Gerbang mutu', 'Putusan'], [
+    ['Komposit &lt; ambang (bawaan 30); solid belum ada; domain <b>sudah berparameter</b>',
+     '<b>dilewati</b> &mdash; tidak ada yang disimpan. Parameter yang sudah disetujui tidak pernah ditimpa'],
+    ['Nugget &gt; ambang (bawaan 80%)', '<b>perlu ditinjau</b> &mdash; estimasi akan sangat merata'],
+    ['Nugget &lt; 5%', '<b>perlu ditinjau</b> &mdash; pada kadar logam nugget nol praktis tidak pernah terjadi; '
+     'biasanya variogram belum terbentuk atau pasangan sampel berjarak pendek terlalu sedikit'],
+    ['Range mayor / semi &lt; 1,05', '<b>perlu ditinjau</b> &mdash; anisotropi tidak terselesaikan (elipsoid bulat); '
+     'untuk vein hampir selalu keliru'],
+    ['Komposit &lt; 50', '<b>perlu ditinjau</b> &mdash; variogram masih rapuh untuk produksi'],
+    ['Range mayor &lt; 2&times; panjang komposit, atau &gt; 3&times; bentang data',
+     '<b>perlu ditinjau</b> &mdash; model belum terbentuk atau tidak terkekang']]))
+B.append('<div class=box>Tiga gerbang terakhir (nugget mendekati nol, elipsoid bulat, komposit &lt; 50) '
+         'ditambahkan <b>setelah</b> uji pertama memperlihatkan variogram yang jelas tidak terbentuk &mdash; '
+         'nugget 0%, range mayor sama dengan range semi, 31 komposit &mdash; justru lolos sebagai '
+         '&ldquo;tersimpan&rdquo;. Memeriksa nugget yang terlalu tinggi saja tidak cukup.</div>')
+B.append('<p>Pilihan <b>langsung mengestimasi sesudahnya</b> bawaannya <b>mati</b>: parameter hasil usulan harus '
+         'dilihat geologistnya sebelum angka sumber daya keluar darinya.</p>')
+
 B.append('<div class=box>Yang <b>tidak</b> diotomatiskan, dan tidak akan: keputusan domain dan flag (itu geologi), '
          'interpretasi sesar, serta ambang klasifikasi Measured / Indicated / Inferred (itu ranah pelaporan dan '
          'kepatuhan). Autorun mengulang pekerjaan, bukan mengambil keputusan.</div>')

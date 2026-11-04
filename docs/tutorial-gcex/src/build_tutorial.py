@@ -104,7 +104,7 @@ BAGIAN = [
    'Domain aktif di Geostatistik', 'Variogram, anisotropi', 'Kriging Neighbourhood Analysis',
    'Uji estimasi &amp; simpan parameter', 'Block model dari nol', 'Sub-blocking',
    'Model Estimation: estimasi block model GC', 'Estimasi waste',
-   'Koreksi setelah bor baru', 'Autorun: wireframe', 'Latihan terpandu']),
+   'Koreksi setelah bor baru', 'Autorun: wireframe', 'Autorun Estimasi dari Nol', 'Latihan terpandu']),
  ('Bagian III &middot; Deposit laterit / stratiform berlapis',
   'Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex, seam) &mdash; lapisan tipis '
   'secara vertikal tetapi luas ke samping, mengikuti bentuk permukaan. Jalurnya berbeda dari vein: '
@@ -564,6 +564,44 @@ ch('Model Estimation: estimasi block model GC', '<p>Menu <b>Model Estimation</b>
  + '<h3>Atribut baru di block model</h3>' + kv([('au_est','kadar hasil estimasi (&minus;99 bila tidak diestimasi)'),('au_final','au_est bila ada, selain itu kadar GC asli &mdash; dipakai untuk perencanaan'),('domain_est','nama domain vein'),('est_pass / est_nsamp','pass yang berhasil, jumlah sampel'),('est_sor / est_ke / est_kv','slope of regression, kriging efficiency, kriging variance'),('est_type','1 = koreksi blok GC, 2 = blok tambahan'),('est_date / est_run','tanggal (yyyymmdd) dan nomor run terakhir yang mengestimasi blok itu')])
  + why('Atribut GC asli dibiarkan utuh supaya perubahan bisa diaudit dan dibandingkan (rekonsiliasi). Keputusan memakai nilai baru ada di atribut <code>au_final</code>.')
  + warn('Rata-rata estimasi bisa berbeda cukup jauh dari GC lama di zona vein (di sini GC lama jauh lebih rendah karena blok GC 2,5 m mencampur vein dengan waste). Periksa swath plot dan penampang sebelum memakai hasil.'), 'me')
+
+ch('Autorun Estimasi dari Nol: domain baru', '<p>Autorun Estimation (update) memakai parameter yang <b>sudah Anda setujui</b>. Untuk domain yang belum punya parameter sama sekali, itu tidak bisa dipakai. Node <b>Autorun Estimasi dari Nol</b> (di bawah Model Estimation) mengisi kekosongan itu &mdash; dan perlu dibaca dengan kesadaran bahwa ia <b>mengusulkan</b>, bukan memutuskan.</p>'
+ + '<h3>Yang dikerjakannya</h3>'
+ + kv([('Kerangka blok', 'memakai block model aktif, atau membuat <b>kerangka AOI baru</b> bila belum ada'),
+       ('Variogram', 'rekomendasi otomatis (lag, transform, top-cut) lalu <b>fitting model</b> &mdash; fungsi yang sama dengan tombol di Geostatistik'),
+       ('Lingkungan kriging', '<b>KNA</b> dipindai, lalu kombinasi terbaik (radius &times; faktor, jumlah sampel maksimal) diterapkan'),
+       ('Parameter', 'disimpan ke domain, seperti <b>Simpan ke domain</b> yang Anda lakukan manual')])
+ + '<h3>Pilihan yang diberikan &mdash; dengan usulan dari data Anda</h3>'
+ + '<table class="t"><tr><th>Pilihan</th><th>Usulan dan dari mana</th></tr>'
+ + '<tr><td><b>Blok X / Y</b></td><td>&asymp; <b>sepertiga spasi bor</b> (median jarak tiap collar ke collar terdekat). Pada data latihan: spasi 14,5 m &rarr; blok 5 m</td></tr>'
+ + '<tr><td><b>Blok Z</b></td><td>&asymp; <b>tebal vein median</b> (jarak pasangan kontak HW&ndash;FW). Pada data latihan: 3 m</td></tr>'
+ + '<tr><td><b>Sub-blocking + N</b></td><td>disarankan otomatis bila tebal vein kurang dari <b>3&times;</b> tinggi blok &mdash; batas solid akan kasar tanpa itu</td></tr>'
+ + '<tr><td><b>Minimal komposit</b></td><td>bawaan 30; di bawah ini domain <b>dilewati</b></td></tr>'
+ + '<tr><td><b>Nugget maksimal</b></td><td>bawaan 80%; di atas ini ditandai perlu ditinjau</td></tr></table>'
+ + tip('Angka blok itu <b>usulan dari data</b>, bukan keharusan. Kalau tinggi bench atau selektivitas alat gali Anda menentukan lain, ganti saja &mdash; alasan usulannya ditampilkan supaya Anda bisa menilai mana yang lebih masuk akal untuk tambang Anda.')
+ + '<h3>Tiga putusan per domain</h3>'
+ + '<p>Karena usulan boleh salah, tiap domain diberi putusan yang tegas:</p>'
+ + '<table class="t"><tr><th>Putusan</th><th>Artinya</th></tr>'
+ + '<tr><td><b>&#10003; tersimpan</b></td><td>lolos semua gerbang mutu</td></tr>'
+ + '<tr><td><b>&#9888; perlu ditinjau</b></td><td>parameter <b>tersimpan tetapi belum layak produksi</b>. Alasannya ditulis</td></tr>'
+ + '<tr><td><b>&#10006; dilewati</b></td><td>tidak ada yang disimpan sama sekali</td></tr></table>'
+ + '<h3>Gerbang mutunya</h3>'
+ + '<table class="t"><tr><th>Pemeriksaan</th><th>Putusan dan alasannya</th></tr>'
+ + '<tr><td>Komposit kurang dari ambang</td><td><b>dilewati</b> &mdash; variogram dari sampel sesedikit itu tidak bermakna</td></tr>'
+ + '<tr><td>Solid belum terbentuk</td><td><b>dilewati</b> &mdash; jalankan Autorun Wireframe dulu</td></tr>'
+ + '<tr><td>Domain <b>sudah punya parameter</b></td><td><b>dilewati</b> &mdash; autorun dari nol tidak pernah menimpa yang sudah Anda setujui</td></tr>'
+ + '<tr><td>Nugget di atas ambang</td><td><b>perlu ditinjau</b> &mdash; estimasi akan sangat merata (efek nugget tinggi khas emas kasar)</td></tr>'
+ + '<tr><td>Nugget <b>di bawah 5%</b></td><td><b>perlu ditinjau</b> &mdash; pada kadar logam nugget nol praktis tidak pernah terjadi; biasanya berarti variogram belum terbentuk atau pasangan sampel berjarak pendek terlalu sedikit</td></tr>'
+ + '<tr><td>Range mayor &asymp; range semi</td><td><b>perlu ditinjau</b> &mdash; <b>anisotropi tidak terselesaikan</b>, elipsoidnya bulat. Untuk vein hampir selalu keliru</td></tr>'
+ + '<tr><td>Komposit kurang dari 50</td><td><b>perlu ditinjau</b> &mdash; variogram masih rapuh untuk dipakai produksi</td></tr>'
+ + '<tr><td>Range mayor &lt; 2&times; panjang komposit, atau &gt; 3&times; bentang data</td><td><b>perlu ditinjau</b> &mdash; model kemungkinan belum terbentuk atau tidak terkekang</td></tr></table>'
+ + why('Dua gerbang terakhir yang disebut di atas &mdash; nugget mendekati nol dan elipsoid bulat &mdash; ditambahkan sesudah uji pertama memperlihatkan variogram yang jelas <b>tidak terbentuk</b> (nugget 0%, range mayor sama dengan range semi, 31 komposit) justru lolos sebagai &ldquo;tersimpan&rdquo;. Memeriksa nugget yang terlalu <i>tinggi</i> saja tidak cukup: nugget nol sama mencurigakannya, dan kesalahan seperti itu tidak terlihat lagi di angka tonase akhir.')
+ + '<h3>Bawaannya tidak langsung mengestimasi</h3>'
+ + '<p>Pilihan <b>Langsung lanjut mengestimasi</b> ada, tetapi bawaannya <b>mati</b>. Alur yang disarankan:</p>'
+ + steps('Jalankan <b>Autorun Estimasi dari Nol</b>, lihat laporannya.',
+         'Buka tiap domain bertanda <b>perlu ditinjau</b> di <b>Geostatistik</b>, periksa variogramnya, perbaiki (mis. pasang orientasi manual bila anisotropinya tidak terselesaikan), lalu <b>Simpan ke domain</b> lagi.',
+         'Setelah semua domain bersih, jalankan <b>Autorun Estimation (update)</b> ({{B:Autorun: wireframe}}).')
+ + warn('Angka sumber daya tidak boleh dilaporkan dari parameter yang belum pernah Anda lihat sendiri. Autorun dari nol memangkas waktu mengetik dan mencoba-coba, <b>bukan</b> tanggung jawab geologistnya.', 'Batas tanggung jawab'))
 
 ch('Koreksi setelah bor baru', '<p>Inilah pemakaian sehari-hari: setiap ada bor baru, GC-Ex hanya mengestimasi ulang blok yang <b>lingkungan kriging-nya</b> berubah, yaitu blok yang memakai komposit dari hole baru / berubah, ditambah blok yang baru masuk solid. Blok lain tetap nilai run sebelumnya.</p>'
  + steps('Menu <b>Data</b> &rarr; <b>Tambah / perbarui data bor (upsert)</b>: pilih <code>SIM_upsert2_*.csv</code> (2 bor infill SIM-INF-05 dan 06 di ujung timur).',
