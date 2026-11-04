@@ -401,19 +401,18 @@ AI_DDR = {"header": {"tanggal": "31-10-26", "shift": "I", "rig": "hansin - sdr -
 
 
 
-SAMPEL_TR01 = [("TR01-01", 0, 2, "0,21", 3), ("TR01-02", 2, 3.5, "1,85", 9), ("TR01-03", 3.5, 4.4, "6,4", 21), ("TR01-04", 4.4, 6, "0,48", 5)]
+# sampel channel latihan di foto dinding pit B (kadar fiktif): oksida, andesit segar, vein hematit, dinding kanan
+SAMPEL_PIT_B = [("CH-B-01", 0, 4, "0,21", 3), ("CH-B-02", 4, 8.4, "0,48", 5), ("CH-B-03", 8.4, 9.6, "6,4", 21), ("CH-B-04", 9.6, 12, "1,85", 9)]
 
 
 def qt_data(out: Path) -> None:
-    """Foto trench sintetis + tabel sampel channel, dan scan borang fiktif (JPG + satu PDF tiga halaman)."""
+    """Foto dinding pit generik (aset/) + tabel sampel channel fiktif, dan scan borang fiktif (JPG + satu PDF tiga halaman)."""
     sk = out / "Foto_Singkapan"
     sk.mkdir(parents=True, exist_ok=True)
-    outcrop_photo(sk / "Trench_Latihan_TR01.jpg")
-    wall_photo(sk / "Dinding_Latihan_W01.jpg")
     for n in ("Dinding_Pit_A.jpg", "Dinding_Pit_B.jpg", "Dinding_Pit_C.jpg"):  # foto dinding pit generik (tanpa EXIF / lokasi)
         shutil.copyfile(Path(__file__).resolve().parent / "aset" / n, sk / n)
-    (sk / "Sampel_Trench_TR01.txt").write_text("Sample ID\tDari\tKe\tAu (ppm)\tAg_ppm\n" + "".join(
-        f"{a}\t{str(b).replace('.', ',')}\t{str(c).replace('.', ',')}\t{au}\t{ag}\n" for a, b, c, au, ag in SAMPEL_TR01), encoding="utf-8")
+    (sk / "Sampel_Channel_Pit_B.txt").write_text("Sample ID\tDari\tKe\tAu (ppm)\tAg_ppm\n" + "".join(
+        f"{a}\t{str(b).replace('.', ',')}\t{str(c).replace('.', ',')}\t{au}\t{ag}\n" for a, b, c, au, ag in SAMPEL_PIT_B), encoding="utf-8")
     bo = out / "Borang"
     bo.mkdir(exist_ok=True)
     form_pit(bo / "Borang_Loading_Pit_30Okt.jpg")
@@ -589,9 +588,10 @@ def main():
         "   Assay_Latihan_LTH-102_ulang.csv -> tab Assay, cara 'Tambah / perbarui per hole' (latihan data baru)\n"
         "Dashboard_lama/   latihan tombol JSON (impor proyek dashboard lama)\n"
         "--- DB-Ex versi Qt (tutorial bab 12-19) ---\n"
-        "Foto_Singkapan/   Trench_Latihan_TR01.jpg (Singkapan -> + Foto); Sampel_Trench_TR01.txt (salin -> Tempel dari Excel)\n"
-        "                  Dinding_Latihan_W01.jpg (tab Analisis: peta warna, jejak kekar & scanline, zona SAM; bab 19)\n"
-        "                  Dinding_Pit_A/B/C.jpg (foto dinding pit generik: zona oksida vs segar, rekahan terisi oksida, vein; bab 19)\n"
+        "Foto_Singkapan/   foto dinding pit sungguhan (generik, tanpa lokasi):\n"
+        "   Dinding_Pit_B.jpg + Sampel_Channel_Pit_B.txt -> bab 12 Singkapan (digitasi, channel sampling, infografis)\n"
+        "   Dinding_Pit_A.jpg -> bab 19 Analisis foto (peta oksida, jejak kekar & scanline, zona SAM)\n"
+        "   Dinding_Pit_C.jpg -> latihan tambahan (zona argilik pucat, sesar miring, zona oksida atas)\n"
         "Borang/           scan borang fiktif (Borang -> + Borang):\n"
         "   Borang_Loading_Pit_30Okt.jpg   -> jenis Ore Spotter: Loading Pit -> ROM / Stockpile (shift II, lewat tengah malam)\n"
         "   Borang_ROM_31Okt.jpg           -> jenis Ore ke Stockpile / Crusher (Rehandling / Direct)\n"

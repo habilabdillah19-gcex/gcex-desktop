@@ -83,7 +83,7 @@ def main() -> None:
     w.set_mode("oc")
     pg = w.outcrop
     qt_data(src)
-    ph = src / "Foto_Singkapan" / "Trench_Latihan_TR01.jpg"
+    ph = src / "Foto_Singkapan" / "Dinding_Pit_B.jpg"
     O.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(ph)], ""))
     pg.add_photo()
     until(lambda: pg.cur is not None and pg.view.w > 0)
@@ -97,22 +97,24 @@ def main() -> None:
             pg.tool.press(QPointF(u * pg.view.w, v * pg.view.h), None)
         if pg.kmap[kind]["shape"] != "point":
             pg.tool.finish()
-    draw("zona_alt", [(0.29, 0.13), (0.62, 0.13), (0.75, 0.93), (0.42, 0.93)])
-    draw("vein", [(0.6, 0.14), (0.36, 0.92)])
-    draw("label_zona", [(0.30, 0.2), (0.6, 0.2)], "Zona argilik (FIKTIF)")
+    # foto dinding pit B: zona oksida hematit-limonit (kiri), andesit segar (tengah), vein / dike hematit tegak (kanan)
+    draw("zona_oks", [(0.0, 0.21), (0.2, 0.19), (0.33, 0.21), (0.36, 0.45), (0.35, 0.62), (0.32, 0.82), (0.2, 0.86), (0.0, 0.86)])
+    draw("vein", [(0.665, 0.21), (0.685, 0.45), (0.72, 0.58), (0.78, 0.82)])
+    draw("kontak_lito", [(0.36, 0.33), (0.5, 0.3), (0.62, 0.48), (0.6, 0.62)])
+    draw("label_zona", [(0.01, 0.25), (0.34, 0.25)], "Zona oksida hematit-limonit")
     pg.cbLabelBox.setChecked(True)
-    draw("label", [(0.12, 0.35)], "TUFF PROPILITIK")
-    draw("orientasi", [(0.47, 0.55)], "N120/70")
-    draw("channel", [(0.05, 0.78), (0.5, 0.8), (0.95, 0.77)])
+    draw("label", [(0.47, 0.62)], "ANDESIT SEGAR")
+    draw("orientasi", [(0.69, 0.37)], "N350/80")
+    draw("channel", [(0.04, 0.76), (0.5, 0.77), (0.95, 0.74)])
     ch = pg.feats[-1]
     pg.tool.select(ch["id"])
-    QGuiApplication.clipboard().setText((src / "Foto_Singkapan" / "Sampel_Trench_TR01.txt").read_text(encoding="utf-8"))
+    QGuiApplication.clipboard().setText((src / "Foto_Singkapan" / "Sampel_Channel_Pit_B.txt").read_text(encoding="utf-8"))
     pg.sample_paste()
     pg.save_form()
-    pg.save_info({"template": "trench", "grade_color": "Au", "compass": "W"})
+    pg.save_info({"template": "trench", "grade_color": "Au", "compass": "W", "title": "Channel sampling dinding pit B (latihan)"})
     pg.tool.select(ch["id"])
     shot("q01_singkapan")
-    png = WORK / "trench_infografis.png"
+    png = WORK / "pit_b_infografis.png"
     O.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (str(png), ""))
     pg.export("png")
     until(lambda: png.exists())
@@ -200,51 +202,55 @@ def main() -> None:
             for r in ws.iter_rows()]
     (WORK / "q11_data_dashboard.json").write_text(json.dumps(rows, ensure_ascii=False, default=str, indent=0), encoding="utf-8")
     print("OK q11_data_dashboard.json", len(rows) - 1, "baris")
-    # =============================================================== Singkapan: tab Analisis (Fase 1)
+    # =============================================================== Singkapan: tab Analisis (Fase 1) — foto dinding pit A
     w.set_mode("oc")
-    ph2 = src / "Foto_Singkapan" / "Dinding_Latihan_W01.jpg"
+    ph2 = src / "Foto_Singkapan" / "Dinding_Pit_A.jpg"
     O.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(ph2)], ""))
     pg.add_photo()
-    until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding") and pg.view.w > 0)
+    until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding_Pit_A") and pg.view.w > 0)
     pg.tabs.setCurrentIndex(4)
     pg.anIdx.setCurrentIndex(0)
     pg.an_index(False)
     until(lambda: pg.ovl is not None and not pg.an_busy, 30000)
     shot("q19_analisis_warna")
     pg.an_clear_index()
+    # skala latihan (lebar dinding di kaki foto dianggap 20 m) + pelapukan zona segar
     from gcex_backend import core_outcrop as CO
     so = CO.store(pg.folder)
-    CO.save_feature(so, pg.cur["id"], None, {"kind": "skala", "pts": [[0.111, 0.965], [0.889, 0.965]], "attrs": {"length_m": 14}}, "Rina W.")
-    CO.update_photo(so, pg.cur["id"], {"desc:weathering": "W2 (Slightly Weathered)"}, "Rina W.")
+    pid = pg.cur["id"]
+    CO.save_feature(so, pid, None, {"kind": "skala", "pts": [[0.05, 0.94], [0.95, 0.94]], "attrs": {"length_m": 20}}, "Rina W.")
+    CO.update_photo(so, pid, {"desc:weathering": "W3 (Moderately Weathered) di zona batuan segar"}, "Rina W.")
     pg._pick(pg.lst.currentRow())
     pg.tabs.setCurrentIndex(4)
     pg.an_traces()
-    until(lambda: pg.scan_res is not None and pg.anSetT.rowCount() >= 2 and not pg.an_busy, 40000)
+    until(lambda: pg.scan_res is not None and not pg.an_busy, 40000)
+    wait(500)
+    shot("q20_analisis_jejak_otomatis")
+    # jejak kekar / vein / sesar digambar geologist mengikuti rekahan terisi oksida yang terlihat
+    pg.auto_reject(None)
+    for kind, pts in (("sesar", [(0.13, 0.42), (0.22, 0.70), (0.31, 0.97)]), ("kekar", [(0.36, 0.60), (0.44, 0.97)]),
+                      ("vein", [(0.40, 0.45), (0.47, 0.66), (0.53, 0.86)]), ("kekar", [(0.48, 0.42), (0.60, 0.92)]),
+                      ("kekar", [(0.56, 0.47), (0.63, 0.93)]), ("kekar", [(0.69, 0.42), (0.77, 0.97)]),
+                      ("kekar", [(0.82, 0.42), (0.89, 0.97)]), ("kekar", [(0.88, 0.45), (0.97, 0.68)]),
+                      ("kekar", [(0.31, 0.51), (0.47, 0.54)]), ("kekar", [(0.50, 0.66), (0.66, 0.70)]),
+                      ("kekar", [(0.66, 0.56), (0.80, 0.59)])):
+        CO.save_feature(so, pid, None, {"kind": kind, "pts": [list(q) for q in pts]}, "Rina W.")
+    pg._pick(pg.lst.currentRow())
+    pg.tabs.setCurrentIndex(4)
+    pg.anDraft.setChecked(False)
+    pg.an_struct()
+    until(lambda: pg.scan_res is not None and pg.anSetT.rowCount() >= 1 and not pg.an_busy, 40000)
     wait(500)
     sa = pg.tabs.widget(4)
     sa.verticalScrollBar().setValue(sa.verticalScrollBar().maximum())
-    shot("q20_analisis_struktur")
+    shot("q21_analisis_struktur")
     sa.verticalScrollBar().setValue(0)
+    pg.anDraft.setChecked(True)
     if pg.vision().get("sam"):
-        pg.auto_reject(None)
         pg.anGrid.setCurrentIndex(pg.anGrid.findData("sedang"))
         pg.an_sam()
         until(lambda: "zona usulan dari" in pg.anSamInfo.text(), 240000)
-        shot("q21_analisis_sam")
-        # foto dinding pit sungguhan (generik): peta oksida & zona SAM
-        ph3 = src / "Foto_Singkapan" / "Dinding_Pit_A.jpg"
-        O.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(ph3)], ""))
-        pg.add_photo()
-        until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding_Pit") and pg.view.w > 0)
-        pg.tabs.setCurrentIndex(4)
-        pg.anIdx.setCurrentIndex(0)
-        pg.an_index(False)
-        until(lambda: pg.ovl is not None and not pg.an_busy, 30000)
-        shot("q22_analisis_pit_oksida")
-        pg.an_clear_index()
-        pg.an_sam()
-        until(lambda: "zona usulan dari" in pg.anSamInfo.text(), 240000)
-        shot("q23_analisis_pit_sam")
+        shot("q22_analisis_sam")
     # =============================================================== QAQC
     import corex.qaqc as Q
     Q.show_in_folder = lambda p: None

@@ -56,7 +56,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div class="band">
       <div class="kick">Database Excellence · keluarga GC-Ex</div>
       <h1>Tutorial DB<em>-Ex</em></h1>
-      <div class="lead">Latihan langkah demi langkah memakai DB-Ex: foto core box, data bor, AI lokal untuk geoteknik, overlay assay, singkapan &amp; trenching, analisis foto (peta oksida, zona SAM, struktur &amp; GSI), borang lapangan (Ore Spotter, Daily Drilling Report) ke Excel, SQLite dan MS Access, serta QAQC Database (CRM, blank, duplikat, data bor). Data latihan fiktif, ditambah tiga foto dinding pit generik.</div>
+      <div class="lead">Latihan langkah demi langkah memakai DB-Ex: foto core box, data bor, AI lokal untuk geoteknik, overlay assay, singkapan &amp; trenching, analisis foto (peta oksida, zona SAM, struktur &amp; GSI), borang lapangan (Ore Spotter, Daily Drilling Report) ke Excel, SQLite dan MS Access, serta QAQC Database (CRM, blank, duplikat, data bor). Data latihan fiktif; foto singkapan adalah foto dinding pit sungguhan yang generik.</div>
     </div>
     <img src="gambar/t02_folder.png">
   </div>
@@ -86,7 +86,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>19. Analisis foto singkapan</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.38.2 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar dan nama orang di tutorial ini adalah contoh fiktif; foto dinding pit (Latihan 19) generik tanpa lokasi.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.38.3 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar dan nama orang di tutorial ini adalah contoh fiktif; foto dinding pit (Latihan 19) generik tanpa lokasi.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -347,30 +347,29 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
   </table>
   <table>
     <tr><th style="width:48%">File di DB-Ex_Data_Dummy</th><th>Dipakai di</th></tr>
-    <tr><td><code>Foto_Singkapan\Trench_Latihan_TR01.jpg</code>, <code>Sampel_Trench_TR01.txt</code></td><td>Latihan 12 – Singkapan</td></tr>
+    <tr><td><code>Foto_Singkapan\Dinding_Pit_B.jpg</code>, <code>Sampel_Channel_Pit_B.txt</code></td><td>Latihan 12 – Singkapan</td></tr>
     <tr><td><code>Borang\Borang_Loading_Pit_30Okt.jpg</code></td><td>Latihan 13 – Ore Spotter Loading Pit</td></tr>
     <tr><td><code>Borang\Borang_ROM_31Okt.jpg</code></td><td>Latihan 14 – Ore ke Stockpile / Crusher</td></tr>
     <tr><td><code>Borang\DDR_31Okt.jpg</code></td><td>Latihan 15–16 – Daily Drilling Report</td></tr>
     <tr><td><code>Borang\Borang_Latihan_3_halaman.pdf</code></td><td>ketiga borang dalam satu PDF (dipecah per halaman)</td></tr>
     <tr><td><code>QAQC\QAQC_Latihan.xlsx</code></td><td>Latihan 17–18 – QAQC Database</td></tr>
-    <tr><td><code>Foto_Singkapan\Dinding_Latihan_W01.jpg</code></td><td>Latihan 19 – Analisis foto singkapan</td></tr>
-    <tr><td><code>Foto_Singkapan\Dinding_Pit_A.jpg</code>, <code>_B</code>, <code>_C</code></td><td>Latihan 19 – foto dinding pit sungguhan (generik)</td></tr>
+    <tr><td><code>Foto_Singkapan\Dinding_Pit_A.jpg</code> (latihan tambahan: <code>Dinding_Pit_C.jpg</code>)</td><td>Latihan 19 – Analisis foto singkapan</td></tr>
   </table>
-  <div class="note"><b>Catatan.</b> Foto trench, scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
+  <div class="note"><b>Catatan.</b> Foto singkapan adalah foto dinding pit sungguhan yang generik (tanpa lokasi, nama perusahaan maupun orang); garis, kadar dan nama sampel di atasnya fiktif. Scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
 </section>
 
 <section class="page">
   <div class="part">Latihan 12</div>
   <h2>Singkapan: digitasi, channel sampling &amp; infografis</h2>
-  <div class="step"><div class="num">1</div><div>Klik <b>Singkapan</b> → <b>+ Foto</b>, pilih <code>D:\Latihan\DB-Ex_Data_Dummy\Foto_Singkapan\Trench_Latihan_TR01.jpg</code>.</div></div>
-  <div class="step"><div class="num">2</div><div>Pilih jenis fitur di bilah gambar (Zona alterasi, Vein, Label zona, Label, Strike / dip, Channel sampel), klik <b>✎ Gambar</b>, klik titik-titik di foto; Enter / klik ganda = selesai. <b>✦ SAM</b> membuat batas zona otomatis dari satu klik di dalam zona.</div></div>
-  <div class="step"><div class="num">3</div><div>Pilih garis <b>Channel sampel</b>; di tab <b>Fitur</b> isi tabel sampel (Sample ID, Dari, Ke, kadar per unsur) atau buka <code>Sampel_Trench_TR01.txt</code>, salin semua isinya lalu <b>Tempel dari Excel</b>. Garis dibagi per interval (diukur dari ujung kiri = collar, ke kanan = EOH) dan diwarnai kelas Au; komposit tertimbang panjang dihitung otomatis.</div></div>
-  <figure><img src="gambar/q01_singkapan.png" style="width:165mm"><figcaption>Gambar 28 – Ruang kerja Singkapan: zona argilik, vein, label, strike/dip N120/70 dan channel sampel 4 interval dengan kotak kadar.</figcaption></figure>
+  <div class="step"><div class="num">1</div><div>Klik <b>Singkapan</b> → <b>+ Foto</b>, pilih <code>D:\Latihan\DB-Ex_Data_Dummy\Foto_Singkapan\Dinding_Pit_B.jpg</code> — dinding pit dengan zona oksida hematit-limonit di kiri, andesit segar abu-abu di tengah dan vein / dike hematit merah tua yang hampir tegak di kanan.</div></div>
+  <div class="step"><div class="num">2</div><div>Digitasi: <i>Zona oksida / gossan</i> (poligon di sekeliling zona merah-coklat kiri), <i>Vein</i> (ikuti dike hematit dari atas ke bawah), <i>Kontak litologi</i> (batas andesit segar), <i>Label zona</i>, <i>Label</i> “ANDESIT SEGAR” dan <i>Strike / dip</i> N350/80 di vein. Pilih jenis di bilah gambar, klik <b>✎ Gambar</b>, klik titik-titik di foto; Enter / klik ganda = selesai. <b>✦ SAM</b> membuat batas zona otomatis dari satu klik di dalam zona.</div></div>
+  <div class="step"><div class="num">3</div><div>Gambar garis <b>Channel sampel</b> mendatar di kaki dinding dari kiri ke kanan; di tab <b>Fitur</b> isi tabel sampel (Sample ID, Dari, Ke, kadar per unsur) atau buka <code>Sampel_Channel_Pit_B.txt</code>, salin semua isinya lalu <b>Tempel dari Excel</b> (4 sampel CH-B-01…04, 12 m, kadar fiktif; CH-B-03 memotong vein). Garis dibagi per interval (diukur dari ujung kiri = collar, ke kanan = EOH) dan diwarnai kelas Au; komposit tertimbang panjang dihitung otomatis.</div></div>
+  <figure><img src="gambar/q01_singkapan.png" style="width:165mm"><figcaption>Gambar 28 – Ruang kerja Singkapan pada foto dinding pit B: zona oksida, vein hematit, kontak, label, strike/dip N350/80 dan channel sampel 4 interval dengan kotak kadar.</figcaption></figure>
 </section>
 
 <section class="page">
   <div class="step"><div class="num">4</div><div>Tab <b>Infografis</b>: gaya, judul, kompas arah pandang, warna kelas kadar. <b>File → Ekspor infografis</b> (Ctrl+E) menyimpan PNG / PDF siap laporan.</div></div>
-  <figure><img src="gambar/q02_infografis.png" style="width:165mm"><figcaption>Gambar 29 – Infografis hasil ekspor: kotak kadar per interval, komposit, legenda kelas Au dan kompas.</figcaption></figure>
+  <figure><img src="gambar/q02_infografis.png" style="width:165mm"><figcaption>Gambar 29 – Infografis hasil ekspor: kotak kadar per interval, komposit 12 m, legenda kelas Au dan kompas.</figcaption></figure>
   <div class="step"><div class="num">5</div><div>Tab <b>Georef</b>: titik kontrol survey (u, v → E, N, RL) membuat foto berkoordinat. Ekspor STR / DXF, tabel sampel dan database channel (<b>Collar, Survey, Assay, Geologi</b>) bawaannya memakai <b>koordinat georef</b>; menempel ke topografi / DTM as-built hanya bila dipilih.</div></div>
   <div class="note">Koordinat ada di <b>bidang foto</b>; kemiringan yang terlihat di satu dinding adalah <i>apparent dip</i>. Rincian teknis georef, topografi dan Depth Anything ada di <i>Panduan Teknis DB-Ex</i> bagian 6c.</div>
 </section>
@@ -510,37 +509,31 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 
 <section class="page">
   <div class="part">Latihan 19</div>
-  <h2>Analisis foto singkapan: peta warna, struktur &amp; zona SAM</h2>
-  <p>Tab <b>Analisis</b> di ruang kerja Singkapan membuat <b>usulan</b> otomatis yang Anda periksa: zona dari SAM, peta warna oksida / vein kuarsa yang terukur, serta jejak kekar dengan set, scanline, Jv, RQD dan bantuan GSI. Semua berjalan offline. Hasil berupa usulan (putus-putus) yang baru ikut ekspor setelah <b>diterima</b>.</p>
-  <div class="step"><div class="num">1</div><div>Singkapan → <b>+ Foto</b> → <code>Foto_Singkapan\Dinding_Latihan_W01.jpg</code> (dinding fiktif: andesit propilitik, zona oksida di kiri, vein kuarsa miring, dua set kekar). Buka tab <b>Analisis</b>.</div></div>
-  <div class="step"><div class="num">2</div><div><b>2 · Peta warna terukur</b> → <i>Oksida besi</i> → <b>Hitung</b>. Area oksida diwarnai oranye di foto; luasnya <b>±35 %</b> foto. Bila sudah ada zona yang didigitasi, tabel menunjukkan % oksida di tiap zona; dengan georef / garis skala juga m². <b>Jadikan usulan zona</b> mengubah area itu menjadi poligon usulan. Ulangi dengan <i>Vein kuarsa</i>.</div></div>
-  <figure><img src="gambar/q19_analisis_warna.png" style="width:150mm"><figcaption>Gambar 46 – Peta warna oksida besi di atas foto dan persentase luasnya.</figcaption></figure>
+  <h2>Analisis foto singkapan: peta oksida, struktur &amp; zona SAM</h2>
+  <p>Tab <b>Analisis</b> di ruang kerja Singkapan membuat <b>usulan</b> otomatis yang Anda periksa: peta warna oksida / vein kuarsa yang terukur, jejak kekar dengan set, scanline, Jv, RQD dan bantuan GSI, serta zona dari SAM. Semua berjalan offline. Hasil berupa usulan (putus-putus) yang baru ikut ekspor setelah <b>diterima</b>. Latihan ini memakai foto dinding pit sungguhan.</p>
+  <div class="step"><div class="num">1</div><div>Singkapan → <b>+ Foto</b> → <code>Foto_Singkapan\Dinding_Pit_A.jpg</code>: zona oksida di atas, batuan segar abu-abu kehijauan di bawah, rekahan terisi oksida curam ke kanan, urat kuarsa putih dan noda limonit tegak di kanan. Buka tab <b>Analisis</b>.</div></div>
+  <div class="step"><div class="num">2</div><div><b>2 · Peta warna terukur</b> → <i>Oksida besi</i> → <b>Hitung</b>. Zona oksida atas, rekahan terisi oksida dan noda limonit diwarnai oranye; luasnya <b>±28 %</b> foto. Bila sudah ada zona yang didigitasi, tabel menunjukkan % oksida di tiap zona; dengan georef / garis skala juga m². <b>Jadikan usulan zona</b> mengubah area itu menjadi poligon usulan.</div></div>
+  <figure><img src="gambar/q19_analisis_warna.png" style="width:150mm"><figcaption>Gambar 46 – Peta oksida besi pada foto dinding pit A.</figcaption></figure>
 </section>
 
 <section class="page">
-  <div class="step"><div class="num">3</div><div>Gambar <b>Garis skala</b> di sepanjang pita ukur di kaki dinding (pita pertama ke pita terakhir = <b>14 m</b>), dan isi <i>Pelapukan</i> di Deskripsi: <code>W2</code>.</div></div>
-  <div class="step"><div class="num">4</div><div><b>3 · Struktur &amp; geoteknik</b> → <b>Deteksi jejak</b>. Jejak lurus dijadikan garis usulan <i>Kekar</i>, lalu struktur dihitung otomatis: dua set — <b>S1 ±65°</b> (curam ke kanan) dan <b>S2 ±160°</b> (landai turun ke kanan) — di rose diagram; scanline mendatar memotong jejak (titik merah / biru di foto). Spasi per set ±<b>1,3 m</b> (kelas ISRM <i>Lebar</i>), Jv ≈ 1,5 / m³, RQD ≈ 100 %, struktur <i>Masif / blok besar</i>, kondisi <i>Baik</i> (dari W2) → <b>GSI ≈ 75–85</b>.</div></div>
-  <figure><img src="gambar/q20_analisis_struktur.png" style="width:150mm"><figcaption>Gambar 47 – Jejak kekar usulan, scanline dengan titik potong per set, rose diagram dan ringkasan geoteknik.</figcaption></figure>
-  <div class="note">Vein kuarsa juga terdeteksi sebagai jejak (masuk set S2). Ganti jenisnya menjadi <b>Vein</b> di tab Fitur. Untuk scanline pilihan, gambar garis (mis. jenis <i>Channel</i>) melintang kekar lalu pilih di kotak <i>Scanline</i>.</div>
+  <div class="step"><div class="num">3</div><div>Beri skala: gambar <b>Garis skala</b> di kaki dinding dari kiri ke kanan dan isi panjangnya. <i>Untuk latihan</i> anggap <b>20 m</b> (di lapangan: pita ukur atau georef dengan titik RTK). Isi <i>Pelapukan</i> di Deskripsi: <code>W3</code> untuk zona batuan segar.</div></div>
+  <div class="step"><div class="num">4</div><div><b>3 · Struktur &amp; geoteknik</b> → <b>Deteksi jejak</b>. Di dinding sungguhan hasilnya <b>kasar</b>: banyak segmen pendek di zona oksida bertekstur, bekas lubang ledak dan bayangan ikut terdeteksi, rekahan berkelok terputus-putus. Pakai sebagai petunjuk saja, lalu <b>Buang semua usulan</b>.</div></div>
+  <figure><img src="gambar/q20_analisis_jejak_otomatis.png" style="width:140mm"><figcaption>Gambar 47 – Usulan jejak otomatis pada foto dinding pit A: banyak segmen semu di zona oksida bertekstur — perlu disaring geologist.</figcaption></figure>
 </section>
 
 <section class="page">
-  <div class="step"><div class="num">5</div><div><b>Buang semua usulan</b>, lalu <b>1 · Segmentasi zona (SAM)</b> → <i>Sedang</i> → <b>Usulkan zona</b> (±20–60 detik). SAM menemukan puluhan segmen (blok di antara kekar); segmen sewarna digabung menjadi <b>2 zona</b>: <i>Zona oksida / gossan</i> dan <i>Zona litologi</i>. Centang <b>Label zona dengan AI vision</b> bila Ollama aktif agar AI memberi jenis &amp; nama tiap zona.</div></div>
-  <figure><img src="gambar/q21_analisis_sam.png" style="width:150mm"><figcaption>Gambar 48 – Zona usulan dari SAM: oksida (kiri) dan andesit propilitik (kanan).</figcaption></figure>
-  <div class="step"><div class="num">6</div><div>Periksa usulan terhadap foto: geser titik batas, ubah jenis / nama, hapus yang keliru, lalu <b>Terima semua usulan</b>. Baru setelah diterima, zona &amp; jejak ikut legenda, infografis, STR / DXF dan database channel.</div></div>
+  <div class="step"><div class="num">5</div><div>Gambar sendiri jejak yang terlihat (bilah atas → <i>Kekar</i>, <i>Vein</i>, <i>Sesar</i> → <b>✎ Gambar</b>): rekahan lebar terisi oksida di kiri sebagai <i>Sesar</i>, rekahan oksida curam ke kanan sebagai <i>Kekar</i>, zona urat kuarsa-oksida sebagai <i>Vein</i>, dan beberapa kekar landai di antara blok. Lalu matikan <i>Ikutkan usulan</i> → <b>Hitung struktur</b>.</div></div>
+  <figure><img src="gambar/q21_analisis_struktur.png" style="width:150mm"><figcaption>Gambar 48 – Jejak yang digambar geologist, scanline mendatar dengan titik potong per set, rose diagram dan ringkasan geoteknik.</figcaption></figure>
+  <div class="check"><b>✓ Cek:</b> dua set — <b>S1 ±108°</b> (rekahan curam turun ke kanan, set dominan) dan <b>S2 ±171°</b> (kekar landai); spasi S1 ±2,6 m (<i>Sangat lebar</i>, dengan skala latihan 20 m), Jv kecil, RQD ≈ 100 %, struktur <i>Masif / blok besar</i>, kondisi <i>Sedang</i> (W3) → <b>GSI ≈ 60–70</b>. Angka ini bergantung pada jejak yang Anda gambar dan skala yang dipakai.</div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">6</div><div><b>1 · Segmentasi zona (SAM)</b> → <i>Sedang</i> → <b>Usulkan zona</b> (±20–60 detik). Zona oksida atas dan rekahan lebar dipisahkan dari blok batuan segar; langit &amp; vegetasi dibuang otomatis. Batuan segar biasanya terpecah beberapa blok — gabungkan / rapikan, ubah jenis / nama, lalu <b>Terima semua usulan</b>. Centang <b>Label zona dengan AI vision</b> bila Ollama aktif agar AI memberi jenis &amp; nama tiap zona.</div></div>
+  <figure><img src="gambar/q22_analisis_sam.png" style="width:150mm"><figcaption>Gambar 49 – Zona usulan SAM pada foto dinding pit A: oksida (oranye) dan batuan segar (biru), bersama jejak yang sudah digambar.</figcaption></figure>
+  <div class="note"><b>Yang bisa diharapkan di foto sungguhan.</b> <b>Peta oksida</b> dan <b>batas oksida – segar dari SAM</b> paling andal. <b>Deteksi jejak otomatis</b> masih kasar — gambar jejak kekar / vein sendiri; set, rose diagram, scanline, Jv, RQD dan GSI tetap dihitung otomatis. <b>Peta vein kuarsa</b> sulit bila batuan induk juga pucat. Kemampuan ini meningkat setelah model dilatih dengan foto &amp; digitasi dari site Anda sendiri.</div>
+  <div class="step"><div class="num">7</div><div>Latihan tambahan: <code>Dinding_Pit_C.jpg</code> (zona argilik pucat, sesar miring, zona oksida atas) — ulangi langkah 2–6.</div></div>
   <div class="warn">Angka geoteknik (spasi, Jv, RQD, GSI) adalah <b>bantuan</b> dari satu foto. Set yang sejajar bidang foto tidak terlihat, dan strike / dip sebenarnya tidak bisa diukur dari satu dinding rata — gunakan apparent dip dari georef dan ukuran kompas di lapangan.</div>
-</section>
-
-<section class="page">
-  <div class="step"><div class="num">7</div><div><b>Foto dinding pit sungguhan.</b> Tambahkan <code>Foto_Singkapan\Dinding_Pit_A.jpg</code>: dinding pit dengan zona oksida di atas, batuan segar abu-abu kehijauan di bawah, rekahan terisi oksida dan urat kuarsa. <b>Peta warna → Oksida besi → Hitung</b>: zona oksida atas, rekahan & noda oksida terpetakan (±28 % luas foto).</div></div>
-  <figure><img src="gambar/q22_analisis_pit_oksida.png" style="width:150mm"><figcaption>Gambar 49 – Peta oksida besi pada foto dinding pit.</figcaption></figure>
-</section>
-
-<section class="page">
-  <div class="step"><div class="num">8</div><div><b>Segmentasi zona (SAM)</b>: zona oksida (atas, rekahan lebar) dipisahkan dari blok batuan segar; langit &amp; vegetasi dibuang otomatis. Batas zona segar biasanya terpecah beberapa blok — gabungkan / rapikan sebelum menerima.</div></div>
-  <figure><img src="gambar/q23_analisis_pit_sam.png" style="width:150mm"><figcaption>Gambar 50 – Zona usulan SAM pada foto dinding pit: oksida (oranye) dan batuan segar (biru).</figcaption></figure>
-  <div class="note"><b>Yang bisa diharapkan di foto sungguhan.</b> <b>Peta oksida</b> dan <b>batas oksida – segar dari SAM</b> paling andal. <b>Deteksi jejak otomatis</b> masih kasar di dinding bertekstur: rekahan yang berkelok, bekas lubang ledak (half barrel) dan bayangan ikut terdeteksi — pakai sebagai titik awal, atau gambar jejak kekar / vein sendiri (✎ Gambar) lalu <b>Hitung struktur</b>: set, rose diagram, scanline, Jv, RQD dan GSI tetap dihitung dari jejak yang Anda gambar. <b>Peta vein kuarsa</b> sulit bila batuan induk juga pucat. Kemampuan ini akan meningkat setelah model dilatih dengan foto &amp; digitasi dari site Anda sendiri (Fase 3).</div>
-  <div class="step"><div class="num">9</div><div>Ulangi dengan <code>Dinding_Pit_B.jpg</code> (zona oksida merah di kiri, dike / vein oksida tegak) dan <code>Dinding_Pit_C.jpg</code> (zona argilik pucat, sesar miring, zona oksida atas).</div></div>
 </section>
 
 <section class="page">

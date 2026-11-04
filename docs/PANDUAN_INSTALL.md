@@ -853,6 +853,12 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 
 - `DB-Ex_Tutorial_Penggunaan.pdf` dibangun ulang: sampul dan daftar isi kini memuat bab 17–19 (QAQC sampel lab, QAQC data bor & laporan PDF, Analisis foto singkapan) dengan data latihan simulasi dan foto dinding pit generik.
 
+## 85. DB-Ex 0.38.3 — bab Singkapan & Analisis foto memakai foto dinding pit sungguhan
+
+- Tutorial bab 12 kini dikerjakan di `Foto_Singkapan/Dinding_Pit_B.jpg`: zona oksida hematit-limonit, vein / dike hematit, kontak, label, strike / dip, channel sampling 4 sampel (`Sampel_Channel_Pit_B.txt`, kadar fiktif) dan infografis.
+- Bab 19 dikerjakan di `Dinding_Pit_A.jpg`: peta oksida, usulan jejak otomatis (ditunjukkan apa adanya — masih kasar), jejak yang digambar geologist → set, scanline, Jv, RQD, GSI, lalu zona SAM. `Dinding_Pit_C.jpg` untuk latihan tambahan.
+- Foto sintetis (trench & dinding) tidak lagi ada di paket data latihan; hanya dipakai uji otomatis.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):
