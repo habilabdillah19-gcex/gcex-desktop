@@ -109,7 +109,8 @@
       var xa = o.x0 + (i + 0.5) * o.bx, xl = xa - offX;
       for (j = 0; j < ny; j++) {
         var ya = o.y0 + (j + 0.5) * o.by, yl = ya - offY;
-        if (PL && PL.f && !PL.f(xl, yl)) { out.poly += nz; continue; }
+        /* rpPoly() bekerja dalam koordinat ABSOLUT (lihat pemakaiannya di rpRun), bukan lokal */
+        if (PL && PL.f && !PL.f(xa, ya)) { out.poly += nz; continue; }
         var ztv = tz ? tz(xl, yl) : null, zpv = pz ? pz(xl, yl) : null;
         if (o.topo && (ztv == null || !isFinite(ztv))) { out.topo += nz; continue; }
         if (o.pit && (zpv == null || !isFinite(zpv))) { out.pit += nz; continue; }

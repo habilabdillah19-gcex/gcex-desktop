@@ -1586,3 +1586,52 @@ Release **tidak pernah dihapus** lagi:
 Pada titik mana pun selama proses ini, Release selalu ada beserta isinya. Run yang dibatalkan paling buruk hanya meninggalkan rilis dengan isi campuran lama-baru, bukan rilis yang hilang.
 
 Kegagalan memindahkan tag tidak lagi menggagalkan penerbitan; ia hanya memunculkan peringatan bahwa arsip kode sumber bisa tertinggal di commit lama.
+
+## 79. GC-Ex Drill Hole Ultimate 0.24.29 — filter posisi, pemotongan di permukaan, export terfilter
+
+Melengkapi penyusun filter (bagian 77) dengan bagian yang masih kurang.
+
+### 1. Tombol cepat topografi
+Dua tombol di panel **Data & Filter**: **Hanya di bawah topografi** dan **Hanya di atas topografi**. Dinilai **per interval dari titik tengahnya** terhadap topografi aktif. Menekan tombol yang berlawanan tidak menumpuk aturan — ia membalik aturan yang sama.
+
+### 2. Aturan posisi di penyusun filter
+Selain atribut dan kampanye, aturan kini bisa menilai **posisi** titik tengah interval:
+
+| Jenis | Operator |
+|---|---|
+| Topografi aktif | di bawah / di atas |
+| **DTM mana pun** (versi topografi, desain pit, wireframe sebagai permukaan) | di bawah / di atas |
+| **Solid domain** (Geomodeller Vein) | di dalam / di luar |
+| **Wireframe** (Data Referensi) | di dalam / di luar |
+| **Poligon** (fitur tertutup Map atau string Surpac) | di dalam / di luar |
+
+Semuanya bisa digabung AND/OR dengan aturan atribut — misalnya *Au ≥ 0,5* **DAN** *di dalam solid QV_Lensa2* **DAN** *di bawah topografi*.
+
+Satu jebakan yang perlu disebut karena sempat menimbulkan bug: **ruang koordinatnya berbeda**. Solid domain dan `topoZ` memakai koordinat **lokal** (`x − offX`), sedangkan `rpTinFn`, `rpSurfSrc` dan `rpPoly` memakai koordinat **absolut**. Modul ini mengubahnya di tiap titik uji.
+
+### 3. Export data bor terfilter + pemotongan di permukaan
+**Export terfilter (.xlsx)** menulis empat sheet Collar / Survey / Assay / Geologi; **Export terfilter (CSV)** menulis empat berkas terpisah. Keduanya hanya memuat yang lolos filter, dengan kolom `Kampanye` ikut serta.
+
+Yang membuatnya berguna untuk perhitungan tonase: **interval yang memotong permukaan tidak dibuang dan tidak diambil utuh, melainkan dipotong tepat di permukaannya.** Kedalaman potongnya dicari dengan bagi-dua pada lintasan bor (30 langkah — ketelitiannya jauh di bawah satu milimeter untuk interval sepanjang apa pun yang wajar). Tanpa ini, "hanya di bawah topografi" akan melebihkan tonase sebesar separuh interval yang sebenarnya berada di udara.
+
+Jumlah interval yang terpotong dilaporkan sesudah export.
+
+### 4. Perbaikan: batas poligon pada kerangka blok AOI
+Ditemukan saat menelusuri ruang koordinat di atas. Pada bagian 64, batas **poligon area** di pembuat kerangka AOI memanggil `rpPoly()` dengan koordinat **lokal**, padahal fungsi itu bekerja dalam koordinat **absolut** — sehingga batas poligonnya menguji tempat yang salah, meleset sejauh offset proyek (ratusan ribu meter). Batas topografi, pit dan RL tidak terpengaruh. Sudah diperbaiki.
+
+### Diuji
+Topografi miring `z = 300 − 0,2x`; bor A (collar RL 310 di x = 0, topo 300) dan bor B (collar RL 290 di x = 100, topo 280) — keduanya **menembus permukaan**, jadi ada interval yang benar-benar memotong topografi:
+
+| Uji | Hasil |
+|---|---|
+| Tombol **di bawah topografi** | interval 0–10 m gugur pada kedua bor (titik tengahnya di udara), sisanya lolos |
+| Tombol **di atas topografi** | tepat kebalikannya: hanya interval 0–10 m |
+| Interval yang seluruhnya di atas | dibuang |
+| Interval yang seluruhnya di bawah | diambil utuh |
+| **Interval yang memotong permukaan** (collar digeser agar permukaan jatuh di kedalaman 15 m, interval 10–20 m) | dipotong menjadi **15,0000–20,0000** |
+| Baris Assay di hasil export | `A, 15, 20, S10, …` — batasnya benar-benar ikut terpotong |
+| Export terfilter | 2 hole, Assay 6 baris, Geologi 6 baris, 1 interval dilaporkan terpotong |
+| Filter dimatikan | `domOK` kembali meloloskan 8 dari 8 interval |
+
+### Cara mematikan filter
+Tiga cara, semuanya di panel **Data & Filter**: hapus centang **Filter aktif** (aturannya tersimpan untuk dipakai lagi), tekan **Hapus semua & matikan**, atau hapus aturan satu per satu dengan tombol **×** — filter mati sendiri saat aturan terakhir hilang.
