@@ -1495,3 +1495,68 @@ Data tiruan 5 hole (3 eksplorasi/infill + 2 grade control), 68 interval assay da
 | Export `.xlsx` set merge | 51,5 KB, **dibuka openpyxl**: Collar 5, Survey 5, Assay 68, Geologi 68 baris; CRC seluruh entri OK |
 
 Proyek yang disimpan dengan 0.24.25/0.24.26 dimuat ulang dengan penyesuaian otomatis: grup gabungan lama menjadi set merge, dan keadaan tiga nilai menjadi centang tampil.
+
+## 77. GC-Ex Drill Hole Ultimate 0.24.28 — import per kampanye & penyusun filter AND/OR
+
+Menutup empat hal yang masih tertinggal dari rangkaian kampanye.
+
+### 1. Pemilih kampanye tujuan di dialog import
+Dialog import dan upsert mendapat **Kampanye tujuan** beserta tombol **+ Kampanye baru…**. Seluruh hole dari import itu diberi label kampanye tersebut. Bawaannya kampanye aktif — atau, bila yang aktif adalah set merge, kampanye sumber pertamanya.
+
+### 2. Satu file .xlsx berisi empat sheet
+Tombol **⇧ Satu file .xlsx (4 sheet: Collar / Survey / Assay / Geologi)** memasang satu berkas ke keempat slot sekaligus.
+
+Pemilihan sheet per peran memang **sudah** ditangani GC-Ex sejak lama — tiap slot menilai setiap sheet di dalam berkas dan memilih yang paling cocok, dengan daftar pilihan untuk mengoreksi. Yang kurang hanyalah memasang berkasnya empat kali, dan itulah yang dikerjakan tombol ini.
+
+### 3. Bentrok antar kampanye saat upsert
+Daftar prioritas kampanye sebelumnya hanya urutan tampilan. Sekarang ia **menentukan**:
+
+| Keadaan | Hasil |
+|---|---|
+| Hole belum ada | masuk, diberi label kampanye tujuan |
+| Hole sudah ada di kampanye tujuan | diganti seperti biasa |
+| Hole ada di kampanye **berprioritas lebih rendah** | kampanye tujuan menang: data diganti, label berpindah |
+| Hole ada di kampanye **berprioritas lebih tinggi** | **data ditolak** — tidak menimpa, label tidak berubah |
+
+Hole yang ditolak **dilaporkan di pratinjau upsert** lengkap dengan HoleID-nya, jadi penolakan tidak pernah diam-diam.
+
+### 4. Penyusun filter AND/OR + rentang nilai
+Panel **Data & Filter** mendapat penyusun aturan. Pilihan atributnya **dinamis**, dibentuk dari apa yang benar-benar masuk saat import — bukan dari kolom mentah berkas Excel/CSV, sehingga tidak ada kolom yang perlu disimpan ulang dan **tidak ada biaya memori tambahan**:
+
+| Kelompok | Contoh | Operator |
+|---|---|---|
+| Unsur assay | Au, Ag, Cu | ≥, ≤, >, <, =, ≠, **antara (rentang)** |
+| Kategori assay | Jenis, Lab | =, ≠, salah satu (daftar), mengandung |
+| Atribut geologi | Lith, Alt, Ox, Texture | sama seperti di atas |
+| Kampanye & dataset aktif | — | sama seperti di atas |
+| Collar | Easting, Northing, RL, kedalaman, bench | angka / teks |
+| Interval | From, To, panjang | angka |
+
+Tiap aturan juga punya **ada isinya** / **kosong** untuk menyaring data yang tidak terisi, dan nilai boleh ditulis dengan koma desimal (`0,5`).
+
+Aturan digabung dengan **AND** atau **OR**, dinilai **per interval**; sebuah hole ikut tampil bila sedikitnya satu intervalnya lolos. Ringkasan di bawah panel menyebutkan berapa interval dan berapa hole yang lolos.
+
+**Sambungannya ke mesin yang sudah ada** sengaja dibuat di satu titik: filter dipasang pada `domOK()` — penjaga interval yang memang sudah dipakai Geostatistik, komposit dan statistik — sehingga hasilnya langsung berlaku di sana **tanpa menyentuh satu pun fungsi analisis**. Pembungkusnya dipasang paling luar dan ber-AND dengan filter domain, populasi WASTE, dan populasi per lapisan yang sudah ada, jadi tidak saling meniadakan.
+
+### Diuji
+
+**Bentrok upsert**, tiga kasus pada dua kampanye (`eksplorasi_2024` prioritas 1, `gc_2025` prioritas 2):
+
+| Kasus | Hasil |
+|---|---|
+| Tujuan `gc_2025`, data memuat `EX-01` (milik prioritas 1) + `GC-99` baru | hanya `GC-99` masuk; `EX-01` **tidak berubah** dan labelnya tetap; penolakan dilaporkan |
+| Tujuan `eksplorasi_2024`, data memuat `GC-01` (milik prioritas 2) | `GC-01` diganti dan labelnya pindah ke pemenang |
+| Prioritas `gc_2025` dinaikkan, lalu kasus pertama diulang | kini `EX-01` **diganti** dan labelnya pindah — hasilnya berbalik mengikuti prioritas |
+
+**Penyusun filter**, data tiruan 3 hole / 7 interval:
+
+| Aturan | Hasil |
+|---|---|
+| `Au ≥ 0,5` | 3 interval, hole `EX-01, GC-01` |
+| `Au antara 0,3–1,0` | 3 interval dari tiga hole berbeda |
+| `Au ≥ 0,5` **AND** `Lith = QV` | 2 interval — interval `Au 2,5` gugur karena `Lith = AND` |
+| `Au ≥ 2` **OR** `Jenis = DD` | 3 interval |
+| `RL collar < 290` | hanya `EX-02` |
+| `Dataset aktif = ikut` | `EX-01, GC-01` |
+| `HoleID salah satu EX-01, GC-01` | `EX-01, GC-01` |
+| Sambungan `domOK` | 3 dari 7 interval — **sama persis** dengan hasil filter; begitu filter dimatikan kembali 7 dari 7 |

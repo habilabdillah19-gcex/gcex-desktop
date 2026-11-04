@@ -531,6 +531,124 @@
     return out;
   };
 
+  /* ================= IMPORT / UPSERT PER KAMPANYE =================
+     1. Pemilih kampanye tujuan di dialog import & upsert (bawaan: kampanye aktif / sumber pertama
+        set merge aktif).
+     2. Tombol "Satu file .xlsx (4 sheet)": satu berkas dipasang ke keempat slot sekaligus. Pemilihan
+        sheet per peran sudah ditangani GC-Ex (tiap slot menilai setiap sheet dan memilih yang paling
+        cocok, dengan daftar pilihan untuk mengoreksi), jadi di sini cukup memasang berkasnya.
+     3. Penyelesaian bentrok: bila satu hole sudah ada di kampanye lain, URUTAN PRIORITAS menentukan.
+        Kampanye yang lebih tinggi menang — bila yang menang kampanye lama, data baru untuk hole itu
+        DITOLAK (tidak menimpa) dan labelnya tidak berubah.                                        */
+  function impSel() { return document.getElementById('kpImpSel'); }
+  window.kpImpSet = function (v) { KP.imp = v; };
+
+  function impFill() {
+    var sel = impSel(); if (!sel) return;
+    sync();
+    var src = KP.L.filter(function (k) { return !isMg(k); });
+    if (!byId(KP.imp) || isMg(byId(KP.imp))) KP.imp = kpTujuan();
+    sel.innerHTML = src.map(function (k, i) {
+      return '<option value="' + k.id + '"' + (k.id === KP.imp ? ' selected' : '') + '>' + kE(k.name) +
+             ' (prioritas ' + (i + 1) + ')</option>';
+    }).join('');
+  }
+  window.kpImpFill = impFill;
+
+  window.kpImpBaru = function () {
+    var n = prompt('Nama kampanye baru untuk data yang akan diimport:', 'kampanye_' + (KP.L.filter(function (k) { return !isMg(k); }).length + 1));
+    if (n == null) return;
+    n = String(n).trim().slice(0, 40); if (!n) return;
+    var k = baru(n); KP.imp = k.id;
+    ubah(); impFill();
+  };
+
+  /* satu .xlsx berisi empat sheet -> pasang ke keempat slot */
+  window.kpImpXlsx = function (inp) {
+    var f = inp && inp.files && inp.files[0];
+    inp.value = '';
+    if (!f) return;
+    if (!/\.(xlsx|xlsm)$/i.test(f.name)) { alert('Pilih berkas .xlsx / .xlsm berisi sheet Collar, Survey, Assay dan Geologi.'); return; }
+    var roles = ['collar', 'survey', 'assay', 'geo'], i = 0;
+    (function next() {
+      if (i >= roles.length) { try { if (window.SA && SA.preview) SA.preview(); } catch (e) {} return; }
+      var r = roles[i++];
+      Promise.resolve(SA.slotFile(r, f)).then(next, next);
+    })();
+  };
+
+  function impUI() {
+    var rb = document.getElementById('roleBox');
+    if (rb && !impSel()) {
+      var d = document.createElement('div');
+      d.className = 'row2';
+      d.innerHTML = '<div><label title="Seluruh hole dari import ini diberi label kampanye tersebut">Kampanye tujuan</label>' +
+        '<select id="kpImpSel" onchange="kpImpSet(this.value)"></select></div>' +
+        '<div><label>&nbsp;</label><button type="button" onclick="kpImpBaru()">+ Kampanye baru…</button></div>';
+      rb.insertBefore(d, rb.firstChild);
+      impFill();
+    }
+    var sl = document.querySelector('.slots');
+    if (sl && !document.getElementById('kpXlsxBtn')) {
+      var w = document.createElement('div');
+      w.style.cssText = 'grid-column:1/-1;margin-top:4px';
+      w.innerHTML = '<label class="sb" id="kpXlsxBtn"><input type="file" accept=".xlsx,.xlsm" onchange="kpImpXlsx(this)">' +
+        '&#8679; Satu file .xlsx (4 sheet: Collar / Survey / Assay / Geologi)</label>' +
+        '<div class="hint" style="margin-top:3px">Berkas yang sama dipasang ke keempat slot; sheet untuk tiap peran dipilih otomatis dan masih bisa dikoreksi di daftar tiap slot.</div>';
+      sl.parentNode.insertBefore(w, sl.nextSibling);
+    }
+  }
+  setTimeout(impUI, 600);
+  setTimeout(impUI, 2500);
+
+  /* ---------- bentrok antar kampanye saat upsert ---------- */
+  if (typeof window.UP === 'object' && UP && typeof UP.merge === 'function') {
+    var _um = UP.merge;
+    UP.merge = function (D, D2) {
+      var hasil = null;
+      try {
+        sync();
+        var tgt = byId(KP.imp) ? KP.imp : kpTujuan();
+        if (tgt && KP.L.length) {
+          var pT = idxOf(tgt), H = {}, tolak = {}, nTolak = 0;
+          ['collars', 'surveys', 'assays', 'geoRows'].forEach(function (t) {
+            (D2[t] || []).forEach(function (r) { H[r[0]] = 1; });
+          });
+          Object.keys(H).forEach(function (h) {
+            var cur = KP.of[h];
+            if (!cur || cur === tgt || !byId(cur)) return;
+            var pC = idxOf(cur);
+            if (pC >= 0 && pC < pT) { tolak[h] = 1; nTolak++; }      /* kampanye lama lebih tinggi: tolak */
+          });
+          if (nTolak) {
+            ['collars', 'surveys', 'assays', 'geoRows'].forEach(function (t) {
+              if (D2[t]) D2[t] = D2[t].filter(function (r) { return !tolak[r[0]]; });
+            });
+            KP._tolak = { n: nTolak, ids: Object.keys(tolak).slice(0, 20), tgt: (byId(tgt) || {}).name || '' };
+          } else KP._tolak = null;
+          hasil = _um.apply(this, arguments);
+          Object.keys(H).forEach(function (h) { if (!tolak[h]) KP.of[h] = tgt; });
+          ubah(true);
+          return hasil;
+        }
+      } catch (e) { console.error(e); }
+      return _um.apply(this, arguments);
+    };
+  }
+  /* laporkan penolakan di ringkasan upsert */
+  if (typeof window.UP === 'object' && UP && typeof UP.txt === 'function') {
+    var _ut = UP.txt;
+    UP.txt = function () {
+      var t = _ut.apply(this, arguments);
+      try {
+        var T = KP._tolak;
+        if (T && T.n) t += '<br><span class=warn>' + T.n + ' hole ditolak</span>: sudah ada di kampanye berprioritas lebih tinggi daripada "' +
+          kE(T.tgt) + '" &mdash; datanya tidak ditimpa (' + T.ids.map(kE).join(', ') + (T.n > T.ids.length ? ', …' : '') + ').';
+      } catch (e) {}
+      return t;
+    };
+  }
+
   /* ---------- simpan / muat bersama proyek ---------- */
   if (window.SA && typeof SA.collectWork === 'function') {
     var _c = SA.collectWork;
