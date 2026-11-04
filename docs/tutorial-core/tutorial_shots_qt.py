@@ -25,7 +25,7 @@ os.environ["GCEX_CACHE"] = str(WORK / "cache")
 from PIL import Image  # noqa: E402
 
 sys.path.insert(0, str(T))
-from buat_data_dummy import AI_DDR, AI_PIT, AI_ROM, qt_data  # noqa: E402  data latihan fiktif (sama dengan paket DB-Ex_Data_Dummy)
+from buat_data_dummy import AI_DDR, AI_PIT, AI_ROM, qaqc_data, qt_data  # noqa: E402  data latihan fiktif (sama dengan paket DB-Ex_Data_Dummy)
 
 
 def main() -> None:
@@ -200,6 +200,57 @@ def main() -> None:
             for r in ws.iter_rows()]
     (WORK / "q11_data_dashboard.json").write_text(json.dumps(rows, ensure_ascii=False, default=str, indent=0), encoding="utf-8")
     print("OK q11_data_dashboard.json", len(rows) - 1, "baris")
+    # =============================================================== QAQC
+    import corex.qaqc as Q
+    Q.show_in_folder = lambda p: None
+    Q.say = lambda *a, **k: print("SAY", str(a[1])[:120])
+    wbp = qaqc_data(src)
+    w.set_mode("qa")
+    qp = w.qaqc
+    until(lambda: qp.res is not None)
+    Q.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(wbp)], ""))
+    qp.cbTarget.setCurrentIndex(0)
+    qp.import_files()
+    until(lambda: qp.res is not None and qp.res["counts"]["crm_data"] == 48)
+    wait(2500)
+    shot("q12_qaqc_dashboard")
+    for i, name in ((1, "q13_qaqc_crm"), (3, "q14_qaqc_duplikat")):
+        qp.tabs.setCurrentIndex(i)
+        ch = qp.cCrm if i == 1 else qp.cDup
+        until(lambda ch=ch: ch.labels and all(lb.pixmap() and not lb.pixmap().isNull() for lb in ch.labels), 40000)
+        wait(300)
+        shot(name)
+    qp.tabs.setCurrentIndex(9 - 1)
+    shot("q15_qaqc_panel")
+    # data bor: impor Collar / Survey / Assay latihan lewat backend lalu periksa
+    from gcex_backend import core_dh, core_io
+    pj = core_io.get_project(str(prj))
+    lab = src / "Data_Lab"
+    if not lab.exists():
+        from buat_data_dummy import main as _m  # noqa: F401
+    qp.tabs.setCurrentIndex(7)
+    rows = [["Hole", "E", "N", "RL", "EOH"], ["XX-1", 1000, 2000, 300, 30], ["XX-2", 1010, 2000, 300, None], ["XX-3", 1020, 2005, 300, 20]]
+    core_dh.do_import(pj, "collar", rows, 0, {"hole": 0, "x": 1, "y": 2, "z": 3, "depth": 4}, [], "replace")
+    core_dh.do_import(pj, "survey", [["Hole", "Depth", "Dip", "Azi"], ["XX-1", 0, -60, 90], ["XX-1", 15, -58, 92], ["XX-1", 30, 55, 95],
+                                     ["XX-3", 0, -90, 0], ["XX-3", 24, -88, 10]], 0, {"hole": 0, "at": 1, "dip": 2, "azi": 3}, [], "replace")
+    core_dh.do_import(pj, "assay", [["Hole", "From", "To", "Sample", "Au"], ["XX-1", 0, 2, "S1", 0.1], ["XX-1", 1.5, 3, "S2", 0.2],
+                                    ["XX-1", 5, 6, "S3", 0.05], ["XX-1", 29, 31, "S1", 0.3], ["XX-3", 0, 1, "S9", 0.1]], 0,
+                      {"hole": 0, "from": 1, "to": 2}, [{"i": 3, "src": "Sample", "name": "Sample", "type": "s", "use": True},
+                                                        {"i": 4, "src": "Au", "name": "Au", "type": "n", "use": True}], "replace")
+    qp.run_dh()
+    until(lambda: "lubang" in qp.dhInfo.text())
+    shot("q16_qaqc_databor")
+    rep_dir = WORK / "keluar"
+    rep_dir.mkdir(exist_ok=True)
+    Q.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (str(rep_dir / "Laporan_QAQC_Latihan"), ""))
+    qp.export_pdf()
+    until(lambda: (rep_dir / "Laporan_QAQC_Latihan.pdf").exists(), 60000)
+    wait(500)
+    import pypdfium2 as pdfium
+    d = pdfium.PdfDocument(str(rep_dir / "Laporan_QAQC_Latihan.pdf"))
+    for i in (0, 1):
+        d[i].render(scale=1.0).to_pil().save(IMG / f"q17_qaqc_laporan_{i + 1}.png")
+    print("OK q17 laporan", len(d), "halaman")
     w.close()
 
 

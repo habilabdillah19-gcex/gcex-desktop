@@ -303,6 +303,47 @@ Langkah:
 
 Semua perubahan (tambah, AI, edit, verifikasi, ekspor) tercatat di riwayat borang dengan nama pengguna.
 
+## 6e. QAQC Database: QAQC sampel lab & data bor (DB-Ex versi Qt)
+
+Tombol **QAQC** di bilah atas membuka ruang kerja QAQC untuk folder proyek yang sama. Datanya tersimpan sendiri di `_GCEx_Core/qaqc/qaqc.db` (tidak bercampur dengan data foto core box). Rumusnya sama dengan workbook QAQC kantor (makro VBA), dipakai apa adanya:
+
+- **CRM**: Z = (Lab − Certified Mean) / Certified SD. |Z| ≤ 2 → **PASS**, 2 < |Z| ≤ 3 → **WARNING (>2SD)**, |Z| > 3 → **FAIL (>3SD)**.
+- **Blank**: **FAIL (>Cut-Off)** bila hasil lab melebihi cut-off (bawaan 0,01).
+- **Duplikat**: HARD = |O − D| / (O + D), lolos bila ≤ 10 %; ikut dihitung RPD = (O − D) / rata-rata dan ARD. Ringkasan per kelas kadar rata-rata pasangan ≤ 0,10, 0,10–0,30 dan > 0,30, plus R² seluruh pasangan (≥ 0,95 Sangat Baik, ≥ 0,85 Baik, ≥ 0,70 Cukup, di bawahnya Kurang).
+- **Dashboard per zona / pit**: dari pass-rate (batasnya diatur di Panel kontrol) CRM dan blank dinilai *Memuaskan* / *Memadai dengan catatan* / *Tidak memuaskan*, duplikat *Memuaskan* / *Marginal* / *Tidak memuaskan*; kesimpulan zona *Memuaskan* / *Memadai dengan catatan* / *Perlu tindakan korektif* (atau *Tidak dapat dinilai* bila CRM / duplikat tidak ada).
+
+**Tabel penyimpanan** (judul kolom boleh berbeda sedikit, dikenali otomatis):
+
+- `Master_CRM`: Standard_Name, Certified_Mean, Certified_SD, Supplier, Lot_Number.
+- `Assay_Import`: Batch_ID, Hole_ID, Sample_ID, Sample_Type, Lab_Grade, Zona — sumber Batch_ID untuk sampel QAQC.
+- `CRM_Data` dan `Blank_Data`: Sample_ID, Standard_Name, Lab_Grade, Zona.
+- `Duplicate_Data`: Original_ID, Duplicate_ID, Original, Duplicate, Zona, dan kolom opsional **Tipe** (lapangan / coarse / pulp).
+
+Impor bersifat **upsert**: baris dengan ID yang sama diperbarui, bukan digandakan (kunci Sample_ID; untuk duplikat Duplicate_ID). Laporan impor menyebut baris baru, diperbarui, dilewati, dan **ID ganda di dalam file** (contoh ID-nya ditampilkan) — ID ganda di workbook sumber sebaiknya dibereskan karena hanya baris terakhir yang disimpan. Zona diambil dari kolom Zona; bila kosong, dari awalan Z+angka di Sample_ID / Hole_ID.
+
+Langkah:
+
+1. Pilih sumber di kotak impor (**Workbook QAQC** = semua sheet dikenali sekaligus, atau satu tabel tertentu), klik **Impor…** dan pilih file .xlsx / .xlsm / .csv. Workbook QAQC lama dari kantor bisa langsung diimpor (makro tidak dijalankan, hanya datanya dibaca).
+2. Tab **Dashboard**: lampu lalu lintas per zona, peringatan (CRM tanpa master, ID ganda, data kurang) dan ringkasan grafik.
+3. Tab **CRM**: ringkasan per zona × CRM (n, rata-rata, bias, CV, PASS / WARNING / FAIL) dan **grafik kontrol** per zona × CRM dengan garis certified, ±2SD, ±3SD.
+4. Tab **Blank**: ringkasan per zona dan grafik urutan blank terhadap garis cut-off.
+5. Tab **Duplikat**: ringkasan per zona × kelas kadar × tipe, dan per zona × tipe tiga grafik: **scatter 1:1 ±HARD** (dengan R²), **plot presisi** (HARD vs kadar rata-rata) dan **bias RPD**.
+6. Tab **Batch lab**: ringkasan per Batch_ID (jumlah CRM / blank / duplikat dan PASS / WARNING / FAIL) untuk menelusuri batch yang perlu re-assay.
+7. Tab **Lampiran**: Appendix A (CRM gagal), B (blank gagal), C (duplikat dengan rasio maks/min ≥ 3 dan kadar maks ≥ 0,2).
+8. Tab **Data**: lihat isi tiap tabel (**Kosongkan tabel…** untuk menghapus isinya); **Master_CRM bisa diedit langsung** (**+ CRM**, ubah mean / SD) lalu **Simpan Master_CRM** — semua hasil dihitung ulang.
+9. Tab **Panel kontrol**: target zona, tipe duplikat, unsur & satuan, cut-off blank, HARD maksimum, batas pass-rate penilaian, batas kelas kadar duplikat, syarat Lampiran C, serta toleransi pemeriksaan data bor. *Simpan & hitung ulang*; *Kembalikan bawaan* untuk nilai awal.
+
+**QAQC data bor** (tab *Data bor*, tombol **Periksa data bor**) memeriksa data Collar / Survey / Assay / Geologi yang sudah diimpor di ruang kerja Core box (bagian 4). Tingkat **MERAH** = kesalahan struktur yang harus diperbaiki sebelum komposit / model; **KUNING** = perlu diperiksa; **INFO** = catatan.
+
+- Collar: koordinat nol (C1), EOH kosong (C2), collar tanpa assay (C3), assay tanpa survey (C4).
+- Survey: survey tanpa collar (S1), tanda dip terbalik (S2), survey melewati EOH (S3), stasiun ganda (S4), lompatan dip / azimuth antar stasiun (S5).
+- Assay (A) & Geologi (G): interval tanpa collar (1), tumpang-tindih (2), celah antar interval (3), melewati EOH (4); assay negatif (A5) dan Sample ID ganda (A6).
+
+**Ekspor**:
+
+- **⇩ Excel + grafik PNG**: satu .xlsx dengan sheet `QAQC_Dashboard`, `CRM_Data`, `CRM_Summary`, `Duplicate_Data`, `Duplicate Summary`, `Blank_Data`, `Report_Appendix`, `Batch_Summary`, `Data_Bor_QAQC`, `Master_CRM`, `Assay_Import`, `Control_Panel` dan sheet grafik (CRM / blank / duplikat), ditambah folder `<nama>_grafik/` berisi semua grafik PNG.
+- **⇩ Laporan PDF**: laporan QAQC siap kirim (A4, nomor halaman) — status kesehatan data, 1. Ringkasan Eksekutif (lampu lalu lintas, angka utama, tindakan prioritas), 2. Integritas Data Bor, akurasi CRM, kontaminasi blank, presisi duplikat, ringkasan per batch, dashboard per zona, dan Lampiran A–D. Judul, penyusun dan nama proyek diisi saat ekspor.
+
 ## 7. Dikerjakan bersama (beberapa geologist)
 
 - Hasil kerja disimpan di subfolder `_GCEx_Core` **di dalam folder foto** (`gcex_core.db`). Geologist lain yang membuka folder yang sama (mis. di drive jaringan) melihat dan melanjutkan pekerjaan yang sama. Nama Anda dicatat pada setiap editan dan verifikasi.

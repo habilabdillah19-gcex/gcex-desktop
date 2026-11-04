@@ -93,7 +93,9 @@ class MainWindow(QMainWindow):
         self.bModeOc = btn("Singkapan", "Foto singkapan / trenching hasil mapping: deskripsi AI, digitasi, infografis", sm=True)
         self.bModeForm = btn("Borang", "Borang lapangan tulisan tangan (Ore Spotter, RC Drill): AI membaca, Anda periksa, "
                              "ekspor ke Excel / CSV / SQLite / MS Access", sm=True)
-        for b_ in (self.bModeCore, self.bModeOc, self.bModeForm):
+        self.bModeQa = btn("QAQC", "QAQC Database: CRM, blank, duplikat per zona / batch lab dan integritas data bor; ekspor Excel, "
+                           "grafik PNG dan laporan PDF", sm=True)
+        for b_ in (self.bModeCore, self.bModeOc, self.bModeForm, self.bModeQa):
             b_.setCheckable(True)
             b_.setEnabled(False)
             h.addWidget(b_)
@@ -101,6 +103,7 @@ class MainWindow(QMainWindow):
         self.bModeCore.clicked.connect(lambda: self.set_mode("core"))
         self.bModeOc.clicked.connect(lambda: self.set_mode("oc"))
         self.bModeForm.clicked.connect(lambda: self.set_mode("form"))
+        self.bModeQa.clicked.connect(lambda: self.set_mode("qa"))
         h.addSpacing(6)
         self.q = SearchBox()
         self.q.setEnabled(False)
@@ -269,6 +272,9 @@ class MainWindow(QMainWindow):
         from .forms import FormsPage
         self.forms = FormsPage(self)
         self.stack.addWidget(self.forms)
+        from .qaqc import QaqcPage
+        self.qaqc = QaqcPage(self)
+        self.stack.addWidget(self.qaqc)
         self.mode = "core"
         self.bSelAll.clicked.connect(lambda: self._sel_all(True))
         self.bSelNone.clicked.connect(lambda: self._sel_all(False))
@@ -457,6 +463,7 @@ class MainWindow(QMainWindow):
         self.bModeCore.setChecked(mode == "core")
         self.bModeOc.setChecked(mode == "oc")
         self.bModeForm.setChecked(mode == "form")
+        self.bModeQa.setChecked(mode == "qa")
         if not self.folder:
             return
         oc = mode != "core"
@@ -471,6 +478,10 @@ class MainWindow(QMainWindow):
             if self.forms.folder != self.folder:
                 self.forms.open(self.folder)
             self.stack.setCurrentWidget(self.forms)
+        elif mode == "qa":
+            if self.qaqc.folder != self.folder:
+                self.qaqc.open(self.folder)
+            self.stack.setCurrentWidget(self.qaqc)
         else:
             self.stack.setCurrentIndex(1)
         SET.set("qt_mode", mode)
@@ -538,10 +549,11 @@ class MainWindow(QMainWindow):
         self._recent()
         self.prj.setText(j["folder"])
         self.setWindowTitle(f"{APP_NAME} — {Path(j['folder']).name}")
-        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q, self.bModeCore, self.bModeOc, self.bModeForm):
+        for b_ in (self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.q, self.bModeCore, self.bModeOc, self.bModeForm, self.bModeQa):
             b_.setEnabled(True)
         self.outcrop.folder = ""
         self.forms.folder = ""
+        self.qaqc.folder = ""
         self.set_mode(self.mode)
         self.q.folder = self.folder
         self.model.thumbs.reset(self.folder)

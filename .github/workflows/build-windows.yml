@@ -166,7 +166,7 @@ jobs:
           # model ONNX (SAM & Depth Anything, Apache-2.0) dari Hugging Face pada revisi tetap, dicek SHA256 -> models/ (ikut installer)
           python tools/ai_models/unduh_model.py models
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::unduh model AI gagal - uji SAM / Depth Anything dilewati" }
-          python -m pytest -q -rfE --tb=line -p no:cacheprovider app_core_qt/tests backend/tests/test_core_forms.py 2>&1 | Tee-Object -FilePath qt_test.log
+          python -m pytest -q -rfE --tb=line -p no:cacheprovider app_core_qt/tests backend/tests/test_core_forms.py backend/tests/test_core_qaqc.py 2>&1 | Tee-Object -FilePath qt_test.log
           $rc = $LASTEXITCODE
           if ($rc -ne 0) {
             Select-String -Path qt_test.log -Pattern 'FAILED|ERROR|Error|assert|Exception|File "' | Select-Object -First 50 | ForEach-Object { Write-Host ("::warning::qt-test " + $_.Line.Trim()) }
@@ -194,6 +194,7 @@ jobs:
           pyinstaller --noconfirm --onedir --windowed --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
             --add-data "models;models" --hidden-import cv2 --hidden-import onnxruntime --hidden-import shapely --hidden-import shapely.geometry --hidden-import pypdfium2 --collect-all pypdfium2 --collect-all pypdfium2_raw `
+            --hidden-import matplotlib --hidden-import matplotlib.backends.backend_agg --collect-data matplotlib --hidden-import openpyxl.drawing.image `
             --collect-binaries onnxruntime --exclude-module sympy --exclude-module mpmath `
             --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller DB-Ex Qt gagal" }

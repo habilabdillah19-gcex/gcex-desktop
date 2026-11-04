@@ -88,6 +88,13 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                         (PDFium: BSD-3-Clause +       (DB-Ex Borang); pustaka dinamis
                                         pustaka pihak ketiga          tidak diubah
                                         permisif)
+  matplotlib                  3.9.2     Matplotlib License (PSF-      grafik kontrol CRM, blank &
+                                        style, BSD-kompatibel);       duplikat (DB-Ex QAQC Database)
+                                        dependensi: contourpy,
+                                        cycler, fonttools, kiwisolver,
+                                        pyparsing, python-dateutil,
+                                        packaging (BSD / MIT / PSF);
+                                        font DejaVu (bebas)
   Model SlimSAM-77            -         Apache-2.0 (turunan Segment   segmentasi zona dari klik
     (Segment Anything, ONNX              Anything, Meta AI:            (DB-Ex Singkapan); file ONNX
     Xenova/slimsam-77-uniform)          Apache-2.0)                   tidak diubah

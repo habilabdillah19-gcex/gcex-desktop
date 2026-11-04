@@ -812,6 +812,16 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 ## 77. DB-Ex 0.36.1 — data simulasi Singkapan & Borang
 
 - Paket **DB-Ex_Data_Dummy** di `_2_Data-Latihan.zip` kini juga berisi data latihan bab 12–16 tutorial: `Foto_Singkapan/` (foto dinding trench sintetis, `Sampel_Trench_TR01.txt`) dan `Borang/` (scan borang fiktif `Borang_Loading_Pit_30Okt.jpg`, `Borang_ROM_31Okt.jpg`, `DDR_31Okt.jpg`, dan ketiganya dalam `Borang_Latihan_3_halaman.pdf`). Semua isi fiktif.
+## 78. DB-Ex 0.37.0 — QAQC Database (sampel lab & data bor)
+
+- Tombol **QAQC** baru di bilah atas DB-Ex versi Qt. Data QAQC tersimpan sendiri di `_GCEx_Core/qaqc/qaqc.db` dalam folder proyek.
+- **QAQC sampel lab** dengan rumus workbook QAQC kantor apa adanya: CRM Z = (Lab − Mean)/SD (PASS ≤ 2, WARNING 2–3, FAIL > 3), blank gagal di atas cut-off (0,01), duplikat HARD = |O−D|/(O+D) lolos ≤ 10 % plus RPD, ARD dan R². Dashboard per zona (Memuaskan / Marginal / Tidak memuaskan), ringkasan per batch lab, Lampiran A/B/C; semua batas bisa diatur di Panel kontrol.
+- **Impor**: workbook QAQC (.xlsx / .xlsm; semua sheet dikenali) atau satu tabel / CSV. Upsert per Sample_ID; ID ganda di file dilaporkan.
+- **QAQC data bor**: memeriksa Collar, Survey, Assay, Geologi yang sudah diimpor (koordinat nol, EOH kosong, dip terbalik, survey / interval melewati EOH, tumpang-tindih, celah, Sample ID ganda, nilai negatif).
+- **Ekspor**: Excel (QAQC_Dashboard, CRM_Data, CRM_Summary, Duplicate_Data, Duplicate Summary, Blank_Data, Report_Appendix, dll.) + folder grafik PNG, dan **laporan QAQC PDF** (ringkasan eksekutif, integritas data bor, CRM, blank, duplikat, batch, lampiran).
+- Installer DB-Ex Qt kini membawa **matplotlib 3.9.2** (lisensi di `LISENSI_PIHAK_KETIGA.txt`); selftest installer menguji rute QAQC dan penggambaran grafik.
+- Tutorial bab 17–18 (QAQC) + data latihan fiktif `QAQC/QAQC_Latihan.xlsx` di `_2_Data-Latihan.zip`; Panduan DB-Ex bagian 6e.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):

@@ -17,6 +17,7 @@ Isi:
   Data_Lab/Assay_Latihan_LTH-102_ulang.csv  hasil assay ulang LTH-102 (latihan tambah / perbarui per hole)
   Dashboard_lama/Geotech_Dashboard_LTH-102.json  file proyek dashboard lama (Gemini), latihan Impor JSON
   Foto_Singkapan/  foto dinding trench sintetis + tabel sampel channel (tutorial bab 12, DB-Ex versi Qt)
+  QAQC/            workbook QAQC fiktif (Master_CRM, Assay_Import, CRM_Data, Blank_Data, Duplicate_Data) (bab 17-18)
   Borang/          scan borang fiktif Ore Spotter loading pit, ROM / crusher, Daily Drilling Report (+ PDF 3 halaman) (bab 13-16)
 """
 import json
@@ -390,6 +391,71 @@ def qt_data(out: Path) -> None:
     pages[0].save(bo / "Borang_Latihan_3_halaman.pdf", "PDF", resolution=200, save_all=True, append_images=pages[1:])
 
 
+
+# ================================================================ data latihan QAQC (ruang kerja QAQC, bab 17-18)
+def qaqc_data(out: Path) -> Path:
+    """Workbook QAQC fiktif dengan sheet seperti workbook QAQC kantor: Master_CRM, Assay_Import, CRM_Data, Blank_Data, Duplicate_Data.
+    Zona fiktif Z7 dan Z8, CRM fiktif CRM-A / CRM-B, batch LAB26xxx. Disisipkan sengaja: CRM WARNING / FAIL (termasuk satu CRM
+    tertukar), blank terkontaminasi, duplikat lapangan yang lebih buruk daripada pulp, dan satu Sample_ID ganda."""
+    from openpyxl import Workbook
+    rg = np.random.default_rng(20261104)
+    crm = {"CRM-A": (0.512, 0.015), "CRM-B": (1.48, 0.042), "CRM-C": (0.195, 0.009)}
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Master_CRM"
+    ws.append(["Standard_Name", "Certified_Mean", "Certified_SD", "Supplier", "Lot_Number"])
+    for i, (k, (m, sd)) in enumerate(crm.items(), 1):
+        ws.append([k, m, sd, "Pemasok Fiktif", i])
+    assay, crm_rows, blank_rows, dup_rows = [], [], [], []
+    n = 0
+    for zi, zone in enumerate(("Z7", "Z8")):
+        for b in range(12):
+            batch = f"LAB26{zi}{b:02d}"
+            hole = f"{zone}_210_{b + 1:02d}"
+            for j in range(40):
+                n += 1
+                sid = f"LT_{n:05d}_{zone}"
+                if j % 20 == 9:  # CRM
+                    std = ("CRM-A", "CRM-B", "CRM-C")[(b + j // 20) % 3]
+                    m, sd = crm[std]
+                    v = m + rg.normal(0, sd * 0.9)
+                    if zone == "Z8" and std == "CRM-A" and b in (3, 6) and j == 9:
+                        v = crm["CRM-B"][0] + rg.normal(0, 0.02)  # CRM tertukar (tercatat CRM-A, nilai CRM-B)
+                    if zone == "Z7" and b in (2, 7) and j == 29:
+                        v = m + 2.4 * sd
+                    if zone == "Z7" and b == 10 and j == 9:
+                        v = m - 3.6 * sd
+                    crm_rows.append([sid, std, round(v, 3)])
+                    assay.append([batch, hole, sid, "Standard", round(v, 3)])
+                elif j % 20 == 10:  # blank setelah CRM
+                    v = 0.005 if rg.random() > 0.06 else round(float(rg.choice([0.02, 0.03, 0.05, 0.12])), 3)
+                    blank_rows.append([sid, "Blank", v])
+                    assay.append([batch, hole, sid, "Blank", v])
+                elif j % 20 == 19:  # duplikat dari sampel sebelumnya
+                    tipe = ("Lapangan", "Coarse", "Pulp")[(b + j // 20) % 3]
+                    o = float(np.round(np.exp(rg.normal(-1.8, 1.1)), 3))
+                    err = {"Lapangan": 0.42, "Coarse": 0.16, "Pulp": 0.05}[tipe]
+                    d = max(0.005, round(o * float(np.exp(rg.normal(0, err))), 3))
+                    oid = f"LT_{n - 1:05d}_{zone}"
+                    dup_rows.append([oid, sid, max(0.005, round(o, 3)), d, zone, tipe])
+                    assay.append([batch, hole, sid, "Duplicate", d])
+    blank_rows.append(list(blank_rows[3]))  # Sample_ID ganda (latihan laporan impor)
+    for title, heads, rows in (("Assay_Import", ["Batch_ID", "Hole_ID", "Sample_ID", "Sample_Type", "Lab_Au_ppm", "Zona"],
+                                [r + [r[1][:2]] for r in assay]),
+                               ("CRM_Data", ["Sample_ID", "Standard_Name", "Lab_Grade"], crm_rows),
+                               ("Duplicate_Data", ["Original_ID", "Duplicate_ID", "Original", "Duplicate", "Zona", "Tipe"], dup_rows),
+                               ("Blank_Data", ["Sample_ID", "Standard_Name", "Lab_Grade"], blank_rows)):
+        w = wb.create_sheet(title)
+        w.append(heads)
+        for r in rows:
+            w.append(r)
+    d = out / "QAQC"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "QAQC_Latihan.xlsx"
+    wb.save(p)
+    return p
+
+
 def main():
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -477,6 +543,7 @@ def main():
     (old / f"Geotech_Dashboard_{H2}.json").write_text(json.dumps({"projectName": f"Geotech_Dashboard_{H2}", "savedAt": "2026-10-20T08:00:00Z",
                                                                     "data": old_items}, indent=2), encoding="utf-8")
     qt_data(OUT)
+    qaqc_data(OUT)
     (OUT / "BACA_SAYA.txt").write_text(
         "DATA DUMMY TUTORIAL DB-Ex\n"
         "SEMUA ISI FIKTIF: nama perusahaan, lubang bor, koordinat (grid lokal), tanggal, kadar dan foto dibuat\n"
@@ -489,13 +556,15 @@ def main():
         "   Geologi_Latihan.txt            -> tab Geologi  (hanya LTH-101; LTH-102 belum dilogging)\n"
         "   Assay_Latihan_LTH-102_ulang.csv -> tab Assay, cara 'Tambah / perbarui per hole' (latihan data baru)\n"
         "Dashboard_lama/   latihan tombol JSON (impor proyek dashboard lama)\n"
-        "--- DB-Ex versi Qt (tutorial bab 12-16) ---\n"
+        "--- DB-Ex versi Qt (tutorial bab 12-18) ---\n"
         "Foto_Singkapan/   Trench_Latihan_TR01.jpg (Singkapan -> + Foto); Sampel_Trench_TR01.txt (salin -> Tempel dari Excel)\n"
         "Borang/           scan borang fiktif (Borang -> + Borang):\n"
         "   Borang_Loading_Pit_30Okt.jpg   -> jenis Ore Spotter: Loading Pit -> ROM / Stockpile (shift II, lewat tengah malam)\n"
         "   Borang_ROM_31Okt.jpg           -> jenis Ore ke Stockpile / Crusher (Rehandling / Direct)\n"
         "   DDR_31Okt.jpg                  -> jenis RC Drilling: Daily Drilling Report\n"
-        "   Borang_Latihan_3_halaman.pdf   -> ketiganya dalam satu PDF (DB-Ex memecah per halaman; pilih jenis tiap borang)\n\n"
+        "   Borang_Latihan_3_halaman.pdf   -> ketiganya dalam satu PDF (DB-Ex memecah per halaman; pilih jenis tiap borang)\n"
+        "QAQC/             QAQC_Latihan.xlsx (QAQC -> Workbook QAQC -> Impor): Master_CRM, Assay_Import, CRM_Data, Blank_Data,\n"
+        "                  Duplicate_Data; zona fiktif Z7 / Z8, CRM fiktif CRM-A / CRM-B / CRM-C\n\n"
         "Kunci: LTH-101 zona QV 36.8-41.2 m berkadar tinggi (Au s.d. 12.4 g/t); IMG_0001 = LTH-101 box 11 (36.30-40.10 m).\n"
         "Copyright (c) Habil Abdillah 2026 - data latihan DB-Ex.\n",
         encoding="utf-8")

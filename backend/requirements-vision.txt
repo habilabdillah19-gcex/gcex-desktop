@@ -5,3 +5,5 @@ shapely==2.0.6
 onnxruntime==1.20.1
 # Borang: halaman PDF scan borang -> gambar (PDFium; BSD-3 / Apache-2.0)
 pypdfium2==4.30.0
+# QAQC Database: grafik kontrol CRM / blank / duplikat (PNG, laporan PDF) - matplotlib (PSF-style / BSD)
+matplotlib==3.9.2

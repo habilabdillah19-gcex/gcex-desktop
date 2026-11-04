@@ -83,7 +83,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>16. Ekspor ke database &amp; dashboard</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.36.1 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.37.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -110,7 +110,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
       <tr><td><code>Data_Lab\Geologi_Latihan.txt</code> (hanya LTH-101)</td><td>Latihan 2 – tab Geologi</td></tr>
       <tr><td><code>Data_Lab\Assay_Latihan_LTH-102_ulang.csv</code></td><td>Latihan 9 – assay ulang</td></tr>
       <tr><td><code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code></td><td>Latihan 10 – impor JSON lama</td></tr>
-      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code></td><td>Latihan 12–16 (DB-Ex versi Qt)</td></tr>
+      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–18 (DB-Ex versi Qt)</td></tr>
     </table>
   </div></div>
   <div class="note"><b>Prinsip DB-Ex.</b> AI visual menilai parameter <b>geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, catatan struktur). Isian <b>geologi</b> (litologi, alterasi, oksidasi, warna) diambil dari <b>logging geologist</b> bila ada; AI hanya mengisinya bila logging tidak ada. Urutan prioritas: logging geologist &gt; editan manual &gt; AI.</div>
@@ -333,13 +333,14 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 
 <section class="page">
   <div class="part">Bagian II · DB-Ex versi Qt</div>
-  <h2>Tiga ruang kerja dalam satu proyek</h2>
-  <p>Bab 12–16 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya tiga tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching) dan <b>Borang</b> (borang lapangan tulisan tangan). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
+  <h2>Empat ruang kerja dalam satu proyek</h2>
+  <p>Bab 12–18 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
   <table>
     <tr><th style="width:24%">Ruang kerja</th><th>Untuk</th><th style="width:30%">Hasil</th></tr>
     <tr><td><b>Core box</b></td><td>Foto core box, data bor, AI geoteknik, overlay assay</td><td>Excel core log, infografis core box</td></tr>
     <tr><td><b>Singkapan</b></td><td>Foto singkapan / dinding trench: digitasi zona, garis, channel sampling, georeferensi</td><td>Infografis PNG / PDF, STR / DXF, CSV sampel, Collar–Survey–Assay–Geologi</td></tr>
     <tr><td><b>Borang</b></td><td>Foto / scan / PDF borang: Ore Spotter loading pit, Ore ke ROM / crusher, RC Daily Drilling Report, RC Drill / Chiptray</td><td>Excel + pivot, CSV, SQLite, MS Access, sheet dashboard drilling</td></tr>
+    <tr><td><b>QAQC</b></td><td>CRM, blank &amp; duplikat dari lab; pemeriksaan Collar / Survey / Assay / Geologi</td><td>Dashboard per zona, Excel + grafik PNG, laporan PDF</td></tr>
   </table>
   <table>
     <tr><th style="width:48%">File di DB-Ex_Data_Dummy</th><th>Dipakai di</th></tr>
@@ -348,6 +349,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td><code>Borang\Borang_ROM_31Okt.jpg</code></td><td>Latihan 14 – Ore ke Stockpile / Crusher</td></tr>
     <tr><td><code>Borang\DDR_31Okt.jpg</code></td><td>Latihan 15–16 – Daily Drilling Report</td></tr>
     <tr><td><code>Borang\Borang_Latihan_3_halaman.pdf</code></td><td>ketiga borang dalam satu PDF (dipecah per halaman)</td></tr>
+    <tr><td><code>QAQC\QAQC_Latihan.xlsx</code></td><td>Latihan 17–18 – QAQC Database</td></tr>
   </table>
   <div class="note"><b>Catatan.</b> Foto trench, scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
 </section>
@@ -454,6 +456,47 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 </section>
 
 <section class="page">
+  <div class="part">Latihan 17</div>
+  <h2>QAQC sampel lab: CRM, blank &amp; duplikat</h2>
+  <p>Ruang kerja <b>QAQC</b> memakai rumus workbook QAQC apa adanya: <b>CRM</b> Z = (Lab − Mean) / SD, |Z| ≤ 2 PASS, 2–3 WARNING, &gt; 3 FAIL; <b>blank</b> gagal bila di atas cut-off 0,01; <b>duplikat</b> HARD = |O − D| / (O + D), lolos bila ≤ 10 % (RPD dan ARD ikut dihitung). Datanya tersimpan sendiri di <code>_GCEx_Core\qaqc\qaqc.db</code>.</p>
+  <div class="step"><div class="num">1</div><div>Klik <b>QAQC</b> di bilah atas. Di kotak impor biarkan <b>Workbook QAQC (semua sheet dikenali)</b>, klik <b>Impor…</b> dan pilih <code>D:\Latihan\DB-Ex_Data_Dummy\QAQC\QAQC_Latihan.xlsx</code>. Sheet <code>Master_CRM</code>, <code>Assay_Import</code>, <code>CRM_Data</code>, <code>Blank_Data</code>, <code>Duplicate_Data</code> dibaca sekaligus.</div></div>
+  <div class="step"><div class="num">2</div><div>Baca laporan impor: <b>CRM_Data: 48 baru</b>, dst., dan peringatan <b>ID ganda</b> — data latihan sengaja berisi satu Sample_ID duplikat ganda. Impor ulang file yang sama tidak menggandakan baris (diperbarui per Sample_ID).</div></div>
+  <div class="step"><div class="num">3</div><div>Tab <b>Dashboard</b>: penilaian per zona (Z7, Z8) untuk CRM, duplikat dan blank, plus kesimpulan keseluruhan. Di data latihan keduanya <b>Perlu tindakan korektif</b> karena ada CRM FAIL.</div></div>
+  <figure><img src="gambar/q12_qaqc_dashboard.png" style="width:150mm"><figcaption>Gambar 38 – Dashboard QAQC per zona dan ringkasan PASS / WARN / FAIL.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">4</div><div>Tab <b>CRM</b>: ringkasan per zona × CRM (n, rata-rata, bias, CV) dan grafik kontrol dengan garis certified, ±2 SD dan ±3 SD. Temukan titik merah <b>CRM-A di Z8</b> yang nilainya mendekati CRM-B: CRM tertukar saat insersi. Lihat batch-nya di tab <b>Lampiran</b> → Appendix A.</div></div>
+  <figure><img src="gambar/q13_qaqc_crm.png" style="width:150mm"><figcaption>Gambar 39 – Ringkasan dan grafik kontrol CRM per zona.</figcaption></figure>
+  <div class="step"><div class="num">5</div><div>Tab <b>Duplikat</b>: ringkasan per zona × kelas kadar (≤ 0,10, 0,10–0,30, &gt; 0,30) dan per tipe (lapangan / coarse / pulp). Grafiknya: scatter 1:1 ±HARD dengan R², plot presisi, dan bias RPD. Duplikat <b>lapangan</b> di data latihan sengaja lebih berderau dari coarse / pulp.</div></div>
+  <figure><img src="gambar/q14_qaqc_duplikat.png" style="width:150mm"><figcaption>Gambar 40 – Duplikat: ringkasan kelas kadar, scatter 1:1, plot presisi dan bias RPD.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">6</div><div>Tab <b>Blank</b> (urutan blank terhadap cut-off) dan <b>Batch lab</b> (PASS / WARNING / FAIL per Batch_ID dari <code>Assay_Import</code>) untuk menelusuri batch yang perlu re-assay.</div></div>
+  <div class="step"><div class="num">7</div><div>Tab <b>Data</b> → <code>Master_CRM</code>: ubah <b>Certified_SD</b> CRM-A dari 0,015 menjadi 0,030, klik <b>Simpan Master_CRM</b>. Semua tab dihitung ulang: WARNING CRM-A hilang, tetapi CRM yang tertukar tetap FAIL. Kembalikan nilainya ke 0,015.</div></div>
+  <div class="step"><div class="num">8</div><div>Tab <b>Panel kontrol</b>: pilih <b>Target zona</b> Z7 → <b>Simpan &amp; hitung ulang</b>. Dashboard, ekspor dan laporan hanya memuat Z7. Batas lain (cut-off blank, HARD maksimum, batas pass-rate, kelas kadar, syarat Lampiran C) diatur di sini; <b>Kembalikan bawaan</b> untuk nilai awal.</div></div>
+  <figure><img src="gambar/q15_qaqc_panel.png" style="width:140mm"><figcaption>Gambar 41 – Panel kontrol: batas penilaian dan interpretasi R².</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="part">Latihan 18</div>
+  <h2>QAQC data bor, ekspor Excel &amp; laporan PDF</h2>
+  <div class="step"><div class="num">1</div><div>Tab <b>Data bor</b> → <b>Periksa data bor</b>. DB-Ex memeriksa Collar, Survey, Assay dan Geologi yang sudah diimpor di ruang kerja Core box (Latihan 2). <b>MERAH</b> = kesalahan struktur yang harus diperbaiki di database sumber sebelum komposit / model (interval tumpang-tindih, Sample ID ganda, tanda dip terbalik, survey / assay tanpa collar); <b>KUNING</b> = perlu diperiksa (melewati EOH, EOH kosong, lompatan survey); <b>INFO</b> = catatan (celah interval, collar tanpa assay).</div></div>
+  <figure><img src="gambar/q16_qaqc_databor.png" style="width:150mm"><figcaption>Gambar 42 – QAQC data bor: ringkasan per kode dan daftar temuan per lubang (contoh data dengan kesalahan sengaja).</figcaption></figure>
+  <div class="step"><div class="num">2</div><div><b>⇩ Excel + grafik PNG</b>: satu file .xlsx (<code>QAQC_Dashboard</code>, <code>CRM_Data</code>, <code>CRM_Summary</code>, <code>Duplicate_Data</code>, <code>Duplicate Summary</code>, <code>Blank_Data</code>, <code>Report_Appendix</code>, <code>Batch_Summary</code>, <code>Data_Bor_QAQC</code>, <code>Control_Panel</code>, sheet grafik) dan folder <code>&lt;nama&gt;_grafik\</code> berisi semua grafik PNG.</div></div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">3</div><div><b>⇩ Laporan PDF</b>: isi judul, penyusun dan proyek, lalu simpan. Laporan A4 bernomor halaman: status kesehatan data, Ringkasan Eksekutif (lampu lalu lintas, angka utama, tindakan prioritas), Integritas Data Bor, akurasi CRM, kontaminasi blank, presisi duplikat, ringkasan per batch, dashboard per zona, serta Lampiran A–D.</div></div>
+  <div style="display:flex;gap:5mm;justify-content:center">
+    <figure style="margin:0"><img src="gambar/q17_qaqc_laporan_1.png" style="width:80mm;border:1px solid #ccd"><figcaption>Gambar 43 – Laporan PDF, halaman 1.</figcaption></figure>
+    <figure style="margin:0"><img src="gambar/q17_qaqc_laporan_2.png" style="width:80mm;border:1px solid #ccd"><figcaption>Gambar 44 – Laporan PDF, grafik kontrol CRM.</figcaption></figure>
+  </div>
+  <div class="warn">QAQC menilai data, bukan memperbaikinya. Sampel / batch yang gagal ditelusuri ke lab dan database sumber; workbook QAQC lama dengan <b>Sample_ID ganda</b> perlu dibereskan karena hanya baris terakhir yang disimpan.</div>
+</section>
+
+<section class="page">
   <h2>Tabel database Borang</h2>
   <table>
     <tr><th style="width:30%">Jenis borang</th><th>Tabel SQLite / MS Access</th><th style="width:30%">Sheet Excel</th></tr>
@@ -482,6 +525,8 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td>Borang: banyak sel merah jam</td><td>Shift di header salah (I / II) atau jam memang di luar shift (lembur). Perbaiki header; sisanya periksa terhadap scan.</td></tr>
     <tr><td>Borang: ekspor "Tidak ada baris"</td><td>Baris belum diverifikasi. Centang ✓ / Verifikasi semua, atau centang <i>Sertakan baris yang belum diverifikasi</i>.</td></tr>
     <tr><td>Ekspor MS Access gagal</td><td>Driver Access 64-bit belum terpasang; pasang Microsoft Access Database Engine 2016 x64, atau ekspor ke SQLite / Excel.</td></tr>
+    <tr><td>QAQC: "CRM tanpa data di Master_CRM"</td><td>Nama Standard_Name di CRM_Data tidak ada di Master_CRM (beda ejaan / spasi). Tambahkan di tab Data → Master_CRM.</td></tr>
+    <tr><td>QAQC: grafik tidak muncul</td><td>Grafik dimuat saat tab dibuka; tunggu beberapa detik. Duplikat butuh minimal 3 pasangan per zona × tipe (Panel kontrol).</td></tr>
     <tr><td>"Backend tidak aktif"</td><td>Bantuan → Buka folder log, kirim <code>backend.log</code> ke admin.</td></tr>
   </table>
   <p class="meta" style="margin-top:6mm">DB-Ex dilindungi UU No. 28 Tahun 2014 tentang Hak Cipta dan dilisensikan, bukan dijual. Ketentuan lengkap: Bantuan → Syarat penggunaan &amp; penafian. Ollama, Qwen dan nama produk lain adalah merek pemiliknya masing-masing.<br>Copyright © Habil Abdillah 2026.</p>

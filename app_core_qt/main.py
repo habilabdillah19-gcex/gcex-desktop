@@ -122,9 +122,26 @@ def selftest(folder: str, out: str) -> int:
         pg = pdfium.PdfDocument(str(tp))[0].render(scale=2).to_pil()
         res["pdf"] = list(pg.size)
         res["forms"] = len(api.call("/core/forms/open", {"folder": folder})["types"])
+        # QAQC Database: rute /core/qaqc terdaftar, matplotlib (Agg) ikut terbundel & bisa menggambar grafik
+        from gcex_backend import core_qaqc
+        qa = api.call("/core/qaqc/open", {"folder": folder})
+        res["qaqc"] = sorted(qa.get("counts", {})) if isinstance(qa, dict) else None
+        import io
+        plt = core_qaqc._plt()
+        f, ax = plt.subplots(figsize=(4, 2.5))
+        ax.axhline(1.0, ls="--", label="±2 SD")
+        ax.scatter([1, 2, 3], [0.98, 1.02, 1.01])
+        ax.set_title("Z1 — CRM-X  [R² = 0.95]")
+        ax.legend()
+        b = io.BytesIO()
+        f.savefig(b, format="png")
+        plt.close(f)
+        png = b.getvalue()
+        res["chart_png"] = len(png)
         res["ok"] = (bool(rows) and not im.isNull() and res["xlsx"] > 1000 and theme.SANS.lower().startswith("inter")
                      and vs["sam"] and vs["depth"] and bool(vs["libs"].get("shapely")) and res["depth"][0] > 0
-                     and res["pdf"][0] > 0 and res["forms"] >= 4)
+                     and res["pdf"][0] > 0 and res["forms"] >= 4
+                     and res["qaqc"] is not None and res["chart_png"] > 1000)
     except Exception as e:  # noqa: BLE001
         import traceback
         res["ok"], res["error"] = False, traceback.format_exc()
