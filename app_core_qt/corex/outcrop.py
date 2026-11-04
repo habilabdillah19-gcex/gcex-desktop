@@ -99,6 +99,8 @@ class OcCanvas(QGraphicsObject):
             return
         t = pg.tool
         boxes: list = []
+        if pg.ovl is not None and pg.anShow.isChecked():
+            p.drawImage(QRectF(0, 0, v.w, v.h), pg.ovl)
         oc_paint.paint_scene(p, v.w, v.h, pg.feats, pg.kmap, pg.info(), desc=pg.cur.get("desc"), m_per_unit=pg.m_per_unit(),
                              sel=t.sel, sel_vertex=t.vsel, handle=v.px(5), draft=t.draft_pts(), draft_kind=pg.kmap.get(t.kind),
                              boxes_out=boxes, show_info=pg.cbInfo.isChecked(), elements=pg.elements, chains=pg.chains())
@@ -107,6 +109,25 @@ class OcCanvas(QGraphicsObject):
             paint_geo(p, v, pg.geo.get("points") or [], pg.geo_row(), pg.geo_err())
         if t.mode == "sam":
             paint_sam(p, v, pg.sam_poly, t.sam_pts, (pg.kmap.get(pg.cbKind.currentData()) or {}).get("color", "#e8a33d"))
+        if pg.scan_res and pg.tabs.currentIndex() == 4:
+            paint_scan(p, v, pg.scan_res)
+
+
+def paint_scan(p: QPainter, v, sc: dict) -> None:
+    """Scanline analisis (hanya di layar): garis putus-putus biru muda dan titik potong per set."""
+    L = sc.get("line") or []
+    if len(L) < 2:
+        return
+    cols = {"S1": QColor("#e03131"), "S2": QColor("#1c7ed6"), "S3": QColor("#2f9e44")}
+    for wd, c, st in ((v.px(5), QColor(255, 255, 255, 220), Qt.SolidLine), (v.px(2.2), QColor("#15aabf"), Qt.DashLine)):
+        p.setPen(QPen(c, wd, st))
+        for a, b in zip(L, L[1:]):
+            p.drawLine(QPointF(a[0] * v.w, a[1] * v.h), QPointF(b[0] * v.w, b[1] * v.h))
+    for h in sc.get("hits") or []:
+        c = QPointF(h["uv"][0] * v.w, h["uv"][1] * v.h)
+        p.setPen(QPen(QColor("#ffffff"), v.px(1.6)))
+        p.setBrush(cols.get(h.get("set"), QColor("#868e96")))
+        p.drawEllipse(c, v.px(5), v.px(5))
 
 
 def paint_sam(p: QPainter, v, poly: list, pts: list, color: str) -> None:
@@ -787,6 +808,9 @@ class OutcropPage(QWidget):
         self.topos: list[dict] = []
         self.geo: dict = {"points": [], "kind": None}
         self.geo_res: dict = {}
+        self.ovl: QImage | None = None      # peta warna (indeks oksida / kuarsa) di atas foto
+        self.scan_res: dict | None = None   # scanline terakhir (garis + titik potong)
+        self.an_busy = False
         self._build()
 
     # ---------------------------------------------------------------- tata letak
@@ -878,6 +902,7 @@ class OutcropPage(QWidget):
         self.tabs.addTab(self._tab_feat(), "Fitur")
         self.tabs.addTab(self._tab_info(), "Infografis")
         self.tabs.addTab(self._tab_geo(), "Georef")
+        self.tabs.addTab(self._tab_an(), "Analisis")
         self.tabs.currentChanged.connect(lambda *_: self.canvas.update())
         sp.addWidget(self.tabs)
         sp.setStretchFactor(1, 1)
@@ -1273,6 +1298,140 @@ class OutcropPage(QWidget):
         v.addStretch(1)
         return self._scroll(w)
 
+    def _tab_an(self) -> QWidget:
+        w = QWidget()
+        w.setObjectName("card")
+        v = QVBoxLayout(w)
+        v.setContentsMargins(12, 10, 12, 12)
+        v.setSpacing(8)
+        n = QLabel("Analisis otomatis untuk <b>diperiksa geologist</b>. Zona & jejak hasil analisis masuk sebagai <b>usulan</b> "
+                   "(putus-putus, tidak ikut ekspor) — terima / buang di sini atau di tab Fitur. Angka geoteknik adalah bantuan, "
+                   "bukan pengganti penilaian lapangan.")
+        n.setObjectName("note")
+        n.setWordWrap(True)
+        n.setTextFormat(Qt.RichText)
+        v.addWidget(n)
+
+        def box(title: str):
+            fr = QFrame()
+            fr.setObjectName("fld")
+            g = QGridLayout(fr)
+            g.setContentsMargins(8, 6, 8, 8)
+            g.setVerticalSpacing(5)
+            hd = QLabel(f"<b>{title}</b>")
+            hd.setObjectName("note")
+            g.addWidget(hd, 0, 0, 1, 4)
+            v.addWidget(fr)
+            return g
+        # 1. SAM
+        g = box("1 · SEGMENTASI ZONA (SAM)")
+        self.anGrid = QComboBox()
+        for k, t in (("kasar", "Kasar (cepat)"), ("sedang", "Sedang"), ("halus", "Halus (zona kecil)")):
+            self.anGrid.addItem(t, k)
+        self.anGrid.setCurrentIndex(max(0, self.anGrid.findData(SET.get("ocAnGrid", "sedang"))))
+        self.anGrid.setToolTip("Kerapatan titik SAM: halus menemukan zona kecil tetapi lebih lama (CPU: ±20–60 detik per foto)")
+        g.addWidget(self.anGrid, 1, 0, 1, 2)
+        self.anAi = QCheckBox("Label zona dengan AI vision (Ollama)")
+        self.anAi.setToolTip("Zona hasil SAM diberi nomor lalu AI lokal (Ollama) menentukan jenis & namanya. Tanpa ini: label dari warna & bentuk.")
+        g.addWidget(self.anAi, 2, 0, 1, 4)
+        self.bAnSam = btn("Usulkan zona", "SAM membagi foto menjadi zona; zona sewarna yang hanya dipisah kekar digabung", pri=True, sm=True)
+        g.addWidget(self.bAnSam, 1, 2, 1, 2)
+        self.anSamInfo = QLabel()
+        self.anSamInfo.setObjectName("note")
+        self.anSamInfo.setWordWrap(True)
+        g.addWidget(self.anSamInfo, 3, 0, 1, 4)
+        # 2. peta warna
+        g = box("2 · PETA WARNA TERUKUR")
+        self.anIdx = QComboBox()
+        self.anIdx.addItem("Oksida besi (merah-kuning-coklat)", "oks")
+        self.anIdx.addItem("Vein kuarsa (putih)", "kuarsa")
+        self.anIdx.setMinimumContentsLength(12)
+        self.anIdx.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        g.addWidget(self.anIdx, 1, 0, 1, 4)
+        self.anSens = QSpinBox()
+        self.anSens.setRange(1, 10)
+        self.anSens.setValue(int(SET.get("ocAnSens", 5)))
+        self.anSens.setPrefix("kepekaan: ")
+        self.anSens.setToolTip("1 = ketat (hanya warna yang jelas), 10 = longgar")
+        g.addWidget(self.anSens, 2, 0, 1, 2)
+        self.bAnIdx = btn("Hitung", "Hitung % luas & tampilkan peta warna di foto", pri=True, sm=True)
+        self.bAnIdxP = btn("Jadikan usulan zona", "Area berwarna dijadikan poligon usulan (zona oksida / zona vein)", sm=True)
+        self.anShow = QCheckBox("Tampilkan di foto")
+        self.anShow.setChecked(True)
+        g.addWidget(self.anShow, 2, 2, 1, 2)
+        g.addWidget(self.bAnIdx, 3, 0, 1, 2)
+        g.addWidget(self.bAnIdxP, 3, 2, 1, 2)
+        self.anIdxInfo = QLabel()
+        self.anIdxInfo.setObjectName("note")
+        self.anIdxInfo.setWordWrap(True)
+        self.anIdxInfo.setTextFormat(Qt.RichText)
+        g.addWidget(self.anIdxInfo, 4, 0, 1, 4)
+        self.anIdxT = QTableWidget(0, 3)
+        self.anIdxT.setHorizontalHeaderLabels(["Zona", "% luas", "m²"])
+        self.anIdxT.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.anIdxT.verticalHeader().hide()
+        self.anIdxT.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.anIdxT.setMaximumHeight(130)
+        self.anIdxT.hide()
+        g.addWidget(self.anIdxT, 5, 0, 1, 4)
+        # 3. struktur
+        g = box("3 · STRUKTUR & GEOTEKNIK")
+        self.anTSens = QSpinBox()
+        self.anTSens.setRange(1, 10)
+        self.anTSens.setValue(int(SET.get("ocAnTSens", 5)))
+        self.anTSens.setPrefix("kepekaan: ")
+        self.anTSens.setToolTip("Lebih tinggi = lebih banyak jejak pendek / samar terdeteksi")
+        g.addWidget(self.anTSens, 1, 0, 1, 2)
+        self.bAnTr = btn("Deteksi jejak", "Jejak lurus di foto dijadikan garis usulan jenis Kekar (ganti jenisnya bila vein / sesar)", pri=True, sm=True)
+        g.addWidget(self.bAnTr, 1, 2, 1, 2)
+        g.addWidget(QLabel("Scanline"), 2, 0)
+        self.anScan = QComboBox()
+        self.anScan.setToolTip("Garis pengukuran frekuensi & spasi kekar. Gambar garis (mis. jenis Channel / Garis skala) melintang kekar untuk memakainya.")
+        self.anScan.setMinimumContentsLength(10)
+        self.anScan.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        g.addWidget(self.anScan, 2, 1, 1, 3)
+        self.anDraft = QCheckBox("Ikutkan usulan")
+        self.anDraft.setChecked(True)
+        g.addWidget(self.anDraft, 3, 0, 1, 2)
+        self.bAnSt = btn("Hitung struktur", "Set kekar, rose diagram, scanline (frekuensi, spasi, kelas ISRM), Jv, RQD & bantuan GSI", sm=True)
+        g.addWidget(self.bAnSt, 3, 2, 1, 2)
+        self.anRose = QLabel()
+        self.anRose.setAlignment(Qt.AlignCenter)
+        g.addWidget(self.anRose, 4, 0, 1, 4)
+        self.anSetT = QTableWidget(0, 5)
+        self.anSetT.setHorizontalHeaderLabels(["Set", "Sudut", "Jejak", "Spasi", "Dip semu"])
+        self.anSetT.setToolTip("Sudut = orientasi jejak di bidang foto dari mendatar; Dip semu = apparent dip dari georef")
+        self.anSetT.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.anSetT.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.anSetT.verticalHeader().hide()
+        self.anSetT.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.anSetT.setMaximumHeight(110)
+        self.anSetT.hide()
+        g.addWidget(self.anSetT, 5, 0, 1, 4)
+        self.anStInfo = QLabel()
+        self.anStInfo.setObjectName("note")
+        self.anStInfo.setWordWrap(True)
+        self.anStInfo.setTextFormat(Qt.RichText)
+        g.addWidget(self.anStInfo, 6, 0, 1, 4)
+        r = QHBoxLayout()
+        self.bAnAcc = btn("Terima semua usulan", "Jadikan semua usulan fitur biasa", sm=True)
+        self.bAnRej = btn("Buang semua usulan", sm=True)
+        r.addWidget(self.bAnAcc)
+        r.addWidget(self.bAnRej)
+        r.addStretch(1)
+        v.addLayout(r)
+        v.addStretch(1)
+        self.bAnSam.clicked.connect(self.an_sam)
+        self.bAnIdx.clicked.connect(lambda: self.an_index(False))
+        self.bAnIdxP.clicked.connect(lambda: self.an_index(True))
+        self.anShow.toggled.connect(lambda *_: self.canvas.update())
+        self.anIdx.currentIndexChanged.connect(lambda *_: self.an_clear_index())
+        self.bAnTr.clicked.connect(self.an_traces)
+        self.bAnSt.clicked.connect(self.an_struct)
+        self.bAnAcc.clicked.connect(lambda: self.auto_accept(None))
+        self.bAnRej.clicked.connect(lambda: self.auto_reject(None))
+        return self._scroll(w)
+
     def _tab_geo(self) -> QWidget:
         w = QWidget()
         w.setObjectName("card")
@@ -1613,6 +1772,8 @@ class OutcropPage(QWidget):
         self.geo["points"] = [dict(q) for q in self.geo.get("points") or []]
         self.geo_res = {}
         self.comp_pos = None
+        if not same:
+            self.an_reset()
         self.tool.cancel()
         self.tool.select(None)
         self.set_enabled(True)
@@ -1816,6 +1977,9 @@ class OutcropPage(QWidget):
         self.auInfo.setText(f"{nd} usulan belum diterima (putus-putus di foto)" if nd else "Belum ada usulan.")
         self.bAcc.setEnabled(bool(nd))
         self.bRej.setEnabled(bool(nd))
+        self.bAnAcc.setEnabled(bool(nd))
+        self.bAnRej.setEnabled(bool(nd))
+        self._an_scan_items()
         self.sel_changed()
 
     def sel_changed(self) -> None:
@@ -2415,6 +2579,167 @@ class OutcropPage(QWidget):
         if self.tool.sel is not None and not any(f["id"] == self.tool.sel for f in j["features"]):
             self.tool.sel = None
         self._feats(j)
+
+    # ---------------------------------------------------------------- analisis foto (Fase 1)
+    def an_reset(self) -> None:
+        self.ovl, self.scan_res = None, None
+        for lb in (self.anSamInfo, self.anIdxInfo, self.anStInfo):
+            lb.setText("")
+        self.anRose.clear()
+        self.anIdxT.hide()
+        self.anSetT.hide()
+
+    def an_clear_index(self) -> None:
+        self.ovl = None
+        self.anIdxInfo.setText("")
+        self.anIdxT.hide()
+        self.canvas.update()
+
+    def _an_scan_items(self) -> None:
+        cur = self.anScan.currentData()
+        self.anScan.blockSignals(True)
+        self.anScan.clear()
+        self.anScan.addItem("Otomatis: mendatar di tengah foto", None)
+        for f in self.feats:
+            if f["shape"] == "line" and f["kind"] not in ("kekar", "vein", "sesar") and not f["attrs"].get("_draft"):
+                k = self.kmap.get(f["kind"], {"name": f["kind"]})
+                self.anScan.addItem(f"{k['name']}" + (f" · {f['name']}" if f.get("name") else f" #{f['id']}"), f["id"])
+        self.anScan.setCurrentIndex(max(0, self.anScan.findData(cur)))
+        self.anScan.blockSignals(False)
+
+    def _an_run(self, path: str, body: dict, busy: str, info: QLabel, ok) -> None:
+        if not self.cur or self.an_busy:
+            return
+        self.an_busy = True
+        for b in (self.bAnSam, self.bAnIdx, self.bAnIdxP, self.bAnTr, self.bAnSt):
+            b.setEnabled(False)
+        info.setText(busy)
+        pid = self.cur["id"]
+
+        def done():
+            self.an_busy = False
+            for b in (self.bAnSam, self.bAnIdx, self.bAnIdxP, self.bAnTr, self.bAnSt):
+                b.setEnabled(bool(self.cur))
+
+        def _ok(j):
+            done()
+            if self.cur and self.cur["id"] == pid:
+                ok(j)
+
+        def _err(e):
+            done()
+            info.setText("")
+            say(self, "Analisis gagal:\n" + e, warn=True)
+        run_bg(api.call, path, dict(body, folder=self.folder, id=pid, by=self.by()), ok=_ok, err=_err)
+
+    def an_sam(self) -> None:
+        if not self.cur:
+            return
+        if not self.vision().get("sam"):
+            say(self, "SAM tidak tersedia di DB-Ex ini (model / pustaka ONNX Runtime & OpenCV tidak ditemukan).\n"
+                      "Pasang ulang DB-Ex dari installer terbaru.", warn=True)
+            return
+        SET.set("ocAnGrid", self.anGrid.currentData())
+        body = {"grid": self.anGrid.currentData()}
+        busy = "SAM membagi foto menjadi zona… (±20–60 detik di CPU)"
+        if self.anAi.isChecked():
+            ai = self.win.ai
+            model = ai.model()
+            if not ai.info or not ai.info.get("running") or not model:
+                self.win.open_ai()
+                return
+            body.update(host=ai.host.text().strip(), model=model, extra=ai.extra.toPlainText())
+            busy = f"SAM membagi foto, lalu AI {model} memberi label… (biasanya 1–3 menit)"
+
+        def ok(j):
+            self._feats(j)
+            self.tool.select(None)
+            n = len(j.get("made") or [])
+            t = f"{n} zona usulan dari {j.get('raw', 0)} segmen SAM" + (f", {j['dropped']} bukan batuan dibuang" if j.get("dropped") else "")
+            if j.get("notes"):
+                t += f". Catatan AI: {j['notes']}"
+            self.anSamInfo.setText(t + (". Periksa, ubah jenis / batasnya, lalu Terima." if n else ". Coba kerapatan Halus."))
+            self.toast(f"{n} zona usulan", 4000)
+        self._an_run("/core/outcrop/an/sam", body, busy, self.anSamInfo, ok)
+
+    def an_index(self, propose: bool) -> None:
+        SET.set("ocAnSens", self.anSens.value())
+        kind = self.anIdx.currentData()
+
+        def ok(j):
+            im = QImage.fromData(__import__("base64").b64decode(j["png"]), "PNG")
+            self.ovl = im if not im.isNull() else None
+            if not self.anShow.isChecked():
+                self.anShow.setChecked(True)
+            m2 = f" ≈ {j['m2']:,.1f} m²" if j.get("m2") is not None else ""
+            self.anIdxInfo.setText(f"<b>{_esc(j['label'])}</b>: <b>{j['pct']:.1f} %</b> luas foto{m2}"
+                                   + ("" if j.get("scaled") else " · m² perlu georef / garis skala")
+                                   + (f" · {len(j['made'])} zona usulan dibuat" if propose else ""))
+            zs = j.get("zones") or []
+            self.anIdxT.setRowCount(len(zs))
+            for i, z in enumerate(zs):
+                for c, val in enumerate((z["name"], f"{z['pct']:.1f}", "" if z.get("m2") is None else f"{z['m2']:,.2f}")):
+                    self.anIdxT.setItem(i, c, QTableWidgetItem(val))
+            self.anIdxT.setVisible(bool(zs))
+            if propose and j.get("features") is not None:
+                self._feats({"features": j["features"]})
+            self.canvas.update()
+        self._an_run("/core/outcrop/an/index", {"kind": kind, "sens": self.anSens.value(), "propose": propose},
+                     "Menghitung peta warna…", self.anIdxInfo, ok)
+
+    def an_traces(self) -> None:
+        SET.set("ocAnTSens", self.anTSens.value())
+
+        def ok(j):
+            self._feats(j)
+            self.tool.select(None)
+            self.toast(f"{len(j['made'])} jejak usulan — menghitung struktur…", 3000)
+            self.an_struct()
+        self._an_run("/core/outcrop/an/traces", {"sens": self.anTSens.value()}, "Mendeteksi jejak…", self.anStInfo, ok)
+
+    def an_struct(self) -> None:
+        def ok(j):
+            self.scan_res = j["scan"]
+            if j.get("rose"):
+                pm = QPixmap()
+                pm.loadFromData(__import__("base64").b64decode(j["rose"]), "PNG")
+                self.anRose.setPixmap(pm.scaledToWidth(min(280, pm.width()), Qt.SmoothTransformation))
+            else:
+                self.anRose.clear()
+            sets = j["sets"]
+            u = j["scan"]["unit"]
+            self.anSetT.setRowCount(len(sets))
+            for i, st in enumerate(sets):
+                sp = st.get("spacing")
+                vals = (st["set"], f"{st['mean']:.0f}°", str(st["n"]),
+                        "" if sp is None else (f"{sp:.2f} m" if u == "m" else f"{sp:.0f} px") + (f" · {st['isrm'].split(' (')[0]}" if st.get("isrm") else ""),
+                        "" if st.get("app_dip") is None else f"{st['app_dip']:.0f}°")
+                for c, val in enumerate(vals):
+                    self.anSetT.setItem(i, c, QTableWidgetItem(val))
+            self.anSetT.setVisible(bool(sets))
+            sc, geo = j["scan"], j["geo"]
+            t = [f"<b>{len(j['lines'])}</b> jejak (kekar / vein / sesar){'' if self.anDraft.isChecked() else ' yang sudah diterima'}; "
+                 f"<b>{len(sets)}</b> set."]
+            if sc["n"]:
+                t.append(f"Scanline {'otomatis' if sc['auto'] else 'pilihan'} {sc['length']:,.2f} {u}: <b>{sc['n']}</b> perpotongan, "
+                         f"frekuensi <b>{sc.get('freq', 0):g}</b> / {u}"
+                         + (f", spasi rata-rata <b>{sc['spacing_mean']:.2f} {u}</b>" if sc.get("spacing_mean") is not None else "")
+                         + (f" — {_esc(sc['isrm'])}" if sc.get("isrm") else "") + ".")
+            else:
+                t.append("Scanline tidak memotong jejak mana pun.")
+            if geo.get("jv"):
+                t.append(f"Jv ≈ <b>{geo['jv']:g}</b> / m³ (dari set yang terlihat di foto), RQD ≈ <b>{geo['rqd']}</b> % (Palmström), "
+                         f"struktur <b>{_esc(geo['structure'])}</b>" + (f", kondisi bidang <b>{_esc(geo['condition'])}</b> (dari Pelapukan)" if geo.get("condition") else "")
+                         + f" → <b>GSI ≈ {_esc(geo['gsi'])}</b>. Bantuan saja — set ketiga yang sejajar bidang foto tidak terlihat.")
+            elif not geo.get("unit_ok"):
+                t.append("<span style='color:#B7791F'>Foto belum berskala: isi Georef atau gambar Garis skala (panjang m) untuk spasi dalam meter, "
+                         "Jv, RQD dan GSI.</span>")
+            if j.get("georef") and any(st.get("app_dip") is not None for st in sets):
+                t.append("Apparent dip dihitung dari georef (bidang foto). Strike / dip sebenarnya butuh jejak di permukaan tidak rata (Fase 2).")
+            self.anStInfo.setText("<br>".join(t))
+            self.canvas.update()
+        self._an_run("/core/outcrop/an/struct", {"scan_fid": self.anScan.currentData(), "drafts": self.anDraft.isChecked()},
+                     "Menghitung struktur…", self.anStInfo, ok)
 
     # ---------------------------------------------------------------- georef
     def geo_visible(self) -> bool:

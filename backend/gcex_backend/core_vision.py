@@ -67,6 +67,7 @@ def _session(key: str):
             ort = _mod("onnxruntime")
             so = ort.SessionOptions()
             so.log_severity_level = 3
+            so.enable_cpu_mem_arena = False  # memori dikembalikan sesudah tiap run (PC lapangan 8 GB RAM)
             _SESS[key] = ort.InferenceSession(str(d / FILES[key]), sess_options=so, providers=["CPUExecutionProvider"])
         return _SESS[key]
 

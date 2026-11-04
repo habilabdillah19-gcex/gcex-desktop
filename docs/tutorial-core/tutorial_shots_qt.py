@@ -200,6 +200,37 @@ def main() -> None:
             for r in ws.iter_rows()]
     (WORK / "q11_data_dashboard.json").write_text(json.dumps(rows, ensure_ascii=False, default=str, indent=0), encoding="utf-8")
     print("OK q11_data_dashboard.json", len(rows) - 1, "baris")
+    # =============================================================== Singkapan: tab Analisis (Fase 1)
+    w.set_mode("oc")
+    ph2 = src / "Foto_Singkapan" / "Dinding_Latihan_W01.jpg"
+    O.QFileDialog.getOpenFileNames = staticmethod(lambda *a, **k: ([str(ph2)], ""))
+    pg.add_photo()
+    until(lambda: pg.cur is not None and pg.cur["file"].startswith("Dinding") and pg.view.w > 0)
+    pg.tabs.setCurrentIndex(4)
+    pg.anIdx.setCurrentIndex(0)
+    pg.an_index(False)
+    until(lambda: pg.ovl is not None and not pg.an_busy, 30000)
+    shot("q19_analisis_warna")
+    pg.an_clear_index()
+    from gcex_backend import core_outcrop as CO
+    so = CO.store(pg.folder)
+    CO.save_feature(so, pg.cur["id"], None, {"kind": "skala", "pts": [[0.111, 0.965], [0.889, 0.965]], "attrs": {"length_m": 14}}, "Rina W.")
+    CO.update_photo(so, pg.cur["id"], {"desc:weathering": "W2 (Slightly Weathered)"}, "Rina W.")
+    pg._pick(pg.lst.currentRow())
+    pg.tabs.setCurrentIndex(4)
+    pg.an_traces()
+    until(lambda: pg.scan_res is not None and pg.anSetT.rowCount() >= 2 and not pg.an_busy, 40000)
+    wait(500)
+    sa = pg.tabs.widget(4)
+    sa.verticalScrollBar().setValue(sa.verticalScrollBar().maximum())
+    shot("q20_analisis_struktur")
+    sa.verticalScrollBar().setValue(0)
+    if pg.vision().get("sam"):
+        pg.auto_reject(None)
+        pg.anGrid.setCurrentIndex(pg.anGrid.findData("sedang"))
+        pg.an_sam()
+        until(lambda: "zona usulan dari" in pg.anSamInfo.text(), 240000)
+        shot("q21_analisis_sam")
     # =============================================================== QAQC
     import corex.qaqc as Q
     Q.show_in_folder = lambda p: None

@@ -83,7 +83,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <div>16. Ekspor ke database &amp; dashboard</div>
     <div>Masalah umum</div>
   </div>
-  <div class="meta">DB-Ex 0.37.2 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
+  <div class="meta">DB-Ex 0.38.0 · Semua nama perusahaan, lubang bor, koordinat, tanggal, kadar, foto dan nama orang di tutorial ini adalah contoh fiktif.<br>Copyright © Habil Abdillah 2026. Seluruh hak dilindungi.</div>
 </section>
 
 <section class="page">
@@ -110,7 +110,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
       <tr><td><code>Data_Lab\Geologi_Latihan.txt</code> (hanya LTH-101)</td><td>Latihan 2 – tab Geologi</td></tr>
       <tr><td><code>Data_Lab\Assay_Latihan_LTH-102_ulang.csv</code></td><td>Latihan 9 – assay ulang</td></tr>
       <tr><td><code>Dashboard_lama\Geotech_Dashboard_LTH-102.json</code></td><td>Latihan 10 – impor JSON lama</td></tr>
-      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–18 (DB-Ex versi Qt)</td></tr>
+      <tr><td><code>Foto_Singkapan\</code>, <code>Borang\</code>, <code>QAQC\</code></td><td>Latihan 12–19 (DB-Ex versi Qt)</td></tr>
     </table>
   </div></div>
   <div class="note"><b>Prinsip DB-Ex.</b> AI visual menilai parameter <b>geoteknik</b> (recovery, RQD, GSI, RMR, pelapukan, kondisi, catatan struktur). Isian <b>geologi</b> (litologi, alterasi, oksidasi, warna) diambil dari <b>logging geologist</b> bila ada; AI hanya mengisinya bila logging tidak ada. Urutan prioritas: logging geologist &gt; editan manual &gt; AI.</div>
@@ -334,7 +334,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 <section class="page">
   <div class="part">Bagian II · DB-Ex versi Qt</div>
   <h2>Empat ruang kerja dalam satu proyek</h2>
-  <p>Bab 12–18 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
+  <p>Bab 12–19 memakai <b>DB-Ex versi Qt</b> (<code>DB-Ex-Qt-Setup-&lt;versi&gt;.exe</code>, pre-release <i>core-ex-qt-uji</i>). Bilah atas punya empat tombol ruang kerja untuk folder proyek yang sama: <b>Core box</b> (Latihan 1–11), <b>Singkapan</b> (foto mapping / trenching), <b>Borang</b> (borang lapangan tulisan tangan) dan <b>QAQC</b> (QAQC sampel lab &amp; data bor). Semua data tersimpan di <code>_GCEx_Core</code> di dalam folder proyek.</p>
   <table>
     <tr><th style="width:24%">Ruang kerja</th><th>Untuk</th><th style="width:30%">Hasil</th></tr>
     <tr><td><b>Core box</b></td><td>Foto core box, data bor, AI geoteknik, overlay assay</td><td>Excel core log, infografis core box</td></tr>
@@ -350,6 +350,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td><code>Borang\DDR_31Okt.jpg</code></td><td>Latihan 15–16 – Daily Drilling Report</td></tr>
     <tr><td><code>Borang\Borang_Latihan_3_halaman.pdf</code></td><td>ketiga borang dalam satu PDF (dipecah per halaman)</td></tr>
     <tr><td><code>QAQC\QAQC_Latihan.xlsx</code></td><td>Latihan 17–18 – QAQC Database</td></tr>
+    <tr><td><code>Foto_Singkapan\Dinding_Latihan_W01.jpg</code></td><td>Latihan 19 – Analisis foto singkapan</td></tr>
   </table>
   <div class="note"><b>Catatan.</b> Foto trench, scan borang, nama spotter / driller / rig / lubang, tanggal dan angka di bab ini <b>fiktif</b>. Tulisan tangan di scan contoh digambar ulang komputer. Jawaban AI pada gambar adalah contoh; di komputer Anda AI membaca borang yang sebenarnya dan hasilnya tetap <b>wajib diperiksa</b>.</div>
 </section>
@@ -504,6 +505,29 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
 </section>
 
 <section class="page">
+  <div class="part">Latihan 19</div>
+  <h2>Analisis foto singkapan: peta warna, struktur &amp; zona SAM</h2>
+  <p>Tab <b>Analisis</b> di ruang kerja Singkapan membuat <b>usulan</b> otomatis yang Anda periksa: zona dari SAM, peta warna oksida / vein kuarsa yang terukur, serta jejak kekar dengan set, scanline, Jv, RQD dan bantuan GSI. Semua berjalan offline. Hasil berupa usulan (putus-putus) yang baru ikut ekspor setelah <b>diterima</b>.</p>
+  <div class="step"><div class="num">1</div><div>Singkapan → <b>+ Foto</b> → <code>Foto_Singkapan\Dinding_Latihan_W01.jpg</code> (dinding fiktif: andesit propilitik, zona oksida di kiri, vein kuarsa miring, dua set kekar). Buka tab <b>Analisis</b>.</div></div>
+  <div class="step"><div class="num">2</div><div><b>2 · Peta warna terukur</b> → <i>Oksida besi</i> → <b>Hitung</b>. Area oksida diwarnai oranye di foto; luasnya <b>±35 %</b> foto. Bila sudah ada zona yang didigitasi, tabel menunjukkan % oksida di tiap zona; dengan georef / garis skala juga m². <b>Jadikan usulan zona</b> mengubah area itu menjadi poligon usulan. Ulangi dengan <i>Vein kuarsa</i>.</div></div>
+  <figure><img src="gambar/q19_analisis_warna.png" style="width:150mm"><figcaption>Gambar 46 – Peta warna oksida besi di atas foto dan persentase luasnya.</figcaption></figure>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">3</div><div>Gambar <b>Garis skala</b> di sepanjang pita ukur di kaki dinding (pita pertama ke pita terakhir = <b>14 m</b>), dan isi <i>Pelapukan</i> di Deskripsi: <code>W2</code>.</div></div>
+  <div class="step"><div class="num">4</div><div><b>3 · Struktur &amp; geoteknik</b> → <b>Deteksi jejak</b>. Jejak lurus dijadikan garis usulan <i>Kekar</i>, lalu struktur dihitung otomatis: dua set — <b>S1 ±65°</b> (curam ke kanan) dan <b>S2 ±160°</b> (landai turun ke kanan) — di rose diagram; scanline mendatar memotong jejak (titik merah / biru di foto). Spasi per set ±<b>1,3 m</b> (kelas ISRM <i>Lebar</i>), Jv ≈ 1,5 / m³, RQD ≈ 100 %, struktur <i>Masif / blok besar</i>, kondisi <i>Baik</i> (dari W2) → <b>GSI ≈ 75–85</b>.</div></div>
+  <figure><img src="gambar/q20_analisis_struktur.png" style="width:150mm"><figcaption>Gambar 47 – Jejak kekar usulan, scanline dengan titik potong per set, rose diagram dan ringkasan geoteknik.</figcaption></figure>
+  <div class="note">Vein kuarsa juga terdeteksi sebagai jejak (masuk set S2). Ganti jenisnya menjadi <b>Vein</b> di tab Fitur. Untuk scanline pilihan, gambar garis (mis. jenis <i>Channel</i>) melintang kekar lalu pilih di kotak <i>Scanline</i>.</div>
+</section>
+
+<section class="page">
+  <div class="step"><div class="num">5</div><div><b>Buang semua usulan</b>, lalu <b>1 · Segmentasi zona (SAM)</b> → <i>Sedang</i> → <b>Usulkan zona</b> (±20–60 detik). SAM menemukan puluhan segmen (blok di antara kekar); segmen sewarna digabung menjadi <b>2 zona</b>: <i>Zona oksida / gossan</i> dan <i>Zona litologi</i>. Centang <b>Label zona dengan AI vision</b> bila Ollama aktif agar AI memberi jenis &amp; nama tiap zona.</div></div>
+  <figure><img src="gambar/q21_analisis_sam.png" style="width:150mm"><figcaption>Gambar 48 – Zona usulan dari SAM: oksida (kiri) dan andesit propilitik (kanan).</figcaption></figure>
+  <div class="step"><div class="num">6</div><div>Periksa usulan terhadap foto: geser titik batas, ubah jenis / nama, hapus yang keliru, lalu <b>Terima semua usulan</b>. Baru setelah diterima, zona &amp; jejak ikut legenda, infografis, STR / DXF dan database channel.</div></div>
+  <div class="warn">Angka geoteknik (spasi, Jv, RQD, GSI) adalah <b>bantuan</b> dari satu foto. Set yang sejajar bidang foto tidak terlihat, dan strike / dip sebenarnya tidak bisa diukur dari satu dinding rata — gunakan apparent dip dari georef dan ukuran kompas di lapangan.</div>
+</section>
+
+<section class="page">
   <h2>Tabel database Borang</h2>
   <table>
     <tr><th style="width:30%">Jenis borang</th><th>Tabel SQLite / MS Access</th><th style="width:30%">Sheet Excel</th></tr>
@@ -534,6 +558,8 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td>Ekspor MS Access gagal</td><td>Driver Access 64-bit belum terpasang; pasang Microsoft Access Database Engine 2016 x64, atau ekspor ke SQLite / Excel.</td></tr>
     <tr><td>QAQC: "CRM tanpa data di Master_CRM"</td><td>Nama Standard_Name di CRM_Data tidak ada di Master_CRM (beda ejaan / spasi). Tambahkan di tab Data → Master_CRM.</td></tr>
     <tr><td>QAQC: grafik tidak muncul</td><td>Grafik dimuat saat tab dibuka; tunggu beberapa detik. Duplikat butuh minimal 3 pasangan per zona × tipe (Panel kontrol).</td></tr>
+    <tr><td>Analisis: "SAM tidak tersedia"</td><td>Model SAM / OpenCV tidak ada di instalasi. Pasang ulang DB-Ex versi Qt terbaru; peta warna &amp; deteksi jejak tetap butuh OpenCV.</td></tr>
+    <tr><td>Analisis: GSI / Jv tidak muncul</td><td>Foto belum berskala. Isi Georef atau gambar Garis skala (panjang m), lalu Hitung struktur lagi.</td></tr>
     <tr><td>"Backend tidak aktif"</td><td>Bantuan → Buka folder log, kirim <code>backend.log</code> ke admin.</td></tr>
   </table>
   <p class="meta" style="margin-top:6mm">DB-Ex dilindungi UU No. 28 Tahun 2014 tentang Hak Cipta dan dilisensikan, bukan dijual. Ketentuan lengkap: Bantuan → Syarat penggunaan &amp; penafian. Ollama, Qwen dan nama produk lain adalah merek pemiliknya masing-masing.<br>Copyright © Habil Abdillah 2026.</p>

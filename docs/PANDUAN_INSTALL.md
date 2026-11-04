@@ -834,6 +834,16 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Semua tab, grafik, ekspor Excel dan laporan PDF hanya memuat sampel dalam filter; filter yang aktif tercantum di bilah atas, dashboard, sheet Control_Panel dan di bawah judul laporan. Data di database tidak berubah; **Hapus filter** kembali ke semua data.
 - Kotak isian Panel kontrol kini berbingkai sehingga jelas bisa diketik.
 
+## 82. DB-Ex 0.38.0 — Analisis foto singkapan (Fase 1)
+
+- Tab baru **Analisis** di ruang kerja Singkapan (DB-Ex versi Qt), semua offline:
+  - **Segmentasi zona (SAM)** otomatis: SAM membagi foto dari grid titik, zona sewarna yang hanya dipisah jejak kekar digabung. Label dari warna & bentuk (oksida, vein, alterasi pucat, litologi) atau dari AI vision lokal (Ollama) yang melihat foto bernomor zona.
+  - **Peta warna terukur**: oksida besi dan vein kuarsa — peta di atas foto, % luas foto & per zona, m² bila foto bergeoreferensi / punya garis skala; area bisa dijadikan poligon usulan.
+  - **Struktur & geoteknik**: deteksi jejak kekar / vein → garis usulan, set orientasi & rose diagram, scanline (frekuensi, spasi per set, kelas ISRM), Jv, RQD (Palmström) dan perkiraan GSI (Hoek–Marinos) sebagai bantuan; apparent dip per set bila bergeoreferensi.
+- Semua hasil berupa **usulan** (putus-putus) yang baru ikut ekspor setelah diterima geologist.
+- SAM kini memakai memori jauh lebih sedikit (puncak ±1,9 GB, sebelumnya bisa >4 GB) — penting untuk PC lapangan 8 GB RAM.
+- Data latihan baru `Foto_Singkapan/Dinding_Latihan_W01.jpg` (fiktif), tutorial Latihan 19, Panduan DB-Ex bagian 6c butir 8.
+
 ## 57. GC-Ex Block Model & Drill Hole Ultimate 0.24.9
 
 **Dua dokumen PDF baru untuk keluarga GC-Ex**, mengikuti pola dokumen DB-Ex (tutorial + penjelasan teknis):

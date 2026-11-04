@@ -21,6 +21,7 @@ Isi:
   Borang/          scan borang fiktif Ore Spotter loading pit, ROM / crusher, Daily Drilling Report (+ PDF 3 halaman) (bab 13-16)
 """
 import json
+import math
 import random
 import shutil
 import sys
@@ -217,6 +218,34 @@ def outcrop_photo(p: Path) -> None:
     im.save(p, quality=90)
 
 
+def wall_photo(p: Path) -> None:
+    """Dinding pit sintetis untuk analisis foto: andesit propilitik, zona oksida (limonit), vein kuarsa miring dan dua set
+    kekar (curam ke kanan ~65°, landai ~160°) dengan spasi teratur — kunci jawaban tutorial bab Analisis foto."""
+    W, H = 1800, 1200
+    yy, xx = np.mgrid[0:H, 0:W]
+    rng = np.random.default_rng(11)
+    noise = rng.normal(0, 1, (H // 5, W // 5))
+    noise = np.array(Image.fromarray(((noise - noise.min()) / np.ptp(noise) * 255).astype(np.uint8)).resize((W, H), Image.BICUBIC)) / 255
+    img = np.zeros((H, W, 3), np.float32)
+    img[:] = (104, 116, 98)                                   # andesit propilitik hijau keabuan
+    oks = (xx < 640 + 0.35 * (yy - 600) + 60 * np.sin(yy / 140.0))
+    img[oks] = (150, 96, 52)                                  # zona oksida limonit di kiri
+    vein = np.abs(yy - (300 + 0.42 * xx)) < 11
+    img[vein] = (236, 234, 226)                               # vein kuarsa
+    img *= (0.80 + 0.36 * noise[..., None])
+    im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.0))
+    dr = ImageDraw.Draw(im)
+    for c in range(-6, 14):                                   # set 1: curam (~65° dari mendatar), spasi ~150 px
+        x0 = 120 + c * 150
+        dr.line([(x0, H), (x0 + H / math.tan(math.radians(65)), 0)], fill=(38, 40, 36), width=3)
+    for c in range(0, 9):                                     # set 2: landai (~20° turun ke kanan), spasi ~170 px
+        y0 = 80 + c * 170
+        dr.line([(0, y0), (W, y0 + W * math.tan(math.radians(20)))], fill=(44, 46, 40), width=2)
+    for i in range(5):                                        # pita ukur georef di dinding
+        dr.rectangle([200 + i * 340, 1150, 260 + i * 340, 1170], fill=(230, 60, 160))
+    im.save(p, quality=90)
+
+
 KELAS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "OX-MO", "SF-MO"]
 KCOL = [(120, 200, 120), (120, 200, 120), (230, 110, 110), (230, 110, 110), (220, 120, 200), (220, 120, 200), (240, 220, 80), (240, 220, 80)]
 PIT_ROWS = [("19.08", "Pit X", "268.5", "OX-LG", "7123", "37", "ROM A1"), ("13", "", "", "OX-LG", "32", "31", "〃"),
@@ -380,6 +409,7 @@ def qt_data(out: Path) -> None:
     sk = out / "Foto_Singkapan"
     sk.mkdir(parents=True, exist_ok=True)
     outcrop_photo(sk / "Trench_Latihan_TR01.jpg")
+    wall_photo(sk / "Dinding_Latihan_W01.jpg")
     (sk / "Sampel_Trench_TR01.txt").write_text("Sample ID\tDari\tKe\tAu (ppm)\tAg_ppm\n" + "".join(
         f"{a}\t{str(b).replace('.', ',')}\t{str(c).replace('.', ',')}\t{au}\t{ag}\n" for a, b, c, au, ag in SAMPEL_TR01), encoding="utf-8")
     bo = out / "Borang"
@@ -556,8 +586,9 @@ def main():
         "   Geologi_Latihan.txt            -> tab Geologi  (hanya LTH-101; LTH-102 belum dilogging)\n"
         "   Assay_Latihan_LTH-102_ulang.csv -> tab Assay, cara 'Tambah / perbarui per hole' (latihan data baru)\n"
         "Dashboard_lama/   latihan tombol JSON (impor proyek dashboard lama)\n"
-        "--- DB-Ex versi Qt (tutorial bab 12-18) ---\n"
+        "--- DB-Ex versi Qt (tutorial bab 12-19) ---\n"
         "Foto_Singkapan/   Trench_Latihan_TR01.jpg (Singkapan -> + Foto); Sampel_Trench_TR01.txt (salin -> Tempel dari Excel)\n"
+        "                  Dinding_Latihan_W01.jpg (tab Analisis: peta warna, jejak kekar & scanline, zona SAM; bab 19)\n"
         "Borang/           scan borang fiktif (Borang -> + Borang):\n"
         "   Borang_Loading_Pit_30Okt.jpg   -> jenis Ore Spotter: Loading Pit -> ROM / Stockpile (shift II, lewat tengah malam)\n"
         "   Borang_ROM_31Okt.jpg           -> jenis Ore ke Stockpile / Crusher (Rehandling / Direct)\n"
