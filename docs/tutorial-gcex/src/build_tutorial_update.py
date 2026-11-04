@@ -868,7 +868,41 @@ B.append('<div class=warn>Sub-blocking mengubah posisi blok, sehingga hasil esti
 B.append('<div class=box>Kadar <b>tidak</b> dikalikan proporsi: kadarnya memang kadar bagian yang di dalam solid, '
          'dan kadar rata-rata di laporan ditimbang tonase yang sudah berproporsi.</div>')
 
-B.append('<div class="page"></div><h2>10. Isi dokumen ini di tutorial bergambar</h2>')
+B.append('<div class="page"></div><h2>10. Database per kampanye, filter data bor &amp; export terfilter</h2>')
+B.append('<p>Tiga tambahan di <b>GC-Ex Drill Hole Ultimate</b> yang semuanya dijalankan dari <b>Project Tree</b>, '
+         'bukan dari panel &mdash; supaya panel kerja tidak perlu digulung naik-turun.</p>')
+B.append('<h3>10.1 Database bor per kampanye</h3>')
+B.append('<p>Node <b>Database Bor</b> dipecah per <b>kampanye pemboran</b> (eksplorasi, infill, grade control per '
+         'periode). Menu node &rarr; <b>Tambah kampanye baru&hellip;</b>; kampanye tujuan juga bisa dipilih di '
+         'dialog import / upsert.</p>')
+B.append(D.tabel(['Keadaan node', 'Peran', 'Akibat'], [
+    ['<b>AKTIF</b>', 'set kerja', 'satu-satunya sumber pemodelan, estimasi, Geostatistik dan statistik'],
+    ['dicentang, tidak aktif', 'referensi', 'tampil di 3D / Sayatan sebagai pembanding, tidak ikut analisis'],
+    ['tidak dicentang', 'sembunyi', 'tidak tampil dan tidak ikut analisis']]))
+B.append('<p>Bila data GC sudah dinilai bagus, <b>Buat set merge&hellip;</b> menggabungkan beberapa kampanye '
+         'menjadi <b>database baru</b> (Collar / Survey / Assay / Geologi <b>Merge</b>) yang bisa dijadikan '
+         'dataset aktif, dan diekspor ke <b>.xlsx 4 sheet</b> untuk pihak luar. Set merge bersifat hidup: '
+         'hole baru di kampanye sumbernya otomatis ikut. Bentrok HoleID saat upsert diputuskan oleh '
+         '<b>urutan prioritas</b> kampanye &mdash; data yang kalah ditolak dan dilaporkan.</p>')
+B.append('<h3>10.2 Filter data bor (AND / OR)</h3>')
+B.append('<p>Node <b>Filter data bor</b> menyaring data yang dipakai seluruh aplikasi, dinilai <b>per interval</b>. '
+         'Atributnya dinamis mengikuti kolom yang ada: kadar unsur (termasuk operator <b>antara</b> untuk rentang), '
+         'kategori assay, atribut geologi, kampanye, data collar, From / To / panjang, HoleID, dan <b>posisi</b> '
+         'terhadap topografi, DTM, solid domain, wireframe atau poligon. Centang node = hidup/mati tanpa '
+         'menghapus aturan; tiap aturan muncul sebagai anak node.</p>')
+B.append(D.tabel(['Jalur', 'Cara interval dinilai'], [
+    ['Statistik, komposit, Geostatistik, <b>estimasi</b>',
+     '<b>utuh atau gugur</b> dari <b>titik tengah</b> interval &mdash; tidak dipotong. Interval yang tidak lolos '
+     'tidak dipakai sebagai data masukan, jadi filter memang mempengaruhi hasil estimasi'],
+    ['<b>Export</b> terfilter (.xlsx 4 sheet / CSV 4 berkas)',
+     'interval yang memotong permukaan <b>dipotong tepat di permukaannya</b>: 10&ndash;20 m dengan permukaan di '
+     '15 m keluar sebagai 15&ndash;20. Tanpa ini &ldquo;hanya di bawah topografi&rdquo; melebihkan panjang bor '
+     'sebesar separuh interval di batasnya']]))
+B.append('<div class=box>Bila hasil estimasi terasa kurang data, periksa dulu node <b>Filter data bor</b>: '
+         'filter yang tertinggal menyala adalah penyebab yang paling sering terlewat. Aturan dan status '
+         'hidup-matinya ikut tersimpan di berkas proyek.</div>')
+
+B.append('<div class="page"></div><h2>11. Isi dokumen ini di tutorial bergambar</h2>')
 B.append('<p>Semua bab di dokumen ini kini juga ada di dua tutorial bergambar, lengkap dengan <b>tangkapan layar '
          'aplikasi</b> dan angka dari satu kali jalannya latihan. Dokumen ini tetap diterbitkan sebagai ringkasan '
          '&ldquo;apa yang baru&rdquo;; untuk belajar langkah demi langkah, pakai tutorial bergambarnya.</p>')
@@ -880,7 +914,8 @@ B.append(D.tabel(['Bab di dokumen ini', 'Di tutorial bergambar'], [
     ['6. GC-Ex Block Model: yang baru', '<i>Tutorial Block Model</i>: bab <b>Yang baru di 0.24</b>'],
     ['7. Kerangka AOI', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Block model dari nol: kerangka AOI</b>'],
     ['8. Estimasi waste', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Estimasi waste</b> (jalur vein) dan bab <b>Geomodeller Stratified-Laterite</b> (jalur laterit)'],
-    ['9. Sub-blocking &amp; proporsi volume', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Sub-blocking &amp; proporsi volume</b>']]))
+    ['9. Sub-blocking &amp; proporsi volume', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Sub-blocking &amp; proporsi volume</b>'],
+    ['10. Kampanye, filter &amp; export terfilter', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Database bor per kampanye</b> dan bab <b>Filter data bor</b> (Bagian I)']]))
 B.append('<p>Nama domain dan angka di kedua tutorial bergambar sudah mengikuti data latihan yang sekarang '
          '(<code>QV_Lensa2</code>, <code>QV_Splay_HW</code>, bor dan assay sesuai berkas yang Anda terima).</p>')
 

@@ -478,6 +478,19 @@
   function peran(k) { return KP.act === k.id ? 'set kerja' : (show(k) ? 'referensi' : 'sembunyi'); }
   window.kpPeran = peran;
 
+  /* 0.24.31: perintah kampanye juga dipasang di menu node "Database Bor" sendiri, supaya bisa
+     menambah kampanye pertama (saat kpTree() masih kosong) tanpa membuka panel mana pun. */
+  window.kpMenuDb = function () {
+    sync();
+    var src = KP.L.filter(function (k) { return !isMg(k); });
+    return [
+      { h: 'Kampanye pemboran' },
+      { t: 'Tambah kampanye baru\u2026', fn: function () { kpTambah(); } },
+      { t: 'Buat set merge\u2026 (gabungkan kampanye)', dis: src.length < 2, fn: function () { kpGabung(); } },
+      { sep: 1 }
+    ];
+  };
+
   window.kpTree = function () {
     sync();
     if (!KP.L.length) return [];

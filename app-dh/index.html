@@ -5775,7 +5775,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
       go:function(){U.setVal('geoAttr',o[0]);if(window.trajMode)trajMode('geo');}};});
     var tb=function(id,t,ic,n,kind,o){return Object.assign({id:id,t:t,ic:ic,b:N(n),dim:!n,menu:function(){var L=[{t:'Ganti / perbarui (upsert)…',fn:ups}];if(kind)L.push({sep:1},{t:'Hapus tabel ini…',danger:1,dis:!n,fn:function(){PTD.drop(kind);}});return L;}},o||{});};
     return{id:'db',step:'3',t:'Database Bor',ic:'folder',fold:1,tab:'Data',b:C.length?N(C.length)+' hole':'',
-      menu:function(){return[{t:'Tambah / perbarui data bor (upsert)…',fn:ups},{sep:1},{t:'Kampanye baru…',fn:function(){if(window.kpTambah)kpTambah();}},{t:'Gabungkan kampanye… (merge)',fn:function(){if(window.kpGabung)kpGabung();}},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}];},
+      menu:function(){return(window.kpMenuDb?kpMenuDb():[]).concat([{t:'Tambah / perbarui data bor (upsert)…',fn:ups},{sep:1},{t:'Kampanye baru…',fn:function(){if(window.kpTambah)kpTambah();}},{t:'Gabungkan kampanye… (merge)',fn:function(){if(window.kpGabung)kpGabung();}},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}]);},
       kids:(window.kpTree?kpTree():[]).concat([tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[{t:'Ganti / perbarui (upsert)…',fn:ups},{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
         tb('db.survey','Survey','table',Sv.length,'survey',{tab:'Data'}),
         tb('db.assay','Assay','table',As.length,'assay',{tab:'Data',kids:els}),
@@ -9059,6 +9059,19 @@ function ogFanDraw() {
   function peran(k) { return KP.act === k.id ? 'set kerja' : (show(k) ? 'referensi' : 'sembunyi'); }
   window.kpPeran = peran;
 
+  /* 0.24.31: perintah kampanye juga dipasang di menu node "Database Bor" sendiri, supaya bisa
+     menambah kampanye pertama (saat kpTree() masih kosong) tanpa membuka panel mana pun. */
+  window.kpMenuDb = function () {
+    sync();
+    var src = KP.L.filter(function (k) { return !isMg(k); });
+    return [
+      { h: 'Kampanye pemboran' },
+      { t: 'Tambah kampanye baru\u2026', fn: function () { kpTambah(); } },
+      { t: 'Buat set merge\u2026 (gabungkan kampanye)', dis: src.length < 2, fn: function () { kpGabung(); } },
+      { sep: 1 }
+    ];
+  };
+
   window.kpTree = function () {
     sync();
     if (!KP.L.length) return [];
@@ -11625,7 +11638,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.29';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.30';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

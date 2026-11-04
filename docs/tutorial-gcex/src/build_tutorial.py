@@ -80,18 +80,66 @@ okm = dict(l.split('\t') for l in N['okMsg'].split('\n') if '\t' in l)
 CH = []
 def ch(title, body, key=None): CH.append((title, body))
 
+# Urutan bab disusun ulang (0.24.31) per TIPE DEPOSIT dan mengikuti urutan node Project Tree /
+# langkah kerja nyata. Bab-bab di bawah tetap ditulis dalam urutan apa saja; daftar BAGIAN inilah
+# yang menentukan urutan terbit. Setiap entri = awal judul bab (unik).
+BAGIAN = [
+ ('Bagian I &middot; Persiapan &amp; database bor',
+  'Berlaku untuk <b>semua tipe deposit</b>. Menyiapkan folder proyek, memasukkan data bor, memeriksa '
+  'kesehatan datanya, menata kampanye pemboran, dan menyaring data yang akan dipakai.',
+  ['Tentang tutorial ini', 'Data simulasi', 'Membuat folder proyek', 'Validasi data bor',
+   'Database bor per kampanye', 'Menambah bor infill dengan upsert', 'Filter data bor',
+   'Mengenal tampilan', 'Sayatan &amp; penampang 2D', 'Geologi: pita litologi']),
+ ('Bagian II &middot; Deposit vein / urat',
+  'Endapan <b>vein</b> (epitermal, mesotermal, urat kuarsa) &mdash; benda bijih tipis, miring, dibatasi '
+  'hanging wall dan footwall. Urutannya mengikuti node <b>Geomodeller Vein &rarr; Geostatistik &rarr; '
+  'Model Estimation</b> di Project Tree: domain &rarr; flag &rarr; string &rarr; solid &rarr; parameter '
+  '&rarr; estimasi &rarr; koreksi.',
+  ['Geomodeller Vein: membuat domain vein', 'Flag otomatis dari kadar', 'Koreksi flag secara interaktif',
+   'String kontrol hanging wall', 'Membangun solid vein', 'Struktur geologi', 'Sesar 3D',
+   'Vein bercabang', 'Memakai wireframe dari Leapfrog', 'Filter domain &amp; statistik',
+   'Domain aktif di Geostatistik', 'Variogram, anisotropi', 'Kriging Neighbourhood Analysis',
+   'Uji estimasi &amp; simpan parameter', 'Model Estimation: estimasi block model GC',
+   'Koreksi setelah bor baru', 'Latihan terpandu']),
+ ('Bagian III &middot; Deposit laterit / stratiform berlapis',
+  'Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex, seam) &mdash; lapisan tipis '
+  'secara vertikal tetapi luas ke samping, mengikuti bentuk permukaan. Jalurnya berbeda dari vein: '
+  'node <b>Geomodeller Stratified-Laterite</b>, estimasi per lapisan di koordinat <b>unfold</b>.',
+  ['Geomodeller Stratified-Laterite']),
+ ('Bagian IV &middot; Waste, kerangka blok &amp; pelaporan sumber daya',
+  'Berlaku untuk <b>semua tipe deposit</b>, dijalankan sesudah benda bijihnya dimodelkan: membuat kerangka '
+  'blok sendiri bila tidak ada block model dari luar, memperhalus batas solid, mengestimasi material di '
+  '<b>luar</b> wireframe ore, lalu melaporkannya per kelas keyakinan.',
+  ['Block model dari nol', 'Sub-blocking', 'Estimasi waste', 'Klasifikasi keyakinan']),
+ ('Bagian V &middot; Data pendukung, export &amp; pemeliharaan',
+  'Peta 2D, pergantian topografi / block model per periode, export ke Surpac dan perawatan folder proyek.',
+  ['Map: peta geologi 2D', 'Mengganti topografi', 'Topografi &amp; orthofoto resolusi tinggi',
+   'Export database', 'Folder proyek, backup', 'Status pengembangan']),
+]
+
 # ================= ISI =================
 ch('Tentang tutorial ini', f'''
 <p>Tutorial ini mengajarkan alur kerja <b>pemodelan vein dan estimasi block model</b> di <b>GC-Ex Drillhole</b>
 (aplikasi desktop <b>GC-Ex Drill Hole Ultimate {VDH}</b>). Setiap langkah dipraktikkan dengan <b>data simulasi</b> yang ikut
 dibagikan, dan semua gambar adalah tangkapan layar dari satu kali jalannya latihan tersebut. Jika rekan Anda mengikuti langkah
 yang sama, angka yang muncul di layarnya akan sama dengan angka di buku ini.</p>
-<h3>Alur kerja</h3>
+<h3>Alur kerja (deposit vein)</h3>
 <div class="flow">
 <div><b>1</b>Folder proyek<br>&amp; import</div><div><b>2</b>Sayatan<br>&amp; geologi</div><div><b>3</b>Domain<br>vein</div>
 <div><b>4</b>Flag interval<br>bor</div><div><b>5</b>String HW / FW<br>&amp; solid RBF</div><div><b>6</b>Wireframe<br>Leapfrog</div>
 <div><b>7</b>Upsert bor<br>infill</div><div><b>8</b>Statistik<br>&amp; variogram</div><div><b>9</b>KNA &amp; Model<br>Estimation</div><div><b>10</b>Export<br>&amp; backup</div>
 </div>
+<h3>Susunan buku ini</h3>
+<p>Sejak edisi ini, urutan bab mengikuti <b>urutan node Project Tree</b> dan <b>tipe deposit</b>, bukan urutan
+penambahan fitur. Bab yang berlaku untuk semua deposit dipisahkan dari bab yang khusus satu tipe:</p>
+<table class="t"><tr><th>Bagian</th><th>Untuk</th><th>Isi</th></tr>
+<tr><td><b>I</b> Persiapan &amp; database bor</td><td>semua tipe</td><td>folder proyek, import, validasi, kampanye pemboran, filter, sayatan, pita litologi</td></tr>
+<tr><td><b>II</b> Deposit vein / urat</td><td>vein, epitermal, mesotermal</td><td>Geomodeller Vein &rarr; flag &rarr; string HW/FW &rarr; solid RBF &rarr; struktur &amp; sesar &rarr; Geostatistik &rarr; Model Estimation</td></tr>
+<tr><td><b>III</b> Laterit / stratiform</td><td>laterit nikel, bauksit, sedex, seam</td><td>Geomodeller Stratified-Laterite: lapisan dari log geologi, estimasi per lapisan di ruang unfold</td></tr>
+<tr><td><b>IV</b> Waste &amp; pelaporan</td><td>semua tipe</td><td>kerangka blok AOI, sub-blocking, estimasi waste, klasifikasi Measured / Indicated / Inferred</td></tr>
+<tr><td><b>V</b> Pendukung &amp; pemeliharaan</td><td>semua tipe</td><td>Map 2D, versi topografi &amp; block model, export, folder proyek &amp; backup</td></tr></table>
+<p>Jadi bila endapan Anda <b>laterit</b>, kerjakan <b>Bagian I &rarr; III &rarr; IV &rarr; V</b> dan Bagian II
+boleh dilewati; bila <b>vein</b>, <b>Bagian I &rarr; II &rarr; IV &rarr; V</b>. Bagian IV dan V sama untuk keduanya.</p>
 <h3>Yang dibutuhkan</h3>
 <ul>
 <li>Komputer Windows 10 / 11 64-bit dengan <b>GC-Ex Drill Hole Ultimate</b> terpasang (installer <code>GC-Ex-Drillhole-Setup-{VDH}.exe</code>) dan lisensi aktif.</li>
@@ -166,6 +214,57 @@ ch('Validasi data bor', '<p>Saat file database dipilih, GC-Ex memeriksa datanya 
    'Kembalikan file ke <code>SIM_collar.csv</code> dan <code>SIM_assay.csv</code> sebelum melanjutkan tutorial.')
  + fig('validasi_rusak', 'Database dengan kesalahan sengaja: 4 dibuang (collar tanpa koordinat, collar ganda, From &ge; To, assay tanpa collar) dan 3 peringatan (Sample ID ganda, tumpang tindih, nilai Au &minus;99).', '78%')
  + warn('Interval tumpang tindih adalah yang paling berbahaya bagi estimasi: panjangnya dihitung dua kali dan kadarnya ikut berbobot ganda. Selesaikan semua peringatan tumpang tindih sebelum Geostatistik / Model Estimation.'))
+
+ch('Database bor per kampanye (multi-campaign)', '<p>Satu area biasanya dibor berkali-kali: <b>eksplorasi</b>, <b>infill</b>, lalu <b>grade control</b> tiap periode. Ketiganya perlu dilihat bersama untuk memvalidasi bor GC, tetapi <b>tidak boleh</b> tercampur begitu saja saat mengestimasi. Node <b>Database Bor</b> di Project Tree karena itu dipecah per <b>kampanye</b>.</p>'
+ + '<h3>Membuat kampanye</h3>'
+ + steps('Klik menu node <b>Database Bor</b> (bukan panel) &rarr; <b>Tambah kampanye baru&hellip;</b>, beri nama mis. <code>eksplorasi_2024</code>, <code>infill_2025</code>, <code>gc_2025_11</code>.',
+         'Data yang sudah ada otomatis menjadi kampanye pertama. Kampanye baru diisi lewat <b>import / upsert</b>: di dialog import ada <b>pemilih kampanye tujuan</b> (dan tombol <b>Kampanye baru&hellip;</b> langsung di situ).',
+         'Untuk memindahkan hole yang salah kampanye: menu node kampanye &rarr; <b>Pindahkan hole ke sini&hellip;</b>, lalu masukkan daftar HoleID.')
+ + '<h3>Tiga peran, satu dataset aktif</h3><p>Peran tiap database ditentukan oleh centang dan status aktifnya:</p>'
+ + '<table class="t"><tr><th>Keadaan node</th><th>Peran</th><th>Akibatnya</th></tr>'
+ + '<tr><td><b>AKTIF</b> (bertanda <i>aktif</i>)</td><td><b>Set kerja</b></td><td>Satu-satunya sumber <b>pemodelan, estimasi, Geostatistik dan statistik</b></td></tr>'
+ + '<tr><td>Dicentang, tidak aktif</td><td><b>Referensi</b></td><td><b>Tampil</b> di 3D dan Sayatan 2D sebagai pembanding, <b>tidak</b> ikut analisis</td></tr>'
+ + '<tr><td>Tidak dicentang</td><td><b>Sembunyi</b></td><td>Tidak tampil dan tidak ikut analisis; datanya tetap tersimpan</td></tr></table>'
+ + why('Inilah cara memvalidasi bor GC: jadikan <code>gc_2025_11</code> sebagai <b>set kerja</b>, biarkan <code>eksplorasi_2024</code> sebagai <b>referensi</b> &mdash; kadar GC bisa dibandingkan langsung di penampang yang sama, tanpa risiko bor eksplorasi ikut masuk ke komposit dan variogram.')
+ + '<h3>Menggabungkan kampanye (merge)</h3>'
+ + '<p>Bila data GC sudah dinilai bagus, kampanye GC dan eksplorasi/infill digabung menjadi <b>satu set database baru</b> &mdash; node <b>Collar / Survey / Assay / Geologi Merge</b>:</p>'
+ + steps('Menu node <b>Database Bor</b> atau node kampanye mana pun &rarr; <b>Buat set merge&hellip;</b>, centang kampanye sumbernya, beri nama mis. <code>merge_resource_2025</code>.',
+         'GC-Ex bertanya apakah set merge itu langsung dijadikan <b>dataset aktif</b>. Bila ya, pemodelan dan estimasi berikutnya memakai gabungan tadi.',
+         'Set merge bersifat <b>hidup</b>: menambah hole ke salah satu kampanye sumbernya otomatis menambahnya ke set merge &mdash; tidak ada salinan data yang bisa ketinggalan.',
+         'Untuk pihak luar: menu node set merge &rarr; <b>Export database ini (.xlsx)</b> &mdash; satu berkas Excel 4 sheet (Collar, Survey, Assay, Geologi), masing-masing berkolom <b>Kampanye</b>.')
+ + '<h3>Kampanye sebagai atribut</h3>'
+ + '<p>Kampanye juga tersedia sebagai <b>atribut kategori</b> bernama <code>Kampanye</code> (dan <code>Dataset aktif</code>), jadi bisa dipakai untuk <b>pewarnaan</b>, <b>filter</b>, <b>statistik per kampanye</b> dan pemisahan variogram tanpa menambah kolom apa pun di tabel assay.</p>'
+ + warn('Bentrok HoleID saat upsert diselesaikan dengan <b>urutan prioritas</b> kampanye (menu node: <b>Naikkan / Turunkan prioritas</b>). Bila satu hole sudah dimiliki kampanye yang lebih tinggi, data baru untuk hole itu <b>ditolak</b> &mdash; tidak menimpa &mdash; dan HoleID yang ditolak dilaporkan sesudah upsert. Jadi pasang urutan prioritas <b>sebelum</b> import, bukan sesudah.'))
+
+ch('Filter data bor (AND / OR)', '<p>Node <b>Filter data bor</b> (di bawah <b>Database Bor</b>) menyaring data yang dipakai <b>seluruh aplikasi</b>: tampilan 3D / Sayatan, statistik, komposit, Geostatistik dan estimasi. Dinilai <b>per interval</b>, bukan per hole.</p>'
+ + '<h3>Menyusun aturan</h3>'
+ + steps('Menu node <b>Filter data bor</b> &rarr; <b>Atur filter&hellip;</b> &mdash; dialog terbuka, panel kerja tidak ikut penuh.',
+         'Pilih mode <b>AND</b> (semua aturan harus terpenuhi) atau <b>OR</b> (cukup salah satu).',
+         'Tekan <b>+ Aturan</b>, pilih atribut, operator, lalu nilainya. Operator <b>antara</b> dipakai untuk rentang, mis. <code>AU_GPT antara 0,3 dan 1,5</code>.',
+         'Kaki dialog menunjukkan hasilnya langsung: <i>&ldquo;&hellip; dari &hellip; interval &middot; &hellip; dari &hellip; hole lolos&rdquo;</i>.')
+ + '<h3>Atribut yang bisa difilter</h3><p>Daftarnya <b>dinamis</b> &mdash; mengikuti kolom yang benar-benar ada di proyek:</p>'
+ + kv([('Kadar unsur', 'setiap kolom angka di assay (<code>AU_GPT</code>, <code>AG_PPM</code>, &hellip;) &mdash; operator angka dan <b>antara</b>'),
+       ('Kategori assay', 'mis. <code>Tekstur</code>, <code>Oksidasi</code> &mdash; sama dengan / bukan / memuat'),
+       ('Atribut geologi', 'mis. <code>Lith</code>, <code>Alterasi</code>, <code>Domain</code> dari tabel geologi'),
+       ('Kampanye / dataset', 'kampanye pemilik hole, dan apakah hole ikut dataset aktif'),
+       ('Data collar', 'Easting, Northing, RL, total depth, bench / grup'),
+       ('Interval', 'From, To, panjang interval'),
+       ('HoleID', 'sama dengan / memuat / diawali &mdash; untuk memilih sekelompok bor'),
+       ('Posisi', 'di atas / bawah <b>topografi</b> atau <b>DTM mana pun</b>; di dalam / luar <b>solid domain</b>, <b>wireframe</b>, atau <b>poligon Map / string</b>')])
+ + '<h3>Tombol cepat topografi</h3>'
+ + '<p>Menu node menyediakan <b>Hanya di bawah topografi</b> dan <b>Hanya di atas topografi</b> &mdash; dua kebutuhan yang paling sering muncul (membuang interval di udara akibat topografi baru, atau memeriksa material yang sudah tertambang). Menekan tombol yang berlawanan tidak menumpuk aturan, hanya membalik aturan yang sama.</p>'
+ + '<h3>Membaca node</h3>'
+ + kv([('Badge', '<code>AND &middot; 3 aturan &middot; 12 hole</code> saat aktif, atau <code>3 aturan (mati)</code>'),
+       ('Anak node', 'satu baris per aturan, mis. <code>Au (assay) &ge; 0.8</code>; menunya memuat <b>Hapus aturan ini</b>'),
+       ('Centang node', 'menghidupkan / mematikan filter <b>tanpa</b> menghapus aturan')])
+ + '<h3>Mematikan filter</h3>'
+ + steps('<b>Lepas centang</b> node <b>Filter data bor</b> &mdash; cara tercepat, aturan tetap tersimpan.',
+         'Atau menu node &rarr; <b>Matikan filter (aturan disimpan)</b>.',
+         'Atau menu node &rarr; <b>Hapus semua aturan</b> bila aturannya memang tidak dipakai lagi.')
+ + '<h3>Export data terfilter</h3>'
+ + '<p>Menu node &rarr; <b>Export data terfilter</b> ke <b>.xlsx</b> (4 sheet) atau <b>CSV</b> (4 berkas). Khusus di export ini, interval yang <b>memotong permukaan</b> tidak dibuang dan tidak diambil utuh melainkan <b>dipotong tepat di permukaannya</b>: interval 10&ndash;20 m dengan topografi di kedalaman 15 m keluar sebagai baris <code>15 &ndash; 20</code>. Tanpa ini, &ldquo;hanya di bawah topografi&rdquo; akan melebihkan panjang bor sebesar separuh interval di batasnya.</p>'
+ + warn('Bedakan dua jalur ini. Untuk <b>statistik, komposit, Geostatistik dan estimasi</b>, interval dinilai <b>utuh atau gugur</b> dari <b>titik tengahnya</b> &mdash; tidak dipotong. Pemotongan di permukaan hanya terjadi pada <b>berkas export</b>. Jadi filter memang mempengaruhi hasil estimasi (interval yang tidak lolos tidak dipakai sebagai data masukan), tetapi pengaruhnya per interval penuh.', 'Filter dan estimasi')
+ + tip('Aturan filter ikut tersimpan di berkas proyek beserta status hidup-matinya, jadi keadaan filter kembali seperti saat proyek ditutup. Bila hasil estimasi terasa &ldquo;kurang data&rdquo;, periksa dulu node ini &mdash; filter yang tertinggal menyala adalah penyebab yang paling sering terlewat.'))
 
 ch('Mengenal tampilan', '<p>Menu utama ada di <b>rel kiri</b>, diurutkan mengikuti alur kerja: <b>Data &rarr; Geologi &rarr; Sayatan &rarr; Geomodeller Vein &rarr; Block Model &rarr; Model Estimation</b>. Di bawah garis pemisah ada menu pendukung: Data Spasial, Data Referensi, Digitasi, Plan Bor, Warna, Overlay, Tampilan. Tombol di <b>bar atas</b>: Proyek, arah pandang (Top / Front / Side / Iso / <b>&perp; Tegak lurus</b> sayatan), <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> (pindah section tanpa membuka menu Sayatan), <b>Layer</b> (ikon tumpukan; juga untuk menyembunyikan drillhole), PNG, dan <b>Geostatistik</b>.</p>'
  + fig('header', 'Bar atas: arah pandang + <b>&perp; Tegak lurus</b>, <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> untuk berpindah section langsung dari sini, lalu Ortho, Layer, Gelap, PNG dan Geostatistik. Drillhole disembunyikan / ditampilkan lewat panel <b>Layer</b>.')
@@ -737,9 +836,44 @@ ch('Status pengembangan', '<p>Status pengembangan. Langkah di buku ini tetap ber
  + '<tr><td>Model Estimation: domain tidak siap</td><td>Perlu solid (Geomodeller Vein &#9315;) dan parameter (Geostatistik &rarr; Uji estimasi &rarr; Simpan ke domain).</td></tr>'
  + '<tr><td>&ldquo;blok hasil tersimpan tidak ditemukan&rdquo;</td><td>Block model GC yang dibuka berbeda dari saat run (file sumber diganti). Jalankan ulang dengan opsi semua blok.</td></tr></table>')
 
+# ================= URUTAN TERBIT =================
+# Setiap bab harus muncul tepat satu kali di BAGIAN; sisanya ditempelkan di bagian terakhir agar
+# bab baru tidak pernah hilang dari PDF, dengan peringatan di layar.
+_sisa = dict(CH)
+URUT = []          # [(nomor bab atau None, judul bagian, judul bab, isi)]
+_no = [0]
+def _ambil(awal):
+    for t in list(_sisa):
+        if t.startswith(awal.replace('&amp;', '&')) or t.startswith(awal):
+            return t, _sisa.pop(t)
+    return None, None   # bab opsional (mis. 'Latihan terpandu' yang butuh fig_update/)
+for jt, ji, daftar in BAGIAN:
+    URUT.append((None, jt, ji, None))
+    for awal in daftar:
+        t, b = _ambil(awal)
+        if t is None: continue
+        _no[0] += 1
+        URUT.append((_no[0], jt, t, b))
+if _sisa:
+    print('PERINGATAN: bab belum masuk daftar BAGIAN, ditempel di bagian terakhir:', ', '.join(_sisa))
+    for t in list(_sisa):
+        _no[0] += 1
+        URUT.append((_no[0], BAGIAN[-1][0], t, _sisa.pop(t)))
+NOMOR = {t: n for n, _, t, b in URUT if b is not None}
+
 # ================= HTML =================
-toc = ''.join('<li><span>%d. %s</span></li>' % (i, t) for i, (t, _) in enumerate(CH))
-body = ''.join('<section class="ch"><h2><span>%d</span>%s</h2>%s</section>' % (i, t, b) for i, (t, b) in enumerate(CH))
+toc = ''
+for n, jt, t, b in URUT:
+    if b is None:
+        toc += '<li class="pt">%s</li>' % jt
+    else:
+        toc += '<li><span>%d. %s</span></li>' % (n, t)
+body = ''
+for n, jt, t, b in URUT:
+    if b is None:
+        body += '<section class="part"><div><div class="lbl">%s</div><p>%s</p></div></section>' % (jt, t)
+    else:
+        body += '<section class="ch"><div class="bag">%s</div><h2><span>%d</span>%s</h2>%s</section>' % (jt, n, t, b)
 today = datetime.date.today()
 bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][today.month-1]
 HTML = f'''<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Tutorial GC-Ex: Pemodelan Vein & Estimasi Block Model</title>
@@ -759,6 +893,11 @@ code{{font-family:'DejaVu Sans Mono',monospace;font-size:8.6pt;background:#f1f3f
 .toc{{page-break-after:always}}.toc h2{{font-size:16pt;color:var(--nv);border-bottom:2px solid var(--ac);padding-bottom:2mm}}
 .toc ol{{list-style:none;padding:0;columns:1}}.toc li{{padding:1.6mm 0;border-bottom:1px dotted var(--ln);font-size:10.5pt}}
 .ch{{page-break-before:always}}
+.toc li.pt{{border:0;padding:4mm 0 1mm;font-size:11pt;font-weight:700;color:var(--nv);border-bottom:2px solid var(--ac)}}
+.part{{page-break-before:always;height:200mm;display:flex;align-items:center;justify-content:center;text-align:center}}
+.part .lbl{{font-size:20pt;font-weight:700;color:var(--nv);border-bottom:3mm solid var(--ac);display:inline-block;padding-bottom:3mm;margin-bottom:6mm}}
+.part p{{max-width:120mm;margin:0 auto;color:var(--mu);font-size:10.5pt;line-height:1.6;text-align:left}}
+.ch .bag{{font-size:8.2pt;letter-spacing:.6px;text-transform:uppercase;color:var(--mu);margin:0 0 1.5mm}}
 h2{{font-size:16pt;color:var(--nv);margin:0 0 4mm;display:flex;align-items:center;gap:3mm;border-bottom:2px solid var(--ac);padding-bottom:2mm}}
 h2 span{{background:var(--nv);color:var(--ac);font-size:13pt;min-width:9mm;height:9mm;border-radius:2mm;display:inline-flex;align-items:center;justify-content:center}}
 h3{{font-size:11.5pt;color:var(--nv);margin:5mm 0 2mm}}
@@ -794,8 +933,8 @@ Data latihan sintetis &middot; semua gambar diambil dari satu kali jalannya lati
 {body}
 </body></html>'''
 def _bab(m):
-    for i,(t,_) in enumerate(CH):
-        if t.startswith(m.group(1)):return 'Bab %d'%i
+    for t, n in NOMOR.items():
+        if t.startswith(m.group(1)): return 'Bab %d' % n
     raise KeyError(m.group(1))
 HTML = re.sub(r'\{\{?B:([^}]+)\}\}?', _bab, HTML)   # di dalam f-string {{B:..}} menjadi {B:..}
 HTML = re.sub(r'\[\[(\w+)\]\]', lambda m: 'Gambar %d' % FNUM[m.group(1)], HTML)

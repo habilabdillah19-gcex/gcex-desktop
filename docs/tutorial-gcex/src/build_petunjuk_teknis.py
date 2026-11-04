@@ -211,9 +211,69 @@ B.append('<p>Menu <b>Validasi data bor</b> memeriksa hal-hal yang biasanya merus
 B.append('<div class=box><b>Import ulang bersifat <i>upsert</i>.</b> Lubang bor yang sudah ada akan '
          '<b>diganti</b> isinya, lubang baru ditambahkan, dan pratinjau menunjukkan berapa yang baru, '
          'diperbarui dan sama sebelum Anda menekan tombolnya.</div>')
+B.append('<h3>Apa yang terjadi pada data tidak valid</h3>')
+B.append('<p>Bawaannya: <b>baris valid tetap masuk</b>, baris tidak valid <b>dibuang per baris</b> dan '
+         'dilaporkan. Import hanya diblokir bila <b>tidak ada satu pun collar valid</b>.</p>')
+B.append(D.tabel(['Tingkat', 'Contoh', 'Akibat'], [
+    ['<b>DIBUANG</b>', 'collar tanpa E / N / RL; collar ganda (HoleID sama); survey dengan |dip| &gt; 90&deg; '
+     'atau azimuth di luar &minus;360&hellip;720; assay / geologi tanpa From&ndash;To, <code>From &ge; To</code>, '
+     'atau From negatif',
+     'baris itu tidak masuk. Collar tanpa koordinat menghilangkan <b>seluruh hole beserta intervalnya</b> &mdash; '
+     'ini yang paling berbahaya karena tidak terasa'],
+    ['<b>PERINGATAN</b>', 'interval tumpang tindih; interval melewati total depth; survey kedalaman ganda; '
+     'Sample_ID ganda di dua tempat; nilai negatif (kode below detection)',
+     'data <b>tetap dipakai</b>. Tumpang tindih membuat panjang terhitung dua kali di statistik dan komposit; '
+     'nilai negatif dipakai apa adanya &mdash; ganti dengan &frac12; batas deteksi di database sumber'],
+    ['<b>INFO</b>', 'celah (gap) antar interval; collar tanpa assay; survey tanpa collar',
+     'tidak mengubah apa pun, hanya pemberitahuan']]))
+B.append('<p>Di <b>upsert</b> ada satu perbedaan: assay / survey / geologi yang <b>HoleID-nya belum ada di '
+         'collar</b> tidak dibuang melainkan <b>disimpan</b> dan tidak ditampilkan sampai collar-nya masuk. '
+         'Seluruh daftar temuan dapat diunduh sebagai <b>Validasi_Data_Bor.csv</b> (Tingkat, Kategori, Hole, '
+         'Keterangan) untuk dikirim balik ke penyiap data. GC-Ex <b>tidak pernah mengubah berkas sumber</b>.</p>')
+
+# ---- 6 (baru): kampanye & filter
+B.append('<div class="page"></div><h2>6. Kampanye pemboran, dataset aktif &amp; filter data</h2>')
+B.append('<p>Satu area dibor berkali-kali: eksplorasi, infill, lalu grade control tiap periode. GC-Ex menyimpan '
+         'semuanya di <b>satu set tabel</b> (collar / survey / assay / geologi) dan memisahkannya dengan '
+         '<b>label kampanye per hole</b>, bukan dengan tabel terpisah per kampanye. Alasannya teknis: seluruh '
+         'mesin GC-Ex &mdash; pewarnaan, sayatan, komposit, variogram, estimasi &mdash; membaca satu kumpulan '
+         'data yang sama, sehingga memecah tabel berarti menduplikasi semua jalur itu.</p>')
+B.append(D.tabel(['Keadaan node database', 'Peran', 'Akibat teknis'], [
+    ['<b>AKTIF</b>', 'set kerja', 'satu-satunya sumber pemodelan, estimasi, Geostatistik dan statistik '
+     '(titik analisis memakai <code>visHolesK()</code>)'],
+    ['dicentang, tidak aktif', 'referensi', 'ikut digambar di 3D / Sayatan 2D (<code>visHoles()</code>) tetapi '
+     '<b>tidak</b> masuk analisis &mdash; inilah cara membandingkan kadar GC dengan bor eksplorasi tanpa '
+     'mencampurnya ke dalam komposit'],
+    ['tidak dicentang', 'sembunyi', 'tidak digambar dan tidak dianalisis; data tetap tersimpan']]))
+B.append('<h3>Set merge</h3>')
+B.append('<p>Menggabungkan beberapa kampanye membuat <b>node database baru</b> (Collar / Survey / Assay / '
+         'Geologi <b>Merge</b>) yang bisa dijadikan dataset aktif. Set merge adalah <b>pandangan hidup</b> atas '
+         'kampanye sumbernya, bukan salinan: hole yang ditambahkan ke salah satu sumber otomatis ikut. '
+         'Export <b>.xlsx 4 sheet</b> (masing-masing berkolom Kampanye) tersedia per database, termasuk set merge.</p>')
+B.append('<div class=box><b>Bentrok HoleID saat upsert</b> diselesaikan dengan <b>urutan prioritas</b> kampanye. '
+         'Bila hole itu sudah dimiliki kampanye yang lebih tinggi, data baru untuk hole tersebut <b>ditolak</b> '
+         '(tidak menimpa) dan HoleID yang ditolak dilaporkan. Jadi prioritas dipasang <b>sebelum</b> import.</div>')
+B.append('<h3>Filter data bor</h3>')
+B.append('<p>Filter disambungkan pada <b>satu titik</b> saja, yaitu fungsi penilai domain '
+         '(<code>domOK()</code>). Karena setiap mesin analisis memanggil fungsi itu, satu aturan filter langsung '
+         'berlaku di tampilan, statistik, komposit, Geostatistik dan estimasi tanpa mengubah satu pun fungsi '
+         'analisis. Aturan dinilai <b>per interval</b> dengan mode AND atau OR; daftar atributnya dibangun '
+         'dinamis dari kolom yang benar-benar ada (unsur, kategori assay, atribut geologi, kampanye, data collar, '
+         'From / To / panjang, HoleID) ditambah aturan <b>posisi</b> terhadap topografi, DTM, solid domain, '
+         'wireframe dan poligon.</p>')
+B.append(D.tabel(['Jalur', 'Cara interval dinilai'], [
+    ['Statistik, komposit, Geostatistik, <b>estimasi</b>',
+     '<b>utuh atau gugur</b>, dinilai dari <b>titik tengah</b> interval. Tidak ada pemotongan. Interval yang '
+     'tidak lolos tidak dipakai sebagai data masukan &mdash; jadi filter memang mengubah hasil estimasi'],
+    ['<b>Export</b> data terfilter (.xlsx / CSV)',
+     'interval yang memotong permukaan <b>dipotong tepat di permukaannya</b> (bagi-dua 30 langkah pada lintasan '
+     'bor): interval 10&ndash;20 m dengan permukaan di 15 m keluar sebagai 15&ndash;20. Tanpa ini &ldquo;hanya di '
+     'bawah topografi&rdquo; melebihkan panjang bor sebesar separuh interval di batasnya']]))
+B.append('<p>Status hidup-mati dan seluruh aturan ikut tersimpan di berkas proyek. Mematikan filter tidak '
+         'menghapus aturannya &mdash; cukup melepas centang node <b>Filter data bor</b>.</p>')
 
 # ---- 6
-B.append('<h2>6. Dua jalur estimasi: vein dan berlapis</h2>')
+B.append('<h2>7. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))
 B.append('<p>Pertanyaan yang sering muncul: <i>bagaimana aplikasi tahu tipe deposit saat estimasi?</i> '
@@ -228,7 +288,7 @@ B.append('<p><b>Sesar 3D.</b> Bidang sesar dapat dicatat beserta dip, offset dan
          'dijadikan <b>batas keras</b>: sampel tidak dipakai menyeberang bidangnya.</p>')
 
 # ---- 7
-B.append('<div class="page"></div><h2>7. Algoritme yang dipakai</h2>')
+B.append('<div class="page"></div><h2>8. Algoritme yang dipakai</h2>')
 B.append('<p>Seluruhnya diimplementasikan sendiri berdasarkan literatur ilmiah terbuka; tidak ada kode dari '
          'perangkat lunak komersial yang disalin.</p>')
 B.append(D.tabel(['Keperluan', 'Metode', 'Rujukan'], [
@@ -249,7 +309,7 @@ B.append('<p>Mutu estimasi tiap blok dicatat sebagai atribut, bukan hanya kadarn
          'menggambarkan kerapatan bor di sekitar blok.</p>')
 
 # ---- 8
-B.append('<div class="page"></div><h2>8. Kerangka blok AOI, estimasi waste &amp; proporsi volume</h2>')
+B.append('<div class="page"></div><h2>9. Kerangka blok AOI, estimasi waste &amp; proporsi volume</h2>')
 B.append('<h3>8.1 Kerangka blok AOI</h3>')
 B.append('<p>Block model dapat dibuat <b>tanpa acuan model lama</b>: grid persegi seluruh <i>area of interest</i> '
          '(ore dan waste), dipotong topografi aktif, dasar desain pit, rentang RL, dan poligon area. Permukaan yang '
@@ -320,7 +380,7 @@ B.append('<div class=box>Untuk <b>volume</b>, <code>sb_frac</code> yang menyeles
          'tetap berguna untuk resolusi <b>kadar</b> di dekat kontak dan geometri <b>dig block</b>. Sub-blocking '
          'mengubah posisi blok, jadi jalankan sebelum estimasi.</div>')
 
-B.append('<div class="page"></div><h2>9. Klasifikasi keyakinan sumber daya</h2>')
+B.append('<div class="page"></div><h2>10. Klasifikasi keyakinan sumber daya</h2>')
 B.append('<p>Di <b>Reporting BM</b>, GC-Ex dapat mengusulkan kelas Measured / Indicated / Inferred per blok '
          'dari atribut di atas, lalu melaporkan tonase dan kadar per kelas beserta kurva grade &times; tonase '
          'bertumpuk. Aturan bawaannya:</p>')
@@ -340,7 +400,7 @@ B.append('<div class=warn>&#9888; Ambang di panel adalah <b>usulan geostatistik 
          'pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>')
 
 # ---- 9
-B.append('<h2>10. Topografi &amp; orthofoto resolusi tinggi</h2>')
+B.append('<h2>11. Topografi &amp; orthofoto resolusi tinggi</h2>')
 B.append('<p>Orthofoto disusun menjadi <b>piramida LOD</b>: level 0 piksel asli, tiap level berikutnya '
          'merata-ratakan 2 &times; 2. Warna diambil dari level yang texel-nya sepadan dengan kerapatan '
          'tampilan, sehingga rata-rata area (anti-alias) dan tidak berkerlip. Resolusi <b>dan</b> luas mesh '
@@ -358,7 +418,7 @@ B.append('<div class=box><b>Hasil laporan tidak berubah.</b> Grid elevasi cepat 
          'tetap memakai fungsi elevasi aslinya.</div>')
 
 # ---- 10
-B.append('<h2>11. Format impor / ekspor</h2>')
+B.append('<h2>12. Format impor / ekspor</h2>')
 B.append(D.tabel(['Keperluan', 'Masuk', 'Keluar'], [
     ['Data bor', 'CSV, Excel (header bebas)', 'CSV, Excel'],
     ['Block model', '.mdl (Surpac), CSV', '.mdl, CSV'],
@@ -371,7 +431,7 @@ B.append('<p>Nama produk dan format pihak lain disebut semata-mata untuk menjela
          'data. Kecocokan diupayakan tetapi tidak dijamin, dan dapat berubah bila format mereka berubah.</p>')
 
 # ---- 11
-B.append('<h2>12. GC-Ex Block Model: flitch, dig block, as-mined</h2>')
+B.append('<h2>13. GC-Ex Block Model: flitch, dig block, as-mined</h2>')
 B.append(D.bullets(
     '<b>Flitch</b> — block model dipotong per ketinggian kerja; Project Tree memberi subnode tiap flitch '
     'sehingga audit atau review dapat langsung memilih flitch yang dimaksud.',
@@ -385,7 +445,7 @@ B.append(D.bullets(
     '<b>Register poligon</b> — daftar seluruh poligon dengan String ID dan warna yang dapat diubah.'))
 
 # ---- 12
-B.append('<h2>13. Dikerjakan bersama beberapa geologist</h2>')
+B.append('<h2>14. Dikerjakan bersama beberapa geologist</h2>')
 B.append('<p>Folder proyek dirancang agar dapat dibuka orang lain: berkas sumber disalin ke dalamnya, dan '
          'basis data proyek menyimpan riwayat perubahan. Yang perlu disepakati di tim:</p>')
 B.append(D.bullets(
@@ -396,7 +456,7 @@ B.append(D.bullets(
     'Parameter variogram dan pass disimpan <b>ke domain</b>, sehingga ikut berpindah bersama proyek.'))
 
 # ---- 13
-B.append('<h2>14. Batasan yang perlu diketahui</h2>')
+B.append('<h2>15. Batasan yang perlu diketahui</h2>')
 B.append(D.bullets(
     'Aplikasi <b>luring sepenuhnya</b>: tidak ada sinkronisasi antar komputer, tidak ada pembaruan otomatis.',
     'Lisensi <b>terikat komputer</b>. Ganti komputer berarti minta lisensi baru ke admin.',
@@ -410,7 +470,7 @@ B.append(D.bullets(
     '(mis. KCMI, JORC) atau keperluan komersial.'))
 
 # ---- 14
-B.append('<h2>15. Masalah umum</h2>')
+B.append('<h2>16. Masalah umum</h2>')
 B.append(D.tabel(['Gejala', 'Sebab yang biasa', 'Yang dilakukan'], [
     ['Menu atau centang layer tidak bisa diklik', 'datanya memang belum ada',
      'panel memberi keterangan <i>(belum ada data)</i>; import datanya dulu'],
@@ -430,7 +490,7 @@ B.append(D.tabel(['Gejala', 'Sebab yang biasa', 'Yang dilakukan'], [
      '0.24.4', 'jalankan ulang Model Estimation agar kerapatan bor ikut terekam']]))
 
 # ---- 15
-B.append('<h2>16. Hak cipta &amp; syarat penggunaan</h2>')
+B.append('<h2>17. Hak cipta &amp; syarat penggunaan</h2>')
 B.append('<p>GC-Ex adalah perangkat lunak independen dan <b>tidak</b> berafiliasi dengan, disponsori, atau '
          'didukung oleh pemilik merek perangkat lunak pertambangan mana pun. Nama-nama produk pihak lain '
          'dipakai semata-mata untuk menjelaskan kecocokan format berkas dan alur kerja.</p>')

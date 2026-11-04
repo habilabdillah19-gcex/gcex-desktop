@@ -10,7 +10,19 @@ tabel gabungan Collar / Survey / Assay / Geologi tetap di bawahnya.
 
 def patch(s: str) -> str:
     """Patch ptree_dh.js: node kampanye + perintah menu."""
-    return patch_tree(s)
+    return _menu_db(patch_tree(s))
+
+
+def _menu_db(s: str) -> str:
+    """Menu node "Database Bor" diawali perintah kampanye (kpMenuDb)."""
+    a = ("      menu:function(){return[{t:'Tambah / perbarui data bor (upsert)\u2026',fn:ups},")
+    assert s.count(a) == 1, 'awal menu node Database Bor tidak ditemukan tepat satu kali'
+    s = s.replace(a, "      menu:function(){return(window.kpMenuDb?kpMenuDb():[]).concat(["
+                     "{t:'Tambah / perbarui data bor (upsert)\u2026',fn:ups},")
+    b = "fn:function(){PTD.drop('all');}}];},"
+    assert s.count(b) == 1, 'akhir menu node Database Bor tidak ditemukan tepat satu kali'
+    s = s.replace(b, "fn:function(){PTD.drop('all');}}]);},")
+    return s
 
 
 def _tree_body(s: str) -> str:

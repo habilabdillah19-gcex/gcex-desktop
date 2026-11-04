@@ -1669,3 +1669,41 @@ komposit, Geostatistik dan estimasi otomatis memakai semua interval lagi.
 
 > Catatan: aturan filter tetap ikut tersimpan di berkas proyek (`.dh3d` / folder proyek), termasuk status
 > hidup-matinya, sehingga keadaan filter kembali seperti saat proyek ditutup.
+
+## 81. GC-Ex Drill Hole Ultimate 0.24.31 — perintah kampanye di node & tutorial disusun ulang
+
+### 1. Tambah kampanye dari node Database Bor
+Perintah **Tambah kampanye baru…** dan **Buat set merge… (gabungkan kampanye)** dulu hanya ada di menu tiap node
+kampanye. Akibatnya, saat belum ada kampanye sama sekali, node itu belum muncul dan perintahnya tidak bisa dicapai.
+Sekarang keduanya juga ada di **menu node Database Bor** sendiri, di bagian paling atas:
+
+| Menu node *Database Bor* | |
+|---|---|
+| **Kampanye pemboran** | *Tambah kampanye baru…* · *Buat set merge…* (mati bila kampanye sumbernya < 2) |
+| | *Tambah / perbarui data bor (upsert)…*, Export database (CSV), Hapus hole tertentu…, dst. |
+
+### 2. Tutorial Modelling & Estimasi disusun ulang
+38 bab dikelompokkan menjadi lima **Bagian**, mengikuti urutan node Project Tree dan dipisah per **tipe deposit**:
+
+| Bagian | Untuk | Isi |
+|---|---|---|
+| **I** Persiapan & database bor | semua tipe | folder proyek, import, validasi, **kampanye pemboran** (bab baru), upsert, **filter data bor** (bab baru), tampilan, sayatan, pita litologi |
+| **II** Deposit vein / urat | vein, epitermal, mesotermal | Geomodeller Vein → flag → string HW/FW → solid RBF → struktur & Sesar 3D → vein bercabang → wireframe → Geostatistik → Model Estimation → koreksi bor baru → latihan terpandu |
+| **III** Laterit / stratiform berlapis | laterit nikel, bauksit, sedex, seam | Geomodeller Stratified-Laterite: lapisan dari log geologi, estimasi per lapisan di ruang unfold |
+| **IV** Waste, kerangka blok & pelaporan | semua tipe | kerangka AOI, sub-blocking & `sb_frac`, estimasi waste, klasifikasi Measured / Indicated / Inferred |
+| **V** Pendukung & pemeliharaan | semua tipe | Map 2D, versi topografi & block model, orthofoto resolusi tinggi, export, folder proyek & backup |
+
+Jadi untuk endapan **laterit** dikerjakan Bagian **I → III → IV → V** (Bagian II dilewati); untuk **vein**,
+Bagian **I → II → IV → V**. Setiap bab mencantumkan nama Bagiannya di kepala halaman, dan daftar isi
+dikelompokkan per Bagian.
+
+### 3. Petunjuk Teknis & Tutorial Update
+- **Petunjuk Teknis** bagian **6 (baru)**: kampanye pemboran, tiga peran database, set merge sebagai pandangan
+  hidup, penyelesaian bentrok HoleID, dan filter yang disambungkan pada satu titik (`domOK()`).
+- **Petunjuk Teknis** bagian 5 kini merinci **apa yang dibuang vs hanya diperingatkan** saat import / upsert
+  (DIBUANG / PERINGATAN / INFO) beserta laporan `Validasi_Data_Bor.csv`.
+- **Tutorial Update** bab **10 (baru)**: kampanye, filter, dan export terfilter.
+
+> Catatan penting yang diperjelas di ketiga dokumen: pemotongan interval **tepat di permukaan** hanya terjadi
+> pada **berkas export**. Untuk statistik, komposit, Geostatistik dan **estimasi**, interval dinilai **utuh atau
+> gugur** dari **titik tengahnya**.
