@@ -534,6 +534,32 @@ B.append('<p>Uji yang dijalankan sebelum rilis membandingkan hasil kedua mode de
 B.append('<div class=warn>&#9888; Hasil progres topo-ke-topo adalah <b>block model di antara dua permukaan</b>, '
          'bukan timbangan. Rekonsiliasi sebenarnya tetap membandingkannya dengan tonase ROM / pabrik: survei '
          'topografi punya ketidakpastian sendiri, dan kadar blok adalah hasil estimasi.</div>')
+B.append('<h3>Data latihan bawaan untuk Demo</h3>')
+B.append('<p>Berkas data simulasi yang dipakai buku tutorial dititipkan <b>di dalam installer</b> '
+         '(<code>resources/data-latihan</code>) dan dibaca lewat protokol internal '
+         '<code>gcexfile://latihan/&lt;nama berkas&gt;</code>. Dua tombol memuatnya: <b>&#8681; Muat data '
+         'latihan simulasi</b> di halaman import, dan <b>&#8681; Muat data latihan &amp; jalankan Demo</b> di '
+         'menu Demo. Impornya memakai jalur yang sama dengan yang dipakai pengguna '
+         '(<code>SA.slotFile</code> / <code>SA.addSp</code> / <code>SA.bmPick</code> / <code>SA.go</code>), '
+         'lalu permukaan desain pit &amp; survei bulanan masuk ke Data Referensi lewat '
+         '<code>mdImport</code> &mdash; jadi tidak ada jalur baca kedua yang bisa berbeda hasilnya.</p>')
+B.append(D.tabel(['Aplikasi', 'Berkas yang dititipkan'], [
+    ['Drill Hole', '<code>SIM_collar / survey / assay / geologi.csv</code>, <code>SIM_topo_xyz.csv</code>, '
+     '<code>SIM_BM_GC_kadar.csv</code> (model <b>berisi kadar</b>: demo tidak menjalankan estimasi), '
+     '<code>QV_Lensa2_Leapfrog.obj</code>, <code>SIM_pit_fase1/2.dxf</code>, '
+     '<code>SIM_topo_akhir_juni/juli.dxf</code>'],
+    ['Block Model', '<code>SIM_BM_GC_kadar.csv</code>, <code>SIM_pit_fase1/2.dxf</code>, '
+     '<code>SIM_topo_akhir_juni/juli.dxf</code>'],
+    ['Tidak dititipkan', 'data laterit, vein bercabang, upsert, database rusak, QAQC &mdash; tetap dari '
+     '<code>GC-Ex-&lt;versi&gt;_2_Data-Latihan.zip</code> pada Release, supaya installer tidak membesar '
+     'tanpa guna']]))
+B.append('<p>Langkah demo yang memang menjalankan perintahnya menampilkan <b>hasil sungguhan</b> di bilah '
+         'bawah &mdash; jumlah interval yang diusulkan, jumlah string, volume solid, jumlah komposit &amp; CV, '
+         'rekomendasi KNA, jumlah dig block beserta ton @ kadar, dan tonase per fase pit serta progres '
+         'topo-ke-topo. Angkanya dibaca dari hasil perhitungan saat itu, bukan ditulis tangan di dalam '
+         'program, sehingga bisa dicocokkan dengan buku tutorial. Langkah yang perhitungannya memakan waktu '
+         'menit (upsert, Model Estimation, kerangka AOI, sub-blocking, estimasi waste, klasifikasi) '
+         '<b>dijelaskan tanpa dijalankan</b>; angkanya ada di buku tutorial.</p>')
 B.append('<h3>Tombol Demo</h3>')
 B.append('<p>Tur otomatis di bilah atas kedua aplikasi disusun ulang mengikuti urutan <b>buku tutorial</b> '
          '(bukan urutan menu), keterangan tiap langkah dipendekkan menjadi satu kalimat, tempo bawaan '

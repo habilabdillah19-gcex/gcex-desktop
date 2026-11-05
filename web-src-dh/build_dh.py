@@ -21,6 +21,7 @@ Modul desktop yang disisipkan (sebelum FP.startUI, setelah semua fungsi proyek &
 - kp_dh.js             : database bor per kampanye (gaya Surpac): prioritas, aktif, warna, atribut virtual, gabungan
 - fq_dh.js             : penyusun filter AND/OR + rentang nilai atas atribut yang sudah diimport
 - wsgs_dh.js           : variogram waste difit sendiri di Geostatistik (populasi WASTE + Simpan ke WASTE)
+- ../web-src/demodata.js: data latihan bawaan (resources/data-latihan) dimuat satu tombol dari menu Demo
 - ../web-src/demox.js  : tombol Demo -- urutan langkah mengikuti buku tutorial, teks pendek, tempo lebih cepat
 - ../web-src/rppit.js  : Reporting -- beberapa desain pit sekaligus (topografi sama) & progres penambangan topo-ke-topo
 - prof_dh.js           : profil kadar per pita RL/E/N (tab Profil), kurva pemusatan logam (Statistik), kipas variogram GT & tebal (Ore Geometry)
@@ -38,7 +39,7 @@ SHARED = os.path.join(W, '..', 'web-src') + os.sep
 s = open(W + 'gcex_dh_base.html', encoding='utf-8').read()
 mods = [SHARED + 'mdlbig.js', SHARED + 'guide.js', SHARED + 'desk_text.js', W + 'mdlbig_dh.js', W + 'deskflush_dh.js', SHARED + 'prj.js', SHARED + 'wm.js']
 if shutil.which('node'):
-    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js', W + 'cls_dh.js', W + 'aoi_dh.js', W + 'waste_dh.js', W + 'waste_lat_dh.js', W + 'subblk_dh.js', W + 'wsgs_dh.js', W + 'prof_dh.js', W + 'kp_dh.js', W + 'fq_dh.js', W + 'wfx_dh.js', W + 'arun_dh.js', W + 'ar3_dh.js', SHARED + 'rppit.js', SHARED + 'demox.js']:
+    for m in mods + [SHARED + 'bigline.js', W + 'slabbar_dh.js', SHARED + 'ptree.js', W + 'og_dh.js', W + 'ui4_dh.js', W + 'ptree_dh.js', W + 'env_dh.js', W + 'flt_dh.js', W + 'sl_dh.js', W + 'cls_dh.js', W + 'aoi_dh.js', W + 'waste_dh.js', W + 'waste_lat_dh.js', W + 'subblk_dh.js', W + 'wsgs_dh.js', W + 'prof_dh.js', W + 'kp_dh.js', W + 'fq_dh.js', W + 'wfx_dh.js', W + 'arun_dh.js', W + 'ar3_dh.js', SHARED + 'rppit.js', SHARED + 'demodata.js', SHARED + 'demox.js']:
         r = subprocess.run(['node', '--check', m], capture_output=True, text=True)
         assert r.returncode == 0, 'Galat sintaks di ' + m + ':\n' + r.stderr[:800]
     print('Cek sintaks modul: OK')
@@ -132,5 +133,11 @@ print('Menu Geomodeller Vein / Stratified-Laterite / Sesar 3D: OK (' + str(n_gm)
 import brand_build
 s = brand_build.apply(s, 'dh', OUT, open(SHARED + 'theme_earthy.css', encoding='utf-8').read() + '\n')
 print('Identitas GC-Ex 0.19: OK')
+# data latihan bawaan: modul shell (di luar sumber viewer -- tombolnya ada di halaman import)
+_dl = open(SHARED + 'demodata.js', encoding='utf-8').read()
+assert '</scr' + 'ipt>' not in _dl
+assert s.count('</body>') == 1
+s = s.replace('</body>', '<script>\n' + _dl + '\n</script>\n</body>', 1)
+
 open(OUT, 'w', encoding='utf-8').write(s)
 print('OK', OUT, len(s))

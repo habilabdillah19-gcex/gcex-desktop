@@ -108,8 +108,60 @@
     } catch (e) { return ''; }
   }
 
-  /* ---------- langkah tambahan (menu yang belum pernah masuk demo) ---------- */
+  /* ---------- angka hasil yang nyata, bukan hanya nama tombol ----------
+     Demo dijalankan di atas data latihan simulasi yang sama dengan buku tutorial, jadi angka yang
+     muncul di bilah bawah bisa dicocokkan langsung dengan PDF-nya. Teks langkah ditambahi hasil
+     SUNGGUHAN sesudah perintahnya berjalan (bukan angka yang ditulis tangan di sini). */
   function tab(n) { try { uiTab(n); } catch (e) {} }
+  function N0(v, d) { return (v == null || !isFinite(v)) ? '-' : (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function hasil(st, detik, fn) {
+    var r0 = st.run;
+    st.run = function (A) {
+      if (r0) r0(A);
+      A(detik, function () {
+        try { var t = fn(); if (!t) return; var e = $('dmD'); if (e) e.innerHTML = st.d + ' <b>&rarr; ' + t + '</b>'; } catch (e) {}
+      });
+    };
+  }
+  function bersih(t) { return String(t == null ? '' : t).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+  function angkaLangkah(S) {
+    var H = DH ? {
+      'Domain vein, flag interval & string kontrol': [8, function () {
+        var a = bersih(window.GM && GM.lastAuto).split('. Periksa')[0], b2 = bersih(window.GM && GM.lastStr);
+        return [a, b2].filter(Boolean).join(' &middot; ');
+      }],
+      'Model vein HW / FW \u2192 solid (RBF)': [6, function () {
+        var d = window.GM && GM.act && window.IM && IM.R[GM.act], S2 = d && d.st;
+        return S2 ? ('volume ' + N0(S2.vol) + ' m&sup3;, tebal rata-rata ' + N0(S2.tav, 2) + ' m, ' + S2.nin + '/' + S2.nfl + ' interval flag di dalam solid') : '';
+      }],
+      'Analisis geostatistik slab': [4.5, function () {
+        var R = window.GS && GS.R;
+        return (R && R.C) ? (N0(R.C.length) + ' komposit, rata-rata ' + N0((R.st && (R.st.wmean || R.st.mean)), 3) + ' g/t, CV ' + N0(R.st && R.st.cv, 2)) : '';
+      }],
+      'Kriging Neighbourhood Analysis': [6, function () { return bersih(($('knaMsg') || {}).innerText).split('Patokan')[0]; }]
+    } : {
+      /* lyItems(true).ton = hasil lyTon(): {t: tonase, grade: kadar sumproduct, ...} */
+      'Dig block otomatis': [6, hasilDigBlock],
+      'Running grade & tonnage': [4, hasilDigBlock]
+    };
+    S.forEach(function (st) { var q = H[st.t]; if (q) hasil(st, q[0], q[1]); });
+  }
+  function hasilDigBlock() {
+    try {
+      var L = lyItems(true), t = 0, m = 0, B = window.lyBench ? lyBench() : null;
+      L.forEach(function (q) { var o = q.ton; if (!o) return; t += o.t || 0; if (isFinite(o.grade)) m += o.grade * (o.t || 0); });
+      if (!L.length || !t) return '';
+      return L.length + ' dig block, ' + N0(t) + ' t @ ' + N0(m / t, 2) + ' g/t' +
+             (B && isFinite(B[0]) ? ' di flitch RL ' + N0(B[0], 2) + ' \u2013 ' + N0(B[1], 2) : '');
+    } catch (e) { return ''; }
+  }
+  /* permukaan latihan (desain pit & survei bulanan) yang sudah diimport di Data Referensi */
+  function permukaan() {
+    var o = {};
+    try { (window.MD && MD.models || []).forEach(function (m, i) { o[m.name] = 'wf:' + i; }); } catch (e) {}
+    var cari = function (re) { var k = Object.keys(o).filter(function (n) { return re.test(n); })[0]; return k ? o[k] : ''; };
+    return { juni: cari(/juni/i), juli: cari(/juli/i), f1: cari(/fase1/i), f2: cari(/fase2/i) };
+  }
   /* langkah paling awal: menyebutkan data yang sedang terbuka (demo dirancang untuk data latihan) */
   function stepData() {
     return { s: 'Pembuka', t: 'Data yang dipakai demo ini', dur: 5,
@@ -157,12 +209,41 @@
         d: 'Register as-mined dijumlahkan per minggu atau bulan, per shift / tujuan / flitch, dibanding periode sebelumnya.',
         run: function (A) { A(0.8, function () { try { PRD.dlg(); } catch (e) {} }); A(5.2, function () { try { PRD.close(); } catch (e) {} }); } });
     }
-    /* fitur baru: beberapa desain pit sekaligus & progres topo-ke-topo */
-    S.push({ s: 'Laporan', t: 'Beberapa pit & progres topo-ke-topo', dur: 8,
+    /* fitur baru: beberapa desain pit sekaligus & progres topo-ke-topo.
+       Bila permukaan latihan sudah diimport (ikut dimuat tombol "Muat data latihan"), laporannya
+       benar-benar DIHITUNG di demo sehingga angkanya sama dengan buku tutorial. */
+    S.push({ s: 'Laporan', t: 'Beberapa pit & progres topo-ke-topo', dur: 14,
       d: 'Beberapa desain pit dilaporkan sekaligus dengan topografi sama, dan material tergali antara dua survei topografi.',
       run: function (A) {
         A(0, function () { tab('Rep'); });
         A(1.2, function () { try { if (window.RP && window.RPX) { RP.sec = 'x'; RPX.panel(); } } catch (e) {} });
+        A(2.4, function () {
+          try {
+            var P = permukaan(); if (!window.RPX || !P.f1 || !P.f2 || !P.juni) return;
+            var o = rpO(); if (o) { o.cuts = '0'; o.grp = 'bench'; o.bh = 5; }
+            RPX.mode = 'pit'; RPX.topo = P.juni; RPX.pits = [P.f1, P.f2]; RPX.run();
+          } catch (e) {}
+        });
+        A(6, function () {
+          try {
+            var X = window.RPX && RPX.res; if (!X || X.mode !== 'pit') return;
+            var e = $('dmD'); if (!e) return;
+            e.innerHTML = 'Per desain pit (topografi sama): <b>' + X.rows.map(function (r) {
+              var T = { n: 0, t: 0 }; Object.keys(r.res.rows[0].G).forEach(function (k) { T.n += r.res.rows[0].G[k].n; T.t += r.res.rows[0].G[k].t; });
+              return r.lab.replace(/^Data Referensi: /, '') + ' ' + N0(T.n) + ' blok / ' + N0(T.t) + ' t';
+            }).join(' &middot; ') + '</b>';
+          } catch (e) {}
+        });
+        A(8, function () {
+          try { var P = permukaan(); if (!window.RPX || !P.juni || !P.juli) return; RPX.mode = 'tt'; RPX.ta = P.juni; RPX.tb = P.juli; RPX.allAtt = true; RPX.run(); } catch (e) {}
+        });
+        A(11.5, function () {
+          try {
+            var X = window.RPX && RPX.res; if (!X || X.mode !== 'tt') return;
+            var r = X.rows[0], T = { n: 0, t: 0 }; Object.keys(r.res.rows[0].G).forEach(function (k) { T.n += r.res.rows[0].G[k].n; T.t += r.res.rows[0].G[k].t; });
+            var e = $('dmD'); if (e) e.innerHTML = 'Progres sebulan (topografi akhir Juni &rarr; akhir Juli): <b>' + N0(T.n) + ' blok, ' + N0(T.t) + ' t</b> &mdash; material yang tergali menurut block model.';
+          } catch (e) {}
+        });
       } });
     return S;
   }
@@ -188,6 +269,7 @@
           .sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; })
           .map(function (q) { return q[2]; });
     S.unshift(stepData());                                        /* data dulu, baru pembuka */
+    try { angkaLangkah(S); } catch (e) { console.error(e); }
     return S;
   };
 
@@ -202,6 +284,19 @@
     return true;
   }
   var n = 0, t = setInterval(function () { if (pasangKecepatan() || ++n > 40) clearInterval(t); }, 250);
+
+  /* tombol "Muat data latihan & jalankan Demo" di menu Demo; pemuatnya (window.DLAT) ada di
+     halaman luar karena sumber viewer ini baru dieval sesudah import. */
+  function pasangDataLatihan() {
+    var m = $('dmMenu'); if (!m || $('dmDlat') || !window.DLAT) return;
+    var b = document.createElement('button');
+    b.id = 'dmDlat'; b.innerHTML = '&#8681; Muat data latihan &amp; jalankan Demo';
+    b.title = 'Impor data simulasi yang dipakai buku tutorial, lalu jalankan tur ini di atasnya';
+    b.onclick = function () { DLAT.muat(true); };
+    var h = m.querySelector('.mh');
+    m.insertBefore(b, h ? h.nextSibling : m.firstChild);
+    DLAT.cari().then(function () { b.style.display = DLAT.lengkap() ? '' : 'none'; });
+  }
 
   /* daftar "Mulai dari bagian" di menu Demo dibuat ulang dari bagian yang BENAR-BENAR ada:
      daftar lamanya ditulis tangan, jadi bagian baru (Geomodeller Vein, Model Estimation, Autorun,
@@ -229,7 +324,7 @@
     if (typeof _m !== 'function') return;
     window.dmMenu = dmMenu = function (show) {
       var r = _m.apply(this, arguments);
-      try { var el = $('dmMenu'); if (el && el.style.display === 'block') pasangBagian(); } catch (e) {}
+      try { var el = $('dmMenu'); if (el && el.style.display === 'block') { pasangBagian(); pasangDataLatihan(); } } catch (e) {}
       return r;
     };
   })();

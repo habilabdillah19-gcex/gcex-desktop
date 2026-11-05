@@ -61,7 +61,7 @@ ch('Data latihan', f"""<p><code>SIM_BM_GC_kadar.csv</code> adalah block model GC
 <table class="t"><tr><th>Berkas</th><th>Isi</th></tr>
 <tr><td>SIM_pit_fase1.dxf, SIM_pit_fase2.dxf</td><td>dua tahap desain pit (lantai RL 240 dan RL 180, lereng 45&deg;); fase 2 memuat fase 1</td></tr>
 <tr><td>SIM_topo_akhir_juni.dxf, SIM_topo_akhir_juli.dxf</td><td>dua survei topografi bulanan pit yang sama (lantai RL 260 lalu RL 245); selisihnya = material tergali sebulan</td></tr></table>"""
- + tip('Kolom S_PCT, ZN_PPM dan CU_PPM ditambahkan untuk latihan <b>additional flagging</b>. Dibuat ulang dengan <code>python tambah_unsur_bm.py</code> (hasil selalu sama).'))
+ + tip('Kolom S_PCT, ZN_PPM dan CU_PPM ditambahkan untuk latihan <b>additional flagging</b>. Dibuat ulang dengan <code>python tambah_unsur_bm.py</code> (hasil selalu sama).') + tip('Tur <b>Demo</b> di bilah atas memakai data latihan ini juga: berkasnya dititipkan di folder instalasi, dan tombol <b>&#8681; Muat data latihan simulasi</b> (halaman import) atau <b>&#8681; Muat data latihan &amp; jalankan Demo</b> (menu Demo) mengimpornya sekali klik &mdash; termasuk empat permukaan DXF di atas. Angka yang muncul di bilah bawah demo (jumlah dig block, ton @ kadar, tonase per fase pit, progres topo-ke-topo) dihitung saat itu, jadi bisa dicocokkan dengan angka di buku ini.', 'Demo memakai data yang sama'))
 
 ch('Halaman muka & import block model', dta('<code>data/SIM_BM_GC_kadar.csv</code> &mdash; 66.147 blok 5 &times; 5 &times; 2,5 m; kolom <code>AU_GC</code> (g/t), <code>SG</code>, <code>DOMAIN</code>, <code>S_PCT</code> (%), <code>ZN_PPM</code>, <code>CU_PPM</code>',
      [('Nama project site', '<code>Site Latihan &middot; Pit Simulasi</code>'),

@@ -176,7 +176,7 @@ bloknya), dan estimasi waste sesudah estimasi ore (karena mewarisi variogram dom
 <p>Langkah bernomor = yang harus diklik / diisi. Kotak <span class="tag tip">Tips</span> berisi jalan pintas,
 <span class="tag why">Mengapa?</span> menjelaskan alasan geologinya, dan <span class="tag warn">Perhatian</span> berisi hal yang sering keliru.
 Nama tombol dan menu ditulis <b>tebal</b> persis seperti di layar.</p>
-''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate ' + VDH + ' dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar'))
+''' + warn('Gambar diambil dari GC-Ex Drill Hole Ultimate ' + VDH + ' dengan kartu grafis perangkat lunak; di komputer Anda tampilan 3D lebih halus dan bisa diputar. Posisi, warna dan angka sama.', 'Catatan gambar') + tip('Tur <b>Demo</b> di bilah atas memakai data latihan ini juga: berkasnya dititipkan di folder instalasi, dan tombol <b>&#8681; Muat data latihan simulasi</b> (halaman import) atau <b>&#8681; Muat data latihan &amp; jalankan Demo</b> (menu Demo) mengimpornya sekali klik. Angka yang muncul di bilah bawah demo &mdash; interval hasil usulan flag, jumlah string, volume solid, jumlah komposit, tonase per fase pit &mdash; dihitung saat itu, jadi bisa dicocokkan dengan angka di buku ini.', 'Demo memakai data yang sama'))
 
 ch('Data simulasi', f'''
 <p>Data ini <b>sintetis</b> (bukan data perusahaan), dibuat agar meniru kasus vein emas epitermal sempit berbentuk sigmoidal.</p>
@@ -829,8 +829,9 @@ ch('Klasifikasi keyakinan & kerapatan bor', dta('lanjutan &mdash; atribut hasil 
  + figs(('kerapatan_3d', f"Block model berwarna est_spasi (batas kelas 15 / 25 / 40 / 60 m): median spasi bor setempat {fz(SPS.get('med'),1)} m (p10 {fz(SPS.get('p10'),1)} m, p90 {fz(SPS.get('p90'),1)} m), median {fz(SPS.get('nholeMed'))} lubang bor per blok. Bagian dalam endapan yang hanya terbor tiap sayatan ke-3 tampak jelas lebih renggang."),)
  + warn('Ambang ini usulan geostatistik, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> sesuai KCMI / JORC.'))
 
-ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; DXF 3DFACE, diimport ke <b>Data Referensi</b> (atau Data Spasial sebagai versi topografi / pit)',
-     [('Atribut &amp; cut-off', 'diatur seperti biasa di tab &#9312; (latihan: <code>AU_GC</code>, cut-off <b>0</b>, pengelompokan per RL 5 m)'),
+ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; DXF 3DFACE, diimport ke <b>Data Referensi</b> (atau Data Spasial sebagai versi topografi / pit). Block model: <code>SIM_BM_GC_kadar.csv</code> (sudah berisi kadar), supaya angkanya bisa dicocokkan tanpa menjalankan estimasi dulu',
+     [('Block model', '<code>SIM_BM_GC_kadar.csv</code> &mdash; dengan <code>SIM_BM_GC.csv</code> yang masih kosong, blok tanpa kadar tidak masuk laporan; jalankan Model Estimation dulu'),
+      ('Atribut &amp; cut-off', 'diatur seperti biasa di tab &#9312; (latihan: <code>AU_GC</code>, cut-off <b>0</b>, pengelompokan per RL 5 m)'),
       ('Mode 1 &mdash; per pit', 'topografi <code>SIM_topo_akhir_juni</code>; centang <b>SIM_pit_fase1</b> lalu <b>SIM_pit_fase2</b>'),
       ('Mode 2 &mdash; progres', 'atas <code>SIM_topo_akhir_juni</code>, bawah <code>SIM_topo_akhir_juli</code>'),
       ('Hasil yang seharusnya', 'fase 1 <b>3.384 blok</b> / 549.900 t &middot; fase 2 <b>16.103 blok</b> / 2.616.738 t &middot; progres sebulan <b>2.439 blok</b> / 396.338 t (SG 2,6, tanpa batas domain)')])

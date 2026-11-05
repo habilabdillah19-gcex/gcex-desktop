@@ -47,6 +47,17 @@
           "*.txt",
           "*.html"
         ]
+      },
+      {
+        "from": "docs/tutorial-gcex/data",
+        "to": "data-latihan",
+        "filter": [
+          "SIM_BM_GC_kadar.csv",
+          "SIM_pit_fase1.dxf",
+          "SIM_pit_fase2.dxf",
+          "SIM_topo_akhir_juni.dxf",
+          "SIM_topo_akhir_juli.dxf"
+        ]
       }
     ],
     "win": {

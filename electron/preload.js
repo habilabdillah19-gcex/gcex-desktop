@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('gcexDesktop', {
   // menunggu backend siap; hasil: {ok, url, err}
   backend: () => getBackend(),
   openLogs: () => ipcRenderer.invoke('gcex:openLogs'),
+  // data latihan bawaan: {dir, files[]}; isinya dibaca lewat fetch('gcexfile://latihan/<nama>')
+  latihan: () => ipcRenderer.invoke('gcex:latihan'),
   // simpan file lewat dialog Windows (data: ArrayBuffer / Uint8Array)
   saveFile: (name, data, filters) => ipcRenderer.invoke('gcex:saveFile', { name, data, filters }),
   // pengganti alert() / confirm(): kotak pesan Windows asli

@@ -2070,3 +2070,52 @@ Pada data latihan: fase 1 **3.384 blok / 549.900 t**, fase 2 **16.103 blok / 2.6
 > (jumlah blok dihitung ulang dari rumus kerucut pit, tanpa melewati jalur DTM): selisih 0,4–0,5 % karena
 > pembulatan segitiga DTM, dan Drill Hole maupun Block Model memberi angka yang **sama persis**. Seluruh tur Demo
 > juga dijalankan sampai habis di kedua aplikasi tanpa galat JavaScript.
+
+## 86. Demo berjalan di atas data latihan bawaan (kedua aplikasi, versi tetap)
+
+Sebelumnya tur **Demo** memakai data apa pun yang sedang terbuka — kalau belum ada data, demo tidak bisa
+memperlihatkan apa pun, dan kalau datanya data proyek sungguhan, angka yang muncul tidak sama dengan angka di
+buku tutorial. Sekarang berkas data latihan yang dipakai tutorial **dititipkan di dalam installer** dan bisa
+dimuat satu tombol.
+
+### 1. Dua tombol
+| Tempat | Tombol | Yang dikerjakan |
+| --- | --- | --- |
+| Halaman import (sebelum ada data) | **⇩ Muat data latihan simulasi** | impor seluruh berkas latihan lalu buka viewer |
+| Menu **Demo** (sesudah viewer terbuka) | **⇩ Muat data latihan & jalankan Demo** | sama, lalu tur Demo langsung jalan |
+
+Kalau sudah ada data terbuka, GC-Ex bertanya dulu (halaman dimuat ulang, pekerjaan yang belum tersimpan ke folder
+proyek akan hilang). Impornya memakai **jalur import yang sama** dengan yang dipakai pengguna
+(`SA.slotFile` / `SA.addSp` / `SA.bmPick` / `SA.go`) — tidak ada jalur baca kedua yang bisa berbeda hasilnya.
+
+### 2. Berkas yang dititipkan
+| Aplikasi | Berkas | Dari tutorial |
+| --- | --- | --- |
+| Drill Hole | `SIM_collar/survey/assay/geologi.csv`, `SIM_topo_xyz.csv`, `SIM_BM_GC_kadar.csv`, `QV_Lensa2_Leapfrog.obj`, `SIM_pit_fase1/2.dxf`, `SIM_topo_akhir_juni/juli.dxf` | bab *Membuat folder proyek & import data* sampai *Laporan per desain pit* |
+| Block Model | `SIM_BM_GC_kadar.csv`, `SIM_pit_fase1/2.dxf`, `SIM_topo_akhir_juni/juli.dxf` | bab *Halaman muka & import block model* sampai *Laporan per desain pit* |
+
+Untuk Drill Hole yang dititipkan adalah block model **berisi kadar** (`SIM_BM_GC_kadar.csv`), bukan model kosong `SIM_BM_GC.csv` yang dipakai bab estimasi: demo tidak menjalankan Model Estimation (butuh menit), jadi dengan model kosong laporan apa pun akan menunjukkan 0 blok. Model kosongnya tetap ada di ZIP Data-Latihan untuk latihan estimasi.
+
+Tambahan ukuran installer: **Drill Hole ±3,3 MB** (21,1 MB CSV/DXF mentah) dan **Block Model ±1,3 MB** (9,9 MB mentah).
+
+Letaknya `resources/data-latihan` di folder instalasi; dibaca lewat protokol internal
+`gcexfile://latihan/<nama berkas>`. Data latihan **lengkap** (laterit, vein bercabang, upsert, database rusak,
+QAQC) tetap diambil dari `GC-Ex-<versi>_2_Data-Latihan.zip` pada Release — yang dititipkan hanya yang dipakai tur
+Demo, supaya installer tidak membesar tanpa guna.
+
+### 3. Angka di demo = angka di tutorial
+Langkah-langkah ini **benar-benar menjalankan** perintahnya dan menampilkan hasil sungguhan di bilah bawah, bukan
+angka yang ditulis tangan di dalam program:
+
+| Langkah | Yang ditampilkan |
+| --- | --- |
+| Domain vein, flag interval & string kontrol | jumlah interval yang diusulkan + jumlah string (tutorial: 524 interval, 98 string) |
+| Model vein HW / FW → solid (RBF) | volume solid, tebal rata-rata, interval flag di dalam solid |
+| Analisis geostatistik slab | jumlah komposit, rata-rata, CV (tutorial: 657 komposit, 3,150 g/t) |
+| Kriging Neighbourhood Analysis | rekomendasi pass 1 |
+| Dig block otomatis / Running grade & tonnage | jumlah dig block, ton @ kadar, RL flitch |
+| Beberapa pit & progres topo-ke-topo | tonase per fase pit dan progres sebulan (3.384 / 16.103 / 2.439 blok) |
+
+Langkah lain (upsert, Model Estimation, kerangka AOI, sub-blocking, estimasi waste, klasifikasi) **dijelaskan
+tanpa dijalankan**: perhitungannya memakan waktu menit, bukan detik, jadi tidak pantas dijalankan di tengah tur.
+Angkanya ada di buku tutorial.

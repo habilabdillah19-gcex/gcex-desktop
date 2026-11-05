@@ -39,6 +39,23 @@
         "*.txt",
         "*.html"
       ]
+    },
+    {
+      "from": "docs/tutorial-gcex/data",
+      "to": "data-latihan",
+      "filter": [
+        "SIM_collar.csv",
+        "SIM_survey.csv",
+        "SIM_assay.csv",
+        "SIM_geologi.csv",
+        "SIM_topo_xyz.csv",
+        "QV_Lensa2_Leapfrog.obj",
+        "SIM_pit_fase1.dxf",
+        "SIM_pit_fase2.dxf",
+        "SIM_topo_akhir_juni.dxf",
+        "SIM_topo_akhir_juli.dxf",
+        "SIM_BM_GC_kadar.csv"
+      ]
     }
   ],
   "win": {

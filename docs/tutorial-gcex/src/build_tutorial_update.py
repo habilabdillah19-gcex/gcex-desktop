@@ -911,6 +911,14 @@ B.append('<p><b>Data latihannya baru:</b> <code>SIM_pit_fase1.dxf</code> dan <co
 B.append('<div class=warn>&#9888; Hasil progres adalah <b>block model di antara dua permukaan</b>, bukan '
          'timbangan. Rekonsiliasi tetap membandingkannya dengan tonase ROM / pabrik.</div>')
 B.append('<h3>Tombol Demo disusun ulang</h3>')
+B.append('<p><b>Demo sekarang bisa memuat data latihannya sendiri.</b> Berkas simulasi yang dipakai buku '
+         'tutorial dititipkan di dalam installer, jadi ada dua tombol: <b>&#8681; Muat data latihan '
+         'simulasi</b> di halaman import, dan <b>&#8681; Muat data latihan &amp; jalankan Demo</b> di menu '
+         'Demo. Karena datanya sama dengan data tutorial, angka yang muncul di bilah bawah demo bisa '
+         'dicocokkan langsung dengan PDF ini &mdash; mis. 524 interval hasil usulan flag, 98 string kontrol, '
+         '657 komposit domain QV_Lensa2, dan 3.384 / 16.103 / 2.439 blok pada laporan per pit &amp; progres. '
+         'Angka itu dibaca dari hasil perhitungan saat demo berjalan, bukan ditulis tangan di dalam '
+         'program.</p>')
 B.append('<p>Tur otomatis di bilah atas kini mengikuti urutan <b>buku tutorial</b>, bukan urutan menu: '
          'Drill Hole berjalan dari data &amp; filter &rarr; sayatan &rarr; Geomodeller Vein &rarr; '
          'Geostatistik &rarr; Model Estimation &rarr; kerangka AOI &amp; waste &rarr; autorun &rarr; laporan; '

@@ -245,6 +245,11 @@ if _sh.which('node'):
 # ---------- 8. Lapisan UI di akhir sumber viewer ----------
 ui = open(W + 'am2.js', encoding='utf-8').read() + '\n' + open(W + 'amfloor.js', encoding='utf-8').read() + '\n' + open(W + 'sgfix.js', encoding='utf-8').read() + '\n' + open(W + 'multiel.js', encoding='utf-8').read() + '\n' + open(W + 'mdlsum.js', encoding='utf-8').read() + '\n' + open(W + 'rpbm.js', encoding='utf-8').read() + '\n' + open(W + 'ui_layer.js', encoding='utf-8').read() + '\n' + open(W + 'ptree.js', encoding='utf-8').read() + '\n' + open(W + 'ptree_bm.js', encoding='utf-8').read()
 ui += ''.join('\n' + open(W + _m, encoding='utf-8').read() for _m in EXTRA)
+# data latihan bawaan: modul shell (di luar sumber viewer, karena tombolnya ada di halaman import)
+_dl = open(W + 'demodata.js', encoding='utf-8').read()
+assert '</scr' + 'ipt>' not in _dl
+s = s.replace('</body>', '<script>\n' + _dl + '\n</script>\n</body>', 1)
+
 i = s.index('<script type="text/plain" id="vsrc">')
 j = s.index('</script>', i)
 s = s[:j] + ui + '\n' + s[j:]

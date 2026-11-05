@@ -110,6 +110,13 @@ jobs:
           foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_FONT_OFL.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
+      - name: Cek data latihan bawaan di GC-Ex Block Model
+        shell: pwsh
+        run: |
+          $d = "dist/win-unpacked"
+          foreach ($f in @("resources/data-latihan/SIM_BM_GC_kadar.csv","resources/data-latihan/SIM_pit_fase1.dxf","resources/data-latihan/SIM_pit_fase2.dxf","resources/data-latihan/SIM_topo_akhir_juni.dxf","resources/data-latihan/SIM_topo_akhir_juli.dxf")) {
+            if (-not (Test-Path "$d/$f")) { throw "data latihan tidak ikut terkemas: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
+          }
       - name: Bangun installer GC-Ex Drillhole
         run: npm run dist:dh
         env:
@@ -138,6 +145,13 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
+      - name: Cek data latihan bawaan di GC-Ex Drillhole
+        shell: pwsh
+        run: |
+          $d = "dist/win-unpacked"
+          foreach ($f in @("resources/data-latihan/SIM_collar.csv","resources/data-latihan/SIM_survey.csv","resources/data-latihan/SIM_assay.csv","resources/data-latihan/SIM_geologi.csv","resources/data-latihan/SIM_topo_xyz.csv","resources/data-latihan/SIM_BM_GC_kadar.csv","resources/data-latihan/QV_Lensa2_Leapfrog.obj","resources/data-latihan/SIM_pit_fase1.dxf","resources/data-latihan/SIM_topo_akhir_juni.dxf","resources/data-latihan/SIM_topo_akhir_juli.dxf")) {
+            if (-not (Test-Path "$d/$f")) { throw "data latihan tidak ikut terkemas: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
+          }
       - name: Panduan DB-Ex (HTML)
         run: python docs/md2html.py docs/PANDUAN_CORE.md docs/PANDUAN_CORE.html
       - name: Bangun installer DB-Ex

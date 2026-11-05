@@ -189,6 +189,21 @@ function stopBackend() {
 // ---------- jembatan ke halaman (preload) ----------
 ipcMain.handle('gcex:info', () => ({ app: APP_NAME, version: app.getVersion(), backendUrl: backend.ok ? backend.url : '', backendErr: backend.err, logDir, userData: app.getPath('userData'), platform: process.platform }));
 ipcMain.handle('gcex:openLogs', () => shell.openPath(logDir));
+// ---------- data latihan bawaan (dipakai tombol Demo) ----------
+// Terpasang: resources/data-latihan (extraResources). Saat dijalankan dari sumber: folder tutorial.
+function latihanDir() {
+  const c = [path.join(process.resourcesPath || '', 'data-latihan'),
+             path.join(__dirname, '..', 'docs', 'tutorial-gcex', 'data')];
+  for (const d of c) { try { if (d && fs.existsSync(d)) return d; } catch (e) {} }
+  return '';
+}
+ipcMain.handle('gcex:latihan', () => {
+  const d = latihanDir();
+  if (!d) return { dir: '', files: [] };
+  try {
+    return { dir: d, files: fs.readdirSync(d).filter(f => /\.(csv|txt|dxf|obj|msh|dtm|str)$/i.test(f)).sort() };
+  } catch (e) { return { dir: d, files: [] }; }
+});
 ipcMain.handle('gcex:saveFile', async (e, opt) => {
   const r = await dialog.showSaveDialog(mainWin, { defaultPath: opt && opt.name, filters: opt && opt.filters });
   if (r.canceled || !r.filePath) return null;
@@ -517,7 +532,16 @@ app.whenReady().then(async () => {
   log('=== GC-Ex', app.getVersion(), 'mulai ===');
   regSelf();
   protocol.handle('gcexfile', async (req) => {
-    const t = new URL(req.url).pathname.replace(/^\/+/, ''), p = PRJ.open[t];
+    const t0 = new URL(req.url).pathname.replace(/^\/+/, '');
+    // data latihan bawaan: gcexfile://latihan/<nama berkas> (hanya nama berkas, tanpa path)
+    if (t0.startsWith('latihan/')) {
+      const nm = path.basename(t0.slice(8)), dir = latihanDir();
+      const f = dir && path.join(dir, nm);
+      if (!f || !fs.existsSync(f)) return new Response('tidak ditemukan', { status: 404 });
+      const rl = await enet.fetch(pathToFileURL(f).toString());
+      return new Response(rl.body, { status: 200, headers: { 'content-type': 'application/octet-stream', 'access-control-allow-origin': '*' } });
+    }
+    const t = t0, p = PRJ.open[t];
     if (!p || !fs.existsSync(p)) return new Response('tidak ditemukan', { status: 404 });
     const r = await enet.fetch(pathToFileURL(p).toString());
     return new Response(r.body, { status: 200, headers: { 'content-type': 'application/octet-stream', 'access-control-allow-origin': '*' } });
