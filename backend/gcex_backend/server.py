@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, access_io, core_dh, core_forms, core_io, core_qaqc, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_segs, excel_io, mdl_io, xlsx_patch
+from . import __version__, access_io, core_dh, core_forms, core_io, core_qaqc, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_segs, excel_io, geostat, krige, mdl_io, xlsx_patch
 
 log = logging.getLogger("gcex")
 app = FastAPI(title="GC-Ex Backend", version=__version__)
@@ -157,6 +157,22 @@ def access_insert(body: AccessInsert) -> dict:
 # ---------- Block model .mdl besar (tahap 3) ----------
 class MdlPath(BaseModel):
     path: str
+
+
+# ---------- GC-Ex: perhitungan geostatistik (variogram & kriging) ----------
+# Muatannya besar (puluhan ribu komposit), jadi dibaca langsung sebagai JSON tanpa lapisan
+# validasi per bidang: bentuknya diperiksa di modulnya sendiri dan galat dikembalikan sebagai
+# pesan yang bisa dibaca (lihat penangan galat di atas).
+@app.post("/geostat/vario")
+async def geostat_vario(request: Request) -> dict:
+    """Variogram eksperimental 36 arah + omni + downhole, dan auto-fit model sferis."""
+    return geostat.run(await request.json())
+
+
+@app.post("/geostat/krige")
+async def geostat_krige(request: Request) -> dict:
+    """Ordinary Kriging sejumlah blok (pass berurutan, sistem diselesaikan berkelompok)."""
+    return krige.run(await request.json())
 
 
 @app.post("/mdl/open")
