@@ -131,6 +131,23 @@ def kotak_terisi(img: np.ndarray):
     return (xs.min() / w, xs.max() / w, ys.min() / h, ys.max() / h)
 
 
+def kotak_proyeksi(kotak, kam: Kamera, lebar: int, tinggi: int):
+    """Kotak model setelah diproyeksikan kamera, dalam bagian dari layar (0..1)."""
+    mvp = kam.mvp(lebar, tinggi).astype(np.float64)
+    sudut = np.array([[x, y, z, 1.0]
+                      for x in kotak[0:2] for y in kotak[2:4] for z in kotak[4:6]])
+    h = sudut @ mvp.T
+    w = h[:, 3]
+    if np.any(np.abs(w) < 1e-9):
+        return None
+    ndc = h[:, :3] / w[:, None]
+    x0 = (ndc[:, 0].min() + 1) / 2
+    x1 = (ndc[:, 0].max() + 1) / 2
+    y0 = (1 - ndc[:, 1].max()) / 2        # layar: y tumbuh ke bawah
+    y1 = (1 - ndc[:, 1].min()) / 2
+    return (float(x0), float(x1), float(y0), float(y1))
+
+
 def bm_contoh(n: int, y0: float = 9011700.0) -> PR.BlockModel:
     """Block model buatan: kubus n blok, koordinat tambang sungguhan (northing 9 juta)."""
     s = max(1, int(round(n ** (1 / 3))))
@@ -187,17 +204,29 @@ def main(argv: Optional[list] = None) -> int:
     kam.pas_ke(A.kotak)
     img, dt = papan.gambar(A, kam, ulang=10)
     isi = terisi(img)
-    print("bingkai: %d x %d | piksel terisi %d (%.1f%%) | %.1f fps"
+    print("bingkai: %d x %d | piksel terisi %d (%.1f%% layar) | %.1f bingkai/detik"
           % (img.shape[1], img.shape[0], isi, 100 * isi / (img.shape[0] * img.shape[1]), 1 / dt))
     if isi < 0.01 * img.shape[0] * img.shape[1]:
         gagal.append("gambar hampir kosong: blok tidak tergambar (piksel terisi %d)" % isi)
 
+    # Pemeriksaan letak: kotak model diproyeksikan dengan matriks kamera yang SAMA, lalu
+    # piksel terisi harus jatuh di dalamnya. Ini memeriksa dua hal sekaligus -- kamera memandang
+    # modelnya, dan blok tergambar di tempat yang benar. Sengaja TIDAK memeriksa "berapa persen
+    # layar terisi", karena model vein tipis memang hanya mengisi sedikit layar; itu bentuk
+    # endapannya, bukan kesalahan.
     kt = kotak_terisi(img)
-    if kt:
-        print("kotak piksel terisi: x %.2f-%.2f, y %.2f-%.2f (bagian dari layar)" % kt)
-        if (kt[1] - kt[0]) < 0.25 or (kt[3] - kt[2]) < 0.15:
-            gagal.append("model hanya memenuhi petak kecil di layar (%.2f x %.2f): "
-                         "kamera tidak pas" % (kt[1] - kt[0], kt[3] - kt[2]))
+    kp = kotak_proyeksi(A.kotak, kam, img.shape[1], img.shape[0])
+    if kt and kp:
+        print("piksel terisi : x %.2f-%.2f  y %.2f-%.2f (bagian layar)" % kt)
+        print("kotak model   : x %.2f-%.2f  y %.2f-%.2f (diproyeksikan)" % kp)
+        tepi = 0.02
+        if not (kp[0] - tepi <= kt[0] and kt[1] <= kp[1] + tepi
+                and kp[2] - tepi <= kt[2] and kt[3] <= kp[3] + tepi):
+            gagal.append("piksel terisi keluar dari kotak model yang diproyeksikan: "
+                         "blok tergambar di tempat yang salah")
+        lebar_model = min(1.0, kp[1]) - max(0.0, kp[0])
+        if lebar_model < 0.3:
+            gagal.append("kotak model hanya selebar %.2f layar: kamera tidak pas" % lebar_model)
     print(peta_teks(img))
     warna = np.unique(img[:, :, :3].reshape(-1, 3), axis=0)
     print("warna berbeda di gambar: %d" % warna.shape[0])
@@ -225,8 +254,15 @@ def main(argv: Optional[list] = None) -> int:
         gagal.append("saringan RL tidak mengurangi piksel terisi (%d vs %d)" % (isi2, isi))
 
     # ---- 3. kecepatan pada beberapa jumlah blok ----
+    #
+    # PERINGATAN YANG PENTING DIBACA: di CI ini OpenGL dijalankan Mesa llvmpipe, yaitu gambar
+    # dihitung oleh CPU runner, bukan kartu grafis. Angka di bawah hanya berguna untuk melihat
+    # bahwa jumlah blok yang besar tidak membuatnya GAGAL, dan untuk menangkap kemunduran
+    # mendadak antar perubahan. Angka ini TIDAK mewakili kecepatan di komputer dengan kartu
+    # grafis sungguhan -- di situ kubus ber-instance biasanya puluhan kali lebih cepat.
     print()
-    print("%-12s %-10s %s" % ("blok", "unggah", "gambar"))
+    print("Kecepatan (Mesa llvmpipe / CPU runner -- bukan ukuran kartu grafis sungguhan):")
+    print("%-12s %-10s %s" % ("blok", "susun", "gambar"))
     for n in (50_000, 200_000, 1_000_000):
         b = bm_contoh(n)
         t0 = time.perf_counter()

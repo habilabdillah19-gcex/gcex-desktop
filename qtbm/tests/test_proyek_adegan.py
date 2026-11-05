@@ -302,3 +302,17 @@ def test_bm_contoh_uji_render_memakai_koordinat_tambang():
     assert b.y.min() > 9_000_000
     A = adegan.susun(b, atribut="AU")
     assert np.abs(A.pusat).max() < 1000          # sudah digeser ke asal lokal
+
+
+def test_kotak_proyeksi_memenuhi_layar():
+    """Kotak yang sudah dipaskan kamera harus memenuhi sebagian besar layar dan berada di dalamnya.
+    Ini dasar pemeriksaan letak di uji render CI, jadi diuji di sini juga."""
+    from qtbm.render import Kamera
+    from qtbm.uji_render import kotak_proyeksi
+    kotak = (-300.0, 300.0, -200.0, 200.0, -50.0, 50.0)
+    kam = Kamera()
+    kam.pas_ke(kotak)
+    kp = kotak_proyeksi(kotak, kam, 800, 600)
+    assert kp is not None
+    assert 0.0 <= kp[0] < kp[1] <= 1.0 and 0.0 <= kp[2] < kp[3] <= 1.0
+    assert (kp[1] - kp[0]) > 0.3
