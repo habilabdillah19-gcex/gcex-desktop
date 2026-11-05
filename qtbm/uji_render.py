@@ -62,17 +62,24 @@ class Papan:
         if not self.pg.siapkan():
             raise RuntimeError("penggambar tidak siap: %s" % self.pg.galat)
 
+    def _tunggu(self) -> None:
+        """Tunggu GPU selesai; tanpa ini pengukuran waktu hanya mengukur pengiriman perintah."""
+        try:
+            self.pg.gl.glFinish()
+        except Exception:
+            self.ctx.functions().glFinish()
+
     def gambar(self, A: AD.Adegan, kam: Kamera, ulang: int = 1) -> Tuple[np.ndarray, float]:
         """Gambar `ulang` bingkai; hasil: (gambar RGBA, detik per bingkai)."""
         self.pg = Penggambar()
         self.pg.siapkan()
         self.pg.unggah(A)
         self.pg.gambar(kam, LEBAR, TINGGI, LATAR)        # bingkai pertama: pemanasan
-        self.ctx.functions().glFinish()
+        self._tunggu()
         t0 = time.perf_counter()
         for _ in range(max(1, ulang)):
             self.pg.gambar(kam, LEBAR, TINGGI, LATAR)
-        self.ctx.functions().glFinish()
+        self._tunggu()
         dt = (time.perf_counter() - t0) / max(1, ulang)
         img = self.fbo.toImage()
         img = img.convertToFormat(img.Format.Format_RGBA8888)
@@ -123,9 +130,14 @@ def main(argv: Optional[list] = None) -> int:
         print("TIDAK BISA MERENDER:", e)
         print("Di mesin tanpa OpenGL 3.3 (mis. kontainer tanpa Mesa), pemeriksaan ini dilewati.")
         return 77                                              # kode khusus: dilewati, bukan gagal
-    gl = papan.ctx.format()
-    print("OpenGL %d.%d | %s" % (gl.majorVersion(), gl.minorVersion(),
-                                 papan.ctx.functions().glGetString(0x1F01) or ""))
+    f = papan.ctx.format()
+    kartu = ""
+    try:
+        from .render import GL_RENDERER
+        kartu = str(papan.pg.gl.glGetString(GL_RENDERER) or "")
+    except Exception:
+        pass
+    print("OpenGL %d.%d | %s" % (f.majorVersion(), f.minorVersion(), kartu))
 
     gagal = []
 

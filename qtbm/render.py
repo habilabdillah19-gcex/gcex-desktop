@@ -23,10 +23,30 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from PySide6.QtGui import QOpenGLContext, QSurfaceFormat
-from PySide6.QtOpenGL import QOpenGLVersionProfile, QOpenGLVersionFunctionsFactory
+from PySide6.QtGui import QMatrix4x4, QOpenGLContext, QSurfaceFormat, QVector3D, QVector4D
+from PySide6.QtOpenGL import (QOpenGLBuffer, QOpenGLShader, QOpenGLShaderProgram,
+                              QOpenGLVertexArrayObject, QOpenGLVersionFunctionsFactory,
+                              QOpenGLVersionProfile)
 
 from .adegan import Adegan
+
+# Konstanta OpenGL. PySide6 TIDAK menyediakannya (QOpenGLFunctions_3_3_Core hanya memuat
+# fungsinya), dan PyOpenGL tidak dipasang supaya penampil tetap ringan. Nilai-nilai ini tetap
+# menurut spesifikasi OpenGL, jadi aman dituliskan tegas di sini.
+GL_TRIANGLES = 0x0004
+GL_LINE_STRIP = 0x0003
+GL_DEPTH_TEST = 0x0B71
+GL_CULL_FACE = 0x0B44
+GL_BACK = 0x0405
+GL_COLOR_BUFFER_BIT = 0x00004000
+GL_DEPTH_BUFFER_BIT = 0x00000100
+GL_FRONT_AND_BACK = 0x0408
+GL_LINE = 0x1B01
+GL_FILL = 0x1B02
+GL_UNSIGNED_INT = 0x1405
+GL_RENDERER = 0x1F01
+GL_FLOAT = 0x1406
+GL_UNSIGNED_BYTE = 0x1401
 
 # satu kubus satuan: 36 simpul (6 sisi x 2 segitiga), beserta normal sisinya
 _SISI = [
@@ -159,22 +179,29 @@ class Kamera:
 
 # ---------------------------------------------------------------------------
 class Penggambar:
-    """Menyiapkan buffer GPU dan menggambar satu adegan. Butuh konteks OpenGL 3.3 yang aktif."""
+    """Menyiapkan buffer GPU dan menggambar satu adegan. Butuh konteks OpenGL 3.3 yang aktif.
+
+    Program shader, buffer, dan VAO memakai pembungkus Qt (QOpenGLShaderProgram, QOpenGLBuffer,
+    QOpenGLVertexArrayObject) karena pembungkus itu yang disediakan PySide6 dengan lengkap.
+    Hanya empat hal yang perlu fungsi OpenGL mentah: glVertexAttribDivisor (supaya satu kubus
+    dipakai berulang per blok), glDrawArraysInstanced, glDrawElements, dan beberapa pengaturan
+    keadaan. Itu diambil dari QOpenGLFunctions_3_3_Core.
+    """
 
     def __init__(self) -> None:
         self.gl = None
-        self.prog_blok = 0
-        self.prog_garis = 0
-        self.vao_blok = 0
-        self.vao_garis = 0
-        self.vao_topo = 0
+        self.prog_blok: Optional[QOpenGLShaderProgram] = None
+        self.prog_garis: Optional[QOpenGLShaderProgram] = None
+        self.vao_blok: Optional[QOpenGLVertexArrayObject] = None
+        self.vao_garis: Optional[QOpenGLVertexArrayObject] = None
+        self.vao_topo: Optional[QOpenGLVertexArrayObject] = None
         self.n_blok = 0
         self.garis_awal = np.zeros(0, np.int32)
         self.garis_cacah = np.zeros(0, np.int32)
         self.n_topo = 0
         self.siap = False
         self.galat = ""
-        self._buf = []
+        self._pegang: list = []          # buffer ditahan di sini supaya tidak dibuang Python
 
     # ---------- penyiapan ----------
     def siapkan(self) -> bool:
@@ -192,46 +219,45 @@ class Penggambar:
                           "(versi konteks: %d.%d)" % (ctx.format().majorVersion(),
                                                       ctx.format().minorVersion()))
             return False
-        gl = self.gl
-        gl.initializeOpenGLFunctions()
+        self.gl.initializeOpenGLFunctions()
         self.prog_blok = self._program(VS_BLOK, FS_BLOK)
         self.prog_garis = self._program(VS_GARIS, FS_GARIS)
         if not self.prog_blok or not self.prog_garis:
             return False
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_CULL_FACE)
-        gl.glCullFace(gl.GL_BACK)
+        self.gl.glEnable(GL_DEPTH_TEST)
+        self.gl.glEnable(GL_CULL_FACE)
+        self.gl.glCullFace(GL_BACK)
         self.siap = True
         return True
 
-    def _program(self, vs: str, fs: str) -> int:
-        gl = self.gl
-        p = gl.glCreateProgram()
-        for jenis, sumber in ((gl.GL_VERTEX_SHADER, vs), (gl.GL_FRAGMENT_SHADER, fs)):
-            s = gl.glCreateShader(jenis)
-            gl.glShaderSource(s, sumber)
-            gl.glCompileShader(s)
-            if not gl.glGetShaderiv(s, gl.GL_COMPILE_STATUS):
-                self.galat = "gagal menyusun shader: %s" % gl.glGetShaderInfoLog(s)
-                return 0
-            gl.glAttachShader(p, s)
-            gl.glDeleteShader(s)
-        gl.glLinkProgram(p)
-        if not gl.glGetProgramiv(p, gl.GL_LINK_STATUS):
-            self.galat = "gagal menautkan program: %s" % gl.glGetProgramInfoLog(p)
-            return 0
+    def _program(self, vs: str, fs: str) -> Optional[QOpenGLShaderProgram]:
+        p = QOpenGLShaderProgram()
+        if not p.addShaderFromSourceCode(QOpenGLShader.ShaderTypeBit.Vertex, vs):
+            self.galat = "gagal menyusun vertex shader: %s" % p.log()
+            return None
+        if not p.addShaderFromSourceCode(QOpenGLShader.ShaderTypeBit.Fragment, fs):
+            self.galat = "gagal menyusun fragment shader: %s" % p.log()
+            return None
+        if not p.link():
+            self.galat = "gagal menautkan program: %s" % p.log()
+            return None
         return p
 
-    def _buffer(self, data: np.ndarray, target=None) -> int:
-        gl = self.gl
-        if target is None:
-            target = gl.GL_ARRAY_BUFFER
-        b = gl.glGenBuffers(1)
-        gl.glBindBuffer(target, b)
+    def _vbo(self, data: np.ndarray, indeks: bool = False) -> QOpenGLBuffer:
+        b = QOpenGLBuffer(QOpenGLBuffer.Type.IndexBuffer if indeks
+                          else QOpenGLBuffer.Type.VertexBuffer)
+        b.create()
+        b.bind()
         d = np.ascontiguousarray(data)
-        gl.glBufferData(target, d.nbytes, d.tobytes(), gl.GL_STATIC_DRAW)
-        self._buf.append(b)
+        b.allocate(d.tobytes(), d.nbytes)
+        self._pegang.append(b)
         return b
+
+    @staticmethod
+    def _vao() -> QOpenGLVertexArrayObject:
+        v = QOpenGLVertexArrayObject()
+        v.create()
+        return v
 
     # ---------- unggah adegan ----------
     def unggah(self, A: Adegan) -> None:
@@ -241,43 +267,45 @@ class Penggambar:
         gl = self.gl
         self.n_blok = A.n_blok
         if self.n_blok:
-            self.vao_blok = gl.glGenVertexArrays(1)
-            gl.glBindVertexArray(self.vao_blok)
-            self._buffer(kubus_satuan())
-            gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 24, 0)
-            gl.glEnableVertexAttribArray(1)
-            gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, 24, 12)
-            self._buffer(A.pusat)
-            gl.glEnableVertexAttribArray(2)
-            gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, 12, 0)
+            self.vao_blok = self._vao()
+            self.vao_blok.bind()
+            self._vbo(kubus_satuan())
+            # posisi & normal kubus satuan: satu baris 6 float (24 bita)
+            self.prog_blok.enableAttributeArray(0)
+            self.prog_blok.setAttributeBuffer(0, GL_FLOAT, 0, 3, 24)
+            self.prog_blok.enableAttributeArray(1)
+            self.prog_blok.setAttributeBuffer(1, GL_FLOAT, 12, 3, 24)
+            # per blok: pusat, ukuran, warna -- divisor 1 artinya maju satu nilai per INSTANS
+            self._vbo(A.pusat)
+            self.prog_blok.enableAttributeArray(2)
+            self.prog_blok.setAttributeBuffer(2, GL_FLOAT, 0, 3, 12)
             gl.glVertexAttribDivisor(2, 1)
-            self._buffer(A.ukuran)
-            gl.glEnableVertexAttribArray(3)
-            gl.glVertexAttribPointer(3, 3, gl.GL_FLOAT, gl.GL_FALSE, 12, 0)
+            self._vbo(A.ukuran)
+            self.prog_blok.enableAttributeArray(3)
+            self.prog_blok.setAttributeBuffer(3, GL_FLOAT, 0, 3, 12)
             gl.glVertexAttribDivisor(3, 1)
-            self._buffer(A.warna)
+            self._vbo(A.warna)
             gl.glEnableVertexAttribArray(4)
-            gl.glVertexAttribPointer(4, 4, gl.GL_UNSIGNED_BYTE, gl.GL_TRUE, 4, 0)
+            gl.glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, True, 4, 0)
             gl.glVertexAttribDivisor(4, 1)
-            gl.glBindVertexArray(0)
+            self.vao_blok.release()
         if A.garis.shape[0]:
-            self.vao_garis = gl.glGenVertexArrays(1)
-            gl.glBindVertexArray(self.vao_garis)
-            self._buffer(A.garis)
-            gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 12, 0)
-            gl.glBindVertexArray(0)
+            self.vao_garis = self._vao()
+            self.vao_garis.bind()
+            self._vbo(A.garis)
+            self.prog_garis.enableAttributeArray(0)
+            self.prog_garis.setAttributeBuffer(0, GL_FLOAT, 0, 3, 12)
+            self.vao_garis.release()
             self.garis_awal = A.garis_awal
             self.garis_cacah = A.garis_cacah
         if A.topo_indeks.size:
-            self.vao_topo = gl.glGenVertexArrays(1)
-            gl.glBindVertexArray(self.vao_topo)
-            self._buffer(A.topo_simpul)
-            gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 12, 0)
-            self._buffer(A.topo_indeks, gl.GL_ELEMENT_ARRAY_BUFFER)
-            gl.glBindVertexArray(0)
+            self.vao_topo = self._vao()
+            self.vao_topo.bind()
+            self._vbo(A.topo_simpul)
+            self.prog_garis.enableAttributeArray(0)
+            self.prog_garis.setAttributeBuffer(0, GL_FLOAT, 0, 3, 12)
+            self._vbo(A.topo_indeks, indeks=True)
+            self.vao_topo.release()
             self.n_topo = int(A.topo_indeks.size)
 
     # ---------- gambar ----------
@@ -286,44 +314,37 @@ class Penggambar:
         if not self.siap:
             return
         gl = self.gl
-        mvp = kam.mvp(lebar, tinggi)
+        M = QMatrix4x4(*np.ascontiguousarray(kam.mvp(lebar, tinggi)).ravel().tolist())
         gl.glViewport(0, 0, lebar, tinggi)
         gl.glClearColor(*latar)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        datar = np.ascontiguousarray(mvp.T).ravel()      # OpenGL menunggu urutan kolom
-        if self.n_blok and self.vao_blok:
-            gl.glUseProgram(self.prog_blok)
-            self._mat(self.prog_blok, "mvp", datar)
-            lok = gl.glGetUniformLocation(self.prog_blok, "arahCahaya")
-            gl.glUniform3f(lok, 0.4, 0.6, 0.8)
-            gl.glBindVertexArray(self.vao_blok)
-            gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, 36, self.n_blok)
-            gl.glBindVertexArray(0)
-        if topo_on and self.n_topo and self.vao_topo:
-            gl.glUseProgram(self.prog_garis)
-            self._mat(self.prog_garis, "mvp", datar)
-            gl.glUniform4f(gl.glGetUniformLocation(self.prog_garis, "warnaGaris"),
-                           0.55, 0.58, 0.62, 1.0)
-            gl.glBindVertexArray(self.vao_topo)
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-            gl.glDrawElements(gl.GL_TRIANGLES, self.n_topo, gl.GL_UNSIGNED_INT, 0)
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-            gl.glBindVertexArray(0)
-        if bor_on and self.garis_awal.size and self.vao_garis:
-            gl.glUseProgram(self.prog_garis)
-            self._mat(self.prog_garis, "mvp", datar)
-            gl.glUniform4f(gl.glGetUniformLocation(self.prog_garis, "warnaGaris"),
-                           0.98, 0.85, 0.35, 1.0)
-            gl.glBindVertexArray(self.vao_garis)
+        gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        if self.n_blok and self.vao_blok is not None:
+            self.prog_blok.bind()
+            self.prog_blok.setUniformValue(self.prog_blok.uniformLocation("mvp"), M)
+            self.prog_blok.setUniformValue(self.prog_blok.uniformLocation("arahCahaya"),
+                                           QVector3D(0.4, 0.6, 0.8))
+            self.vao_blok.bind()
+            gl.glDrawArraysInstanced(GL_TRIANGLES, 0, 36, self.n_blok)
+            self.vao_blok.release()
+            self.prog_blok.release()
+        if topo_on and self.n_topo and self.vao_topo is not None:
+            self.prog_garis.bind()
+            self.prog_garis.setUniformValue(self.prog_garis.uniformLocation("mvp"), M)
+            self.prog_garis.setUniformValue(self.prog_garis.uniformLocation("warnaGaris"),
+                                            QVector4D(0.55, 0.58, 0.62, 1.0))
+            self.vao_topo.bind()
+            gl.glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            gl.glDrawElements(GL_TRIANGLES, self.n_topo, GL_UNSIGNED_INT, 0)
+            gl.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            self.vao_topo.release()
+            self.prog_garis.release()
+        if bor_on and self.garis_awal.size and self.vao_garis is not None:
+            self.prog_garis.bind()
+            self.prog_garis.setUniformValue(self.prog_garis.uniformLocation("mvp"), M)
+            self.prog_garis.setUniformValue(self.prog_garis.uniformLocation("warnaGaris"),
+                                            QVector4D(0.98, 0.85, 0.35, 1.0))
+            self.vao_garis.bind()
             for a, c in zip(self.garis_awal.tolist(), self.garis_cacah.tolist()):
-                gl.glDrawArrays(gl.GL_LINE_STRIP, int(a), int(c))
-            gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
-
-    def _mat(self, prog: int, nama: str, datar: np.ndarray) -> None:
-        gl = self.gl
-        lok = gl.glGetUniformLocation(prog, nama)
-        try:
-            gl.glUniformMatrix4fv(lok, 1, gl.GL_FALSE, datar.tolist())
-        except TypeError:
-            gl.glUniformMatrix4fv(lok, 1, gl.GL_FALSE, datar)
+                gl.glDrawArrays(GL_LINE_STRIP, int(a), int(c))
+            self.vao_garis.release()
+            self.prog_garis.release()
