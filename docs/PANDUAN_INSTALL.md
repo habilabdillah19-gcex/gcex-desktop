@@ -2192,3 +2192,72 @@ Aplikasi **belum** memakai backend untuk perhitungan ini. Alasannya terlihat dar
 daftar blok ke backend memakan waktu yang tidak kecil, jadi pemindahan yang benar harus mengirim data **sekali**
 lalu menyimpannya di backend — bukan mengirim ulang setiap kali hitung. Selama itu belum dikerjakan, jalur
 JavaScript tetap satu-satunya yang dipakai, sehingga tidak ada risiko angka berubah.
+
+## 88. Metode tonase: cara Surpac vs cara presisi GC-Ex — dibuat bisa dibandingkan
+
+Pernah ada sengketa angka: volume dan tonase block model **yang sama** berbeda antara hitungan
+Surpac dan hitungan GC-Ex. Penyebabnya bukan salah hitung, melainkan dua aturan yang berbeda untuk
+blok di perbatasan, ditambah satu pilihan di GC-Ex yang mudah terlewat. Bagian ini menerangkan
+keduanya dan di mana angkanya bisa diperiksa.
+
+### 1. Dua aturan yang sama-sama sah
+
+| Cara | Aturan | Dipakai untuk |
+| --- | --- | --- |
+| **Seperti Surpac** | blok dihitung **utuh** bila titik pusatnya di dalam batas (string / solid / flitch) — sama dengan Surpac *Keep partial = False* | rekonsiliasi dengan report Surpac |
+| **Presisi GC-Ex** | blok perbatasan ditimbang **proporsi volumenya** yang benar-benar di dalam batas | dig plan, perhitungan dilusi & ore loss |
+
+Pada vein tebal 2–4 m dengan blok 5 × 5 × 2,5 m, kesalahan batas itu sendiri sebesar dilusi yang
+mau diukur — itulah sebabnya cara presisi ada.
+
+### 2. Di tab Dig block: pilihan metode + Audit CSV
+
+Di bawah pilihan *Sayatan BM* ada **Metode tonase** dengan dua pilihan di atas, lalu tombol
+**🔍 Audit blok per poligon (CSV)**. Ekspor itu memuat **setiap blok** dengan kedua perhitungan
+bersebelahan: luas terpotong, tebal di flitch, volume/ton/metal presisi, lalu kolom *Titik tengah
+masuk (Surpac)* beserta volume/ton/metal Surpac.
+
+**Yang diperbaiki pada 0.24.25 / 0.24.35:** ringkasan Audit CSV kini juga memuat **waste pengisi** —
+yaitu area poligon yang **tidak tertutup blok BM**, yang dihitung sebagai waste bila pilihan *"Area
+polygon tanpa blok BM dihitung sebagai waste default"* menyala (**bawaannya menyala**). Pilihan itu
+hanya dipakai metode Presisi GC-Ex; metode Seperti Surpac mengabaikannya.
+
+Sebelum perbaikan ini, ekspor Audit hanya menjumlahkan blok, sedangkan panel Dig block memuat blok
+**ditambah** waste pengisi — jadi kedua angka itu tidak pernah cocok dan selisihnya tidak bisa
+dijelaskan oleh orang yang hanya memegang ekspornya. Contoh nyata dari data latihan (poligon
+4.019,6 m², flitch 2,5 m):
+
+| Angka | Nilai |
+| --- | --- |
+| Blok (presisi, dipotong) | 8.510,32 t |
+| Waste pengisi (area tanpa blok BM) | 17.616,82 t |
+| **Ton presisi + waste** (= angka di panel) | **26.127,14 t** |
+| Ton Surpac (titik pusat masuk) | 9.100,00 t |
+
+Kolom baru **Ton presisi + waste** itulah yang cocok dengan tonase di panel. Keterangan di bawah
+ringkasan menyebutkan SG dan kadar waste yang dipakai, serta menegaskan bahwa metode Surpac tidak
+memuatnya. Hint di pilihan metode juga memberi peringatan selama pilihan waste itu menyala.
+
+### 3. Di Reporting BM: tab ⑤ Metode tonase (kedua aplikasi)
+
+Tab baru di Reporting BM — **ada di GC-Ex Block Model maupun GC-Ex Drill Hole** — menghitung
+**kedua** metode sekali jalan dan menaruh selisihnya berdampingan per cut-off: blok, volume,
+tonase, kadar tiap atribut, lalu baris **Selisih** dalam ton dan persen. Ada tombol Export CSV.
+
+Tab itu memakai atribut, cut-off, pengelompokan, domain, poligon, permukaan dan SG yang sudah
+diatur di tab ① dan ②; yang diganti hanya aturan blok perbatasan. Mesin hitungnya `rpRun()` yang
+sama seperti laporan biasa, dijalankan dua kali — jadi angkanya pasti konsisten dengan laporan
+biasa, bukan hasil rumus salinan. Itu diuji otomatis di `tools/uji/uji_metode_tonase.py`.
+
+**Dua hal yang perlu dibaca sebelum menyimpulkan:**
+
+- Metode presisi memakai atribut proporsi (`sb_frac`). Bila block model belum punya atribut itu,
+  kedua metode **identik** dan tab ini mengatakannya terang-terangan. Hitung dulu di GC-Ex Drill
+  Hole › Block Model › *Hitung proporsi volume ore per blok (sb_frac)*.
+- **Blok berproporsi 0 tidak dilaporkan sama sekali** pada metode presisi. Jadi bila `sb_frac`
+  hanya mencakup solid vein, baris *Presisi GC-Ex* melaporkan material **di dalam solid saja**,
+  sedangkan baris *Seperti Surpac* melaporkan semua blok yang lolos constraint — termasuk waste di
+  luar solid. Selisih bisa tampak −98% dan itu **wajar**, bukan tanda salah hitung. Perbandingan
+  yang berarti: samakan dulu constraint domainnya di tab ②, lalu lihat selisihnya — yang tersisa
+  barulah pengaruh aturan blok perbatasan. Panel menampilkan rincian berapa blok berproporsi 1,
+  berapa di perbatasan, dan berapa berproporsi 0, supaya asal selisihnya terlihat.
