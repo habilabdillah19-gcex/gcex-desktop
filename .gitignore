@@ -21,3 +21,6 @@ build-pyqt/
 
 # model ONNX (diunduh tools/ai_models/unduh_model.py, tidak masuk git)
 models/
+
+# folder penyajian sementara untuk uji paritas (dibuat ulang oleh tools/uji/paritas_geostat.py)
+tools/uji/_srv_dh/
