@@ -284,9 +284,14 @@ class Penggambar:
             self.prog_blok.enableAttributeArray(3)
             self.prog_blok.setAttributeBuffer(3, GL_FLOAT, 0, 3, 12)
             gl.glVertexAttribDivisor(3, 1)
-            self._vbo(A.warna)
-            gl.glEnableVertexAttribArray(4)
-            gl.glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, True, 4, 0)
+            # Warna diunggah sebagai float 0..1, bukan bita 0..255. Alasannya praktis:
+            # QOpenGLShaderProgram.setAttributeBuffer tidak menyatakan apakah bita dinormalkan,
+            # dan glVertexAttribPointer mentah di PySide6 menolak bentuk argumen yang biasa.
+            # Float menghapus seluruh ketidakpastian itu; biayanya 16 bita per blok (16 MB untuk
+            # sejuta blok), yang tidak berarti dibanding risiko warna salah.
+            self._vbo(A.warna.astype(np.float32) / 255.0)
+            self.prog_blok.enableAttributeArray(4)
+            self.prog_blok.setAttributeBuffer(4, GL_FLOAT, 0, 4, 16)
             gl.glVertexAttribDivisor(4, 1)
             self.vao_blok.release()
         if A.garis.shape[0]:
