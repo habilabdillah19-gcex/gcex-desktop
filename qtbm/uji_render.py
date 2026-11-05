@@ -98,6 +98,39 @@ def terisi(img: np.ndarray, toleransi: int = 12) -> int:
     return int(np.count_nonzero(d > toleransi))
 
 
+def peta_teks(img: np.ndarray, kolom: int = 64, baris: int = 24) -> str:
+    """Peta kerapatan piksel terisi sebagai teks.
+
+    Ada supaya gambar hasil render bisa DINILAI dari log CI, bukan hanya lewat berkas PNG yang
+    belum tentu bisa diunduh. Tiap huruf mewakili satu petak layar: ' ' kosong, '.' sedikit,
+    ':' ', '+' ', '#' makin penuh.
+    """
+    d = np.abs(img[:, :, :3].astype(np.int16) - _latar_uint8()[None, None, :]).max(axis=2) > 12
+    h, w = d.shape
+    tangga = " .:+*#"
+    out = []
+    for b in range(baris):
+        y0, y1 = int(b * h / baris), int((b + 1) * h / baris)
+        garis = ""
+        for k in range(kolom):
+            x0, x1 = int(k * w / kolom), int((k + 1) * w / kolom)
+            petak = d[y0:y1, x0:x1]
+            f = float(petak.mean()) if petak.size else 0.0
+            garis += tangga[min(len(tangga) - 1, int(f * len(tangga)))]
+        out.append("|" + garis + "|")
+    return "\n".join(out)
+
+
+def kotak_terisi(img: np.ndarray):
+    """Kotak pembatas piksel terisi, dalam bagian dari lebar/tinggi layar (0..1)."""
+    d = np.abs(img[:, :, :3].astype(np.int16) - _latar_uint8()[None, None, :]).max(axis=2) > 12
+    if not d.any():
+        return None
+    ys, xs = np.nonzero(d)
+    h, w = d.shape
+    return (xs.min() / w, xs.max() / w, ys.min() / h, ys.max() / h)
+
+
 def bm_contoh(n: int, y0: float = 9011700.0) -> PR.BlockModel:
     """Block model buatan: kubus n blok, koordinat tambang sungguhan (northing 9 juta)."""
     s = max(1, int(round(n ** (1 / 3))))
@@ -159,6 +192,13 @@ def main(argv: Optional[list] = None) -> int:
     if isi < 0.01 * img.shape[0] * img.shape[1]:
         gagal.append("gambar hampir kosong: blok tidak tergambar (piksel terisi %d)" % isi)
 
+    kt = kotak_terisi(img)
+    if kt:
+        print("kotak piksel terisi: x %.2f-%.2f, y %.2f-%.2f (bagian dari layar)" % kt)
+        if (kt[1] - kt[0]) < 0.25 or (kt[3] - kt[2]) < 0.15:
+            gagal.append("model hanya memenuhi petak kecil di layar (%.2f x %.2f): "
+                         "kamera tidak pas" % (kt[1] - kt[0], kt[3] - kt[2]))
+    print(peta_teks(img))
     warna = np.unique(img[:, :, :3].reshape(-1, 3), axis=0)
     print("warna berbeda di gambar: %d" % warna.shape[0])
     if warna.shape[0] < 8:
