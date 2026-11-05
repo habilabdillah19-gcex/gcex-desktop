@@ -128,6 +128,8 @@ figure.nar figcaption{{max-width:52%;margin-left:auto;margin-right:auto}}
 .tip{{border-color:#2f9e44;background:#ebfbee}}.tip b:first-child{{color:#2b8a3e}}
 .why{{border-color:#1c7ed6;background:#e7f5ff}}.why b:first-child{{color:#1864ab}}
 .warn{{border-color:#e8590c;background:#fff4e6}}.warn b:first-child{{color:#d9480f}}
+.dta{{border-color:#5f3dc4;background:#f3f0ff}}.dta b:first-child{{color:#5f3dc4}}
+.dta .dtaf{{font-size:9pt;margin:1mm 0 0}}.dta table.kv{{margin:1.5mm 0 0}}.dta table.kv td:first-child{{width:30%}}
 .tag{{font-size:8pt;font-weight:700;padding:0 2mm;border-radius:1mm;border:0}}
 table{{border-collapse:collapse;width:100%;margin:2mm 0 3mm;font-size:9pt;break-inside:avoid}}
 table.t th{{background:var(--nv);color:#fff;text-align:left;padding:1.5mm 2mm}}table.t td{{border-bottom:1px solid var(--ln);padding:1.5mm 2mm;vertical-align:top}}

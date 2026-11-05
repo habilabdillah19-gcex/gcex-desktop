@@ -2,6 +2,16 @@
 CH = []
 def ch(title, body, key=None): CH.append((title, body))
 
+def dta(berkas, isian):
+    """Kotak tetap di awal bab: BERKAS data latihan mana yang dipakai dan ANGKA apa yang diisi.
+    Dipasang karena bab-bab sebelumnya hanya menyebut nama tombol, sehingga pembaca tidak tahu data
+    mana yang harus dimuat dan nilai apa yang harus diketik untuk sampai ke gambar yang sama."""
+    b = ''.join('<tr><td>%s</td><td>%s</td></tr>' % r for r in isian)
+    return ('<div class="box dta"><b>Data &amp; isian bab ini</b>'
+            + ('<div class=dtaf>Berkas: ' + berkas + '</div>' if berkas else '')
+            + ('<table class=kv>' + b + '</table>' if isian else '') + '</div>')
+
+
 # Urutan terbit disusun ulang (0.24.33) mengikuti urutan node Project Tree / langkah kerja nyata
 # grade control dengan block model. Bab di bawah boleh ditulis dalam urutan apa saja; daftar inilah
 # yang menentukan urutannya di PDF. Setiap entri = awal judul bab (unik).
@@ -49,7 +59,11 @@ ch('Data latihan', f"""<p><code>SIM_BM_GC_kadar.csv</code> adalah block model GC
 <tr><td>ZN_PPM, CU_PPM</td><td><b>baru</b>: seng &amp; tembaga (ppm) fiktif, mengikuti kadar Au</td></tr><tr><td>DOMAIN</td><td>QV_Utama / QV_HW1 / WASTE</td></tr></table>"""
  + tip('Kolom S_PCT, ZN_PPM dan CU_PPM ditambahkan untuk latihan <b>additional flagging</b>. Dibuat ulang dengan <code>python tambah_unsur_bm.py</code> (hasil selalu sama).'))
 
-ch('Halaman muka & import block model', steps(
+ch('Halaman muka & import block model', dta('<code>data/SIM_BM_GC_kadar.csv</code> &mdash; 66.147 blok 5 &times; 5 &times; 2,5 m; kolom <code>AU_GC</code> (g/t), <code>SG</code>, <code>DOMAIN</code>, <code>S_PCT</code> (%), <code>ZN_PPM</code>, <code>CU_PPM</code>',
+     [('Nama project site', '<code>Site Latihan &middot; Pit Simulasi</code>'),
+      ('Folder proyek', 'folder kosong, mis. <code>Proyek_Tutorial_BM</code>'),
+      ('Nama block model', '<code>Latihan_BM</code>'),
+      ('Berkas block model', '<code>SIM_BM_GC_kadar.csv</code>')]) + steps(
  'Buka <b>GC-Ex Block Model</b> dari menu Start. Halaman muka <b>Import data</b> tampil penuh ([[halaman_muka]]).',
  'Isi <b>Nama project site</b> (di sini <i>Site Latihan &middot; Pit Simulasi</i>). Nama ini tampil di bilah atas di bawah <b>Grade Control Excellence</b> dan disimpan per proyek.',
  'Klik <b>Buka / pilih folder proyek</b> lalu pilih folder kosong <code>Proyek_Tutorial_BM</code>.',
@@ -57,25 +71,38 @@ ch('Halaman muka & import block model', steps(
  + fig('halaman_muka', 'Halaman muka GC-Ex Block Model: nama project site, folder proyek, proyek tersimpan dan impor data.')
  + fig('import', 'Block model dipilih; file sumber disalin ke folder proyek <code>sumber/</code>.'))
 
-ch('Mengenal tampilan', '<p>Di kiri ada <b>Project Tree</b> (urut langkah kerja, angka 1–10) dan <b>Properti</b> (isi node yang dipilih). Bilah atas: logo <b>GC-Ex / BLOCK MODEL</b>, <b>Grade Control Excellence</b> + nama project site, Proyek, arah pandang, menu <b>Sayatan</b> (Sayatan 2D / 3D), Ortho, Layer, Gelap, PNG.</p>'
+ch('Mengenal tampilan', dta('lanjutan &mdash; <code>SIM_BM_GC_kadar.csv</code> sudah terbuka',
+     [('Filter tampilan', '<code>AU_GC &ge; 0,19</code> (Block Model &rarr; Filter &amp; SG)')]) + '<p>Di kiri ada <b>Project Tree</b> (urut langkah kerja, angka 1–10) dan <b>Properti</b> (isi node yang dipilih). Bilah atas: logo <b>GC-Ex / BLOCK MODEL</b>, <b>Grade Control Excellence</b> + nama project site, Proyek, arah pandang, menu <b>Sayatan</b> (Sayatan 2D / 3D), Ortho, Layer, Gelap, PNG.</p>'
  + fig('header', 'Bilah atas GC-Ex Block Model.')
  + fig('bm_3d', 'Block model dengan filter AU &ge; 0,19 (Block Model &rarr; Filter &amp; SG): ore shoot kadar tinggi (merah) di tengah vein.')
  + steps('Project Tree &rarr; <b>Block Model &rarr; Warna &amp; kelas kadar</b>: kelas diskrit dan warnanya ([[warna_kelas]]).')
  + fig('warna_kelas', 'Warna &amp; kelas kadar AU.'))
 
-ch('Flitch aktif & Sayatan 2D', steps(
+ch('Flitch aktif & Sayatan 2D', dta('lanjutan &mdash; block model yang sama',
+     [('Tinggi flitch', '<b>2,5 m</b> (= tinggi blok, jadi satu flitch = satu lapis blok)'),
+      ('RL atas', '<b>241,25</b> &rarr; flitch <b>RL 241,25 &ndash; 238,75</b>'),
+      ('Tombol', '<b>Terapkan flitch (buka Penampang 2D)</b>')]) + steps(
  f"Project Tree &rarr; <b>Flitch Aktif</b>: isi <b>Tinggi flitch</b> 2,5 dan <b>RL atas</b> {N['flitch1'][0]} ([[flitch]]).",
  'Klik <b>Terapkan flitch</b>: GC-Ex membuka <b>Sayatan 2D</b> tampak atas pada RL tengah flitch; blok dilukis sebagai gambar sehingga zoom &amp; geser ringan.')
  + fig('flitch', f"Flitch RL {N['flitch1'][0]} – {N['flitch1'][1]} di Sayatan 2D.")
  + tip('Menu <b>Sayatan &rarr; Pilih arah sayatan di tampak atas</b> membuka jendela 3D tampak atas; tarik garis P1 &rarr; P2 langsung di atas data untuk sayatan vertikal.'))
 
-ch('Dig block otomatis', steps(
+ch('Dig block otomatis', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75',
+     [('Unsur kelas', '<code>AU_GC</code>'),
+      ('Kelas 1', 'dari <b>0,4</b> s/d &lt; <b>1</b> &rarr; string <b>14</b>, material <b>LG</b>'),
+      ('Kelas 2', 'dari <b>1</b> s/d <b>maks</b> &rarr; string <b>17</b>, material <b>HG</b>'),
+      ('Tujuan (DEST)', '<b>LG</b> bukan sulfida &rarr; <code>S340</code> &middot; <b>LG</b> sulfida &rarr; <code>S370</code> &middot; <b>HG</b> &rarr; <code>R418</code>'),
+      ('Jarak gabung tubuh', '<b>3 m</b>'),
+      ('Hasil yang seharusnya', '<b>68 dig block</b> di flitch ini')]) + steps(
  'Project Tree &rarr; <b>Dig Block &rarr; Otomatis (kelas &amp; tujuan)</b>. Aturan kelas (string number, warna, material) dan <b>Tujuan (DEST)</b> per material diatur di sini.',
  'Klik <b>Buat dig block otomatis</b> ([[digblock_auto]]).')
  + fig('digblock_auto', f"{N['db1']} dig block otomatis di flitch RL {N['flitch1'][0]} – {N['flitch1'][1]}: HG &rarr; R418, LG &rarr; S340.")
  + why('Dig block mengikuti batas sudut blok GC, lalu dihaluskan dan celah kecil disatukan sesuai lebar alat gali.'))
 
-ch('Additional flagging (garis ganda)', """<p><b>Additional flagging</b> menggantikan aturan &ldquo;sulfida / material SxS&rdquo;. Satu aturan = <b>nama flag + unsur + operator + COG</b>. Bila <b>komposit</b> unsur di dalam poligon (rata-rata tertimbang tonase) melewati COG, <b>seluruh poligon</b> diberi flag dan digambar dengan <b>garis ganda</b>.</p>"""
+ch('Additional flagging (garis ganda)', dta('lanjutan &mdash; memakai kolom <code>S_PCT</code> dan <code>ZN_PPM</code> dari berkas yang sama',
+     [('Aturan 1', 'nama <code>Ore Sulfide</code> &mdash; atribut <code>S_PCT</code> <b>&gt; 0,8</b>'),
+      ('Aturan 2', 'nama <code>Zn tinggi</code> &mdash; atribut <code>ZN_PPM</code> <b>&gt; 500</b>'),
+      ('Hasil yang seharusnya', '<b>53 dari 68</b> dig block mendapat flag di flitch ini')]) + """<p><b>Additional flagging</b> menggantikan aturan &ldquo;sulfida / material SxS&rdquo;. Satu aturan = <b>nama flag + unsur + operator + COG</b>. Bila <b>komposit</b> unsur di dalam poligon (rata-rata tertimbang tonase) melewati COG, <b>seluruh poligon</b> diberi flag dan digambar dengan <b>garis ganda</b>.</p>"""
  + steps('Dig Block &rarr; Otomatis &rarr; buka <b>Additional flagging (garis ganda)</b> ([[flagging_aturan]]).',
    'Aturan 1: nama <b>Ore Sulfide</b>, unsur <code>S_PCT</code>, <b>&gt;</b>, COG <b>0,8</b> (%).',
    'Klik <b>+ Aturan flag</b>. Aturan 2: <b>Zn tinggi</b>, <code>ZN_PPM</code>, <b>&gt;</b>, COG <b>500</b> (ppm). Satuan COG = satuan kolom block model.',
@@ -89,7 +116,11 @@ ch('Digit manual & rekap string', steps(
  'Dig Block &rarr; <b>Rekap &amp; edit string</b> ([[rekap_string]]): tabel semua string (tampil, nomor, keterangan, titik, panjang, bidang) dengan &#9998; <b>edit bentuk</b> dan &times; hapus. String baru dibuat di bagian bawah panel.')
  + fig('rekap_string', 'Rekap &amp; edit string.'))
 
-ch('Orthofoto resolusi tinggi di flitch', """<p>Saat menggambar dig block di flitch, yang paling membantu adalah melihat <b>foto lapangannya</b> di bawah poligon: batas material yang terlihat di muka galian, jalan angkut, batas pekerjaan shift sebelumnya. Orthofoto tampil sebagai <b>gambar latar</b> pada Penampang 2D horizontal &mdash; dan flitch adalah penampang horizontal.</p>
+ch('Orthofoto resolusi tinggi di flitch', dta('orthofoto <b>tidak</b> termasuk paket data latihan (berkas raster besar). Pakai orthofoto pit Anda sendiri: <code>.tif</code> + world file, atau <code>.jpg</code> + <code>.jgw</code>',
+     [('Import', 'Data Spasial &rarr; Orthofoto'),
+      ('Langkah', 'buka flitch (Penampang 2D), lalu centang node <b>Orthofoto (latar plan / flitch)</b>'),
+      ('Isian', 'opasitas <b>50&ndash;75%</b> dari menu node'),
+      ('Yang dilihat', 'badge node menyebut resolusi yang dipakai; <b>zoom masuk</b> membuat angka m/piksel mengecil dan gambar makin tajam')]) + """<p>Saat menggambar dig block di flitch, yang paling membantu adalah melihat <b>foto lapangannya</b> di bawah poligon: batas material yang terlihat di muka galian, jalan angkut, batas pekerjaan shift sebelumnya. Orthofoto tampil sebagai <b>gambar latar</b> pada Penampang 2D horizontal &mdash; dan flitch adalah penampang horizontal.</p>
 <p>Sejak 0.24.24 latar itu dipotong sesuai tampilan dari <b>piramida resolusi tinggi</b>, bukan satu gambar beresolusi tetap. Artinya <b>zoom masuk membuatnya makin tajam</b>; sebelumnya gambar dibuat sekali seukuran ortho penuh lalu dipakai terus, sehingga di flitch sempit (misal 50 &times; 50 m dari ortho 1,5 km) tampak buram dan zoom tidak menolong.</p>""" +
  kv([('Node', '<b>Orthofoto (latar plan / flitch)</b> di bawah <b>Flitch Aktif</b>'),
      ('Centang', 'nyala / mati tanpa pergi ke menu Overlay'),
@@ -98,7 +129,10 @@ ch('Orthofoto resolusi tinggi di flitch', """<p>Saat menggambar dig block di fli
  + tip('Opasitas 50&ndash;75% biasanya paling enak: foto masih terbaca, warna kelas kadar blok tetap jelas di atasnya.')
  + warn('Latar ini hanya digambar pada penampang <b>horizontal</b> (plan / flitch). Pada penampang vertikal tidak ada orthofoto &mdash; badge node akan menyebut <i>hanya di plan 2D</i>.'))
 
-ch('Pemeriksaan dig block sebelum dig plan terbit', """<p>Dig plan yang cacat baru ketahuan di pit, saat alat sudah di muka galian. Node <b>Pemeriksaan dig block</b> memeriksanya lebih dulu, dan membagi temuan menjadi dua tingkat.</p>""" +
+ch('Pemeriksaan dig block sebelum dig plan terbit', dta('lanjutan &mdash; dig block yang sudah ada',
+     [('Prasyarat', 'lebar minimum alat diisi di <b>Dig block otomatis</b> (bawaan <b>1,5 m</b>)'),
+      ('Langkah', 'node <b>Pemeriksaan dig block</b> &rarr; <b>Periksa flitch aktif</b>, lalu <b>Periksa semua flitch</b>'),
+      ('Hasil yang seharusnya', 'pada data latihan yang masih rapi: <b>tidak ada temuan</b>. Untuk mencobanya, tarik satu titik dig block sampai bentuknya menyempit, lalu periksa lagi')]) + """<p>Dig plan yang cacat baru ketahuan di pit, saat alat sudah di muka galian. Node <b>Pemeriksaan dig block</b> memeriksanya lebih dulu, dan membagi temuan menjadi dua tingkat.</p>""" +
  '<table class="t"><tr><th>Tingkat</th><th>Artinya</th></tr>' +
  '<tr><td><b>CEGAH</b></td><td>jangan diterbitkan sebelum dibereskan</td></tr>' +
  '<tr><td><b>PERIKSA</b></td><td>perlu dilihat, belum tentu salah</td></tr></table>' +
@@ -118,7 +152,10 @@ ch('Pemeriksaan dig block sebelum dig plan terbit', """<p>Dig plan yang cacat ba
          'Unduh CSV-nya bila perlu lampiran, lalu terbitkan dig plan.')
  + tip('Dua pemeriksaan ini jarang berbunyi pada pengaturan bawaan, dan itu wajar: <b>tanpa tujuan material</b> hanya mungkin bila materialnya tidak cocok aturan tujuan mana pun <i>dan</i> tujuan cadangan kosong; <b>nama ganda</b> hanya mungkin bila template nama tidak memuat <code>{NO}</code>. Keduanya tetap diperiksa untuk menjaga keadaan yang tidak biasa.'))
 
-ch('Preset kelas kadar & tujuan material', """<p>Batas kelas kadar dan aturan tujuan material diisi manual tiap kali. Akibatnya shift siang dan shift malam, atau dua orang yang berbeda, bisa memakai batas yang berbeda tanpa ada yang sadar &mdash; dan itu muncul sebagai selisih yang tidak bisa dijelaskan di rekonsiliasi.</p>
+ch('Preset kelas kadar & tujuan material', dta('lanjutan &mdash; pengaturan kelas &amp; tujuan dari bab Dig block otomatis',
+     [('Langkah', 'node <b>Preset kelas kadar &amp; tujuan</b> &rarr; <b>Simpan pengaturan sekarang sebagai preset&hellip;</b>'),
+      ('Nama preset', 'mis. <code>Pit Simulasi &mdash; Nov 2026</code>'),
+      ('Isi yang tersimpan', '2 kelas (LG, HG), 3 aturan tujuan, lebar minimum 1,5 m, ambang sulfida')]) + """<p>Batas kelas kadar dan aturan tujuan material diisi manual tiap kali. Akibatnya shift siang dan shift malam, atau dua orang yang berbeda, bisa memakai batas yang berbeda tanpa ada yang sadar &mdash; dan itu muncul sebagai selisih yang tidak bisa dijelaskan di rekonsiliasi.</p>
 <p>Node <b>Preset kelas kadar &amp; tujuan</b> menyimpannya sebagai preset bernama di berkas proyek.</p>""" +
  kv([('Yang disimpan', 'batas kelas kadar (LG / HG / &hellip;), aturan tujuan material, <b>lebar minimum alat</b>, ambang sulfida, material bawaan, ambang luas'),
      ('Menyimpan', 'menu node &rarr; <i>Simpan pengaturan sekarang sebagai preset&hellip;</i>, beri nama mis. <code>Pit A &mdash; Nov 2026</code>'),
@@ -126,29 +163,42 @@ ch('Preset kelas kadar & tujuan material', """<p>Batas kelas kadar dan aturan tu
      ('Tiap preset tampil', 'jumlah kelas, jumlah aturan tujuan, lebar minimum, dan tanggal disimpan')])
  + warn('Memakai preset <b>tidak menghapus</b> dig block yang sudah ada, tetapi material dan tujuannya dihitung ulang dengan aturan baru. Karena itu selalu ada konfirmasi lebih dulu. Untuk rekonsiliasi yang rapi, ganti preset di <b>awal</b> periode, bukan di tengah.'))
 
-ch('Ringkasan harian flitch aktif', """<p>Laporan pagi biasanya dirakit sendiri dari beberapa tabel. Node <b>Ringkasan harian (flitch aktif)</b> menyusunnya sekaligus, dalam satu halaman.</p>""" +
+ch('Ringkasan harian flitch aktif', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75 beserta as-mined-nya',
+     [('Langkah', 'node <b>Ringkasan harian (flitch aktif)</b>'),
+      ('Hasil yang seharusnya', 'per material: HG dan LG; per tujuan: R418, S340, S370; total rencana <b>19.175 t</b>, dan baris aktual bila as-mined flitch ini sudah dihitung')]) + """<p>Laporan pagi biasanya dirakit sendiri dari beberapa tabel. Node <b>Ringkasan harian (flitch aktif)</b> menyusunnya sekaligus, dalam satu halaman.</p>""" +
  kv([('Per material', 'jumlah dig block, ton, dan kadar <b>semua unsur</b> yang dicentang di <i>Elemen laporan</i>'),
      ('Per tujuan material', 'tabel yang sama, dikelompokkan menurut tujuan'),
      ('Rencana vs aktual', 'bila as-mined flitch itu sudah dihitung: ton rencana (dig block) vs aktual (as-mined), beserta selisih dan persennya'),
      ('Export', 'CSV satu berkas berisi ketiga bagian di atas')])
  + tip('Kalau as-mined flitch itu belum dihitung, bagian rencana vs aktual akan mengatakannya terang-terangan, bukan menampilkan nol. Untuk rekap beberapa hari sekaligus, pakai <b>Laporan periode</b>.'))
 
-ch('Rekap dig block: multi-unsur & centroid', """<p>Rekap dig block semua flitch (CSV) dulu hanya memuat <b>satu</b> kolom kadar. Untuk endapan ber-multi unsur, kolom lainnya harus diambil dari tempat lain.</p>
+ch('Rekap dig block: multi-unsur & centroid', dta('lanjutan &mdash; memerlukan kolom <code>S_PCT</code>, <code>ZN_PPM</code>, <code>CU_PPM</code>',
+     [('Prasyarat', 'centang unsurnya di <b>Elemen laporan</b> (Dig block)'),
+      ('Langkah', 'Dig Block &rarr; <b>Rekap semua flitch (CSV)</b>'),
+      ('Hasil yang seharusnya', '<b>120 baris</b> berkolom AU_GC, S_PCT, ZN_PPM, CU_PPM, Metal tiap unsur, Centroid_X, Centroid_Y')]) + """<p>Rekap dig block semua flitch (CSV) dulu hanya memuat <b>satu</b> kolom kadar. Untuk endapan ber-multi unsur, kolom lainnya harus diambil dari tempat lain.</p>
 <p>Sekarang rekap itu memuat <b>semua unsur</b> yang dicentang di <i>Elemen laporan</i>, <b>Metal</b> tiap unsur yang satuannya memungkinkan, serta <b>Centroid_X</b> dan <b>Centroid_Y</b> tiap dig block.</p>""" +
  kv([('Kolom', 'RL_atas, RL_bawah, Nama, Material, Tujuan, Luas_m2, Ton, &lt;tiap unsur&gt;, Metal_&lt;unsur&gt;, Centroid_X, Centroid_Y, Flag'),
      ('Centroid', 'titik berat poligon (bukan titik tengah kotak pembatas), dipakai dispatch / fleet system untuk menandai lokasi blok')]))
 
-ch('Pembobotan proporsi sub-blok (sb_frac)', """<p>Bila block model yang Anda pakai berasal dari <b>Model Estimation GC-Ex Drill Hole</b> dan pernah dipecah di batas solid (sub-blocking), setiap blok membawa kolom <code>sb_frac</code>: proporsi volume blok yang benar-benar berada di dalam solid.</p>
+ch('Pembobotan proporsi sub-blok (sb_frac)', dta('<code>data/SIM_BM_GC_estimasi.csv</code> &mdash; block model yang sama + kolom hasil Model Estimation Drill Hole (<code>est_pass</code>, <code>est_nsamp</code>, <code>est_sor</code>, <code>est_ke</code>, <code>est_type</code>, <code>sb_frac</code>, <code>domain_est</code>); <b>20,1%</b> blok ber-<code>sb_frac</code> &lt; 1',
+     [('Import', 'buka proyek baru, pilih <code>SIM_BM_GC_estimasi.csv</code> sebagai block model'),
+      ('Langkah', 'Reporting &rarr; jalankan sekali <b>dengan</b> centang proporsi, sekali <b>tanpa</b>'),
+      ('Hasil yang seharusnya', '<b>8,05 juta t</b> dengan pembobotan vs <b>10,75 juta t</b> tanpa &mdash; selisih ~25%')]) + """<p>Bila block model yang Anda pakai berasal dari <b>Model Estimation GC-Ex Drill Hole</b> dan pernah dipecah di batas solid (sub-blocking), setiap blok membawa kolom <code>sb_frac</code>: proporsi volume blok yang benar-benar berada di dalam solid.</p>
 <p>Reporting Block Model kini <b>menimbang</b> tonase dan volume dengan angka itu, jadi blok di perbatasan dihitung <b>sebagian</b>. Pilihannya hanya muncul bila atribut itu ada, dan bisa dimatikan (blok dihitung utuh, cara Surpac).</p>""" +
  why('Tanpa pembobotan ini, block model yang <b>sama</b> memberi tonase yang <b>berbeda</b> antara laporan di Drill Hole dan di Block Model &mdash; justru dilusi batas yang sudah diukur dengan susah payah menjadi hilang. Pada data latihan <code>SIM_BM_GC_estimasi.csv</code> (20,1% blok sebagian), selisihnya sekitar <b>25%</b>: 8,05 juta ton dengan pembobotan vs 10,75 juta ton tanpa pembobotan.')
  + tip('Latihannya: import <code>data/SIM_BM_GC_estimasi.csv</code>, buka Reporting, jalankan sekali dengan centang <b>Timbang volume &amp; tonase dengan proporsi sub-blok</b> dan sekali tanpa centang, lalu bandingkan.'))
 
-ch('Laporan grade × tonase', steps(
+ch('Laporan grade × tonase', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75',
+     [('Flitch', 'RL 241,25 &ndash; 238,75'),
+      ('Hasil yang seharusnya', '<b>19.175 t</b> @ <b>4,58</b> g/t dari 68 dig block')]) + steps(
  'Project Tree &rarr; <b>Laporan Grade × Tonnage &rarr; Running grade &amp; tonnage</b> ([[laporan_flitch]]): ton, kadar dan metal per dig block flitch aktif, dikelompokkan per tujuan.',
  '<b>Elemen laporan &amp; kadar tonase</b>: centang unsur tambahan (S_PCT, ZN_PPM, CU_PPM) agar ikut tabel, CSV, PDF dan register.')
  + fig('laporan_flitch', 'Running grade &amp; tonnage flitch aktif.'))
 
-ch('Review flitch per flitch di Project Tree', f"""<p>Setiap menu punya node <b>Per flitch</b> yang dihitung dari poligon tersimpan; flitch aktif tidak berubah saat menghitung. Kerjakan flitch kedua (RL atas {R0[0]}) dengan langkah yang sama, lalu tinjau keduanya.</p>"""
+ch('Review flitch per flitch di Project Tree', dta('lanjutan &mdash; dua flitch',
+     [('Flitch kedua', 'RL atas <b>295</b> &rarr; flitch <b>RL 295 &ndash; 292,5</b>, lalu <b>Buat dig block otomatis</b> lagi'),
+      ('Hasil yang seharusnya', 'RL 295&ndash;292,5: <b>52</b> dig block, 9.100 t @ 1,50 &middot; RL 241,25&ndash;238,75: <b>68</b> dig block, 19.175 t @ 4,58'),
+      ('Rekap semua flitch (CSV)', '<b>120 baris</b> dig block')]) + f"""<p>Setiap menu punya node <b>Per flitch</b> yang dihitung dari poligon tersimpan; flitch aktif tidak berubah saat menghitung. Kerjakan flitch kedua (RL atas {R0[0]}) dengan langkah yang sama, lalu tinjau keduanya.</p>"""
  + steps('<b>Dig Block &rarr; Per flitch</b> ([[pertree_digblock]]): tiap flitch menampilkan jumlah DB dan ton @ kadar. Buka satu flitch: daftar poligon dengan ton @ kadar dan &#9873; flag ([[pertree_digblock_flitch]]).',
    'Klik poligon: flitch-nya dibuka di Sayatan 2D dan poligon disorot ([[pertree_digblock_2d]]). Menu &hellip;: <b>Edit bentuk</b>, <b>Hapus</b>.',
    '<b>Laporan Grade × Tonnage &rarr; Per flitch</b> ([[pertree_laporan]]): ton @ kadar per flitch dan per material &rarr; tujuan. <b>Rekap semua flitch (CSV)</b>: satu baris per dig block di semua flitch.')
@@ -163,7 +213,11 @@ ch('Review flitch per flitch di Project Tree', f"""<p>Setiap menu punya node <b>
 ch('Layout & ekspor dig plan', steps('Project Tree &rarr; <b>Layout &amp; Ekspor Dig Plan &rarr; Layout &amp; plot PDF</b> ([[layout]]): judul, skala, elemen laporan, tabel tonase; PDF siap cetak.',
  '<b>Export STR / DXF (Surpac)</b> untuk string dig block; <b>Simpan gambar PNG</b> untuk tampilan saat ini.') + fig('layout', 'Layout &amp; plot PDF.'))
 
-ch('As-mined: rencana vs aktual', """<p>Sesudah penambangan, batas aktual dicatat sebagai <b>poligon as-mined</b> (pick-up survey, file STR / DXF / CSV, atau digit manual) lalu dihitung dengan model GC + koreksi sampel. Di latihan ini poligon aktual dibuat dari dig block yang bergeser 0,6 m (simulasi penggalian).</p>"""
+ch('As-mined: rencana vs aktual', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75',
+     [('Poligon aktual', 'di latihan ini dibuat dari dig block <b>HG</b> dan <b>LG</b> yang digeser <b>+0,6 m</b> ke timur dan <b>&minus;0,4 m</b> ke utara (simulasi penggalian)'),
+      ('Jumlah poligon', '<b>68</b>'),
+      ('Tanggal &amp; shift', 'isi di <b>Default poligon berikutnya</b> &mdash; mis. tanggal hari ini dan <b>DS &middot; Siang</b>; dipakai <b>Laporan periode</b>'),
+      ('Hasil yang seharusnya', 'rencana <b>19.175 t</b> @ 4,58 vs aktual <b>19.152 t</b> @ 3,99')]) + """<p>Sesudah penambangan, batas aktual dicatat sebagai <b>poligon as-mined</b> (pick-up survey, file STR / DXF / CSV, atau digit manual) lalu dihitung dengan model GC + koreksi sampel. Di latihan ini poligon aktual dibuat dari dig block yang bergeser 0,6 m (simulasi penggalian).</p>"""
  + steps('Project Tree &rarr; <b>As-Mined &rarr; Poligon, pick-up &amp; lantai</b>: import pick-up / boundary atau digit manual ([[asmined_poligon]]).',
    f"<b>As-Mined &rarr; Per flitch</b> ([[pertree_asmined]]): tiap flitch menampilkan selisih <b>&Delta;</b>; di dalamnya <b>Rencana (dig block)</b> dan <b>Aktual (as-mined)</b> beserta poligon. Flitch RL {AV[0]} – {AV[1]}: rencana {fN(AV[2])} t @ {fN(AV[3],2)}, aktual {fN(AV[5])} t @ {fN(AV[6],2)}.",
    'Klik flitch: dibuka di Sayatan 2D dengan dig block (rencana) dan poligon as-mined (aktual) bertumpuk ([[asmined_review_2d]]).')
@@ -171,7 +225,12 @@ ch('As-mined: rencana vs aktual', """<p>Sesudah penambangan, batas aktual dicata
  + fig('asmined_review_2d', 'Rencana (dig block) dan aktual (as-mined) bertumpuk.')
  + why('Kadar aktual lebih rendah karena poligon aktual bergeser keluar dari vein sempit: dilusi. Inilah yang ingin dilihat rekonsiliasi flitch per flitch.'))
 
-ch('Laporan periode: mingguan & bulanan', """<p>Node <b>Laporan periode (mingguan / bulanan)</b> di bawah <b>Register &amp; Laporan As-Mined</b> menjumlahkan apa yang <b>benar-benar tergali</b> dalam satu rentang tanggal, dari register as-mined.</p>""" +
+ch('Laporan periode: mingguan & bulanan', dta('register as-mined dari bab sebelumnya &mdash; tidak ada berkas yang diimpor',
+     [('Prasyarat', 'poligon as-mined sudah punya <b>tanggal</b> dan <b>shift</b>'),
+      ('Latihan cepat', 'buat poligon di <b>dua flitch</b> dengan <b>tanggal berbeda</b>, satu DS dan satu NS'),
+      ('Periode', '<b>Bulan ini</b>'),
+      ('Kelompokkan', 'coba <b>per tanggal</b>, lalu <b>per shift</b>, lalu <b>per flitch</b>'),
+      ('Target', 'isi mis. <b>30.000</b> ton untuk melihat persen pencapaiannya')]) + """<p>Node <b>Laporan periode (mingguan / bulanan)</b> di bawah <b>Register &amp; Laporan As-Mined</b> menjumlahkan apa yang <b>benar-benar tergali</b> dalam satu rentang tanggal, dari register as-mined.</p>""" +
  kv([('Periode cepat', 'Minggu ini &middot; Minggu lalu &middot; Bulan ini &middot; Bulan lalu &middot; Kustom (dari&ndash;sampai)'),
      ('Kelompokkan', 'per tanggal, per minggu, per <b>shift (DS / NS)</b>, per flitch, per tujuan material, per kode ore, atau per pit'),
      ('Isi tabel', 'jumlah poligon, ton, BCM, dan kadar semua unsur terpilih &mdash; kadar <b>ditimbang tonase</b>'),
