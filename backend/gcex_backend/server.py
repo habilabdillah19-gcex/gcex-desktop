@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, access_io, core_dh, core_forms, core_io, core_qaqc, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_segs, excel_io, geostat, krige, mdl_io, xlsx_patch
+from . import __version__, access_io, core_dh, core_forms, core_io, core_qaqc, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_segs, excel_io, geostat, krige, mdl_io, subblok, xlsx_patch
 
 log = logging.getLogger("gcex")
 app = FastAPI(title="GC-Ex Backend", version=__version__)
@@ -173,6 +173,12 @@ async def geostat_vario(request: Request) -> dict:
 async def geostat_krige(request: Request) -> dict:
     """Ordinary Kriging sejumlah blok (pass berurutan, sistem diselesaikan berkelompok)."""
     return krige.run(await request.json())
+
+
+@app.post("/geostat/subblok")
+async def geostat_subblok(request: Request) -> dict:
+    """Proporsi volume ore per blok (sb_frac), uji menyeberang batas solid, atau pecah blok."""
+    return subblok.run(await request.json())
 
 
 @app.post("/mdl/open")
