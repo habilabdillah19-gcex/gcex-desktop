@@ -1,6 +1,6 @@
 """Model 3D (fotogrametri) dinding singkapan — jendela kerja dari ruang kerja Singkapan (DB-Ex versi Qt).
 
-Kiri: foto model (3–10). Tengah: foto terpilih (klik titik cat RTK / titik pengukuran). Kanan: tab Titik RTK (tabel Nama, E,
+Kiri: foto model (3–100; drone 50+). Tengah: foto terpilih (klik titik cat RTK / titik pengukuran). Kanan: tab Titik RTK (tabel Nama, E,
 N, RL — tempel dari Excel / CSV, deteksi titik cat otomatis, galat per titik), Ukur bidang (dip / arah dip / strike
 sebenarnya dari titik yang diklik di sepanjang jejak / di satu bidang tersingkap) dan Tampilan (denah & tampak awan titik,
 ekspor CSV / STR / PLY). Backend: /core/outcrop/m3d/* (core_oc3d)."""
@@ -9,7 +9,7 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QIcon, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFileDialog, QGraphicsObject, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
                                QListWidget, QListWidgetItem, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout,
@@ -172,8 +172,8 @@ class Model3DDialog(Dlg):
         top = QHBoxLayout()
         self.cbM = QComboBox()
         self.cbM.setMinimumWidth(240)
-        self.bNew = btn("+ Model baru…", f"Pilih 3–10 foto satu dinding (berjalan sejajar dinding, tumpang-tindih ±70 %, tanpa zoom)", pri=True, sm=True)
-        self.bBuild = btn("Bangun model 3D", "Fitur SIFT, pencocokan antar foto, rekonstruksi kamera & awan titik (±1 menit per 10 foto)", sm=True)
+        self.bNew = btn("+ Model baru…", "Pilih 3–100 foto satu dinding / lantai (HP: berjalan sejajar dinding; drone: jalur terbang sejajar; tumpang-tindih ±70 %, tanpa zoom)", pri=True, sm=True)
+        self.bBuild = btn("Bangun model 3D", "Fitur SIFT, pencocokan antar foto, rekonstruksi kamera & awan titik (±1 menit untuk 10 foto, ±3–10 menit untuk 60 foto drone)", sm=True)
         self.bDelM = btn("Hapus model", sm=True)
         self.st = QLabel()
         self.st.setObjectName("note")
@@ -189,7 +189,7 @@ class Model3DDialog(Dlg):
         self.lst.setMaximumWidth(200)
         sp.addWidget(self.lst)
         self.view = OcView()
-        self.view.placeholder("Buat model baru dari 3–10 foto satu dinding.")
+        self.view.placeholder("Buat model baru dari 3–100 foto satu dinding / lantai.")
         self.ov = Overlay(self)
         self.tool = Tool(self)
         self.view.set_tool(self.tool)
@@ -364,8 +364,8 @@ class Model3DDialog(Dlg):
         for b in (self.bBuild, self.bDelM, self.bGPaste, self.bGCsv, self.bGDet, self.bGDel, self.bMeas, self.bMDel):
             b.setEnabled(has and not self.busy)
         if not has:
-            self.st.setText("Belum ada model. <b>+ Model baru…</b> lalu pilih 3–10 foto satu dinding.")
-            self.view.placeholder("Buat model baru dari 3–10 foto satu dinding.")
+            self.st.setText("Belum ada model. <b>+ Model baru…</b> lalu pilih 3–100 foto satu dinding / lantai.")
+            self.view.placeholder("Buat model baru dari 3–100 foto satu dinding / lantai.")
             return
         rec, geo = m.get("recon"), m.get("georef") or {}
         if rec:
@@ -374,7 +374,7 @@ class Model3DDialog(Dlg):
             if geo.get("method") == "rtk":
                 t += f" · <b style='color:#2f9e44'>georef RTK</b> ({geo['n']} titik, RMS <b>{geo['rms']:.3f} m</b>)"
             elif geo.get("method") == "gps":
-                t += f" · <b style='color:#B7791F'>georef GPS HP (kasar, RMS {geo['rms']:.1f} m)</b>"
+                t += f" · <b style='color:#B7791F'>georef GPS kamera (kasar, RMS {geo['rms']:.1f} m)</b>"
             else:
                 t += " · <b style='color:#C0392B'>belum berskala</b>"
         else:
@@ -391,14 +391,17 @@ class Model3DDialog(Dlg):
         self.hint()
 
     def new_model(self) -> None:
-        fs, _ = QFileDialog.getOpenFileNames(self, "Foto satu dinding untuk model 3D (3–10)", SET.get("m3dDir", str(Path.home())),
+        fs, _ = QFileDialog.getOpenFileNames(self, "Foto satu dinding / lantai untuk model 3D (3–100)", SET.get("m3dDir", str(Path.home())),
                                              "Foto (*.jpg *.jpeg *.png *.tif *.tiff)")
         if not fs:
             return
         SET.set("m3dDir", str(Path(fs[0]).parent))
         name = Path(fs[0]).parent.name
+        link = self.pg._ask_link(fs)
+        if link is None:
+            return
         try:
-            j = api.call("/core/outcrop/m3d/create", {"folder": self.folder, "name": name, "paths": fs, "by": self.pg.by()})
+            j = api.call("/core/outcrop/m3d/create", {"folder": self.folder, "name": name, "paths": fs, "by": self.pg.by(), "link": link})
         except api.ApiError as e:
             say(self, str(e), warn=True)
             return
@@ -406,7 +409,7 @@ class Model3DDialog(Dlg):
         self.info.setText(f"Model <b>{_esc(j['model']['name'])}</b> dibuat dari {len(fs)} foto. Klik <b>Bangun model 3D</b>.")
 
     def delete_model(self) -> None:
-        if not self.m or not ask(self, f"Hapus model 3D \"{self.m['name']}\" beserta salinan fotonya?"):
+        if not self.m or not ask(self, f"Hapus model 3D \"{self.m['name']}\" beserta salinan fotonya?" + ("\n\nFoto tertaut di folder aslinya tidak dihapus." if self.m.get("linked") else "")):
             return
         api.call("/core/outcrop/m3d/delete", {"folder": self.folder, "id": self.m["id"]})
         self.reload()
@@ -416,10 +419,24 @@ class Model3DDialog(Dlg):
             return
         self.busy = True
         self.refresh()
-        self.st.setText("Membangun model 3D… (fitur, pencocokan, rekonstruksi; ±1 menit per 10 foto)")
+        self.st.setText("Membangun model 3D… (fitur, pencocokan, rekonstruksi; ±1 menit untuk 10 foto, ±3–10 menit untuk 60 foto drone)")
         mid = self.m["id"]
+        base = self.st.text()
+        tm = QTimer(self)
+
+        def tick():
+            try:
+                msg = api.call("/core/outcrop/m3d/progress", {"folder": self.folder, "id": mid})["msg"]
+            except api.ApiError:
+                msg = ""
+            if self.busy and msg:
+                self.st.setText(base + "<br><b>" + _esc(msg) + "</b>")
+        tm.timeout.connect(tick)
+        tm.start(1000)
+        self._prog_timer = tm
 
         def ok(j):
+            tm.stop()
             self.busy = False
             self.m = j["model"]
             k = self.cbM.findData(mid)
@@ -430,6 +447,7 @@ class Model3DDialog(Dlg):
             log("[model3d] dibangun", mid, j["model"]["recon"]["n_points"])
 
         def err(e):
+            tm.stop()
             self.busy = False
             self.open_model(mid)
             say(self, "Model 3D gagal dibangun:\n" + e, warn=True)
@@ -638,7 +656,7 @@ class Model3DDialog(Dlg):
                                f"aturan tangan kanan) · pusat E {e:,.2f} N {n:,.2f} RL {z:,.2f} · RMS bidang {r['rms']:.3f} m · "
                                f"mutu <b style='color:{QCOL.get(r['quality'], '#141a26')}'>{r['quality']}</b>"
                                + (f" — {_esc(r['note'])}" if r.get("note") else "")
-                               + (" · <span style='color:#B7791F'>georef GPS HP (kasar)</span>" if r.get("georef") == "gps" else ""))
+                               + (" · <span style='color:#B7791F'>georef GPS kamera (kasar)</span>" if r.get("georef") == "gps" else ""))
         if self.img != me["img"] and 0 <= me["img"] < self.lst.count():
             self.lst.setCurrentRow(me["img"])
 

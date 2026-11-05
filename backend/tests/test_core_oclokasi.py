@@ -75,3 +75,46 @@ def test_exif_camera_crs_nearest_and_map(prj):
     assert loc["n_gps"] == 1 and len(loc["photos"]) == 2
     pytest.importorskip("matplotlib")
     assert L.map_png(s, p["id"])
+
+
+def test_drone_dji_xmp_link_floor_scale(prj):
+    """Foto drone gaya DJI Mavic 3 (FIKTIF): XMP gimbal / tinggi / RTK terbaca, jenis foto otomatis dari pitch gimbal,
+    foto tertaut tidak disalin & tidak dihapus, skala lantai otomatis dari tinggi terbang (bisa diganti isian geologist)."""
+    from buat_data_dummy import with_dji
+    d, tmp = prj
+    src = tmp / "drone"
+    src.mkdir()
+    Image.new("RGB", (5280, 3956), (120, 110, 100)).save(src / "plain.jpg")
+    with_dji(src / "plain.jpg", src / "DJI_0001_D.JPG", -5.5012, 117.3021, 355.2, 42.5, 75.0, -90.0, "2026-11-02 10:15:00")
+    with_dji(src / "plain.jpg", src / "DJI_0002_D.JPG", -5.5013, 117.3022, 330.0, 17.0, -100.0, -5.0, "2026-11-02 10:16:00", rtk=True)
+    ex = L.read_exif(src / "DJI_0001_D.JPG")
+    dj = ex["drone"]
+    assert dj["gimbal_pitch"] == -90 and dj["rel_alt"] == 42.5 and dj["abs_alt"] == 355.2 and dj["rtk_flag"] == 0
+    assert ex["heading"] == 75.0 and ex["heading_ref"] == "gimbal" and ex["alt"] == 355.2 and ex["f35"] == 24
+    assert L.drone_kind(ex) == "floor" and L.drone_kind(L.read_exif(src / "DJI_0002_D.JPG")) == "wall"
+    ex2 = L.read_exif(src / "DJI_0002_D.JPG")
+    assert ex2["heading"] == 260.0 and ex2["hacc"] == 0.012 and ex2["drone"]["rtk_flag"] == 50
+    assert L.read_dji_xmp(src / "plain.jpg") == {}
+    s = O.store(str(d))
+    n_before = len(list(s.photos.iterdir()))
+    p1 = O.add_photo(s, str(src / "DJI_0001_D.JPG"), "Rina", link=True)
+    p2 = O.add_photo(s, str(src / "DJI_0002_D.JPG"), "Rina", link=True)
+    assert p1["linked"] and len(list(s.photos.iterdir())) == n_before and O.photo_path(s, p1["id"]) == (src / "DJI_0001_D.JPG").resolve()
+    with pytest.raises(ValueError, match="sudah ada"):
+        O.add_photo(s, str(src / "DJI_0001_D.JPG"), "Rina", link=True)
+    assert p1["desc"]["photo_type"] == "floor" and p2["desc"]["photo_type"] == "wall" and p1["w"] == 5280
+    cam = L.camera(s, O.photo(s, p1["id"]), cols=[])
+    assert cam["drone"]["gimbal_pitch"] == -90 and any("RTK" in w for w in cam["warn"])
+    assert L.camera(s, O.photo(s, p2["id"]), cols=[])["rtk"] == "RTK fix"
+    # skala lantai: 42,5 m x 36 / (24 x 5280) = 12,07 mm / piksel
+    sc = O.scale_info(s, p1["id"])
+    assert sc["m_per_px"] == pytest.approx(42.5 * 36 / (24 * 5280)) and sc["drone"]["source"] == "tinggi relatif drone"
+    assert O.scale_info(s, p2["id"]) is None  # dinding: tidak ada skala otomatis
+    O.update_photo(s, p1["id"], {"info": {"h_floor": 30.0}}, "Rina")
+    assert O.scale_info(s, p1["id"])["m_per_px"] == pytest.approx(30 * 36 / (24 * 5280))
+    # garis skala tetap diutamakan
+    O.save_feature(s, p1["id"], None, {"kind": "skala", "pts": [[0, 0.5], [1, 0.5]], "attrs": {"length_m": 50}}, "Rina")
+    assert O.scale_info(s, p1["id"])["m_per_px"] == pytest.approx(50 / 5280) and not O.scale_info(s, p1["id"]).get("drone")
+    # hapus foto tertaut: file asli tetap ada
+    O.delete_photo(s, p1["id"], "Rina")
+    assert (src / "DJI_0001_D.JPG").exists()

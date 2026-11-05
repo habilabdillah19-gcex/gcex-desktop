@@ -52,6 +52,35 @@ def _txt(v: Any) -> str:
     return str(v or "").strip().strip("\x00")
 
 
+DJI_KEYS = {"AbsoluteAltitude": "abs_alt", "RelativeAltitude": "rel_alt", "GimbalYawDegree": "gimbal_yaw",
+            "GimbalPitchDegree": "gimbal_pitch", "GimbalRollDegree": "gimbal_roll", "FlightYawDegree": "flight_yaw",
+            "RtkFlag": "rtk_flag", "RtkStdLon": "rtk_std_e", "RtkStdLat": "rtk_std_n", "RtkStdHgt": "rtk_std_h"}
+
+
+def read_dji_xmp(path: Path) -> dict:
+    """Metadata drone DJI (Mavic 3 / 3E, Phantom 4 RTK, Matrice) dari paket XMP di kepala JPEG: tinggi absolut & relatif
+    terhadap titik lepas landas, yaw / pitch / roll gimbal, status & ketelitian RTK. {} bila bukan foto DJI."""
+    try:
+        with open(path, "rb") as fh:
+            head = fh.read(256 * 1024)
+    except OSError:
+        return {}
+    i = head.find(b"<x:xmpmeta")
+    if i < 0 or b"drone-dji" not in head:
+        return {}
+    j = head.find(b"</x:xmpmeta>", i)
+    xmp = head[i:j if j > 0 else len(head)].decode("utf-8", "ignore")
+    raw = dict(re.findall(r'drone-dji:(\w+)="([^"]*)"', xmp))
+    raw.update(re.findall(r"<drone-dji:(\w+)>([^<]*)</drone-dji:\w+>", xmp))
+    out: dict[str, Any] = {}
+    for k, nk in DJI_KEYS.items():
+        try:
+            out[nk] = round(float(str(raw[k]).strip()), 3)
+        except (KeyError, ValueError):
+            pass
+    return out
+
+
 def read_exif(path: Path) -> dict:
     """Metadata lokasi & kamera dari file foto. Kunci yang tidak ada tidak diisi; {} bila tidak ada EXIF."""
     from PIL import Image
@@ -97,7 +126,38 @@ def read_exif(path: Path) -> dict:
             if hd is not None:
                 out["heading"] = round(hd % 360, 1)
                 out["heading_ref"] = "magnetik" if _txt(gps.get(16)).upper() == "M" else "sejati"
+    dj = read_dji_xmp(path)
+    if dj:
+        out["drone"] = dj
+        if out.get("heading") is None and dj.get("gimbal_yaw") is not None:
+            out["heading"] = round(dj["gimbal_yaw"] % 360, 1)
+            out["heading_ref"] = "gimbal"
+        if dj.get("abs_alt") is not None:
+            out["alt"] = dj["abs_alt"]
+        if dj.get("rtk_flag") == 50 and dj.get("rtk_std_e") is not None:
+            out["hacc"] = round(max(dj.get("rtk_std_e") or 0, dj.get("rtk_std_n") or 0), 3)
     return out
+
+
+def drone_kind(ex: dict) -> Optional[str]:
+    """Jenis foto dari sudut gimbal drone: menunduk tajam = lantai (floor), mendatar = dinding (wall)."""
+    p = ((ex or {}).get("drone") or {}).get("gimbal_pitch")
+    if p is None:
+        return None
+    return "floor" if p <= -60 else ("wall" if p >= -40 else None)
+
+
+def drone_floor_scale(ex: dict, w: int, h: int, h_floor: Optional[float] = None) -> Optional[dict]:
+    """Skala foto lantai dari drone yang menunduk tegak: meter per piksel = tinggi kamera di atas lantai x 36 mm /
+    (fokus ekuivalen 35 mm x sisi panjang piksel). Tinggi = isian geologist, atau tinggi relatif drone (anggap lantai
+    setinggi titik lepas landas). Perkiraan: lantai dianggap datar & tegak lurus sumbu kamera."""
+    dj = (ex or {}).get("drone") or {}
+    p, f35 = dj.get("gimbal_pitch"), (ex or {}).get("f35")
+    H = h_floor if h_floor else dj.get("rel_alt")
+    if p is None or p > -75 or not f35 or not H or H <= 0:
+        return None
+    mpp = H * 36.0 / (f35 * max(w, h))
+    return {"m_per_px": mpp, "height_m": round(H, 2), "source": "isian" if h_floor else "tinggi relatif drone", "pitch": p}
 
 
 # ================================================================ WGS84 -> UTM (Krüger)
@@ -186,6 +246,11 @@ def on_add(s: O.Store, pid: int) -> None:
     if ex.get("taken") and (not r.get("taken") or re.match(r"^\d{4}:\d{2}:\d{2}", r.get("taken") or "")):
         with s.lock, s.conn() as c:
             c.execute("UPDATE photos SET taken=? WHERE id=?", (ex["taken"], pid))
+    k = drone_kind(ex)
+    if k and not (r.get("desc") or {}).get("photo_type"):
+        desc = dict(r.get("desc") or {}, photo_type=k)
+        with s.lock, s.conn() as c:  # isian otomatis (bukan suntingan geologist), AI / geologist boleh mengubah
+            c.execute("UPDATE photos SET desc_json=? WHERE id=?", (json.dumps(desc, ensure_ascii=False), pid))
 
 
 def _collars(folder: str) -> list[dict]:
@@ -210,6 +275,13 @@ def camera(s: O.Store, r: dict, cr: Optional[dict] = None, cols: Optional[list] 
     cam = {"e": round(E, 2), "n": round(N, 2), "rl": ex.get("alt"), "hacc": ex.get("hacc"), "heading": ex.get("heading"),
            "heading_ref": ex.get("heading_ref"), "zone": f"{z}{'S' if south else 'N'}", "taken": ex.get("taken"), "tz": ex.get("tz"),
            "camera": ex.get("camera"), "f35": ex.get("f35"), "warn": []}
+    dj = ex.get("drone")
+    if dj:
+        cam["drone"] = dj
+        if dj.get("rtk_flag") is not None:
+            cam["rtk"] = {50: "RTK fix", 34: "RTK float", 16: "GPS tunggal"}.get(int(dj["rtk_flag"]), f"status {int(dj['rtk_flag'])}")
+        if dj.get("rtk_flag") != 50:
+            cam["warn"].append("Posisi drone tanpa RTK fix: ±1–5 m (GPS biasa).")
     if utm_zone(ex["lon"]) != z:
         cam["warn"].append(f"Foto berada di zona UTM {utm_zone(ex['lon'])}, dihitung di zona proyek {z} (distorsi sedikit lebih besar).")
     if cam["hacc"] and cam["hacc"] > 15:

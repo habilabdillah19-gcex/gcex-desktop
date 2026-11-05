@@ -45,7 +45,7 @@ def test_model3d_dialog(qtbot, prj, tmp_path, monkeypatch):
     assert d.m["name"] == "Dinding_M01" and d.lst.count() == 10 and "Belum dibangun" in d.st.text()
     d.build()
     qtbot.waitUntil(lambda: not d.busy and bool(d.m.get("recon")), timeout=300000)
-    assert "georef GPS HP" in d.st.text() and d.m["recon"]["n_cams"] == 10
+    assert "georef GPS kamera" in d.st.text() and d.m["recon"]["n_cams"] == 10
     # koordinat RTK ditempel dari CSV
     assert d.paste_gcps((src / "Titik_RTK_Dinding_M01.csv").read_text(encoding="utf-8")) == 5
     assert d.gT.rowCount() == 5 and d.gT.item(0, 4).text() == "0"

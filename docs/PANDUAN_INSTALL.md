@@ -874,6 +874,14 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - **Ukur bidang**: klik titik di sepanjang jejak vein / kekar / sesar yang melintasi permukaan tidak rata → **dip, arah dip, strike sebenarnya**, RMS dan mutu. Ekspor bidang (CSV, STR Surpac) dan awan titik (PLY).
 - Data latihan `Model_3D/Dinding_M01` (dinding sintetis fiktif, 10 foto, `Titik_RTK_Dinding_M01.csv`, `KUNCI_JAWABAN.txt`); tutorial Latihan 21; Panduan DB-Ex 6c butir 10.
 
+## 89. DB-Ex 0.42.0 — foto drone & Model 3D sampai 100 foto
+
+- **Foto drone DJI** (Mavic 3 / 3E, Phantom 4 RTK, Matrice): arah hadap (yaw gimbal), pitch gimbal, tinggi relatif / absolut dan status RTK dibaca dari metadata XMP. Jenis foto *lantai* / *dinding* terisi otomatis dari sudut gimbal.
+- **Skala otomatis foto lantai** dari tinggi terbang dan lensa (drone menunduk tegak): m², spasi kekar, Jv, RQD tanpa garis skala. Klik *ubah tinggi* di info kamera bila lantai tidak setinggi titik lepas landas.
+- **Tautkan, bukan salin**: menambah > 20 foto atau > 150 MB menawarkan *Tautkan* — foto tetap di folder aslinya (folder drone 6 GB tidak tersalin ulang). Folder asli jangan dipindah.
+- **Model 3D 3–100 foto** (sebelumnya maks. 10): 60 foto drone ±3 menit, memori puncak ±0,75 GB; kemajuan tampil selama pembangunan.
+- Panduan DB-Ex 6c butir 9 & 10, tutorial Latihan 21.
+
 ## 88. DB-Ex 0.41.0 — Legenda site & penyaring jejak AI
 
 - **Legenda site…** (dialog AI lokal dan tab Analisis Singkapan): isi istilah resmi proyek, yaitu litologi, alterasi, oksida / vein & mineralisasi, struktur, hal yang *bukan geologi* (bekas lubang ledak, pita ukur, cat) dan catatan lain. Tersimpan di folder proyek dan otomatis ikut ke semua prompt AI geologi: analisis core box, deskripsi & delineasi singkapan, label zona SAM, penyaring jejak.

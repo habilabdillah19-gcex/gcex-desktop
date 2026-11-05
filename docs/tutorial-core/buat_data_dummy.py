@@ -363,6 +363,26 @@ def m3d_cameras(n: int = 10) -> list[dict]:
     return cams
 
 
+def m3d_drone_cameras(per_row: int = 30, heights: tuple = (3.0, 7.0), dist: float = 8.0) -> list[dict]:
+    """Jalur terbang drone sejajar dinding (FIKTIF): beberapa baris ketinggian, kamera menghadap dinding (utara), jarak ±8 m,
+    gimbal sedikit menunduk / mendongak. Urutan: baris bawah kiri -> kanan, baris atas kanan -> kiri (pola lawn-mower)."""
+    cams = []
+    for r, hgt in enumerate(heights):
+        xs = np.linspace(0.8, 29.2, per_row)
+        for x in (xs if r % 2 == 0 else xs[::-1]):
+            y = -dist + 0.25 * math.sin(x * 0.9 + r)
+            yaw = math.radians(2.0 * math.sin(x * 0.4))
+            pitch = math.radians(12.0 if hgt < 5 else -8.0)
+            C = np.array([x, y, hgt])
+            fwd = np.array([math.sin(yaw) * math.cos(pitch), math.cos(yaw) * math.cos(pitch), math.sin(pitch)])
+            right = np.cross(fwd, [0, 0, 1.0])
+            right /= np.linalg.norm(right)
+            down = np.cross(fwd, right)
+            cams.append({"C": C, "R": np.vstack([right, down, fwd]), "heading": (math.degrees(math.atan2(fwd[0], fwd[1])) + 360) % 360,
+                         "pitch": math.degrees(pitch)})
+    return cams
+
+
 def m3d_render(tex: np.ndarray, cam: dict, W: int = 1600, H: int = 1200, f35: float = 24.0) -> np.ndarray:
     """Render satu foto: sinar per piksel -> perpotongan terdekat dengan bidang dinding -> warna tekstur (+ langit / lantai)."""
     f = f35 / 36.0 * W
@@ -418,6 +438,73 @@ def utm_to_ll(E: float, N: float, zone: int = 50, south: bool = True) -> tuple[f
         lat += (N - n) / 110574.0
         lon += (E - e) / (111320.0 * math.cos(math.radians(lat)))
     return lat, lon
+
+
+def with_dji(src: Path, dst: Path, lat: float, lon: float, abs_alt: float, rel_alt: float, yaw: float, pitch: float, taken: str,
+             rtk: bool = False) -> None:
+    """Salin foto dengan metadata gaya drone DJI Mavic 3 (FIKTIF): EXIF GPS tanpa arah hadap + paket XMP drone-dji
+    (tinggi absolut & relatif, yaw / pitch gimbal, status RTK). Dipakai uji otomatis & data latihan."""
+    import io as _io
+    from PIL.TiffImagePlugin import IFDRational
+
+    def dms(v):
+        v = abs(v)
+        d = int(v)
+        m = int((v - d) * 60)
+        sec = (v - d - m / 60) * 3600
+        return (IFDRational(d, 1), IFDRational(m, 1), IFDRational(round(sec * 10000), 10000))
+    with Image.open(src) as im:
+        im = im.convert("RGB")
+        ex = Image.Exif()
+        ex[271], ex[272] = "DJI", "L2D-20c"
+        ex[306] = taken.replace("-", ":")
+        sub = ex.get_ifd(0x8769)
+        sub[36867] = taken.replace("-", ":")
+        sub[0xA405] = 24
+        g = ex.get_ifd(0x8825)
+        g[1], g[2] = ("S" if lat < 0 else "N"), dms(lat)
+        g[3], g[4] = ("W" if lon < 0 else "E"), dms(lon)
+        g[5], g[6] = b"\x00", IFDRational(round(abs_alt * 1000), 1000)
+        b = _io.BytesIO()
+        im.save(b, "JPEG", quality=90, exif=ex)
+    flag, std = ("50", "0.012") if rtk else ("0", "")
+    xmp = ('<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF '
+           'xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="DJI Meta Data" '
+           'xmlns:drone-dji="http://www.dji.com/drone-dji/1.0/" '
+           f'drone-dji:AbsoluteAltitude="{abs_alt:+.3f}" drone-dji:RelativeAltitude="{rel_alt:+.3f}" '
+           f'drone-dji:GimbalRollDegree="+0.00" drone-dji:GimbalYawDegree="{((yaw + 180) % 360) - 180:+.2f}" '
+           f'drone-dji:GimbalPitchDegree="{pitch:+.2f}" drone-dji:FlightYawDegree="{((yaw + 180) % 360) - 180:+.2f}" '
+           f'drone-dji:RtkFlag="{flag}"' + (f' drone-dji:RtkStdLon="{std}" drone-dji:RtkStdLat="{std}" drone-dji:RtkStdHgt="0.020"' if rtk else "")
+           + '/></rdf:RDF></x:xmpmeta><?xpacket end="w"?>').encode()
+    payload = b"http://ns.adobe.com/xap/1.0/\x00" + xmp
+    data = b.getvalue()
+    seg = b"\xff\xe1" + (len(payload) + 2).to_bytes(2, "big") + payload
+    k = 2  # sisipkan XMP sesudah segmen APP0 / APP1 (EXIF) pertama
+    while data[k:k + 2] in (b"\xff\xe0", b"\xff\xe1"):
+        k += 2 + int.from_bytes(data[k + 2:k + 4], "big")
+    dst.write_bytes(data[:k] + seg + data[k:])
+
+
+def model3d_drone_data(out: Path, per_row: int = 30, W: int = 1600, H: int = 1200) -> Path:
+    """Folder Model_3D/Dinding_Drone_D01: foto drone FIKTIF dinding yang sama dengan Dinding_M01, dua jalur terbang
+    (tinggi 3 m & 7 m), metadata gaya DJI Mavic 3 (GPS ±2 m tanpa RTK, yaw / pitch gimbal di XMP)."""
+    d = out / "Model_3D" / "Dinding_Drone_D01"
+    d.mkdir(parents=True, exist_ok=True)
+    src = Path(__file__).resolve().parent / "aset" / "Dinding_Pit_C.jpg"
+    tex = np.asarray(Image.open(src).convert("RGB"))
+    tex = tex[int(tex.shape[0] * 0.25):int(tex.shape[0] * 0.75)]
+    tex = np.asarray(Image.fromarray(tex).resize((3000, 1000)))
+    E0, N0, RL0 = M3D_ORIGIN
+    rng = np.random.default_rng(33)
+    for i, cam in enumerate(m3d_drone_cameras(per_row), 1):
+        im = Image.fromarray(m3d_render(tex, cam, W, H))
+        tmp = d / f"_tmp_{i}.jpg"
+        im.save(tmp, quality=92)
+        lat, lon = utm_to_ll(E0 + cam["C"][0] + rng.normal(0, 1.5), N0 + cam["C"][1] + rng.normal(0, 1.5))
+        with_dji(tmp, d / f"DJI_{20261102101500 + i}_{i:04d}_D.JPG", lat, lon, RL0 + cam["C"][2] + rng.normal(0, 1.0),
+                 cam["C"][2] + 1.2, cam["heading"], cam["pitch"], f"2026-11-02 10:{15 + i // 6:02d}:{(i * 10) % 60:02d}")
+        tmp.unlink()
+    return d
 
 
 def model3d_data(out: Path, n: int = 10, W: int = 1600, H: int = 1200) -> Path:

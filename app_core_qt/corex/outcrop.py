@@ -12,10 +12,10 @@ from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QIcon, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout, QFrame, QGraphicsObject,
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout, QFrame, QGraphicsObject,
                                QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPlainTextEdit,
                                QPushButton, QScrollArea, QSizePolicy, QSpinBox, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget,
-                               QToolButton, QVBoxLayout, QWidget)
+                               QMessageBox, QToolButton, QVBoxLayout, QWidget)
 
 from . import api, oc_paint, theme
 from .card import _esc, btn
@@ -950,6 +950,7 @@ class OutcropPage(QWidget):
         self.locInfo.setObjectName("note")
         self.locInfo.setWordWrap(True)
         self.locInfo.setTextFormat(Qt.RichText)
+        self.locInfo.linkActivated.connect(lambda h: self.edit_hfloor() if h == "hfloor" else None)
         v.addWidget(self.locInfo)
         rl = QHBoxLayout()
         self.bLocMap = btn("Peta foto…", "Peta posisi kamera semua foto (GPS HP) bersama collar bor, dan tabel lokasinya", sm=True)
@@ -1623,11 +1624,13 @@ class OutcropPage(QWidget):
         return i
 
     def m_per_px(self) -> float | None:
-        """Skala foto: garis skala bila ada, kalau tidak dari georef (di tengah foto)."""
-        if self.scale:
-            return self.scale["m_per_px"]
+        """Skala foto: garis skala bila ada, kalau tidak dari georef (di tengah foto), kalau tidak dari tinggi drone (lantai)."""
         sol = self.geo_res.get("solution") or {}
-        return sol.get("m_per_px") if sol.get("ok") else None
+        if self.scale and not self.scale.get("drone"):
+            return self.scale["m_per_px"]
+        if sol.get("ok"):
+            return sol.get("m_per_px")
+        return self.scale["m_per_px"] if self.scale else None
 
     def m_per_unit(self) -> float | None:
         m = self.m_per_px()
@@ -1716,9 +1719,9 @@ class OutcropPage(QWidget):
         root = None
         for p in self.photos:
             it = QListWidgetItem(f"{p.get('title') or p['name']}\n{p['n_feat']} fitur" + (" · AI" if p["status"] == "done" else "")
-                                 + (" · file hilang" if p.get("missing") else ""))
+                                 + (" · tertaut" if p.get("linked") else "") + (" · file hilang" if p.get("missing") else ""))
             it.setData(Qt.UserRole, p["id"])
-            it.setToolTip(p["name"])
+            it.setToolTip(p["file"] if p.get("linked") else p["name"])
             self.lst.addItem(it)
             root = root or self._root()
             f = root / "foto" / p["file"] if root else None
@@ -1752,15 +1755,50 @@ class OutcropPage(QWidget):
         if not fs:
             return
         SET.set("ocLastDir", str(Path(fs[0]).parent))
-        last = None
-        for f in fs:
+        link = self._ask_link(fs)
+        if link is None:
+            return
+        from PySide6.QtWidgets import QProgressDialog
+        pd = QProgressDialog("Menambahkan foto…", "Batal", 0, len(fs), self)
+        pd.setWindowTitle("Tambah foto")
+        pd.setMinimumDuration(400)
+        last, errs = None, []
+        for k, f in enumerate(fs):
+            if pd.wasCanceled():
+                break
+            pd.setValue(k)
+            pd.setLabelText(f"{'Menautkan' if link else 'Menyalin'} {Path(f).name} ({k + 1}/{len(fs)})")
+            QApplication.processEvents()
             try:
-                last = api.call("/core/outcrop/add", {"folder": self.folder, "path": f, "by": self.by()})
+                last = api.call("/core/outcrop/add", {"folder": self.folder, "path": f, "by": self.by(), "link": link})
             except api.ApiError as e:
-                say(self, f"{Path(f).name}:\n{e}", warn=True)
+                errs.append(f"{Path(f).name}: {e}")
+        pd.setValue(len(fs))
+        if errs:
+            say(self, "\n".join(errs[:15]) + (f"\n… dan {len(errs) - 15} lainnya" if len(errs) > 15 else ""), warn=True)
         if last:
             self.reload(select=last["photo"]["id"])
-            self.toast(f"{len(fs)} foto ditambahkan ke proyek")
+            self.toast(f"{len(fs) - len(errs)} foto {'ditautkan' if link else 'ditambahkan'} ke proyek")
+
+    def _ask_link(self, fs: list[str]) -> bool | None:
+        """Salin ke proyek (bawaan, foto sedikit) atau tautkan ke file asli (foto drone besar). None = batal."""
+        size = sum(Path(f).stat().st_size for f in fs if Path(f).is_file())
+        if size < 150e6 and len(fs) <= 20:
+            return False
+        m = QMessageBox(self)
+        m.setWindowTitle("Tambah foto")
+        m.setIcon(QMessageBox.Question)
+        m.setText(f"<b>{len(fs)} foto, {size / 1e9:,.2f} GB.</b>")
+        m.setInformativeText("<b>Tautkan</b> (disarankan untuk foto drone): foto tetap di folder aslinya, proyek hanya menyimpan "
+                             "tautan — tidak memakan disk dua kali. Folder asli jangan dipindah / dihapus; rekan yang membuka proyek "
+                             "perlu akses ke folder yang sama.<br><br><b>Salin</b>: foto disalin ke folder proyek (aman dibagikan, "
+                             f"butuh ±{size / 1e9:,.1f} GB ruang tambahan).")
+        bl = m.addButton("Tautkan", QMessageBox.AcceptRole)
+        bc = m.addButton("Salin ke proyek", QMessageBox.AcceptRole)
+        m.addButton("Batal", QMessageBox.RejectRole)
+        m.setDefaultButton(bl)
+        m.exec()
+        return True if m.clickedButton() is bl else (False if m.clickedButton() is bc else None)
 
     def delete_photo(self) -> None:
         if not self.cur:
@@ -2644,10 +2682,26 @@ class OutcropPage(QWidget):
         if not c:
             self.locInfo.setText("<b>Kamera</b>: foto tanpa data GPS (metadata lokasi tidak ada / dibuang saat dikirim).")
             return
-        t = (f"<b>Kamera (GPS HP)</b> · {_esc(c['zone'])}: E <b>{c['e']:,.1f}</b> · N <b>{c['n']:,.1f}</b>"
-             + (f" · RL {c['rl']:,.1f}" if c.get("rl") is not None else "") + (f" · <b>±{c['hacc']:g} m</b>" if c.get("hacc") else ""))
+        dj = c.get("drone") or {}
+        t = (f"<b>Kamera ({'drone' if dj else 'GPS HP'})</b> · {_esc(c['zone'])}: E <b>{c['e']:,.1f}</b> · N <b>{c['n']:,.1f}</b>"
+             + (f" · RL {c['rl']:,.1f}" if c.get("rl") is not None else "") + (f" · <b>±{c['hacc']:g} m</b>" if c.get("hacc") else "")
+             + (f" · {_esc(c['rtk'])}" if c.get("rtk") else ""))
         if c.get("heading") is not None:
             t += f"<br>Menghadap <b>{c['heading']:.0f}°</b> ({_esc(c.get('heading_ref') or 'sejati')})"
+        if dj:
+            bits = []
+            if dj.get("gimbal_pitch") is not None:
+                p_ = dj["gimbal_pitch"]
+                bits.append(f"gimbal <b>{p_:.0f}°</b> ({'menunduk tegak: lantai' if p_ <= -60 else ('mendatar: dinding' if p_ >= -40 else 'miring')})")
+            if dj.get("rel_alt") is not None:
+                bits.append(f"tinggi dari titik lepas landas {dj['rel_alt']:,.1f} m")
+            t += "<br>Drone: " + " · ".join(bits)
+            ds = (self.scale or {}).get("drone")
+            if ds:
+                t += (f"<br>Skala otomatis lantai <b>{self.scale['m_per_px'] * 1000:.1f} mm / piksel</b> dari tinggi kamera "
+                      f"<b>{ds['height_m']:g} m</b> di atas lantai ({_esc(ds['source'])}) · <a href='hfloor'>ubah tinggi</a>")
+            elif (self.cur.get("desc") or {}).get("photo_type", "floor") == "floor" and (dj.get("gimbal_pitch") or 0) <= -75:
+                t += " · <a href='hfloor'>isi tinggi kamera di atas lantai</a> untuk skala otomatis"
         if c.get("nearest"):
             t += f" · lubang terdekat <b>{_esc(c['nearest']['hole'])}</b> ({c['nearest']['dist']:,.0f} m)"
         if c.get("georef_dist") is not None:
@@ -2657,6 +2711,27 @@ class OutcropPage(QWidget):
         for w_ in c.get("warn") or []:
             t += f"<br><span style='color:#B7791F'>⚠ {_esc(w_)}</span>"
         self.locInfo.setText(t)
+
+    def edit_hfloor(self) -> None:
+        """Tinggi kamera drone di atas lantai (m) untuk skala otomatis foto lantai. 0 = pakai tinggi relatif drone."""
+        if not self.cur:
+            return
+        from PySide6.QtWidgets import QInputDialog
+        dj = (self.cam or {}).get("drone") or {}
+        cur = (self.cur.get("info") or {}).get("h_floor") or dj.get("rel_alt") or 30.0
+        v, ok = QInputDialog.getDouble(self, "Tinggi kamera di atas lantai",
+                                       "Tinggi kamera drone di atas lantai yang difoto (m).\n"
+                                       "Tinggi relatif drone diukur dari titik lepas landas; bila lantai lebih rendah / tinggi,\n"
+                                       "isi selisihnya di sini (mis. dari RL drone − RL lantai). 0 = pakai tinggi relatif drone.",
+                                       float(cur), 0.0, 500.0, 2)
+        if not ok:
+            return
+        try:
+            api.call("/core/outcrop/update", {"folder": self.folder, "id": self.cur["id"], "values": {"info": {"h_floor": v or None}}, "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self.reload(select=self.cur["id"])
 
     def loc_crs(self) -> None:
         if not self.folder:
@@ -3071,7 +3146,7 @@ class OutcropPage(QWidget):
                 t += f"<br><span style='color:{mu}'>galat terbesar: {_esc(worst['name'])} {worst['err']:.3f} m</span>"
             for wn in sol.get("warn") or []:
                 t += f"<br><span style='color:{er}'>⚠ {_esc(wn)}</span>"
-            if self.scale:
+            if self.scale and not self.scale.get("drone"):
                 t += f"<br><span style='color:{mu}'>Bar skala memakai garis skala; ukuran fitur memakai georef.</span>"
         self.gRes.setText(t)
         ok = bool(sol and sol.get("ok"))

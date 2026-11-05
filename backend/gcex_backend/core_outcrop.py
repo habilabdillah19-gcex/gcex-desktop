@@ -193,6 +193,7 @@ def photos(s: Store) -> list[dict]:
         rows = [_row(r, cnt.get(r["id"], 0)) for r in c.execute("SELECT * FROM photos ORDER BY id")]
     for r in rows:
         r["missing"] = not (s.photos / r["file"]).exists()
+        r["linked"] = Path(r["file"]).is_absolute()
     return rows
 
 
@@ -204,6 +205,7 @@ def photo(s: Store, pid: int) -> dict:
         n = c.execute("SELECT COUNT(*) FROM features WHERE photo_id=?", (pid,)).fetchone()[0]
     d = _row(r, n)
     d["missing"] = not (s.photos / d["file"]).exists()
+    d["linked"] = Path(d["file"]).is_absolute()
     return d
 
 
@@ -211,15 +213,23 @@ def photo_path(s: Store, pid: int) -> Path:
     return s.photos / photo(s, pid)["file"]
 
 
-def add_photo(s: Store, src: str, by: str) -> dict:
+def add_photo(s: Store, src: str, by: str, link: bool = False) -> dict:
+    """Tambah foto. link=False: disalin ke folder proyek (ikut terbawa bila folder proyek dipindah / dibagikan).
+    link=True: hanya ditautkan ke file asli (foto drone besar: tidak memakan disk dua kali; folder asli harus tetap ada)."""
     sp = Path(src)
     if not sp.is_file():
         raise ValueError(f"File foto tidak ditemukan: {src}")
     if sp.suffix.lower() not in IMG_EXT:
         raise ValueError(f"{sp.name}: format foto tidak dikenali (JPG, PNG, TIFF, BMP, WEBP).")
-    try:
-        im = core_io._open_img(sp, 0)
-        w, h = im.size
+    try:  # ukuran tanpa men-decode seluruh piksel (foto drone 20 MP: cepat untuk ratusan foto)
+        from PIL import Image
+        Image.MAX_IMAGE_PIXELS = core_io._MAX_PX
+        with Image.open(sp) as im:
+            w, h = im.size
+            if im.getexif().get(274) in (5, 6, 7, 8):
+                w, h = h, w
+            im.draft("RGB", (64, 64))
+            im.load()
     except Exception as e:  # noqa: BLE001
         raise ValueError(f"{sp.name} tidak bisa dibuka sebagai foto: {e}") from e
     taken = None
@@ -231,16 +241,24 @@ def add_photo(s: Store, src: str, by: str) -> dict:
     except Exception:  # noqa: BLE001
         pass
     with s.lock:
-        name = sp.name
-        dst = s.photos / name
-        k = 2
-        while dst.exists():
-            dst = s.photos / f"{sp.stem}_{k}{sp.suffix}"
-            k += 1
-        shutil.copy2(sp, dst)
+        if link:
+            dst = sp.resolve()
+            with s.conn() as c:
+                if c.execute("SELECT 1 FROM photos WHERE file=?", (str(dst),)).fetchone():
+                    raise ValueError(f"{sp.name} sudah ada di proyek (tertaut).")
+            fname = str(dst)  # path absolut: s.photos / fname = file asli
+        else:
+            name = sp.name
+            dst = s.photos / name
+            k = 2
+            while dst.exists():
+                dst = s.photos / f"{sp.stem}_{k}{sp.suffix}"
+                k += 1
+            shutil.copy2(sp, dst)
+            fname = dst.name
         with s.conn() as c:
             cur = c.execute("INSERT INTO photos (file, name, src, w, h, title, taken, by, at) VALUES (?,?,?,?,?,?,?,?,?)",
-                            (dst.name, sp.name, str(sp), w, h, sp.stem, str(taken) if taken else None, by, core_io.now()))
+                            (fname, sp.name, str(sp), w, h, sp.stem, str(taken) if taken else None, by, core_io.now()))
             pid = cur.lastrowid
             c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
                       (pid, "foto", None, sp.name, "tambah", by, core_io.now()))
@@ -254,11 +272,14 @@ def add_photo(s: Store, src: str, by: str) -> dict:
 
 def delete_photo(s: Store, pid: int, by: str) -> None:
     f = photo_path(s, pid)
+    linked = photo(s, pid)["linked"]
     with s.lock, s.conn() as c:
         c.execute("DELETE FROM features WHERE photo_id=?", (pid,))
         c.execute("DELETE FROM photos WHERE id=?", (pid,))
         c.execute("INSERT INTO history (photo_id, what, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
                   (pid, "foto", f.name, None, "hapus", by, core_io.now()))
+    if linked:  # foto tertaut: file asli (mis. folder drone) TIDAK dihapus
+        return
     try:
         f.unlink()
     except OSError:
@@ -768,6 +789,14 @@ def scale_info(s: Store, pid: int, r: Optional[dict] = None) -> Optional[dict]:
             px += (((b[0] - a[0]) * r["w"]) ** 2 + ((b[1] - a[1]) * r["h"]) ** 2) ** 0.5
         if px > 1:
             best = {"feature": f["id"], "m_per_px": f["attrs"]["length_m"] / px, "length_m": f["attrs"]["length_m"], "px": px}
+    if best is None and (r.get("desc") or {}).get("photo_type", "floor") == "floor":
+        try:  # foto lantai dari drone yang menunduk tegak: skala dari tinggi terbang & lensa
+            from . import core_oclokasi as L
+            ds = L.drone_floor_scale(L._exif_of(s, r), r["w"], r["h"], (r.get("info") or {}).get("h_floor"))
+        except Exception:  # noqa: BLE001
+            ds = None
+        if ds:
+            best = {"feature": None, "m_per_px": ds["m_per_px"], "length_m": None, "px": None, "drone": ds}
     return best
 
 
@@ -779,6 +808,7 @@ class FBody(BaseModel):
 
 class AddBody(FBody):
     path: str
+    link: bool = False
 
 
 class PidBody(FBody):
@@ -837,7 +867,7 @@ def api_open(b: FBody) -> dict:
 @router.post("/add")
 def api_add(b: AddBody) -> dict:
     s = store(b.folder)
-    return {"ok": True, "photo": add_photo(s, b.path, b.by), "summary": _summary(s)}
+    return {"ok": True, "photo": add_photo(s, b.path, b.by, b.link), "summary": _summary(s)}
 
 
 @router.post("/photo")

@@ -1,6 +1,6 @@
 """Model 3D dinding dari beberapa foto (fotogrametri / Structure-from-Motion) untuk DB-Ex Singkapan (Fase 2b).
 
-Alur: 3–10 foto satu dinding (berjalan sejajar dinding, tumpang-tindih ±70 %) -> fitur SIFT & pencocokan antar foto
+Alur: 3–100 foto satu dinding / lantai (HP: berjalan sejajar dinding; drone: jalur terbang sejajar, tumpang-tindih ±70 %) -> fitur SIFT & pencocokan antar foto
 (diverifikasi matriks esensial) -> rekonstruksi bertahap (pasangan awal, PnP untuk foto berikutnya, triangulasi) ->
 penghalusan bergantian kamera / titik (pengganti bundle adjustment ringan) -> awan titik 3D.
 
@@ -30,9 +30,10 @@ from . import core_io
 from . import core_outcrop as O
 
 router = APIRouter(prefix="/core/outcrop/m3d", tags=["core-outcrop-model3d"])
-MAX_PHOTOS = 10
+MAX_PHOTOS = 100      # drone: 50+ foto satu dinding / lantai (memori puncak ±1,5 GB pada 100 foto)
 WORK_SIDE = 1600       # sisi panjang foto untuk fitur & rekonstruksi (koordinat disimpan dalam piksel ukuran ini)
 _LOCK = threading.RLock()
+PROGRESS: dict[str, str] = {}  # "folder|id" -> pesan kemajuan build
 
 
 def _cv2():
@@ -81,8 +82,9 @@ def models(s: O.Store) -> list[dict]:
     return out
 
 
-def create(s: O.Store, name: str, paths: list[str], by: str) -> dict:
-    """Model baru: foto disalin ke _GCEx_Core/singkapan/model3d/mNNN/foto (maks. 10), metadata GPS HP ikut dibaca."""
+def create(s: O.Store, name: str, paths: list[str], by: str, link: bool = False) -> dict:
+    """Model baru: foto disalin ke _GCEx_Core/singkapan/model3d/mNNN/foto, atau (link=True, foto drone) hanya ditautkan ke
+    file aslinya. Maks. MAX_PHOTOS foto; metadata GPS HP / drone ikut dibaca."""
     from . import core_oclokasi as L
     ps = [Path(p) for p in paths if Path(p).is_file()]
     if len(ps) < 3:
@@ -96,14 +98,21 @@ def create(s: O.Store, name: str, paths: list[str], by: str) -> dict:
         (d / "foto").mkdir(parents=True)
     photos = []
     for i, p in enumerate(ps):
-        dst = d / "foto" / f"{i + 1:02d}_{p.name}"
-        shutil.copy2(p, dst)
+        if link:
+            dst = p.resolve()
+            fname = str(dst)  # path absolut: d / "foto" / fname = file asli
+        else:
+            dst = d / "foto" / f"{i + 1:03d}_{p.name}"
+            shutil.copy2(p, dst)
+            fname = dst.name
         ex = L.read_exif(dst)
-        from PIL import Image, ImageOps
-        with Image.open(dst) as im:
-            w, h = ImageOps.exif_transpose(im).size
-        photos.append({"i": i, "file": dst.name, "name": p.name, "w": w, "h": h, "exif": ex})
-    m = {"id": mid, "name": name.strip() or f"Model {mid}", "photos": photos, "status": "baru", "by": by, "at": core_io.now(),
+        from PIL import Image
+        with Image.open(dst) as im:  # ukuran setelah orientasi EXIF, tanpa men-decode piksel
+            w, h = im.size
+            if im.getexif().get(274) in (5, 6, 7, 8):
+                w, h = h, w
+        photos.append({"i": i, "file": fname, "name": p.name, "w": w, "h": h, "exif": ex})
+    m = {"id": mid, "name": name.strip() or f"Model {mid}", "photos": photos, "status": "baru", "by": by, "at": core_io.now(), "linked": bool(link),
          "gcps": [], "measures": [], "georef": None, "recon": None}
     save(s, m)
     return m
@@ -285,73 +294,139 @@ def bundle_adjust(Ks: dict, cams: dict, X: np.ndarray, oc: np.ndarray, op: np.nd
     return {c: (Rs[c], ts[c]) for c in cids}, X
 
 
+def _gps_xyz(photos: list[dict]) -> Optional[np.ndarray]:
+    """Posisi kamera lokal (m) dari GPS foto (UTM + ketinggian), atau None bila sebagian besar foto tanpa GPS."""
+    from . import core_oclokasi as L
+    ex = [(ph.get("exif") or {}) for ph in photos]
+    ok = [e.get("lat") is not None for e in ex]
+    if sum(ok) < max(3, 0.8 * len(ex)):
+        return None
+    ref = next(e for e in ex if e.get("lat") is not None)
+    zone = L.utm_zone(ref["lon"])
+    out = np.full((len(ex), 3), np.nan)
+    for i, e in enumerate(ex):
+        if e.get("lat") is not None:
+            E, N, _z, _s = L.to_utm(e["lat"], e["lon"], zone, ref["lat"] < 0)
+            out[i] = (E, N, e.get("alt") or 0.0)
+    return out
+
+
+def _pair_candidates(photos: list[dict], descs: list[np.ndarray], window: int = 4, knn: int = 8, top: int = 6) -> list[tuple[int, int]]:
+    """Pasangan foto yang dicocokkan. Foto sedikit (<= 12): semua pasangan. Foto banyak (drone, 50+): tetangga urutan
+    pemotretan + tetangga terdekat dari GPS + foto paling mirip dari pencocokan cepat 400 fitur terkuat (menangkap jalur
+    terbang sebelah / foto tanpa GPS). Jumlah pasangan ~ n x 15, bukan n²."""
+    n = len(photos)
+    if n <= 12:
+        return [(i, j) for i in range(n) for j in range(i + 1, n)]
+    P: set = set()
+    for i in range(n):
+        for j in range(i + 1, min(n, i + window + 1)):
+            P.add((i, j))
+    G = _gps_xyz(photos)
+    if G is not None:
+        for i in range(n):
+            if np.isnan(G[i, 0]):
+                continue
+            d = np.linalg.norm(G - G[i], axis=1)
+            d[i] = np.inf
+            for j in np.argsort(np.nan_to_num(d, nan=np.inf))[:knn]:
+                if np.isfinite(d[j]):
+                    P.add((min(i, int(j)), max(i, int(j))))
+    cv2 = _cv2()
+    small = [de[:400] for de in descs]  # fitur SIFT sudah urut dari respons terkuat
+    bf = cv2.BFMatcher(cv2.NORM_L2)
+    score = np.zeros((n, n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            if len(small[i]) < 20 or len(small[j]) < 20:
+                continue
+            mm = bf.knnMatch(small[i], small[j], k=2)
+            score[i, j] = score[j, i] = sum(1 for x in mm if len(x) == 2 and x[0].distance < 0.7 * x[1].distance)
+    for i in range(n):
+        for j in np.argsort(-score[i])[:top]:
+            if score[i, j] >= 8:
+                P.add((min(i, int(j)), max(i, int(j))))
+    return sorted(P)
+
+
 def reconstruct(paths: list[Path], photos: list[dict], progress=None) -> dict:
-    """SfM bertahap. Hasil: kamera (K, R, t), titik 3D, warna, pengamatan per titik (indeks foto, u, v dalam piksel kerja)."""
+    """SfM bertahap. Hasil: kamera (K, R, t), titik 3D, warna, pengamatan per titik (indeks foto, u, v dalam piksel kerja).
+    Skala 3–100 foto: pasangan terpilih (bukan semua), indeks titik per kamera, triangulasi tervektor, dan penyesuaian berkas
+    bertahap tiap 8 kamera (subset titik) supaya jalur terbang panjang tidak melengkung."""
     cv2 = _cv2()
     n = len(paths)
-    sift = cv2.SIFT_create(nfeatures=8000, contrastThreshold=0.02)
-    kps, descs, Ks, ks, colors = [], [], [], [], []
+    nfeat = 8000 if n <= 15 else (6000 if n <= 40 else 4500)
+    sift = cv2.SIFT_create(nfeatures=nfeat, contrastThreshold=0.02)
+    kps, descs, Ks, ks = [], [], [], []
     for i, p in enumerate(paths):
         g, k = _gray(p)
         kp, de = sift.detectAndCompute(g, None)
+        if kp:
+            o = np.argsort([-q.response for q in kp], kind="stable")
+            kp, de = [kp[x] for x in o], de[o]
         kps.append(np.array([q.pt for q in kp], np.float64) if kp else np.zeros((0, 2)))
         descs.append(de if de is not None else np.zeros((0, 128), np.float32))
         Ks.append(_K(photos[i], k))
         ks.append(k)
         if progress:
             progress(f"Fitur foto {i + 1}/{n}: {len(kp)} titik")
-    from PIL import Image, ImageOps
-    rgbs = []
-    for p, k in zip(paths, ks):
-        with Image.open(p) as im:
-            im = ImageOps.exif_transpose(im).convert("RGB")
-            rgbs.append(np.asarray(im.resize((round(im.width * k), round(im.height * k)))))
-    # pencocokan antar pasangan (urutan berjalan: tetangga dekat diutamakan, semua pasangan bila foto sedikit)
-    bf = cv2.BFMatcher(cv2.NORM_L2)
+    plist = _pair_candidates(photos, descs)
+    if n > 15:
+        bf = cv2.FlannBasedMatcher({"algorithm": 1, "trees": 4}, {"checks": 64})
+    else:
+        bf = cv2.BFMatcher(cv2.NORM_L2)
     pairs: dict[tuple[int, int], np.ndarray] = {}
-    for i in range(n):
-        for j in range(i + 1, n):
-            if j - i > 4 and n > 6:
-                continue
-            if len(descs[i]) < 20 or len(descs[j]) < 20:
-                continue
-            mm = bf.knnMatch(descs[i], descs[j], k=2)
-            good = np.array([[a.queryIdx, a.trainIdx] for a, b in (x for x in mm if len(x) == 2) if a.distance < 0.75 * b.distance])
-            if len(good) < 30:
-                continue
-            p1 = cv2.undistortPoints(kps[i][good[:, 0]].reshape(-1, 1, 2), Ks[i], None).reshape(-1, 2)
-            p2 = cv2.undistortPoints(kps[j][good[:, 1]].reshape(-1, 1, 2), Ks[j], None).reshape(-1, 2)
-            E, mask = cv2.findEssentialMat(p1, p2, np.eye(3), method=cv2.RANSAC, prob=0.999, threshold=1.0 / Ks[i][0, 0])
-            if E is None or mask is None:
-                continue
-            inl = good[mask.ravel().astype(bool)]
-            if len(inl) >= 30:
-                pairs[(i, j)] = inl
-        if progress:
-            progress(f"Mencocokkan foto {i + 1}/{n}")
+    for q, (i, j) in enumerate(plist):
+        if len(descs[i]) < 20 or len(descs[j]) < 20:
+            continue
+        mm = bf.knnMatch(descs[i], descs[j], k=2)
+        good = np.array([[a.queryIdx, a.trainIdx] for a, b in (x for x in mm if len(x) == 2) if a.distance < 0.75 * b.distance])
+        if len(good) < 30:
+            continue
+        p1 = cv2.undistortPoints(kps[i][good[:, 0]].reshape(-1, 1, 2), Ks[i], None).reshape(-1, 2)
+        p2 = cv2.undistortPoints(kps[j][good[:, 1]].reshape(-1, 1, 2), Ks[j], None).reshape(-1, 2)
+        E, mask = cv2.findEssentialMat(p1, p2, np.eye(3), method=cv2.RANSAC, prob=0.999, threshold=1.0 / Ks[i][0, 0])
+        if E is None or mask is None:
+            continue
+        inl = good[mask.ravel().astype(bool)]
+        if len(inl) >= 30:
+            pairs[(i, j)] = inl
+        if progress and (q % max(1, len(plist) // 20) == 0 or q == len(plist) - 1):
+            progress(f"Mencocokkan pasangan foto {q + 1}/{len(plist)}")
+    del descs
     if not pairs:
         raise ValueError("Foto tidak saling cocok. Pastikan foto dari dinding yang sama, tumpang-tindih ±70 %, tanpa zoom.")
-    # jejak (track) dengan union-find atas (foto, fitur)
-    par: dict = {}
+    # jejak (track): union-find atas nomor fitur global
+    off = np.r_[0, np.cumsum([len(k_) for k_ in kps])]
+    par = list(range(int(off[-1])))
 
     def find(a):
-        while par.setdefault(a, a) != a:
+        while par[a] != a:
             par[a] = par[par[a]]
             a = par[a]
         return a
+    used = set()
     for (i, j), inl in pairs.items():
-        for a, b in inl:
-            ra, rb = find((i, int(a))), find((j, int(b)))
+        for a, b in inl.tolist():
+            ga, gb = int(off[i]) + a, int(off[j]) + b
+            used.add(ga)
+            used.add(gb)
+            ra, rb = find(ga), find(gb)
             if ra != rb:
                 par[rb] = ra
     groups: dict = {}
-    for key in list(par):
-        groups.setdefault(find(key), []).append(key)
-    tracks = []
+    for g_ in used:
+        groups.setdefault(find(g_), []).append(g_)
+    tracks: list[dict] = []
     for mem in groups.values():
-        imgs = [q[0] for q in mem]
+        imgs = (np.searchsorted(off, mem, side="right") - 1).tolist()
         if len(mem) >= 2 and len(set(imgs)) == len(imgs):  # satu fitur per foto
-            tracks.append({q[0]: q[1] for q in mem})
+            tracks.append({im: g_ - int(off[im]) for im, g_ in zip(imgs, mem)})
+    del par, groups, used
+    cam_tracks: list[list[int]] = [[] for _ in range(n)]
+    for ti, tr in enumerate(tracks):
+        for i in tr:
+            cam_tracks[i].append(ti)
     # pasangan awal: banyak inlier dan paralaks cukup
     best, best_score = None, -1
     for (i, j), inl in pairs.items():
@@ -368,65 +443,115 @@ def reconstruct(paths: list[Path], photos: list[dict], progress=None) -> dict:
     p2 = cv2.undistortPoints(kps[j0][inl[:, 1]].reshape(-1, 1, 2), Ks[j0], None).reshape(-1, 2)
     E, _m = cv2.findEssentialMat(p1, p2, np.eye(3), method=cv2.RANSAC, prob=0.999, threshold=1.0 / Ks[i0][0, 0])
     _n, R, t, _mm = cv2.recoverPose(E, p1, p2)
+    n_pairs = len(pairs)
+    del pairs
     cams: dict[int, tuple[np.ndarray, np.ndarray]] = {i0: (np.eye(3), np.zeros(3)), j0: (R, t.ravel())}
     pts: dict[int, np.ndarray] = {}
+    cnt = np.zeros(n, int)  # jumlah titik 3D yang terlihat tiap foto (untuk memilih foto berikutnya)
 
-    def P(i):
-        R_, t_ = cams[i]
-        return Ks[i] @ np.c_[R_, t_]
+    def setpt(ti, X):
+        if ti not in pts:
+            for i in tracks[ti]:
+                cnt[i] += 1
+        pts[ti] = X
 
-    def tri_tracks(min_angle=1.5):
-        for ti, tr in enumerate(tracks):
-            if ti in pts:
-                continue
-            vis = [i for i in tr if i in cams]
-            if len(vis) < 2:
-                continue
-            uv = [kps[i][tr[i]] for i in vis]
-            X = _triangulate([P(i) for i in vis], uv)
-            if not np.all(np.isfinite(X)):
-                continue
-            ok = True
-            rays = []
-            for i, q in zip(vis, uv):
-                R_, t_ = cams[i]
-                xc = R_ @ X + t_
-                if xc[2] <= 0:
-                    ok = False
-                    break
-                pr = Ks[i] @ xc
-                if np.hypot(*(pr[:2] / pr[2] - q)) > 3.0:
-                    ok = False
-                    break
-                C = -R_.T @ t_
-                rays.append((X - C) / np.linalg.norm(X - C))
-            if not ok:
-                continue
-            ang = max(math.degrees(math.acos(min(1.0, float(a @ b)))) for a in rays for b in rays)
-            if ang >= min_angle:
-                pts[ti] = X
-    tri_tracks()
-    # tambah foto lain satu per satu (PnP)
-    while len(cams) < n:
-        cand = []
-        for i in range(n):
-            if i in cams:
-                continue
-            obs = [(ti, tracks[ti][i]) for ti in pts if i in tracks[ti]]
-            cand.append((len(obs), i, obs))
-        cand.sort(reverse=True)
-        if not cand or cand[0][0] < 12:
+    def delpt(ti):
+        if pts.pop(ti, None) is not None:
+            for i in tracks[ti]:
+                cnt[i] -= 1
+
+    def tri_batch(tids):
+        """Triangulasi DLT banyak titik sekaligus (dikelompokkan per jumlah pandangan): X, galat reproyeksi maks (px),
+        sudut sinar maks (derajat), semua di depan kamera."""
+        out = {}
+        by_m: dict[int, list] = {}
+        for ti in tids:
+            vis = [i for i in tracks[ti] if i in cams]
+            if len(vis) >= 2:
+                by_m.setdefault(len(vis), []).append((ti, vis))
+        PM = {i: Ks[i] @ np.c_[cams[i][0], cams[i][1]] for i in cams}
+        CC = {i: -cams[i][0].T @ cams[i][1] for i in cams}
+        for m, items in by_m.items():
+            for q0 in range(0, len(items), 20000):
+                it = items[q0:q0 + 20000]
+                Ps = np.array([[PM[i] for i in vis] for _ti, vis in it])                   # B m 3 4
+                uv = np.array([[kps[i][tracks[ti][i]] for i in vis] for ti, vis in it])   # B m 2
+                A = np.concatenate([uv[..., 0:1] * Ps[:, :, 2, :] - Ps[:, :, 0, :], uv[..., 1:2] * Ps[:, :, 2, :] - Ps[:, :, 1, :]], 1)
+                Xh = np.linalg.svd(A)[2][:, -1, :]
+                w = np.where(np.abs(Xh[:, 3]) < 1e-12, np.nan, Xh[:, 3])
+                X = Xh[:, :3] / w[:, None]
+                xh = np.einsum("bmij,bj->bmi", Ps, np.c_[X, np.ones(len(X))])
+                z = xh[..., 2]
+                pr = xh[..., :2] / np.where(np.abs(z) < 1e-12, 1e-12, z)[..., None]
+                err = np.nanmax(np.hypot(*(pr - uv).transpose(2, 0, 1)), axis=1)
+                Cs = np.array([[CC[i] for i in vis] for _ti, vis in it])
+                ray = X[:, None, :] - Cs
+                ray /= np.maximum(np.linalg.norm(ray, axis=2, keepdims=True), 1e-12)
+                cosm = np.einsum("bmi,bki->bmk", ray, ray).min(axis=(1, 2))
+                ang = np.degrees(np.arccos(np.clip(cosm, -1, 1)))
+                front = (z > 0).all(axis=1) & np.isfinite(X).all(axis=1)
+                for k_, (ti, _vis) in enumerate(it):
+                    out[ti] = (X[k_], float(err[k_]) if front[k_] else 1e9, float(ang[k_]), bool(front[k_]))
+        return out
+
+    def tri_new(cands, min_angle=1.5, maxerr=3.0):
+        res = tri_batch([ti for ti in cands if ti not in pts])
+        for ti, (X, err, ang, front) in res.items():
+            if front and err <= maxerr and ang >= min_angle:
+                setpt(ti, X)
+
+    def retri(maxerr):
+        res = tri_batch(list(pts))
+        for ti in list(pts):
+            r_ = res.get(ti)
+            if r_ is None or not r_[3] or r_[1] > maxerr:
+                delpt(ti)
+            else:
+                pts[ti] = r_[0]
+
+    def run_ba(iters, max_pts, maxerr):
+        nonlocal cams
+        if len(cams) < 3 or len(pts) < 50:
+            return
+        ids = sorted(pts)
+        if len(ids) > max_pts:
+            ids = sorted(np.random.default_rng(len(cams)).choice(ids, max_pts, replace=False).tolist())
+        oc_, op_, uv_ = [], [], []
+        for k_, t_ in enumerate(ids):
+            for i in tracks[t_]:
+                if i in cams:
+                    oc_.append(i)
+                    op_.append(k_)
+                    uv_.append(kps[i][tracks[t_][i]])
+        cams, _Xb = bundle_adjust(Ks, cams, np.array([pts[t_] for t_ in ids]), np.array(oc_), np.array(op_), np.array(uv_, float),
+                                  i0, j0, iters=iters)
+        retri(maxerr)
+
+    tri_new(range(len(tracks)))
+    # tambah foto lain satu per satu (PnP), penyesuaian berkas ringan tiap 8 kamera
+    failed: set = set()
+    last_ba = len(cams)
+    while len(cams) + len(failed) < n:
+        order = [int(i) for i in np.argsort(-cnt, kind="stable") if int(i) not in cams and int(i) not in failed]
+        if not order or cnt[order[0]] < 12:
             break
-        _c, i, obs = cand[0]
+        i = order[0]
+        obs = [(ti, tracks[ti][i]) for ti in cam_tracks[i] if ti in pts]
         X = np.array([pts[ti] for ti, _f in obs])
         uv = np.array([kps[i][f] for _ti, f in obs])
         ok, rv, tv, inl_ = cv2.solvePnPRansac(X, uv, Ks[i], None, reprojectionError=3.0, iterationsCount=300, confidence=0.999,
                                               flags=cv2.SOLVEPNP_EPNP)
         if not ok or inl_ is None or len(inl_) < 10:
-            break
+            failed.add(i)
+            continue
         rv, tv = cv2.solvePnPRefineLM(X[inl_.ravel()], uv[inl_.ravel()], Ks[i], None, rv, tv)
         cams[i] = (cv2.Rodrigues(rv)[0], tv.ravel())
-        tri_tracks()
+        tri_new(cam_tracks[i])
+        if len(cams) >= 6 and len(cams) - last_ba >= 8 and len(cams) < n:
+            if progress:
+                progress(f"Penyesuaian berkas sementara: {len(cams)} kamera")
+            run_ba(6, 15000, 4.0)
+            last_ba = len(cams)
         if progress:
             progress(f"Kamera {len(cams)}/{n} terpasang, {len(pts)} titik 3D")
     # penghalusan bergantian: kamera (PnP-LM semua pengamatan) lalu titik (triangulasi ulang), buang titik dengan galat besar
@@ -434,7 +559,7 @@ def reconstruct(paths: list[Path], photos: list[dict], progress=None) -> dict:
         for i in list(cams):
             if i == i0:
                 continue
-            obs = [(ti, tracks[ti][i]) for ti in pts if i in tracks[ti]]
+            obs = [(ti, tracks[ti][i]) for ti in cam_tracks[i] if ti in pts]
             if len(obs) < 8:
                 continue
             X = np.array([pts[ti] for ti, _f in obs])
@@ -442,69 +567,41 @@ def reconstruct(paths: list[Path], photos: list[dict], progress=None) -> dict:
             R_, t_ = cams[i]
             rv, tv = cv2.solvePnPRefineLM(X, uv, Ks[i], None, cv2.Rodrigues(R_)[0], t_.reshape(3, 1).copy())
             cams[i] = (cv2.Rodrigues(rv)[0], tv.ravel())
-        for ti in list(pts):
-            vis = [i for i in tracks[ti] if i in cams]
-            X = _triangulate([P(i) for i in vis], [kps[i][tracks[ti][i]] for i in vis])
-            errs = []
-            for i in vis:
-                R_, t_ = cams[i]
-                xc = R_ @ X + t_
-                pr = Ks[i] @ xc
-                errs.append(np.hypot(*(pr[:2] / pr[2] - kps[i][tracks[ti][i]])) if xc[2] > 0 else 1e9)
-            if not np.all(np.isfinite(X)) or max(errs) > (4.0 if it < 2 else 2.5):
-                del pts[ti]
-            else:
-                pts[ti] = X
-        tri_tracks()
+        retri(4.0 if it < 2 else 2.5)
+        tri_new(range(len(tracks)))
     # penyesuaian berkas (bundle adjustment) penuh: semua kamera + titik bersama-sama, lalu buang pencilan dan ulangi sekali
     for rnd in range(2):
-        if len(cams) < 3 or len(pts) < 50:
-            break
-        ids = sorted(pts)
-        oc_, op_, uv_ = [], [], []
-        for k, t_ in enumerate(ids):
-            for i in tracks[t_]:
-                if i in cams:
-                    oc_.append(i)
-                    op_.append(k)
-                    uv_.append(kps[i][tracks[t_][i]])
         if progress:
-            progress(f"Penyesuaian berkas {rnd + 1}/2: {len(cams)} kamera, {len(ids)} titik")
-        cams, Xb = bundle_adjust(Ks, cams, np.array([pts[t_] for t_ in ids]), np.array(oc_), np.array(op_), np.array(uv_, float),
-                                 i0, j0, iters=20 if rnd == 0 else 10)
-        for k, t_ in enumerate(ids):
-            X = Xb[k]
-            errs = []
-            for i in tracks[t_]:
-                if i in cams:
-                    xc = cams[i][0] @ X + cams[i][1]
-                    pr = Ks[i] @ xc
-                    errs.append(np.hypot(*(pr[:2] / pr[2] - kps[i][tracks[t_][i]])) if xc[2] > 0 else 1e9)
-            if np.all(np.isfinite(X)) and max(errs) <= 2.0:
-                pts[t_] = X
-            else:
-                del pts[t_]
+            progress(f"Penyesuaian berkas {rnd + 1}/2: {len(cams)} kamera, {len(pts)} titik")
+        run_ba(20 if rnd == 0 else 10, 60000, 2.0)
     if len(cams) < 2 or len(pts) < 50:
         raise ValueError("Rekonstruksi gagal: terlalu sedikit titik 3D. Foto kurang tumpang-tindih / terlalu kabur / dinding terlalu polos.")
     ids = sorted(pts)
     Xs = np.array([pts[t_] for t_ in ids])
-    cols = []
-    err_all = []
-    obs_out = []
+    err_all, obs_out, first = [], [], []
     for t_ in ids:
         vis = [i for i in tracks[t_] if i in cams]
-        i = vis[0]
-        u, v = kps[i][tracks[t_][i]]
-        cols.append(rgbs[i][min(rgbs[i].shape[0] - 1, int(v)), min(rgbs[i].shape[1] - 1, int(u))].tolist())
+        first.append(vis[0])
         obs_out.append([[int(i), round(float(kps[i][tracks[t_][i]][0]), 2), round(float(kps[i][tracks[t_][i]][1]), 2)] for i in vis])
         for i in vis:
             R_, t2 = cams[i]
             pr = Ks[i] @ (R_ @ pts[t_] + t2)
             err_all.append(float(np.hypot(*(pr[:2] / pr[2] - kps[i][tracks[t_][i]]))))
+    # warna titik: tiap foto dibuka sekali saja (hemat memori untuk puluhan foto)
+    from PIL import Image, ImageOps
+    cols = np.zeros((len(ids), 3), np.uint8)
+    first = np.array(first)
+    for i in sorted(set(first.tolist())):
+        sel = np.flatnonzero(first == i)
+        with Image.open(paths[i]) as im:
+            im = ImageOps.exif_transpose(im).convert("RGB")
+            rgb = np.asarray(im.resize((round(im.width * ks[i]), round(im.height * ks[i]))))
+        uv = np.array([kps[i][tracks[ids[k_]][i]] for k_ in sel])
+        cols[sel] = rgb[np.clip(uv[:, 1].astype(int), 0, rgb.shape[0] - 1), np.clip(uv[:, 0].astype(int), 0, rgb.shape[1] - 1)]
     return {"cams": {str(i): {"K": Ks[i].tolist(), "R": cams[i][0].tolist(), "t": cams[i][1].tolist(), "k": ks[i]} for i in cams},
-            "points": Xs, "colors": np.array(cols, np.uint8), "obs": obs_out,
+            "points": Xs, "colors": cols, "obs": obs_out,
             "n_points": len(ids), "n_cams": len(cams), "n_photos": n, "reproj_px": round(float(np.sqrt(np.mean(np.square(err_all)))), 2),
-            "pairs": len(pairs)}
+            "pairs": n_pairs}
 
 
 def build(s: O.Store, mid: int, progress=None) -> dict:
@@ -623,7 +720,7 @@ def solve_georef(s: O.Store, m: dict) -> Optional[dict]:
                residuals=[{"name": nm, "de": round(float(r[0]), 3), "dn": round(float(r[1]), 3), "drl": round(float(r[2]), 3),
                            "err": round(float(np.linalg.norm(r)), 3)} for nm, r in zip(names, res)], n=len(names))
     if out["method"] == "gps":
-        out["msg"] = (f"Skala & arah dari posisi kamera GPS HP ({len(names)} foto, RMS {out['rms']:.1f} m): KASAR. "
+        out["msg"] = (f"Skala & arah dari posisi kamera GPS HP / drone ({len(names)} foto, RMS {out['rms']:.1f} m): KASAR. "
                       "Strike / dip bisa melenceng beberapa derajat; klik titik RTK untuk hasil teliti.")
     return out
 
@@ -826,7 +923,7 @@ def views_png(s: O.Store, mid: int) -> Optional[str]:
             a.grid(alpha=0.25)
         geo = m.get("georef") or {}
         fig.suptitle(f"{m['name']} — {m['recon']['n_points']:,} titik 3D, {m['recon']['n_cams']}/{m['recon']['n_photos']} foto\n"
-                     + ({"rtk": f"georef RTK, RMS {geo.get('rms', 0):.3f} m", "gps": f"georef GPS HP (kasar), RMS {geo.get('rms', 0):.1f} m"}
+                     + ({"rtk": f"georef RTK, RMS {geo.get('rms', 0):.3f} m", "gps": f"georef GPS kamera (kasar), RMS {geo.get('rms', 0):.1f} m"}
                         .get(geo.get("method"), "belum berskala")) + f"\nsumbu (m) relatif terhadap E {o[0]:,.1f} · N {o[1]:,.1f}",
                      fontsize=8)
         fig.tight_layout()
@@ -880,6 +977,7 @@ class FBody(BaseModel):
 class NewBody(FBody):
     name: str = ""
     paths: list[str]
+    link: bool = False
 
 
 class MidBody(FBody):
@@ -921,7 +1019,7 @@ def api_list(b: FBody) -> dict:
 
 @router.post("/create")
 def api_create(b: NewBody) -> dict:
-    return {"ok": True, "model": create(O.store(b.folder), b.name, b.paths, b.by)}
+    return {"ok": True, "model": create(O.store(b.folder), b.name, b.paths, b.by, b.link)}
 
 
 @router.post("/get")
@@ -931,7 +1029,19 @@ def api_get(b: MidBody) -> dict:
 
 @router.post("/build")
 def api_build(b: MidBody) -> dict:
-    return {"ok": True, "model": build(O.store(b.folder), b.id)}
+    key = f"{b.folder}|{b.id}"
+    t0 = time.time()
+    PROGRESS[key] = "Memulai…"
+    try:
+        return {"ok": True, "model": build(O.store(b.folder), b.id, lambda msg: PROGRESS.__setitem__(key, f"{msg} · {time.time() - t0:,.0f} detik"))}
+    finally:
+        PROGRESS.pop(key, None)
+
+
+@router.post("/progress")
+def api_progress(b: MidBody) -> dict:
+    """Pesan kemajuan pembangunan model yang sedang berjalan (untuk ditampilkan antarmuka)."""
+    return {"ok": True, "msg": PROGRESS.get(f"{b.folder}|{b.id}", "")}
 
 
 @router.post("/gcps")
