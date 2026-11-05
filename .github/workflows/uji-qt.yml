@@ -1,0 +1,69 @@
+# Uji penampil Qt (tahap 2). Dua lapis:
+#   1. uji tanpa grafis: pembaca folder proyek, penyusun adegan, kamera -- jalan di mana saja
+#   2. render sungguhan: menggambar block model ke framebuffer memakai Mesa (llvmpipe) lalu
+#      MEMERIKSA gambarnya (ada piksel terisi, warna beragam, saringan berpengaruh) dan mengukur
+#      fps pada 50 ribu / 200 ribu / 1 juta blok.
+#
+# Lapis kedua ada karena penampil 3D tidak boleh dipercaya hanya dari "kelihatannya jalan".
+# Kontainer pengembangan tidak punya OpenGL, jadi di sinilah gambarnya diperiksa.
+# Gambar hasilnya diunggah sebagai artifact supaya bisa dilihat manusia.
+name: Uji penampil Qt
+
+on:
+  push:
+    paths:
+      - 'qtbm/**'
+      - '.github/workflows/uji-qt.yml'
+  workflow_dispatch:
+
+jobs:
+  uji:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Pasang pustaka Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install "PySide6==6.8.1.1" numpy pytest
+
+      - name: Pasang Mesa & pustaka Qt (render tanpa kartu grafis)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            xvfb libgl1 libegl1 libglx-mesa0 libgl1-mesa-dri libglu1-mesa \
+            libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-xinerama0 libxcb-xkb1 libdbus-1-3 libnss3
+
+      - name: Uji tanpa grafis (pembaca proyek, adegan, kamera)
+        run: python -m pytest qtbm/tests -q
+
+      - name: Render sungguhan + ukur kecepatan
+        env:
+          QT_QPA_PLATFORM: xcb
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          xvfb-run -a -s "-screen 0 1280x1024x24" \
+            python -m qtbm.uji_render docs/tutorial-gcex/data/SIM_BM_GC_kadar.csv \
+              --png render-blockmodel.png
+          kode=$?
+          if [ "$kode" = "77" ]; then
+            echo "::error::OpenGL 3.3 tidak tersedia di runner -- render tidak terverifikasi"
+            exit 1
+          fi
+          exit $kode
+
+      - name: Unggah gambar hasil render
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-penampil-qt
+          path: render-blockmodel.png
+          if-no-files-found: warn
