@@ -25,6 +25,7 @@ Python dengan angka JS pada data latihan, blok per blok).
 from __future__ import annotations
 
 import math
+import os
 import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -244,8 +245,8 @@ def _krige_batch(m: Model, SX: np.ndarray, SY: np.ndarray, SZ: np.ndarray, SV: n
     return {"est": est, "kv": kv, "sor": sor, "ke": ke, "neg": neg, "mu": mu}
 
 
-def run(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Estimasi sejumlah blok; pass dicoba berurutan seperti okStep di JS.
+def _inti(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Estimasi sejumlah blok dalam satu proses; pass dicoba berurutan seperti okStep di JS.
 
     payload: {C:[{x,y,z,id}], z:[...], m:{...okModel...}, blocks:[[x,y,z],...],
               passes:[{mult,min,max,mph}], bs:[3], nd:[3], cell: float|None}
@@ -361,3 +362,92 @@ def run(payload: Dict[str, Any]) -> Dict[str, Any]:
         "cbb": cbb,
         "ms": int(round((time.perf_counter() - t0) * 1000)),
     }
+
+
+# ---------------------------------------------------------------------------
+# Pembagian ke beberapa inti CPU
+#
+# Hasil satu blok TIDAK bergantung pada blok lain: tetangganya dicari dari komposit, bukan dari
+# blok yang sudah diestimasi. Karena itu daftar blok boleh dipotong dan dikerjakan beberapa proses
+# sekaligus, dan angkanya wajib tetap sama persis -- itu yang diuji di test_krige.py.
+# Proses dipakai (bukan thread) karena GIL Python membuat thread tidak menambah kecepatan di sini.
+# ---------------------------------------------------------------------------
+
+_BERSAMA: Dict[str, Any] = {}
+
+
+def _siap_pekerja(dasar: Dict[str, Any]) -> None:
+    """Dipanggil sekali per proses pekerja: komposit & model dikirim satu kali, bukan per potongan."""
+    _BERSAMA["dasar"] = dasar
+
+
+def _kerja(args: Tuple[int, List[List[float]]]) -> Tuple[int, Dict[str, Any]]:
+    i0, blk = args
+    p = dict(_BERSAMA["dasar"])
+    p["blocks"] = blk
+    return i0, _inti(p)
+
+
+def _jumlah_pekerja(minta: Any, nb: int) -> int:
+    """Berapa proses yang dipakai. 'auto' / 0 = sebanyak inti CPU (maksimal 8), dibatasi agar
+    tiap pekerja masih dapat cukup blok -- memecah 50 blok ke 8 proses hanya menambah ongkos."""
+    inti = os.cpu_count() or 1
+    if minta in (None, 0, "auto", "otomatis"):
+        w = min(inti, 8)
+    else:
+        try:
+            w = int(minta)
+        except (TypeError, ValueError):
+            w = 1
+    w = max(1, min(w, inti, nb // 1000 if nb >= 2000 else 1))
+    return w
+
+
+def run(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Estimasi sejumlah blok. Bila bloknya banyak, pekerjaan dibagi ke beberapa inti CPU;
+    hasilnya identik dengan satu proses (dibuktikan uji paritas).
+
+    payload: {C:[{x,y,z,id}], z:[...], m:{...okModel...}, blocks:[[x,y,z],...],
+              passes:[{mult,min,max,mph}], bs:[3], nd:[3], cell: float|None,
+              workers: int|'auto'|None}
+    hasil  : {i, est, kv, sor, ke, ns, ps, neg, cnt, ms, cbb} -- i = indeks blok yang berhasil
+             diestimasi (blok yang gagal di semua pass tidak muncul, seperti JS).
+    """
+    blocks = payload.get("blocks") or []
+    w = _jumlah_pekerja(payload.get("workers"), len(blocks))
+    if w <= 1:
+        return _inti(payload)
+
+    dasar = {k: v for k, v in payload.items() if k not in ("blocks", "workers")}
+    nb = len(blocks)
+    potong = [(round(nb * i / w), round(nb * (i + 1) / w)) for i in range(w)]
+    tugas = [(a, list(blocks[a:b])) for a, b in potong if b > a]
+    t0 = time.perf_counter()
+    try:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=w, initializer=_siap_pekerja, initargs=(dasar,)) as ex:
+            bagian = list(ex.map(_kerja, tugas))
+    except Exception:
+        # pembagian proses bisa gagal di lingkungan tertentu (mis. terbungkus tanpa
+        # freeze_support). Angka lebih penting daripada kecepatan: kembali ke satu proses.
+        return _inti(payload)
+
+    o: Dict[str, Any] = {"ok": True, "i": [], "est": [], "kv": [], "sor": [], "ke": [],
+                         "neg": [], "ns": [], "ps": []}
+    cnt: List[int] = []
+    cbb = 0.0
+    for i0, r in bagian:
+        o["i"].extend(i + i0 for i in r["i"])           # indeks dikembalikan ke penomoran asli
+        for k in ("est", "kv", "sor", "ke", "neg", "ns", "ps"):
+            o[k].extend(r[k])
+        if len(cnt) < len(r["cnt"]):
+            cnt += [0] * (len(r["cnt"]) - len(cnt))
+        for j, v in enumerate(r["cnt"]):
+            cnt[j] += v
+        cbb = r["cbb"]
+    urut = sorted(range(len(o["i"])), key=lambda k: o["i"][k])
+    for k in ("i", "est", "kv", "sor", "ke", "neg", "ns", "ps"):
+        o[k] = [o[k][j] for j in urut]
+    o.update({"cnt": cnt, "n": len(o["i"]), "nblok": nb, "cbb": cbb,
+              "ms": int(round((time.perf_counter() - t0) * 1000)), "workers": w})
+    return o

@@ -131,3 +131,20 @@ def test_paritas_dengan_javascript():
         for kunci in ("est", "kv", "sor", "ke", "neg"):
             assert float(r[kunci]) == pytest.approx(float(o[kunci][k]), rel=1e-9, abs=1e-9), \
                 "blok %d: %s" % (i, kunci)
+
+
+@pytest.mark.skipif(not FIX.exists(), reason="berkas paritas JS belum dibuat")
+def test_beberapa_inti_cpu_memberi_angka_sama():
+    """Blok dibagi ke beberapa proses; hasilnya harus sama persis dengan satu proses.
+    Diuji karena kecepatan tidak ada gunanya kalau angkanya bergeser."""
+    d = json.loads(FIX.read_text(encoding="utf-8"))
+    blocks = list(d["blocks"]) * 3                      # > 2000 blok supaya pembagian aktif
+    p = {"C": d["C"], "z": d["z"], "m": d["m"], "blocks": blocks,
+         "passes": d["passes"], "bs": d["bs"], "nd": d["nd"], "cell": d["cell"]}
+    satu = krige.run(dict(p, workers=1))
+    banyak = krige.run(dict(p, workers="auto"))
+    assert banyak["i"] == satu["i"]
+    assert banyak["cnt"] == satu["cnt"]
+    assert banyak["ns"] == satu["ns"] and banyak["ps"] == satu["ps"]
+    for kunci in ("est", "kv", "sor", "ke", "neg"):
+        assert np.allclose(banyak[kunci], satu[kunci], rtol=0, atol=0), kunci

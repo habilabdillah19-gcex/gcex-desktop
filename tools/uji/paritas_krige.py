@@ -174,7 +174,8 @@ def main() -> int:
 
     t0 = time.perf_counter()
     o = krige.run({"C": d["C"], "z": d["z"], "m": d["m"], "blocks": d["blocks"],
-                   "passes": d["passes"], "bs": d["bs"], "nd": d["nd"], "cell": d["cell"]})
+                   "passes": d["passes"], "bs": d["bs"], "nd": d["nd"], "cell": d["cell"],
+                   "workers": "auto"})
     ms = int((time.perf_counter() - t0) * 1000)
     print("  Python: %d ms untuk %d blok terestimasi (%.3f ms/blok; total panggilan %d ms)"
           % (o["ms"], o["n"], o["ms"] / max(1, o["n"]), ms), flush=True)

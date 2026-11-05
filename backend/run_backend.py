@@ -11,6 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
 def main() -> None:
+    # wajib sebelum apa pun yang memakai multiprocessing (kriging membagi blok ke beberapa inti):
+    # tanpa ini, versi terbungkus PyInstaller di Windows akan menjalankan ulang aplikasinya.
+    import multiprocessing
+    multiprocessing.freeze_support()
     ap = argparse.ArgumentParser(description="GC-Ex backend")
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
