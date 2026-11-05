@@ -446,6 +446,7 @@ jobs:
             --paths . --exclude-module tkinter --exclude-module matplotlib --exclude-module scipy `
             --exclude-module uvicorn --exclude-module fastapi --exclude-module PIL `
             --hidden-import qtbm --hidden-import qtbm.tampilan --hidden-import qtbm.render `
+            --hidden-import qtbm.tampil_bm --hidden-import qtbm.panel_bm `
             --distpath dist-qtbm --workpath build-qtbm penampil_qt.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller penampil 3D Qt gagal" }
           $d = "dist-qtbm/GC-Ex-BlockModel-3D"
@@ -476,6 +477,14 @@ jobs:
           Get-Content $out -Raw | Write-Host
           if ($p.ExitCode -ne 0 -or -not $j.ok) { throw "uji mandiri penampil 3D Qt gagal (exit $($p.ExitCode))" }
           if ($j.blok -ne 66147) { throw ("jumlah blok tidak seperti yang diharapkan: " + $j.blok) }
+          # Aturan tampilan (kelas diskrit) harus ikut terkemas dan jalan: atribut warna terpilih,
+          # dan jumlah blok per kelas menjumlah tepat sama dengan blok yang digambar.
+          if ($j.atribut_warna -ne 'AU_GC') { throw ("atribut warna tak terduga: " + $j.atribut_warna) }
+          $sum = ($j.kelas | Measure-Object -Property blok -Sum).Sum
+          if ($sum -ne $j.blok_digambar) {
+            throw ("jumlah blok per kelas ($sum) tidak sama dengan blok digambar (" + $j.blok_digambar + ")")
+          }
+          Write-Host ("OK kelas tampilan: " + $j.kelas.Count + " kelas, " + $sum + " blok")
           if ($j.blok_digambar -ne $j.blok) { throw "jumlah blok yang disusun tidak sama dengan jumlah blok" }
           if ($j.koordinat_adegan_maks -gt 1000) { throw ("koordinat adegan terlalu besar: " + $j.koordinat_adegan_maks) }
           Write-Host ("OK penampil 3D Qt: " + $j.blok + " blok, baca " + $j.ms_baca + " ms, susun " + $j.ms_susun + " ms")

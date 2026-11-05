@@ -2261,3 +2261,60 @@ biasa, bukan hasil rumus salinan. Itu diuji otomatis di `tools/uji/uji_metode_to
   yang berarti: samakan dulu constraint domainnya di tab ②, lalu lihat selisihnya — yang tersisa
   barulah pengaruh aturan blok perbatasan. Panel menampilkan rincian berapa blok berproporsi 1,
   berapa di perbatasan, dan berapa berproporsi 0, supaya asal selisihnya terlihat.
+
+## 89. Penampil 3D Qt tahap 2A — tampilan block model yang sama persis dengan aplikasi HTML
+
+Penampil 3D Qt (ZIP ke-4 di Release, berdiri sendiri, tidak menggantikan apa pun) kini punya
+**panel "Tampilan block model"** dengan kendali yang sama dengan panel di aplikasi HTML:
+
+| Kendali | Perilaku |
+| --- | --- |
+| **Warnai berdasarkan** | atribut angka atau atribut kategori |
+| **Kelas diskrit** | batas bawah ≤ nilai < batas atas; warna, batas, tambah/hapus kelas |
+| **Kuantil** | batas bawaan dari kuantil 50 / 75 / 90 / 97 persen |
+| **Pakai cut-off** | batas kelas ditulis manual, mis. `0.3, 0.5, 1, 2` |
+| **Kategori** | centang = tampil, warna per nilai, jumlah blok per nilai |
+| **Tampilkan bila (cut-off)** | atribut + `≥` / `<` + nilai |
+| **Opasitas kubus**, **SG tetap**, **Kolom SG** | sama dengan panel HTML |
+
+### Mengapa "sama persis" itu diuji, bukan dianggap
+
+Kedua aplikasi akan dipakai **berdampingan** oleh orang yang sama. Kalau jumlah blok yang tampil
+atau warnanya berbeda sedikit saja, yang terjadi bukan selisih selera tampilan melainkan dua
+jawaban berbeda untuk pertanyaan yang sama. Karena itu aturannya tidak ditulis ulang dari ingatan:
+
+- `qtbm/tampil_bm.py` menirukan `bxCls`, `bxClassOf`, `bxPass`, `bxLab` dan `bxDefUI` apa adanya —
+  termasuk hal-hal yang kelihatan aneh: batas kelas dihitung dari data **tercuplik** (maksimum
+  ±20.000 nilai), kuantilnya bukan interpolasi, dan batas yang sama setelah dibulatkan ke 2 angka
+  berarti **dibuang**, sehingga jumlah kelas bisa kurang dari 5.
+- `python tools/uji/paritas_tampil_bm.py` membuka **aplikasi HTML sungguhan** dengan data latihan,
+  menjalankan `bxCls()` / `bxClassOf()` / `bxSel()` asli di dalamnya untuk 9 susunan panel, lalu
+  membandingkan hasilnya blok demi blok dengan versi Python. Hasil terakhir: **semua sama persis**
+  (4.135 blok cuplikan; termasuk kasus cut-off `≥` / `<`, batas kelas manual, dan kategori yang
+  dilepas centangnya).
+- Hasil JS itu dibekukan ke `qtbm/tests/data/tampil_bm_js.json` sehingga CI memeriksanya **tanpa
+  peramban** setiap kali `qtbm/**` berubah.
+
+Satu beda yang **disengaja**: pembulatan batas kelas memakai aturan JavaScript (nilai tepat setengah
+dibulatkan **ke atas**: 1,25 → 1,3). Kalau ditulis dengan `'%.1e'` bawaan Python, hasilnya 1,2 —
+dan batas kelas kedua aplikasi akan berbeda tanpa ada yang menyadarinya.
+
+### Import block model Surpac `.mdl` langsung
+
+Penampil tidak lagi meminta `.mdl` diekspor ke CSV dulu. Berkas `.mdl` dibaca lewat
+`gcex_backend.mdl_io` — **modul yang sama** yang dipakai aplikasi, jadi tidak ada pembaca format
+kedua yang bisa menyimpang. Yang perlu diketahui:
+
+- Ukuran blok tidak ada di berkas per blok; `.mdl` menyimpan **octree**, jadi ukuran dihitung dari
+  kotak akar dibagi 2^level — sama seperti di aplikasi.
+- Pembacaan pertama sebuah berkas **membangun cache kolom** (sekali per berkas, bisa beberapa menit
+  untuk model besar). Kemajuannya ditulis di panel. Berkas yang sudah pernah dibuka aplikasi
+  langsung terbaca dari cache yang sama.
+- Atribut **kalkulasi** (rumus `IIF(...)`) tidak tersimpan di berkas, jadi tidak muncul di penampil.
+
+### Yang belum ada di tahap ini
+
+Panel Sayatan/Slicing, Reporting Block Model, dan Dig block + digitasi string **belum** ada di
+penampil Qt — semuanya masih dikerjakan di aplikasi HTML seperti biasa. Urutan pengerjaannya:
+Reporting Block Model lebih dulu (mesin hitungnya sudah ada di
+`backend/gcex_backend/laporan.py`), lalu Dig block + ekspor DXF/STR.

@@ -23,6 +23,7 @@ from __future__ import annotations
 import base64
 import json
 import math
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -32,6 +33,9 @@ import numpy as np
 # nama berkas di folder proyek (lihat FP.MAINF / FP.DATAF di aplikasi)
 BERKAS_KERJA = "gcex_project.json"
 BERKAS_DATA = "gcex_data.json"
+
+# kode kategori "kosong" -- sama dengan 65535 di aplikasi HTML dan di qtbm/tampil_bm.py
+KODE_KOSONG_KAT = 65535
 
 # padanan nama larik JavaScript -> tipe NumPy
 TIPE_TA = {
@@ -204,15 +208,91 @@ def _taksir_ukuran(a: np.ndarray) -> float:
     return float(d.min()) if d.size else 1.0
 
 
-def baca_bm(p: Path, maks: int = 0) -> BlockModel:
+def _backend_mdl():
+    """Ambil modul pembaca .mdl dari backend GC-Ex; None bila tidak terjangkau."""
+    try:
+        from gcex_backend import mdl_io            # type: ignore
+        return mdl_io
+    except ImportError:
+        pass
+    jalur = Path(__file__).resolve().parents[1] / "backend"
+    if jalur.is_dir() and str(jalur) not in sys.path:
+        sys.path.insert(0, str(jalur))
+    try:
+        from gcex_backend import mdl_io            # type: ignore
+        return mdl_io
+    except ImportError:
+        return None
+
+
+def baca_bm_mdl(p: Path, maks: int = 0, rl: Optional[Tuple[float, float]] = None,
+                lapor: Optional[Any] = None) -> BlockModel:
+    """Baca block model Surpac .mdl lewat `gcex_backend.mdl_io` -- modul yang sama dengan aplikasi.
+
+    Pembacaan .mdl bukan sekali jalan: mdl_io membangun CACHE kolom biner lebih dulu (sekali per
+    berkas, bisa menit untuk model besar), lalu pembacaan berikutnya cepat. Fungsi ini memakai
+    cache itu apa adanya -- jadi berkas yang sudah pernah dibuka aplikasi langsung terbaca.
+
+    Ukuran blok TIDAK ada di berkas per blok: .mdl menyimpan octree, jadi ukuran dihitung dari
+    kotak akar dibagi 2^level. Itu cara yang sama dipakai mdl_io dan aplikasi.
+
+    `rl` membatasi rentang RL yang dimuat (menghemat memori pada model besar); `maks` mencuplik
+    blok secara merata bila jumlahnya masih melebihi batas.
+    """
+    mdl_io = _backend_mdl()
+    if mdl_io is None:
+        raise RuntimeError(
+            "pembaca .mdl ada di backend GC-Ex (gcex_backend.mdl_io) tetapi tidak terjangkau dari "
+            "penampil ini. Jalankan dari folder repo, atau export .mdl ke CSV dari aplikasi.")
+    try:
+        c, m = mdl_io.open_cache(p)
+    except Exception:
+        if lapor:
+            lapor("membangun cache .mdl (sekali per berkas, bisa beberapa menit)...")
+        m = mdl_io.build_cache(p, prog=(lambda persen, n: lapor("cache .mdl %.0f%% (%s blok)"
+                                                                % (persen, f"{n:,}".replace(",", ".")))
+                                        ) if lapor else None)
+        c, m = mdl_io.open_cache(p)
+
+    idx = mdl_io.select(c, z_min=(rl[0] if rl else None), z_max=(rl[1] if rl else None))
+    if maks and idx.size > maks:
+        idx = idx[:: int(np.ceil(idx.size / maks))]
+    akar = m["root"]
+    lv = np.asarray(c.col("lv", "u1")[idx], dtype=np.int64)
+    skala = np.power(2.0, -lv)
+    bm = BlockModel(
+        x=np.asarray(c.col("x", "<f8")[idx], dtype=np.float64).copy(),
+        y=np.asarray(c.col("y", "<f8")[idx], dtype=np.float64).copy(),
+        z=np.asarray(c.col("z", "<f8")[idx], dtype=np.float64).copy(),
+        sx=akar[0] * skala, sy=akar[1] * skala, sz=akar[2] * skala,
+        nama=Path(p).name, asal=str(p))
+    kamus = {int(k): {int(cc): s for cc, s in d.items()} for k, d in (m.get("dicts") or {}).items()}
+    for k, a in enumerate(m["stored"]):
+        nama, tipe = a["name"], int(a["type"])
+        if tipe == 3:
+            kode32 = np.asarray(c.col("f%d" % k, "<i4")[idx], dtype=np.int64)
+            peta = kamus.get(k, {})
+            daftar = [peta[q] for q in sorted(peta)]
+            urut = {q: i for i, q in enumerate(sorted(peta))}
+            kode = np.full(kode32.size, KODE_KOSONG_KAT, dtype=np.uint16)
+            for q, i in urut.items():
+                kode[np.abs(kode32) == q] = i
+            bm.kategori[nama] = (kode, daftar)
+        elif tipe == 1:
+            bm.angka[nama] = np.asarray(c.col("f%d" % k, "<i4")[idx], dtype=np.float64)
+        else:
+            bm.angka[nama] = np.asarray(c.col("f%d" % k, "<f8")[idx], dtype=np.float64).copy()
+    return bm
+
+
+def baca_bm(p: Path, maks: int = 0, rl: Optional[Tuple[float, float]] = None,
+            lapor: Optional[Any] = None) -> BlockModel:
     """Baca block model dari CSV/TSV atau Surpac .mdl (memakai modul backend yang sudah ada)."""
     p = Path(p)
     if p.suffix.lower() in (".csv", ".txt", ".tsv"):
         return baca_bm_csv(p, maks)
     if p.suffix.lower() == ".mdl":
-        raise NotImplementedError(
-            "block model Surpac .mdl dibaca lewat backend GC-Ex (gcex_backend.mdl_io); "
-            "penampil Qt tahap ini baru membaca CSV. Export .mdl ke CSV dari aplikasi dulu.")
+        return baca_bm_mdl(p, maks, rl, lapor)
     raise ValueError("jenis berkas block model tidak dikenali: %s" % p.name)
 
 

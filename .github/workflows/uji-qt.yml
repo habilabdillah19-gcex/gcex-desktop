@@ -41,7 +41,9 @@ jobs:
             libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
             libxcb-xinerama0 libxcb-xkb1 libdbus-1-3 libnss3
 
-      - name: Uji tanpa grafis (pembaca proyek, adegan, kamera)
+      - name: Uji tanpa grafis (pembaca proyek, adegan, kamera, panel tampilan)
+        env:
+          QT_QPA_PLATFORM: offscreen      # panel diuji tanpa layar; render diuji di langkah berikut
         run: python -m pytest qtbm/tests -q
 
       - name: Render sungguhan + ukur kecepatan

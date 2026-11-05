@@ -28,16 +28,24 @@ def periksa(argv) -> int:
     t0 = time.perf_counter()
     bm = PR.baca_bm(berkas)
     ms_baca = (time.perf_counter() - t0) * 1000
-    atribut = sorted(bm.angka)[0] if bm.angka else None
+    # Jalur yang sama dengan jendela: keadaan panel bawaan (tampil_bm.ui_awal) lalu susun_tampil.
+    # Sengaja BUKAN AD.susun() lagi, supaya .exe hasil kemasan benar-benar menguji aturan kelas dan
+    # cut-off yang dipakai pemakai, bukan jalur sederhana yang hanya ada di uji.
+    from . import tampil_bm as TB
+
+    T = TB.ui_awal(bm)
     t1 = time.perf_counter()
-    A = AD.susun(bm, atribut=atribut)
+    A, idx, lg = AD.susun_tampil(bm, T)
     ms_susun = (time.perf_counter() - t1) * 1000
+    atribut = T.atribut
     k = bm.kotak()
     hasil = {
-        "ok": bool(bm.n and A.n_blok == bm.n),
+        "ok": bool(bm.n and A.n_blok == idx.size),
         "berkas": berkas.name,
         "blok": bm.n,
         "blok_digambar": A.n_blok,
+        "atribut_warna": atribut,
+        "kelas": [{"label": l, "warna": w, "blok": c} for l, w, c in lg],
         "atribut_angka": sorted(bm.angka),
         "atribut_kategori": sorted(bm.kategori),
         "kotak": [round(v, 2) for v in k],
@@ -56,6 +64,12 @@ def periksa(argv) -> int:
     if not bm.angka:
         hasil["ok"] = False
         hasil["galat"] = "block model tanpa atribut angka"
+    # Jumlah blok per kelas harus menjumlah tepat sama dengan blok yang digambar. Kalau tidak,
+    # legenda di panel akan berbeda dari apa yang tampak di layar -- angka yang menyesatkan.
+    if lg and sum(c for _l, _w, c in lg) != int(idx.size):
+        hasil["ok"] = False
+        hasil["galat"] = ("jumlah blok per kelas (%d) tidak sama dengan blok digambar (%d)"
+                          % (sum(c for _l, _w, c in lg), int(idx.size)))
     teks = json.dumps(hasil, indent=2, ensure_ascii=False)
     print(teks)
     if keluar:

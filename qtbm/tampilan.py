@@ -23,12 +23,13 @@ import numpy as np
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog,
+from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QFileDialog,
                                QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton,
                                QSlider, QVBoxLayout, QWidget)
 
 from . import adegan as AD
 from . import proyek as PR
+from .panel_bm import PanelBM
 from .render import Kamera, Penggambar
 
 
@@ -154,10 +155,9 @@ class Jendela(QMainWindow):
         b2.clicked.connect(self.buka_bm)
         L.addWidget(b2)
 
-        L.addWidget(QLabel("Warna menurut atribut"))
-        self.cmb = QComboBox()
-        self.cmb.currentIndexChanged.connect(self.susun_ulang)
-        L.addWidget(self.cmb)
+        self.panel = PanelBM()
+        self.panel.berubah.connect(self.susun_ulang)
+        L.addWidget(self.panel, 1)
 
         L.addWidget(QLabel("Batas RL"))
         baris = QHBoxLayout()
@@ -219,14 +219,25 @@ class Jendela(QMainWindow):
         self.susun_ulang(pas_kamera=True)
 
     def buka_bm(self) -> None:
-        f, _ = QFileDialog.getOpenFileName(self, "Pilih berkas block model",
-                                           "", "Block model (*.csv *.txt *.tsv)")
+        f, _ = QFileDialog.getOpenFileName(
+            self, "Pilih berkas block model", "",
+            "Block model (*.csv *.txt *.tsv *.mdl);;CSV / teks (*.csv *.txt *.tsv);;"
+            "Surpac block model (*.mdl)")
         if not f:
             return
+
+        def lapor(teks: str) -> None:
+            # Membaca .mdl besar bisa beberapa menit pada berkas yang belum pernah dibuka
+            # (cache kolom dibangun sekali). Kabarnya ditulis di panel supaya pemakai tidak
+            # menyangka aplikasinya menggantung.
+            self.lbl.setText(teks)
+            QApplication.processEvents()
+
         try:
-            bm = PR.baca_bm(Path(f))
+            bm = PR.baca_bm(Path(f), lapor=lapor)
         except Exception as e:
             QMessageBox.warning(self, "Gagal membaca block model", str(e))
+            self.lbl.setText(self.P.ringkas() if self.P else "Belum ada proyek dibuka.")
             return
         if self.P is None:
             self.P = PR.Proyek()
@@ -239,14 +250,8 @@ class Jendela(QMainWindow):
         self.susun_ulang(pas_kamera=True)
 
     def isi_atribut(self) -> None:
-        self.cmb.blockSignals(True)
-        self.cmb.clear()
-        if self.P and self.P.bm:
-            for a in sorted(self.P.bm.angka):
-                self.cmb.addItem(a)
-            for a in sorted(self.P.bm.kategori):
-                self.cmb.addItem(a + "  (kategori)")
-        self.cmb.blockSignals(False)
+        """Pasang block model ke panel; panel sendiri yang menyetel atribut & kelas bawaan."""
+        self.panel.pasang_model(self.P.bm if self.P else None)
 
     # ---------- menyusun ----------
     def saringan(self) -> AD.Saringan:
@@ -261,12 +266,13 @@ class Jendela(QMainWindow):
     def susun_ulang(self, *a, pas_kamera: bool = False) -> None:
         if not self.P:
             return
-        nama = self.cmb.currentText().replace("  (kategori)", "") or None
         t = time.perf_counter()
-        A = AD.susun(self.P.bm, self.P.bor if self.P.data else None,
-                     self.P.topo() if self.P.data else None,
-                     atribut=nama, saringan=self.saringan())
+        A, idx, lg = AD.susun_tampil(self.P.bm, self.panel.T,
+                                     self.P.bor if self.P.data else None,
+                                     self.P.topo() if self.P.data else None,
+                                     saringan=self.saringan())
         self._ms_susun = (time.perf_counter() - t) * 1000
+        self.panel.lapor(int(idx.size), lg)
         self.pemutar.pasang(A, pas_kamera=pas_kamera)
 
     def tampil_lapis(self) -> None:

@@ -258,6 +258,42 @@ def permukaan_grid(A: Adegan, titik: np.ndarray, toleransi: float = 1e-6) -> Ade
     return A
 
 
+def susun_tampil(bm: Optional[BlockModel], T, bor: Optional[Bor] = None,
+                 topo: Optional[np.ndarray] = None, saringan: Optional[Saringan] = None):
+    """Susun adegan memakai aturan panel block model (`tampil_bm.Tampilan`).
+
+    Beda dengan `susun()` di bawah: warna dan blok yang tampil ditentukan KELAS DISKRIT dan cut-off
+    yang sama dengan aplikasi HTML (lihat tampil_bm.py), bukan tangga warna kontinu. Inilah yang
+    dipakai jendela penampil; `susun()` dipertahankan untuk uji dan pemakaian sederhana.
+
+    Hasil: (Adegan, indeks blok yang tampil, legenda) -- legenda ikut dikembalikan supaya panel
+    bisa menulis jumlah blok per kelas tanpa menghitung dua kali.
+    """
+    from . import tampil_bm as TB
+
+    if bm is None or bm.n == 0:
+        A = Adegan(asal=titik_asal(titik=topo))
+        if bor is not None:
+            garis_bor(A, bor)
+        if topo is not None and topo.size:
+            permukaan_grid(A, topo)
+        return A, np.zeros(0, dtype=np.int64), []
+
+    luar = saringan.terapkan(bm) if saringan else None
+    idx, kelas = TB.pilih(bm, T, pakai=luar)
+    W = TB.warna_per_blok(bm, T, kelas)
+    penuh = np.zeros((bm.n, 4), dtype=np.uint8)
+    penuh[idx] = W
+    pakai = np.zeros(bm.n, dtype=bool)
+    pakai[idx] = True
+    A = blok(bm, penuh, pakai)
+    if bor is not None:
+        garis_bor(A, bor)
+    if topo is not None and topo.size:
+        permukaan_grid(A, topo)
+    return A, idx, TB.legenda(bm, T, kelas)
+
+
 def susun(bm: Optional[BlockModel], bor: Optional[Bor] = None,
           topo: Optional[np.ndarray] = None, atribut: Optional[str] = None,
           saringan: Optional[Saringan] = None, tangga: str = "kadar",
