@@ -75,9 +75,12 @@ function rpSurfList(){return(window.MD&&MD.models||[]).map(function(w,i){return[
 function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performance.now(),msg=$('rpMsg');
   try{var cuts=String(o.cuts).split(/[;, ]+/).map(function(s){return parseFloat(String(s).replace(',','.'));}).filter(isFinite).sort(function(a,b){return a-b;});if(!cuts.length)cuts=[0];
     var G=m.num[o.gr];if(!G)throw new Error('Pilih atribut kadar untuk cut-off.');var atts=o.atts.filter(function(a){return m.num[a];});if(atts.indexOf(o.gr)<0)atts.unshift(o.gr);
-    var D=rpDomFn(o,m),tz=null,pz=null,cache={},offx=window.offX||0,offy=window.offY||0;
+    var D=rpDomFn(o,m),tz=null,pz=null,tzT=false,pzT=false,cache={},offx=window.offX||0,offy=window.offY||0;
     if(o.surf==='topo'||o.surf==='pit'){if(!(OV.topoF&&OV.topoF.x&&OV.topoF.x.length))throw new Error('Topografi belum ada (Data Spasial › Topografi).');tz=rpSurf(OV.topoF);}
     if(o.surf==='pit'){if(!(OV.pitF&&OV.pitF.x&&OV.pitF.x.length))throw new Error('Desain pit belum ada (Data Spasial › Desain pit).');pz=rpSurf(OV.pitF);}
+    /* RP.ovr: permukaan atas / bawah ditentukan dari luar (rppit.js -- laporan per desain pit dan
+       progres topo-ke-topo). Mesin hitungnya tetap yang ini, jadi angkanya konsisten. */
+    if(RP.ovr){tz=RP.ovr.tz||null;pz=RP.ovr.pz||null;tzT=!!RP.ovr.tzT;pzT=!!RP.ovr.pzT;}
     var SX=(o.sx||[]).map(function(q){var w=MD.models[+String(q.k).slice(3)],fn=w&&rpTinFn(w);if(!fn)throw new Error('Batas DTM tambahan tidak ditemukan. Hapus barisnya atau import ulang.');return{fn:fn,n:w.name,side:q.side,c:{}};});
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),U=BX.ui||{},SGA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null;
     if(o.poly&&!PL)throw new Error('Poligon area tidak ditemukan.');
@@ -93,7 +96,9 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
       if(PL&&PL.f(x,y)===pOut){nOut.poly++;continue;}
       if(FA){var fa=FA[i];if(!isFinite(fa)||(o.fOp==='ge'?fa<fv:o.fOp==='le'?fa>fv:o.fOp==='eq'?Math.abs(fa-fv)>1e-9:false)){nOut.f++;continue;}}
       var ck=Math.round(x*2)+'|'+Math.round(y*2);
-      if(tz){var c=cache[ck];if(!c)c=cache[ck]=[tz(x,y),pz?pz(x,y):null];if(c[0]!==null&&z>c[0]){nOut.surf++;continue;}if(pz){if(c[1]===null||z<c[1]){nOut.surf++;continue;}}}
+      if(tz){var c=cache[ck];if(!c)c=cache[ck]=[tz(x,y),pz?pz(x,y):null];
+        if(c[0]===null){if(tzT){nOut.ext++;continue;}}else if(z>c[0]){nOut.surf++;continue;}
+        if(pz){if(c[1]===null){if(pzT){nOut.ext++;continue;}nOut.surf++;continue;}if(z<c[1]){nOut.surf++;continue;}}}
       if(SX.length){var bad=0;for(var s2=0;s2<SX.length;s2++){var S2=SX[s2],r2=S2.c[ck];if(r2===undefined)r2=S2.c[ck]=S2.fn(m.x[i],m.y[i]);if(r2===null){bad=1;break;}if(S2.side==='above'?z<=r2[0]:z>=r2[1]){bad=2;break;}}if(bad){if(bad===1)nOut.ext++;else nOut.surf++;continue;}}
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
@@ -193,6 +198,7 @@ if(typeof bxSel==='function'){var _s=bxSel;window.bxSel=bxSel=function(o){var k=
     '#pRep .rptabs{display:flex;gap:3px}#pRep .rptabs button{flex:1}#pRep .rptabs button.on{background:var(--mj,#f0c047);border-color:var(--mjln,#d6a12b);color:#1d2b5e;font-weight:700}';
   document.head.appendChild(css);
   var _bp=window.bxPanel;if(_bp)window.bxPanel=bxPanel=function(){var r=_bp.apply(this,arguments);try{if(!s.hidden)rpPanel();}catch(e){}return r;};})();
+RP.api={surf:rpSurf,tin:rpTinFn,tot:rpTot,metal:rpMetal};   /* dipakai rppit.js (per pit & topo-ke-topo) */
 Object.assign(window,{rpRun:rpRun,rpPanel:rpPanel,rpSet:rpSet,rpAtt:rpAtt,rpSx:rpSx,rpShow:rpShow,rpCsv:rpCsv,rpImpWf:rpImpWf,rpImpStr:rpImpStr,rpFlNow:rpFlNow,rpO:rpO});
 })();
 /* watermark hak cipta di setiap halaman PDF (dig plan, layout as-mined, report rekonsiliasi) */

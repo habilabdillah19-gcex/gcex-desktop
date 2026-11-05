@@ -2004,3 +2004,69 @@ melatih laporan periode, karena poligon as-mined harus didigitasi sendiri dan ti
 > Diuji di aplikasi sungguhan: **60 + 14 pemeriksaan lulus**, tanpa galat JavaScript. Tes pertama sempat lulus
 > dengan `nDb: 0` — pemeriksaan dig block belum pernah dijalankan pada dig block sungguhan; tes kedua menyuntikkan
 > empat dig block yang sengaja dibuat cacat dan membuktikan ketujuh aturannya memicu.
+
+## 85. Reporting: beberapa desain pit sekaligus & progres topo-ke-topo (kedua aplikasi, versi tetap)
+
+Berlaku untuk **GC-Ex Drill Hole 0.24.33** dan **GC-Ex Block Model 0.24.24** — **nomor versinya tidak dinaikkan**
+(permintaan pemilik): Release pada tag yang sama diterbitkan ulang dengan installer baru.
+
+Reporting BM hanya memakai topografi dan desain pit yang **sedang aktif**, satu-satu. Dua pekerjaan rutin karena
+itu tidak pernah menghasilkan angka berdampingan. Tab baru **④ Pit & progres** di Reporting (juga node
+**Per desain pit & progres topo-ke-topo** di Project Tree, di bawah Reporting BM / Laporan) mengerjakan keduanya.
+
+### 1. Per desain pit, topografi sama
+1. Import desain pitnya: **Data Referensi → Import model / solid** (`.dxf`, `.dtm`+`.str`, `.obj`, `.msh`), atau di
+   Drill Hole lewat **Data Spasial → + Tambah versi desain pit** (versi lama tetap tersimpan).
+2. Atur atribut & cut-off seperti biasa di tab **①**, lalu buka tab **④ Pit & progres** → mode **Per desain pit**.
+3. Pilih **satu** topografi untuk semua pit, centang desain pit **dari yang terkecil ke terbesar**, lalu
+   **Hitung per pit**.
+
+Hasilnya satu baris per pit (blok, volume, tonase, kadar & logam tiap atribut) dan di bawahnya baris **tambahan** =
+selisih terhadap pit sebelumnya. Kadar tambahan dihitung sebagai *logam tambahan ÷ tonase tambahan*, bukan
+rata-rata dua kadar. Baris tambahan hanya bermakna untuk pit **bersarang**; untuk pit yang saling terpisah, baca
+baris per pit saja.
+
+### 2. Progres topo-ke-topo (ore reconcile)
+Mode **Progres topo-ke-topo**: isi **topografi atas** = survei yang lebih **awal** (mis. akhir Juni) dan
+**topografi bawah** = survei yang lebih **baru** (akhir Juli). Yang dilaporkan adalah blok yang titik pusatnya
+**di bawah** permukaan atas dan **di atas** permukaan bawah — material yang tergali antara dua survei, dengan
+seluruh atribut kadar block model (centang *Laporkan semua atribut kadar*), rincian per RL, dan export CSV.
+
+Bila atas dan bawah tertukar, hasilnya **0 blok** — itu petunjuknya, bukan galat.
+
+> ⚠ Hasil ini adalah **block model di antara dua permukaan**, bukan timbangan. Rekonsiliasi sebenarnya tetap
+> membandingkannya dengan tonase ROM / pabrik: survei topografi punya ketidakpastian sendiri dan kadar blok adalah
+> hasil estimasi. Blok dihitung utuh menurut titik pusatnya, kecuali `sb_frac` dinyalakan di tab ①.
+
+Semua batasan lain (domain, poligon, rentang RL, filter atribut, SG, `sb_frac`, daftar cut-off) tetap diambil dari
+tab ① dan ②: yang diganti **hanya permukaan atas & bawah**, sehingga angkanya sebanding dengan laporan biasa.
+Secara teknis modul ini mengisi `RP.ovr` lalu memanggil `rpRun()` milik aplikasi sekali untuk tiap target — tidak
+ada mesin perhitungan kedua yang bisa berbeda hasilnya.
+
+### 3. Data latihan baru
+`python docs/tutorial-gcex/tambah_pit_topo.py` membuat empat permukaan DXF 3DFACE (hasilnya selalu sama):
+
+| Berkas | Isi |
+| --- | --- |
+| `SIM_pit_fase1.dxf`, `SIM_pit_fase2.dxf` | dua tahap desain pit, lantai RL 240 dan RL 180, lereng 45° (bersarang) |
+| `SIM_topo_akhir_juni.dxf`, `SIM_topo_akhir_juli.dxf` | dua survei topografi bulanan pit yang sama (lantai RL 260 lalu RL 245) |
+
+Pada data latihan: fase 1 **3.384 blok / 549.900 t**, fase 2 **16.103 blok / 2.616.738 t**, progres sebulan
+**2.439 blok / 396.338 t** (SG 2,6, tanpa batas domain).
+
+### 4. Tombol Demo disusun ulang (kedua aplikasi)
+- Urutan langkah mengikuti **buku tutorial**, bukan urutan menu.
+- Keterangan tiap langkah dipendekkan menjadi **satu kalimat** (sebagian tadinya 300 huruf dan tidak terbaca
+  selesai sebelum langkahnya berganti).
+- Tempo bawaan **0,55×** durasi lama dan kursor diperbarui **20 fps**; pilihan kecepatan menjadi
+  **Pelan / Sedang / Cepat / Kilat**.
+- Langkah pertama menyebutkan **data yang sedang terbuka** dan mengingatkan bila bukan data latihan simulasi
+  `SIM_*` — demo berjalan di atas data yang dimuat, bukan data bawaan di dalam installer.
+- Langkah baru untuk menu yang belum pernah masuk demo: serap wireframe Leapfrog, kerangka AOI & sub-blocking,
+  estimasi waste, autorun, pemeriksaan dig block, preset kelas, ringkasan harian, laporan periode, dan laporan per
+  desain pit / progres topo-ke-topo.
+
+> Diuji di aplikasi sungguhan: **16 pemeriksaan lulus di kedua aplikasi**, dibandingkan dengan hitungan **bebas**
+> (jumlah blok dihitung ulang dari rumus kerucut pit, tanpa melewati jalur DTM): selisih 0,4–0,5 % karena
+> pembulatan segitiga DTM, dan Drill Hole maupun Block Model memberi angka yang **sama persis**. Seluruh tur Demo
+> juga dijalankan sampai habis di kedua aplikasi tanpa galat JavaScript.

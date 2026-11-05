@@ -4319,6 +4319,9 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     o.sx=o.sx||[];var D=rpDomFn(o,m),tz=null,pz=null,tzT=false,pzT=false,cache={},ta=spAct('topo'),pa=spAct('pit');
     if(o.surf==='topo'||o.surf==='pit'){if(ta&&ta.tin){var tf=rpTinFn(ta.tin);tz=function(x,y){var r=tf(x+offX,y+offY);return r?r[1]:null;};tzT=true;}else{if(!imTopoOk())throw new Error('Topografi belum ada (menu Data Spasial).');tz=rpSurf(OV.topoF);}}
     if(o.surf==='pit'){if(pa&&pa.tin){var pf=rpTinFn(pa.tin);pz=function(x,y){var r=pf(x+offX,y+offY);return r?r[0]:null;};pzT=true;}else{if(!(OV.pitF&&OV.pitF.x.length))throw new Error('Desain pit belum ada (menu Data Spasial).');pz=rpSurf(OV.pitF);}}
+    /* RP.ovr: permukaan atas / bawah ditentukan dari luar (rppit.js -- laporan beberapa desain pit
+       sekaligus dan progres penambangan topo-ke-topo). Mesin hitungnya tetap yang ini. */
+    if(RP.ovr){tz=RP.ovr.tz||null;pz=RP.ovr.pz||null;tzT=!!RP.ovr.tzT;pzT=!!RP.ovr.pzT;}
     var SX=o.sx.map(function(q){var r=rpSurfSrc(q.k);if(!r||!r.fn)throw new Error('Batas DTM tambahan tidak ditemukan / bukan permukaan segitiga ('+q.k+'). Hapus barisnya atau import ulang.');return{fn:r.fn,n:r.n,side:q.side,c:{}};});
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),SGA=o.sgMode==='a'&&m.num[o.sgAttr]?m.num[o.sgAttr]:null,sg0=+o.sg||2.6;
     var grp=o.grp,bh=Math.max(0.5,+o.bh||5),GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null,dE=m.cat[meAN().dom];
@@ -4342,7 +4345,8 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,surf:o.surf,surfN:(o.surf!=='none'?((ta?ta.name:'')+(tzT?' [DTM]':'')+(o.surf==='pit'?' / pit '+(pa?pa.name:'')+(pzT?' [DTM]':''):'')):''),sxD:SX.map(function(q){return (q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,sg:SGA?'atribut '+o.sgAttr:'SG '+sg0,date:new Date().toLocaleString('id-ID'),bm:m.name};
     RP.sec='2';if(o.show){BX.rpOnly=true;BX.sc={};updatePlot();}rpPanel();}
   catch(e){console.error(e);if(msg)msg.innerHTML='<span class=warn>'+rpE(e.message)+'</span>';else alert(e.message);}}
-function rpMetal(a,t,g,u){if(u==='%')return t*g/100;return t*g;}/* g/t & ppm -> gram; % -> ton logam */
+function rpMetal(a,t,g,u){if(u==='%')return t*g/100;return t*g;}
+RP.api={surf:rpSurf,tin:rpTinFn};   /* dipakai rppit.js (per pit & topo-ke-topo) *//* g/t & ppm -> gram; % -> ton logam */
 function rpMetU(u){return u==='%'?'t logam':'gram';}
 function rpTot(G){var r={n:0,v:0,t:0,s:{}};Object.keys(G).forEach(function(k){var a=G[k];r.n+=a.n;r.v+=a.v;r.t+=a.t;Object.keys(a.s).forEach(function(at){var q=r.s[at]||(r.s[at]={tw:0,w:0});q.tw+=a.s[at].tw;q.w+=a.s[at].w;});});return r;}
 function rpTable(){var R=RP.res;if(!R)return '';var at=R.atts,h='<div class=rpwrap><table class="pltb rptb"><tr><th>Cut-off<br><small>'+rpE(R.gr)+'</small></th><th>Blok</th><th>Volume<br><small>m³</small></th><th>Tonase<br><small>t</small></th>'+

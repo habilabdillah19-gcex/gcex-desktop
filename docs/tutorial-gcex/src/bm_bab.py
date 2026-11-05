@@ -30,7 +30,7 @@ BAGIAN = [
   'Melaporkan tonase dan kadar dari block model dengan <i>constraint</i> &mdash; di bawah topografi, di dalam '
   'desain pit, per bench, per kategori, per cut-off.',
   ['Laporan grade', 'Ringkasan harian flitch aktif', 'Rekap dig block: multi-unsur',
-   'Pembobotan proporsi sub-blok']),
+   'Pembobotan proporsi sub-blok', 'Laporan per desain pit']),
  ('Bagian IV &middot; As-mined &amp; rekonsiliasi',
   'Membandingkan rencana dengan aktual: permukaan as-mined, register pekerjaan, dan rekonsiliasi flitch per '
   'flitch antara dig plan dan material yang benar-benar tergali.',
@@ -56,7 +56,11 @@ ch('Tentang tutorial ini', """<p>Tutorial ini mengajarkan alur kerja <b>grade co
 ch('Data latihan', f"""<p><code>SIM_BM_GC_kadar.csv</code> adalah block model GC <b>sintetis</b> (bukan data perusahaan): {fN(N['nBlok'])} blok 2,5 &times; 2,5 &times; 2,5 m di sekitar vein simulasi, atribut <b>{N['atribut']}</b>, dan <code>DOMAIN</code>.</p>
 <table class="t"><tr><th>Kolom</th><th>Isi</th></tr><tr><td>AU</td><td>kadar emas (g/t)</td></tr><tr><td>SG</td><td>berat jenis</td></tr>
 <tr><td>S_PCT</td><td><b>baru</b>: sulfur (%) fiktif; naik di bawah zona oksida (RL &lt; 290) dan di dalam vein</td></tr>
-<tr><td>ZN_PPM, CU_PPM</td><td><b>baru</b>: seng &amp; tembaga (ppm) fiktif, mengikuti kadar Au</td></tr><tr><td>DOMAIN</td><td>QV_Utama / QV_HW1 / WASTE</td></tr></table>"""
+<tr><td>ZN_PPM, CU_PPM</td><td><b>baru</b>: seng &amp; tembaga (ppm) fiktif, mengikuti kadar Au</td></tr><tr><td>DOMAIN</td><td>QV_Utama / QV_HW1 / WASTE</td></tr></table>
+<p>Untuk bab <b>Laporan per desain pit &amp; progres topo-ke-topo</b> ada empat permukaan DXF 3DFACE di folder yang sama, semuanya sintetis:</p>
+<table class="t"><tr><th>Berkas</th><th>Isi</th></tr>
+<tr><td>SIM_pit_fase1.dxf, SIM_pit_fase2.dxf</td><td>dua tahap desain pit (lantai RL 240 dan RL 180, lereng 45&deg;); fase 2 memuat fase 1</td></tr>
+<tr><td>SIM_topo_akhir_juni.dxf, SIM_topo_akhir_juli.dxf</td><td>dua survei topografi bulanan pit yang sama (lantai RL 260 lalu RL 245); selisihnya = material tergali sebulan</td></tr></table>"""
  + tip('Kolom S_PCT, ZN_PPM dan CU_PPM ditambahkan untuk latihan <b>additional flagging</b>. Dibuat ulang dengan <code>python tambah_unsur_bm.py</code> (hasil selalu sama).'))
 
 ch('Halaman muka & import block model', dta('<code>data/SIM_BM_GC_kadar.csv</code> &mdash; 66.147 blok 5 &times; 5 &times; 2,5 m; kolom <code>AU_GC</code> (g/t), <code>SG</code>, <code>DOMAIN</code>, <code>S_PCT</code> (%), <code>ZN_PPM</code>, <code>CU_PPM</code>',
@@ -212,6 +216,29 @@ ch('Review flitch per flitch di Project Tree', dta('lanjutan &mdash; dua flitch'
 
 ch('Layout & ekspor dig plan', steps('Project Tree &rarr; <b>Layout &amp; Ekspor Dig Plan &rarr; Layout &amp; plot PDF</b> ([[layout]]): judul, skala, elemen laporan, tabel tonase; PDF siap cetak.',
  '<b>Export STR / DXF (Surpac)</b> untuk string dig block; <b>Simpan gambar PNG</b> untuk tampilan saat ini.') + fig('layout', 'Layout &amp; plot PDF.'))
+
+ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; import lewat <b>Data Referensi</b> &rarr; Import model / solid',
+     [('Atribut &amp; cut-off', 'tab &#9312; seperti biasa (latihan: <code>AU_GC</code>, cut-off <b>0</b>, per RL 5 m)'),
+      ('Mode 1 &mdash; per pit', 'topografi <code>SIM_topo_akhir_juni</code>; centang <b>SIM_pit_fase1</b> lalu <b>SIM_pit_fase2</b>'),
+      ('Mode 2 &mdash; progres', 'atas <code>SIM_topo_akhir_juni</code>, bawah <code>SIM_topo_akhir_juli</code>'),
+      ('Hasil yang seharusnya', 'fase 1 <b>3.384 blok</b> / 549.900 t &middot; fase 2 <b>16.103 blok</b> / 2.616.738 t &middot; progres sebulan <b>2.439 blok</b> / 396.338 t (SG 2,6)')])
+ + '<p>Dua pekerjaan short term planning yang sebelumnya harus diulang-ulang: membandingkan <b>fase pit</b>, dan menghitung material yang benar-benar <b>tergali bulan ini</b>. Keduanya ada di tab <b>&#9315; Pit &amp; progres</b> pada Reporting Block Model (atau node <b>Per desain pit &amp; progres topo-ke-topo</b> di bawah <b>Laporan</b>).</p>'
+ + warn('Tab ini memakai atribut, cut-off, pengelompokan, domain, poligon, SG dan <code>sb_frac</code> yang sudah diatur di tab &#9312; dan &#9313;. Yang diganti hanya <b>permukaan atas &amp; bawah</b>, jadi angkanya sebanding dengan laporan biasa.', 'Yang diganti hanya permukaan')
+ + '<h3>1. Beberapa desain pit sekaligus</h3>'
+ + steps('Import desain pitnya (DXF / DTM Surpac) di <b>Data Referensi</b>.',
+   'Reporting &rarr; tab <b>&#9315; Pit &amp; progres</b> &rarr; mode <b>Per desain pit</b>.',
+   'Pilih <b>satu</b> topografi untuk semua pit, lalu centang desain pit dari yang terkecil ke terbesar.',
+   'Klik <b>Hitung per pit</b>: satu baris per pit, dan baris <b>tambahan</b> = selisih terhadap pit di atasnya (berlaku untuk pit bersarang).')
+ + '<h3>2. Progres topo-ke-topo</h3>'
+ + steps('Mode <b>Progres topo-ke-topo</b>.',
+   '<b>Topografi atas</b> = survei lebih awal (mis. akhir Juni), <b>topografi bawah</b> = survei lebih baru (akhir Juli).',
+   'Biarkan <b>Laporkan semua atribut kadar</b> menyala agar seluruh unsur masuk laporan.',
+   'Klik <b>Hitung progres</b>, lalu <b>Export CSV</b>.')
+ + kv([('Yang dihitung', 'blok yang titik pusatnya <b>di bawah</b> topografi atas dan <b>di atas</b> topografi bawah'),
+       ('Dipakai untuk', 'rekonsiliasi bulanan: tonase &amp; kadar material yang tergali menurut block model'),
+       ('Bukan untuk', 'menggantikan timbangan ROM &mdash; bandingkan keduanya, jangan salah satu dianggap benar'),
+       ('Bila hasilnya 0 blok', 'topografi atas dan bawah tertukar')])
+ + tip('Untuk pelaporan bulanan rutin, kombinasikan dengan <b>Laporan periode</b>: progres topo-ke-topo memberi angka dari block model, laporan periode memberi angka dari poligon as-mined yang dicatat harian. Selisih keduanya adalah bahan diskusi rekonsiliasi.'))
 
 ch('As-mined: rencana vs aktual', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75',
      [('Poligon aktual', 'di latihan ini dibuat dari dig block <b>HG</b> dan <b>LG</b> yang digeser <b>+0,6 m</b> ke timur dan <b>&minus;0,4 m</b> ke utara (simulasi penggalian)'),

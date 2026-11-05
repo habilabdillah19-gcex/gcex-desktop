@@ -129,7 +129,7 @@ BAGIAN = [
   '<b>Measured / Indicated / Inferred</b> per blok dari atribut hasil estimasi, lalu melaporkan tonase dan '
   'kadar per kelas dan per cut-off. Blok waste (<code>est_type = 3</code>) sengaja tidak ikut pelaporan '
   'sumber daya &mdash; kadarnya untuk dilusi, ore loss dan perencanaan pit.',
-  ['Klasifikasi keyakinan']),
+  ['Klasifikasi keyakinan', 'Laporan per desain pit']),
  ('Bagian V &middot; Data pendukung, export &amp; pemeliharaan',
   'Peta 2D, pergantian topografi / block model per periode, export ke Surpac dan perawatan folder proyek.',
   ['Map: peta geologi 2D', 'Mengganti topografi', 'Topografi &amp; orthofoto resolusi tinggi',
@@ -194,6 +194,8 @@ ch('Data simulasi', f'''
 <tr><td>QV_Lensa2_Leapfrog.obj</td><td>Contoh wireframe lensa 2 hasil Leapfrog (tertutup, 21.596 segitiga).</td></tr>
 <tr><td>SIM_struktur.csv</td><td>96 titik struktur (Easting, Northing, RL, Jenis, Dip, Dip_Azimuth, Plunge, Trend, Catatan): kontak vein di singkapan dan bidang sesar.</td></tr>
 <tr><td>SIM_pickup_survey.csv</td><td>142 titik pick-up survei (Kode, Easting, Northing, RL, Tebal_m, Keterangan): singkapan vein tiap lensa.</td></tr>
+<tr><td>SIM_pit_fase1.dxf, SIM_pit_fase2.dxf</td><td>Dua tahap <b>desain pit</b> (DXF 3DFACE, kerucut lereng 45&deg;, lantai RL 240 dan RL 180); fase 2 memuat fase 1 sehingga bisa dipakai latihan laporan <b>per desain pit</b>.</td></tr>
+<tr><td>SIM_topo_akhir_juni.dxf, SIM_topo_akhir_juli.dxf</td><td>Dua <b>survei topografi bulanan</b> pada pit yang sama (lantai RL 260 lalu RL 245): selisihnya = material tergali sebulan, untuk latihan <b>progres topo-ke-topo</b>.</td></tr>
 <tr><td>SIM_split_*.csv</td><td>Proyek terpisah vein bercabang (latihan domain induk).</td></tr>
 <tr><td>SIM_rusak_collar.csv, SIM_rusak_assay.csv</td><td>Database dengan kesalahan sengaja untuk latihan validasi.</td></tr>
 <tr><td>SIM_LAT_collar / survey / assay / geologi.csv</td><td>Proyek terpisah <b>laterit nikel</b>: {NL['nHole']} bor vertikal grid 25 m, sampel 1 m ({fN(NL['nAssay'])} sampel), unsur Ni, Co, Fe, MgO, SiO2 (%), kolom <code>Zona</code>: TS (tanah penutup), LIM, SAP, BRK.</td></tr>
@@ -826,6 +828,37 @@ ch('Klasifikasi keyakinan & kerapatan bor', dta('lanjutan &mdash; atribut hasil 
  + '<h3>Kerapatan bor per blok</h3><p>Jumlah komposit saja bukan ukuran kerapatan: dua puluh komposit dari <b>satu</b> lubang tidak sama dengan dua puluh komposit dari enam lubang. Karena itu syarat Measured / Indicated memakai <code>est_nhole</code> dan <code>est_spasi</code>.</p>'
  + figs(('kerapatan_3d', f"Block model berwarna est_spasi (batas kelas 15 / 25 / 40 / 60 m): median spasi bor setempat {fz(SPS.get('med'),1)} m (p10 {fz(SPS.get('p10'),1)} m, p90 {fz(SPS.get('p90'),1)} m), median {fz(SPS.get('nholeMed'))} lubang bor per blok. Bagian dalam endapan yang hanya terbor tiap sayatan ke-3 tampak jelas lebih renggang."),)
  + warn('Ambang ini usulan geostatistik, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> sesuai KCMI / JORC.'))
+
+ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; DXF 3DFACE, diimport ke <b>Data Referensi</b> (atau Data Spasial sebagai versi topografi / pit)',
+     [('Atribut &amp; cut-off', 'diatur seperti biasa di tab &#9312; (latihan: <code>AU_GC</code>, cut-off <b>0</b>, pengelompokan per RL 5 m)'),
+      ('Mode 1 &mdash; per pit', 'topografi <code>SIM_topo_akhir_juni</code>; centang <b>SIM_pit_fase1</b> lalu <b>SIM_pit_fase2</b>'),
+      ('Mode 2 &mdash; progres', 'atas <code>SIM_topo_akhir_juni</code>, bawah <code>SIM_topo_akhir_juli</code>'),
+      ('Hasil yang seharusnya', 'fase 1 <b>3.384 blok</b> / 549.900 t &middot; fase 2 <b>16.103 blok</b> / 2.616.738 t &middot; progres sebulan <b>2.439 blok</b> / 396.338 t (SG 2,6, tanpa batas domain)')])
+ + '<p>Reporting BM biasa memakai <b>satu</b> permukaan topografi dan <b>satu</b> desain pit: yang sedang aktif. Dua pekerjaan rutin karena itu jadi berulang &mdash; membandingkan fase pit, dan menghitung material yang benar-benar tergali bulan ini. Tab <b>&#9315; Pit &amp; progres</b> (node <b>Per desain pit &amp; progres topo-ke-topo</b> di bawah Reporting BM) mengerjakan keduanya tanpa mengganti versi aktif.</p>'
+ + warn('Tab ini <b>tidak</b> punya pengaturan sendiri untuk atribut, cut-off, domain, poligon, RL, SG atau <code>sb_frac</code>. Semuanya diambil dari tab &#9312; dan &#9313;, dan hanya <b>permukaan atas &amp; bawah</b> yang diganti &mdash; supaya angkanya pasti sebanding dengan laporan biasa.', 'Yang diganti hanya permukaan')
+ + '<h3>1. Beberapa desain pit sekaligus, topografi sama</h3>'
+ + steps('Import kedua desain pit: <b>Data Referensi</b> &rarr; <b>Import model vein / solid</b> &rarr; <code>SIM_pit_fase1.dxf</code> dan <code>SIM_pit_fase2.dxf</code>. (Cara kerja: Data Spasial &rarr; <b>+ Tambah versi desain pit</b> juga bisa, dan versi lama tetap tersimpan.)',
+   'Reporting BM &rarr; tab <b>&#9312;</b>: pilih atribut dan cut-off seperti biasa. Lalu tab <b>&#9315; Pit &amp; progres</b>, mode <b>Per desain pit</b>.',
+   'Pilih <b>topografi</b> &mdash; satu untuk semua pit, supaya perbedaan angka benar-benar berasal dari desain pitnya.',
+   'Centang desain pit <b>dari yang terkecil ke terbesar</b>, lalu <b>Hitung per pit</b>.')
+ + '<p>Hasilnya satu baris per pit: blok, volume, tonase, kadar tiap atribut dan logamnya. Di bawah tiap baris (mulai baris kedua) ada baris <b>tambahan</b>: selisih terhadap pit di atasnya.</p>'
+ + kv([('Tonase &amp; logam tambahan', 'dikurangkan langsung (fase 2 &minus; fase 1)'),
+       ('Kadar tambahan', 'logam tambahan &divide; tonase tambahan &mdash; bukan rata-rata dua kadar'),
+       ('Syaratnya', 'pit <b>bersarang</b> (fase berikutnya memuat fase sebelumnya). Untuk pit yang saling terpisah, baca baris per pit saja dan abaikan baris tambahan')])
+ + why('Angka yang dicari short term planner adalah <i>berapa tambahan ore bila pit diperdalam ke fase berikutnya</i>. Menghitungnya dari dua laporan terpisah berarti dua kali ganti versi aktif, dua kali catat, dan satu kesempatan salah catat.')
+ + '<h3>2. Progres topo-ke-topo (ore reconcile)</h3>'
+ + '<p>Material yang tergali antara dua survei adalah blok yang berada <b>di bawah topografi lama</b> dan <b>di atas topografi baru</b>. Dengan begitu seluruh atribut block model bisa dilaporkan untuk periode itu: tonase, kadar tiap unsur, logam, dan rinciannya per RL.</p>'
+ + steps('Import kedua survei (Data Referensi atau Data Spasial): <code>SIM_topo_akhir_juni.dxf</code> dan <code>SIM_topo_akhir_juli.dxf</code>.',
+   'Tab <b>&#9315; Pit &amp; progres</b> &rarr; mode <b>Progres topo-ke-topo</b>.',
+   'Isi <b>topografi atas</b> = survei yang lebih <b>awal</b> (akhir Juni), <b>topografi bawah</b> = survei yang lebih <b>baru</b> (akhir Juli).',
+   'Biarkan <b>Laporkan semua atribut kadar</b> menyala bila ingin seluruh unsur ikut, bukan hanya yang dicentang di tab &#9312;.',
+   'Klik <b>Hitung progres</b>, lalu <b>Export CSV</b> untuk laporan bulanan.')
+ + kv([('Yang dilaporkan', 'blok, volume, tonase, kadar &amp; logam tiap atribut, dan rincian per RL / kategori sesuai pengelompokan di tab &#9312;'),
+       ('Permukaan DTM', 'bila berupa DTM segitiga (.dtm / .dxf), blok di <b>luar jangkauan</b> DTM tidak dihitung dan dilaporkan sebagai <i>di luar DTM</i> &mdash; sama seperti Surpac'),
+       ('Permukaan titik XYZ', 'diinterpolasi IDW seperti Reporting biasa'),
+       ('Arah yang benar', 'bila atas dan bawah tertukar, hasilnya 0 blok &mdash; itu tandanya, bukan galat')])
+ + warn('Hasil ini adalah <b>block model di antara dua permukaan</b>, bukan timbangan. Rekonsiliasi sebenarnya tetap membandingkannya dengan tonase ROM / pabrik: survei punya ketidakpastiannya sendiri, dan blok dihitung utuh menurut titik pusatnya (pakai <code>sb_frac</code> bila block model sudah dipecah di batas solid).')
+ + tip('Untuk laporan bulanan rutin: simpan tiap survei sebagai <b>versi</b> di Data Spasial dengan catatan tanggalnya (mis. &ldquo;survei drone 30 Juni&rdquo;), supaya pasangan topografi tiap bulan tinggal dipilih dan tidak tertukar.'))
 
 ch('Vein bercabang: domain induk', dta('<b>proyek terpisah</b>: <code>data/SIM_split_collar / survey / assay / geologi.csv</code> + block model <code>SIM_split_BM_GC.csv</code>, topografi <code>SIM_topo_xyz.csv</code>',
      [('Folder proyek', 'folder kosong baru, mis. <code>Proyek_Tutorial_Split</code>'),

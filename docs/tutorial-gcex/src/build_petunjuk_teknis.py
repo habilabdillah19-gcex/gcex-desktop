@@ -10,6 +10,7 @@ Jalankan:  python docs/tutorial-gcex/src/build_petunjuk_teknis.py
 Hasil:     docs/GCEx_Petunjuk_Teknis.pdf
 """
 import os
+import re
 
 import matplotlib
 matplotlib.use('Agg')
@@ -126,23 +127,8 @@ F1, F2, F3 = f_arsitektur(), f_alur(), f_dua_jalur()
 
 # ================================================================== isi dokumen
 B = []
-B.append(D.cover(
-    'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
-    'Petunjuk Teknis GC-', 'Ex',
-    'Cara kerja, alur data, format impor / ekspor, algoritme yang dipakai, kerangka blok AOI, '
-    'estimasi waste (vein &amp; berlapis), sub-blocking di batas solid, batasan dan masalah umum. '
-    'Pendamping <i>Tutorial Update GC-Ex</i>. Berlaku untuk GC-Ex Drill Hole Ultimate dan GC-Ex Block Model.',
-    ['1. Cara kerja singkat', '2. Memasang & menjalankan', '3. Folder proyek dan apa yang disimpan',
-     '4. Alur kerja data', '5. Data bor: format & aturan', '6. Dua jalur estimasi: vein dan berlapis',
-     '7. Algoritme yang dipakai', '8. Kerangka blok AOI, estimasi waste & proporsi volume',
-     '9. Klasifikasi keyakinan sumber daya',
-     '10. Topografi & orthofoto resolusi tinggi', '11. Format impor / ekspor',
-     '12. GC-Ex Block Model: flitch, dig block, as-mined', '13. Dikerjakan bersama beberapa geologist',
-     '14. Batasan yang perlu diketahui', '15. Masalah umum', '16. Hak cipta & syarat penggunaan'],
-    'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
-    'Semua nama perusahaan, lubang bor, koordinat dan kadar pada contoh di dokumen ini fiktif.<br>'
-    'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.' % (VBM, VDH, D.tanggal())))
-
+# sampul disisipkan di akhir (daftar isi dihitung dari judul <h2> yang benar-benar ada,
+# supaya tidak pernah ketinggalan saat bagian baru ditambahkan)
 # ---- 1
 B.append('<h2>1. Cara kerja singkat</h2>')
 B.append('<p>GC-Ex adalah dua aplikasi desktop terpisah yang dipasang sendiri-sendiri: '
@@ -514,7 +500,51 @@ B.append('<div class=warn>&#9888; Ambang di panel adalah <b>usulan geostatistik 
          'pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>')
 
 # ---- 9
-B.append('<h2>13. Topografi &amp; orthofoto resolusi tinggi</h2>')
+B.append('<div class="page"></div><h2>13. Laporan beberapa desain pit &amp; progres topo-ke-topo</h2>')
+B.append('<p>Reporting BM memakai <b>satu</b> topografi dan <b>satu</b> desain pit: yang sedang aktif. Dua '
+         'pekerjaan rutin karena itu tidak pernah menghasilkan angka berdampingan &mdash; membandingkan fase '
+         'pit, dan menghitung material yang benar-benar tergali antara dua survei. Tab <b>&#9315; Pit &amp; '
+         'progres</b> (ada di Drill Hole maupun Block Model) mengerjakan keduanya.</p>')
+B.append(D.tabel(['Mode', 'Yang dihitung'], [
+    ['Per desain pit', 'untuk tiap desain pit yang dicentang: blok di bawah <b>satu</b> topografi yang sama dan '
+     'di atas desain pit itu. Satu baris per pit, plus baris <b>tambahan</b> = selisih terhadap pit sebelumnya'],
+    ['Progres topo-ke-topo', 'blok di bawah topografi <b>lama</b> dan di atas topografi <b>baru</b> = material '
+     'tergali antara dua survei; seluruh atribut kadar dapat dilaporkan sekaligus']]))
+B.append('<p><b>Cara pemasangannya penting untuk dipercaya.</b> Modul ini tidak menyalin mesin perhitungan '
+         'Reporting. Ia mengisi <code>RP.ovr</code> (permukaan atas / bawah), memanggil <code>rpRun()</code> '
+         'milik aplikasi sekali untuk tiap target, lalu mengumpulkan hasilnya. Akibatnya semua batasan lain '
+         '&mdash; domain, poligon, rentang RL, filter atribut, SG, <code>sb_frac</code>, daftar cut-off &mdash; '
+         'berlaku apa adanya, dan angkanya pasti sebanding dengan laporan biasa. Satu-satunya yang diganti '
+         'adalah permukaan.</p>')
+B.append(D.tabel(['Hal', 'Perilaku'], [
+    ['Sumber permukaan', 'versi topografi / desain pit di <b>Data Spasial</b> (Drill Hole) dan DTM / wireframe '
+     'di <b>Data Referensi</b> (kedua aplikasi). DTM segitiga dipakai persis seperti Surpac; titik / kontur '
+     'diinterpolasi IDW'],
+    ['Di luar jangkauan DTM', 'blok tidak dihitung dan dilaporkan terpisah sebagai <i>di luar DTM</i>'],
+    ['Kadar tambahan antar pit', 'logam tambahan &divide; tonase tambahan &mdash; bukan rata-rata dua kadar. '
+     'Hanya benar untuk pit <b>bersarang</b>; untuk pit terpisah baca baris per pit saja'],
+    ['Atas &amp; bawah tertukar', 'hasilnya 0 blok (bukan angka negatif) &mdash; itu petunjuk, bukan galat'],
+    ['Blok dihitung', 'utuh menurut titik pusatnya, kecuali block model sudah dipecah dan <code>sb_frac</code> '
+     'dinyalakan di tab &#9312;']]))
+B.append('<p>Uji yang dijalankan sebelum rilis membandingkan hasil kedua mode dengan hitungan <b>bebas</b>: '
+         'jumlah blok dihitung ulang langsung dari rumus kerucut pit data latihan, tanpa melewati jalur DTM. '
+         'Pada data latihan selisihnya 0,4&ndash;0,5% (3.384 vs 3.398 blok; 16.103 vs 16.112; 2.439 vs 2.452) '
+         '&mdash; berasal dari pembulatan segitiga DTM terhadap kerucut matematisnya, dan kedua aplikasi '
+         'memberi angka yang sama persis.</p>')
+B.append('<div class=warn>&#9888; Hasil progres topo-ke-topo adalah <b>block model di antara dua permukaan</b>, '
+         'bukan timbangan. Rekonsiliasi sebenarnya tetap membandingkannya dengan tonase ROM / pabrik: survei '
+         'topografi punya ketidakpastian sendiri, dan kadar blok adalah hasil estimasi.</div>')
+B.append('<h3>Tombol Demo</h3>')
+B.append('<p>Tur otomatis di bilah atas kedua aplikasi disusun ulang mengikuti urutan <b>buku tutorial</b> '
+         '(bukan urutan menu), keterangan tiap langkah dipendekkan menjadi satu kalimat, tempo bawaan '
+         '0,55&times; durasi lama dengan pembaruan kursor 20 fps, dan pilihan kecepatan menjadi Pelan / Sedang '
+         '/ Cepat / Kilat. Demo dijalankan di atas <b>data yang sedang terbuka</b>; langkah pertamanya '
+         'menyebutkan dataset itu dan mengingatkan bila yang terbuka bukan data latihan simulasi. Langkah baru '
+         'ditambahkan untuk menu yang belum pernah masuk demo: serap wireframe Leapfrog, kerangka AOI &amp; '
+         'sub-blocking, estimasi waste, autorun, pemeriksaan dig block, preset kelas, ringkasan harian, laporan '
+         'periode, dan laporan per desain pit / progres topo-ke-topo.</p>')
+
+B.append('<h2>14. Topografi &amp; orthofoto resolusi tinggi</h2>')
 B.append('<p>Orthofoto disusun menjadi <b>piramida LOD</b>: level 0 piksel asli, tiap level berikutnya '
          'merata-ratakan 2 &times; 2. Warna diambil dari level yang texel-nya sepadan dengan kerapatan '
          'tampilan, sehingga rata-rata area (anti-alias) dan tidak berkerlip. Resolusi <b>dan</b> luas mesh '
@@ -532,7 +562,7 @@ B.append('<div class=box><b>Hasil laporan tidak berubah.</b> Grid elevasi cepat 
          'tetap memakai fungsi elevasi aslinya.</div>')
 
 # ---- 10
-B.append('<h2>14. Format impor / ekspor</h2>')
+B.append('<h2>15. Format impor / ekspor</h2>')
 B.append(D.tabel(['Keperluan', 'Masuk', 'Keluar'], [
     ['Data bor', 'CSV, Excel (header bebas)', 'CSV, Excel'],
     ['Block model', '.mdl (Surpac), CSV', '.mdl, CSV'],
@@ -545,7 +575,7 @@ B.append('<p>Nama produk dan format pihak lain disebut semata-mata untuk menjela
          'data. Kecocokan diupayakan tetapi tidak dijamin, dan dapat berubah bila format mereka berubah.</p>')
 
 # ---- 11
-B.append('<h2>15. GC-Ex Block Model: flitch, dig block, as-mined</h2>')
+B.append('<h2>16. GC-Ex Block Model: flitch, dig block, as-mined</h2>')
 B.append(D.bullets(
     '<b>Flitch</b> — block model dipotong per ketinggian kerja; Project Tree memberi subnode tiap flitch '
     'sehingga audit atau review dapat langsung memilih flitch yang dimaksud.',
@@ -613,7 +643,7 @@ B.append('<p>Latar orthofoto pada Penampang 2D horizontal (termasuk tampilan fli
          'sehingga <b>zoom masuk makin tajam</b>. Node <b>Orthofoto (latar plan / flitch)</b> di bawah Flitch '
          'Aktif menyediakan nyala/mati, opasitas, dan badge resolusi yang sedang dipakai.</p>')
 
-B.append('<h2>16. Dikerjakan bersama beberapa geologist</h2>')
+B.append('<h2>17. Dikerjakan bersama beberapa geologist</h2>')
 B.append('<p>Folder proyek dirancang agar dapat dibuka orang lain: berkas sumber disalin ke dalamnya, dan '
          'basis data proyek menyimpan riwayat perubahan. Yang perlu disepakati di tim:</p>')
 B.append(D.bullets(
@@ -624,7 +654,7 @@ B.append(D.bullets(
     'Parameter variogram dan pass disimpan <b>ke domain</b>, sehingga ikut berpindah bersama proyek.'))
 
 # ---- 13
-B.append('<h2>17. Batasan yang perlu diketahui</h2>')
+B.append('<h2>18. Batasan yang perlu diketahui</h2>')
 B.append(D.bullets(
     'Aplikasi <b>luring sepenuhnya</b>: tidak ada sinkronisasi antar komputer, tidak ada pembaruan otomatis.',
     'Lisensi <b>terikat komputer</b>. Ganti komputer berarti minta lisensi baru ke admin.',
@@ -638,7 +668,7 @@ B.append(D.bullets(
     '(mis. KCMI, JORC) atau keperluan komersial.'))
 
 # ---- 14
-B.append('<h2>18. Masalah umum</h2>')
+B.append('<h2>19. Masalah umum</h2>')
 B.append(D.tabel(['Gejala', 'Sebab yang biasa', 'Yang dilakukan'], [
     ['Menu atau centang layer tidak bisa diklik', 'datanya memang belum ada',
      'panel memberi keterangan <i>(belum ada data)</i>; import datanya dulu'],
@@ -658,7 +688,7 @@ B.append(D.tabel(['Gejala', 'Sebab yang biasa', 'Yang dilakukan'], [
      '0.24.4', 'jalankan ulang Model Estimation agar kerapatan bor ikut terekam']]))
 
 # ---- 15
-B.append('<h2>19. Hak cipta &amp; syarat penggunaan</h2>')
+B.append('<h2>20. Hak cipta &amp; syarat penggunaan</h2>')
 B.append('<p>GC-Ex adalah perangkat lunak independen dan <b>tidak</b> berafiliasi dengan, disponsori, atau '
          'didukung oleh pemilik merek perangkat lunak pertambangan mana pun. Nama-nama produk pihak lain '
          'dipakai semata-mata untuk menjelaskan kecocokan format berkas dan alur kerja.</p>')
@@ -668,6 +698,19 @@ B.append('<p>Daftar komponen open-source beserta teks lisensinya ada di folder <
          'penafian merek dagang, syarat penggunaan, serta teks lisensi Python, Electron / Chromium, dan font.</p>')
 B.append('<p>Perangkat lunak disediakan &ldquo;apa adanya&rdquo; tanpa jaminan apa pun. '
          'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.</p>')
+
+_ISI = [re.sub('<[^>]+>', '', m) for x in B for m in re.findall(r'<h2>(.*?)</h2>', x)]
+assert len(_ISI) >= 16, 'daftar isi kosong?'
+B.insert(0, D.cover(
+    'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
+    'Petunjuk Teknis GC-', 'Ex',
+    'Cara kerja, alur data, format impor / ekspor, algoritme yang dipakai, kerangka blok AOI, '
+    'estimasi waste (vein &amp; berlapis), sub-blocking di batas solid, batasan dan masalah umum. '
+    'Pendamping <i>Tutorial Update GC-Ex</i>. Berlaku untuk GC-Ex Drill Hole Ultimate dan GC-Ex Block Model.',
+    _ISI,
+    'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
+    'Semua nama perusahaan, lubang bor, koordinat dan kadar pada contoh di dokumen ini fiktif.<br>'
+    'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.' % (VBM, VDH, D.tanggal())))
 
 sz = D.render(B, PDF, 'Petunjuk Teknis GC-Ex %s / %s' % (VBM, VDH))
 print('OK', PDF, sz, 'byte')

@@ -17,6 +17,7 @@ import datetime
 import html
 import math
 import os
+import re
 
 import matplotlib
 matplotlib.use('Agg')
@@ -444,23 +445,7 @@ VBM, VDH = D.versi()
 
 
 B = []
-B.append(D.cover(
-    'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
-    'Tutorial Update GC-', 'Ex',
-    'Apa yang baru di GC-Ex Drill Hole Ultimate dan GC-Ex Block Model, dan bagaimana memakainya: '
-    'data latihan simulasi baru, klasifikasi keyakinan sumber daya, kerapatan bor per blok, '
-    'topografi &amp; orthofoto resolusi tinggi, block model dari nol (kerangka AOI), estimasi '
-    '<b>waste</b> untuk jalur vein maupun laterit, serta sub-blocking dan proporsi volume di batas '
-    'solid. Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
-    ['1. Data latihan simulasi baru', '2. Latihan terpandu: menemukan kembali geometri endapan',
-     '3. Klasifikasi keyakinan sumber daya', '4. Kerapatan bor per blok',
-     '5. Topografi &amp; orthofoto resolusi tinggi', '6. GC-Ex Block Model: yang baru',
-     '7. Block model dari nol: kerangka AOI', '8. Estimasi waste: kadar di luar wireframe ore',
-     '9. Sub-blocking &amp; proporsi volume', '10. Isi dokumen ini di tutorial bergambar'],
-    'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
-    'Semua gambar di dokumen ini <b>dihitung langsung dari model dan berkas data latihan</b>, bukan '
-    'tangkapan layar, sehingga angkanya selalu cocok dengan data yang Anda terima.<br>'
-    'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.' % (VBM, VDH, D.tanggal())))
+# sampul disisipkan di akhir: daftar isinya dihitung dari judul <h2> yang ada
 
 # ---- 1
 B.append('<h2>1. Data latihan simulasi baru</h2>')
@@ -902,7 +887,40 @@ B.append('<div class=box>Bila hasil estimasi terasa kurang data, periksa dulu no
          'filter yang tertinggal menyala adalah penyebab yang paling sering terlewat. Aturan dan status '
          'hidup-matinya ikut tersimpan di berkas proyek.</div>')
 
-B.append('<div class="page"></div><h2>11. Isi dokumen ini di tutorial bergambar</h2>')
+B.append('<div class="page"></div><h2>11. Laporan beberapa desain pit &amp; progres topo-ke-topo</h2>')
+B.append('<p>Reporting BM memakai topografi dan desain pit yang <b>sedang aktif</b> &mdash; satu-satu. '
+         'Membandingkan fase pit berarti mengganti versi aktif lalu menghitung lagi, dan angkanya tidak pernah '
+         'berdampingan. Tab baru <b>&#9315; Pit &amp; progres</b> di Reporting (ada di Drill Hole maupun Block '
+         'Model, juga sebagai node Project Tree di bawah Reporting / Laporan) mengerjakan dua hal:</p>')
+B.append(D.tabel(['Mode', 'Untuk apa'], [
+    ['Per desain pit', 'centang beberapa desain pit sekaligus; semuanya dihitung dengan <b>topografi yang '
+     'sama</b>. Satu baris per pit, plus baris <b>tambahan</b>: berapa tonase &amp; logam yang bertambah bila '
+     'pit diperdalam ke fase berikutnya (untuk pit bersarang)'],
+    ['Progres topo-ke-topo', 'untuk <b>ore reconcile</b>: material tergali antara dua survei = blok di bawah '
+     'topografi lama dan di atas topografi baru, mis. akhir Juni &rarr; akhir Juli. Seluruh atribut kadar '
+     'block model dapat dilaporkan sekaligus, dengan rincian per RL dan export CSV']]))
+B.append('<p>Atribut, cut-off, pengelompokan, domain, poligon, SG dan <code>sb_frac</code> tetap diambil dari '
+         'tab &#9312; dan &#9313;; yang diganti hanya permukaan atas &amp; bawah, sehingga angkanya sebanding '
+         'dengan laporan biasa. Permukaan boleh berasal dari versi Data Spasial maupun DTM / DXF di Data '
+         'Referensi; DTM segitiga dipakai persis seperti Surpac.</p>')
+B.append('<p><b>Data latihannya baru:</b> <code>SIM_pit_fase1.dxf</code> dan <code>SIM_pit_fase2.dxf</code> '
+         '(dua tahap desain pit, bersarang) serta <code>SIM_topo_akhir_juni.dxf</code> dan '
+         '<code>SIM_topo_akhir_juli.dxf</code> (dua survei bulanan pit yang sama). Pada data itu: fase 1 '
+         '3.384 blok / 549.900 t, fase 2 16.103 blok / 2.616.738 t, dan progres sebulan 2.439 blok / '
+         '396.338 t.</p>')
+B.append('<div class=warn>&#9888; Hasil progres adalah <b>block model di antara dua permukaan</b>, bukan '
+         'timbangan. Rekonsiliasi tetap membandingkannya dengan tonase ROM / pabrik.</div>')
+B.append('<h3>Tombol Demo disusun ulang</h3>')
+B.append('<p>Tur otomatis di bilah atas kini mengikuti urutan <b>buku tutorial</b>, bukan urutan menu: '
+         'Drill Hole berjalan dari data &amp; filter &rarr; sayatan &rarr; Geomodeller Vein &rarr; '
+         'Geostatistik &rarr; Model Estimation &rarr; kerangka AOI &amp; waste &rarr; autorun &rarr; laporan; '
+         'Block Model dari block model &rarr; flitch &rarr; dig block &rarr; pemeriksaan &rarr; laporan &rarr; '
+         'layout &rarr; as-mined &rarr; laporan periode. Keterangan tiap langkah dipendekkan menjadi satu '
+         'kalimat, tempo bawaan dipercepat (0,55&times;, 20 fps) dengan pilihan Pelan / Sedang / Cepat / Kilat, '
+         'dan langkah pertamanya menyebutkan <b>data yang sedang terbuka</b> &mdash; demo dimaksudkan '
+         'dijalankan di atas data latihan simulasi <code>SIM_*</code>.</p>')
+
+B.append('<div class="page"></div><h2>12. Isi dokumen ini di tutorial bergambar</h2>')
 B.append('<p>Semua bab di dokumen ini kini juga ada di dua tutorial bergambar, lengkap dengan <b>tangkapan layar '
          'aplikasi</b> dan angka dari satu kali jalannya latihan. Dokumen ini tetap diterbitkan sebagai ringkasan '
          '&ldquo;apa yang baru&rdquo;; untuk belajar langkah demi langkah, pakai tutorial bergambarnya.</p>')
@@ -923,6 +941,22 @@ import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
            open(os.path.join(FIGD, 'notes.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+_ISI = [re.sub('<[^>]+>', '', q) for x in B for q in re.findall(r'<h2>(.*?)</h2>', x)]
+assert len(_ISI) >= 10, 'daftar isi kosong?'
+B.insert(0, D.cover(
+    'GRADE CONTROL EXCELLENCE · KELUARGA GC-EX',
+    'Tutorial Update GC-', 'Ex',
+    'Apa yang baru di GC-Ex Drill Hole Ultimate dan GC-Ex Block Model, dan bagaimana memakainya: '
+    'data latihan simulasi baru, klasifikasi keyakinan sumber daya, kerapatan bor per blok, '
+    'topografi &amp; orthofoto resolusi tinggi, block model dari nol (kerangka AOI), estimasi '
+    '<b>waste</b> untuk jalur vein maupun laterit, serta sub-blocking dan proporsi volume di batas '
+    'solid. Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
+    _ISI,
+    'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
+    'Semua gambar di dokumen ini <b>dihitung langsung dari model dan berkas data latihan</b>, bukan '
+    'tangkapan layar, sehingga angkanya selalu cocok dengan data yang Anda terima.<br>'
+    'Copyright &copy; Habil Abdillah 2026. Seluruh hak dilindungi.' % (VBM, VDH, D.tanggal())))
+
 sz = D.render(B, PDF, 'Tutorial Update GC-Ex %s / %s' % (VBM, VDH))
 print('OK', PDF, sz, 'byte')
 print('angka:', NOTE)

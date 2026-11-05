@@ -45,6 +45,15 @@ SIM_rusak_*.csv       database dengan kesalahan SENGAJA (latihan menu Validasi d
                                 collar, nilai -99, interval melebihi kedalaman bor
 SIM_topo_xyz_nov.csv  topografi survei berikutnya (area tambang turun s/d 7 m) -> latihan versi
                       topografi di Data Spasial dan perhitungan volume sisa
+SIM_pit_fase1.dxf     dua tahap DESAIN PIT (DXF 3DFACE, lantai RL 240 dan RL 180, lereng 45 derajat;
+SIM_pit_fase2.dxf     fase 2 memuat fase 1) -> latihan Reporting tab "Pit & progres" mode PER DESAIN PIT:
+                      import di Data Referensi, pilih satu topografi untuk keduanya, centang fase 1 lalu
+                      fase 2. Hasil pada data ini: 3.384 blok / 549.900 t dan 16.103 blok / 2.616.738 t.
+SIM_topo_akhir_juni.dxf  dua SURVEI TOPOGRAFI bulanan pit yang sama (lantai RL 260 lalu RL 245)
+SIM_topo_akhir_juli.dxf  -> latihan mode PROGRES TOPO-KE-TOPO: topografi atas = Juni (lebih awal),
+                      bawah = Juli (lebih baru). Blok di antaranya = material tergali sebulan:
+                      2.439 blok / 396.338 t. Kalau atas & bawah tertukar, hasilnya 0 blok.
+                      Keempatnya dibuat ulang dengan: python docs/tutorial-gcex/tambah_pit_topo.py
 SIM_LAT_*.csv         endapan LATERIT berlapis (dibuat make_sim_laterit.py) untuk menu
                       Geomodeller Stratified-Laterite Deposit
 
