@@ -430,6 +430,56 @@ jobs:
             ForEach-Object { Write-Host ("::notice::PDF " + $_.Name + " " + [math]::Round($_.Length/1MB,2) + " MB " + $_.LastWriteTime) }
           exit 0
 
+      # ---------- Penampil 3D Qt (tahap 2, PERCOBAAN): bangun, uji mandiri, siapkan untuk Release ----------
+      # Dikemas TERPISAH dari installer GC-Ex: PySide6 menambah ratusan MB dan penampil ini belum
+      # terbukti berguna di pekerjaan sehari-hari. Seperti DB-Ex Qt, kegagalan di sini TIDAK boleh
+      # menahan Release GC-Ex -- ditandai lalu dilewati.
+      - name: Penampil 3D Qt - bangun (PyInstaller)
+        shell: pwsh
+        run: |
+          trap {
+            Write-Host ("::warning::build penampil 3D Qt gagal: " + $_.Exception.Message)
+            "QTBM_BUILD=gagal" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            exit 0
+          }
+          pyinstaller --noconfirm --onedir --windowed --name GC-Ex-BlockModel-3D --icon build/icon.ico `
+            --paths . --exclude-module tkinter --exclude-module matplotlib --exclude-module scipy `
+            --exclude-module uvicorn --exclude-module fastapi --exclude-module PIL `
+            --hidden-import qtbm --hidden-import qtbm.tampilan --hidden-import qtbm.render `
+            --distpath dist-qtbm --workpath build-qtbm penampil_qt.py
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller penampil 3D Qt gagal" }
+          $d = "dist-qtbm/GC-Ex-BlockModel-3D"
+          # Qt dipakai di bawah LGPL: teks lisensinya WAJIB ikut. Berkas ini sudah diambil pada
+          # langkah DB-Ex Qt di atas; bila tidak ada, build ini dianggap gagal daripada
+          # mengedarkan Qt tanpa lisensinya.
+          New-Item -ItemType Directory -Force "$d/legal" | Out-Null
+          foreach ($f in @("legal/LISENSI_QT_LGPL-3.0.txt","legal/LISENSI_QT_GPL-3.0.txt")) {
+            if (-not (Test-Path $f)) { throw "teks lisensi Qt tidak ada: $f" }
+            Copy-Item $f "$d/legal"
+          }
+          Copy-Item legal/SYARAT_PENGGUNAAN.txt,legal/PENAFIAN_MEREK.txt "$d/legal" -ErrorAction SilentlyContinue
+          Copy-Item qtbm/README.md "$d/BACA_SAYA.md"
+          "{0:N1} MB" -f ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+          exit 0
+      - name: Penampil 3D Qt - uji mandiri exe (baca block model, susun adegan)
+        shell: pwsh
+        run: |
+          if ($env:QTBM_BUILD -eq 'gagal') { Write-Host "::warning::dilewati: build penampil 3D Qt gagal"; exit 0 }
+          $exe = "dist-qtbm/GC-Ex-BlockModel-3D/GC-Ex-BlockModel-3D.exe"
+          $out = "$env:RUNNER_TEMP/qtbm_periksa.json"
+          # Runner Windows tidak punya kartu grafis, jadi yang diuji di sini BUKAN rendernya
+          # (itu diuji workflow uji-qt.yml dengan Mesa), melainkan bahwa exe hasil kemasan utuh:
+          # pustaka ikut terbawa, berkas block model terbaca, dan angkanya masuk akal.
+          $p = Start-Process -FilePath $exe -ArgumentList "--periksa","docs/tutorial-gcex/data/SIM_BM_GC_kadar.csv","$out" -PassThru -Wait
+          if (-not (Test-Path $out)) { throw "uji mandiri penampil 3D Qt tidak menghasilkan berkas" }
+          $j = Get-Content $out -Raw | ConvertFrom-Json
+          Get-Content $out -Raw | Write-Host
+          if ($p.ExitCode -ne 0 -or -not $j.ok) { throw "uji mandiri penampil 3D Qt gagal (exit $($p.ExitCode))" }
+          if ($j.blok -ne 66147) { throw ("jumlah blok tidak seperti yang diharapkan: " + $j.blok) }
+          if ($j.blok_digambar -ne $j.blok) { throw "jumlah blok yang disusun tidak sama dengan jumlah blok" }
+          if ($j.koordinat_adegan_maks -gt 1000) { throw ("koordinat adegan terlalu besar: " + $j.koordinat_adegan_maks) }
+          Write-Host ("OK penampil 3D Qt: " + $j.blok + " blok, baca " + $j.ms_baca + " ms, susun " + $j.ms_susun + " ms")
+
       - name: Kemas & terbitkan GitHub Release
         if: github.ref == 'refs/heads/main'
         shell: pwsh

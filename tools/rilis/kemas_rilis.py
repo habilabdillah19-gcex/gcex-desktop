@@ -222,6 +222,16 @@ def main():
     ])
     tentang.unlink()
 
+    # ---- 4 penampil 3D Qt (percobaan tahap 2; hanya bila CI berhasil membangunnya)
+    # Dikemas TERPISAH, bukan disatukan ke installer, karena PySide6 menambah ratusan MB dan
+    # penampil ini belum terbukti berguna di pekerjaan sehari-hari. Siapa pun yang mau mencoba
+    # mengunduh zip ini, buka foldernya, jalankan exe-nya; tidak ada yang dipasang ke sistem.
+    qtbm_dir = ROOT / "dist-qtbm" / "GC-Ex-BlockModel-3D"
+    qtbm_zip = None
+    if qtbm_dir.is_dir() and any(qtbm_dir.iterdir()):
+        qtbm_zip = outd / f"GC-Ex-{ver}_4_Penampil-3D-Qt.zip"
+        zip_dir(qtbm_zip, [(qtbm_dir, "GC-Ex-BlockModel-3D")])
+
     # ---- catatan rilis
     tags = [t for t in git("tag", "--list", "v*", "--sort=-v:refname").splitlines() if t and t != tag]
     prev = next((t for t in tags if subprocess.run(["git", "merge-base", "--is-ancestor", t, sha], cwd=ROOT).returncode == 0), "")
@@ -248,6 +258,10 @@ def main():
     desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, DB-Ex, aktivasi lisensi)"
     desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm, _ in inst) + ") + generator"
     desc[lis.name] = "Tentang, syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat)"
+    if qtbm_zip is not None:
+        desc[qtbm_zip.name] = ("Penampil block model 3D Qt (PERCOBAAN, tahap 2) - berdiri sendiri, "
+                               "tidak dipasang ke sistem dan tidak mengubah aplikasi GC-Ex. "
+                               "Buka foldernya lalu jalankan GC-Ex-BlockModel-3D.exe")
     for h, n, s in sums:
         L.append(f"| `{n}` | {desc.get(n, '')} | {s / 1048576:.1f} MB |")
     L += ["| Source code (zip / tar.gz) | Kode sumber commit ini (otomatis dari GitHub) | |", "",
