@@ -2119,3 +2119,76 @@ angka yang ditulis tangan di dalam program:
 Langkah lain (upsert, Model Estimation, kerangka AOI, sub-blocking, estimasi waste, klasifikasi) **dijelaskan
 tanpa dijalankan**: perhitungannya memakan waktu menit, bukan detik, jadi tidak pantas dijalankan di tengah tur.
 Angkanya ada di buku tutorial.
+
+## 87. GC-Ex Drill Hole Ultimate 0.24.34 — perhitungan berat punya versi Python, dengan bukti angka
+
+Perhitungan paling berat di GC-Ex sekarang punya **dua versi**: versi JavaScript yang dipakai aplikasi sejak
+awal, dan versi Python (NumPy) di backend. Yang dipindahkan: variogram eksperimental & fitting model, Ordinary
+Kriging, sub-blocking beserta proporsi volume ore `sb_frac`, dan agregasi laporan tonase × kadar lengkap dengan
+constraint-nya (rentang RL, poligon, filter atribut, permukaan atas/bawah, batas DTM tambahan, domain, SG,
+pembobotan `sb_frac`).
+
+### 1. Yang berubah di aplikasi: satu tombol, dan angka laporan tidak tersentuh
+
+Di panel **Block Model**, di bawah tombol *Hitung proporsi volume ore per blok (sb_frac)*, ada tombol baru:
+
+> **⏱ Bandingkan sb_frac: JavaScript vs backend Python**
+
+Tombol itu menjalankan **kedua** versi pada mesh solid dan daftar blok yang sama, lalu melaporkan:
+
+| Yang dilaporkan | Gunanya |
+| --- | --- |
+| beda angka terbesar antara kedua versi | memastikan hasilnya memang sama (beda ~1e-7 adalah pembulatan penyimpanan `Float32`, bukan selisih hitungan) |
+| total waktu yang ditunggu, JavaScript vs backend | angka yang benar-benar dirasakan pemakai |
+| rincian: waktu hitung murni, jumlah inti CPU, dan waktu kirim data | memperlihatkan di mana ongkosnya berada |
+
+**Atribut `sb_frac` yang tersimpan tetap hasil versi JavaScript**, apa pun hasil pembandingan. Jadi tombol ini
+tidak bisa mengubah satu angka pun di laporan tonase — ia hanya mengukur. Kalau backend tidak aktif, tombolnya
+mengatakan begitu dan tidak terjadi apa-apa.
+
+Kenapa pengukurannya diserahkan ke pemakai: kecepatan backend bergantung pada **jumlah inti CPU** komputer yang
+dipakai, karena perhitungan kriging dan `sb_frac` dibagi ke beberapa proses (hasil satu blok tidak bergantung
+pada blok lain). Angka dari komputer pengembang tidak mewakili komputer kantor atau laptop lapangan.
+
+### 2. Bukti bahwa angkanya sama
+
+Bukan "mestinya sama", tetapi diuji: fungsi JS yang dipakai produksi dijalankan di aplikasi sungguhan atas data
+latihan simulasi, masukan dan keluarannya **dibekukan** menjadi berkas uji, lalu masukan yang sama dihitung versi
+Python dan dibandingkan satu per satu.
+
+| Yang diuji | Cakupan pembandingan | Hasil |
+| --- | --- | --- |
+| Variogram & fitting | γ per lag/arah, nugget, sill, range | sama |
+| Ordinary Kriging | pass, jumlah sampel, kadar, kriging variance, SoR, KE, bobot negatif — 1.000 blok, ketiga pass terpakai | sama |
+| `sb_frac` | proporsi tiap blok, jumlah blok utuh / perbatasan / di luar, volume ore berbobot — 66.147 blok terhadap solid 70.780 segitiga | sama (beda maks 3e-08 = batas `Float32`) |
+| Agregasi laporan | jumlah blok, volume, tonase, kadar berbobot tonase, dan jumlah blok terbuang di tiap tahap — lima susunan constraint, termasuk progres topo juni→juli (2.439 blok, sama dengan buku tutorial) | sama |
+
+Seluruhnya **44 uji otomatis** (`backend/tests/`), dengan berkas keluaran JS yang dibekukan di
+`backend/tests/data/*_js.json`. Kalau suatu saat versi Python bergeser walau sedikit, ujinya gagal. Harness yang
+mengambil angka dari aplikasi sungguhan ada di `tools/uji/paritas_*.py`.
+
+### 3. Kecepatan: diukur, bukan diperkirakan
+
+Pada 2 inti CPU, data latihan:
+
+| Bagian | JavaScript | Python |
+| --- | --- | --- |
+| Variogram & fitting | 623 ms | 441 ms |
+| Ordinary Kriging | 0,871 ms/blok | 0,756 ms/blok |
+| `sb_frac`, 66 ribu blok | 3.404 ms | 2.373 ms |
+| Agregasi laporan | 28–58 ms | 29–80 ms (tidak membaik) |
+
+Dua catatan yang jujur. **Pertama**, agregasi laporan tidak mendapat apa-apa: JavaScript sudah menyelesaikannya
+dalam satu lintasan atas blok, jadi tidak ada yang bisa dihemat. **Kedua**, pada `sb_frac` penghematan terbesar
+bukan dari NumPy melainkan dari sifat ujinya — uji "titik di dalam mesh" memakai sinar vertikal, sehingga hanya
+bergantung pada (x,y). Artinya 1.000 titik cuplikan per blok sebenarnya 100 kolom × 10 ketinggian, dan segitiga
+cukup diperiksa **sekali per kolom**: 35,5 detik menjadi 3,9 detik, sebelum dibagi ke inti CPU.
+
+Pada komputer berinti banyak selisihnya akan lebih lebar, dan itulah yang diukur tombol di atas.
+
+### 4. Apa yang belum dilakukan
+
+Aplikasi **belum** memakai backend untuk perhitungan ini. Alasannya terlihat dari pengukuran: mengirim mesh dan
+daftar blok ke backend memakan waktu yang tidak kecil, jadi pemindahan yang benar harus mengirim data **sekali**
+lalu menyimpannya di backend — bukan mengirim ulang setiap kali hitung. Selama itu belum dikerjakan, jalur
+JavaScript tetap satu-satunya yang dipakai, sehingga tidak ada risiko angka berubah.
