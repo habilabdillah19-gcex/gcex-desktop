@@ -11,7 +11,8 @@ Jenis borang:
 - "ddr": RC Drilling Daily Drilling Report — header (tanggal, shift, rig, driller, client, jam WH / DL / MNTC / BD / RAIN / STD, HM
   engine, bit, catatan) + tabel utama aktivitas (mulai, selesai, uraian, kategori otomatis dari kata kunci) + tabel kedua 'hole'
   (meterage: from, to, hole ID, az, dip). Ekspor tiga tabel: DDR_AKTIVITAS, DDR_METERAGE, DDR_SHIFT (ringkasan) + pivot jam & meter.
-- "rc": RC Drill / Chiptray Log — header (Hole ID, tanggal) + interval (Sample ID, From, To, Remark QAQC).
+- "rc": RC Drill Logging / Chiptray Log — interval per baris (Hole ID, tanggal, Sample ID, From, To, Lith, Int_Alt, Min1,
+  Vein_Type, Qt_pct, Remark QAQC); Hole ID & tanggal ditulis sekali per lubang lalu diteruskan ke baris di bawahnya.
 
 Prinsip: hasil AI = usulan. Sel yang diragukan AI ditandai, validasi otomatis menandai yang janggal, geologist mengedit dan
 memverifikasi per baris; ekspor bawaan hanya baris terverifikasi. Tidak ada data contoh / tiruan bila AI gagal.
@@ -113,12 +114,18 @@ TYPES: dict[str, dict] = {
                  "tidak ada."),
     },
     "rc": {
-        "name": "RC Drill / Chiptray Log",
-        "header": [("hole_id", "Hole ID", "text"), ("tanggal", "Tanggal pengeboran", "date")],
-        "rows": [("sample_id", "Sample ID", "text"), ("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("remark", "Remark (QAQC)", "text")],
-        "hint": ("Borang RC Drill Logging / Chiptray: header berisi HOLE ID dan tanggal pengeboran. Tabel berisi satu baris per interval "
-                 "sampel: Sample ID, From (m), To (m), dan Remark (QAQC: STD = standar / CRM, BLANK, DUP = duplikat; kosong bila sampel "
-                 "biasa). Formulir mungkin difoto lanskap (berputar 90 derajat): baca sesuai arah tulisan."),
+        "name": "RC Drill Logging / Chiptray Log",
+        "header": [("hole_id", "Hole ID (bawaan)", "text"), ("tanggal", "Tanggal pengeboran (bawaan)", "date")],
+        "rows": [("hole_id", "Hole ID", "text"), ("tanggal", "Tanggal", "date"), ("sample_id", "Sample ID", "text"),
+                 ("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("lith", "Lith", "text"), ("alt", "Int_Alt", "text"),
+                 ("min1", "Min1", "text"), ("vein", "Vein_Type", "text"), ("qt", "Qt_pct", "num"), ("remark", "Remark (QAQC)", "text")],
+        "hint": ("Borang RC Drill Logging Form, biasanya lanskap. Kolom No dan Sample_ID TERCETAK (mis. DP_150137_Z4); Remark2 tercetak "
+                 "pada baris QAQC (STD..., BLANK). Tulisan tangan: Hole_ID dan Tanggal Pengeboran HANYA di baris pertama tiap lubang "
+                 "(kadang dua baris: Hole ID lalu Az/Dip, mis. 'AZ 64-60' -> abaikan baris Az/Dip), From, To, Lith, Int_Alt, Min1, "
+                 "Vein_Type, Qt_pct. Tulis HANYA baris yang From/To-nya terisi atau berlabel STD / BLANK. Hole_ID & Tanggal: isi hanya "
+                 "di baris tempat tertulis, baris lain kosong (program yang meneruskan). Garis bergelombang / kurung kurawal / garis tegak "
+                 "panjang di kolom Lith, Int_Alt, Min1 = sama dengan baris di atas -> tulis \"〃\". Kode geologi disalin persis "
+                 "(mis. VLT, QMN, ARG, IAR, PRO, SIL, ox, cly, chl-cly, Qz-Mn)."),
     },
 }
 KELAS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "SCAT", "OX-MO", "SF-MO"]
@@ -284,6 +291,38 @@ def _prefix(v: str) -> str:
     t = str(v or "").strip()
     m = re.match(r"^(.*?)[\s\-:]+\S*\d\S*$", t)
     return (m.group(1) if m else re.sub(r"[\d.,]+$", "", t)).strip()
+
+
+RC_CARRY = ("hole_id", "tanggal")  # ditulis sekali per lubang
+RC_DITTO = ("lith", "alt", "min1", "vein", "qt")
+
+
+def fill_rc(lst: list[dict]) -> list[tuple[dict, list[str]]]:
+    """RC logging: Hole ID & tanggal diteruskan ke baris di bawahnya sampai ada Hole ID baru; tanda ulang (〃, garis
+    bergelombang) di kolom geologi -> nilai baris atas. Kembalikan (data, field yang diisi program) per baris."""
+    prev: dict[str, str] = {}
+    out = []
+    for d in lst:
+        x, filled = dict(d), []
+        for k in RC_CARRY:
+            v = str(x.get(k) or "").strip()
+            if (not v or is_ditto(v)) and prev.get(k):
+                x[k] = prev[k]
+                filled.append(k)
+        if str(d.get("hole_id") or "").strip() and not is_ditto(d.get("hole_id")):
+            x["hole_id"] = norm_bhid(x["hole_id"]) or x["hole_id"]
+        for k in RC_DITTO:
+            v = str(x.get(k) or "").strip()
+            if (is_ditto(v) or re.fullmatch(r"[~{}()\[\]S§∫ʃ$]+", v or "x")) and prev.get(k):
+                x[k] = prev[k]
+                filled.append(k)
+            elif is_ditto(v):
+                x[k] = ""
+        for k in RC_CARRY + RC_DITTO:
+            if str(x.get(k) or "").strip():
+                prev[k] = x[k]
+        out.append((x, filled))
+    return out
 
 
 def fill_ore(ftype: str, lst: list[dict], carry_empty: bool) -> list[tuple[dict, list[str]]]:
@@ -540,6 +579,9 @@ def add_file(s: Store, src: str, ftype: str, by: str) -> list[dict]:
             pages = [ImageOps.exif_transpose(im).convert("RGB")]
     else:
         raise ValueError(f"{sp.name}: format tidak dikenali (JPG, PNG, TIFF, BMP, WEBP, PDF).")
+    # foto borang jenis yang sama biasanya diambil dengan cara yang sama: putaran borang terakhir (bentuk foto sama:
+    # tegak / rebah) dipakai lagi, jadi tidak perlu memutar tiap lembar sebelum dibaca AI
+    last = [x for x in docs(s) if x["type"] == ftype and x.get("rot")]
     made = []
     for i, im in enumerate(pages, 1):
         uid = uuid.uuid4().hex[:12]
@@ -551,6 +593,9 @@ def add_file(s: Store, src: str, ftype: str, by: str) -> list[dict]:
                             (uid, fn, sp.name + (f" hal {i}" if len(pages) > 1 else ""), str(sp), i, ftype, im.width, im.height, by,
                              core_io.now())).lastrowid
             _hist(c, did, "tambah", None, sp.name, "tambah", by)
+            same = [x for x in last if (x.get("w", 0) > x.get("h", 0)) == (im.width > im.height)]
+            if same:
+                c.execute("UPDATE docs SET rot=? WHERE id=?", (int(same[-1]["rot"]) % 360, did))
         made.append(doc(s, did))
     return made
 
@@ -697,20 +742,74 @@ def ai_schema(ftype: str) -> dict:
 
 
 def ai_prompt(ftype: str, extra: str = "") -> str:
+    """Perintah baca borang dengan jawaban RINGKAS: satu baris teks per baris tabel, nilai dipisah '|'.
+    Dibanding JSON (nama field diulang di setiap baris) jumlah token jawaban kira-kira 3-4x lebih sedikit, dan pada
+    komputer tanpa GPU waktu baca terutama ditentukan oleh panjang jawaban."""
     t = TYPES[ftype]
-    h = ", ".join(f"{k} ({lab})" for k, lab, _ in t["header"])
-    r = ", ".join(f"{k} ({lab})" for k, lab, _ in t["rows"])
-    return (f"Anda petugas data entry geologi tambang. Baca formulir lapangan tulisan tangan pada gambar ini dengan teliti.\n{t['hint']}\n"
-            f"Isi 'header' dengan field: {h}.\nIsi 'rows' dengan SATU objek per baris tabel yang terisi, field: {r}. Urutkan dari atas ke bawah. "
-            + "".join(f"Isi '{tt['ai']}' ({tt['name']}) dengan satu objek per baris terisi, field: "
-                      + ", ".join(f"{k} ({lab})" for k, lab, _ in tt["rows"]) + ". " for tt in (t.get("tables") or {}).values())
-            + "Lewati baris kosong; jangan mengarang baris yang tidak ada.\n"
-            "Salin angka & kode persis seperti tertulis (jangan dibulatkan / diterjemahkan). "
-            + ("" if ftype in ORE_TYPES else "Bila tulisan sama dengan baris di atasnya (tanda ulang \" atau ditto), isi dengan nilai baris di atasnya. ")
-            + "Bila satu sel tidak terbaca jelas, tetap isi tebakan terbaik "
-            "dan cantumkan nama field-nya di 'ragu' baris itu (header: di header.ragu). Sel kosong = \"\".\n"
-            + (f"Catatan pengguna: {extra.strip()}\n" if extra and extra.strip() else "")
-            + "Jawab hanya JSON sesuai skema.")
+    hk = [k for k, _l, _t in t["header"]]
+    rk = [k for k, _l, _t in t["rows"]]
+    lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
+             "JAWAB DALAM FORMAT RINGKAS INI SAJA (tanpa penjelasan, tanpa JSON):",
+             "H|" + "|".join(hk) + "   <- SATU baris header: nilai sesuai urutan itu",
+             "R|" + "|".join(rk) + "   <- SATU baris per baris tabel yang terisi, urut dari atas"]
+    for tt in (t.get("tables") or {}).values():
+        lines.append(f"{tt['ai'].upper()}|" + "|".join(k for k, _l, _t in tt["rows"]) + f"   <- satu baris per baris {tt['name']}")
+    lines += ["C|catatan bebas (boleh tidak ada)",
+              "Contoh baris: R|" + "|".join(["…"] * len(rk)),
+              "Sel kosong = biarkan kosong di antara dua '|'. Jangan mengulang nama kolom. Jangan mengarang baris yang tidak ada.",
+              "Salin angka & kode persis seperti tertulis. Bila satu sel tidak terbaca jelas, tulis tebakan terbaik diakhiri '?' (mis. VLT?)."]
+    if ftype not in ORE_TYPES and ftype != "rc":
+        lines.append("Bila tulisan sama dengan baris di atasnya (tanda ulang), tulis nilai baris di atasnya.")
+    if extra and extra.strip():
+        lines.append(f"Catatan pengguna: {extra.strip()}")
+    return "\n".join(lines)
+
+
+def parse_ai_text(ftype: str, txt: str) -> dict:
+    """Jawaban ringkas (H|..., R|..., <TABEL>|..., C|...) -> bentuk yang sama dengan jawaban JSON lama
+    ({header, rows, <tabel>, catatan}, sel bertanda '?' masuk 'ragu'). Jawaban JSON tetap diterima."""
+    t = TYPES[ftype]
+    raw = (txt or "").strip()
+    js = re.sub(r"^```\w*\s*|\s*```$", "", raw)
+    if js.startswith("{"):
+        return json.loads(js)
+    hk = [k for k, _l, _t in t["header"]]
+    rk = [k for k, _l, _t in t["rows"]]
+    tabs = {tt["ai"].upper(): (tt["ai"], [k for k, _l, _t in tt["rows"]]) for tt in (t.get("tables") or {}).values()}
+
+    def cells(rest: str, keys: list[str]) -> dict:
+        vs = [v.strip() for v in rest.split("|")]
+        if len(vs) > len(keys):  # pemisah '|' di dalam uraian terakhir: gabungkan ke kolom terakhir
+            vs = vs[:len(keys) - 1] + [" | ".join(vs[len(keys) - 1:])]
+        o: dict[str, Any] = {"ragu": []}
+        for k, v in zip(keys, vs):
+            if v.endswith("?"):
+                v = v[:-1].strip()
+                o["ragu"].append(k)
+            o[k] = "" if v in ("-", "…", "...") and k not in ("aktivitas",) else v
+        return o
+    out: dict[str, Any] = {"header": {}, "rows": [], "catatan": ""}
+    for ln in raw.splitlines():
+        ln = ln.strip().strip("`").strip()
+        m = re.match(r"^([A-Za-z_]+)\s*\|(.*)$", ln)
+        if not m:
+            continue
+        tag, rest = m.group(1).upper(), m.group(2)
+        if [v.strip() for v in rest.split("|")][:2] == (hk if tag == "H" else rk)[:2]:
+            continue  # model mengulang baris nama kolom
+        if tag == "H":
+            out["header"] = cells(rest, hk)
+        elif tag == "R":
+            out["rows"].append(cells(rest, rk))
+        elif tag == "C":
+            out["catatan"] = rest.strip()
+        elif tag in tabs:
+            out.setdefault(tabs[tag][0], []).append(cells(rest, tabs[tag][1]))
+    for _k, (ai, _ks) in tabs.items():
+        out.setdefault(ai, [])
+    if not out["rows"] and not out["header"] and not any(out[a] for a, _ in tabs.values()):
+        raise ValueError("jawaban AI tidak berformat H| / R| (tidak ada baris yang terbaca)")
+    return out
 
 
 def _image_b64(s: Store, d: dict, max_px: int) -> str:
@@ -748,7 +847,9 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
     d = doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
     body = {"model": model, "messages": [{"role": "user", "content": ai_prompt(d["type"], extra), "images": [_image_b64(s, d, max_px)]}],
-            "stream": False, "format": ai_schema(d["type"]), "options": {"temperature": 0, "num_ctx": 16384}, "keep_alive": "30m"}
+            "stream": False, "keep_alive": "30m",
+            # num_predict membatasi jawaban: model kecil kadang mengulang baris tanpa henti sampai batas waktu habis (borang 'gagal')
+            "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 2500, "repeat_penalty": 1.05}}
     if _can_think(host, model):
         body["think"] = False
     t0 = time.time()
@@ -763,7 +864,7 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             j = core_io._http(host + "/api/chat", body, timeout=timeout)
         if j.get("error"):
             raise RuntimeError("Ollama: " + str(j["error"]))
-        res = core_io._parse_json((j.get("message") or {}).get("content", ""))
+        res = parse_ai_text(d["type"], (j.get("message") or {}).get("content", ""))
     except Exception as e:  # noqa: BLE001 - TIDAK ada data tiruan: borang tetap kosong & galat dicatat
         with s.lock, s.conn() as c:
             c.execute("UPDATE docs SET status='error', error=? WHERE id=?", (str(e)[:500], did))
@@ -799,6 +900,8 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
     if d["type"] in ORE_TYPES and out_rows:
         res_f = fill_ore(d["type"], [dict(x, _u=u) for x, u in out_rows], True)
         out_rows = [({k: v for k, v in x.items() if k != "_u"}, list(dict.fromkeys(x["_u"] + f))) for x, f in res_f]
+    if d["type"] == "rc" and out_rows:
+        out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(fill_rc([x for x, _u in out_rows]), out_rows)]
     if d["type"] == "ddr" and out_rows:
         out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(fill_ddr([x for x, _u in out_rows]), out_rows)]
     extra = []
@@ -939,9 +1042,12 @@ def records(d: dict, rs: list[dict]) -> list[dict]:
                                                                                           else ket.upper())})
         else:
             tg = parse_date(h.get("tanggal"))
-            rec.update({"hole_id": norm_bhid(h.get("hole_id")), "tanggal": tg.isoformat() if tg else str(h.get("tanggal") or ""),
+            tg = parse_date(x.get("tanggal")) or tg
+            rec.update({"hole_id": norm_bhid(x.get("hole_id") or h.get("hole_id")),
+                        "tanggal": tg.isoformat() if tg else str(x.get("tanggal") or h.get("tanggal") or ""),
                         "sample_id": (x.get("sample_id") or "").strip(), "from_m": parse_num(x.get("from_m")), "to_m": parse_num(x.get("to_m")),
-                        "remark": qaqc(x.get("remark"))})
+                        "lith": (x.get("lith") or "").strip(), "alt": (x.get("alt") or "").strip(), "min1": (x.get("min1") or "").strip(),
+                        "vein": (x.get("vein") or "").strip(), "qt": parse_num(x.get("qt")), "remark": qaqc(x.get("remark"))})
         out.append(rec)
     return out
 
@@ -1085,13 +1191,19 @@ def validate(d: dict, rs: list[dict], others: Optional[list[dict]] = None) -> di
                 if st and st not in ("baru", "lama"):
                     bad(r, "status", "status harus Baru / Lama")
     else:
-        if not (h.get("hole_id") or "").strip():
+        if not (h.get("hole_id") or "").strip() and not any((r["data"].get("hole_id") or "").strip() for r in rs):
             hdr["hole_id"] = "Hole ID kosong"
         seen: dict[str, int] = {}
         prev = None
+        hole = None
         for r in rs:
             x = r["data"]
             f, t = parse_num(x.get("from_m")), parse_num(x.get("to_m"))
+            hid = norm_bhid(x.get("hole_id") or h.get("hole_id"))
+            if hid != hole:  # lubang baru: interval mulai dari awal
+                hole, prev = hid, None
+            if qaqc(x.get("remark")) in ("STD", "BLANK") and f is None and t is None:
+                continue  # sampel QAQC sisipan tanpa interval: tidak memutus urutan From / To lubang
             if f is None:
                 bad(r, "from_m", "From harus angka")
             if t is None:
@@ -1237,7 +1349,9 @@ OUT = {
        ("BIT_OFF", "Bit Off", "bit_off", "TEXT"), ("BIT_DRILLED", "Bit Drilled (m)", "bit_drilled", "NUM"), ("CATATAN", "Catatan", "catatan", "TEXT"),
        ("GEOLOGIST", "Geologist Approval", "geologist", "TEXT")],
     "rc": [("HOLE_ID", "HOLE_ID", "hole_id", "TEXT"), ("TANGGAL", "Tanggal", "tanggal", "DATE"), ("SAMPLE_ID", "Sample_ID", "sample_id", "TEXT"),
-           ("FROM_M", "From (m)", "from_m", "NUM"), ("TO_M", "To (m)", "to_m", "NUM"), ("REMARK", "Remark (QAQC)", "remark", "TEXT")],
+           ("FROM_M", "From (m)", "from_m", "NUM"), ("TO_M", "To (m)", "to_m", "NUM"), ("LITH", "Lith", "lith", "TEXT"),
+           ("INT_ALT", "Int_Alt", "alt", "TEXT"), ("MIN1", "Min1", "min1", "TEXT"), ("VEIN_TYPE", "Vein_Type", "vein", "TEXT"),
+           ("QT_PCT", "Qt_pct", "qt", "NUM"), ("REMARK", "Remark (QAQC)", "remark", "TEXT")],
 }
 DB_TABLE = {"ore": "ORE_LOADING_PIT", "rom": "ORE_ROM_CRUSHER", "rc": "RC_INTERVAL", "ddr": "DDR_AKTIVITAS", "ddr_hole": "DDR_METERAGE",
             "ddr_shift": "DDR_SHIFT", "ddr_dash": "DDR_DASHBOARD"}

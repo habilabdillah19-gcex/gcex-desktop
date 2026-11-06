@@ -3215,3 +3215,14 @@ Ekspor `.mdl` masih menulis sel pecahan sebagai blok penuh (bagian 95). Dengan a
 selisihnya **bertambah besar**, sebab sel pecahan tidak lagi hanya di tepi poligon melainkan di
 seluruh luasnya. Kolom `FRAKSI` / `VOLUME` dan catatan di panel membuat selisihnya terlihat;
 memperbaikinya berarti memecah sel ke level octree yang lebih halus, dan itu pekerjaan berikutnya.
+
+## 104. DB-Ex 0.42.4 — jawaban AI Borang ringkas; RC Drill Logging mengikuti borang lapangan
+
+- **Jawaban AI ringkas.** AI tidak lagi menulis JSON; tiap baris tabel dijawab sebagai satu baris teks dengan nilai dipisah `|`. Jawaban jadi kira-kira 3-4x lebih pendek, dan di komputer tanpa GPU panjang jawaban itulah yang paling menentukan waktu baca. Panjang jawaban juga dibatasi, sehingga model yang mengulang baris tanpa henti berhenti sendiri dan tidak lagi berakhir *gagal* setelah menunggu lama.
+- **RC Drill Logging / Chiptray Log** kini berkolom Hole ID, Tanggal, Sample ID, From, To, **Lith, Int_Alt, Min1, Vein_Type, Qt_pct**, Remark (QAQC). Satu lembar boleh memuat banyak lubang:
+  - Hole ID & tanggal cukup ditulis di baris pertama lubang; baris di bawahnya diisi otomatis sampai Hole ID berikutnya (ditandai kuning).
+  - Garis bergelombang / kurung kurawal / tanda ulang di kolom Lith, Int_Alt, Min1 diisi dari baris atas (kuning).
+  - Baris sisipan BLANK / STD tanpa From-To tidak memutus pemeriksaan urutan interval.
+  - Ekspor `RC_INTERVAL` / sheet *Interval_Geodatabase* membawa kolom LITH, INT_ALT, MIN1, VEIN_TYPE, QT_PCT.
+- **Putaran scan diingat.** Foto borang baru otomatis memakai putaran (↻) borang terakhir sejenis dengan bentuk foto yang sama, jadi foto yang diambil rebah tidak perlu diputar satu per satu sebelum dibaca AI. Putar scan dulu sebelum membaca: AI membaca tulisan yang tegak jauh lebih cepat dan tepat.
+

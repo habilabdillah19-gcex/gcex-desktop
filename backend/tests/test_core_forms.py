@@ -64,10 +64,13 @@ def _scan(tmp, name="borang.jpg", size=(1200, 900)):
     return f
 
 
-def _ai(monkeypatch, res):
+def _ai(monkeypatch, res, raw=None):
     calls = []
 
     def fake(url, body=None, timeout=5.0):
+        if raw is not None and not url.endswith("/api/show"):
+            calls.append(body)
+            return {"message": {"content": raw}}
         if url.endswith("/api/show"):  # cek kemampuan model (think) bukan panggilan baca borang
             return {"capabilities": ["completion", "vision"]}
         calls.append(body)
@@ -105,7 +108,8 @@ def test_ore_loading_pit_fill_validate_pivot(st, monkeypatch):
     did = cf.add_file(s, str(_scan(tmp)), "ore", "Rina")[0]["id"]
     calls = _ai(monkeypatch, ORE_AI)
     j = cf.ai_read(s, did, "http://x", "qwen2.5vl:7b", "tulisan miring")
-    assert calls[0]["format"]["required"] == ["header", "rows"] and "tulisan miring" in calls[0]["messages"][0]["content"]
+    assert "format" not in calls[0] and "R|no|start|finish" in calls[0]["messages"][0]["content"]  # jawaban ringkas, bukan JSON
+    assert "tulisan miring" in calls[0]["messages"][0]["content"] and calls[0]["options"]["num_predict"] > 0
     assert "〃" in calls[0]["messages"][0]["content"]
     rs = j["rows"]
     assert len(rs) == 4 and j["doc"]["status"] == "done" and j["doc"]["hdr_unc"] == ["crew"]  # baris elevasi saja & kosong tidak jadi baris
@@ -284,8 +288,7 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
     calls = _ai(monkeypatch, DDR_AI)
     cf.ai_read(s, did, "http://x", "m")
-    sch = calls[0]["format"]
-    assert sch["required"] == ["header", "rows", "lubang"] and "lubang" in calls[0]["messages"][0]["content"]
+    assert "LUBANG|from_m|to_m|hole_id|az|dip" in calls[0]["messages"][0]["content"]
     rs = cf.rows(s, did)
     act = [r for r in rs if r["tbl"] == ""]
     hole = [r for r in rs if r["tbl"] == "hole"]
@@ -381,3 +384,31 @@ def test_bhid_rig_on_manual_edit(st):
     rc = cf.add_file(s, str(_scan(tmp, "rc.jpg")), "rc", "Rina")[0]["id"]
     cf.update_doc(s, rc, {"header": {"hole_id": "dp 900"}}, "Rina")
     assert cf.doc(s, rc)["header"]["hole_id"] == "DP_900"
+
+
+def test_rc_logging_jawaban_ringkas(st, monkeypatch):
+    """Jawaban ringkas H| / R| (bukan JSON): Hole ID & tanggal diteruskan per lubang, tanda ulang geologi dari baris atas,
+    sel bertanda '?' jadi ragu, baris QAQC tanpa interval tidak memutus urutan. Data fiktif."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
+    txt = "\n".join([
+        "H||",
+        "R|hole_id|tanggal|sample_id|from_m|to_m|lith|alt|min1|vein|qt|remark",  # model mengulang nama kolom: diabaikan
+        "R|XX-100-01|05-11-26|SMP_000101_ZZ|0|1|VLT|ARG|ox||||",
+        "R|||SMP_000102_ZZ|1|2|〃|〃|cly||||",
+        "R|||SMP_000103_ZZ|2|3|QMN?|SIL|Qz-Mn|QMN|||",
+        "R|||SMP_000104_ZZ||||||||BLANK",
+        "R|XX-100-02|05-11-26|SMP_000105_ZZ|0|1|VLT|PRO|chl-cly||||",
+        "R|||SMP_000106_ZZ|1|2|{|{|{||||",
+        "C|fiktif"])
+    _ai(monkeypatch, None, raw=txt)
+    cf.ai_read(s, did, "http://x", "m")
+    rs = cf.rows(s, did)
+    assert [r["data"]["hole_id"] for r in rs] == ["XX_100_01"] * 4 + ["XX_100_02"] * 2
+    assert rs[1]["data"]["lith"] == "VLT" and rs[1]["data"]["alt"] == "ARG" and {"lith", "alt", "hole_id"} <= set(rs[1]["unc"])
+    assert rs[2]["data"]["lith"] == "QMN" and "lith" in rs[2]["unc"]
+    assert rs[5]["data"]["lith"] == "VLT" and rs[5]["data"]["min1"] == "chl-cly"
+    v = cf.validate(cf.doc(s, did), rs)
+    assert not any(k in ("from_m", "to_m") for x in v["rows"].values() for k in x), v  # urutan per lubang, BLANK tidak memutus
+    rec = cf.records(cf.doc(s, did), rs)
+    assert rec[4]["hole_id"] == "XX_100_02" and rec[0]["tanggal"] == "2026-11-05" and rec[3]["remark"] == "BLANK"

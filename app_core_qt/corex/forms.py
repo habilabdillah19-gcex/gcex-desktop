@@ -722,6 +722,9 @@ class FormsPage(QWidget):
                 new["data"] = {"from_m": f"{t:g}", "to_m": f"{t + (t - f):g}"}
             except ValueError:
                 new["data"] = {"from_m": to}
+            for k in ("hole_id", "tanggal"):  # lubang yang sama
+                if ref["data"].get(k):
+                    new["data"][k] = ref["data"][k]
             m = re.match(r"^(.*?)(\d+)(\D*)$", ref["data"].get("sample_id") or "")
             if m:
                 new["data"]["sample_id"] = f"{m.group(1)}{int(m.group(2)) + 1:0{len(m.group(2))}d}{m.group(3)}"

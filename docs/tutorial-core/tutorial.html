@@ -347,7 +347,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><th style="width:24%">Ruang kerja</th><th>Untuk</th><th style="width:30%">Hasil</th></tr>
     <tr><td><b>Core box</b></td><td>Foto core box, data bor, AI geoteknik, overlay assay</td><td>Excel core log, infografis core box</td></tr>
     <tr><td><b>Singkapan</b></td><td>Foto singkapan / dinding trench: digitasi zona, garis, channel sampling, georeferensi</td><td>Infografis PNG / PDF, STR / DXF, CSV sampel, Collar–Survey–Assay–Geologi</td></tr>
-    <tr><td><b>Borang</b></td><td>Foto / scan / PDF borang: Ore Spotter loading pit, Ore ke ROM / crusher, RC Daily Drilling Report, RC Drill / Chiptray</td><td>Excel + pivot, CSV, SQLite, MS Access, sheet dashboard drilling</td></tr>
+    <tr><td><b>Borang</b></td><td>Foto / scan / PDF borang: Ore Spotter loading pit, Ore ke ROM / crusher, RC Daily Drilling Report, RC Drill Logging / Chiptray</td><td>Excel + pivot, CSV, SQLite, MS Access, sheet dashboard drilling</td></tr>
     <tr><td><b>QAQC</b></td><td>CRM, blank &amp; duplikat dari lab; pemeriksaan Collar / Survey / Assay / Geologi</td><td>Dashboard per zona, Excel + grafik PNG, laporan PDF</td></tr>
   </table>
   <table>
@@ -590,7 +590,7 @@ ul,ol{margin:1mm 0 3mm;padding-left:5mm}li{margin:.7mm 0}
     <tr><td>Ore Spotter: Loading Pit</td><td><code>ORE_LOADING_PIT</code> + view pivot</td><td>Data_Loading_Pit + Pivot_*</td></tr>
     <tr><td>Ore ke Stockpile / Crusher</td><td><code>ORE_ROM_CRUSHER</code> + view pivot</td><td>Data_ROM_Crusher + Pivot_*</td></tr>
     <tr><td>RC Daily Drilling Report</td><td><code>DDR_DASHBOARD</code>, <code>DDR_AKTIVITAS</code>, <code>DDR_METERAGE</code>, <code>DDR_SHIFT</code> + view pivot</td><td>Data_Dashboard, DDR_*, Pivot_*</td></tr>
-    <tr><td>RC Drill / Chiptray Log</td><td><code>RC_INTERVAL</code></td><td>Interval_Geodatabase</td></tr>
+    <tr><td>RC Drill Logging / Chiptray Log</td><td><code>RC_INTERVAL</code></td><td>Interval_Geodatabase</td></tr>
   </table>
   <p>Setiap tabel punya kolom <b>VERIFIED</b>, <b>SRC_DOC</b> (nama borang) dan <b>SRC_KEY</b> (borang:baris). Ekspor ulang tidak menggandakan baris: SQLite memperbarui baris yang sama, MS Access melewati baris yang sudah ada. CSV Daily Drilling Report = satu ZIP berisi satu CSV per tabel. MS Access butuh driver Access 64-bit (MS Office 64-bit / Access Database Engine).</p>
   <div class="warn">Hasil AI adalah <b>usulan</b>. Data yang masuk database / dashboard hanya baris yang sudah <b>diverifikasi</b> geologist atau petugas data terhadap scan aslinya.</div>
