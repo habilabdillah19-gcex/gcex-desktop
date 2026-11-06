@@ -2385,12 +2385,37 @@ sama: selisih yang tidak akan dicari siapa pun, karena tidak ada yang merasa men
 - **Waste pengisi tidak termasuk** di laporan ini; itu hanya ada di perhitungan dig block per
   poligon (bagian 88). Keterangan ini ikut tercetak di CSV.
 
-### Satu kejanggalan yang sengaja TIDAK diperbaiki
+### RALAT: "kejanggalan satuan logam" yang pernah ditulis di sini TIDAK BENAR
 
-Satuan kolom logam ditentukan dari **awalan nama atribut** (`rpUnitDef`), jadi kolom bernama
-`CU_PPM` ikut dianggap `%` padahal isinya ppm. Itu perilaku aplikasi HTML sekarang. Memperbaikinya
-hanya di Qt akan membuat kolom logam kedua aplikasi berbeda untuk data yang sama. Kalau mau
-diperbaiki, perbaikannya harus di `rpUnitDef` lebih dulu supaya keduanya ikut berubah.
+Bagian ini sebelumnya menyatakan bahwa satuan kolom logam ditentukan dari awalan nama atribut
+sehingga `CU_PPM` dianggap `%`, dan bahwa itu adalah perilaku aplikasi HTML yang sengaja ditiru
+di Qt. **Keduanya salah.**
+
+Diperiksa langsung di aplikasi yang berjalan: `rpUnitDef('CU_PPM')` mengembalikan **`'ppm'`**.
+`rpUnitDef` memanggil `elUnit()` lebih dulu dan hanya jatuh ke regex cadangannya bila `elUnit`
+mengembalikan string kosong — dan `elUnit` memeriksa `ppm` / `ppb` **sebelum** aturan awalan
+unsur. **Aplikasi HTML benar sejak awal.**
+
+Yang keliru adalah tiruan di penampil Qt (`qtbm/laporan_bm.satuan()`): ia menyalin regex
+cadangannya saja, tanpa `elUnit`. Akibatnya nyata — untuk 1.000 t @ 50 ppm:
+
+| | CU_PPM | Hasil |
+| --- | --- | --- |
+| Aplikasi HTML | `ppm` | 50.000 gram (50 kg) — benar |
+| Penampil Qt (sebelum ralat) | `%` | 500 "t logam" — salah **10.000 kali** dan salah satuan |
+
+Pada data latihan, dua dari lima atribut terkena (`CU_PPM`, `ZN_PPM`).
+
+**Mengapa tidak tertangkap:** uji di `qtbm/tests/test_laporan_bm.py` menuliskan `("CU_PPM", "%")`
+sebagai nilai yang diharapkan — nilai itu diambil dari bacaan saya atas kodenya, bukan dari
+aplikasi. Ujinya lulus sambil **melindungi** bug-nya. Uji yang memuat keyakinan keliru lebih buruk
+daripada tidak ada uji, sebab ia memberi rasa aman.
+
+**Sudah diperbaiki:** `satuan()` kini meniru rantai lengkapnya (elUnit dulu, baru regex cadangan),
+dan `tools/uji/paritas_laporan_bm.py` membandingkan satuan **43 nama atribut** terhadap `elUnit()`
+asli di aplikasi — banyak nama, supaya URUTAN aturannya ikut teruji, bukan satu-dua contoh. Ada
+penjaga agar daftarnya selalu memuat atribut ppm: tanpa itu, aturan yang pernah salah tidak
+teruji sama sekali.
 
 ### Yang belum ada
 

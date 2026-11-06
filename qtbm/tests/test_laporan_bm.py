@@ -142,13 +142,38 @@ def test_baris_selisih_ada_saat_dibandingkan(bm):
 
 
 # --------------------------------------------------------------- label, satuan, logam
+# Nilai yang diharapkan di bawah DIAMBIL dari `elUnit()` ASLI aplikasi HTML, bukan dari bacaan
+# saya atas kodenya. Versi lama daftar ini menuliskan ("CU_PPM", "%") dan ("ZN_PPM", "%") --
+# keliru, dan karena ujinya memuat keyakinan yang keliru itu, ia LULUS sambil melindungi bug di
+# `laporan_bm.satuan()` yang menghitung logam ppm 10.000 kali terlalu besar. Jangan mengubah
+# nilai di sini tanpa menjalankan paritas terhadap aplikasi sungguhan lebih dulu.
 @pytest.mark.parametrize("nama,unit", [
-    ("AU_GC", "g/t"), ("AG_PPM", "g/t"), ("S_PCT", "%"), ("CU_PPM", "%"), ("ZN_PPM", "%"),
+    ("AU_GC", "g/t"), ("AU", "g/t"), ("AU_GPT", "g/t"), ("AG", "g/t"), ("PT", "g/t"),
+    ("S_PCT", "%"), ("CU_PCT", "%"), ("FE", "%"), ("CU", "%"), ("STOT", "%"),
+    ("CU_PPM", "ppm"), ("ZN_PPM", "ppm"), ("AG_PPM", "ppm"), ("PB_PPM", "ppm"),
+    ("AS_PPB", "ppb"), ("HG_PPB", "ppb"),
+    ("XYZ", "g/t"),
 ])
 def test_satuan_sama_dengan_aplikasi(nama, unit):
-    # CU_PPM / ZN_PPM memang dianggap '%' oleh rpUnitDef di aplikasi (aturannya melihat awalan
-    # nama). Ditiru apa adanya; lihat catatan di laporan_bm.satuan().
     assert LB.satuan(nama) == unit
+
+
+def test_satuan_ppm_tidak_dianggap_persen():
+    """Penjaga tegas: awalan unsur TIDAK boleh mengalahkan akhiran ppm / ppb.
+
+    `elUnit` memeriksa ppm/ppb SEBELUM awalan unsur. Kalau urutannya terbalik, `CU_PPM` jadi '%'
+    dan kolom logamnya salah 10.000 kali sekaligus salah satuan -- tanpa galat apa pun.
+    """
+    for a in ("CU_PPM", "ZN_PPM", "PB_PPM", "FE_PPM", "MN_PPM"):
+        assert LB.satuan(a) == "ppm", a
+    for a in ("AS_PPB", "CU_PPB"):
+        assert LB.satuan(a) == "ppb", a
+
+
+def test_logam_ppm_dalam_gram_bukan_ton():
+    """1.000 t @ 50 ppm = 50.000 gram (50 kg), bukan 500 ton."""
+    assert LB.logam(1000.0, 50.0, "ppm") == pytest.approx(50000.0)
+    assert LB.satuan_logam("ppm") == "gram"
 
 
 def test_logam_mengikuti_satuan():
@@ -314,3 +339,27 @@ def test_paritas_laporan_dengan_js_beku():
                     pq = pv["s"][a]
                     assert pq["tw"] == pytest.approx(jq["tw"], rel=1e-9, abs=1e-6)
                     assert pq["w"] == pytest.approx(jq["w"], rel=1e-9, abs=1e-6)
+
+
+def test_paritas_satuan_dengan_aplikasi_html():
+    """Satuan atribut Qt = `rpUnitDef` aplikasi (elUnit dulu, baru regex cadangan).
+
+    Dijalankan ulang dari hasil `elUnit()` ASLI yang dibekukan, atas 43 nama atribut, supaya
+    URUTAN aturannya ikut teruji -- bukan hanya satu-dua contoh. Uji lama di berkas ini pernah
+    menuliskan nilai yang keliru dari bacaan kode, lalu lulus sambil melindungi bug.
+    """
+    import json as _json
+    import sys
+    from pathlib import Path as _P
+
+    beku = _P(__file__).parent / "data" / "laporan_bm_js.json"
+    if not beku.exists():
+        pytest.skip("hasil JS belum dibekukan")
+    d = _json.loads(beku.read_text(encoding="utf-8"))
+    if not d.get("elUnit"):
+        pytest.skip("fixture belum memuat elUnit; bekukan ulang")
+    sys.path.insert(0, str(_P(__file__).resolve().parents[2] / "tools" / "uji"))
+    import paritas_laporan_bm as PL
+
+    salah = PL.bandingkan_satuan(d)
+    assert not salah, "satuan Qt berbeda dari aplikasi HTML:\n" + "\n".join(salah)

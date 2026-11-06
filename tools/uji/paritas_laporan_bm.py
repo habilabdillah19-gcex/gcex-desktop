@@ -81,6 +81,21 @@ JS = r"""
   Object.keys(m.num).forEach(function(a){ out.num[a] = lap(m.num[a]); });
   cats.forEach(function(a){ out.cat[a] = {kode: lap(m.cat[a].codes), dict: m.cat[a].dict}; });
 
+  /* Satuan atribut: `rpUnitDef` memanggil `elUnit()` lebih dulu dan hanya jatuh ke regex
+     cadangannya bila elUnit mengembalikan ''. elUnit memeriksa ppm/ppb SEBELUM awalan unsur,
+     jadi CU_PPM -> 'ppm', bukan '%'. Pernah salah ditiru di Qt sebagai '%', membuat kolom logam
+     ppm salah 10.000 kali DAN salah satuan, tanpa galat apa pun. Diperiksa di sini atas banyak
+     nama supaya urutan aturannya ikut teruji, bukan cuma satu-dua contoh. */
+  var NAMA_UNIT = ['AU_GC','AU','AU_GPT','AUGT','AG','AG_PPM','PT','PD','CU','CU_PPM','CU_PCT',
+    'CU_P','CUPC','ZN_PPM','ZN','PB_PPM','PB','FE','FE_PCT','MN','NI','S','S_PCT','STOT','SCIS',
+    'SXS','C','AL','SI','MG','CA','SG','DENSITY','SB_FRAC','AS_PPB','HG_PPB','XYZ','GRADE',
+    'KADAR','TEMP','PERC_FE','FE_PERC','X_PC'];
+  out.elUnit = {};
+  NAMA_UNIT.forEach(function (a) {
+    try { out.elUnit[a] = (typeof elUnit === 'function') ? elUnit(a) : null; }
+    catch (e) { out.elUnit[a] = 'GALAT'; }
+  });
+
   var A0 = nums.filter(function(n){ return /^AU/i.test(n); })[0] || nums[0];
   var sgCol = nums.filter(function(n){ return /^(sg|dens|density|bd)$/i.test(n); })[0] || '';
 
@@ -217,6 +232,39 @@ def pilihan_dari(o: dict) -> LB.Pilihan:
     return P
 
 
+def bandingkan_satuan(d: dict) -> list:
+    """Satuan atribut Qt harus sama dengan `rpUnitDef` = elUnit() dulu, baru regex cadangan."""
+    import re as _re2
+
+    E = d.get("elUnit")
+    if not E:
+        return ["elUnit tidak terekam; bekukan ulang hasil JS"]
+
+    def cadangan(a):
+        if (_re2.match(r"^(cu|zn|pb|fe|s|stot|scis|c|mn)(_|pct|$)", a, _re2.I)
+                or _re2.search(r"pct$", a, _re2.I)):
+            return "%"
+        return "g/t"
+
+    salah = []
+    nPpm = 0
+    for a, j in E.items():
+        if j == "GALAT":
+            salah.append("elUnit(%r) melempar galat di aplikasi" % a)
+            continue
+        harap = j if j else cadangan(a)
+        q = LB.satuan(a)
+        if q != harap:
+            salah.append("satuan %r: aplikasi %r (elUnit %r) vs Qt %r" % (a, harap, j, q))
+        if harap == "ppm":
+            nPpm += 1
+    # penjaga: tanpa satu pun atribut ppm, aturan yang pernah salah itu tidak teruji
+    if nPpm < 2:
+        salah.append("daftar uji satuan nyaris tidak memuat atribut ppm (%d): aturan yang pernah "
+                     "salah tidak teruji" % nPpm)
+    return salah
+
+
 def _dekat(a: float, b: float) -> bool:
     a, b = float(a), float(b)
     if not np.isfinite(a) or not np.isfinite(b):
@@ -287,7 +335,7 @@ def main() -> int:
     if d.get("galatHalaman"):
         print("galat halaman:", d["galatHalaman"][:3])
     print("model cuplikan: %d blok" % d["n"])
-    salah = bandingkan(d)
+    salah = bandingkan(d) + bandingkan_satuan(d)
     if FIXTURE:
         BEKU.parent.mkdir(parents=True, exist_ok=True)
         d.pop("galatHalaman", None)

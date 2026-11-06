@@ -153,14 +153,37 @@ import re as _re
 
 
 def satuan(a: str) -> str:
-    """Satuan bawaan atribut -- padanan rpUnitDef(): unsur basis logam jadi '%', lainnya 'g/t'.
+    """Satuan bawaan atribut -- padanan `rpUnitDef()`, TERMASUK `elUnit()` yang dipanggilnya.
 
-    Perlu diketahui dan DISENGAJA tidak diperbaiki di sini: aturan ini melihat awalan nama saja,
-    jadi kolom bernama `CU_PPM` ikut dianggap '%' (karena berawalan `cu_`), padahal isinya ppm.
-    Itu perilaku aplikasi HTML sekarang. Memperbaikinya hanya di Qt akan membuat kolom logam kedua
-    aplikasi berbeda untuk data yang sama -- justru jenis selisih yang susah dilacak. Kalau mau
-    diperbaiki, perbaikannya harus di `rpUnitDef` dulu supaya keduanya ikut berubah.
+    URUTANNYA PENTING DAN BUKAN SELERA. `rpUnitDef` memanggil `elUnit(a)` lebih dulu dan hanya
+    jatuh ke regex cadangannya bila `elUnit` mengembalikan string kosong. Dan `elUnit` memeriksa
+    `ppm` / `ppb` SEBELUM aturan awalan unsur -- itulah sebabnya `CU_PPM` menjadi `'ppm'`, bukan
+    `'%'` dari awalan `cu`.
+
+    Versi modul ini pernah menyalin regex cadangannya saja, tanpa `elUnit`. Akibatnya `CU_PPM`
+    dan `ZN_PPM` dihitung sebagai persen: untuk 1.000 t @ 50 ppm, aplikasi HTML memberi 50.000
+    gram sedangkan Qt memberi 500 "t logam" -- salah 10.000 kali DAN salah satuan. Docstring
+    lama di sini bahkan menyatakan aplikasi HTML yang keliru dan Qt sengaja menirunya; itu tidak
+    benar, aplikasi HTML benar sejak awal.
+
+    Catatan: `elUnit` juga menghormati penimpaan manual `BX.ui.rptU[a]`. Itu tidak ditiru di sini
+    karena panel Qt belum punya kendalinya; bila nanti ada, ia harus diperiksa lebih dulu.
     """
+    s = str(a).lower()
+    # --- urutan elUnit(), persis ---
+    if _re.search(r"(pct|perc|%|_p$|pc$)", s):
+        return "%"
+    if _re.search(r"ppm", s):
+        return "ppm"
+    if _re.search(r"ppb", s):
+        return "ppb"
+    if _re.search(r"(gpt|g_?t$|gt$)", s):
+        return "g/t"
+    if _re.match(r"^(au|ag|pt|pd)", s):
+        return "g/t"
+    if _re.match(r"^(cu|pb|zn|fe|mn|ni|s|sxs|scis|stot|c|al|si|mg|ca)", s):
+        return "%"
+    # --- elUnit mengembalikan '': barulah regex cadangan rpUnitDef ---
     if _re.match(r"^(cu|zn|pb|fe|s|stot|scis|c|mn)(_|pct|$)", a, _re.I) or \
             _re.search(r"pct$", a, _re.I):
         return "%"
@@ -168,7 +191,12 @@ def satuan(a: str) -> str:
 
 
 def logam(ton: float, kadar: float, unit: str) -> float:
-    """Logam terkandung -- padanan rpMetal(): '%' -> ton logam, 'ppb' -> gram, lain -> gram."""
+    """Logam terkandung -- padanan `rpMetal()`.
+
+    '%'   -> ton logam (t x kadar / 100)
+    'ppb' -> gram      (t x kadar / 1000; ppb x t = mg, jadi dibagi 1000 menjadi gram)
+    lain  -> gram      (g/t dan ppm sama-sama gram per ton, jadi t x kadar langsung gram)
+    """
     if unit == "%":
         return ton * kadar / 100.0
     if unit == "ppb":
