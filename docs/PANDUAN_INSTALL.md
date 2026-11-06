@@ -2488,74 +2488,28 @@ belum), penyimpanan string ke folder proyek, dan cetak peta oreblock PDF. Semua 
 ada di aplikasi HTML.
 
 
-## 92. Block Model 0.24.26 — angka kedua metode tonase dig block selalu terlihat
+## 92. Penampil Qt — dua perbaikan kecil di tab Dig block
 
-### Mengapa diubah
+### Keputusan: selisih metode tonase TIDAK ditampilkan secara bawaan
 
-Perangkat lunak yang diakui di tambang adalah Surpac, sehingga angka dig block perlu bisa
-dipertanggungjawabkan terhadapnya. Bawaan dig block GC-Ex adalah **metode presisi GC-Ex**, dan
-selisihnya terhadap metode Surpac di dig block bersifat **geometris** — blok dipotong di garis
-poligon, versus blok ikut **utuh** bila titik tengahnya di dalam poligon. Karena geometris, ia
-**tetap ada walaupun block model tidak punya atribut proporsi `sb_frac`**. Ini berbeda dari
-Reporting BM: di sana, tanpa `sb_frac`, kedua metode memang memberi angka identik sehingga
-pilihan metode tidak berdampak.
+Pemilik menyatakan selisih luasan / tonase / kadar sangat berdampak pada kepercayaan karena
+perangkat lunak yang diakui adalah Surpac, dan bahwa block model kerjanya **tidak punya**
+atribut proporsi `sb_frac`. Sempat dibuat agar angka kedua metode selalu tampil berdampingan;
+pemilik kemudian meralat: **tetap presisi, selisihnya tidak perlu ditampilkan.** Perubahan itu
+dibatalkan seluruhnya — aplikasi HTML kembali ke keadaan sebelumnya (modul `digband.js` dicabut,
+versi Block Model kembali ke 0.24.25 karena isi installernya tidak berubah), dan di penampil Qt
+pilihan *"Tampilkan juga angka metode satunya"* tetap ada tetapi **mati** secara bawaan.
 
-Angka nyata dari uji paritas terhadap `lyTon()` di aplikasi ini sendiri:
+Catatan yang perlu diingat kalau topik ini dibuka lagi: tanpa `sb_frac`, Reporting BM memang
+memberi angka identik untuk kedua metode sehingga pilihan metode di laporan tidak berdampak —
+tetapi di **dig block** selisihnya bersifat **geometris** (blok dipotong di garis poligon versus
+blok ikut utuh bila titik tengahnya di dalam), jadi ia **tetap ada walau model tanpa `sb_frac`**.
+Pada uji paritas: −9,6% bila garis poligon tepat di batas blok, −0,1% bila di tengah blok, −0,9%
+pada poligon segi lima, −17,9% bila ada poligon lubang, dan kadarnya ikut bergeser (0,2763 vs
+0,2629). Angka itu dicatat di sini supaya tersedia bila nanti dibutuhkan, bukan untuk menyalakan
+kembali tampilannya tanpa diminta.
 
-| Kasus | Presisi | Surpac | Selisih |
-|---|---|---|---|
-| Garis poligon tepat di batas blok | 15.275 t | 16.900 t | −9,6% |
-| Garis poligon di tengah blok | 15.255 t | 15.275 t | −0,1% |
-| Poligon segi lima | 12.728 t | 12.838 t | −0,9% |
-| Dengan poligon lubang | 12.675 t | 15.438 t | −17,9% |
-
-Kadarnya pun bergeser (0,2763 vs 0,2629 pada kasus segi lima). Selisih sebesar itu tidak boleh
-bersembunyi di balik satu pilihan di menu yang bisa lupa dibuka.
-
-### Yang berubah
-
-**Bawaan TIDAK diubah.** Metode presisi tetap bawaan dan tetap menjadi angka utama, supaya tidak
-ada angka lama yang berubah diam-diam. Yang berubah hanya: **angka metode pembanding sekarang
-selalu ditampilkan di sebelahnya**, beserta selisih persennya —
-
-- pada angka langsung saat mendigit di Sayatan 2D;
-- pada daftar dig block yang sudah tersimpan (`lyItems().ton2`);
-- plus keterangan tetap di panel yang menyebutkan metode mana yang dipakai, bahwa selisihnya
-  geometris, dan bahwa **waste pengisi hanya ditambahkan pada metode presisi**.
-
-### Cara angka pembandingnya dihitung — dan mengapa begitu
-
-`dbLain()` (modul `web-src/digband.js`) menghitung metode lain dengan **membalik `lyU().calcM`
-sesaat lalu memanggil `lyTon()` yang sama**, bukan dengan memanggil `lyTonS()` langsung. Itu
-jalur yang persis sama dengan yang didapat pemakai saat mengganti pilihan metode sendiri,
-sehingga tidak mungkin ada jalur ketiga yang perilakunya menyimpang dari keduanya.
-
-Yang gampang salah di situ: cache indeks flitch (`LY.ix`) ikut bergantung pada metode. Kalau
-tidak dibuang saat membalik, angka pembandingnya **salah tanpa memunculkan galat apa pun** — dan
-yang salah justru angka yang dipakai untuk mempertanggungjawabkan tonase terhadap Surpac. Karena
-itu `tools/uji/paritas_galian_bm.py` memeriksanya di aplikasi sungguhan, **di kedua arah**:
-`dbLain()` saat mode presisi harus sama dengan memilih Surpac langsung, `dbLain()` saat mode
-Surpac harus sama dengan memilih presisi langsung, `calcM` harus kembali ke nilai semula, dan
-angka metode asal harus tetap sama setelah `dbLain()` dipanggil. Ada juga penjaga agar ujinya
-tidak lulus palsu: bila poligon pembanding memberi angka yang sama pada kedua metode, ujinya
-**gagal**, sebab berarti ia tidak membedakan apa-apa.
-
-### Catatan tentang waste pengisi
-
-Waste pengisi (dilusi untuk luas poligon yang tidak tertutup blok) **bawaannya menyala** dan
-hanya ditambahkan pada metode presisi. Pada data latihan yang jarang (blok hanya menutup ±47%
-luas poligon) kombinasi itu membuat selisih terhadap Surpac mencapai **+33% sampai +40%**. Pada
-block model penuh yang nyata, tutupan blok mendekati 100% dan waste pengisi mendekati nol — jadi
-angka puluhan persen itu **bukan** yang akan terlihat di pekerjaan sehari-hari. Yang tetap
-berlaku apa pun modelnya adalah selisih geometris di tabel di atas.
-
-### Hal yang sama di penampil Qt
-
-Di tab Dig block penampil Qt, kedua kolom tonase (**Presisi t** dan **Surpac t**) beserta kolom
-**Selisih %** sekarang **selalu ada** — centang untuk mematikannya dihapus, karena centang yang
-bisa lupa dinyalakan tidak cocok untuk angka yang menentukan kepercayaan.
-
-Selain itu dua hal diperbaiki di tab Dig block Qt:
+### Dua cacat yang diperbaiki
 
 - Tombol **"Tutup & simpan"** diganti menjadi **"Tutup poligon"**, dan judul daftarnya menjadi
   *"String di sesi ini (belum tersimpan ke berkas)"*. Label lama menyesatkan: yang terjadi

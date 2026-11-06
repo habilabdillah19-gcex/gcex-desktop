@@ -140,8 +140,13 @@ def test_hitung_tanpa_dialog_modal(app):
     assert P.tabel.rowCount() == 1
 
 
-def test_tabel_selalu_membandingkan_kedua_metode(app):
-    """Kedua kolom harus ADA tanpa perlu dinyalakan: tidak boleh ada centang yang bisa lupa."""
+def test_pembanding_surpac_bawaannya_mati(app):
+    """Keputusan pemilik: selisih kedua metode TIDAK ditampilkan kecuali diminta."""
+    P = PanelGalian()
+    assert P.cb_banding.isChecked() is False
+
+
+def test_tabel_membandingkan_kedua_metode_bila_dinyalakan(app):
     P = PanelGalian()
     bm = _bm()
     T = TB.ui_awal(bm)
@@ -154,6 +159,7 @@ def test_tabel_selalu_membandingkan_kedua_metode(app):
                                 pts=[(x0 + 2.5, y0 + 2.5, z), (x0 + 22.5, y0 + 2.5, z),
                                      (x0 + 22.5, y0 + 22.5, z), (x0 + 2.5, y0 + 22.5, z)]))
     P.cb_waste.setChecked(False)
+    P.cb_banding.setChecked(True)
     P.hitung_semua()
     judul = [P.tabel.horizontalHeaderItem(c).text() for c in range(P.tabel.columnCount())]
     assert "Presisi t" in judul and "Surpac t" in judul

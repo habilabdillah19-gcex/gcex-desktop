@@ -339,16 +339,3 @@ def test_paritas_ekspor_dengan_aplikasi_html():
         pytest.skip("fixture belum memuat keluaran dgExport; bekukan ulang")
     salah = PG.bandingkan_ekspor(d)
     assert not salah, "ekspor string Qt berbeda dari aplikasi HTML:\n" + "\n".join(salah)
-
-
-def test_paritas_pembanding_dblain():
-    """`dbLain()` di aplikasi HTML harus = memilih metode itu langsung, dan tidak berjejak."""
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "uji"))
-    import paritas_galian_bm as PG
-
-    d = _muat()
-    if not d.get("pembanding"):
-        pytest.skip("fixture belum memuat hasil dbLain; bekukan ulang")
-    salah = PG.bandingkan_pembanding(d)
-    assert not salah, "angka pembanding dig block tidak dapat dipercaya:\n" + "\n".join(salah)

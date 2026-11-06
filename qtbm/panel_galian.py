@@ -74,17 +74,15 @@ class PanelGalian(QWidget):
         self.cmb_metode.addItem("Presisi GC-Ex (blok dipotong di garis)", "clip")
         self.cmb_metode.addItem("Seperti Surpac (blok utuh, titik tengah)", "surpac")
         f2.addRow("Metode tonase", self.cmb_metode)
-        # Kedua metode SELALU ditampilkan; ini bukan pilihan yang bisa dimatikan.
-        # Alasannya: perangkat lunak yang diakui di tambang adalah Surpac, dan selisih kedua
-        # metode di dig block bersifat GEOMETRIS (blok dipotong di garis vs blok utuh), jadi
-        # tetap ada walau block model tanpa `sb_frac`. Pada uji paritas selisihnya 0,1%-17,9%
-        # tergantung posisi garis poligon terhadap grid blok. Angka sebesar itu tidak boleh
-        # bersembunyi di balik satu centang yang bisa lupa dinyalakan.
-        self.lbl_banding = QLabel("Angka kedua metode selalu ditampilkan berdampingan; metode "
-                                  "yang dipilih di atas yang dipakai sebagai angka utama.")
-        self.lbl_banding.setWordWrap(True)
-        self.lbl_banding.setStyleSheet("color:#8b97a8")
-        f2.addRow(self.lbl_banding)
+        # Keputusan pemilik: selisih kedua metode TIDAK ditampilkan secara bawaan. Pilihannya
+        # tetap ada untuk dipakai saat angka perlu dicocokkan dengan Surpac, tetapi mati kecuali
+        # diminta. Catatan untuk sesi berikutnya: selisih ini bersifat GEOMETRIS (blok dipotong di
+        # garis poligon vs blok utuh bila titik tengahnya di dalam), jadi ia ADA walaupun block
+        # model tanpa `sb_frac` -- pada uji paritas 0,1% sampai 17,9% tergantung posisi garis
+        # poligon terhadap grid blok. Jangan menyalakannya kembali tanpa diminta pemilik.
+        self.cb_banding = QCheckBox("Tampilkan juga angka metode satunya (pembanding Surpac)")
+        self.cb_banding.setChecked(False)
+        f2.addRow(self.cb_banding)
         self.cb_lolos = QCheckBox("Hanya blok yang lolos cut-off tampilan")
         f2.addRow(self.cb_lolos)
         self.lbl_sg = QLabel("SG")
@@ -198,7 +196,7 @@ class PanelGalian(QWidget):
         self.cb_snap.toggled.connect(self._snap_berubah)
         for w in (self.cmb_kadar, self.cmb_metode):
             w.currentIndexChanged.connect(self.hitung_semua)
-        for w in (self.cb_lolos, self.cb_waste):
+        for w in (self.cb_banding, self.cb_lolos, self.cb_waste):
             w.toggled.connect(self.hitung_semua)
         for w in (self.spn_wsg, self.spn_wg):
             w.valueChanged.connect(self.hitung_semua)
@@ -362,22 +360,25 @@ class PanelGalian(QWidget):
             self.lbl_hidup.setText("%d titik — klik minimal 3 titik" % len(P))
             return
         O = self.opsi()
+        banding = self.cb_banding.isChecked()
         try:
-            D = GA.bandingkan(self.bm, P, self._tampilan_sg(), O)
+            if banding:
+                D = GA.bandingkan(self.bm, P, self._tampilan_sg(), O)
+            else:
+                D = {O.metode: GA.tonase(self.bm, P, self._tampilan_sg(), O)}
         except Exception as e:                      # noqa: BLE001
             self.lbl_hidup.setText("belum bisa dihitung: %s" % e)
             return
         H = D[O.metode]
-        lain = D["surpac" if O.metode == "clip" else "clip"]
         kadar = ("%.3f" % H.kadar) if math.isfinite(H.kadar) else "—"
-        beda = ("%+.1f%%" % ((H.t - lain.t) / lain.t * 100.0)) if lain.t else "—"
-        self.lbl_hidup.setText(
-            "%d titik · %.1f m² · <b>%s t @ %s</b> (%s) · pembanding %s: <b>%s t</b> (%s) "
-            "· blok menutup %d%%"
-            % (len(P), H.luas_poligon, _ribuan(H.t), kadar,
-               GA.NAMA_METODE.get(O.metode, O.metode),
-               GA.NAMA_METODE.get(lain.metode, lain.metode), _ribuan(lain.t), beda,
-               round(H.cov * 100)))
+        teks = ("%d titik · %.1f m² · <b>%s t @ %s</b> · blok menutup %d%%"
+                % (len(P), H.luas_poligon, _ribuan(H.t), kadar, round(H.cov * 100)))
+        if banding:
+            lain = D["surpac" if O.metode == "clip" else "clip"]
+            beda = ("%+.1f%%" % ((H.t - lain.t) / lain.t * 100.0)) if lain.t else "—"
+            teks += (" · %s: <b>%s t</b> (%s)"
+                     % (GA.NAMA_METODE.get(lain.metode, lain.metode), _ribuan(lain.t), beda))
+        self.lbl_hidup.setText(teks)
 
     # ---------------------------------------------------------------- hitung
 
@@ -393,8 +394,12 @@ class PanelGalian(QWidget):
             return
         T = self._tampilan_sg()
         O = self.opsi()
-        kolom = ["No", "Ket.", "Titik", "Luas m²",
-                 "Presisi t", "Surpac t", "Selisih %", "Kadar", "Blok %"]
+        banding = self.cb_banding.isChecked()
+        kolom = ["No", "Ket.", "Titik", "Luas m²"]
+        if banding:
+            kolom += ["Presisi t", "Surpac t", "Selisih %", "Kadar", "Blok %"]
+        else:
+            kolom += ["Tonase t", "Kadar", "Logam", "Blok %"]
         self.tabel.setColumnCount(len(kolom))
         self.tabel.setHorizontalHeaderLabels(kolom)
         semua_catatan: List[str] = []
@@ -403,16 +408,23 @@ class PanelGalian(QWidget):
             if len(P) < 3:
                 continue
             try:
-                H = GA.bandingkan(self.bm, P, T, O)
+                if banding:
+                    H = GA.bandingkan(self.bm, P, T, O)
+                else:
+                    H = {O.metode: GA.tonase(self.bm, P, T, O)}
             except Exception as e:                  # noqa: BLE001
                 self._baris(s, ["gagal: %s" % e])
                 continue
             utama = H[O.metode]
             kadar = ("%.3f" % utama.kadar) if math.isfinite(utama.kadar) else "—"
-            a_, b_ = H["clip"].t, H["surpac"].t
-            sel = ("%+.2f" % ((a_ - b_) / b_ * 100.0)) if b_ else "—"
-            nilai = [_ribuan(a_), _ribuan(b_), sel, kadar,
-                     "%d" % round(utama.cov * 100)]
+            if banding:
+                a_, b_ = H["clip"].t, H["surpac"].t
+                sel = ("%+.2f" % ((a_ - b_) / b_ * 100.0)) if b_ else "—"
+                nilai = [_ribuan(a_), _ribuan(b_), sel, kadar,
+                         "%d" % round(utama.cov * 100)]
+            else:
+                nilai = [_ribuan(utama.t), kadar, _ribuan(utama.logam),
+                         "%d" % round(utama.cov * 100)]
             self._baris(s, nilai)
             for c in GA.catatan(self.bm, H, O):
                 if c not in semua_catatan:

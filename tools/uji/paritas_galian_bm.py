@@ -174,27 +174,6 @@ JS = r"""
   jalan('atribut kadar tidak ada -> jatuh ke cadangan', kotak(30),
         S({calcM: 'clip', gAttr: '__tidak_ada__'}));
 
-  /* ---- dbLain(): angka metode pembanding yang SELALU ditampilkan di panel dig block.
-     Ia dihitung dengan membalik lyU().calcM sesaat lalu memanggil lyTon() yang sama. Kalau cache
-     indeks flitch (LY.ix) tidak dibuang saat membalik, angkanya salah TANPA galat apa pun -- dan
-     yang salah adalah justru angka pembanding yang dipakai untuk mempertanggungjawabkan tonase
-     terhadap Surpac. Karena itu diperiksa di kedua arah, plus tidak meninggalkan jejak. */
-  if (typeof dbLain === 'function') {
-    var Lb = lyU(), Pb = segi, zsb;
-    Lb.top = zb + sz / 2; Lb.bot = zb - sz / 2; Lb.flMode = 'comp'; Lb.onlyPass = false;
-    var U0 = BX.ui; U0.sg = 2.6; U0.sgCol = ''; U0.sgZero = ''; U0.sgRep = ''; U0.wOn = false;
-    zsb = lyZs();
-    Lb.calcM = 'clip'; if (window.LY) LY.ix = null;
-    var b_clip = lyTon(Pb, zsb, []).t, b_lain_clip = dbLain(Pb, zsb, []).t;
-    Lb.calcM = 'surpac'; if (window.LY) LY.ix = null;
-    var b_surpac = lyTon(Pb, zsb, []).t, b_lain_surpac = dbLain(Pb, zsb, []).t;
-    var b_akhir = lyCalcM();
-    Lb.calcM = 'clip'; if (window.LY) LY.ix = null;
-    var b_clip2 = lyTon(Pb, zsb, []).t;
-    out.pembanding = {clip: b_clip, surpac: b_surpac, lain_dari_clip: b_lain_clip,
-                      lain_dari_surpac: b_lain_surpac, calcM_akhir: b_akhir, clip_ulang: b_clip2};
-  }
-
   /* ---- ekspor string: tangkap keluaran dgExport() ASLI, bukan membaca kodenya ulang.
      Urutan Y,X di .str dan pengembalian offset adalah kesalahan yang tidak menimbulkan galat
      apa pun -- berkasnya tetap terbaca Surpac, poligonnya saja yang di tempat lain. Satu-satunya
@@ -315,29 +294,6 @@ RUAS = (("n", "n"), ("v", "v"), ("t", "t"), ("a", "a"), ("grade", "kadar"),
         ("cov", "cov"), ("wA", "waste_a"), ("wT", "waste_t"), ("fh", "fh"), ("zs", "zs"))
 
 
-def bandingkan_pembanding(d: dict) -> list:
-    """`dbLain()` harus memberi angka yang sama dengan memilih metode itu langsung, tanpa jejak."""
-    P = d.get("pembanding")
-    if not P:
-        return ["dbLain tidak terekam: modul web-src/digband.js tidak terpasang di app/index.html"]
-    salah = []
-    if not _dekat(P["lain_dari_clip"], P["surpac"]):
-        salah.append("dbLain dari mode presisi %r != Surpac langsung %r"
-                     % (P["lain_dari_clip"], P["surpac"]))
-    if not _dekat(P["lain_dari_surpac"], P["clip"]):
-        salah.append("dbLain dari mode Surpac %r != presisi langsung %r"
-                     % (P["lain_dari_surpac"], P["clip"]))
-    if P["calcM_akhir"] != "surpac":
-        salah.append("dbLain tidak mengembalikan calcM; jadi %r" % P["calcM_akhir"])
-    if not _dekat(P["clip_ulang"], P["clip"]):
-        salah.append("angka presisi berubah setelah dbLain dipanggil: %r -> %r"
-                     % (P["clip"], P["clip_ulang"]))
-    if _dekat(P["clip"], P["surpac"]):
-        salah.append("kedua metode memberi angka sama pada poligon pembanding: ujinya tidak "
-                     "membedakan apa-apa (%r)" % P["clip"])
-    return salah
-
-
 def bandingkan_ekspor(d: dict) -> list:
     """Isi berkas .str dan .dxf Qt harus sama baris per baris dengan `dgExport()` aplikasi HTML."""
     import datetime as _dt
@@ -413,7 +369,7 @@ def main() -> int:
     if d.get("galatHalaman"):
         print("galat halaman: %s" % d["galatHalaman"][:3])
     print("model jendela: %d blok, flitch terpadat RL %.2f" % (d["n"], d["zb"]))
-    salah = bandingkan(d) + bandingkan_ekspor(d) + bandingkan_pembanding(d)
+    salah = bandingkan(d) + bandingkan_ekspor(d)
     print("kasus: %d" % len(d["kasus"]))
     for ks in d["kasus"]:
         print("  - %s" % ks["nama"])
@@ -423,7 +379,6 @@ def main() -> int:
             print("  ! %s" % s)
         return 1
     print("  - ekspor .str dan .dxf (isi berkas dibandingkan baris per baris)")
-    print("  - dbLain(): angka metode pembanding, diperiksa di kedua arah + tanpa jejak")
     print("\nSEMUA SAMA PERSIS: dig block & ekspor string Qt = aplikasi HTML.")
     return 0
 
