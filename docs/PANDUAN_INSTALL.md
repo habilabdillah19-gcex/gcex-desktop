@@ -2694,3 +2694,84 @@ kode keluar 1 dan menyebut berkas serta nomor yang bersangkutan. Pemeriksaan yan
 terbukti bisa gagal tidak membuktikan apa pun.
 
 **218 uji otomatis** di `qtbm/tests`.
+
+
+## 95. Penampil Qt — tab Sayatan
+
+Penampil Qt kini punya tab keempat: **Sayatan**. Kendali sayatan ad-hoc yang dulu ada di bilah
+sisi (slab tegak berazimut) **dicabut**, karena ia memakai uji titik tengah blok dan azimut saja
+sehingga memilih blok yang berbeda dari aplikasi HTML pada pengaturan yang sama — dan karena ada
+dua tempat yang bisa membatasi sayatan. Sekarang definisinya **satu**, dipakai bersama oleh panel
+Tampilan, Laporan dan Dig block.
+
+### Hanya dua mode, sengaja
+
+| Mode | Posisi diukur sebagai |
+| --- | --- |
+| **Horizontal (plan per elevasi)** | RL |
+| **Garis manual (vertikal / miring)** | jarak dari titik 1, dengan dip dan pilihan batas ruas |
+
+Fungsi `secGeom` di aplikasi HTML juga memuat mode X, Y dan A, tetapi pilihan *Arah potongan* di
+aplikasi **Block Model** hanya menawarkan `H` dan `P` — ketiga mode lain **tidak bisa dicapai dari
+antarmukanya**. Menawarkannya di penampil Qt berarti memberi angka yang tidak bisa diperiksa
+terhadap apa pun. Ada uji yang menjaga daftar mode panel tetap H dan P, sehingga menambah mode
+baru memaksa keputusan paritas lebih dulu, bukan diam-diam.
+
+### Kendali
+
+Arah potongan, **Potong data** (hanya blok di dalam slab), posisi (slider + kotak angka), tebal
+slab, dan untuk garis manual: dip, titik 1 dan titik 2 (easting/northing penuh), batas sepanjang
+ruas, serta perpanjangan ujung. Tombol *Pas ke tengah model* dan — pada mode horizontal — *Geser
+satu tebal ke bawah* untuk menyusuri bench satu per satu. Panel menulis keterangan sayatan yang
+aktif beserta **jumlah blok di dalam slab**, dan mengatakan terus-terang bila nol.
+
+Catatan kecil yang disengaja: slider **tidak menjepit** kotak angkanya. Di aplikasi HTML `pos`
+adalah slider yang menjepit nilainya, dan itu sempat membuat uji paritas menyetel 0 lalu mendapat
+127 tanpa tanda apa pun.
+
+### Tiga hal yang bisa salah TANPA galat — dan cara ketiganya dijaga
+
+**1. Uji kotak, bukan uji titik tengah.** Aplikasi HTML (`bxSlabHit`) menguji blok sebagai
+**kotak**: setengah rentang blok diproyeksikan ke normal bidang (`r = (sx·|nx| + sy·|ny| +
+sz·|nz|)/2`), lalu blok ikut bila rentang `[d−r, d+r]` bersinggungan dengan slab. Memakai titik
+tengah membuat slab yang lebih tipis daripada satu blok hampir tidak memilih apa pun. Bedanya
+besar: pada data latihan, slab setebal satu blok memilih **164 blok** dengan uji kotak dan hanya
+**63** dengan uji titik tengah. Kedua jalur disediakan dan diuji terpisah (`dalam_slab` dan
+`dalam_slab_titik`), sebab aplikasi HTML sendiri memakai titik tengah di tempat lain — metode
+tonase "seperti Surpac".
+
+**2. RL pusat bidang pada sayatan miring.** `secGeom` memakai `(G.z0 + G.z1)/2`, yaitu tengah
+kotak **data bor** (collar dan ujung lubang), **bukan** tengah block model. Pada dip 90 ini tidak
+berpengaruh karena normal bidang tidak punya komponen z — tetapi pada dip lain bidangnya bergeser
+dan blok yang terpilih berbeda. Itulah sebabnya kasus dip 90 lulus sejak awal sementara dip 70 dan
+45 tidak, sampai sumbernya ditemukan. `Proyek.rl_data()` menyalin perhitungan itu, panel
+**menyebutkan nilai yang sedang dipakai**, dan bila proyek tidak punya data bor panel mengatakan
+bahwa keduanya bisa berbeda sehingga sayatan miring akan bergeser.
+
+**3. Ruang koordinat.** Aplikasi HTML menaruh pusat bidang mode X di `c = [-offX, 0, 0]` supaya
+`pos` tetap berupa easting penuh pada koordinat internalnya. Penampil Qt memakai koordinat penuh
+sejak awal, jadi pusatnya `[0, 0, 0]` dan `pos` langsung easting penuh — hasilnya sama. Menyalin
+`[-offX, 0, 0]` ke sini akan menggeser bidangnya dua kali.
+
+### Yang diuji
+
+`tools/uji/paritas_sayatan_bm.py` membuka aplikasi Block Model sungguhan dan menjalankan `secK()`
++ `bxSlabHit()` **asli** untuk **12 susunan** (horizontal dengan tebal 10 m, setebal satu blok,
+0,2 m, tepat di batas blok, dan di luar model; garis manual dengan dip 90 / 70 / 45, offset 30,
+dibatasi ruas, dengan perpanjangan 40 m, dan ruas pendek). Yang dibandingkan adalah **blok mana
+yang terpilih** — bukan parameter bidangnya — sebab itulah yang dilihat pemakai dan itu kebal
+terhadap perbedaan cara menuliskan pusat bidang. Keduabelasnya **sama persis**, pada kedua jalur
+(uji kotak dan uji titik tengah).
+
+Tiga bug ditemukan dan diperbaiki dalam prosesnya, dua di antaranya milik harness ujinya sendiri:
+panjang ruas dihitung lalu **tidak diteruskan** ke hasil bidang (bug kode); `pos` disetel 0 tetapi
+dijepit slider menjadi 127 (bug harness); dan mode `X` disetel ke pilihan yang tidak memilikinya
+sehingga `secGeom` jatuh ke cabang miring dengan azimut 0 (bug harness, dan inilah yang menyingkap
+bahwa mode X / Y / A tidak bisa dicapai dari antarmuka).
+
+Penjaga agar ujinya tidak lulus palsu: bila tidak ada satu pun kasus di mana uji kotak dan uji
+titik tengah berbeda, ujinya **gagal**; dan bila daftar mode di aplikasi berubah, ujinya juga
+gagal dengan menyebut daftar barunya.
+
+Uji mandiri `.exe` di CI ikut memeriksa bahwa uji kotak memilih lebih banyak blok daripada uji
+titik tengah — kalau sama, uji kotak hilang dari kemasan. **252 uji otomatis** di `qtbm/tests`.

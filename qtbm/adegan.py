@@ -259,7 +259,8 @@ def permukaan_grid(A: Adegan, titik: np.ndarray, toleransi: float = 1e-6) -> Ade
 
 
 def susun_tampil(bm: Optional[BlockModel], T, bor: Optional[Bor] = None,
-                 topo: Optional[np.ndarray] = None, saringan: Optional[Saringan] = None):
+                 topo: Optional[np.ndarray] = None, saringan: Optional[Saringan] = None,
+                 luar: Optional[np.ndarray] = None):
     """Susun adegan memakai aturan panel block model (`tampil_bm.Tampilan`).
 
     Beda dengan `susun()` di bawah: warna dan blok yang tampil ditentukan KELAS DISKRIT dan cut-off
@@ -279,7 +280,11 @@ def susun_tampil(bm: Optional[BlockModel], T, bor: Optional[Bor] = None,
             permukaan_grid(A, topo)
         return A, np.zeros(0, dtype=np.int64), []
 
-    luar = saringan.terapkan(bm) if saringan else None
+    # `luar` = topeng bool yang sudah dihitung di luar (batas RL + sayatan dari panel Sayatan).
+    # Diutamakan daripada `saringan`, supaya hanya ada SATU tempat yang menentukan batas
+    # geometris; `saringan` tetap didukung untuk uji dan pemakaian sederhana.
+    if luar is None and saringan is not None:
+        luar = saringan.terapkan(bm)
     idx, kelas = TB.pilih(bm, T, pakai=luar)
     W = TB.warna_per_blok(bm, T, kelas)
     penuh = np.zeros((bm.n, 4), dtype=np.uint8)

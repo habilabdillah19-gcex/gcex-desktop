@@ -160,6 +160,31 @@ def periksa(argv) -> int:
         hasil["ok"] = False
         hasil["galat"] = "dig block gagal: %s: %s" % (type(e).__name__, e)
 
+    # Sayatan ikut diuji: slab setebal satu blok harus memilih LEBIH BANYAK blok daripada uji
+    # titik tengah. Kalau sama, berarti uji kotak hilang dari kemasan dan sayatan Qt akan
+    # menampilkan jauh lebih sedikit blok daripada aplikasi HTML pada pengaturan yang sama.
+    from . import sayatan as SY
+
+    try:
+        _x0, _x1, _y0, _y1, _z0, z1 = k
+        tipis = float(min(bm.sz))
+        OS = SY.Opsi(mode="H", pos=z1 - tipis / 2.0, tebal=tipis)
+        n_kotak = int(SY.dalam_slab(bm, OS).sum())
+        n_titik = int(SY.dalam_slab_titik(bm, OS).sum())
+        hasil["sayatan"] = {"mode": "H", "tebal": tipis, "blok_kotak": n_kotak,
+                            "blok_titik_tengah": n_titik,
+                            "label": SY.label(bm, OS)}
+        if n_kotak <= 0:
+            hasil["ok"] = False
+            hasil["galat"] = "sayatan tidak memilih satu blok pun pada flitch teratas"
+        if n_kotak <= n_titik:
+            hasil["ok"] = False
+            hasil["galat"] = ("uji kotak sayatan (%d blok) tidak lebih banyak daripada uji titik "
+                              "tengah (%d): uji kotak hilang" % (n_kotak, n_titik))
+    except Exception as e:                          # noqa: BLE001
+        hasil["ok"] = False
+        hasil["galat"] = "sayatan gagal: %s: %s" % (type(e).__name__, e)
+
     teks = json.dumps(hasil, indent=2, ensure_ascii=False)
     print(teks)
     if keluar:

@@ -420,6 +420,30 @@ class Proyek:
             min_x = min_y = 0.0
         return (math.floor(min_x / 1000.0) * 1000.0, math.floor(min_y / 1000.0) * 1000.0)
 
+    def rl_data(self) -> Optional[Tuple[float, float]]:
+        """Rentang RL kotak DATA bor (collar dan ujung lubang) -- padanan `G.z0`/`G.z1`.
+
+        Dipakai sebagai RL pusat bidang pada sayatan miring: `secGeom` di aplikasi HTML memakai
+        `(G.z0 + G.z1) / 2`, yaitu tengah kotak data bor, BUKAN tengah block model. Pada dip 90
+        ini tidak berpengaruh, tetapi pada dip lain bidangnya bergeser dan blok yang terpilih
+        berbeda -- jadi angka ini perlu ditiru, bukan diganti tengah block model.
+
+        `G` dihitung dari collar dan titik UJUNG tiap lubang saja (bukan seluruh jalur), jadi itu
+        yang dipakai di sini. None bila tidak ada data bor.
+        """
+        B = self.bor
+        if not B.n:
+            return None
+        zs: List[float] = []
+        for t in B.titik:
+            if t is None or not len(t):
+                continue
+            zs.append(float(t[0][2]))               # collar
+            zs.append(float(t[-1][2]))              # ujung lubang
+        if not zs:
+            return None
+        return (min(zs), max(zs))
+
     def asal_bm(self) -> str:
         """Nama berkas sumber block model yang dicatat proyek (bila ada)."""
         s = (self.kerja or {}).get("src") or {}

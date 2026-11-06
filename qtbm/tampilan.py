@@ -33,6 +33,7 @@ from .panel_bm import PanelBM
 from .kanvas2d import Kanvas2D
 from .panel_galian import PanelGalian
 from .panel_laporan import PanelLaporan
+from .panel_sayatan import PanelSayatan
 from .render import Kamera, Penggambar
 
 
@@ -172,7 +173,10 @@ class Jendela(QMainWindow):
                                       self.panel.T.sg_nol, self.panel.T.sg_ganti)
         self.tab.addTab(self.panel, "Tampilan")
         self.tab.addTab(self.lap, "Laporan")
+        self.say = PanelSayatan()
+        self.say.berubah.connect(self.susun_ulang)
         self.tab.addTab(self.gal, "Dig block")
+        self.tab.addTab(self.say, "Sayatan")
         self.tab.currentChanged.connect(self._tab_berubah)
         L.addWidget(self.tab, 1)
 
@@ -186,17 +190,11 @@ class Jendela(QMainWindow):
             baris.addWidget(s)
         L.addLayout(baris)
 
-        self.sayat_on = QCheckBox("Batasi sayatan (slab tegak)")
-        self.sayat_on.stateChanged.connect(self.susun_ulang)
-        L.addWidget(self.sayat_on)
-        baris2 = QHBoxLayout()
-        self.az = QDoubleSpinBox(); self.az.setRange(0, 359.9); self.az.setValue(90.0)
-        self.tebal = QDoubleSpinBox(); self.tebal.setRange(0.5, 10000); self.tebal.setValue(40.0)
-        for s in (self.az, self.tebal):
-            s.valueChanged.connect(self.susun_ulang)
-        baris2.addWidget(QLabel("azimut")); baris2.addWidget(self.az)
-        baris2.addWidget(QLabel("tebal")); baris2.addWidget(self.tebal)
-        L.addLayout(baris2)
+        # Kendali sayatan ad-hoc (slab tegak berazimut) DICABUT dari bilah sisi. Dulu ia
+        # memakai uji TITIK TENGAH blok dan azimut saja, sehingga memilih blok yang berbeda dari
+        # aplikasi HTML pada pengaturan yang sama -- dan ada dua tempat yang bisa membatasi
+        # sayatan. Sekarang definisinya satu, di tab Sayatan, dan dipakai bersama oleh panel
+        # Tampilan, Laporan dan Dig block.
 
         self.cb_bor = QCheckBox("Jalur bor"); self.cb_bor.setChecked(True)
         self.cb_bor.stateChanged.connect(self.tampil_lapis)
@@ -328,6 +326,7 @@ class Jendela(QMainWindow):
         # 2D dan SG yang dipakai tonase selalu ikut panel Tampilan tanpa perlu disalin ulang.
         self.gal.pasang_model(bm, self.panel.T)
         self.kanvas2d.pasang_model(bm, self.panel.T)
+        self.say.pasang_model(bm, self.P.rl_data() if self.P else None)
 
     def _saringan_bool(self):
         """Larik bool saringan GEOMETRIS yang sedang aktif (batas RL + sayatan).
@@ -336,19 +335,29 @@ class Jendela(QMainWindow):
         digambar, bukan batas perhitungan. Kalau keduanya dicampur, laporan akan berubah hanya
         karena seseorang mengganti warna -- dan tidak ada yang akan menduga sebabnya.
         """
-        if not self.P or not self.P.bm or not self.P.bm.n:
-            return None
-        return self.saringan().terapkan(self.P.bm)
+        return self._topeng_geometris()
 
     # ---------- menyusun ----------
     def saringan(self) -> AD.Saringan:
         S = AD.Saringan()
         if self.P and self.P.bm and (self.rl1.value() > self.rl0.value()):
             S.rl = (self.rl0.value(), self.rl1.value())
-        if self.sayat_on.isChecked() and self.P and self.P.bm and self.P.bm.n:
-            k = self.P.bm.kotak()
-            S.sayatan = ((k[0] + k[1]) / 2, (k[2] + k[3]) / 2, self.az.value(), self.tebal.value())
         return S
+
+    def _topeng_geometris(self):
+        """Batas RL + sayatan: SATU definisi, dipakai gambar, laporan dan dig block.
+
+        Sayatannya datang dari tab Sayatan (`qtbm/sayatan.py`, sudah dibuktikan sama dengan
+        `bxSlabHit` aplikasi HTML), bukan dari perhitungan terpisah -- kalau ada dua, keduanya
+        akan menyimpang dan tidak ada yang tahu angka mana yang keluar.
+        """
+        if not self.P or not self.P.bm or not self.P.bm.n:
+            return None
+        t = self.saringan().terapkan(self.P.bm)
+        st = self.say.topeng()
+        if st is not None and st.size == t.size:
+            t = t & st
+        return t
 
     def susun_ulang(self, *a, pas_kamera: bool = False) -> None:
         if not self.P:
@@ -357,7 +366,7 @@ class Jendela(QMainWindow):
         A, idx, lg = AD.susun_tampil(self.P.bm, self.panel.T,
                                      self.P.bor if self.P.data else None,
                                      self.P.topo() if self.P.data else None,
-                                     saringan=self.saringan())
+                                     luar=self._topeng_geometris())
         self._ms_susun = (time.perf_counter() - t) * 1000
         self.panel.lapor(int(idx.size), lg)
         self.pemutar.pasang(A, pas_kamera=pas_kamera)

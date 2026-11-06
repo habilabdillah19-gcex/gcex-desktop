@@ -466,6 +466,7 @@ jobs:
             --hidden-import qtbm.galian --hidden-import qtbm.string_io `
             --hidden-import qtbm.panel_galian --hidden-import qtbm.kanvas2d `
             --hidden-import qtbm.simpan_galian `
+            --hidden-import qtbm.sayatan --hidden-import qtbm.panel_sayatan `
             --distpath dist-qtbm --workpath build-qtbm penampil_qt.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller penampil 3D Qt gagal" }
           $d = "dist-qtbm/GC-Ex-BlockModel-3D"
@@ -526,6 +527,14 @@ jobs:
           if ($j.simpan.hash_kosong -ne '811c9dc5-1000193-0') {
             throw ("hash berkas berbeda dari FP.hash aplikasi HTML: " + $j.simpan.hash_kosong)
           }
+          # Sayatan: uji KOTAK harus memilih lebih banyak blok daripada uji titik tengah.
+          # Kalau sama, uji kotak hilang dari kemasan dan sayatan Qt menampilkan jauh lebih
+          # sedikit blok daripada aplikasi HTML pada pengaturan yang sama.
+          if (-not $j.sayatan) { throw "uji mandiri tidak melaporkan hasil sayatan" }
+          if ($j.sayatan.blok_kotak -le $j.sayatan.blok_titik_tengah) {
+            throw ("uji kotak sayatan " + $j.sayatan.blok_kotak + " tidak lebih banyak daripada uji titik tengah " + $j.sayatan.blok_titik_tengah)
+          }
+          Write-Host ("OK sayatan: " + $j.sayatan.blok_kotak + " blok (uji kotak) vs " + $j.sayatan.blok_titik_tengah + " (titik tengah), " + $j.sayatan.label)
           Write-Host ("OK simpan string: " + $j.simpan.string + " string bolak-balik, hash cocok")
           Write-Host ("OK dig block: " + $j.galian.clip.tonase_t + " t (presisi), " + $j.galian.surpac.tonase_t + " t (Surpac); ekspor .str " + $j.ekspor.str_baris + " baris, .dxf " + $j.ekspor.dxf_baris + " baris")
           if ($j.blok_digambar -ne $j.blok) { throw "jumlah blok yang disusun tidak sama dengan jumlah blok" }
