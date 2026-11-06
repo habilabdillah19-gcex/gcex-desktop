@@ -5,10 +5,21 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# satu build sekaligus: GitHub Release versi yang sama tidak saling timpa di tengah jalan
+# Satu build sekaligus: GitHub Release versi yang sama tidak saling timpa di tengah jalan.
+#
+# cancel-in-progress: TRUE, dan itu TIDAK melanggar aturan "setiap push harus muncul di Release".
+# Build selalu mengambil keadaan `main` TERAKHIR, dan catatan rilis memuat SEMUA commit sejak
+# rilis sebelumnya -- jadi commit yang build-nya dibatalkan tetap terbit, hanya ikut pada build
+# berikutnya alih-alih membangun ulang seluruh installer untuk dirinya sendiri.
+#
+# Mengapa diubah: 6-11 November tercatat 86 build Windows dalam enam hari, masing-masing 38-87
+# menit dengan pengali 2x, sehingga jatah 3.000 menit GitHub Pro habis dan build berhenti total.
+# Sebagian besar di antaranya adalah push beruntun dari beberapa sesi yang bekerja bersamaan:
+# dengan 'false' keenam-enamnya membangun installer yang sama berkali-kali, padahal hanya hasil
+# yang terakhir yang pernah dipakai. Dengan 'true' satu rentetan push menjadi satu build.
 concurrency:
   group: build-windows-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -24,6 +35,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          # Cache pip bawaan setup-python: kunci dari berkas requirements, jadi ia otomatis
+          # batal begitu daftar paketnya berubah -- tidak mungkin memasang paket basi.
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-vision.txt
       - name: Pengaman versi (tolak kenaikan versi aplikasi yang isinya tidak berubah)
         if: github.ref == 'refs/heads/main'
         shell: pwsh
@@ -79,6 +96,27 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
+          # SENGAJA tanpa `cache: npm`: repo ini tidak punya package-lock.json, dan setup-node
+          # menggagalkan build bila berkas kunci itu tidak ada. Unduhan npm tetap di-cache lewat
+          # langkah actions/cache di bawah, yang TIDAK mengubah cara npm memilih versi paket --
+          # menambahkan lock file akan mengubah versi yang terkemas, dan itu keputusan tersendiri.
+      # Binary Electron & cache electron-builder: unduhan besar yang SAMA di tiap build selama
+      # versinya tidak berubah. Kuncinya di-hash dari package.json, jadi cache batal sendiri
+      # begitu versi Electron di situ naik -- tidak ada risiko mengemas binary versi lama.
+      - name: Cache unduhan Electron / electron-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: electron-${{ runner.os }}-
+      - name: Cache unduhan npm
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/npm-cache
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: npm-${{ runner.os }}-
       - name: Pasang paket Node
         run: npm install --no-audit --no-fund
       - name: Kumpulkan lisensi pihak ketiga

@@ -16,6 +16,13 @@ on:
       - '.github/workflows/uji-qt.yml'
   workflow_dispatch:
 
+# Push beruntun cukup diuji sekali, atas keadaan terakhir. Alur ini murah (Ubuntu, ~1,5 menit,
+# pengali 1x) sehingga bukan sumber masalah tagihan, tetapi tidak ada gunanya menjalankan uji
+# yang sama enam kali untuk enam commit yang langsung saling menimpa.
+concurrency:
+  group: uji-qt-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   uji:
     runs-on: ubuntu-latest

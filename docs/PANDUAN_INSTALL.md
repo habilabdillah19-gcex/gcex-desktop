@@ -2915,3 +2915,75 @@ hanya angkanya. Ketidakrataan baru tampak sebagai teras bila modelnya sub-blocke
 Atap belum bisa dibaca dari DTM / permukaan yang sudah jadi (mis. `.dtm` Surpac) — baru dari awan
 titik. Atribut tujuan dumping dan ore characteristic sudah ada di as-mined lewat aturan material
 (`R.cls` dan `R.dst`); yang ditambahkan di sini hanya batas atas volumenya.
+
+
+## 97. CI: build Windows dibuat hemat tanpa mengurangi Release
+
+### Masalahnya
+
+Sejak 1 November tercatat **86 build Windows dalam enam hari**, masing-masing **38–87 menit**
+dengan **pengali 2×** untuk runner Windows. Jatah 3.000 menit GitHub Pro habis sekitar hari
+ketiga, dan sejak itu **setiap build ditolak** dengan pesan *"The job was not started because
+recent account payments have failed or your spending limit needs to be increased."* Akibatnya
+tidak ada installer baru yang terbit sejak pukul 03:12 tanggal 6 November, walau pekerjaannya
+sudah ada di `main`.
+
+### Yang TIDAK dilakukan
+
+Build Windows **tidak** dipindahkan ke pemicu manual atau tag saja. Itu sempat dipertimbangkan,
+tetapi melanggar aturan repo ini sendiri: *"SETIAP pembaruan yang di-push ke `main` … harus
+muncul di GitHub Release."* Kalau build hanya jalan saat tag, push biasa tidak akan pernah
+terbit, dan jejak resmi tiap pembaruan hilang.
+
+Repo juga **tidak** dijadikan publik. Sistem lisensinya memang tidak bisa dipalsukan walau
+sumbernya terbuka — Ed25519, aplikasi hanya memegang kunci publik di `electron/license.js`,
+kunci privat tidak ada di repo — tetapi dengan sumber terbuka siapa pun bisa **menghapus**
+pemeriksaan lisensinya dan membangun ulang aplikasinya sendiri. Gerbang lisensi menahan
+penyalinan biasa, bukan orang yang memegang sumbernya.
+
+### Yang dilakukan
+
+**1. `cancel-in-progress: true` pada build Windows.** Sebelumnya `false`, sehingga enam push
+beruntun dari beberapa sesi membangun installer yang sama enam kali — padahal hanya hasil
+terakhir yang pernah dipakai. Ini **tidak** melanggar aturan Release: build selalu mengambil
+keadaan `main` terakhir, dan catatan rilis memuat **semua** commit sejak rilis sebelumnya, jadi
+commit yang build-nya dibatalkan tetap terbit — hanya ikut pada build berikutnya.
+
+Dihitung dari riwayat nyata: dari 86 run, **68 disusul push baru dalam 50 menit** (lebih cepat
+daripada build selesai) sehingga akan dibatalkan. Sisa **18 build** yang benar-benar perlu
+berjalan — pemangkasan sekitar 79%. Angka ini perkiraan: ia mengandaikan push berikutnya datang
+sebelum build sebelumnya selesai, yang benar untuk rentetan push tetapi tidak selalu.
+
+**2. Cache.** Alur ini sebelumnya **tidak punya satu pun** `actions/cache`, sehingga pip, npm dan
+binary Electron diunduh ulang dari nol setiap build — kemungkinan besar sebab build 87 menit.
+Ditambahkan:
+
+| Cache | Kunci | Catatan |
+| --- | --- | --- |
+| pip (lewat `setup-python`) | isi `backend/requirements*.txt` | batal sendiri bila daftar paket berubah |
+| unduhan npm | isi `package.json` | **bukan** `cache: npm` bawaan `setup-node` — lihat di bawah |
+| binary Electron & electron-builder | isi `package.json` | batal sendiri bila versi Electron naik |
+
+`cache: npm` bawaan `setup-node` **sengaja tidak dipakai**: repo ini tidak punya
+`package-lock.json`, dan `setup-node` menggagalkan build bila berkas kunci itu tidak ada. Cache
+unduhan npm dipasang manual sebagai gantinya, karena ia **tidak** mengubah cara npm memilih versi
+paket — menambahkan lock file akan mengubah versi yang terkemas ke installer, dan itu keputusan
+tersendiri yang perlu diputuskan pemilik, bukan efek samping perbaikan CI.
+
+**3. `concurrency` pada alur uji penampil Qt.** Alur ini murah (Ubuntu, ~1,5 menit, pengali 1×)
+dan bukan sumber masalah tagihan, tetapi tidak ada gunanya menjalankan uji yang sama berkali-kali
+untuk commit yang langsung saling menimpa.
+
+### Yang masih perlu tindakan pemilik
+
+Perubahan ini **tidak menghidupkan kembali** build yang sedang diblokir. Jatah menit yang sudah
+habis tetap habis: *spending limit* perlu dinaikkan di **GitHub → Settings → Billing & plans**,
+atau ditunggu sampai jatah bulanan berganti. Setelah itu `gh run rerun <id>` akan membangun
+commit teratas dan menerbitkan seluruh pekerjaan yang tertahan dalam satu Release.
+
+### Catatan terpisah: tidak ada `package-lock.json`
+
+Repo ini tidak punya lock file, sehingga `npm install` bebas memilih versi paket yang berbeda
+antar build. Untuk aplikasi yang diedarkan sebagai installer berlisensi, itu berarti dua build
+dari commit yang sama bisa mengemas versi dependensi yang berbeda. Belum diubah di sini karena
+menambahkannya mengubah versi yang terkemas, dan itu keputusan pemilik.
