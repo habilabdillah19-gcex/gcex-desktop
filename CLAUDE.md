@@ -17,7 +17,7 @@
   - Sebelum push: `git fetch` + `git pull --rebase` (beberapa sesi push paralel); bila versi sudah dipakai sesi lain, naikkan lagi.
   - **Hanya naikkan versi aplikasi yang berkasnya benar-benar berubah** (Block Model tidak ikut naik karena perubahan Drill Hole saja).
     Periksa dengan `python tools/rilis/kemas_rilis.py --cek` sebelum push; CI menolak commit yang melanggar.
-- Isi Release: 3 installer terpisah (GC-Ex Block Model, GC-Ex Drillhole, DB-Ex — tidak dibundel, masing-masing pada versinya sendiri), `_1_Dokumen.zip`,
+- Isi Release: 3 installer terpisah (GC-Ex Block Model, GC-Ex Drillhole, DB-Ex — tidak dibundel, masing-masing pada versinya sendiri) + `DB-Ex-Qt-Setup` (DB-Ex versi Qt, versi = builder-core.json; satu-satunya yang memuat Singkapan / Borang / QAQC), `_1_Dokumen.zip`,
   `_2_Data-Latihan.zip`, `_3_Lisensi-dan-Tentang.zip`, `_CATATAN_RILIS.md` (commit sejak rilis sebelumnya), `SHA256SUMS.txt`,
   plus kode sumber otomatis dari tag. File baru yang perlu ikut rilis didaftarkan di `tools/rilis/kemas_rilis.py`.
 - Lokasi: tutorial & data simulasi GC-Ex di `docs/tutorial-gcex/`, DB-Ex di `docs/tutorial-core/`, panduan di `docs/`,

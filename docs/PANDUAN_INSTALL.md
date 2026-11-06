@@ -882,6 +882,7 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - Bilah filter (Hole ID, kedalaman, status) hanya tampil di ruang kerja **Core box**, tidak di halaman depan.
 - **DB-Ex versi HTML** (`DB-Ex-Setup`) tetap khusus Core box; halaman depannya kini menyebut bahwa Singkapan, Borang dan QAQC ada di DB-Ex versi Qt (`DB-Ex-Qt-Setup`).
 - Perbaikan: membuka folder singkapan untuk kedua kalinya dalam satu sesi tidak lagi memunculkan galat.
+- **Installer DB-Ex versi Qt kini ada di Release resmi**: `DB-Ex-Qt-Setup-<versi>.exe` (sebelumnya hanya di pre-release `core-ex-qt-uji`, yang tidak tampil di halaman Release). Pasang installer ini untuk memakai Singkapan & Model 3D, Borang dan QAQC; DB-Ex versi HTML (`DB-Ex-Setup`) otomatis dicopot karena terpasang di folder yang sama. Data di folder proyek (`_GCEx_Core`) tidak tersentuh.
 
 ## 89. DB-Ex 0.42.0 — foto drone & Model 3D sampai 100 foto
 

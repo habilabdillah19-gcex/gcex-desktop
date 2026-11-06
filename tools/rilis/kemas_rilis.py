@@ -2,6 +2,8 @@
 
 Isi folder keluaran (semua diunggah ke Release v<versi>):
   GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, DB-Ex-Setup-<v>.exe   installer (dipasang terpisah)
+  DB-Ex-Qt-Setup-<v>.exe             installer DB-Ex versi Qt (semua ruang kerja: Core box, Singkapan & Model 3D,
+                                     Borang, QAQC), bila CI berhasil membangunnya (dist-qt/)
   GC-Ex-<v>_1_Dokumen.zip            README, panduan teknis, tutorial PDF (GC-Ex, DB-Ex, aktivasi lisensi)
   GC-Ex-<v>_2_Data-Latihan.zip       data dummy / simulasi (GC-Ex Drillhole & Block Model, DB-Ex) + generatornya
   GC-Ex-<v>_3_Lisensi-dan-Tentang.zip  TENTANG.txt, syarat penggunaan, lisensi pihak ketiga, penafian merek,
@@ -178,6 +180,13 @@ def main():
             inst.append((f.name, nm, v_app))
     if not inst:
         raise SystemExit(f"tidak ada installer satu pun di {dist}")
+    # DB-Ex versi Qt: dulu hanya di pre-release "core-ex-qt-uji", yang tidak terlihat di halaman Release
+    # (permintaan pemilik 6 Nov 2026: harus ada di Release). Singkapan, Model 3D, Borang & QAQC hanya ada di versi ini.
+    qt = sorted((ROOT / "dist-qt").glob("DB-Ex-Qt-Setup-*.exe"), key=lambda q: q.stat().st_mtime)
+    qt_inst = None
+    if qt:
+        shutil.copy2(qt[-1], outd / qt[-1].name)
+        qt_inst = (qt[-1].name, "DB-Ex versi Qt", qt[-1].stem[len("DB-Ex-Qt-Setup") + 1:] or "?")
     has_core = any(n.startswith("DB-Ex") for n, _, _ in inst)
     has_gcex = any(n.startswith("GC-Ex") for n, _, _ in inst)
 
@@ -255,6 +264,11 @@ def main():
          "## Isi rilis", "",
          "| File | Isi | Ukuran |", "|---|---|---|"]
     desc = {n: f"Installer {a} {v}" for n, a, v in inst}
+    if qt_inst:
+        desc[qt_inst[0]] = (f"Installer DB-Ex versi Qt {qt_inst[2]} - lengkap: Core box, Singkapan & Model 3D (foto drone), "
+                            "Borang lapangan, QAQC Database. Menggantikan DB-Ex versi HTML bila dipasang")
+        desc["DB-Ex-Setup-" + next((v for n, _a, v in inst if n.startswith("DB-Ex-Setup")), "") + ".exe"] = (
+            "Installer DB-Ex versi HTML (Core box saja) " + next((v for n, _a, v in inst if n.startswith("DB-Ex-Setup")), ""))
     desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, DB-Ex, aktivasi lisensi)"
     desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm, _ in inst) + ") + generator"
     desc[lis.name] = "Tentang, syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat)"
@@ -265,7 +279,7 @@ def main():
     for h, n, s in sums:
         L.append(f"| `{n}` | {desc.get(n, '')} | {s / 1048576:.1f} MB |")
     L += ["| Source code (zip / tar.gz) | Kode sumber commit ini (otomatis dari GitHub) | |", "",
-          "Versi tiap aplikasi di rilis ini: " + ", ".join(f"{nm} {v}" for _, nm, v in inst) + ". "
+          "Versi tiap aplikasi di rilis ini: " + ", ".join(f"{nm} {v}" for _, nm, v in inst + ([qt_inst] if qt_inst else [])) + ". "
           + ("Aplikasi yang tidak ada installernya di sini tetap memakai rilis sebelumnya. " if len(inst) < len(APPS) else "")
           + "Aplikasi dipasang satu per satu (installer terpisah). Aplikasi offline, tanpa pembaruan otomatis: "
           "pelanggan meminta versi baru ke admin.", "",
