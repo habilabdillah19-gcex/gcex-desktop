@@ -13,7 +13,7 @@ function amR(){var U=amU();if(!U.reg)U.reg={};var R=U.reg,m=BX.m,D={pit:'',date:
   if(R.sxs===undefined&&m){var nm=Object.keys(m.num);R.sxs=(window.dbU&&dbU().sxsAttr)||nm.filter(function(a){return /^s(x|ulph?|ulf)?s$|^sxs|^s_?ox|^stot$|^s$/i.test(a);})[0]||'';}
   if(R.ag===undefined&&m){R.ag=Object.keys(m.num).filter(function(a){return /^ag/i.test(a);})[0]||'';}
   return R;}
-function amSGKey(){var U=BX.ui||{};return lyCalcM()+'|'+(U.sgCol||'')+'|'+(U.sgCol?(U.sgZero==='zero'?'0':String(bxSGrep())):String(U.sg))+(window.amFloorKey?amFloorKey():'');}
+function amSGKey(){var U=BX.ui||{};return lyCalcM()+'|'+(U.sgCol||'')+'|'+(U.sgCol?(U.sgZero==='zero'?'0':String(bxSGrep())):String(U.sg))+(window.amFloorKey?amFloorKey():'')+(window.amRoofKey?amRoofKey():'');}
 function amSGTxt(){var U=BX.ui||{};return U.sgCol?('SG kolom '+U.sgCol+(U.sgZero==='zero'?', blok <=0 = 0':', blok <=0 = '+bxSGrep())):('SG tetap '+U.sg);}
 function amCMTxt(cm){return(cm||lyCalcM())==='surpac'?'Seperti Surpac (blok utuh, titik tengah)':'Presisi GC-Ex (dipotong di garis boundary)';}
 function amShiftTxt(s){return /^N/i.test(s)?'Malam':'Siang';}
@@ -52,17 +52,30 @@ function amInfoById(id){var L=amAllInfo();for(var i=0;i<L.length;i++)if(L[i].x.i
 /* ---------- hitung as-mined flitch aktif (+ statistik per poligon) ---------- */
 function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),fh=B[0]-B[1],P=amPolys();
   if(!P.length){AM.msg='<span class=warn>Belum ada poligon aktif di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+'. Digit atau import boundary dulu (tab &#9314;).</span>';amPanel();return;}
+  var AMJ={a:0,p:P.map(function(){return 0;})};
   var CM=lyCalcM(),t0=Date.now(),G=amGrid(),dx=G.dx,dy=G.dy,dz=G.dz,O=G.O,cells=new Map(),Ga=m.num[U.attr],sgA=BX.ui.sgCol&&m.num[BX.ui.sgCol]?m.num[BX.ui.sgCol]:null,AG=R.ag&&m.num[R.ag]?m.num[R.ag]:null,SX=R.sxs&&m.num[R.sxs]?m.num[R.sxs]:null;
-  var FM=R.floor==='pickup',FL=null,zLo=B[1];if(FM){FL=P.map(function(o){var F=amFloorFn(o,B);if(F.ok&&F.zmin<zLo)zLo=F.zmin;return F;});}var IX=lyCandZ(zLo,B[0]);
+  var FM=R.floor==='pickup',FL=null,zLo=B[1];if(FM){FL=P.map(function(o){var F=amFloorFn(o,B);if(F.ok&&F.zmin<zLo)zLo=F.zmin;return F;});}
+  /* ATAP. Bawaan tetap RL atas flitch nominal (B[0]) supaya tidak ada angka lama yang
+     berubah diam-diam; lihat web-src/amroof.js. `zHi` melebar bila ada atap pick-up di
+     ATAS RL nominal (overdig atap), kalau tidak blok di situ tidak akan ikut dicari. */
+  var RM=(typeof amRoofMode==='function')&&amRoofMode()!=='flitch',RF=null,zHi=B[0];
+  if(RM){RF=P.map(function(o){var F=amRoofFn(o,B);if(F.ok&&F.zmax>zHi)zHi=F.zmax;return F;});}
+  var IX=lyCandZ(zLo,zHi);
   var iz0=Math.floor((B[1]-O[2])/dz+1e-9),iz1=Math.ceil((B[0]-O[2])/dz-1e-9)-1,ca=dx*dy;
-  P.forEach(function(o,pi){var Rr=o.r,b=o.b,FP0=FM&&FL[pi].ok?FL[pi]:null,iz0p=FP0?Math.floor((FP0.zmin-O[2])/dz+1e-9):iz0;for(var t=0;t<IX.length;t++){var i=IX[t],hx=m.sx[i]/2,hy=m.sy[i]/2,hz=m.sz[i]/2;if(m.x[i]+hx<=b[0]||m.x[i]-hx>=b[1]||m.y[i]+hy<=b[2]||m.y[i]-hy>=b[3])continue;
+  P.forEach(function(o,pi){var Rr=o.r,b=o.b,FP0=FM&&FL[pi].ok?FL[pi]:null,iz0p=FP0?Math.floor((FP0.zmin-O[2])/dz+1e-9):iz0,RP0=RM&&RF[pi].ok?RF[pi]:null,iz1p=RP0?Math.ceil((RP0.zmax-O[2])/dz-1e-9)-1:iz1;for(var t=0;t<IX.length;t++){var i=IX[t],hx=m.sx[i]/2,hy=m.sy[i]/2,hz=m.sz[i]/2;if(m.x[i]+hx<=b[0]||m.x[i]-hx>=b[1]||m.y[i]+hy<=b[2]||m.y[i]-hy>=b[3])continue;
       var bx0=Math.round((m.x[i]-hx-O[0])/dx),bx1=Math.round((m.x[i]+hx-O[0])/dx),by0=Math.round((m.y[i]-hy-O[1])/dy),by1=Math.round((m.y[i]+hy-O[1])/dy),bz0=Math.round((m.z[i]-hz-O[2])/dz),bz1=Math.round((m.z[i]+hz-O[2])/dz);
-      if(CM==='surpac'){var zc=m.z[i],fbS=FP0?FP0.f(m.x[i],m.y[i]):B[1];if(!(zc>fbS+1e-9&&zc<=B[0]+1e-9))continue;if(!lyInS(Rr,m.x[i],m.y[i]))continue;
+      if(CM==='surpac'){var zc=m.z[i],fbS=FP0?FP0.f(m.x[i],m.y[i]):B[1],rtS=RP0?RP0.f(m.x[i],m.y[i]):B[0];if(!(zc>fbS+1e-9&&zc<=rtS+1e-9))continue;if(!lyInS(Rr,m.x[i],m.y[i]))continue;
         for(var ix=bx0;ix<bx1;ix++)for(var iy=by0;iy<by1;iy++)for(var iz=bz0;iz<bz1;iz++){var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:1});}continue;}
-      var a0=Math.max(bx0,Math.floor((b[0]-O[0])/dx)),a1=Math.min(bx1,Math.ceil((b[1]-O[0])/dx)),c0=Math.max(by0,Math.floor((b[2]-O[1])/dy)),c1=Math.min(by1,Math.ceil((b[3]-O[1])/dy)),z0=Math.max(iz0p,bz0),z1=Math.min(iz1,bz1-1);if(z1<z0)continue;
-      for(var ix=a0;ix<a1;ix++)for(var iy=c0;iy<c1;iy++){var x0=O[0]+ix*dx,y0=O[1]+iy*dy,af=lyClip(Rr,[x0,x0+dx,y0,y0+dy])/ca;if(af<=1e-9)continue;if(af>1)af=1;var fb=FP0?FP0.f(x0+dx/2,y0+dy/2):B[1];
-        for(var iz=z0;iz<=z1;iz++){var zb=O[2]+iz*dz,zf=(Math.min(zb+dz,B[0])-Math.max(zb,fb))/dz;if(zf<=1e-9)continue;var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:af*Math.min(1,zf)});}}}});
+      var a0=Math.max(bx0,Math.floor((b[0]-O[0])/dx)),a1=Math.min(bx1,Math.ceil((b[1]-O[0])/dx)),c0=Math.max(by0,Math.floor((b[2]-O[1])/dy)),c1=Math.min(by1,Math.ceil((b[3]-O[1])/dy)),z0=Math.max(iz0p,bz0),z1=Math.min(iz1p,bz1-1);if(z1<z0)continue;
+      for(var ix=a0;ix<a1;ix++)for(var iy=c0;iy<c1;iy++){var x0=O[0]+ix*dx,y0=O[1]+iy*dy,af=lyClip(Rr,[x0,x0+dx,y0,y0+dy])/ca;if(af<=1e-9)continue;if(af>1)af=1;var fb=FP0?FP0.f(x0+dx/2,y0+dy/2):B[1],rt=RP0?RP0.f(x0+dx/2,y0+dy/2):B[0];
+        if(rt<=fb+1e-9){AMJ.a+=af*ca;AMJ.p[pi]=(AMJ.p[pi]||0)+af*ca;continue;}
+        for(var iz=z0;iz<=z1;iz++){var zb=O[2]+iz*dz,zf=(Math.min(zb+dz,rt)-Math.max(zb,fb))/dz;if(zf<=1e-9)continue;var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:af*Math.min(1,zf)});}}}});
   var C=Array.from(cells.values());
+  /* AMJ = luas (m2) yang atapnya berada di bawah / sama dengan lantai: tebal nol.
+     Terjadi pada underdig nyata atau titik dari hari yang salah. Dilaporkan, bukan
+     dijepit diam-diam -- menjepit tanpa memberi tahu menyembunyikan masalah survei
+     sebagai angka yang kelihatan wajar. */
+  AM.jepit={a:AMJ.a,p:AMJ.p.slice()};
   var UPD=U.mode!=='full',nNoM=0,haveS=AM.comps.length>0;if(!haveS&&!UPD){AM.msg='<span class=warn>Estimasi ulang penuh butuh data sampel. Import collar &amp; assay dulu (tab &#9313;), atau pakai metode Update model GC.</span>';amPanel();return;}
   if(UPD&&haveS){AM.comps.forEach(function(q){q.m=amModelAt(q.x,q.y,q.z,Ga);q.r=isFinite(q.m)?q.g-q.m:NaN;if(!isFinite(q.r))nNoM++;});}
   var Rs=Math.max(0.1,+U.R||15),Hs={},cs=Rs,key=function(a,b,c){return a+'|'+b+'|'+c;};AM.comps.forEach(function(q,j){if(UPD&&!isFinite(q.r))return;var k=key(Math.floor(q.x/cs),Math.floor(q.y/cs),Math.floor(q.z/cs));(Hs[k]=Hs[k]||[]).push(j);});
@@ -136,7 +149,7 @@ function amPanel(){var el=$('amBody');if(!el)return;var m=BX.m;if(!m){el.innerHT
     '<label class="mdbtn'+((D.pts||[]).length?' ok':'')+'" style="margin:0;text-align:center"><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amPtsFile(this.files);this.value=\'\'">&#8679; Import pick-up (.csv / .txt / .str / .dxf)</label>'+
     '<div class=hint>'+((D.pts||[]).length?'<b>'+D.pts.length.toLocaleString()+'</b> titik &middot; tampil di flitch ini: <b>'+amPtsNear().length.toLocaleString()+'</b>':'CSV: ID, X/East, Y/North, Z/RL, Kode.')+(AM.pmsg?' &middot; '+AM.pmsg:'')+'</div>'+
     ((D.pts||[]).length?'<div class=g2><label class=sw><input type=checkbox '+(D.pAll?'checked':'')+' onchange="amD().pAll=this.checked;amPanel();updatePlot()">Semua RL</label><label class=sw><input type=checkbox '+(D.plab?'checked':'')+' onchange="amD().plab=this.checked;updatePlot()">Label ID / kode</label></div>':'')+'</div>'+
-    (window.amFloorBox?amFloorBox():'')+'<div class=amset><div class=amst><b>Default poligon berikutnya</b><small>'+amE(R.pit||lyZone())+' &middot; '+amE(amDateTxt(R.date))+' &middot; '+amE(R.shift)+'</small></div><div class=g2><div><label>Block</label><input type=text value="'+amE(R.block)+'" placeholder="mis. 15" onchange="amRSet(\'block\',this.value)"></div><div><label>Shift</label>'+sel(R.shift,[['DS','DS · Siang'],['NS','NS · Malam']],"amRSet('shift',this.value)")+'</div></div></div>'+
+    (window.amRoofBox?amRoofBox():'')+(window.amFloorBox?amFloorBox():'')+'<div class=amset><div class=amst><b>Default poligon berikutnya</b><small>'+amE(R.pit||lyZone())+' &middot; '+amE(amDateTxt(R.date))+' &middot; '+amE(R.shift)+'</small></div><div class=g2><div><label>Block</label><input type=text value="'+amE(R.block)+'" placeholder="mis. 15" onchange="amRSet(\'block\',this.value)"></div><div><label>Shift</label>'+sel(R.shift,[['DS','DS · Siang'],['NS','NS · Malam']],"amRSet('shift',this.value)")+'</div></div></div>'+
     (AM.digOn?'<div class=amdig><b>&#9679; Mendigit poligon</b> &mdash; klik di Penampang 2D'+((D.pts||[]).length?' (menempel ke titik pick-up)':'')+', klik titik pertama untuk menutup.<div class=g2 style="margin-top:4px"><button class=btn-pri onclick="dgFinish(true)">Tutup &amp; simpan</button><button onclick="dgCancel()">Batal</button></div></div>':
       '<button class=btn-pri style="width:100%;margin-top:6px" onclick="amDig()">&#9998; Digit poligon as-mined'+((D.pts||[]).length?' (snap ke pick-up)':'')+'</button>')+
     '<div class=g2 style="margin-top:6px"><label class=mdbtn style="margin:0;text-align:center"><input type=file multiple accept=".str,.dxf" onchange="amBndFile(this.files);this.value=\'\'">&#8679; Import boundary (.str / .dxf)</label><button onclick="amBndFromDig()" title="Salin string tertutup dari menu Digitasi / dig block di flitch ini">Ambil dari Digitasi</button></div>'+

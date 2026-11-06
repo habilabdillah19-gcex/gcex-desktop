@@ -2775,3 +2775,91 @@ gagal dengan menyebut daftar barunya.
 
 Uji mandiri `.exe` di CI ikut memeriksa bahwa uji kotak memilih lebih banyak blok daripada uji
 titik tengah — kalau sama, uji kotak hilang dari kemasan. **252 uji otomatis** di `qtbm/tests`.
+
+
+## 96. Block Model 0.24.27 — atap (roof) as-mined dari pick-up survey
+
+### Masalah yang ditutup
+
+Dalam satu flitch (mis. RL240–RL238,5), elevasi atap dan lantai penggalian **tidak pernah tepat**
+di RL nominalnya. Lantainya sudah ditangani sejak sebelumnya: pilihan *Ikuti lantai pick-up*
+menginterpolasi lantai tiap poligon dari titik pick-up. **Atapnya belum** — `amRun` memakai
+`B[0]`, yaitu RL atas flitch nominal, ditulis mati di kodenya.
+
+Akibatnya **sistematis dan selalu berlebih**, jadi tidak saling menghapus antar flitch melainkan
+menumpuk. Kalau atap sebenarnya ada di 239,78 sementara nominalnya 240,00, setiap poligon
+kelebihan 0,22 m setebal seluruh luasnya: pada poligon 2.000 m² itu 440 m³ ≈ 1.100 t ore yang
+tidak pernah digali.
+
+### Alurnya sekarang
+
+1. **Impor titik pick-up ATAP** — pick-up dig block / poligon ore actual yang dipasang **hari
+   sebelumnya**. CSV XYZ format Surpac, atau `.str` / `.dxf`.
+2. **Impor titik pick-up LANTAI** — pick-up lantai penggalian satu shift (seperti sebelumnya).
+3. Digitasi boundary, lalu hitung as-mined. Batas atas sub-blok mengikuti atap, batas bawahnya
+   mengikuti lantai.
+
+### Titik atap dan titik lantai disimpan TERPISAH
+
+`amD().ptsR` untuk atap, `amD().pts` untuk lantai, dengan tombol impor masing-masing. Keduanya
+**tidak** dipisahkan dari elevasinya — memisahkan dari elevasi justru mustahil diandalkan, sebab
+seluruh sebab fitur ini ada adalah karena elevasinya tidak pasti. Kalau keduanya tercampur dalam
+satu awan titik, atap dan lantai akan diinterpolasi dari titik yang sama dan volumenya salah
+**tanpa tanda apa pun**.
+
+Pengurai kolom CSV-nya **satu**, bukan dua: `amPtsFile(files, slot)` diberi parameter slot alih-alih
+disalin menjadi fungsi kedua — kalau disalin, perbaikan pengenalan kolom pada salah satunya tidak
+akan ikut ke yang lain.
+
+### Dua bentuk atap
+
+| Pilihan | Perilaku |
+| --- | --- |
+| **RL atas flitch (nominal)** | rumus lama, **tetap bawaan** |
+| **Atap rata dari pick-up** | satu elevasi per poligon, dari titik atap di dalam / dekat poligon itu |
+| **Atap ikut permukaan pick-up** | IDW pangkat 2, sama dengan lantai — untuk atap yang memang tidak rata |
+
+### Median, bukan rata-rata — tetapi keduanya ditampilkan
+
+Satu titik salah tembak (di berm, atau dari flitch sebelahnya) menggeser rata-rata; median tidak.
+Jadi bawaannya **median**, dengan rata-rata sebagai pilihan. Yang lebih penting: **keduanya
+ditampilkan berdampingan**, dan bila berbeda lebih dari 5 cm panel memperingatkan bahwa awan
+titiknya kemungkinan berisi outlier atau atapnya sebenarnya tidak rata — dan menyarankan mode
+*ikut permukaan*. Selisih itu adalah **tanda**, bukan hiasan; menyembunyikannya berarti
+menyembunyikan mutu datanya.
+
+### Kalau lantai menembus atap
+
+Dengan atap rata dan lantai bergelombang, ini **akan** terjadi — entah karena underdig nyata atau
+karena titik dari hari / flitch yang salah. Tebalnya dihitung **nol** di situ, **dan luas yang
+terjepit itu dilaporkan di panel** dengan peringatan. Menjepit tanpa memberi tahu akan
+menyembunyikan masalah survei sebagai angka yang kelihatan wajar.
+
+### Poligon tanpa titik atap
+
+Kurang dari 3 titik atap di dalam / dekat poligon → poligon itu memakai **RL atas flitch nominal**,
+dan itu **disebutkan**. Flitch pertama yang digali memang tidak punya pick-up hari sebelumnya;
+tanpa disebutkan, tidak ada cara membedakan atap hasil survei dari atap asumsi.
+
+### Yang diuji — dan mana yang lebih penting
+
+`tools/uji/uji_atap_asmined.py` menjalankan **dua versi aplikasi berdampingan**: versi pembanding
+diambil dari git (`--dasar`, bawaan `HEAD`) sehingga ujinya bisa diulang siapa pun, bukan hanya di
+mesin yang menyimpan salinannya.
+
+**1. Tidak ada angka lama yang berubah** — ini yang lebih penting. Dengan bawaan
+(`roof = 'flitch'`), hasil as-mined versi baru harus sama persis dengan versi sebelum perubahan.
+Delapan ukuran dibandingkan (volume, tonase, jumlah sub-blok, terestimasi, warisan, sel, luas,
+volume poligon) dan semuanya **identik sampai digit terakhir** — 7.159,455128214322 m³ di kedua
+versi. Perubahan yang menggeser angka produksi tanpa ada yang meminta adalah kerusakan, bukan
+peningkatan.
+
+**2. Mode atap mengubah angka ke arah yang benar** — atap 0,22 m di bawah RL nominal pada flitch
+2,50 m memberi volume **−8,80%**, tepat sesuai 0,22 / 2,50. Mode rata dan mode permukaan memberi
+angka identik ketika semua titiknya memang rata, seperti seharusnya.
+
+### Yang belum ada
+
+Atap belum bisa dibaca dari DTM / permukaan yang sudah jadi (mis. `.dtm` Surpac) — baru dari awan
+titik. Atribut tujuan dumping dan ore characteristic sudah ada di as-mined lewat aturan material
+(`R.cls` dan `R.dst`); yang ditambahkan di sini hanya batas atas volumenya.
