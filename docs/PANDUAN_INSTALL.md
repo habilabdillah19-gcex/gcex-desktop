@@ -3049,3 +3049,51 @@ pernah sempat terbit — membiarkannya terbit dulu justru mewujudkan masalahnya.
 - **Folder Borang / Singkapan / QAQC tidak lagi otomatis masuk Core box.** Dulu setiap folder yang dibuka langsung dipindai dan semua gambarnya didaftarkan sebagai foto core box (mis. foto borang ikut tampil di tabel Core box). Sekarang foto hanya didaftarkan dari ruang kerja Core box. Bila folder dibuka untuk ruang kerja lain lalu Anda pindah ke Core box, DB-Ex bertanya dulu apakah foto di folder itu memang foto core box.
 - Folder yang sudah telanjur terisi foto borang di Core box: centang semua (*Pilih semua yang tampil*) lalu **Keluarkan dari daftar**. Data Borang tidak terpengaruh.
 
+
+## 100. CI: build terjadwal sebagai jaring pengaman
+
+### Kegagalan yang ditimbulkan perbaikan sebelumnya
+
+Bagian 97 mengubah `cancel-in-progress` menjadi `true` supaya rentetan push hanya menghasilkan
+satu build. Itu memang memangkas build sia-sia, tetapi punya kegagalan sendiri yang **tidak
+terlihat saat perubahannya dibuat**: bila beberapa sesi mem-push **lebih cepat daripada build
+selesai** (~40 menit), tidak ada satu pun build yang pernah tuntas dan **Release tidak pernah
+diperbarui sama sekali**.
+
+Itu bukan kemungkinan teoretis — ia langsung terjadi pada 6 November: tiga build berturut-turut
+dibatalkan (06:22, 06:28, dan satu lagi), dua di antaranya oleh push dari sesi yang berbeda, satu
+oleh push saya sendiri. Sebelum perubahan itu, build mengantre dan semuanya akhirnya jalan: boros,
+tetapi Release selalu terbit.
+
+### Jaring pengamannya
+
+Ditambahkan pemicu terjadwal harian:
+
+```yaml
+schedule:
+  - cron: "44 18 * * *"      # 18:44 UTC = 02:44 WITA
+```
+
+Jam sepi, sehingga kecil kemungkinan ia sendiri dibatalkan push. Menitnya sengaja **bukan** `:00`
+— GitHub menunda jadwal yang menumpuk di awal jam.
+
+Dan `cancel-in-progress` dibuat bergantung pada jenis pemicunya:
+
+```yaml
+cancel-in-progress: ${{ github.event_name != 'schedule' }}
+```
+
+- **Push** membatalkan build yang sedang jalan — peredam tetap bekerja.
+- **Build terjadwal** tidak membatalkan apa pun; ia mengantre. Jaring pengaman tidak boleh justru
+  membunuh build yang hampir selesai.
+
+Grup `concurrency`-nya tetap sama untuk keduanya, sehingga tidak pernah ada dua build menulis
+Release yang sama pada saat bersamaan — bahaya yang sudah diperingatkan komentar aslinya.
+
+### Yang diterima sebagai konsekuensi
+
+Build terjadwal tetap jalan walau `main` tidak berubah sejak Release terakhir, dan akan
+menerbitkan ulang isi yang sama. Itu dibiarkan: repo sudah publik sehingga menitnya gratis, dan
+menambah pemeriksaan "apakah ada yang berubah" menambah kerumitan pada bagian yang justru harus
+bisa diandalkan tanpa syarat. Yang dibelinya adalah jaminan sederhana — **Release selalu cocok
+dengan `main` paling lambat keesokan dini hari**, apa pun yang terjadi dengan push hari itu.

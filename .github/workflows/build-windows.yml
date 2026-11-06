@@ -4,22 +4,44 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # JARING PENGAMAN. `cancel-in-progress: true` di bawah membuat rentetan push hanya menghasilkan
+  # satu build -- hemat, tetapi punya kegagalan sendiri: bila beberapa sesi mem-push LEBIH CEPAT
+  # daripada build selesai (~40 menit), tidak ada satu pun build yang pernah tuntas dan Release
+  # TIDAK PERNAH diperbarui. Itu sudah terjadi: 6 November, tiga build berturut-turut dibatalkan
+  # oleh push berikutnya.
+  #
+  # Build terjadwal ini jalan tanpa peduli push, jadi Release terbit setidaknya sekali sehari
+  # walaupun sesi-sesi terus bekerja. Dijadwalkan pukul 18:44 UTC = 02:44 WITA: jam sepi, jadi
+  # kecil kemungkinan ia sendiri dibatalkan push. Menitnya sengaja BUKAN :00 -- GitHub menunda
+  # jadwal yang menumpuk di awal jam.
+  schedule:
+    - cron: "44 18 * * *"
 
 # Satu build sekaligus: GitHub Release versi yang sama tidak saling timpa di tengah jalan.
 #
-# cancel-in-progress: TRUE, dan itu TIDAK melanggar aturan "setiap push harus muncul di Release".
+# Push membatalkan build yang sedang jalan, dan itu TIDAK melanggar aturan "setiap push harus
+# muncul di Release".
 # Build selalu mengambil keadaan `main` TERAKHIR, dan catatan rilis memuat SEMUA commit sejak
 # rilis sebelumnya -- jadi commit yang build-nya dibatalkan tetap terbit, hanya ikut pada build
 # berikutnya alih-alih membangun ulang seluruh installer untuk dirinya sendiri.
 #
-# Mengapa diubah: 6-11 November tercatat 86 build Windows dalam enam hari, masing-masing 38-87
-# menit dengan pengali 2x, sehingga jatah 3.000 menit GitHub Pro habis dan build berhenti total.
-# Sebagian besar di antaranya adalah push beruntun dari beberapa sesi yang bekerja bersamaan:
-# dengan 'false' keenam-enamnya membangun installer yang sama berkali-kali, padahal hanya hasil
-# yang terakhir yang pernah dipakai. Dengan 'true' satu rentetan push menjadi satu build.
+# Mengapa diubah: 1-6 November tercatat 86 build Windows dalam enam hari, masing-masing 38-87
+# menit; waktu itu repo masih privat dengan pengali 2x, sehingga jatah 3.000 menit GitHub Pro
+# habis dan build berhenti total. Sebagian besar adalah push beruntun dari beberapa sesi yang
+# bekerja bersamaan: dengan 'false' keenam-enamnya membangun installer yang sama berkali-kali,
+# padahal hanya hasil terakhir yang pernah dipakai. Repo kini publik sehingga menitnya gratis,
+# tetapi build yang sia-sia tetap memakan WAKTU TUNGGU.
+#
+# Kegagalan yang ditimbulkannya, dan jaring pengamannya: bila sesi-sesi mem-push lebih cepat
+# daripada build selesai, TIDAK ADA build yang pernah tuntas dan Release tidak pernah
+# diperbarui -- itu benar-benar terjadi pada 6 November (tiga build berturut-turut dibatalkan).
+# Karena itu ada `schedule` harian di atas yang jalan tanpa peduli push.
 concurrency:
   group: build-windows-${{ github.ref }}
-  cancel-in-progress: true
+  # Push MEMBATALKAN build yang sedang jalan (debounce). Build TERJADWAL tidak: ia mengantre,
+  # supaya jaring pengaman tidak justru membunuh build yang hampir selesai. Grupnya tetap sama
+  # sehingga tidak pernah ada dua build menulis Release yang sama bersamaan.
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 jobs:
   build:
