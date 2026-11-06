@@ -27,6 +27,7 @@ import shutil
 import sqlite3
 import threading
 import time
+import urllib.error
 import uuid
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -726,13 +727,40 @@ def _image_b64(s: Store, d: dict, max_px: int) -> str:
     return base64.b64encode(b.getvalue()).decode()
 
 
-def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 2000, by: str = "", timeout: float = 900) -> dict:
+_THINK: dict[tuple[str, str], bool] = {}
+
+
+def _can_think(host: str, model: str) -> bool:
+    """Model 'berpikir' (mis. qwen3-vl) menulis penalaran panjang sebelum menjawab: pada CPU itu memakan sebagian besar
+    waktu baca borang. Membaca tabel tulisan tangan tidak butuh penalaran itu, jadi dimatikan (think=false) bila modelnya
+    mendukung. Hasil /api/show disimpan per sesi."""
+    k = (host, model)
+    if k not in _THINK:
+        try:
+            caps = core_io._http(host + "/api/show", {"model": model}, timeout=10).get("capabilities") or []
+            _THINK[k] = "thinking" in caps
+        except Exception:  # noqa: BLE001 - Ollama lama / tanpa /api/show: kirim tanpa parameter think
+            _THINK[k] = False
+    return _THINK[k]
+
+
+def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900) -> dict:
     d = doc(s, did)
+    host = (host or core_io.DEFAULT_HOST).rstrip("/")
     body = {"model": model, "messages": [{"role": "user", "content": ai_prompt(d["type"], extra), "images": [_image_b64(s, d, max_px)]}],
-            "stream": False, "format": ai_schema(d["type"]), "options": {"temperature": 0, "num_ctx": 16384}, "keep_alive": "15m"}
+            "stream": False, "format": ai_schema(d["type"]), "options": {"temperature": 0, "num_ctx": 16384}, "keep_alive": "30m"}
+    if _can_think(host, model):
+        body["think"] = False
     t0 = time.time()
     try:
-        j = core_io._http((host or core_io.DEFAULT_HOST).rstrip("/") + "/api/chat", body, timeout=timeout)
+        try:
+            j = core_io._http(host + "/api/chat", body, timeout=timeout)
+        except urllib.error.HTTPError as e:
+            if "think" not in body or e.code != 400:
+                raise
+            body.pop("think")  # Ollama versi lama menolak parameter think: ulangi tanpa itu (dan jangan kirim lagi sesi ini)
+            _THINK[(host, model)] = False
+            j = core_io._http(host + "/api/chat", body, timeout=timeout)
         if j.get("error"):
             raise RuntimeError("Ollama: " + str(j["error"]))
         res = core_io._parse_json((j.get("message") or {}).get("content", ""))
@@ -1425,7 +1453,7 @@ class AiBody(FBody):
     host: str = ""
     model: str
     extra: str = ""
-    max_px: int = 2000
+    max_px: int = 1600
 
 
 class ExpBody(FBody):

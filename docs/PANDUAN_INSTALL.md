@@ -3097,3 +3097,11 @@ menerbitkan ulang isi yang sama. Itu dibiarkan: repo sudah publik sehingga menit
 menambah pemeriksaan "apakah ada yang berubah" menambah kerumitan pada bagian yang justru harus
 bisa diandalkan tanpa syarat. Yang dibelinya adalah jaminan sederhana — **Release selalu cocok
 dengan `main` paling lambat keesokan dini hari**, apa pun yang terjadi dengan push hari itu.
+
+## 101. DB-Ex 0.42.3 — Borang dibaca AI lebih cepat
+
+- **AI tidak lagi "berpikir panjang" untuk Borang.** Model seperti `qwen3-vl` menulis penalaran panjang sebelum menjawab; di komputer tanpa GPU itu bisa memakan sebagian besar dari ±10 menit per lembar. DB-Ex kini mematikan mode itu (*think = false*) khusus untuk membaca borang, bila model mendukungnya. Ollama versi lama yang belum mengenal parameter ini otomatis dibaca ulang tanpa parameter itu.
+- **Pilihan kecepatan** di sebelah tombol *✦ Baca dengan AI*: **Cepat** (gambar 1280 px), **Seimbang** (1600 px, bawaan), **Teliti** (2000 px, untuk tulisan kecil / scan buram). Makin kecil gambar, makin cepat AI membaca. Pilihan diingat.
+- **Baca semua yang belum**: semua borang yang belum dibaca (atau gagal) diantrekan dan dibaca satu per satu di latar belakang. Daftar borang menampilkan *AI membaca…* / *antre AI #n*, dan di bawah scan tampil jam berjalan. Selama itu Anda bisa membuka, memeriksa, dan memverifikasi borang lain. Borang yang gagal dilewati dan antrean berlanjut.
+- Lama baca per borang tercatat di bawah scan (*Dibaca AI … · N dtk*), jadi Anda bisa membandingkan sebelum dan sesudah.
+

@@ -68,6 +68,8 @@ def _ai(monkeypatch, res):
     calls = []
 
     def fake(url, body=None, timeout=5.0):
+        if url.endswith("/api/show"):  # cek kemampuan model (think) bukan panggilan baca borang
+            return {"capabilities": ["completion", "vision"]}
         calls.append(body)
         return {"message": {"content": json.dumps(res)}}
     monkeypatch.setattr(core_io, "_http", fake)

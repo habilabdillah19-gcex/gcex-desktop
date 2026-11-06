@@ -190,3 +190,54 @@ def test_forms_daily_drilling_report(qtbot, prj, tmp_path, monkeypatch):
     qtbot.waitUntil(lambda: z.exists(), timeout=6000)
     import zipfile
     assert "DDR_METERAGE.csv" in zipfile.ZipFile(z).namelist()
+
+
+def test_forms_antrean_ai_cepat_tanpa_think(qtbot, prj, tmp_path, monkeypatch):
+    """Baca semua yang belum: borang diantrekan & dibaca satu per satu; model 'berpikir' dikirim think=false;
+    ukuran gambar mengikuti pilihan Cepat / Seimbang / Teliti; Ollama lama yang menolak think diulang tanpa itu."""
+    import base64
+    import io
+    import urllib.error
+    from corex.api import core_io
+    from corex import api as capi
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    src2 = _scan(tmp_path).with_name("Borang_Spotter_fiktif_2.jpg")
+    Image.new("RGB", (1000, 1300), "white").save(src2)
+    monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src2)], ""))
+    pg.add_files()
+    qtbot.waitUntil(lambda: pg.lst.count() == 2, timeout=8000)
+    sent = []
+    old_ollama = {"on": True}
+
+    def fake(url, body=None, timeout=5.0):
+        if url.endswith("/api/show"):
+            return {"capabilities": ["completion", "vision", "thinking"]}
+        if old_ollama["on"] and "think" in body:
+            old_ollama["on"] = False
+            raise urllib.error.HTTPError(url, 400, "think not supported", {}, None)
+        im = Image.open(io.BytesIO(base64.b64decode(body["messages"][0]["images"][0])))
+        sent.append(("think" in body, body.get("think"), max(im.size)))
+        return {"message": {"content": json.dumps(ORE_AI)}}
+    monkeypatch.setattr(core_io, "_http", fake)
+    from gcex_backend import core_forms
+    core_forms._THINK.clear()
+    w.ai.info = {"running": True}
+    monkeypatch.setattr(w.ai, "model", lambda: "qwen3-vl:4b")
+    pg.cbSpeed.setCurrentIndex(pg.cbSpeed.findData(1280))  # Cepat
+    pg.run_ai_all()
+    assert "Antrean AI: 2" in pg.bAIAll.text()
+    qtbot.waitUntil(lambda: pg.ai_did is None and not pg.ai_q and all(d["status"] == "done" for d in pg.docs), timeout=15000)
+    assert [x[0] for x in sent] == [False, False]  # Ollama lama menolak think: diulang tanpa itu, borang berikutnya tidak dicoba lagi
+    assert all(px <= 1280 for *_a, px in sent)
+    assert pg.bAIAll.text() == "Baca semua yang belum"
+    assert "AI ·" in pg.lst.item(0).text() or " · AI" in pg.lst.item(0).text()
+    # think=false dikirim bila Ollama menerimanya
+    sent.clear()
+    core_forms._THINK.clear()
+    pg.lst.setCurrentRow(0)
+    monkeypatch.setattr("corex.forms.ask", lambda *a, **k: True)
+    pg.run_ai()
+    qtbot.waitUntil(lambda: pg.ai_did is None and bool(sent), timeout=15000)
+    assert sent[-1][:2] == (True, False)
+
+

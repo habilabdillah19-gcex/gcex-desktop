@@ -7,6 +7,7 @@ Spotter) dan Ekspor (Excel, CSV, SQLite, MS Access). Data lewat rute /core/forms
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, QTimer
@@ -96,6 +97,12 @@ class FormsPage(QWidget):
         self.tbl = ""                     # tabel yang sedang ditampilkan ('' = utama, 'hole' = meterage DDR)
         self.kat: list[str] = []
         self.ai_busy = False
+        self.ai_q: list[int] = []        # antrean baca AI (id borang); yang sedang dibaca = self.ai_did
+        self.ai_did: int | None = None
+        self.ai_t0 = 0.0
+        self.ai_clock = QTimer(self)
+        self.ai_clock.setInterval(1000)
+        self.ai_clock.timeout.connect(self._ai_tick)
         self._filling = False
         self._build()
 
@@ -145,8 +152,19 @@ class FormsPage(QWidget):
         self.title = QLabel()
         self.title.setTextFormat(Qt.RichText)
         th.addWidget(self.title, 1)
-        self.bAI = btn("✦ Baca dengan AI", "AI vision lokal (Ollama) membaca header & tabel borang. Baris lama diganti.", pri=True, sm=True)
+        self.cbSpeed = QComboBox()
+        for t_, px in (("Cepat", 1280), ("Seimbang", 1600), ("Teliti", 2000)):
+            self.cbSpeed.addItem(t_, px)
+        self.cbSpeed.setCurrentIndex(max(0, self.cbSpeed.findData(int(SET.get("fmPx", 1600)))))
+        self.cbSpeed.setToolTip("Ukuran gambar yang dikirim ke AI.\nCepat = 1280 px (paling cepat; cukup untuk tulisan yang jelas)\n"
+                                "Seimbang = 1600 px\nTeliti = 2000 px (paling lambat; untuk tulisan kecil / scan buram)")
+        self.cbSpeed.currentIndexChanged.connect(lambda _i: SET.set("fmPx", self.cbSpeed.currentData()))
+        th.addWidget(self.cbSpeed)
+        self.bAI = btn("✦ Baca dengan AI", "AI vision lokal (Ollama) membaca header & tabel borang ini. Baris lama diganti.", pri=True, sm=True)
         th.addWidget(self.bAI)
+        self.bAIAll = btn("Baca semua yang belum", "Antrekan semua borang yang belum dibaca (atau gagal) untuk dibaca AI satu per satu "
+                          "di latar belakang. Selama itu Anda tetap bisa memeriksa & memverifikasi borang lain.", sm=True)
+        th.addWidget(self.bAIAll)
         cv.addWidget(tb)
         self.view = ScanView(self)
         self.view.placeholder("Tambahkan foto / scan / PDF borang dengan + Borang.\nScroll = zoom, tarik = geser, ↻ = putar (juga untuk AI).")
@@ -170,6 +188,7 @@ class FormsPage(QWidget):
         self.bAdd.clicked.connect(self.add_files)
         self.bDel.clicked.connect(self.delete_doc)
         self.bAI.clicked.connect(self.run_ai)
+        self.bAIAll.clicked.connect(self.run_ai_all)
         self.lst.currentRowChanged.connect(self._pick)
         self.set_enabled(False)
 
@@ -323,6 +342,8 @@ class FormsPage(QWidget):
         self.cbNew.setEnabled(bool(self.folder))
         for w in (self.bDel, self.bAI, self.tabs):
             w.setEnabled(on)
+        self.bAIAll.setEnabled(bool(self.folder))
+        self._ai_buttons()
 
     def ftype(self) -> str:
         return (self.cur or {}).get("doc", {}).get("type") or self.cbNew.currentData() or "ore"
@@ -334,6 +355,7 @@ class FormsPage(QWidget):
     def open(self, folder: str) -> None:
         self.folder = folder
         self.cur = None
+        self.ai_q = []  # jawaban AI yang masih berjalan untuk folder lama diabaikan (cek folder di _ai_next)
         try:
             j = api.call("/core/forms/open", {"folder": folder})
         except api.ApiError as e:
@@ -365,6 +387,10 @@ class FormsPage(QWidget):
     def _line(self, d: dict) -> str:
         t = SHORT.get(d["type"], d["type"])
         st = {"done": "AI", "error": "AI gagal", "pending": "belum dibaca"}.get(d["status"], d["status"])
+        if d["id"] == self.ai_did:
+            st = "AI membaca…"
+        elif d["id"] in self.ai_q:
+            st = f"antre AI #{self.ai_q.index(d['id']) + 1}"
         s = f"{d['name']}\n{t} · {st}"
         if d.get("n_rows"):
             s += f" · {d['n_ver']}/{d['n_rows']} ✓" + (f" · {d['n_unc']} ragu" if d.get("n_unc") else "")
@@ -452,9 +478,11 @@ class FormsPage(QWidget):
         except api.ApiError as e:
             say(self, str(e), warn=True)
             return
+        self.ai_q = [x for x in self.ai_q if x != d["id"]]
         self.cur = None
         self.docs = j["docs"]
         self._fill_list()
+        self._ai_buttons()
         if self.docs:
             self.lst.setCurrentRow(0)
             self._pick(0)
@@ -495,7 +523,11 @@ class FormsPage(QWidget):
         d = c["doc"]
         t = self.types[d["type"]]
         self.title.setText(f"<b>{_esc(d['name'])}</b> · {_esc(t['name'])}")
-        if d["status"] == "done":
+        if d["id"] == self.ai_did:
+            self._ai_tick()
+        elif d["id"] in self.ai_q:
+            self.aiInfo.setText(f"Menunggu giliran AI (antre #{self.ai_q.index(d['id']) + 1}). Tabel akan diganti hasil AI.")
+        elif d["status"] == "done":
             self.aiInfo.setText(f"Dibaca AI {_esc(d.get('ai_model') or '')} · {'-' if d.get('ai_secs') is None else round(d['ai_secs'])} dtk · {_esc(d.get('ai_at') or '')}"
                                 + (f" · catatan AI: {_esc(d['ai_note'])}" if d.get("ai_note") else ""))
         elif d["status"] == "error":
@@ -763,45 +795,110 @@ class FormsPage(QWidget):
             say(self, str(e), warn=True)
 
     # ---------------------------------------------------------------- AI
-    def run_ai(self) -> None:
-        if not self.cur or self.ai_busy:
-            return
+    def _ai_ready(self) -> bool:
         ai = self.win.ai
-        model = ai.model()
-        if not ai.info or not ai.info.get("running") or not model:
+        if not ai.info or not ai.info.get("running") or not ai.model():
             self.win.open_ai()
+            return False
+        return True
+
+    def run_ai(self) -> None:
+        """Baca borang yang sedang dibuka (masuk antrean paling depan bila AI sedang membaca borang lain)."""
+        if not self.cur or not self._ai_ready():
+            return
+        did = self.cur["doc"]["id"]
+        if did == self.ai_did or did in self.ai_q:
             return
         n_ver = sum(1 for r in self.cur["rows"] if r["verified"])
         if self.cur["rows"] and not ask(self, f"Baca ulang dengan AI? {len(self.cur['rows'])} baris yang ada (termasuk {n_ver} terverifikasi) "
                                               "akan diganti hasil AI. Isian header yang Anda edit tetap."):
             return
-        did, folder = self.cur["doc"]["id"], self.folder
-        body = {"folder": folder, "id": did, "host": ai.host.text().strip(), "model": model, "extra": ai.extra.toPlainText(),
-                "max_px": max(1600, int(ai.px.currentData())), "by": self.by()}
-        self.ai_busy = True
-        self.bAI.setEnabled(False)
-        self.bAI.setText("AI membaca borang…")
-        self.aiInfo.setText(f"Membaca borang dengan {model}… (tulisan tangan: biasanya 30–180 detik)")
+        self.ai_q.insert(0, did)
+        self._ai_next()
 
-        def done():
-            self.ai_busy = False
-            self.bAI.setEnabled(bool(self.cur))
-            self.bAI.setText("✦ Baca dengan AI")
+    def run_ai_all(self) -> None:
+        """Antrekan semua borang yang belum dibaca / gagal; dibaca satu per satu di latar belakang."""
+        if not self.folder or not self._ai_ready():
+            return
+        todo = [d["id"] for d in self.docs if d["status"] in ("pending", "error") and not d.get("n_rows")
+                and d["id"] != self.ai_did and d["id"] not in self.ai_q]
+        if not todo:
+            say(self, "Semua borang sudah dibaca AI (atau sudah ada isinya).\nUntuk membaca ulang satu borang, buka borangnya lalu klik ✦ Baca dengan AI.")
+            return
+        self.ai_q += todo
+        self.toast(f"{len(todo)} borang masuk antrean AI. Anda bisa memeriksa borang lain selama AI membaca.", 5000)
+        self._ai_next()
+
+    def _ai_buttons(self) -> None:
+        n = len(self.ai_q) + (1 if self.ai_did is not None else 0)
+        self.bAIAll.setText(f"Antrean AI: {n} borang" if n else "Baca semua yang belum")
+        cur = self.cur["doc"]["id"] if self.cur else None
+        busy = cur is not None and (cur == self.ai_did or cur in self.ai_q)
+        self.bAI.setText("AI membaca borang…" if cur is not None and cur == self.ai_did else ("Menunggu antrean AI…" if busy else "✦ Baca dengan AI"))
+        self.bAI.setEnabled(bool(self.cur) and not busy)
+
+    def _ai_tick(self) -> None:
+        if self.ai_did is None:
+            return
+        if self.cur and self.cur["doc"]["id"] == self.ai_did:
+            sec = int(time.time() - self.ai_t0)
+            self.aiInfo.setTextFormat(Qt.PlainText)
+            self.aiInfo.setText(f"AI membaca borang ini… {sec // 60}:{sec % 60:02d}"
+                                + (f" · {len(self.ai_q)} borang lagi di antrean" if self.ai_q else "")
+                                + ". Anda bisa membuka borang lain sementara menunggu.")
+
+    def _ai_next(self) -> None:
+        if self.ai_did is not None or not self.ai_q or not self.folder:
+            self._ai_buttons()
+            self._relabel()
+            return
+        ai = self.win.ai
+        did, folder = self.ai_q.pop(0), self.folder
+        self.ai_did, self.ai_busy, self.ai_t0 = did, True, time.time()
+        body = {"folder": folder, "id": did, "host": ai.host.text().strip(), "model": ai.model(), "extra": ai.extra.toPlainText(),
+                "max_px": int(self.cbSpeed.currentData() or 1600), "by": self.by()}
+        self.ai_clock.start()
+        self._ai_buttons()
+        self._relabel()
+        if self.cur and self.cur["doc"]["id"] == did:
+            self.refresh()
+
+        def fin():
+            self.ai_did, self.ai_busy = None, False
+            self.ai_clock.stop()
+            if folder == self.folder:
+                self._sync_list()
+                QTimer.singleShot(0, self._ai_next)
 
         def ok(j):
-            done()
+            fin()
+            if folder != self.folder:
+                return
             if self.cur and self.cur["doc"]["id"] == did:
                 self.cur = j
                 self.refresh()
-            self._sync_list()
-            self.toast(f"AI selesai: {len(j['rows'])} baris — periksa sel kuning / merah lalu verifikasi", 5000)
+            secs = j["doc"].get("ai_secs")
+            self.toast(f"AI selesai: {j['doc']['name']} · {len(j['rows'])} baris"
+                       + (f" · {round(secs)} dtk" if secs is not None else "") + " — periksa sel kuning / merah lalu verifikasi", 5000)
 
         def err(e):
-            done()
-            say(self, "AI gagal membaca borang (tabel tidak diisi):\n" + e, warn=True)
+            fin()
+            if folder != self.folder:
+                return
             if self.cur and self.cur["doc"]["id"] == did:
                 self._pick(self.lst.currentRow())
+            if self.ai_q:
+                self.toast("AI gagal membaca satu borang; lanjut ke borang berikutnya. " + e[:120], 6000)
+            else:
+                say(self, "AI gagal membaca borang (tabel tidak diisi):\n" + e, warn=True)
         run_bg(api.call, "/core/forms/ai", body, ok=ok, err=err)
+
+    def _relabel(self) -> None:
+        for i in range(self.lst.count()):
+            it = self.lst.item(i)
+            d = next((x for x in self.docs if x["id"] == it.data(Qt.UserRole)), None)
+            if d:
+                it.setText(self._line(d))
 
     # ---------------------------------------------------------------- ekspor
     def export(self, fmt: str) -> None:
