@@ -99,6 +99,7 @@ class FormsPage(QWidget):
         self.ai_busy = False
         self.ai_q: list[int] = []        # antrean baca AI (id borang); yang sedang dibaca = self.ai_did
         self.ai_did: int | None = None
+        self.perf: dict[int, dict] = {}  # kecepatan baca AI terakhir per borang (sesi ini)
         self.ai_t0 = 0.0
         self.ai_clock = QTimer(self)
         self.ai_clock.setInterval(1000)
@@ -355,6 +356,7 @@ class FormsPage(QWidget):
     def open(self, folder: str) -> None:
         self.folder = folder
         self.cur = None
+        self.perf = {}
         self.ai_q = []  # jawaban AI yang masih berjalan untuk folder lama diabaikan (cek folder di _ai_next)
         try:
             j = api.call("/core/forms/open", {"folder": folder})
@@ -529,7 +531,7 @@ class FormsPage(QWidget):
             self.aiInfo.setText(f"Menunggu giliran AI (antre #{self.ai_q.index(d['id']) + 1}). Tabel akan diganti hasil AI.")
         elif d["status"] == "done":
             self.aiInfo.setText(f"Dibaca AI {_esc(d.get('ai_model') or '')} · {'-' if d.get('ai_secs') is None else round(d['ai_secs'])} dtk · {_esc(d.get('ai_at') or '')}"
-                                + (f" · catatan AI: {_esc(d['ai_note'])}" if d.get("ai_note") else ""))
+                                + (f" · catatan AI: {_esc(d['ai_note'])}" if d.get("ai_note") else "") + self._perf_html(d["id"]))
         elif d["status"] == "error":
             self.aiInfo.setText(f"<span style='color:{theme.C['er']}'>AI gagal: {_esc(d.get('error') or '')}</span> — tabel tidak diisi.")
         else:
@@ -832,6 +834,22 @@ class FormsPage(QWidget):
         self.toast(f"{len(todo)} borang masuk antrean AI. Anda bisa memeriksa borang lain selama AI membaca.", 5000)
         self._ai_next()
 
+    def _perf_html(self, did: int) -> str:
+        """Ringkasan kecepatan baca terakhir + peringatan bila model tidak seluruhnya di GPU (penyebab utama baca lambat)."""
+        p = self.perf.get(did)
+        if not p:
+            return ""
+        t = (f"<br>{p['tokens']} token jawaban" + (f" · {p['tok_s']:g} token/dtk" if p.get("tok_s") else "")
+             + f" · gambar {p['px']} px · konteks {p['num_ctx']}")
+        g = p.get("gpu")
+        if g is not None and g < 100:
+            t += (f"<br><span style='color:{theme.C['er']}'><b>Model hanya {g:g}% di GPU, sisanya di CPU — inilah yang membuat lambat.</b> "
+                  "Tutup aplikasi lain yang memakai GPU (browser, Leapfrog, Surpac 3D), pilih kecepatan <b>Cepat</b>, atau pakai model "
+                  "yang lebih kecil (mis. qwen3-vl:2b) di dialog AI.</span>")
+        elif g is not None:
+            t += " · 100% di GPU"
+        return t
+
     def _ai_buttons(self) -> None:
         n = len(self.ai_q) + (1 if self.ai_did is not None else 0)
         self.bAIAll.setText(f"Antrean AI: {n} borang" if n else "Baca semua yang belum")
@@ -877,6 +895,8 @@ class FormsPage(QWidget):
             fin()
             if folder != self.folder:
                 return
+            if j.get("perf"):
+                self.perf[did] = j["perf"]
             if self.cur and self.cur["doc"]["id"] == did:
                 self.cur = j
                 self.refresh()

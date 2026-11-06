@@ -412,3 +412,14 @@ def test_rc_logging_jawaban_ringkas(st, monkeypatch):
     assert not any(k in ("from_m", "to_m") for x in v["rows"].values() for k in x), v  # urutan per lubang, BLANK tidak memutus
     rec = cf.records(cf.doc(s, did), rs)
     assert rec[4]["hole_id"] == "XX_100_02" and rec[0]["tanggal"] == "2026-11-05" and rec[3]["remark"] == "BLANK"
+
+
+def test_konteks_secukupnya_dan_porsi_gpu(monkeypatch):
+    """num_ctx mengikuti ukuran gambar (bukan 16384 tetap, yang bisa mendorong model keluar dari VRAM);
+    porsi GPU dibaca dari /api/ps."""
+    assert cf.ctx_for((1280, 905), "x" * 1500) == 5120
+    assert cf.ctx_for((2000, 1414), "x" * 1500) == 6144
+    monkeypatch.setattr(cf.core_io, "_http", lambda url, body=None, timeout=5.0: {"models": [
+        {"name": "qwen3-vl:4b", "size": 6_000_000_000, "size_vram": 3_000_000_000}]})
+    assert cf.gpu_share("http://x", "qwen3-vl:4b") == 50
+    assert cf.gpu_share("http://x", "lain:1b") is None

@@ -812,7 +812,7 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     return out
 
 
-def _image_b64(s: Store, d: dict, max_px: int) -> str:
+def _image_b64(s: Store, d: dict, max_px: int) -> tuple[str, tuple[int, int]]:
     from PIL import Image
     with Image.open(s.scans / d["file"]) as im:
         im = im.convert("RGB")
@@ -823,7 +823,8 @@ def _image_b64(s: Store, d: dict, max_px: int) -> str:
             im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
         b = io.BytesIO()
         im.save(b, "JPEG", quality=90)
-    return base64.b64encode(b.getvalue()).decode()
+        size = im.size
+    return base64.b64encode(b.getvalue()).decode(), size
 
 
 _THINK: dict[tuple[str, str], bool] = {}
@@ -843,13 +844,39 @@ def _can_think(host: str, model: str) -> bool:
     return _THINK[k]
 
 
+N_PREDICT = 2500
+
+
+def ctx_for(size: tuple[int, int], prompt: str) -> int:
+    """num_ctx secukupnya: token gambar (Qwen-VL: satu token per 32x32 px) + perintah + jawaban, dibulatkan ke 1024.
+    Konteks yang terlalu besar (dulu 16384) memperbesar KV cache sampai model tidak muat di VRAM GPU dan sebagian
+    berjalan di CPU -> waktu baca berlipat (laporan pengguna: >5-10 menit per lembar)."""
+    img = -(-size[0] // 32) * -(-size[1] // 32)
+    need = img + len(prompt) // 3 + N_PREDICT + 256
+    return int(min(16384, max(4096, -(-need // 1024) * 1024)))
+
+
+def gpu_share(host: str, model: str) -> Optional[float]:
+    """Porsi model di VRAM GPU (0-100 %) menurut Ollama /api/ps; None bila tidak diketahui. < 100 % = sebagian di CPU (lambat)."""
+    try:
+        ms = core_io._http(host + "/api/ps", timeout=5).get("models") or []
+    except Exception:  # noqa: BLE001
+        return None
+    for m in ms:
+        if str(m.get("name") or m.get("model") or "").split(":")[0] == model.split(":")[0] and m.get("size"):
+            return round(100.0 * float(m.get("size_vram") or 0) / float(m["size"]), 0)
+    return None
+
+
 def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900) -> dict:
     d = doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
-    body = {"model": model, "messages": [{"role": "user", "content": ai_prompt(d["type"], extra), "images": [_image_b64(s, d, max_px)]}],
+    prompt = ai_prompt(d["type"], extra)
+    img, size = _image_b64(s, d, max_px)
+    body = {"model": model, "messages": [{"role": "user", "content": prompt, "images": [img]}],
             "stream": False, "keep_alive": "30m",
             # num_predict membatasi jawaban: model kecil kadang mengulang baris tanpa henti sampai batas waktu habis (borang 'gagal')
-            "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 2500, "repeat_penalty": 1.05}}
+            "options": {"temperature": 0, "num_ctx": ctx_for(size, prompt), "num_predict": N_PREDICT, "repeat_penalty": 1.05}}
     if _can_think(host, model):
         body["think"] = False
     t0 = time.time()
@@ -869,7 +896,12 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
         with s.lock, s.conn() as c:
             c.execute("UPDATE docs SET status='error', error=? WHERE id=?", (str(e)[:500], did))
         raise
-    return apply_ai(s, did, res, model, time.time() - t0, by)
+    out = apply_ai(s, did, res, model, time.time() - t0, by)
+    ev = j.get("eval_count") or 0
+    out["perf"] = {"gpu": gpu_share(host, model), "secs": round(time.time() - t0, 1), "tokens": ev,
+                   "tok_s": round(ev / (j["eval_duration"] / 1e9), 1) if j.get("eval_duration") else None,
+                   "num_ctx": body["options"]["num_ctx"], "px": max(size)}
+    return out
 
 
 def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "") -> dict:

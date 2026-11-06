@@ -3226,3 +3226,12 @@ memperbaikinya berarti memecah sel ke level octree yang lebih halus, dan itu pek
   - Ekspor `RC_INTERVAL` / sheet *Interval_Geodatabase* membawa kolom LITH, INT_ALT, MIN1, VEIN_TYPE, QT_PCT.
 - **Putaran scan diingat.** Foto borang baru otomatis memakai putaran (↻) borang terakhir sejenis dengan bentuk foto yang sama, jadi foto yang diambil rebah tidak perlu diputar satu per satu sebelum dibaca AI. Putar scan dulu sebelum membaca: AI membaca tulisan yang tegak jauh lebih cepat dan tepat.
 
+## 105. DB-Ex 0.42.5 — Borang: konteks AI secukupnya, porsi GPU ditampilkan
+
+- **Penyebab lambat yang paling sering: model tidak seluruhnya di GPU.** Konteks AI sebelumnya ditetapkan 16384 token (lalu 8192). Memori konteks (KV cache) sebesar itu bisa membuat model tidak muat di VRAM, sehingga sebagian dijalankan CPU dan pembacaan satu lembar bisa memakan 5-10 menit. Sekarang konteks dihitung secukupnya dari ukuran gambar + perintah + jawaban (±5-6 ribu token).
+- **Panel di bawah scan** setelah AI membaca kini menampilkan: jumlah token jawaban, token/detik, ukuran gambar, konteks, dan **porsi model di GPU** (dari Ollama). Bila kurang dari 100 %, muncul peringatan merah dengan saran:
+  - tutup aplikasi lain yang memakai GPU (browser dengan banyak tab, Leapfrog, Surpac 3D);
+  - pilih kecepatan **Cepat** (gambar 1280 px);
+  - pakai model yang lebih kecil, mis. `qwen3-vl:2b` (`ollama pull qwen3-vl:2b`, lalu pilih di dialog AI).
+- Cek manual di Command Prompt saat AI sedang membaca: `ollama ps` — kolom **PROCESSOR** harus `100% GPU`.
+
