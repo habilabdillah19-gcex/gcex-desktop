@@ -70,6 +70,33 @@ def periksa(argv) -> int:
         hasil["ok"] = False
         hasil["galat"] = ("jumlah blok per kelas (%d) tidak sama dengan blok digambar (%d)"
                           % (sum(c for _l, _w, c in lg), int(idx.size)))
+    # Laporan ikut diuji di sini supaya kemasan .exe terbukti membawa mesin hitungnya
+    # (gcex_backend.laporan). Tanpa pemeriksaan ini, tab Laporan baru ketahuan kosong di tangan
+    # pemakai -- modulnya ada di repo tetapi tidak ikut terkemas.
+    from . import laporan_bm as LB
+
+    try:
+        PL = LB.Pilihan(kadar=atribut or "", cuts=[0.0], atribut=[atribut] if atribut else [],
+                        sg=2.6, bandingkan=True)
+        hl = LB.jalankan(bm, PL)
+        tot = {m: LB._total((hl["metode"][m].get("rows") or [{}])[0].get("G") or {})
+               for m in hl["urut"]}
+        hasil["laporan"] = {m: {"blok": int(v["n"]), "volume_m3": round(v["v"], 2),
+                                "tonase_t": round(v["t"], 2)} for m, v in tot.items()}
+        # Volume laporan harus sama dengan volume seluruh blok yang dilaporkan; dan tonase =
+        # volume x SG. Kalau tidak, pilihan salah diteruskan ke mesin hitungnya.
+        v = tot["surpac"]["v"]
+        if abs(tot["surpac"]["t"] - v * 2.6) > max(1.0, 1e-9 * abs(v * 2.6)):
+            hasil["ok"] = False
+            hasil["galat"] = "tonase laporan tidak sama dengan volume x SG"
+        if tot["surpac"]["n"] != bm.n:
+            hasil["ok"] = False
+            hasil["galat"] = ("laporan metode Surpac melaporkan %d blok, model punya %d"
+                              % (tot["surpac"]["n"], bm.n))
+    except Exception as e:                      # noqa: BLE001 -- sengaja ditangkap dan dilaporkan
+        hasil["ok"] = False
+        hasil["galat"] = "laporan gagal: %s: %s" % (type(e).__name__, e)
+
     teks = json.dumps(hasil, indent=2, ensure_ascii=False)
     print(teks)
     if keluar:

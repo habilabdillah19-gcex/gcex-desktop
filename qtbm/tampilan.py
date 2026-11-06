@@ -25,11 +25,12 @@ from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QFileDialog,
                                QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton,
-                               QSlider, QVBoxLayout, QWidget)
+                               QSlider, QTabWidget, QVBoxLayout, QWidget)
 
 from . import adegan as AD
 from . import proyek as PR
 from .panel_bm import PanelBM
+from .panel_laporan import PanelLaporan
 from .render import Kamera, Penggambar
 
 
@@ -141,7 +142,7 @@ class Jendela(QMainWindow):
 
         self.pemutar = Pemutar(self)
         sisi = QWidget()
-        sisi.setFixedWidth(300)
+        sisi.setFixedWidth(340)
         L = QVBoxLayout(sisi)
 
         self.lbl = QLabel("Belum ada proyek dibuka.")
@@ -151,13 +152,21 @@ class Jendela(QMainWindow):
         b1 = QPushButton("Buka folder proyek…")
         b1.clicked.connect(self.buka_folder)
         L.addWidget(b1)
-        b2 = QPushButton("Muat block model (CSV)…")
+        b2 = QPushButton("Muat block model (CSV / .mdl)…")
         b2.clicked.connect(self.buka_bm)
         L.addWidget(b2)
 
+        # Dua panel di tab terpisah: Tampilan (apa yang digambar) dan Laporan (angka tonase).
+        # Dipisah karena keduanya dipakai pada saat berbeda dan laporan butuh ruang tabel.
+        self.tab = QTabWidget()
         self.panel = PanelBM()
         self.panel.berubah.connect(self.susun_ulang)
-        L.addWidget(self.panel, 1)
+        self.lap = PanelLaporan()
+        self.lap.saringan_aktif = self._saringan_bool
+        self.lap.sumber_sg = lambda: (self.panel.T.sg, self.panel.T.sg_kolom)
+        self.tab.addTab(self.panel, "Tampilan")
+        self.tab.addTab(self.lap, "Laporan")
+        L.addWidget(self.tab, 1)
 
         L.addWidget(QLabel("Batas RL"))
         baris = QHBoxLayout()
@@ -250,8 +259,21 @@ class Jendela(QMainWindow):
         self.susun_ulang(pas_kamera=True)
 
     def isi_atribut(self) -> None:
-        """Pasang block model ke panel; panel sendiri yang menyetel atribut & kelas bawaan."""
-        self.panel.pasang_model(self.P.bm if self.P else None)
+        """Pasang block model ke kedua panel; panel sendiri yang menyetel pilihan bawaannya."""
+        bm = self.P.bm if self.P else None
+        self.panel.pasang_model(bm)
+        self.lap.pasang_model(bm)
+
+    def _saringan_bool(self):
+        """Larik bool saringan GEOMETRIS yang sedang aktif (batas RL + sayatan).
+
+        Sengaja TIDAK memuat cut-off dan kelas dari panel Tampilan: itu pengatur warna dan apa yang
+        digambar, bukan batas perhitungan. Kalau keduanya dicampur, laporan akan berubah hanya
+        karena seseorang mengganti warna -- dan tidak ada yang akan menduga sebabnya.
+        """
+        if not self.P or not self.P.bm or not self.P.bm.n:
+            return None
+        return self.saringan().terapkan(self.P.bm)
 
     # ---------- menyusun ----------
     def saringan(self) -> AD.Saringan:

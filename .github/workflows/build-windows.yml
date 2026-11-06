@@ -443,10 +443,13 @@ jobs:
             exit 0
           }
           pyinstaller --noconfirm --onedir --windowed --name GC-Ex-BlockModel-3D --icon build/icon.ico `
-            --paths . --exclude-module tkinter --exclude-module matplotlib --exclude-module scipy `
+            --paths . --paths backend --exclude-module tkinter --exclude-module matplotlib `
+            --exclude-module scipy --hidden-import gcex_backend --hidden-import gcex_backend.laporan `
+            --hidden-import gcex_backend.mdl_io `
             --exclude-module uvicorn --exclude-module fastapi --exclude-module PIL `
             --hidden-import qtbm --hidden-import qtbm.tampilan --hidden-import qtbm.render `
             --hidden-import qtbm.tampil_bm --hidden-import qtbm.panel_bm `
+            --hidden-import qtbm.laporan_bm --hidden-import qtbm.panel_laporan `
             --distpath dist-qtbm --workpath build-qtbm penampil_qt.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller penampil 3D Qt gagal" }
           $d = "dist-qtbm/GC-Ex-BlockModel-3D"
@@ -485,6 +488,13 @@ jobs:
             throw ("jumlah blok per kelas ($sum) tidak sama dengan blok digambar (" + $j.blok_digambar + ")")
           }
           Write-Host ("OK kelas tampilan: " + $j.kelas.Count + " kelas, " + $sum + " blok")
+          # Mesin laporan (gcex_backend.laporan) harus IKUT terkemas, bukan hanya ada di repo:
+          # tanpa ini tab Laporan baru ketahuan kosong di tangan pemakai.
+          if (-not $j.laporan) { throw "uji mandiri tidak melaporkan hasil laporan" }
+          if ($j.laporan.surpac.blok -ne $j.blok) {
+            throw ("laporan metode Surpac melaporkan " + $j.laporan.surpac.blok + " blok, model punya " + $j.blok)
+          }
+          Write-Host ("OK laporan: " + $j.laporan.surpac.tonase_t + " t (Surpac), " + $j.laporan.presisi.tonase_t + " t (presisi)")
           if ($j.blok_digambar -ne $j.blok) { throw "jumlah blok yang disusun tidak sama dengan jumlah blok" }
           if ($j.koordinat_adegan_maks -gt 1000) { throw ("koordinat adegan terlalu besar: " + $j.koordinat_adegan_maks) }
           Write-Host ("OK penampil 3D Qt: " + $j.blok + " blok, baca " + $j.ms_baca + " ms, susun " + $j.ms_susun + " ms")

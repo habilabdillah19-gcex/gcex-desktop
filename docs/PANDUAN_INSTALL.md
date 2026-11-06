@@ -2318,3 +2318,71 @@ Panel Sayatan/Slicing, Reporting Block Model, dan Dig block + digitasi string **
 penampil Qt — semuanya masih dikerjakan di aplikasi HTML seperti biasa. Urutan pengerjaannya:
 Reporting Block Model lebih dulu (mesin hitungnya sudah ada di
 `backend/gcex_backend/laporan.py`), lalu Dig block + ekspor DXF/STR.
+
+## 90. Penampil 3D Qt tahap 2B — tab Laporan Block Model
+
+Penampil Qt kini punya dua tab di panel kanan: **Tampilan** (bagian 89) dan **Laporan**. Tab
+Laporan menghitung tonase × kadar seperti Reporting Block Model di aplikasi HTML.
+
+| Pilihan | Keterangan |
+| --- | --- |
+| **Atribut kadar (cut-off)** | atribut yang dipakai menyaring cut-off |
+| **Cut-off** | daftar dipisah koma; tiap nilai dilaporkan sebagai **≥ nilai** |
+| **Kelompokkan** | Total saja / **Per RL (bench / flitch)** / **Per atribut kategori** |
+| **Tinggi bench + RL acuan** | bench dihitung dari RL acuan; label jadi `RL <atas> – <bawah>` |
+| **Atribut yang dilaporkan kadarnya** | dicentang; tiap atribut dapat kolom kadar **dan kolom logam** |
+| **Batasi ke saringan tampilan** | memakai batas RL + sayatan yang sedang tampil di layar |
+| **Bandingkan metode tonase** | presisi GC-Ex vs seperti Surpac, berdampingan + baris Selisih |
+
+Tabelnya bisa diekspor ke CSV, lengkap dengan keterangan metode di bawahnya.
+
+### Angkanya dibuktikan sama dengan laporan aplikasi HTML
+
+Mesin hitungnya **bukan** ditulis ulang: yang dipakai `gcex_backend.laporan.run()`, modul Python
+yang sudah dibuktikan sama dengan `rpRun()` (bagian 87). Tetapi mesin yang benar masih bisa
+dipanggil dengan **pilihan yang salah**, jadi lapisan Qt-nya diuji sendiri:
+`python tools/uji/paritas_laporan_bm.py` membuka **aplikasi Block Model sungguhan**, menjalankan
+`rpRun()` asli untuk **7 susunan pilihan** (SG tetap, kolom SG, beberapa atribut, per RL 5 m, per
+RL 10 m dengan RL acuan 300, metode seperti Surpac, per kategori), lalu membandingkan jumlah blok,
+volume, tonase dan kadar berbobot **per grup**. Hasil terakhir: **ketujuhnya sama persis** (3.007
+blok cuplikan). Hasil JS dibekukan ke `qtbm/tests/data/laporan_bm_js.json` supaya CI memeriksanya
+tanpa peramban.
+
+### Dua hal yang ditemukan uji itu, dan sudah diperbaiki
+
+**1. SG hanya punya satu sumber: panel Tampilan.** Di aplikasi HTML, Reporting BM mengambil SG dari
+panel tampilan block model (`BX.ui.sg` / `BX.ui.sgCol`), bukan dari panel laporan. Rancangan awal
+tab Laporan Qt punya kotak SG sendiri — artinya ada dua tempat mengisi SG dan tidak ada yang tahu
+mana yang terhitung. Sekarang kotak SG di tab Laporan hanya **menampilkan** SG yang berlaku dan
+dimatikan, dengan tulisan *"SG (dari panel Tampilan)"*.
+
+**2. Kolom SG tidak dipilih otomatis.** Walaupun block model punya atribut bernama `SG`, bawaannya
+tetap **SG tetap 2,6** — sama dengan aplikasi HTML (`bxDefUI` menyetel `sgCol` kosong). Memilih
+kolom SG otomatis hanya di Qt akan membuat tonase bawaan kedua aplikasi berbeda untuk model yang
+sama: selisih yang tidak akan dicari siapa pun, karena tidak ada yang merasa mengubah apa-apa.
+
+### Peringatan yang harus dibaca bersama angkanya
+
+- Bila block model **tidak punya atribut `sb_frac`**, metode presisi tidak punya apa pun untuk
+  ditimbang, sehingga kedua metode menghasilkan angka **sama**. Panel mengatakannya terus-terang:
+  selisih 0% di situ **bukan** bukti kedua cara cocok — modelnya belum pernah di-sub-blocking.
+- Blok **berproporsi nol** tidak dilaporkan sama sekali oleh metode presisi, sedangkan metode
+  Surpac tetap melaporkannya. Panel menyebutkan berapa blok yang begitu, karena itulah penyebab
+  utama selisih yang tampak besar.
+- Panel juga menulis **berapa blok terbuang di tiap tahap penyaringan** (di luar rentang RL, kadar
+  tidak sah, SG tidak sah, proporsi nol), supaya pertanyaan "kenapa tonasenya sekian" ada
+  jawabannya tanpa menebak.
+- **Waste pengisi tidak termasuk** di laporan ini; itu hanya ada di perhitungan dig block per
+  poligon (bagian 88). Keterangan ini ikut tercetak di CSV.
+
+### Satu kejanggalan yang sengaja TIDAK diperbaiki
+
+Satuan kolom logam ditentukan dari **awalan nama atribut** (`rpUnitDef`), jadi kolom bernama
+`CU_PPM` ikut dianggap `%` padahal isinya ppm. Itu perilaku aplikasi HTML sekarang. Memperbaikinya
+hanya di Qt akan membuat kolom logam kedua aplikasi berbeda untuk data yang sama. Kalau mau
+diperbaiki, perbaikannya harus di `rpUnitDef` lebih dulu supaya keduanya ikut berubah.
+
+### Yang belum ada
+
+Panel Sayatan/Slicing dan **Dig block + digitasi string (DXF/STR)** belum ada di penampil Qt.
+Dig block adalah pekerjaan berikutnya.
