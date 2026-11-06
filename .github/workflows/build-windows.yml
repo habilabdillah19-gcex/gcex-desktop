@@ -43,7 +43,8 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: write   # menerbitkan installer ke GitHub Release (repo privat -> release juga privat)
+      contents: write   # menerbitkan installer + memindahkan tag lewat API git/refs
+                        # (repo sudah publik sejak 6 Nov 2026, jadi Release-nya juga publik)
     steps:
       - uses: actions/checkout@v6
         with:
@@ -623,8 +624,16 @@ jobs:
           # Sekarang tag dipindahkan ke commit ini tanpa menyentuh Release-nya, lalu isinya
           # diperbarui di tempat. Pada titik mana pun Release selalu ada.
           $cr = "rilis/GC-Ex-${v}_CATATAN_RILIS.md"
-          git tag -f $tag $env:GITHUB_SHA
-          git push -f origin "refs/tags/$tag"
+          # Tag dipindahkan lewat API, BUKAN `git push`. Sebabnya: bila commit yang ditandai memuat
+          # perubahan pada .github/workflows/*, git push dari dalam Actions ditolak dengan
+          # "refusing to allow a GitHub App to create or update workflow ... without `workflows`
+          # permission", dan izin `workflows` itu TIDAK bisa diberikan ke GITHUB_TOKEN. Terjadi
+          # 6 Nov 2026 pada v0.42.3. API git/refs tidak dikenai pemeriksaan itu.
+          $ref = "refs/tags/$tag"
+          gh api -X PATCH "repos/$env:GITHUB_REPOSITORY/git/$ref" -f sha=$env:GITHUB_SHA -F force=true *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh api -X POST "repos/$env:GITHUB_REPOSITORY/git/refs" -f ref=$ref -f sha=$env:GITHUB_SHA *> $null
+          }
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal memindahkan tag $tag - arsip kode sumber rilis bisa tertinggal di commit lama" }
           # coba sampai 3x: satu kali gangguan jaringan saat mengunggah installer besar dulu langsung
           # menggagalkan langkah ini tanpa pesan (Release 0.23.3 tidak terbit)
