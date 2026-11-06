@@ -2384,5 +2384,105 @@ diperbaiki, perbaikannya harus di `rpUnitDef` lebih dulu supaya keduanya ikut be
 
 ### Yang belum ada
 
-Panel Sayatan/Slicing dan **Dig block + digitasi string (DXF/STR)** belum ada di penampil Qt.
-Dig block adalah pekerjaan berikutnya.
+Panel Sayatan/Slicing belum ada di penampil Qt. Dig block sudah ada — lihat bagian 91.
+
+
+## 91. Penampil 3D Qt tahap 2C — tab Dig block, digitasi plan 2D, dan ekspor DXF/STR
+
+Penampil Qt kini punya tab ketiga: **Dig block**. Di tab ini poligon galian digambar langsung di
+atas block model, tonasenya dihitung, dan hasilnya diekspor ke DXF atau Surpac `.str`.
+
+### Mengapa digitasinya di plan 2D, bukan di tampilan 3D
+
+Dig block adalah poligon pada **satu bidang datar** (flitch). Mengklik titik di tampilan 3D yang
+bisa diputar berarti menebak kedalaman di balik piksel: satu derajat kemiringan kamera menggeser
+titiknya beberapa meter dan tidak ada yang akan tahu. Karena itu tab Dig block mengganti viewport
+menjadi **plan 2D dengan RL terkunci** pada flitch yang aktif, satu piksel selalu berarti jarak
+yang sama di lapangan, dan RL flitch selalu tertulis di sudut kanvas. Aplikasi HTML pun begitu —
+`dgStart()` memaksa pindah ke Sayatan 2D sebelum digitasi dimulai.
+
+### Kendali
+
+| Kendali | Perilaku |
+| --- | --- |
+| **RL atas / RL bawah** | Batas flitch. Tombol *Flitch berikut ke bawah* menggeser keduanya satu tebal flitch. |
+| **Cara ambil blok** | *Tumpang tindih sebenarnya* (composite) atau *hanya blok di bidang tengah* — yang kedua menghitung blok setebal flitch penuh walau bloknya lebih tipis. |
+| **Atribut kadar** | Kadar yang dirata-rata berbobot tonase, dan dasar kolom logam. |
+| **Metode tonase** | *Presisi GC-Ex* (blok dipotong di garis poligon dan bidang flitch) atau *Seperti Surpac* (blok ikut **utuh** bila titik tengahnya di dalam poligon dan flitch). |
+| **Bandingkan kedua metode** | Dua kolom tonase berdampingan + kolom Selisih %. |
+| **Hanya blok yang lolos cut-off tampilan** | Ikut cut-off panel Tampilan (`lyU().onlyPass`). |
+| **Waste pengisi** | Dilusi untuk luas poligon yang tidak tertutup blok. **Bawaannya menyala**, sama dengan aplikasi HTML. |
+| **Tempel ke sudut blok** | Titik klik menempel ke sudut / titik tengah blok terdekat, supaya garis galian jatuh di batas blok. |
+| Papan ketik saat mendigit | **Enter** tutup poligon · **Backspace** urung titik · **Esc** batal. Klik titik pertama juga menutup poligon. |
+
+Tetikus di kanvas 2D: **klik kiri** menaruh titik, **klik kanan / tengah + geser** memindahkan
+pandangan, **roda** memperbesar berpusat di kursor. Ada batang skala di kiri bawah — tanpa itu
+tidak ada cara menilai ukuran poligon dari gambarnya saja.
+
+### Angkanya dibuktikan, bukan diklaim
+
+Mesin dig block **tidak ada** di `gcex_backend`: ia tiruan `lyTon()` (presisi) dan `lyTonS()`
+(Surpac) di aplikasi HTML, ditulis ulang di Python (`qtbm/galian.py`). Karena itu seluruh
+perilakunya harus dibuktikan, bukan dipercaya. `tools/uji/paritas_galian_bm.py` membuka
+**aplikasi Block Model sungguhan** dengan data latihan dan menjalankan `lyTon()` **asli** untuk
+**21 susunan**: poligon dengan garis di batas blok dan di tengah blok, poligon segi lima, flitch
+setebal 1 / 3 / setengah blok, mode bidang tengah, poligon lubang (*exclusion*), kolom SG, cut-off
+tampilan, dan waste pengisi. Semua **sama persis**. Isi berkas `.str` dan `.dxf` juga dibandingkan
+**baris per baris** dengan keluaran `dgExport()` asli. Hasil JS dibekukan ke
+`qtbm/tests/data/galian_bm_js.json` supaya CI memeriksanya tanpa peramban.
+
+### Tiga hal yang bisa membuat kedua aplikasi diam-diam berbeda — sudah ditutup
+
+**1. Waste pengisi bawaannya MENYALA.** `dbU()` di aplikasi HTML menyetel `U.wOn = true` bila
+belum pernah disentuh. Kalau di Qt dibuat mati, tonase dig block bawaan akan lebih kecil untuk
+poligon yang sama, dan tidak ada yang merasa mengubah apa pun.
+
+**2. Perlakuan blok yang kolom SG-nya kosong / nol** (`sgZero` / `sgRep`) belum diteruskan panel
+Laporan ke mesin hitungnya, walau mesinnya sudah mendukung. Sekarang ikut, dan sumbernya tetap
+satu: panel Tampilan. Tab Dig block **tidak punya kotak SG sendiri** — hanya menampilkan SG yang
+berlaku.
+
+**3. Dua ruang koordinat.** Aplikasi HTML menyimpan koordinat block model secara **penuh**
+(`BX.m.x`) tetapi titik hasil digitasi **relatif offset** (`DG.S[].pts`), sehingga `lyItems()`
+harus menambahkan offset sebelum menghitung dan `dgExport()` menambahkannya lagi saat menulis
+berkas. Tertukar satu kali saja, berkasnya tetap terbaca Surpac dan tidak memunculkan galat apa
+pun — poligonnya saja yang berada ratusan kilometer dari tempatnya. Penampil Qt **tidak menyalin
+pembagian itu**: satu ruang koordinat saja, sehingga kelas kesalahan itu tidak ada.
+
+### Asimetri yang ditiru apa adanya
+
+**Waste pengisi hanya ditambahkan pada metode presisi.** Di aplikasi HTML, `lyTonS()` memang tidak
+pernah menambahkannya, jadi baris waste hilang begitu metode diganti ke Surpac. Itu perilaku
+aplikasi resmi dan sengaja dipertahankan; panel mengatakannya di bawah pilihan waste dan dalam
+catatan di bawah tabel, supaya selisih antara dua kolom tidak disalahartikan sebagai perbedaan
+cara memotong blok saja.
+
+### Peringatan yang ikut ditampilkan bersama angkanya
+
+- **Berapa persen luas poligon yang tertutup blok.** Sisanya tidak punya blok sama sekali dan
+  tonasenya tidak terhitung kecuali waste pengisi dinyalakan.
+- Bila mode **bidang tengah** dipakai: volume bisa lebih besar daripada volume blok sebenarnya.
+- Berapa persen tonase yang **tidak punya kadar sah** dan karena itu tidak ikut rata-rata kadar —
+  tonasenya tetap dilaporkan.
+- Bila kedua metode memberi angka **sama persis** pada satu poligon, panel menyatakan itu bisa
+  terjadi karena poligonnya jatuh tepat di garis blok, dan **bukan** bukti umum bahwa kedua cara
+  selalu cocok.
+
+### Uji otomatis
+
+`qtbm/tests` naik dari 96 ke **178 uji**. Termasuk dua penjaga agar ujinya tidak lulus palsu: bila
+ketiga kasus kolom SG memberi angka identik, atau tidak satu pun kasus membedakan kedua metode,
+ujinya **gagal**. Penjaga itu sudah terpakai sekali — kolom SG data latihan tidak punya satu pun
+nilai tidak sah, sehingga cabang `sgZero` / `sgRep` semula tidak teruji sama sekali dan ujinya
+lulus tanpa menguji apa pun.
+
+Uji mandiri `.exe` di CI kini ikut menjalankan dig block **dan ekspornya**, sebab mesinnya harus
+benar-benar **terkemas**: kalau yang gagal adalah ekspornya, yang dibawa ke lapangan adalah berkas
+kosong, dan itu baru ketahuan di lapangan.
+
+### Yang belum ada di tab Dig block
+
+Aturan material otomatis (`dbRule` / HG-LG / tujuan dump), *minimum mining width*, dig block
+otomatis dari badan bijih, poligon lubang dari antarmuka (mesinnya sudah mendukung, panelnya
+belum), penyimpanan string ke folder proyek, dan cetak peta oreblock PDF. Semua itu masih hanya
+ada di aplikasi HTML.

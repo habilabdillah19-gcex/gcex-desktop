@@ -25,11 +25,13 @@ from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QFileDialog,
                                QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton,
-                               QSlider, QTabWidget, QVBoxLayout, QWidget)
+                               QSlider, QStackedWidget, QTabWidget, QVBoxLayout, QWidget)
 
 from . import adegan as AD
 from . import proyek as PR
 from .panel_bm import PanelBM
+from .kanvas2d import Kanvas2D
+from .panel_galian import PanelGalian
 from .panel_laporan import PanelLaporan
 from .render import Kamera, Penggambar
 
@@ -165,8 +167,13 @@ class Jendela(QMainWindow):
         self.lap.saringan_aktif = self._saringan_bool
         self.lap.sumber_sg = lambda: (self.panel.T.sg, self.panel.T.sg_kolom,
                                       self.panel.T.sg_nol, self.panel.T.sg_ganti)
+        self.gal = PanelGalian()
+        self.gal.sumber_sg = lambda: (self.panel.T.sg, self.panel.T.sg_kolom,
+                                      self.panel.T.sg_nol, self.panel.T.sg_ganti)
         self.tab.addTab(self.panel, "Tampilan")
         self.tab.addTab(self.lap, "Laporan")
+        self.tab.addTab(self.gal, "Dig block")
+        self.tab.currentChanged.connect(self._tab_berubah)
         L.addWidget(self.tab, 1)
 
         L.addWidget(QLabel("Batas RL"))
@@ -203,10 +210,21 @@ class Jendela(QMainWindow):
         L.addWidget(self.stat)
         L.addStretch(1)
 
+        # Dua kanvas bertumpuk: 3D untuk melihat, plan 2D untuk mendigit. Digitasi sengaja TIDAK
+        # dilakukan di kanvas 3D yang bisa diputar -- mengklik titik di sana berarti menebak
+        # kedalaman di balik piksel, dan satu derajat kemiringan kamera menggeser titiknya
+        # beberapa meter tanpa ada yang tahu. Aplikasi HTML pun mengunci digitasi ke Sayatan 2D.
+        self.kanvas2d = Kanvas2D()
+        self.gal.pasang_kanvas(self.kanvas2d)
+        self.gal.berubah.connect(self.kanvas2d.segarkan)
+        self.tumpuk = QStackedWidget()
+        self.tumpuk.addWidget(self.pemutar)
+        self.tumpuk.addWidget(self.kanvas2d)
+
         pusat = QWidget()
         H = QHBoxLayout(pusat)
         H.setContentsMargins(0, 0, 0, 0)
-        H.addWidget(self.pemutar, 1)
+        H.addWidget(self.tumpuk, 1)
         H.addWidget(sisi)
         self.setCentralWidget(pusat)
 
@@ -215,6 +233,19 @@ class Jendela(QMainWindow):
         self.jam.start(500)
 
     # ---------- memuat ----------
+    def _tab_berubah(self, i: int) -> None:
+        """Tab Dig block menampilkan plan 2D; tab lain kembali ke 3D."""
+        dig = self.tab.widget(i) is self.gal
+        self.tumpuk.setCurrentWidget(self.kanvas2d if dig else self.pemutar)
+        if dig:
+            self.kanvas2d.segarkan()
+            self.kanvas2d.pas_ke_data()
+        elif self.kanvas2d.digit_on:
+            # keluar dari tab saat mendigit akan meninggalkan poligon setengah jadi yang tak
+            # terlihat di mana pun; dibatalkan dan dikatakan, bukan disimpan diam-diam.
+            self.kanvas2d.batal()
+            self.gal.pesan.setText("Digitasi dibatalkan karena tab berpindah.")
+
     def buka_folder(self) -> None:
         d = QFileDialog.getExistingDirectory(self, "Pilih folder proyek GC-Ex")
         if not d:
@@ -260,10 +291,14 @@ class Jendela(QMainWindow):
         self.susun_ulang(pas_kamera=True)
 
     def isi_atribut(self) -> None:
-        """Pasang block model ke kedua panel; panel sendiri yang menyetel pilihan bawaannya."""
+        """Pasang block model ke semua panel; panel sendiri yang menyetel pilihan bawaannya."""
         bm = self.P.bm if self.P else None
         self.panel.pasang_model(bm)
         self.lap.pasang_model(bm)
+        # Dig block memakai Tampilan YANG SAMA (objek, bukan salinan), supaya warna blok di plan
+        # 2D dan SG yang dipakai tonase selalu ikut panel Tampilan tanpa perlu disalin ulang.
+        self.gal.pasang_model(bm, self.panel.T)
+        self.kanvas2d.pasang_model(bm, self.panel.T)
 
     def _saringan_bool(self):
         """Larik bool saringan GEOMETRIS yang sedang aktif (batas RL + sayatan).
@@ -297,6 +332,11 @@ class Jendela(QMainWindow):
         self._ms_susun = (time.perf_counter() - t) * 1000
         self.panel.lapor(int(idx.size), lg)
         self.pemutar.pasang(A, pas_kamera=pas_kamera)
+        # Plan 2D dan tonase dig block ikut aturan warna & SG panel Tampilan, jadi keduanya
+        # disegarkan di sini juga -- kalau tidak, warna di tab Dig block bisa tertinggal satu
+        # langkah dari tab Tampilan dan dua tab menunjukkan model yang berbeda.
+        self.kanvas2d.segarkan()
+        self.gal.segarkan_sg()
 
     def tampil_lapis(self) -> None:
         self.pemutar.bor_on = self.cb_bor.isChecked()

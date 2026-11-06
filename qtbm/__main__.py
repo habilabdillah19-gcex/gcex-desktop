@@ -97,6 +97,49 @@ def periksa(argv) -> int:
         hasil["ok"] = False
         hasil["galat"] = "laporan gagal: %s: %s" % (type(e).__name__, e)
 
+    # Dig block ikut diuji di sini supaya kemasan .exe terbukti membawa mesinnya dan ekspornya.
+    # Tanpa pemeriksaan ini, tab Dig block baru ketahuan gagal di tangan pemakai -- dan kalau yang
+    # gagal adalah ekspornya, yang dibawa ke lapangan adalah berkas kosong.
+    from . import galian as GA
+    from . import string_io as SIO
+
+    try:
+        _x0, _x1, _y0, _y1, _z0, z1 = k
+        tebal = float(min(bm.sz))
+        O = GA.Opsi(rl_atas=z1, rl_bawah=z1 - tebal, kadar=atribut or "", waste_on=False)
+        # poligon seluruh hamparan model: seluruh blok flitch teratas harus ikut
+        P = [(_x0, _y0), (_x1, _y0), (_x1, _y1), (_x0, _y1)]
+        H = GA.bandingkan(bm, P, T, O)
+        hasil["galian"] = {m: {"blok": v.n, "volume_m3": round(v.v, 2),
+                               "tonase_t": round(v.t, 2),
+                               "menutup_pct": round(v.cov * 100, 1)} for m, v in H.items()}
+        # Volume metode Surpac = jumlah volume blok yang titik tengahnya ada di flitch teratas.
+        # Dihitung sendiri di sini, bukan diambil dari mesinnya, supaya benar-benar memeriksa.
+        import numpy as _np
+        di_flitch = (_np.asarray(bm.z) > (z1 - tebal) + 1e-9) & (_np.asarray(bm.z) <= z1 + 1e-9)
+        vol = float((_np.asarray(bm.sx) * _np.asarray(bm.sy)
+                     * _np.asarray(bm.sz))[di_flitch].sum())
+        if abs(H["surpac"].v - vol) > max(1e-6, 1e-9 * vol):
+            hasil["ok"] = False
+            hasil["galat"] = ("volume dig block Surpac %.3f tidak sama dengan volume blok flitch "
+                              "%.3f" % (H["surpac"].v, vol))
+        if H["clip"].n == 0 or H["surpac"].n == 0:
+            hasil["ok"] = False
+            hasil["galat"] = "dig block tidak kena satu blok pun: ruang koordinat tidak cocok"
+        # ekspor: isi berkas harus benar-benar terbentuk, bukan hanya tidak melempar galat
+        S = [SIO.String(no=1, ket="ORE", tertutup=True,
+                        pts=[(p[0], p[1], z1 - tebal / 2) for p in P])]
+        t_str = SIO.teks_str(S, bm.nama or "GCEX")
+        t_dxf = SIO.teks_dxf(S)
+        hasil["ekspor"] = {"str_baris": len(t_str.splitlines()),
+                           "dxf_baris": len(t_dxf.splitlines())}
+        if not t_str.rstrip().endswith("END") or "EOF" not in t_dxf:
+            hasil["ok"] = False
+            hasil["galat"] = "ekspor string tidak lengkap (.str tanpa END atau .dxf tanpa EOF)"
+    except Exception as e:                          # noqa: BLE001 -- sengaja ditangkap dan dilaporkan
+        hasil["ok"] = False
+        hasil["galat"] = "dig block gagal: %s: %s" % (type(e).__name__, e)
+
     teks = json.dumps(hasil, indent=2, ensure_ascii=False)
     print(teks)
     if keluar:
