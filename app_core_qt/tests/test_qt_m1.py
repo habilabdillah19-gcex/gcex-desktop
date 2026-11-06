@@ -205,3 +205,26 @@ def test_license_dialog(qtbot, tmp_path, monkeypatch):
     d.key.setPlainText(_key(k, {"id": "L9", "n": "Rina", "m": "AAAA-BBBB-CCCC-DDDD", "a": ["core"]}))
     d.activate()
     assert st.check("core")["ok"] and "Lisensi aktif" in d.msg.text()
+
+
+def test_halaman_depan_buka_folder_per_ruang_kerja(qtbot, prj, monkeypatch):
+    """Halaman depan: satu tombol buka folder per ruang kerja (Core box, Singkapan, Borang, QAQC); folder terakhir ingat ruang kerjanya."""
+    from PySide6.QtWidgets import QFileDialog
+    from corex import util
+    w = _win(qtbot)
+    assert set(w.startBtns) == {"core", "oc", "form", "qa"}
+    assert not w.fbar.isVisible()  # bilah filter Core box baru tampil setelah folder dibuka
+    titles = []
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", staticmethod(lambda _p, t, _d: (titles.append(t), prj)[1]))
+    w.startBtns["qa"].click()
+    qtbot.waitUntil(lambda: bool(w.folder) and w.stack.currentWidget() is w.qaqc, timeout=8000)
+    assert "QAQC" in titles[-1] and w.bModeQa.isChecked()
+    assert util.SET.get("folder_mode")[w.folder.lower()] == "qa"
+    w.set_mode("oc")
+    assert util.SET.get("folder_mode")[w.folder.lower()] == "oc"
+    w._recent()
+    rb = [w.recentW.itemAt(i).widget() for i in range(w.recentW.count())]
+    assert any("Singkapan" in b.text() for b in rb[1:])
+    w.choose_folder()  # tombol "Buka folder" di bilah atas: ruang kerja yang sedang aktif
+    assert "singkapan" in titles[-1]
+    qtbot.waitUntil(lambda: w.stack.currentWidget() is w.outcrop, timeout=8000)

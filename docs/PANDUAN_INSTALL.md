@@ -874,6 +874,15 @@ Penangkapan galat di CI diperbaiki: GitHub hanya menampilkan 10 anotasi peringat
 - **Ukur bidang**: klik titik di sepanjang jejak vein / kekar / sesar yang melintasi permukaan tidak rata → **dip, arah dip, strike sebenarnya**, RMS dan mutu. Ekspor bidang (CSV, STR Surpac) dan awan titik (PLY).
 - Data latihan `Model_3D/Dinding_M01` (dinding sintetis fiktif, 10 foto, `Titik_RTK_Dinding_M01.csv`, `KUNCI_JAWABAN.txt`); tutorial Latihan 21; Panduan DB-Ex 6c butir 10.
 
+## 94. DB-Ex 0.42.1 — halaman depan per ruang kerja
+
+- **DB-Ex versi Qt**: halaman depan memuat empat kartu, yaitu **Core box**, **Singkapan & Model 3D**, **Borang lapangan** dan **QAQC Database**. Setiap kartu punya tombol buka folder sendiri (*Buka folder foto core box*, *Buka folder singkapan*, *Buka folder borang*, *Buka folder QAQC*); folder yang dipilih langsung terbuka di ruang kerja itu.
+- Tombol **Buka folder** di bilah atas dan *File → Buka folder…* (Ctrl+O) membuka folder untuk ruang kerja yang sedang aktif; *File → Buka folder untuk* memilih ruang kerjanya.
+- **Folder terakhir** mencatat ruang kerja terakhir tiap folder, jadi klik folder singkapan langsung kembali ke Singkapan.
+- Bilah filter (Hole ID, kedalaman, status) hanya tampil di ruang kerja **Core box**, tidak di halaman depan.
+- **DB-Ex versi HTML** (`DB-Ex-Setup`) tetap khusus Core box; halaman depannya kini menyebut bahwa Singkapan, Borang dan QAQC ada di DB-Ex versi Qt (`DB-Ex-Qt-Setup`).
+- Perbaikan: membuka folder singkapan untuk kedua kalinya dalam satu sesi tidak lagi memunculkan galat.
+
 ## 89. DB-Ex 0.42.0 — foto drone & Model 3D sampai 100 foto
 
 - **Foto drone DJI** (Mavic 3 / 3E, Phantom 4 RTK, Matrice): arah hadap (yaw gimbal), pitch gimbal, tinggi relatif / absolut dan status RTK dibaca dari metadata XMP. Jenis foto *lantai* / *dinding* terisi otomatis dari sudut gimbal.

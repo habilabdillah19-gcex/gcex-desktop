@@ -999,9 +999,10 @@ class OutcropPage(QWidget):
     def _build_desc(self) -> None:
         while self.descBox.count():
             it = self.descBox.takeAt(0)
-            if it.widget():
-                it.widget().setParent(None)
-                it.widget().deleteLater()
+            wd = it.widget()  # simpan dulu: setelah setParent(None) it.widget() bisa None (membuka folder singkapan kedua kalinya)
+            if wd:
+                wd.setParent(None)
+                wd.deleteLater()
         self.dw, self.dTag = {}, {}
         for d in self.desc_fields:
             k = d["key"]

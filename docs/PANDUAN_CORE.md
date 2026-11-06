@@ -63,7 +63,7 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
 
 ## 3. Alur kerja
 
-1. **Buka folder foto** → pilih folder berisi foto core box. Subfolder (mis. per lubang bor) ikut dibaca. Format: JPG, PNG, TIFF, BMP, WEBP.
+1. **Buka folder foto** (DB-Ex versi Qt: tombol **Buka folder foto core box** di kartu *Core box* halaman depan; kartu lain membuka folder untuk Singkapan, Borang atau QAQC) → pilih folder berisi foto core box. Subfolder (mis. per lubang bor) ikut dibaca. Format: JPG, PNG, TIFF, BMP, WEBP.
 2. Hole ID, nomor box dan kedalaman **dibaca dari nama file** bila polanya jelas (bila tidak, AI membaca papan label di foto, lihat bagian 3a), mis.:
    - `LTH-101_Box11_36.30-40.10.jpg` → LTH-101, box 11, 36,30–40,10 m
    - `DDH-07-15 BX4 10.2m-14.0m.jpg` → DDH-07-15, box 4, 10,2–14,0 m

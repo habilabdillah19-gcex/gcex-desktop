@@ -107,6 +107,8 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #start {{ background: {c['bg']}; }}
 #startCard {{ background: {c['pn']}; border: 1px solid {c['bd']}; border-top: 4px solid {c['nv']}; }}
 #startH {{ font-size: 19pt; font-weight: 800; color: {c['ink']}; }}
+#modCard {{ background: {c['pn2']}; border: 1px solid {c['bd']}; border-radius: 5px; }}
+#modH {{ font-size: 11.5pt; color: {c['ink']}; }}
 """
 
 

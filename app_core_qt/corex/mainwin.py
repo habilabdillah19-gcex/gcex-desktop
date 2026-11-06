@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         b = QLabel(f"DB<span style='color:{theme.C['sb']}'>-Ex</span>")
         b.setObjectName("brand")
         b.setTextFormat(Qt.RichText)
-        self.prj = QLabel("Interpretasi foto core box · 100% offline")
+        self.prj = QLabel("Core box · Singkapan · Borang · QAQC · 100% offline")
         self.prj.setObjectName("prj")
         self.prj.setMaximumWidth(520)
         for x in (k, b, self.prj):
@@ -110,7 +110,7 @@ class MainWindow(QMainWindow):
         self.q.picked.connect(self.goto_result)
         h.addWidget(self.q, 2)
         h.addStretch(1)
-        self.bOpen = btn("Buka folder", "Buka folder foto core box (boleh berisi subfolder per lubang bor)", pri=True)
+        self.bOpen = btn("Buka folder", "Buka folder proyek untuk ruang kerja yang sedang aktif (Core box / Singkapan / Borang / QAQC)", pri=True)
         self.bRescan = btn("↻", "Cari foto baru / yang hilang di folder")
         self.bDH = btn("Data bor", "Import Collar, Survey, Assay, Geologi (CSV / Excel) dengan header bebas")
         self.bImport = btn("JSON", "Ambil hasil dari file .json dashboard lama (dicocokkan per nama file foto)")
@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         for x in (self.bOpen, self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.pill, self.bDark):
             h.addWidget(x)
         v.addWidget(top)
-        self.bOpen.clicked.connect(self.choose_folder)
+        self.bOpen.clicked.connect(lambda: self.choose_folder())
         self.bRescan.clicked.connect(self.rescan)
         self.bExport.clicked.connect(self.export_xlsx)
         self.bImport.clicked.connect(self.import_json)
@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         self.cnt.setObjectName("note")
         f.addWidget(self.cnt)
         v.addWidget(fb)
+        fb.hide()  # bilah filter Core box tampil setelah folder dibuka
         self.ft = QTimer(self)
         self.ft.setSingleShot(True)
         self.ft.setInterval(250)
@@ -326,45 +327,93 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Escape"), self, activated=lambda: self.outcrop.escape() if self.mode == "oc" else (self.forms.escape() if self.mode == "form"
                                                                                                         else self.interp.escape()))
 
+    # ruang kerja DB-Ex: (mode, judul, isi kartu halaman depan, tombol, judul dialog pilih folder)
+    MODES = (
+        ("core", "Core box",
+         "Foto core box per lubang bor. AI membaca papan label (Hole ID, box, kedalaman) dan menilai recovery, RQD, GSI, RMR; "
+         "geologist melengkapi logging, memverifikasi, lalu ekspor Excel.",
+         "Buka folder foto core box", "Pilih folder foto core box (boleh bersubfolder per lubang bor)"),
+        ("oc", "Singkapan & Model 3D",
+         "Foto singkapan, trenching, dinding / lantai bench dari iPhone atau drone DJI. Deskripsi AI, digitasi kontak, vein &amp; struktur, "
+         "strike / dip, Model 3D sampai 100 foto, ekspor Surpac / DXF dan infografis.",
+         "Buka folder singkapan", "Pilih folder proyek singkapan (foto singkapan / drone)"),
+        ("form", "Borang lapangan",
+         "Foto / scan / PDF borang tulisan tangan (Ore Spotter, Ore ke ROM, RC Daily Drilling, RC Drill / Chiptray Log). "
+         "AI membaca, Anda periksa; ekspor Excel, CSV, SQLite, MS Access.",
+         "Buka folder borang", "Pilih folder proyek borang lapangan"),
+        ("qa", "QAQC Database",
+         "CRM, blank dan duplikat per zona / batch lab, plus integritas data bor (collar, survey, assay). "
+         "Dashboard, ekspor Excel, grafik PNG dan laporan PDF.",
+         "Buka folder QAQC", "Pilih folder proyek QAQC"),
+    )
+    MODE_NAME = {m[0]: m[1] for m in MODES}
+
     def _start_page(self) -> QWidget:
+        from PySide6.QtWidgets import QGridLayout, QScrollArea
+        sa = QScrollArea()
+        sa.setObjectName("start")
+        sa.setWidgetResizable(True)
+        sa.setFrameShape(QFrame.NoFrame)
         w = QWidget()
         w.setObjectName("start")
+        sa.setWidget(w)
         o = QVBoxLayout(w)
         o.setAlignment(Qt.AlignCenter)
         c = QFrame()
         c.setObjectName("startCard")
-        c.setMaximumWidth(860)
+        c.setMaximumWidth(940)
+        from PySide6.QtWidgets import QSizePolicy
+        c.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)  # kartu modul setinggi isinya, tidak ditarik memenuhi layar
         v = QVBoxLayout(c)
         v.setContentsMargins(28, 22, 28, 24)
         v.setSpacing(12)
-        k = QLabel("DATABASE EXCELLENCE · CORE LOGGING")
+        k = QLabel("DATABASE EXCELLENCE · DATA GEOLOGI GRADE CONTROL")
         k.setObjectName("kick")
-        hd = QLabel(f"Foto core box dibaca di komputer ini, <span style='color:{theme.C['sb']}'>bukan di cloud.</span>")
+        hd = QLabel(f"Data geologi diolah di komputer ini, <span style='color:{theme.C['sb']}'>bukan di cloud.</span>")
         hd.setObjectName("startH")
         hd.setWordWrap(True)
         hd.setTextFormat(Qt.RichText)
-        p = QLabel("Pilih folder berisi foto core box (boleh bersubfolder per lubang bor). DB-Ex membaca Hole ID, nomor box dan kedalaman dari nama file "
-                   "bila ada; AI lokal (Ollama) membaca papan label dan mendeskripsikan core. Geologist memeriksa, memperbaiki, memverifikasi, lalu export ke Excel.")
+        p = QLabel("DB-Ex mengelola foto dan data lapangan geologist: foto core box, foto singkapan / dinding pit (iPhone atau drone), "
+                   "borang tulisan tangan dan QAQC data assay. AI lokal (Ollama) membantu membaca dan mendeskripsikan; geologist memeriksa, "
+                   "memverifikasi, lalu mengekspor ke Excel, Surpac atau laporan PDF. Pilih ruang kerja di bawah, lalu buka foldernya.")
         p.setWordWrap(True)
-        steps = QHBoxLayout()
-        for t, d in (("1 · Buka folder", "Hasil kerja disimpan di subfolder <code>_GCEx_Core</code> di folder itu, jadi rekan yang membuka folder yang sama bisa melanjutkan."),
-                     ("2 · AI geoteknik", "Model vision di Ollama, tanpa internet, menilai recovery, RQD, GSI, RMR. Logging geologist &amp; editan Anda tidak pernah ditimpa."),
-                     ("3 · Verifikasi", "Periksa tiap foto, Ctrl+Enter untuk verifikasi &amp; lanjut, lalu Export Excel.")):
-            s = dialogs.box(f"<b>{t}</b><br>{d}")
-            steps.addWidget(s)
-        go = btn("Buka folder foto core box", pri=True)
-        go.clicked.connect(self.choose_folder)
+        g = QGridLayout()
+        g.setSpacing(10)
+        self.startBtns = {}
+        for i, (m, t, d, bt, _dt_) in enumerate(self.MODES):
+            f = QFrame()
+            f.setObjectName("modCard")
+            fv = QVBoxLayout(f)
+            fv.setContentsMargins(14, 12, 14, 12)
+            fv.setSpacing(8)
+            ht = QLabel(f"<b>{t}</b>")
+            ht.setObjectName("modH")
+            dd = QLabel(d)
+            dd.setWordWrap(True)
+            dd.setTextFormat(Qt.RichText)
+            dd.setObjectName("note")
+            b = btn(bt, pri=True)
+            b.clicked.connect(lambda _=False, m=m: self.choose_folder(m))
+            self.startBtns[m] = b
+            fv.addWidget(ht)
+            fv.addWidget(dd)
+            fv.addStretch(1)
+            fv.addWidget(b, 0, Qt.AlignLeft)
+            g.addWidget(f, i // 2, i % 2)
+        tip = dialogs.box("Hasil kerja disimpan di subfolder <code>_GCEx_Core</code> di folder yang dibuka, jadi rekan yang membuka folder yang sama "
+                          "bisa melanjutkan. Satu folder proyek boleh dipakai untuk beberapa ruang kerja; pindah lewat tombol "
+                          "<b>Core box · Singkapan · Borang · QAQC</b> di bilah atas.")
         self.recentW = QVBoxLayout()
         self.sAi = dialogs.box("Memeriksa AI lokal…")
         for x in (k, hd, p):
             v.addWidget(x)
-        v.addLayout(steps)
-        v.addWidget(go, 0, Qt.AlignLeft)
+        v.addLayout(g)
+        v.addWidget(tip)
         v.addLayout(self.recentW)
         v.addWidget(self.sAi)
         o.addWidget(c)
         self._recent()
-        return w
+        return sa
 
     def _recent(self) -> None:
         while self.recentW.count():
@@ -374,25 +423,31 @@ class MainWindow(QMainWindow):
                 x.setParent(None)
                 x.deleteLater()
         rec = SET.get("recent", [])
+        fm = SET.get("folder_mode", {}) or {}
         if rec:
             t = QLabel("<b>Folder terakhir</b>")
             self.recentW.addWidget(t)
         for f in rec:
-            b = QPushButton(f"{Path(f).name}    {f}")
+            m = fm.get(f.lower())
+            b = QPushButton(f"{Path(f).name}    {f}" + (f"    · {self.MODE_NAME[m]}".replace("&", "&&") if m in self.MODE_NAME else ""))
             b.setStyleSheet("text-align:left;border:0;border-bottom:1px dashed " + theme.C["bd2"])
             b.setCursor(Qt.PointingHandCursor)
-            b.clicked.connect(lambda _=False, f=f: self.open_folder(f))
+            b.clicked.connect(lambda _=False, f=f, m=m: self.open_folder(f, m))
             self.recentW.addWidget(b)
 
     def _menu(self) -> None:
         mb = self.menuBar()
         m = mb.addMenu("&File")
-        for t, fn, sc in (("Buka folder foto…", self.choose_folder, "Ctrl+O"), ("Pindai ulang", self.rescan, "F5"),
+        for t, fn, sc in (("Buka folder…", lambda: self.choose_folder(), "Ctrl+O"), ("Pindai ulang", self.rescan, "F5"),
                           ("Export Excel…", self.export_xlsx, "Ctrl+S")):
             a = QAction(t, self)
             a.setShortcut(QKeySequence(sc))
             a.triggered.connect(fn)
             m.addAction(a)
+            if sc == "Ctrl+O":
+                om = m.addMenu("Buka folder untuk")
+                for md, mt, *_r in self.MODES:
+                    om.addAction(mt + "…", lambda md=md: self.choose_folder(md))
         a = QAction("Ekspor infografis foto (PNG / PDF)…", self)
         a.setShortcut(QKeySequence("Ctrl+E"))
         a.triggered.connect(lambda: self.outcrop.export("png") if self.mode == "oc" else self.interp.export_infographic())
@@ -485,6 +540,9 @@ class MainWindow(QMainWindow):
         else:
             self.stack.setCurrentIndex(1)
         SET.set("qt_mode", mode)
+        fm = dict(SET.get("folder_mode", {}) or {})
+        fm[self.folder.lower()] = mode
+        SET.set("folder_mode", dict(list(fm.items())[-30:]))
 
     def set_zoom(self, z: float) -> None:
         """Tampilan > Ukuran tampilan: skala seluruh antarmuka (Qt menetapkannya saat aplikasi mulai -> buka ulang)."""
@@ -529,12 +587,17 @@ class MainWindow(QMainWindow):
         self.model.refresh_all()
 
     # ================================================================ proyek
-    def choose_folder(self) -> None:
-        f = QFileDialog.getExistingDirectory(self, "Pilih folder foto core box", (SET.get("recent") or [""])[0])
+    def choose_folder(self, mode: str | None = None) -> None:
+        """Buka folder untuk ruang kerja `mode` (core / oc / form / qa); tanpa mode = ruang kerja yang sedang aktif."""
+        mode = mode if mode in self.MODE_NAME else self.mode
+        title = next(x[4] for x in self.MODES if x[0] == mode)
+        f = QFileDialog.getExistingDirectory(self, title, (SET.get("recent") or [""])[0])
         if f:
-            self.open_folder(f)
+            self.open_folder(f, mode)
 
-    def open_folder(self, folder: str) -> None:
+    def open_folder(self, folder: str, mode: str | None = None) -> None:
+        if mode in self.MODE_NAME:
+            self.mode = mode
         self.sSum.setText("Membuka folder & memindai foto…")
         by = self.user()
         run_bg(api.call, "/core/open", {"folder": folder, "by": by}, ok=self._opened,
@@ -563,7 +626,10 @@ class MainWindow(QMainWindow):
         self.interp.ov.layers = None
         sc = j["scan"]
         self.load_rows(first=True)
-        self.toast(f"{sc['total']} foto" + (f" · {sc['added']} baru" if sc["added"] else "") + (f" · {sc['missing']} hilang" if sc["missing"] else ""), 3500)
+        if self.mode == "core":
+            self.toast(f"{sc['total']} foto" + (f" · {sc['added']} baru" if sc["added"] else "") + (f" · {sc['missing']} hilang" if sc["missing"] else ""), 3500)
+        else:
+            self.toast(f"Ruang kerja {self.MODE_NAME[self.mode]} · {Path(j['folder']).name}", 3000)
         if j.get("db_local"):
             say(self, "Folder ini tidak bisa ditulisi (mis. folder hanya-baca).\n\nHasil kerja disimpan di komputer ini saja:\n" + j["db"]
                 + "\n\nRekan di komputer lain tidak akan melihat hasil ini. Salin folder foto ke lokasi yang bisa ditulisi bila ingin dikerjakan bersama.")

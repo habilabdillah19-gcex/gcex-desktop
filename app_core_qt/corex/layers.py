@@ -1745,10 +1745,11 @@ class Interp:
 def _clear(lay) -> None:
     while lay.count():
         it = lay.takeAt(0)
-        if it.widget():
-            it.widget().hide()
-            it.widget().setParent(None)
-            it.widget().deleteLater()
+        wd = it.widget()
+        if wd:
+            wd.hide()
+            wd.setParent(None)
+            wd.deleteLater()
         elif it.layout():
             _clear(it.layout())
 

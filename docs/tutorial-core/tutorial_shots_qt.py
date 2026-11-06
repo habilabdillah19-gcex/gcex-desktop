@@ -69,6 +69,9 @@ def main() -> None:
     w = MainWindow("uji")
     w.resize(1500, 900)
     w.show()
+    wait(1200)
+    w.grab().save(str(IMG / "q00_awal.png"))  # halaman depan: satu tombol buka folder per ruang kerja
+    print("OK q00_awal")
     w.open_folder(str(prj))
     until(lambda: len(w.view) == 3)
 
