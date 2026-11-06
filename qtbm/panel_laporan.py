@@ -43,7 +43,9 @@ class PanelLaporan(QWidget):
         # TAMPILAN block model (BX.ui.sg / BX.ui.sgCol), bukan dari panel laporan. Jendela memasang
         # `sumber_sg` ke panel Tampilan supaya perilakunya sama; dua kotak SG terpisah akan membuat
         # orang mengisinya dua kali dan tidak tahu mana yang terhitung.
-        self.sumber_sg = None                 # callable -> (sg_tetap, nama_kolom_sg)
+        # callable -> (sg_tetap, nama_kolom_sg) atau (sg_tetap, kolom, sg_nol, sg_ganti).
+        # Bentuk 4 nilai ikut membawa perlakuan blok yang kolom SG-nya kosong / nol.
+        self.sumber_sg = None
 
         L = QVBoxLayout(self)
         L.setContentsMargins(0, 0, 0, 0)
@@ -188,7 +190,7 @@ class PanelLaporan(QWidget):
         """Tampilkan SG yang BERLAKU (dari panel Tampilan) dan matikan kotaknya di sini."""
         if not callable(self.sumber_sg):
             return
-        sg, kolom = self.sumber_sg()
+        sg, kolom = self._sg_berlaku()[:2]
         self.spn_sg.blockSignals(True)
         self.cmb_sg.blockSignals(True)
         self.spn_sg.setValue(float(sg))
@@ -202,6 +204,13 @@ class PanelLaporan(QWidget):
                                "angka yang sama — persis seperti di aplikasi HTML.")
         self.spn_sg.blockSignals(False)
         self.cmb_sg.blockSignals(False)
+
+    def _sg_berlaku(self):
+        """(sg, kolom, sg_nol, sg_ganti) dari panel Tampilan; bentuk lama (2 nilai) tetap jalan."""
+        v = tuple(self.sumber_sg())
+        if len(v) >= 4:
+            return float(v[0]), (v[1] or ""), (v[2] or ""), (v[3] or "")
+        return float(v[0]), (v[1] or ""), "", ""
 
     def _grup_berubah(self) -> None:
         g = self.cmb_grup.currentData() or "none"
@@ -224,8 +233,9 @@ class PanelLaporan(QWidget):
         P.tinggi_bench = float(self.spn_bh.value())
         P.rl_acuan = float(self.spn_br.value())
         if callable(self.sumber_sg):
-            sg, kolom = self.sumber_sg()
+            sg, kolom, nol, ganti = self._sg_berlaku()
             P.sg, P.sg_kolom = float(sg), (kolom or "")
+            P.sg_nol, P.sg_ganti = nol, ganti
         else:
             P.sg = float(self.spn_sg.value())
             P.sg_kolom = self.cmb_sg.currentData() or ""

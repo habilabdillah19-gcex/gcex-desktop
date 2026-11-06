@@ -166,6 +166,45 @@ class Tampilan:
     opasitas: float = 0.85
     sg: float = 2.6
     sg_kolom: str = ""
+    sg_nol: str = ""                     # 'zero' = blok tanpa SG sah bertonase 0 (seperti Surpac)
+    sg_ganti: str = ""                   # SG pengganti bila kolom SG kosong/nol; kosong = pakai `sg`
+
+    # ---------- SG per blok ----------
+    def sg_blok(self, v: float) -> float:
+        """SG satu blok -- salinan `bxSGv` di aplikasi HTML.
+
+        Urutannya penting dan bukan selera: tanpa kolom SG dipakai SG tunggal; dengan kolom SG,
+        nilai yang sah (> 0) dipakai apa adanya; yang tidak sah jatuh ke 0 bila pemakai memilih
+        'zero' (volume tetap terhitung, tonasenya nol -- cara Surpac), kalau tidak ke SG pengganti,
+        kalau itu pun kosong ke SG tunggal. Mengubah urutan ini membuat tonase berbeda dari
+        aplikasi HTML pada model yang kolom SG-nya berlubang -- selisih yang tidak akan dicari
+        siapa pun karena tidak ada yang merasa mengubah apa-apa.
+        """
+        if not self.sg_kolom:
+            return float(self.sg)
+        try:
+            fv = float(v)
+        except (TypeError, ValueError):
+            fv = float("nan")
+        if math.isfinite(fv) and fv > 0:
+            return fv
+        if self.sg_nol == "zero":
+            return 0.0
+        try:
+            r = float(self.sg_ganti)
+        except (TypeError, ValueError):
+            r = 0.0
+        return r if r > 0 else float(self.sg)
+
+    def sg_larik(self, bm: BlockModel) -> np.ndarray:
+        """SG untuk seluruh blok sekaligus (vektor, hasilnya sama dengan `sg_blok` per blok)."""
+        n = bm.n
+        if not self.sg_kolom or self.sg_kolom not in bm.angka:
+            return np.full(n, float(self.sg), dtype=np.float64)
+        v = np.asarray(bm.angka[self.sg_kolom], dtype=np.float64)
+        sah = np.isfinite(v) & (v > 0)
+        ganti = self.sg_blok(float("nan"))     # satu jalur yang sama dengan versi per blok
+        return np.where(sah, v, ganti)
 
     # ---------- kelas & warna ----------
     def kelas_dari(self, bm: BlockModel, atribut: str) -> List[Kelas]:

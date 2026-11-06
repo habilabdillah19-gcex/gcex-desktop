@@ -73,6 +73,8 @@ class Pilihan:
     rl: Optional[Tuple[float, float]] = None
     sg: float = 2.6
     sg_kolom: str = ""
+    sg_nol: str = ""                                 # 'zero' = blok tanpa SG sah bertonase 0
+    sg_ganti: str = ""                               # SG pengganti bila kolom SG kosong/nol
     metode: str = "presisi"                          # 'presisi' | 'surpac'
     bandingkan: bool = False                         # True = hitung kedua metode
 
@@ -87,6 +89,11 @@ class Pilihan:
             "bref": float(self.rl_acuan),
             "sg": float(self.sg),
             "sgCol": self.sg_kolom,
+            # Perlakuan blok yang kolom SG-nya kosong / nol. Mesin laporan sudah mendukungnya;
+            # kalau tidak diteruskan dari panel, tonase model yang kolom SG-nya berlubang akan
+            # berbeda dari aplikasi HTML tanpa ada yang merasa mengubah apa-apa.
+            "sgZero": self.sg_nol,
+            "sgRep": self.sg_ganti,
             # Proporsi sub-blok dipakai HANYA pada metode presisi. Di Block Model sakelar ini
             # bertipe BOOLEAN (di Drill Hole ia nama atribut) -- beda konvensi yang sudah pernah
             # membuat angka "presisi" diam-diam sama dengan angka Surpac.

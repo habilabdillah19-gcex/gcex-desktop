@@ -163,7 +163,8 @@ class Jendela(QMainWindow):
         self.panel.berubah.connect(self.susun_ulang)
         self.lap = PanelLaporan()
         self.lap.saringan_aktif = self._saringan_bool
-        self.lap.sumber_sg = lambda: (self.panel.T.sg, self.panel.T.sg_kolom)
+        self.lap.sumber_sg = lambda: (self.panel.T.sg, self.panel.T.sg_kolom,
+                                      self.panel.T.sg_nol, self.panel.T.sg_ganti)
         self.tab.addTab(self.panel, "Tampilan")
         self.tab.addTab(self.lap, "Laporan")
         L.addWidget(self.tab, 1)
