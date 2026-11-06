@@ -2518,3 +2518,85 @@ kembali tampilannya tanpa diminta.
   Penyimpanan ke folder proyek belum ada, sehingga menutup jendela benar-benar menghilangkan
   string; selama penyimpanan itu belum dibuat, setidaknya pekerjaannya tidak hilang tanpa
   pemakai diberi tahu.
+
+
+## 93. Penampil Qt — string dig block tersimpan di folder proyek
+
+### Cacat yang ditutup
+
+Sebelum ini, string dig block di penampil Qt hanya ada selama jendela terbuka. Menutup aplikasi
+menghilangkan semuanya, tanpa peringatan apa pun. Seorang junior yang mendigit 20 dig block lalu
+menutup penampil kehilangan satu shift pekerjaan.
+
+### Keputusan: Qt TIDAK menulis ke `gcex_project.json`
+
+`gcex_project.json` dijaga protokol yang cukup rumit di aplikasi HTML: berkas kunci
+(`gcex.lock`) yang menyatakan siapa sedang membuka proyek, nomor revisi `rev` untuk mendeteksi
+konflik antar pemakai, cadangan otomatis ke `backup/` dan `backup/harian/`, serta hash isi. Kalau
+penampil Qt — yang masih berstatus percobaan — menulis ke situ dan satu bagian protokol itu
+terlewat, yang rusak adalah berkas proyek yang sedang dipakai orang lain. Harga kesalahan itu
+jauh lebih besar daripada manfaat menulis langsung.
+
+Karena itu pembagiannya:
+
+| Berkas | Perlakuan penampil Qt |
+| --- | --- |
+| `gcex_project.json` | **hanya dibaca** — untuk mengambil string yang dibuat aplikasi HTML. Tidak pernah ditulis, tidak pernah dikunci. |
+| `gcex_dig_qt.json` | **berkas Qt sendiri**, di folder proyek yang sama. Di sinilah string Qt disimpan. |
+
+**Akibat yang harus diketahui:** string yang dibuat di Qt **belum** otomatis muncul di aplikasi
+HTML. Untuk itu aplikasi HTML perlu diajari membaca berkas pendamping ini, dan itu perubahan pada
+aplikasi produksi yang menunggu keputusan pemilik.
+
+### Yang bisa dilakukan di panel
+
+- **Simpan ke folder proyek** — menulis `gcex_dig_qt.json`. Simpan juga berjalan **otomatis**
+  setiap kali daftar string berubah dan saat jendela ditutup.
+- **Ambil string dari aplikasi HTML** — menambahkan string dari `gcex_project.json`. Sengaja
+  **menambah, bukan mengganti**: mengganti berarti membuang pekerjaan yang mungkin belum
+  tersimpan. Nomor string yang sudah dipakai dilewati supaya tidak ada dua string bernomor sama.
+- Peringatan di panel hanya muncul bila memang ada yang bisa hilang: tanpa folder proyek, atau
+  ada perubahan yang belum tersimpan.
+
+### Dua hal yang bisa salah TANPA memunculkan galat — dan cara keduanya dijaga
+
+**1. Offset koordinat.** Aplikasi HTML memakai dua ruang koordinat: block model memakai koordinat
+penuh, tetapi titik hasil digitasi (`DG.S[].pts`) tersimpan **relatif** terhadap `offX`/`offY`.
+Offset itu dihitung dari **koordinat collar** — minimum easting / northing, dibulatkan ke bawah
+ke ribuan; bila tidak ada collar dipakai `anch` dari berkas data; bila itu pun tidak ada, nol.
+Salah hitung satu kali saja memindahkan poligon ratusan kilometer: berkasnya tetap sah, gambarnya
+saja kosong. `Proyek.offset()` menyalin rumus itu, dan diuji terhadap `offX`/`offY` aplikasi
+sungguhan (data latihan: 504000 / 9011000 dari 610 collar), termasuk kasus tanpa collar, kasus
+`anch` dikalahkan collar, dan pembulatan **ke bawah** untuk koordinat negatif (−1234 → −2000,
+bukan −1000). Offset yang dipakai saat membaca adalah yang **tersimpan di berkas**, bukan yang
+dihitung ulang — sehingga bila data bor proyek berubah dan offsetnya ikut berubah, string lama
+tetap kembali ke tempat yang benar.
+
+**2. Hash isi berkas.** Berkas proyek GC-Ex memakai hash `FP.hash` untuk memeriksa keutuhan isi.
+Salinan Python-nya harus sama persis, kalau tidak berkas yang ditulis Qt dianggap rusak oleh
+pihak mana pun yang memeriksanya. Hal yang mudah terlewat: JavaScript bekerja pada **satuan kode
+UTF-16** (`charCodeAt`, `s.length`), jadi satu emoji di keterangan string menjadi **dua** satuan
+kode. Salinan Python menghitungnya sama, dan diuji terhadap `FP.hash` asli untuk delapan teks
+termasuk emoji, tab, baris baru dan tanda kutip — semuanya cocok.
+
+### Yang diuji
+
+`tools/uji/paritas_simpan_galian.py` membuka aplikasi Block Model sungguhan dan membandingkan:
+`FP.hash` (8 teks), `offX`/`offY`, serta pembacaan berkas `gcex_project.json` **asli** yang dibuat
+`FP.pack` + `SA.collectWork` di dalam aplikasi — bukan berkas tiruan, sebab berkas tiruan hanya
+membuktikan Python cocok dengan dugaan Python. Ditambah uji bolak-balik berkas Qt, dan satu
+pemeriksaan tegas bahwa `gcex_project.json` **tidak berubah satu byte pun** setelah Qt menulis.
+Hasil JS dibekukan ke `qtbm/tests/data/simpan_galian_js.json` (2 KB) untuk CI.
+
+Perilaku saat berkas rusak juga diuji dan sengaja dipilih: berkas string Qt yang rusak
+**tidak dihapus dan tidak ditimpa** — pemakai mungkin masih bisa menyelamatkan isinya sendiri;
+yang terjadi hanya tidak dimuat, dan itu dikatakan. Sebaliknya, `gcex_project.json` yang rusak
+tidak melempar galat sama sekali: gagal membaca pekerjaan orang lain tidak boleh menghalangi
+pemakai memakai penampilnya.
+
+Penulisan memakai berkas sementara lalu ganti nama. Itu bukan kehati-hatian berlebihan: kalau
+aplikasi mati di tengah penulisan langsung, yang tertinggal adalah berkas separuh jadi — dan
+string yang hilang justru pekerjaan yang hendak diselamatkan berkas ini.
+
+Uji mandiri `.exe` di CI ikut menulis lalu membaca string dan memeriksa koordinatnya kembali
+**tepat**, serta memeriksa hash-nya cocok dengan `FP.hash`. **216 uji otomatis** di `qtbm/tests`.

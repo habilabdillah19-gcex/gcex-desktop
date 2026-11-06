@@ -242,12 +242,13 @@ class Jendela(QMainWindow):
         pernah melewatinya), dan ia memang harus menghentikan penutupan sampai dijawab.
         """
         try:
+            self.gal.simpan_otomatis()              # dengan folder proyek, ini menutup masalahnya
             if self.gal.ada_belum_diekspor():
                 j = QMessageBox.warning(
                     self, "String belum diekspor",
-                    "Ada %d string dig block yang belum diekspor.\n\nPenyimpanan ke folder "
-                    "proyek belum ada, jadi string ini akan HILANG kalau jendela ditutup "
-                    "sekarang. Ekspor ke DXF / STR dulu?" % len(self.gal.strings),
+                    "Ada %d string dig block yang belum tersimpan.\n\nTanpa folder proyek "
+                    "yang terbuka, string ini akan HILANG kalau jendela ditutup sekarang. "
+                    "Buka folder proyek, atau ekspor ke DXF / STR dulu?" % len(self.gal.strings),
                     QMessageBox.Cancel | QMessageBox.Discard, QMessageBox.Cancel)
                 if j == QMessageBox.Cancel:
                     e.ignore()
@@ -281,6 +282,10 @@ class Jendela(QMainWindow):
             return
         self.lbl.setText(self.P.ringkas())
         self.isi_atribut()
+        # String dig block yang pernah disimpan di folder ini dimuat kembali. Offset proyek
+        # (offX/offY) diambil dari data bor proyek -- lihat Proyek.offset(); titik digitasi
+        # aplikasi HTML relatif terhadapnya, jadi tanpa itu poligonnya pindah ratusan kilometer.
+        self.gal.pasang_folder(self.P.folder, self.P.offset())
         self.susun_ulang(pas_kamera=True)
 
     def buka_bm(self) -> None:

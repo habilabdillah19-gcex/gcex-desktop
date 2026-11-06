@@ -136,6 +136,26 @@ def periksa(argv) -> int:
         if not t_str.rstrip().endswith("END") or "EOF" not in t_dxf:
             hasil["ok"] = False
             hasil["galat"] = "ekspor string tidak lengkap (.str tanpa END atau .dxf tanpa EOF)"
+        # Penyimpanan ke folder proyek: tulis lalu baca lagi, dan koordinatnya harus kembali
+        # TEPAT. Ini yang menyelamatkan pekerjaan satu shift, jadi tidak cukup "tidak melempar".
+        import tempfile as _tf
+
+        from . import simpan_galian as SG
+
+        with _tf.TemporaryDirectory() as _td:
+            SG.tulis(_td, S, 504000.0, 9011000.0, nama_proyek="uji kemasan")
+            S2, _meta = SG.baca(_td)
+            cocok = (len(S2) == len(S)
+                     and all(abs(a - b) <= 1e-9
+                             for p, q in zip(S[0].pts, S2[0].pts) for a, b in zip(p, q)))
+            hasil["simpan"] = {"string": len(S2), "hash_kosong": SG.hash_fp(""), "cocok": cocok}
+            if not cocok:
+                hasil["ok"] = False
+                hasil["galat"] = "simpan lalu baca string tidak memberi koordinat yang sama"
+            # hash harus sama dengan FP.hash aplikasi HTML; nilai untuk teks kosong tetap
+            if SG.hash_fp("") != "811c9dc5-1000193-0":
+                hasil["ok"] = False
+                hasil["galat"] = "hash berkas berbeda dari FP.hash aplikasi HTML"
     except Exception as e:                          # noqa: BLE001 -- sengaja ditangkap dan dilaporkan
         hasil["ok"] = False
         hasil["galat"] = "dig block gagal: %s: %s" % (type(e).__name__, e)

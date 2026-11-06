@@ -349,3 +349,96 @@ def test_kanvas_gambar_tidak_melempar(app):
     K.titik = [(500010.0, 9000010.0), (500020.0, 9000010.0), (500020.0, 9000020.0)]
     K.digit_on = True
     K.grab()
+
+
+# ---------------------------------------------------------------- folder proyek
+
+def test_panel_simpan_dan_muat_dari_folder(app, tmp_path):
+    P = PanelGalian()
+    bm = _bm()
+    T = TB.ui_awal(bm)
+    P.pasang_model(bm, T)
+    P.pasang_folder(tmp_path, (500000.0, 9000000.0))
+    z = GA.zs_flitch(GA.bench(P.spn_atas.value(), P.spn_bawah.value()))
+    P.strings.append(SIO.String(no=1, ket="ORE", tertutup=True,
+                                pts=[(500010.0, 9000010.0, z), (500030.0, 9000010.0, z),
+                                     (500030.0, 9000030.0, z)]))
+    P._tersimpan = False
+    P.simpan_proyek()
+    assert P._tersimpan is True
+
+    Q = PanelGalian()
+    Q.pasang_model(bm, T)
+    Q.pasang_folder(tmp_path, (500000.0, 9000000.0))
+    assert len(Q.strings) == 1
+    assert Q.strings[0].pts[0] == pytest.approx((500010.0, 9000010.0, z))
+
+
+def test_panel_simpan_tanpa_folder_memberi_pesan(app):
+    P = PanelGalian()
+    P.simpan_proyek()
+    assert "folder proyek" in P.pesan.text()
+
+
+def test_peringatan_hilang_bila_folder_proyek_ada(app, tmp_path):
+    """Dengan folder proyek, string tersimpan otomatis -- tidak ada yang hilang, tidak ada alarm."""
+    P = PanelGalian()
+    bm = _bm()
+    P.pasang_model(bm, TB.ui_awal(bm))
+    P.pasang_folder(tmp_path, (500000.0, 9000000.0))
+    P.strings.append(SIO.String(no=1, pts=[(500010.0, 9000010.0, 101.0),
+                                           (500030.0, 9000010.0, 101.0),
+                                           (500030.0, 9000030.0, 101.0)]))
+    P.simpan_otomatis()
+    assert P.ada_belum_diekspor() is False
+
+
+def test_peringatan_muncul_tanpa_folder_proyek(app):
+    P = PanelGalian()
+    bm = _bm()
+    P.pasang_model(bm, TB.ui_awal(bm))
+    P.strings.append(SIO.String(no=1, pts=[(1.0, 1.0, 1.0), (2.0, 1.0, 1.0), (2.0, 2.0, 1.0)]))
+    P.hitung_semua()
+    assert P.ada_belum_diekspor() is True
+    assert "HILANG" in P.peringatan_simpan.text()
+
+
+def test_ambil_dari_html_menambah_bukan_mengganti(app, tmp_path):
+    """Mengganti daftar akan membuang pekerjaan yang mungkin belum tersimpan."""
+    from qtbm import simpan_galian as SG
+    body = '{"work":{"dg":[{"no":1,"d":"HTML","closed":true,"vis":true,' \
+           '"pts":[[10,20,101],[30,20,101],[30,40,101]]}]},"dataHash":"x"}'
+    teks, _h = SG.pack({"format": "gcex-project", "version": 2}, body)
+    (tmp_path / SG.BERKAS_PROYEK).write_text(teks, encoding="utf-8")
+
+    P = PanelGalian()
+    bm = _bm()
+    P.pasang_model(bm, TB.ui_awal(bm))
+    P.pasang_folder(tmp_path, (500000.0, 9000000.0))
+    P.strings.append(SIO.String(no=1, ket="QT", tertutup=True,
+                                pts=[(500010.0, 9000010.0, 101.0), (500030.0, 9000010.0, 101.0),
+                                     (500030.0, 9000030.0, 101.0)]))
+    P.ambil_dari_html()
+    assert len(P.strings) == 2
+    assert {s.ket for s in P.strings} == {"QT", "HTML"}
+    # nomor tidak boleh kembar
+    assert len({s.no for s in P.strings}) == 2
+
+
+def test_ambil_dari_html_tanpa_folder_memberi_pesan(app):
+    P = PanelGalian()
+    P.ambil_dari_html()
+    assert "folder proyek" in P.pesan.text()
+
+
+def test_berkas_rusak_tidak_ditimpa(app, tmp_path):
+    """Berkas string Qt yang rusak dibiarkan apa adanya: pemakai mungkin masih bisa menyelamatkannya."""
+    from qtbm import simpan_galian as SG
+    rusak = '{"format":"gcex-dig-qt","hash":"salah","body":{"dg":[]}}'
+    (tmp_path / SG.BERKAS_QT).write_text(rusak, encoding="utf-8")
+    P = PanelGalian()
+    bm = _bm()
+    P.pasang_model(bm, TB.ui_awal(bm))
+    P.pasang_folder(tmp_path, (0.0, 0.0))
+    assert "tidak bisa dibaca" in P.pesan.text()
+    assert (tmp_path / SG.BERKAS_QT).read_text(encoding="utf-8") == rusak

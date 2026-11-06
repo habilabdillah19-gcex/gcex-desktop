@@ -390,6 +390,36 @@ class Proyek:
                        dtype=np.float64)
         return A
 
+    def offset(self) -> Tuple[float, float]:
+        """(offX, offY) -- salinan perhitungan `offX`/`offY` di aplikasi HTML.
+
+        INI PENTING DAN MUDAH SALAH. Aplikasi HTML memakai DUA ruang koordinat: block model
+        memakai koordinat penuh, tetapi titik hasil digitasi (`DG.S[].pts`) tersimpan RELATIF
+        terhadap offset ini. Jadi string yang dibaca dari berkas proyek harus ditambah offset
+        sebelum bisa dipakai bersama block model, dan dikurangi lagi sebelum ditulis kembali.
+
+        Tertukar atau salah hitung satu kali saja, poligonnya pindah ratusan kilometer TANPA
+        memunculkan galat apa pun -- berkasnya tetap sah, gambarnya saja yang kosong.
+
+        Rumusnya (lihat `var offX=...` di app/index.html): minimum easting / northing collar,
+        dibulatkan ke bawah ke ribuan. Bila tidak ada collar, dipakai `anch` dari berkas data
+        (kotak pembatas data spasial); bila itu pun tidak ada, nol.
+        """
+        collars = self.data.get("collars") or []
+        xs = [float(c[1]) for c in collars if c and len(c) >= 3 and c[1] is not None]
+        ys = [float(c[2]) for c in collars if c and len(c) >= 3 and c[2] is not None]
+        if xs and ys:
+            min_x, min_y = min(xs), min(ys)
+        else:
+            a = self.data.get("anch") or None
+            if a and len(a) >= 3:
+                min_x, min_y = float(a[0]), float(a[2])
+            else:
+                min_x = min_y = float("inf")
+        if not (math.isfinite(min_x) and math.isfinite(min_y)):
+            min_x = min_y = 0.0
+        return (math.floor(min_x / 1000.0) * 1000.0, math.floor(min_y / 1000.0) * 1000.0)
+
     def asal_bm(self) -> str:
         """Nama berkas sumber block model yang dicatat proyek (bila ada)."""
         s = (self.kerja or {}).get("src") or {}

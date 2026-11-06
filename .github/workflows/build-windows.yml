@@ -452,6 +452,7 @@ jobs:
             --hidden-import qtbm.laporan_bm --hidden-import qtbm.panel_laporan `
             --hidden-import qtbm.galian --hidden-import qtbm.string_io `
             --hidden-import qtbm.panel_galian --hidden-import qtbm.kanvas2d `
+            --hidden-import qtbm.simpan_galian `
             --distpath dist-qtbm --workpath build-qtbm penampil_qt.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller penampil 3D Qt gagal" }
           $d = "dist-qtbm/GC-Ex-BlockModel-3D"
@@ -506,6 +507,13 @@ jobs:
           if (-not $j.ekspor -or $j.ekspor.str_baris -lt 5 -or $j.ekspor.dxf_baris -lt 20) {
             throw "ekspor string terlalu pendek: berkas kosong"
           }
+          # Penyimpanan string ke folder proyek: inilah yang menyelamatkan pekerjaan satu shift.
+          # Kalau hash-nya berbeda dari FP.hash aplikasi HTML, berkasnya dianggap rusak pihak lain.
+          if (-not $j.simpan -or -not $j.simpan.cocok) { throw "simpan lalu baca string gagal" }
+          if ($j.simpan.hash_kosong -ne '811c9dc5-1000193-0') {
+            throw ("hash berkas berbeda dari FP.hash aplikasi HTML: " + $j.simpan.hash_kosong)
+          }
+          Write-Host ("OK simpan string: " + $j.simpan.string + " string bolak-balik, hash cocok")
           Write-Host ("OK dig block: " + $j.galian.clip.tonase_t + " t (presisi), " + $j.galian.surpac.tonase_t + " t (Surpac); ekspor .str " + $j.ekspor.str_baris + " baris, .dxf " + $j.ekspor.dxf_baris + " baris")
           if ($j.blok_digambar -ne $j.blok) { throw "jumlah blok yang disusun tidak sama dengan jumlah blok" }
           if ($j.koordinat_adegan_maks -gt 1000) { throw ("koordinat adegan terlalu besar: " + $j.koordinat_adegan_maks) }

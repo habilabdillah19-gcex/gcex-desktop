@@ -13,6 +13,7 @@ membuat uji otomatis (yang berjalan tanpa layar) menggantung selamanya, dan pern
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Signal
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDoubleS
                                QTableWidgetItem, QVBoxLayout, QWidget)
 
 from . import galian as GA
+from . import simpan_galian as SG
 from . import string_io as SIO
 from . import tampil_bm as TB
 from .proyek import BlockModel
@@ -39,7 +41,10 @@ class PanelGalian(QWidget):
         self.kanvas = None                            # Kanvas2D, dipasang dari jendela
         self.sumber_sg: Optional[Callable] = None     # -> (sg, kolom, sg_nol, sg_ganti)
         self.strings: List[SIO.String] = []
+        self.folder = None                            # folder proyek, bila ada
+        self.offset = (0.0, 0.0)                      # offX/offY proyek, untuk berkas proyek
         self._sudah_diekspor = False
+        self._tersimpan = True                        # belum ada apa pun yang perlu disimpan
         self._hasil = None
 
         L = QVBoxLayout(self)
@@ -153,6 +158,12 @@ class PanelGalian(QWidget):
         self.tabel.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabel.setMinimumHeight(120)
         v5.addWidget(self.tabel)
+        b6 = QHBoxLayout()
+        self.btn_simpan = QPushButton("Simpan ke folder proyek")
+        self.btn_muat_html = QPushButton("Ambil string dari aplikasi HTML")
+        for b in (self.btn_simpan, self.btn_muat_html):
+            b6.addWidget(b)
+        v5.addLayout(b6)
         b5 = QHBoxLayout()
         self.btn_hitung = QPushButton("Hitung ulang")
         self.btn_hapus = QPushButton("Hapus terpilih")
@@ -167,9 +178,7 @@ class PanelGalian(QWidget):
         self.pesan.setWordWrap(True)
         self.pesan.setStyleSheet("color:#ffd92f")
         L.addWidget(self.pesan)
-        self.peringatan_simpan = QLabel(
-            "⚠ String hanya ada selama jendela terbuka. Belum ada penyimpanan ke folder proyek — "
-            "ekspor ke DXF / STR dulu sebelum menutup aplikasi, atau pekerjaannya hilang.")
+        self.peringatan_simpan = QLabel("")
         self.peringatan_simpan.setWordWrap(True)
         self.peringatan_simpan.setStyleSheet("color:#fc8d59")
         self.peringatan_simpan.setVisible(False)
@@ -191,6 +200,8 @@ class PanelGalian(QWidget):
         self.btn_batal.clicked.connect(self.batal)
         self.btn_hitung.clicked.connect(self.hitung_semua)
         self.btn_hapus.clicked.connect(self.hapus_terpilih)
+        self.btn_simpan.clicked.connect(self.simpan_proyek)
+        self.btn_muat_html.clicked.connect(self.ambil_dari_html)
         self.btn_dxf.clicked.connect(lambda: self.ekspor("dxf"))
         self.btn_str.clicked.connect(lambda: self.ekspor("str"))
         self.cb_snap.toggled.connect(self._snap_berubah)
@@ -342,12 +353,14 @@ class PanelGalian(QWidget):
                         "#f08c00", "#5c940d"][len(self.strings) % 8])
         self.strings.append(s)
         self._sudah_diekspor = False
+        self._tersimpan = False
         self.spn_no.setValue(int(self.spn_no.value()) + 1)
         if self.kanvas is not None:
             self.kanvas.strings = self.strings
             self.kanvas.titik = []
             self.kanvas.update()
         self.pesan.setText("")
+        self.simpan_otomatis()
         self.hitung_semua()
         self.berubah.emit()
 
@@ -383,11 +396,32 @@ class PanelGalian(QWidget):
     # ---------------------------------------------------------------- hitung
 
     def ada_belum_diekspor(self) -> bool:
-        """True bila ada string yang akan hilang kalau jendela ditutup sekarang."""
-        return bool(self.strings) and not self._sudah_diekspor
+        """True bila ada string yang akan HILANG kalau jendela ditutup sekarang.
+
+        Dengan folder proyek terbuka, string tersimpan otomatis ke `gcex_dig_qt.json`, jadi tidak
+        ada yang hilang. Tanpa folder proyek, tidak ada tempat menyimpan selain ekspor manual --
+        dan di situlah peringatan perlu muncul.
+        """
+        if not self.strings:
+            return False
+        if self.folder is not None:
+            return not self._tersimpan
+        return not self._sudah_diekspor
+
+    def _status_simpan(self) -> None:
+        self.peringatan_simpan.setVisible(self.ada_belum_diekspor())
+        if not self.strings:
+            return
+        if self.folder is None:
+            self.peringatan_simpan.setText(
+                "⚠ Belum ada folder proyek yang dibuka, jadi string tidak bisa disimpan dan akan "
+                "HILANG saat jendela ditutup. Buka folder proyek, atau ekspor ke DXF / STR dulu.")
+        elif not self._tersimpan:
+            self.peringatan_simpan.setText(
+                "⚠ Ada perubahan yang belum tersimpan ke folder proyek.")
 
     def hitung_semua(self, *a) -> None:
-        self.peringatan_simpan.setVisible(self.ada_belum_diekspor())
+        self._status_simpan()
         self.tabel.setRowCount(0)
         self.catatan.setText("")
         if self.bm is None or not self.bm.n or not self.strings:
@@ -449,10 +483,107 @@ class PanelGalian(QWidget):
         for r in baris:
             if 0 <= r < len(self.strings):
                 self.strings.pop(r)
+        self._tersimpan = False
         if self.kanvas is not None:
             self.kanvas.strings = self.strings
             self.kanvas.update()
         self.pesan.setText("")
+        self.simpan_otomatis()
+        self.hitung_semua()
+        self.berubah.emit()
+
+    # ---------------------------------------------------------------- folder proyek
+
+    def pasang_folder(self, folder, offset=(0.0, 0.0)) -> None:
+        """Folder proyek dibuka: muat string Qt yang pernah disimpan di situ."""
+        self.folder = Path(folder) if folder else None
+        self.offset = (float(offset[0]), float(offset[1]))
+        if self.folder is None:
+            self._status_simpan()
+            return
+        try:
+            S, meta = SG.baca(self.folder)
+        except Exception as e:                      # noqa: BLE001
+            # berkas rusak TIDAK dihapus dan TIDAK ditimpa: pemakai mungkin masih bisa
+            # menyelamatkan isinya sendiri. Yang terjadi hanya: tidak dimuat, dan dikatakan.
+            self.pesan.setText("Berkas string Qt di folder proyek tidak bisa dibaca (%s). "
+                               "Berkasnya dibiarkan apa adanya, tidak ditimpa." % e)
+            self._status_simpan()
+            return
+        if S:
+            self.strings = S
+            self._tersimpan = True
+            if self.kanvas is not None:
+                self.kanvas.strings = self.strings
+            n = max([x.no for x in S] + [0]) + 1
+            self.spn_no.setValue(n)
+            self.pesan.setText("%d string dimuat dari folder proyek (%s)."
+                               % (len(S), meta.get("savedAt") or "waktu tidak tercatat"))
+        self.hitung_semua()
+        self.berubah.emit()
+
+    def simpan_proyek(self) -> None:
+        if self.folder is None:
+            self.pesan.setText("Belum ada folder proyek yang dibuka, jadi tidak ada tempat "
+                               "menyimpan. Buka folder proyek dulu, atau ekspor ke DXF / STR.")
+            return
+        try:
+            p = SG.tulis(self.folder, self.strings, self.offset[0], self.offset[1],
+                         nama_proyek=(self.bm.nama if self.bm else "") or "")
+        except Exception as e:                      # noqa: BLE001
+            self.pesan.setText("Gagal menyimpan ke folder proyek: %s" % e)
+            return
+        self._tersimpan = True
+        self._status_simpan()
+        self.pesan.setText("Tersimpan: %s (%d string). Berkas gcex_project.json aplikasi HTML "
+                           "tidak disentuh." % (p.name, len(self.strings)))
+
+    def simpan_otomatis(self) -> None:
+        """Dipanggil setiap kali daftar string berubah; diam saja bila tidak ada folder proyek."""
+        if self.folder is None or self._tersimpan:
+            return
+        try:
+            SG.tulis(self.folder, self.strings, self.offset[0], self.offset[1],
+                     nama_proyek=(self.bm.nama if self.bm else "") or "")
+            self._tersimpan = True
+            self._status_simpan()
+        except Exception as e:                      # noqa: BLE001
+            self.pesan.setText("Simpan otomatis gagal: %s — pakai tombol Simpan, atau ekspor." % e)
+
+    def ambil_dari_html(self) -> None:
+        """Tambahkan string dig block yang dibuat aplikasi HTML (dari gcex_project.json).
+
+        HANYA BACA. Yang sudah ada di daftar tidak diganti, melainkan ditambahi -- mengganti
+        berarti membuang pekerjaan yang mungkin belum diekspor. Nomor string yang sudah dipakai
+        dilewati, supaya tidak ada dua string bernomor sama di satu daftar.
+        """
+        if self.folder is None:
+            self.pesan.setText("Belum ada folder proyek yang dibuka.")
+            return
+        S = SG.baca_string_html(self.folder, self.offset[0], self.offset[1])
+        if not S:
+            self.pesan.setText("Tidak ada string dig block di gcex_project.json "
+                               "(atau berkasnya belum ada di folder ini).")
+            return
+        ada = {(x.no, tuple(x.pts)) for x in self.strings}
+        tambah = [x for x in S if (x.no, tuple(x.pts)) not in ada]
+        if not tambah:
+            self.pesan.setText("Semua %d string dari aplikasi HTML sudah ada di daftar." % len(S))
+            return
+        nomor = {x.no for x in self.strings}
+        berikut = max(nomor) + 1 if nomor else 1
+        for x in tambah:
+            if x.no in nomor:
+                x.no = berikut
+                berikut += 1
+            nomor.add(x.no)
+            self.strings.append(x)
+        self._tersimpan = False
+        if self.kanvas is not None:
+            self.kanvas.strings = self.strings
+        self.spn_no.setValue(max(nomor) + 1)
+        self.pesan.setText("%d string dari aplikasi HTML ditambahkan (dari %d yang ada di "
+                           "gcex_project.json)." % (len(tambah), len(S)))
         self.hitung_semua()
         self.berubah.emit()
 
