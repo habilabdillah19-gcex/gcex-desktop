@@ -842,7 +842,11 @@ class FormsPage(QWidget):
         t = (f"<br>{p['tokens']} token jawaban" + (f" · {p['tok_s']:g} token/dtk" if p.get("tok_s") else "")
              + f" · gambar {p['px']} px · konteks {p['num_ctx']}")
         g = p.get("gpu")
-        if g is not None and g < 100:
+        if g == 0:  # tanpa GPU NVIDIA / AMD yang didukung Ollama (mis. Intel Iris Xe): seluruhnya di CPU
+            t += (f"<br><span style='color:{theme.C['half']}'><b>AI berjalan di CPU</b> (kartu grafis tidak dipakai Ollama). "
+                  "Supaya lebih cepat: pilih <b>Cepat</b>, pakai model kecil <b>qwen3-vl:2b</b>, tutup aplikasi lain agar RAM lega, "
+                  "atau arahkan alamat Ollama (dialog AI) ke komputer lain yang punya GPU NVIDIA.</span>")
+        elif g is not None and g < 100:
             t += (f"<br><span style='color:{theme.C['er']}'><b>Model hanya {g:g}% di GPU, sisanya di CPU — inilah yang membuat lambat.</b> "
                   "Tutup aplikasi lain yang memakai GPU (browser, Leapfrog, Surpac 3D), pilih kecepatan <b>Cepat</b>, atau pakai model "
                   "yang lebih kecil (mis. qwen3-vl:2b) di dialog AI.</span>")

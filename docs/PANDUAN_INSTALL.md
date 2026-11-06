@@ -3235,3 +3235,11 @@ memperbaikinya berarti memecah sel ke level octree yang lebih halus, dan itu pek
   - pakai model yang lebih kecil, mis. `qwen3-vl:2b` (`ollama pull qwen3-vl:2b`, lalu pilih di dialog AI).
 - Cek manual di Command Prompt saat AI sedang membaca: `ollama ps` — kolom **PROCESSOR** harus `100% GPU`.
 
+## 106. DB-Ex 0.42.6 — Borang di laptop tanpa GPU NVIDIA
+
+Ollama hanya memakai kartu grafis NVIDIA (atau AMD tertentu). Pada laptop dengan **Intel Iris Xe**, AI seluruhnya berjalan di CPU, dan membaca satu lembar tulisan tangan bisa memakan beberapa menit. Panel di bawah scan kini menyebut hal itu dan menyarankan, dari yang paling berpengaruh:
+
+1. **Pakai komputer lain yang punya GPU NVIDIA sebagai "server" AI.** Di komputer itu pasang Ollama, set variabel lingkungan `OLLAMA_HOST=0.0.0.0`, lalu `ollama pull qwen3-vl:4b`. Di DB-Ex laptop: dialog AI → alamat Ollama diisi `http://<IP komputer itu>:11434`. Foto tetap di laptop; hanya gambar borang yang dikirim lewat jaringan kantor (tidak ke internet).
+2. **Model kecil** `qwen3-vl:2b` (`ollama pull qwen3-vl:2b`, pilih di dialog AI): kira-kira 2x lebih cepat, sedikit lebih sering keliru membaca tulisan jelek — periksa sel kuning.
+3. Kecepatan **Cepat** (gambar 1280 px) dan tutup aplikasi lain supaya RAM 8 GB tidak penuh.
+
