@@ -3012,3 +3012,31 @@ Repo ini tidak punya lock file, sehingga `npm install` bebas memilih versi paket
 antar build. Untuk aplikasi yang diedarkan sebagai installer berlisensi, itu berarti dua build
 dari commit yang sama bisa mengemas versi dependensi yang berbeda. Belum diubah di sini karena
 menambahkannya mengubah versi yang terkemas, dan itu keputusan pemilik.
+
+
+## 98. Drill Hole 0.24.36 — cap versi, dan ralat atas keputusan sebelumnya
+
+Pada bagian 94, cap versi di `app-dh/index.html` dibetulkan dari 0.24.34 menjadi 0.24.35 **tanpa**
+menaikkan versi Drill Hole, dengan alasan yang berubah hanya cap yang menyusul nomor yang sudah
+diumumkan di rilis sebelumnya — bukan isi aplikasi.
+
+**Alasan itu keliru**, dan akibatnya tepat jenis masalah yang pembetulan cap itu sendiri hendak
+hilangkan:
+
+| | Nama berkas installer | Aplikasi melaporkan dirinya |
+| --- | --- | --- |
+| Release sebelum pembetulan | `GC-Ex-Drillhole-Setup-0.24.35.exe` | 0.24.34 |
+| Build setelah pembetulan | `GC-Ex-Drillhole-Setup-0.24.35.exe` | 0.24.35 |
+
+Dua installer yang **isinya berbeda** dengan **nama berkas dan nomor versi yang sama persis**, dan
+yang kedua menimpa yang pertama di Release. Kalau nanti ada yang melapor "saya pakai 0.24.35",
+tetap tidak bisa dipastikan ia memakai yang mana — persis kerancuan yang hendak dihilangkan.
+
+Aturan repo juga lebih tegas daripada penalaran itu: *"Naikkan versi aplikasi yang **isi
+installernya** berubah."* `app-dh/index.html` adalah isi installer Drill Hole, dan ia berubah.
+Tidak ada pengecualian untuk "hanya cap versi".
+
+**Diperbaiki:** Drill Hole naik ke **0.24.36**, `app-dh/index.html` dibangun ulang sehingga capnya
+ikut 0.24.36, dan `tools/rilis/cek_cap_versi.py` memastikan keduanya cocok. Perubahan ini
+sengaja di-push **sebelum** build yang sedang berjalan selesai, supaya `0.24.35` yang kedua tidak
+pernah sempat terbit — membiarkannya terbit dulu justru mewujudkan masalahnya.
