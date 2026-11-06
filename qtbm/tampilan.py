@@ -233,6 +233,30 @@ class Jendela(QMainWindow):
         self.jam.start(500)
 
     # ---------- memuat ----------
+    def closeEvent(self, e) -> None:
+        """Peringatkan bila ada string dig block yang belum diekspor.
+
+        Penyimpanan ke folder proyek belum ada, jadi menutup jendela MENGHILANGKAN string.
+        Selama itu belum ada, setidaknya pemakai tidak kehilangannya tanpa diberi tahu.
+        Dialog di sini aman: ini jalur penutupan, bukan jalur hitung (uji tanpa layar tidak
+        pernah melewatinya), dan ia memang harus menghentikan penutupan sampai dijawab.
+        """
+        try:
+            if self.gal.ada_belum_diekspor():
+                j = QMessageBox.warning(
+                    self, "String belum diekspor",
+                    "Ada %d string dig block yang belum diekspor.\n\nPenyimpanan ke folder "
+                    "proyek belum ada, jadi string ini akan HILANG kalau jendela ditutup "
+                    "sekarang. Ekspor ke DXF / STR dulu?" % len(self.gal.strings),
+                    QMessageBox.Cancel | QMessageBox.Discard, QMessageBox.Cancel)
+                if j == QMessageBox.Cancel:
+                    e.ignore()
+                    self.tab.setCurrentWidget(self.gal)
+                    return
+        except Exception:                           # noqa: BLE001
+            pass                                    # jangan pernah menghalangi penutupan
+        super().closeEvent(e)
+
     def _tab_berubah(self, i: int) -> None:
         """Tab Dig block menampilkan plan 2D; tab lain kembali ke 3D."""
         dig = self.tab.widget(i) is self.gal

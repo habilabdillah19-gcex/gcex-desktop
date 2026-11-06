@@ -39,6 +39,7 @@ class PanelGalian(QWidget):
         self.kanvas = None                            # Kanvas2D, dipasang dari jendela
         self.sumber_sg: Optional[Callable] = None     # -> (sg, kolom, sg_nol, sg_ganti)
         self.strings: List[SIO.String] = []
+        self._sudah_diekspor = False
         self._hasil = None
 
         L = QVBoxLayout(self)
@@ -73,9 +74,17 @@ class PanelGalian(QWidget):
         self.cmb_metode.addItem("Presisi GC-Ex (blok dipotong di garis)", "clip")
         self.cmb_metode.addItem("Seperti Surpac (blok utuh, titik tengah)", "surpac")
         f2.addRow("Metode tonase", self.cmb_metode)
-        self.cb_banding = QCheckBox("Tampilkan kedua metode berdampingan")
-        self.cb_banding.setChecked(True)
-        f2.addRow(self.cb_banding)
+        # Kedua metode SELALU ditampilkan; ini bukan pilihan yang bisa dimatikan.
+        # Alasannya: perangkat lunak yang diakui di tambang adalah Surpac, dan selisih kedua
+        # metode di dig block bersifat GEOMETRIS (blok dipotong di garis vs blok utuh), jadi
+        # tetap ada walau block model tanpa `sb_frac`. Pada uji paritas selisihnya 0,1%-17,9%
+        # tergantung posisi garis poligon terhadap grid blok. Angka sebesar itu tidak boleh
+        # bersembunyi di balik satu centang yang bisa lupa dinyalakan.
+        self.lbl_banding = QLabel("Angka kedua metode selalu ditampilkan berdampingan; metode "
+                                  "yang dipilih di atas yang dipakai sebagai angka utama.")
+        self.lbl_banding.setWordWrap(True)
+        self.lbl_banding.setStyleSheet("color:#8b97a8")
+        f2.addRow(self.lbl_banding)
         self.cb_lolos = QCheckBox("Hanya blok yang lolos cut-off tampilan")
         f2.addRow(self.cb_lolos)
         self.lbl_sg = QLabel("SG")
@@ -110,7 +119,12 @@ class PanelGalian(QWidget):
         v4 = QVBoxLayout(gb4)
         b1 = QHBoxLayout()
         self.btn_mulai = QPushButton("Mulai digit")
-        self.btn_tutup = QPushButton("Tutup && simpan")
+        # BUKAN "Tutup & simpan": yang terjadi hanyalah poligon ditutup dan masuk daftar di
+        # panel ini. Belum ada apa pun yang tersimpan ke berkas, dan string akan HILANG saat
+        # jendela ditutup. Label "simpan" di sini pernah ada dan itu menyesatkan: pemakai yang
+        # mendigit 20 dig block lalu menutup aplikasi kehilangan satu shift pekerjaan sambil
+        # yakin sudah menyimpannya.
+        self.btn_tutup = QPushButton("Tutup poligon")
         self.btn_urung = QPushButton("Urung titik")
         self.btn_batal = QPushButton("Batal")
         for b in (self.btn_mulai, self.btn_tutup, self.btn_urung, self.btn_batal):
@@ -133,7 +147,7 @@ class PanelGalian(QWidget):
         L.addWidget(gb4)
 
         # ---------- daftar string ----------
-        gb5 = QGroupBox("String tersimpan")
+        gb5 = QGroupBox("String di sesi ini (belum tersimpan ke berkas)")
         v5 = QVBoxLayout(gb5)
         self.tabel = QTableWidget(0, 5)
         self.tabel.setHorizontalHeaderLabels(["No", "Ket.", "Titik", "Luas m²", "Tonase t"])
@@ -155,6 +169,13 @@ class PanelGalian(QWidget):
         self.pesan.setWordWrap(True)
         self.pesan.setStyleSheet("color:#ffd92f")
         L.addWidget(self.pesan)
+        self.peringatan_simpan = QLabel(
+            "⚠ String hanya ada selama jendela terbuka. Belum ada penyimpanan ke folder proyek — "
+            "ekspor ke DXF / STR dulu sebelum menutup aplikasi, atau pekerjaannya hilang.")
+        self.peringatan_simpan.setWordWrap(True)
+        self.peringatan_simpan.setStyleSheet("color:#fc8d59")
+        self.peringatan_simpan.setVisible(False)
+        L.addWidget(self.peringatan_simpan)
         self.catatan = QLabel("")
         self.catatan.setWordWrap(True)
         self.catatan.setStyleSheet("color:#8b97a8")
@@ -177,7 +198,7 @@ class PanelGalian(QWidget):
         self.cb_snap.toggled.connect(self._snap_berubah)
         for w in (self.cmb_kadar, self.cmb_metode):
             w.currentIndexChanged.connect(self.hitung_semua)
-        for w in (self.cb_banding, self.cb_lolos, self.cb_waste):
+        for w in (self.cb_lolos, self.cb_waste):
             w.toggled.connect(self.hitung_semua)
         for w in (self.spn_wsg, self.spn_wg):
             w.valueChanged.connect(self.hitung_semua)
@@ -322,6 +343,7 @@ class PanelGalian(QWidget):
                        ["#e8590c", "#2f9e44", "#1971c2", "#c2255c", "#7048e8", "#0c8599",
                         "#f08c00", "#5c940d"][len(self.strings) % 8])
         self.strings.append(s)
+        self._sudah_diekspor = False
         self.spn_no.setValue(int(self.spn_no.value()) + 1)
         if self.kanvas is not None:
             self.kanvas.strings = self.strings
@@ -339,31 +361,40 @@ class PanelGalian(QWidget):
         if len(P) < 3:
             self.lbl_hidup.setText("%d titik — klik minimal 3 titik" % len(P))
             return
+        O = self.opsi()
         try:
-            H = GA.tonase(self.bm, P, self._tampilan_sg(), self.opsi())
+            D = GA.bandingkan(self.bm, P, self._tampilan_sg(), O)
         except Exception as e:                      # noqa: BLE001
             self.lbl_hidup.setText("belum bisa dihitung: %s" % e)
             return
+        H = D[O.metode]
+        lain = D["surpac" if O.metode == "clip" else "clip"]
         kadar = ("%.3f" % H.kadar) if math.isfinite(H.kadar) else "—"
-        self.lbl_hidup.setText("%d titik · %.1f m² · <b>%s t @ %s</b> · blok menutup %d%%"
-                               % (len(P), H.luas_poligon, _ribuan(H.t), kadar,
-                                  round(H.cov * 100)))
+        beda = ("%+.1f%%" % ((H.t - lain.t) / lain.t * 100.0)) if lain.t else "—"
+        self.lbl_hidup.setText(
+            "%d titik · %.1f m² · <b>%s t @ %s</b> (%s) · pembanding %s: <b>%s t</b> (%s) "
+            "· blok menutup %d%%"
+            % (len(P), H.luas_poligon, _ribuan(H.t), kadar,
+               GA.NAMA_METODE.get(O.metode, O.metode),
+               GA.NAMA_METODE.get(lain.metode, lain.metode), _ribuan(lain.t), beda,
+               round(H.cov * 100)))
 
     # ---------------------------------------------------------------- hitung
 
+    def ada_belum_diekspor(self) -> bool:
+        """True bila ada string yang akan hilang kalau jendela ditutup sekarang."""
+        return bool(self.strings) and not self._sudah_diekspor
+
     def hitung_semua(self, *a) -> None:
+        self.peringatan_simpan.setVisible(self.ada_belum_diekspor())
         self.tabel.setRowCount(0)
         self.catatan.setText("")
         if self.bm is None or not self.bm.n or not self.strings:
             return
         T = self._tampilan_sg()
         O = self.opsi()
-        banding = self.cb_banding.isChecked()
-        kolom = ["No", "Ket.", "Titik", "Luas m²"]
-        if banding:
-            kolom += ["Presisi t", "Surpac t", "Selisih %", "Kadar"]
-        else:
-            kolom += ["Tonase t", "Kadar", "Logam", "Blok %"]
+        kolom = ["No", "Ket.", "Titik", "Luas m²",
+                 "Presisi t", "Surpac t", "Selisih %", "Kadar", "Blok %"]
         self.tabel.setColumnCount(len(kolom))
         self.tabel.setHorizontalHeaderLabels(kolom)
         semua_catatan: List[str] = []
@@ -372,24 +403,16 @@ class PanelGalian(QWidget):
             if len(P) < 3:
                 continue
             try:
-                if banding:
-                    H = GA.bandingkan(self.bm, P, T, O)
-                    utama = H["clip"]
-                else:
-                    utama = GA.tonase(self.bm, P, T, O)
-                    H = {O.metode: utama}
+                H = GA.bandingkan(self.bm, P, T, O)
             except Exception as e:                  # noqa: BLE001
                 self._baris(s, ["gagal: %s" % e])
                 continue
+            utama = H[O.metode]
             kadar = ("%.3f" % utama.kadar) if math.isfinite(utama.kadar) else "—"
-            if banding:
-                a_, b_ = H["clip"].t, H["surpac"].t
-                sel = ("%+.2f" % ((a_ - b_) / b_ * 100.0)) if b_ else "—"
-                nilai = [_ribuan(a_), _ribuan(b_), sel, kadar]
-            else:
-                logam = utama.logam
-                nilai = [_ribuan(utama.t), kadar, _ribuan(logam),
-                         "%d" % round(utama.cov * 100)]
+            a_, b_ = H["clip"].t, H["surpac"].t
+            sel = ("%+.2f" % ((a_ - b_) / b_ * 100.0)) if b_ else "—"
+            nilai = [_ribuan(a_), _ribuan(b_), sel, kadar,
+                     "%d" % round(utama.cov * 100)]
             self._baris(s, nilai)
             for c in GA.catatan(self.bm, H, O):
                 if c not in semua_catatan:
@@ -440,6 +463,8 @@ class PanelGalian(QWidget):
         except Exception as e:                      # noqa: BLE001
             self.pesan.setText("Ekspor gagal: %s" % e)
             return
+        self._sudah_diekspor = True
+        self.peringatan_simpan.setVisible(False)
         self.pesan.setText("Tersimpan: %s (%d string, koordinat penuh)" % (jalur, len(tampil)))
 
 

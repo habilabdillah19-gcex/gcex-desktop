@@ -140,7 +140,8 @@ def test_hitung_tanpa_dialog_modal(app):
     assert P.tabel.rowCount() == 1
 
 
-def test_tabel_membandingkan_kedua_metode(app):
+def test_tabel_selalu_membandingkan_kedua_metode(app):
+    """Kedua kolom harus ADA tanpa perlu dinyalakan: tidak boleh ada centang yang bisa lupa."""
     P = PanelGalian()
     bm = _bm()
     T = TB.ui_awal(bm)
@@ -152,7 +153,6 @@ def test_tabel_membandingkan_kedua_metode(app):
     P.strings.append(SIO.String(no=1, tertutup=True,
                                 pts=[(x0 + 2.5, y0 + 2.5, z), (x0 + 22.5, y0 + 2.5, z),
                                      (x0 + 22.5, y0 + 22.5, z), (x0 + 2.5, y0 + 22.5, z)]))
-    P.cb_banding.setChecked(True)
     P.cb_waste.setChecked(False)
     P.hitung_semua()
     judul = [P.tabel.horizontalHeaderItem(c).text() for c in range(P.tabel.columnCount())]
