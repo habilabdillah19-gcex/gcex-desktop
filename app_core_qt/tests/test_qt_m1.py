@@ -228,3 +228,46 @@ def test_halaman_depan_buka_folder_per_ruang_kerja(qtbot, prj, monkeypatch):
     w.choose_folder()  # tombol "Buka folder" di bilah atas: ruang kerja yang sedang aktif
     assert "singkapan" in titles[-1]
     qtbot.waitUntil(lambda: w.stack.currentWidget() is w.outcrop, timeout=8000)
+
+
+def test_keluarkan_foto_dari_daftar(qtbot, prj, monkeypatch):
+    """Foto bisa dikeluarkan dari daftar Core box tanpa menyentuh filenya; tidak masuk lagi saat dipindai; bisa dikembalikan."""
+    from pathlib import Path
+    monkeypatch.setattr("corex.mainwin.ask", lambda *a, **k: True)
+    w = _win(qtbot)
+    w.open_folder(prj)
+    qtbot.waitUntil(lambda: len(w.view) == 3 and w.cur_id is not None, timeout=8000)
+    assert not w.bSelDel.isEnabled()
+    first, second, third = w.view
+    w.remove_photos()  # tanpa centang: foto yang sedang dibuka
+    qtbot.waitUntil(lambda: len(w.view) == 2 and w.cur_id == second["id"], timeout=8000)
+    assert (Path(prj) / first["rel"]).exists()  # file tidak disentuh
+    w.rescan()
+    qtbot.waitUntil(lambda: "1 dikeluarkan" in w.sSum.text(), timeout=8000)
+    assert len(w.rows) == 2
+    w.model.sel.add(third["id"])
+    w._sel_changed()
+    assert w.bSelDel.isEnabled()
+    w.bSelDel.click()
+    qtbot.waitUntil(lambda: len(w.rows) == 1 and not w.model.sel, timeout=8000)
+    w.restore_photos()
+    qtbot.waitUntil(lambda: len(w.rows) == 3, timeout=8000)
+
+
+def test_folder_borang_tidak_otomatis_masuk_core_box(qtbot, prj, monkeypatch):
+    """Folder yang dibuka untuk Borang tidak mendaftarkan fotonya ke Core box; pindah ke Core box bertanya dulu."""
+    asked = []
+    monkeypatch.setattr("corex.mainwin.ask", lambda *a, **k: (asked.append(a[1]), False)[1])
+    w = _win(qtbot)
+    w.open_folder(prj, "form")
+    qtbot.waitUntil(lambda: bool(w.folder) and w.stack.currentWidget() is w.forms, timeout=8000)
+    qtbot.wait(300)
+    assert w.rows == []
+    w.rescan()  # F5 di ruang kerja Borang tidak mendaftarkan foto
+    qtbot.wait(300)
+    assert w.rows == []
+    w.set_mode("core")
+    qtbot.waitUntil(lambda: bool(asked), timeout=4000)
+    assert "belum dipakai di Core box" in asked[-1] and w.rows == []
+    w.rescan()  # ↻ = pendaftaran yang disengaja
+    qtbot.waitUntil(lambda: len(w.rows) == 3, timeout=8000)

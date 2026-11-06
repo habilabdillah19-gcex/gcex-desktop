@@ -145,7 +145,8 @@ class Viewer(QGraphicsView):
             return
         self.full = True
         pid, folder = self.pid, self.folder
-        run_bg(lambda: QImage(str(api.image_file(folder, pid, 0))), ok=lambda im: self._got(pid, im, True))
+        run_bg(lambda: QImage(str(api.image_file(folder, pid, 0))), ok=lambda im: self._got(pid, im, True),
+               err=lambda e: None)  # foto sudah dikeluarkan / file hilang: pratinjau yang ada tetap tampil
 
     # ---------------------------------------------------------------- zoom / geser / putar
     def fit(self) -> None:

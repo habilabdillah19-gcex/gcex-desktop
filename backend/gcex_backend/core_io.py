@@ -228,7 +228,11 @@ def scan(p: Project) -> dict:
     added = 0
     with p.lock, p.conn() as c:
         have = {r["rel"]: r["missing"] for r in c.execute("SELECT rel, missing FROM photos")}
+        c.execute(_IGN_DDL)
+        skip = {r[0] for r in c.execute("SELECT rel FROM ignored")}
         for rel in sorted(found, key=natural_key):
+            if rel in skip:
+                continue
             fn, sz, mt = found[rel]
             if rel in have:
                 if have[rel]:
@@ -244,6 +248,47 @@ def scan(p: Project) -> dict:
             c.execute("UPDATE photos SET missing=1 WHERE rel=?", (rel,))
         total = c.execute("SELECT COUNT(*) FROM photos WHERE missing=0").fetchone()[0]
     return {"added": added, "missing": len(gone), "total": total}
+
+
+_IGN_DDL = "CREATE TABLE IF NOT EXISTS ignored (rel TEXT PRIMARY KEY, name TEXT, by TEXT, at TEXT)"
+
+
+def remove(p: Project, ids: list[int], by: str = "") -> dict:
+    """Keluarkan foto dari daftar Core box. File foto TIDAK disentuh: namanya dicatat di tabel `ignored`
+    supaya pemindaian berikutnya tidak memasukkannya lagi; baris foto beserta segmen & tandanya dihapus
+    dari database. restore() mengembalikannya ke daftar (sebagai foto baru, isian lama tidak kembali)."""
+    from . import core_marks, core_segs
+    core_segs.ensure(p)
+    core_marks.ensure(p)
+    n = 0
+    with p.lock, p.conn() as c:
+        c.execute(_IGN_DDL)
+        for pid in ids:
+            r = c.execute("SELECT id, rel, name FROM photos WHERE id=?", (pid,)).fetchone()
+            if not r:
+                continue
+            for tb in ("segs", "marks"):
+                c.execute(f"DELETE FROM {tb} WHERE photo_id=?", (pid,))
+            c.execute("DELETE FROM photos WHERE id=?", (pid,))
+            c.execute("INSERT OR REPLACE INTO ignored VALUES (?,?,?,?)", (r["rel"], r["name"], by, now()))
+            c.execute("INSERT INTO history (photo_id, field, old, new, src, by, at) VALUES (?,?,?,?,?,?,?)",
+                      (pid, "dikeluarkan", r["rel"], None, "keluarkan", by, now()))
+            n += 1
+    return {"removed": n, "ignored": n_ignored(p)}
+
+
+def n_ignored(p: Project) -> int:
+    with p.conn() as c:
+        c.execute(_IGN_DDL)
+        return c.execute("SELECT COUNT(*) FROM ignored").fetchone()[0]
+
+
+def restore(p: Project) -> dict:
+    """Kembalikan semua foto yang pernah dikeluarkan ke daftar, lalu pindai ulang."""
+    with p.lock, p.conn() as c:
+        c.execute(_IGN_DDL)
+        c.execute("DELETE FROM ignored")
+    return scan(p)
 
 
 def _row_out(r: sqlite3.Row) -> dict:
@@ -291,6 +336,7 @@ def summary(p: Project) -> dict:
                 "error": q("SELECT COUNT(*) FROM photos WHERE missing=0 AND status='error'"),
                 "verified": q("SELECT COUNT(*) FROM photos WHERE missing=0 AND verified=1"),
                 "missing": q("SELECT COUNT(*) FROM photos WHERE missing=1"),
+                "ignored": (c.execute(_IGN_DDL), q("SELECT COUNT(*) FROM ignored"))[1],
                 "holes": q("SELECT COUNT(DISTINCT hole_id) FROM photos WHERE missing=0 AND hole_id IS NOT NULL AND hole_id<>''")}
 
 
@@ -871,10 +917,14 @@ class ImportBody(FolderBody):
     payload: Any
 
 
+class OpenBody(FolderBody):
+    scan: bool = True  # False: folder dibuka untuk ruang kerja lain (Singkapan / Borang / QAQC) -> foto tidak didaftarkan ke Core box
+
+
 @router.post("/open")
-def api_open(b: FolderBody) -> dict:
+def api_open(b: OpenBody) -> dict:
     p = get_project(b.folder)
-    sc = scan(p)
+    sc = scan(p) if b.scan else {"added": 0, "missing": 0, "total": summary(p)["total"], "skipped": True}
     return {"ok": True, "folder": str(p.folder), "db": str(p.db), "db_local": p.local, "scan": sc,
             "summary": summary(p), "meta": get_meta(p), "fields": [{"key": k, "type": t, "label": l} for k, t, l in FIELDS],
             "weathering": WEATHERING, "oxidation": OXIDATION}
@@ -884,6 +934,22 @@ def api_open(b: FolderBody) -> dict:
 def api_rescan(b: FolderBody) -> dict:
     p = get_project(b.folder)
     return {"ok": True, "scan": scan(p), "summary": summary(p)}
+
+
+class RemoveBody(FolderBody):
+    ids: list[int]
+
+
+@router.post("/remove")
+def api_remove(b: RemoveBody) -> dict:
+    p = get_project(b.folder)
+    return {"ok": True, **remove(p, b.ids, b.by), "summary": summary(p)}
+
+
+@router.post("/restore")
+def api_restore(b: FolderBody) -> dict:
+    p = get_project(b.folder)
+    return {"ok": True, "scan": restore(p), "summary": summary(p)}
 
 
 @router.post("/rows")

@@ -70,6 +70,8 @@ Perkiraan waktu per foto: GPU 8 GB ±5–20 detik; hanya CPU ±1–3 menit. Antr
    - `GCD0123 B05 12,5-15,0m.jpg` → GCD0123, box 5, 12,5–15,0 m
 
    Isian dari nama file diberi label berarsir **nama file** dan tidak ditimpa AI. Nama seperti `IMG_0001.jpg` dibiarkan kosong: AI mencoba membaca papan label di foto.
+
+   **Foto yang bukan foto core box** (mis. foto borang yang ikut ada di folder): centang lalu klik **Keluarkan dari daftar** (atau tombol Delete). File tidak dihapus; foto hanya tidak dipakai Core box dan tidak masuk lagi saat dipindai ulang. Kembalikan lewat *File → Kembalikan foto yang dikeluarkan dari daftar*. Folder yang dibuka untuk Borang, Singkapan atau QAQC tidak otomatis didaftarkan ke Core box.
 3. **Jalankan AI lokal** → pilih model → **Analisis foto yang belum**. Bilah kemajuan di bawah menunjukkan jumlah, sisa waktu, dan tombol **Hentikan**. Hasil tiap foto langsung tersimpan, jadi aplikasi boleh ditutup di tengah jalan; jalankan lagi untuk melanjutkan yang belum.
 4. **Periksa & perbaiki.** Klik baris tabel (atau ↑ ↓) untuk melihat foto. Scroll = zoom, tarik = geser, klik ganda = pas layar, tombol ↗ = resolusi penuh untuk membaca label kecil. Ubah isian di kartu kiri atau langsung di tabel.
    - Sel **biru muda** (label biru **AI**) = isian AI yang belum dicek.

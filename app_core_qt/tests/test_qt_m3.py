@@ -113,7 +113,10 @@ def test_shortcuts_not_ambiguous(qtbot):
             s = k.toString()
             assert s not in seen, f"pintasan {s} dipakai dua kali: {seen[s]} & {a.text()}"
             seen[s] = a.text()
+    from PySide6.QtCore import Qt
     for sc in w.findChildren(QShortcut):
+        if sc.context() == Qt.WidgetShortcut:
+            continue  # hanya berlaku saat widget-nya sendiri fokus (mis. Delete di tabel), tidak bentrok
         s = sc.key().toString()
         assert s not in seen, f"pintasan {s} dipakai dua kali: {seen[s]} & QShortcut"
         seen[s] = "QShortcut"

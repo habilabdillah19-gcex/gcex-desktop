@@ -3040,3 +3040,12 @@ Tidak ada pengecualian untuk "hanya cap versi".
 ikut 0.24.36, dan `tools/rilis/cek_cap_versi.py` memastikan keduanya cocok. Perubahan ini
 sengaja di-push **sebelum** build yang sedang berjalan selesai, supaya `0.24.35` yang kedua tidak
 pernah sempat terbit — membiarkannya terbit dulu justru mewujudkan masalahnya.
+
+## 99. DB-Ex 0.42.2 — keluarkan foto dari daftar Core box; folder Borang tidak lagi terdaftar otomatis
+
+- **Keluarkan dari daftar**: tombol baru di bilah atas tabel Core box (juga tombol **Delete** saat tabel aktif). Berlaku untuk foto yang dicentang, atau foto yang sedang dibuka bila tidak ada yang dicentang.
+  File foto di folder **tidak dihapus dan tidak dipindah**; foto hanya dikeluarkan dari daftar Core box (isian, segmen dan tandanya ikut terhapus dari database) dan tidak masuk lagi saat dipindai ulang (↻ / F5). Bilah status menampilkan jumlahnya (*N dikeluarkan*).
+- **Kembalikan**: *File → Kembalikan foto yang dikeluarkan dari daftar…* memasukkan lagi semua foto tersebut sebagai foto baru.
+- **Folder Borang / Singkapan / QAQC tidak lagi otomatis masuk Core box.** Dulu setiap folder yang dibuka langsung dipindai dan semua gambarnya didaftarkan sebagai foto core box (mis. foto borang ikut tampil di tabel Core box). Sekarang foto hanya didaftarkan dari ruang kerja Core box. Bila folder dibuka untuk ruang kerja lain lalu Anda pindah ke Core box, DB-Ex bertanya dulu apakah foto di folder itu memang foto core box.
+- Folder yang sudah telanjur terisi foto borang di Core box: centang semua (*Pilih semua yang tampil*) lalu **Keluarkan dari daftar**. Data Borang tidak terpengaruh.
+

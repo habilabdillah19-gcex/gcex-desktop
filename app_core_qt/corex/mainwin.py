@@ -39,6 +39,8 @@ class MainWindow(QMainWindow):
         self.dh: dict | None = None
         self.labels: dict[str, str] = {}
         self.cur_id: int | None = None
+        self._core_scanned: str | None = None  # folder yang fotonya sudah didaftarkan ke Core box di sesi ini
+        self._last_sum: dict = {}
         self.last_done = -1
         self.model = PhotoModel()
         self._build()
@@ -250,9 +252,13 @@ class MainWindow(QMainWindow):
         self.bSelAll, self.bSelNone = btn("Pilih semua yang tampil", sm=True), btn("Kosongkan", sm=True)
         self.bSelVer, self.bSelUnver = btn("✓ Verifikasi terpilih", sm=True), btn("Batalkan verifikasi", sm=True)
         self.bSelAI = btn("AI untuk terpilih", sm=True)
-        for x in (self.selInfo, self.bSelAll, self.bSelNone, self.bSelVer, self.bSelUnver, self.bSelAI):
+        self.bSelDel = btn("Keluarkan dari daftar", sm=True)
+        self.bSelDel.setToolTip("Keluarkan foto terpilih dari daftar Core box (tombol Delete).\n"
+                                "File foto di folder TIDAK dihapus atau dipindah; hanya tidak dipakai di Core box.\n"
+                                "Kembalikan lewat File → Kembalikan foto yang dikeluarkan.")
+        for x in (self.selInfo, self.bSelAll, self.bSelNone, self.bSelVer, self.bSelUnver, self.bSelAI, self.bSelDel):
             bk.addWidget(x)
-        hint = QLabel("↑ ↓ pindah foto · Ctrl+Enter verifikasi & lanjut · klik ganda sel untuk mengedit")
+        hint = QLabel("↑ ↓ pindah foto · Ctrl+Enter verifikasi & lanjut · Delete keluarkan foto · klik ganda sel untuk mengedit")
         hint.setObjectName("note")
         from PySide6.QtWidgets import QSizePolicy as _SP
         hint.setSizePolicy(_SP.Ignored, _SP.Preferred)
@@ -283,6 +289,7 @@ class MainWindow(QMainWindow):
                                      and self.verify(list(self.model.sel), True))
         self.bSelUnver.clicked.connect(lambda: self.verify(list(self.model.sel), False))
         self.bSelAI.clicked.connect(lambda: self.run_ai("ids", list(self.model.sel)))
+        self.bSelDel.clicked.connect(lambda: self.remove_photos())
         self.model.selChanged.connect(self._sel_changed)
         self.model.edited.connect(self.save_field)
         self.table.rowActivated.connect(self.select)
@@ -322,6 +329,8 @@ class MainWindow(QMainWindow):
             b_.setEnabled(False)
         self._sel_changed()
         QShortcut(QKeySequence("Ctrl+K"), self, activated=lambda: (self.q.setFocus(), self.q.selectAll()) if self.q.isEnabled() else None)
+        dk = QShortcut(QKeySequence.Delete, self.table, activated=lambda: self.remove_photos())
+        dk.setContext(Qt.WidgetShortcut)  # hanya saat tabel fokus; editor sel tetap memakai Delete biasa
         QShortcut(QKeySequence("Ctrl+Return"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Ctrl+Enter"), self, activated=self.verify_current)
         QShortcut(QKeySequence("Escape"), self, activated=lambda: self.outcrop.escape() if self.mode == "oc" else (self.forms.escape() if self.mode == "form"
@@ -448,6 +457,7 @@ class MainWindow(QMainWindow):
                 om = m.addMenu("Buka folder untuk")
                 for md, mt, *_r in self.MODES:
                     om.addAction(mt + "…", lambda md=md: self.choose_folder(md))
+        m.addAction("Kembalikan foto yang dikeluarkan dari daftar…", self.restore_photos)
         a = QAction("Ekspor infografis foto (PNG / PDF)…", self)
         a.setShortcut(QKeySequence("Ctrl+E"))
         a.triggered.connect(lambda: self.outcrop.export("png") if self.mode == "oc" else self.interp.export_infographic())
@@ -539,6 +549,8 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentWidget(self.qaqc)
         else:
             self.stack.setCurrentIndex(1)
+            if self._core_scanned != self.folder:
+                QTimer.singleShot(0, self._core_first_scan)
         SET.set("qt_mode", mode)
         fm = dict(SET.get("folder_mode", {}) or {})
         fm[self.folder.lower()] = mode
@@ -600,11 +612,12 @@ class MainWindow(QMainWindow):
             self.mode = mode
         self.sSum.setText("Membuka folder & memindai foto…")
         by = self.user()
-        run_bg(api.call, "/core/open", {"folder": folder, "by": by}, ok=self._opened,
+        run_bg(api.call, "/core/open", {"folder": folder, "by": by, "scan": self.mode == "core"}, ok=self._opened,
                err=lambda e: (self.sSum.setText("Gagal membuka folder."), say(self, "Gagal membuka folder:\n" + e, warn=True)))
 
     def _opened(self, j: dict) -> None:
         self.folder, self.meta = j["folder"], j.get("meta") or {}
+        self._core_scanned = None if j["scan"].get("skipped") else self.folder
         self.labels = {f["key"]: f["label"] for f in j["fields"]}
         self.card.set_labels(self.labels)
         rec = [j["folder"]] + [x for x in SET.get("recent", []) if x.lower() != j["folder"].lower()]
@@ -637,10 +650,18 @@ class MainWindow(QMainWindow):
 
     def load_rows(self, first: bool = False, then=None) -> None:
         folder = self.folder
+        self._rows_seq = seq = getattr(self, "_rows_seq", 0) + 1
+        if getattr(self, "_rows_folder", None) != folder:
+            self._rows_folder, self._rows_first, self._rows_then = folder, False, []
+        self._rows_first = self._rows_first or first
+        if then:
+            self._rows_then.append(then)
 
         def ok(j):
-            if folder != self.folder:
-                return
+            if folder != self.folder or seq != self._rows_seq:
+                return  # jawaban lama tidak menimpa daftar yang lebih baru; first/then ikut jawaban terbaru
+            first_, thens = self._rows_first, self._rows_then
+            self._rows_first, self._rows_then = False, []
             self.rows = j["rows"]
             self.by_id = {r["id"]: r for r in self.rows}
             self.dh = j.get("dh") or self.dh
@@ -649,19 +670,21 @@ class MainWindow(QMainWindow):
             self._holes()
             self.apply_filter(keep=True)
             self.show_summary(j["summary"])
-            if first and self.view:
+            if first_ and self.view:
                 self.table.go_row(0)
             elif self.cur_id in self.by_id:
                 self.card.show_row(self.by_id[self.cur_id])
                 self.interp.row_changed(self.by_id[self.cur_id])
-            if then:
-                then()
+            for t in thens:
+                t()
 
         run_bg(api.call, "/core/rows", {"folder": folder}, ok=ok, err=lambda e: say(self, e, warn=True))
 
     def show_summary(self, s: dict) -> None:
+        self._last_sum = s
         self.sSum.setText(f"{s['total']} foto · {s['holes']} lubang · AI selesai {s['done']} · gagal {s['error']} · diverifikasi {s['verified']}"
-                          + (f" · {s['missing']} file hilang" if s.get("missing") else ""))
+                          + (f" · {s['missing']} file hilang" if s.get("missing") else "")
+                          + (f" · {s['ignored']} dikeluarkan" if s.get("ignored") else ""))
         self.ai.set_pending(sum(1 for r in self.rows if not r.get("missing") and not r.get("verified") and r.get("status") != "done"))
 
     def _holes(self) -> None:
@@ -817,7 +840,7 @@ class MainWindow(QMainWindow):
     def _sel_changed(self) -> None:
         n = len(self.model.sel)
         self.selInfo.setText(f"{n} dipilih")
-        for b_ in (self.bSelVer, self.bSelUnver, self.bSelAI):
+        for b_ in (self.bSelVer, self.bSelUnver, self.bSelAI, self.bSelDel):
             b_.setEnabled(bool(n))
 
     # ================================================================ simpan & verifikasi
@@ -979,10 +1002,88 @@ class MainWindow(QMainWindow):
             api.call("/core/ai/cancel")
             self.toast("AI akan berhenti setelah foto ini")
 
-    # ================================================================ export / impor
-    def rescan(self) -> None:
+    def remove_photos(self, ids: list[int] | None = None) -> None:
+        """Keluarkan foto dari daftar Core box. Tanpa ids: foto yang dicentang, atau foto yang sedang dibuka
+        bila tidak ada yang dicentang. File foto di folder tidak disentuh."""
+        if not self.folder or self.mode != "core":
+            return
+        if ids is None:
+            ids = list(self.model.sel) or ([self.cur_id] if self.cur_id in self.by_id else [])
+        ids = [i for i in ids if i in self.by_id]
+        if not ids:
+            return
+        nm = self.by_id[ids[0]]["rel"] if len(ids) == 1 else f"{len(ids)} foto"
+        nver = sum(1 for i in ids if self.by_id[i].get("verified"))
+        if not ask(self, f"Keluarkan {nm} dari daftar Core box?\n\n"
+                         "• File foto di folder TIDAK dihapus dan tidak dipindah.\n"
+                         "• Isian, segmen, dan tanda foto tersebut dihapus dari database Core box.\n"
+                         + (f"• {nver} di antaranya sudah diverifikasi.\n" if nver else "")
+                         + "\nBisa dikembalikan lewat File → Kembalikan foto yang dikeluarkan."):
+            return
+        try:
+            j = api.call("/core/remove", {"folder": self.folder, "ids": ids, "by": self.user()})
+        except api.ApiError as e:
+            say(self, f"Gagal mengeluarkan foto:\n{e}", warn=True)
+            return
+        for i in ids:
+            self.model.sel.discard(i)
+        idx = self._cur_index()
+        lost = self.cur_id in ids
+
+        def after():
+            self._sel_changed()
+            if not lost:
+                return
+            self.cur_id = None
+            if self.view:
+                self.table.go_row(max(0, min(idx, len(self.view) - 1)))
+            else:
+                self.viewer.placeholder("Tidak ada foto core box.")
+                self.card.clear()
+        self.load_rows(then=after)
+        self.toast(f"{j.get('removed', 0)} foto dikeluarkan dari daftar (file tetap di folder)", 5000)
+
+    def restore_photos(self) -> None:
         if not self.folder:
             return
+        n = (self._last_sum or {}).get("ignored", 0)
+        if not n:
+            say(self, "Tidak ada foto yang pernah dikeluarkan dari daftar di folder ini.")
+            return
+        if not ask(self, f"Kembalikan {n} foto yang pernah dikeluarkan ke daftar Core box?\n\nFoto masuk sebagai foto baru (isian lamanya sudah terhapus)."):
+            return
+        try:
+            j = api.call("/core/restore", {"folder": self.folder})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self._core_scanned = self.folder
+        if self.mode != "core":
+            self.set_mode("core")
+        self.load_rows()
+        self.toast(f"{j['scan']['added']} foto dikembalikan ke daftar", 4000)
+
+    def _core_first_scan(self) -> None:
+        """Folder dibuka untuk ruang kerja lain lalu pindah ke Core box: foto baru didaftarkan sebagai foto
+        core box hanya bila folder ini memang sudah dipakai Core box, atau setelah pengguna setuju."""
+        if not self.folder or self.mode != "core" or self._core_scanned == self.folder:
+            return
+        self._core_scanned = self.folder
+        if self.rows:
+            self.rescan()
+        elif ask(self, f"Folder {Path(self.folder).name} belum dipakai di Core box.\n\n"
+                       "Daftarkan foto di folder ini sebagai foto core box?\n\n"
+                       "Pilih Batal bila folder ini untuk Borang / Singkapan / QAQC."):
+            self.rescan()
+        else:
+            self.viewer.placeholder("Folder ini belum dipakai di Core box.\nKlik ↻ untuk mendaftarkan foto di folder ini.")
+            self.card.clear()
+
+    # ================================================================ export / impor
+    def rescan(self) -> None:
+        if not self.folder or self.mode != "core":
+            return  # foto hanya didaftarkan ke Core box dari ruang kerja Core box
+        self._core_scanned = self.folder
         try:
             j = api.call("/core/rescan", {"folder": self.folder})
         except api.ApiError as e:
