@@ -296,10 +296,13 @@
     var L = store(), Q = GCO.qc;
     var nC = Q ? Q.t.filter(function (x) { return x.lv === 'CEGAH'; }).length : 0;
     return [
-      { id: 'dig.qc', t: 'Pemeriksaan dig block', ic: 'check', tab: 'BM', sub: 'Dig block',
+      { id: 'dig.qc', t: 'Pemeriksaan dig block', ic: 'check',
         b: Q ? (Q.t.length ? nC + ' cegah / ' + (Q.t.length - nC) + ' periksa' : 'bersih') : '',
         hint: 'Jalankan sebelum dig plan terbit: tanpa tujuan, lebar di bawah batas alat, tonase nol, poligon rusak, nama ganda',
         go: function () { GCO.qcRun(false); },
+        card: { acts: [{ t: 'Periksa flitch aktif', pri: 1, fn: function () { GCO.qcRun(false); } },
+                       { t: 'Periksa semua flitch', fn: function () { GCO.qcRun(true); } },
+                       { t: 'Lihat hasil terakhir', fn: function () { if (GCO.qc) GCO.qcDlg(); } }] },
         menu: function () {
           return [{ t: 'Periksa flitch aktif', fn: function () { GCO.qcRun(false); } },
                   { t: 'Periksa semua flitch', fn: function () { GCO.qcRun(true); } },
@@ -307,9 +310,11 @@
                   { t: 'Lihat hasil terakhir', dis: !Q, fn: function () { GCO.qcDlg(); } },
                   { t: '↓ Export CSV', dis: !Q, fn: function () { GCO.qcCsv(); } }];
         } },
-      { id: 'dig.pst', t: 'Preset kelas kadar & tujuan', ic: 'gear', fold: 1, tab: 'BM', sub: 'Dig block',
+      { id: 'dig.pst', t: 'Preset kelas kadar & tujuan', ic: 'gear', fold: 1,
         b: L.length ? L.length + ' preset' : '', dim: !L.length,
         hint: 'Batas kelas kadar, aturan tujuan material, lebar minimum dan ambang sulfida — supaya DS dan NS memakai batas yang sama',
+        card: { kids: 1, hint: 'Simpan batas kelas kadar & aturan tujuan yang sedang dipakai sebagai preset, atau pilih preset di bawah untuk menerapkannya ke flitch aktif.',
+                acts: [{ t: 'Simpan pengaturan sekarang sebagai preset…', pri: 1, fn: function () { GCO.pstSimpan(); } }] },
         menu: function () {
           return [{ t: 'Simpan pengaturan sekarang sebagai preset…', fn: function () { GCO.pstSimpan(); } }]
             .concat(L.length ? [{ sep: 1 }, { h: 'Pakai preset' }] : [])
@@ -327,9 +332,11 @@
   };
   /* di bawah Laporan Grade x Tonnage: ringkasan harian */
   window.gcoRepTree = function () {
-    return [{ id: 'rep.day', t: 'Ringkasan harian (flitch aktif)', ic: 'report', tab: 'BM', sub: 'Dig block',
+    return [{ id: 'rep.day', t: 'Ringkasan harian (flitch aktif)', ic: 'report',
       hint: 'Satu halaman: ton & kadar per material dan per tujuan, plus rencana vs aktual as-mined flitch ini',
       go: function () { GCO.dayDlg(); },
+      card: { acts: [{ t: 'Buka ringkasan harian…', pri: 1, fn: function () { GCO.dayDlg(); } },
+                     { t: 'Export CSV', fn: function () { GCO.dayCsv(); } }] },
       menu: function () { return [{ t: 'Buka ringkasan harian…', fn: function () { GCO.dayDlg(); } },
                                   { t: '↓ Export CSV', fn: function () { GCO.dayCsv(); } }]; } }];
   };

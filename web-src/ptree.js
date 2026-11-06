@@ -57,6 +57,11 @@
     var col=document.createElement('div');col.id='ptCol';body.insertBefore(col,side);
     col.innerHTML='<div id="ptWrap"><div class="pth"><span class="ptt">Project Tree</span><span class="ptb"><button type="button" id="ptExp" title="Buka semua folder">&#8862;</button><button type="button" id="ptCol1" title="Tutup semua folder">&#8863;</button><button type="button" id="ptHide" title="Sembunyikan panel kiri (buka lagi lewat tombol di tepi kiri tampilan)">&#171;</button></span></div><div id="ptree" tabindex="0" role="tree" aria-label="Project tree"></div></div><div id="ptSplit" title="Geser untuk mengatur tinggi tree / properti"></div>';
     col.appendChild(side);var ph=document.createElement('div');ph.id='ptPH';side.insertBefore(ph,side.firstChild);
+    /* Kartu aksi. Node yang hanya menjalankan perintah (buka dialog, unduh berkas) dulu tidak mengganti
+       isi panel sama sekali, sehingga panel milik node SEBELUMNYA tetap terpampang di bawah judul node
+       yang baru -- isi tidak nyambung dengan judulnya, dan fungsi yang sama terlihat seolah ada di
+       banyak menu. Sekarang node seperti itu memunculkan kartu ringkas berisi keterangan + tombolnya. */
+    var cd=document.createElement('div');cd.id='ptCard';cd.style.display='none';side.insertBefore(cd,ph.nextSibling);
     var ob=document.createElement('button');ob.type='button';ob.id='ptOpen';ob.title='Tampilkan Project Tree';ob.innerHTML='&#187;';ob.onclick=function(){if(side.classList.contains('hide'))uiSide();};
     var st=$('stage');if(st)st.appendChild(ob);
     $('ptHide').onclick=function(){if(!side.classList.contains('hide'))uiSide();};
@@ -87,7 +92,7 @@
     return '<div class="ptr'+(T.sel===n.id?' sel':'')+(n.dim?' dim':'')+(n.fold?' fold':'')+'" role="treeitem" aria-level="'+(d+1)+'"'+(has?' aria-expanded="'+(op?'true':'false')+'"':'')+' data-id="'+esc(n.id)+'" style="--d:'+d+'" title="'+esc(n.hint||n.t)+'">'+
       '<span class="ptc'+(has?'':' no')+'">'+(has?(op?'&#9662;':'&#9656;'):'')+'</span>'+
       (ck?'<span class="ptk'+(n.chk?' on':'')+'" role="checkbox" aria-checked="'+(n.chk?'true':'false')+'" title="'+(n.chk?'Sembunyikan':'Tampilkan')+'"></span>':'<span class="ptk no"></span>')+
-      (n.step?'<span class="pts'+(n.st?' '+n.st:'')+'" title="'+({done:'Selesai',next:'Langkah berikutnya',todo:'Belum dikerjakan',opt:'Opsional',part:'Sebagian'}[n.st]||'')+'">'+(n.st==='done'?'&#10003;':esc(n.step))+'</span>':'')+'<span class="pti">'+(IC[n.ic]||IC.folder)+'</span><span class="ptl">'+esc(n.t)+'</span>'+(n.mark?'<span class="ptm">'+esc(n.mark)+'</span>':'')+(n.b!=null&&n.b!==''?'<span class="ptn">'+esc(n.b)+'</span>':'')+
+      (n.step?'<span class="pts'+(n.st?' '+n.st:'')+'" title="'+({done:'Selesai',next:'Langkah berikutnya',todo:'Belum dikerjakan',opt:'Opsional',part:'Sebagian'}[n.st]||'')+'"></span>':'')+'<span class="pti">'+(IC[n.ic]||IC.folder)+'</span><span class="ptl">'+esc(n.t)+'</span>'+(n.mark?'<span class="ptm">'+esc(n.mark)+'</span>':'')+(n.b!=null&&n.b!==''?'<span class="ptn">'+esc(n.b)+'</span>':'')+
       (n.menu?'<button type="button" class="ptx" tabindex="-1" title="Menu (klik kanan)">'+IC.more+'</button>':'')+'</div>';}
   function render(force){var el=$('ptree');if(!el||!T.def||T.editing)return;var L=build(),s=sigOf(L);if(!force&&s===T.sig)return;T.sig=s;var h='',flat=[];
     var walk=function(A,d){A.forEach(function(n){h+=rowHtml(n,d);flat.push(n);if(n.kids&&n.kids.length&&T.open[n.id])walk(n.kids,d+1);});};walk(L,0);
@@ -95,6 +100,20 @@
   T.render=render;
   function markSel(){var el=$('ptree');if(!el)return;el.querySelectorAll('.ptr.sel').forEach(function(r){r.classList.remove('sel');});var r=T.sel&&el.querySelector('.ptr[data-id="'+CSS.escape(T.sel)+'"]');if(r)r.classList.add('sel');head();}
   T.markSel=markSel;
+  /* Kartu aksi: node tanpa `tab` (tidak punya panel sendiri) atau yang menyetel `card`. */
+  function card(n){var el=$('ptCard');if(!el)return;
+    var C=n&&(n.card||(!n.tab&&n.go?{}:null));
+    if(!C){el.style.display='none';el.innerHTML='';document.body.classList.remove('pt-card');return;}
+    var acts=C.acts||(n.go?[{t:C.run||('Jalankan: '+n.t.replace(/[.\u2026]+$/,'')),fn:n.go,pri:1}]:[]);
+    var h='<div class=ptcd>'+(C.hint||n.hint?'<p>'+esc(C.hint||n.hint)+'</p>':'');
+    if(n.dim)h+='<p class=ptcw>'+esc(C.why||'Belum bisa dijalankan: datanya belum ada.')+'</p>';
+    h+=acts.map(function(a,i){return '<button type="button" class="'+(a.pri?'btn-pri':'')+'" data-i="'+i+'"'+(n.dim?' disabled':'')+'>'+esc(a.t)+'</button>';}).join('');
+    if(C.kids&&n.kids&&n.kids.length)h+='<div class=ptck>'+n.kids.map(function(k){return '<button type="button" data-go="'+esc(k.id)+'">'+esc(k.t)+'</button>';}).join('')+'</div>';
+    el.innerHTML=h+'</div>';el.style.display='';document.body.classList.add('pt-card');
+    el.onclick=function(e){var b=e.target.closest('button');if(!b)return;
+      if(b.dataset.go){T.select(b.dataset.go);return;}
+      var a=acts[+b.dataset.i];if(a&&a.fn)try{a.fn();}catch(x){console.error(x);}};}
+  T.card=card;
   function head(){var ph=$('ptPH');if(!ph)return;var n=T.sel&&find(T.sel);if(!n){ph.innerHTML='<span class="pp">Properti</span>';return;}
     ph.innerHTML='<span class="pp">Properti</span><span class="pi2">'+(IC[n.ic]||IC.folder)+'</span><b>'+esc(n.t)+'</b>'+(n.menu?'<button type="button" class="ptx" title="Menu item ini">'+IC.more+'</button>':'');
     var b=ph.querySelector('.ptx');if(b)b.onclick=function(e){var r=b.getBoundingClientRect();menu(n,r.left,r.bottom+2);e.stopPropagation();};}
@@ -107,7 +126,7 @@
     if(tries!==-1&&(tries||0)<8)setTimeout(function(){T.goSub(tab,re,(tries||0)+1);},90);return false;};
   function select(n,noAct){if(!n)return;T.sel=n.id;T._qt=Date.now();if(!noAct){T._quiet=1;try{if(n.tab&&window.uiTab){uiTab(n.tab);}}catch(e){console.error(e);}T._quiet=0;
       var go=function(){try{if(n.sub)T.goSub(n.tab,n.sub);}catch(e){}try{if(n.go)n.go();}catch(e){console.error(e);}};if(n.sub)setTimeout(go,30);else go();
-      var sd=$('side');if(sd&&n.tab)sd.scrollTop=0;try{if(T.def.onSelect)T.def.onSelect(n);}catch(e){console.error(e);}}
+      var sd=$('side');if(sd&&n.tab)sd.scrollTop=0;try{card(n);}catch(e){console.error(e);}try{if(T.def.onSelect)T.def.onSelect(n);}catch(e){console.error(e);}}
     render();markSel();scrollSel();nav();}
   function topOf(n){var r=null;T.nodes.some(function(t){if(t===n||T.flatAll(t.kids||[]).indexOf(n)>=0){r=t;return true;}return false;});return r;}
   function nav(){var sd=$('side');if(!sd||!T.def||!T.def.nav)return;var el=$('ptNav');if(!el){el=document.createElement('div');el.id='ptNav';sd.appendChild(el);}else if(el.parentNode!==sd||el!==sd.lastElementChild)sd.appendChild(el);
@@ -165,7 +184,28 @@
   T.install=function(def){T.def=def;if(def.css){var dc=document.createElement('style');dc.id='ptDefCss';dc.textContent=def.css;document.head.appendChild(dc);}try{T.open=JSON.parse(LS('gcex_pt_open_'+def.app)||'null')||null;}catch(e){T.open=null;}
     if(!layout())return;bind();hook();var first=!T.open;if(first)T.open={};build();if(first){(def.openDef||[]).forEach(function(id){T.open[id]=1;});}
     var cur=null;try{var t=LS('dh3d_tab');if(t)T.flatAll(T.nodes).some(function(x){if(x.tab===t&&!x.sub){cur=x;return true;}return false;});}catch(e){}
-    if(cur)T.sel=cur.id;render(true);setInterval(function(){if(!document.hidden)render();},1500);document.body.classList.add('pt-on');};
+    if(cur)T.sel=cur.id;render(true);poll();document.body.classList.add('pt-on');};
+  /* Penyegaran berkala.
+     Dulu: setInterval 1,5 detik tanpa syarat. Tiap denyut membangun ULANG seluruh pohon, dan itu
+     bukan pekerjaan ringan -- ia memindai dig block, menghitung luas tiap poligon, mengelompokkan
+     flitch dan membaca register as-mined. Pada model besar, denyut itu muncul sebagai tersendat
+     berkala, persis saat pengguna sedang memutar atau menggeser tampilan.
+     Sekarang: (1) dijalankan saat peramban sedang luang (requestIdleCallback), bukan menyela;
+     (2) dilewati ketika tampilan sedang diputar / digeser atau ada perhitungan berjalan, sebab
+     hasilnya toh akan dibuang; (3) mundur bertahap 1,5 -> 8 detik selama tidak ada yang berubah,
+     dan kembali cepat begitu pengguna menyentuh apa pun. Yang berubah hanya KAPAN pohon dibangun
+     ulang, bukan isinya. */
+  var PI=1500,PMAX=8000,ptimer=null;
+  T.soon=function(){PI=1500;if(ptimer){clearTimeout(ptimer);ptimer=null;poll();}};
+  function busy(){return document.body.classList.contains('ptdrag')||document.body.classList.contains('busy')||
+    !!(window.BX&&BX.busy)||!!(window.DLAT&&DLAT.busy)||!!(window.PLOTBUSY);}
+  function tick(){if(document.hidden||T.editing||busy()){PI=Math.min(PMAX,PI*1.5);return;}
+    var before=T.sig;render();PI=(T.sig===before)?Math.min(PMAX,Math.round(PI*1.4)):1500;}
+  function poll(){ptimer=setTimeout(function(){ptimer=null;
+    var run=function(){try{tick();}catch(e){}poll();};
+    if(window.requestIdleCallback)requestIdleCallback(run,{timeout:1200});else run();},PI);}
+  /* sentuhan pengguna -> segarkan cepat lagi */
+  ['pointerdown','keydown','change'].forEach(function(ev){document.addEventListener(ev,function(){PI=1500;},true);});
   /* ---------- pembantu untuk definisi pohon ---------- */
   T.u={cb:function(id){var e=$(id);return e?!!e.checked:undefined;},
     setCb:function(id,v){var e=$(id);if(!e)return;if(e.checked!==!!v){e.checked=!!v;e.dispatchEvent(new Event('change',{bubbles:true}));}},
@@ -193,9 +233,19 @@
     '.ptc{flex:0 0 12px;text-align:center;font-size:10px;color:var(--mu,#6b7785);cursor:pointer}.ptc.no{cursor:default}',
     '.ptk{flex:0 0 13px;height:13px;border:1px solid #8996a6;border-radius:3px;background:var(--sf,#fff);cursor:pointer;position:relative}.ptk.no{border-color:transparent;background:none;cursor:default}',
     '.ptk.on{background:var(--pr,#1f3a5f);border-color:var(--pr,#1f3a5f)}.ptk.on::after{content:"";position:absolute;left:3.5px;top:0.5px;width:3.5px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}',
+    '#ptCard{padding:8px 10px 10px}',
+    'body.pt-card #side>:not(#ptPH):not(#ptCard):not(#ptNav){display:none!important}',
+    '.ptcd p{margin:0 0 8px;font:12.5px/1.5 Arial,sans-serif;color:var(--mu,#6b7785)}.ptcd p.ptcw{color:#b05000}',
+    '.ptcd>button{display:block;width:100%;margin:0 0 6px;padding:7px 10px;font:600 12.5px Arial,sans-serif;cursor:pointer;border-radius:5px;border:1px solid var(--bd,#c9d2dc);background:var(--bg2,#fff)}',
+    '.ptcd>button:disabled{opacity:.5;cursor:not-allowed}.ptcd .ptck{margin-top:8px;border-top:1px solid var(--bd,#e3e8ee);padding-top:8px}',
+    '.ptcd .ptck button{display:block;width:100%;margin:0 0 4px;padding:6px 9px;text-align:left;font:12.5px Arial,sans-serif;cursor:pointer;border:0;background:none;color:var(--pr,#1f3a5f);border-radius:4px}',
+    '.ptcd .ptck button:hover{background:var(--hv,#eef2f7)}',
     '.pti{flex:0 0 16px;width:16px;height:16px;color:var(--pr,#1f3a5f);display:inline-flex}.pti svg,#ptPH .pi2 svg{width:16px;height:16px}',
-    '.pts{flex:0 0 15px;height:15px;border-radius:50%;background:var(--pr,#1f3a5f);color:#fff;font:700 9.5px/15px Arial,sans-serif;text-align:center;margin-right:1px}',
-    '.pts.done{background:#2f9e44}.pts.todo{background:transparent;color:var(--mu,#6b7785);box-shadow:inset 0 0 0 1.5px #9aa5b1}.pts.opt{background:#adb5bd}.pts.part{background:#f08c00}.pts.next{background:var(--pr,#1f3a5f);box-shadow:0 0 0 2px #f0c047}',
+    /* Dulu lingkaran berangka (1..10). Pemilik meminta angka dalam lingkaran dihilangkan: nomor langkah
+   tidak menambah informasi apa pun di atas urutan node yang memang sudah terlihat dari atas ke bawah,
+   sedangkan statusnya tetap berguna. Jadi tinggal titik status, keterangannya di tooltip. */
+    '.pts{flex:0 0 7px;height:7px;border-radius:50%;background:var(--pr,#1f3a5f);margin:0 5px 0 1px}',
+    '.pts.done{background:#2f9e44}.pts.todo{background:transparent;box-shadow:inset 0 0 0 1.5px #9aa5b1}.pts.opt{background:#adb5bd}.pts.part{background:#f08c00}.pts.next{background:var(--pr,#1f3a5f);box-shadow:0 0 0 2px #f0c047}',
     '#ptNav{position:sticky;bottom:-14px;z-index:3;margin:14px -14px -14px;padding:6px 10px 8px;background:var(--bg,#f4f6f9);border-top:1px solid var(--bd,#d5dbe3)}',
     '#ptNav .pnl{display:block;font:700 10px/1.2 Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#6b7785);margin-bottom:4px}',
     '#ptNav .pnb{display:flex;gap:6px;justify-content:space-between}#ptNav button{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px}',

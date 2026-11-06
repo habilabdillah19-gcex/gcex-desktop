@@ -295,7 +295,11 @@
     var r = R(), n = 0, B = { n: 0, fl: [] };
     try { n = kumpul(r).length; B = PRD.belum(r); } catch (e) {}
     return [{
-      id: 'reg.prd', t: 'Laporan periode (mingguan / bulanan)', ic: 'report', tab: 'AM', sub: 'Register',
+      id: 'reg.prd', t: 'Laporan periode (mingguan / bulanan)', ic: 'report',
+      card: { why: 'Belum ada poligon as-mined yang sudah dihitung pada periode ini.',
+              acts: [{ t: 'Buka laporan periode\u2026', pri: 1, fn: function () { PRD.dlg(); } },
+                     { t: 'Minggu ini', fn: function () { PRD.o.kind = 'minggu'; PRD.res = null; PRD.dlg(); PRD.run(); } },
+                     { t: 'Bulan ini', fn: function () { PRD.o.kind = 'bulan'; PRD.res = null; PRD.dlg(); PRD.run(); } }] },
       b: r.lab + (n ? ' · ' + n + ' poligon' : ''),
       dim: !n,
       hint: 'Ton, BCM dan kadar per tanggal / minggu / shift / flitch / tujuan material, dari register as-mined' +

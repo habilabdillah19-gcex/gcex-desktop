@@ -210,8 +210,8 @@
     if (!RPX.topo && ST.length) RPX.topo = ST[0][0];
     if (!RPX.ta && ST.length) RPX.ta = ST[0][0];
     if (!RPX.tb && ST.length > 1) RPX.tb = ST[1][0];
-    var h = '<i id=rpxBody hidden></i><div class="uitabs rptabs"><button onclick="RP.sec=\'1\';rpPanel()">&#9312; Atribut</button><button onclick="RP.sec=\'c\';rpPanel()">&#9313; Constraint</button><button onclick="RP.sec=\'2\';rpPanel()">&#9314; Hasil</button><button class=on>&#9315; Pit &amp; progres</button></div>';
-    h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon dan SG</b> yang sudah diatur di tab &#9312; dan &#9313;. Yang diganti di sini hanya <b>permukaan atas &amp; bawah</b>.</div>';
+    var h = '<i id=rpxBody hidden></i><div class="uitabs rptabs"><button onclick="RP.sec=\'1\';rpPanel()">Atribut</button><button onclick="RP.sec=\'c\';rpPanel()">Constraint</button><button onclick="RP.sec=\'2\';rpPanel()">Hasil</button><button class=on>Pit &amp; progres</button></div>';
+    h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon dan SG</b> yang sudah diatur di tab <b>Atribut</b> dan <b>Constraint</b>. Yang diganti di sini hanya <b>permukaan atas &amp; bawah</b>.</div>';
     h += '<div class="uitabs rptabs" style="margin-bottom:6px"><button class="' + (RPX.mode === 'pit' ? 'on' : '') + '" onclick="RPX.set(\'mode\',\'pit\')">Per desain pit</button><button class="' + (RPX.mode === 'tt' ? 'on' : '') + '" onclick="RPX.set(\'mode\',\'tt\')">Progres topo-ke-topo</button></div>';
     if (RPX.msg) h += '<div class="box gmstate">' + RPX.msg + '</div>';
     if (RPX.mode === 'pit') {
@@ -223,7 +223,7 @@
     } else {
       h += '<h4>Topografi atas (lebih awal)</h4>' + sel(ST.length ? ST : [['', '(belum ada)']], RPX.ta, "RPX.set('ta',this.value)");
       h += '<h4>Topografi bawah (lebih baru)</h4>' + sel(ST.length ? ST : [['', '(belum ada)']], RPX.tb, "RPX.set('tb',this.value)");
-      h += '<label class=sw style="margin-top:6px"><input type=checkbox ' + (RPX.allAtt ? 'checked' : '') + ' onchange="RPX.set(\'allAtt\',this.checked)"> Laporkan <b>semua</b> atribut kadar block model (bukan hanya yang dicentang di &#9312;)</label>';
+      h += '<label class=sw style="margin-top:6px"><input type=checkbox ' + (RPX.allAtt ? 'checked' : '') + ' onchange="RPX.set(\'allAtt\',this.checked)"> Laporkan <b>semua</b> atribut kadar block model (bukan hanya yang dicentang di )</label>';
       h += '<div class=hint>Material tergali antara dua survei = blok <b>di bawah</b> topografi atas dan <b>di atas</b> topografi bawah. Pakai ini untuk rekonsiliasi bulanan: mis. atas = akhir Juni, bawah = akhir Juli.</div>';
     }
     h += '<button class=btn-pri style="width:100%;height:32px;margin-top:8px" onclick="RPX.run()" ' + (RPX.busy ? 'disabled' : '') + '>&#9654; ' + (RPX.busy ? 'Menghitung…' : 'Hitung ' + (RPX.mode === 'pit' ? 'per pit' : 'progres')) + '</button>';
@@ -247,7 +247,7 @@
       var bar = document.querySelector('#rpBody .rptabs');
       if (!bar || bar.querySelector('.rpxtab')) return;
       var b2 = document.createElement('button');
-      b2.className = 'rpxtab'; b2.innerHTML = '&#9315; Pit &amp; progres';
+      b2.className = 'rpxtab'; b2.innerHTML = 'Pit &amp; progres';
       b2.title = 'Beberapa desain pit sekaligus, dan progres penambangan topo-ke-topo';
       b2.onclick = function () { RP.sec = 'x'; RPX.panel(); };
       bar.appendChild(b2);

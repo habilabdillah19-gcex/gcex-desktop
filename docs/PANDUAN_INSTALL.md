@@ -3243,3 +3243,167 @@ Ollama hanya memakai kartu grafis NVIDIA (atau AMD tertentu). Pada laptop dengan
 2. **Model kecil** `qwen3-vl:2b` (`ollama pull qwen3-vl:2b`, pilih di dialog AI): kira-kira 2x lebih cepat, sedikit lebih sering keliru membaca tulisan jelek — periksa sel kuning.
 3. Kecepatan **Cepat** (gambar 1280 px) dan tutup aplikasi lain supaya RAM 8 GB tidak penuh.
 
+## 107. Perapian UI/UX: satu fungsi satu tempat, judul yang nyambung dengan isinya
+
+Permintaan pemilik, dengan enam tangkapan layar: banyak fungsi yang sama muncul di beberapa menu,
+ada panel yang isinya tidak nyambung dengan judulnya, dan tombol-tombol bernomor dalam lingkaran
+masih tersisa.
+
+### Satu sebab, bukan enam
+
+Lima dari enam keluhan itu berasal dari **satu** kelemahan yang sama, bukan dari lima tempat berbeda.
+
+Panel Properti di bawah Project Tree diisi dengan cara memilih **tab** dan **sub-bagian** panel yang
+sudah ada. Node yang hanya menjalankan perintah — membuka dialog, mengunduh berkas — tidak punya
+tab, jadi ia **tidak mengganti isi panel sama sekali**: panel milik node SEBELUMNYA tetap terpampang
+di bawah judul node yang baru. Dan node yang punya tab tetapi tidak menyebut segmen mana yang
+dimaksud akan menampilkan **seluruh** panel Dig block, termasuk bagian milik node lain.
+
+Akibatnya persis seperti yang dilaporkan: tombol *Import BM* muncul di bawah judul *Sayatan 2D*,
+panel *Dig block otomatis* muncul di mana-mana, dan folder *Dig Block* memperlihatkan isi yang sama
+persis dengan sub-node *Otomatis*.
+
+### Yang dikerjakan
+
+Sekarang setiap node menyatakan apa yang muncul di Properti. Ada tiga bentuk, dan tidak ada bentuk
+keempat yang "membiarkan saja apa adanya":
+
+1. **Panel** — node yang memang punya panel sendiri (tab + sub-bagian + segmen).
+2. **Kartu aksi** — node yang menjalankan perintah: keterangan singkat + tombolnya, tanpa panel.
+   Ini bawaan untuk setiap node tanpa tab, jadi kelemahan yang sama tidak bisa muncul lagi pada
+   node yang ditambahkan nanti.
+3. **Kartu folder** — daftar sub-menu sebagai tombol, bukan salinan panel sub-node pertamanya.
+
+Pemetaan yang berubah, diperiksa dengan menekan ke-66 node satu per satu lalu merekam isi panelnya
+(`peta_panel`, lihat "Cara memeriksanya" di bawah):
+
+| Node | Sebelum | Sesudah |
+| --- | --- | --- |
+| `dig` (folder Dig Block) | sama persis dengan `dig.auto` | kartu folder |
+| `dig.auto` Otomatis | kelas kadar **dan** tujuan | kelas kadar saja |
+| `dig.dest` Tujuan (DEST) | tidak ada | node sendiri, tujuan saja |
+| `fl.2d` di bawah Flitch Aktif | panel Block Model + tombol Import BM | **Buat Flitch Aktif** (kartu, 3 tombol) |
+| `rep.unit`, `rep.csv`, `out.png`, `reg.xl`, `reg.pdf`, `reg.mdl` | panel node sebelumnya | kartu aksi |
+| `dig.qc`, `dig.pst`, `rep.day`, `reg.prd`, `reg.3d`, `reg.puz` | panel Dig block / Register | kartu aksi |
+| `rep.x` Per desain pit & progres | di Laporan Grade × Tonnage | pindah ke Block Model › Reporting |
+| `rep.rl` Ringkasan per RL | ada di DUA cabang | satu, di Block Model |
+| `rep`, `out`, `am`, `reg`, `sp`, `set` (folder) | menduplikasi sub-node pertamanya | kartu folder |
+
+Judul besar di dalam panel (`.lyhead`, `h3`) juga disembunyikan selama Project Tree aktif: ia hanya
+mengulang nama node yang sudah tertulis di kepala Properti, dan justru membuat isi panel terbaca
+sebagai milik judul yang salah.
+
+Node *Sayatan 2D* di bawah *Flitch Aktif* diganti menjadi **Buat Flitch Aktif**, sesuai permintaan:
+yang dikerjakan di situ memang menerapkan flitch, bukan mengatur sayatan.
+
+### Angka dalam lingkaran
+
+Dihapus seluruhnya, 51 tempat di enam berkas: tab ①–⑥ pada Reporting, Metode tonase, Pit & progres,
+alur As-Mined dan tab panel, serta badge bernomor di Project Tree. Badge itu kini titik status saja —
+statusnya (selesai / berikutnya / belum / opsional) tetap terbaca lewat warna dan tooltip, sedangkan
+nomornya tidak menambah apa pun di atas urutan node yang memang sudah terlihat dari atas ke bawah.
+Kalimat yang dulu merujuk "tab ②" diganti menjadi nama tabnya, supaya tidak menunjuk sesuatu yang
+sudah tidak ada.
+
+### Cara memeriksanya
+
+`peta_panel` menjalankan aplikasi sungguhan dengan data latihan, menekan setiap node Project Tree,
+lalu merekam judul-judul yang BENAR-BENAR terlihat di panel Properti. Itu yang memunculkan peta
+redundansi di atas, dan itu pula yang dipakai untuk memastikan perbaikannya bekerja — bukan dengan
+membaca kode dan berharap.
+
+## 108. Lag di laptop: 45,8 detik layar membeku, menjadi 1,0 detik
+
+Laporan pemilik: aplikasi sering tersendat di laptop HP 14s. Yang dikerjakan di sini bukan menebak
+lalu menyetel apa saja yang kelihatan berat, melainkan **mengukur lebih dulu**.
+
+### Cara mengukurnya
+
+Yang diukur adalah apa yang dirasakan: **berapa lama layar membeku**. Caranya memantau jeda antar
+frame (`requestAnimationFrame`); frame normal ~16 ms, dan setiap jeda di atas 50 ms adalah waktu
+ketika aplikasi tidak menanggapi apa pun. Diuji di atas block model sintetis **586.775 blok** dengan
+ukuran campuran 6×6×3 / 3×3×3 / 1,5×1,5×0,75 m — sengaja dibuat sebesar `bmgczone3` milik pemilik,
+sebab data latihan hanya 66 rb blok dan tidak pernah memperlihatkan masalahnya.
+
+Dua pengukuran pertama saya **salah dan dibuang**, dan itu dicatat di sini supaya tidak diulang:
+
+1. Mengukur waktu dinding sesudah `wait_for_timeout(6000)` — yang terbaca ya 6 detik itu, bukan
+   lamanya aplikasi sibuk.
+2. Menggeser slider lewat event buatan pada `#secPos` — **id itu tidak ada**; slider sayatan ber-id
+   `#pos`. Jadi selama dua putaran pengukuran, tidak ada slider yang benar-benar digeser, dan
+   angkanya (173 ms vs 212 ms) tidak berarti apa-apa. Baru setelah gagang slider yang benar diseret
+   dengan gerakan mouse sungguhan, masalahnya muncul.
+
+### Apa yang ditemukan
+
+Pada profil Seimbang, grafik berisi **8 trace `mesh3d` dengan 3.389.028 titik**. Setiap langkah
+geseran slider sayatan membangun ulang seluruh titik itu dan mengirimnya lagi ke kartu grafis.
+
+Menyeret slider sayatan 24 langkah:
+
+| | Layar membeku | Total membeku | Jeda terlama |
+| --- | --- | --- | --- |
+| Sebelum | **47 ×** | **45.847 ms** | **4.779 ms** |
+| Sesudah | 3 × | **1.025 ms** | 773 ms |
+
+Hampir 46 detik tidak menanggapi apa pun, dengan satu jeda hampir 5 detik. Di laptop dengan grafis
+bawaan, itulah yang terasa sebagai "lag".
+
+### Yang diubah
+
+1. **Pengaman model besar.** Setelan *Update saat slider dilepas* sudah lama ada dan memang
+   jawabannya, tetapi bawaannya mati pada profil Seimbang — jadi pengguna harus tahu dulu bahwa
+   setelan itu ada. Sekarang, saat block model ≥ 250.000 blok dimuat, setelan itu dinyalakan
+   **sekali** dan **alasannya ditulis** di panel Block Model. Ia tidak menimpa keputusan pengguna:
+   begitu pengguna menyentuh setelan itu sendiri, pilihannya diingat dan tidak diubah lagi. Yang
+   berubah hanya KAPAN gambar diperbarui, bukan isinya.
+2. **Penyegaran Project Tree.** Dulu `setInterval` 1,5 detik tanpa syarat, dan tiap denyut membangun
+   ulang seluruh pohon. Di dalamnya ada `lyItems()`, yang **menghitung tonase presisi setiap
+   poligon** — padahal yang dipakai hanya JUMLAH poligonnya. Diganti `lyPolys()`, yang memberi
+   daftar sama tanpa satu pun perhitungan tonase. Penyegarannya kini menunggu saat peramban luang
+   (`requestIdleCallback`), dilewati saat tampilan sedang diputar/digeser, dan mundur bertahap
+   1,5 → 8 detik selama tidak ada yang berubah, lalu cepat lagi begitu pengguna menyentuh apa pun.
+   Diukur pada data latihan dengan 68 dig block: 6,6 → 4,9 ms per bangun-ulang. Kecil, tetapi
+   denyut berkalanya yang hilang.
+
+Perubahan nomor 2 saja tidak akan terasa; yang menyelesaikan masalahnya adalah nomor 1.
+
+## 109. Fitur Demo disesuaikan dengan Project Tree
+
+Setelah panel Properti ditentukan oleh node Project Tree, Demo perlu ikut disesuaikan: ia berpindah
+panel dengan `uiTab()`, padahal tab-nya memang berganti tetapi bagian panel yang dituju tetap
+tersembunyi karena node yang terpilih bukan pemiliknya.
+
+### Yang diperiksa, dan apa yang ternyata sudah rusak
+
+`tools/uji/uji_demo.py` menjalankan demo **sungguhan** dari langkah pertama sampai habis, dan tiap
+250 ms mencatat apakah elemen yang ditunjuk langkah itu BENAR-BENAR terlihat di layar. Hasil awal:
+**5 dari 37 langkah menunjuk elemen yang tidak pernah tampak.** Pemeriksaan yang sama dijalankan
+pada versi SEBELUM perapian UI (`git show HEAD:app/index.html`) dan memberi **5 kegagalan yang sama
+persis** — jadi kelimanya sudah rusak sejak sebelumnya, bukan akibat perapian ini, dan sekarang
+ikut diperbaiki.
+
+### Tiga percobaan, dua di antaranya salah
+
+Dicatat karena sempat memperburuk keadaan:
+
+1. Memetakan node Project Tree ke **17 langkah** sekaligus: kerusakan NAIK dari 5 ke 7. Sebabnya
+   memilih node ikut mengganti panel, dan pilihan itu **terbawa ke langkah berikutnya** yang
+   mengandaikan panel lain.
+2. Dipersempit ke 4 langkah: tersisa 4 — perbaikan lama hilang, kerusakan baru muncul.
+3. Yang benar: bukan menambal tiap langkah, melainkan **satu** perubahan — selama demo berjalan
+   (`body.dm-tur`), penyembunyian per-node dimatikan. Demo adalah tur yang menyusuri banyak bagian
+   panel berturut-turut; Project Tree sebaliknya sengaja menyembunyikan yang bukan milik node
+   terpilih. Dua maksud itu memang bertabrakan, dan tempat menyelesaikannya satu, bukan 37.
+
+Ditambah dua hal kecil: dua langkah Layout PDF tetap perlu memilih node-nya (bagian panel itu hanya
+terbuka lewat pemilih bagian, bukan lewat penyembunyian), dan tiga elemen target diarahkan ulang —
+`.dbtot` yang baru ada setelah dig block dibuat, serta `btn2d` dan `rbAM` yang merupakan tombol
+bilah atas yang kini digantikan Project Tree (yang ditunjuk sekarang baris node-nya).
+
+Satu kesalahan saya sendiri juga dicatat: perbaikan elemen target sempat **tidak pernah dijalankan**
+karena fungsi pemasangnya keluar lebih awal untuk langkah yang tidak ada di daftar node. Ujinya
+melaporkan kegagalan yang sama seolah perbaikannya tidak bekerja — padahal kodenya memang tidak
+pernah dieksekusi.
+
+**Hasil akhir: 0 dari 37 langkah menunjuk elemen yang tidak terlihat.**

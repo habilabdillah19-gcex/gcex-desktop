@@ -197,12 +197,12 @@
     var m = window.BX && BX.m;
     if (!m) { b.innerHTML = '<div class="box gmstate">Belum ada block model.</div>'; return; }
     var h = '<i id=rpmBody hidden></i><div class="uitabs rptabs">' +
-      '<button onclick="RP.sec=\'1\';rpPanel()">&#9312; Atribut</button>' +
-      '<button onclick="RP.sec=\'c\';rpPanel()">&#9313; Constraint</button>' +
-      '<button onclick="RP.sec=\'2\';rpPanel()">&#9314; Hasil</button>' +
-      (window.RPX ? '<button onclick="RPX.open()">&#9315; Pit &amp; progres</button>' : '') +
-      '<button class=on>&#9316; Metode tonase</button></div>';
-    h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon, permukaan dan SG</b> yang sudah diatur di tab &#9312; dan &#9313;. ' +
+      '<button onclick="RP.sec=\'1\';rpPanel()">Atribut</button>' +
+      '<button onclick="RP.sec=\'c\';rpPanel()">Constraint</button>' +
+      '<button onclick="RP.sec=\'2\';rpPanel()">Hasil</button>' +
+      (window.RPX ? '<button onclick="RPX.open()">Pit &amp; progres</button>' : '') +
+      '<button class=on>Metode tonase</button></div>';
+    h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon, permukaan dan SG</b> yang sudah diatur di tab <b>Atribut</b> dan <b>Constraint</b>. ' +
       'Yang dibandingkan di sini hanya <b>aturan blok perbatasan</b>.</div>';
     h += '<div class="box gmstate"><b>Seperti Surpac</b> &mdash; blok dihitung <b>utuh</b> berdasarkan titik pusatnya (Surpac <i>Keep partial = False</i>).<br>' +
       '<b>Presisi GC-Ex</b> &mdash; blok perbatasan ditimbang <b>proporsi volumenya</b> yang berada di dalam solid (atribut <code>' +
@@ -232,14 +232,14 @@
           'melaporkan material <b>di dalam solid saja</b>, sedangkan baris <b>Seperti Surpac</b> melaporkan ' +
           'semua blok yang lolos constraint &mdash; termasuk waste di luar solid. Selisih sebesar itu wajar ' +
           'dan bukan tanda salah hitung; bandingkan keduanya hanya sesudah constraint domainnya disamakan ' +
-          '(tab &#9313;).</div>';
+          '(tab <b>Constraint</b>).</div>';
       }
       h += tabel();
       h += '<div class="g2 f" style="margin-top:8px"><button class=btn-pri onclick="RPM.csv()">&#8681; Export CSV</button>' +
         '<button onclick="RP.sec=\'2\';rpPanel()">Laporan rinci terakhir</button></div>';
       h += '<div class=hint style="margin-top:6px">Untuk rekonsiliasi dengan report Surpac: pakai baris <b>Seperti Surpac</b>. ' +
         'Untuk dig plan dan perhitungan dilusi / ore loss: pakai <b>Presisi GC-Ex</b>, karena di situlah blok perbatasan dihitung seadanya. ' +
-        'Perbandingan yang paling berarti: batasi domain ke solid yang sama di tab &#9313;, lalu lihat selisihnya &mdash; ' +
+        'Perbandingan yang paling berarti: batasi domain ke solid yang sama di tab <b>Constraint</b>, lalu lihat selisihnya &mdash; ' +
         'yang tersisa barulah pengaruh aturan blok perbatasan.</div>';
     }
     b.innerHTML = h;
@@ -254,7 +254,7 @@
       if (!bar || bar.querySelector('.rpmtab')) return;
       if (document.getElementById('rpmBody')) return;    /* panel milik tab ini sendiri */
       var b2 = document.createElement('button');
-      b2.className = 'rpmtab'; b2.innerHTML = '&#9316; Metode tonase';
+      b2.className = 'rpmtab'; b2.innerHTML = 'Metode tonase';
       b2.title = 'Bandingkan tonase cara Surpac (blok utuh) dengan cara presisi GC-Ex (timbang sb_frac)';
       b2.onclick = function () { RPM.open(); };
       bar.appendChild(b2);

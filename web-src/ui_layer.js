@@ -74,14 +74,14 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
 (function(){
   var wrap=function(fn,after,before){var f=window[fn];if(typeof f!=='function')return;window[fn]=function(){if(before)try{before.apply(this,arguments);}catch(e){console.error(e);}var r=f.apply(this,arguments);if(after)try{after.apply(this,arguments);}catch(e){console.error(e);}return r;};};
   /* Block Model: tab utama (Block model / Dig block / Layout PDF) */
-  uiSecTabs($('pBM'),'bmp',['&#9312; Block model','&#9313; Dig block','&#9314; Layout PDF']);
+  uiSecTabs($('pBM'),'bmp',['Block model','Dig block','Layout PDF']);
   /* isi Block model: sub-bagian seperti GC-Ex Drillhole */
   wrap('bxPanel',function(){var b=$('bxBody');if(!b||!BX.m)return;var mk=function(t,before){if(!before)return;var h=document.createElement('h4');h.textContent=t;b.insertBefore(h,before);};
     var kids=Array.prototype.slice.call(b.children),fl=kids.filter(function(n){return n.classList.contains('lab')&&/cut-off/i.test(n.textContent);})[0];
     mk('Warna & kelas',kids[0]);mk('Filter & tampilan',fl);mk('Statistik & tonase',$('bxStat'));
     uiSecTabs(b,'bm',['Warna &amp; kelas','Filter &amp; SG','Statistik']);});
   /* As-Mined: alur bernomor jadi tab */
-  var amTabs=function(){var b=$('amBody');if(!b||!BX.m)return;uiSecTabs(b,'am',['&#9312; Setup','&#9313; Sampel','&#9314; Poligon','&#9315; Parameter','&#9316; Register','&#9317; Layout'],{hd:'.amh',def:'3'});};
+  var amTabs=function(){var b=$('amBody');if(!b||!BX.m)return;uiSecTabs(b,'am',['Setup','Sampel','Poligon','Parameter','Register','Layout'],{hd:'.amh',def:'3'});};
   wrap('amPanel',amTabs);
   wrap('amFile',null,function(){uiSecOpen('am',2);});
   ['amPtsFile','amBndFile','amBndFromDig','amDig'].forEach(function(fn){wrap(fn,null,function(){uiSecOpen('am',3);});});

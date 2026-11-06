@@ -250,6 +250,76 @@
 
   /* ---------- susun ulang: buang, pendekkan, tambah, urutkan per bagian ---------- */
   var _ds = dmSteps;
+
+  /* ---------- Demo mengikuti Project Tree ----------
+     Sejak panel Properti ditentukan oleh NODE yang terpilih di Project Tree, berpindah panel dengan
+     uiTab() saja tidak cukup: tab-nya memang berganti, tetapi bagian panel yang dituju tetap
+     tersembunyi karena node yang terpilih bukan pemiliknya. Akibatnya lima langkah demo menunjuk
+     elemen yang tidak terlihat di layar -- diperiksa dengan menjalankan demo sungguhan dan merekam
+     apakah elemen targetnya pernah tampak (uji_demo). Kelimanya sudah begitu SEBELUM perapian UI
+     ini; bukan akibatnya, tetapi ikut diperbaiki di sini.
+
+     `pilih()` memilih node-nya lebih dulu, dan `ganti()` menempelkan itu ke langkah yang sudah ada
+     tanpa menulis ulang langkahnya. Satu tempat, jadi langkah demo berikutnya tidak perlu tahu
+     soal ini.                                                                                   */
+  function pilih(id) { try { if (window.PT && PT.select) PT.select(id); } catch (e) {} }
+  /* Demo adalah TUR, bukan pekerjaan: ia menyusuri banyak bagian panel berturut-turut.
+     Project Tree sebaliknya sengaja menyembunyikan bagian yang bukan milik node terpilih.
+     Dua maksud itu bertabrakan, dan dua percobaan sebelumnya membuktikan menambalnya per langkah
+     tidak bekerja: memetakan node ke 17 langkah menaikkan kerusakan 5 -> 7, memetakan 4 langkah
+     menyisakan 4 -- sebab pilihan node terbawa ke langkah BERIKUTNYA yang mengandaikan panel lain.
+     Jadi yang diubah bukan tiap langkah, melainkan satu hal: SELAMA demo berjalan, penyembunyian
+     itu dimatikan. Selesai demo, semuanya kembali seperti semula. */
+  function demoCss() {
+    if (document.getElementById('dmxCss')) return;
+    var st = document.createElement('style'); st.id = 'dmxCss';
+    st.textContent =
+      'body.dm-tur #dbBody[data-f] > [data-seg]{display:revert!important}' +
+      'body.dm-tur.pt-bmhd #pBM > *{display:revert!important}' +
+      'body.dm-tur.pt-card #side > *{display:revert!important}' +
+      'body.dm-tur #ptCard{display:none!important}' +
+      'body.dm-tur #pBM .lyhead,body.dm-tur #pBM > h3,body.dm-tur #pAM > h3{display:revert!important}';
+    document.head.appendChild(st);
+  }
+  (function () {
+    var s0 = window.dmStart, e0 = window.dmEnd, p0 = window.dmStop;
+    if (typeof s0 === 'function') window.dmStart = function () {
+      demoCss(); document.body.classList.add('dm-tur'); return s0.apply(this, arguments); };
+    var mati = function (f) { return typeof f === 'function' ? function () {
+      document.body.classList.remove('dm-tur'); return f.apply(this, arguments); } : f; };
+    if (e0) window.dmEnd = mati(e0);
+    if (p0) window.dmStop = mati(p0);
+  })();
+
+  /* #lyBody berada di bagian panel "Layout PDF" yang hanya terbuka lewat node-nya; menampilkan
+     ulang isi pBM saja tidak cukup, sebab yang menyembunyikannya adalah pemilih bagian panel.
+     Dua langkah ini saja yang perlu memilih node -- dan sejak penyembunyian dimatikan selama demo,
+     pilihan yang terbawa ke langkah berikutnya tidak lagi menyembunyikan apa pun. */
+  var PTNODE = {
+    'Layout & Plot PDF': 'out.ly',
+    'Pratinjau PDF': 'out.ly'
+  };
+  /* Elemen target yang tidak pernah tampak, diarahkan ke yang benar. */
+  var PTEL = {
+    /* .dbtot baru ada setelah dig block dibuat; sebelum itu demo menunjuk ruang kosong. */
+    'Running grade & tonnage': '#dbBody table.dbtot, #dbBody .lytb, #dbBody',
+    /* btn2d & rbAM tombol bilah atas yang digantikan Project Tree; baris node-nya yang ditunjuk. */
+    'Sayatan 2D (plan)': '.ptr[data-id="fl.2d"], #btn2d',
+    'Model as-mined (rekonsiliasi bulanan)': '#amBody, .ptr[data-id="am"]'
+  };
+  function ikutTree(S) {
+    S.forEach(function (st) {
+      /* PTEL dipasang LEBIH DULU dan tanpa syarat. Versi sebelumnya keluar dari iterasi ketika
+         langkahnya tidak ada di PTNODE, sehingga perbaikan elemen target tidak pernah terpasang
+         sama sekali -- dan uji demo tetap melaporkan kegagalan yang sama seolah perbaikannya
+         tidak bekerja, padahal kodenya memang tidak pernah dijalankan. */
+      if (PTEL[st.t]) st.el = PTEL[st.t];
+      var id = PTNODE[st.t]; if (!id) return;
+      var r0 = st.run;
+      st.run = function (A) { A(0, function () { pilih(id); }); if (r0) r0(A); };
+    });
+  }
+
   window.dmSteps = dmSteps = function () {
     var S;
     try { S = _ds.apply(this, arguments) || []; } catch (e) { console.error(e); return []; }
@@ -269,6 +339,7 @@
           .sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; })
           .map(function (q) { return q[2]; });
     S.unshift(stepData());                                        /* data dulu, baru pembuka */
+    try { ikutTree(S); } catch (e) { console.error(e); }
     try { angkaLangkah(S); } catch (e) { console.error(e); }
     return S;
   };

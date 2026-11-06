@@ -17,10 +17,15 @@
   function segTag(){var b=$('dbBody');if(!b)return;var seg='fl';[].forEach.call(b.children,function(c){
       if(c.classList.contains('dbsub')){var t=c.textContent||'';seg=/otomatis|tujuan/i.test(t)?'auto':/digit manual/i.test(t)?'man':/export/i.test(t)?'exp':/running grade/i.test(t)?'rep':seg;}
       else if(c.classList.contains('elbox')&&seg==='fl')seg='el';
-      /* aturan kelas (string number / warna / material) & tujuan dipakai dig block otomatis DAN manual */
-      var rule=seg==='auto'&&(c.classList.contains('dbrt')||c.classList.contains('dbdt')||(c.classList.contains('dbsub')&&/tujuan/i.test(c.textContent||''))||
-        (c.tagName==='BUTTON'&&/dbRAdd/.test(c.getAttribute('onclick')||''))||!!(c.querySelector&&c.querySelector('select[onchange*="rAttr"],button[onclick*="lyDestAdd"]')));
-      c.setAttribute('data-seg',rule?'rule':seg);});
+      /* Aturan kelas kadar ('rule') dan tujuan material ('dest') dipakai dig block otomatis DAN manual,
+         jadi keduanya dipisah dari segmen 'auto' supaya tiap sub-node hanya menampilkan miliknya:
+         Otomatis = kelas kadar, Tujuan = tujuan per material. Sebelumnya keduanya satu segmen, sehingga
+         node 'Otomatis' dan node 'Tujuan' memperlihatkan isi yang persis sama. */
+      var q=function(sel){return !!(c.querySelector&&c.querySelector(sel));};
+      var dest=seg==='auto'&&(c.classList.contains('dbdt')||(c.classList.contains('dbsub')&&/tujuan/i.test(c.textContent||''))||q('button[onclick*="lyDestAdd"]'));
+      var rule=!dest&&seg==='auto'&&(c.classList.contains('dbrt')||
+        (c.tagName==='BUTTON'&&/dbRAdd/.test(c.getAttribute('onclick')||''))||q('select[onchange*="rAttr"]'));
+      c.setAttribute('data-seg',dest?'dest':rule?'rule':seg);});
     if(FOC)b.setAttribute('data-f',FOC);else b.removeAttribute('data-f');}
   function focus(f){FOC=f||'';segTag();var b=$('dbBody');if(b&&f){var sd=$('side');if(sd)sd.scrollTop=0;}}
   (function(){var d=window.dbPanel;if(typeof d==='function'&&!d._ptf){window.dbPanel=function(){var r=d.apply(this,arguments);try{segTag();}catch(e){}return r;};window.dbPanel._ptf=1;}})();
@@ -31,10 +36,17 @@
   var setTopo=function(m){if(m)try{localStorage.setItem('gcex_pt_topo',m);}catch(e){}var S=$('ovTopoS'),L=$('ovTopoL');if(S)S.checked=m==='surf'||m==='both';if(L)L.checked=m==='line'||m==='both';updatePlot();};
   var asMenu=function(cur,set){return[{h:'Tampilkan sebagai'},{t:'Surface (permukaan)',on:cur==='surf',fn:function(){set('surf');}},{t:'Garis (kontur / crest-toe)',on:cur==='line',fn:function(){set('line');}},{t:'Surface + garis',on:cur==='both',fn:function(){set('both');}}];};
   /* ---------- status ---------- */
-  function S(){var m=window.BX&&BX.m,fl=ok(function(){return !!(window.dbFlOn&&dbFlOn());},false),dig=m?ok(function(){return lyItems(true).length;},0):0,
+  function S(){var m=window.BX&&BX.m,fl=ok(function(){return !!(window.dbFlOn&&dbFlOn());},false),/* Dulu: lyItems(true).length. lyItems menghitung TONASE PRESISI tiap poligon (memotong blok di
+       garis poligon dan bidang flitch) -- padahal yang dipakai di sini cuma JUMLAHNYA. Dipanggil ulang
+       tiap penyegaran pohon, itu salah satu sumber tersendat terbesar di model besar. lyPolys()
+       memberi daftar yang sama tanpa satu pun perhitungan tonase. */
+      dig=m?ok(function(){return lyPolys().length;},0):0,
       bnd=ok(function(){return amD().bnd||[];},[]),amc=bnd.filter(function(x){return x.st;}).length;
     return{fp:!!(window.FP&&FP.dir),sp:has(window.topoData)||has(window.pitData)||!!window.orthoImg,bm:!!m,ref:ok(function(){return MD.models.length+MD.pts.length+(MD.str||[]).length;},0),
       fl:fl,dig:dig,ly:ok(function(){return LY.pages.length;},0)>0,bnd:bnd.length,amc:amc};}
+  /* Tidak di-cache: luas berubah begitu satu titik digeser, dan kunci cache yang murah (jumlah titik)
+     tidak menangkap itu -- luas basi lebih berbahaya daripada hitungan ulang yang murah ini. */
+  function areaTxt(q){try{var a=dgArea(q);return a?a.toFixed(0)+' m\u00b2':'';}catch(e){return '';}}
   function flTxt(){var B=ok(function(){return lyBench();},null);return B?'RL '+lyFmt(B[0])+' – '+lyFmt(B[1]):'';}
   function nodes(){var s=S(),m=window.BX&&BX.m,L=[],add=function(f,id,t){try{L.push(f());}catch(e){console.warn('tree',id,e);L.push({id:id,t:t,ic:'folder',fold:1});}};
     /* status & langkah berikutnya (langkah wajib berurutan) */
@@ -45,7 +57,7 @@
       go:function(){var b=$('pjBtn');if(b)b.click();},
       menu:function(){return[{t:'Simpan sekarang',fn:function(){if(SA.saveNow)SA.saveNow();}},{t:'Simpan sebagai file .prj…',fn:function(){SA.prjSave();}},{t:'Buka file .prj…',fn:function(){PT.pick('.prj',false,function(i){SA.prjOpen(i.files[0]);});}},{t:'Unduh file proyek (.dh3d)',fn:function(){if(SA.downloadProj)SA.downloadProj();}},{t:'Import ulang (data lain dipertahankan)…',fn:function(){if(SA.reopen)SA.reopen();}},{sep:1},{t:'Menu proyek & folder…',fn:function(){var b=$('pjBtn');if(b)b.click();}}];}};},'proj','Proyek');
     add(function(){var T=window.topoData,Pd=window.pitData,O=window.orthoImg;
-      return{id:'sp',step:'2',st:st.sp,t:'Data Spasial',ic:'folder',fold:1,tab:'Overlay',hint:'Topografi, desain pit & orthofoto (opsional)',menu:function(){return[reimp,{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
+      return{id:'sp',step:'2',st:st.sp,t:'Data Spasial',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Topografi, desain pit & orthofoto (opsional)',menu:function(){return[reimp,{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
         kids:[{id:'sp.topo',t:'Topografi',ic:'topo',tab:'Overlay',dim:!has(T),chk:has(T)?!!topoAs():undefined,onChk:function(v){setTopo(v?topoPref():'');},
             b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return[reimp,{sep:1}].concat(asMenu(topoAs(),setTopo));}},
           {id:'sp.pit',t:'Desain pit',ic:'pit',tab:'Overlay',dim:!has(Pd),chk:has(Pd)?!!U.cb('ovPit'):undefined,onChk:function(v){U.setCb('ovPit',v);},b:has(Pd)?({surf:'surface',line:'garis',both:'surface+garis'}[U.val('ovPitMode')]||''):'',
@@ -60,7 +72,7 @@
           sub('bm.cls','Warna & kelas kadar','color','BM',['Block model','Warna']),sub('bm.flt','Filter & SG','attr','BM',['Block model','Filter']),sub('bm.stat','Statistik','chart','BM',['Block model','Statistik']),
           {id:'bm.rep',t:'Reporting (constraint)',ic:'report',tab:'Rep',b:ok(function(){return window.RP&&RP.res&&RP.res.bm===m.name?N(RP.res.nb)+' blok':'';},''),hint:'Grade × tonase sisa dengan constraint topografi / pit / DTM / domain / poligon / RL, ringkasan per RL',
             go:function(){if(window.RP){RP.sec=RP.res?'2':'1';rpPanel();}},
-            kids:[{id:'bm.rep.1',t:'Atribut & ringkasan per RL',ic:'attr',tab:'Rep',go:function(){RP.sec='1';rpPanel();}},{id:'bm.rep.2',t:'Constraint',ic:'filter',tab:'Rep',go:function(){RP.sec='c';rpPanel();}},{id:'bm.rep.3',t:'Hasil grade × tonase',ic:'chart',tab:'Rep',go:function(){RP.sec='2';rpPanel();}}]},
+            kids:[{id:'bm.rep.1',t:'Atribut & ringkasan per RL',ic:'attr',tab:'Rep',go:function(){RP.sec='1';rpPanel();}},{id:'bm.rep.2',t:'Constraint',ic:'filter',tab:'Rep',go:function(){RP.sec='c';rpPanel();}},{id:'bm.rep.3',t:'Hasil grade × tonase',ic:'chart',tab:'Rep',go:function(){RP.sec='2';rpPanel();}}].concat(window.rpxTree?rpxTree():[])},
           {id:'bm.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:A('bsOpen'),dim:!(window.bsOn&&bsOn()),hint:'Untuk .mdl besar yang dibuka lewat backend (seluruh file, bukan hanya potongan)'}]:[]};},'bm','Block Model');
     add(function(){var mdK=function(kind,ic,lab){return ok(function(){return MD[kind].map(function(o,i){return{id:'ref.'+kind+'.'+i+'.'+o.name,t:o.name,ic:ic,tab:'Model',sub:lab,chk:!!o.vis,onChk:function(v){mdSet(kind,i,'vis',v);},
         b:o.nt?N(o.nt)+' segitiga':'',menu:function(){return[{t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}}];}};});},[]);};
@@ -78,7 +90,7 @@
       var fl=ord.map(function(k){var g=G[k],ak=isAct(g),bd=[g.db.length?g.db.length+' DB':'',g.am.length?g.am.length+' AM':''].filter(Boolean).join(' · ');
         var kids=[];
         if(g.db.length)kids.push({id:'fl.'+k+'.db',t:'Dig block ('+g.db.length+')',ic:'poly',fold:1,kids:g.db.map(function(o){var q=o.s;return{id:'fl.'+k+'.db.'+(q.id||o.i),t:'#'+q.no+' '+(q.d||'string')+(q.dest?' → '+q.dest:''),ic:q.manual?'digit':'poly',
-          b:(function(){try{var a=dgArea(q);return a?a.toFixed(0)+' m²':'';}catch(e){return '';}})(),
+          b:areaTxt(q),
           go:function(){try{if(!isAct(g))open(g);setTimeout(function(){if(window.DGM)DGM.last=q.id;DB.sel=q.id;PT.goSub('BM','Dig block');try{dbPanel();}catch(e){}updatePlot();},120);}catch(e){console.error(e);}},
           menu:function(){return[{t:'Buka flitch & sorot',fn:function(){if(!isAct(g))open(g);}},{t:'Edit bentuk…',fn:function(){if(!isAct(g))open(g);setTimeout(function(){dbEdStart(DG.S.indexOf(q));},200);}}];}};})});
         if(g.am.length)kids.push({id:'fl.'+k+'.am',t:'Poligon as-mined ('+g.am.length+')',ic:'poly',fold:1,kids:g.am.map(function(x){var I=ok(function(){return amInfoById(x.id);},null);return{id:'fl.'+k+'.am.'+x.id,t:(I&&I.code)||x.name||x.id,ic:'poly',
@@ -90,32 +102,35 @@
         menu:function(){return[{t:'Buka flitch ini (Penampang 2D)',fn:function(){open(g);}},{t:'Register as-mined flitch ini',fn:function(){open(g);uiTab('AM');}},{sep:1},{t:'Hapus semua dig block di flitch ini…',danger:1,fn:function(){open(g);setTimeout(A('dbDelFlitch'),200);}}];}};});
       return{id:'fl',step:'5',st:st.fl,t:'Flitch Aktif',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'fl',b:m?flTxt():'',hint:'Tinggi flitch, RL atas / bawah, metode tonase, lalu Terapkan flitch (Penampang 2D)',
         menu:function(){return[{t:'Terapkan flitch (buka Penampang 2D)',fn:A('lyApply'),dis:!m}];},
-        kids:[{id:'fl.2d',t:'Penampang 2D',ic:'s2d',tab:'Slice',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();}}].concat(window.ortFlTree?ortFlTree():[]).concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,kids:fl}]:[])};},'fl','Flitch Aktif');
-    add(function(){return{id:'dig',step:'6',st:st.dig,t:'Dig Block',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'auto',b:s.dig?s.dig+' poligon':'',hint:'Dig block otomatis dari kelas kadar & tujuan material, atau digit manual (flitch aktif)',
+        kids:[{id:'fl.2d',t:'Buat Flitch Aktif',ic:'s2d',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();},hint:'Terapkan RL atas / bawah di atas sebagai flitch aktif, lalu buka Penampang 2D-nya',card:{hint:'Menerapkan tinggi & RL flitch yang diatur di Flitch Aktif, lalu membuka Penampang 2D pada flitch itu.',acts:[{t:'Buat flitch aktif & buka Penampang 2D',pri:1,fn:A('lyApply')},{t:'Hanya buka / tutup Penampang 2D',fn:A('toggle2D')},{t:'Atur tinggi & RL flitch…',fn:function(){PT.select('fl');}}]}}].concat(window.ortFlTree?ortFlTree():[]).concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,kids:fl}]:[])};},'fl','Flitch Aktif');
+    add(function(){return{id:'dig',step:'6',st:st.dig,t:'Dig Block',ic:'folder',fold:1,b:s.dig?s.dig+' poligon':'',hint:'Dig block otomatis dari kelas kadar & tujuan material, atau digit manual (flitch aktif)',card:{kids:1,hint:'Pilih cara membuat dig block di bawah. Panel pengaturannya ada di sub-menu masing-masing, supaya satu pengaturan hanya punya satu tempat.',acts:[{t:'Buat dig block otomatis (flitch aktif)',pri:1,fn:function(){PT.select('dig.auto');setTimeout(A('dbAuto'),200);}}]},
         menu:function(){return[{t:'Buat dig block otomatis (flitch aktif)',fn:function(){A('dbAuto')();},dis:!m},{t:'Hapus semua dig block di flitch aktif…',danger:1,fn:A('dbDelFlitch'),dis:!s.dig}];},
-        kids:[{id:'dig.auto',t:'Otomatis (kelas & tujuan)',ic:'poly',tab:'BM',sub:'Dig block',foc:'auto'},{id:'dig.man',t:'Digit manual (snap sudut blok)',ic:'digit',tab:'BM',sub:'Dig block',foc:'man'},
+        kids:[{id:'dig.auto',t:'Otomatis (kelas kadar)',ic:'poly',tab:'BM',sub:'Dig block',foc:'auto',hint:'Batas kelas kadar, string number & warna material, lalu buat poligon otomatis di flitch aktif'},{id:'dig.dest',t:'Tujuan (DEST) per material',ic:'attr',tab:'BM',sub:'Dig block',foc:'dest',hint:'Tujuan tiap material (ROM / stockpile / waste dump) — dipakai dig block otomatis maupun digit manual'},{id:'dig.man',t:'Digit manual (snap sudut blok)',ic:'digit',tab:'BM',sub:'Dig block',foc:'man'},
           {id:'dig.str',t:'Rekap & edit string',ic:'string',tab:'Dig',hint:'Daftar string yang sudah dibuat: tampil / sembunyi, buka bidang, edit bentuk, hapus; string baru di bawahnya',b:ok(function(){return DG.S.length;},0)||''}].concat(window.gcoDigTree?gcoDigTree():[])};},'dig','Dig Block');
-    add(function(){return{id:'rep',step:'7',st:st.rep,t:'Laporan Grade × Tonnage',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'rep',hint:'Running grade & tonnage per dig block, multi-elemen',
+    add(function(){return{id:'rep',step:'7',st:st.rep,t:'Laporan Grade × Tonnage',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Running grade & tonnage per dig block, multi-elemen',
         kids:[{id:'rep.run',t:'Running grade & tonnage',ic:'table',tab:'BM',sub:'Dig block',foc:'rep'},{id:'rep.el',t:'Elemen laporan & kadar tonase',ic:'el',tab:'BM',sub:'Dig block',foc:'el'},
-          {id:'rep.unit',t:'Satuan elemen…',ic:'attr',go:A('elUnitDlg')},{id:'rep.csv',t:'Ringkasan tonase (CSV)',ic:'export',go:A('lyCsv')},{id:'rep.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:A('bsOpen'),dim:!(window.bsOn&&bsOn()),hint:'Untuk .mdl besar yang dibuka lewat backend'}].concat(window.gcoRepTree?gcoRepTree():[]).concat(window.rpxTree?rpxTree():[])};},'rep','Laporan');
-    add(function(){return{id:'out',step:'8',st:st.out,t:'Layout & Ekspor Dig Plan',ic:'folder',fold:1,tab:'BM',sub:'Layout',hint:'Layout & plot PDF, export STR / DXF untuk Surpac',
+          {id:'rep.unit',t:'Satuan elemen…',ic:'attr',go:A('elUnitDlg')},{id:'rep.csv',t:'Ringkasan tonase (CSV)',ic:'export',go:A('lyCsv')}].concat(window.gcoRepTree?gcoRepTree():[])};},'rep','Laporan');
+    add(function(){return{id:'out',step:'8',st:st.out,t:'Layout & Ekspor Dig Plan',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Layout & plot PDF, export STR / DXF untuk Surpac',
         kids:[sub('out.ly','Layout & plot PDF','map','BM','Layout'),{id:'out.str',t:'Export STR / DXF (Surpac)',ic:'export',tab:'BM',sub:'Dig block',foc:'exp'},{id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')}]};},'out','Layout');
-    add(function(){return{id:'am',step:'9',st:st.am,t:'As-Mined',ic:'folder',fold:1,tab:'AM',sub:'Poligon',b:s.bnd?s.amc+'/'+s.bnd+' poligon':'',chk:ok(function(){return !!AM.show;}),onChk:function(v){AM.show=v;updatePlot();if(window.amPanel)amPanel();},hint:'Sesudah penambangan: sampel, pick-up, boundary aktual & hitung',
+    add(function(){return{id:'am',step:'9',st:st.am,t:'As-Mined',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},b:s.bnd?s.amc+'/'+s.bnd+' poligon':'',chk:ok(function(){return !!AM.show;}),onChk:function(v){AM.show=v;updatePlot();if(window.amPanel)amPanel();},hint:'Sesudah penambangan: sampel, pick-up, boundary aktual & hitung',
         kids:[sub('am.1','Setup register & kelas','gear','AM','Setup'),sub('am.2','Sampel (collar / assay)','table','AM','Sampel'),sub('am.3','Poligon, pick-up & lantai','poly','AM','Poligon'),sub('am.4','Parameter estimasi','attr','AM','Parameter')]};},'am','As-Mined');
-    add(function(){return{id:'reg',step:'10',st:st.reg,t:'Register & Laporan As-Mined',ic:'folder',fold:1,tab:'AM',sub:'Register',hint:'Register poligon → Excel, layout & report rekonsiliasi',
+    add(function(){return{id:'reg',step:'10',st:st.reg,t:'Register & Laporan As-Mined',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Register poligon → Excel, layout & report rekonsiliasi',
         menu:function(){return[{t:'Kirim register ke Excel…',fn:A('amXlSend'),dis:typeof window.amXlSend!=='function'},{t:'Salin register ke Excel',fn:A('amRegCopy')},{t:'Register (CSV)',fn:A('amRegCsv')},{sep:1},{t:'Report rekonsiliasi (PDF)',fn:A('amPdf')},{t:'Rekonsiliasi (CSV)',fn:A('amCsv')},{t:'Block model as-mined (.mdl)',fn:A('amMdl')}];},
         kids:[sub('reg.1','Register poligon','report','AM','Register')].concat((function(){var G={},ord=[];ok(function(){return amBndAll();},[]).forEach(function(x){var k=(+x.top).toFixed(3)+'|'+(+x.bot).toFixed(3);if(!G[k]){G[k]={top:+x.top,bot:+x.bot,n:0,t:0,m:0};ord.push(k);}var I=ok(function(){return amInfoById(x.id);},null);G[k].n++;if(I&&I.calc&&x.on){G[k].t+=I.ton;if(isFinite(I.gA))G[k].m+=I.gA*I.ton;}});
             if(!ord.length)return[];ord.sort(function(a,b){return G[b].top-G[a].top;});var f=function(v){return String(+(+v).toFixed(3));};
             return[{id:'reg.fl',t:'Per flitch ('+ord.length+')',ic:'flitch',fold:1,kids:ord.map(function(k){var g=G[k];return{id:'reg.fl.'+k,t:'RL '+f(g.top)+' – '+f(g.bot),ic:'flitch',b:g.n+' pol · '+N(Math.round(g.t))+' t'+(g.t?' @ '+(g.m/g.t).toFixed(2):''),tab:'AM',sub:'Register',
-              go:function(){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+g.top.toFixed(3));amApply();}};})}];})()).concat([sub('reg.2','Layout as-mined','map','AM','Layout'),{id:'reg.3d',t:'3D hasil kerja (dig block → as-mined)',ic:'block',chk:ok(function(){return !!(window.AM3&&AM3.on);},false),onChk:function(v){if(window.am3Toggle)am3Toggle(v);},tab:'AM',sub:'Register',hint:'Prisma dig block, poligon as-mined & sub-blok model as-mined di 3D'},
-          {id:'reg.puz',t:'Rekap & model gabungan (.mdl)',ic:'block',tab:'AM',sub:'Register',menu:function(){return[{t:'Hitung semua flitch',fn:A('am3RunAll')},{t:'Export .mdl gabungan',fn:A('amMdl')},{t:'Export CSV gabungan',fn:A('am3Csv')}];}},{id:'reg.xl',t:'Kirim register ke Excel…',ic:'export',go:A('amXlSend'),dim:typeof window.amXlSend!=='function'},
+              go:function(){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+g.top.toFixed(3));amApply();}};})}];})()).concat([sub('reg.2','Layout as-mined','map','AM','Layout'),{id:'reg.3d',t:'3D hasil kerja (dig block → as-mined)',ic:'block',chk:ok(function(){return !!(window.AM3&&AM3.on);},false),onChk:function(v){if(window.am3Toggle)am3Toggle(v);},card:{acts:[{t:'Tampilkan / sembunyikan di 3D',pri:1,fn:function(){if(window.am3Toggle)am3Toggle(!(window.AM3&&AM3.on));}}]},hint:'Prisma dig block, poligon as-mined & sub-blok model as-mined di 3D'},
+          {id:'reg.puz',t:'Rekap & model gabungan (.mdl)',ic:'block',card:{acts:[{t:'Hitung semua flitch',pri:1,fn:A('am3RunAll')},{t:'Export .mdl gabungan',fn:A('amMdl')},{t:'Export CSV gabungan',fn:A('am3Csv')}]},menu:function(){return[{t:'Hitung semua flitch',fn:A('am3RunAll')},{t:'Export .mdl gabungan',fn:A('amMdl')},{t:'Export CSV gabungan',fn:A('am3Csv')}];}},{id:'reg.xl',t:'Kirim register ke Excel…',ic:'export',go:A('amXlSend'),dim:typeof window.amXlSend!=='function'},
           {id:'reg.pdf',t:'Report rekonsiliasi (PDF)',ic:'report',go:A('amPdf')},{id:'reg.mdl',t:'Block model as-mined (.mdl)',ic:'block',go:A('amMdl')}]).concat(window.prdTree?prdTree():[])};},'reg','Register');
-    L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.s',t:'Sayatan',ic:'section',tab:'Slice'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
+    L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},kids:[{id:'set.s',t:'Sayatan',ic:'section',tab:'Slice'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     return L;}
   PT.install({app:'bm',nodes:nodes,nav:true,openDef:['bm','fl','dig','am'],
-    onSelect:function(n){var f=n.foc||'';focus(f);setTimeout(function(){focus(f);},120);document.body.classList.toggle('pt-bmhd',n.tab==='BM'&&!/^bm(\.|$)/.test(n.id));},
+    onSelect:function(n){var f=n.foc||'';focus(f);setTimeout(function(){focus(f);},120);document.body.classList.toggle('pt-bmhd',!/^bm(\.|$)/.test(n.id));},
     css:'#pBM>.uitabs,#amBody>.uitabs,#pAM .amflow{display:none!important}'+
+      /* Judul besar di dalam panel hanya mengulang nama node yang sudah tertulis di kepala Properti,
+         dan justru membuat isinya terbaca sebagai milik judul yang salah. */
+      'body.pt-on #pBM .lyhead,body.pt-on #pBM>h3,body.pt-on #pAM>h3,body.pt-on #pModel>h3,body.pt-on #pOverlay>h3{display:none!important}'+
       'body.pt-bmhd #pBM>:not(.uisec){display:none!important}'+
-      [['fl'],['el'],['auto','rule','rep'],['man','rule','rep'],['exp'],['rep']].map(function(K){return '#dbBody[data-f='+K[0]+']>[data-seg]'+K.map(function(k){return ':not([data-seg='+k+'])';}).join('')+'{display:none!important}';}).join('')+
-      '#dbBody[data-f=man]{display:flex;flex-direction:column}#dbBody[data-f=man]>[data-seg=man]{order:1}#dbBody[data-f=man]>[data-seg=rule]{order:2}#dbBody[data-f=man]>[data-seg=rep]{order:3}'});
+      [['fl'],['el'],['auto','rule','rep'],['dest'],['man','rule','dest','rep'],['exp'],['rep']].map(function(K){return '#dbBody[data-f='+K[0]+']>[data-seg]'+K.map(function(k){return ':not([data-seg='+k+'])';}).join('')+'{display:none!important}';}).join('')+
+      '#dbBody[data-f=man]{display:flex;flex-direction:column}#dbBody[data-f=man]>[data-seg=man]{order:1}#dbBody[data-f=man]>[data-seg=rule]{order:2}#dbBody[data-f=man]>[data-seg=dest]{order:3}#dbBody[data-f=man]>[data-seg=rep]{order:4}'});
 })();

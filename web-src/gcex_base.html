@@ -2091,6 +2091,7 @@ function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFc
 /* ---------- panel ---------- */
 function bxPanel(){var b=$('bxBody');if(!b)return;var m=BX.m;if(!m){b.innerHTML='<div class=hint>Belum ada block model. Klik <b>Import block model</b>.</div>';$('bxInfo').innerHTML='';return;}var U=BX.ui;
   $('bxInfo').innerHTML='<b>'+bxE(m.name)+'</b> &middot; '+m.n.toLocaleString()+' blok &middot; ukuran '+m.sizes+'<br>E '+m.ext[0].toFixed(0)+'–'+m.ext[1].toFixed(0)+' &middot; N '+m.ext[2].toFixed(0)+'–'+m.ext[3].toFixed(0)+' &middot; Z '+m.ext[4].toFixed(1)+'–'+m.ext[5].toFixed(1)+(m.mdl&&m.mdl.nRead?'<br>Filter import: '+(m.mdl.flt?bxE(m.mdl.flt):'tidak ada')+' &middot; '+m.n.toLocaleString()+' dari '+m.mdl.nRead.toLocaleString()+' blok file &middot; '+(m.mdl.ms/1000).toFixed(1)+' s':'')+(m.mdl&&m.mdl.notes&&m.mdl.notes.length?'<br><span class=warn>'+bxE(m.mdl.notes.join('; '))+'</span>':'')+(m.warn?'<br><span class=warn>'+bxE(m.warn)+'</span>':'');
+  bxBesarAuto();
   var attrs=Object.keys(m.num).concat(Object.keys(m.cat)),nums=Object.keys(m.num),h='';
   h+='<div class=f><label>Warnai berdasarkan</label><select id=bxAttr onchange=bxSet(&#39;attr&#39;,this.value)>'+attrs.map(function(a){return '<option'+(a===U.attr?' selected':'')+'>'+bxE(a)+'</option>';}).join('')+'</select></div>';
   if(m.cat[U.attr]){var C=m.cat[U.attr];h+='<div class=lab>Kategori (centang = tampil)</div><div class=bxcl>'+C.dict.map(function(d,k){return '<div class=bxrow><input type=checkbox '+(bxCatOn(U.attr,d)?'checked':'')+' onchange=bxCatSet('+k+',this.checked)><input type=color value='+bxCatCol(U.attr,d,k)+' onchange=bxCatC('+k+',this.value)><span>'+bxE(d)+'</span><small>'+(C.cnt[k]||0).toLocaleString()+'</small></div>';}).join('')+'</div>';}
@@ -2181,6 +2182,28 @@ function bxStatsFc(C,s){var el=$('bxStat');if(!el)return;var U=BX.ui,m=BX.m,a=U.
     '<div class=hint>Komposit flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+': tiap kolom '+s+'&times;'+s+' m = rata-rata tertimbang tebal &times; SG dari semua blok di dalam flitch. Tonase = volume di dalam flitch &times; '+(sgA?'kolom '+bxE(U.sgCol):'SG '+U.sg)+'.</div>';}
 
 function bxLim3D(){var p=$('perfPreset')?$('perfPreset').value:'bal';return p==='full'?400000:p==='eco'?60000:150000;}
+/* Pengaman otomatis untuk model besar.
+   Pengukuran pada model 586.775 blok (ukuran 6x6x3 / 3x3x3 / 1,5x1,5x0,75, profil Seimbang): grafik
+   berisi 8 trace mesh3d dengan 3.389.028 titik, dan MENGGESER slider sayatan satu langkah berarti
+   seluruh titik itu dibangun lagi dan dikirim ulang ke kartu grafis -- sekitar 750 ms per langkah,
+   jadi 8 langkah = 6 detik tersendat. Di laptop dengan grafis bawaan itu yang terasa sebagai "lag".
+   Setelan "Update saat slider dilepas" sudah ada dan tepat untuk ini, tetapi bawaannya mati pada
+   profil Seimbang, sehingga pengguna harus tahu dulu bahwa setelan itu ada.
+   Sekarang: sekali saja, saat block model besar dimuat, setelan itu dinyalakan dan ALASANNYA
+   disebutkan. Tidak menimpa pilihan pengguna -- begitu pengguna menyentuhnya sendiri, keputusan itu
+   diingat dan tidak diubah lagi. Yang berubah hanya KAPAN gambar diperbarui, bukan isinya. */
+function bxBesarAuto(){try{var m=BX.m;if(!m||m.n<250000)return;
+  var e=$('perfRel');if(!e||e.checked)return;
+  if(e.dataset.user==='1')return;
+  try{if(localStorage.getItem('gcex_perfrel_user')==='1')return;}catch(x){}
+  e.checked=true;
+  var el=$('bxInfo');if(el)el.insertAdjacentHTML('beforeend','<div class=hint style="margin-top:4px">'+
+    '&#9201; Model ini besar ('+m.n.toLocaleString()+' blok), jadi <b>Update saat slider dilepas</b> '+
+    'dinyalakan: gambar diperbarui sekali setelah slider dilepas, bukan di setiap langkah. '+
+    'Bisa dimatikan di <b>Pengaturan tampilan &rsaquo; Tampilan &amp; performa</b>.</div>');
+}catch(e){}}
+(function(){var e=$('perfRel');if(e)e.addEventListener('change',function(){e.dataset.user='1';
+  try{localStorage.setItem('gcex_perfrel_user','1');}catch(x){}});})();
 function bx3dNote(){var el=$('bx3d');if(!el){var inf=$('bxInfo');if(!inf)return;el=document.createElement('div');el.id='bx3d';el.className='hint';el.style.cssText='margin-top:4px;color:#9a6700';inf.parentNode.insertBefore(el,inf.nextSibling);}
   var L=BX.lim3d;if(!L||VIEW2D){el.style.display='none';return;}el.style.display='block';
   el.innerHTML='&#9888; 3D dibatasi supaya browser tidak hang: tampil <b>'+L.shown.toLocaleString()+'</b> dari '+L.tot.toLocaleString()+' blok (kelas tertinggi diutamakan, kelas yang tidak muat disembunyikan). Lihat semua lewat <b>cut-off</b>, <b>Potong data</b> (menu Sayatan) atau <b>Penampang 2D</b>. Batas ikut profil Kinerja (Hemat 60 rb &middot; Seimbang 150 rb &middot; Penuh 400 rb blok).';}
@@ -3012,16 +3035,16 @@ function amPanel(){var el=$('amBody');if(!el)return;var m=BX.m;if(!m){el.innerHT
   var inp=function(k,lab,st,ti){return '<div><label>'+lab+'</label><input type=number step='+(st||'any')+' value="'+amE(U[k])+'" onchange="amSet(\''+k+'\',this.value)"'+(ti?' title="'+amE(ti)+'"':'')+'></div>';};
   var h='<div class=hint style="margin-top:0">Block model baru untuk volume yang sudah digali: boundary aktual per flitch, grid sub-blok terkecil model resmi, kadar diestimasi ulang (Ordinary Kriging) dari bor GC + channel sample dengan parameter model resmi.</div>';
   /* 1. model resmi */
-  h+='<div class=amh>&#9312; Block model resmi</div><div class=hint><b>'+amE((m.mdl&&m.mdl.file)||m.name)+'</b> &middot; '+m.n.toLocaleString()+' blok'+(m.mdl&&m.mdl.flt?' &middot; filter '+amE(m.mdl.flt):'')+'<br>Grid as-mined: '+G.dx+' &times; '+G.dy+' &times; '+G.dz+' m'+(G.L<0||!m.mdl||!m.mdl.hraw?' &middot; <span class=warn>export .mdl hanya untuk model dari file .mdl</span>':'')+'</div>';
+  h+='<div class=amh>Block model resmi</div><div class=hint><b>'+amE((m.mdl&&m.mdl.file)||m.name)+'</b> &middot; '+m.n.toLocaleString()+' blok'+(m.mdl&&m.mdl.flt?' &middot; filter '+amE(m.mdl.flt):'')+'<br>Grid as-mined: '+G.dx+' &times; '+G.dy+' &times; '+G.dz+' m'+(G.L<0||!m.mdl||!m.mdl.hraw?' &middot; <span class=warn>export .mdl hanya untuk model dari file .mdl</span>':'')+'</div>';
   /* 2. data sampel */
-  h+='<div class=amh>&#9313; Data sampel (format collar-assay)</div>';
+  h+='<div class=amh>Data sampel (format collar-assay)</div>';
   ['ch','gc'].forEach(function(k){var S=D.sets[k]||{fn:{}},fn=S.fn||{};h+='<div class=amset><div class=amst><b>'+AMSET[k]+'</b>'+(S.col||S.asy?'<button class=x onclick="amClearSet(\''+k+'\')" title="Hapus data '+AMSET[k]+'">&times;</button>':'')+'</div><div class="g3 amf">'+
       ['col','asy','sur'].map(function(q){var lb={col:'Collar',asy:'Assay',sur:'Survey (ops.)'}[q];return '<label class="mdbtn'+(fn[q]?' ok':'')+'" title="'+amE(fn[q]||'')+'"><input type=file accept=".csv,.txt,.tsv" onchange="amFile(\''+k+'\',\''+q+'\',this.files[0]);this.value=\'\'">'+(fn[q]?'&#10003; ':'')+lb+'</label>';}).join('')+'</div>'+
       (S.asy?'<div class=g2 style="margin-top:3px"><div><label>Kolom kadar</label><select onchange="amSetG(\''+k+'\',this.value)">'+S.asy.h.map(function(c){return '<option'+(c===S.gcol?' selected':'')+'>'+amE(c)+'</option>';}).join('')+'</select></div><div class=hint style="align-self:end">'+(S.info||'')+'</div></div>':(S.info?'<div class=hint>'+S.info+'</div>':''))+'</div>';});
   h+='<div class=g2 style="margin-top:4px">'+inp('comp','Panjang komposit (m)')+'<div><label>Konvensi dip</label><select onchange="amSet(\'dipNeg\',this.value===\'1\',1)"><option value=1'+(U.dipNeg?' selected':'')+'>Negatif = ke bawah (Surpac)</option><option value=0'+(!U.dipNeg?' selected':'')+'>Positif = ke bawah</option></select></div></div>'+
     '<div class=hint>Collar: HoleID, East, North, RL, Azimuth, Dip, Depth. Assay: HoleID, From, To, kadar. Channel = lubang dengan dip 0 (bila kolom Dip kosong, channel dianggap horizontal). Total: <b>'+AM.holes.length+'</b> lubang/channel, <b>'+AM.comps.length+'</b> komposit.</div>';
   /* 3. flitch & boundary */
-  h+='<div class=amh>&#9314; Flitch &amp; boundary aktual</div><div class=g3><div><label>Tinggi flitch</label><input type=number step=any value="'+amE(L.fh)+'" onchange="lySet(\'fh\',this.value);amPanel()"></div><div><label>RL atas</label><input type=number step=any value="'+B[0]+'" onchange="lyU().bot=\'\';lySet(\'top\',this.value);amPanel()"></div><div><label>RL bawah</label><input type=number step=any value="'+B[1]+'" onchange="lySet(\'bot\',this.value);amPanel()"></div></div>'+
+  h+='<div class=amh>Flitch &amp; boundary aktual</div><div class=g3><div><label>Tinggi flitch</label><input type=number step=any value="'+amE(L.fh)+'" onchange="lySet(\'fh\',this.value);amPanel()"></div><div><label>RL atas</label><input type=number step=any value="'+B[0]+'" onchange="lyU().bot=\'\';lySet(\'top\',this.value);amPanel()"></div><div><label>RL bawah</label><input type=number step=any value="'+B[1]+'" onchange="lySet(\'bot\',this.value);amPanel()"></div></div>'+
     '<button class="'+(on?'':'btn-pri')+'" style="width:100%;margin-top:4px" onclick="amApply()">'+(on?'&#10003; Flitch aktif di Penampang 2D':'Terapkan flitch (buka Penampang 2D)')+'</button>'+
     '<div class=amset><div class=amst><b>Titik pick-up survey</b>'+((D.pts||[]).length?'<button class=x onclick="amPtsClear()" title="Hapus semua titik pick-up">&times;</button>':'')+'</div>'+
     '<label class="mdbtn'+((D.pts||[]).length?' ok':'')+'" style="margin:0;text-align:center"><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amPtsFile(this.files);this.value=\'\'">&#8679; Import pick-up (.csv / .txt / .str / .dxf)</label>'+
@@ -3033,16 +3056,16 @@ function amPanel(){var el=$('amBody');if(!el)return;var m=BX.m;if(!m){el.innerHT
     (AM.bmsg?'<div class=hint>'+AM.bmsg+'</div>':'')+
     (BC.length?'<div class=amlist>'+BC.map(function(x){return '<div class=amrow><input type=checkbox '+(x.on?'checked':'')+' onchange="amBndOn(\''+x.id+'\',this.checked)" title="Dipakai"><span>'+amE(x.name)+'<small>'+lyArea(x.pts).toFixed(1)+' m&sup2; &middot; '+x.pts.length+' titik</small></span><button class=x onclick="amBndDel(\''+x.id+'\')" title="Hapus boundary">&times;</button></div>';}).join('')+'</div>':'<div class=hint>Belum ada boundary di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+'. String boundary masuk ke flitch yang sedang aktif.</div>');
   /* 4. parameter */
-  h+='<div class=amh>&#9315; Parameter estimasi (samakan dengan model resmi)</div><div><label>Metode as-mined</label><select onchange="amSet(\'mode\',this.value)"><option value=upd'+(U.mode!=='full'?' selected':'')+'>Update model GC (warisan + koreksi data baru)</option><option value=full'+(U.mode==='full'?' selected':'')+'>Estimasi ulang penuh (OK dari data yang diimport)</option></select></div>'+
+  h+='<div class=amh>Parameter estimasi (samakan dengan model resmi)</div><div><label>Metode as-mined</label><select onchange="amSet(\'mode\',this.value)"><option value=upd'+(U.mode!=='full'?' selected':'')+'>Update model GC (warisan + koreksi data baru)</option><option value=full'+(U.mode==='full'?' selected':'')+'>Estimasi ulang penuh (OK dari data yang diimport)</option></select></div>'+
     '<div class=hint>'+(U.mode!=='full'?'Sub-blok mewarisi kadar &amp; atribut model GC. Di sekitar data baru, selisih (data baru &minus; model GC) di titik sampel dikriging (simple kriging, rerata 0, variogram yang sama) lalu ditambahkan ke kadar model GC; makin jauh dari data baru makin kembali ke model GC.':'Kadar sub-blok diestimasi ulang dengan Ordinary Kriging hanya dari data yang diimport (bor GC + channel). Pakai bila semua bor GC ikut diimport.')+' Sub-blok tanpa data baru dalam radius search mewarisi model GC.</div><div class=g3 style="margin-top:4px"><div><label>Atribut kadar</label><select onchange="amSet(\'attr\',this.value)">'+nums.map(function(a){return '<option'+(a===U.attr?' selected':'')+'>'+amE(a)+'</option>';}).join('')+'</select></div>'+inp('tc','Top-cut (kosong = tidak)')+inp('nd','Diskretisasi / sumbu','1')+'</div>'+
     '<div class=g3 style="margin-top:4px">'+inp('R','Radius search (m)')+inp('minS','Min sampel','1')+inp('maxS','Maks sampel','1')+'</div>'+
     '<div class=g3 style="margin-top:4px">'+inp('c0','Nugget C0')+inp('c1','Sill C1 (sferis)')+inp('a','Range a (m)')+'</div>'+
     '<div class=hint>Variogram isotropik satu zona. Sub-blok tanpa sampel dalam radius memakai grade model resmi. Atribut kadar inilah yang diganti di file .mdl as-mined.</div>';
   /* 5. hitung */
-  h+='<div class=amh>&#9316; Hitung</div><button class=btn-pri style="width:100%" onclick="amRun()"'+(BC.some(function(x){return x.on;})&&AM.comps.length?'':' disabled')+'>&#9881; Hitung as-mined flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+'</button>'+
+  h+='<div class=amh>Hitung</div><button class=btn-pri style="width:100%" onclick="amRun()"'+(BC.some(function(x){return x.on;})&&AM.comps.length?'':' disabled')+'>&#9881; Hitung as-mined flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+'</button>'+
     '<label class=sw style="margin-top:4px"><input type=checkbox '+(AM.show?'checked':'')+' onchange="AM.show=this.checked;updatePlot()">Tampilkan as-mined, boundary &amp; sampel di Penampang 2D</label>'+(AM.msg?'<div class=hint style="margin-top:4px">'+AM.msg+'</div>':'');
   /* 6. hasil & export */
-  h+='<div class=amh>&#9317; Hasil rekonsiliasi &amp; export</div>';
+  h+='<div class=amh>Hasil rekonsiliasi &amp; export</div>';
   if(R.length){h+='<table class="pltb amt"><tr><th>Flitch</th><th>Ton</th><th>'+amE(U.attr)+' resmi</th><th>as-mined</th><th>Selisih</th><th></th></tr>'+
       R.map(function(r){return '<tr><td>'+lyFmt(r.top)+'&ndash;'+lyFmt(r.bot)+'<br><small>'+r.np+' boundary &middot; '+r.n.toLocaleString()+' sub-blok'+' &middot; '+(r.mode==='upd'?'diperbarui':'terestimasi')+' '+r.pu.toFixed(0)+'% ton'+'</small></td><td>'+lyFmt(r.t)+'</td><td>'+amF(r.gO,3)+'</td><td><b>'+amF(r.gA,3)+'</b></td><td>'+amD2(r)+'</td><td><button class=x onclick="amDel(\''+r.k+'\')" title="Hapus hasil flitch ini">&times;</button></td></tr>';}).join('')+
       '<tr class=tot><td>Total</td><td>'+lyFmt(T.t)+'</td><td>'+amF(T.gO,3)+'</td><td>'+amF(T.gA,3)+'</td><td>'+amD2(T)+'</td><td></td></tr></table>'+
