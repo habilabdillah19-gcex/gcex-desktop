@@ -2610,3 +2610,87 @@ string yang hilang justru pekerjaan yang hendak diselamatkan berkas ini.
 
 Uji mandiri `.exe` di CI ikut menulis lalu membaca string dan memeriksa koordinatnya kembali
 **tepat**, serta memeriksa hash-nya cocok dengan `FP.hash`. **216 uji otomatis** di `qtbm/tests`.
+
+
+## 94. Block Model 0.24.26 — string dig block Qt terbaca di aplikasi HTML, dan cap versi dijaga CI
+
+### String dig block jadi dua arah
+
+Sebelum ini alirannya satu arah: string yang dibuat di aplikasi HTML terlihat di penampil Qt,
+tetapi string yang dibuat di Qt tidak terlihat di aplikasi HTML. Pemakai yang mendigit di Qt lalu
+ingin mencetak peta oreblock, memakai aturan material HG/LG, atau as-mined akan menemui daftar
+kosong tanpa penjelasan — sebab hal-hal itu hanya ada di aplikasi HTML.
+
+Panel **Dig block** aplikasi HTML sekarang punya tombol **⇩ Ambil string dari penampil 3D Qt**,
+yang membaca `gcex_dig_qt.json` di folder proyek. Pembagian berkasnya tetap seperti sebelumnya
+dan sengaja tidak diubah:
+
+| Berkas | Ditulis oleh | Dibaca oleh |
+| --- | --- | --- |
+| `gcex_project.json` | aplikasi HTML | aplikasi HTML + penampil Qt |
+| `gcex_dig_qt.json` | penampil Qt | penampil Qt + **aplikasi HTML (baru)** |
+
+Penampil Qt tetap **tidak** menulis ke `gcex_project.json`, karena berkas itu dijaga berkas kunci,
+nomor revisi dan cadangan otomatis (lihat bagian 93).
+
+**Menambah, bukan mengganti.** Daftar string yang sudah ada tidak pernah ditimpa: menimpa berarti
+membuang pekerjaan yang mungkin belum tersimpan. String yang isinya sudah ada dilewati, dan nomor
+yang sudah terpakai diganti nomor berikutnya supaya tidak ada dua string bernomor sama. Menekan
+tombolnya dua kali tidak melipatgandakan apa pun — ini diuji.
+
+### Hal yang paling mudah salah: offset
+
+Titik digitasi tersimpan **relatif** terhadap `offX`/`offY`, dan offset itu dihitung dari
+koordinat collar proyek. Berkas Qt mencatat offset yang dipakainya saat menulis. Kalau kemudian
+ada collar baru di barat atau selatan yang menggeser nilai minimum, offset aplikasi **berbeda**
+dari yang tercatat di berkas. Karena itu titiknya digeser sebesar selisih kedua offset, bukan
+dipakai apa adanya. Tanpa penggeseran itu poligon pindah ribuan meter dan **tidak ada galat apa
+pun yang muncul** — hanya poligon kosong di tempat yang salah.
+
+Penggeserannya **dikatakan** kepada pemakai ("koordinat digeser −3000 / +2000 m karena offset
+proyek berbeda dari saat berkas Qt ditulis"), sebab tanpa itu tidak ada cara mengetahui bahwa
+koordinatnya disesuaikan, dan tidak ada cara menilai apakah penyesuaian itu wajar.
+
+Diuji di aplikasi sungguhan: berkas `gcex_dig_qt.json` yang **ditulis oleh Python** dibaca oleh
+`dgQtImport()` **asli** di dalam aplikasi, untuk dua kasus — offset sama dan offset berbeda. Pada
+kasus kedua berkas menyimpan titik (3100,5; −1799,75) sementara aplikasi memulihkannya menjadi
+(100,5; 200,25), yaitu tempat nyata yang sama. Penjaga ujinya memeriksa bahwa titik **di dalam
+berkas** benar-benar berbeda antara kedua kasus — kalau sama, penggeseran tidak pernah diperlukan
+sehingga tidak teruji.
+
+Satu bug ditemukan oleh uji ini dan sudah diperbaiki: `esc()` milik aplikasi tidak terjangkau dari
+lingkup modul, sehingga `dgQtImport` melempar galat **setelah** string tergabung — pemakai akan
+melihat pesan galat padahal pekerjaannya sudah masuk. Pelolosan karakternya tidak dibuang,
+melainkan diganti pelolos sendiri di dalam modul: keterangan string dan waktu simpan datang dari
+berkas, yaitu masukan dari luar.
+
+### Cap versi sekarang dijaga CI
+
+CI **tidak** menjalankan `web-src/build.py` — berkas `app*/index.html` yang ada di repo itulah
+yang dikemas. Jadi menaikkan versi tanpa membangun ulang berkas HTML-nya membuat aplikasi
+melaporkan versi **lama**, dan tidak ada apa pun yang menolak.
+
+Itu sudah pernah terjadi: pada commit `d717474` Block Model dinaikkan ke 0.24.25 dan Drill Hole ke
+0.24.35 tanpa dibangun ulang, sehingga aplikasi yang beredar mencap dirinya **0.24.24** dan
+**0.24.34** selama beberapa rilis. Tidak ada fitur yang rusak — nomor itu hanya dipakai untuk
+tampilan dan untuk kolom `versi` di tabel `sinkron` basis data proyek — tetapi tabel itulah jejak
+resmi siapa mengerjakan apa dengan versi apa, dan baris riwayat tidak pernah diperbaiki lagi.
+
+Dua hal dikerjakan:
+
+1. **Cap keduanya dibetulkan.** Block Model dibangun ulang bersama perubahan ini dan naik ke
+   **0.24.26**, jadi tidak ada nomor versi yang terbuang hanya untuk membenarkan cap. Drill Hole
+   dibangun ulang dan capnya menjadi **0.24.35** — versinya **tidak** dinaikkan, karena yang
+   berubah hanyalah cap yang menyusul nomor yang memang sudah diumumkan di rilis sebelumnya,
+   bukan perubahan isi aplikasi. Pengaman `kemas_rilis.py --cek` tetap lulus.
+2. **Pemeriksaan CI baru** `tools/rilis/cek_cap_versi.py` membandingkan `window.GCEX_VER` di dalam
+   tiap berkas HTML dengan versi yang dinyatakan di `package.json` / `builder-dh.json` /
+   `builder-core.json`, dan **menggagalkan build** bila tidak cocok. Berjalan di awal, sebelum
+   apa pun dibangun. Aplikasi yang tidak menanamkan cap dilaporkan sebagai "tidak bisa diperiksa",
+   bukan didiamkan seolah lulus.
+
+Pemeriksaan itu sendiri diuji dengan sengaja merusak cap satu aplikasi: ia memang gagal dengan
+kode keluar 1 dan menyebut berkas serta nomor yang bersangkutan. Pemeriksaan yang belum pernah
+terbukti bisa gagal tidak membuktikan apa pun.
+
+**218 uji otomatis** di `qtbm/tests`.

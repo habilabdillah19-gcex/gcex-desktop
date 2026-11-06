@@ -97,6 +97,42 @@ JS = r"""
 })
 """
 
+# Dibaca kembali oleh aplikasi: berkas gcex_dig_qt.json yang DITULIS PYTHON harus terbaca oleh
+# `dgQtImport()` ASLI di aplikasi, termasuk penggeseran bila offset berbeda. `FP.dir` diganti
+# tiruan yang hanya mengembalikan teks berkas -- yang diuji pembacaan & penggabungannya, bukan
+# pemilih folder peramban.
+JS_IMPOR = r"""
+(function (teks, offFile) {
+  if (typeof dgQtImport !== 'function')
+    return Promise.resolve({err: 'dgQtImport tidak ada -- modul web-src/digqt.js tidak terpasang'});
+  var simpanDir = FP.dir, simpanS = DG.S;
+  FP.dir = {getFileHandle: function (n) {
+    if (n !== 'gcex_dig_qt.json') return Promise.reject(new Error('tidak ada'));
+    return Promise.resolve({getFile: function () {
+      return Promise.resolve({text: function () { return Promise.resolve(teks); },
+                              slice: function () { return {text: function () { return Promise.resolve(teks); }}; }});
+    }});
+  }};
+  DG.S = [];
+  return Promise.resolve(dgQtImport()).then(function () {
+    var hasil = DG.S.map(function (s) {
+      return {no: s.no, d: s.d, closed: !!s.closed, vis: s.vis !== false,
+              pts: s.pts, dariQt: !!s.dariQt};
+    });
+    var out = {dg: hasil, offX: offX, offY: offY, offFile: offFile};
+    /* panggil dua kali: string yang sama tidak boleh berlipat */
+    return Promise.resolve(dgQtImport()).then(function () {
+      out.nSetelahDuaKali = DG.S.length;
+      FP.dir = simpanDir; DG.S = simpanS;
+      return out;
+    });
+  }).catch(function (e) {
+    FP.dir = simpanDir; DG.S = simpanS;
+    return {err: String(e && e.message || e)};
+  });
+})
+"""
+
 
 def siapkan() -> None:
     SRV.mkdir(parents=True, exist_ok=True)
@@ -140,6 +176,32 @@ def ambil() -> dict:
         d = pg.evaluate("(%s)(%s)" % (JS, json.dumps(TEKS_HASH)))
         if d is None or d.get("err"):
             raise SystemExit("gagal: %s" % (d or {}).get("err", "tidak ada hasil"))
+
+        # ---- arah kedua: berkas yang ditulis Python dibaca `dgQtImport()` asli ----
+        import tempfile as _tf2
+
+        from qtbm.string_io import String as _Str
+
+        ox, oy = float(d["offX"]), float(d["offY"])
+        S = [_Str(no=11, ket="DARI QT", tertutup=True,
+                  pts=[(ox + 100.5, oy + 200.25, 237.5), (ox + 140.5, oy + 200.25, 237.5),
+                       (ox + 140.5, oy + 250.75, 237.5)]),
+             _Str(no=12, ket="QT terbuka", tertutup=False, tampil=False,
+                  pts=[(ox + 10.0, oy + 20.0, 240.0), (ox + 30.0, oy + 45.0, 240.0)])]
+        d["impor"] = {}
+        for label, off_tulis in (("offset sama", (ox, oy)),
+                                 ("offset berbeda", (ox - 3000.0, oy + 2000.0))):
+            with _tf2.TemporaryDirectory() as td:
+                SG.tulis(td, S, off_tulis[0], off_tulis[1], nama_proyek="uji impor")
+                teks = (Path(td) / SG.BERKAS_QT).read_text(encoding="utf-8")
+            r = pg.evaluate("(%s)(%s, %s)" % (JS_IMPOR, json.dumps(teks), json.dumps(off_tulis)))
+            # titik MENTAH di dalam berkas ikut dicatat: itu yang harus berbeda antara kedua
+            # kasus. Titik AKHIR-nya justru harus sama -- itulah maksud penggeseran.
+            _m, _b = SG.unpack(teks)
+            r["ptsBerkas"] = (_b.get("dg") or [{}])[0].get("pts")
+            d["impor"][label] = r
+        d["imporHarap"] = [{"no": x.no, "d": x.ket, "closed": x.tertutup, "vis": x.tampil,
+                            "pts": [list(p) for p in x.pts]} for x in S]
         d["galatHalaman"] = galat
         ctx.close()
     return d
@@ -232,6 +294,59 @@ def bandingkan_proyek(d: dict) -> list:
     return salah
 
 
+def bandingkan_impor(d: dict) -> list:
+    """`dgQtImport()` aplikasi harus memulihkan koordinat PENUH yang ditulis Python."""
+    I = d.get("impor")
+    if not I:
+        return ["impor tidak terekam di hasil JS"]
+    harap = d.get("imporHarap") or []
+    salah = []
+    for label, r in I.items():
+        if not r or r.get("err"):
+            salah.append("impor %s: %s" % (label, (r or {}).get("err", "tidak ada hasil")))
+            continue
+        ox, oy = float(r["offX"]), float(r["offY"])
+        got = r.get("dg") or []
+        if len(got) != len(harap):
+            salah.append("impor %s: %d string terbaca, seharusnya %d"
+                         % (label, len(got), len(harap)))
+            continue
+        for a, g in zip(harap, got):
+            if int(a["no"]) != int(g["no"]) or str(a["d"]) != str(g["d"]):
+                salah.append("impor %s: no/keterangan string %s tidak cocok" % (label, a["no"]))
+            if bool(a["closed"]) != bool(g["closed"]) or bool(a["vis"]) != bool(g["vis"]):
+                salah.append("impor %s: tertutup/tampil string %s tidak cocok" % (label, a["no"]))
+            if not g.get("dariQt"):
+                salah.append("impor %s: string %s tidak ditandai berasal dari Qt"
+                             % (label, a["no"]))
+            # DG.S[].pts relatif offset aplikasi; koordinat penuh = pts + off aplikasi
+            for k, (pa, pg) in enumerate(zip(a["pts"], g["pts"])):
+                penuh = (pg[0] + ox, pg[1] + oy, pg[2])
+                for j in range(3):
+                    if abs(penuh[j] - pa[j]) > 1e-6:
+                        salah.append("impor %s: string %s titik %d sumbu %d: seharusnya %r, "
+                                     "dapat %r" % (label, a["no"], k, j, pa[j], penuh[j]))
+        if r.get("nSetelahDuaKali") != len(harap):
+            salah.append("impor %s: dipanggil dua kali memberi %r string, seharusnya tetap %d "
+                         "(string yang sama tidak boleh berlipat)"
+                         % (label, r.get("nSetelahDuaKali"), len(harap)))
+    # Penjaga agar kasus "offset berbeda" tidak hampa. Yang harus BERBEDA adalah titik mentah di
+    # dalam berkas; titik AKHIR-nya justru harus SAMA, sebab itulah maksud penggeseran -- poligon
+    # mendarat di tempat nyata yang sama walau offset yang dipakai saat menulis berbeda.
+    if "offset berbeda" in I and "offset sama" in I:
+        fa = I["offset berbeda"].get("ptsBerkas")
+        fb = I["offset sama"].get("ptsBerkas")
+        if fa and fb and fa == fb:
+            salah.append("titik di dalam berkas sama pada kedua kasus: penggeseran offset tidak "
+                         "pernah benar-benar diperlukan, jadi tidak teruji")
+        ga = (I["offset berbeda"].get("dg") or [{}])[0].get("pts")
+        gb = (I["offset sama"].get("dg") or [{}])[0].get("pts")
+        if ga and gb and ga != gb:
+            salah.append("titik akhir berbeda antara kedua kasus: penggeseran offset TIDAK "
+                         "memulihkan tempat yang sama (%r vs %r)" % (ga[0], gb[0]))
+    return salah
+
+
 def main() -> int:
     if FIXTURE and BEKU.exists():
         print("memakai hasil JS yang dibekukan: %s" % BEKU.relative_to(ROOT))
@@ -246,9 +361,11 @@ def main() -> int:
         print("galat halaman: %s" % d["galatHalaman"][:3])
     print("offX/offY aplikasi: %r / %r (dari %d collar)"
           % (d["offX"], d["offY"], d.get("nCollar", 0)))
-    salah = bandingkan_hash(d) + bandingkan_offset(d) + bandingkan_proyek(d)
+    salah = (bandingkan_hash(d) + bandingkan_offset(d) + bandingkan_proyek(d)
+             + bandingkan_impor(d))
     print("yang diuji: FP.hash (%d teks), offX/offY, baca gcex_project.json asli, bolak-balik "
-          "berkas Qt" % len(d.get("hash") or {}))
+          "berkas Qt, dan dgQtImport() aplikasi membaca berkas tulisan Python "
+          "(offset sama & berbeda)" % len(d.get("hash") or {}))
     if salah:
         print("\nTIDAK SAMA (%d):" % len(salah))
         for s in salah:

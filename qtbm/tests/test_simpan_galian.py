@@ -264,3 +264,28 @@ def test_fixture_offset_tidak_nol():
     """Penjaga: offset nol akan membuat uji paritas lulus tanpa menguji pergeseran apa pun."""
     d = _muat()
     assert d["offX"] and d["offY"], "offset fixture nol: uji pergeseran koordinat jadi hampa"
+
+
+def test_paritas_impor_oleh_aplikasi_html():
+    """Berkas yang DITULIS Python harus terbaca `dgQtImport()` ASLI di aplikasi HTML.
+
+    Termasuk kasus offset berbeda: poligon harus mendarat di tempat nyata yang SAMA walau
+    offset yang dipakai saat menulis berbeda dari offset aplikasi saat membaca.
+    """
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "uji"))
+    import paritas_simpan_galian as PS
+
+    d = _muat()
+    if not d.get("impor"):
+        pytest.skip("fixture belum memuat hasil dgQtImport; bekukan ulang")
+    salah = PS.bandingkan_impor(d)
+    assert not salah, "lingkaran dua arah string tidak tertutup:\n" + "\n".join(salah)
+
+
+def test_fixture_impor_menguji_offset_berbeda():
+    """Penjaga: tanpa kasus offset berbeda, penggeseran koordinat tidak teruji sama sekali."""
+    d = _muat()
+    I = d.get("impor") or {}
+    assert "offset berbeda" in I and "offset sama" in I
+    assert I["offset berbeda"]["ptsBerkas"] != I["offset sama"]["ptsBerkas"]

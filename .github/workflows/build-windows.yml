@@ -32,6 +32,19 @@ jobs:
         run: |
           python tools/rilis/kemas_rilis.py --cek
           if ($LASTEXITCODE -ne 0) { throw "pengaman versi menolak commit ini - lihat pesan di atas" }
+
+      - name: Cek cap versi di dalam berkas aplikasi
+        shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          # CI TIDAK menjalankan web-src/build.py: berkas app*/index.html di repo itulah yang
+          # dikemas. Jadi menaikkan versi tanpa membangun ulang berkas HTML-nya membuat aplikasi
+          # melaporkan versi LAMA, dan kolom `versi` di tabel `sinkron` basis data proyek
+          # mencatat jejak yang salah -- selamanya, karena baris riwayat tidak diperbaiki lagi.
+          # Itu pernah terjadi (lihat komentar di tools/rilis/cek_cap_versi.py).
+          python tools/rilis/cek_cap_versi.py
+          if ($LASTEXITCODE -ne 0) { throw "cap versi di berkas aplikasi tidak cocok - lihat pesan di atas" }
       - name: Pasang paket Python
         run: |
           python -m pip install --upgrade pip
