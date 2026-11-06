@@ -1156,6 +1156,40 @@ function lblCfg(th,clip){var m=$('asLbl').value,mi=parseFloat($('asMin').value);
 function toggle2D(){try{if(!VIEW2D){var L0=$('plotDiv')._fullLayout,k0=L0&&L0.scene&&L0.scene.camera;if(k0&&k0.eye)window.__cam3d=JSON.parse(JSON.stringify(k0));}}catch(e){}VIEW2D=!VIEW2D;$('btn2d').classList.toggle('on',VIEW2D);try{Plotly.purge('plotDiv');}catch(e){}updatePlot();}
 function camFollowHook(){if($('camFollow')&&$('camFollow').checked&&!VIEW2D)setTimeout(viewSection,250);}
 function PERF_REL(){var e=$('perfRel');return !!(e&&e.checked);}
+/* Pengaman data besar -- sama seperti di GC-Ex Block Model, dan atas sebab yang sama.
+   Diukur pada DATA LATIHAN SIM_* saja (610 lubang, 76.069 sampel): menyeret gagang slider sayatan
+   24 langkah membuat layar MEMBEKU 61 kali, total 44.138 ms, jeda terlama 2.324 ms. Penyebabnya
+   sama: tiap langkah geseran membangun ulang seluruh geometri lubang bor (15 trace, 1.190.825
+   titik) dan mengirimnya lagi ke kartu grafis. Di laptop dengan grafis bawaan itulah yang terasa
+   sebagai tersendat.
+   Setelan "Update saat slider dilepas" sudah lama ada dan memang jawabannya, tetapi bawaannya mati
+   pada profil Seimbang -- jadi pengguna harus tahu dulu bahwa setelan itu ada. Sekarang dinyalakan
+   SEKALI saat datanya besar, dan ALASANNYA disebutkan. Tidak menimpa keputusan pengguna: begitu
+   pengguna menyentuhnya sendiri, pilihan itu diingat dan tidak diubah lagi.
+   Yang berubah hanya KAPAN gambar diperbarui, bukan isinya -- tidak ada satu angka pun yang
+   bergeser, dan tidak ada data yang disembunyikan. */
+function dhBesar(){try{
+  var nA=(window.assays||[]).length, nL=(window.collars||[]).length, nB=(window.BM&&BM.n)||0;
+  return (nA>=20000)||(nL>=200)||(nB>=250000);
+}catch(e){return false;}}
+function dhBesarAuto(){try{
+  if(!dhBesar())return;
+  var e=$('perfRel');if(!e||e.checked)return;
+  if(e.dataset.user==='1')return;
+  try{if(localStorage.getItem('gcex_perfrel_user')==='1')return;}catch(x){}
+  e.checked=true;
+  var nA=(window.assays||[]).length,nL=(window.collars||[]).length;
+  var el=$('dmD')||$('stat')||null;
+  var txt='<div class=hint style="margin-top:4px">&#9201; Data ini besar ('+nL.toLocaleString('id-ID')+
+    ' lubang, '+nA.toLocaleString('id-ID')+' sampel), jadi <b>Update saat slider dilepas</b> dinyalakan: '+
+    'gambar diperbarui sekali setelah slider dilepas, bukan di setiap langkah. '+
+    'Bisa dimatikan di <b>Tampilan &amp; performa</b>.</div>';
+  var box=$('secInfo')||$('posv');
+  if(box&&box.insertAdjacentHTML)box.insertAdjacentHTML('afterend',txt);
+  else if(window.FP&&FP.toast)FP.toast('Data besar: "Update saat slider dilepas" dinyalakan supaya tidak tersendat.',false,9000);
+}catch(e){}}
+(function(){var e=$('perfRel');if(e)e.addEventListener('change',function(){e.dataset.user='1';
+  try{localStorage.setItem('gcex_perfrel_user','1');}catch(x){}});})();
 document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.type==='range'&&PERF_REL())updatePlot();},true);
 function perfApply(){var p=$('perfPreset').value,set=function(id,v){var e=$(id);if(e)e.checked=v;};
   if(p==='eco'){set('lightMode',true);set('hoverOn',false);set('showLabel',false);set('perfRel',true);set('sliceClip',true);set('gAuto',false);$('orRes').value='4';$('asMax').value=300;$('bmDisp').value='pt';$('bmMax').value=15000;}
@@ -5368,7 +5402,9 @@ UP.ui=async function(){var p=E('pData');if(!p||E('upsBox'))return;var d=document
     (prev?'<button style="width:100%;margin-top:6px" onclick="UP.undo()">&#8630; Batalkan upsert terakhir ('+new Date(prev.date).toLocaleString()+')</button>':'');
   var h=p.querySelector('h3');if(h&&h.nextSibling)p.insertBefore(d,h.nextSibling);else p.insertBefore(d,p.firstChild);};
 /* sesudah boot: tombol di menu Data + laporan upsert */
-(function(){var _b=SA.boot;SA.boot=function(){var r=_b.apply(this,arguments);try{UP.ui();var t=sessionStorage.getItem('gcexUps');if(t){sessionStorage.removeItem('gcexUps');var o=JSON.parse(t);setTimeout(function(){if(window.FP&&FP.toast)FP.toast('&#10003; Upsert data pemboran: '+o.t,false,15000);},1800);}}catch(e){}return r;};})();
+/* dipanggil sesudah data pemboran dimuat, bukan saat halaman dibuka: jumlah lubang & sampel
+   baru diketahui di titik itu */
+(function(){var _b=SA.boot;SA.boot=function(){var r=_b.apply(this,arguments);setTimeout(function(){try{dhBesarAuto();}catch(e){}},1200);try{UP.ui();var t=sessionStorage.getItem('gcexUps');if(t){sessionStorage.removeItem('gcexUps');var o=JSON.parse(t);setTimeout(function(){if(window.FP&&FP.toast)FP.toast('&#10003; Upsert data pemboran: '+o.t,false,15000);},1800);}}catch(e){}return r;};})();
 /* buka otomatis proyek browser sesudah upsert (tanpa folder proyek) */
 setTimeout(async function(){try{var n=await idbGet('dhAutoOpen');if(!n)return;await idbDel('dhAutoOpen');var w=0;while(!window.Plotly&&w++<60)await new Promise(function(r){setTimeout(r,250);});if(window.Plotly)SA.openProj(n);}catch(e){console.warn(e);}},80);
 })();

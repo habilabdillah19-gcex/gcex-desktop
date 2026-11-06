@@ -3407,3 +3407,49 @@ melaporkan kegagalan yang sama seolah perbaikannya tidak bekerja — padahal kod
 pernah dieksekusi.
 
 **Hasil akhir: 0 dari 37 langkah menunjuk elemen yang tidak terlihat.**
+
+## 110. GC-Ex Drill Hole: lag yang sama, 44,1 detik menjadi 1,1 detik
+
+Permintaan pemilik: lakukan untuk Drill Hole apa yang sudah dilakukan untuk Block Model (bagian
+108), supaya ringan di laptop HP 14s.
+
+Dikerjakan dengan urutan yang sama — **ukur dulu, baru ubah** — dan memakai alat ukur yang sama
+(`tools/uji/ukur_lag_dh.py`): lamanya **layar membeku**, yaitu jumlah jeda antar-frame di atas
+50 ms, selama gagang slider sayatan diseret dengan gerakan mouse sungguhan.
+
+### Yang ditemukan
+
+Diukur di atas **data latihan SIM_*** saja — 610 lubang bor, 76.069 sampel assay. Tidak perlu data
+sintetis yang besar seperti di Block Model, sebab masalahnya sudah muncul pada data latihan itu
+sendiri: grafiknya berisi **15 trace, 1.190.825 titik**, dan setiap langkah geseran slider
+membangun ulang seluruh geometri lubang bor lalu mengirimnya lagi ke kartu grafis.
+
+Menyeret slider sayatan 24 langkah:
+
+| | Layar membeku | Total membeku | Jeda terlama |
+| --- | --- | --- | --- |
+| Sebelum | **61 ×** | **44.138 ms** | 2.324 ms |
+| Sesudah | 2 × | **1.078 ms** | 769 ms |
+
+### Yang diubah
+
+Satu hal, sama persis dengan Block Model: setelan *Update saat slider dilepas* dinyalakan **sekali**
+ketika datanya besar, dengan **alasan tertulis** di panel Sayatan. Ambangnya disesuaikan dengan
+bentuk data Drill Hole — bukan jumlah blok, melainkan **≥ 20.000 sampel assay, atau ≥ 200 lubang,
+atau block model estimasi ≥ 250.000 blok** — sebab di aplikasi ini yang berat adalah geometri
+lubang bornya, dan block model estimasi sering belum ada sama sekali.
+
+Ia tidak menimpa keputusan pengguna: begitu pengguna menyentuh setelan itu sendiri, pilihannya
+diingat (`localStorage`) dan tidak diubah lagi. Yang berubah hanya **kapan** gambar diperbarui,
+bukan isinya — tidak ada satu angka pun yang bergeser, dan tidak ada data yang disembunyikan.
+
+Pemeriksaannya dipanggil **sesudah** data pemboran dimuat (`SA.boot`), bukan saat halaman dibuka:
+jumlah lubang dan sampel baru diketahui di titik itu.
+
+### Catatan untuk pengukuran berikutnya
+
+Dua hal yang sempat menghabiskan waktu dan dicatat supaya tidak diulang: node Sayatan di Drill Hole
+ber-id `sec` (di Block Model `set.s`), dan `uiTab` / `PT.select` tidak terjangkau dari luar karena
+sumber viewer dievaluasi ke dalam lingkupnya sendiri — yang bekerja adalah menekan tombolnya
+langsung (`#rbSlice`). Selama slider `#pos` belum terlihat di layar, ia tidak bisa diseret, dan
+pengukurannya menghasilkan angka yang tidak berarti apa-apa.
