@@ -423,3 +423,32 @@ def test_konteks_secukupnya_dan_porsi_gpu(monkeypatch):
         {"name": "qwen3-vl:4b", "size": 6_000_000_000, "size_vram": 3_000_000_000}]})
     assert cf.gpu_share("http://x", "qwen3-vl:4b") == 50
     assert cf.gpu_share("http://x", "lain:1b") is None
+
+
+def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
+    """Variasi jawaban model kecil: tabel markdown, 'R:' / '- R|', jawaban di bagian thinking, dan bila tetap tak terbaca
+    diulang sekali dengan JSON berskema. Jawaban mentah disimpan untuk penelusuran."""
+    s, tmp = st
+    p = cf.parse_ai_text("rc", "Berikut hasilnya:\n| hole_id | tanggal | sample_id |\n|---|---|---|\n"
+                               "| XX-1 | 05-11-26 | S_001 | 0 | 1 | VLT | ARG | ox | | | |\n- R: | | S_002 | 1 | 2 | 〃 | 〃 | 〃 | | | |")
+    assert [r["sample_id"] for r in p["rows"]] == ["S_001", "S_002"] and p["rows"][0]["hole_id"] == "XX-1"
+    with pytest.raises(ValueError, match="jawaban kosong"):
+        cf.parse_ai_text("rc", "")
+    did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
+    seq = [{"message": {"thinking": "R|XX-2|05-11-26|S_010|0|1|VLT|||||", "content": ""}}]
+    monkeypatch.setattr(cf.core_io, "_http", lambda url, body=None, timeout=5.0: {} if url.endswith(("/api/show", "/api/ps")) else seq[0])
+    cf.ai_read(s, did, "http://x", "m")
+    assert cf.rows(s, did)[0]["data"]["sample_id"] == "S_010"
+    assert (s.root / "ai_mentah" / f"{did}.txt").read_text(encoding="utf-8").startswith("[thinking]")
+    calls = []
+
+    def fake(url, body=None, timeout=5.0):
+        if url.endswith(("/api/show", "/api/ps")):
+            return {}
+        calls.append(body)
+        if "format" not in body:
+            return {"message": {"content": "Maaf, tulisan tidak jelas."}}
+        return {"message": {"content": json.dumps({"header": {}, "rows": [{"sample_id": "S_020", "from_m": "0", "to_m": "1", "ragu": []}]})}}
+    monkeypatch.setattr(cf.core_io, "_http", fake)
+    cf.ai_read(s, did, "http://x", "m")
+    assert len(calls) == 2 and "format" in calls[1] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"

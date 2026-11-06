@@ -773,6 +773,12 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     js = re.sub(r"^```\w*\s*|\s*```$", "", raw)
     if js.startswith("{"):
         return json.loads(js)
+    m = re.search(r"\{.*\}", raw, re.S)  # JSON di tengah penjelasan
+    if m and '"rows"' in m.group(0):
+        try:
+            return json.loads(m.group(0))
+        except ValueError:
+            pass
     hk = [k for k, _l, _t in t["header"]]
     rk = [k for k, _l, _t in t["rows"]]
     tabs = {tt["ai"].upper(): (tt["ai"], [k for k, _l, _t in tt["rows"]]) for tt in (t.get("tables") or {}).values()}
@@ -791,10 +797,17 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     out: dict[str, Any] = {"header": {}, "rows": [], "catatan": ""}
     for ln in raw.splitlines():
         ln = ln.strip().strip("`").strip()
-        m = re.match(r"^([A-Za-z_]+)\s*\|(.*)$", ln)
-        if not m:
+        # variasi model: "- R|", "1. R|", "**R**|", "R:", "R |"
+        ln = re.sub(r"^(?:[-*•]\s*|\d+[.)]\s*)", "", ln).replace("**", "")
+        m = re.match(r"^([A-Za-z_]+)\s*[|:]\s*(.*)$", ln)
+        if m and (m.group(1).upper() in ("H", "R", "C") or m.group(1).upper() in tabs) and ("|" in m.group(2) or m.group(1).upper() == "C"):
+            tag, rest = m.group(1).upper(), m.group(2)
+        elif ln.count("|") >= max(2, len(rk) // 2) and not re.fullmatch(r"[|:\-\s]+", ln):
+            tag, rest = "R", ln.strip("|")  # baris tabel markdown tanpa tanda R
+            if [v.strip().lower() for v in rest.split("|")][:1] == [rk[0]] or rest.split("|")[0].strip().lower() in [lbl.lower() for _k, lbl, _t in t["rows"]]:
+                continue
+        else:
             continue
-        tag, rest = m.group(1).upper(), m.group(2)
         if [v.strip() for v in rest.split("|")][:2] == (hk if tag == "H" else rk)[:2]:
             continue  # model mengulang baris nama kolom
         if tag == "H":
@@ -808,7 +821,8 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     for _k, (ai, _ks) in tabs.items():
         out.setdefault(ai, [])
     if not out["rows"] and not out["header"] and not any(out[a] for a, _ in tabs.values()):
-        raise ValueError("jawaban AI tidak berformat H| / R| (tidak ada baris yang terbaca)")
+        raise ValueError("jawaban AI tidak berformat H| / R| (tidak ada baris yang terbaca)"
+                         + (f": «{raw[:160]}»" if raw else ": jawaban kosong"))
     return out
 
 
@@ -868,6 +882,17 @@ def gpu_share(host: str, model: str) -> Optional[float]:
     return None
 
 
+def _save_raw(s: Store, did: int, msg: dict) -> None:
+    """Simpan jawaban mentah AI terakhir per borang (_GCEx_Core/borang/ai_mentah/<id>.txt) untuk menelusuri galat."""
+    try:
+        p = s.root / "ai_mentah"
+        p.mkdir(parents=True, exist_ok=True)
+        (p / f"{did}.txt").write_text(("[thinking]\n" + msg["thinking"] + "\n\n" if msg.get("thinking") else "")
+                                      + "[content]\n" + str(msg.get("content") or ""), encoding="utf-8")
+    except OSError:
+        pass
+
+
 def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900) -> dict:
     d = doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
@@ -891,7 +916,24 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             j = core_io._http(host + "/api/chat", body, timeout=timeout)
         if j.get("error"):
             raise RuntimeError("Ollama: " + str(j["error"]))
-        res = parse_ai_text(d["type"], (j.get("message") or {}).get("content", ""))
+        msg = j.get("message") or {}
+        _save_raw(s, did, msg)
+        try:
+            res = parse_ai_text(d["type"], msg.get("content") or "")
+        except ValueError:
+            try:  # model yang tetap 'berpikir': jawaban kadang tertulis di bagian thinking, content kosong / terpotong
+                res = parse_ai_text(d["type"], (msg.get("thinking") or "") + "\n" + (msg.get("content") or ""))
+            except ValueError:
+                # cadangan: ulangi sekali dengan format JSON berskema (lebih lambat, tetapi bentuk jawabannya dipaksa Ollama)
+                body2 = dict(body, format=ai_schema(d["type"]),
+                             options=dict(body["options"], num_predict=N_PREDICT * 2, num_ctx=min(16384, body["options"]["num_ctx"] + N_PREDICT)))
+                body2["messages"] = [dict(body["messages"][0], content=prompt.split("JAWAB DALAM FORMAT RINGKAS")[0]
+                                          + "Jawab dalam JSON sesuai skema.")]
+                j = core_io._http(host + "/api/chat", body2, timeout=timeout)
+                if j.get("error"):
+                    raise RuntimeError("Ollama: " + str(j["error"]))
+                _save_raw(s, did, j.get("message") or {})
+                res = core_io._parse_json((j.get("message") or {}).get("content", ""))
     except Exception as e:  # noqa: BLE001 - TIDAK ada data tiruan: borang tetap kosong & galat dicatat
         with s.lock, s.conn() as c:
             c.execute("UPDATE docs SET status='error', error=? WHERE id=?", (str(e)[:500], did))

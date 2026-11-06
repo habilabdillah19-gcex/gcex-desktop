@@ -3453,3 +3453,10 @@ ber-id `sec` (di Block Model `set.s`), dan `uiTab` / `PT.select` tidak terjangka
 sumber viewer dievaluasi ke dalam lingkupnya sendiri — yang bekerja adalah menekan tombolnya
 langsung (`#rbSlice`). Selama slider `#pos` belum terlihat di layar, ia tidak bisa diseret, dan
 pengukurannya menghasilkan angka yang tidak berarti apa-apa.
+
+## 111. DB-Ex 0.42.7 — perbaikan galat "jawaban AI tidak berformat H| / R|"
+
+- Di 0.42.4–0.42.6 AI diminta menjawab ringkas (`H|...`, `R|...`). Sebagian model kecil menjawab dengan bentuk lain (tabel markdown, `R:`, JSON di tengah penjelasan) atau menulis jawabannya di bagian *thinking*, sehingga borang gagal dengan pesan di atas. Bentuk-bentuk itu kini dikenali.
+- Bila jawaban tetap tidak terbaca, DB-Ex otomatis **mengulang sekali dengan format JSON berskema** (cara sebelum 0.42.4): lebih lambat, tetapi bentuk jawabannya dipaksa oleh Ollama.
+- Jawaban mentah AI terakhir untuk tiap borang disimpan di `_GCEx_Core/borang/ai_mentah/<id>.txt`; pesan galat juga memuat potongan awal jawaban. Bila masih gagal, kirim file itu ke admin.
+
