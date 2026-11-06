@@ -3141,3 +3141,77 @@ repo publik. Premisnya hilang, tetapi perubahannya tidak ditinjau ulang.
 Pelajarannya dicatat di sini karena sempat merugikan: perubahan dibuat atas perkiraan tentang
 perilaku GitHub, bukan atas riwayat yang sudah tersedia di repo ini sendiri. Riwayat itu sudah
 berisi jawabannya sejak awal.
+
+## 103. As-mined: atap dari permukaan / DTM yang sudah dimuat
+
+Bagian 95 memberi atap as-mined dari **awan titik pick-up** (median per poligon, atau interpolasi
+IDW). Itu cocok bila geologist memegang CSV pick-up mentah. Tetapi alur yang lebih umum di
+tambang adalah sebaliknya: titik pick-up sudah dijadikan **DTM di Surpac** lebih dulu — ditutup,
+dibersihkan, dipotong di batas desain — dan DTM itulah yang dianggap sah. Memaksa pemakai kembali
+ke awan titik mentah berarti memakai permukaan yang **berbeda** dari yang dipakai survei untuk
+menghitung volume, dan selisihnya tidak akan pernah bisa dijelaskan saat rekonsiliasi.
+
+Karena itu ada mode atap keempat: **Atap dari permukaan / DTM yang sudah dimuat (menu Model)**.
+
+### Dari mana permukaannya diambil
+
+Tidak ada pengimpor baru. Permukaan diambil dari daftar yang **sudah ada**, `MD.models`, yang
+diisi oleh pembaca yang sudah lama terpasang:
+
+| Berkas | Catatan |
+| --- | --- |
+| Surpac `.dtm` | **harus** disertai `.str` pasangannya — `.dtm` hanya memuat segitiga, titiknya ada di `.str` |
+| Leapfrog `.msh` | |
+| `.obj` | |
+| DXF mesh (`POLYFACE` / `3DFACE`) | |
+
+Jadi urutannya: muat permukaannya lewat menu **Model** seperti biasa, lalu pilih namanya di panel
+as-mined. Satu permukaan bisa dipakai sekaligus untuk gambar 3D dan untuk perhitungan; tidak ada
+salinan kedua yang bisa menyimpang.
+
+Koordinatnya **tidak** dikonversi. `MD.models[].v` menyimpan koordinat **penuh** (fungsi gambar
+`mdLocal()` lah yang mengurangi `offX/offY`, hanya untuk tampilan), dan as-mined juga bekerja di
+koordinat penuh. Menambahkan konversi "untuk aman" justru akan menggeser permukaannya 1 km.
+
+### Cara elevasinya dibaca
+
+`amRoofZ` menembakkan garis vertikal dari setiap pusat sel ke permukaan dan mengambil elevasi
+perpotongannya (barisentrik, dari segitiga yang benar-benar menaungi titik itu). Supaya tidak
+menelusuri seluruh segitiga untuk setiap sel, segitiga diindeks lebih dulu ke **kisi ember 2D**
+(`_rfIx`, disimpan pada objek modelnya dan dipakai ulang selama modelnya tidak berganti).
+
+Dua keadaan dilaporkan, bukan didiamkan:
+
+1. **Di luar jangkauan permukaan.** Kalau garis vertikal sebuah sel tidak mengenai satu segitiga
+   pun — DTM-nya tidak menjangkau seluruh poligon — sel itu memakai **RL atas flitch nominal**,
+   yaitu atap **asumsi**, sama seperti sebelum fitur ini ada. Luas total yang mengalaminya
+   ditampilkan di panel dengan peringatan. Diam-diam memakai RL nominal di separuh poligon akan
+   memberi angka yang kelihatan wajar dan salah.
+2. **Satu titik mengenai lebih dari satu segitiga.** Itu tanda yang dipilih kemungkinan **solid
+   tertutup** (punya atap *dan* lantai), bukan permukaan. Yang diambil adalah perpotongan
+   **terdekat ke RL atas flitch**, tetapi jumlah titiknya tetap dilaporkan: pada solid tertutup
+   pilihan itu bisa benar untuk sebagian sel dan salah untuk sebagian lain, dan tanpa angka ini
+   tidak ada cara pemakai mengetahuinya.
+
+### Yang diuji
+
+`tools/uji/uji_atap_asmined.py` ditambah dua kasus, keduanya dengan permukaan sintetis yang
+dimasukkan langsung ke `MD.models` dalam bentuk yang sama dengan hasil `readDtm` / `readMsh`:
+
+- **DTM rata yang menutupi seluruh poligon** pada RL atas &minus; 0,22 m → volumenya **wajib
+  sama persis** dengan mode *atap rata* pada elevasi yang sama, dan luas "di luar jangkauan"
+  wajib **nol**. Ini yang mengikat mode baru ke mode yang sudah terbukti.
+- **DTM yang hanya menutupi separuh poligon** → luas "di luar jangkauan" wajib **lebih dari nol**,
+  dan volumenya wajib berada **di antara** DTM penuh dan atap flitch nominal (separuh yang tidak
+  terjangkau kembali ke RL nominal).
+
+Uji bawaan (bagian 95) tetap berjalan: dengan `roof = 'flitch'`, delapan ukuran as-mined masih
+identik sampai digit terakhir dengan versi sebelum perubahan. Mode atap baru tidak boleh menggeser
+satu angka pun bagi pemakai yang tidak memilihnya.
+
+### Yang belum
+
+Ekspor `.mdl` masih menulis sel pecahan sebagai blok penuh (bagian 95). Dengan atap dari DTM
+selisihnya **bertambah besar**, sebab sel pecahan tidak lagi hanya di tepi poligon melainkan di
+seluruh luasnya. Kolom `FRAKSI` / `VOLUME` dan catatan di panel membuat selisihnya terlihat;
+memperbaikinya berarti memecah sel ke level octree yang lebih halus, dan itu pekerjaan berikutnya.

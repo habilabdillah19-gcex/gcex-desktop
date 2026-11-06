@@ -27,7 +27,7 @@
 /* ---------- pilihan ---------- */
 function amRoofMode() {
   var R = amR();
-  return (R.roof === 'flat' || R.roof === 'pickup') ? R.roof : 'flitch';
+  return (R.roof === 'flat' || R.roof === 'pickup' || R.roof === 'dtm') ? R.roof : 'flitch';
 }
 
 function amRoofPar(B) {
@@ -46,6 +46,10 @@ function amRoofKey() {
   var R = amR();
   var m = amRoofMode();
   if (m === 'flitch') return '';
+  if (m === 'dtm') {
+    var M = amRoofModel();
+    return '|rf:dtm,' + String(R.rfModel || '') + ',' + (M ? M.nt : 0);
+  }
   return '|rf:' + [m, R.rfUp, R.rfDn, R.rfBuf, R.rfCode, R.rfStat,
                    (amD().ptsR || []).length].join(',');
 }
@@ -76,6 +80,7 @@ function amRoofPts(o, B) {
 function amRoofFn(o, B) {
   var mode = amRoofMode();
   if (mode === 'flitch') return {ok: false, n: 0, mode: mode, zmax: B[0], f: function () { return B[0]; }};
+  if (mode === 'dtm') return amRoofFnDtm(o, B);
   var Q = amRoofPts(o, B), A = Q.pts, n = A.length, F = amRoofPar(B);
   if (n < 3) {
     /* Kurang dari 3 titik: jatuh ke RL atas NOMINAL, dan itu dilaporkan per poligon. Tanpa
@@ -204,12 +209,49 @@ function amRoofBox() {
     '<option value=flitch' + (mode === 'flitch' ? ' selected' : '') + '>RL atas flitch (nominal, rumus lama)</option>' +
     '<option value=flat' + (mode === 'flat' ? ' selected' : '') + '>Atap rata dari pick-up (satu elevasi per poligon)</option>' +
     '<option value=pickup' + (mode === 'pickup' ? ' selected' : '') + '>Atap ikut permukaan pick-up (IDW, seperti lantai)</option>' +
+    '<option value=dtm' + (mode === 'dtm' ? ' selected' : '') + '>Atap dari permukaan / DTM yang sudah dimuat (menu Model)</option>' +
     '</select>';
+  if (mode === 'dtm') {
+    var MM = (window.MD && MD.models) ? MD.models : [];
+    if (!MM.length) {
+      h += '<div class=hint><span class=warn>Belum ada permukaan yang dimuat.</span> Import ' +
+        'Surpac <code>.dtm</code> (bersama <code>.str</code> pasangannya), Leapfrog <code>.msh</code>, ' +
+        '<code>.obj</code> atau DXF mesh lewat menu <b>Model</b>, lalu pilih di sini.</div>';
+    } else {
+      h += '<div style="margin-top:4px"><label>Permukaan atap</label><select onchange="amRSet(\'rfModel\',this.value)">' +
+        '<option value="">— pilih —</option>' +
+        MM.map(function (m) {
+          return '<option' + (String(R.rfModel || '') === m.name ? ' selected' : '') + '>' +
+            amE(m.name) + '</option>';
+        }).join('') + '</select>';
+      var M = amRoofModel();
+      if (M) {
+        h += '<div class=hint>' + amE(M.name) + ': ' + M.nv.toLocaleString() + ' titik, ' +
+          M.nt.toLocaleString() + ' segitiga.</div>';
+      }
+      h += '</div>';
+    }
+    /* Laporan dari perhitungan terakhir: dua hal yang kalau didiamkan menyesatkan. */
+    if (window.AM && AM.luarAtap) {
+      if (AM.luarAtap.a > 0.01) {
+        h += '<div class=hint><span class=warn>' + AM.luarAtap.a.toFixed(1) + ' m&sup2; berada DI ' +
+          'LUAR jangkauan permukaan</span> &mdash; di situ dipakai RL atas flitch nominal ' +
+          lyFmt(B[0]) + ', yaitu atap ASUMSI. Periksa apakah permukaannya memang tidak menjangkau ' +
+          'seluruh poligon.</div>';
+      }
+      if (AM.luarAtap.ganda > 0) {
+        h += '<div class=hint><span class=warn>' + AM.luarAtap.ganda.toLocaleString() + ' titik ' +
+          'mengenai lebih dari satu segitiga</span> &mdash; yang dipilih adalah perpotongan ' +
+          'terdekat ke RL atas flitch. Itu tanda objek yang dipilih kemungkinan <b>solid tertutup</b>, ' +
+          'bukan permukaan; volume as-mined bisa salah tanpa memunculkan galat.</div>';
+      }
+    }
+  }
   if (mode === 'flitch') {
     h += '<div class=hint>Rumus lama: batas atas = RL atas flitch ' + lyFmt(B[0]) +
       ' apa adanya. Bila atap penggalian sebenarnya lebih rendah, volume as-mined <b>berlebih</b>, ' +
       'dan selalu berlebih &mdash; jadi ia menumpuk antar flitch, tidak saling menghapus.</div>';
-  } else {
+  } else if (mode !== 'dtm') {
     h += '<div class=g3 style="margin-top:4px">' +
       inp('rfUp', 'Pita ke atas RL atas (m)', '2') +
       inp('rfDn', 'Pita ke bawah RL atas (m)', String(+(0.6 * (B[0] - B[1])).toFixed(2))) +
@@ -250,4 +292,114 @@ function amVolTxt(s) {
     'pecahan: tepi poligon, atap dan lantai. Ekspor .mdl / CSV menulis blok berukuran penuh, ' +
     'jadi volume yang dihitung ulang dari dimensi blok akan sebesar angka kedua &mdash; ' +
     'kolom <code>FRAKSI</code> dan <code>VOLUME</code> di CSV memuat angka yang sebenarnya.</div>';
+}
+
+/* ================= ATAP DARI PERMUKAAN (DTM / mesh) =================
+ * Aplikasi sudah bisa membaca Surpac .dtm (berpasangan dengan .str), Leapfrog .msh, .obj dan
+ * DXF mesh lewat menu Model; hasilnya ada di MD.models sebagai jaring segitiga. Jadi atap dari
+ * DTM tidak perlu pembaca berkas kedua -- ia memakai model yang sudah dimuat.
+ *
+ * RUANG KOORDINAT: `m.v` memakai koordinat PENUH, ruang yang sama dengan poligon as-mined dan
+ * block model (mdLocal() barulah mengurangi offX/offY, dan itu hanya untuk menggambar). Jadi
+ * tidak ada penggeseran di sini -- dan itu diperiksa oleh uji, bukan diandaikan.
+ *
+ * SATU (x,y) BISA MENGENAI LEBIH DARI SATU SEGITIGA bila yang dipilih ternyata solid tertutup,
+ * bukan permukaan. Yang diambil adalah perpotongan yang PALING DEKAT ke RL atas flitch, dan
+ * jumlah kejadiannya dihitung lalu dilaporkan: memilih solid sebagai atap adalah kekeliruan
+ * yang masuk akal, dan diam-diam mengambil salah satu sisinya akan memberi volume yang salah
+ * tanpa tanda apa pun.
+ */
+function amRoofModel() {
+  var R = amR(), nm = String(R.rfModel || '');
+  if (!nm || !window.MD || !MD.models) return null;
+  for (var i = 0; i < MD.models.length; i++) if (MD.models[i].name === nm) return MD.models[i];
+  return null;
+}
+
+/* indeks 2D segitiga: ember per sel grid, dibangun sekali per model (disimpan di modelnya) */
+function amRoofIndex(m) {
+  if (m._rfIx && m._rfIxVer === m.nt) return m._rfIx;
+  var nt = m.nt, V = m.v, T = m.t;
+  var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, i;
+  for (i = 0; i < m.nv; i++) {
+    var vx = V[i * 3], vy = V[i * 3 + 1];
+    if (vx < x0) x0 = vx; if (vx > x1) x1 = vx;
+    if (vy < y0) y0 = vy; if (vy > y1) y1 = vy;
+  }
+  /* sel dipilih supaya rata-rata beberapa segitiga per sel; batasi agar tidak boros memori */
+  var n = Math.max(1, Math.min(400, Math.round(Math.sqrt(nt / 2))));
+  var cw = Math.max(1e-6, (x1 - x0) / n), ch = Math.max(1e-6, (y1 - y0) / n);
+  var H = {};
+  for (var t = 0; t < nt; t++) {
+    var a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2];
+    var ax = V[a * 3], ay = V[a * 3 + 1], bx = V[b * 3], by = V[b * 3 + 1],
+        cx = V[c * 3], cy = V[c * 3 + 1];
+    var i0 = Math.floor((Math.min(ax, bx, cx) - x0) / cw), i1 = Math.floor((Math.max(ax, bx, cx) - x0) / cw);
+    var j0 = Math.floor((Math.min(ay, by, cy) - y0) / ch), j1 = Math.floor((Math.max(ay, by, cy) - y0) / ch);
+    for (var ii = i0; ii <= i1; ii++) for (var jj = j0; jj <= j1; jj++) {
+      var k = ii + '|' + jj;
+      (H[k] = H[k] || []).push(t);
+    }
+  }
+  m._rfIx = {H: H, x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch};
+  m._rfIxVer = nt;
+  return m._rfIx;
+}
+
+/* z permukaan di (x,y). zAcuan = RL yang dipakai memilih bila ada beberapa perpotongan.
+   Kembalikan NaN bila (x,y) di luar permukaan. `cnt` (opsional) menghitung kejadian ganda. */
+function amRoofZ(m, X, ix, x, y, zAcuan, cnt) {
+  if (x < ix.x0 || x > ix.x1 || y < ix.y0 || y > ix.y1) return NaN;
+  var L = ix.H[Math.floor((x - ix.x0) / ix.cw) + '|' + Math.floor((y - ix.y0) / ix.ch)];
+  if (!L) return NaN;
+  var V = m.v, T = m.t, best = NaN, bestD = Infinity, nHit = 0;
+  for (var q = 0; q < L.length; q++) {
+    var t = L[q], a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2];
+    var ax = V[a * 3], ay = V[a * 3 + 1], az = V[a * 3 + 2];
+    var bx = V[b * 3], by = V[b * 3 + 1], bz = V[b * 3 + 2];
+    var cx = V[c * 3], cy = V[c * 3 + 1], cz = V[c * 3 + 2];
+    var d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    if (Math.abs(d) < 1e-12) continue;                 /* segitiga tegak / degenerat dari atas */
+    var w1 = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d;
+    var w2 = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
+    var w3 = 1 - w1 - w2;
+    if (w1 < -1e-9 || w2 < -1e-9 || w3 < -1e-9) continue;
+    var z = w1 * az + w2 * bz + w3 * cz;
+    nHit++;
+    var dd = Math.abs(z - zAcuan);
+    if (dd < bestD) { bestD = dd; best = z; }
+  }
+  if (cnt && nHit > 1) cnt.ganda++;
+  return best;
+}
+
+
+/* atap dari permukaan: f(x,y) mengembalikan NaN di luar permukaan, dan am2.js yang memutuskan
+   apa yang terjadi di situ (jatuh ke RL nominal, dan luasnya DICATAT) -- sebab hanya di sana
+   luas sel yang sebenarnya diketahui. */
+function amRoofFnDtm(o, B) {
+  var m = amRoofModel();
+  if (!m) return {ok: false, n: 0, mode: 'dtm', zmax: B[0], f: function () { return B[0]; },
+                  err: 'model permukaan belum dipilih'};
+  var ix = amRoofIndex(m), b = o.b, V = m.v, T = m.t;
+  /* batas atas pencarian blok: z tertinggi segitiga yang menyentuh kotak pembatas poligon */
+  var zmax = -Infinity, i0 = Math.floor((b[0] - ix.x0) / ix.cw), i1 = Math.floor((b[1] - ix.x0) / ix.cw);
+  var j0 = Math.floor((b[2] - ix.y0) / ix.ch), j1 = Math.floor((b[3] - ix.y0) / ix.ch), seen = {};
+  for (var ii = i0; ii <= i1; ii++) for (var jj = j0; jj <= j1; jj++) {
+    var L = ix.H[ii + '|' + jj];
+    if (!L) continue;
+    for (var q = 0; q < L.length; q++) {
+      var t = L[q];
+      if (seen[t]) continue;
+      seen[t] = 1;
+      for (var k = 0; k < 3; k++) {
+        var z = V[T[t * 3 + k] * 3 + 2];
+        if (z > zmax) zmax = z;
+      }
+    }
+  }
+  if (!isFinite(zmax)) zmax = B[0];
+  var cnt = {ganda: 0};
+  return {ok: true, n: m.nt, mode: 'dtm', nama: m.name, zmax: Math.max(zmax, B[0]), cnt: cnt,
+          f: function (x, y) { return amRoofZ(m, null, ix, x, y, B[0], cnt); }};
 }

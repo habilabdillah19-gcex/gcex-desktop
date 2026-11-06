@@ -106,6 +106,32 @@ JS_CSV = r"""
 })
 """
 
+# Permukaan / DTM sintetis dimasukkan langsung ke MD.models, bentuknya sama dengan yang dihasilkan
+# readDtm / readMsh / readObj: {name, v: Float64Array (xyz PENUH), t: Uint32Array, nv, nt}.
+# Dua kasus: (a) menutupi seluruh poligon pada RL atas - 0,22 m, hasilnya WAJIB sama dengan atap
+# rata 0,22 m; (b) hanya separuh poligon, supaya luas "di luar jangkauan permukaan" terlaporkan.
+JS_PASANG_DTM = r"""
+(function (cx, cy, z, separuh) {
+  if (!window.MD) return {err: 'MD tidak ada'};
+  MD.models = MD.models || [];
+  var x0 = cx - 60, x1 = separuh ? cx : cx + 60, y0 = cy - 60, y1 = cy + 60;
+  var nx = 6, ny = 6, v = [], t = [], i, j;
+  for (j = 0; j <= ny; j++) for (i = 0; i <= nx; i++) {
+    v.push(x0 + (x1 - x0) * i / nx, y0 + (y1 - y0) * j / ny, z);
+  }
+  for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+    var a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
+    t.push(a, b, d, a, d, c);
+  }
+  var nm = separuh ? 'UJI_DTM_SEPARUH' : 'UJI_DTM';
+  MD.models = MD.models.filter(function (m) { return m.name !== nm; });
+  MD.models.push({name: nm, v: new Float64Array(v), t: new Uint32Array(t),
+                  nv: v.length / 3, nt: t.length / 3});
+  amR().rfModel = nm;
+  return {ok: true, nama: nm, nv: v.length / 3, nt: t.length / 3, z: z};
+})
+"""
+
 JS_HITUNG = r"""
 (function (mode) {
   var R = amR();
@@ -130,6 +156,10 @@ JS_HITUNG = r"""
              gA: S.gA, gO: S.gO, nCell: E.cells.length, area: E.area, volP: E.volP,
              roof: (R.roof === undefined ? '(tidak ada)' : R.roof)};
   if (window.AM && AM.jepit) out.jepit = AM.jepit.a;
+  if (window.AM && AM.luarAtap) {
+    out.luarAtap = AM.luarAtap.a;
+    out.ganda = AM.luarAtap.ganda;
+  }
   return out;
 })
 """
@@ -176,7 +206,17 @@ def jalankan(pg, url: str, mode_list, rf_turun):
         raise SystemExit("siapkan gagal: %s" % (S or {}).get("err"))
     out = {"siap": S, "hasil": {}}
     for mode in mode_list:
-        out["hasil"][str(mode)] = pg.evaluate("(%s)(%s)" % (JS_HITUNG, json.dumps(mode)))
+        if mode in ("dtm", "dtm-separuh"):
+            d = pg.evaluate("(%s)(%s,%s,%s,%s)" % (
+                JS_PASANG_DTM, S["cx"], S["cy"], S["top"] - rf_turun,
+                "true" if mode == "dtm-separuh" else "false"))
+            if not d or d.get("err"):
+                raise SystemExit("pasang DTM gagal: %s" % (d or {}).get("err"))
+            out["dtm" if mode == "dtm" else "dtmS"] = d
+            r = pg.evaluate("(%s)(%s)" % (JS_HITUNG, json.dumps("dtm")))
+        else:
+            r = pg.evaluate("(%s)(%s)" % (JS_HITUNG, json.dumps(mode)))
+        out["hasil"][str(mode)] = r
         if mode == "flat":
             out["csv"] = pg.evaluate("(%s)()" % JS_CSV)
     return out
@@ -204,7 +244,8 @@ def main() -> int:
         hasil["lama"] = jalankan(pg, "http://localhost:%s/index.html" % PORT_LAMA, [None], 0.22)
         print("  versi BARU...", flush=True)
         hasil["baru"] = jalankan(pg, "http://localhost:%s/index.html" % PORT_BARU,
-                                 [None, "flitch", "flat", "pickup"], 0.22)
+                                 [None, "flitch", "flat", "pickup",
+                                  "dtm", "dtm-separuh"], 0.22)
         hasil["galat"] = galat
         ctx.close()
 
@@ -264,6 +305,34 @@ def main() -> int:
             if abs(nyata - harap) > 0.02:
                 salah.append("besar selisih tidak masuk akal: %.4f vs perkiraan %.4f"
                              % (nyata, harap))
+
+    # ---- 2b. atap dari permukaan / DTM ----
+    print("\n2b. ATAP DARI PERMUKAAN / DTM")
+    DT = hasil["baru"]["hasil"].get("dtm", {})
+    DS = hasil["baru"]["hasil"].get("dtm-separuh", {})
+    FL2 = hasil["baru"]["hasil"].get("flat", {})
+    if DT.get("err") or DS.get("err"):
+        salah.append("mode dtm gagal: %s / %s" % (DT.get("err"), DS.get("err")))
+    elif FL2.get("vol"):
+        print("   DTM penuh   volume %.2f m3  (atap rata %.2f m3)" % (DT["vol"], FL2["vol"]))
+        if abs(DT["vol"] - FL2["vol"]) > 1e-6 * max(1.0, FL2["vol"]):
+            salah.append("DTM rata yang menutupi seluruh poligon TIDAK sama dengan atap rata "
+                         "pada RL yang sama: %r vs %r" % (DT["vol"], FL2["vol"]))
+        la = DT.get("luarAtap", 0.0)
+        print("   di luar jangkauan permukaan: %.2f m2" % la)
+        if la > 0.01:
+            salah.append("DTM menutupi seluruh poligon tetapi masih melaporkan %.2f m2 di luar "
+                         "jangkauan" % la)
+        las = DS.get("luarAtap", 0.0)
+        print("   DTM separuh volume %.2f m3, di luar jangkauan %.2f m2" % (DS["vol"], las))
+        if las < 1.0:
+            salah.append("DTM yang hanya menutupi separuh poligon TIDAK melaporkan luas di luar "
+                         "jangkauan (%.2f m2)" % las)
+        # separuh tak terjangkau memakai RL nominal, jadi volumenya di antara DTM penuh dan flitch
+        F0 = hasil["baru"]["hasil"]["flitch"]
+        if not (DT["vol"] - 1e-6 < DS["vol"] < F0["vol"] + 1e-6):
+            salah.append("volume DTM separuh (%r) tidak berada di antara DTM penuh (%r) dan "
+                         "flitch (%r)" % (DS["vol"], DT["vol"], F0["vol"]))
 
     # ---- 3. kolom FRAKSI / VOLUME di ekspor CSV ----
     C = hasil["baru"].get("csv")

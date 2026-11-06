@@ -53,6 +53,11 @@ function amInfoById(id){var L=amAllInfo();for(var i=0;i<L.length;i++)if(L[i].x.i
 function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),fh=B[0]-B[1],P=amPolys();
   if(!P.length){AM.msg='<span class=warn>Belum ada poligon aktif di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+'. Digit atau import boundary dulu (tab &#9314;).</span>';amPanel();return;}
   var AMJ={a:0,p:P.map(function(){return 0;})};
+  /* AMR = luas yang berada DI LUAR permukaan atap (hanya mode 'dtm'): di situ atap
+     tidak diketahui, jadi dipakai RL atas flitch nominal dan luasnya DICATAT. Tanpa
+     dicatat, bagian poligon yang permukaannya tidak menjangkau akan diam-diam dihitung
+     dengan atap asumsi dan tidak ada yang tahu seberapa luas. */
+  var AMR={a:0,p:P.map(function(){return 0;})};
   var CM=lyCalcM(),t0=Date.now(),G=amGrid(),dx=G.dx,dy=G.dy,dz=G.dz,O=G.O,cells=new Map(),Ga=m.num[U.attr],sgA=BX.ui.sgCol&&m.num[BX.ui.sgCol]?m.num[BX.ui.sgCol]:null,AG=R.ag&&m.num[R.ag]?m.num[R.ag]:null,SX=R.sxs&&m.num[R.sxs]?m.num[R.sxs]:null;
   var FM=R.floor==='pickup',FL=null,zLo=B[1];if(FM){FL=P.map(function(o){var F=amFloorFn(o,B);if(F.ok&&F.zmin<zLo)zLo=F.zmin;return F;});}
   /* ATAP. Bawaan tetap RL atas flitch nominal (B[0]) supaya tidak ada angka lama yang
@@ -64,10 +69,11 @@ function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),f
   var iz0=Math.floor((B[1]-O[2])/dz+1e-9),iz1=Math.ceil((B[0]-O[2])/dz-1e-9)-1,ca=dx*dy;
   P.forEach(function(o,pi){var Rr=o.r,b=o.b,FP0=FM&&FL[pi].ok?FL[pi]:null,iz0p=FP0?Math.floor((FP0.zmin-O[2])/dz+1e-9):iz0,RP0=RM&&RF[pi].ok?RF[pi]:null,iz1p=RP0?Math.ceil((RP0.zmax-O[2])/dz-1e-9)-1:iz1;for(var t=0;t<IX.length;t++){var i=IX[t],hx=m.sx[i]/2,hy=m.sy[i]/2,hz=m.sz[i]/2;if(m.x[i]+hx<=b[0]||m.x[i]-hx>=b[1]||m.y[i]+hy<=b[2]||m.y[i]-hy>=b[3])continue;
       var bx0=Math.round((m.x[i]-hx-O[0])/dx),bx1=Math.round((m.x[i]+hx-O[0])/dx),by0=Math.round((m.y[i]-hy-O[1])/dy),by1=Math.round((m.y[i]+hy-O[1])/dy),bz0=Math.round((m.z[i]-hz-O[2])/dz),bz1=Math.round((m.z[i]+hz-O[2])/dz);
-      if(CM==='surpac'){var zc=m.z[i],fbS=FP0?FP0.f(m.x[i],m.y[i]):B[1],rtS=RP0?RP0.f(m.x[i],m.y[i]):B[0];if(!(zc>fbS+1e-9&&zc<=rtS+1e-9))continue;if(!lyInS(Rr,m.x[i],m.y[i]))continue;
+      if(CM==='surpac'){var zc=m.z[i],fbS=FP0?FP0.f(m.x[i],m.y[i]):B[1],rtS=RP0?RP0.f(m.x[i],m.y[i]):B[0];if(!isFinite(rtS))rtS=B[0];if(!(zc>fbS+1e-9&&zc<=rtS+1e-9))continue;if(!lyInS(Rr,m.x[i],m.y[i]))continue;
         for(var ix=bx0;ix<bx1;ix++)for(var iy=by0;iy<by1;iy++)for(var iz=bz0;iz<bz1;iz++){var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:1});}continue;}
       var a0=Math.max(bx0,Math.floor((b[0]-O[0])/dx)),a1=Math.min(bx1,Math.ceil((b[1]-O[0])/dx)),c0=Math.max(by0,Math.floor((b[2]-O[1])/dy)),c1=Math.min(by1,Math.ceil((b[3]-O[1])/dy)),z0=Math.max(iz0p,bz0),z1=Math.min(iz1p,bz1-1);if(z1<z0)continue;
       for(var ix=a0;ix<a1;ix++)for(var iy=c0;iy<c1;iy++){var x0=O[0]+ix*dx,y0=O[1]+iy*dy,af=lyClip(Rr,[x0,x0+dx,y0,y0+dy])/ca;if(af<=1e-9)continue;if(af>1)af=1;var fb=FP0?FP0.f(x0+dx/2,y0+dy/2):B[1],rt=RP0?RP0.f(x0+dx/2,y0+dy/2):B[0];
+        if(RP0&&!isFinite(rt)){AMR.a+=af*ca;AMR.p[pi]=(AMR.p[pi]||0)+af*ca;rt=B[0];}
         if(rt<=fb+1e-9){AMJ.a+=af*ca;AMJ.p[pi]=(AMJ.p[pi]||0)+af*ca;continue;}
         for(var iz=z0;iz<=z1;iz++){var zb=O[2]+iz*dz,zf=(Math.min(zb+dz,rt)-Math.max(zb,fb))/dz;if(zf<=1e-9)continue;var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:af*Math.min(1,zf)});}}}});
   var C=Array.from(cells.values());
@@ -76,6 +82,8 @@ function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),f
      dijepit diam-diam -- menjepit tanpa memberi tahu menyembunyikan masalah survei
      sebagai angka yang kelihatan wajar. */
   AM.jepit={a:AMJ.a,p:AMJ.p.slice()};
+  AM.luarAtap={a:AMR.a,p:AMR.p.slice(),
+               ganda:(RM&&RF?RF.reduce(function(n,F){return n+((F.cnt&&F.cnt.ganda)||0);},0):0)};
   var UPD=U.mode!=='full',nNoM=0,haveS=AM.comps.length>0;if(!haveS&&!UPD){AM.msg='<span class=warn>Estimasi ulang penuh butuh data sampel. Import collar &amp; assay dulu (tab &#9313;), atau pakai metode Update model GC.</span>';amPanel();return;}
   if(UPD&&haveS){AM.comps.forEach(function(q){q.m=amModelAt(q.x,q.y,q.z,Ga);q.r=isFinite(q.m)?q.g-q.m:NaN;if(!isFinite(q.r))nNoM++;});}
   var Rs=Math.max(0.1,+U.R||15),Hs={},cs=Rs,key=function(a,b,c){return a+'|'+b+'|'+c;};AM.comps.forEach(function(q,j){if(UPD&&!isFinite(q.r))return;var k=key(Math.floor(q.x/cs),Math.floor(q.y/cs),Math.floor(q.z/cs));(Hs[k]=Hs[k]||[]).push(j);});

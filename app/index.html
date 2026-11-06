@@ -3638,6 +3638,11 @@ function amInfoById(id){var L=amAllInfo();for(var i=0;i<L.length;i++)if(L[i].x.i
 function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),fh=B[0]-B[1],P=amPolys();
   if(!P.length){AM.msg='<span class=warn>Belum ada poligon aktif di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+'. Digit atau import boundary dulu (tab &#9314;).</span>';amPanel();return;}
   var AMJ={a:0,p:P.map(function(){return 0;})};
+  /* AMR = luas yang berada DI LUAR permukaan atap (hanya mode 'dtm'): di situ atap
+     tidak diketahui, jadi dipakai RL atas flitch nominal dan luasnya DICATAT. Tanpa
+     dicatat, bagian poligon yang permukaannya tidak menjangkau akan diam-diam dihitung
+     dengan atap asumsi dan tidak ada yang tahu seberapa luas. */
+  var AMR={a:0,p:P.map(function(){return 0;})};
   var CM=lyCalcM(),t0=Date.now(),G=amGrid(),dx=G.dx,dy=G.dy,dz=G.dz,O=G.O,cells=new Map(),Ga=m.num[U.attr],sgA=BX.ui.sgCol&&m.num[BX.ui.sgCol]?m.num[BX.ui.sgCol]:null,AG=R.ag&&m.num[R.ag]?m.num[R.ag]:null,SX=R.sxs&&m.num[R.sxs]?m.num[R.sxs]:null;
   var FM=R.floor==='pickup',FL=null,zLo=B[1];if(FM){FL=P.map(function(o){var F=amFloorFn(o,B);if(F.ok&&F.zmin<zLo)zLo=F.zmin;return F;});}
   /* ATAP. Bawaan tetap RL atas flitch nominal (B[0]) supaya tidak ada angka lama yang
@@ -3649,10 +3654,11 @@ function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),f
   var iz0=Math.floor((B[1]-O[2])/dz+1e-9),iz1=Math.ceil((B[0]-O[2])/dz-1e-9)-1,ca=dx*dy;
   P.forEach(function(o,pi){var Rr=o.r,b=o.b,FP0=FM&&FL[pi].ok?FL[pi]:null,iz0p=FP0?Math.floor((FP0.zmin-O[2])/dz+1e-9):iz0,RP0=RM&&RF[pi].ok?RF[pi]:null,iz1p=RP0?Math.ceil((RP0.zmax-O[2])/dz-1e-9)-1:iz1;for(var t=0;t<IX.length;t++){var i=IX[t],hx=m.sx[i]/2,hy=m.sy[i]/2,hz=m.sz[i]/2;if(m.x[i]+hx<=b[0]||m.x[i]-hx>=b[1]||m.y[i]+hy<=b[2]||m.y[i]-hy>=b[3])continue;
       var bx0=Math.round((m.x[i]-hx-O[0])/dx),bx1=Math.round((m.x[i]+hx-O[0])/dx),by0=Math.round((m.y[i]-hy-O[1])/dy),by1=Math.round((m.y[i]+hy-O[1])/dy),bz0=Math.round((m.z[i]-hz-O[2])/dz),bz1=Math.round((m.z[i]+hz-O[2])/dz);
-      if(CM==='surpac'){var zc=m.z[i],fbS=FP0?FP0.f(m.x[i],m.y[i]):B[1],rtS=RP0?RP0.f(m.x[i],m.y[i]):B[0];if(!(zc>fbS+1e-9&&zc<=rtS+1e-9))continue;if(!lyInS(Rr,m.x[i],m.y[i]))continue;
+      if(CM==='surpac'){var zc=m.z[i],fbS=FP0?FP0.f(m.x[i],m.y[i]):B[1],rtS=RP0?RP0.f(m.x[i],m.y[i]):B[0];if(!isFinite(rtS))rtS=B[0];if(!(zc>fbS+1e-9&&zc<=rtS+1e-9))continue;if(!lyInS(Rr,m.x[i],m.y[i]))continue;
         for(var ix=bx0;ix<bx1;ix++)for(var iy=by0;iy<by1;iy++)for(var iz=bz0;iz<bz1;iz++){var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:1});}continue;}
       var a0=Math.max(bx0,Math.floor((b[0]-O[0])/dx)),a1=Math.min(bx1,Math.ceil((b[1]-O[0])/dx)),c0=Math.max(by0,Math.floor((b[2]-O[1])/dy)),c1=Math.min(by1,Math.ceil((b[3]-O[1])/dy)),z0=Math.max(iz0p,bz0),z1=Math.min(iz1p,bz1-1);if(z1<z0)continue;
       for(var ix=a0;ix<a1;ix++)for(var iy=c0;iy<c1;iy++){var x0=O[0]+ix*dx,y0=O[1]+iy*dy,af=lyClip(Rr,[x0,x0+dx,y0,y0+dy])/ca;if(af<=1e-9)continue;if(af>1)af=1;var fb=FP0?FP0.f(x0+dx/2,y0+dy/2):B[1],rt=RP0?RP0.f(x0+dx/2,y0+dy/2):B[0];
+        if(RP0&&!isFinite(rt)){AMR.a+=af*ca;AMR.p[pi]=(AMR.p[pi]||0)+af*ca;rt=B[0];}
         if(rt<=fb+1e-9){AMJ.a+=af*ca;AMJ.p[pi]=(AMJ.p[pi]||0)+af*ca;continue;}
         for(var iz=z0;iz<=z1;iz++){var zb=O[2]+iz*dz,zf=(Math.min(zb+dz,rt)-Math.max(zb,fb))/dz;if(zf<=1e-9)continue;var k=ix+'|'+iy+'|'+iz+'|'+pi;if(!cells.has(k))cells.set(k,{ix:ix,iy:iy,iz:iz,p:i,pg:pi,pid:o.id,f:af*Math.min(1,zf)});}}}});
   var C=Array.from(cells.values());
@@ -3661,6 +3667,8 @@ function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),f
      dijepit diam-diam -- menjepit tanpa memberi tahu menyembunyikan masalah survei
      sebagai angka yang kelihatan wajar. */
   AM.jepit={a:AMJ.a,p:AMJ.p.slice()};
+  AM.luarAtap={a:AMR.a,p:AMR.p.slice(),
+               ganda:(RM&&RF?RF.reduce(function(n,F){return n+((F.cnt&&F.cnt.ganda)||0);},0):0)};
   var UPD=U.mode!=='full',nNoM=0,haveS=AM.comps.length>0;if(!haveS&&!UPD){AM.msg='<span class=warn>Estimasi ulang penuh butuh data sampel. Import collar &amp; assay dulu (tab &#9313;), atau pakai metode Update model GC.</span>';amPanel();return;}
   if(UPD&&haveS){AM.comps.forEach(function(q){q.m=amModelAt(q.x,q.y,q.z,Ga);q.r=isFinite(q.m)?q.g-q.m:NaN;if(!isFinite(q.r))nNoM++;});}
   var Rs=Math.max(0.1,+U.R||15),Hs={},cs=Rs,key=function(a,b,c){return a+'|'+b+'|'+c;};AM.comps.forEach(function(q,j){if(UPD&&!isFinite(q.r))return;var k=key(Math.floor(q.x/cs),Math.floor(q.y/cs),Math.floor(q.z/cs));(Hs[k]=Hs[k]||[]).push(j);});
@@ -6947,7 +6955,7 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
 /* ---------- pilihan ---------- */
 function amRoofMode() {
   var R = amR();
-  return (R.roof === 'flat' || R.roof === 'pickup') ? R.roof : 'flitch';
+  return (R.roof === 'flat' || R.roof === 'pickup' || R.roof === 'dtm') ? R.roof : 'flitch';
 }
 
 function amRoofPar(B) {
@@ -6966,6 +6974,10 @@ function amRoofKey() {
   var R = amR();
   var m = amRoofMode();
   if (m === 'flitch') return '';
+  if (m === 'dtm') {
+    var M = amRoofModel();
+    return '|rf:dtm,' + String(R.rfModel || '') + ',' + (M ? M.nt : 0);
+  }
   return '|rf:' + [m, R.rfUp, R.rfDn, R.rfBuf, R.rfCode, R.rfStat,
                    (amD().ptsR || []).length].join(',');
 }
@@ -6996,6 +7008,7 @@ function amRoofPts(o, B) {
 function amRoofFn(o, B) {
   var mode = amRoofMode();
   if (mode === 'flitch') return {ok: false, n: 0, mode: mode, zmax: B[0], f: function () { return B[0]; }};
+  if (mode === 'dtm') return amRoofFnDtm(o, B);
   var Q = amRoofPts(o, B), A = Q.pts, n = A.length, F = amRoofPar(B);
   if (n < 3) {
     /* Kurang dari 3 titik: jatuh ke RL atas NOMINAL, dan itu dilaporkan per poligon. Tanpa
@@ -7124,12 +7137,49 @@ function amRoofBox() {
     '<option value=flitch' + (mode === 'flitch' ? ' selected' : '') + '>RL atas flitch (nominal, rumus lama)</option>' +
     '<option value=flat' + (mode === 'flat' ? ' selected' : '') + '>Atap rata dari pick-up (satu elevasi per poligon)</option>' +
     '<option value=pickup' + (mode === 'pickup' ? ' selected' : '') + '>Atap ikut permukaan pick-up (IDW, seperti lantai)</option>' +
+    '<option value=dtm' + (mode === 'dtm' ? ' selected' : '') + '>Atap dari permukaan / DTM yang sudah dimuat (menu Model)</option>' +
     '</select>';
+  if (mode === 'dtm') {
+    var MM = (window.MD && MD.models) ? MD.models : [];
+    if (!MM.length) {
+      h += '<div class=hint><span class=warn>Belum ada permukaan yang dimuat.</span> Import ' +
+        'Surpac <code>.dtm</code> (bersama <code>.str</code> pasangannya), Leapfrog <code>.msh</code>, ' +
+        '<code>.obj</code> atau DXF mesh lewat menu <b>Model</b>, lalu pilih di sini.</div>';
+    } else {
+      h += '<div style="margin-top:4px"><label>Permukaan atap</label><select onchange="amRSet(\'rfModel\',this.value)">' +
+        '<option value="">— pilih —</option>' +
+        MM.map(function (m) {
+          return '<option' + (String(R.rfModel || '') === m.name ? ' selected' : '') + '>' +
+            amE(m.name) + '</option>';
+        }).join('') + '</select>';
+      var M = amRoofModel();
+      if (M) {
+        h += '<div class=hint>' + amE(M.name) + ': ' + M.nv.toLocaleString() + ' titik, ' +
+          M.nt.toLocaleString() + ' segitiga.</div>';
+      }
+      h += '</div>';
+    }
+    /* Laporan dari perhitungan terakhir: dua hal yang kalau didiamkan menyesatkan. */
+    if (window.AM && AM.luarAtap) {
+      if (AM.luarAtap.a > 0.01) {
+        h += '<div class=hint><span class=warn>' + AM.luarAtap.a.toFixed(1) + ' m&sup2; berada DI ' +
+          'LUAR jangkauan permukaan</span> &mdash; di situ dipakai RL atas flitch nominal ' +
+          lyFmt(B[0]) + ', yaitu atap ASUMSI. Periksa apakah permukaannya memang tidak menjangkau ' +
+          'seluruh poligon.</div>';
+      }
+      if (AM.luarAtap.ganda > 0) {
+        h += '<div class=hint><span class=warn>' + AM.luarAtap.ganda.toLocaleString() + ' titik ' +
+          'mengenai lebih dari satu segitiga</span> &mdash; yang dipilih adalah perpotongan ' +
+          'terdekat ke RL atas flitch. Itu tanda objek yang dipilih kemungkinan <b>solid tertutup</b>, ' +
+          'bukan permukaan; volume as-mined bisa salah tanpa memunculkan galat.</div>';
+      }
+    }
+  }
   if (mode === 'flitch') {
     h += '<div class=hint>Rumus lama: batas atas = RL atas flitch ' + lyFmt(B[0]) +
       ' apa adanya. Bila atap penggalian sebenarnya lebih rendah, volume as-mined <b>berlebih</b>, ' +
       'dan selalu berlebih &mdash; jadi ia menumpuk antar flitch, tidak saling menghapus.</div>';
-  } else {
+  } else if (mode !== 'dtm') {
     h += '<div class=g3 style="margin-top:4px">' +
       inp('rfUp', 'Pita ke atas RL atas (m)', '2') +
       inp('rfDn', 'Pita ke bawah RL atas (m)', String(+(0.6 * (B[0] - B[1])).toFixed(2))) +
@@ -7170,6 +7220,116 @@ function amVolTxt(s) {
     'pecahan: tepi poligon, atap dan lantai. Ekspor .mdl / CSV menulis blok berukuran penuh, ' +
     'jadi volume yang dihitung ulang dari dimensi blok akan sebesar angka kedua &mdash; ' +
     'kolom <code>FRAKSI</code> dan <code>VOLUME</code> di CSV memuat angka yang sebenarnya.</div>';
+}
+
+/* ================= ATAP DARI PERMUKAAN (DTM / mesh) =================
+ * Aplikasi sudah bisa membaca Surpac .dtm (berpasangan dengan .str), Leapfrog .msh, .obj dan
+ * DXF mesh lewat menu Model; hasilnya ada di MD.models sebagai jaring segitiga. Jadi atap dari
+ * DTM tidak perlu pembaca berkas kedua -- ia memakai model yang sudah dimuat.
+ *
+ * RUANG KOORDINAT: `m.v` memakai koordinat PENUH, ruang yang sama dengan poligon as-mined dan
+ * block model (mdLocal() barulah mengurangi offX/offY, dan itu hanya untuk menggambar). Jadi
+ * tidak ada penggeseran di sini -- dan itu diperiksa oleh uji, bukan diandaikan.
+ *
+ * SATU (x,y) BISA MENGENAI LEBIH DARI SATU SEGITIGA bila yang dipilih ternyata solid tertutup,
+ * bukan permukaan. Yang diambil adalah perpotongan yang PALING DEKAT ke RL atas flitch, dan
+ * jumlah kejadiannya dihitung lalu dilaporkan: memilih solid sebagai atap adalah kekeliruan
+ * yang masuk akal, dan diam-diam mengambil salah satu sisinya akan memberi volume yang salah
+ * tanpa tanda apa pun.
+ */
+function amRoofModel() {
+  var R = amR(), nm = String(R.rfModel || '');
+  if (!nm || !window.MD || !MD.models) return null;
+  for (var i = 0; i < MD.models.length; i++) if (MD.models[i].name === nm) return MD.models[i];
+  return null;
+}
+
+/* indeks 2D segitiga: ember per sel grid, dibangun sekali per model (disimpan di modelnya) */
+function amRoofIndex(m) {
+  if (m._rfIx && m._rfIxVer === m.nt) return m._rfIx;
+  var nt = m.nt, V = m.v, T = m.t;
+  var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, i;
+  for (i = 0; i < m.nv; i++) {
+    var vx = V[i * 3], vy = V[i * 3 + 1];
+    if (vx < x0) x0 = vx; if (vx > x1) x1 = vx;
+    if (vy < y0) y0 = vy; if (vy > y1) y1 = vy;
+  }
+  /* sel dipilih supaya rata-rata beberapa segitiga per sel; batasi agar tidak boros memori */
+  var n = Math.max(1, Math.min(400, Math.round(Math.sqrt(nt / 2))));
+  var cw = Math.max(1e-6, (x1 - x0) / n), ch = Math.max(1e-6, (y1 - y0) / n);
+  var H = {};
+  for (var t = 0; t < nt; t++) {
+    var a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2];
+    var ax = V[a * 3], ay = V[a * 3 + 1], bx = V[b * 3], by = V[b * 3 + 1],
+        cx = V[c * 3], cy = V[c * 3 + 1];
+    var i0 = Math.floor((Math.min(ax, bx, cx) - x0) / cw), i1 = Math.floor((Math.max(ax, bx, cx) - x0) / cw);
+    var j0 = Math.floor((Math.min(ay, by, cy) - y0) / ch), j1 = Math.floor((Math.max(ay, by, cy) - y0) / ch);
+    for (var ii = i0; ii <= i1; ii++) for (var jj = j0; jj <= j1; jj++) {
+      var k = ii + '|' + jj;
+      (H[k] = H[k] || []).push(t);
+    }
+  }
+  m._rfIx = {H: H, x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch};
+  m._rfIxVer = nt;
+  return m._rfIx;
+}
+
+/* z permukaan di (x,y). zAcuan = RL yang dipakai memilih bila ada beberapa perpotongan.
+   Kembalikan NaN bila (x,y) di luar permukaan. `cnt` (opsional) menghitung kejadian ganda. */
+function amRoofZ(m, X, ix, x, y, zAcuan, cnt) {
+  if (x < ix.x0 || x > ix.x1 || y < ix.y0 || y > ix.y1) return NaN;
+  var L = ix.H[Math.floor((x - ix.x0) / ix.cw) + '|' + Math.floor((y - ix.y0) / ix.ch)];
+  if (!L) return NaN;
+  var V = m.v, T = m.t, best = NaN, bestD = Infinity, nHit = 0;
+  for (var q = 0; q < L.length; q++) {
+    var t = L[q], a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2];
+    var ax = V[a * 3], ay = V[a * 3 + 1], az = V[a * 3 + 2];
+    var bx = V[b * 3], by = V[b * 3 + 1], bz = V[b * 3 + 2];
+    var cx = V[c * 3], cy = V[c * 3 + 1], cz = V[c * 3 + 2];
+    var d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    if (Math.abs(d) < 1e-12) continue;                 /* segitiga tegak / degenerat dari atas */
+    var w1 = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d;
+    var w2 = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d;
+    var w3 = 1 - w1 - w2;
+    if (w1 < -1e-9 || w2 < -1e-9 || w3 < -1e-9) continue;
+    var z = w1 * az + w2 * bz + w3 * cz;
+    nHit++;
+    var dd = Math.abs(z - zAcuan);
+    if (dd < bestD) { bestD = dd; best = z; }
+  }
+  if (cnt && nHit > 1) cnt.ganda++;
+  return best;
+}
+
+
+/* atap dari permukaan: f(x,y) mengembalikan NaN di luar permukaan, dan am2.js yang memutuskan
+   apa yang terjadi di situ (jatuh ke RL nominal, dan luasnya DICATAT) -- sebab hanya di sana
+   luas sel yang sebenarnya diketahui. */
+function amRoofFnDtm(o, B) {
+  var m = amRoofModel();
+  if (!m) return {ok: false, n: 0, mode: 'dtm', zmax: B[0], f: function () { return B[0]; },
+                  err: 'model permukaan belum dipilih'};
+  var ix = amRoofIndex(m), b = o.b, V = m.v, T = m.t;
+  /* batas atas pencarian blok: z tertinggi segitiga yang menyentuh kotak pembatas poligon */
+  var zmax = -Infinity, i0 = Math.floor((b[0] - ix.x0) / ix.cw), i1 = Math.floor((b[1] - ix.x0) / ix.cw);
+  var j0 = Math.floor((b[2] - ix.y0) / ix.ch), j1 = Math.floor((b[3] - ix.y0) / ix.ch), seen = {};
+  for (var ii = i0; ii <= i1; ii++) for (var jj = j0; jj <= j1; jj++) {
+    var L = ix.H[ii + '|' + jj];
+    if (!L) continue;
+    for (var q = 0; q < L.length; q++) {
+      var t = L[q];
+      if (seen[t]) continue;
+      seen[t] = 1;
+      for (var k = 0; k < 3; k++) {
+        var z = V[T[t * 3 + k] * 3 + 2];
+        if (z > zmax) zmax = z;
+      }
+    }
+  }
+  if (!isFinite(zmax)) zmax = B[0];
+  var cnt = {ganda: 0};
+  return {ok: true, n: m.nt, mode: 'dtm', nama: m.name, zmax: Math.max(zmax, B[0]), cnt: cnt,
+          f: function (x, y) { return amRoofZ(m, null, ix, x, y, B[0], cnt); }};
 }
 
 /* ================= TOMBOL DEMO: URUTAN TUTORIAL, TEKS PENDEK, TEMPO LEBIH CEPAT =================
@@ -9320,7 +9480,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.27';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.28';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
