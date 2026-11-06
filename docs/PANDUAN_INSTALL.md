@@ -3105,3 +3105,39 @@ dengan `main` paling lambat keesokan dini hari**, apa pun yang terjadi dengan pu
 - **Baca semua yang belum**: semua borang yang belum dibaca (atau gagal) diantrekan dan dibaca satu per satu di latar belakang. Daftar borang menampilkan *AI membaca…* / *antre AI #n*, dan di bawah scan tampil jam berjalan. Selama itu Anda bisa membuka, memeriksa, dan memverifikasi borang lain. Borang yang gagal dilewati dan antrean berlanjut.
 - Lama baca per borang tercatat di bawah scan (*Dibaca AI … · N dtk*), jadi Anda bisa membandingkan sebelum dan sesudah.
 
+
+## 102. RALAT: `cancel-in-progress: true` dikembalikan ke `false`
+
+Bagian 97 mengubah `cancel-in-progress` menjadi `true` dengan alasan dari 86 run Windows dalam
+enam hari, "68 di antaranya akan dibatalkan" sehingga hemat ~79%. **Perhitungan itu salah.**
+
+Ia mengandaikan bahwa dengan `false` ke-86 run berjalan penuh. Tidak demikian: **GitHub sudah
+membatalkan run yang masih mengantre** dalam satu grup `concurrency` walaupun setelannya `false`.
+Itu terlihat jelas di riwayat 5–6 November — banyak run berstatus *cancelled* di bawah setelan
+lama. Yang sebenarnya ditambahkan oleh `true` hanyalah satu hal: **membunuh build yang sudah
+berjalan**.
+
+Di repo dengan beberapa sesi bekerja bersamaan, itu fatal. Push datang tiap 5–15 menit sedangkan
+build perlu 38–87 menit, sehingga tidak ada satu pun build yang pernah selesai.
+
+Buktinya langsung terbaca dari riwayat hari yang sama:
+
+| Setelan | Rentang | Hasil |
+| --- | --- | --- |
+| `false` (lama) | 6 Nov 20:42–03:12 | **7 build sukses** (diselingi 7 pembatalan run yang mengantre) |
+| `true` (perubahan 05:53) | 6 Nov 05:53–07:05 | **0 sukses, 4 pembatalan beruntun** |
+
+Alasan awal perubahan itu — jatah 3.000 menit GitHub Pro habis — juga sudah **lenyap satu jam
+kemudian** ketika repo dijadikan publik: Actions pada runner standar gratis tanpa batas untuk
+repo publik. Premisnya hilang, tetapi perubahannya tidak ditinjau ulang.
+
+**Dikembalikan ke `false`.** Yang tetap dipertahankan:
+
+- **Cache** (pip, unduhan npm, binary Electron) — murni untung, memangkas waktu build.
+- **Build terjadwal 02:44 WITA** — tetap berguna: run yang mengantre masih bisa dibatalkan push
+  berikutnya, jadi pada hari yang sangat sibuk masih mungkin ada rentang panjang tanpa Release
+  baru.
+
+Pelajarannya dicatat di sini karena sempat merugikan: perubahan dibuat atas perkiraan tentang
+perilaku GitHub, bukan atas riwayat yang sudah tersedia di repo ini sendiri. Riwayat itu sudah
+berisi jawabannya sejak awal.
