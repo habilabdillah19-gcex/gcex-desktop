@@ -3460,3 +3460,9 @@ pengukurannya menghasilkan angka yang tidak berarti apa-apa.
 - Bila jawaban tetap tidak terbaca, DB-Ex otomatis **mengulang sekali dengan format JSON berskema** (cara sebelum 0.42.4): lebih lambat, tetapi bentuk jawabannya dipaksa oleh Ollama.
 - Jawaban mentah AI terakhir untuk tiap borang disimpan di `_GCEx_Core/borang/ai_mentah/<id>.txt`; pesan galat juga memuat potongan awal jawaban. Bila masih gagal, kirim file itu ke admin.
 
+## 112. DB-Ex 0.42.8 — jawaban AI Borang dipaksa rapi; folder _GCEx_Core bersarang dicegah
+
+- Di 0.42.7 model kecil (`qwen3-vl:2b`) kadang menulis penjelasan atau menyalin judul kolom, dan teks itu masuk ke tabel sebagai baris ("The user says…", "TIME", "From"). Sekarang Ollama **memaksa** bentuk jawaban: daftar nilai per baris tanpa nama kolom (tetap ringkas), dan baris yang isinya judul kolom, kalimat penjelasan, atau kosong dibuang otomatis.
+- **Jangan membuka folder `_GCEx_Core` sebagai folder proyek** — buka folder foto / borang di atasnya. Bila terlanjur terpilih, DB-Ex kini otomatis memakai folder induknya (tidak lagi membuat `_GCEx_Core\_GCEx_Core\borang\_GCEx_Core`). Borang yang terlanjur masuk ke folder bersarang perlu ditambahkan ulang dari folder yang benar.
+- Ketepatan tetap bergantung pada model: `qwen3-vl:2b` di CPU cepat-lambatnya ±5 menit per lembar dan lebih sering salah membaca kolom waktu; hasil terbaik dengan `qwen3-vl:4b` di komputer ber-GPU NVIDIA (lihat bagian sebelumnya).
+

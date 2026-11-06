@@ -108,7 +108,7 @@ def test_ore_loading_pit_fill_validate_pivot(st, monkeypatch):
     did = cf.add_file(s, str(_scan(tmp)), "ore", "Rina")[0]["id"]
     calls = _ai(monkeypatch, ORE_AI)
     j = cf.ai_read(s, did, "http://x", "qwen2.5vl:7b", "tulisan miring")
-    assert "format" not in calls[0] and "R|no|start|finish" in calls[0]["messages"][0]["content"]  # jawaban ringkas, bukan JSON
+    assert calls[0]["format"]["required"] == ["h", "r"] and '"r": [[no, start, finish' in calls[0]["messages"][0]["content"]  # ringkas & dipaksa skema
     assert "tulisan miring" in calls[0]["messages"][0]["content"] and calls[0]["options"]["num_predict"] > 0
     assert "〃" in calls[0]["messages"][0]["content"]
     rs = j["rows"]
@@ -288,7 +288,7 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
     calls = _ai(monkeypatch, DDR_AI)
     cf.ai_read(s, did, "http://x", "m")
-    assert "LUBANG|from_m|to_m|hole_id|az|dip" in calls[0]["messages"][0]["content"]
+    assert '"lubang": [[from_m, to_m, hole_id, az, dip' in calls[0]["messages"][0]["content"] and "lubang" in calls[0]["format"]["required"]
     rs = cf.rows(s, did)
     act = [r for r in rs if r["tbl"] == ""]
     hole = [r for r in rs if r["tbl"] == "hole"]
@@ -425,12 +425,43 @@ def test_konteks_secukupnya_dan_porsi_gpu(monkeypatch):
     assert cf.gpu_share("http://x", "lain:1b") is None
 
 
-def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
-    """Variasi jawaban model kecil: tabel markdown, 'R:' / '- R|', jawaban di bagian thinking, dan bila tetap tak terbaca
-    diulang sekali dengan JSON berskema. Jawaban mentah disimpan untuk penelusuran."""
+def test_jawaban_ringkas_dipaksa_skema_dan_baris_sampah_dibuang(st, monkeypatch):
+    """Jawaban dipaksa skema ringkas {h, r, c}; baris salinan kepala tabel / kalimat penjelasan model dibuang
+    (galat 0.42.7: 'The user says…', 'TIME', 'From' masuk sebagai baris). Folder _GCEx_Core terpilih -> folder induk."""
     s, tmp = st
-    p = cf.parse_ai_text("rc", "Berikut hasilnya:\n| hole_id | tanggal | sample_id |\n|---|---|---|\n"
-                               "| XX-1 | 05-11-26 | S_001 | 0 | 1 | VLT | ARG | ox | | | |\n- R: | | S_002 | 1 | 2 | 〃 | 〃 | 〃 | | | |")
+    did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
+    calls = []
+    res = {"h": ["", ""], "r": [["hole_id", "tanggal", "sample_id", "from_m", "to_m", "lith", "alt", "min1", "vein", "qt", "remark"],
+                                ["The user says to fill in the header row with the values from the form and then list the rows", "", "", "", "", "", "", "", "", "", ""],
+                                ["XX-1", "05-11-26", "S_001", "0", "1", "VLT?", "ARG", "ox", "", "", ""],
+                                ["", "", "S_002", "1", "2", "〃", "〃", "〃", "", "", ""],
+                                ["", "", "", "", "", "", "", "", "", "", ""]], "c": ""}
+
+    def fake(url, body=None, timeout=5.0):
+        if url.endswith(("/api/show", "/api/ps")):
+            return {}
+        calls.append(body)
+        return {"message": {"content": json.dumps(res)}}
+    monkeypatch.setattr(cf.core_io, "_http", fake)
+    cf.ai_read(s, did, "http://x", "m")
+    sch = calls[0]["format"]
+    assert sch["required"] == ["h", "r"] and sch["properties"]["r"]["items"]["minItems"] == 11
+    rs = cf.rows(s, did)
+    assert [r["data"]["sample_id"] for r in rs] == ["S_001", "S_002"] and "lith" in rs[0]["unc"]
+    assert rs[1]["data"]["lith"] == "VLT" and rs[1]["data"]["hole_id"] == "XX_1"
+    assert (s.root / "ai_mentah" / f"{did}.txt").exists()
+    from gcex_backend import core_io
+    sub = Path(tmp) / "_GCEx_Core" / "borang"
+    sub.mkdir(parents=True, exist_ok=True)
+    assert core_io.get_project(str(sub)).folder == Path(tmp).resolve()
+
+
+def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
+    """Variasi jawaban: 'R:' / '- R|', jawaban di bagian thinking, dan bila tetap tak terbaca diulang sekali dengan
+    JSON berskema. Baris tanpa tanda R (tabel markdown / penjelasan) tidak dipakai."""
+    s, tmp = st
+    p = cf.parse_ai_text("rc", "Berikut hasilnya:\n| XX-9 | 05-11-26 | S_009 | 0 | 1 |\n"
+                               "R|XX-1|05-11-26|S_001|0|1|VLT|ARG|ox||||\n- R: | | S_002 | 1 | 2 | 〃 | 〃 | 〃 | | | |")
     assert [r["sample_id"] for r in p["rows"]] == ["S_001", "S_002"] and p["rows"][0]["hole_id"] == "XX-1"
     with pytest.raises(ValueError, match="jawaban kosong"):
         cf.parse_ai_text("rc", "")
@@ -446,9 +477,9 @@ def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
         if url.endswith(("/api/show", "/api/ps")):
             return {}
         calls.append(body)
-        if "format" not in body:
+        if "h" in body["format"]["properties"]:  # skema ringkas: model (tiruan) tetap menjawab ngawur
             return {"message": {"content": "Maaf, tulisan tidak jelas."}}
         return {"message": {"content": json.dumps({"header": {}, "rows": [{"sample_id": "S_020", "from_m": "0", "to_m": "1", "ragu": []}]})}}
     monkeypatch.setattr(cf.core_io, "_http", fake)
     cf.ai_read(s, did, "http://x", "m")
-    assert len(calls) == 2 and "format" in calls[1] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"
+    assert len(calls) == 2 and "rows" in calls[1]["format"]["properties"] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"

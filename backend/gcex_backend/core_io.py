@@ -178,6 +178,11 @@ def _writable(d: Path) -> bool:
 
 def get_project(folder: str) -> Project:
     f = Path(folder).expanduser().resolve()
+    # folder data DB-Ex sendiri (…\_GCEx_Core\…) terpilih sebagai folder proyek: pakai folder di atasnya, jangan
+    # membuat _GCEx_Core bersarang (…\_GCEx_Core\_GCEx_Core\borang\_GCEx_Core)
+    parts = [x.lower() for x in f.parts]
+    if PRJ_DIR.lower() in parts:
+        f = Path(*f.parts[:parts.index(PRJ_DIR.lower())])
     if not f.is_dir():
         raise ValueError(f"Folder foto tidak ditemukan: {folder}")
     key = str(f).lower()

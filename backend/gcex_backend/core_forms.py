@@ -741,6 +741,22 @@ def ai_schema(ftype: str) -> dict:
     return {"type": "object", "required": req, "properties": props}
 
 
+def ai_schema_compact(ftype: str) -> dict:
+    """Skema jawaban RINGKAS tetapi DIPAKSA Ollama (structured output): header & tiap baris berupa daftar nilai berurutan
+    (tanpa nama kolom yang diulang di setiap baris). Model kecil (2b) tidak bisa lagi menulis penjelasan / format lain
+    (galat 0.42.4-0.42.7: 'The user says…', 'TIME', 'From' masuk sebagai baris)."""
+    t = TYPES[ftype]
+
+    def arr(n: int) -> dict:
+        return {"type": "array", "items": {"type": "string"}, "minItems": n, "maxItems": n}
+    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": arr(len(t["rows"]))}, "c": {"type": "string"}}
+    req = ["h", "r"]
+    for tt in (t.get("tables") or {}).values():
+        props[tt["ai"]] = {"type": "array", "items": arr(len(tt["rows"]))}
+        req.append(tt["ai"])
+    return {"type": "object", "required": req, "properties": props}
+
+
 def ai_prompt(ftype: str, extra: str = "") -> str:
     """Perintah baca borang dengan jawaban RINGKAS: satu baris teks per baris tabel, nilai dipisah '|'.
     Dibanding JSON (nama field diulang di setiap baris) jumlah token jawaban kira-kira 3-4x lebih sedikit, dan pada
@@ -749,20 +765,51 @@ def ai_prompt(ftype: str, extra: str = "") -> str:
     hk = [k for k, _l, _t in t["header"]]
     rk = [k for k, _l, _t in t["rows"]]
     lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
-             "JAWAB DALAM FORMAT RINGKAS INI SAJA (tanpa penjelasan, tanpa JSON):",
-             "H|" + "|".join(hk) + "   <- SATU baris header: nilai sesuai urutan itu",
-             "R|" + "|".join(rk) + "   <- SATU baris per baris tabel yang terisi, urut dari atas"]
+             "Jawab JSON ringkas: daftar nilai berurutan, TANPA nama kolom.",
+             '"h": [' + ", ".join(hk) + "]   <- nilai header sesuai urutan itu",
+             '"r": [[' + ", ".join(rk) + "], …]   <- satu daftar per baris tabel yang terisi, urut dari atas"]
     for tt in (t.get("tables") or {}).values():
-        lines.append(f"{tt['ai'].upper()}|" + "|".join(k for k, _l, _t in tt["rows"]) + f"   <- satu baris per baris {tt['name']}")
-    lines += ["C|catatan bebas (boleh tidak ada)",
-              "Contoh baris: R|" + "|".join(["…"] * len(rk)),
-              "Sel kosong = biarkan kosong di antara dua '|'. Jangan mengulang nama kolom. Jangan mengarang baris yang tidak ada.",
-              "Salin angka & kode persis seperti tertulis. Bila satu sel tidak terbaca jelas, tulis tebakan terbaik diakhiri '?' (mis. VLT?)."]
+        lines.append(f'"{tt["ai"]}": [[' + ", ".join(k for k, _l, _t in tt["rows"]) + f"], …]   <- satu daftar per baris {tt['name']}")
+    lines += ['"c": catatan singkat (boleh "")',
+              "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Sel kosong = \"\". Jangan mengarang baris.",
+              "Salin angka & kode persis. Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?' (mis. \"VLT?\")."]
     if ftype not in ORE_TYPES and ftype != "rc":
         lines.append("Bila tulisan sama dengan baris di atasnya (tanda ulang), tulis nilai baris di atasnya.")
     if extra and extra.strip():
         lines.append(f"Catatan pengguna: {extra.strip()}")
     return "\n".join(lines)
+
+
+def _from_compact(ftype: str, o: dict) -> dict:
+    """{h:[…], r:[[…]], <tabel>:[[…]], c} -> {header, rows, <tabel>, catatan}; sel diakhiri '?' masuk ragu;
+    baris yang isinya nama / judul kolom (model menyalin kepala tabel) dibuang."""
+    t = TYPES[ftype]
+    names = {x.lower() for k, lbl, _t in t["rows"] + t["header"] for x in (k, lbl)}
+    names |= {x.lower() for tt in (t.get("tables") or {}).values() for k, lbl, _t in tt["rows"] for x in (k, lbl)}
+    names |= {"time", "from", "to", "no", "meterage", "hole id", "azimuth", "dip"}
+
+    def one(vals: Any, keys: list[str]) -> Optional[dict]:
+        vals = [str(v if v is not None else "").strip() for v in (vals if isinstance(vals, list) else [])]
+        x: dict[str, Any] = {"ragu": []}
+        for k, v in zip(keys, vals):
+            if v.endswith("?"):
+                v = v[:-1].strip()
+                x["ragu"].append(k)
+            x[k] = v
+        filled = [v for k, v in x.items() if k != "ragu" and v]
+        if not filled or sum(v.lower() in names for v in filled) >= max(1, len(filled) // 2):
+            return None  # kosong / salinan kepala tabel
+        if any(len(v) > 60 and v.count(" ") > 8 for v in filled[:2]):
+            return None  # kalimat penjelasan model, bukan isian borang
+        return x
+    hk = [k for k, _l, _t in t["header"]]
+    rk = [k for k, _l, _t in t["rows"]]
+    out: dict[str, Any] = {"header": one(o.get("h"), hk) or {}, "rows": [], "catatan": str(o.get("c") or "")}
+    out["rows"] = [x for x in (one(v, rk) for v in o.get("r") or []) if x]
+    for tt in (t.get("tables") or {}).values():
+        ks = [k for k, _l, _t in tt["rows"]]
+        out[tt["ai"]] = [x for x in (one(v, ks) for v in o.get(tt["ai"]) or []) if x]
+    return out
 
 
 def parse_ai_text(ftype: str, txt: str) -> dict:
@@ -772,7 +819,8 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     raw = (txt or "").strip()
     js = re.sub(r"^```\w*\s*|\s*```$", "", raw)
     if js.startswith("{"):
-        return json.loads(js)
+        o = json.loads(js)
+        return _from_compact(ftype, o) if "r" in o or "h" in o else o
     m = re.search(r"\{.*\}", raw, re.S)  # JSON di tengah penjelasan
     if m and '"rows"' in m.group(0):
         try:
@@ -802,11 +850,7 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
         m = re.match(r"^([A-Za-z_]+)\s*[|:]\s*(.*)$", ln)
         if m and (m.group(1).upper() in ("H", "R", "C") or m.group(1).upper() in tabs) and ("|" in m.group(2) or m.group(1).upper() == "C"):
             tag, rest = m.group(1).upper(), m.group(2)
-        elif ln.count("|") >= max(2, len(rk) // 2) and not re.fullmatch(r"[|:\-\s]+", ln):
-            tag, rest = "R", ln.strip("|")  # baris tabel markdown tanpa tanda R
-            if [v.strip().lower() for v in rest.split("|")][:1] == [rk[0]] or rest.split("|")[0].strip().lower() in [lbl.lower() for _k, lbl, _t in t["rows"]]:
-                continue
-        else:
+        else:  # baris tanpa tanda (tabel markdown, penjelasan) tidak dipakai: sumber baris sampah di 0.42.7
             continue
         if [v.strip() for v in rest.split("|")][:2] == (hk if tag == "H" else rk)[:2]:
             continue  # model mengulang baris nama kolom
@@ -899,7 +943,7 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
     prompt = ai_prompt(d["type"], extra)
     img, size = _image_b64(s, d, max_px)
     body = {"model": model, "messages": [{"role": "user", "content": prompt, "images": [img]}],
-            "stream": False, "keep_alive": "30m",
+            "stream": False, "keep_alive": "30m", "format": ai_schema_compact(d["type"]),
             # num_predict membatasi jawaban: model kecil kadang mengulang baris tanpa henti sampai batas waktu habis (borang 'gagal')
             "options": {"temperature": 0, "num_ctx": ctx_for(size, prompt), "num_predict": N_PREDICT, "repeat_penalty": 1.05}}
     if _can_think(host, model):
@@ -927,8 +971,8 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
                 # cadangan: ulangi sekali dengan format JSON berskema (lebih lambat, tetapi bentuk jawabannya dipaksa Ollama)
                 body2 = dict(body, format=ai_schema(d["type"]),
                              options=dict(body["options"], num_predict=N_PREDICT * 2, num_ctx=min(16384, body["options"]["num_ctx"] + N_PREDICT)))
-                body2["messages"] = [dict(body["messages"][0], content=prompt.split("JAWAB DALAM FORMAT RINGKAS")[0]
-                                          + "Jawab dalam JSON sesuai skema.")]
+                body2["messages"] = [dict(body["messages"][0], content=prompt.split("Jawab JSON ringkas")[0]
+                                          + "Jawab dalam JSON sesuai skema (header, rows, catatan).")]
                 j = core_io._http(host + "/api/chat", body2, timeout=timeout)
                 if j.get("error"):
                     raise RuntimeError("Ollama: " + str(j["error"]))
