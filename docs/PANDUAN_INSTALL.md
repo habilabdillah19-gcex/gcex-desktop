@@ -2858,6 +2858,58 @@ peningkatan.
 2,50 m memberi volume **−8,80%**, tepat sesuai 0,22 / 2,50. Mode rata dan mode permukaan memberi
 angka identik ketika semua titiknya memang rata, seperti seharusnya.
 
+
+### Sel pecahan: kolom FRAKSI / VOLUME dan selisih yang ditampilkan
+
+Di dalam GC-Ex, sel yang hanya terisi sebagian dihitung dengan fraksinya: `v = dx·dy·dz × f`.
+Volume dan tonasenya benar. **Tetapi saat diekspor, sel itu ditulis sebagai blok PENUH** — octree
+`.mdl` tidak punya konsep sel pecahan, dan CSV menulis `DX,DY,DZ` ukuran grid penuh.
+
+Akibatnya siapa pun yang menghitung ulang volume dari dimensi blok — di Surpac, misalnya, saat
+rekonsiliasi — akan mendapat angka **lebih besar** daripada yang dilaporkan GC-Ex. Pada data
+latihan (grid 5×5×2,5 m, 125 sel):
+
+| | Volume GC-Ex | Dihitung ulang dari dimensi blok | Selisih |
+| --- | --- | --- | --- |
+| Atap nominal | 7.159,46 m³ | 7.812,50 m³ | +9,1% |
+| Atap rata dari pick-up | 6.529,42 m³ | 7.812,50 m³ | +19,7% |
+
+Sebelum fitur atap, sel pecahan hanya ada di **tepi poligon**. Sekarang atap dan lantai juga
+menghasilkannya, dan itu mengenai **seluruh luas poligon** — jadi fitur atap ini sendiri yang
+memperbesar selisihnya dari 9% ke 20%.
+
+Dua hal dikerjakan supaya selisih itu **terlihat**, bukan ditemukan orang lain saat rekonsiliasi:
+
+1. **Kolom `FRAKSI` dan `VOLUME`** ditambahkan ke ekspor *Sub-blok CSV* (`amCells`) dan ke ekspor
+   model gabungan (`am3Csv`). `FRAKSI` = bagian sel yang benar-benar terisi; `VOLUME` = volume
+   sebenarnya sel itu. Jumlah kolom `VOLUME` sama persis dengan volume yang dilaporkan panel,
+   sementara jumlah `DX×DY×DZ` sama dengan volume blok penuh — kedua angka itu kini ada di dalam
+   berkas yang sama sehingga selisihnya bisa diterangkan tanpa menebak.
+2. **Panel menyebutkan selisihnya** setiap kali as-mined dihitung: volume terhitung, volume bila
+   semua sel dihitung penuh, dan persentasenya, beserta keterangan bahwa ekspor menulis blok
+   berukuran penuh dan kolom `FRAKSI` / `VOLUME` memuat angka sebenarnya.
+
+Keduanya **tidak mengubah satu angka pun** yang sudah ada — hanya membuat yang tersembunyi jadi
+terlihat. Uji `tools/uji/uji_atap_asmined.py` memeriksanya: jumlah kolom `VOLUME` harus sama
+dengan volume yang dilaporkan (6.529,4231 = 6.529,4231), jumlah `DX×DY×DZ` harus sama dengan
+volume blok penuh (7.812,5000 = 7.812,5000), harus ada sel pecahan (kalau tidak ada, kolom
+`FRAKSI` tidak teruji), dan panel harus benar-benar menyebutkan selisihnya.
+
+`amVolTxt` dipanggil dari `am2.js` lewat `window.amVolTxt ? ... : ''`, bukan langsung: kalau
+modul atapnya tidak termuat, seluruh perhitungan as-mined akan melempar galat — ketergantungan
+keras dari modul inti ke modul tambahan.
+
+### Yang masih belum ada untuk model compiled
+
+Ekspor `.mdl` masih menulis sel pecahan sebagai blok penuh. Memperbaikinya berarti memecah sel
+itu ke level octree yang lebih halus supaya bentuknya mendekati atap / lantai sebenarnya — paling
+benar secara geometri, tetapi paling berat dan dibatasi level maksimum octree model sumber.
+
+Perlu diingat juga: resolusi vertikal model as-mined = **tinggi blok terkecil di model sumber**
+(`amGrid`). Pada model yang tidak di-sub-block (mis. dz = 2,5 m), atap yang 0,22 m lebih rendah
+**tidak akan terlihat** pada bentuk 3D-nya sama sekali — bentuknya persis sama, yang berubah
+hanya angkanya. Ketidakrataan baru tampak sebagai teras bila modelnya sub-blocked.
+
 ### Yang belum ada
 
 Atap belum bisa dibaca dari DTM / permukaan yang sudah jadi (mis. `.dtm` Surpac) — baru dari awan

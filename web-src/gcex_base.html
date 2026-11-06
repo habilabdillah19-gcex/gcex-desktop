@@ -3088,8 +3088,12 @@ function amCsv(){var R=amRows(),T=amTot(R),U=amU(),a=U.attr,r=['Periode,Flitch_R
   r.push(['TOTAL','','',T.np,'',T.n,T.ne,T.nf,T.pu.toFixed(1),T.vol.toFixed(2),T.t.toFixed(2),amF(T.gO,4),amF(T.gA,4),amF(T.da,4),amF(T.dg,1),T.mO.toFixed(2),T.mA.toFixed(2)].join(','));
   r.push('');r.push('Parameter,'+(U.mode!=='full'?'Update model GC (simple kriging residual)':'Ordinary Kriging penuh')+',sferis isotropik,C0='+U.c0+',C1='+U.c1+',a='+U.a+' m,radius='+U.R+' m,min='+U.minS+',maks='+U.maxS+',komposit='+U.comp+' m,top-cut='+(U.tc||'tidak')+',diskretisasi='+U.nd+'^3');r.push('Data,'+AM.holes.length+' lubang/channel,'+AM.comps.length+' komposit,"'+amSrcTxt()+'"');
   dgDl(r.join('\r\n')+'\r\n','AsMined_Report_'+String(U.period||'periode').replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv','text/csv');}
-function amCells(){var U=amU(),r=['X,Y,Z,DX,DY,DZ,Flitch,'+U.attr+'_resmi,'+U.attr+'_asmined,Sumber,Koreksi,N_sampel,Jarak_terdekat,KV,Ton'],G=amGrid();
-  Object.keys(AM.res).forEach(function(k){var x=AM.res[k];x.cells.forEach(function(c){r.push([c.x.toFixed(3),c.y.toFixed(3),c.z.toFixed(3),G.dx,G.dy,G.dz,k,amF(c.go,4),amF(c.g,4),c.est?(x.sum.mode==='upd'?'diperbarui':'estimasi'):'warisan GC',amF(c.res,4),c.ns,amF(c.dmin,2),amF(c.kv,4),c.t.toFixed(3)].join(','));});});
+/* FRAKSI dan VOLUME wajib ikut: DX/DY/DZ yang ditulis adalah ukuran sel PENUH, sedangkan sel
+   di tepi poligon dan di atap / lantai hanya terisi sebagian. Tanpa kedua kolom ini, siapa pun
+   yang menghitung ulang volume dari dimensi blok akan mendapat angka LEBIH BESAR daripada
+   volume yang dilaporkan GC-Ex, dan selisihnya tidak akan ada penjelasannya di berkas ini. */
+function amCells(){var U=amU(),r=['X,Y,Z,DX,DY,DZ,FRAKSI,VOLUME,Flitch,'+U.attr+'_resmi,'+U.attr+'_asmined,Sumber,Koreksi,N_sampel,Jarak_terdekat,KV,Ton'],G=amGrid(),cv=G.dx*G.dy*G.dz;
+  Object.keys(AM.res).forEach(function(k){var x=AM.res[k];x.cells.forEach(function(c){var fr=(c.f==null?1:c.f);r.push([c.x.toFixed(3),c.y.toFixed(3),c.z.toFixed(3),G.dx,G.dy,G.dz,fr.toFixed(6),(cv*fr).toFixed(4),k,amF(c.go,4),amF(c.g,4),c.est?(x.sum.mode==='upd'?'diperbarui':'estimasi'):'warisan GC',amF(c.res,4),c.ns,amF(c.dmin,2),amF(c.kv,4),c.t.toFixed(3)].join(','));});});
   dgDl(r.join('\r\n')+'\r\n','AsMined_SubBlok_'+String(U.period||'periode').replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv','text/csv');}
 function amPdf(){var R=amRows(),T=amTot(R),U=amU(),a=U.attr,W=297,H=210,ops=[],y=H-18,L=lyU();
   var tx=function(x,yy,s,t,f,c,an){ops.push({t:'text',x:x,y:yy,s:s,txt:String(t),col:c||'#000',font:f||'H',anchor:an});};

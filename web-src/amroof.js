@@ -229,3 +229,25 @@ function amRoofBox() {
   }
   return h + '</div></div>';
 }
+
+/* ---------- selisih volume terhitung vs volume blok penuh ----------
+ * Ekspor .mdl / CSV menulis DX/DY/DZ ukuran sel PENUH, sedangkan sel di tepi poligon dan di atap /
+ * lantai hanya terisi sebagian. Jadi siapa pun yang menghitung ulang volume dari dimensi blok --
+ * di Surpac, misalnya, saat rekonsiliasi -- akan mendapat angka LEBIH BESAR daripada volume yang
+ * dilaporkan GC-Ex. Selisih itu wajar dan ada penjelasannya, tetapi hanya kalau DITAMPILKAN.
+ * Ditemukan orang lain saat rekonsiliasi, ia tampak seperti kesalahan.
+ *
+ * Mode atap MEMPERBESAR selisih ini: sebelumnya sel pecahan hanya di tepi poligon, sekarang atap
+ * dan lantai juga menghasilkannya -- dan itu mengenai seluruh luas poligon, bukan cuma tepinya.
+ */
+function amVolTxt(s) {
+  if (!s || !isFinite(s.volPenuh) || !isFinite(s.vol) || s.vol <= 0) return '';
+  var d = s.volPenuh - s.vol, pc = d / s.vol * 100;
+  if (!(d > 0.01)) return '';
+  return '<div class=hint style="margin-bottom:4px">Volume terhitung <b>' +
+    s.vol.toFixed(2) + ' m&sup3;</b> &middot; bila semua sel dihitung PENUH <b>' +
+    s.volPenuh.toFixed(2) + ' m&sup3;</b> (+' + pc.toFixed(1) + '%). Selisihnya ada di sel ' +
+    'pecahan: tepi poligon, atap dan lantai. Ekspor .mdl / CSV menulis blok berukuran penuh, ' +
+    'jadi volume yang dihitung ulang dari dimensi blok akan sebesar angka kedua &mdash; ' +
+    'kolom <code>FRAKSI</code> dan <code>VOLUME</code> di CSV memuat angka yang sebenarnya.</div>';
+}

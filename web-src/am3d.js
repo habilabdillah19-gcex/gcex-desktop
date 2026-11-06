@@ -12,9 +12,9 @@ function am3RunAll(){var F=am3Flitches();if(!F.length){alert('Belum ada poligon 
   try{F.forEach(function(f){L.fh=+(f.top-f.bot).toFixed(4);L.top=f.top;L.bot=f.bot;try{amRun(true);n++;}catch(e){console.error(e);}});}finally{L.fh=sv.fh;L.top=sv.top;L.bot=sv.bot;}
   AM3.msg=n+' flitch dihitung ulang ('+((Date.now()-t0)/1000).toFixed(1)+' s).';amPanel();updatePlot();}
 function am3Cells(){var all=new Map();Object.keys(AM.res).forEach(function(k){(AM.res[k].cells||[]).forEach(function(c){all.set(c.ix+'|'+c.iy+'|'+c.iz,c);});});return Array.from(all.values());}
-function am3Csv(){var C=am3Cells();if(!C.length){alert('Belum ada hasil as-mined. Klik "Hitung semua flitch".');return;}var G=amGrid(),U=amU(),r=['X,Y,Z,DX,DY,DZ,'+U.attr+'_ASMINED,'+U.attr+'_MODEL,TON,DATA_BARU,FLITCH'];
+function am3Csv(){var C=am3Cells();if(!C.length){alert('Belum ada hasil as-mined. Klik "Hitung semua flitch".');return;}var G=amGrid(),U=amU(),cv=G.dx*G.dy*G.dz,r=['X,Y,Z,DX,DY,DZ,FRAKSI,VOLUME,'+U.attr+'_ASMINED,'+U.attr+'_MODEL,TON,DATA_BARU,FLITCH'];
   var fk=function(z){var ks=Object.keys(AM.res);for(var i=0;i<ks.length;i++){var q=AM.res[ks[i]];if(z<=q.top+1e-6&&z>=q.bot-1e-6)return ks[i];}return '';};
-  C.sort(function(a,b){return b.z-a.z||a.y-b.y||a.x-b.x;}).forEach(function(c){r.push([(+c.x).toFixed(3),(+c.y).toFixed(3),(+c.z).toFixed(3),G.dx,G.dy,G.dz,isFinite(c.g)?(+c.g).toFixed(4):'',isFinite(c.go)?(+c.go).toFixed(4):'',isFinite(c.t)?(+c.t).toFixed(3):'',c.est?1:0,fk(c.z)].join(','));});
+  C.sort(function(a,b){return b.z-a.z||a.y-b.y||a.x-b.x;}).forEach(function(c){var fr=(c.f==null?1:c.f);r.push([(+c.x).toFixed(3),(+c.y).toFixed(3),(+c.z).toFixed(3),G.dx,G.dy,G.dz,fr.toFixed(6),(cv*fr).toFixed(4),isFinite(c.g)?(+c.g).toFixed(4):'',isFinite(c.go)?(+c.go).toFixed(4):'',isFinite(c.t)?(+c.t).toFixed(3):'',c.est?1:0,fk(c.z)].join(','));});
   var nm='asmined_gabungan_'+String(amR().pit||lyZone()).replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv';dgDl(r.join('\r\n')+'\r\n',nm,'text/csv');}
 function am3Toggle(v){var was=AM3.on;AM3.on=v==null?!AM3.on:!!v;if(AM3.on&&!Object.keys(AM.res).length&&am3Flitches().length)am3RunAll();if(AM3.on&&window.VIEW2D)toggle2D();
   /* fokus ke hasil kerja: block model & potong slab disembunyikan sementara, dikembalikan saat 3D hasil kerja ditutup */

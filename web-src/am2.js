@@ -99,8 +99,13 @@ function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),f
   var now=new Date().toISOString(),byId={};amBndAll().forEach(function(x){byId[x.id]=x;});
   P.forEach(function(o,pi){var q=PS[pi],x=byId[o.id];if(!x)return;var EQ=elQFin(q,q.t?q.gA/q.t:NaN);x.st={fl:FM?(FL[pi].ok?{n:FL[pi].n,med:FL[pi].med,min:FL[pi].zmin,max:FL[pi].zmax}:{n:FL[pi].n,none:1}):null,el:EQ.el,elw:EQ.elw,elA:EQ.elA,n:q.n,ne:q.ne,v:q.v,t:q.t,tu:q.tu,cm:CM,key:amSGKey(),sgM:q.v?q.t/q.v:NaN,gA:q.t?q.gA/q.t:NaN,gO:q.t?q.gO/q.t:NaN,ag:q.agT?q.ag/q.agT:NaN,sx:q.sxT?q.sx/q.sxT:NaN,attr:U.attr,agA:R.ag,sxA:R.sxs,mode:s.mode,at:now};});
   var areaP=0;P.forEach(function(o){areaP+=o.area;});
+  /* Volume bila SEMUA sel dihitung penuh -- itulah yang akan didapat siapa pun yang
+     menghitung ulang dari dimensi blok di Surpac, sebab ekspor .mdl / CSV menulis DX/DY/DZ
+     ukuran sel penuh. Selisihnya terhadap s.vol ada di sel pecahan (tepi poligon, atap,
+     lantai) dan harus TERLIHAT, bukan ditemukan orang lain saat rekonsiliasi. */
+  s.volPenuh=C.length*dx*dy*dz;
   AM.res[lyFmt(B[0])+'_'+lyFmt(B[1])]={top:B[0],bot:B[1],cells:C,sum:s,polys:P.map(function(o){return o.name;}),area:areaP,volP:areaP*fh,ms:Date.now()-t0,attr:U.attr,par:JSON.parse(JSON.stringify(U)),nComp:AM.comps.length,date:now};
-  AM.msg=P.length+' poligon dihitung ('+(CM==='surpac'?'Seperti Surpac: blok utuh, titik tengah':'Presisi: dipotong di garis boundary')+', '+amSGTxt()+') di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+': <b>'+C.length.toLocaleString()+'</b> sub-blok'+(haveS?', <b>'+s.ne.toLocaleString()+'</b> '+(UPD?'diperbarui data baru':'terestimasi')+', '+s.nf.toLocaleString()+' mewarisi model GC':' &middot; <span class=warn>belum ada data sampel: kadar = model GC</span>')+(UPD&&nNoM?' &middot; <span class=warn>'+nNoM+' komposit di luar block model</span>':'')+' &middot; '+((Date.now()-t0)/1000).toFixed(1)+' s';
+  AM.msg=(window.amVolTxt?amVolTxt(s):'')+P.length+' poligon dihitung ('+(CM==='surpac'?'Seperti Surpac: blok utuh, titik tengah':'Presisi: dipotong di garis boundary')+', '+amSGTxt()+') di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+': <b>'+C.length.toLocaleString()+'</b> sub-blok'+(haveS?', <b>'+s.ne.toLocaleString()+'</b> '+(UPD?'diperbarui data baru':'terestimasi')+', '+s.nf.toLocaleString()+' mewarisi model GC':' &middot; <span class=warn>belum ada data sampel: kadar = model GC</span>')+(UPD&&nNoM?' &middot; <span class=warn>'+nNoM+' komposit di luar block model</span>':'')+' &middot; '+((Date.now()-t0)/1000).toFixed(1)+' s';
   amPanel();updatePlot();amDirty();}
 /* ---------- edit field register ---------- */
 function amPSet(id,f,v){var x=amBndAll().filter(function(q){return q.id===id;})[0];if(!x)return;x[f]=v;amPanel();if(['ore','dest','sid','col','code','blk','date','shift','pit'].indexOf(f)>=0)updatePlot();amDirty();}

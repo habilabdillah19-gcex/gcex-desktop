@@ -3534,8 +3534,12 @@ function amCsv(){var R=amRows(),T=amTot(R),U=amU(),a=U.attr,r=['Periode,Flitch_R
   r.push(['TOTAL','','',T.np,'',T.n,T.ne,T.nf,T.pu.toFixed(1),T.vol.toFixed(2),T.t.toFixed(2),amF(T.gO,4),amF(T.gA,4),amF(T.da,4),amF(T.dg,1),T.mO.toFixed(2),T.mA.toFixed(2)].concat(window.elAmCsvT?elAmCsvT(R):[]).join(','));
   r.push('');r.push('Parameter,'+(U.mode!=='full'?'Update model GC (simple kriging residual)':'Ordinary Kriging penuh')+',sferis isotropik,C0='+U.c0+',C1='+U.c1+',a='+U.a+' m,radius='+U.R+' m,min='+U.minS+',maks='+U.maxS+',komposit='+U.comp+' m,top-cut='+(U.tc||'tidak')+',diskretisasi='+U.nd+'^3');r.push('Data,'+AM.holes.length+' lubang/channel,'+AM.comps.length+' komposit,"'+amSrcTxt()+'"');
   dgDl(r.join('\r\n')+'\r\n','AsMined_Report_'+String(U.period||'periode').replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv','text/csv');}
-function amCells(){var U=amU(),r=['X,Y,Z,DX,DY,DZ,Flitch,'+U.attr+'_resmi,'+U.attr+'_asmined,Sumber,Koreksi,N_sampel,Jarak_terdekat,KV,Ton'],G=amGrid();
-  Object.keys(AM.res).forEach(function(k){var x=AM.res[k];x.cells.forEach(function(c){r.push([c.x.toFixed(3),c.y.toFixed(3),c.z.toFixed(3),G.dx,G.dy,G.dz,k,amF(c.go,4),amF(c.g,4),c.est?(x.sum.mode==='upd'?'diperbarui':'estimasi'):'warisan GC',amF(c.res,4),c.ns,amF(c.dmin,2),amF(c.kv,4),c.t.toFixed(3)].join(','));});});
+/* FRAKSI dan VOLUME wajib ikut: DX/DY/DZ yang ditulis adalah ukuran sel PENUH, sedangkan sel
+   di tepi poligon dan di atap / lantai hanya terisi sebagian. Tanpa kedua kolom ini, siapa pun
+   yang menghitung ulang volume dari dimensi blok akan mendapat angka LEBIH BESAR daripada
+   volume yang dilaporkan GC-Ex, dan selisihnya tidak akan ada penjelasannya di berkas ini. */
+function amCells(){var U=amU(),r=['X,Y,Z,DX,DY,DZ,FRAKSI,VOLUME,Flitch,'+U.attr+'_resmi,'+U.attr+'_asmined,Sumber,Koreksi,N_sampel,Jarak_terdekat,KV,Ton'],G=amGrid(),cv=G.dx*G.dy*G.dz;
+  Object.keys(AM.res).forEach(function(k){var x=AM.res[k];x.cells.forEach(function(c){var fr=(c.f==null?1:c.f);r.push([c.x.toFixed(3),c.y.toFixed(3),c.z.toFixed(3),G.dx,G.dy,G.dz,fr.toFixed(6),(cv*fr).toFixed(4),k,amF(c.go,4),amF(c.g,4),c.est?(x.sum.mode==='upd'?'diperbarui':'estimasi'):'warisan GC',amF(c.res,4),c.ns,amF(c.dmin,2),amF(c.kv,4),c.t.toFixed(3)].join(','));});});
   dgDl(r.join('\r\n')+'\r\n','AsMined_SubBlok_'+String(U.period||'periode').replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv','text/csv');}
 function amPdf(){var R=amRows(),T=amTot(R),U=amU(),a=U.attr,W=297,H=210,ops=[],y=H-18,L=lyU();
   var tx=function(x,yy,s,t,f,c,an){ops.push({t:'text',x:x,y:yy,s:s,txt:String(t),col:c||'#000',font:f||'H',anchor:an});};
@@ -3680,8 +3684,13 @@ function amRun(silent){var m=BX.m;if(!m)return;var U=amU(),R=amR(),B=lyBench(),f
   var now=new Date().toISOString(),byId={};amBndAll().forEach(function(x){byId[x.id]=x;});
   P.forEach(function(o,pi){var q=PS[pi],x=byId[o.id];if(!x)return;var EQ=elQFin(q,q.t?q.gA/q.t:NaN);x.st={fl:FM?(FL[pi].ok?{n:FL[pi].n,med:FL[pi].med,min:FL[pi].zmin,max:FL[pi].zmax}:{n:FL[pi].n,none:1}):null,el:EQ.el,elw:EQ.elw,elA:EQ.elA,n:q.n,ne:q.ne,v:q.v,t:q.t,tu:q.tu,cm:CM,key:amSGKey(),sgM:q.v?q.t/q.v:NaN,gA:q.t?q.gA/q.t:NaN,gO:q.t?q.gO/q.t:NaN,ag:q.agT?q.ag/q.agT:NaN,sx:q.sxT?q.sx/q.sxT:NaN,attr:U.attr,agA:R.ag,sxA:R.sxs,mode:s.mode,at:now};});
   var areaP=0;P.forEach(function(o){areaP+=o.area;});
+  /* Volume bila SEMUA sel dihitung penuh -- itulah yang akan didapat siapa pun yang
+     menghitung ulang dari dimensi blok di Surpac, sebab ekspor .mdl / CSV menulis DX/DY/DZ
+     ukuran sel penuh. Selisihnya terhadap s.vol ada di sel pecahan (tepi poligon, atap,
+     lantai) dan harus TERLIHAT, bukan ditemukan orang lain saat rekonsiliasi. */
+  s.volPenuh=C.length*dx*dy*dz;
   AM.res[lyFmt(B[0])+'_'+lyFmt(B[1])]={top:B[0],bot:B[1],cells:C,sum:s,polys:P.map(function(o){return o.name;}),area:areaP,volP:areaP*fh,ms:Date.now()-t0,attr:U.attr,par:JSON.parse(JSON.stringify(U)),nComp:AM.comps.length,date:now};
-  AM.msg=P.length+' poligon dihitung ('+(CM==='surpac'?'Seperti Surpac: blok utuh, titik tengah':'Presisi: dipotong di garis boundary')+', '+amSGTxt()+') di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+': <b>'+C.length.toLocaleString()+'</b> sub-blok'+(haveS?', <b>'+s.ne.toLocaleString()+'</b> '+(UPD?'diperbarui data baru':'terestimasi')+', '+s.nf.toLocaleString()+' mewarisi model GC':' &middot; <span class=warn>belum ada data sampel: kadar = model GC</span>')+(UPD&&nNoM?' &middot; <span class=warn>'+nNoM+' komposit di luar block model</span>':'')+' &middot; '+((Date.now()-t0)/1000).toFixed(1)+' s';
+  AM.msg=(window.amVolTxt?amVolTxt(s):'')+P.length+' poligon dihitung ('+(CM==='surpac'?'Seperti Surpac: blok utuh, titik tengah':'Presisi: dipotong di garis boundary')+', '+amSGTxt()+') di flitch RL '+lyFmt(B[0])+'&ndash;'+lyFmt(B[1])+': <b>'+C.length.toLocaleString()+'</b> sub-blok'+(haveS?', <b>'+s.ne.toLocaleString()+'</b> '+(UPD?'diperbarui data baru':'terestimasi')+', '+s.nf.toLocaleString()+' mewarisi model GC':' &middot; <span class=warn>belum ada data sampel: kadar = model GC</span>')+(UPD&&nNoM?' &middot; <span class=warn>'+nNoM+' komposit di luar block model</span>':'')+' &middot; '+((Date.now()-t0)/1000).toFixed(1)+' s';
   amPanel();updatePlot();amDirty();}
 /* ---------- edit field register ---------- */
 function amPSet(id,f,v){var x=amBndAll().filter(function(q){return q.id===id;})[0];if(!x)return;x[f]=v;amPanel();if(['ore','dest','sid','col','code','blk','date','shift','pit'].indexOf(f)>=0)updatePlot();amDirty();}
@@ -5207,9 +5216,9 @@ function am3RunAll(){var F=am3Flitches();if(!F.length){alert('Belum ada poligon 
   try{F.forEach(function(f){L.fh=+(f.top-f.bot).toFixed(4);L.top=f.top;L.bot=f.bot;try{amRun(true);n++;}catch(e){console.error(e);}});}finally{L.fh=sv.fh;L.top=sv.top;L.bot=sv.bot;}
   AM3.msg=n+' flitch dihitung ulang ('+((Date.now()-t0)/1000).toFixed(1)+' s).';amPanel();updatePlot();}
 function am3Cells(){var all=new Map();Object.keys(AM.res).forEach(function(k){(AM.res[k].cells||[]).forEach(function(c){all.set(c.ix+'|'+c.iy+'|'+c.iz,c);});});return Array.from(all.values());}
-function am3Csv(){var C=am3Cells();if(!C.length){alert('Belum ada hasil as-mined. Klik "Hitung semua flitch".');return;}var G=amGrid(),U=amU(),r=['X,Y,Z,DX,DY,DZ,'+U.attr+'_ASMINED,'+U.attr+'_MODEL,TON,DATA_BARU,FLITCH'];
+function am3Csv(){var C=am3Cells();if(!C.length){alert('Belum ada hasil as-mined. Klik "Hitung semua flitch".');return;}var G=amGrid(),U=amU(),cv=G.dx*G.dy*G.dz,r=['X,Y,Z,DX,DY,DZ,FRAKSI,VOLUME,'+U.attr+'_ASMINED,'+U.attr+'_MODEL,TON,DATA_BARU,FLITCH'];
   var fk=function(z){var ks=Object.keys(AM.res);for(var i=0;i<ks.length;i++){var q=AM.res[ks[i]];if(z<=q.top+1e-6&&z>=q.bot-1e-6)return ks[i];}return '';};
-  C.sort(function(a,b){return b.z-a.z||a.y-b.y||a.x-b.x;}).forEach(function(c){r.push([(+c.x).toFixed(3),(+c.y).toFixed(3),(+c.z).toFixed(3),G.dx,G.dy,G.dz,isFinite(c.g)?(+c.g).toFixed(4):'',isFinite(c.go)?(+c.go).toFixed(4):'',isFinite(c.t)?(+c.t).toFixed(3):'',c.est?1:0,fk(c.z)].join(','));});
+  C.sort(function(a,b){return b.z-a.z||a.y-b.y||a.x-b.x;}).forEach(function(c){var fr=(c.f==null?1:c.f);r.push([(+c.x).toFixed(3),(+c.y).toFixed(3),(+c.z).toFixed(3),G.dx,G.dy,G.dz,fr.toFixed(6),(cv*fr).toFixed(4),isFinite(c.g)?(+c.g).toFixed(4):'',isFinite(c.go)?(+c.go).toFixed(4):'',isFinite(c.t)?(+c.t).toFixed(3):'',c.est?1:0,fk(c.z)].join(','));});
   var nm='asmined_gabungan_'+String(amR().pit||lyZone()).replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv';dgDl(r.join('\r\n')+'\r\n',nm,'text/csv');}
 function am3Toggle(v){var was=AM3.on;AM3.on=v==null?!AM3.on:!!v;if(AM3.on&&!Object.keys(AM.res).length&&am3Flitches().length)am3RunAll();if(AM3.on&&window.VIEW2D)toggle2D();
   /* fokus ke hasil kerja: block model & potong slab disembunyikan sementara, dikembalikan saat 3D hasil kerja ditutup */
@@ -7139,6 +7148,28 @@ function amRoofBox() {
       'masalah survei sebagai angka yang kelihatan wajar.</div>';
   }
   return h + '</div></div>';
+}
+
+/* ---------- selisih volume terhitung vs volume blok penuh ----------
+ * Ekspor .mdl / CSV menulis DX/DY/DZ ukuran sel PENUH, sedangkan sel di tepi poligon dan di atap /
+ * lantai hanya terisi sebagian. Jadi siapa pun yang menghitung ulang volume dari dimensi blok --
+ * di Surpac, misalnya, saat rekonsiliasi -- akan mendapat angka LEBIH BESAR daripada volume yang
+ * dilaporkan GC-Ex. Selisih itu wajar dan ada penjelasannya, tetapi hanya kalau DITAMPILKAN.
+ * Ditemukan orang lain saat rekonsiliasi, ia tampak seperti kesalahan.
+ *
+ * Mode atap MEMPERBESAR selisih ini: sebelumnya sel pecahan hanya di tepi poligon, sekarang atap
+ * dan lantai juga menghasilkannya -- dan itu mengenai seluruh luas poligon, bukan cuma tepinya.
+ */
+function amVolTxt(s) {
+  if (!s || !isFinite(s.volPenuh) || !isFinite(s.vol) || s.vol <= 0) return '';
+  var d = s.volPenuh - s.vol, pc = d / s.vol * 100;
+  if (!(d > 0.01)) return '';
+  return '<div class=hint style="margin-bottom:4px">Volume terhitung <b>' +
+    s.vol.toFixed(2) + ' m&sup3;</b> &middot; bila semua sel dihitung PENUH <b>' +
+    s.volPenuh.toFixed(2) + ' m&sup3;</b> (+' + pc.toFixed(1) + '%). Selisihnya ada di sel ' +
+    'pecahan: tepi poligon, atap dan lantai. Ekspor .mdl / CSV menulis blok berukuran penuh, ' +
+    'jadi volume yang dihitung ulang dari dimensi blok akan sebesar angka kedua &mdash; ' +
+    'kolom <code>FRAKSI</code> dan <code>VOLUME</code> di CSV memuat angka yang sebenarnya.</div>';
 }
 
 /* ================= TOMBOL DEMO: URUTAN TUTORIAL, TEKS PENDEK, TEMPO LEBIH CEPAT =================

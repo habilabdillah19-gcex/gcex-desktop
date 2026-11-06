@@ -89,6 +89,23 @@ JS_SIAPKAN = r"""
 })
 """
 
+# Ekspor CSV ditangkap lewat dgDl, lalu kolom FRAKSI / VOLUME diperiksa: jumlah VOLUME harus
+# sama dengan volume yang dilaporkan, dan jumlah DX*DY*DZ harus sama dengan volume blok penuh.
+JS_CSV = r"""
+(function () {
+  if (typeof amCells !== 'function') return {err: 'amCells tidak ada'};
+  var tangkap = null, _dl = window.dgDl;
+  window.dgDl = function (txt, fn) { tangkap = {txt: txt, fn: fn}; };
+  try { amCells(); } catch (e) { window.dgDl = _dl; return {err: String(e && e.message || e)}; }
+  window.dgDl = _dl;
+  if (!tangkap) return {err: 'amCells tidak menghasilkan berkas'};
+  var B = lyBench(), kk = lyFmt(B[0]) + '_' + lyFmt(B[1]);
+  var E = AM.res[kk];
+  return {csv: tangkap.txt.slice(0, 400000), nama: tangkap.fn,
+          vol: E.sum.vol, volPenuh: E.sum.volPenuh, t: E.sum.t, pesan: String(AM.msg || '')};
+})
+"""
+
 JS_HITUNG = r"""
 (function (mode) {
   var R = amR();
@@ -160,6 +177,8 @@ def jalankan(pg, url: str, mode_list, rf_turun):
     out = {"siap": S, "hasil": {}}
     for mode in mode_list:
         out["hasil"][str(mode)] = pg.evaluate("(%s)(%s)" % (JS_HITUNG, json.dumps(mode)))
+        if mode == "flat":
+            out["csv"] = pg.evaluate("(%s)()" % JS_CSV)
     return out
 
 
@@ -245,6 +264,46 @@ def main() -> int:
             if abs(nyata - harap) > 0.02:
                 salah.append("besar selisih tidak masuk akal: %.4f vs perkiraan %.4f"
                              % (nyata, harap))
+
+    # ---- 3. kolom FRAKSI / VOLUME di ekspor CSV ----
+    C = hasil["baru"].get("csv")
+    print("\n3. KOLOM FRAKSI / VOLUME DI EKSPOR CSV")
+    if not C or C.get("err"):
+        salah.append("ekspor CSV gagal: %s" % (C or {}).get("err", "tidak terekam"))
+    else:
+        baris = [b for b in C["csv"].split("\r\n") if b.strip()]
+        kol = baris[0].split(",")
+        for k in ("FRAKSI", "VOLUME", "DX", "DY", "DZ"):
+            if k not in kol:
+                salah.append("kolom %s tidak ada di ekspor CSV" % k)
+        if not salah:
+            iF, iV = kol.index("FRAKSI"), kol.index("VOLUME")
+            iX, iY, iZ = kol.index("DX"), kol.index("DY"), kol.index("DZ")
+            sv = 0.0
+            svp = 0.0
+            nPecah = 0
+            for b in baris[1:]:
+                r = b.split(",")
+                f = float(r[iF]); v = float(r[iV])
+                sv += v
+                svp += float(r[iX]) * float(r[iY]) * float(r[iZ])
+                if f < 0.999999:
+                    nPecah += 1
+            print("   %d sel, %d di antaranya pecahan (FRAKSI < 1)" % (len(baris) - 1, nPecah))
+            print("   jumlah VOLUME   %.4f  vs volume dilaporkan %.4f" % (sv, C["vol"]))
+            print("   jumlah DX*DY*DZ %.4f  vs volume blok penuh  %.4f" % (svp, C["volPenuh"]))
+            if abs(sv - C["vol"]) > 1e-3:
+                salah.append("jumlah kolom VOLUME (%.4f) tidak sama dengan volume dilaporkan "
+                             "(%.4f)" % (sv, C["vol"]))
+            if abs(svp - C["volPenuh"]) > 1e-3:
+                salah.append("jumlah DX*DY*DZ (%.4f) tidak sama dengan volume blok penuh (%.4f)"
+                             % (svp, C["volPenuh"]))
+            if not nPecah:
+                salah.append("tidak ada satu pun sel pecahan: kolom FRAKSI tidak teruji")
+            if "blok berukuran penuh" not in C["pesan"]:
+                salah.append("panel tidak menyebutkan selisih volume blok penuh")
+            else:
+                print("   panel menyebutkan selisihnya: OK")
 
     if salah:
         print("\nADA YANG SALAH (%d):" % len(salah))
