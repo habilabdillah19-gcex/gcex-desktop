@@ -120,6 +120,14 @@
       if(b.dataset.go){T.select(b.dataset.go);return;}
       var a=acts[+b.dataset.i];if(a&&a.fn)try{a.fn();}catch(x){console.error(x);}};}
   T.card=card;
+  /* Memindahkan sorotan & judul ke node lain tanpa menjalankan aksinya. Dipakai ketika panel
+     berpindah bukan karena pemilihan node: menjalankan select() di situ akan memanggil go() lagi
+     dan bisa berputar. */
+  T.mark=function(id){var n=find(id);if(!n)return;T.sel=id;
+    try{head();}catch(e){}
+    try{card(n);}catch(e){}
+    try{var sd=$('ptBody');if(sd){[].forEach.call(sd.querySelectorAll('.ptr.on'),function(r){r.classList.remove('on');});
+      var r=sd.querySelector('.ptr[data-id="'+id+'"]');if(r)r.classList.add('on');}}catch(e){}};
   function head(){var ph=$('ptPH');if(!ph)return;var n=T.sel&&find(T.sel);if(!n){ph.innerHTML='<span class="pp">Properti</span>';return;}
     ph.innerHTML='<span class="pp">Properti</span><span class="pi2">'+(IC[n.ic]||IC.folder)+'</span><b>'+esc(n.t)+'</b>'+(n.menu?'<button type="button" class="ptx" title="Menu item ini">'+IC.more+'</button>':'');
     var b=ph.querySelector('.ptx');if(b)b.onclick=function(e){var r=b.getBoundingClientRect();menu(n,r.left,r.bottom+2);e.stopPropagation();};}

@@ -4779,6 +4779,14 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
       if(b.dataset.go){T.select(b.dataset.go);return;}
       var a=acts[+b.dataset.i];if(a&&a.fn)try{a.fn();}catch(x){console.error(x);}};}
   T.card=card;
+  /* Memindahkan sorotan & judul ke node lain tanpa menjalankan aksinya. Dipakai ketika panel
+     berpindah bukan karena pemilihan node: menjalankan select() di situ akan memanggil go() lagi
+     dan bisa berputar. */
+  T.mark=function(id){var n=find(id);if(!n)return;T.sel=id;
+    try{head();}catch(e){}
+    try{card(n);}catch(e){}
+    try{var sd=$('ptBody');if(sd){[].forEach.call(sd.querySelectorAll('.ptr.on'),function(r){r.classList.remove('on');});
+      var r=sd.querySelector('.ptr[data-id="'+id+'"]');if(r)r.classList.add('on');}}catch(e){}};
   function head(){var ph=$('ptPH');if(!ph)return;var n=T.sel&&find(T.sel);if(!n){ph.innerHTML='<span class="pp">Properti</span>';return;}
     ph.innerHTML='<span class="pp">Properti</span><span class="pi2">'+(IC[n.ic]||IC.folder)+'</span><b>'+esc(n.t)+'</b>'+(n.menu?'<button type="button" class="ptx" title="Menu item ini">'+IC.more+'</button>':'');
     var b=ph.querySelector('.ptx');if(b)b.onclick=function(e){var r=b.getBoundingClientRect();menu(n,r.left,r.bottom+2);e.stopPropagation();};}
@@ -4966,7 +4974,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     if(FOC)b.setAttribute('data-f',FOC);else b.removeAttribute('data-f');}
   function focus(f){FOC=f||'';segTag();var b=$('dbBody');if(b&&f){var sd=$('side');if(sd)sd.scrollTop=0;}}
   (function(){var d=window.dbPanel;if(typeof d==='function'&&!d._ptf){window.dbPanel=function(){var r=d.apply(this,arguments);try{segTag();}catch(e){}return r;};window.dbPanel._ptf=1;}})();
-  (function(){var u=window.uiTab;if(typeof u==='function')window.uiTab=function(){var r=u.apply(this,arguments);try{if(Date.now()-(PT._qt||0)>1500){if(FOC)focus('');document.body.classList.remove('pt-bmhd');/* penyembunyian panel non-BM ikut dilepas: bila tab berpindah BUKAN karena pemilihan node (mis. lyApply yang pindah sendiri ke tab Block Model), panel yang tampil bukan lagi milik node terpilih -- menyembunyikannya hanya menyisakan halaman kosong di bawah judul yang keliru. */document.body.classList.remove('pt-nonbm');}}catch(e){}return r;};})();
+  (function(){var u=window.uiTab;if(typeof u==='function')window.uiTab=function(){var r=u.apply(this,arguments);try{if(Date.now()-(PT._qt||0)>1500){if(FOC)focus('');document.body.classList.remove('pt-bmhd');document.body.classList.remove('pt-nonbm');/* Judul Properti ikut dibetulkan. Bila tab berpindah BUKAN karena pemilihan node (mis. lyApply yang pindah sendiri ke tab Block Model), panel yang tampil bukan lagi milik node terpilih -- dan judulnya tertinggal pada nama node lama, sehingga terbaca 'Sayatan' di atas panel Dig block. Pilihan node dipindahkan ke node yang MEMANG memiliki panel itu, jadi judul, sorotan di pohon, dan isi panel kembali menunjuk hal yang sama. */try{var _t=arguments[0],_n=(PT.flat||[]).filter(function(q){return q.tab===_t&&!q.sub&&!q.foc;})[0]||(PT.flat||[]).filter(function(q){return q.tab===_t;})[0];if(_n&&PT.sel!==_n.id&&(!PT.sel||((PT.flat||[]).filter(function(q){return q.id===PT.sel;})[0]||{}).tab!==_t))PT.mark(_n.id);}catch(e){}}}catch(e){}return r;};})();
   /* ---------- tampilkan sebagai ---------- */
   var topoAs=function(){var s=U.cb('ovTopoS'),l=U.cb('ovTopoL');return s&&l?'both':s?'surf':l?'line':'';};
   var topoPref=function(){var m='surf';try{m=localStorage.getItem('gcex_pt_topo')||'surf';}catch(e){}return m;};
