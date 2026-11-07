@@ -20,7 +20,6 @@ def patch_tree(s: str) -> str:
     a = (".concat(D.filter(function(d){return !d.par;}).map(kid))};}")
     assert s.count(a) == 1, 'akhir kids node Geomodeller Vein tidak ditemukan tepat satu kali'
     s = s.replace(a, ".concat(D.filter(function(d){return !d.par;}).map(kid))"
-                     ".concat(window.wfxTree?wfxTree():[])"
                      ".concat(window.arWfTree?arWfTree():[])};}")
 
     # --- Stratified-Laterite

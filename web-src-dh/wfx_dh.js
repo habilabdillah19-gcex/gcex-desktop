@@ -77,7 +77,7 @@
   window.wfxPakai = function (domId, nama) {
     var d = fn('gmDom') ? gmDom(domId) : null; if (!d) return;
     var m = byName(nama);
-    if (!m) { alert('Wireframe "' + nama + '" tidak ada di Data Referensi.'); return; }
+    if (!m) { alert('Wireframe "' + nama + '" tidak ada di node Import Wireframe Geologi.'); return; }
     var V = volMesh(m), W = fn('wfInside') ? wfInside(m) : null;
     if (W && W.open) {
       if (!confirm('Wireframe "' + nama + '" tidak tertutup rapat (' + W.open + ' dari ' + W.ne +
@@ -207,7 +207,7 @@
   window.wfSerap = function () {
     var M = models();
     var m = M[WFX.o.mi | 0];
-    if (!m) { alert('Import wireframe dulu di menu Data Referensi (.msh / .obj / .dxf / .dtm + .str).'); return; }
+    if (!m) { alert('Import wireframe dulu di node Import Wireframe Geologi (.msh / .obj / .dxf / .dtm + .str).'); return; }
     if (!window.GM) { alert('Menu Geomodeller Vein belum siap.'); return; }
 
     var nm = (WFX.o.nama || '').trim() || String(m.name).replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 30) || 'Vein_WF';
@@ -323,7 +323,7 @@
       '<small>Wireframe implicit dari Leapfrog (atau Surpac) menjadi domain GC-Ex yang bisa diedit dan ikut diperbarui saat ada bor baru.</small>' +
       '</div></div><button class="ib ghost" onclick="wfxSetClose()">Tutup</button></div><div class=impBody>' +
       (!M.length
-        ? '<div class=box>Belum ada wireframe. Import dulu di menu <b>Data Referensi</b> (<code>.msh</code>, <code>.obj</code>, <code>.dxf</code>, atau <code>.dtm</code> + <code>.str</code> Surpac), lalu kembali ke sini.</div>'
+        ? '<div class=box>Belum ada wireframe. Import dulu di node <b>Import Wireframe Geologi</b> (<code>.msh</code>, <code>.obj</code>, <code>.dxf</code>, atau <code>.dtm</code> + <code>.str</code> Surpac), lalu kembali ke sini.</div>'
         : '<div><label>Wireframe</label><select onchange="wfxSet(\'mi\',this.value)">' +
           M.map(function (x, i) { return '<option value=' + i + (i === (o.mi | 0) ? ' selected' : '') + '>' + E(x.name) + '</option>'; }).join('') +
           '</select><div class=hint>' + (m ? N(m.nt) + ' segitiga &middot; volume ' + N(V) + ' m&sup3; &middot; ' +
@@ -340,50 +340,54 @@
   }
   window.wfxSetClose = function () { var d = $('wfxSetDlg'); if (d) d.style.display = 'none'; };
 
-  /* ---------- node Project Tree ---------- */
-  window.wfxTree = function () {
-    if (!window.GM || !fn('gmTops')) return [];
-    var M = models(), D = gmTops();
-    var terkunci = D.filter(function (d) { return d.wfx; });
-    var kids = D.map(function (d) {
-      var nm = d.wfx, ada = nm ? !!byName(nm) : false;
+  /* ---------- node Project Tree: "Import Wireframe Geologi" ----------
+     SATU-SATUNYA tempat wireframe geologi diimport dan dilihat (permintaan pemilik, 8 Nov 2026).
+     Anak node = berkas di MD.models, berurutan sesuai urutan import. Fungsi menjadikan wireframe
+     domain (Mode B serap, Mode A eksak, iris / flag di Geomodeller) ada di menu klik-kanan tiap berkas. */
+  window.wfxNode = function () {
+    var M = models(), D = fn('gmTops') ? gmTops() : [];
+    var imp = function () { PT.pick('.msh,.obj,.dxf,.dtm,.str', true, function (i) { mdImport(i); }); };
+    var kids = M.map(function (m, i) {
+      var kunci = D.filter(function (d) { return d.wfx === m.name; });
       return {
-        id: 'wfx.' + d.id, t: d.name, ic: 'dom',
-        b: nm ? (ada ? 'eksak: ' + nm : 'eksak: ' + nm + ' (hilang)') : 'solid GC-Ex',
-        dim: !nm,
-        hint: nm ? (ada ? 'Batas EKSAK dari wireframe — tidak bisa diedit dan tidak berubah saat ada bor baru'
-                        : 'Wireframe belum diimport ulang di Data Referensi — sementara kembali memakai solid RBF')
-                 : 'Memakai solid RBF dari string kontrol — bisa diedit, ikut berubah saat ada bor baru',
+        id: 'wf.' + i + '.' + m.name, t: m.name, ic: 'ref', tab: 'Wf',
+        chk: !!m.vis, onChk: function (v) { mdSet('models', i, 'vis', v); },
+        b: N(m.nt) + ' segitiga' + (kunci.length ? ' · eksak: ' + kunci.map(function (d) { return d.name; }).join(', ') : ''),
+        hint: 'Import ke-' + (i + 1) + '. Klik kanan: jadikan domain (serap / eksak), iris / flag interval bor, atau hapus.',
         menu: function () {
-          var L = [];
-          if (nm) L.push({ t: 'Lepaskan dari wireframe (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } });
-          M.forEach(function (x) {
-            L.push({ t: (x.name === nm ? '✓ ' : '') + 'Pakai EKSAK: ' + x.name, dis: x.name === nm, fn: function () { wfxPakai(d.id, x.name); } });
+          var L = [{ h: 'Jadikan domain' },
+            { t: 'Serap jadi domain yang bisa diedit (Mode B)…', fn: function () { WFX.o.mi = i; wfxDlg(); } },
+            { t: 'Iris jadi string / flag interval bor (Geomodeller Vein)', dis: !window.WF, fn: function () { WF.mi = i; if (window.GM) GM._openWf = true; PT.select('gm'); } },
+            { sep: 1 }, { h: 'Mode A — batas EKSAK untuk audit' }];
+          if (!D.length) L.push({ t: 'Belum ada domain di Geomodeller Vein', dis: 1 });
+          D.forEach(function (d) {
+            if (d.wfx === m.name) L.push({ t: 'Lepaskan domain ' + d.name + ' (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } });
+            else L.push({ t: 'Kunci domain ' + d.name + ' ke wireframe ini', fn: function () { wfxPakai(d.id, m.name); } });
           });
-          if (!M.length) L.push({ t: 'Belum ada wireframe di Data Referensi', dis: 1 });
+          L.push({ sep: 1 }, { t: 'Hapus wireframe ini', danger: 1, fn: function () { mdDel('models', i); } });
           return L;
         }
       };
     });
-    return [{
-      id: 'wfx', t: 'Wireframe luar (Leapfrog / Surpac)', ic: 'ref', fold: 1, tab: 'GM',
-      b: M.length ? (M.length + ' wireframe' + (terkunci.length ? ' · ' + terkunci.length + ' domain eksak' : '')) : 'belum ada',
-      dim: !M.length,
-      hint: 'Serap menjadi domain yang bisa diedit (Mode B), atau pakai eksak sebagai batas estimasi untuk audit (Mode A)',
+    /* domain yang terkunci ke wireframe yang tidak (lagi) diimport: tetap terlihat di sini */
+    D.filter(function (d) { return d.wfx && !byName(d.wfx); }).forEach(function (d) {
+      kids.push({ id: 'wf.hilang.' + d.id, t: d.name, ic: 'dom', dim: 1, b: 'eksak: ' + d.wfx + ' (hilang)',
+        hint: 'Wireframe "' + d.wfx + '" belum diimport ulang — domain ini sementara memakai solid RBF',
+        menu: function () { return [{ t: 'Lepaskan dari wireframe (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } }]; } });
+    });
+    var nk = D.filter(function (d) { return d.wfx; }).length;
+    return {
+      id: 'wf', step: '2b', t: 'Import Wireframe Geologi', ic: 'ref', fold: 1, tab: 'Wf',
+      b: M.length ? M.length + ' berkas' + (nk ? ' · ' + nk + ' domain eksak' : '') : '',
+      hint: 'Wireframe / solid geologi dari Leapfrog (.msh / .obj), Surpac (.dtm + .str) atau DXF — berurutan sesuai urutan import',
       menu: function () {
-        return [
-          { h: 'Mode B — diserap (bisa diedit, ikut bor baru)' },
+        return [{ t: 'Import wireframe geologi…', fn: imp },
+          { sep: 1 },
           { t: 'Serap wireframe → domain…', dis: !M.length, fn: function () { wfxDlg(); } },
-          { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } },
-          { sep: 1 },
-          { h: 'Mode A — eksak (untuk audit)' },
-          { t: 'Pilih di anak node: tiap domain bisa dikunci ke satu wireframe', dis: 1 },
-          { sep: 1 },
-          { t: 'Import wireframe… (Data Referensi)', fn: function () { try { uiTab('Ref'); } catch (e) { try { uiTab('SP'); } catch (e2) {} } } }
-        ];
+          { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } }];
       },
       kids: kids
-    }];
+    };
   };
 
   /* pengaturan dialog ikut tersimpan di berkas proyek (d.wfx sendiri ikut lewat gmPack) */

@@ -551,6 +551,7 @@ body.sgdrag #stage{pointer-events:none}
 <div class=rsep title='Menu pendukung'></div>
 <button class='rb' id='rbSP' onclick='uiTab(&#39;SP&#39;)' title='Data Spasial: versi topografi, desain pit, orthofoto dan block model GC'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linejoin='round'><path d='M3 8l9-4 9 4-9 4z'/><path d='M3 12.5l9 4 9-4'/><path d='M3 17l9 4 9-4'/></svg>Data<br>Spasial</button>
 <button class='rb' id='rbModel' onclick='uiTab(&#39;Model&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M3 15l6-8 5 4 7-6v9l-7 6-5-4-6 5z'/><path d='M9 7v8M14 11v8' stroke-width='1.2'/></svg>Data Referensi</button>
+<button class='rb' id='rbWf' onclick='uiTab(&#39;Wf&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M12 3l8 5v8l-8 5-8-5V8z'/><path d='M4 8l8 5 8-5M12 13v8' stroke-width='1.2'/></svg>Wireframe Geologi</button>
 <button class='rb' id='rbDig' onclick='uiTab(&#39;Dig&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 18l5-9 5 6 6-11'/><circle cx='4' cy='18' r='1.7'/><circle cx='9' cy='9' r='1.7'/><circle cx='14' cy='15' r='1.7'/><circle cx='20' cy='4' r='1.7'/></svg>Digitasi</button>
 <button class='rb' id='rbPlan' onclick='uiTab(&#39;Plan&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2v4M10 6h4l-1 3h-2z'/><path d='M12 9l3 11'/><circle cx='6' cy='17' r='1.6'/><circle cx='18' cy='8' r='1.6'/><circle cx='5' cy='8' r='1.6'/></svg>Plan Bor</button>
 <button class='rb' id='rbWarna' onclick='uiTab(&#39;Warna&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><rect x='3' y='4' width='18' height='4' rx='1'/><rect x='3' y='10' width='12' height='4' rx='1'/><rect x='3' y='16' width='7' height='4' rx='1'/></svg>Warna</button>
@@ -664,14 +665,20 @@ body.sgdrag #stage{pointer-events:none}
 <div id='dgList' style='max-height:220px;overflow:auto;margin:0 -4px 8px'></div>
 <div class='g2 f'><button class='btn-pri' onclick='dgExport(&#39;dxf&#39;)'>&#8681; Export DXF</button><button class='btn-pri' onclick='dgExport(&#39;str&#39;)'>&#8681; Export STR</button></div>
 </section>
-<section id='pModel' hidden>
-<h3>Data referensi eksternal</h3>
-<div class='hint' style='margin:-4px 0 8px'>Data dari luar sebagai acuan: wireframe / solid dari software lain, titik survey pemetaan, string Surpac. Pemodelan vein sendiri ada di menu <b>Geomodeller Vein</b>.</div>
-<h4>Wireframe / solid</h4>
-<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>&#8679; Import model vein / solid</label>
+<section id='pWf' hidden>
+<h3>Import Wireframe Geologi</h3>
+<div class='hint' style='margin:-4px 0 8px'>Satu-satunya tempat mengimpor wireframe / solid geologi dari Leapfrog atau software lain. Setiap berkas muncul di Project Tree di bawah node <b>Import Wireframe Geologi</b> sesuai urutan import; klik kanan berkasnya untuk menjadikannya domain.</div>
+<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>&#8679; Import wireframe geologi (.msh / .obj / .dxf / .dtm)</label>
 <div class='hint'>Leapfrog <b>.msh</b> &middot; Surpac <b>.dtm</b> (pilih bersama file <b>.str</b>-nya) &middot; DXF 3DFACE / polyface &middot; Wavefront <b>.obj</b>. Saat slab dipotong / Sayatan 2D, model tampil sebagai garis perpotongan.</div>
 <div id='mdList' class='mdlist'></div>
 <label class='sw'><input type='checkbox' id='mdSolid' checked onchange='updatePlot()'>Tampilkan solid transparan saat slab dipotong (3D)</label>
+<div class='g2 f' style='margin-top:6px'><button onclick='wfxDlg()' title='Wireframe menjadi domain GC-Ex yang bisa diedit (Mode B)'>&#8680; Serap wireframe &rarr; domain&hellip;</button><button onclick='wfxLihat()'>Laporan penyerapan terakhir</button></div>
+<div class='hint'>Mode A (batas EKSAK untuk audit): klik kanan berkas wireframe di Project Tree &rsaquo; <i>Kunci domain &hellip; ke wireframe ini</i>. Iris / flag interval bor ada di <b>Geomodeller Vein</b> &rsaquo; <i>Dari wireframe luar</i>.</div>
+<div id='wfMsg' class='hint' style='margin-top:6px'></div>
+</section>
+<section id='pModel' hidden>
+<h3>Data referensi (titik survey, string, struktur)</h3>
+<div class='hint' style='margin:-4px 0 8px'>Data dari luar sebagai acuan: titik survey pemetaan, string Surpac. Wireframe / solid geologi diimport di node <b>Import Wireframe Geologi</b>.</div>
 <h4>Titik survey pemetaan lapangan</h4>
 <label class='mdbtn'><input type='file' multiple accept='.csv,.txt' onchange='mdPts(this)'>&#8679; Import titik survey (CSV / TXT)</label>
 <div class='hint'>Kolom X/Easting, Y/Northing, Z/Elevasi (tanpa Z: diambil dari topografi), ID titik dan kolom keterangan / kode untuk pewarnaan.</div>
@@ -1514,7 +1521,7 @@ function knaDraw(){var K=KNA;if(!K)return;var cf={responsive:false,displaylogo:f
     'Patokan umum: SoR &ge; 0.9 dan KE &ge; 0.5 untuk blok measured; tambahan sampel setelah SoR mendatar hanya menambah smoothing. <button class=btn-pri onclick=knaApply()>Terapkan ke Pass 1</button></div>':'<span class=warn>Tidak ada kombinasi yang berhasil; perbesar radius.</span>';}
 function knaApply(){if(!KNA||!KNA.rec)return;$('okM1').value=KNA.rec.rf;$('okX1').value=KNA.rec.nmax;$('okN1').value=KNA.mn;if(KNA.mph)$('okH1').value=KNA.mph;gsTab('E');}
 function uiResize(){try{if(window.Plotly&&Plotly.Plots&&Plotly.Plots.resize)Plotly.Plots.resize('plotDiv');}catch(e){}}
-function uiTab(n){var sd=$('side');['Data','Warna','Geo','GM','ME','Map','Slice','Dig','Plan','Model','BM','SP','Overlay','View'].forEach(function(k){if(!$('p'+k))return;$('p'+k).hidden=(k!==n);$('rb'+k).className='rb'+(k===n?' on':'');});
+function uiTab(n){var sd=$('side');['Data','Warna','Geo','GM','ME','Map','Slice','Dig','Plan','Model','Wf','BM','SP','Overlay','View'].forEach(function(k){if(!$('p'+k))return;$('p'+k).hidden=(k!==n);$('rb'+k).className='rb'+(k===n?' on':'');});
   if(sd.classList.contains('hide')){sd.classList.remove('hide');setTimeout(uiResize,30);}
   try{localStorage.setItem('dh3d_tab',n);}catch(e){}}
 function uiSide(){var sd=$('side');sd.classList.toggle('hide');$('rbHide').style.transform=sd.classList.contains('hide')?'scaleX(-1)':'';setTimeout(uiResize,30);}
@@ -2451,7 +2458,7 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
   S.push({s:'Plan Bor',t:'Preview 3D & export CSV',d:'Rencana tampil sebagai garis putus-putus magenta bersama lubang lama, lengkap dengan jarak ke lubang terdekat dan kadar perkiraan dari block model. Tombol Export menghasilkan CSV dengan format plan bor yang dipakai sekarang.',el:'[onclick^=plExport]',dur:10,orbit:[2,9,90],
     run:function(A){A(0.5,function(){setCam(1.4,-1.4,0.9);});}});
   if(window.BX&&BX.m)S.push({s:'Overlay',t:'Block model grade control',d:'Menu Block Model: block model GC (.mdl / CSV) diimport lewat jendela popup, diwarnai per kelas kadar atau kategori material, dan difilter dengan cut-off sebagai acuan pemodelan dan estimasi.',el:'rbBM',dur:10,orbit:[2,9,90],run:function(A){A(0,function(){uiTab('BM');if(VIEW2D)toggle2D();dmSet('sliceClip',false);setCam(1.4,-1.4,0.9);});}});
-  if(window.MD&&(MD.models.length||MD.pts.length))S.push({s:'Overlay',t:'Data referensi',d:'Menu Data Referensi menampilkan solid vein (Leapfrog .msh, Surpac .dtm, DXF, OBJ) dan titik survey pemetaan lapangan. Saat slab dipotong atau di Sayatan 2D, vein tampil sebagai garis perpotongan.',el:'rbModel',dur:9,orbit:[2,8.5,120],run:function(A){A(0,function(){uiTab('Model');if(VIEW2D)toggle2D();dmSet('sliceClip',false);setCam(1.4,-1.4,0.9);});}});
+  if(window.MD&&(MD.models.length||MD.pts.length))S.push({s:'Overlay',t:'Wireframe & data referensi',d:'Node Import Wireframe Geologi memuat solid vein (Leapfrog .msh, Surpac .dtm, DXF, OBJ); Data referensi memuat titik survey pemetaan lapangan. Saat slab dipotong atau di Sayatan 2D, vein tampil sebagai garis perpotongan.',el:'rbModel',dur:9,orbit:[2,8.5,120],run:function(A){A(0,function(){uiTab('Model');if(VIEW2D)toggle2D();dmSet('sliceClip',false);setCam(1.4,-1.4,0.9);});}});
   if(hasTopo||hasOr){S.push({s:'Overlay',t:'Topografi & orthofoto',d:'Topografi Surpac (STR) dan orthofoto GeoTIFF ditampilkan bersama lubang bor untuk konteks lapangan.',el:hasOr?'ovOrtho':'ovTopoS',dur:11,orbit:[4,10.5,120],
     run:function(A){A(0,function(){uiTab('Overlay');dmSet('sMode','H');dmSet('sliceClip',false);dmSet('showPlane',false);});A(1,function(){if(hasTopo)dmSet('ovTopoS',true);});A(2.2,function(){if(hasOr)dmSet('ovOrtho',true);});A(3,function(){setCam(1.3,-1.3,0.9);});}});
     S.push({s:'Overlay',t:'Tampak atas',d:'Dari atas terlihat posisi lubang terhadap pit dan kondisi lapangan terkini.',dur:6,run:function(A){A(0.5,function(){setCam(0,-0.01,2.3);});A(5.5,function(){if(hasOr)dmSet('ovOrtho',false);if(hasTopo)dmSet('ovTopoS',false);});}});}
@@ -2471,7 +2478,7 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
     run:function(A){A(0,function(){if(GS.open)gsToggle();uiTab('Data');setCam(1.5,-1.5,1);});}});
   return S;}
 function dmSnap(){var v={};document.querySelectorAll('input[id],select[id]').forEach(function(e){if(e.id.indexOf('dm')===0)return;v[e.id]=e.type==='checkbox'?e.checked:e.value;});
-  var tab='Data';['Data','Warna','Geo','GM','ME','Map','Slice','Dig','Plan','Model','BM','SP','Overlay','View'].forEach(function(k){if($('rb'+k)&&$('rb'+k).className.indexOf('on')>=0)tab=k;});
+  var tab='Data';['Data','Warna','Geo','GM','ME','Map','Slice','Dig','Plan','Model','Wf','BM','SP','Overlay','View'].forEach(function(k){if($('rb'+k)&&$('rb'+k).className.indexOf('on')>=0)tab=k;});
   return{v:v,tab:tab,gs:GS.open,v2:VIEW2D,traj:TRAJ,eye:dmEye(),pl:JSON.stringify(PL.h),dg:JSON.stringify(DG.S)};}
 function dmRestore(s){if(!s)return;if(DRW.on)drawClose();try{PL.h=JSON.parse(s.pl);}catch(er){}try{if(DG.on)dgCancel();DG.S=JSON.parse(s.dg);dgSave();dgList();}catch(er){}if(VIEW2D!==s.v2)toggle2D();if(GS.open!==s.gs)gsToggle();
   for(var id in s.v){var e=$(id);if(!e)continue;if(e.type==='checkbox')e.checked=s.v[id];else if(id!=='holeFilter')e.value=s.v[id];}
@@ -2531,7 +2538,7 @@ function mdBump(noPlot){MD.ver++;MD.sc={};mdList();if(!noPlot)updatePlot();if(wi
 function mdLocal(m){if(m._x)return;var n=m.nv,x=new Float32Array(n),y=new Float32Array(n),z=new Float32Array(n);
   for(var i=0;i<n;i++){x[i]=m.v[i*3]-offX;y[i]=m.v[i*3+1]-offY;z[i]=m.v[i*3+2];}var I=new Int32Array(m.nt),J=new Int32Array(m.nt),K=new Int32Array(m.nt);
   for(var t=0;t<m.nt;t++){I[t]=m.t[t*3];J[t]=m.t[t*3+1];K[t]=m.t[t*3+2];}m._x=x;m._y=y;m._z=z;m._i=I;m._j=J;m._k=K;}
-async function mdImport(inp){var fs=Array.prototype.slice.call(inp.files||[]);inp.value='';if(!fs.length)return;var el=$('mdMsg');el.textContent='Membaca model…';
+async function mdImport(inp){var fs=Array.prototype.slice.call(inp.files||[]);inp.value='';if(!fs.length)return;var el=$('wfMsg')||$('mdMsg');el.textContent='Membaca model…';
   try{var L=await SA.readMeshes(fs);L.forEach(function(m){m.col=MDPAL[MD.models.length%MDPAL.length];m.op=0.55;m.vis=true;MD.models.push(m);});
     var ext=mdExtNote(L.map(function(m){return m.v;}));el.innerHTML=L.map(function(m){return mdEsc(m.name)+': '+m.nv.toLocaleString()+' titik, '+m.nt.toLocaleString()+' segitiga';}).join('<br>')+(L.notes?'<br>'+L.notes:'')+ext;mdBump();}
   catch(e){el.innerHTML='<span class=warn>'+mdEsc(e.message)+'</span>';console.error(e);}}
@@ -3208,7 +3215,7 @@ function wfSplit(m,loop,F){var P=loop.p,Q=P.map(function(p){return F(p[0],p[1],p
 function wfSecs(all){var S=secK(),e=$('pos'),th=WF.sp>0?WF.sp:S.thick,list=[];if(all){var k0=Math.ceil((+e.min-S.pos)/th-1e-9),k1=Math.floor((+e.max-S.pos)/th+1e-9);for(var k=k0;k<=k1;k++)list.push(Math.round((S.pos+k*th)*1000)/1000);}else list=[S.pos];return{S:S,list:list};}
 function wfDomTarget(m){if(WF.dom==='__new'){var nm=String(m.name).replace(/\.[^.]+$/,'').replace(/[^A-Za-z0-9_-]+/g,'_').slice(0,30)||'Vein_WF',d=null;GM.doms.forEach(function(x){if(x.name.toLowerCase()===nm.toLowerCase())d=x;});if(!d)d=gmAddDom(nm);WF.dom=d.id;return d;}
   return gmDom(WF.dom)||gmDom(GM.act)||(GM.doms.length?GM.doms[0]:gmAddDom(String(m.name).replace(/\.[^.]+$/,'')));}
-function gmWfStrings(all){var m=wfModel();if(!m){alert('Import wireframe dulu di menu Data Referensi.');return;}var d=wfDomTarget(m),src='wf:'+m.name,X=wfSecs(all),g=X.S.g,F=p2fn(g),P0=dgPlane(),made=0,rep=0,nsec=0,nloop=0,nopen=0,nsm=0,ned=0;
+function gmWfStrings(all){var m=wfModel();if(!m){alert('Import wireframe dulu di node Import Wireframe Geologi.');return;}var d=wfDomTarget(m),src='wf:'+m.name,X=wfSecs(all),g=X.S.g,F=p2fn(g),P0=dgPlane(),made=0,rep=0,nsec=0,nloop=0,nopen=0,nsm=0,ned=0;
   X.list.forEach(function(pos){var L=wfSlice(m,g,pos,X.S.K2);if(!L.length)return;var P=JSON.parse(JSON.stringify(P0));P.pos=pos;
     if(GM.str.some(function(s){return s.src===src&&s.dom===d.id&&s.ed&&gmSamePl(s.pl,P);})){ned++;return;}
     GM.str=GM.str.filter(function(s){var r=s.src===src&&s.dom===d.id&&gmSamePl(s.pl,P);if(r)rep++;return !r;});var any=false;
@@ -3226,14 +3233,14 @@ function wfInside(m){mdLocal(m);var X=m._x,Y=m._y,Z=m._z,I=m._i,J=m._j,K=m._k,nt
     for(var q=0;q<L.length;q++){var t=L[q],a=I[t],b=J[t],c=K[t],ax=X[a],ay=Y[a],bx=X[b],by=Y[b],cx=X[c],cy=Y[c],den=(by-cy)*(ax-cx)+(cx-bx)*(ay-cy);if(Math.abs(den)<1e-12)continue;
       var l1=((by-cy)*(px-cx)+(cx-bx)*(py-cy))/den,l2=((cy-ay)*(px-cx)+(ax-cx)*(py-cy))/den,l3=1-l1-l2;if(l1<0||l2<0||l3<0)continue;if(l1*Z[a]+l2*Z[b]+l3*Z[c]>pz)cnt++;}return(cnt&1)===1;};
   return{f:f,open:open,ne:Object.keys(E).length};}
-function gmWfFlag(){var m=wfModel();if(!m){alert('Import wireframe dulu di menu Data Referensi.');return;}var d=wfDomTarget(m),W=wfInside(m),n=0,nh={},len=0;gmPush();
+function gmWfFlag(){var m=wfModel();if(!m){alert('Import wireframe dulu di node Import Wireframe Geologi.');return;}var d=wfDomTarget(m),W=wfInside(m),n=0,nh={},len=0;gmPush();
   collars.forEach(function(c){var id=c[0],h=holeData[id];if(!h)return;gmIv(id).forEach(function(iv){var t=Math.min(iv[1],h.maxD);if(t<=iv[0])return;var P=getXYZ(id,(iv[0]+t)/2);if(!W.f(P.x,P.y,P.z))return;
       if(WF.keep&&gmCodeAt(id,(iv[0]+iv[1])/2)>=0)return;gmSetRange(id,iv[0],iv[1],d.id);n++;nh[id]=1;len+=iv[1]-iv[0];});});
   if(!n)GM.und.pop();WF.msg=(n?'&#10003; '+n+' interval ('+Object.keys(nh).length+' hole, '+len.toFixed(1)+' m) di dalam <b>'+gmE(m.name)+'</b> di-flag ke <b>'+gmE(d.name)+'</b>.':'<span class=warn>Tidak ada interval bor di dalam wireframe'+(WF.keep?' yang belum di-flag':'')+'.</span>')+
     (W.open?'<br><span class=warn>Wireframe tidak tertutup rapat ('+W.open+' dari '+W.ne+' sisi terbuka): hasil di dekat bagian terbuka bisa tidak akurat.</span>':' Wireframe tertutup rapat.');GM.act=d.id;gmDirty();}
 function wfSet(k,v){WF[k]=v;gmPanel();}
 function wfPanelHtml(){if(!window.WF)return '';var M=MD.models;if(WF.mi>=M.length)WF.mi=0;var h='<details class=gmdet'+(GM._openWf?' open':'')+' ontoggle="GM._openWf=this.open"><summary>Dari wireframe luar (Leapfrog / Surpac)</summary>';
-  if(!M.length)return h+'<div class=hint>Import wireframe (.msh / .dtm / .dxf / .obj) di menu <b>Data Referensi</b>, lalu kembali ke sini.</div></details>';
+  if(!M.length)return h+'<div class=hint>Import wireframe (.msh / .dtm / .dxf / .obj) di node <b>Import Wireframe Geologi</b>, lalu kembali ke sini.</div></details>';
   h+='<div class="g2 f"><div><label>Wireframe</label><select onchange="wfSet(\'mi\',+this.value)">'+M.map(function(m,i){return '<option value='+i+(i===WF.mi?' selected':'')+'>'+gmE(m.name)+'</option>';}).join('')+'</select></div>'+
     '<div><label>Ke domain</label><select onchange="wfSet(\'dom\',this.value)"><option value="">(domain aktif)</option>'+GM.doms.map(function(d){return '<option value="'+d.id+'"'+(d.id===WF.dom?' selected':'')+'>'+gmE(d.name)+'</option>';}).join('')+'<option value="__new"'+(WF.dom==='__new'?' selected':'')+'>+ domain baru (nama wireframe)</option></select></div></div>'+
     '<div class="g2 f"><div><label>Jarak section (m)</label><input type=number step=any min=0 value="'+(WF.sp||'')+'" placeholder="= tebal slab" onchange="WF.sp=+this.value||0"></div><label class=sw style="align-self:end"><input type=checkbox '+(WF.keep?'checked':'')+' onchange="WF.keep=this.checked">Flag: jangan timpa flag lain</label></div>'+
@@ -4747,7 +4754,7 @@ function uiSecOpen(key,k){if(UISEC[key])uiSecSel(key,String(k));}
   wrap('spPanel',function(){uiSecTabs($('spBody'),'sp',['&#9312; Topografi','&#9313; Pit','&#9314; Ortho','&#9315; Block model']);});
   wrap('mapPanel',function(){uiSecTabs($('mapBody'),'map',['Layer peta','Pick-up','Digitasi','Titik struktur','Layout']);});
   /* Data Referensi (statis + #stBody) */
-  uiSecTabs($('pModel'),'ref',['Wireframe','Titik survey','String','Struktur'],{always:'#mdMsg'});
+  uiSecTabs($('pModel'),'ref',['Titik survey','String','Struktur'],{always:'#mdMsg'});
   try{mePanel();}catch(e){}try{if(BX.m)bxPanel();}catch(e){}try{spPanel();}catch(e){}try{mapPanel();}catch(e){}
   /* buka tab yang relevan saat ada aksi */
   ['mdImport','mdPts','mdStr'].forEach(function(fn,i){var f=window[fn];if(typeof f!=='function')return;window[fn]=function(){uiSecOpen('ref',i+1);return f.apply(this,arguments);};});
@@ -4786,7 +4793,7 @@ function rpTinFn(T){if(!T||!T.v||!T.t)return null;if(RPTIN.has(T))return RPTIN.g
       var l1=((Y2-Y3)*(x-X3)+(X3-X2)*(y-Y3))/d,l2=((Y3-Y1)*(x-X3)+(X1-X3)*(y-Y3))/d,l3=1-l1-l2,e=-1e-9;if(l1<e||l2<e||l3<e)continue;var z=l1*V[a2+2]+l2*V[b2+2]+l3*V[c2+2];if(z<lo)lo=z;if(z>hi)hi=z;}
     return hi>-Infinity?[lo,hi]:null;};RPTIN.set(T,fn);return fn;}
 function rpSurfList(){var L=[];['topo','pit'].forEach(function(role){spL(role).forEach(function(v){if(v.tin)L.push(['sp:'+role+':'+v.id,SPN[role]+': '+v.name+(spAct(role)===v?' (aktif)':'')]);});});
-  (window.MD&&MD.models||[]).forEach(function(w,i){L.push(['wf:'+i,'Data Referensi: '+w.name]);});return L;}
+  (window.MD&&MD.models||[]).forEach(function(w,i){L.push(['wf:'+i,'Wireframe: '+w.name]);});return L;}
 function rpSurfSrc(k){if(!k)return null;if(k.indexOf('wf:')===0){var w=MD.models[+k.slice(3)];return w?{n:w.name,fn:rpTinFn(w)}:null;}
   var a=k.split(':'),v=spL(a[1]).filter(function(x){return x.id===a[2];})[0];return v&&v.tin?{n:SPN[a[1]]+' '+v.name,fn:rpTinFn(v.tin)}:null;}
 function rpStrGroups(S){var segs=[],cur=[],si=0;for(var i=0;i<S.x.length;i++){if(isNaN(S.x[i])){if(cur.length){segs.push({sn:S.sn?S.sn[si]:0,p:cur});}cur=[];si++;continue;}cur.push([S.x[i],S.y[i]]);}if(cur.length)segs.push({sn:S.sn?S.sn[si]:0,p:cur});return segs;}
@@ -4893,7 +4900,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
       '<div class=rpsrc>Topografi aktif: '+tyN(ta)+'<br>Desain pit aktif: '+tyN(pa)+'</div><div class=rpimps>'+imp("rpImpSp('topo',this)",'.dtm,.str,.dxf,.csv,.txt,.xyz','Import topografi','Masuk ke Data Spasial sebagai versi topografi baru (aktif). Pilih file .dtm bersama .str-nya.')+imp("rpImpSp('pit',this)",'.dtm,.str,.dxf,.csv,.txt,.xyz','Import desain pit','Masuk ke Data Spasial sebagai versi pit baru (aktif). Pilih file .dtm bersama .str-nya.')+'</div>'+
       '<div class=hint>File masuk ke menu <b>Data Spasial</b> sebagai versi baru (versi lama tetap tersimpan). Blok dihitung bila <b>centroid</b> di bawah topografi (dan di atas pit), seperti Surpac. Dengan DTM segitiga, blok di luar jangkauan DTM <b>tidak</b> dihitung.</div>';
     var SL=rpSurfList();h+='<h4>Batas DTM tambahan</h4>'+(o.sx.length?o.sx.map(function(q,i){return '<div class="g3 f rpsx"><div style="grid-column:span 2">'+sel('',SL.length?SL:[['','(tidak ada DTM)']],q.k,"rpSx("+i+",'k',this.value)")+'</div><div style="display:flex;gap:4px">'+sel('',[['below','di bawah'],['above','di atas']],q.side,"rpSx("+i+",'side',this.value)")+'<button class=x onclick="rpSx('+i+',\'del\')" title="Hapus batas">&times;</button></div></div>';}).join(''):'<div class=hint>Mis. di bawah batas oksidasi, di atas mined-out / survey akhir bulan.</div>')+
-      '<div class=rpimps>'+(SL.length?'<button onclick="rpSx(0,\'add\')">+ Tambah batas DTM</button>':'')+imp('rpImpWf(this)','.dtm,.str,.dxf,.obj,.msh','Import DTM (.dtm + .str)','Masuk ke Data Referensi › Wireframe; langsung ditambahkan sebagai batas.')+'</div><div class=hint>Sumber: DTM segitiga di <b>Data Spasial</b> (versi topografi / pit mana saja) dan <b>Data Referensi › Wireframe</b>.</div>';
+      '<div class=rpimps>'+(SL.length?'<button onclick="rpSx(0,\'add\')">+ Tambah batas DTM</button>':'')+'</div><div class=hint>Sumber: DTM segitiga di <b>Data Spasial</b> (versi topografi / pit mana saja) dan wireframe di node <b>Import Wireframe Geologi</b> (import di sana).</div>';
     h+='<h4>Elevasi &amp; area</h4><div class="g2 f"><div><label>Z min (RL)</label><input type=number step=any value="'+rpE(o.z0)+'" onchange="RP.o.z0=this.value" placeholder="tanpa batas"></div><div><label>Z maks (RL)</label><input type=number step=any value="'+rpE(o.z1)+'" onchange="RP.o.z1=this.value" placeholder="tanpa batas"></div></div>';
     var PLs=rpPolyList();
     (function(){var nums=Object.keys(m.num).filter(function(k){return /frac|prop/i.test(k);});if(!nums.length&&!o.frac)return;h+='<label title="Volume &amp; tonase tiap blok dikalikan proporsi ini (0&ndash;1), sehingga blok di perbatasan solid ikut seadanya alih-alih dibulatkan ke ore atau waste. Atribut sb_frac dihitung di menu Block Model: Pecah blok di batas solid / Hitung proporsi volume ore per blok.">Timbang volume &amp; tonase dengan proporsi</label><div class=f>'+sel('',[['','(tanpa pembobotan — blok dihitung utuh)']].concat(nums.map(function(k){return[k,k];})),o.frac,"RP.o.frac=this.value")+'</div>';if(o.frac)h+='<div class=hint style="margin:-4px 0 6px">Blok dengan proporsi 0 tidak dilaporkan; blok perbatasan dilaporkan sebagian. Kadar tidak dikalikan proporsi — kadar rata-rata ditimbang tonase, yang sudah berproporsi.</div>';})();
@@ -5036,12 +5043,12 @@ function vlPanel(){var b=$('vlBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
   var bR=btn('Rep','Reporting<br>BM','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>','Reporting Block Model: grade × tonase sisa dengan constraint');
   me.parentNode.insertBefore(bR,me.nextSibling);me.parentNode.insertBefore(bV,me.nextSibling);
   var _u=uiTab;uiTab=function(n){var r=_u.apply(this,arguments);['Rep','Val'].forEach(function(k){var p=$('p'+k),b2=$('rb'+k);if(p)p.hidden=(k!==n);if(b2)b2.className='rb'+(k===n?' on':'');});
-    if((n==='Rep'||n==='Val')&&!VL._w){VL._w=1;try{if(uiSideW()<560)uiSideW(560);}catch(e){}}if(n==='Rep')rpPanel();if(n==='Val')vlPanel();if(n==='Rep'||n==='Val'){['Data','Warna','Geo','GM','ME','Map','Slice','Dig','Plan','Model','BM','SP','Overlay','View'].forEach(function(k){if($('p'+k))$('p'+k).hidden=true;if($('rb'+k))$('rb'+k).className='rb';});}return r;};
+    if((n==='Rep'||n==='Val')&&!VL._w){VL._w=1;try{if(uiSideW()<560)uiSideW(560);}catch(e){}}if(n==='Rep')rpPanel();if(n==='Val')vlPanel();if(n==='Rep'||n==='Val'){['Data','Warna','Geo','GM','ME','Map','Slice','Dig','Plan','Model','Wf','BM','SP','Overlay','View'].forEach(function(k){if($('p'+k))$('p'+k).hidden=true;if($('rb'+k))$('rb'+k).className='rb';});}return r;};
   /* muat ulang panel saat block model / estimasi berubah */
   var _bp=window.bxPanel;if(_bp)bxPanel=function(){var r=_bp.apply(this,arguments);try{if($('pRep')&&!$('pRep').hidden)rpPanel();}catch(e){}return r;};})();
 /* ================= UI: susunan rail (alur kerja vs pendukung), tab otomatis & pencarian menu (Ctrl+K) ================= */
 (function(){var rail=$('rail');if(!rail||$('rbMore'))return;
-  var flow=['Data','Geo','Slice','GM','ME','Val','Rep','BM','Map'],sup=['SP','Model','Dig','Plan','Warna','Overlay','View'],grow=rail.querySelector('.grow'),old=rail.querySelector('.rsep');if(old)old.remove();
+  var flow=['Data','Geo','Slice','GM','ME','Val','Rep','BM','Map'],sup=['SP','Model','Wf','Dig','Plan','Warna','Overlay','View'],grow=rail.querySelector('.grow'),old=rail.querySelector('.rsep');if(old)old.remove();
   var cap=function(t){var d=document.createElement('div');d.className='rcap';d.textContent=t;return d;};
   rail.insertBefore(cap('ALUR KERJA'),rail.firstChild);
   var n1=['1','2','3','4','5','6','7','',''];flow.forEach(function(k,i){var b=$('rb'+k);if(!b)return;rail.insertBefore(b,grow);if(n1[i]){b.setAttribute('data-step',n1[i]);}});
@@ -5675,6 +5682,14 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
       if(b.dataset.go){T.select(b.dataset.go);return;}
       var a=acts[+b.dataset.i];if(a&&a.fn)try{a.fn();}catch(x){console.error(x);}};}
   T.card=card;
+  /* Memindahkan sorotan & judul ke node lain tanpa menjalankan aksinya. Dipakai ketika panel
+     berpindah bukan karena pemilihan node: menjalankan select() di situ akan memanggil go() lagi
+     dan bisa berputar. */
+  T.mark=function(id){var n=find(id);if(!n)return;T.sel=id;
+    try{head();}catch(e){}
+    try{card(n);}catch(e){}
+    try{var sd=$('ptBody');if(sd){[].forEach.call(sd.querySelectorAll('.ptr.on'),function(r){r.classList.remove('on');});
+      var r=sd.querySelector('.ptr[data-id="'+id+'"]');if(r)r.classList.add('on');}}catch(e){}};
   function head(){var ph=$('ptPH');if(!ph)return;var n=T.sel&&find(T.sel);if(!n){ph.innerHTML='<span class="pp">Properti</span>';return;}
     ph.innerHTML='<span class="pp">Properti</span><span class="pi2">'+(IC[n.ic]||IC.folder)+'</span><b>'+esc(n.t)+'</b>'+(n.menu?'<button type="button" class="ptx" title="Menu item ini">'+IC.more+'</button>':'');
     var b=ph.querySelector('.ptx');if(b)b.onclick=function(e){var r=b.getBoundingClientRect();menu(n,r.left,r.bottom+2);e.stopPropagation();};}
@@ -5882,11 +5897,11 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
   /* ---------- folder ---------- */
   function fProj(){var fp=window.FP&&FP.dir;return{id:'proj',step:'1',t:'Proyek: '+(SA.pname||'-'),ic:'proj',fold:1,b:fp?'folder':'lokal',hint:fp?'Folder proyek: '+FP.dir.name:'Tersimpan di komputer ini (belum terhubung ke folder proyek)',
     go:function(){var b=$('pjBtn');if(b)b.click();},
-    menu:function(){return[{t:'Simpan sekarang',fn:A('_ptSave')},{t:'Simpan sebagai file .prj…',fn:function(){SA.prjSave();}},{t:'Buka file .prj…',fn:function(){PT.pick('.prj',false,function(i){SA.prjOpen(i.files[0]);});}},{t:'Unduh file proyek (.dh3d)',fn:function(){SA.downloadProj();}},{t:'Import ulang (data lain dipertahankan)…',fn:function(){SA.reopen();}},{sep:1},{t:'Menu proyek & folder…',fn:function(){var b=$('pjBtn');if(b)b.click();}}];}};}
+    menu:function(){return[{t:'Simpan sekarang',fn:A('_ptSave')},{t:'Simpan sebagai file .prj…',fn:function(){SA.prjSave();}},{t:'Buka file .prj…',fn:function(){PT.pick('.prj',false,function(i){SA.prjOpen(i.files[0]);});}},{t:'Simpan salinan proyek (.dh3d)…',fn:function(){SA.downloadProj();}},{t:'Import ulang (data lain dipertahankan)…',fn:function(){SA.reopen();}},{sep:1},{t:'Menu proyek & folder…',fn:function(){var b=$('pjBtn');if(b)b.click();}}];}};}
   window._ptSave=function(){if(SA.saveNow)SA.saveNow();};
   function fSpatial(){var mdK=function(kind,ic,lab){return ok(function(){return MD[kind].map(function(m,i){return{id:'ref.'+kind+'.'+i+'.'+m.name,t:m.name,ic:ic,tab:'Model',sub:lab,chk:!!m.vis,onChk:function(v){mdSet(kind,i,'vis',v);},
       b:m.nt?N(m.nt)+' segitiga':(m.pts&&m.pts.length?N(m.pts.length)+' titik':''),menu:function(){return[{t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}}];}};});},[]);};
-    var refK=[].concat(mdK('models','ref','Wireframe'),mdK('pts','pts','Titik'),mdK('str','string','String'));
+    var refK=[].concat(mdK('pts','pts','Titik'),mdK('str','string','String'));
     return{id:'sp',step:'2',t:'Data Spasial',ic:'folder',fold:1,tab:'SP',hint:'Topografi, desain pit, orthofoto (dengan versi) dan data referensi Surpac',
       menu:function(){return[addV('topo'),addV('pit'),addV('ortho'),{sep:1},{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
       kids:[{id:'sp.topo',t:'Topografi',ic:'topo',tab:'SP',sub:'Topografi',chk:!!topoAs(),onChk:function(v){setTopo(v?topoPref():'');},
@@ -5895,8 +5910,8 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
           menu:function(){var c=U.val('ovPitMode');return[addV('pit'),{sep:1}].concat(asMenu(c,function(m){var S=$('ovPitMode');if(S)S.value=m;U.setCb('ovPit',true);updatePlot();}));},kids:versions('pit')},
         {id:'sp.ortho',t:'Orthofoto',ic:'ortho',tab:'SP',sub:'Ortho',chk:!!U.cb('ovOrtho'),onChk:function(v){U.setCb('ovOrtho',v);},
           menu:function(){var m=U.val('orMode');return[addV('ortho'),{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:m==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:m==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:m==='flat',fn:function(){U.setVal('orMode','flat');}}];},kids:versions('ortho')},
-        {id:'sp.ref',t:'Data referensi (solid, titik, string)',ic:'ref',tab:'Model',b:refK.length||'',dim:!refK.length,
-          menu:function(){return[{t:'Import model vein / solid…',fn:function(){PT.pick('.dtm,.str,.msh,.obj,.dxf',true,function(i){mdImport(i);});}},{t:'Import titik survey…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'Import string (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}];},kids:refK}]};}
+        {id:'sp.ref',t:'Data referensi (titik survey, string)',ic:'ref',tab:'Model',sub:'Titik survey',b:refK.length||'',dim:!refK.length,
+          menu:function(){return[{t:'Import titik survey…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'Import string (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}];},kids:refK}]};}
   function fDb(){var C=window.collars||[],Sv=window.surveys||[],As=window.assays||[],G=window.geoRows||[],E=window.elements||[],cur=U.val('elementFilter'),ga=U.val('geoAttr');
     var els=E.map(function(e){return{id:'db.el.'+e,t:e,ic:'el',tab:'Data',mark:e===cur?'warna':'',hint:'Warnai trajectory dengan '+e,go:function(){U.setVal('elementFilter',e);if(window.trajMode)trajMode('grade');},
       menu:function(){return[{t:'Warnai dengan '+e,fn:function(){U.setVal('elementFilter',e);}},{t:'Warna kadar & kelas…',fn:tab('Warna')}];}};});
@@ -5924,7 +5939,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
       kids:mp.map(function(f){return node(f,f.kind==='mapst'?'Titik struktur (klik di peta)':String(f.name).replace(/\s*\((Map pick-up|Mapping pick-up)\)\s*$/,'')+' (pick-up)');}).concat(nL?[{id:'st.mapln',t:'Garis struktur peta (sesar, kekar, vein, sumbu lipatan)',ic:'digit',tab:'Map',sub:'Digitasi',b:nL}]:[])});
     var FF=ok(function(){return FLT.F;},[]),TMS={pre:'pre',syn:'syn',post:'post'};
     kids.push({id:'st.flt',t:'Sesar (bidang 3D)',ic:'section',fold:1,tab:'FLT',b:FF.length||'',chk:ok(function(){return FLT.lay!==false;},true),onChk:function(v){FLT.lay=v;fltDirty(false);},hint:'Bidang sesar 3D: dip / dip direction, vektor gerak, offset, pre / syn / post mineralisasi, urutan umur',
-      menu:function(){return[{t:'Buka menu Sesar 3D',fn:function(){uiTab('FLT');}},{t:'+ Sesar dari koordinat…',fn:function(){uiTab('FLT');fltManual();}},{t:'Urutkan umur otomatis',fn:A('fltAutoAge')},{t:'Export CSV sesar',fn:A('fltCsv')},{t:'Export DXF bidang sesar',fn:A('fltDxf')}];},
+      menu:function(){return[{t:'Buka panel Sesar 3D',fn:function(){uiTab('FLT');}},{t:'+ Sesar dari koordinat…',fn:function(){uiTab('FLT');fltManual();}},{t:'Urutkan umur otomatis',fn:A('fltAutoAge')},{t:'Export CSV sesar',fn:A('fltCsv')},{t:'Export DXF bidang sesar',fn:A('fltDxf')}];},
       kids:FF.map(function(f){return{id:'st.flt.'+f.id,t:f.name+' · '+TMS[f.tm]+(f.tm==='post'&&+f.off>0?' · '+f.off+' m':''),ic:'string',tab:'FLT',b:'umur '+f.age,chk:f.on!==false,onChk:function(v){fltSet(f.id,'on',v);},
         go:function(){FLT.sel=f.id;uiTab('FLT');},rename:function(nm){fltSet(f.id,'name',nm);},menu:function(){return[{t:'Edit atribut',fn:function(){FLT.sel=f.id;uiTab('FLT');}},{sep:1},{t:'Hapus sesar',danger:1,fn:function(){fltDel(f.id);}}];}};})});
     if(csv.length)kids.push({id:'st.csv',t:'File CSV struktur',ic:'table',fold:1,tab:'Model',sub:'Struktur',b:csv.reduce(function(a,f){return a+cnt(f.id);},0)||'',kids:csv.map(function(f){return node(f);})});
@@ -5946,7 +5961,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
         {id:'sec.clip',t:'Potong data di dalam slab (3D)',ic:'section',tab:'Slice',chk:U.cb('sliceClip'),onChk:function(v){U.setCb('sliceClip',v);}},
         {id:'sec.plane',t:'Bidang potong',ic:'section',tab:'Slice',chk:U.cb('showPlane'),onChk:function(v){U.setCb('showPlane',v);}},
         {id:'sec.prof',t:'Profil topo / pit pada sayatan',ic:'topo',tab:'Slice',chk:U.cb('showProf'),onChk:function(v){U.setCb('showProf',v);}},
-        {id:'sec.dig',t:'Digitasi string',ic:'digit',tab:'Dig',b:S.length||'',menu:function(){return[{t:'Export DXF',fn:function(){dgExport('dxf');}},{t:'Export STR',fn:function(){dgExport('str');}}];},
+        {id:'sec.dig',t:'Digitasi string',ic:'digit',tab:'Dig',b:S.length||'',menu:function(){return[{t:'Export string digitasi (DXF)',fn:function(){dgExport('dxf');}},{t:'Export string digitasi (STR)',fn:function(){dgExport('str');}}];},
           kids:S.slice(0,300).map(function(s,i){return{id:'dg.'+(s.id||i)+'.'+s.no,t:'String '+s.no+(s.d?' · '+s.d:''),ic:'string',tab:'Dig',chk:!!s.vis,onChk:function(v){dgVis(i,v);},dbl:function(){dgGo(i);},
             menu:function(){return[{t:'Buka di penampangnya',fn:function(){dgGo(i);}},{sep:1},{t:'Hapus string',danger:1,fn:function(){dgDel(i);}}];}};})}]};}
   function fGM(){var D=ok(function(){return GM.doms;},[]),act=ok(function(){return GM.act;});
@@ -5956,11 +5971,11 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
         menu:function(){return[{t:'Jadikan domain aktif',dis:d.id===act,fn:function(){GM.act=d.id;gmPanel();}},{sep:1},{t:'Hapus domain…',danger:1,fn:function(){gmDelDom(d.id);}}];},kids:ch.map(kid)};};
     return{id:'gm',step:'6',t:'Geomodeller Vein System Deposit',ic:'folder',fold:1,tab:'GM',b:D.length?D.length+' domain':'',hint:'Domain vein → flag interval → string kontrol HW/FW → solid',
       menu:function(){return[{t:'+ Domain baru…',fn:function(){var r=U.ask('Nama domain baru:','');if(r!=null){gmAddDom(r);uiTab('GM');}}},{sep:1},{t:'Export flag (CSV)',fn:A('gmFlagCsv')},{t:'Export string kontrol (STR)',fn:function(){gmStrExport('str');}},{t:'Export string kontrol (DXF)',fn:function(){gmStrExport('dxf');}}];},
-      kids:[{id:'gm.add',t:'+ Tambah domain…',ic:'dom',hint:'Domain vein / zona baru; dikerjakan di Properti setelah dipilih',go:function(){var r=U.ask('Nama domain baru:','');if(r!=null&&String(r).trim()){gmAddDom(String(r).trim());uiTab('GM');}}}].concat(D.filter(function(d){return !d.par;}).map(kid)).concat(window.wfxTree?wfxTree():[]).concat(window.arWfTree?arWfTree():[])};}
+      kids:[{id:'gm.add',t:'+ Tambah domain…',ic:'dom',hint:'Domain vein / zona baru; dikerjakan di Properti setelah dipilih',go:function(){var r=U.ask('Nama domain baru:','');if(r!=null&&String(r).trim()){gmAddDom(String(r).trim());uiTab('GM');}}}].concat(D.filter(function(d){return !d.par;}).map(kid)).concat(window.arWfTree?arWfTree():[])};}
   function fSL(){var LL=ok(function(){return SL.L;},[]),so=function(id,t,ic,k){return{id:id,t:t,ic:ic,tab:'SL',go:function(){uiTab('SL');setTimeout(function(){try{uiSecOpen('sl',k);}catch(e){}},40);}};};
     return{id:'sl',step:'6b',t:'Geomodeller Stratified-Laterite Deposit',ic:'folder',fold:1,tab:'SL',b:LL.length?LL.length+' lapisan':'',chk:ok(function(){return SL.lay!==false;},true),onChk:function(v){SL.lay=v;updatePlot();},
       hint:'Laterit Ni / bauksit / stratiform (sedex): lapisan dari log geologi → permukaan atap / lantai → estimasi unfold per lapisan → laporan WMT / DMT',
-      menu:function(){return[{t:'Preset laterit nikel',fn:function(){uiTab('SL');slPreset('lat');}},{t:'Preset bauksit',fn:function(){uiTab('SL');slPreset('bx');}},{t:'Preset stratiform (sedex)',fn:function(){uiTab('SL');slPreset('sdx');}},{sep:1},{t:'Jalankan estimasi lapisan',fn:A('slRun')},{t:'Laporan CSV',fn:A('slRepCsv')}];},
+      menu:function(){return[{t:'Preset laterit nikel',fn:function(){uiTab('SL');slPreset('lat');}},{t:'Preset bauksit',fn:function(){uiTab('SL');slPreset('bx');}},{t:'Preset stratiform (sedex)',fn:function(){uiTab('SL');slPreset('sdx');}},{sep:1},{t:'Jalankan estimasi lapisan',fn:A('slRun')},{t:'Export laporan WMT / DMT (CSV)',fn:A('slRepCsv')}];},
       kids:LL.map(function(l,i){return{id:'sl.l.'+l.id,t:l.name,ic:'dom',chk:l.vis!==false,onChk:function(v){slSetL(i,'vis',v);},tab:'SL',b:(l.codes||[]).length?'':'kode?',rename:function(nm){slSetL(i,'name',nm);},go:function(){uiTab('SL');setTimeout(function(){try{uiSecOpen('sl',1);}catch(e){}},40);}};})
         .concat([so('sl.1','① Lapisan & kode log','attr',1),so('sl.2','② Permukaan (atap / lantai)','topo',2),so('sl.3','③ Estimasi unfold per lapisan','est',3),so('sl.4','④ Laporan WMT / DMT','report',4)]).concat(window.arLatTree?arLatTree():[])};}
   function fBM(){var m=window.BX&&BX.m,V=ok(function(){return BXV;},[]),cur=m?ok(function(){return bxvKey(m.src);},''):'',at=m?Object.keys(m.num||{}).concat(Object.keys(m.cat||{})):[],ca=ok(function(){return BX.ui.attr;},'');
@@ -5972,7 +5987,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
           {id:'bm.cls',t:'Warna & kelas',ic:'color',tab:'BM',sub:'Warna'},{id:'bm.flt',t:'Filter & SG',ic:'attr',tab:'BM',sub:'Filter'},{id:'bm.stat',t:'Statistik',ic:'chart',tab:'BM',sub:'Statistik'}]:[])};}
   var sub=function(id,t,ic,tb,re){return{id:id,t:t,ic:ic,tab:tb,sub:re};};
   function nodes(){var L=[],add=function(f,id,t){try{L.push(f());}catch(e){console.warn('tree',id,e);L.push({id:id,t:t,ic:'folder',fold:1});}};
-    add(fProj,'proj','Proyek');add(fSpatial,'sp','Data Spasial');add(fDb,'db','Database Bor');add(fMapping,'mp','Peta (Mapping)');add(fStruct,'st','Struktur Geologi');
+    add(fProj,'proj','Proyek');add(fSpatial,'sp','Data Spasial');if(window.wfxNode)add(wfxNode,'wf','Import Wireframe Geologi');add(fDb,'db','Database Bor');add(fMapping,'mp','Peta (Mapping)');add(fStruct,'st','Struktur Geologi');
     add(fGM,'gm','Geomodeller Vein System Deposit');add(fSL,'sl','Geomodeller Stratified-Laterite Deposit');add(fBM,'bm','Block Model');
     /* 0.20: domain aktif juga dari node Geostatistik & Model Estimation */
     var actD=ok(function(){return GM.act;}),tops=ok(function(){return gmTops();},[]);
@@ -10166,7 +10181,7 @@ function ogFanDraw() {
   window.wfxPakai = function (domId, nama) {
     var d = fn('gmDom') ? gmDom(domId) : null; if (!d) return;
     var m = byName(nama);
-    if (!m) { alert('Wireframe "' + nama + '" tidak ada di Data Referensi.'); return; }
+    if (!m) { alert('Wireframe "' + nama + '" tidak ada di node Import Wireframe Geologi.'); return; }
     var V = volMesh(m), W = fn('wfInside') ? wfInside(m) : null;
     if (W && W.open) {
       if (!confirm('Wireframe "' + nama + '" tidak tertutup rapat (' + W.open + ' dari ' + W.ne +
@@ -10296,7 +10311,7 @@ function ogFanDraw() {
   window.wfSerap = function () {
     var M = models();
     var m = M[WFX.o.mi | 0];
-    if (!m) { alert('Import wireframe dulu di menu Data Referensi (.msh / .obj / .dxf / .dtm + .str).'); return; }
+    if (!m) { alert('Import wireframe dulu di node Import Wireframe Geologi (.msh / .obj / .dxf / .dtm + .str).'); return; }
     if (!window.GM) { alert('Menu Geomodeller Vein belum siap.'); return; }
 
     var nm = (WFX.o.nama || '').trim() || String(m.name).replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 30) || 'Vein_WF';
@@ -10412,7 +10427,7 @@ function ogFanDraw() {
       '<small>Wireframe implicit dari Leapfrog (atau Surpac) menjadi domain GC-Ex yang bisa diedit dan ikut diperbarui saat ada bor baru.</small>' +
       '</div></div><button class="ib ghost" onclick="wfxSetClose()">Tutup</button></div><div class=impBody>' +
       (!M.length
-        ? '<div class=box>Belum ada wireframe. Import dulu di menu <b>Data Referensi</b> (<code>.msh</code>, <code>.obj</code>, <code>.dxf</code>, atau <code>.dtm</code> + <code>.str</code> Surpac), lalu kembali ke sini.</div>'
+        ? '<div class=box>Belum ada wireframe. Import dulu di node <b>Import Wireframe Geologi</b> (<code>.msh</code>, <code>.obj</code>, <code>.dxf</code>, atau <code>.dtm</code> + <code>.str</code> Surpac), lalu kembali ke sini.</div>'
         : '<div><label>Wireframe</label><select onchange="wfxSet(\'mi\',this.value)">' +
           M.map(function (x, i) { return '<option value=' + i + (i === (o.mi | 0) ? ' selected' : '') + '>' + E(x.name) + '</option>'; }).join('') +
           '</select><div class=hint>' + (m ? N(m.nt) + ' segitiga &middot; volume ' + N(V) + ' m&sup3; &middot; ' +
@@ -10429,50 +10444,54 @@ function ogFanDraw() {
   }
   window.wfxSetClose = function () { var d = $('wfxSetDlg'); if (d) d.style.display = 'none'; };
 
-  /* ---------- node Project Tree ---------- */
-  window.wfxTree = function () {
-    if (!window.GM || !fn('gmTops')) return [];
-    var M = models(), D = gmTops();
-    var terkunci = D.filter(function (d) { return d.wfx; });
-    var kids = D.map(function (d) {
-      var nm = d.wfx, ada = nm ? !!byName(nm) : false;
+  /* ---------- node Project Tree: "Import Wireframe Geologi" ----------
+     SATU-SATUNYA tempat wireframe geologi diimport dan dilihat (permintaan pemilik, 8 Nov 2026).
+     Anak node = berkas di MD.models, berurutan sesuai urutan import. Fungsi menjadikan wireframe
+     domain (Mode B serap, Mode A eksak, iris / flag di Geomodeller) ada di menu klik-kanan tiap berkas. */
+  window.wfxNode = function () {
+    var M = models(), D = fn('gmTops') ? gmTops() : [];
+    var imp = function () { PT.pick('.msh,.obj,.dxf,.dtm,.str', true, function (i) { mdImport(i); }); };
+    var kids = M.map(function (m, i) {
+      var kunci = D.filter(function (d) { return d.wfx === m.name; });
       return {
-        id: 'wfx.' + d.id, t: d.name, ic: 'dom',
-        b: nm ? (ada ? 'eksak: ' + nm : 'eksak: ' + nm + ' (hilang)') : 'solid GC-Ex',
-        dim: !nm,
-        hint: nm ? (ada ? 'Batas EKSAK dari wireframe — tidak bisa diedit dan tidak berubah saat ada bor baru'
-                        : 'Wireframe belum diimport ulang di Data Referensi — sementara kembali memakai solid RBF')
-                 : 'Memakai solid RBF dari string kontrol — bisa diedit, ikut berubah saat ada bor baru',
+        id: 'wf.' + i + '.' + m.name, t: m.name, ic: 'ref', tab: 'Wf',
+        chk: !!m.vis, onChk: function (v) { mdSet('models', i, 'vis', v); },
+        b: N(m.nt) + ' segitiga' + (kunci.length ? ' · eksak: ' + kunci.map(function (d) { return d.name; }).join(', ') : ''),
+        hint: 'Import ke-' + (i + 1) + '. Klik kanan: jadikan domain (serap / eksak), iris / flag interval bor, atau hapus.',
         menu: function () {
-          var L = [];
-          if (nm) L.push({ t: 'Lepaskan dari wireframe (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } });
-          M.forEach(function (x) {
-            L.push({ t: (x.name === nm ? '✓ ' : '') + 'Pakai EKSAK: ' + x.name, dis: x.name === nm, fn: function () { wfxPakai(d.id, x.name); } });
+          var L = [{ h: 'Jadikan domain' },
+            { t: 'Serap jadi domain yang bisa diedit (Mode B)…', fn: function () { WFX.o.mi = i; wfxDlg(); } },
+            { t: 'Iris jadi string / flag interval bor (Geomodeller Vein)', dis: !window.WF, fn: function () { WF.mi = i; if (window.GM) GM._openWf = true; PT.select('gm'); } },
+            { sep: 1 }, { h: 'Mode A — batas EKSAK untuk audit' }];
+          if (!D.length) L.push({ t: 'Belum ada domain di Geomodeller Vein', dis: 1 });
+          D.forEach(function (d) {
+            if (d.wfx === m.name) L.push({ t: 'Lepaskan domain ' + d.name + ' (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } });
+            else L.push({ t: 'Kunci domain ' + d.name + ' ke wireframe ini', fn: function () { wfxPakai(d.id, m.name); } });
           });
-          if (!M.length) L.push({ t: 'Belum ada wireframe di Data Referensi', dis: 1 });
+          L.push({ sep: 1 }, { t: 'Hapus wireframe ini', danger: 1, fn: function () { mdDel('models', i); } });
           return L;
         }
       };
     });
-    return [{
-      id: 'wfx', t: 'Wireframe luar (Leapfrog / Surpac)', ic: 'ref', fold: 1, tab: 'GM',
-      b: M.length ? (M.length + ' wireframe' + (terkunci.length ? ' · ' + terkunci.length + ' domain eksak' : '')) : 'belum ada',
-      dim: !M.length,
-      hint: 'Serap menjadi domain yang bisa diedit (Mode B), atau pakai eksak sebagai batas estimasi untuk audit (Mode A)',
+    /* domain yang terkunci ke wireframe yang tidak (lagi) diimport: tetap terlihat di sini */
+    D.filter(function (d) { return d.wfx && !byName(d.wfx); }).forEach(function (d) {
+      kids.push({ id: 'wf.hilang.' + d.id, t: d.name, ic: 'dom', dim: 1, b: 'eksak: ' + d.wfx + ' (hilang)',
+        hint: 'Wireframe "' + d.wfx + '" belum diimport ulang — domain ini sementara memakai solid RBF',
+        menu: function () { return [{ t: 'Lepaskan dari wireframe (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } }]; } });
+    });
+    var nk = D.filter(function (d) { return d.wfx; }).length;
+    return {
+      id: 'wf', step: '2b', t: 'Import Wireframe Geologi', ic: 'ref', fold: 1, tab: 'Wf',
+      b: M.length ? M.length + ' berkas' + (nk ? ' · ' + nk + ' domain eksak' : '') : '',
+      hint: 'Wireframe / solid geologi dari Leapfrog (.msh / .obj), Surpac (.dtm + .str) atau DXF — berurutan sesuai urutan import',
       menu: function () {
-        return [
-          { h: 'Mode B — diserap (bisa diedit, ikut bor baru)' },
+        return [{ t: 'Import wireframe geologi…', fn: imp },
+          { sep: 1 },
           { t: 'Serap wireframe → domain…', dis: !M.length, fn: function () { wfxDlg(); } },
-          { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } },
-          { sep: 1 },
-          { h: 'Mode A — eksak (untuk audit)' },
-          { t: 'Pilih di anak node: tiap domain bisa dikunci ke satu wireframe', dis: 1 },
-          { sep: 1 },
-          { t: 'Import wireframe… (Data Referensi)', fn: function () { try { uiTab('Ref'); } catch (e) { try { uiTab('SP'); } catch (e2) {} } } }
-        ];
+          { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } }];
       },
       kids: kids
-    }];
+    };
   };
 
   /* pengaturan dialog ikut tersimpan di berkas proyek (d.wfx sendiri ikut lewat gmPack) */
@@ -11782,6 +11801,12 @@ function ogFanDraw() {
     return [{
       id: 'rep.x', t: 'Per desain pit & progres topo-ke-topo', ic: 'pit', b: b,
       hint: 'Beberapa desain pit sekaligus dengan topografi yang sama, dan tonase × kadar material tergali antara dua survei topografi',
+      /* Node ini punya PANEL sendiri (bagian "Pit & progres" di Reporting), bukan sekadar perintah.
+         Tanpa `tab`, Project Tree menganggapnya node aksi dan memunculkan kartu tombol -- padahal
+         RPX.open() memang membuka panelnya, hanya saja kartu itu menutupinya. Akibatnya tombol
+         birunya terlihat seperti tidak melakukan apa-apa, lalu judul panel kembali ke "Reporting
+         (constraint)" begitu panelnya menggambar ulang. Dengan `tab`, panelnya yang tampil. */
+      tab: 'Rep',
       go: function () { RPX.open(); },
       menu: function () {
         return [{ t: 'Laporan per desain pit', fn: function () { RPX.mode = 'pit'; RPX.open(); } },
@@ -13090,11 +13115,11 @@ SA.autosave=function(){setInterval(SA.saveWork,30000);document.addEventListener(
   ['change','click'].forEach(function(ev){document.getElementById('app').addEventListener(ev,function(){SA.dirty();},true);});};
 SA.projUI=function(){var tb=document.querySelector('#top .dmWrap')||document.querySelector('#top .brand');if(!tb||E('pjWrap'))return;var w=document.createElement('div');w.id='pjWrap';w.className='dmWrap';
   w.innerHTML='<button id="pjBtn" class="tb" onclick="SA.pjMenu()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg><span>Proyek</span> <small id="pjTime"></small> &#9662;</button>'+
-   '<div id="pjMenu"><div class="mh">'+esc(SA.pname)+'</div><button onclick="SA.saveNow()">&#128190; Simpan sekarang</button><button onclick="SA.downloadProj()">&#8681; Unduh file proyek (.dh3d)</button><button onclick="SA.reopen()">&#8679; Import ulang (data lain dipertahankan)</button>'+
-   '<div class="hint">Pekerjaan (string, plan bor, model vein, titik survey, block model, pengaturan tampilan) tersimpan otomatis di browser ini. Unduh file proyek untuk cadangan atau dibuka di komputer lain.</div></div>';
+   '<div id="pjMenu"><div class="mh">'+esc(SA.pname)+'</div><button onclick="SA.saveNow()">&#128190; Simpan sekarang</button><button onclick="SA.downloadProj()">&#8681; Simpan salinan proyek (.dh3d)&hellip;</button><button onclick="SA.reopen()">&#8679; Import ulang (data lain dipertahankan)</button>'+
+   '<div class="hint">Pekerjaan (string, plan bor, model vein, titik survey, block model, pengaturan tampilan) tersimpan otomatis di browser ini. Simpan salinan proyek (.dh3d) untuk cadangan atau dibuka di komputer lain.</div></div>';
   tb.parentNode.insertBefore(w,tb.nextSibling);document.addEventListener('click',function(e){if(!e.target.closest||!e.target.closest('#pjWrap'))E('pjMenu').style.display='none';});};
 SA.pjMenu=function(){var m=E('pjMenu');m.style.display=m.style.display==='block'?'none':'block';};
-SA.saveNow=async function(){E('pjMenu').style.display='none';var ok=await SA.saveWork();alert(ok?'Proyek tersimpan di browser.':'Gagal menyimpan (penyimpanan browser penuh atau diblokir). Gunakan Unduh file proyek.');};
+SA.saveNow=async function(){E('pjMenu').style.display='none';var ok=await SA.saveWork();alert(ok?'Proyek tersimpan di browser.':'Gagal menyimpan (penyimpanan browser penuh atau diblokir). Gunakan Simpan salinan proyek (.dh3d).');};
 SA.reopen=async function(){E('pjMenu').style.display='none';if(!confirm('Halaman import akan dibuka untuk proyek "'+SA.pname+'".\n\nHanya data yang Anda pilih yang diganti (database, topografi, desain pit, orthofoto, block model). Data yang tidak dipilih tetap dipertahankan; topografi / pit / orthofoto lama tetap tersimpan sebagai versi.\n\nUntuk proyek di folder, lebih aman memakai menu Data Spasial dan Tambah / perbarui data bor (upsert). Lanjutkan?'))return;await SA.saveWork();try{sessionStorage.setItem('gcex_reopen',SA.pname);}catch(e){}(window.FP&&(FP._reloading=1),location.reload());};
 function encTA(k,v){if(v&&typeof v==='object'&&ArrayBuffer.isView(v)){var u=new Uint8Array(v.buffer,v.byteOffset,v.byteLength),s='';for(var i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return{__ta:v.constructor.name,b:btoa(s)};}return v;}
 function decTA(k,v){if(v&&typeof v==='object'&&v.__ta&&typeof v.b==='string'){var s=atob(v.b),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);var C=window[v.__ta]||Uint8Array;return C===Uint8Array?u:new C(u.buffer);}return v;}
@@ -13111,7 +13136,7 @@ SA.listProj=async function(){var keys=await idbKeys(),P=[],last=await idbGet('la
   P.sort(function(a,b){return(b.work&&b.work.date||b.date)>(a.work&&a.work.date||a.date)?1:-1;});var box=E('pjList');
   box.innerHTML=P.length?P.map(function(r){var d=new Date((r.work&&r.work.date)||r.date),n=JSON.stringify(r.name);
     return '<div class="fi pj'+(r.name===last?' cur':'')+'"><div class="nm"><b>'+esc(r.name)+'</b><small>'+r.data.collars.length+' hole &middot; '+(r.data.orthoImg?'orthofoto &middot; ':'')+(r.work?((r.work.dg||[]).length+' string, '+((r.work.plan&&r.work.plan.h)||[]).length+' titik plan'+(r.work.hasBm?', block model':'')+(r.work.hasBx?', block model '+esc(r.work.bxName||''):'')+(r.work.nMd&&(r.work.nMd[0]+r.work.nMd[1])?', '+r.work.nMd[0]+' model, '+r.work.nMd[1]+' set titik':'')+' &middot; '):'')+'disimpan '+d.toLocaleString()+'</small></div>'+
-      '<div class="pjb"><button class="ib sm" onclick=\'SA.openProj('+esc(n)+')\'>Buka</button><button class="ib sm ghost2" onclick=\'SA.downloadProj('+esc(n)+')\' title="Unduh file proyek">&#8681;</button><button class="ib sm ghost2" onclick=\'SA.delProj('+esc(n)+')\' title="Hapus">&times;</button></div></div>';}).join(''):'<div class="hint2">Belum ada proyek tersimpan di browser ini.</div>';};
+      '<div class="pjb"><button class="ib sm" onclick=\'SA.openProj('+esc(n)+')\'>Buka</button><button class="ib sm ghost2" onclick=\'SA.downloadProj('+esc(n)+')\' title="Simpan salinan proyek (.dh3d)">&#8681;</button><button class="ib sm ghost2" onclick=\'SA.delProj('+esc(n)+')\' title="Hapus">&times;</button></div></div>';}).join(''):'<div class="hint2">Belum ada proyek tersimpan di browser ini.</div>';};
 
 
 SA.planFmt=function(){var b=E('plNameEx');if(!b||E('plFmt'))return;var w=document.createElement('div');w.className='f';var v='{BENCH}_{NO}';try{v=localStorage.getItem('dh3d_plfmt')||v;}catch(e){}
@@ -13459,7 +13484,7 @@ FP.loadSrc=async function(src,data,say){var r=await FP.findFile(src.name,src.siz
     var m=await SA.mdlRun(f,H,st,data.topoData||[],data.pitData||[],say,function(){return SA.mdlStop;});return{m:m,path:r.path};}
   var R=await SA.readBMcsv(f),cfg=src.cfg;['x','y','z'].forEach(function(a){if(cfg['s'+a]<0&&window.bxInfer)cfg['s'+a+'v']=bxInfer(R,cfg[a]);});return{m:SA.buildBM(R,cfg),path:r.path};};
 /* ---------- membuka folder ---------- */
-FP.pick=async function(){if(!FP.ok()){alert('Browser ini belum mendukung folder proyek. Pakai Microsoft Edge atau Google Chrome versi terbaru di komputer (bukan HP). Sementara itu gunakan "Unduh file proyek (.dh3d)".');return;}
+FP.pick=async function(){if(!FP.ok()){alert('Browser ini belum mendukung folder proyek. Pakai Microsoft Edge atau Google Chrome versi terbaru di komputer (bukan HP). Sementara itu gunakan "Simpan salinan proyek (.dh3d)".');return;}
   var d;try{d=await window.showDirectoryPicker({id:'gcex-proyek',mode:'readwrite'});}catch(e){return;}await FP.use(d);};
 FP.reconnect=async function(){var d=await idbGet('fpDir');if(!d){FP.pick();return;}if(!(await FP.perm(d,true))){msg('Izin folder ditolak.',true);return;}await FP.use(d);};
 FP.use=async function(d){if(!(await FP.perm(d,true))){msg('Izin baca-tulis folder ditolak.',true);return;}await idbPut('fpDir',d);FP.askUser();
@@ -13545,7 +13570,7 @@ FP.menu=async function(){var m=E('pjMenu');if(!m)return;if(FP.dir)await FP.srcSt
   H+=FP.dir?(FP.err?'<button onclick="FP.reconnectViewer()">&#128279; Hubungkan lagi ke folder</button>':'')+'<button onclick="FP.restoreUI()">&#9100; Pulihkan dari backup&hellip;</button>':'<button onclick="FP.connectViewer()">&#128193; Simpan ke folder proyek&hellip;</button>';
   if(FP.dir&&s)H+=FP.srcIn?'<div class=fpst>Block model sumber: <b>'+esc(FP.srcIn)+'</b> &#10003;</div>':(SA.srcFiles[s.name]?'<button onclick="FP.copySrc()"'+(FP.copying?' disabled':'')+'>&#8679; Salin file block model ke folder ('+esc(s.name)+')</button>':'<div class=fpst><span class=warn>File block model '+esc(s.name)+' belum ada di folder proyek.</span></div>');
   if(FP.dir)H+='<label class=fpchk><input type=checkbox '+(FP.exp?'checked':'')+' onchange="FP.exp=this.checked"> Salin setiap export ke folder proyek/export</label>';
-  H+='<button onclick="SA.downloadProj()">&#8681; Unduh file proyek (.dh3d)</button>'+(FP.dir?'<button onclick="E(\'pjMenu\').style.display=\'none\';uiTab(\'SP\')">&#8679; Ganti topografi / pit / orthofoto / block model</button>':'<button onclick="SA.reopen()">&#8679; Import ulang (data lain dipertahankan)</button>')+''+(FP.dir?'<button onclick="FP.detach()">&#10005; Lepas folder proyek</button>':'');
+  H+='<button onclick="SA.downloadProj()">&#8681; Simpan salinan proyek (.dh3d)&hellip;</button>'+(FP.dir?'<button onclick="E(\'pjMenu\').style.display=\'none\';uiTab(\'SP\')">&#8679; Ganti topografi / pit / orthofoto / block model</button>':'<button onclick="SA.reopen()">&#8679; Import ulang (data lain dipertahankan)</button>')+''+(FP.dir?'<button onclick="FP.detach()">&#10005; Lepas folder proyek</button>':'');
   H+='<div class="hint">'+(FP.dir?'Simpan otomatis ke folder 3 detik setelah ada perubahan. Backup berversi setiap database / wireframe / hasil estimasi berubah, minimal tiap 10 menit (maks 40 + 1 per hari, 90 hari). Kunci pemakai aktif dan cek konflik antar geologist.':'Simpan proyek di folder drive jaringan / OneDrive / SharePoint agar aman, ter-backup dan bisa dibuka geologist lain (Edge / Chrome).')+'</div>';m.innerHTML=H;};
 /* ---------- jendela awal ---------- */
 FP.startUI=async function(){var c=E('fpCard');if(!c){var pj=E('pjCard');if(!pj)return;c=document.createElement('section');c.className='card';c.id='fpCard';pj.parentNode.insertBefore(c,pj);}
@@ -14304,7 +14329,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.38';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.39';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

@@ -3921,3 +3921,13 @@ kedua kotak turun dari **12 menjadi 3**.
 - Peringatan **atap menembus lantai** (luas yang tebalnya dihitung nol) kini juga muncul di panel Lantai.
 - Beberapa menu diganti namanya supaya sesuai isinya, mis. **Buka daftar poligon as-mined flitch ini** (dulu *Register as-mined flitch ini*: menu ini hanya membuka daftar, tidak mengubah dig block menjadi as-mined) dan **Simpan salinan proyek (.dh3d)…** (dulu *Unduh file proyek*).
 - Angka tonase tidak berubah.
+
+## 129. Drillhole 0.24.39 — node "Import Wireframe Geologi"
+
+- Semua wireframe / solid geologi (Leapfrog `.msh` / `.obj`, Surpac `.dtm` + `.str`, DXF) diimport di **satu** tempat: node **Import Wireframe Geologi** di Project Tree (di bawah Data Spasial). Klik kanan node › *Import wireframe geologi…*, atau pilih node lalu pakai tombol di panelnya.
+- Setiap berkas muncul sebagai anak node, **berurutan sesuai urutan import**. Centang = tampil di 3D.
+- Menjadikan wireframe domain: klik kanan berkasnya —
+  - *Serap jadi domain yang bisa diedit (Mode B)…* — jadi string HW/FW + solid RBF, ikut diperbarui saat ada bor baru;
+  - *Iris jadi string / flag interval bor* — membuka Geomodeller Vein dengan wireframe ini terpilih;
+  - *Kunci domain … ke wireframe ini* (Mode A) — batas EKSAK untuk audit; *Lepaskan …* untuk kembali ke solid RBF.
+- Tombol / menu import wireframe di tempat lain sudah dihapus (Data referensi, Reporting BM, Geomodeller Vein). Reporting BM tetap bisa memakai wireframe yang sudah diimport sebagai *Batas DTM tambahan*.
