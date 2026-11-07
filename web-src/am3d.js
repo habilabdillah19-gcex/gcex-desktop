@@ -53,7 +53,7 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
      gabungan" di node Rekap, dan "Block model as-mined (.mdl)" di node tersendiri) -- padahal
      berkas yang dihasilkan sama persis. */
   h+='<div class=hint style="margin-top:4px">Export .mdl / CSV gabungan ada di <b>Register &amp; Laporan As-Mined &rsaquo; Ekspor As-Mined</b>.'+
-     (mdlOk?'':' Export .mdl aktif bila block model dibuka dari file .mdl; untuk block model CSV pakai Rekap gabungan (CSV).')+'</div>';
+     (mdlOk?'':' Export .mdl aktif bila block model dibuka dari file .mdl; untuk block model CSV pakai Sub-blok as-mined semua flitch (CSV).')+'</div>';
   h+='<div class=hint>'+(AM3.msg?AM3.msg+' ':'')+'Model gabungan = semua sub-blok as-mined dari semua flitch (sub-blok yang sama dari run berbeda diambil yang terakhir).'+'</div></div>';return h;}
 (function(){var _p=amPanel;amPanel=function(){var r=_p.apply(this,arguments);try{var el=$('amBody');if(!el||!BX.m)return r;var sec=el.querySelector('.uisec[data-k="5"]');var host=sec||el;var d=document.createElement('div');d.innerHTML=am3Box();host.appendChild(d.firstChild);}catch(e){console.error(e);}return r;};})();
 (function(){var st=document.createElement('style');st.textContent='#amBody .am3box{margin-top:10px;padding:7px 8px;border:1px solid var(--bd);border-left:4px solid var(--pr);border-radius:6px;background:var(--sf2)}'+

@@ -56,6 +56,23 @@ function amFlTxt(I){var x=I.x,s=I.st,out='',B=[x.top,x.bot],t=0.5;
   if(s&&s.fl){out+=s.fl.none?' &middot; <span class=warn title="Titik pick-up di dalam / sekitar poligon kurang dari 3: lantai = RL bawah flitch">lantai = RL bawah ('+s.fl.n+' titik)</span>':' &middot; <span title="Lantai pick-up: '+s.fl.n+' titik, RL '+s.fl.min.toFixed(2)+'&ndash;'+s.fl.max.toFixed(2)+'">lantai '+s.fl.med.toFixed(2)+'</span>';
     if(s.v>0&&I.area>0)out+=' &middot; tebal '+(s.v/I.area).toFixed(2)+' m';}
   return out;}
+/* ---------- laporan titik LANTAI (selaras amRoofStat) ----------
+   Tanpa laporan ini, titik lantai di luar pita dibuang diam-diam dan poligonnya jatuh ke RL bawah
+   nominal: tonase berubah tanpa satu pun tanda. Dihitung dari pita yang SAMA dengan amFloorPts. */
+function amFloorStat(B){var D=amD(),P=D.pts||[],F=amFloorPar(B),lo=B[1]-F.dn,hi=Math.min(B[0]-0.05,B[1]+F.up),n=0,bw=0,ab=0,nz=0;
+  P.forEach(function(q){if(!isFinite(q.z)){nz++;return;}if(q.z<lo)bw++;else if(q.z>hi)ab++;else n++;});
+  var pol=0,jatuh=[];try{amBndCur().forEach(function(x){if(!x.on)return;pol++;if(x.st&&x.st.fl&&x.st.fl.none)jatuh.push(x);});}catch(e){}
+  return{n:P.length,nPita:n,bw:bw,ab:ab,nz:nz,lo:lo,hi:hi,pol:pol,jatuh:jatuh};}
+function amFloorWarn(B){var R=amR();if(R.floor!=='pickup')return '';var D=amD(),S=amFloorStat(B),h='';
+  if(!S.n)return '<div class=hint><span class=warn>Mode &ldquo;Ikuti lantai pick-up&rdquo; aktif, tetapi belum ada titik pick-up LANTAI: semua poligon memakai RL bawah nominal '+lyFmt(B[1])+'.</span></div>';
+  h+='<div class=hint id=amFloorStat>'+S.n.toLocaleString()+' titik lantai, <b>'+S.nPita.toLocaleString()+'</b> di dalam pita RL '+S.lo.toFixed(2)+'&ndash;'+S.hi.toFixed(2);
+  var luar=S.bw+S.ab+S.nz;
+  if(luar)h+=' &middot; <span'+(S.nPita?'':' class=warn')+'>'+luar.toLocaleString()+' tidak dipakai ('+[S.bw?S.bw.toLocaleString()+' di bawah pita':'',S.ab?S.ab.toLocaleString()+' di atas pita':'',S.nz?S.nz.toLocaleString()+' tanpa Z':''].filter(Boolean).join(', ')+')</span>';
+  h+='</div>';
+  if(!S.nPita)h+='<div class=hint><span class=warn>Tidak satu pun titik lantai jatuh di pita elevasi flitch ini, jadi semua poligon memakai RL bawah nominal '+lyFmt(B[1])+'.</span> Kemungkinan titiknya dari flitch lain, kolom koordinatnya tertukar, atau pitanya terlalu sempit (Setelan lanjutan).</div>';
+  else if(S.jatuh.length)h+='<div class=hint><span class=warn>'+S.jatuh.length+' dari '+S.pol+' poligon punya &lt; 3 titik lantai di dalam / dekat poligon</span> &mdash; lantainya memakai RL bawah nominal '+lyFmt(B[1])+': '+S.jatuh.slice(0,6).map(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}return amE((I&&I.code)||x.name||x.id);}).join(', ')+(S.jatuh.length>6?', &hellip;':'')+'.</div>';
+  if(window.AM&&AM.jepit&&AM.jepit.a>0.01)h+='<div class=hint><span class=warn>Perhitungan terakhir: '+AM.jepit.a.toFixed(1)+' m&sup2; luas yang atapnya berada di bawah / sama dengan lantai</span> &mdash; tebalnya dihitung NOL di situ. Itu underdig nyata, atau titik pick-up lantai / atap dari hari atau flitch yang salah. Periksa sebelum angkanya dilaporkan.</div>';
+  return h;}
 function amFloorBox(){var D=amD(),R=amR(),B=lyBench(),fh=B[0]-B[1],F=amFloorPar(B),has=(D.pts||[]).length>0,S=has?amPStat():null;
   var sel=function(v,opts,on){return '<select onchange="'+on+'">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(String(o[0])===String(v)?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';};
   var h='<div class=amset id=amFloorBox><div class=amst><b>Elevasi pick-up &amp; lantai</b></div>';
@@ -64,7 +81,7 @@ function amFloorBox(){var D=amD(),R=amR(),B=lyBench(),fh=B[0]-B[1],F=amFloorPar(
       '<div class=amzc>'+AMPC.map(function(c){return S.c[c[0]]?'<span><i style="background:'+c[2]+'"></i>'+c[1]+' <b>'+S.c[c[0]].toLocaleString()+'</b></span>':'';}).join('')+'</div>';}
   h+='<div class=g2 style="margin-top:4px"><div><label>Import boundary masuk ke</label>'+sel(R.bndZ||'active',[['active','Flitch aktif (abaikan Z)'],['auto','Flitch menurut elevasi string']],"amRSet('bndZ',this.value)")+'</div>'+
     '<div><label>Volume as-mined</label>'+sel(R.floor||'flitch',[['flitch','Tebal flitch penuh'],['pickup','Ikuti lantai pick-up']],"amRSet('floor',this.value);amAuto()")+'</div></div>';
-  if(R.floor==='pickup'){h+='<details class=amadv><summary>Setelan lanjutan (pita, jarak, kode titik)</summary><div class=g3 style="margin-top:4px"><div><label>Lantai s/d bawah RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.dn)+'" onchange="amRSet(\'flDn\',this.value);amAuto()"></div>'+
+  if(R.floor==='pickup'){h+=amFloorWarn(B)+'<details class=amadv><summary>Setelan lanjutan (pita, jarak, kode titik)</summary><div class=g3 style="margin-top:4px"><div><label>Lantai s/d bawah RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.dn)+'" onchange="amRSet(\'flDn\',this.value);amAuto()"></div>'+
       '<div><label>s/d atas RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.up)+'" onchange="amRSet(\'flUp\',this.value);amAuto()"></div><div><label>Jarak dari poligon (m)</label><input type=number step=any min=0 value="'+amE(F.buf)+'" onchange="amRSet(\'flBuf\',this.value);amAuto()"></div></div>'+
       '<div style="margin-top:4px"><label>Hanya kode / ID titik (opsional, mis. TOE|FLOOR)</label><input type=text value="'+amE(F.code)+'" placeholder="semua titik" onchange="amRSet(\'flCode\',this.value);amAuto()"></div>'+
       '<div class=hint>Lantai tiap poligon diinterpolasi dari titik pick-up di dalam / &le; '+F.buf+' m dari poligon dengan Z antara RL '+(B[1]-F.dn).toFixed(2)+' dan '+Math.min(B[0]-0.05,B[1]+F.up).toFixed(2)+'. Tonase = dari lantai aktual sampai RL atas '+lyFmt(B[0])+': lantai lebih rendah (overdig) ikut terhitung, lebih tinggi (underdig) dikurangi. Poligon dengan &lt; 3 titik memakai RL bawah flitch.</div></details>';}

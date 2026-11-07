@@ -3914,3 +3914,10 @@ kedua kotak turun dari **12 menjadi 3**.
 - AI diminta langsung menulis bacaan terbaik tiap sel dan menandai yang ragu dengan **?** (disorot kuning) — tidak berlama-lama "berpikir".
 - **Kamus site** (lihat di **Template**): nilai yang sudah Anda verifikasi ≥ 2 kali (mis. asal material, tujuan, keterangan) dipakai AI sebagai ejaan acuan; bacaan yang mirip dirapikan otomatis dan ditandai kuning. Makin banyak baris diverifikasi, makin tepat.
 - **ROM / Crusher & Loading Ore**: versi borang dengan urutan kolom kelas berbeda (mis. SCAT paling kanan) kini dipetakan benar — periksa isian **Urutan kolom kelas** di header.
+
+## 128. Block Model 0.24.37 — laporan titik lantai As-Mined & nama menu
+
+- **Panel Lantai** (As-Mined › Flitch, poligon, lantai & atap, mode *Ikuti lantai pick-up*) kini menyebut berapa titik lantai yang dipakai dan berapa yang dibuang karena di luar pita elevasi. Bila tidak satu pun titik jatuh di pita, atau ada poligon dengan < 3 titik lantai, muncul peringatan kuning: poligon itu memakai RL bawah nominal.
+- Peringatan **atap menembus lantai** (luas yang tebalnya dihitung nol) kini juga muncul di panel Lantai.
+- Beberapa menu diganti namanya supaya sesuai isinya, mis. **Buka daftar poligon as-mined flitch ini** (dulu *Register as-mined flitch ini*: menu ini hanya membuka daftar, tidak mengubah dig block menjadi as-mined) dan **Simpan salinan proyek (.dh3d)…** (dulu *Unduh file proyek*).
+- Angka tonase tidak berubah.
