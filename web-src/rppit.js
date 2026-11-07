@@ -290,6 +290,12 @@
     return [{
       id: 'rep.x', t: 'Per desain pit & progres topo-ke-topo', ic: 'pit', b: b,
       hint: 'Beberapa desain pit sekaligus dengan topografi yang sama, dan tonase × kadar material tergali antara dua survei topografi',
+      /* Node ini punya PANEL sendiri (bagian "Pit & progres" di Reporting), bukan sekadar perintah.
+         Tanpa `tab`, Project Tree menganggapnya node aksi dan memunculkan kartu tombol -- padahal
+         RPX.open() memang membuka panelnya, hanya saja kartu itu menutupinya. Akibatnya tombol
+         birunya terlihat seperti tidak melakukan apa-apa, lalu judul panel kembali ke "Reporting
+         (constraint)" begitu panelnya menggambar ulang. Dengan `tab`, panelnya yang tampil. */
+      tab: 'Rep',
       go: function () { RPX.open(); },
       menu: function () {
         return [{ t: 'Laporan per desain pit', fn: function () { RPX.mode = 'pit'; RPX.open(); } },
