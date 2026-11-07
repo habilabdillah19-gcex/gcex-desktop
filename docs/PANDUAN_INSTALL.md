@@ -3859,3 +3859,11 @@ Setelan halus — pita ke atas / ke bawah RL, buffer dari poligon, pola kode tit
 elevasi — dipindah ke balik satu baris **Setelan lanjutan**. Yang tersisa langsung terlihat hanya
 pilihan yang dipakai harian. Terukur dari panel yang tergambar: kendali yang langsung terlihat di
 kedua kotak turun dari **12 menjadi 3**.
+
+## 121. DB-Ex 0.42.9 — perbaikan galat Borang "Jawaban model bukan JSON"
+
+- Penyebab: dengan bentuk JSON yang dipaksa (0.42.8), sebagian model / versi Ollama mengembalikan jawaban **kosong**, atau model tetap "berpikir" sampai batas token habis sebelum sempat menjawab.
+- Sekarang DB-Ex selalu meminta model tidak berpikir (`think: false`), dan bila jawaban kosong / tak terbaca, otomatis **mengulang sekali tanpa format paksa** (baris teks `H|` / `R|`).
+- Bila tetap gagal, pesan galat menyebut penyebabnya, mis. *jawaban kosong (selesai: length, 2500 token, berpikir 9000 karakter)* — artinya model kehabisan token karena berpikir — beserta lokasi jawaban mentah `_GCEx_Core\borang\ai_mentah\<nomor>.txt`. Kirim pesan / file itu ke admin.
+- Disarankan memperbarui Ollama ke versi terbaru (unduh ulang installer Ollama) supaya `think: false` dan format JSON berjalan benar untuk `qwen3-vl`.
+

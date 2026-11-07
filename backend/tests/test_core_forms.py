@@ -477,9 +477,19 @@ def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
         if url.endswith(("/api/show", "/api/ps")):
             return {}
         calls.append(body)
-        if "h" in body["format"]["properties"]:  # skema ringkas: model (tiruan) tetap menjawab ngawur
-            return {"message": {"content": "Maaf, tulisan tidak jelas."}}
-        return {"message": {"content": json.dumps({"header": {}, "rows": [{"sample_id": "S_020", "from_m": "0", "to_m": "1", "ragu": []}]})}}
+        if "format" in body:  # sebagian model + Ollama: content kosong bila format dipaksa
+            return {"message": {"content": ""}, "done_reason": "stop", "eval_count": 3}
+        return {"message": {"content": "R|XX-3|05-11-26|S_020|0|1||||||"}}
     monkeypatch.setattr(cf.core_io, "_http", fake)
     cf.ai_read(s, did, "http://x", "m")
-    assert len(calls) == 2 and "rows" in calls[1]["format"]["properties"] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"
+    assert len(calls) == 2 and "format" not in calls[1] and "R|hole_id|" in calls[1]["messages"][0]["content"] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"
+
+
+def test_galat_menyebut_penyebab(st, monkeypatch):
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
+    monkeypatch.setattr(cf.core_io, "_http", lambda url, body=None, timeout=5.0: {} if url.endswith(("/api/show", "/api/ps"))
+                        else {"message": {"content": "", "thinking": "hmm"}, "done_reason": "length", "eval_count": 2500})
+    with pytest.raises(ValueError, match=r"jawaban kosong \(selesai: length, 2500 token, berpikir 3 karakter\)"):
+        cf.ai_read(s, did, "http://x", "m")
+    assert cf.doc(s, did)["status"] == "error"

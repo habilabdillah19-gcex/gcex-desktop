@@ -757,13 +757,25 @@ def ai_schema_compact(ftype: str) -> dict:
     return {"type": "object", "required": req, "properties": props}
 
 
-def ai_prompt(ftype: str, extra: str = "") -> str:
+def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
     """Perintah baca borang dengan jawaban RINGKAS: satu baris teks per baris tabel, nilai dipisah '|'.
     Dibanding JSON (nama field diulang di setiap baris) jumlah token jawaban kira-kira 3-4x lebih sedikit, dan pada
     komputer tanpa GPU waktu baca terutama ditentukan oleh panjang jawaban."""
     t = TYPES[ftype]
     hk = [k for k, _l, _t in t["header"]]
     rk = [k for k, _l, _t in t["rows"]]
+    if mode == "teks":  # cadangan tanpa format Ollama: satu baris teks per baris tabel, nilai dipisah '|'
+        lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
+                 "Jawab HANYA dengan baris-baris berikut, tanpa penjelasan:",
+                 "H|" + "|".join(hk) + "   <- satu baris header",
+                 "R|" + "|".join(rk) + "   <- satu baris per baris tabel yang terisi, urut dari atas"]
+        for tt in (t.get("tables") or {}).values():
+            lines.append(f"{tt['ai'].upper()}|" + "|".join(k for k, _l, _t in tt["rows"]) + f"   <- satu baris per baris {tt['name']}")
+        lines += ["Ganti nama kolom dengan NILAI yang tertulis. Sel kosong dibiarkan kosong di antara dua '|'.",
+                  "Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?'."]
+        if extra and extra.strip():
+            lines.append(f"Catatan pengguna: {extra.strip()}")
+        return "\n".join(lines)
     lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
              "Jawab JSON ringkas: daftar nilai berurutan, TANPA nama kolom.",
              '"h": [' + ", ".join(hk) + "]   <- nilai header sesuai urutan itu",
@@ -892,14 +904,9 @@ def _can_think(host: str, model: str) -> bool:
     """Model 'berpikir' (mis. qwen3-vl) menulis penalaran panjang sebelum menjawab: pada CPU itu memakan sebagian besar
     waktu baca borang. Membaca tabel tulisan tangan tidak butuh penalaran itu, jadi dimatikan (think=false) bila modelnya
     mendukung. Hasil /api/show disimpan per sesi."""
-    k = (host, model)
-    if k not in _THINK:
-        try:
-            caps = core_io._http(host + "/api/show", {"model": model}, timeout=10).get("capabilities") or []
-            _THINK[k] = "thinking" in caps
-        except Exception:  # noqa: BLE001 - Ollama lama / tanpa /api/show: kirim tanpa parameter think
-            _THINK[k] = False
-    return _THINK[k]
+    # Selalu dikirim (kecuali Ollama pernah menolaknya, lihat ai_read): daftar 'capabilities' Ollama tidak selalu
+    # mencantumkan 'thinking' untuk qwen3-vl, padahal model tetap berpikir dan menghabiskan batas token -> jawaban kosong.
+    return _THINK.get((host, model), True)
 
 
 N_PREDICT = 2500
@@ -924,6 +931,26 @@ def gpu_share(host: str, model: str) -> Optional[float]:
         if str(m.get("name") or m.get("model") or "").split(":")[0] == model.split(":")[0] and m.get("size"):
             return round(100.0 * float(m.get("size_vram") or 0) / float(m["size"]), 0)
     return None
+
+
+def _try_parse(ftype: str, msg: dict) -> Optional[dict]:
+    """Isi borang dari jawaban Ollama (content, lalu content + thinking); None bila tidak ada baris / header terbaca."""
+    for txt in (msg.get("content") or "", (msg.get("thinking") or "") + "\n" + (msg.get("content") or "")):
+        try:
+            res = parse_ai_text(ftype, txt)
+        except ValueError:
+            continue
+        if res.get("rows") or any(v for k, v in (res.get("header") or {}).items() if k != "ragu") \
+                or any(isinstance(v, list) and v for k, v in res.items() if k not in ("rows", "header")):
+            return res
+    return None
+
+
+def _why_empty(j: dict) -> str:
+    m = j.get("message") or {}
+    c = (m.get("content") or "").strip()
+    return (("jawaban kosong" if not c else f"«{c[:80]}»") + f" (selesai: {j.get('done_reason') or '?'}, "
+            f"{j.get('eval_count') or 0} token" + (f", berpikir {len(m['thinking'])} karakter" if m.get("thinking") else "") + ")")
 
 
 def _save_raw(s: Store, did: int, msg: dict) -> None:
@@ -962,22 +989,23 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             raise RuntimeError("Ollama: " + str(j["error"]))
         msg = j.get("message") or {}
         _save_raw(s, did, msg)
-        try:
-            res = parse_ai_text(d["type"], msg.get("content") or "")
-        except ValueError:
-            try:  # model yang tetap 'berpikir': jawaban kadang tertulis di bagian thinking, content kosong / terpotong
-                res = parse_ai_text(d["type"], (msg.get("thinking") or "") + "\n" + (msg.get("content") or ""))
-            except ValueError:
-                # cadangan: ulangi sekali dengan format JSON berskema (lebih lambat, tetapi bentuk jawabannya dipaksa Ollama)
-                body2 = dict(body, format=ai_schema(d["type"]),
-                             options=dict(body["options"], num_predict=N_PREDICT * 2, num_ctx=min(16384, body["options"]["num_ctx"] + N_PREDICT)))
-                body2["messages"] = [dict(body["messages"][0], content=prompt.split("Jawab JSON ringkas")[0]
-                                          + "Jawab dalam JSON sesuai skema (header, rows, catatan).")]
-                j = core_io._http(host + "/api/chat", body2, timeout=timeout)
-                if j.get("error"):
-                    raise RuntimeError("Ollama: " + str(j["error"]))
-                _save_raw(s, did, j.get("message") or {})
-                res = core_io._parse_json((j.get("message") or {}).get("content", ""))
+        res = _try_parse(d["type"], msg)
+        if res is None:
+            # Jawaban kosong / tak terbaca dengan format JSON yang dipaksa (sebagian model + versi Ollama mengembalikan
+            # content kosong bila 'format' dipakai): ulangi SEKALI tanpa format, perintah baris teks H| / R|.
+            why = _why_empty(j)
+            body2 = {k: v for k, v in body.items() if k != "format"}
+            body2["messages"] = [dict(body["messages"][0], content=ai_prompt(d["type"], extra, "teks"))]
+            j = core_io._http(host + "/api/chat", body2, timeout=timeout)
+            if j.get("error"):
+                raise RuntimeError("Ollama: " + str(j["error"]))
+            msg = j.get("message") or {}
+            _save_raw(s, did, msg)
+            res = _try_parse(d["type"], msg)
+            if res is None:
+                raise ValueError("AI tidak memberi isian borang yang bisa dibaca. Percobaan 1 (JSON): " + why
+                                 + " · percobaan 2 (teks): " + _why_empty(j)
+                                 + ". Jawaban mentah: _GCEx_Core\\borang\\ai_mentah\\" + f"{did}.txt")
     except Exception as e:  # noqa: BLE001 - TIDAK ada data tiruan: borang tetap kosong & galat dicatat
         with s.lock, s.conn() as c:
             c.execute("UPDATE docs SET status='error', error=? WHERE id=?", (str(e)[:500], did))
