@@ -89,6 +89,8 @@ class MainWindow(QMainWindow):
         for x in (k, b, self.prj):
             br.addWidget(x)
         h.addLayout(br)
+        h.addSpacing(18)
+        self.topH = h
         h.addStretch(1)
         # ruang kerja: Core box (foto core) | Singkapan (foto singkapan / trenching hasil mapping)
         self.bModeCore = btn("Core box", "Interpretasi foto core box", sm=True)
@@ -279,6 +281,8 @@ class MainWindow(QMainWindow):
         from .forms import FormsPage
         self.forms = FormsPage(self)
         self.stack.addWidget(self.forms)
+        self.topH.insertWidget(2, self.forms.nav)  # Borang | Riwayat | Template | Pengaturan | Bantuan (hanya mode Borang)
+        self.forms.nav.hide()
         from .qaqc import QaqcPage
         self.qaqc = QaqcPage(self)
         self.stack.addWidget(self.qaqc)
@@ -529,6 +533,7 @@ class MainWindow(QMainWindow):
         self.bModeOc.setChecked(mode == "oc")
         self.bModeForm.setChecked(mode == "form")
         self.bModeQa.setChecked(mode == "qa")
+        self.forms.nav.setVisible(mode == "form" and bool(self.folder))
         if not self.folder:
             return
         oc = mode != "core"

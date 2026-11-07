@@ -42,7 +42,7 @@ def _open_forms(qtbot, prj, tmp_path, monkeypatch):
     w.set_mode("form")
     pg = w.forms
     assert w.stack.currentWidget() is pg and not w.fbar.isVisible() and w.bModeForm.isChecked()
-    assert pg.cbNew.count() == 4 and pg.lst.count() == 0
+    assert pg.cbNew.count() == 8 and pg.cbNew.itemData(0) == "auto" and pg.lst.count() == 0
     src = _scan(tmp_path)
     monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
     pg.cbNew.setCurrentIndex(pg.cbNew.findData("ore"))

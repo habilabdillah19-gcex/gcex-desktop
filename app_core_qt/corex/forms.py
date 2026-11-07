@@ -14,7 +14,7 @@ from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QMenu, QProgressBar,
                                QLineEdit, QListWidget, QListWidgetItem, QRadioButton, QScrollArea, QSplitter, QStyledItemDelegate, QTableWidget,
-                               QTableWidgetItem, QTabWidget, QToolButton, QVBoxLayout, QWidget)
+                               QPushButton, QStackedWidget, QTableWidgetItem, QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
 from . import api, theme
 from .card import _esc, btn
@@ -22,12 +22,17 @@ from .dialogs import ask, say
 from .util import SET, log, run_bg, show_in_folder
 from .viewer import Viewer
 
-SHORT = {"ore": "Loading pit", "rom": "ROM / crusher", "ddr": "Daily Drilling Report", "rc": "RC Drill"}
-FILE = {"ore": "Ore_Loading_Pit", "rom": "Ore_ROM_Crusher", "ddr": "RC_Daily_Drilling_Report", "rc": "RC_Drill"}
+SHORT = {"ore": "Loading pit", "rom": "ROM / crusher", "ddr": "Daily Drilling Report", "rc": "RC Drill", "map": "Geological Mapping",
+         "chn": "Channel Sampling", "dpr": "Drill Progress Report"}
+FILE = {"ore": "Ore_Loading_Pit", "rom": "Ore_ROM_Crusher", "ddr": "RC_Daily_Drilling_Report", "rc": "RC_Drill", "map": "Geological_Mapping",
+        "chn": "Channel_Sampling", "dpr": "Drill_Progress_Report"}
 MULTI = {"ddr"}  # borang dengan beberapa tabel: ekspor CSV = ZIP berisi satu CSV per tabel
 UNC_BG, BAD_BG, VER_BG = "#fff3bf", "#ffe3e3", "#e6f4ea"
-TYPE_ICON = {"ore": "⛏", "rom": "⇄", "ddr": "▤", "rc": "▦"}
-TYPE_LABEL = {"ore": "Ore Spotter (Loading Pit)", "rom": "Ore ke Stockpile / Crusher", "ddr": "Daily Drilling Report", "rc": "RC Drill Logging"}
+TYPE_ICON = {"auto": "✦", "ore": "⛏", "rom": "⇄", "ddr": "▤", "rc": "▦", "map": "⌖", "chn": "┇", "dpr": "▲"}
+TYPE_LABEL = {"auto": "Auto Detect (Rekomendasi)", "ore": "Ore Spotter (Loading Pit)", "rom": "Ore ke Stockpile / Crusher",
+              "ddr": "Daily Drilling Report", "rc": "RC Drill Logging", "map": "Geological Mapping", "chn": "Channel Sampling",
+              "dpr": "Drill Progress Report"}
+NAV = [("Borang", "▣"), ("Riwayat", "↺"), ("Template", "▤"), ("Pengaturan", "⚙"), ("Bantuan", "?")]
 EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp", ".pdf")
 # status di daftar file: (teks, warna titik)
 ST = {"run": ("Memproses", "#2f6fd6"), "queue": ("Dalam antrean", "#8a94a3"), "err": ("AI gagal", "#c0392b"),
@@ -179,7 +184,30 @@ class FormsPage(QWidget):
         """Tata letak (0.43.0): kiri = jenis borang, tombol tambah, daftar file berstatus; tengah = scan dengan bilah zoom;
         kanan = tab Data (status ekstraksi, header, tabel, ringkasan) / Validasi / Pivot / Ekspor; bawah = antrean AI."""
         self.setAcceptDrops(True)
-        o = QVBoxLayout(self)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        self.pages = QStackedWidget()
+        root.addWidget(self.pages)
+        work = QWidget()
+        self.pages.addWidget(work)
+        # bilah navigasi (dipasang di bilah atas jendela oleh MainWindow, hanya tampil di mode Borang)
+        self.nav = QFrame()
+        self.nav.setObjectName("fmNav")
+        nh = QHBoxLayout(self.nav)
+        nh.setContentsMargins(0, 0, 0, 0)
+        nh.setSpacing(2)
+        self.navBtns: list[QPushButton] = []
+        for i, (t_, ic) in enumerate(NAV):
+            b_ = QPushButton(f"{ic}  {t_}")
+            b_.setObjectName("fmNavBtn")
+            b_.setCheckable(True)
+            b_.setChecked(i == 0)
+            b_.setCursor(Qt.PointingHandCursor)
+            b_.clicked.connect(lambda _=False, i=i: self.show_page(i))
+            nh.addWidget(b_)
+            self.navBtns.append(b_)
+        o = QVBoxLayout(work)
         o.setContentsMargins(0, 0, 0, 0)
         o.setSpacing(0)
         sp = QSplitter(Qt.Horizontal)
@@ -326,6 +354,10 @@ class FormsPage(QWidget):
         self.lst.currentRowChanged.connect(self._pick)
         QShortcut(QKeySequence(QKeySequence.Delete), self.lst, activated=self.delete_doc, context=Qt.WidgetShortcut)
         self.view.loaded.connect(lambda *_: self._zoom_pct())
+        from .forms_pages import HelpPage, HistoryPage, SettingsPage, TemplatePage
+        self.pgHist, self.pgTpl, self.pgSet, self.pgHelp = HistoryPage(self), TemplatePage(self), SettingsPage(self), HelpPage(self)
+        for w_ in (self.pgHist, self.pgTpl, self.pgSet, self.pgHelp):
+            self.pages.addWidget(w_)
         self.set_enabled(False)
 
     def _bottom_bar(self) -> QWidget:
@@ -602,6 +634,8 @@ class FormsPage(QWidget):
         self.win.toast(m, ms)
 
     def set_enabled(self, on: bool) -> None:
+        for b_ in self.navBtns[1:]:
+            b_.setEnabled(bool(self.folder))
         for w_ in (self.bAdd, self.bAddDir, self.cbNew, self.typeList):
             w_.setEnabled(bool(self.folder))
         for w in (self.bDel, self.bAI, self.tabs):
@@ -630,22 +664,27 @@ class FormsPage(QWidget):
         self.kat = j.get("kategori") or []
         self._katDel.items = self.kat
         self.rootp = j.get("root") or ""
-        cur = self.cbNew.currentData() or SET.get("fmType", "ore")
+        cur = self.cbNew.currentData() or SET.get("fmType", "auto")
+        self.show_page(0)
         self.cbNew.blockSignals(True)
         self.cbNew.clear()
+        self.cbNew.addItem(TYPE_LABEL["auto"], "auto")
         for k, t in self.types.items():
             self.cbNew.addItem(t["name"], k)
         self.cbNew.setCurrentIndex(max(0, self.cbNew.findData(cur)))
         self.cbNew.blockSignals(False)
         self.typeList.blockSignals(True)
         self.typeList.clear()
-        for k, t in self.types.items():
-            it = QListWidgetItem(f"{TYPE_ICON.get(k, '•')}   {TYPE_LABEL.get(k, t['name'])}")
+        for k, nm in [("auto", TYPE_LABEL["auto"])] + [(k, TYPE_LABEL.get(k, t["name"])) for k, t in self.types.items()]:
+            it = QListWidgetItem(f"{TYPE_ICON.get(k, '◇')}   {nm}")
             it.setData(Qt.UserRole, k)
-            it.setToolTip(t["name"])
+            it.setToolTip("Jenis ditebak dari nama file; bila tidak ada petunjuk, AI menentukannya sebelum membaca" if k == "auto"
+                          else self.types[k]["name"] + ("" if self.types[k].get("builtin", True) else " (template kustom)"))
             self.typeList.addItem(it)
         self.typeList.setCurrentRow(self.cbNew.currentIndex())
-        self.typeList.setFixedHeight(32 * max(1, self.typeList.count()) + 8)
+        self.typeList.setFixedHeight(min(32 * 9, 30 * max(1, self.typeList.count()) + 8))
+        self.typeList.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded if self.typeList.count() > 9 else Qt.ScrollBarAlwaysOff)
+        self.pgHist.set_types(self.types)
         self.typeList.blockSignals(False)
         self.docs = j["docs"]
         self._fill_list()
@@ -660,7 +699,7 @@ class FormsPage(QWidget):
         return Path(self.rootp) if self.rootp else None
 
     def _line(self, d: dict) -> str:
-        t = SHORT.get(d["type"], d["type"])
+        t = self._tname(d["type"])
         st = {"done": "AI", "error": "AI gagal", "pending": "belum dibaca"}.get(d["status"], d["status"])
         if d["id"] == self.ai_did:
             st = "AI membaca…"
@@ -692,7 +731,12 @@ class FormsPage(QWidget):
             sec = time.time() - self.ai_t0
             est = max(20.0, self._est_secs())
             prog, el = sec / est, f"{int(sec) // 60}:{int(sec) % 60:02d} · {round(min(0.99, sec / est) * 100)}%"
-        return {"name": d["name"], "type": SHORT.get(d["type"], d["type"]), "st": st, "cnt": cnt,
+        ty = self._tname(d["type"])
+        if d.get("auto") == 1:
+            ty = "Auto Detect · jenis ditentukan AI"
+        elif d.get("auto") == 2:
+            ty += " · dari nama file"
+        return {"name": d["name"], "type": ty, "st": st, "cnt": cnt,
                 "pos": (self.ai_q.index(d["id"]) + 1) if st == "queue" else 0, "prog": prog, "el": el}
 
     def _est_secs(self) -> float:
@@ -786,7 +830,7 @@ class FormsPage(QWidget):
             return
         ft = self.cbNew.currentData()
         SET.set("fmType", ft)
-        fs, _ = QFileDialog.getOpenFileNames(self, f"Tambah borang {self.types[ft]['name']}", SET.get("fmLastDir", str(Path.home())),
+        fs, _ = QFileDialog.getOpenFileNames(self, f"Tambah borang {self._tname(ft)}", SET.get("fmLastDir", str(Path.home())),
                                              "Borang (*.jpg *.jpeg *.png *.tif *.tiff *.bmp *.webp *.pdf)")
         if fs:
             SET.set("fmLastDir", str(Path(fs[0]).parent))
@@ -796,7 +840,7 @@ class FormsPage(QWidget):
         """Semua foto / scan / PDF di satu folder (tidak termasuk subfolder) -> borang jenis terpilih."""
         if not self.folder:
             return
-        d = QFileDialog.getExistingDirectory(self, f"Tambah folder borang {self.types[self.cbNew.currentData()]['name']}",
+        d = QFileDialog.getExistingDirectory(self, f"Tambah folder borang {self._tname(self.cbNew.currentData())}",
                                              SET.get("fmLastDir", str(Path.home())))
         if not d:
             return
@@ -806,7 +850,7 @@ class FormsPage(QWidget):
             say(self, "Tidak ada foto / scan / PDF di folder itu.", warn=True)
             return
         if len(fs) > 5 and not ask(self, f"Tambahkan {len(fs)} file dari folder ini sebagai borang "
-                                         f"{self.types[self.cbNew.currentData()]['name']}?"):
+                                         f"{self._tname(self.cbNew.currentData())}?"):
             return
         self._add_paths(fs)
 
@@ -893,8 +937,110 @@ class FormsPage(QWidget):
         self.lst.setCurrentItem(it)
         m = QMenu(self)
         m.addAction("✦ Baca dengan AI", self.run_ai)
+        sub = m.addMenu("Ubah jenis borang")
+        has_rows = bool(self.cur and self.cur["rows"])
+        sub.setEnabled(not has_rows)
+        if has_rows:
+            sub.setTitle("Ubah jenis borang (kosongkan baris dulu)")
+        for k, t in self.types.items():
+            a = sub.addAction(t["name"], lambda k=k: self.change_type(k))
+            a.setCheckable(True)
+            a.setChecked(bool(self.cur) and self.cur["doc"]["type"] == k)
+        m.addAction("Deteksi jenis dengan AI", self.detect_type).setEnabled(not has_rows)
+        m.addSeparator()
         m.addAction("Hapus borang…", self.delete_doc)
         m.exec(self.lst.viewport().mapToGlobal(pos))
+
+    def _tname(self, k: str) -> str:
+        if k == "auto":
+            return "Auto Detect"
+        return SHORT.get(k) or (self.types.get(k) or {}).get("name") or k
+
+    def change_type(self, k: str) -> None:
+        if not self.cur or k == self.cur["doc"]["type"]:
+            return
+        try:
+            self.cur = api.call("/core/forms/update", {"folder": self.folder, "id": self.cur["doc"]["id"], "values": {"type": k}, "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        self.tbl = ""
+        self.refresh()
+        self._sync_list()
+        self.toast(f"Jenis borang diganti: {self.types[k]['name']}", 3000)
+
+    def detect_type(self) -> None:
+        """Tanya AI jenis borang yang dibuka (jawaban satu kata; tidak membaca isi)."""
+        if not self.cur or not self._ai_ready():
+            return
+        ai = self.win.ai
+        did, folder = self.cur["doc"]["id"], self.folder
+        self.toast("AI menentukan jenis borang…", 4000)
+
+        def ok(j):
+            if folder != self.folder:
+                return
+            if self.cur and self.cur["doc"]["id"] == did:
+                self.cur = j
+                self.tbl = ""
+                self.refresh()
+            self._sync_list()
+            self.toast(f"Jenis terdeteksi: {self.types[j['doc']['type']]['name']}", 4000)
+        run_bg(api.call, "/core/forms/detect", {"folder": folder, "id": did, "host": ai.host.text().strip(), "model": ai.model(), "by": self.by()},
+               ok=ok, err=lambda e: say(self, "Jenis tidak terdeteksi:\n" + e, warn=True))
+
+    def reload_types(self) -> None:
+        """Muat ulang daftar jenis (setelah template disimpan / dihapus) tanpa mengganti borang yang dibuka."""
+        if not self.folder:
+            return
+        try:
+            j = api.call("/core/forms/open", {"folder": self.folder})
+        except api.ApiError:
+            return
+        cur = self.cur["doc"]["id"] if self.cur else None
+        keep = self.cbNew.currentData()
+        self.types = j["types"]
+        self.cbNew.blockSignals(True)
+        self.cbNew.clear()
+        self.cbNew.addItem(TYPE_LABEL["auto"], "auto")
+        for k, t in self.types.items():
+            self.cbNew.addItem(t["name"], k)
+        self.cbNew.setCurrentIndex(max(0, self.cbNew.findData(keep)))
+        self.cbNew.blockSignals(False)
+        self.typeList.blockSignals(True)
+        self.typeList.clear()
+        for k, nm in [("auto", TYPE_LABEL["auto"])] + [(k, TYPE_LABEL.get(k, t["name"])) for k, t in self.types.items()]:
+            it = QListWidgetItem(f"{TYPE_ICON.get(k, '◇')}   {nm}")
+            it.setData(Qt.UserRole, k)
+            self.typeList.addItem(it)
+        self.typeList.setCurrentRow(self.cbNew.currentIndex())
+        self.typeList.setFixedHeight(min(32 * 9, 30 * max(1, self.typeList.count()) + 8))
+        self.typeList.blockSignals(False)
+        self.pgHist.set_types(self.types)
+        self.docs = j["docs"]
+        self._fill_list()
+        if cur is not None:
+            self.select_doc(cur)
+
+    def select_doc(self, did: int) -> bool:
+        for i in range(self.lst.count()):
+            if self.lst.item(i).data(Qt.UserRole) == did:
+                self.lst.setCurrentRow(i)
+                self._pick(i)
+                return True
+        return False
+
+    def show_page(self, i: int) -> None:
+        """Navigasi Borang | Riwayat | Template | Pengaturan | Bantuan."""
+        self.pages.setCurrentIndex(i)
+        for j, b_ in enumerate(self.navBtns):
+            b_.setChecked(j == i)
+        if i == 1:
+            self.pgHist.refresh()
+        elif i == 2:
+            self.pgTpl.refresh()
+        elif i == 3:
+            self.pgSet.refresh()
 
     def _zoom_pct(self) -> None:
         self.vb["pct"].setText(f"{round(self.view.transform().m11() * 100)}%" if self.view.w else "–")
@@ -1115,6 +1261,26 @@ class FormsPage(QWidget):
                     kel[kk] = kel.get(kk, 0) + num(r["data"].get("ton"))
             cards = [("Ritase", f"{len(rows)}", "truk"), ("Total tonase", f"{ton:g}", "ton")]
             cards += [(f"Kelas {k}", f"{v:g}", "ton") for k, v in sorted(kel.items(), key=lambda x: -x[1])[:5]]
+        elif d["type"] in ("map", "chn", "dpr") or not self.types.get(d["type"], {}).get("builtin", True):
+            recs = [r for r in c.get("recs") or [] if not r.get("_tbl")]
+            if d["type"] == "chn":
+                chs = {r.get("channel_id") for r in recs} - {"", None}
+                cards = [("Sampel", f"{len(recs)}", "baris"), ("Channel", f"{len(chs)}", "channel"),
+                         ("Panjang", f"{sum(r.get('panjang') or 0 for r in recs):g}", "m"),
+                         ("Sampel QAQC", f"{sum(1 for r in recs if r.get('qaqc'))}", "STD / BLANK / DUP")]
+            elif d["type"] == "dpr":
+                cards = [("Lubang", f"{len({r.get('hole_id') for r in recs} - {'', None})}", "hole"),
+                         ("Meter shift", f"{sum(r.get('meter') or 0 for r in recs):g}", "m"),
+                         ("Selesai", f"{sum(1 for r in recs if r.get('status') == 'Selesai')}", "lubang"),
+                         ("Masih dibor", f"{sum(1 for r in recs if r.get('status') == 'Drilling')}", "lubang")]
+            elif d["type"] == "map":
+                cards = [("Stasiun", f"{len(recs)}", "titik"), ("Sampel", f"{sum(1 for r in recs if r.get('sample_id'))}", "diambil"),
+                         ("Data struktur", f"{sum(1 for r in recs if r.get('strike') is not None)}", "strike / dip"),
+                         ("Litologi", f"{len({r.get('litologi') for r in recs} - {'', None})}", "jenis")]
+            else:
+                cards = [("Baris", f"{len(recs)}", "baris")]
+                if any("panjang" in r for r in recs):
+                    cards.append(("Panjang", f"{sum(r.get('panjang') or 0 for r in recs):g}", "m"))
         elif d["type"] == "rc":
             holes = {str(r["data"].get("hole_id") or "").strip() for r in rows} - {""}
             met = sum(max(0.0, num(r["data"].get("to_m")) - num(r["data"].get("from_m"))) for r in rows)

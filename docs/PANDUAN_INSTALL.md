@@ -3899,3 +3899,12 @@ kedua kotak turun dari **12 menjadi 3**.
 - **Kanan**: tab **Data** (status ekstraksi + *Keyakinan AI*, header dua kolom, tabel, ringkasan kartu angka), tab **Validasi** (daftar galat; klik = lompat ke sel), **Pivot**, **Ekspor**.
 - **Bawah**: antrean AI dengan **Baca Semua dengan AI** dan **Batal**.
 - Data proyek lama tetap terbaca; hanya tampilan yang berubah.
+
+## 126. DB-Ex 0.44.0 (Qt) — Riwayat, Template, Auto Detect, jenis borang baru
+
+- **Navigasi** di bilah atas (mode Borang): **Borang · Riwayat · Template · Pengaturan · Bantuan**.
+- **Riwayat**: semua perubahan di proyek (siapa, kapan, nilai lama / baru); cari, filter jenis, simpan CSV; klik ganda = buka borangnya.
+- **Template**: lihat / duplikat jenis bawaan, buat **template kustom** untuk borang lain di site (header, kolom, tipe, petunjuk AI, tabel database). Disimpan di folder proyek (`_GCEx_Core/borang/template.json`).
+- **Auto Detect (Rekomendasi)** di daftar jenis: jenis ditebak dari nama file; bila tidak bisa, AI menentukannya sebelum membaca. Klik kanan file → *Ubah jenis borang* / *Deteksi jenis dengan AI*.
+- **Jenis baru**: Geological Mapping, Channel Sampling, Drill Progress Report (validasi, pivot, ringkasan, ekspor Excel / CSV / SQLite / Access).
+- Kolom bawaan jenis baru masih umum. Bila borang site Anda berbeda: Template → pilih jenisnya → **Duplikat** → ubah kolom → Simpan.

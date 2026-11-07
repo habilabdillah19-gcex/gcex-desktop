@@ -158,7 +158,70 @@ TYPES: dict[str, dict] = {
     },
 }
 KELAS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "SCAT", "OX-MO", "SF-MO"]
+# ---------------------------------------------------------------- jenis borang GENERIK (0.44)
+# Satu mesin untuk jenis borang yang tidak butuh aturan khusus (Geological Mapping, Channel Sampling, Drill Progress Report)
+# dan untuk template kustom buatan pengguna: header disebar ke tiap baris, nilai dinormalkan menurut tipe kolom
+# (num / date / time), tanda ulang -> nilai baris atas, kolom 'carry' diteruskan ke bawah, validasi tipe / rentang /
+# pilihan / wajib / unik / interval From-To, ekspor & pivot dari definisi. Kunci spesifikasi ada di 'gen'.
+STATUS_DPR = ["Drilling", "Selesai", "Standby", "Batal", "Pindah"]
+GEN_BUILTIN: dict[str, dict] = {
+    "map": {
+        "name": "Geological Mapping",
+        "header": [("tanggal", "Tanggal", "date"), ("geologist", "Geologist", "text"), ("area", "Area / prospek", "text"),
+                   ("koordinat", "Sistem koordinat / zona UTM", "text"), ("catatan", "Catatan", "text")],
+        "rows": [("stasiun", "Stasiun", "text"), ("easting", "Easting (X)", "num"), ("northing", "Northing (Y)", "num"),
+                 ("elevasi", "Elevasi (m)", "num"), ("litologi", "Litologi", "text"), ("alterasi", "Alterasi", "text"),
+                 ("mineralisasi", "Mineralisasi", "text"), ("struktur", "Struktur (vein / sesar / kekar / kontak)", "text"),
+                 ("strike", "Strike (°)", "num"), ("dip", "Dip (°)", "num"), ("sample_id", "Sample ID", "text"),
+                 ("keterangan", "Keterangan", "text")],
+        "hint": ("Borang pemetaan geologi lapangan (Geological Mapping / field mapping sheet). Header: tanggal, nama geologist, area / "
+                 "prospek, sistem koordinat (mis. WGS84 UTM 50S), catatan. Tabel: satu baris per stasiun pengamatan: nomor stasiun, "
+                 "koordinat Easting / Northing, elevasi, litologi, alterasi, mineralisasi, jenis struktur, strike & dip (derajat), "
+                 "Sample ID bila diambil sampel, keterangan. Kode geologi disalin persis."),
+        "gen": {"db": "GEO_MAPPING", "sheet": "Data_Mapping", "unique": "sample_id", "req": ["stasiun"],
+                "ranges": {"strike": (0, 360), "dip": (0, 90)},
+                "pivots": [("PIVOT_LITOLOGI", "Stasiun per litologi", ["litologi"], [("stasiun", "count", None)]),
+                           ("PIVOT_STRUKTUR", "Struktur: jumlah & rata-rata dip", ["struktur"], [("stasiun", "count", None), ("dip_rata", "avg", "dip")])]},
+    },
+    "chn": {
+        "name": "Channel Sampling",
+        "header": [("tanggal", "Tanggal", "date"), ("geologist", "Geologist / sampler", "text"), ("lokasi", "Pit / lokasi", "text"),
+                   ("bench", "Bench / elevasi", "text"), ("channel_id", "Channel ID (bawaan)", "text"), ("azimuth", "Azimuth channel (°)", "num"),
+                   ("easting", "Easting awal (X)", "num"), ("northing", "Northing awal (Y)", "num")],
+        "rows": [("channel_id", "Channel ID", "text"), ("sample_id", "Sample ID", "text"), ("from_m", "From (m)", "num"),
+                 ("to_m", "To (m)", "num"), ("litologi", "Litologi", "text"), ("alterasi", "Alterasi", "text"),
+                 ("mineralisasi", "Mineralisasi / vein", "text"), ("berat", "Berat (kg)", "num"), ("qaqc", "QAQC (STD / BLANK / DUP)", "text"),
+                 ("keterangan", "Keterangan", "text")],
+        "hint": ("Borang channel sampling (sampel alur di dinding pit / singkapan / parit). Header: tanggal, geologist / sampler, pit / "
+                 "lokasi, bench / elevasi, Channel ID, azimuth channel, koordinat awal. Tabel: satu baris per sampel: Channel ID (biasanya "
+                 "hanya di baris pertama tiap channel), Sample ID, From, To (meter sepanjang channel), litologi, alterasi, mineralisasi / "
+                 "vein, berat sampel (kg), QAQC (STD / BLANK / DUP bila sampel kontrol), keterangan."),
+        "gen": {"db": "CHANNEL_SAMPLE", "sheet": "Data_Channel", "unique": "sample_id", "req": ["sample_id"], "carry": ["channel_id"],
+                "interval": ("channel_id", "from_m", "to_m"), "derived": [("panjang", "Panjang (m)", "num")],
+                "ranges": {"berat": (0, 50)}, "enums": {"qaqc": ["", "STD", "BLANK", "DUP"]},
+                "pivots": [("PIVOT_CHANNEL", "Per channel", ["channel_id"], [("sampel", "count", None), ("panjang", "sum", "panjang")]),
+                           ("PIVOT_LITOLOGI", "Per litologi", ["litologi"], [("sampel", "count", None), ("panjang", "sum", "panjang")])]},
+    },
+    "dpr": {
+        "name": "Drill Progress Report",
+        "header": [("tanggal", "Tanggal", "date"), ("shift", "Shift (I / II)", "text"), ("rig", "Drill rig", "text"),
+                   ("kontraktor", "Kontraktor", "text"), ("supervisor", "Supervisor / geologist", "text"), ("lokasi", "Lokasi / prospek", "text")],
+        "rows": [("hole_id", "Hole ID", "text"), ("rencana", "Kedalaman rencana (m)", "num"), ("from_m", "From (m)", "num"),
+                 ("to_m", "To (m)", "num"), ("status", "Status (" + " / ".join(STATUS_DPR) + ")", "text"), ("mulai", "Jam mulai", "time"),
+                 ("selesai", "Jam selesai", "time"), ("keterangan", "Keterangan", "text")],
+        "hint": ("Borang Drill Progress Report (laporan kemajuan pemboran harian per rig). Header: tanggal, shift (I / II), drill rig, "
+                 "kontraktor, supervisor / geologist, lokasi / prospek. Tabel: satu baris per lubang yang dibor pada shift itu: Hole ID, "
+                 "kedalaman rencana (m), kedalaman awal shift (From) dan akhir shift (To), status lubang (" + ", ".join(STATUS_DPR) + "), "
+                 "jam mulai & selesai, keterangan (mis. kendala, ganti bit)."),
+        "gen": {"db": "DRILL_PROGRESS", "sheet": "Data_Progress", "req": ["hole_id"], "enums": {"status": [""] + STATUS_DPR},
+                "derived": [("meter", "Meter shift", "num"), ("progres_pct", "Progres (% rencana)", "num")],
+                "pivots": [("PIVOT_RIG", "Meter per rig & shift", ["tanggal", "rig", "shift"], [("lubang", "count", None), ("meter", "sum", "meter")]),
+                           ("PIVOT_LUBANG", "Meter per lubang", ["hole_id"], [("meter", "sum", "meter"), ("kedalaman", "max", "to_m")])]},
+    },
+}
 ORE_TYPES = ("ore", "rom")
+TYPES.update(GEN_BUILTIN)
+BUILTIN_KEYS = set(TYPES)
 SHIFT_DS = (6, 18)  # shift I / siang (DS) 06:00-18:00, shift II / malam (NS) 18:00-06:00
 # sel kosong hasil AI -> diisi dari baris atas (ditandai kuning); tanda ulang -> nilai baris atas
 CARRY = {"ore": ("pit", "elevasi", "tujuan"), "rom": ("asal", "tujuan", "status", "keterangan")}
@@ -245,7 +308,10 @@ def store(folder: str) -> Store:
             c.executescript(_DDL)
             if "tbl" not in {r[1] for r in c.execute("PRAGMA table_info(rows)")}:  # tabel tambahan per borang (0.35)
                 c.execute("ALTER TABLE rows ADD COLUMN tbl TEXT DEFAULT ''")
+            if "auto" not in {r[1] for r in c.execute("PRAGMA table_info(docs)")}:  # Auto Detect (0.44): 1 = menunggu AI, 2 = dari nama file
+                c.execute("ALTER TABLE docs ADD COLUMN auto INTEGER DEFAULT 0")
         _STORES[key] = s
+        load_templates(s)
         return s
 
 
@@ -630,7 +696,13 @@ def _pdf_pages(src: Path) -> list:
 
 
 def add_file(s: Store, src: str, ftype: str, by: str) -> list[dict]:
-    """Tambah scan / foto / PDF borang (disalin ke proyek). PDF dipecah: satu borang per halaman."""
+    """Tambah scan / foto / PDF borang (disalin ke proyek). PDF dipecah: satu borang per halaman.
+    ftype 'auto' (Auto Detect): jenis ditebak dari nama file (auto=2); bila tidak ada petunjuk, AI menentukannya saat membaca (auto=1)."""
+    auto = 0
+    if ftype == "auto":
+        ftype = guess_type(src)
+        auto = 2 if ftype else 1
+        ftype = ftype or next(iter(TYPES))
     if ftype not in TYPES:
         raise ValueError(f"Jenis borang tidak dikenal: {ftype}")
     sp = Path(src)
@@ -650,7 +722,7 @@ def add_file(s: Store, src: str, ftype: str, by: str) -> list[dict]:
         raise ValueError(f"{sp.name}: format tidak dikenali (JPG, PNG, TIFF, BMP, WEBP, PDF).")
     # foto borang jenis yang sama biasanya diambil dengan cara yang sama: putaran borang terakhir (bentuk foto sama:
     # tegak / rebah) dipakai lagi, jadi tidak perlu memutar tiap lembar sebelum dibaca AI
-    last = [x for x in docs(s) if x["type"] == ftype and x.get("rot")]
+    last = [x for x in docs(s) if x["type"] == ftype and x.get("rot")] if not auto == 1 else []
     made = []
     for i, im in enumerate(pages, 1):
         uid = uuid.uuid4().hex[:12]
@@ -662,6 +734,10 @@ def add_file(s: Store, src: str, ftype: str, by: str) -> list[dict]:
                             (uid, fn, sp.name + (f" hal {i}" if len(pages) > 1 else ""), str(sp), i, ftype, im.width, im.height, by,
                              core_io.now())).lastrowid
             _hist(c, did, "tambah", None, sp.name, "tambah", by)
+            if auto:
+                c.execute("UPDATE docs SET auto=? WHERE id=?", (auto, did))
+                if auto == 2:
+                    _hist(c, did, "jenis (Auto Detect nama file)", None, ftype, "auto", by)
             same = [x for x in last if (x.get("w", 0) > x.get("h", 0)) == (im.width > im.height)]
             if same:
                 c.execute("UPDATE docs SET rot=? WHERE id=?", (int(same[-1]["rot"]) % 360, did))
@@ -695,6 +771,8 @@ def update_doc(s: Store, did: int, values: dict, by: str) -> dict:
                     raise ValueError("Jenis borang tidak bisa diganti setelah ada baris; hapus baris dulu atau tambahkan ulang file-nya.")
                 sets.append("type=?")
                 vals.append(values["type"])
+                _hist(c, did, "jenis", d["type"], values["type"], "edit", by)
+            sets.append("auto=0")
         if "rot" in values:
             r = int(values["rot"]) % 360
             if r not in (0, 90, 180, 270):
@@ -737,6 +815,8 @@ def save_rows(s: Store, did: int, lst: list[dict], by: str, tbl: str = "") -> li
         datas = [x for x, _f in fill_ore(d["type"], datas, False)]
     if d["type"] == "ddr" and not tbl:
         datas = [x for x, _f in fill_ddr(datas)]
+    if is_gen(d["type"]) and not tbl:
+        datas = [x for x, _f in gen_fill(d["type"], datas, d["header"], carry=False)]
     if "hole_id" in keys:
         for x in datas:
             x["hole_id"] = norm_bhid(x["hole_id"])
@@ -1196,6 +1276,14 @@ def _save_raw(s: Store, did: int, msg: dict) -> None:
 
 def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900) -> dict:
     d = doc(s, did)
+    if d.get("auto") == 1:  # Auto Detect: jenis belum diketahui -> tanya AI dulu (jawaban satu kata, cepat)
+        try:
+            ai_detect(s, did, host, model, by)
+        except Exception as e:  # noqa: BLE001
+            with s.lock, s.conn() as c:
+                c.execute("UPDATE docs SET status='error', error=? WHERE id=?", (str(e)[:500], did))
+            raise
+        d = doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
     prompt = ai_prompt(d["type"], extra)
     img, size = _image_b64(s, d, max_px)
@@ -1292,6 +1380,8 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
         out_rows = [({k: v for k, v in x.items() if k != "_u"}, list(dict.fromkeys(x["_u"] + f))) for x, f in res_f]
     if d["type"] == "rc" and out_rows:
         out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(fill_rc([x for x, _u in out_rows]), out_rows)]
+    if is_gen(d["type"]) and out_rows:
+        out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(gen_fill(d["type"], [x for x, _u in out_rows], h), out_rows)]
     if d["type"] == "ddr" and out_rows:  # baris tanpa jam = lanjutan uraian kegiatan di atasnya
         merged: list = []
         for x, u in out_rows:
@@ -1401,6 +1491,10 @@ def records(d: dict, rs: list[dict]) -> list[dict]:
         x = dict(r["data"])
         rec: dict[str, Any] = {"_row": r["id"], "_idx": r["idx"], "_verified": r["verified"], "_doc": d["id"], "_uid": d["uid"],
                                "_name": d["name"], "_key": f"{d['uid']}:{r['id']}", "_tbl": r.get("tbl") or ""}
+        if is_gen(d["type"]):
+            rec.update(gen_rec(d, x))
+            out.append(rec)
+            continue
         if d["type"] == "ddr":
             rec.update(ddr_common(d))
             if rec["_tbl"] == "hole":
@@ -1462,6 +1556,8 @@ def validate(d: dict, rs: list[dict], others: Optional[list[dict]] = None) -> di
     h = d["header"]
     if h.get("tanggal") and not parse_date(h.get("tanggal")):
         hdr["tanggal"] = "tanggal tidak dikenali (mis. 30-Oct-26 atau 30/10/2026)"
+    if is_gen(d["type"]):
+        return gen_validate(d, rs, others, hdr)
     if d["type"] == "ddr":
         ks = shift_code(h.get("shift"))
         if not ks:
@@ -1642,12 +1738,21 @@ def validate(d: dict, rs: list[dict], others: Optional[list[dict]] = None) -> di
     return {"header": hdr, "rows": out, "n": len(hdr) + sum(len(v) for v in out.values())}
 
 
+def uniq_key(ftype: str) -> str:
+    """Kolom yang harus unik di seluruh borang jenis itu (RC: Sample ID; generik: 'unique' di spesifikasi)."""
+    return "sample_id" if ftype == "rc" else ((TYPES.get(ftype) or {}).get("gen") or {}).get("unique") or ""
+
+
 def other_ids(s: Store, did: int) -> list[dict]:
+    me = doc(s, did)
+    k = uniq_key(me["type"])
     out = []
+    if not k:
+        return out
     for d in docs(s):
-        if d["id"] == did or d["type"] != "rc":
+        if d["id"] == did or d["type"] != me["type"]:
             continue
-        out.append({"name": d["name"], "ids": {(r["data"].get("sample_id") or "").strip().upper() for r in rows(s, d["id"])}})
+        out.append({"name": d["name"], "ids": {(r["data"].get(k) or "").strip().upper() for r in rows(s, d["id"]) if not r.get("tbl")}})
     return out
 
 
@@ -1760,6 +1865,415 @@ SHEET = {"ore": "Data_Loading_Pit", "rom": "Data_ROM_Crusher", "rc": "Interval_G
 AUDIT = [("VERIFIED", "BOOL"), ("SRC_DOC", "TEXT"), ("SRC_KEY", "TEXT")]
 
 
+# ---------------------------------------------------------------- mesin jenis borang generik (0.44)
+def is_gen(ftype: str) -> bool:
+    return "gen" in (TYPES.get(ftype) or {})
+
+
+def _g(ftype: str) -> dict:
+    return TYPES[ftype].get("gen") or {}
+
+
+def gen_fill(ftype: str, lst: list[dict], h: dict, carry: bool = True) -> list[tuple[dict, list[str]]]:
+    """Tanda ulang (〃 " = ,,) -> nilai baris atas; kolom 'carry' (mis. Channel ID) yang kosong -> nilai baris atas / header
+    (hanya hasil AI). Sel yang diisi program ditandai kuning."""
+    g = _g(ftype)
+    keys = [k for k, _l, _t in TYPES[ftype]["rows"]]
+    out, prev = [], {}
+    for d in lst:
+        x, f = dict(d), []
+        for k in keys:
+            v = str(x.get(k) if x.get(k) is not None else "").strip()
+            if is_ditto(v) and prev.get(k):
+                x[k] = prev[k]
+                f.append(k)
+            elif carry and not v and k in (g.get("carry") or []):
+                src = prev.get(k) or str(h.get(k) or "").strip()
+                if src:
+                    x[k] = src
+                    f.append(k)
+        for k in keys:
+            if str(x.get(k) or "").strip():
+                prev[k] = str(x[k]).strip()
+        out.append((x, f))
+    return out
+
+
+def _norm(t: str, v: Any) -> Any:
+    if t == "num":
+        return parse_num(v)
+    if t == "date":
+        dt = parse_date(v)
+        return dt.isoformat() if dt else str(v or "").strip()
+    if t == "time":
+        return parse_time(v) or str(v or "").strip()
+    return re.sub(r"\s+", " ", str(v if v is not None else "")).strip()
+
+
+def gen_rec(d: dict, x: dict) -> dict:
+    """Rekaman ekspor generik: header (disebar) + kolom baris (dinormalkan menurut tipe) + kolom turunan."""
+    t = TYPES[d["type"]]
+    g = t.get("gen") or {}
+    h = d["header"]
+    rec: dict[str, Any] = {}
+    for k, _l, ty in t["header"]:
+        rec[k] = _norm(ty, h.get(k))
+    for k, _l, ty in t["rows"]:
+        v = x.get(k)
+        if (v is None or str(v).strip() == "") and k in rec:  # kolom sama di header (mis. Channel ID bawaan)
+            continue
+        rec[k] = _norm(ty, v)
+    if "shift" in rec:
+        rec["kode_shift"] = shift_code(rec["shift"])
+    for k in ("hole_id", "channel_id"):
+        if rec.get(k):
+            rec[k] = norm_bhid(rec[k])
+    if "qaqc" in rec:
+        rec["qaqc"] = qaqc(rec["qaqc"])
+    f_, t_ = rec.get("from_m"), rec.get("to_m")
+    ln = round(t_ - f_, 3) if isinstance(f_, (int, float)) and isinstance(t_, (int, float)) else None
+    for k, _l, _t in g.get("derived") or []:
+        if k in ("panjang", "meter"):
+            rec[k] = ln
+        elif k == "progres_pct":
+            rp = rec.get("rencana")
+            rec[k] = round(100 * t_ / rp, 1) if isinstance(t_, (int, float)) and isinstance(rp, (int, float)) and rp > 0 else None
+    if "status" in rec and (g.get("enums") or {}).get("status"):
+        st = str(rec["status"]).strip().lower()
+        rec["status"] = next((e for e in g["enums"]["status"] if e and (e.lower() == st or (st and e.lower().startswith(st[:4])))), rec["status"])
+    return rec
+
+
+def gen_validate(d: dict, rs: list[dict], others: Optional[list[dict]], hdr: dict) -> dict:
+    t = TYPES[d["type"]]
+    g = t.get("gen") or {}
+    out: dict[int, dict[str, str]] = {}
+
+    def bad(r, k, m):
+        out.setdefault(r["id"], {}).setdefault(k, m)
+    h = d["header"]
+    for k, lab, ty in t["header"]:
+        v = str(h.get(k) or "").strip()
+        if not v:
+            continue
+        if ty == "num" and parse_num(v) is None:
+            hdr[k] = f"{lab} harus angka"
+        elif ty == "date" and not parse_date(v):
+            hdr[k] = "tanggal tidak dikenali (mis. 30-Oct-26 atau 30/10/2026)"
+        elif ty == "time" and not parse_time(v):
+            hdr[k] = "jam tidak dikenali (mis. 07:30 atau 0730)"
+    if "shift" in h and str(h.get("shift") or "").strip() and not shift_code(h.get("shift")):
+        hdr["shift"] = "shift harus I / II (siang / malam)"
+    rng, enums, req = g.get("ranges") or {}, g.get("enums") or {}, g.get("req") or []
+    uk = g.get("unique") or ""
+    seen: dict[str, int] = {}
+    iv = g.get("interval")
+    grp_prev: dict[str, Any] = {}
+    grp_cur = None
+    for i, r in enumerate(rs):
+        if r.get("tbl"):
+            continue
+        x = r["data"]
+        for k, lab, ty in t["rows"]:
+            v = str(x.get(k) or "").strip()
+            if not v:
+                if k in req:
+                    bad(r, k, f"{lab} kosong")
+                continue
+            if ty == "num":
+                n = parse_num(v)
+                if n is None:
+                    bad(r, k, f"{lab} harus angka")
+                elif k in rng and not rng[k][0] <= n <= rng[k][1]:
+                    bad(r, k, f"{lab} di luar {rng[k][0]:g}-{rng[k][1]:g}")
+            elif ty == "date" and not parse_date(v):
+                bad(r, k, "tanggal tidak dikenali")
+            elif ty == "time" and not parse_time(v):
+                bad(r, k, "jam tidak dikenali (mis. 07:30 atau 0730)")
+            if k in enums:
+                ok = [e.lower() for e in enums[k] if e]
+                vv = (qaqc(v) if k == "qaqc" else v).lower()
+                if vv not in ok and not any(e.startswith(vv[:4]) for e in ok if len(vv) >= 4):
+                    bad(r, k, f"{lab}: harus " + " / ".join(e for e in enums[k] if e))
+        if uk:
+            sid = str(x.get(uk) or "").strip().upper()
+            if sid:
+                if sid in seen:
+                    bad(r, uk, f"kembar dengan baris {seen[sid] + 1}")
+                else:
+                    seen[sid] = i
+                for o in others or []:
+                    if sid in o["ids"]:
+                        bad(r, uk, f"sudah ada di borang {o['name']}")
+                        break
+        f_, t_ = parse_num(x.get("from_m")), parse_num(x.get("to_m"))
+        if f_ is not None and t_ is not None and t_ <= f_:
+            bad(r, "to_m", "To harus lebih besar dari From")
+        if d["type"] == "dpr":
+            rp = parse_num(x.get("rencana"))
+            if rp is not None and t_ is not None and t_ > rp + 0.01:
+                bad(r, "to_m", f"melewati kedalaman rencana {rp:g} m — periksa angka / rencana")
+        if iv:
+            gk, fk, tk = iv
+            gv = norm_bhid(x.get(gk) or h.get(gk))
+            if gv != grp_cur:
+                grp_cur = gv
+            if qaqc(x.get("qaqc")) in ("STD", "BLANK") and f_ is None and t_ is None:
+                continue
+            pv = grp_prev.get(gv)
+            if pv is not None and f_ is not None:
+                if f_ > pv + 1e-6:
+                    bad(r, fk, f"interval bolong: baris sebelumnya berakhir di {pv:g} m")
+                elif f_ < pv - 1e-6:
+                    bad(r, fk, f"tumpang-tindih dengan baris sebelumnya (berakhir {pv:g} m)")
+            if t_ is not None:
+                grp_prev[gv] = t_
+    return {"header": hdr, "rows": out, "n": len(hdr) + sum(len(v) for v in out.values())}
+
+
+def gen_out(ftype: str) -> list[tuple]:
+    t = TYPES[ftype]
+    tm = {"num": "NUM", "date": "DATE"}
+    cols, seen = [], set()
+    for k, lab, ty in list(t["header"]) + list(t["rows"]) + list((t.get("gen") or {}).get("derived") or []):
+        if k in seen:
+            continue
+        seen.add(k)
+        cols.append((re.sub(r"\W+", "_", k).upper(), re.sub(r"\s*\(bawaan\)", "", lab), k, tm.get(ty, "TEXT")))
+        if k == "shift":
+            cols.append(("KODE_SHIFT", "Kode Shift", "kode_shift", "TEXT"))
+    return cols
+
+
+def register_gen(ftype: str) -> None:
+    """Daftarkan jenis generik ke tabel ekspor / pivot (bawaan saat impor modul, template kustom saat dimuat)."""
+    g = _g(ftype)
+    PARTS[ftype] = [(ftype, "")]
+    OUT[ftype] = gen_out(ftype)
+    DB_TABLE[ftype] = g.get("db") or ("BORANG_" + re.sub(r"\W+", "_", ftype).upper())
+    SHEET[ftype] = (g.get("sheet") or ("Data_" + re.sub(r"\W+", "_", TYPES[ftype]["name"])))[:31]
+    PIVOTS[ftype] = [(key, title, ftype, keys, aggs) for key, title, keys, aggs in g.get("pivots") or []]
+    for _k, _t, _p, keys, aggs in PIVOTS[ftype]:
+        for k in keys + [a[0] for a in aggs]:
+            LAB.setdefault(k, next((lab for kk, lab, _ty in TYPES[ftype]["header"] + TYPES[ftype]["rows"] if kk == k), k.replace("_", " ").capitalize()))
+
+
+for _k in GEN_BUILTIN:
+    register_gen(_k)
+
+
+def unregister(ftype: str) -> None:
+    for dct in (PARTS, OUT, DB_TABLE, SHEET, PIVOTS, TYPES):
+        dct.pop(ftype, None)
+
+
+# ---------------------------------------------------------------- template kustom (0.44)
+# Disimpan per proyek: _GCEx_Core/borang/template.json = {"x_kunci": {name, header, rows, hint, gen}}. Kunci kustom
+# selalu berawalan 'x_' sehingga tidak bentrok dengan jenis bawaan. Jenis bawaan bisa dijadikan dasar (duplikat).
+TEMPLATE_FILE = "template.json"
+COL_TYPES = ("text", "num", "date", "time")
+_LOADED: dict[str, set] = {}
+
+
+def _tpl_path(s: Store) -> Path:
+    return s.root / TEMPLATE_FILE
+
+
+def load_templates(s: Store) -> dict:
+    p = _tpl_path(s)
+    try:
+        tpl = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except (OSError, ValueError):
+        tpl = {}
+    for k in [k for k in TYPES if k.startswith("x_") and k not in tpl]:  # template proyek lain / yang dihapus
+        unregister(k)
+    for k, spec in tpl.items():
+        if not k.startswith("x_"):
+            continue
+        try:
+            TYPES[k] = _clean_spec(spec)
+            register_gen(k)
+        except ValueError:
+            continue
+    _LOADED[str(s.root)] = {k for k in tpl if k.startswith("x_")}
+    return tpl
+
+
+def _cols(lst: Any, what: str) -> list[tuple[str, str, str]]:
+    out, seen = [], set()
+    for c in lst or []:
+        k, lab, ty = (list(c) + ["", "", "text"])[:3] if isinstance(c, (list, tuple)) else (c.get("key"), c.get("label"), c.get("type"))
+        k = re.sub(r"[^a-z0-9_]", "_", str(k or lab or "").strip().lower()).strip("_")[:40]
+        if not k:
+            continue
+        if k in seen:
+            raise ValueError(f"Kunci {what} '{k}' dipakai dua kali.")
+        seen.add(k)
+        out.append((k, str(lab or k).strip()[:80], ty if ty in COL_TYPES else "text"))
+    return out
+
+
+def _clean_spec(spec: dict) -> dict:
+    name = str(spec.get("name") or "").strip()
+    if not name:
+        raise ValueError("Nama template kosong.")
+    rows_ = _cols(spec.get("rows"), "kolom")
+    if not rows_:
+        raise ValueError("Template perlu minimal satu kolom tabel.")
+    hdr = _cols(spec.get("header"), "header")
+    g = dict(spec.get("gen") or {})
+    keys = {k for k, _l, _t in rows_}
+    gen = {"db": re.sub(r"\W+", "_", str(g.get("db") or "").upper())[:60] or None, "sheet": str(g.get("sheet") or "")[:31] or None,
+           "unique": g.get("unique") if g.get("unique") in keys else "", "req": [k for k in g.get("req") or [] if k in keys],
+           "carry": [k for k in g.get("carry") or [] if k in keys]}
+    if {"from_m", "to_m"} <= keys:
+        grp = next((k for k in ("hole_id", "channel_id", "trench_id") if k in keys), "")
+        gen["interval"] = (grp, "from_m", "to_m") if grp else None
+        gen["derived"] = [("panjang", "Panjang (m)", "num")]
+    return {"name": name[:80], "header": hdr, "rows": rows_, "hint": str(spec.get("hint") or "").strip()[:2000]
+            or f"Borang '{name}'. Baca header dan tabel apa adanya.", "gen": gen, "custom": True}
+
+
+def templates(s: Store) -> list[dict]:
+    load_templates(s)
+    used: dict[str, int] = {}
+    for d in docs(s):
+        used[d["type"]] = used.get(d["type"], 0) + 1
+    out = []
+    for k, t in TYPES.items():
+        out.append({"key": k, "name": t["name"], "builtin": k in BUILTIN_KEYS, "header": t["header"], "rows": t["rows"],
+                    "hint": t.get("hint", ""), "gen": {kk: vv for kk, vv in (t.get("gen") or {}).items() if kk in ("db", "sheet", "unique", "req", "carry")},
+                    "tables": list((t.get("tables") or {}).keys()), "docs": used.get(k, 0)})
+    return out
+
+
+def save_template(s: Store, key: str, spec: dict, by: str) -> str:
+    tpl = load_templates(s)
+    clean = _clean_spec(spec)
+    if not key:
+        base = "x_" + (re.sub(r"[^a-z0-9]+", "_", clean["name"].lower()).strip("_")[:30] or "borang")
+        key, i = base, 2
+        while key in TYPES:
+            key, i = f"{base}_{i}", i + 1
+    if not key.startswith("x_"):
+        raise ValueError("Jenis borang bawaan tidak bisa diubah; buat duplikatnya sebagai template kustom.")
+    if key in TYPES and key in tpl:  # kolom yang sudah berisi data tidak boleh hilang diam-diam
+        old = {k for k, _l, _t in TYPES[key]["rows"]}
+        gone = old - {k for k, _l, _t in clean["rows"]}
+        if gone:
+            n = sum(1 for d in docs(s) if d["type"] == key for r in rows(s, d["id"]) if any(str(r["data"].get(k) or "").strip() for k in gone))
+            if n:
+                raise ValueError(f"Kolom {', '.join(sorted(gone))} masih berisi data di {n} baris borang; kosongkan dulu atau ganti labelnya saja.")
+    tpl[key] = {"name": clean["name"], "header": [list(c) for c in clean["header"]], "rows": [list(c) for c in clean["rows"]],
+                "hint": clean["hint"], "gen": {k: v for k, v in clean["gen"].items() if k in ("db", "sheet", "unique", "req", "carry")}}
+    _tpl_path(s).write_text(json.dumps(tpl, ensure_ascii=False, indent=1), encoding="utf-8")
+    load_templates(s)
+    with s.lock, s.conn() as c:
+        _hist(c, None, "template", None, f"{key}: {clean['name']}", "template", by)
+    return key
+
+
+def delete_template(s: Store, key: str, by: str) -> None:
+    tpl = load_templates(s)
+    if key not in tpl:
+        raise ValueError("Hanya template kustom yang bisa dihapus.")
+    n = sum(1 for d in docs(s) if d["type"] == key)
+    if n:
+        raise ValueError(f"Template dipakai {n} borang; hapus / ganti jenis borang itu dulu.")
+    tpl.pop(key)
+    _tpl_path(s).write_text(json.dumps(tpl, ensure_ascii=False, indent=1), encoding="utf-8")
+    load_templates(s)
+    with s.lock, s.conn() as c:
+        _hist(c, None, "hapus template", key, None, "template", by)
+
+
+# ---------------------------------------------------------------- deteksi jenis otomatis (0.44)
+NAME_RULES = [("dpr", r"progress|\bdpr\b|kemajuan"), ("ddr", r"\bddr|daily.?drill|drilling.?report|laporan.?harian"),
+              ("chn", r"channel|\bchn\b|alur"), ("map", r"mapping|pemetaan|\bmap\b|geol.?map"),
+              ("rc", r"\brc\b|rc.?log|chip.?tray|chiptray|logging"), ("rom", r"\brom\b|crusher|stockpile|rehand"),
+              ("ore", r"loading|spotter|\bpit\b|\bore\b")]
+
+
+def guess_type(name: str) -> str:
+    """Jenis borang dari nama file (kata kunci); '' bila tidak ada yang cocok."""
+    n = re.sub(r"[_\-.]+", " ", Path(name).stem.lower())
+    for k, rx in NAME_RULES:
+        if k in TYPES and re.search(rx, n):
+            return k
+    for k, t in TYPES.items():  # template kustom: nama template ada di nama file
+        if k.startswith("x_") and t["name"].lower() in n:
+            return k
+    return ""
+
+
+def detect_prompt() -> str:
+    lines = ["Gambar ini foto satu formulir lapangan tambang. Tentukan JENIS formulirnya dari judul tercetak dan susunan kolomnya.",
+             "Pilihan (kunci: ciri):"]
+    for k, t in TYPES.items():
+        lines.append(f"- {k}: {t['name']} — {t.get('hint', '')[:180]}")
+    lines += ['Jawab JSON {"type": "<kunci>"} saja.', "/no_think"]
+    return "\n".join(lines)
+
+
+def ai_detect(s: Store, did: int, host: str, model: str, by: str = "", timeout: float = 300) -> str:
+    """Tanya model jenis borang (gambar kecil 896 px, jawaban satu kata) lalu ganti jenis borang (hanya bila belum ada baris)."""
+    d = doc(s, did)
+    host = (host or core_io.DEFAULT_HOST).rstrip("/")
+    img, size = _image_b64(s, d, 896)
+    prompt = detect_prompt()
+    body = {"model": model, "messages": [{"role": "user", "content": prompt, "images": [img]}], "stream": False, "keep_alive": "30m",
+            "format": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "enum": list(TYPES)}}},
+            "options": {"temperature": 0, "num_ctx": ctx_for(size, prompt), "num_predict": 40}}
+    if _can_think(host, model):
+        body["think"] = False
+    try:
+        j = core_io._http(host + "/api/chat", body, timeout=timeout)
+    except urllib.error.HTTPError as e:
+        if "think" not in body or e.code != 400:
+            raise
+        body.pop("think")
+        _THINK[(host, model)] = False
+        j = core_io._http(host + "/api/chat", body, timeout=timeout)
+    txt = ((j.get("message") or {}).get("content") or "").strip()
+    m = re.search(r'"type"\s*:\s*"([\w]+)"', txt) or re.search(r"\b(" + "|".join(map(re.escape, TYPES)) + r")\b", txt)
+    k = m.group(1) if m and m.group(1) in TYPES else ""
+    if not k:
+        raise ValueError("AI tidak bisa menentukan jenis borang; pilih jenisnya manual (klik kanan → Ubah jenis).")
+    with s.lock, s.conn() as c:
+        if k != d["type"]:
+            if c.execute("SELECT COUNT(*) FROM rows WHERE doc_id=?", (did,)).fetchone()[0]:
+                raise ValueError("Borang sudah berisi baris; jenis tidak diganti otomatis.")
+            c.execute("UPDATE docs SET type=? WHERE id=?", (k, did))
+            _hist(c, did, "jenis (Auto Detect AI)", d["type"], k, "ai", by)
+        c.execute("UPDATE docs SET auto=0 WHERE id=?", (did,))
+    return k
+
+
+# ---------------------------------------------------------------- riwayat semua borang (0.44)
+def history_all(s: Store, q: str = "", ftype: str = "", limit: int = 2000) -> list[dict]:
+    """Riwayat seluruh proyek (terbaru dulu), dengan nama & jenis borang (borang terhapus: nama dari catatan hapus)."""
+    names: dict[int, tuple[str, str]] = {d["id"]: (d["name"], d["type"]) for d in docs(s)}
+    with s.conn() as c:
+        rs = [dict(r) for r in c.execute("SELECT * FROM history ORDER BY id DESC LIMIT ?", (max(1, min(20000, limit * 3)),))]
+    for r in rs:
+        if r["what"] == "hapus" and r["doc_id"] not in names and r["doc_id"] is not None:
+            names[r["doc_id"]] = (str(r["old"] or ""), "")
+    out = []
+    ql = q.strip().lower()
+    for r in rs:
+        nm, ty = names.get(r["doc_id"], ("", "")) if r["doc_id"] is not None else ("(proyek)", "")
+        r["doc_name"], r["doc_type"] = nm, ty
+        r["type_name"] = (TYPES.get(ty) or {}).get("name", "")
+        if ftype and ty != ftype:
+            continue
+        if ql and ql not in " ".join(str(r.get(k) or "") for k in ("what", "old", "new", "by", "doc_name", "src")).lower():
+            continue
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def collect(s: Store, ids: list[int], ftype: str, unverified: bool = False) -> dict:
     """Baris untuk diekspor dari borang terpilih (kosong = semua borang jenis itu). Bawaan: hanya baris terverifikasi."""
     if ftype not in TYPES:
@@ -1768,7 +2282,7 @@ def collect(s: Store, ids: list[int], ftype: str, unverified: bool = False) -> d
     recs, skip, issues = [], 0, 0
     for d in sel:
         rs = rows(s, d["id"])
-        v = validate(d, rs, other_ids(s, d["id"]) if ftype == "rc" else None)
+        v = validate(d, rs, other_ids(s, d["id"]) if uniq_key(ftype) else None)
         issues += v["n"]
         took = 0
         for rec in records(d, rs):
@@ -1981,7 +2495,7 @@ class ExpBody(FBody):
 def _full(s: Store, did: int) -> dict:
     d = doc(s, did)
     rs = rows(s, did)
-    v = validate(d, rs, other_ids(s, did) if d["type"] == "rc" else None)
+    v = validate(d, rs, other_ids(s, did) if uniq_key(d["type"]) else None)
     recs = records(d, rs)
     return {"doc": d, "rows": rs, "valid": v, "recs": recs, "pivot": pivots(recs, d["type"]),
             "summary": ddr_summary(d, rs) if d["type"] == "ddr" else None}
@@ -1990,7 +2504,8 @@ def _full(s: Store, did: int) -> dict:
 @router.post("/open")
 def api_open(b: FBody) -> dict:
     s = store(b.folder)
-    return {"ok": True, "docs": docs(s), "types": {k: {"name": t["name"], "header": t["header"], "rows": t["rows"],
+    load_templates(s)
+    return {"ok": True, "docs": docs(s), "types": {k: {"name": t["name"], "header": t["header"], "rows": t["rows"], "builtin": k in BUILTIN_KEYS,
                                      "tables": {tb: {"name": tt["name"], "rows": tt["rows"]} for tb, tt in (t.get("tables") or {}).items()}}
                                  for k, t in TYPES.items()},
             "kategori": DDR_KAT_NAMES,
@@ -2047,6 +2562,54 @@ def api_delete(b: DidBody) -> dict:
 @router.post("/history")
 def api_history(b: DidBody) -> dict:
     return {"ok": True, "history": history(store(b.folder), b.id)}
+
+
+class HistBody(FBody):
+    q: str = ""
+    type: str = ""
+    limit: int = 2000
+
+
+class TplBody(FBody):
+    key: str = ""
+    spec: dict[str, Any] = {}
+
+
+class DetBody(FBody):
+    id: int
+    host: str = ""
+    model: str
+
+
+@router.post("/history_all")
+def api_history_all(b: HistBody) -> dict:
+    return {"ok": True, "history": history_all(store(b.folder), b.q, b.type, b.limit)}
+
+
+@router.post("/templates")
+def api_templates(b: FBody) -> dict:
+    return {"ok": True, "templates": templates(store(b.folder)), "col_types": list(COL_TYPES)}
+
+
+@router.post("/template/save")
+def api_template_save(b: TplBody) -> dict:
+    s = store(b.folder)
+    k = save_template(s, b.key, b.spec, b.by)
+    return {"ok": True, "key": k, "templates": templates(s)}
+
+
+@router.post("/template/delete")
+def api_template_delete(b: TplBody) -> dict:
+    s = store(b.folder)
+    delete_template(s, b.key, b.by)
+    return {"ok": True, "templates": templates(s)}
+
+
+@router.post("/detect")
+def api_detect(b: DetBody) -> dict:
+    s = store(b.folder)
+    ai_detect(s, b.id, b.host, b.model, b.by)
+    return {"ok": True, **_full(s, b.id)}
 
 
 @router.post("/ai")

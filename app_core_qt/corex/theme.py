@@ -146,6 +146,12 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #fmKpi[warn="true"] {{ border-color: #d08a1e; }}
 #fmKpiL {{ color: {c['mu']}; font-size: 7.8pt; }}
 #fmKpiV {{ color: {c['ink']}; font-size: 13pt; font-weight: 800; }}
+#fmNav QPushButton#fmNavBtn {{ border: 0; border-radius: 0; background: transparent; color: {c['mu']}; padding: 8px 12px;
+                             font-weight: 600; border-bottom: 3px solid transparent; }}
+#fmNav QPushButton#fmNavBtn:hover {{ color: {c['ink']}; background: {c['pn2']}; }}
+#fmNav QPushButton#fmNavBtn:checked {{ color: {c['ac2']}; background: {c['acs']}; border-bottom-color: {c['ac2']}; }}
+#fmNav QPushButton#fmNavBtn:disabled {{ color: {c['bd2']}; }}
+#fmPageTitle {{ font-size: 15pt; font-weight: 800; color: {c['ink']}; }}
 #fmVList::item {{ padding: 5px 4px; border-bottom: 1px solid {c['bd']}; }}
 """
 
