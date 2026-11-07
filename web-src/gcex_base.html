@@ -389,6 +389,7 @@ body.sgdrag #stage{pointer-events:none}
 <button class='rb' hidden id='rbPlan' onclick='uiTab(&#39;Plan&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2v4M10 6h4l-1 3h-2z'/><path d='M12 9l3 11'/><circle cx='6' cy='17' r='1.6'/><circle cx='18' cy='8' r='1.6'/><circle cx='5' cy='8' r='1.6'/></svg>Plan Bor</button>
 <button class='rb' id='rbDig' onclick='uiTab(&#39;Dig&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 18l5-9 5 6 6-11'/><circle cx='4' cy='18' r='1.7'/><circle cx='9' cy='9' r='1.7'/><circle cx='14' cy='15' r='1.7'/><circle cx='20' cy='4' r='1.7'/></svg>Digitasi</button>
 <button class='rb' id='rbModel' onclick='uiTab(&#39;Model&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M3 15l6-8 5 4 7-6v9l-7 6-5-4-6 5z'/><path d='M9 7v8M14 11v8' stroke-width='1.2'/></svg>Model</button>
+<button class='rb' id='rbWf' onclick='uiTab(&#39;Wf&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M12 3l8 5v8l-8 5-8-5V8z'/><path d='M4 8l8 5 8-5M12 13v8' stroke-width='1.2'/></svg>Wireframe Geologi</button>
 <button class='rb' id='rbBM' onclick='uiTab(&#39;BM&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linejoin='round'><path d='M3 8l5-3 5 3v6l-5 3-5-3z'/><path d='M13 8l4-2.4 4 2.4v6l-4 2.4-4-2.4'/><path d='M8 11l5-3M8 11v6M8 11L3 8'/></svg>Block Model</button>
 <button class='rb' id='rbAM' onclick='uiTab(&#39;AM&#39;)' title='Model as-mined (rekonsiliasi)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 20h18'/><path d='M5 20l3-7h8l3 7'/><path d='M9 13l2-5h2l2 5'/><path d='M12 3v3'/></svg>As-Mined</button>
 <button class='rb' id='rbOverlay' onclick='uiTab(&#39;Overlay&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M2 20l6-10 4 6 3-4 7 8z'/><circle cx='17' cy='6' r='2'/></svg>Overlay</button>
@@ -497,12 +498,21 @@ body.sgdrag #stage{pointer-events:none}
      ekspor yang tidak kelihatan sampai berkasnya dibuka di Surpac. -->
 <div class='hint'>Export string ke Surpac ada di <b>Layout &amp; Ekspor Dig Plan &rsaquo; Export STR / DXF</b>, dan berlaku untuk <b>flitch yang sedang aktif</b>.</div>
 </section>
-<section id='pModel' hidden>
-<h3>Model vein &amp; titik survey</h3>
-<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>&#8679; Import model vein / solid</label>
+<section id='pWf' hidden>
+<h3>Import Wireframe Geologi</h3>
+<div class='hint' style='margin:-4px 0 8px'>Satu-satunya tempat mengimpor wireframe / solid geologi. Setiap berkas muncul di Project Tree di bawah node <b>Import Wireframe Geologi</b> sesuai urutan import.</div>
+<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this,&#39;geo&#39;)'>&#8679; Import wireframe geologi (.msh / .obj / .dxf / .dtm)</label>
 <div class='hint'>Leapfrog <b>.msh</b> &middot; Surpac <b>.dtm</b> (pilih bersama file <b>.str</b>-nya) &middot; DXF 3DFACE / polyface &middot; Wavefront <b>.obj</b>. Saat slab dipotong / Penampang 2D, model tampil sebagai garis perpotongan.</div>
-<div id='mdList' class='mdlist'></div>
+<div id='wfList' class='mdlist'></div>
 <label class='sw'><input type='checkbox' id='mdSolid' checked onchange='updatePlot()'>Tampilkan solid transparan saat slab dipotong (3D)</label>
+<div id='wfMsg' class='hint' style='margin-top:6px'></div>
+</section>
+<section id='pModel' hidden>
+<h3>Data referensi (permukaan DTM, titik survey, string)</h3>
+<h4>Permukaan pit / topografi (DTM)</h4>
+<label class='mdbtn'><input type='file' multiple accept='.dtm,.str,.dxf,.msh,.obj' onchange='mdImport(this,&#39;surf&#39;)'>&#8679; Import permukaan pit / topografi (DTM)</label>
+<div class='hint'>Desain pit dan survei topografi berupa DTM segitiga (Surpac <b>.dtm</b> + <b>.str</b>, DXF 3DFACE), dipakai di Reporting &rsaquo; <b>Pit &amp; progres</b> dan sebagai batas DTM. Wireframe geologi diimport di node <b>Import Wireframe Geologi</b>.</div>
+<div id='mdList' class='mdlist'></div>
 <h4>Titik survey pemetaan lapangan</h4>
 <label class='mdbtn'><input type='file' multiple accept='.csv,.txt' onchange='mdPts(this)'>&#8679; Import titik survey (CSV / TXT)</label>
 <div class='hint'>Kolom X/Easting, Y/Northing, Z/Elevasi (tanpa Z: diambil dari topografi), ID titik dan kolom keterangan / kode untuk pewarnaan.</div>
@@ -1321,7 +1331,7 @@ function knaDraw(){var K=KNA;if(!K)return;var cf={responsive:false,displaylogo:f
     'Patokan umum: SoR &ge; 0.9 dan KE &ge; 0.5 untuk blok measured; tambahan sampel setelah SoR mendatar hanya menambah smoothing. <button class=btn-pri onclick=knaApply()>Terapkan ke Pass 1</button></div>':'<span class=warn>Tidak ada kombinasi yang berhasil; perbesar radius.</span>';}
 function knaApply(){if(!KNA||!KNA.rec)return;$('okM1').value=KNA.rec.rf;$('okX1').value=KNA.rec.nmax;$('okN1').value=KNA.mn;if(KNA.mph)$('okH1').value=KNA.mph;gsTab('E');}
 function uiResize(){try{if(window.Plotly&&Plotly.Plots&&Plotly.Plots.resize)Plotly.Plots.resize('plotDiv');}catch(e){}}
-function uiTab(n){if(['Data','Warna','Geo','Plan'].indexOf(n)>=0)n='BM';var sd=$('side');['Data','Warna','Geo','Slice','Dig','Plan','Model','BM','AM','Overlay','View'].forEach(function(k){$('p'+k).hidden=(k!==n);$('rb'+k).className='rb'+(k===n?' on':'');});
+function uiTab(n){if(['Data','Warna','Geo','Plan'].indexOf(n)>=0)n='BM';var sd=$('side');['Data','Warna','Geo','Slice','Dig','Plan','Model','Wf','BM','AM','Overlay','View'].forEach(function(k){$('p'+k).hidden=(k!==n);$('rb'+k).className='rb'+(k===n?' on':'');});
   if(sd.classList.contains('hide')){sd.classList.remove('hide');setTimeout(uiResize,30);}
   try{localStorage.setItem('dh3d_tab',n);}catch(e){}}
 function uiSide(){var sd=$('side');sd.classList.toggle('hide');$('rbHide').style.transform=sd.classList.contains('hide')?'scaleX(-1)':'';setTimeout(uiResize,30);}
@@ -1956,7 +1966,7 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
     run:function(A){A(0,function(){if(GS.open)gsToggle();uiTab('Data');setCam(1.5,-1.5,1);});}});
   return S;}
 function dmSnap(){var v={};document.querySelectorAll('input[id],select[id]').forEach(function(e){if(e.id.indexOf('dm')===0)return;v[e.id]=e.type==='checkbox'?e.checked:e.value;});
-  var tab='Data';['Data','Warna','Geo','Slice','Dig','Plan','Model','BM','AM','Overlay','View'].forEach(function(k){if($('rb'+k)&&$('rb'+k).className.indexOf('on')>=0)tab=k;});
+  var tab='Data';['Data','Warna','Geo','Slice','Dig','Plan','Model','Wf','BM','AM','Overlay','View'].forEach(function(k){if($('rb'+k)&&$('rb'+k).className.indexOf('on')>=0)tab=k;});
   return{v:v,tab:tab,gs:GS.open,v2:VIEW2D,traj:TRAJ,eye:dmEye(),pl:JSON.stringify(PL.h),dg:JSON.stringify(DG.S)};}
 function dmRestore(s){if(!s)return;if(DRW.on)drawClose();try{PL.h=JSON.parse(s.pl);}catch(er){}try{if(DG.on)dgCancel();DG.S=JSON.parse(s.dg);dgSave();dgList();}catch(er){}if(VIEW2D!==s.v2)toggle2D();if(GS.open!==s.gs)gsToggle();
   for(var id in s.v){var e=$(id);if(!e)continue;if(e.type==='checkbox')e.checked=s.v[id];else if(id!=='holeFilter')e.value=s.v[id];}
@@ -2016,8 +2026,8 @@ function mdBump(noPlot){MD.ver++;MD.sc={};mdList();if(!noPlot)updatePlot();if(wi
 function mdLocal(m){if(m._x)return;var n=m.nv,x=new Float32Array(n),y=new Float32Array(n),z=new Float32Array(n);
   for(var i=0;i<n;i++){x[i]=m.v[i*3]-offX;y[i]=m.v[i*3+1]-offY;z[i]=m.v[i*3+2];}var I=new Int32Array(m.nt),J=new Int32Array(m.nt),K=new Int32Array(m.nt);
   for(var t=0;t<m.nt;t++){I[t]=m.t[t*3];J[t]=m.t[t*3+1];K[t]=m.t[t*3+2];}m._x=x;m._y=y;m._z=z;m._i=I;m._j=J;m._k=K;}
-async function mdImport(inp){var fs=Array.prototype.slice.call(inp.files||[]);inp.value='';if(!fs.length)return;var el=$('mdMsg');el.textContent='Membaca model…';
-  try{var L=await SA.readMeshes(fs);L.forEach(function(m){m.col=MDPAL[MD.models.length%MDPAL.length];m.op=0.55;m.vis=true;MD.models.push(m);});
+async function mdImport(inp,jenis){var fs=Array.prototype.slice.call(inp.files||[]);inp.value='';if(!fs.length)return;jenis=jenis==='surf'?'surf':'geo';var el=(jenis==='geo'&&$('wfMsg'))||$('mdMsg');el.textContent='Membaca model…';
+  try{var L=await SA.readMeshes(fs);L.forEach(function(m){m.jenis=jenis;m.col=MDPAL[MD.models.length%MDPAL.length];m.op=0.55;m.vis=true;MD.models.push(m);});
     var ext=mdExtNote(L.map(function(m){return m.v;}));el.innerHTML=L.map(function(m){return mdEsc(m.name)+': '+m.nv.toLocaleString()+' titik, '+m.nt.toLocaleString()+' segitiga';}).join('<br>')+(L.notes?'<br>'+L.notes:'')+ext;mdBump();}
   catch(e){el.innerHTML='<span class=warn>'+mdEsc(e.message)+'</span>';console.error(e);}}
 function mdExtNote(arrs){var x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;arrs.forEach(function(v){for(var i=0;i<v.length;i+=3){var x=v[i]-offX,y=v[i+1]-offY;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}});
@@ -2027,10 +2037,13 @@ async function mdPts(inp){var fs=Array.prototype.slice.call(inp.files||[]);inp.v
     el.innerHTML=out.join('<br>');mdBump();}catch(e){el.innerHTML='<span class=warn>'+mdEsc(e.message)+'</span>';console.error(e);}}
 function mdSet(kind,i,k,v){var o=MD[kind][i];o[k]=v;mdBump();}
 function mdDel(kind,i){var o=MD[kind][i];if(!confirm('Hapus '+o.name+'?'))return;MD[kind].splice(i,1);mdBump();}
-function mdList(){var a=$('mdList'),b=$('ptList');if(!a)return;mdStrList();
-  a.innerHTML=MD.models.map(function(m,i){return '<div class=mdrow><input type=checkbox '+(m.vis?'checked':'')+' onchange="mdSet(\'models\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
+function mdList(){var a=$('mdList'),b=$('ptList'),wl=$('wfList');if(!a)return;mdStrList();
+  /* wireframe geologi (jenis geo / tanpa jenis) di panel Import Wireframe Geologi; permukaan pit / topo (jenis surf) di Data referensi */
+  var row=function(m,i){return '<div class=mdrow><input type=checkbox '+(m.vis?'checked':'')+' onchange="mdSet(\'models\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
     '<input type=color value='+m.col+' onchange="mdSet(\'models\','+i+',\'col\',this.value)" title=Warna><div class=nm title="'+mdEsc(m.name)+'">'+mdEsc(m.name)+'<small>'+m.nt.toLocaleString()+' segitiga</small></div>'+
-    '<input type=range min=0.1 max=1 step=0.05 value='+m.op+' onchange="mdSet(\'models\','+i+',\'op\',+this.value)" title=Opasitas><button class=x onclick="mdDel(\'models\','+i+')" title=Hapus>&times;</button></div>';}).join('')||'<div class=hint>Belum ada model.</div>';
+    '<input type=range min=0.1 max=1 step=0.05 value='+m.op+' onchange="mdSet(\'models\','+i+',\'op\',+this.value)" title=Opasitas><button class=x onclick="mdDel(\'models\','+i+')" title=Hapus>&times;</button></div>';};
+  var S=function(want){return MD.models.map(function(m,i){return (m.jenis==='surf')===want?row(m,i):'';}).join('');};
+  a.innerHTML=S(true)||'<div class=hint>Belum ada permukaan DTM.</div>';if(wl)wl.innerHTML=S(false)||'<div class=hint>Belum ada wireframe geologi.</div>';
   b.innerHTML=MD.pts.map(function(p,i){return '<div class=mdrow><input type=checkbox '+(p.vis?'checked':'')+' onchange="mdSet(\'pts\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
     '<input type=color value='+p.col+' onchange="mdSet(\'pts\','+i+',\'col\',this.value)" title=Warna><div class=nm title="'+mdEsc(p.name)+'">'+mdEsc(p.name)+'<small>'+p.n+' titik</small></div>'+
     '<select onchange="mdSet(\'pts\','+i+',\'by\',this.value)" title=Warna&nbsp;berdasarkan><option value="">1 warna</option>'+p.cats.map(function(c){return '<option'+(c===p.by?' selected':'')+'>'+mdEsc(c)+'</option>';}).join('')+'</select>'+
@@ -3702,7 +3715,7 @@ var _sv=null;SA.dirty=function(){clearTimeout(_sv);_sv=setTimeout(SA.saveWork,30
 SA.saveWork=async function(){if(!SA.pname||(window.DM&&DM.on))return false;var w=SA.collectWork(),ok=await idbPut('work:'+SA.pname,w);
   if(ok&&window.BM&&BM.ver!==SA.bmVer){ok=await idbPut('bm:'+SA.pname,BM);if(ok)SA.bmVer=BM.ver;}if(ok&&window.BX&&BX.ver!==SA.bxVer){ok=BX.m?await idbPut('bx:'+SA.pname,BX.m.n>SA.BIG?{big:1,name:BX.m.name,n:BX.m.n,file:BX.m.mdl&&BX.m.mdl.file,flt:BX.m.mdl&&BX.m.mdl.flt}:BX.m):await idbDel('bx:'+SA.pname);if(ok)SA.bxVer=BX.ver;}if(ok&&window.MD&&MD.ver!==SA.mdVer){ok=MD.models.length+MD.pts.length+(MD.str||[]).length?await idbPut('mdl:'+SA.pname,SA.mdPack()):await idbDel('mdl:'+SA.pname);if(ok)SA.mdVer=MD.ver;}if(ok&&!window.BM&&SA.bmVer){await idbDel('bm:'+SA.pname);SA.bmVer=0;}if(ok)SA.saved(w.date);return ok;};
 SA.loadWork=async function(nm){var w=await idbGet('work:'+nm);if(!w)return null;if(w.hasBm){var b=await idbGet('bm:'+nm);if(b)w.bm=b;}if(w.hasMd){var m=await idbGet('mdl:'+nm);if(m)w.md=m;}if(w.hasBx){var x=await idbGet('bx:'+nm);if(x)w.bx=x;}return w;};
-SA.mdPack=function(){return{str:(MD.str||[]).map(function(S){return{name:S.name,sn:S.sn,x:S.x,y:S.y,z:S.z,ns:S.ns,np:S.np,col:S.col,vis:S.vis,lw:S.lw};}),models:MD.models.map(function(m){return{name:m.name,v:m.v,t:m.t,nv:m.nv,nt:m.nt,col:m.col,op:m.op,vis:m.vis};}),pts:MD.pts.map(function(p){var o={};Object.keys(p).forEach(function(k){if(k.charAt(0)!=='_')o[k]=p[k];});return o;})};};
+SA.mdPack=function(){return{str:(MD.str||[]).map(function(S){return{name:S.name,sn:S.sn,x:S.x,y:S.y,z:S.z,ns:S.ns,np:S.np,col:S.col,vis:S.vis,lw:S.lw};}),models:MD.models.map(function(m){return{name:m.name,v:m.v,t:m.t,nv:m.nv,nt:m.nt,col:m.col,op:m.op,vis:m.vis,jenis:m.jenis};}),pts:MD.pts.map(function(p){var o={};Object.keys(p).forEach(function(k){if(k.charAt(0)!=='_')o[k]=p[k];});return o;})};};
 SA.saved=function(d,restored){var b=E('pjBtn');if(!b)return;var t=new Date(d);b.title=(restored?'Dipulihkan dari simpanan ':'Tersimpan otomatis ')+t.toLocaleString();E('pjTime').textContent=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);};
 SA.autosave=function(){setInterval(SA.saveWork,30000);document.addEventListener('visibilitychange',function(){if(document.hidden)SA.saveWork();});window.addEventListener('beforeunload',function(){SA.saveWork();});
   ['change','click'].forEach(function(ev){document.getElementById('app').addEventListener(ev,function(){SA.dirty();},true);});};

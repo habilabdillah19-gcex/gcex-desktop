@@ -3931,3 +3931,16 @@ kedua kotak turun dari **12 menjadi 3**.
   - *Iris jadi string / flag interval bor* — membuka Geomodeller Vein dengan wireframe ini terpilih;
   - *Kunci domain … ke wireframe ini* (Mode A) — batas EKSAK untuk audit; *Lepaskan …* untuk kembali ke solid RBF.
 - Tombol / menu import wireframe di tempat lain sudah dihapus (Data referensi, Reporting BM, Geomodeller Vein). Reporting BM tetap bisa memakai wireframe yang sudah diimport sebagai *Batas DTM tambahan*.
+
+## 130. Block Model 0.24.38 — node "Import Wireframe Geologi"
+
+- Wireframe / solid geologi diimport dan dilihat hanya di node **Import Wireframe Geologi** (di bawah Data Referensi), berurutan sesuai urutan import.
+- **Data Referensi (DTM, titik, string)** kini untuk permukaan pit / topografi (DTM) yang dipakai Reporting › *Pit & progres* dan batas DTM, serta titik survey & string.
+- Proyek lama: semua model tampil di node wireframe. Untuk desain pit / topografi, klik kanan › *Pindahkan ke Data Referensi (permukaan pit / topo)*.
+- Tombol *+ Import DTM* di Reporting › Batas DTM dihapus; import DTM-nya di Data Referensi.
+
+## 131. Drillhole 0.24.40 — semua alat wireframe di satu panel
+
+- *Iris jadi string HW/FW* dan *Flag interval bor di dalam wireframe* kini ada di panel **Import Wireframe Geologi** (klik kanan berkas › *Iris jadi string / flag interval bor (manual)…*), tidak lagi di Geomodeller Vein.
+- Data latihan: desain pit dan survei topografi bulanan masuk **Data Spasial** sebagai versi pit / topografi.
+- DXF 3DFACE yang diimport ke Data Spasial disimpan sebagai DTM segitiga (seperti Surpac .dtm).

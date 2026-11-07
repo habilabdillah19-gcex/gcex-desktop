@@ -149,9 +149,9 @@ B = {}
 for ln in lines:
     k = re.search(r"id='(rb\w+)'", ln)
     if k: B[k.group(1)] = ln
-B['rbModel'] = B['rbModel'].replace(">Model</button>", ">Data Referensi</button>").replace("<button class='rb' id='rbModel'", "<button class='rb' id='rbModel' title='Data referensi eksternal: wireframe / solid, titik survey, string Surpac / DXF'")
+B['rbModel'] = B['rbModel'].replace(">Model</button>", ">Data Referensi</button>").replace("<button class='rb' id='rbModel'", "<button class='rb' id='rbModel' title='Data referensi eksternal: permukaan pit / topografi (DTM), titik survey, string Surpac / DXF'")
 B['rbAM'] = B['rbAM'].replace("title='Model as-mined (rekonsiliasi)'", "title='As-Mined: model as-mined &amp; rekonsiliasi per flitch'")
-order = ['rbData', 'rbGeo', 'rbSlice', 'rbBM', 'rbAM', '|', 'rbModel', 'rbDig', 'rbPlan', 'rbWarna', 'rbOverlay', 'rbView']
+order = ['rbData', 'rbGeo', 'rbSlice', 'rbBM', 'rbAM', '|', 'rbModel', 'rbWf', 'rbDig', 'rbPlan', 'rbWarna', 'rbOverlay', 'rbView']
 out = []
 for k in order:
     out.append("<div class=rsep title='Menu pendukung'></div>" if k == '|' else B.pop(k))
@@ -166,13 +166,13 @@ rep("<div id='bxBody'></div>\n<div class='lyhead'>&#9935; Dig block per flitch</
 rep("<div class='lyhead'>&#128438; Layout &amp; Plot PDF</div>", "<h4 class='lyhead'>&#128438; Layout &amp; Plot PDF</h4>")
 
 # ---------- 5. Data Referensi ----------
-rep("<h3>Model vein &amp; titik survey</h3>\n<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>",
-    "<h3>Data referensi eksternal</h3>\n<div class='hint' style='margin:-4px 0 8px'>Data dari luar sebagai acuan penambangan: wireframe / solid vein dari software pemodelan, titik survey pemetaan, string Surpac (desain, oreline). Modul Block Model tidak melakukan pemodelan &mdash; gunakan <b>GC-Ex Drillhole</b> untuk Geological Modelling &amp; estimasi.</div>\n<h4>Wireframe / solid</h4>\n<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>")
+# panel Data Referensi (permukaan DTM, titik, string) & panel Import Wireframe Geologi ditulis langsung di gcex_base.html
+assert "<section id='pWf' hidden>" in s and "onchange='mdImport(this,&#39;surf&#39;)'" in s
 
 # ---------- 6. Teks tur demo ----------
-rep("d:'Menu Model: solid vein", "d:'Menu Data Referensi: solid vein")
+rep("d:'Menu Model: solid vein (Leapfrog, Surpac DTM, DXF, OBJ), titik survey", "d:'Wireframe geologi (Leapfrog, Surpac DTM, DXF, OBJ) diimport di node Import Wireframe Geologi; Menu Data Referensi: permukaan pit / topografi (DTM), titik survey")
 rep("'Model & Overlay'", "'Referensi & Overlay'", s.count("'Model & Overlay'"))
-s = s.replace("t:'Model vein & string Surpac'", "t:'Data referensi: solid & string Surpac'")
+s = s.replace("t:'Model vein & string Surpac'", "t:'Wireframe & data referensi'")
 
 # ---------- 7. Kartu Plotly disembunyikan bila Plotly sudah tertanam ----------
 rep("E('plSave').style.display=(how.indexOf('tertanam')>=0)?'none':'block';",

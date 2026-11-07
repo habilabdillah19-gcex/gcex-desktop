@@ -120,16 +120,37 @@
       try { if (SA.goState) SA.goState(); } catch (e) {}
       kabar('Membuka&hellip;');
       await SA.go();
-      /* permukaan latihan (desain pit & survei topografi bulanan) -> Data Referensi.
-         mdImport ada di dalam sumber viewer, yang baru dieval sesudah SA.go(): tunggu dulu. */
+      /* permukaan latihan (desain pit & survei topografi bulanan) dan wireframe Leapfrog.
+         mdImport / spAdd ada di dalam sumber viewer, yang baru dieval sesudah SA.go(): tunggu dulu. */
       for (var w = 0; w < 80 && typeof window.mdImport !== 'function'; w++) await new Promise(function (r) { setTimeout(r, 150); });
-      /* wireframe Leapfrog ikut dimuat (Drill Hole) supaya langkah demo tentang wireframe ada isinya */
-      var perm = PERM.concat(DHp() ? ['QV_Lensa2_Leapfrog.obj'] : []).filter(DLAT.ada);
+      var perm = PERM.filter(DLAT.ada);
+      if (DHp() && typeof window.spAdd === 'function') {
+        /* Drill Hole: desain pit & survei topografi -> Data Spasial sebagai VERSI pit / topografi (bukan
+           wireframe). spAdd menjadikan versi baru aktif dan menyalakan overlay; topografi aktif & centang
+           overlay dikembalikan supaya angka tutorial (topografi SIM_topo_xyz) tidak bergeser. */
+        var cb = function (id) { var e = $(id); return e ? e.checked : null; }, cbSet = function (id, v) { var e = $(id); if (e && v !== null) e.checked = v; };
+        var ov0 = { p: cb('ovPit'), s: cb('ovTopoS'), l: cb('ovTopoL') }, t0 = null;
+        try { t0 = spAct('topo'); } catch (e) {}
+        for (var k = 0; k < perm.length; k++) {
+          kabar('Membaca ' + perm[k] + '&hellip;');
+          await window.spAdd(/pit/i.test(perm[k]) ? 'pit' : 'topo', { files: [await DLAT.berkas(perm[k])], value: '' });
+        }
+        try { if (t0 && spAct('topo') !== t0) spActivate('topo', t0.id); } catch (e) {}
+        cbSet('ovPit', ov0.p); cbSet('ovTopoS', ov0.s); cbSet('ovTopoL', ov0.l);
+        try { updatePlot(); } catch (e) {}
+        perm = [];
+      }
       if (perm.length && typeof window.mdImport === 'function') {
+        /* Block Model: permukaan DTM di Data Referensi (Reporting > Pit & progres) */
         var F = [];
-        for (var k = 0; k < perm.length; k++) F.push(await DLAT.berkas(perm[k]));
+        for (var k2 = 0; k2 < perm.length; k2++) F.push(await DLAT.berkas(perm[k2]));
         kabar('Membaca ' + perm.length + ' permukaan latihan&hellip;');
-        await window.mdImport({ files: F, value: '' });
+        await window.mdImport({ files: F, value: '' }, 'surf');
+      }
+      /* wireframe Leapfrog (Drill Hole) -> node Import Wireframe Geologi, supaya langkah demo wireframe ada isinya */
+      if (DHp() && DLAT.ada('QV_Lensa2_Leapfrog.obj') && typeof window.mdImport === 'function') {
+        kabar('Membaca wireframe latihan&hellip;');
+        await window.mdImport({ files: [await DLAT.berkas('QV_Lensa2_Leapfrog.obj')], value: '' }, 'geo');
       }
       kabar('&#10003; Data latihan siap.');
       DLAT.busy = false;

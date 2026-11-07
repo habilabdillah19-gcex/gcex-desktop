@@ -673,8 +673,9 @@ body.sgdrag #stage{pointer-events:none}
 <div id='mdList' class='mdlist'></div>
 <label class='sw'><input type='checkbox' id='mdSolid' checked onchange='updatePlot()'>Tampilkan solid transparan saat slab dipotong (3D)</label>
 <div class='g2 f' style='margin-top:6px'><button onclick='wfxDlg()' title='Wireframe menjadi domain GC-Ex yang bisa diedit (Mode B)'>&#8680; Serap wireframe &rarr; domain&hellip;</button><button onclick='wfxLihat()'>Laporan penyerapan terakhir</button></div>
-<div class='hint'>Mode A (batas EKSAK untuk audit): klik kanan berkas wireframe di Project Tree &rsaquo; <i>Kunci domain &hellip; ke wireframe ini</i>. Iris / flag interval bor ada di <b>Geomodeller Vein</b> &rsaquo; <i>Dari wireframe luar</i>.</div>
+<div class='hint'>Mode A (batas EKSAK untuk audit): klik kanan berkas wireframe di Project Tree &rsaquo; <i>Kunci domain &hellip; ke wireframe ini</i>.</div>
 <div id='wfMsg' class='hint' style='margin-top:6px'></div>
+<div id='wfTools'></div>
 </section>
 <section id='pModel' hidden>
 <h3>Data referensi (titik survey, string, struktur)</h3>
@@ -2232,12 +2233,12 @@ var MD={models:[],pts:[],str:[],ver:0,sc:{}};
 var MDPAL=['#d9480f','#9c36b5','#1098ad','#e67700','#2f9e44','#c2255c','#5f3dc4','#495057'];
 var PTPAL=['#e03131','#1971c2','#2f9e44','#f08c00','#9c36b5','#0c8599','#c2255c','#5c940d','#862e9c','#364fc7','#d9480f','#087f5b'];
 function mdEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function mdBump(noPlot){MD.ver++;MD.sc={};mdList();if(!noPlot)updatePlot();if(window.SA&&SA.dirty)SA.dirty();}
+function mdBump(noPlot){MD.ver++;MD.sc={};mdList();try{wfToolsDraw();}catch(e){}if(!noPlot)updatePlot();if(window.SA&&SA.dirty)SA.dirty();}
 function mdLocal(m){if(m._x)return;var n=m.nv,x=new Float32Array(n),y=new Float32Array(n),z=new Float32Array(n);
   for(var i=0;i<n;i++){x[i]=m.v[i*3]-offX;y[i]=m.v[i*3+1]-offY;z[i]=m.v[i*3+2];}var I=new Int32Array(m.nt),J=new Int32Array(m.nt),K=new Int32Array(m.nt);
   for(var t=0;t<m.nt;t++){I[t]=m.t[t*3];J[t]=m.t[t*3+1];K[t]=m.t[t*3+2];}m._x=x;m._y=y;m._z=z;m._i=I;m._j=J;m._k=K;}
-async function mdImport(inp){var fs=Array.prototype.slice.call(inp.files||[]);inp.value='';if(!fs.length)return;var el=$('wfMsg')||$('mdMsg');el.textContent='Membaca model…';
-  try{var L=await SA.readMeshes(fs);L.forEach(function(m){m.col=MDPAL[MD.models.length%MDPAL.length];m.op=0.55;m.vis=true;MD.models.push(m);});
+async function mdImport(inp,jenis){var fs=Array.prototype.slice.call(inp.files||[]);inp.value='';if(!fs.length)return;var el=$('wfMsg')||$('mdMsg');el.textContent='Membaca model…';
+  try{var L=await SA.readMeshes(fs);L.forEach(function(m){m.jenis=jenis==='surf'?'surf':'geo';m.col=MDPAL[MD.models.length%MDPAL.length];m.op=0.55;m.vis=true;MD.models.push(m);});
     var ext=mdExtNote(L.map(function(m){return m.v;}));el.innerHTML=L.map(function(m){return mdEsc(m.name)+': '+m.nv.toLocaleString()+' titik, '+m.nt.toLocaleString()+' segitiga';}).join('<br>')+(L.notes?'<br>'+L.notes:'')+ext;mdBump();}
   catch(e){el.innerHTML='<span class=warn>'+mdEsc(e.message)+'</span>';console.error(e);}}
 function mdExtNote(arrs){var x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;arrs.forEach(function(v){for(var i=0;i<v.length;i+=3){var x=v[i]-offX,y=v[i+1]-offY;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}});
@@ -2714,7 +2715,6 @@ function gmPanel(){var b=$('gmBody');if(!b)return;var S=gmStats(),act=gmDom(GM.a
         '<td><a href=javascript:void(0) onclick="gmStrGo('+r.i+')" title="Buka bidang string ini">'+(P?(P.m==='H'?'Z '+(+P.pos).toFixed(1):'S '+normAz(P.az)+'/'+P.dip+' @'+(+P.pos).toFixed(1)):'-')+'</a></td>'+
         '<td style="white-space:nowrap"><button class=lb onclick="gmStart(\'edit\','+r.i+')" title="Edit titik">&#9998;</button><button class=x onclick="gmStrDel('+r.i+')" title=Hapus>&times;</button></td></tr>';}).join('')+'</table>':'<div class=hint>Belum ada string kontrol.</div>')+'</div>';
   h+='<div class="g2 f"><button class="btn-pri" onclick="gmStrExport(\'str\')">&#8681; Export STR</button><button class="btn-pri" onclick="gmStrExport(\'dxf\')">&#8681; Export DXF</button></div>';
-  if(window.wfPanelHtml)h+=wfPanelHtml();
   if(window.imPanelHtml)h+=imPanelHtml();
   b.innerHTML=h;}
 
@@ -2935,16 +2935,18 @@ function gmWfFlag(){var m=wfModel();if(!m){alert('Import wireframe dulu di node 
       if(WF.keep&&gmCodeAt(id,(iv[0]+iv[1])/2)>=0)return;gmSetRange(id,iv[0],iv[1],d.id);n++;nh[id]=1;len+=iv[1]-iv[0];});});
   if(!n)GM.und.pop();WF.msg=(n?'&#10003; '+n+' interval ('+Object.keys(nh).length+' hole, '+len.toFixed(1)+' m) di dalam <b>'+gmE(m.name)+'</b> di-flag ke <b>'+gmE(d.name)+'</b>.':'<span class=warn>Tidak ada interval bor di dalam wireframe'+(WF.keep?' yang belum di-flag':'')+'.</span>')+
     (W.open?'<br><span class=warn>Wireframe tidak tertutup rapat ('+W.open+' dari '+W.ne+' sisi terbuka): hasil di dekat bagian terbuka bisa tidak akurat.</span>':' Wireframe tertutup rapat.');GM.act=d.id;gmDirty();}
-function wfSet(k,v){WF[k]=v;gmPanel();}
-function wfPanelHtml(){if(!window.WF)return '';var M=MD.models;if(WF.mi>=M.length)WF.mi=0;var h='<details class=gmdet'+(GM._openWf?' open':'')+' ontoggle="GM._openWf=this.open"><summary>Dari wireframe luar (Leapfrog / Surpac)</summary>';
-  if(!M.length)return h+'<div class=hint>Import wireframe (.msh / .dtm / .dxf / .obj) di node <b>Import Wireframe Geologi</b>, lalu kembali ke sini.</div></details>';
+function wfSet(k,v){WF[k]=v;wfToolsDraw();}
+/* alat iris / flag tinggal di panel Import Wireframe Geologi (pWf), bukan lagi di Geomodeller Vein */
+function wfToolsDraw(){var e=$('wfTools');if(e&&window.wfPanelHtml)e.innerHTML=wfPanelHtml();}
+function wfPanelHtml(){if(!window.WF)return '';var M=MD.models;if(WF.mi>=M.length)WF.mi=0;var h='<h4>Iris jadi string / flag interval bor (manual)</h4><div class=hint style="margin-top:-2px">Langkah demi langkah per section; untuk semua langkah sekaligus pakai <b>Serap wireframe &rarr; domain</b>. Hasilnya muncul sebagai string &amp; flag domain di <b>Geomodeller Vein</b>.</div>';
+  if(!M.length)return h+'<div class=hint>Import wireframe dulu (tombol di atas).</div>';
   h+='<div class="g2 f"><div><label>Wireframe</label><select onchange="wfSet(\'mi\',+this.value)">'+M.map(function(m,i){return '<option value='+i+(i===WF.mi?' selected':'')+'>'+gmE(m.name)+'</option>';}).join('')+'</select></div>'+
     '<div><label>Ke domain</label><select onchange="wfSet(\'dom\',this.value)"><option value="">(domain aktif)</option>'+GM.doms.map(function(d){return '<option value="'+d.id+'"'+(d.id===WF.dom?' selected':'')+'>'+gmE(d.name)+'</option>';}).join('')+'<option value="__new"'+(WF.dom==='__new'?' selected':'')+'>+ domain baru (nama wireframe)</option></select></div></div>'+
     '<div class="g2 f"><div><label>Jarak section (m)</label><input type=number step=any min=0 value="'+(WF.sp||'')+'" placeholder="= tebal slab" onchange="WF.sp=+this.value||0"></div><label class=sw style="align-self:end"><input type=checkbox '+(WF.keep?'checked':'')+' onchange="WF.keep=this.checked">Flag: jangan timpa flag lain</label></div>'+
     '<div class="g2 f"><button onclick="gmWfStrings(false)" title="Iris wireframe pada section aktif">&#9986; Iris jadi string HW/FW (section ini)</button><button onclick="gmWfStrings(true)" title="Semua section sejajar">&#9986; Semua section</button></div>'+
     '<button style="width:100%" onclick="gmWfFlag()">&#9873; Flag interval bor di dalam wireframe</button>'+
     '<div class=hint>String hasil irisan bertanda <b>impor</b>: bisa diedit, ditambah dan dipakai bersama kontak bor; tidak ditimpa Tarik otomatis. Mengiris ulang mengganti string impor lama di section yang sama.</div>'+(WF.msg?'<div class=hint>'+WF.msg+'</div>':'');
-  return h+'</details>';}
+  return h;}
 try{gmPanel();}catch(e){}
 /* ================= MODEL VEIN HW / FW -> SOLID (RBF, gaya "vein" Leapfrog) =================
    Per domain vein:
@@ -4996,11 +4998,14 @@ async function readImgWorld(s,bb,res,maxpx){var g=await rasterWorld(s);if(!g)thr
 
 /* --- baca satu set file spasial di dalam viewer (menu Data Spasial): topo / pit -> titik [[x,y,z],…,null]; ortho -> gambar --- */
 SA.spRead=async function(role,files,bb,res,prog){var fa=Array.prototype.slice.call(files||[]);
-  if(role!=='ortho'&&fa.some(function(f){return ext(f.name)==='dtm';})){var ms=await SA.readMeshes(fa.filter(function(f){var x=ext(f.name);return x==='dtm'||x==='str';}));if(!ms.length)throw new Error('DTM tidak terbaca');
+  /* DXF 3DFACE / polyface juga DTM segitiga: disimpan sebagai TIN persis seperti .dtm, supaya Reporting (Pit & progres,
+     batas DTM) memakai segitiganya sendiri, bukan titik sudut yang diinterpolasi. DXF garis (kontur) tetap jalur lama. */
+  var msDxf=null;if(role!=='ortho'&&fa.length&&fa.every(function(f){return ext(f.name)==='dxf';})){try{msDxf=await SA.readMeshes(fa);}catch(e){msDxf=null;}if(!(msDxf&&msDxf.length&&msDxf.some(function(m){return m.nt>0;})))msDxf=null;}
+  if(role!=='ortho'&&(msDxf||fa.some(function(f){return ext(f.name)==='dtm';}))){var ms=msDxf||await SA.readMeshes(fa.filter(function(f){var x=ext(f.name);return x==='dtm'||x==='str';}));if(!ms.length)throw new Error('DTM tidak terbaca');
     var nv=0,nt=0;ms.forEach(function(m){nv+=m.nv;nt+=m.nt;});var V=new Float64Array(nv*3),T=new Uint32Array(nt*3),ov=0,ot=0,data=[];
     ms.forEach(function(m){V.set(m.v,ov*3);for(var k=0;k<m.t.length;k++)T[ot*3+k]=m.t[k]+ov;ov+=m.nv;ot+=m.nt;});
     var stp=Math.max(1,Math.ceil(nv/200000));for(var q=0;q<nv;q+=stp){data.push([V[q*3],V[q*3+1],V[q*3+2]]);data.push(null);}
-    return{data:data,tin:{v:V,t:T},info:'DTM '+nt.toLocaleString('id-ID')+' segitiga, '+nv.toLocaleString('id-ID')+' titik',src:fa.filter(function(f){return ext(f.name)==='dtm';}).map(function(f){return f.name;}).join(', ')};}
+    return{data:data,tin:{v:V,t:T},info:'DTM '+nt.toLocaleString('id-ID')+' segitiga, '+nv.toLocaleString('id-ID')+' titik',src:fa.filter(function(f){var x=ext(f.name);return x==='dtm'||(msDxf&&x==='dxf');}).map(function(f){return f.name;}).join(', ')};}
   var L=[];Array.prototype.forEach.call(files||[],function(f){var x=ext(f.name),k=RASTER.indexOf(x)>=0?'raster':WORLD.indexOf(x)>=0?'world':x==='dxf'?'dxf':x==='str'?'str':'xyz';L.push({f:f,k:k,role:role});});
   if(role==='ortho'){var R=L.filter(function(s){return s.k==='raster';});if(!R.length)throw new Error('pilih file raster (GeoTIFF / JPG / PNG + world file)');var keep=SA.sp.ortho;SA.sp.ortho=L;
     try{var s=R[0],k=ext(s.f.name),O=(k==='tif'||k==='tiff')?await readGeoTiff(s,bb,res,2500000,prog||function(){}):await readImgWorld(s,bb,res,2500000);}finally{SA.sp.ortho=keep;}
@@ -5191,7 +5196,7 @@ SA.saveWork=async function(){if(!SA.pname||(window.DM&&DM.on))return false;var w
 SA.loadWork=async function(nm){var w=await idbGet('work:'+nm);if(!w)return null;if(w.hasBm){var b=await idbGet('bm:'+nm);if(b)w.bm=b;}if(w.hasMd){var m=await idbGet('mdl:'+nm);if(m)w.md=m;}if(w.hasBx){var x=await idbGet('bx:'+nm);if(x)w.bx=x;}return w;};
 /* model part berisi wireframe/titik/string + hasil Model Estimation (window.ME) */
 SA.mdHas=function(){return !!(window.MD&&(MD.models.length+MD.pts.length+(MD.str||[]).length>0||(window.ME&&ME.store)));};
-SA.mdPack=function(){return{str:(MD.str||[]).map(function(S){return{name:S.name,sn:S.sn,x:S.x,y:S.y,z:S.z,ns:S.ns,np:S.np,col:S.col,vis:S.vis,lw:S.lw};}),models:MD.models.map(function(m){return{name:m.name,v:m.v,t:m.t,nv:m.nv,nt:m.nt,col:m.col,op:m.op,vis:m.vis};}),pts:MD.pts.map(function(p){var o={};Object.keys(p).forEach(function(k){if(k.charAt(0)!=='_')o[k]=p[k];});return o;})};};
+SA.mdPack=function(){return{str:(MD.str||[]).map(function(S){return{name:S.name,sn:S.sn,x:S.x,y:S.y,z:S.z,ns:S.ns,np:S.np,col:S.col,vis:S.vis,lw:S.lw};}),models:MD.models.map(function(m){return{name:m.name,v:m.v,t:m.t,nv:m.nv,nt:m.nt,col:m.col,op:m.op,vis:m.vis,jenis:m.jenis};}),pts:MD.pts.map(function(p){var o={};Object.keys(p).forEach(function(k){if(k.charAt(0)!=='_')o[k]=p[k];});return o;})};};
 SA.saved=function(d,restored){var b=E('pjBtn');if(!b)return;var t=new Date(d);b.title=(restored?'Dipulihkan dari simpanan ':'Tersimpan otomatis ')+t.toLocaleString();E('pjTime').textContent=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);};
 SA.autosave=function(){setInterval(SA.saveWork,30000);document.addEventListener('visibilitychange',function(){if(document.hidden)SA.saveWork();});window.addEventListener('beforeunload',function(){SA.saveWork();});
   ['change','click'].forEach(function(ev){document.getElementById('app').addEventListener(ev,function(){SA.dirty();},true);});};

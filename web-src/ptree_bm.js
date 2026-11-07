@@ -78,11 +78,17 @@
             go:function(){if(window.RP){RP.sec=RP.res?'2':'1';rpPanel();}},
             kids:[{id:'bm.rep.1',t:'Atribut & ringkasan per RL',ic:'attr',tab:'Rep',go:function(){RP.sec='1';rpPanel();}},{id:'bm.rep.2',t:'Constraint',ic:'filter',tab:'Rep',go:function(){RP.sec='c';rpPanel();}},{id:'bm.rep.3',t:'Hasil grade × tonase',ic:'chart',tab:'Rep',go:function(){RP.sec='2';rpPanel();}}].concat(window.rpxTree?rpxTree():[])},
           {id:'bm.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:A('bsOpen'),dim:!(window.bsOn&&bsOn()),hint:'Untuk .mdl besar yang dibuka lewat backend (seluruh file, bukan hanya potongan)'}]:[]};},'bm','Block Model');
-    add(function(){var mdK=function(kind,ic,lab){return ok(function(){return MD[kind].map(function(o,i){return{id:'ref.'+kind+'.'+i+'.'+o.name,t:o.name,ic:ic,tab:'Model',sub:lab,chk:!!o.vis,onChk:function(v){mdSet(kind,i,'vis',v);},
-        b:o.nt?N(o.nt)+' segitiga':'',menu:function(){return[{t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}}];}};});},[]);};
-      var K=[].concat(mdK('models','ref','Wireframe'),mdK('pts','pts','Titik'),mdK('str','string','String'));
-      return{id:'ref',step:'4',st:st.ref,t:'Data Referensi',ic:'folder',fold:1,tab:'Model',b:K.length||'',hint:'Opsional: solid & string Surpac, titik survey sebagai acuan',
-        menu:function(){return[{t:'Import model vein / solid…',fn:function(){PT.pick('.dtm,.str,.msh,.obj,.dxf',true,function(i){mdImport(i);});}},{t:'Import titik survey…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'Import string (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}];},kids:K};},'ref','Data Referensi');
+    /* 4 Data Referensi: permukaan pit / topo (DTM), titik survey, string. Wireframe geologi TIDAK di sini (node 4b). */
+    add(function(){var mdK=function(kind,ic,lab,keep){return ok(function(){return MD[kind].map(function(o,i){if(keep&&!keep(o))return null;return{id:'ref.'+kind+'.'+i+'.'+o.name,t:o.name,ic:ic,tab:'Model',sub:lab,chk:!!o.vis,onChk:function(v){mdSet(kind,i,'vis',v);},
+        b:o.nt?N(o.nt)+' segitiga':'',menu:function(){var L=[];if(kind==='models')L.push({t:'Pindahkan ke Import Wireframe Geologi',fn:function(){o.jenis='geo';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1});L.push({t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}});return L;}};}).filter(Boolean);},[]);};
+      var K=[].concat(mdK('models','topo','Permukaan',function(o){return o.jenis==='surf';}),mdK('pts','pts','Titik'),mdK('str','string','String'));
+      return{id:'ref',step:'4',st:st.ref,t:'Data Referensi (DTM, titik, string)',ic:'folder',fold:1,tab:'Model',b:K.length||'',hint:'Opsional: permukaan pit / topografi (DTM) untuk Pit & progres, titik survey dan string Surpac sebagai acuan',
+        menu:function(){return[{t:'Import permukaan pit / topografi (DTM)…',fn:function(){PT.pick('.dtm,.str,.dxf,.msh,.obj',true,function(i){mdImport(i,'surf');});}},{t:'Import titik survey…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'Import string (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}];},kids:K};},'ref','Data Referensi');
+    /* 4b Import Wireframe Geologi: SATU-SATUNYA tempat import & melihat wireframe geologi (urutan import) */
+    add(function(){var W=ok(function(){return MD.models.map(function(o,i){return o.jenis==='surf'?null:{id:'wf.'+i+'.'+o.name,t:o.name,ic:'ref',tab:'Wf',chk:!!o.vis,onChk:function(v){mdSet('models',i,'vis',v);},
+          b:o.nt?N(o.nt)+' segitiga':'',hint:'Import ke-'+(i+1),menu:function(){return[{t:'Pindahkan ke Data Referensi (permukaan pit / topo)',fn:function(){o.jenis='surf';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1},{t:'Hapus wireframe ini',danger:1,fn:function(){mdDel('models',i);}}];}};}).filter(Boolean);},[]);
+      return{id:'wf',step:'4b',t:'Import Wireframe Geologi',ic:'ref',fold:1,tab:'Wf',b:W.length?W.length+' berkas':'',hint:'Wireframe / solid geologi (Leapfrog .msh / .obj, Surpac .dtm + .str, DXF) — berurutan sesuai urutan import',
+        menu:function(){return[{t:'Import wireframe geologi…',fn:function(){PT.pick('.msh,.obj,.dxf,.dtm,.str',true,function(i){mdImport(i,'geo');});}}];},kids:W};},'wf','Import Wireframe Geologi');
     /* 5 flitch: SEMUA flitch yang sudah dikerjakan (dig block, string, poligon as-mined) sebagai subnode untuk audit / review */
     add(function(){var Sg=ok(function(){return DG.S;},[]),AMB=ok(function(){return amBndAll();},[]),G={},ord=[],fmt=function(v){return String(+(+v).toFixed(3));};
       var grp=function(top,bot){var k=(+top).toFixed(3)+'|'+(+bot).toFixed(3);if(!G[k]){G[k]={top:+top,bot:+bot,db:[],am:[]};ord.push(k);}return G[k];};
@@ -139,7 +145,7 @@
       /* Judul besar di dalam panel hanya mengulang nama node yang sudah tertulis di kepala Properti,
          dan justru membuat isinya terbaca sebagai milik judul yang salah. */
       'body.pt-nonbm #pBM{display:none!important}'+
-      'body.pt-on #pBM .lyhead,body.pt-on #pBM>h3,body.pt-on #pAM>h3,body.pt-on #pModel>h3,body.pt-on #pOverlay>h3{display:none!important}'+
+      'body.pt-on #pBM .lyhead,body.pt-on #pBM>h3,body.pt-on #pAM>h3,body.pt-on #pModel>h3,body.pt-on #pWf>h3,body.pt-on #pOverlay>h3{display:none!important}'+
       'body.pt-bmhd #pBM>:not(.uisec){display:none!important}'+
       /* Segmen 'rep' (tabel running grade & tonase) sengaja TIDAK ikut di node Otomatis maupun Digit
          manual: permintaan pemilik, angka grade & tonase hanya boleh muncul di satu tempat, yaitu

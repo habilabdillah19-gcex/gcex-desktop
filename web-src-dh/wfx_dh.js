@@ -353,11 +353,11 @@
         id: 'wf.' + i + '.' + m.name, t: m.name, ic: 'ref', tab: 'Wf',
         chk: !!m.vis, onChk: function (v) { mdSet('models', i, 'vis', v); },
         b: N(m.nt) + ' segitiga' + (kunci.length ? ' · eksak: ' + kunci.map(function (d) { return d.name; }).join(', ') : ''),
-        hint: 'Import ke-' + (i + 1) + '. Klik kanan: jadikan domain (serap / eksak), iris / flag interval bor, atau hapus.',
+        hint: 'Import ke-' + (i + 1) + '. Klik kanan: jadikan domain (serap / iris / flag / eksak) atau hapus.',
         menu: function () {
           var L = [{ h: 'Jadikan domain' },
             { t: 'Serap jadi domain yang bisa diedit (Mode B)…', fn: function () { WFX.o.mi = i; wfxDlg(); } },
-            { t: 'Iris jadi string / flag interval bor (Geomodeller Vein)', dis: !window.WF, fn: function () { WF.mi = i; if (window.GM) GM._openWf = true; PT.select('gm'); } },
+            { t: 'Iris jadi string / flag interval bor (manual)…', dis: !window.WF, fn: function () { WF.mi = i; WF.msg = ''; PT.select('wf'); setTimeout(function () { try { wfToolsDraw(); var e = $('wfTools'); if (e) e.scrollIntoView({ block: 'start' }); } catch (e2) {} }, 60); } },
             { sep: 1 }, { h: 'Mode A — batas EKSAK untuk audit' }];
           if (!D.length) L.push({ t: 'Belum ada domain di Geomodeller Vein', dis: 1 });
           D.forEach(function (d) {
@@ -389,6 +389,15 @@
       kids: kids
     };
   };
+
+  /* panel Import Wireframe Geologi: alat iris / flag digambar ulang sesudah aksi yang mengubah isinya */
+  ['gmWfStrings', 'gmWfFlag', 'gmPanel', 'gmAddDom', 'gmDelDom'].forEach(function (nm) {
+    var f = window[nm]; if (typeof f !== 'function' || f._wfT) return;
+    window[nm] = function () { var r = f.apply(this, arguments); try { if (fn('wfToolsDraw')) wfToolsDraw(); } catch (e) {} return r; };
+    window[nm]._wfT = 1;
+  });
+  (function () { var u = window.uiTab; if (typeof u !== 'function' || u._wfT) return;
+    window.uiTab = function (n) { var r = u.apply(this, arguments); try { if (n === 'Wf' && fn('wfToolsDraw')) wfToolsDraw(); } catch (e) {} return r; }; window.uiTab._wfT = 1; })();
 
   /* pengaturan dialog ikut tersimpan di berkas proyek (d.wfx sendiri ikut lewat gmPack) */
   if (window.SA && SA.collectWork) {

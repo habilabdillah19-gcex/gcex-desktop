@@ -82,7 +82,11 @@ JS = r"""
   var o = rpO();
   var U = BX.ui || {};
   /* DTM dari data latihan untuk kasus progres topo-ke-topo & batas DTM tambahan */
-  var MM = (window.MD && MD.models) || [], iJuni = -1, iJuli = -1;
+  /* sejak Drillhole 0.24.40 survei topografi latihan adalah VERSI topografi di Data Spasial (v.tin),
+     bukan lagi wireframe di MD.models; keduanya dicari supaya uji ini jalan di build lama & baru */
+  var MM = [], KEY = [], iJuni = -1, iJuli = -1;
+  ((window.MD && MD.models) || []).forEach(function (m, i) { MM.push(m); KEY.push('wf:' + i); });
+  try { spL('topo').forEach(function (v) { if (v.tin) { MM.push({name: v.name, v: v.tin.v, t: v.tin.t, tin0: v.tin}); KEY.push('sp:topo:' + v.id); } }); } catch (e) {}
   for (var w = 0; w < MM.length; w++) {
     if (/topo_akhir_juni/i.test(MM[w].name)) iJuni = w;
     if (/topo_akhir_juli/i.test(MM[w].name)) iJuli = w;
@@ -93,7 +97,7 @@ JS = r"""
   };
   var zfTin = function (i, which) {
     var ox = window.offX || 0, oy = window.offY || 0, j = which === 'lo' ? 0 : 1;
-    var tf = RP.api.tin(MM[i]);
+    var tf = RP.api.tin(MM[i].tin0 || MM[i]);
     return function (x, y) { var r = tf(x + ox, y + oy); return r ? r[j] : null; };
   };
 
@@ -123,7 +127,7 @@ JS = r"""
       RP.ovr = {tz: zfTin(ks.ovr.atas, 'hi'), pz: zfTin(ks.ovr.bawah, 'lo'),
                 tzT: true, pzT: true, lab: 'uji paritas'};
     }
-    if (ks.sx) o.sx = ks.sx.map(function (q) { return {k: 'wf:' + q.i, side: q.side}; });
+    if (ks.sx) o.sx = ks.sx.map(function (q) { return {k: KEY[q.i], side: q.side}; });
     rpRun();
     var R = RP.res;
     if (!R) { hasil.push({nama: ks.nama, err: 'rpRun tidak menghasilkan apa pun'}); return; }

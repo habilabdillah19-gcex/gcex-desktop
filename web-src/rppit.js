@@ -48,7 +48,7 @@
       if (window.OV && OV.topoF && OV.topoF.x && OV.topoF.x.length) L.push(['ov:topo', 'Topografi aktif']);
       if (window.OV && OV.pitF && OV.pitF.x && OV.pitF.x.length) L.push(['ov:pit', 'Desain pit aktif']);
     }
-    (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, 'Data Referensi: ' + w.name]); });
+    (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, (w.jenis === 'surf' ? 'Permukaan DTM: ' : 'Wireframe: ') + w.name]); });
     return L;
   }
   function labOf(k) { var r = srcs('topo').filter(function (p) { return p[0] === k; })[0]; return r ? r[1] : k; }
@@ -61,7 +61,7 @@
     if (k.indexOf('wf:') === 0) {
       var w = (window.MD && MD.models || [])[+k.slice(3)], tf = w && api('tin') ? api('tin')(w) : null;
       if (!tf) return null;
-      return { n: 'Data Referensi ' + w.name, tin: true, f: function (x, y) { var r = tf(x + ox, y + oy); return r ? r[j] : null; } };
+      return { n: (w.jenis === 'surf' ? 'Permukaan DTM ' : 'Wireframe ') + w.name, tin: true, f: function (x, y) { var r = tf(x + ox, y + oy); return r ? r[j] : null; } };
     }
     if (k.indexOf('ov:') === 0) {
       var o = k === 'ov:pit' ? (window.OV && OV.pitF) : (window.OV && OV.topoF);

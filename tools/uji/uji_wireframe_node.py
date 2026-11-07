@@ -15,7 +15,7 @@ Yang diukur:
 
 Pemakaian: python tools/uji/uji_wireframe_node.py [--dasar=<ref git>]
 """
-import json, os, random, subprocess, sys, tempfile, time, urllib.request
+import json, os, random, re, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,6 +72,57 @@ JS_DOMAIN = r"""
 })()
 """
 
+JS_SPASIAL = r"""
+(function () {
+  var o = {models: MD.models.map(function (m) { return m.name; })};
+  try {
+    o.pit = spL('pit').map(function (v) { return v.name + (v.tin ? '[tin]' : ''); });
+    o.topo = spL('topo').map(function (v) { return v.name + (v.tin ? '[tin]' : ''); });
+    o.topoAktif = spAct('topo') ? spAct('topo').name : null;
+    var t = spL('topo').filter(function (v) { return v.tin; })[0]; o.tinKeys = t ? Object.keys(t.tin) : null;
+  } catch (e) { o.err = String(e); }
+  o.ovPit = (document.getElementById('ovPit') || {}).checked;
+  return o;
+})()
+"""
+
+JS_IRIS = r"""
+(async function () {
+  try { uiTab('GM'); gmPanel(); } catch (e) {}
+  var diGM = !!document.querySelector('#pGM [onclick*="gmWfFlag"]');
+  PT.select('wf'); await new Promise(function (r) { setTimeout(r, 300); });
+  var T = document.getElementById('wfTools'), b = T ? T.querySelector('[onclick*="gmWfFlag"]') : null, r = b ? b.getBoundingClientRect() : null;
+  var tampil = !!(r && r.height > 5);
+  var qi = -1; MD.models.forEach(function (m, i) { if (/QV_Lensa2/.test(m.name)) qi = i; });
+  WF.mi = qi; var d = GM.doms.filter(function (x) { return x.name === 'UJI_DOM'; })[0]; WF.dom = d ? d.id : '';
+  if (b) b.click();
+  await new Promise(function (r2) { setTimeout(r2, 300); });
+  var T2 = document.getElementById('wfTools');
+  return {diGM: diGM, tampil: tampil, pesan: T2 ? (T2.textContent.match(/\d+ interval[^.]*/) || [''])[0] : ''};
+})()
+"""
+
+JS_LAPOR = r"""
+(function () {
+  if (!(window.BX && BX.m) || typeof rpRun !== 'function') return {err: 'block model / reporting tidak ada'};
+  var C = [];
+  (MD.models || []).forEach(function (m, i) { C.push({n: m.name, k: 'wf:' + i, tin: m}); });
+  try { spL('topo').concat(spL('pit')).forEach(function (v) { if (v.tin) C.push({n: v.name, k: (spL('pit').indexOf(v) >= 0 ? 'sp:pit:' : 'sp:topo:') + v.id, tin: v.tin}); }); } catch (e) {}
+  var cari = function (re) { return C.filter(function (c) { return re.test(c.n); })[0]; };
+  var juni = cari(/topo_akhir_juni/), juli = cari(/topo_akhir_juli/), f2 = cari(/pit_fase2/);
+  if (!juni || !juli || !f2) return {err: 'permukaan latihan tidak ditemukan'};
+  var o = rpO(), ton = function () { var R = RP.res, t = 0; if (!R || !R.rows.length) return null; Object.keys(R.rows[0].G).forEach(function (k) { t += R.rows[0].G[k].t; }); return +t.toFixed(3); };
+  var zf = function (tin, j) { var tf = RP.api.tin(tin), ox = window.offX || 0, oy = window.offY || 0; return function (x, y) { var r = tf(x + ox, y + oy); return r ? r[j] : null; }; };
+  o.dom = 'all'; o.cat = {}; o.surf = 'none'; o.poly = ''; o.z0 = ''; o.z1 = ''; o.cuts = '0'; o.grp = 'none'; o.show = false;
+  var out = {};
+  RP.ovr = null; o.sx = [{k: juli.k, side: 'below'}]; rpRun(); out.dibawahJuli = ton();
+  o.sx = [{k: f2.k, side: 'above'}]; rpRun(); out.diatasPitFase2 = ton();
+  o.sx = []; RP.ovr = {tz: zf(juni.tin, 1), pz: zf(juli.tin, 0), tzT: true, pzT: true, lab: 'uji'}; rpRun(); out.progresJuniJuli = ton();
+  RP.ovr = null; o.sx = []; rpRun(); out.tanpaBatas = ton();
+  return out;
+})()
+"""
+
 JS_PILIH = r"""
 (async function () {
   PT.select('wf');
@@ -120,11 +171,12 @@ def main():
         ctx.add_init_script("window.showDirectoryPicker=async function(){throw new Error('batal');};")
         pg = ctx.new_page(); pg.on("dialog", lambda d: d.accept())
         pg.on("pageerror", lambda e: galat.append(str(e)[:200]))
-        H["lama"]["boot"] = boot(pg, pl); H["lama"]["pintu"] = pg.evaluate(JS_PINTU)
-        H["baru"]["boot"] = boot(pg, pb); H["baru"]["pintu"] = pg.evaluate(JS_PINTU)
+        H["lama"]["boot"] = boot(pg, pl); H["lama"]["sp"] = pg.evaluate(JS_SPASIAL); H["lama"]["lapor"] = pg.evaluate(JS_LAPOR); H["lama"]["pintu"] = pg.evaluate(JS_PINTU)
+        H["baru"]["boot"] = boot(pg, pb); H["baru"]["sp"] = pg.evaluate(JS_SPASIAL); H["baru"]["lapor"] = pg.evaluate(JS_LAPOR); H["baru"]["pintu"] = pg.evaluate(JS_PINTU)
         H["baru"]["urut"] = pg.evaluate(JS_URUT)
         H["baru"]["dom"] = pg.evaluate(JS_DOMAIN)
         H["baru"]["pilih"] = pg.evaluate(JS_PILIH)
+        H["baru"]["iris"] = pg.evaluate(JS_IRIS)
         ctx.close()
     for v in ("lama", "baru"):
         print("%s: boot %s | pintu import panel %s | menu node %s | node wfx di GM %s"
@@ -132,6 +184,7 @@ def main():
     U, D, P = H["baru"]["urut"], H["baru"]["dom"], H["baru"]["pilih"]
     print("anak node wf:", U["kids"]); print("MD.models   :", U["models"])
     print("kunci domain:", D); print("pilih node  :", P)
+    print("spasial lama:", H["lama"]["sp"]); print("spasial baru:", H["baru"]["sp"]); print("iris/flag   :", H["baru"]["iris"])
     salah = []
     if H["baru"]["boot"]["hole"] <= 0: salah.append("boot baru gagal (0 hole)")
     pb_, nb_ = H["baru"]["pintu"]["panel"], H["baru"]["pintu"]["node"]
@@ -144,6 +197,20 @@ def main():
     if D.get("err") or D.get("wfx") != "UJI_URUTAN_TERAKHIR" or "UJI_DOM" not in (D.get("badge") or "") or not D.get("serap"):
         salah.append("fungsi domain dari menu node gagal: %s" % D)
     if P["sel"] != "wf" or not P["tampil"] or not P["tombol"]: salah.append("panel pWf tidak tampil saat node wf dipilih: %s" % P)
+    print("laporan lama:", H["lama"]["lapor"]); print("laporan baru:", H["baru"]["lapor"])
+    LA, LB = H["lama"]["lapor"], H["baru"]["lapor"]
+    if LA.get("err") or LB.get("err") or LA != LB: salah.append("tonase Reporting dengan batas DTM / progres topo berubah")
+    if LA.get("dibawahJuli") is not None and LA.get("dibawahJuli") == LA.get("tanpaBatas"): salah.append("batas DTM tidak memotong apa pun -> uji tonase tidak membuktikan")
+    SB, SL = H["baru"]["sp"], H["lama"]["sp"]
+    if any(re.search(r"SIM_(pit|topo)", n) for n in SB["models"]): salah.append("permukaan pit/topo masih di daftar wireframe")
+    if not any(re.search(r"SIM_(pit|topo)", n) for n in SL["models"]): salah.append("build lama tidak memuat permukaan di wireframe -> uji tidak membuktikan")
+    if sorted(SB.get("pit") or []) != ["SIM_pit_fase1[tin]", "SIM_pit_fase2[tin]"]: salah.append("versi pit Data Spasial salah: %s" % SB.get("pit"))
+    if not all(any(n.startswith(x) and n.endswith("[tin]") for n in SB.get("topo") or []) for x in ("SIM_topo_akhir_juni", "SIM_topo_akhir_juli")): salah.append("versi topo Data Spasial salah: %s" % SB.get("topo"))
+    if SB.get("topoAktif") != SL.get("topoAktif"): salah.append("topografi aktif bergeser: %s -> %s" % (SL.get("topoAktif"), SB.get("topoAktif")))
+    if SB.get("ovPit") != SL.get("ovPit"): salah.append("centang overlay pit berubah")
+    I = H["baru"]["iris"]
+    if I["diGM"]: salah.append("alat iris/flag masih ada di panel Geomodeller Vein")
+    if not I["tampil"] or "interval" not in I["pesan"]: salah.append("alat iris/flag di panel wireframe tidak tampil / tidak jalan: %s" % I)
     if galat: print("galat halaman:", galat[:3])
     print("\n" + ("LULUS" if not salah else "GAGAL:\n  " + "\n  ".join(salah)))
     return 0 if not salah else 1

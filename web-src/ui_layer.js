@@ -87,7 +87,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
   ['amPtsFile','amBndFile','amBndFromDig','amDig'].forEach(function(fn){wrap(fn,null,function(){uiSecOpen('am',3);});});
   wrap('amRun',function(silent){if(silent===true)return;uiSecOpen('am',5);});
   /* Data Referensi */
-  uiSecTabs($('pModel'),'ref',['Wireframe','Titik survey','String'],{always:'#mdMsg'});
+  uiSecTabs($('pModel'),'ref',['Permukaan DTM','Titik survey','String'],{always:'#mdMsg'});
   ['mdImport','mdPts','mdStr'].forEach(function(fn,i){wrap(fn,null,function(){uiSecOpen('ref',i+1);});});
   /* tur demo: elemen yang ditunjuk otomatis dibuka tab-nya */
   wrap('dmPoint',null,function(x){uiReveal(dmEl(x));});
