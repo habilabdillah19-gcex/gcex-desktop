@@ -3891,3 +3891,11 @@ kedua kotak turun dari **12 menjadi 3**.
 - **Loading Ore** dan **ROM / Crusher**: AI menyalin sel menurut urutan kolom borang; program yang menentukan kelas material, tumpukan rehandling dan status Baru / Lama dari posisi sel. Bila AI salah menghitung kolom kosong, kelas ditandai kuning. Di borang ROM, isi nama ketiga tumpukan rehandling di header (dibaca AI bila tertulis).
 - Borang yang sudah dibaca dengan versi lama: klik **✦ Baca dengan AI** lagi.
 - Batas kemampuan: model 2b di CPU membaca tulisan tangan kecil (kode litologi / alterasi) kurang andal. Untuk ketelitian pakai mode **Seimbang**, atau `qwen3-vl:4b-instruct` di laptop dengan GPU NVIDIA (jauh lebih cepat dan teliti).
+
+## 125. DB-Ex 0.43.0 (Qt) — tata letak Borang baru
+
+- **Kiri**: pilih jenis borang → **Tambah File** atau **Tambah Folder** (semua foto / PDF dalam satu folder), atau seret file dari Explorer ke halaman Borang. **Daftar File** menampilkan status tiap borang (Belum dibaca, Dalam antrean, Memproses + progres, Perlu verifikasi, Selesai, AI gagal) dan bisa diurutkan. Klik kanan = baca AI / hapus.
+- **Tengah**: bilah zoom (− % +), putar ↻, pas layar ⤢, **⛶ fokus scan** (panel samping disembunyikan).
+- **Kanan**: tab **Data** (status ekstraksi + *Keyakinan AI*, header dua kolom, tabel, ringkasan kartu angka), tab **Validasi** (daftar galat; klik = lompat ke sel), **Pivot**, **Ekspor**.
+- **Bawah**: antrean AI dengan **Baca Semua dengan AI** dan **Batal**.
+- Data proyek lama tetap terbaca; hanya tampilan yang berubah.

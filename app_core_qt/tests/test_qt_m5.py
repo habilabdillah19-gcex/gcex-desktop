@@ -134,7 +134,7 @@ def test_forms_ai_failure_and_rc_row(qtbot, prj, tmp_path, monkeypatch):
     monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
     pg.add_files()
     qtbot.waitUntil(lambda: pg.cur and pg.cur["doc"]["type"] == "rc", timeout=8000)
-    assert pg.lst.count() == 2 and not pg.tabs.isTabEnabled(1) and "RC Drill" in pg.lst.item(1).text()
+    assert pg.lst.count() == 2 and not pg.tabs.isTabEnabled(2) and "RC Drill" in pg.lst.item(1).text()
     pg._save_rows([{"id": None, "data": {"sample_id": "DX 100007 ZA", "from_m": "6", "to_m": "7"}, "verified": False}])
     pg.add_row(None)
     d = pg.cur["rows"][1]["data"]
@@ -229,7 +229,7 @@ def test_forms_antrean_ai_cepat_tanpa_think(qtbot, prj, tmp_path, monkeypatch):
     qtbot.waitUntil(lambda: pg.ai_did is None and not pg.ai_q and all(d["status"] == "done" for d in pg.docs), timeout=15000)
     assert [x[0] for x in sent] == [False, False]  # Ollama lama menolak think: diulang tanpa itu, borang berikutnya tidak dicoba lagi
     assert all(px <= 1280 for *_a, px in sent)
-    assert pg.bAIAll.text() == "Baca semua yang belum"
+    assert pg.bAIAll.text() == "Baca Semua dengan AI"
     assert "AI ·" in pg.lst.item(0).text() or " · AI" in pg.lst.item(0).text()
     # think=false dikirim bila Ollama menerimanya
     sent.clear()

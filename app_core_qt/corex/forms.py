@@ -11,10 +11,10 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QIcon, QImage, QPixmap
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel,
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QMenu, QProgressBar,
                                QLineEdit, QListWidget, QListWidgetItem, QRadioButton, QScrollArea, QSplitter, QStyledItemDelegate, QTableWidget,
-                               QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
+                               QTableWidgetItem, QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
 from . import api, theme
 from .card import _esc, btn
@@ -26,6 +26,73 @@ SHORT = {"ore": "Loading pit", "rom": "ROM / crusher", "ddr": "Daily Drilling Re
 FILE = {"ore": "Ore_Loading_Pit", "rom": "Ore_ROM_Crusher", "ddr": "RC_Daily_Drilling_Report", "rc": "RC_Drill"}
 MULTI = {"ddr"}  # borang dengan beberapa tabel: ekspor CSV = ZIP berisi satu CSV per tabel
 UNC_BG, BAD_BG, VER_BG = "#fff3bf", "#ffe3e3", "#e6f4ea"
+TYPE_ICON = {"ore": "⛏", "rom": "⇄", "ddr": "▤", "rc": "▦"}
+TYPE_LABEL = {"ore": "Ore Spotter (Loading Pit)", "rom": "Ore ke Stockpile / Crusher", "ddr": "Daily Drilling Report", "rc": "RC Drill Logging"}
+EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp", ".pdf")
+# status di daftar file: (teks, warna titik)
+ST = {"run": ("Memproses", "#2f6fd6"), "queue": ("Dalam antrean", "#8a94a3"), "err": ("AI gagal", "#c0392b"),
+      "ok": ("Selesai", "#2e9d57"), "check": ("Perlu verifikasi", "#e09a1e"), "new": ("Belum dibaca", "#8a94a3")}
+ROLE_D = Qt.UserRole + 1   # dict status untuk FileCard
+
+
+class FileCard(QStyledItemDelegate):
+    """Baris daftar file: miniatur, nama, jenis borang, status berwarna (+ bilah progres saat AI membaca)."""
+
+    def sizeHint(self, option, index):  # noqa: N802
+        return QSize(option.rect.width(), 66)
+
+    def paint(self, p: QPainter, option, index) -> None:  # noqa: D401
+        from PySide6.QtWidgets import QStyle
+        info = index.data(ROLE_D) or {}
+        r = option.rect.adjusted(4, 3, -4, -3)
+        p.save()
+        p.setRenderHint(QPainter.Antialiasing)
+        sel = bool(option.state & QStyle.State_Selected)
+        p.setPen(QPen(QColor(theme.C["ac"] if sel else theme.C["bd"]), 1.4 if sel else 1))
+        p.setBrush(QColor(theme.C["acs"] if sel else theme.C["pn"]))
+        p.drawRoundedRect(r, 5, 5)
+        if sel:
+            p.fillRect(r.x(), r.y() + 1, 3, r.height() - 2, QColor(theme.C["ac2"]))
+        ic = index.data(Qt.DecorationRole)
+        x = r.x() + 8
+        if isinstance(ic, QIcon):
+            ic.paint(p, x, r.y() + 4, 44, r.height() - 8)
+        x += 52
+        st, col = ST.get(info.get("st", "new"), ST["new"])
+        if info.get("st") == "queue" and info.get("pos"):
+            st = f"Antre #{info['pos']}"
+        fm = option.fontMetrics
+        tw = r.right() - x - 8
+        f = QFont(option.font)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(QColor(theme.C["ink"]))
+        p.drawText(x, r.y() + 4, tw, 18, Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(info.get("name", ""), Qt.ElideMiddle, tw))
+        p.setFont(option.font)
+        sw = fm.horizontalAdvance(st) + 16
+        p.setPen(QColor(theme.C["mu"]))
+        p.drawText(x, r.y() + 22, tw - sw - 6, 17, Qt.AlignLeft | Qt.AlignVCenter, fm.elidedText(info.get("type", ""), Qt.ElideRight, tw - sw - 6))
+        sx = r.right() - 8 - sw
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(col))
+        p.drawEllipse(sx, r.y() + 26, 8, 8)
+        p.setPen(QColor(col))
+        p.drawText(sx + 13, r.y() + 22, sw - 13, 17, Qt.AlignLeft | Qt.AlignVCenter, st)
+        if info.get("st") == "run":  # bilah progres (perkiraan dari lama baca rata-rata)
+            pr = max(0.03, min(0.97, info.get("prog", 0.0)))
+            by = r.y() + 45
+            bw = tw - 80
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(theme.C["pn2"]))
+            p.drawRoundedRect(x, by, bw, 5, 2, 2)
+            p.setBrush(QColor(col))
+            p.drawRoundedRect(x, by, int(bw * pr), 5, 2, 2)
+            p.setPen(QColor(theme.C["mu"]))
+            p.drawText(x + bw + 6, by - 5, 74, 15, Qt.AlignLeft | Qt.AlignVCenter, info.get("el", ""))
+        elif info.get("cnt"):
+            p.setPen(QColor(theme.C["mu"]))
+            p.drawText(x, r.y() + 39, tw, 17, Qt.AlignLeft | Qt.AlignVCenter, fm.elidedText(info["cnt"], Qt.ElideRight, tw))
+        p.restore()
 
 
 class ListDelegate(QStyledItemDelegate):
@@ -109,49 +176,86 @@ class FormsPage(QWidget):
 
     # ---------------------------------------------------------------- tata letak
     def _build(self) -> None:
-        o = QHBoxLayout(self)
+        """Tata letak (0.43.0): kiri = jenis borang, tombol tambah, daftar file berstatus; tengah = scan dengan bilah zoom;
+        kanan = tab Data (status ekstraksi, header, tabel, ringkasan) / Validasi / Pivot / Ekspor; bawah = antrean AI."""
+        self.setAcceptDrops(True)
+        o = QVBoxLayout(self)
         o.setContentsMargins(0, 0, 0, 0)
+        o.setSpacing(0)
         sp = QSplitter(Qt.Horizontal)
         sp.setHandleWidth(5)
-        o.addWidget(sp)
-        # kiri
+        o.addWidget(sp, 1)
+        o.addWidget(self._bottom_bar())
+        # ---- kiri
         lw = QWidget()
+        lw.setObjectName("fmLeft")
         lv = QVBoxLayout(lw)
-        lv.setContentsMargins(10, 10, 6, 10)
-        hd = QLabel("<b>BORANG LAPANGAN</b>")
-        hd.setObjectName("note")
+        lv.setContentsMargins(10, 10, 6, 8)
+        lv.setSpacing(6)
+        hd = QLabel("BORANG LAPANGAN")
+        hd.setObjectName("fmSect")
         lv.addWidget(hd)
-        self.cbNew = QComboBox()
-        self.cbNew.setToolTip("Jenis borang untuk file yang akan ditambahkan")
-        lv.addWidget(self.cbNew)
+        self.cbNew = QComboBox()  # sumber data jenis borang (disembunyikan; dipilih lewat daftar jenis di bawah)
+        self.cbNew.hide()
+        self.typeList = QListWidget()
+        self.typeList.setObjectName("fmTypes")
+        self.typeList.setFrameShape(QFrame.NoFrame)
+        self.typeList.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.typeList.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.typeList.setTextElideMode(Qt.ElideRight)
+        self.typeList.setToolTip("Jenis borang untuk file yang akan ditambahkan")
+        self.typeList.currentRowChanged.connect(self._type_picked)
+        self.cbNew.currentIndexChanged.connect(self._type_synced)
+        lv.addWidget(self.typeList)
+        self.bAdd = btn("＋  Tambah File", "Tambah foto / scan / PDF borang (disalin ke folder proyek; PDF: satu borang per halaman)", pri=True)
+        self.bAddDir = btn("＋  Tambah Folder", "Tambahkan semua foto / scan / PDF di satu folder sebagai borang jenis terpilih")
+        for b_ in (self.bAdd, self.bAddDir):
+            b_.setMinimumHeight(32)
+            lv.addWidget(b_)
         r = QHBoxLayout()
-        self.bAdd = btn("+ Borang", "Tambah foto / scan / PDF borang (disalin ke folder proyek; PDF: satu borang per halaman)", pri=True, sm=True)
-        self.bDel = btn("Hapus", sm=True)
-        r.addWidget(self.bAdd)
+        self.lstHead = QLabel("DAFTAR FILE")
+        self.lstHead.setObjectName("fmSect")
+        r.addWidget(self.lstHead, 1)
+        self.cbSort = QComboBox()
+        for t_, k in (("Urut: Ditambahkan", "add"), ("Urut: Terbaru", "new"), ("Urut: Nama", "name"), ("Urut: Status", "status"),
+                      ("Urut: Jenis", "type")):
+            self.cbSort.addItem(t_, k)
+        self.cbSort.setCurrentIndex(max(0, self.cbSort.findData(SET.get("fmSort", "add"))))
+        self.cbSort.currentIndexChanged.connect(self._sort_changed)
+        r.addWidget(self.cbSort)
+        self.bDel = btn("🗑", "Hapus borang terpilih dari proyek (file asli di luar proyek tidak tersentuh) — juga tombol Delete", sm=True)
         r.addWidget(self.bDel)
-        r.addStretch(1)
         lv.addLayout(r)
         self.lst = QListWidget()
-        self.lst.setIconSize(QSize(64, 84))
-        self.lst.setWordWrap(True)
-        self.lst.setTextElideMode(Qt.ElideMiddle)
+        self.lst.setObjectName("fmFiles")
+        self.lst.setIconSize(QSize(46, 58))
+        self.lst.setItemDelegate(FileCard(self.lst))
+        self.lst.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.lst.customContextMenuRequested.connect(self._list_menu)
         lv.addWidget(self.lst, 1)
+        drop = QLabel("⇪  Seret file ke sini atau klik tombol di atas\nJPG, PNG, TIFF, BMP, WEBP, PDF")
+        drop.setObjectName("fmDrop")
+        drop.setAlignment(Qt.AlignCenter)
+        lv.addWidget(drop)
         self.sum = QLabel()
         self.sum.setObjectName("note")
         self.sum.setWordWrap(True)
         lv.addWidget(self.sum)
         sp.addWidget(lw)
-        # tengah
+        # ---- tengah
         cw = QWidget()
         cv = QVBoxLayout(cw)
         cv.setContentsMargins(0, 0, 0, 0)
         cv.setSpacing(0)
         tb = QFrame()
-        tb.setObjectName("fbar")
-        th = QHBoxLayout(tb)
-        th.setContentsMargins(10, 5, 10, 5)
+        tb.setObjectName("fmVHead")
+        tv = QVBoxLayout(tb)
+        tv.setContentsMargins(10, 6, 10, 6)
+        tv.setSpacing(5)
+        th = QHBoxLayout()
         self.title = QLabel()
         self.title.setTextFormat(Qt.RichText)
+        self.title.setObjectName("fmVTitle")
         th.addWidget(self.title, 1)
         self.cbSpeed = QComboBox()
         for t_, px in (("Cepat", 1280), ("Seimbang", 1600), ("Teliti", 2000)):
@@ -163,51 +267,188 @@ class FormsPage(QWidget):
         th.addWidget(self.cbSpeed)
         self.bAI = btn("✦ Baca dengan AI", "AI vision lokal (Ollama) membaca header & tabel borang ini. Baris lama diganti.", pri=True, sm=True)
         th.addWidget(self.bAI)
-        self.bAIAll = btn("Baca semua yang belum", "Antrekan semua borang yang belum dibaca (atau gagal) untuk dibaca AI satu per satu "
-                          "di latar belakang. Selama itu Anda tetap bisa memeriksa & memverifikasi borang lain.", sm=True)
-        th.addWidget(self.bAIAll)
+        tv.addLayout(th)
+        zh = QHBoxLayout()
+        zh.setSpacing(4)
+        self.vb: dict[str, QToolButton] = {}
+        for k, t_, tip in (("zout", "−", "Perkecil"), ("pct", "100%", "Perbesaran (klik = pas layar)"), ("zin", "+", "Perbesar"),
+                           ("sp", "", ""), ("rot", "↻", "Putar 90° (disimpan, dipakai juga saat AI membaca)"),
+                           ("fit", "⤢", "Pas layar (klik ganda di scan)"), ("focus", "⛶", "Fokus scan: sembunyikan panel kiri & kanan")):
+            if k == "sp":
+                zh.addSpacing(14)
+                continue
+            b_ = QToolButton()
+            b_.setText(t_)
+            b_.setToolTip(tip)
+            b_.setObjectName("fmVBtn")
+            if k == "focus":
+                b_.setCheckable(True)
+            zh.addWidget(b_)
+            self.vb[k] = b_
+        zh.addStretch(1)
+        tv.addLayout(zh)
         cv.addWidget(tb)
         self.view = ScanView(self)
-        self.view.placeholder("Tambahkan foto / scan / PDF borang dengan + Borang.\nScroll = zoom, tarik = geser, ↻ = putar (juga untuk AI).")
+        self.view.tools.hide()  # diganti bilah zoom di atas
+        self.view.placeholder("Tambahkan foto / scan / PDF borang dengan Tambah File, atau seret file ke sini.\n"
+                              "Scroll = zoom, tarik = geser, ↻ = putar (juga untuk AI).")
         cv.addWidget(self.view, 1)
+        self.vb["zout"].clicked.connect(lambda: (self.view.zoom(1 / 1.3), self._zoom_pct()))
+        self.vb["zin"].clicked.connect(lambda: (self.view.zoom(1.3), self._zoom_pct()))
+        self.vb["pct"].clicked.connect(lambda: (self.view.fit(), self._zoom_pct()))
+        self.vb["fit"].clicked.connect(lambda: (self.view.fit(), self._zoom_pct()))
+        self.vb["rot"].clicked.connect(lambda: self.view.btn["rot"].click())
+        self.vb["focus"].toggled.connect(self._focus)
         self.aiInfo = QLabel()
         self.aiInfo.setObjectName("note")
         self.aiInfo.setWordWrap(True)
         self.aiInfo.setContentsMargins(10, 4, 10, 4)
         cv.addWidget(self.aiInfo)
         sp.addWidget(cw)
-        # kanan
+        # ---- kanan
         self.tabs = QTabWidget()
-        self.tabs.setMinimumWidth(460)
+        self.tabs.setObjectName("fmTabs")
+        self.tabs.setMinimumWidth(480)
         self.tabs.addTab(self._tab_data(), "Data")
+        self.tabs.addTab(self._tab_valid(), "Validasi")
         self.tabs.addTab(self._tab_pivot(), "Pivot")
         self.tabs.addTab(self._tab_export(), "Ekspor")
         sp.addWidget(self.tabs)
         sp.setStretchFactor(1, 1)
-        sp.setSizes(SET.get("qt_fm_split", [230, 700, 620]))
-        sp.splitterMoved.connect(lambda *_: SET.set("qt_fm_split", sp.sizes()))
+        sp.setSizes(SET.get("qt_fm_split2", [260, 640, 660]))
+        sp.splitterMoved.connect(lambda *_: SET.set("qt_fm_split2", sp.sizes()))
+        self.split = sp
+        self.left, self.right = lw, self.tabs
         self.bAdd.clicked.connect(self.add_files)
+        self.bAddDir.clicked.connect(self.add_folder)
         self.bDel.clicked.connect(self.delete_doc)
         self.bAI.clicked.connect(self.run_ai)
-        self.bAIAll.clicked.connect(self.run_ai_all)
         self.lst.currentRowChanged.connect(self._pick)
+        QShortcut(QKeySequence(QKeySequence.Delete), self.lst, activated=self.delete_doc, context=Qt.WidgetShortcut)
+        self.view.loaded.connect(lambda *_: self._zoom_pct())
         self.set_enabled(False)
+
+    def _bottom_bar(self) -> QWidget:
+        bar = QFrame()
+        bar.setObjectName("fmBottom")
+        h = QHBoxLayout(bar)
+        h.setContentsMargins(12, 6, 12, 6)
+        h.setSpacing(10)
+        self.qInfo = QLabel("Antrean AI kosong")
+        self.qInfo.setObjectName("note")
+        h.addWidget(self.qInfo)
+        self.qBar = QProgressBar()
+        self.qBar.setRange(0, 1)
+        self.qBar.setValue(0)
+        self.qBar.setTextVisible(False)
+        self.qBar.setFixedWidth(220)
+        h.addWidget(self.qBar)
+        self.qPct = QLabel("")
+        self.qPct.setObjectName("note")
+        h.addWidget(self.qPct)
+        self.qDone = QLabel("")
+        self.qDone.setObjectName("note")
+        h.addWidget(self.qDone)
+        h.addStretch(1)
+        self.bAIAll = btn("Baca Semua dengan AI", "Antrekan semua borang yang belum dibaca (atau gagal) untuk dibaca AI satu per satu "
+                          "di latar belakang. Selama itu Anda tetap bisa memeriksa & memverifikasi borang lain.", pri=True)
+        self.bAIAll.setMinimumHeight(32)
+        self.bAIAll.setMinimumWidth(190)
+        self.bCancel = btn("Batal", "Kosongkan antrean AI (borang yang sedang dibaca tetap diselesaikan)")
+        self.bCancel.setMinimumHeight(32)
+        h.addWidget(self.bAIAll)
+        h.addWidget(self.bCancel)
+        self.bAIAll.clicked.connect(self.run_ai_all)
+        self.bCancel.clicked.connect(self.cancel_ai)
+        self.q_done, self.q_total, self.q_last = 0, 0, ""
+        return bar
+
+    def _section(self, v: QVBoxLayout, title: str, extra: list | None = None, open_: bool = True) -> tuple[QVBoxLayout, QToolButton]:
+        """Bagian yang bisa dilipat (▾ judul) dengan tombol tambahan di kanan judul."""
+        box = QFrame()
+        box.setObjectName("fmCard")
+        bv = QVBoxLayout(box)
+        bv.setContentsMargins(10, 6, 10, 8)
+        bv.setSpacing(6)
+        hh = QHBoxLayout()
+        tg = QToolButton()
+        tg.setObjectName("fmFold")
+        tg.setCheckable(True)
+        tg.setChecked(open_)
+        tg.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        tg.setArrowType(Qt.DownArrow if open_ else Qt.RightArrow)
+        tg.setText(title)
+        hh.addWidget(tg)
+        hh.addStretch(1)
+        for w_ in extra or []:
+            hh.addWidget(w_)
+        bv.addLayout(hh)
+        body = QWidget()
+        inner = QVBoxLayout(body)
+        inner.setContentsMargins(0, 0, 0, 0)
+        inner.setSpacing(6)
+        bv.addWidget(body, 1)
+        body.setVisible(open_)
+
+        def flip(on: bool) -> None:
+            body.setVisible(on)
+            tg.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+        tg.toggled.connect(flip)
+        v.addWidget(box, 1 if extra is not None else 0)
+        return inner, tg
 
     def _tab_data(self) -> QWidget:
         w = QWidget()
         v = QVBoxLayout(w)
-        v.setContentsMargins(12, 10, 12, 12)
-        v.setSpacing(6)
-        self.hdrBox = QFrame()
-        self.hdrBox.setObjectName("fld")
-        self.hdrForm = QFormLayout(self.hdrBox)
-        self.hdrForm.setContentsMargins(8, 6, 8, 6)
+        v.setContentsMargins(10, 10, 10, 10)
+        v.setSpacing(8)
+        # status ekstraksi
+        self.banner = QFrame()
+        self.banner.setObjectName("fmBanner")
+        bh = QHBoxLayout(self.banner)
+        bh.setContentsMargins(10, 8, 10, 8)
+        self.bnIcon = QLabel("•")
+        self.bnIcon.setObjectName("fmBnIcon")
+        self.bnIcon.setFixedWidth(26)
+        self.bnIcon.setAlignment(Qt.AlignCenter)
+        bh.addWidget(self.bnIcon)
+        bt = QVBoxLayout()
+        bt.setSpacing(0)
+        self.bnTitle = QLabel()
+        self.bnTitle.setObjectName("fmBnTitle")
+        self.bnSub = QLabel()
+        self.bnSub.setObjectName("note")
+        self.bnSub.setWordWrap(True)
+        bt.addWidget(self.bnTitle)
+        bt.addWidget(self.bnSub)
+        bh.addLayout(bt, 1)
+        cl = QVBoxLayout()
+        cl.setSpacing(0)
+        cap = QLabel("Keyakinan AI")
+        cap.setObjectName("note")
+        cap.setAlignment(Qt.AlignRight)
+        self.bnConf = QLabel("–")
+        self.bnConf.setObjectName("fmConf")
+        self.bnConf.setAlignment(Qt.AlignCenter)
+        self.bnConf.setToolTip("Persentase isian yang dibaca AI tanpa ragu (tidak kuning). Bukan jaminan benar — tetap cocokkan dengan scan.")
+        cl.addWidget(cap)
+        cl.addWidget(self.bnConf, 0, Qt.AlignRight)
+        bh.addLayout(cl)
+        v.addWidget(self.banner)
+        # header (dua kolom)
+        hv, self.hdrFold = self._section(v, "Informasi Header")
+        self.hdrBox = QWidget()
+        self.hdrGrid = QGridLayout(self.hdrBox)
+        self.hdrGrid.setContentsMargins(0, 0, 0, 0)
+        self.hdrGrid.setHorizontalSpacing(8)
+        self.hdrGrid.setVerticalSpacing(4)
         self.hdrEd: dict[str, QLineEdit] = {}
         self.hdrScroll = QScrollArea()
         self.hdrScroll.setWidgetResizable(True)
         self.hdrScroll.setFrameShape(QFrame.NoFrame)
         self.hdrScroll.setWidget(self.hdrBox)
-        v.addWidget(self.hdrScroll)
+        hv.addWidget(self.hdrScroll)
+        # tabel
         self.tblRow = QWidget()
         tr = QHBoxLayout(self.tblRow)
         tr.setContentsMargins(0, 0, 0, 0)
@@ -215,27 +456,19 @@ class FormsPage(QWidget):
         self.cbTbl = QComboBox()
         self.cbTbl.currentIndexChanged.connect(self._tbl_changed)
         tr.addWidget(self.cbTbl)
-        tr.addStretch(1)
         self.tblRow.hide()
-        v.addWidget(self.tblRow)
-        self.sumInfo = QLabel()
-        self.sumInfo.setTextFormat(Qt.RichText)
-        self.sumInfo.setWordWrap(True)
-        self.sumInfo.setObjectName("fld")
-        self.sumInfo.setMargin(6)
-        self.sumInfo.hide()
-        v.addWidget(self.sumInfo)
+        tv_, self.tblFold = self._section(v, "Data", [self.tblRow])
         self.valInfo = QLabel()
         self.valInfo.setTextFormat(Qt.RichText)
         self.valInfo.setWordWrap(True)
-        v.addWidget(self.valInfo)
+        tv_.addWidget(self.valInfo)
         self.t = QTableWidget(0, 1)
         self.t.verticalHeader().setDefaultSectionSize(24)
         self.t.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.t.itemChanged.connect(self._cell)
         self._plain = QStyledItemDelegate(self.t)
         self._katDel = ListDelegate(self.t, [])
-        v.addWidget(self.t, 1)
+        tv_.addWidget(self.t, 1)
         r = QHBoxLayout()
         self.bRow = btn("+ Baris", sm=True)
         self.bIns = btn("Sisipkan", "Sisipkan baris di atas baris terpilih", sm=True)
@@ -245,19 +478,49 @@ class FormsPage(QWidget):
         for b in (self.bRow, self.bIns, self.bRowDel, self.bVerAll, self.bUnver):
             r.addWidget(b)
         r.addStretch(1)
-        v.addLayout(r)
-        n = QLabel("<span style='background:%s'>&nbsp;kuning&nbsp;</span> = AI ragu / diisi program dari tanda ulang (〃, garis), <span style='background:%s'>&nbsp;merah&nbsp;</span> = "
-                   "galat validasi (arahkan kursor untuk alasannya). Periksa tiap baris terhadap scan lalu centang <b>✓</b> "
-                   "(Ctrl+Enter = verifikasi baris & lanjut). Ekspor bawaan hanya baris terverifikasi." % (UNC_BG, BAD_BG))
-        n.setObjectName("note")
-        n.setWordWrap(True)
-        n.setTextFormat(Qt.RichText)
-        v.addWidget(n)
+        tv_.addLayout(r)
+        # ringkasan
+        sv, self.sumFold = self._section(v, "Ringkasan")
+        self.kpiBox = QWidget()
+        self.kpi = QGridLayout(self.kpiBox)
+        self.kpi.setContentsMargins(0, 0, 0, 0)
+        self.kpi.setSpacing(6)
+        sv.addWidget(self.kpiBox)
+        self.sumInfo = QLabel()
+        self.sumInfo.setTextFormat(Qt.RichText)
+        self.sumInfo.setWordWrap(True)
+        self.sumInfo.setObjectName("note")
+        self.sumInfo.hide()
+        sv.addWidget(self.sumInfo)
         self.bRow.clicked.connect(lambda: self.add_row(None))
         self.bIns.clicked.connect(lambda: self.add_row(max(0, self.t.currentRow())))
         self.bRowDel.clicked.connect(self.del_row)
         self.bVerAll.clicked.connect(lambda: self.verify_all(True))
         self.bUnver.clicked.connect(lambda: self.verify_all(False))
+        return w
+
+    def _tab_valid(self) -> QWidget:
+        w = QWidget()
+        v = QVBoxLayout(w)
+        v.setContentsMargins(12, 10, 12, 12)
+        v.setSpacing(6)
+        self.vSum = QLabel()
+        self.vSum.setTextFormat(Qt.RichText)
+        self.vSum.setWordWrap(True)
+        v.addWidget(self.vSum)
+        self.vList = QListWidget()
+        self.vList.setObjectName("fmVList")
+        self.vList.itemActivated.connect(self._goto_issue)
+        self.vList.itemClicked.connect(self._goto_issue)
+        v.addWidget(self.vList, 1)
+        n = QLabel("Klik satu galat untuk melompat ke selnya di tab Data.<br>"
+                   "<span style='background:%s'>&nbsp;kuning&nbsp;</span> = AI ragu / diisi program dari tanda ulang (〃, garis) atau dari "
+                   "posisi kolom, <span style='background:%s'>&nbsp;merah&nbsp;</span> = galat validasi. Periksa tiap baris terhadap scan lalu "
+                   "centang <b>✓</b> (Ctrl+Enter = verifikasi baris & lanjut). Ekspor bawaan hanya baris terverifikasi." % (UNC_BG, BAD_BG))
+        n.setObjectName("note")
+        n.setWordWrap(True)
+        n.setTextFormat(Qt.RichText)
+        v.addWidget(n)
         return w
 
     def _tab_pivot(self) -> QWidget:
@@ -339,8 +602,8 @@ class FormsPage(QWidget):
         self.win.toast(m, ms)
 
     def set_enabled(self, on: bool) -> None:
-        self.bAdd.setEnabled(bool(self.folder))
-        self.cbNew.setEnabled(bool(self.folder))
+        for w_ in (self.bAdd, self.bAddDir, self.cbNew, self.typeList):
+            w_.setEnabled(bool(self.folder))
         for w in (self.bDel, self.bAI, self.tabs):
             w.setEnabled(on)
         self.bAIAll.setEnabled(bool(self.folder))
@@ -374,6 +637,16 @@ class FormsPage(QWidget):
             self.cbNew.addItem(t["name"], k)
         self.cbNew.setCurrentIndex(max(0, self.cbNew.findData(cur)))
         self.cbNew.blockSignals(False)
+        self.typeList.blockSignals(True)
+        self.typeList.clear()
+        for k, t in self.types.items():
+            it = QListWidgetItem(f"{TYPE_ICON.get(k, '•')}   {TYPE_LABEL.get(k, t['name'])}")
+            it.setData(Qt.UserRole, k)
+            it.setToolTip(t["name"])
+            self.typeList.addItem(it)
+        self.typeList.setCurrentRow(self.cbNew.currentIndex())
+        self.typeList.setFixedHeight(32 * max(1, self.typeList.count()) + 8)
+        self.typeList.blockSignals(False)
         self.docs = j["docs"]
         self._fill_list()
         self.set_enabled(False)
@@ -398,13 +671,85 @@ class FormsPage(QWidget):
             s += f" · {d['n_ver']}/{d['n_rows']} ✓" + (f" · {d['n_unc']} ragu" if d.get("n_unc") else "")
         return s
 
+    def _info(self, d: dict) -> dict:
+        """Data kartu daftar file (FileCard)."""
+        n, nv = d.get("n_rows") or 0, d.get("n_ver") or 0
+        if d["id"] == self.ai_did:
+            st = "run"
+        elif d["id"] in self.ai_q:
+            st = "queue"
+        elif d["status"] == "error" and not n:
+            st = "err"
+        elif n and nv >= n:
+            st = "ok"
+        elif n:
+            st = "check"
+        else:
+            st = "new"
+        cnt = f"{nv}/{n} ✓ terverifikasi" + (f" · {d['n_unc']} ragu" if d.get("n_unc") else "") if n else ""
+        el, prog = "", 0.0
+        if st == "run":
+            sec = time.time() - self.ai_t0
+            est = max(20.0, self._est_secs())
+            prog, el = sec / est, f"{int(sec) // 60}:{int(sec) % 60:02d} · {round(min(0.99, sec / est) * 100)}%"
+        return {"name": d["name"], "type": SHORT.get(d["type"], d["type"]), "st": st, "cnt": cnt,
+                "pos": (self.ai_q.index(d["id"]) + 1) if st == "queue" else 0, "prog": prog, "el": el}
+
+    def _est_secs(self) -> float:
+        """Perkiraan lama baca satu borang = rata-rata lama baca AI yang tercatat di proyek ini."""
+        xs = [d["ai_secs"] for d in self.docs if d.get("ai_secs")]
+        return sum(xs) / len(xs) if xs else 90.0
+
+    def _sorted(self, docs: list[dict]) -> list[dict]:
+        k = self.cbSort.currentData() if hasattr(self, "cbSort") else "add"
+        order = {"run": 0, "queue": 1, "err": 2, "check": 3, "new": 4, "ok": 5}
+        if k == "new":
+            return sorted(docs, key=lambda d: -d["id"])
+        if k == "name":
+            return sorted(docs, key=lambda d: d["name"].lower())
+        if k == "status":
+            return sorted(docs, key=lambda d: (order[self._info(d)["st"]], d["id"]))
+        if k == "type":
+            return sorted(docs, key=lambda d: (d["type"], d["id"]))
+        return list(docs)
+
+    def _sort_changed(self, _i: int) -> None:
+        SET.set("fmSort", self.cbSort.currentData())
+        if self.folder:
+            self._fill_list()
+
+    def _type_picked(self, i: int) -> None:
+        if 0 <= i < self.cbNew.count() and self.cbNew.currentIndex() != i:
+            self.cbNew.setCurrentIndex(i)
+        if i >= 0:
+            SET.set("fmType", self.cbNew.itemData(i))
+
+    def _type_synced(self, i: int) -> None:
+        if self.typeList.currentRow() != i:
+            self.typeList.blockSignals(True)
+            self.typeList.setCurrentRow(i)
+            self.typeList.blockSignals(False)
+
+    def _set_item(self, it: QListWidgetItem, d: dict) -> None:
+        it.setText(self._line(d))
+        it.setData(ROLE_D, self._info(d))
+
+    def _counts(self) -> None:
+        n = len(self.docs)
+        rr = sum(d.get("n_rows") or 0 for d in self.docs)
+        vv = sum(d.get("n_ver") or 0 for d in self.docs)
+        self.sum.setText(f"{n} borang · {rr} baris · {vv} diverifikasi")
+        self.lstHead.setText(f"DAFTAR FILE ({n})")
+
     def _fill_list(self) -> None:
         cur = self.cur["doc"]["id"] if self.cur else None
+        self.docs = self._sorted(self.docs)
         self.lst.blockSignals(True)
         self.lst.clear()
         root = self._root()
         for d in self.docs:
-            it = QListWidgetItem(self._line(d))
+            it = QListWidgetItem()
+            self._set_item(it, d)
             it.setData(Qt.UserRole, d["id"])
             f = root / "scan" / d["file"] if root else None
             if f and f.exists():
@@ -417,10 +762,7 @@ class FormsPage(QWidget):
                 if self.lst.item(i).data(Qt.UserRole) == cur:
                     self.lst.setCurrentRow(i)
         self.lst.blockSignals(False)
-        n = len(self.docs)
-        rr = sum(d.get("n_rows") or 0 for d in self.docs)
-        vv = sum(d.get("n_ver") or 0 for d in self.docs)
-        self.sum.setText(f"{n} borang · {rr} baris · {vv} diverifikasi")
+        self._counts()
 
     def _thumb(self, did: int, im: QImage) -> None:
         for i in range(self.lst.count()):
@@ -431,17 +773,13 @@ class FormsPage(QWidget):
         if not self.cur:
             return
         try:
-            self.docs = api.call("/core/forms/open", {"folder": self.folder})["docs"]
+            docs = api.call("/core/forms/open", {"folder": self.folder})["docs"]
         except api.ApiError:
             return
-        for i in range(self.lst.count()):
-            it = self.lst.item(i)
-            d = next((x for x in self.docs if x["id"] == it.data(Qt.UserRole)), None)
-            if d:
-                it.setText(self._line(d))
-        rr = sum(d.get("n_rows") or 0 for d in self.docs)
-        vv = sum(d.get("n_ver") or 0 for d in self.docs)
-        self.sum.setText(f"{len(self.docs)} borang · {rr} baris · {vv} diverifikasi")
+        pos = {self.lst.item(i).data(Qt.UserRole): i for i in range(self.lst.count())}
+        self.docs = sorted(docs, key=lambda d: pos.get(d["id"], 1 << 30))  # urutan = urutan daftar (indeks _pick)
+        self._relabel()
+        self._counts()
 
     def add_files(self) -> None:
         if not self.folder:
@@ -450,10 +788,41 @@ class FormsPage(QWidget):
         SET.set("fmType", ft)
         fs, _ = QFileDialog.getOpenFileNames(self, f"Tambah borang {self.types[ft]['name']}", SET.get("fmLastDir", str(Path.home())),
                                              "Borang (*.jpg *.jpeg *.png *.tif *.tiff *.bmp *.webp *.pdf)")
-        if not fs:
+        if fs:
+            SET.set("fmLastDir", str(Path(fs[0]).parent))
+            self._add_paths(fs)
+
+    def add_folder(self) -> None:
+        """Semua foto / scan / PDF di satu folder (tidak termasuk subfolder) -> borang jenis terpilih."""
+        if not self.folder:
             return
-        SET.set("fmLastDir", str(Path(fs[0]).parent))
-        self.toast("Menyalin borang ke proyek…", 3000)
+        d = QFileDialog.getExistingDirectory(self, f"Tambah folder borang {self.types[self.cbNew.currentData()]['name']}",
+                                             SET.get("fmLastDir", str(Path.home())))
+        if not d:
+            return
+        SET.set("fmLastDir", d)
+        fs = sorted(str(f) for f in Path(d).iterdir() if f.is_file() and f.suffix.lower() in EXTS)
+        if not fs:
+            say(self, "Tidak ada foto / scan / PDF di folder itu.", warn=True)
+            return
+        if len(fs) > 5 and not ask(self, f"Tambahkan {len(fs)} file dari folder ini sebagai borang "
+                                         f"{self.types[self.cbNew.currentData()]['name']}?"):
+            return
+        self._add_paths(fs)
+
+    def dragEnterEvent(self, e) -> None:  # noqa: N802
+        if self.folder and e.mimeData().hasUrls() and any(u.toLocalFile().lower().endswith(EXTS) for u in e.mimeData().urls()):
+            e.acceptProposedAction()
+
+    def dropEvent(self, e) -> None:  # noqa: N802
+        fs = [u.toLocalFile() for u in e.mimeData().urls() if u.toLocalFile().lower().endswith(EXTS)]
+        if fs:
+            e.acceptProposedAction()
+            self._add_paths(fs)
+
+    def _add_paths(self, fs: list[str]) -> None:
+        ft = self.cbNew.currentData()
+        self.toast(f"Menyalin {len(fs)} borang ke proyek…", 3000)
 
         def ok(j):
             self.docs = j["docs"]
@@ -462,7 +831,7 @@ class FormsPage(QWidget):
                 say(self, "Sebagian file dilewati:\n" + "\n".join(j["errors"]), warn=True)
             if j["added"]:
                 did = j["added"][0]["id"]
-                i = next(i for i, d in enumerate(self.docs) if d["id"] == did)
+                i = next(i for i in range(self.lst.count()) if self.lst.item(i).data(Qt.UserRole) == did)
                 self.lst.setCurrentRow(i)
                 self._pick(i)
                 self.toast(f"{len(j['added'])} borang ditambahkan — klik ✦ Baca dengan AI", 4000)
@@ -499,9 +868,9 @@ class FormsPage(QWidget):
         self.t.setRowCount(0)
 
     def _pick(self, i: int) -> None:
-        if not 0 <= i < len(self.docs):
+        if not 0 <= i < self.lst.count():
             return
-        did = self.docs[i]["id"]
+        did = self.lst.item(i).data(Qt.UserRole)
         try:
             j = api.call("/core/forms/doc", {"folder": self.folder, "id": did})
         except api.ApiError as e:
@@ -516,6 +885,81 @@ class FormsPage(QWidget):
             root = self._root()
             self.view.show_scan(root / "scan" / j["doc"]["file"] if root else Path(j["doc"]["file"]), did, j["doc"].get("rot") or 0)
         self.refresh()
+
+    def _list_menu(self, pos) -> None:
+        it = self.lst.itemAt(pos)
+        if not it:
+            return
+        self.lst.setCurrentItem(it)
+        m = QMenu(self)
+        m.addAction("✦ Baca dengan AI", self.run_ai)
+        m.addAction("Hapus borang…", self.delete_doc)
+        m.exec(self.lst.viewport().mapToGlobal(pos))
+
+    def _zoom_pct(self) -> None:
+        self.vb["pct"].setText(f"{round(self.view.transform().m11() * 100)}%" if self.view.w else "–")
+
+    def _focus(self, on: bool) -> None:
+        """Fokus scan: panel kiri & kanan disembunyikan (tombol ⛶ lagi = kembali)."""
+        self.left.setVisible(not on)
+        self.right.setVisible(not on)
+        QTimer.singleShot(0, lambda: (self.view.fit(), self._zoom_pct()))
+
+    def _queue_bar(self) -> None:
+        """Bilah bawah: jumlah antre / diproses / selesai di sesi ini, progres, jam selesai terakhir."""
+        if not hasattr(self, "qInfo"):
+            return
+        run = 1 if self.ai_did is not None else 0
+        nq = len(self.ai_q)
+        tot = self.q_done + run + nq
+        if not run and not nq:
+            self.qInfo.setText(f"Antrean AI kosong · {self.q_done} borang selesai dibaca sesi ini" if self.q_done else "Antrean AI kosong")
+            self.qBar.setRange(0, 1)
+            self.qBar.setValue(1 if self.q_done else 0)
+            self.qPct.setText("")
+        else:
+            self.qInfo.setText(f"{nq} file dalam antrean  |  {run} memproses  |  {self.q_done} selesai")
+            part = 0.0
+            if run:
+                part = min(0.95, (time.time() - self.ai_t0) / max(20.0, self._est_secs()))
+            pct = (self.q_done + part) / max(1, tot)
+            self.qBar.setRange(0, 1000)
+            self.qBar.setValue(int(pct * 1000))
+            self.qPct.setText(f"{round(pct * 100)}%")
+        self.qDone.setText(f"● Selesai: {self.q_last}" if self.q_last else "")
+        self.bCancel.setEnabled(bool(nq))
+
+    def cancel_ai(self) -> None:
+        n = len(self.ai_q)
+        self.ai_q = []
+        self._ai_buttons()
+        self._relabel()
+        if n:
+            self.toast(f"{n} borang dikeluarkan dari antrean AI" + (" — borang yang sedang dibaca tetap diselesaikan" if self.ai_did is not None else ""), 4000)
+
+    def _goto_issue(self, it: QListWidgetItem) -> None:
+        tgt = it.data(Qt.UserRole)
+        if not tgt or not self.cur:
+            return
+        rid, k, tbl = tgt
+        self.tabs.setCurrentIndex(0)
+        if rid is None:
+            e = self.hdrEd.get(k)
+            if e:
+                self.hdrFold.setChecked(True)
+                e.setFocus()
+            return
+        if tbl != self.tbl:
+            self.tbl = tbl
+            self.refresh()
+        self.tblFold.setChecked(True)
+        cols = [c for c, _l in self.cols(self.types[self.cur["doc"]["type"]])]
+        for i in range(self.t.rowCount()):
+            ck = self.t.item(i, 0)
+            if ck and ck.data(Qt.UserRole) == rid:
+                self.t.setCurrentCell(i, 1 + cols.index(k) if k in cols else 1)
+                self.t.setFocus()
+                break
 
     # ---------------------------------------------------------------- tampil
     def refresh(self) -> None:
@@ -548,24 +992,160 @@ class FormsPage(QWidget):
         self.cbTbl.setCurrentIndex(max(0, self.cbTbl.findData(self.tbl)))
         self.cbTbl.blockSignals(False)
         self.tblRow.setVisible(len(tbs) > 1)
-        self.hdrScroll.setMaximumHeight(240 if len(t["header"]) > 8 else 16777215)
-        self.hdrScroll.setMinimumHeight(min(240, 30 + 26 * len(t["header"])))
+        rows_h = (len(t["header"]) + 1) // 2
+        self.hdrScroll.setMaximumHeight(min(128, 8 + 30 * rows_h))
+        self.hdrScroll.setMinimumHeight(min(128, 8 + 30 * rows_h))
         self._summary(c.get("summary"))
         self._table(d, t, [r for r in c["rows"] if (r.get("tbl") or "") == self.tbl], c["valid"])
         self._pivot(c.get("pivot"))
-        self.tabs.setTabEnabled(1, bool(c.get("pivot")))
+        self.tabs.setTabEnabled(2, bool(c.get("pivot")))
+        self._banner(d, t, c)
+        self._valid_list(d, t, c)
+        self._kpis(d, c)
+        self.tblFold.setText(f"Data {dict(tbs).get(self.tbl, 'Tabel')}"
+                             f" ({sum(1 for r in c['rows'] if (r.get('tbl') or '') == self.tbl)} baris)")
+
+    def _banner(self, d: dict, t: dict, c: dict) -> None:
+        """Status ekstraksi + keyakinan AI (porsi isian yang tidak ditandai ragu)."""
+        if d["id"] == self.ai_did:
+            k, ic, ti = "run", "⟳", "AI sedang membaca borang ini"
+        elif d["id"] in self.ai_q:
+            k, ic, ti = "run", "…", f"Menunggu antrean AI (#{self.ai_q.index(d['id']) + 1})"
+        elif d["status"] == "error":
+            k, ic, ti = "er", "!", "AI gagal membaca"
+        elif d["status"] == "done":
+            k, ic, ti = "ok", "✓", "Ekstraksi selesai"
+        else:
+            k, ic, ti = "new", "○", "Belum dibaca AI" if not c["rows"] else "Diisi manual"
+        sub = f"Jenis dokumen: {t['name']}"
+        if d["status"] == "done" and d.get("ai_model"):
+            sub += f" · {d['ai_model']}" + (f" · {round(d['ai_secs'])} dtk" if d.get("ai_secs") is not None else "")
+        self.banner.setProperty("k", k)
+        theme.repolish(self.banner)
+        self.bnIcon.setText(ic)
+        self.bnTitle.setText(ti)
+        self.bnSub.setText(sub)
+        cells = sum(1 for r in c["rows"] for v in r["data"].values() if str(v or "").strip())
+        cells += sum(1 for v in d["header"].values() if str(v or "").strip())
+        unc = sum(len(r.get("unc") or []) for r in c["rows"]) + len(d.get("hdr_unc") or [])
+        if d["status"] == "done" and cells:
+            pc = max(0, round(100 * (1 - unc / cells)))
+            self.bnConf.setText(f"{pc}%")
+            self.bnConf.setProperty("k", "ok" if pc >= 90 else ("mid" if pc >= 70 else "lo"))
+        else:
+            self.bnConf.setText("–")
+            self.bnConf.setProperty("k", "")
+        theme.repolish(self.bnConf)
+
+    def _valid_list(self, d: dict, t: dict, c: dict) -> None:
+        """Tab Validasi: semua galat (header & baris, semua tabel) — klik = lompat ke sel."""
+        v = c["valid"]
+        labs = {k: lab for k, lab, _t in t["header"]}
+        labr = {"": {k: lab for k, lab, _t in t["rows"]}}
+        for tk, tt in (t.get("tables") or {}).items():
+            labr[tk] = {k: lab for k, lab, _t in tt["rows"]}
+        self.vList.clear()
+        for k, m in v["header"].items():
+            it = QListWidgetItem(f"⚠  Header · {labs.get(k, k)}: {m}")
+            it.setData(Qt.UserRole, (None, k, ""))
+            self.vList.addItem(it)
+        pos: dict[str, int] = {}
+        n_unc = 0
+        for r in c["rows"]:
+            tb = r.get("tbl") or ""
+            pos[tb] = pos.get(tb, 0) + 1
+            n_unc += 1 if r.get("unc") else 0
+            for k, m in (v["rows"].get(r["id"]) or v["rows"].get(str(r["id"])) or {}).items():
+                nm = "" if not tb else f"{(t.get('tables') or {}).get(tb, {}).get('name', tb)} · "
+                it = QListWidgetItem(f"⚠  {nm}Baris {pos[tb]} · {labr.get(tb, {}).get(k, k)}: {m}")
+                it.setData(Qt.UserRole, (r["id"], k, tb))
+                self.vList.addItem(it)
+        n = self.vList.count()
+        er = theme.C["er"]
+        nv = sum(1 for r in c["rows"] if r["verified"])
+        self.vSum.setText((f"<span style='color:{er}'><b>{n}</b> galat validasi</span>" if n else "<b>Validasi bersih</b> — tidak ada galat")
+                          + f" · {len(c['rows'])} baris · {nv} diverifikasi · {n_unc} baris ragu (kuning)")
+        self.tabs.setTabText(1, f"Validasi ({n})" if n else "Validasi ✓")
+
+    def _kpi_card(self, i: int, label: str, val: str, unit: str = "", warn: bool = False) -> None:
+        f = QFrame()
+        f.setObjectName("fmKpi")
+        f.setProperty("warn", warn)
+        lv = QVBoxLayout(f)
+        lv.setContentsMargins(8, 5, 8, 5)
+        lv.setSpacing(0)
+        a = QLabel(label)
+        a.setObjectName("fmKpiL")
+        b = QLabel(val)
+        b.setObjectName("fmKpiV")
+        lv.addWidget(a)
+        lv.addWidget(b)
+        if unit:
+            u = QLabel(unit)
+            u.setObjectName("fmKpiL")
+            lv.addWidget(u)
+        self.kpi.addWidget(f, i // 5, i % 5)
+
+    def _kpis(self, d: dict, c: dict) -> None:
+        """Kartu ringkasan: Daily Drilling Report = jam & meter; Ore / ROM = ritase & tonase; RC = interval & meter."""
+        while self.kpi.count():
+            w_ = self.kpi.takeAt(0).widget()
+            if w_:
+                w_.deleteLater()
+        rows = [r for r in c["rows"] if not (r.get("tbl") or "")]
+        sm = c.get("summary") or {}
+        cards: list[tuple] = []
+
+        def num(x) -> float:
+            try:
+                return float(str(x).replace(",", "."))
+            except (TypeError, ValueError):
+                return 0.0
+        if d["type"] == "ddr" and sm:
+            cards = [("Total aktivitas", f"{len(rows)}", "baris"), ("Jam borang", f"{sm.get('jam_borang', 0):g}", "jam"),
+                     ("Jam aktivitas", f"{sm.get('jam_aktivitas', 0):g}", "jam", abs((sm.get("jam_borang") or 0) - (sm.get("jam_aktivitas") or 0)) > 0.5),
+                     ("Drilling", f"{sm.get('jam_drilling', 0):g}", "jam"), ("Meterage", f"{sm.get('meter', 0):g}", "m"),
+                     ("Jumlah lubang", f"{sm.get('n_lubang', 0)}", "lubang"), ("Meter / jam drilling", f"{sm.get('m_per_jam') or 0:g}", "m/jam")]
+        elif d["type"] in ("ore", "rom"):
+            ton = sum(num(r["data"].get("ton")) for r in rows)
+            kel: dict[str, float] = {}
+            for r in rows:
+                kk = str(r["data"].get("kelas") or "").strip()
+                if kk:
+                    kel[kk] = kel.get(kk, 0) + num(r["data"].get("ton"))
+            cards = [("Ritase", f"{len(rows)}", "truk"), ("Total tonase", f"{ton:g}", "ton")]
+            cards += [(f"Kelas {k}", f"{v:g}", "ton") for k, v in sorted(kel.items(), key=lambda x: -x[1])[:5]]
+        elif d["type"] == "rc":
+            holes = {str(r["data"].get("hole_id") or "").strip() for r in rows} - {""}
+            met = sum(max(0.0, num(r["data"].get("to_m")) - num(r["data"].get("from_m"))) for r in rows)
+            qa = sum(1 for r in rows if re.search(r"std|blank|dup", str(r["data"].get("remark") or ""), re.I))
+            cards = [("Interval", f"{len(rows)}", "baris"), ("Lubang", f"{len(holes)}", "hole"), ("Meter dilog", f"{met:g}", "m"),
+                     ("Sampel QAQC", f"{qa}", "STD / BLANK")]
+        nv = sum(1 for r in c["rows"] if r["verified"])
+        cards.append(("Terverifikasi", f"{nv}/{len(c['rows'])}", "baris", nv < len(c["rows"])))
+        for i, cd in enumerate(cards):
+            self._kpi_card(i, cd[0], cd[1], cd[2] if len(cd) > 2 else "", bool(cd[3]) if len(cd) > 3 else False)
 
     def _header(self, d: dict, t: dict) -> None:
         keys = [k for k, _l, _t in t["header"]]
         if list(self.hdrEd) != keys:
-            while self.hdrForm.rowCount():
-                self.hdrForm.removeRow(0)
+            while self.hdrGrid.count():
+                w_ = self.hdrGrid.takeAt(0).widget()
+                if w_:
+                    w_.deleteLater()
             self.hdrEd = {}
-            for k, lab, _ty in t["header"]:
+            half = (len(t["header"]) + 1) // 2
+            for i, (k, lab, _ty) in enumerate(t["header"]):
+                row, col = (i, 0) if i < half else (i - half, 2)
+                lb = QLabel(lab)
+                lb.setObjectName("fmHLab")
                 e = QLineEdit()
                 e.editingFinished.connect(lambda k=k: self._hdr_save(k))
-                self.hdrForm.addRow(lab, e)
+                self.hdrGrid.addWidget(lb, row, col)
+                self.hdrGrid.addWidget(e, row, col + 1)
                 self.hdrEd[k] = e
+            self.hdrGrid.setColumnStretch(1, 1)
+            self.hdrGrid.setColumnStretch(3, 1)
         v = self.cur["valid"]["header"]
         for k, e in self.hdrEd.items():
             if not e.hasFocus():
@@ -830,6 +1410,8 @@ class FormsPage(QWidget):
         if not todo:
             say(self, "Semua borang sudah dibaca AI (atau sudah ada isinya).\nUntuk membaca ulang satu borang, buka borangnya lalu klik ✦ Baca dengan AI.")
             return
+        if self.ai_did is None and not self.ai_q:
+            self.q_done = 0
         self.ai_q += todo
         self.toast(f"{len(todo)} borang masuk antrean AI. Anda bisa memeriksa borang lain selama AI membaca.", 5000)
         self._ai_next()
@@ -856,7 +1438,8 @@ class FormsPage(QWidget):
 
     def _ai_buttons(self) -> None:
         n = len(self.ai_q) + (1 if self.ai_did is not None else 0)
-        self.bAIAll.setText(f"Antrean AI: {n} borang" if n else "Baca semua yang belum")
+        self.bAIAll.setText(f"Antrean AI: {n} borang" if n else "Baca Semua dengan AI")
+        self._queue_bar()
         cur = self.cur["doc"]["id"] if self.cur else None
         busy = cur is not None and (cur == self.ai_did or cur in self.ai_q)
         self.bAI.setText("AI membaca borang…" if cur is not None and cur == self.ai_did else ("Menunggu antrean AI…" if busy else "✦ Baca dengan AI"))
@@ -865,6 +1448,13 @@ class FormsPage(QWidget):
     def _ai_tick(self) -> None:
         if self.ai_did is None:
             return
+        for i in range(self.lst.count()):
+            it = self.lst.item(i)
+            if it.data(Qt.UserRole) == self.ai_did:
+                d = next((x for x in self.docs if x["id"] == self.ai_did), None)
+                if d:
+                    it.setData(ROLE_D, self._info(d))
+        self._queue_bar()
         if self.cur and self.cur["doc"]["id"] == self.ai_did:
             sec = int(time.time() - self.ai_t0)
             self.aiInfo.setTextFormat(Qt.PlainText)
@@ -891,6 +1481,8 @@ class FormsPage(QWidget):
         def fin():
             self.ai_did, self.ai_busy = None, False
             self.ai_clock.stop()
+            self.q_done += 1
+            self.q_last = time.strftime("%H:%M")
             if folder == self.folder:
                 self._sync_list()
                 QTimer.singleShot(0, self._ai_next)
@@ -925,7 +1517,8 @@ class FormsPage(QWidget):
             it = self.lst.item(i)
             d = next((x for x in self.docs if x["id"] == it.data(Qt.UserRole)), None)
             if d:
-                it.setText(self._line(d))
+                self._set_item(it, d)
+        self._queue_bar()
 
     # ---------------------------------------------------------------- ekspor
     def export(self, fmt: str) -> None:

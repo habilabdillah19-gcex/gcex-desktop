@@ -109,6 +109,44 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #startH {{ font-size: 19pt; font-weight: 800; color: {c['ink']}; }}
 #modCard {{ background: {c['pn2']}; border: 1px solid {c['bd']}; border-radius: 5px; }}
 #modH {{ font-size: 11.5pt; color: {c['ink']}; }}
+/* ---- ruang kerja Borang (0.43.0) ---- */
+#fmLeft {{ background: {c['bg']}; }}
+#fmSect {{ font-size: 8.2pt; font-weight: 700; letter-spacing: 1px; color: {c['ink']}; padding: 4px 2px 0 2px; }}
+#fmTypes {{ background: {c['pn']}; border: 1px solid {c['bd']}; border-radius: 6px; padding: 2px; font-size: 10pt; }}
+#fmTypes::item {{ padding: 6px 8px; border-radius: 4px; color: {c['ink']}; }}
+#fmTypes::item:selected {{ background: {c['acs']}; color: {c['ac2']}; font-weight: 700; }}
+#fmTypes::item:hover {{ background: {c['pn2']}; }}
+#fmFiles {{ background: {c['bg']}; border: 0; }}
+#fmDrop {{ border: 1px dashed {c['bd2']}; border-radius: 6px; color: {c['mu']}; font-size: 8.4pt; padding: 8px; background: {c['pn']}; }}
+#fmVHead {{ background: {c['nv']}; }}
+#fmVHead QLabel {{ color: #ffffff; }}
+#fmVTitle {{ font-size: 10pt; }}
+#fmVBtn {{ background: rgba(255,255,255,0.08); color: #ffffff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px;
+           min-width: 26px; min-height: 22px; font-size: 10.5pt; font-weight: 700; padding: 1px 6px; }}
+#fmVBtn:hover, #fmVBtn:checked {{ background: rgba(255,255,255,0.22); }}
+#fmBottom {{ background: {c['pn']}; border-top: 1px solid {c['bd']}; }}
+#fmTabs QTabBar::tab {{ padding: 7px 18px; font-weight: 600; }}
+#fmCard {{ background: {c['pn']}; border: 1px solid {c['bd']}; border-radius: 6px; }}
+#fmFold {{ border: 0; background: transparent; font-size: 10.5pt; font-weight: 700; color: {c['ink']}; padding: 2px 0; text-align: left; }}
+#fmFold:hover {{ color: {c['ac2']}; background: transparent; }}
+#fmBanner {{ background: {c['pn']}; border: 1px solid {c['bd']}; border-left: 5px solid {c['bd2']}; border-radius: 6px; }}
+#fmBanner[k="ok"] {{ border-left-color: #2e9d57; background: {'#16261d' if c['bg'] == DARK['bg'] else '#eef8f1'}; }}
+#fmBanner[k="run"] {{ border-left-color: #2f6fd6; }}
+#fmBanner[k="er"] {{ border-left-color: {c['er']}; background: {c['ers']}; }}
+#fmBnIcon {{ font-size: 15pt; font-weight: 800; color: {c['ink']}; }}
+#fmBanner[k="ok"] #fmBnIcon {{ color: #2e9d57; }}
+#fmBanner[k="er"] #fmBnIcon {{ color: {c['er']}; }}
+#fmBnTitle {{ font-size: 10.5pt; font-weight: 700; color: {c['ink']}; }}
+#fmConf {{ font-size: 11pt; font-weight: 800; color: #ffffff; background: {c['bd2']}; border-radius: 4px; padding: 2px 10px; }}
+#fmConf[k="ok"] {{ background: #2e9d57; }}
+#fmConf[k="mid"] {{ background: #d08a1e; }}
+#fmConf[k="lo"] {{ background: {c['er']}; }}
+#fmHLab {{ color: {c['mu']}; font-size: 8.8pt; }}
+#fmKpi {{ background: {c['pn2']}; border: 1px solid {c['bd']}; border-radius: 5px; }}
+#fmKpi[warn="true"] {{ border-color: #d08a1e; }}
+#fmKpiL {{ color: {c['mu']}; font-size: 7.8pt; }}
+#fmKpiV {{ color: {c['ink']}; font-size: 13pt; font-weight: 800; }}
+#fmVList::item {{ padding: 5px 4px; border-bottom: 1px solid {c['bd']}; }}
 """
 
 
