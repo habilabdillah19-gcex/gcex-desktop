@@ -252,7 +252,11 @@ function amRoofBox() {
       ' apa adanya. Bila atap penggalian sebenarnya lebih rendah, volume as-mined <b>berlebih</b>, ' +
       'dan selalu berlebih &mdash; jadi ia menumpuk antar flitch, tidak saling menghapus.</div>';
   } else if (mode !== 'dtm') {
-    h += '<div class=g3 style="margin-top:4px">' +
+    /* Setelan halus disembunyikan di balik satu baris: yang dipakai sehari-hari hanya pilihan
+       batas atas. Enam kotak isian yang selalu terbuka membuat panel ini terbaca seperti form
+       kalibrasi, bukan alat kerja. */
+    h += '<details class=amadv><summary>Setelan lanjutan (pita, buffer, kode titik)</summary>' +
+      '<div class=g3 style="margin-top:4px">' +
       inp('rfUp', 'Pita ke atas RL atas (m)', '2') +
       inp('rfDn', 'Pita ke bawah RL atas (m)', String(+(0.6 * (B[0] - B[1])).toFixed(2))) +
       inp('rfBuf', 'Buffer dari poligon (m)', '2') + '</div>' +
@@ -267,7 +271,7 @@ function amRoofBox() {
       'flitch nominal, dan disebutkan di ringkasan per poligon. Bila lantai menembus atap di suatu ' +
       'tempat (underdig, atau titik dari hari yang salah), tebalnya dihitung nol dan luas yang ' +
       'terjepit itu <b>dilaporkan</b> &mdash; menjepitnya tanpa memberi tahu akan menyembunyikan ' +
-      'masalah survei sebagai angka yang kelihatan wajar.</div>';
+      'masalah survei sebagai angka yang kelihatan wajar.</div></details>';
   }
   return h + '</div></div>';
 }

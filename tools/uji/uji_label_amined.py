@@ -21,7 +21,9 @@ with sync_playwright() as pw:
     pg.evaluate("document.getElementById('dlatBtn').click()")
     pg.wait_for_function("window.BX && BX.m && BX.m.n>0",timeout=600000)
     pg.wait_for_function("!DLAT.busy",timeout=600000); pg.wait_for_timeout(3000)
-    pg.evaluate("(function(){try{rbAM&&rbAM();}catch(e){}try{amPanel();}catch(e){}})()")
+    pg.evaluate("""(function(){try{rbAM&&rbAM();}catch(e){}
+      try{amRSet('roof','pickup');}catch(e){}try{amRSet('floor','pickup');}catch(e){}
+      try{amPanel();}catch(e){}})()""")
     pg.wait_for_timeout(2500)
     t=pg.evaluate("""(function(){var e=document.getElementById('pAM')||document.querySelector('#side');
       return e?e.textContent.replace(/\\s+/g,' '):'';})()""")
@@ -29,9 +31,13 @@ with sync_playwright() as pw:
       [].forEach.call(document.querySelectorAll('label.mdbtn, #amRoofBox label'),function(b){
         var s=(b.textContent||'').replace(/\\s+/g,' ').trim();if(s)out.push(s.slice(0,90));});return out;})()""")
     print("  label import:"); [print("    -",x) for x in tombol]
-    adaLantai = "pick-up lantai" in t.lower() or "pick-up LANTAI" in t
+    adaLantai = "pick-up lantai" in t.lower()
     adaAtap   = "pick-up atap" in t.lower()
-    print("\n  menyebut import LANTAI:",adaLantai,"| menyebut import ATAP:",adaAtap)
+    # Jumlah kotak isian/pilihan yang LANGSUNG terlihat (tidak di balik "Setelan lanjutan").
+    n=pg.evaluate("""(function(){var c=0;
+      [].forEach.call(document.querySelectorAll('#amRoofBox input, #amRoofBox select, #amFloorBox input, #amFloorBox select'),
+        function(e){if(e.type==='file')return;if(e.closest('details.amadv'))return;c++;});return c;})()""")
+    print("\n  menyebut import LANTAI:",adaLantai,"| ATAP:",adaAtap,"| kendali langsung terlihat:",n)
     ok = adaLantai and adaAtap
     print("%s"%("BENAR: kedua import dinamai jelas." if ok else
           "GAGAL: import lantai/atap tidak dinamai jelas di panel."))

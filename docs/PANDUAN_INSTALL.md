@@ -3816,3 +3816,46 @@ sehingga dari mana pun pemakai masuk, pasangannya ketemu.
 `tools/uji/uji_label_amined.py` membaca **teks panel yang benar-benar tergambar**, bukan kode
 sumbernya: build lama `menyebut import LANTAI: False`, build baru `True`, dengan import atap tetap
 `True` di keduanya.
+
+## 120. CSV pick-up ID,X,Y,Z,Kode terbaca benar, dan panel atap/lantai dirampingkan
+
+**Versi:** GC-Ex Block Model 0.24.36.
+
+### 120.1 Kolom tergeser satu
+
+Untuk berkas **tanpa baris judul**, `amPtsFile()` dahulu hanya memeriksa apakah kolom pertama
+berupa angka; bila ya, ia menetapkan X = kolom 1, Y = kolom 2, Z = kolom 3. Berkas survey pick-up
+lazimnya berbentuk **ID, Easting, Northing, RL, Kode** dengan ID berupa angka, sehingga seluruh
+kolom tergeser satu:
+
+| Seharusnya | Terbaca sebagai |
+|---|---|
+| ID (1, 2, 3 …) | Easting |
+| Easting (558993) | Northing |
+| Northing (9010227) | **Z / elevasi** |
+| RL (271,63) | Kode |
+
+Itulah yang terlihat di layar: sumbu Easting berisi 60–160 (nomor titik) dan label elevasi berbunyi
+9010238. Karena Z berisi angka ratusan ribu, **tidak satu titik pun** jatuh di pita elevasi flitch
+("10 titik atap, 0 di dalam pita RL 271,60–274,50"), jadi atap dan lantai tidak pernah terbentuk —
+tanpa satu pun pesan galat, karena setiap angkanya sah sebagai angka.
+
+Kini kolom koordinat dikenali dari **besaran nilainya**, bukan posisinya: dua kolom berdampingan
+yang median mutlaknya sama-sama ≥ 1.000 adalah Easting & Northing, di posisi mana pun; Z dan Kode
+mengikut sesudahnya; kolom sebelum keduanya diperlakukan sebagai ID. Aturan lama tetap dipakai
+sebagai cadangan untuk koordinat grid lokal yang nilainya kecil.
+
+Diuji dengan berkas tiruan berbentuk sama persis dengan berkas pemilik
+(`tools/uji/uji_csv_pickup.py`):
+
+| Build | x | y | z |
+|---|---|---|---|
+| lama | 1 – 60 (nomor ID) | 558990 – 559001 | 9010220 – 9010234 |
+| baru | 558990 – 559001 | 9010220 – 9010234 | 270,6 – 272,32 |
+
+### 120.2 Perampingan panel atap & lantai
+
+Setelan halus — pita ke atas / ke bawah RL, buffer dari poligon, pola kode titik, ringkasan
+elevasi — dipindah ke balik satu baris **Setelan lanjutan**. Yang tersisa langsung terlihat hanya
+pilihan yang dipakai harian. Terukur dari panel yang tergambar: kendali yang langsung terlihat di
+kedua kotak turun dari **12 menjadi 3**.

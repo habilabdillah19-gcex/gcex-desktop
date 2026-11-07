@@ -3219,7 +3219,21 @@ function amPtsFile(files,slot){if(!files||!files.length)return;slot=(slot==='pts
   (async function(){var D=amD();D[slot]=D[slot]||[];var TG=D[slot];for(var i=0;i<L.length;i++){var f=L[i],ext=(f.name.split('.').pop()||'').toLowerCase();try{
       if(ext==='str'||ext==='dxf'){var segs=await SA.readLines({f:f,k:ext});segs.forEach(function(P){P.forEach(function(q){TG.push({x:+q[0],y:+q[1],z:+q[2],id:'',c:f.name.replace(/\.[^.]+$/,'')});});});}
       else{var T=amParse(await f.text()),h=T.h,ix=amCol(h,/^(x|east|easting|e)$/i),iy=amCol(h,/^(y|north|northing|n)$/i),iz=amCol(h,/^(z|rl|elev|elevation|h|height)$/i),ii=amCol(h,/^(id|pt|point|ptid|point_?id|name|no|nama)$/i),ic=amCol(h,/^(code|kode|desc|description|keterangan|ket|remark|layer)$/i),rows=T.r;
-        if(ix<0||iy<0){var num=h.map(function(v){return isFinite(amNum(v));});rows=T.r.concat(num.filter(Boolean).length>=3?[h]:[]);var r0=rows[0]||[],nn=r0.map(function(v){return isFinite(amNum(v));});if(nn[0]&&nn[1]&&nn[2]&&!nn[3]){ix=0;iy=1;iz=2;ic=3;}else if(!nn[0]){ii=0;ix=1;iy=2;iz=3;ic=4;}else{ix=0;iy=1;iz=2;}}
+        if(ix<0||iy<0){var num=h.map(function(v){return isFinite(amNum(v));});rows=T.r.concat(num.filter(Boolean).length>=3?[h]:[]);
+        /* Tanpa baris judul, kolom tidak boleh ditebak dari urutannya. Berkas survey pick-up
+           lazim berbentuk ID,X,Y,Z,Kode dengan ID berupa angka; aturan lama hanya memeriksa
+           apakah kolom pertama angka, sehingga ID terbaca sebagai X dan SELURUH kolom tergeser
+           satu: Easting jadi nomor titik, Z jadi Northing, dan tidak satu titik pun jatuh di
+           pita elevasi. Kini kolom koordinat dikenali dari BESARAN nilainya -- dua kolom
+           berdampingan yang sama-sama besar adalah Easting & Northing, di posisi mana pun. */
+        var amMed=function(c){var v=[],q;for(q=0;q<rows.length&&q<200;q++){var t=amNum(rows[q][c]);if(isFinite(t))v.push(Math.abs(t));}
+          if(!v.length)return NaN;v.sort(function(a,b){return a-b;});return v[v.length>>1];};
+        var nc=0;rows.forEach(function(r){if(r&&r.length>nc)nc=r.length;});
+        var M=[],q2;for(q2=0;q2<nc;q2++)M.push(amMed(q2));
+        var j=-1;for(q2=0;q2+1<nc;q2++){if(isFinite(M[q2])&&isFinite(M[q2+1])&&M[q2]>=1000&&M[q2+1]>=1000){j=q2;break;}}
+        if(j>=0){ix=j;iy=j+1;iz=(j+2<nc&&isFinite(M[j+2]))?j+2:-1;ic=(j+3<nc)?j+3:-1;ii=(j>0)?j-1:-1;}
+        else{var r0=rows[0]||[],nn=r0.map(function(v){return isFinite(amNum(v));});
+          if(nn[0]&&nn[1]&&nn[2]&&!nn[3]){ix=0;iy=1;iz=2;ic=3;}else if(!nn[0]){ii=0;ix=1;iy=2;iz=3;ic=4;}else{ix=0;iy=1;iz=2;}}}
         rows.forEach(function(r){var x=amNum(r[ix]),y=amNum(r[iy]),z=iz>=0?amNum(r[iz]):NaN;if(isFinite(x)&&isFinite(y))TG.push({x:x,y:y,z:z,id:ii>=0?String(r[ii]||''):'',c:ic>=0?String(r[ic]||''):''});});}
     }catch(e){AM.pmsg='<span class=warn>'+amE(f.name)+': '+amE(e.message)+'</span>';}}
     AM.pmsg=(TG.length-n0).toLocaleString()+' titik pick-up '+(slot==='ptsR'?'ATAP':'lantai')+' ditambahkan.';amPanel();updatePlot();amDirty();})();}
