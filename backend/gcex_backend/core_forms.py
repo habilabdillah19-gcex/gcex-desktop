@@ -56,7 +56,8 @@ TYPES: dict[str, dict] = {
     "ore": {
         "name": "Ore Spotter: Loading Pit → ROM / Stockpile",
         "header": [("tanggal", "Tanggal", "date"), ("shift", "Shift (I / II)", "text"), ("crew", "Nama crew / spotter", "text"),
-                   ("lokasi", "Lokasi (pit)", "text"), ("excavator", "Excavator (EX)", "text")],
+                   ("lokasi", "Lokasi (pit)", "text"), ("excavator", "Excavator (EX)", "text"),
+                   ("kelas_urut", "Urutan kolom kelas (tercetak, kiri ke kanan)", "text")],
         "rows": [("no", "No", "text"), ("start", "Start loading", "time"), ("finish", "Finish loading", "time"), ("pit", "Pit / blok", "text"),
                  ("elevasi", "Elevasi", "text"), ("kelas", "Kelas material", "text"), ("unit", "Truck", "text"), ("ton", "Tonnage", "num"),
                  ("tujuan", "Tujuan dumping", "text")],
@@ -72,7 +73,8 @@ TYPES: dict[str, dict] = {
                  "Header: NAMA CREW, LOKASI (pit), nomor excavator (mis. EX-123, ditulis tangan di dekat judul), TANGGAL, SHIFT (I / II). "
                  "Tabel bernomor, satu baris per ritase truk. Kolom dari kiri: NO; Start Loading; Finish Loading (jam ditulis di salah satu "
                  "dari dua kolom ini; baris berikutnya sering hanya menulis MENIT, mis. 13 -> salin apa adanya \"13\"); PIT; Elevation; lalu "
-                 "kelompok kolom kelas material berwarna " + "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO" + ", masing-masing dengan "
+                 "kelompok kolom kelas material berwarna " + "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO" + " (urutan bisa berbeda antar versi borang: tulis nama kolom kelas "
+                 "persis urutan tercetak dari kiri ke kanan di header kelas_urut, dipisah koma), masing-masing dengan "
                  "sub-kolom TRUCK dan Tonnage: salin nomor truk & tonase ke sel kelompok TEMPAT TULISAN ITU BERADA (sel kelompok lain "
                  "kosong), mis. truk T01 tonase 30 di bawah OX-LG -> \"1|19.03||PIT A|100.0|T01|30|||||||||||||||ROM 1\", di bawah SF-LG -> "
                  "\"2|09|||〃|||T02|31|||||||||||||〃\"; kolom terakhir Tujuan Dumping "
@@ -86,7 +88,8 @@ TYPES: dict[str, dict] = {
         "name": "Ore ke Stockpile / Crusher (Rehandling / Direct)",
         "header": [("tanggal", "Tanggal", "date"), ("shift", "Shift (I / II)", "text"), ("crew", "Crew / spotter", "text"),
                    ("lokasi", "Lokasi", "text"), ("rh1", "Nama tumpukan rehandling 1", "text"),
-                   ("rh2", "Nama tumpukan rehandling 2", "text"), ("rh3", "Nama tumpukan rehandling 3", "text")],
+                   ("rh2", "Nama tumpukan rehandling 2", "text"), ("rh3", "Nama tumpukan rehandling 3", "text"),
+                   ("kelas_urut", "Urutan kolom kelas (tercetak, kiri ke kanan)", "text")],
         "rows": [("no", "No", "text"), ("unit", "Eq. No. Unit", "text"), ("start", "Start loading", "time"),
                  ("finish", "Finish loading", "time"), ("asal", "Asal material", "text"), ("tujuan", "Tujuan", "text"),
                  ("rehandling", "Rehandling tumpukan", "text"), ("kelas", "Kelas material", "text"), ("ton", "Ton", "num"),
@@ -103,7 +106,9 @@ TYPES: dict[str, dict] = {
                  "(jam, mis. 19.02; baris berikutnya sering hanya menulis MENIT, mis. 05 -> salin apa adanya \"05\"); Asal Material (mis. "
                  "Pit ..., ROM ..., OPP); Tujuan (mis. Crusher, ROM ...); Rehandling Tumpukan (tiga sub-kolom bernama tumpukan; isi "
                  "rh1 / rh2 / rh3 di header dengan NAMA ketiga sub-kolom itu; di baris tulis v di sub-kolom yang dicentang); lalu kolom kelas material berwarna "
-                 "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, SF-MO: salin angka tonase ke sel kolom TEMPAT angka itu "
+                 "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, SF-MO (urutannya BISA BERBEDA antar versi borang, mis. SCAT di "
+                 "tengah atau paling kanan: tulis nama kolom kelas persis urutan tercetak dari kiri ke kanan di header kelas_urut, dipisah "
+                 "koma): salin angka tonase ke sel kolom TEMPAT angka itu "
                  "berada (kolom kelas lain kosong); Status Material (sub-kolom Baru dan Lama: tulis v di sel yang dicentang); Keterangan (mis. Direct, Rehandling, OPP).\n"
                  "TANDA ULANG: bila sel berisi tanda ulang (\" atau = atau ,, ) atau dilewati garis tegak / garis miring yang menyambung "
                  "dari baris di atas, tulis tepat \"〃\" (jangan menyalin nilai di atas sendiri; program yang mengisinya)."),
@@ -491,7 +496,9 @@ def fill_ore(ftype: str, lst: list[dict], carry_empty: bool) -> list[tuple[dict,
             v = str(x.get(k) or "").strip()
             pv = prev.get("start") if (k == "start" and prev.get("start")) else (prev.get("finish") or prev.get("start"))
             pt = parse_time(pv) if pv else None
-            if re.fullmatch(r"\d{1,2}", v) and pt:
+            mv = re.fullmatch(r"[.:,]?\s*(\d{1,2})", v)
+            if mv and pt:
+                v = mv.group(1)
                 h, m0 = int(pt[:2]), int(pt[3:])
                 mi = int(v)
                 if mi < 60:
@@ -939,7 +946,27 @@ def _ragu(r: dict, keys: Any) -> bool:
     return any(k in (r.get("ragu") or []) for k in keys)
 
 
-def ore_fix(r: dict) -> dict:
+ORE_CLS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "OX-MO", "SF-MO"]
+ROM_CLS = ["OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "SCAT", "OX-MO", "SF-MO"]
+
+
+def class_order(h: dict, default: list[str]) -> tuple[list[str], bool]:
+    """Urutan kolom kelas yang TERCETAK di borang (header kelas_urut, dibaca AI) bila lengkap & sah; selain itu urutan baku.
+    Ada versi borang dengan SCAT di tengah dan versi dengan SCAT paling kanan."""
+    raw = str((h or {}).get("kelas_urut") or "")
+    toks = [t for t in re.split(r"[,;|/\n]+", raw.upper()) if t.strip()]
+    if len(toks) < len(default):  # dipisah spasi saja
+        toks = [t for t in re.split(r"\s+", raw.upper()) if t]
+    norm = {_slug(c).upper(): c for c in default}
+    got = []
+    for t in toks:
+        c = norm.get(re.sub(r"[^A-Z]", "", t))
+        if c and c not in got:
+            got.append(c)
+    return (got, True) if len(got) == len(default) else (list(default), False)
+
+
+def ore_fix(r: dict, h: Optional[dict] = None) -> dict:
     """Ore Spotter: sel TRUCK / Tonnage per kelas (urutan kolom borang) -> kelas, unit, ton. Jawaban lama (kelas sudah
     ditulis model) dibiarkan. Lebih dari satu kelompok terisi -> kelompok pertama dipakai, kelas ditandai kuning."""
     if str(r.get("kelas") or "").strip() or str(r.get("unit") or "").strip():
@@ -947,16 +974,17 @@ def ore_fix(r: dict) -> dict:
     out = {k: v for k, v in r.items() if not re.match(r"^[a-z]{2,4}_(trk|ton)$", k)}
     ragu = [k for k in (r.get("ragu") or []) if not re.match(r"^[a-z]{2,4}_(trk|ton)$", k)]
     hits = []
-    for c in KELAS:
-        trk, ton = (str(r.get(f"{_slug(c)}_{x}") or "").strip() for x in ("trk", "ton"))
-        if trk or ton:
-            hits.append((c, trk, ton))
+    order, _ok = class_order(h or {}, ORE_CLS)
+    for pos, c0 in enumerate(ORE_CLS):  # sel ke-i (kunci urutan baku) = kolom kelas ke-i yang tercetak
+        trk, ton = (str(r.get(f"{_slug(c0)}_{x}") or "").strip() for x in ("trk", "ton"))
+        if (trk or ton) and re.search(r"\d", trk + ton):  # titik / coretan saja bukan isian
+            hits.append((order[pos], trk, ton, c0))
     if hits:
-        c, trk, ton = hits[0]
+        c, trk, ton, c0 = hits[0]
         if not ton and re.match(r"^\S+\s+\d+(?:[.,]\d+)?$", trk):  # "H026 30" dalam satu sel
             trk, ton = trk.rsplit(None, 1)
         out.update({"kelas": c, "unit": trk, "ton": ton})
-        sl = _slug(c)
+        sl = _slug(c0)
         ragu += (["unit"] if _ragu(r, [f"{sl}_trk"]) else []) + (["ton"] if _ragu(r, [f"{sl}_ton"]) else [])
         if len(hits) > 1:
             ragu.append("kelas")
@@ -972,7 +1000,8 @@ def rom_fix(r: dict, h: dict) -> dict:
     kolom borang -> rehandling (nama tumpukan dari header), kelas + ton, status. Jawaban lama (kelas sudah ditulis) dibiarkan."""
     if str(r.get("kelas") or "").strip() or str(r.get("status") or "").strip() or str(r.get("rehandling") or "").strip():
         return r
-    sl = {_slug(c): c for c in KELAS}
+    order, _ok = class_order(h, ROM_CLS)
+    sl = {_slug(c0): order[i] for i, c0 in enumerate(ROM_CLS)}  # sel ke-i = kolom kelas ke-i yang tercetak
     drop = set(sl) | {"rh1", "rh2", "rh3", "baru", "lama"}
     out = {k: v for k, v in r.items() if k not in drop}
     ragu = [k for k in (r.get("ragu") or []) if k not in drop]
@@ -985,7 +1014,7 @@ def rom_fix(r: dict, h: dict) -> dict:
         out["rehandling"] = "〃" if v == "〃" else (name or (v if len(v) > 2 else f"Tumpukan {k[-1]}"))
         if len(rh) > 1 or _ragu(r, [k]) or not name:
             ragu.append("rehandling")
-    ks = [k for k in sl if val[k] not in _CHECK]
+    ks = [k for k in sl if val[k] not in _CHECK and (re.search(r"\d", val[k]) or is_ditto(val[k]))]  # titik / coretan bukan tonase
     if ks:
         out.update({"kelas": sl[ks[0]], "ton": val[ks[0]]})
         if len(ks) > 1:
@@ -1020,7 +1049,75 @@ def ai_schema_compact(ftype: str) -> dict:
     return {"type": "object", "required": req, "properties": props}
 
 
-def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
+VOCAB_SKIP = {"sample_id", "hole_id", "no", "aktivitas", "stasiun", "channel_id", "trench_id", "catatan", "remark"}
+_OCR = str.maketrans({"5": "S", "0": "O", "8": "B", "1": "I", "2": "Z", "6": "G", " ": "", "-": "", "_": "", ".": ""})
+
+
+def site_vocab(s: "Store", ftype: str, per: int = 8, total: int = 60) -> dict[str, list[str]]:
+    """Kamus site: nilai teks yang sudah DIVERIFIKASI geologist (>= 2 kali) per kolom, di semua borang jenis ini di proyek.
+    Disuntikkan ke prompt AI dan dipakai merapikan salah baca yang mirip (5BG -> SBG). Hanya dari data proyek sendiri
+    (tidak pernah disimpan di aplikasi / repo)."""
+    t = TYPES.get(ftype)
+    if not t:
+        return {}
+    keys = [k for k, _l, ty in list(t["rows"]) + list(t["header"]) if ty == "text" and k not in VOCAB_SKIP]
+    cnt: dict[str, dict[str, int]] = {k: {} for k in keys}
+    with s.conn() as c:
+        q = ("SELECT r.data_json, d.header_json FROM rows r JOIN docs d ON d.id=r.doc_id WHERE d.type=? AND r.verified=1 "
+             "AND COALESCE(r.tbl,'')='' ORDER BY r.id DESC LIMIT 5000")
+        for rd, hd in c.execute(q, (ftype,)):
+            try:
+                x = {**json.loads(hd or "{}"), **json.loads(rd or "{}")}
+            except ValueError:
+                continue
+            for k in keys:
+                v = re.sub(r"\s+", " ", str(x.get(k) or "")).strip()
+                if v and not is_ditto(v) and len(v) <= 30:
+                    cnt[k][v] = cnt[k].get(v, 0) + 1
+    out, n = {}, 0
+    for k in keys:
+        top = [v for v, m in sorted(cnt[k].items(), key=lambda z: -z[1]) if m >= 2][:per]
+        if top and n < total:
+            out[k] = top[:max(1, total - n)]
+            n += len(out[k])
+    return out
+
+
+def snap(v: str, words: list[str]) -> Optional[str]:
+    """Ejaan kamus site untuk bacaan yang mirip (spasi / huruf besar / salah baca 5-S 0-O 8-B 1-I), atau None."""
+    import difflib
+    v0 = str(v or "").strip()
+    if len(v0) < 2 or is_ditto(v0) or not words:
+        return None
+    nv = v0.upper().translate(_OCR)
+    best, score = None, 0.0
+    for w in words:
+        nw = w.upper().translate(_OCR)
+        if nw == nv:
+            return w if w != v0 else None
+        r = difflib.SequenceMatcher(None, nv, nw).ratio()
+        if r > score:
+            best, score = w, r
+    return best if best and score >= 0.84 and len(nv) >= 3 and best != v0 else None
+
+
+RULES = [  # aturan umum dari borang-borang lapangan yang sudah dibaca (0.44.1)
+    "Tanda | HANYA pemisah sel. Garis tegak / garis miring / tanda ulang (\" = ,, ‖) di borang ditulis 〃, jangan |.",
+    "Centang (✓ √ v) ditulis v. Jam yang hanya ditulis menit (mis. .05 atau 23) salin apa adanya.",
+    "Jangan ragu-ragu dan jangan menjelaskan: tulis bacaan terbaik untuk SETIAP sel; bila tidak yakin akhiri dengan ? "
+    "(sel itu disorot kuning dan diperiksa geologist).",
+]
+
+
+def _vocab_lines(vocab: Optional[dict], t: dict) -> list[str]:
+    if not vocab:
+        return []
+    lab = {k: lab for k, lab, _t in list(t["header"]) + list(t["rows"])}
+    xs = [f"{lab.get(k, k)}: {', '.join(v)}" for k, v in vocab.items() if v]
+    return ["Nilai yang biasa tertulis di proyek ini (pakai ejaan ini bila tulisan mirip): " + "; ".join(xs)] if xs else []
+
+
+def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[dict] = None) -> str:
     """Perintah baca borang dengan jawaban RINGKAS: satu baris teks per baris tabel, nilai dipisah '|'.
     Dibanding JSON (nama field diulang di setiap baris) jumlah token jawaban kira-kira 3-4x lebih sedikit, dan pada
     komputer tanpa GPU waktu baca terutama ditentukan oleh panjang jawaban."""
@@ -1035,7 +1132,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
         for tt in (t.get("tables") or {}).values():
             lines.append(f"{tt['ai'].upper()}|" + "|".join(k for k, _l, _t in tt["rows"]) + f"   <- satu baris per baris {tt['name']}")
         lines += ["Ganti nama kolom dengan NILAI yang tertulis. Sel kosong dibiarkan kosong di antara dua '|'.",
-                  "Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?'."]
+                  "Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?'.", *RULES, *_vocab_lines(vocab, t)]
         if extra and extra.strip():
             lines.append(f"Catatan pengguna: {extra.strip()}")
         lines.append("/no_think")
@@ -1049,7 +1146,8 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
     lines += ['"c": catatan singkat (boleh "")',
               "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Sel kosong: tidak ada apa pun di antara dua |, "
               "sel kosong di ujung baris boleh tidak ditulis. Jangan mengarang baris.",
-              "Salin angka & kode persis. Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?' (mis. \"VLT?\")."]
+              "Salin angka & kode persis. Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?' (mis. \"VLT?\").",
+              *RULES[:2], RULES[2], *_vocab_lines(vocab, t)]
     if ftype not in ORE_TYPES and ftype != "rc":
         lines.append("Bila tulisan sama dengan baris di atasnya (tanda ulang), tulis nilai baris di atasnya.")
     if extra and extra.strip():
@@ -1285,7 +1383,8 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             raise
         d = doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
-    prompt = ai_prompt(d["type"], extra)
+    vocab = site_vocab(s, d["type"])
+    prompt = ai_prompt(d["type"], extra, vocab=vocab)
     img, size = _image_b64(s, d, max_px)
     body = {"model": model, "messages": [{"role": "user", "content": prompt, "images": [img]}],
             "stream": False, "keep_alive": "30m", "format": ai_schema_compact(d["type"]),
@@ -1313,7 +1412,7 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             # content kosong bila 'format' dipakai): ulangi SEKALI tanpa format, perintah baris teks H| / R|.
             why = _why_empty(j)
             body2 = {k: v for k, v in body.items() if k != "format"}
-            body2["messages"] = [dict(body["messages"][0], content=ai_prompt(d["type"], extra, "teks"))]
+            body2["messages"] = [dict(body["messages"][0], content=ai_prompt(d["type"], extra, "teks", vocab=vocab))]
             j = core_io._http(host + "/api/chat", body2, timeout=timeout)
             if j.get("error"):
                 raise RuntimeError("Ollama: " + str(j["error"]))
@@ -1359,6 +1458,13 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
             if h[k] != raw and k not in hunc:  # dirapikan program (mis. rig, Hole ID) -> kuning, cek terhadap scan
                 hunc.append(k)
     out_rows = []
+    vocab = site_vocab(s, d["type"])
+    for k, words in vocab.items():
+        if k in hk and k not in edited_hdr:
+            w = snap(h.get(k, ""), words)
+            if w:
+                h[k] = w
+                hunc.append(k)
     rows_in = [r for r in (res or {}).get("rows") or [] if isinstance(r, dict)]
     if d["type"] == "rc":
         rows_in = rc_fix_all(rows_in, {**d["header"], **{k: v for k, v in rh.items() if v}})
@@ -1368,13 +1474,19 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
         if d["type"] == "ddr":
             r = ddr_fix(r)
         elif d["type"] == "ore":
-            r = ore_fix(r)
+            r = ore_fix(r, {**d["header"], **{k: v for k, v in rh.items() if v}})
         elif d["type"] == "rom":
             r = rom_fix(r, {**d["header"], **{k: v for k, v in rh.items() if v}})
         data = {k: str(r.get(k) if r.get(k) is not None else "").strip() for k in rk}
         if not any(v for k, v in data.items() if k != "no"):
             continue
-        out_rows.append((data, [k for k in (r.get("ragu") or []) if k in rk]))
+        rg = [k for k in (r.get("ragu") or []) if k in rk]
+        for k, words in vocab.items():  # kamus site: 5BG -> SBG, ROMS38 -> ROM 338 (kuning: cek terhadap scan)
+            w = snap(data.get(k, ""), words) if k in data else None
+            if w:
+                data[k] = w
+                rg.append(k)
+        out_rows.append((data, rg))
     if d["type"] in ORE_TYPES and out_rows:
         res_f = fill_ore(d["type"], [dict(x, _u=u) for x, u in out_rows], True)
         out_rows = [({k: v for k, v in x.items() if k != "_u"}, list(dict.fromkeys(x["_u"] + f))) for x, f in res_f]
@@ -2579,6 +2691,15 @@ class DetBody(FBody):
     id: int
     host: str = ""
     model: str
+
+
+class VocabBody(FBody):
+    type: str
+
+
+@router.post("/vocab")
+def api_vocab(b: VocabBody) -> dict:
+    return {"ok": True, "vocab": site_vocab(store(b.folder), b.type)}
 
 
 @router.post("/history_all")

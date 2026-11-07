@@ -3908,3 +3908,9 @@ kedua kotak turun dari **12 menjadi 3**.
 - **Auto Detect (Rekomendasi)** di daftar jenis: jenis ditebak dari nama file; bila tidak bisa, AI menentukannya sebelum membaca. Klik kanan file → *Ubah jenis borang* / *Deteksi jenis dengan AI*.
 - **Jenis baru**: Geological Mapping, Channel Sampling, Drill Progress Report (validasi, pivot, ringkasan, ekspor Excel / CSV / SQLite / Access).
 - Kolom bawaan jenis baru masih umum. Bila borang site Anda berbeda: Template → pilih jenisnya → **Duplikat** → ubah kolom → Simpan.
+
+## 127. DB-Ex 0.44.1 — kamus site & aturan baca AI
+
+- AI diminta langsung menulis bacaan terbaik tiap sel dan menandai yang ragu dengan **?** (disorot kuning) — tidak berlama-lama "berpikir".
+- **Kamus site** (lihat di **Template**): nilai yang sudah Anda verifikasi ≥ 2 kali (mis. asal material, tujuan, keterangan) dipakai AI sebagai ejaan acuan; bacaan yang mirip dirapikan otomatis dan ditandai kuning. Makin banyak baris diverifikasi, makin tepat.
+- **ROM / Crusher & Loading Ore**: versi borang dengan urutan kolom kelas berbeda (mis. SCAT paling kanan) kini dipetakan benar — periksa isian **Urutan kolom kelas** di header.

@@ -309,6 +309,14 @@ class TemplatePage(QWidget):
         self.eHint = QPlainTextEdit()
         self.eHint.setMinimumHeight(110)
         ev.addWidget(self.eHint)
+        ev.addWidget(QLabel("<b>Kamus site</b> — dipelajari otomatis dari baris yang sudah DIVERIFIKASI (muncul ≥ 2 kali)"))
+        self.vocab = QLabel()
+        self.vocab.setObjectName("box")
+        self.vocab.setWordWrap(True)
+        self.vocab.setTextFormat(Qt.RichText)
+        self.vocab.setToolTip("Nilai ini disisipkan ke perintah AI, dan bacaan yang mirip (mis. 5BG → SBG, ROMS38 → ROM 338) dirapikan "
+                              "ke ejaan ini lalu disorot kuning. Makin banyak baris diverifikasi, makin tepat. Disimpan hanya di proyek ini.")
+        ev.addWidget(self.vocab)
         kk = QLabel("Kunci kolom khusus: <b>from_m</b> & <b>to_m</b> mengaktifkan cek interval (bolong / tumpang-tindih) per "
                     "<b>hole_id</b> / <b>channel_id</b> / <b>trench_id</b> dan kolom turunan Panjang. Kunci <b>shift</b> di header menambah Kode "
                     "Shift (DS / NS).")
@@ -361,6 +369,16 @@ class TemplatePage(QWidget):
         t = self.tpls[i]
         self.key = t["key"]
         self._load(t, ro=t["builtin"])
+        self._vocab(t)
+
+    def _vocab(self, t: dict) -> None:
+        try:
+            v = api.call("/core/forms/vocab", {"folder": self.pg.folder, "type": t["key"]})["vocab"]
+        except api.ApiError:
+            v = {}
+        lab = {k: lab for k, lab, _ty in list(t["header"]) + list(t["rows"])}
+        self.vocab.setText("<br>".join(f"<b>{_esc(lab.get(k, k))}</b>: {_esc(', '.join(xs))}" for k, xs in v.items())
+                           or "Belum ada — verifikasi (✓) baris borang jenis ini; nilai yang muncul ≥ 2 kali otomatis menjadi kamus.")
 
     def _load(self, t: dict, ro: bool) -> None:
         self.ro = ro

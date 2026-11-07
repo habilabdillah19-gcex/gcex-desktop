@@ -118,3 +118,45 @@ def test_auto_detect(st, monkeypatch):
     assert d["type"] == "dpr" and d["auto"] == 0 and len(cf.rows(s, did)) == 1
     assert calls[0]["format"]["properties"]["type"]["enum"][:3] == ["ore", "rom", "ddr"] and calls[0]["options"]["num_predict"] == 40
     assert any(h["what"] == "jenis (Auto Detect AI)" for h in cf.history(s, did))
+
+
+def test_rom_kamus_site_titik_dan_menit(st):
+    """0.44.1: kamus site dari baris terverifikasi (prompt + rapikan salah baca), sel kelas berisi titik bukan tonase,
+    menit bertitik ('.05') diteruskan dari jam di atasnya. Data fiktif."""
+    s, tmp = st
+    a = cf.add_file(s, str(_scan(tmp, "a.jpg")), "rom", "Rina")[0]["id"]
+    rows = [{"data": {"unit": "T1", "finish": "19:00", "asal": "PIT ABC", "tujuan": "Crusher", "kelas": "OX-LG", "ton": "30",
+                      "status": "Baru", "keterangan": "Direct"}, "verified": True} for _ in range(3)]
+    cf.save_rows(s, a, rows, "Rina")
+    v = cf.site_vocab(s, "rom")
+    assert v["asal"] == ["PIT ABC"] and v["keterangan"] == ["Direct"]
+    assert "PIT ABC" in cf.ai_prompt("rom", vocab=v) and "jangan |" in cf.ai_prompt("rom")
+    assert cf.snap("P1T A8C", ["PIT ABC"]) == "PIT ABC" and cf.snap("Crusher", ["PIT ABC"]) is None
+    b = cf.add_file(s, str(_scan(tmp, "b.jpg")), "rom", "Rina")[0]["id"]
+    cells = lambda *x: "|".join(x)  # noqa: E731
+    k9 = [""] * 9
+    r1 = cells("1", "T2", "", "20.10", "P1T A8C", "Crusher", "", "v", "", *(["31"] + k9[1:]), "v", "", "Direct")
+    k = list(k9)
+    k[0], k[2] = ".", "35"  # titik di OX-LG, tonase di OX-HG
+    r2 = cells("2", "T3", "", ".05", "〃", "〃", "", "v", "", *k, "〃", "", "〃")
+    res = cf.parse_ai_text("rom", json.dumps({"h": ["05-11-26", "II", "", "", "AA", "BB", "CC"], "r": [r1, r2]}))
+    cf.apply_ai(s, b, res, "m", 1)
+    rs = cf.rows(s, b)
+    d1, d2 = rs[0]["data"], rs[1]["data"]
+    assert d1["asal"] == "PIT ABC" and "asal" in rs[0]["unc"]
+    assert (d2["kelas"], d2["ton"], d2["finish"], d2["asal"], d2["status"]) == ("OX-HG", "35", "21:05", "PIT ABC", "Baru")
+
+
+def test_rom_urutan_kelas_tercetak(st):
+    """Versi borang ROM dengan SCAT paling kanan: sel ke-9 = SCAT bila header kelas_urut terbaca lengkap; bila tidak, urutan baku."""
+    s, tmp = st
+    b = cf.add_file(s, str(_scan(tmp, "c.jpg")), "rom", "Rina")[0]["id"]
+    k = [""] * 9
+    k[8] = "35"
+    row = "|".join(["1", "T9", "", "05.52", "PIT X", "Crusher", "", "", "", *k, "", "", "Rehandling"])
+    urut = "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO, SCAT"
+    res = cf.parse_ai_text("rom", json.dumps({"h": ["05-11-26", "II", "", "", "", "", "", urut], "r": [row]}))
+    cf.apply_ai(s, b, res, "m", 1)
+    assert cf.rows(s, b)[0]["data"]["kelas"] == "SCAT"
+    assert cf.class_order({"kelas_urut": "OX-LG SF-LG"}, cf.ROM_CLS) == (cf.ROM_CLS, False)
+    assert cf.class_order({"kelas_urut": "ox lg,sf-lg,OX HG,SF-HG,OXSG,SF-SG,OX-MO,SF-MO"}, cf.ORE_CLS)[1]
