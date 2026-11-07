@@ -962,7 +962,19 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   if(!$('showDH')||$('showDH').checked)dh.T.forEach(function(t){traces.push(t);});
   if(bmo)bmo.traces.forEach(function(t){traces.push(t);});
   if(window.planTraces)planTraces(traces,{clip:clip,K:K});
-  if(window.bxTraces)bxTraces(traces,{clip:clip,K:K});if(window.mdTraces)mdTraces(traces,{clip:clip,K:K});if(window.dgTraces)dgTraces(traces,{clip:clip,K:K});if(window.dgState)dgState();if(window.cpUpdate)setTimeout(function(){CP.cam=null;cpUpdate();},0);
+  /* Flitch aktif SELALU membatasi block model di 3D.
+     Permintaan pemilik: setelah flitch dibuat, tampilan 3D harus memperlihatkan block model sebagai
+     pulau-pulau yang atas dan bawahnya dibatasi RL flitch aktif, seperti di Surpac. Sebelumnya
+     pembatasan itu hanya terjadi kalau kotak "Potong data (hanya dalam slab)" dicentang atau sedang
+     di Penampang 2D -- di 3D biasa, block model digambar UTUH dari dasar sampai puncak model
+     (terukur: flitch 238,75-241,25 m, tetapi yang tergambar 132,09-348,12 m). Dilihat dari samping,
+     urat setinggi 200 m itu tampak seperti tirai tegak, bukan pulau-pulau.
+     bxSel() sendiri sudah tahu cara memotong tepat di RL flitch (lihat bxSel: BX.ui.fl), hanya saja
+     ia tidak pernah diminta memotong. Jadi yang diubah hanya SIAPA yang meminta, bukan cara
+     memotongnya -- angka tonase dan laporan tidak tersentuh, ini murni apa yang digambar.
+     Data lain (lubang bor, permukaan, string) tetap mengikuti kotak "Potong data" seperti biasa. */
+  var bxClip = clip || !!(BX.ui && BX.ui.fl && g.m === 'H');
+  if(window.bxTraces)bxTraces(traces,{clip:bxClip,K:K});if(window.mdTraces)mdTraces(traces,{clip:clip,K:K});if(window.dgTraces)dgTraces(traces,{clip:clip,K:K});if(window.dgState)dgState();if(window.cpUpdate)setTimeout(function(){CP.cam=null;cpUpdate();},0);
   var xr=Math.max(rx[1]-rx[0],1),yr=Math.max(ry[1]-ry[0],1),zr=Math.max(rz[1]-rz[0],1),base=Math.max(xr,yr,zr);
   var fg=dark?'#dbe3ec':'#1c2733',bg=dark?'#16202c':'#ffffff',sb=dark?'#111a24':'#f6f8fa',gr=dark?'#2a3746':'#d5dbe3';
   var ax=function(t){return{title:{text:t},color:fg,gridcolor:gr,zerolinecolor:gr,backgroundcolor:sb,showbackground:true};};

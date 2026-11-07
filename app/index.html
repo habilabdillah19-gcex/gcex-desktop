@@ -1082,7 +1082,19 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   if(!$('showDH')||$('showDH').checked)dh.T.forEach(function(t){traces.push(t);});
   if(bmo)bmo.traces.forEach(function(t){traces.push(t);});
   if(window.planTraces)planTraces(traces,{clip:clip,K:K});
-  if(window.bxTraces)bxTraces(traces,{clip:clip,K:K});if(window.mdTraces)mdTraces(traces,{clip:clip,K:K});if(window.dgTraces)dgTraces(traces,{clip:clip,K:K});if(window.dgState)dgState();if(window.cpUpdate)setTimeout(function(){CP.cam=null;cpUpdate();},0);
+  /* Flitch aktif SELALU membatasi block model di 3D.
+     Permintaan pemilik: setelah flitch dibuat, tampilan 3D harus memperlihatkan block model sebagai
+     pulau-pulau yang atas dan bawahnya dibatasi RL flitch aktif, seperti di Surpac. Sebelumnya
+     pembatasan itu hanya terjadi kalau kotak "Potong data (hanya dalam slab)" dicentang atau sedang
+     di Sayatan 2D -- di 3D biasa, block model digambar UTUH dari dasar sampai puncak model
+     (terukur: flitch 238,75-241,25 m, tetapi yang tergambar 132,09-348,12 m). Dilihat dari samping,
+     urat setinggi 200 m itu tampak seperti tirai tegak, bukan pulau-pulau.
+     bxSel() sendiri sudah tahu cara memotong tepat di RL flitch (lihat bxSel: BX.ui.fl), hanya saja
+     ia tidak pernah diminta memotong. Jadi yang diubah hanya SIAPA yang meminta, bukan cara
+     memotongnya -- angka tonase dan laporan tidak tersentuh, ini murni apa yang digambar.
+     Data lain (lubang bor, permukaan, string) tetap mengikuti kotak "Potong data" seperti biasa. */
+  var bxClip = clip || !!(BX.ui && BX.ui.fl && g.m === 'H');
+  if(window.bxTraces)bxTraces(traces,{clip:bxClip,K:K});if(window.mdTraces)mdTraces(traces,{clip:clip,K:K});if(window.dgTraces)dgTraces(traces,{clip:clip,K:K});if(window.dgState)dgState();if(window.cpUpdate)setTimeout(function(){CP.cam=null;cpUpdate();},0);
   if(od&&od.base){var _zl=Infinity,_zh=-Infinity,_sc=function(v){if(v!=null&&isFinite(v)){if(v<_zl)_zl=v;if(v>_zh)_zh=v;}};traces.forEach(function(t){if(t===od.tr||!t.z)return;var a=t.z;for(var _i=0;_i<a.length;_i++){var _r=a[_i];if(_r!=null&&typeof _r==='object'&&_r.length!==undefined){for(var _j=0;_j<_r.length;_j++)_sc(_r[_j]);}else _sc(_r);}});if(!isFinite(_zl)){_zl=rz[0];_zh=rz[1];}var _zb=_zl-Math.max(0.5,(_zh-_zl)*0.02);if(od.zb!==_zb){od.zb=_zb;var _z=new Array(od.tr.x.length);for(var _k=0;_k<_z.length;_k++)_z[_k]=_zb;od.tr.z=_z;}if(_zb<rz[0])rz[0]=_zb;}
   var xr=Math.max(rx[1]-rx[0],1),yr=Math.max(ry[1]-ry[0],1),zr=Math.max(rz[1]-rz[0],1),base=Math.max(xr,yr,zr);
   var fg=dark?'#dbe3ec':'#1c2733',bg=dark?'#16202c':'#ffffff',sb=dark?'#111a24':'#f6f8fa',gr=dark?'#2a3746':'#d5dbe3';
@@ -4937,7 +4949,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     if(FOC)b.setAttribute('data-f',FOC);else b.removeAttribute('data-f');}
   function focus(f){FOC=f||'';segTag();var b=$('dbBody');if(b&&f){var sd=$('side');if(sd)sd.scrollTop=0;}}
   (function(){var d=window.dbPanel;if(typeof d==='function'&&!d._ptf){window.dbPanel=function(){var r=d.apply(this,arguments);try{segTag();}catch(e){}return r;};window.dbPanel._ptf=1;}})();
-  (function(){var u=window.uiTab;if(typeof u==='function')window.uiTab=function(){var r=u.apply(this,arguments);try{if(Date.now()-(PT._qt||0)>1500){if(FOC)focus('');document.body.classList.remove('pt-bmhd');}}catch(e){}return r;};})();
+  (function(){var u=window.uiTab;if(typeof u==='function')window.uiTab=function(){var r=u.apply(this,arguments);try{if(Date.now()-(PT._qt||0)>1500){if(FOC)focus('');document.body.classList.remove('pt-bmhd');/* penyembunyian panel non-BM ikut dilepas: bila tab berpindah BUKAN karena pemilihan node (mis. lyApply yang pindah sendiri ke tab Block Model), panel yang tampil bukan lagi milik node terpilih -- menyembunyikannya hanya menyisakan halaman kosong di bawah judul yang keliru. */document.body.classList.remove('pt-nonbm');}}catch(e){}return r;};})();
   /* ---------- tampilkan sebagai ---------- */
   var topoAs=function(){var s=U.cb('ovTopoS'),l=U.cb('ovTopoL');return s&&l?'both':s?'surf':l?'line':'';};
   var topoPref=function(){var m='surf';try{m=localStorage.getItem('gcex_pt_topo')||'surf';}catch(e){}return m;};
@@ -9765,7 +9777,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.29';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.30';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

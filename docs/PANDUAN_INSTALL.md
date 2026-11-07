@@ -3466,3 +3466,86 @@ pengukurannya menghasilkan angka yang tidak berarti apa-apa.
 - **Jangan membuka folder `_GCEx_Core` sebagai folder proyek** — buka folder foto / borang di atasnya. Bila terlanjur terpilih, DB-Ex kini otomatis memakai folder induknya (tidak lagi membuat `_GCEx_Core\_GCEx_Core\borang\_GCEx_Core`). Borang yang terlanjur masuk ke folder bersarang perlu ditambahkan ulang dari folder yang benar.
 - Ketepatan tetap bergantung pada model: `qwen3-vl:2b` di CPU cepat-lambatnya ±5 menit per lembar dan lebih sering salah membaca kolom waktu; hasil terbaik dengan `qwen3-vl:4b` di komputer ber-GPU NVIDIA (lihat bagian sebelumnya).
 
+
+## 113. Perapian UI/UX lanjutan, ekspor selalu bertanya, dan 3D dibatasi flitch aktif
+
+Sebelas temuan pemilik dengan tangkapan layar. Lima di antaranya berakar pada satu hal yang sama
+dengan bagian 107 — node yang tidak punya panel sendiri membiarkan panel node SEBELUMNYA terpampang
+di bawah judul yang berbeda — dan sisanya cacat tersendiri.
+
+### Ekspor: selalu bertanya mau disimpan di mana dan dengan nama apa
+
+Permintaannya jelas: apa pun yang diekspor, dalam bentuk apa pun, harus memunculkan jendela simpan.
+
+Yang ditemukan lebih buruk dari dugaan: **tidak satu pun** ekspor melakukannya. Semuanya memakai
+`<a download>`, yang di aplikasi terpasang berarti berkas jatuh diam-diam ke folder Download dengan
+nama yang sudah dipatok. Padahal jembatan Electron **sudah menyediakan** dialog Simpan
+(`gcex:saveFile`, lengkap dengan penyaring jenis berkas) sejak awal — ia hanya tidak pernah dipanggil
+dari halaman sama sekali.
+
+Sekarang semua ekspor lewat satu pintu, `gxSimpan()`, dengan tiga jalur berurutan: dialog Simpan
+milik Windows di aplikasi terpasang, `showSaveFilePicker` di peramban yang mendukungnya, dan — kalau
+keduanya tidak ada — setidaknya **menanyakan nama berkas** lebih dulu, bukan memakai nama patokan.
+Dipasang di satu tempat supaya ekspor yang ditambahkan nanti ikut menurut tanpa perlu diingatkan.
+Yang ikut dialihkan: string STR/DXF, ringkasan tonase CSV, pemeriksaan dig block, ringkasan harian,
+laporan periode, rencana bor CSV, berkas proyek `.dh3d` dan `.prj`, serta ekstraksi berkas sumber.
+
+### Tampilan 3D dibatasi RL flitch aktif
+
+Permintaan: setelah flitch dibuat, 3D harus memperlihatkan block model sebagai **pulau-pulau** yang
+atas dan bawahnya dibatasi RL flitch aktif, seperti Surpac.
+
+Terukur sebelum perbaikan: flitch 238,75–241,25 m, tetapi block model yang digambar **148,75–331,25 m**
+— seluruh model, dari dasar sampai puncak. Dilihat dari samping, urat setinggi 180 m itu tampak
+seperti tirai tegak, bukan pulau-pulau.
+
+Sebabnya bukan cara memotongnya: `bxSel()` sudah lama tahu cara memotong tepat di RL flitch
+(`BX.ui.fl`), tetapi hanya diminta memotong kalau kotak *Potong data (hanya dalam slab)* dicentang
+atau sedang di Penampang 2D. Di 3D biasa, tidak ada yang memintanya. Jadi yang diubah hanya **siapa
+yang meminta**: selama ada flitch aktif dan sayatannya horizontal, block model selalu dipotong di RL
+flitch. Terukur sesudahnya: **238,75–241,25 m**, tepat flitch.
+
+Yang TIDAK ikut berubah, dan itu disengaja: angka tonase dan laporan sama sekali tidak tersentuh —
+ini murni soal apa yang digambar. Permukaan referensi (topografi, solid pit, solid urat Leapfrog)
+juga tetap digambar utuh dan tetap mengikuti kotak *Potong data*; pada tangkapan layar, benda tinggi
+yang masih terlihat setelah perbaikan adalah solid urat, bukan block model.
+
+### Dua cacat lain yang ditemukan
+
+1. **Tombol "Simpan preset" mati justru ketika belum ada preset.** Kartu aksi mematikan SELURUH
+   tombolnya ketika node ber-`dim`. Tetapi `dim` menandai *daftar yang masih kosong*, bukan aksi yang
+   mustahil — sehingga satu-satunya jalan membuat preset pertama adalah lewat menu titik-tiga.
+   Sekarang yang memutuskan hanya aksi itu sendiri. Preset yang disimpan juga **langsung dipakai di
+   flitch aktif**, sesuai permintaan.
+2. **Tab "Pit & progres" muncul dua kali.** Pemasang tab melewatkan pekerjaannya kalau sudah ada
+   tombol bertanda `.rpxtab`, tetapi panel yang menggambar bilah tabnya sendiri membuat tombol
+   "Pit & progres" **tanpa** tanda itu — jadi tombol kedua dengan nama sama persis ditambahkan.
+   Sekarang panel-panel itu menandai tombolnya, dan pemeriksaannya juga melihat teksnya.
+
+### Satu fungsi satu tempat (lanjutan bagian 107)
+
+- Panel Block Model kini disembunyikan **total** untuk node yang panelnya ada di tab lain, jadi panel
+  *Sayatan* tidak lagi memuat menu digitasi dig block.
+- *Buat Flitch Aktif* kini **berisi** isian tinggi & RL flitch; folder *Flitch Aktif* jadi kartu daftar.
+- Node *RL …*, *Semua flitch* dan *Dig block (n)* jadi kartu ringkas, bukan salinan panel orang lain.
+- Tabel running grade & tonase dikeluarkan dari node *Otomatis* dan *Digit manual*: angka grade &
+  tonase hanya di **Laporan Grade × Tonnage › Running grade & tonnage**.
+- Tombol Export DXF/STR di panel *Rekap & edit string* dihapus. Ekspor string tinggal di satu node dan
+  berlaku untuk flitch yang sedang aktif. Dua panel dengan tombol export berpenampilan sama tetapi
+  cakupan berbeda (semua string yang tampil vs dig block flitch aktif) adalah sumber salah ekspor yang
+  tidak kelihatan sampai berkasnya dibuka di Surpac.
+
+### Mengganti nama string
+
+Bisa langsung, dan memang sudah bisa sejak dulu: kotak teks berisi nama string di panel *Running grade
+& tonnage* dapat diketik, dan namanya tersimpan ke proyek (`lyNm`) serta terpakai saat ekspor. Yang
+kurang hanyalah petunjuk bahwa kotak itu bisa diketik.
+
+### Catatan: dua kesalahan alat ukur, bukan aplikasinya
+
+Dicatat supaya tidak diulang. **Pertama**, harness uji memakai nomor port tetap; peladen dari
+pengujian sebelumnya masih menyajikan berkas lama, sehingga uji diam-diam memeriksa versi yang salah
+— saya sempat menyimpulkan 0.24.29 rusak total karena ini, dan itu **keliru**; versi rilisnya sehat.
+Semua harness kini memakai port acak. **Kedua**, probe 3D awalnya mengukur rentang elevasi SEMUA
+lapisan sekaligus, termasuk topografi dan solid pit yang memang setinggi 348 m, sehingga perbaikan
+yang sudah bekerja terbaca seolah tidak berubah. Pengukuran harus per lapisan.
