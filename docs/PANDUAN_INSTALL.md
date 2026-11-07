@@ -3878,3 +3878,8 @@ kedua kotak turun dari **12 menjadi 3**.
   lalu pilih di dialog AI (tombol **AI lokal** di kanan atas). Laptop tanpa GPU NVIDIA: `2b-instruct`; laptop dengan GPU NVIDIA: `4b-instruct` (atau `8b-instruct` bila memori GPU ≥ 8 GB).
 - Dialog AI kini menandai model qwen3-vl tanpa `-instruct`; pesan galat Borang menyebut model pengganti yang tepat.
 
+## 123. DB-Ex 0.42.11 — kolom aktivitas Daily Drilling Report tidak bergeser lagi
+
+- Pada model kecil (`qwen3-vl:2b-instruct`) tabel aktivitas sempat bergeser: rentang jam masuk ke kolom uraian / kategori, uraian hilang.
+- AI kini hanya diminta dua nilai per kegiatan: **rentang jam** dan **uraian**. Program memecah jam menjadi Mulai / Selesai, mengisi kategori dari kata kunci uraian, dan menggabungkan baris lanjutan (tanpa jam) ke kegiatan di atasnya.
+- Borang yang sudah dibaca dengan versi lama: klik **✦ Baca dengan AI** lagi.

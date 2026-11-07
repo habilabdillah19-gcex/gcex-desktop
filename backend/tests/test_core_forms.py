@@ -503,3 +503,17 @@ def test_model_thinking_disarankan_instruct(st, monkeypatch):
     with pytest.raises(ValueError, match=r"qwen3-vl:2b-instruct"):
         cf.ai_read(s, did, "http://x", "qwen3-vl:2b")
     assert cf.thinking_alt("qwen3-vl:4b-thinking") == "qwen3-vl:4b-instruct"
+
+
+def test_ddr_ai_dua_kolom_dan_kolom_bergeser(st):
+    """0.42.11: Daily Drilling Report diminta 2 kolom [jam, uraian]; jawaban yang kolomnya bergeser (jam di uraian / kategori)
+    tetap dipetakan ke mulai-selesai, baris tanpa jam digabung ke kegiatan di atasnya."""
+    assert cf.ai_schema_compact("ddr")["properties"]["r"]["items"]["minItems"] == 2
+    res = cf.parse_ai_text("ddr", '{"h":[],"r":[["0630-0700","TRAVELING TO"],["","370"],["07.00 - 07.05","PSM"]],"lubang":[]}')
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
+    res["rows"] += [{"mulai": "TITIK AMAN", "selesai": "", "aktivitas": "1800-1900", "kategori": "1800-1900"}]
+    cf.apply_ai(s, did, res, "m", 1)
+    rs = [r["data"] for r in cf.rows(s, did) if r["tbl"] == ""]
+    assert [(r["mulai"], r["selesai"]) for r in rs] == [("06:30", "07:00"), ("07:00", "07:05"), ("18:00", "19:00")]
+    assert rs[0]["aktivitas"] == "TRAVELING TO 370" and rs[1]["kategori"] == "P5M" and rs[2]["aktivitas"] == "TITIK AMAN"

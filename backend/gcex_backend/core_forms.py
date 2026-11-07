@@ -101,14 +101,16 @@ TYPES: dict[str, dict] = {
                    ("geologist", "Geologist approval", "text")],
         "rows": [("mulai", "Mulai", "time"), ("selesai", "Selesai", "time"), ("aktivitas", "Drilling details / formation description", "text"),
                  ("kategori", "Kategori", "text")],
+        # jawaban AI cukup 2 kolom (rentang jam + uraian): model kecil (2b) sering menggeser 4 kolom (jam masuk uraian / kategori)
+        "ai_rows": [("jam", "Rentang jam, mis. 0630-0700", "text"), ("aktivitas", "Uraian kegiatan", "text")],
         "tables": {"hole": {"name": "Meterage / lubang", "ai": "lubang",
                             "rows": [("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("hole_id", "Hole ID", "text"),
                                      ("az", "Az", "num"), ("dip", "Dip", "num")]}},
         "hint": ("Borang 'Daily Drilling Report' pemboran RC, portrait. Header kanan atas: Client, DHP_ID, Driller, Date, Drill Rig (nama "
                  "unit, mis. 'Hanjin SDR-07' -> tulis apa adanya), Shift (I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang' (satu objek per lubang). Kolom kanan "
                  "'DRILLING DETAILS and FORMATION DESCRIPTION': tiap kegiatan diawali rentang jam, mis. 0650-0700 atau 07.00-07.05, lalu "
-                 "uraian (boleh dua baris tulisan) -> isi 'rows' dengan satu objek per kegiatan: mulai, selesai, aktivitas (gabungkan "
-                 "baris lanjutan uraian), kategori kosongkan (""). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
+                 "uraian (boleh dua baris tulisan) -> satu baris per kegiatan: [jam, uraian], mis. [\"0630-0700\", \"TRAVELING TO 370\"] "
+                 "(gabungkan baris lanjutan uraian ke kegiatan yang sama). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
                  "ENGINE (start, finish, HM running), Geologist approval; catatan di bawah tabel: WH, DL, MNTC, BD, RAIN, STD (jam, "
                  "mis. 5hr -> 5) dan tulisan bebas -> 'catatan'. 'lokasi' (nama area / prospek) biasanya tidak tertulis: kosongkan bila "
                  "tidak ada."),
@@ -741,6 +743,51 @@ def ai_schema(ftype: str) -> dict:
     return {"type": "object", "required": req, "properties": props}
 
 
+def ai_rows(t: dict) -> list:
+    """Kolom baris yang diminta dari AI (boleh lebih sedikit dari kolom tabel, mis. Daily Drilling Report: jam + uraian)."""
+    return t.get("ai_rows") or t["rows"]
+
+
+_RANGE = re.compile(r"(\d{1,2})\s*[.:°'`]?\s*(\d{2})\s*(?:-|–|—|~|/|s\.?d\.?|to|sampai)\s*(\d{1,2})\s*[.:°'`]?\s*(\d{2})(?!\d)", re.I)
+
+
+def ddr_fix(r: dict) -> dict:
+    """Satu baris aktivitas Daily Drilling Report dari AI -> mulai, selesai, aktivitas, kategori, apa pun urutan / kolom yang
+    dipakai model. Rentang jam (0630-0700, 07.00-07.05, 0700 - 0705) dicari di SEMUA sel; teks lain = uraian; kategori hanya
+    dipertahankan bila nama kategori yang dikenal (selain itu dikosongkan -> diisi program dari kata kunci uraian)."""
+    keys = ("jam", "mulai", "selesai", "aktivitas", "kategori")
+    vals = {k: str(r.get(k) if r.get(k) is not None else "").strip() for k in keys}
+    ragu = list(r.get("ragu") or [])
+    mulai, selesai = parse_time(vals["mulai"]), parse_time(vals["selesai"])
+    texts, rng_key = [], None
+    for k in keys:
+        v = vals[k]
+        if not v or (k in ("mulai", "selesai") and parse_time(v)):
+            continue
+        m = _RANGE.search(v)
+        if m:
+            a, b = parse_time(m.group(1) + m.group(2)), parse_time(m.group(3) + m.group(4))
+            if a and b:
+                if not (mulai and selesai):
+                    mulai, selesai, rng_key = a, b, k
+                v = (v[:m.start()] + " " + v[m.end():]).strip(" -:|,?")
+        if k == "kategori":
+            kn = kat_norm(v)
+            if kn in DDR_KAT_NAMES:
+                continue
+        if v and v not in texts:
+            texts.append(v)
+    out = {k: v for k, v in r.items() if k not in keys and k != "ragu"}
+    kn = kat_norm(vals["kategori"])
+    out.update({"mulai": mulai or vals["mulai"], "selesai": selesai or vals["selesai"], "aktivitas": " ".join(texts),
+                "kategori": kn if kn in DDR_KAT_NAMES else ""})
+    rg = []
+    for k in ragu:
+        rg += ["mulai", "selesai"] if k in ("jam", rng_key) and k != "aktivitas" else [k]
+    out["ragu"] = [k for k in dict.fromkeys(rg) if k in ("mulai", "selesai", "aktivitas", "kategori")]
+    return out
+
+
 def ai_schema_compact(ftype: str) -> dict:
     """Skema jawaban RINGKAS tetapi DIPAKSA Ollama (structured output): header & tiap baris berupa daftar nilai berurutan
     (tanpa nama kolom yang diulang di setiap baris). Model kecil (2b) tidak bisa lagi menulis penjelasan / format lain
@@ -749,7 +796,7 @@ def ai_schema_compact(ftype: str) -> dict:
 
     def arr(n: int) -> dict:
         return {"type": "array", "items": {"type": "string"}, "minItems": n, "maxItems": n}
-    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": arr(len(t["rows"]))}, "c": {"type": "string"}}
+    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": arr(len(ai_rows(t)))}, "c": {"type": "string"}}
     req = ["h", "r"]
     for tt in (t.get("tables") or {}).values():
         props[tt["ai"]] = {"type": "array", "items": arr(len(tt["rows"]))}
@@ -763,7 +810,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
     komputer tanpa GPU waktu baca terutama ditentukan oleh panjang jawaban."""
     t = TYPES[ftype]
     hk = [k for k, _l, _t in t["header"]]
-    rk = [k for k, _l, _t in t["rows"]]
+    rk = [k for k, _l, _t in ai_rows(t)]
     if mode == "teks":  # cadangan tanpa format Ollama: satu baris teks per baris tabel, nilai dipisah '|'
         lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
                  "Jawab HANYA dengan baris-baris berikut, tanpa penjelasan:",
@@ -798,7 +845,7 @@ def _from_compact(ftype: str, o: dict) -> dict:
     """{h:[…], r:[[…]], <tabel>:[[…]], c} -> {header, rows, <tabel>, catatan}; sel diakhiri '?' masuk ragu;
     baris yang isinya nama / judul kolom (model menyalin kepala tabel) dibuang."""
     t = TYPES[ftype]
-    names = {x.lower() for k, lbl, _t in t["rows"] + t["header"] for x in (k, lbl)}
+    names = {x.lower() for k, lbl, _t in t["rows"] + ai_rows(t) + t["header"] for x in (k, lbl)}
     names |= {x.lower() for tt in (t.get("tables") or {}).values() for k, lbl, _t in tt["rows"] for x in (k, lbl)}
     names |= {"time", "from", "to", "no", "meterage", "hole id", "azimuth", "dip"}
 
@@ -817,7 +864,7 @@ def _from_compact(ftype: str, o: dict) -> dict:
             return None  # kalimat penjelasan model, bukan isian borang
         return x
     hk = [k for k, _l, _t in t["header"]]
-    rk = [k for k, _l, _t in t["rows"]]
+    rk = [k for k, _l, _t in ai_rows(t)]
     out: dict[str, Any] = {"header": one(o.get("h"), hk) or {}, "rows": [], "catatan": str(o.get("c") or "")}
     out["rows"] = [x for x in (one(v, rk) for v in o.get("r") or []) if x]
     for tt in (t.get("tables") or {}).values():
@@ -842,7 +889,7 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
         except ValueError:
             pass
     hk = [k for k, _l, _t in t["header"]]
-    rk = [k for k, _l, _t in t["rows"]]
+    rk = [k for k, _l, _t in ai_rows(t)]
     tabs = {tt["ai"].upper(): (tt["ai"], [k for k, _l, _t in tt["rows"]]) for tt in (t.get("tables") or {}).values()}
 
     def cells(rest: str, keys: list[str]) -> dict:
@@ -1053,6 +1100,8 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
     for r in (res or {}).get("rows") or []:
         if not isinstance(r, dict):
             continue
+        if d["type"] == "ddr":
+            r = ddr_fix(r)
         data = {k: str(r.get(k) if r.get(k) is not None else "").strip() for k in rk}
         if not any(v for k, v in data.items() if k != "no"):
             continue
@@ -1062,6 +1111,16 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
         out_rows = [({k: v for k, v in x.items() if k != "_u"}, list(dict.fromkeys(x["_u"] + f))) for x, f in res_f]
     if d["type"] == "rc" and out_rows:
         out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(fill_rc([x for x, _u in out_rows]), out_rows)]
+    if d["type"] == "ddr" and out_rows:  # baris tanpa jam = lanjutan uraian kegiatan di atasnya
+        merged: list = []
+        for x, u in out_rows:
+            if merged and not x.get("mulai") and not x.get("selesai") and x.get("aktivitas"):
+                px, pu = merged[-1]
+                px["aktivitas"] = (str(px.get("aktivitas") or "") + " " + x["aktivitas"]).strip()
+                merged[-1] = (px, list(dict.fromkeys(pu + [k for k in u if k == "aktivitas"])))
+            else:
+                merged.append((x, u))
+        out_rows = merged
     if d["type"] == "ddr" and out_rows:
         out_rows = [(x, list(dict.fromkeys(u + f))) for (x, f), (_x, u) in zip(fill_ddr([x for x, _u in out_rows]), out_rows)]
     extra = []
