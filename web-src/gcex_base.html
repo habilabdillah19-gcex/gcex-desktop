@@ -489,7 +489,11 @@ body.sgdrag #stage{pointer-events:none}
 <label class='sw'><input type='checkbox' id='dgAll' checked onchange='updatePlot()'>Tampilkan string di 3D penuh</label>
 <div class='hint'>Klik kiri di Penampang 2D: tambah titik (Z / bidang terkunci pada slab aktif). Klik titik pertama: string tertutup. Enter: selesai &middot; Backspace: hapus titik &middot; Esc: batal. Drag tetap untuk menggeser peta.</div>
 <div id='dgList' style='max-height:220px;overflow:auto;margin:0 -4px 8px'></div>
-<div class='g2 f'><button class='btn-pri' onclick='dgExport(&#39;dxf&#39;)'>&#8681; Export DXF</button><button class='btn-pri' onclick='dgExport(&#39;str&#39;)'>&#8681; Export STR</button></div>
+<!-- Tombol export dipindahkan ke SATU tempat: Layout & Ekspor Dig Plan > Export STR / DXF (Surpac),
+     yang bekerja pada flitch yang sedang aktif. Dua panel dengan tombol export berpenampilan sama
+     tetapi cakupan berbeda (semua string yang tampil vs dig block flitch aktif) adalah sumber salah
+     ekspor yang tidak kelihatan sampai berkasnya dibuka di Surpac. -->
+<div class='hint'>Export string ke Surpac ada di <b>Layout &amp; Ekspor Dig Plan &rsaquo; Export STR / DXF</b>, dan berlaku untuk <b>flitch yang sedang aktif</b>.</div>
 </section>
 <section id='pModel' hidden>
 <h3>Model vein &amp; titik survey</h3>
@@ -1707,8 +1711,7 @@ function plExport(){if(!PL.h.length){alert('Belum ada titik rencana.');return;}v
   rows=['Drillhole Name,Easting,Northing,Elevation,Azimuth,Dip,Lift Rate,Drift Rate,Distance,Extension,Target Depth,Comment'];
   PL.h.forEach(function(h){rows.push([q(h.n),plF(h.x+offX,4),plF(h.y+offY,4),rd?Math.round(h.z):plF(h.z,2),plF(h.az,2),plF(h.dip,2),plF(h.lift,3),plF(h.drift,3),plF(h.dist,2),plF(h.ext,2),plF(h.td,2),q(h.cm)].join(','));});
   var txt=rows.join('\r\n')+'\r\n',fn='Plan_Bor_'+ZONE+'_'+($('plBench').value||'plan')+'.csv',blob=new Blob([txt],{type:'text/csv'});
-  if(window.navigator&&navigator.msSaveBlob){navigator.msSaveBlob(blob,fn);return;}
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
+  gxSimpan(blob,fn,'text/csv');}
 plInit();
 var DG={S:[],on:false,cur:[],c2:[],pl:null,down:null,hov:null,pal:['#e8590c','#2f9e44','#1971c2','#c2255c','#7048e8','#0c8599','#f08c00','#5c940d']};
 function dgKey(){return 'dh3d_dig_'+ZONE;}
@@ -1767,7 +1770,44 @@ function dgMouse(e,type){if(!DG.on||!VIEW2D)return;var A=dgAx();if(!A)return;var
     if(DG.c2.length>=3){var f=dgPx(A,DG.c2[0][0],DG.c2[0][1]);if(Math.hypot(f[0]-px,f[1]-py)<10){dgFinish(true);return;}}
     var a=A.x.p2d(ix),b=A.y.p2d(iy),sn=dgSnap2(A,px,py);if(sn){a=sn[0];b=sn[1];}
     DG.c2.push([a,b]);DG.cur.push(dg3(DG.pl,a,b).map(function(v){return Math.round(v*1000)/1000;}));dgDraw();dgState();}}
-function dgDl(txt,fn,type){var b=new Blob([txt],{type:type||'text/plain'});if(window.navigator&&navigator.msSaveBlob){navigator.msSaveBlob(b,fn);return;}var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},600);}
+/* ---------- SATU pintu keluar untuk SEMUA ekspor ----------
+   Permintaan pemilik: apa pun yang diekspor, dalam bentuk apa pun, harus selalu memunculkan jendela
+   "simpan di mana, dengan nama apa".
+   Sebelumnya tidak satu pun ekspor melakukannya: semuanya memakai <a download>, yang di aplikasi
+   terpasang berarti berkas jatuh diam-diam ke folder Download dengan nama yang sudah dipatok. Padahal
+   jembatan Electron SUDAH menyediakan dialog Simpan (gcexDesktop.api.saveFile) -- hanya saja tidak
+   pernah dipanggil dari halaman.
+   Tiga jalur, berurutan sesuai yang tersedia:
+     1. aplikasi terpasang  -> dialog Simpan milik Windows (lokasi + nama + jenis berkas);
+     2. peramban modern     -> showSaveFilePicker, dialog yang sama perilakunya;
+     3. selebihnya          -> tanya nama berkas lebih dulu, baru unduh.
+   Dipasang di satu tempat supaya ekspor yang ditambahkan nanti ikut menurut tanpa perlu diingatkan. */
+function gxJenis(fn){var e=String(fn).split('.').pop().toLowerCase(),N={
+    csv:'Berkas CSV',txt:'Teks',str:'String Surpac',dxf:'DXF (AutoCAD)',dtm:'DTM Surpac',mdl:'Block model Surpac',
+    pdf:'PDF',png:'Gambar PNG',obj:'OBJ',json:'JSON',prj:'Proyek GC-Ex',dh3d:'Proyek GC-Ex',xlsx:'Excel'}[e]||('Berkas .'+e);
+  return[{name:N,extensions:[e]},{name:'Semua berkas',extensions:['*']}];}
+async function gxSimpan(data,fn,type){
+  var blob=(data instanceof Blob)?data:new Blob([data],{type:type||'text/plain'});
+  /* 1. aplikasi terpasang: dialog Simpan milik sistem */
+  try{ if(window.gcexDesktop&&gcexDesktop.api&&gcexDesktop.api.saveFile){
+      var buf=new Uint8Array(await blob.arrayBuffer());
+      var path=await gcexDesktop.api.saveFile(fn,buf,gxJenis(fn));
+      if(path&&window.FP&&FP.toast)FP.toast('&#10003; Disimpan: '+path,false,6000);
+      return path||null; } }catch(e){console.warn('saveFile:',e);}
+  /* 2. peramban yang punya pemilih berkas */
+  if(window.showSaveFilePicker){ try{
+      var h=await showSaveFilePicker({suggestedName:fn});
+      var w=await h.createWritable();await w.write(blob);await w.close();return h.name||fn; }
+    catch(e){ if(e&&e.name==='AbortError')return null; console.warn(e); } }
+  /* 3. jalur terakhir: setidaknya namanya ditanyakan, tidak dipatok diam-diam */
+  var nm=null;try{nm=prompt('Simpan dengan nama berkas:',fn);}catch(e){nm=fn;}
+  if(nm===null)return null; nm=String(nm).trim()||fn;
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+  return nm;}
+window.gxSimpan=gxSimpan;
+function dgDl(txt,fn,type){return gxSimpan(txt,fn,type);}
 function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.length){alert('Belum ada string yang ditampilkan untuk diekspor.');return;}var base='String_'+String(ZONE).replace(/[^A-Za-z0-9_-]+/g,'_'),r=[],f3=function(v){return(+v).toFixed(3);};
   if(fmt==='str'){var d=new Date(),mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
     r.push(base+','+('0'+d.getDate()).slice(-2)+'-'+mo+'-'+String(d.getFullYear()).slice(-2)+',,SSI_STYLES:styles.ssi');r.push('0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000');
@@ -3626,8 +3666,8 @@ SA.reopen=async function(){E('pjMenu').style.display='none';await SA.saveWork();
 function encTA(k,v){if(v&&typeof v==='object'&&ArrayBuffer.isView(v)){var u=new Uint8Array(v.buffer,v.byteOffset,v.byteLength),s='';for(var i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return{__ta:v.constructor.name,b:btoa(s)};}return v;}
 function decTA(k,v){if(v&&typeof v==='object'&&v.__ta&&typeof v.b==='string'){var s=atob(v.b),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);var C=window[v.__ta]||Uint8Array;return C===Uint8Array?u:new C(u.buffer);}return v;}
 SA.downloadProj=async function(nm){var p=E('pjMenu');if(p)p.style.display='none';if(!nm){await SA.saveWork();nm=SA.pname;}var r=await idbGet('proj:'+nm);if(!r){alert('Proyek tidak ditemukan.');return;}var wk=await SA.loadWork(nm);
-  var txt=JSON.stringify({format:'dh3d-project',version:1,name:r.name,date:r.date,data:r.data,work:wk},encTA),b=new Blob([txt],{type:'application/json'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(b);a.download=String(r.name).replace(/[^A-Za-z0-9_-]+/g,'_')+'.dh3d';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);};
+  var txt=JSON.stringify({format:'dh3d-project',version:1,name:r.name,date:r.date,data:r.data,work:wk},encTA),b=new Blob([txt],{type:'application/json'});
+  gxSimpan(b,String(r.name).replace(/[^A-Za-z0-9_-]+/g,'_')+'.dh3d','application/json');};
 SA.openProjFile=async function(f){if(!f)return;msg('Membuka '+esc(f.name)+'&hellip;');try{var o=JSON.parse(await f.text(),decTA);if(o.format!=='dh3d-project'||!o.data)throw new Error('bukan file proyek Drillhole 3D Viewer');
     await idbPut('proj:'+o.name,{name:o.name,date:o.date,data:o.data});if(o.work){var bm=o.work.bm,md=o.work.md,bx=o.work.bx;delete o.work.bm;delete o.work.md;delete o.work.bx;o.work.hasBm=!!bm;o.work.hasMd=!!md;o.work.hasBx=!!bx;if(bx)await idbPut('bx:'+o.name,bx);else await idbDel('bx:'+o.name);await idbPut('work:'+o.name,o.work);if(bm)await idbPut('bm:'+o.name,bm);else await idbDel('bm:'+o.name);if(md)await idbPut('mdl:'+o.name,md);else await idbDel('mdl:'+o.name);}await idbPut('lastName',o.name);msg('');SA.listProj();SA.openProj(o.name);}catch(er){msg(esc(f.name)+': '+esc(er.message),true);}};
 SA.openProj=async function(nm){if(!window.Plotly){alert('Library Plotly belum siap (lihat langkah 3).');return;}var r=await idbGet('proj:'+nm);if(!r){alert('Proyek tidak ditemukan.');return;}await idbPut('lastName',nm);SA.boot(r.data,await SA.loadWork(nm));};

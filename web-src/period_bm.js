@@ -234,9 +234,8 @@
                         'Pencapaian persen,' + S.capai.p.toFixed(1), 'Selisih ton,' + Math.round(S.capai.sel));
     if (S.tren && S.tren.length) { L.push('', 'Tren,Ton'); S.tren.forEach(function (x) { L.push(q(x.k) + ',' + Math.round(x.t)); }); }
     if (S.belum.n) L.push('', 'Belum dihitung,' + S.belum.n + ' poligon di ' + S.belum.fl.length + ' flitch (tidak ikut dijumlahkan)');
-    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(b); a.download = 'GCEx_LaporanPeriode_' + S.r.from + '_' + S.r.to + '.csv';
-    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' });
+    gxSimpan(b, 'GCEx_LaporanPeriode_' + S.r.from + '_' + S.r.to + '.csv');
   };
 
   PRD.set = function (k, v) { PRD.o[k] = v; if (k === 'kind' || k === 'from' || k === 'to' || k === 'grp') PRD.res = null; panel(); };

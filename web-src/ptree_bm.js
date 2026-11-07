@@ -89,7 +89,7 @@
       var B=ok(function(){return lyBench();},[NaN,NaN]),isAct=function(g){return Math.abs(g.top-B[0])<1e-6&&Math.abs(g.bot-B[1])<1e-6;};
       var fl=ord.map(function(k){var g=G[k],ak=isAct(g),bd=[g.db.length?g.db.length+' DB':'',g.am.length?g.am.length+' AM':''].filter(Boolean).join(' · ');
         var kids=[];
-        if(g.db.length)kids.push({id:'fl.'+k+'.db',t:'Dig block ('+g.db.length+')',ic:'poly',fold:1,kids:g.db.map(function(o){var q=o.s;return{id:'fl.'+k+'.db.'+(q.id||o.i),t:'#'+q.no+' '+(q.d||'string')+(q.dest?' → '+q.dest:''),ic:q.manual?'digit':'poly',
+        if(g.db.length)kids.push({id:'fl.'+k+'.db',t:'Dig block ('+g.db.length+')',ic:'poly',fold:1,card:{kids:1,hint:'Daftar dig block di flitch ini. Aturan kelas kadar & tujuan ada di <b>Dig Block</b>, angkanya di <b>Laporan Grade \u00d7 Tonnage</b>.'},kids:g.db.map(function(o){var q=o.s;return{id:'fl.'+k+'.db.'+(q.id||o.i),t:'#'+q.no+' '+(q.d||'string')+(q.dest?' → '+q.dest:''),ic:q.manual?'digit':'poly',
           b:areaTxt(q),
           go:function(){try{if(!isAct(g))open(g);setTimeout(function(){if(window.DGM)DGM.last=q.id;DB.sel=q.id;PT.goSub('BM','Dig block');try{dbPanel();}catch(e){}updatePlot();},120);}catch(e){console.error(e);}},
           menu:function(){return[{t:'Buka flitch & sorot',fn:function(){if(!isAct(g))open(g);}},{t:'Edit bentuk…',fn:function(){if(!isAct(g))open(g);setTimeout(function(){dbEdStart(DG.S.indexOf(q));},200);}}];}};})});
@@ -98,11 +98,11 @@
           go:function(){try{if(!isAct(g))open(g);setTimeout(function(){uiTab('AM');PT.goSub('AM','Register');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();},150);}catch(e){console.error(e);}},
           menu:function(){return[{t:'Buka di register',fn:function(){if(!isAct(g))open(g);uiTab('AM');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();}},{t:'Edit bentuk…',fn:function(){if(!isAct(g))open(g);setTimeout(function(){amEdShape(x.id);},200);}}];}};})});
         return{id:'fl.'+k,t:'RL '+fmt(g.top)+' – '+fmt(g.bot)+(ak?' (aktif)':''),ic:'flitch',tab:'BM',sub:'Dig block',b:bd,fold:1,kids:kids,
-        foc:'rep',go:function(){try{open(g);setTimeout(function(){PT.goSub('BM','Dig block');},80);}catch(e){console.error(e);}},
+        card:{hint:'Flitch ini. Angka grade & tonase ada di <b>Laporan Grade \u00d7 Tonnage</b>, pembuatan dig block di <b>Dig Block</b> \u2014 supaya satu informasi hanya punya satu tempat.',acts:[{t:'Jadikan flitch aktif & buka Penampang 2D',pri:1,fn:function(){open(g);}},{t:'Lihat running grade & tonase flitch ini',fn:function(){open(g);setTimeout(function(){PT.select('rep.run');},200);}},{t:'Hapus semua dig block di flitch ini\u2026',fn:function(){open(g);setTimeout(A('dbDelFlitch'),200);}}]},go:function(){try{open(g);setTimeout(function(){PT.goSub('BM','Dig block');},80);}catch(e){console.error(e);}},
         menu:function(){return[{t:'Buka flitch ini (Penampang 2D)',fn:function(){open(g);}},{t:'Register as-mined flitch ini',fn:function(){open(g);uiTab('AM');}},{sep:1},{t:'Hapus semua dig block di flitch ini…',danger:1,fn:function(){open(g);setTimeout(A('dbDelFlitch'),200);}}];}};});
-      return{id:'fl',step:'5',st:st.fl,t:'Flitch Aktif',ic:'folder',fold:1,tab:'BM',sub:'Dig block',foc:'fl',b:m?flTxt():'',hint:'Tinggi flitch, RL atas / bawah, metode tonase, lalu Terapkan flitch (Penampang 2D)',
+      return{id:'fl',step:'5',st:st.fl,t:'Flitch Aktif',ic:'folder',fold:1,b:m?flTxt():'',hint:'Tinggi flitch, RL atas / bawah, metode tonase, lalu Terapkan flitch (Penampang 2D)',card:{kids:1,hint:'Isian tinggi & RL flitch ada di <b>Buat Flitch Aktif</b> di bawah. Daftar flitch yang sudah ada di <b>Semua flitch</b>.'},
         menu:function(){return[{t:'Terapkan flitch (buka Penampang 2D)',fn:A('lyApply'),dis:!m}];},
-        kids:[{id:'fl.2d',t:'Buat Flitch Aktif',ic:'s2d',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();},hint:'Terapkan RL atas / bawah di atas sebagai flitch aktif, lalu buka Penampang 2D-nya',card:{hint:'Menerapkan tinggi & RL flitch yang diatur di Flitch Aktif, lalu membuka Penampang 2D pada flitch itu.',acts:[{t:'Buat flitch aktif & buka Penampang 2D',pri:1,fn:A('lyApply')},{t:'Hanya buka / tutup Penampang 2D',fn:A('toggle2D')},{t:'Atur tinggi & RL flitch…',fn:function(){PT.select('fl');}}]}}].concat(window.ortFlTree?ortFlTree():[]).concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,kids:fl}]:[])};},'fl','Flitch Aktif');
+        kids:[{id:'fl.2d',t:'Buat Flitch Aktif',ic:'s2d',tab:'BM',sub:'Dig block',foc:'fl',chk:ok(function(){return !!VIEW2D;}),onChk:function(){toggle2D();},hint:'Tinggi flitch, RL atas / bawah dan metode tonase \u2014 lalu Terapkan untuk membuka Penampang 2D'}].concat(window.ortFlTree?ortFlTree():[]).concat(fl.length?[{id:'fl.list',t:'Semua flitch ('+fl.length+')',ic:'flitch',b:fl.length,fold:1,card:{kids:1,hint:'Pilih flitch di bawah. Pengaturan tinggi & RL flitch ada di <b>Flitch Aktif</b>, pembuatan dig block di <b>Dig Block</b>, dan angka grade & tonase di <b>Laporan Grade \u00d7 Tonnage \u203a Running grade & tonnage</b>.'},kids:fl}]:[])};},'fl','Flitch Aktif');
     add(function(){return{id:'dig',step:'6',st:st.dig,t:'Dig Block',ic:'folder',fold:1,b:s.dig?s.dig+' poligon':'',hint:'Dig block otomatis dari kelas kadar & tujuan material, atau digit manual (flitch aktif)',card:{kids:1,hint:'Pilih cara membuat dig block di bawah. Panel pengaturannya ada di sub-menu masing-masing, supaya satu pengaturan hanya punya satu tempat.',acts:[{t:'Buat dig block otomatis (flitch aktif)',pri:1,fn:function(){PT.select('dig.auto');setTimeout(A('dbAuto'),200);}}]},
         menu:function(){return[{t:'Buat dig block otomatis (flitch aktif)',fn:function(){A('dbAuto')();},dis:!m},{t:'Hapus semua dig block di flitch aktif…',danger:1,fn:A('dbDelFlitch'),dis:!s.dig}];},
         kids:[{id:'dig.auto',t:'Otomatis (kelas kadar)',ic:'poly',tab:'BM',sub:'Dig block',foc:'auto',hint:'Batas kelas kadar, string number & warna material, lalu buat poligon otomatis di flitch aktif'},{id:'dig.dest',t:'Tujuan (DEST) per material',ic:'attr',tab:'BM',sub:'Dig block',foc:'dest',hint:'Tujuan tiap material (ROM / stockpile / waste dump) — dipakai dig block otomatis maupun digit manual'},{id:'dig.man',t:'Digit manual (snap sudut blok)',ic:'digit',tab:'BM',sub:'Dig block',foc:'man'},
@@ -125,12 +125,21 @@
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},kids:[{id:'set.s',t:'Sayatan',ic:'section',tab:'Slice'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     return L;}
   PT.install({app:'bm',nodes:nodes,nav:true,openDef:['bm','fl','dig','am'],
-    onSelect:function(n){var f=n.foc||'';focus(f);setTimeout(function(){focus(f);},120);document.body.classList.toggle('pt-bmhd',!/^bm(\.|$)/.test(n.id));},
+    onSelect:function(n){var f=n.foc||'';focus(f);setTimeout(function(){focus(f);},120);document.body.classList.toggle('pt-bmhd',!/^bm(\.|$)/.test(n.id));
+    /* Panel Block Model (termasuk seluruh isi Dig block) disembunyikan TOTAL untuk node yang
+       bukan miliknya. Sebelumnya hanya sebagian yang disembunyikan, sehingga node seperti
+       'Sayatan' -- yang panelnya sendiri ada di tab lain -- tetap menampilkan menu digitasi
+       dig block di bawah judulnya. */
+    document.body.classList.toggle('pt-nonbm',!!(n.tab&&n.tab!=='BM'));},
     css:'#pBM>.uitabs,#amBody>.uitabs,#pAM .amflow{display:none!important}'+
       /* Judul besar di dalam panel hanya mengulang nama node yang sudah tertulis di kepala Properti,
          dan justru membuat isinya terbaca sebagai milik judul yang salah. */
+      'body.pt-nonbm #pBM{display:none!important}'+
       'body.pt-on #pBM .lyhead,body.pt-on #pBM>h3,body.pt-on #pAM>h3,body.pt-on #pModel>h3,body.pt-on #pOverlay>h3{display:none!important}'+
       'body.pt-bmhd #pBM>:not(.uisec){display:none!important}'+
-      [['fl'],['el'],['auto','rule','rep'],['dest'],['man','rule','dest','rep'],['exp'],['rep']].map(function(K){return '#dbBody[data-f='+K[0]+']>[data-seg]'+K.map(function(k){return ':not([data-seg='+k+'])';}).join('')+'{display:none!important}';}).join('')+
+      /* Segmen 'rep' (tabel running grade & tonase) sengaja TIDAK ikut di node Otomatis maupun Digit
+         manual: permintaan pemilik, angka grade & tonase hanya boleh muncul di satu tempat, yaitu
+         Laporan Grade x Tonnage > Running grade & tonnage. */
+      [['fl'],['el'],['auto','rule'],['dest'],['man','rule','dest'],['exp'],['rep']].map(function(K){return '#dbBody[data-f='+K[0]+']>[data-seg]'+K.map(function(k){return ':not([data-seg='+k+'])';}).join('')+'{display:none!important}';}).join('')+
       '#dbBody[data-f=man]{display:flex;flex-direction:column}#dbBody[data-f=man]>[data-seg=man]{order:1}#dbBody[data-f=man]>[data-seg=rule]{order:2}#dbBody[data-f=man]>[data-seg=dest]{order:3}#dbBody[data-f=man]>[data-seg=rep]{order:4}'});
 })();

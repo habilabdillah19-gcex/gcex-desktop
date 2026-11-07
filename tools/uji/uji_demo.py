@@ -2,9 +2,9 @@
 """Jalankan demo SUNGGUHAN (tidak di-pause) dan catat, per langkah, apakah elemen yang ditunjuk
 pernah terlihat. Versi sebelumnya menjalankan demo dalam keadaan pause -- padahal yang membuka
 panel adalah aksi terjadwal milik tiap langkah, yang hanya berjalan kalau demo benar-benar jalan."""
-import os, shutil, subprocess, sys, tempfile, time, urllib.request
+import os, random, shutil, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
-ROOT=Path("/home/claude/gcex-desktop"); PORT=sys.argv[1] if len(sys.argv)>1 else "8891"
+ROOT=Path("/home/claude/gcex-desktop"); PORT = str(random.randint(9100, 9899))   # port acak: port tetap bisa tersangkut peladen lama
 SRC=sys.argv[2] if len(sys.argv)>2 else str(ROOT/"app"/"index.html")
 d=Path(tempfile.mkdtemp(prefix="gcex_dm2_")); shutil.copyfile(SRC,d/"index.html")
 os.symlink(ROOT/"docs"/"tutorial-gcex"/"data",d/"data-latihan")

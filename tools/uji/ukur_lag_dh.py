@@ -2,9 +2,9 @@
 """Ukur lamanya LAYAR MEMBEKU di GC-Ex Drill Hole, dengan cara yang sama seperti di Block Model:
 jeda antar-frame > 50 ms selama gagang slider sayatan diseret dengan mouse sungguhan.
 Dijalankan di atas data latihan SIM_* (yang memang dibundel ke installer)."""
-import os, shutil, subprocess, sys, tempfile, time, urllib.request
+import os, random, shutil, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
-ROOT=Path("/home/claude/gcex-desktop"); PORT=sys.argv[1] if len(sys.argv)>1 else "8901"
+ROOT=Path("/home/claude/gcex-desktop"); PORT = str(random.randint(9100, 9899))   # port acak: port tetap bisa tersangkut peladen lama
 MODE=sys.argv[2] if len(sys.argv)>2 else "apaadanya"     # apaadanya | rilis-slider
 d=Path(tempfile.mkdtemp(prefix="gcex_dh_")); shutil.copyfile(ROOT/"app-dh"/"index.html",d/"index.html")
 os.symlink(ROOT/"docs"/"tutorial-gcex"/"data",d/"data-latihan")

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Peta node Project Tree -> isi panel Properti yang BENAR-BENAR terlihat.
 Dijalankan di aplikasi sungguhan dengan data latihan."""
-import os, shutil, subprocess, sys, tempfile, time, urllib.request
+import os, random, shutil, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
 ROOT = Path("/home/claude/gcex-desktop")
 DATA = ROOT / "docs" / "tutorial-gcex" / "data"
-PORT = sys.argv[1] if len(sys.argv) > 1 else "8801"
+PORT = str(random.randint(9100, 9899))   # port acak: port tetap bisa tersangkut peladen lama
 
 d = Path(tempfile.mkdtemp(prefix="gcex_ui_"))
 shutil.copyfile(ROOT / "app" / "index.html", d / "index.html")

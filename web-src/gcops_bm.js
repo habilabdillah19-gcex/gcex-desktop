@@ -144,9 +144,8 @@
     var q = function (v) { v = String(v == null ? '' : v).replace(/<[^>]+>/g, '').replace(/&minus;/g, '-').replace(/&lt;/g, '<').replace(/&sup2;/g, '2'); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     var L = ['Pemeriksaan dig block,' + q(Q.tgl), 'Dig block diperiksa,' + Q.nDb, 'Lebar minimum alat (m),' + Q.mmw, '', 'Tingkat,Flitch,Dig block,Temuan,Saran']
       .concat(Q.t.map(function (x) { return [x.lv, x.fl, x.nama, x.apa, x.saran].map(q).join(','); }));
-    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(b); a.download = 'GCEx_PemeriksaanDigBlock.csv';
-    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' });
+    gxSimpan(b, 'GCEx_PemeriksaanDigBlock.csv');
   };
 
   /* ================= 2. RINGKASAN HARIAN (flitch aktif) ================= */
@@ -237,9 +236,8 @@
     Object.keys(S.byD).sort().forEach(function (k) { L.push(row('Tujuan', k, S.byD[k])); });
     L.push(row('Total', 'RENCANA', { n: S.n, a: S.tot }));
     if (A) L.push(row('Total', 'AKTUAL as-mined', { n: A.n, a: A.a }));
-    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(b); a.download = 'GCEx_RingkasanHarian_RL' + G.top + '.csv';
-    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    var b = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv' });
+    gxSimpan(b, 'GCEx_RingkasanHarian_RL' + G.top + '.csv');
   };
 
   /* ================= 3. PRESET KELAS KADAR & TUJUAN ================= */
@@ -271,7 +269,14 @@
     if (i >= 0) { if (!confirm('Preset "' + nm + '" sudah ada. Ganti?')) return; L[i] = o; } else L.push(o);
     if (window.bxDirty) bxDirty(); else if (window.SA && SA.dirty) SA.dirty();
     try { if (window.PT && PT.render) PT.render(true); } catch (e) {}
-    alert('Preset "' + nm + '" tersimpan: ' + (o.p.rules || []).length + ' kelas kadar, ' + (o.p.destR || []).length +
+    /* Permintaan pemilik: begitu preset disimpan, preset itu langsung berlaku di flitch aktif.
+       Isinya memang pengaturan yang sedang dipakai, jadi menerapkannya tidak mengubah angka apa pun --
+       tetapi membuat keadaannya tegas: preset yang baru dibuat itulah yang sedang aktif, bukan
+       sesuatu yang masih harus dipilih lagi lewat menu. */
+    try { GCO.pstTerap(nm); } catch (e) { console.error(e); }
+    try { if (window.PT && PT.select) PT.select('dig.pst'); } catch (e) {}
+    alert('Preset "' + nm + '" tersimpan dan langsung dipakai di flitch aktif: ' +
+          (o.p.rules || []).length + ' kelas kadar, ' + (o.p.destR || []).length +
           ' aturan tujuan, lebar minimum ' + o.p.mmw + ' m.');
   };
   GCO.pstTerap = function (nm) {
@@ -314,7 +319,8 @@
         b: L.length ? L.length + ' preset' : '', dim: !L.length,
         hint: 'Batas kelas kadar, aturan tujuan material, lebar minimum dan ambang sulfida — supaya DS dan NS memakai batas yang sama',
         card: { kids: 1, hint: 'Simpan batas kelas kadar & aturan tujuan yang sedang dipakai sebagai preset, atau pilih preset di bawah untuk menerapkannya ke flitch aktif.',
-                acts: [{ t: 'Simpan pengaturan sekarang sebagai preset…', pri: 1, fn: function () { GCO.pstSimpan(); } }] },
+                acts: [{ t: '\u2795 Simpan pengaturan sekarang sebagai preset\u2026', pri: 1,
+                         fn: function () { GCO.pstSimpan(); } }] },
         menu: function () {
           return [{ t: 'Simpan pengaturan sekarang sebagai preset…', fn: function () { GCO.pstSimpan(); } }]
             .concat(L.length ? [{ sep: 1 }, { h: 'Pakai preset' }] : [])

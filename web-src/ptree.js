@@ -106,8 +106,14 @@
     if(!C){el.style.display='none';el.innerHTML='';document.body.classList.remove('pt-card');return;}
     var acts=C.acts||(n.go?[{t:C.run||('Jalankan: '+n.t.replace(/[.\u2026]+$/,'')),fn:n.go,pri:1}]:[]);
     var h='<div class=ptcd>'+(C.hint||n.hint?'<p>'+esc(C.hint||n.hint)+'</p>':'');
-    if(n.dim)h+='<p class=ptcw>'+esc(C.why||'Belum bisa dijalankan: datanya belum ada.')+'</p>';
-    h+=acts.map(function(a,i){return '<button type="button" class="'+(a.pri?'btn-pri':'')+'" data-i="'+i+'"'+(n.dim?' disabled':'')+'>'+esc(a.t)+'</button>';}).join('');
+    /* `dim` menandai node yang DAFTARNYA masih kosong, bukan aksi yang tidak bisa dijalankan.
+       Dulu seluruh tombol di kartu ikut dimatikan karenanya -- akibatnya tombol "Simpan preset"
+       justru mati persis ketika belum ada preset sama sekali, yaitu saat tombol itu paling
+       dibutuhkan, dan satu-satunya jalan keluarnya lewat menu titik-tiga. Sekarang yang memutuskan
+       hanya aksi itu sendiri (`dis`). */
+    var mati=acts.every(function(a){return a.dis;});
+    if(n.dim&&mati)h+='<p class=ptcw>'+esc(C.why||'Belum bisa dijalankan: datanya belum ada.')+'</p>';
+    h+=acts.map(function(a,i){return '<button type="button" class="'+(a.pri?'btn-pri':'')+'" data-i="'+i+'"'+(a.dis?' disabled':'')+(a.title?' title="'+esc(a.title)+'"':'')+'>'+esc(a.t)+'</button>';}).join('');
     if(C.kids&&n.kids&&n.kids.length)h+='<div class=ptck>'+n.kids.map(function(k){return '<button type="button" data-go="'+esc(k.id)+'">'+esc(k.t)+'</button>';}).join('')+'</div>';
     el.innerHTML=h+'</div>';el.style.display='';document.body.classList.add('pt-card');
     el.onclick=function(e){var b=e.target.closest('button');if(!b)return;

@@ -200,7 +200,7 @@
       '<button onclick="RP.sec=\'1\';rpPanel()">Atribut</button>' +
       '<button onclick="RP.sec=\'c\';rpPanel()">Constraint</button>' +
       '<button onclick="RP.sec=\'2\';rpPanel()">Hasil</button>' +
-      (window.RPX ? '<button onclick="RPX.open()">Pit &amp; progres</button>' : '') +
+      (window.RPX ? '<button class=rpxtab onclick="RPX.open()">Pit &amp; progres</button>' : '') +
       '<button class=on>Metode tonase</button></div>';
     h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon, permukaan dan SG</b> yang sudah diatur di tab <b>Atribut</b> dan <b>Constraint</b>. ' +
       'Yang dibandingkan di sini hanya <b>aturan blok perbatasan</b>.</div>';

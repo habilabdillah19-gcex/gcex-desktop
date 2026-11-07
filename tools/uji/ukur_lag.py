@@ -4,7 +4,7 @@ Caranya memantau jeda antar-frame (requestAnimationFrame): frame normal ~16 ms; 
 50 ms adalah waktu ketika aplikasi tidak menanggapi apa pun."""
 import os, random, shutil, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
-ROOT=Path("/home/claude/gcex-desktop"); PORT=sys.argv[1] if len(sys.argv)>1 else "8871"
+ROOT=Path("/home/claude/gcex-desktop"); PORT = str(random.randint(9100, 9899))   # port acak: port tetap bisa tersangkut peladen lama
 MODE=sys.argv[2] if len(sys.argv)>2 else "auto"     # auto | paksa-mati
 d=Path(tempfile.mkdtemp(prefix="gcex_bk_")); shutil.copyfile(ROOT/"app"/"index.html",d/"index.html")
 os.symlink(ROOT/"docs"/"tutorial-gcex"/"data",d/"data-latihan")

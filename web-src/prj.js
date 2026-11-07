@@ -39,7 +39,11 @@ async function zipRead(f){var n=f.size,tail=Math.min(n,66000),buf=new DataView(a
 function say(t,bad,ms){if(window.FP&&FP.toast)FP.toast(t,bad,ms==null?0:ms);else if(window.msg)msg(t,bad);}
 function slug(s){return String(s||'proyek').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'')||'proyek';}
 function mb(b){return(b/1048576).toLocaleString('id-ID',{maximumFractionDigits:b<1048576*10?1:0})+' MB';}
-async function saveBlob(b,name){if(window.showSaveFilePicker){try{var h=await showSaveFilePicker({suggestedName:name,types:[{description:'Proyek GC-Ex (.prj)',accept:{'application/octet-stream':['.prj']}}]});var w=await h.createWritable();await w.write(b);await w.close();return h.name||name;}
+async function saveBlob(b,name){
+  /* Aplikasi terpasang punya dialog Simpan sendiri; dipakai lebih dulu supaya .prj ikut aturan
+     yang sama dengan ekspor lain: selalu tanya lokasi & nama. */
+  if(window.gxSimpan)return await gxSimpan(b,name);
+  if(window.showSaveFilePicker){try{var h=await showSaveFilePicker({suggestedName:name,types:[{description:'Proyek GC-Ex (.prj)',accept:{'application/octet-stream':['.prj']}}]});var w=await h.createWritable();await w.write(b);await w.close();return h.name||name;}
     catch(e){if(e&&e.name==='AbortError')return null;console.warn(e);}}
   var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);return name;}
 async function projJson(){await SA.saveWork();var nm=SA.pname,r=await idbGet('proj:'+nm);if(!r)throw new Error('Proyek belum tersimpan di komputer ini.');var wk=await SA.loadWork(nm);
@@ -77,7 +81,8 @@ SA.prjOpen=async function(f){if(!f)return;if(typeof DecompressionStream!=='funct
         (SA.bxBig&&SA.bxBig.big&&!(window.BX&&BX.m)?' &#9888; Block model besar tidak ikut tersimpan di proyek: ekstrak file sumber lalu import ulang lewat Block Model › Import BM.':''),false,12000);},1500);}
   catch(e){console.error(e);var t='Gagal membuka '+esc(f.name)+': '+esc(e.message);if(window.msg&&E('imp')&&!E('imp').classList.contains('off'))msg(t,true);else say(t,true,9000);}};
 SA.prjExtract=async function(){var L=SA.prjSrc||[];if(!L.length)return;for(var i=0;i<L.length;i++){var f=L[i].file;if(!f)continue;var fn=null;
-    if(window.showSaveFilePicker){try{var h=await showSaveFilePicker({suggestedName:f.name});var w=await h.createWritable();await w.write(f);await w.close();fn=h.name;}catch(e){if(e&&e.name==='AbortError')continue;}}
+    if(window.gxSimpan){fn=await gxSimpan(f,f.name);}
+    else if(window.showSaveFilePicker){try{var h=await showSaveFilePicker({suggestedName:f.name});var w=await h.createWritable();await w.write(f);await w.close();fn=h.name;}catch(e){if(e&&e.name==='AbortError')continue;}}
     if(!fn){var a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},1500);fn=f.name;}
     say('&#10003; '+esc(fn)+' diekstrak.',false,5000);}};
 /* jendela awal: tombol "Buka file proyek" menerima .prj dan .dh3d */
