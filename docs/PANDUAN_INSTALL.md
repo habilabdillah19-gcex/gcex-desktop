@@ -3747,3 +3747,35 @@ Harness pemeriksaan node hanya memastikan elemen dialognya **ada di DOM** &mdash
 memang ada, hanya tidak terlihat. `tools/uji/uji_dialog.py` kini mengukur **letak kotaknya terhadap
 jendela**: terhadap build lama ketiganya `DI LUAR LAYAR (top=950)`, terhadap build baru ketiganya
 `TERLIHAT`. Sama seperti pelajaran bagian 116: memeriksa keberadaan, bukan akibat, bukanlah uji.
+
+## 118. Klik string di Sayatan 2D hanya mengenai flitch aktif
+
+**Versi:** GC-Ex Block Model 0.24.34.
+
+Pada Sayatan 2D, ore line dari elevasi lain memang sengaja ikut ditampilkan sebagai rujukan arah
+bijih. Yang salah bukan ia terlihat, melainkan ia **boleh diklik**.
+
+`dbPick()` menelusuri seluruh `DG.S` dengan saringan `vis && closed && !inner` saja — tanpa satu
+pun pemeriksaan elevasi — lalu memilih garis terdekat ke kursor **dalam piksel**. Di bidang datar,
+garis dari RL lain diproyeksikan ke tempat yang sama, sehingga ia bersaing setara dengan garis yang
+benar. Akibatnya: hendak memilih ore line hijau pada flitch aktif, yang terpilih garis coklat muda
+dari elevasi lain.
+
+Sekarang `dbPick()` memakai saringan bench yang **sama persis** dengan `lyPolys()`:
+
+- bila string punya `s.db`, atap dan lantainya harus cocok dengan flitch aktif;
+- string pada bidang non-horizontal dikecualikan;
+- selain itu, `z` titik pertamanya harus berada di dalam rentang flitch.
+
+Satu sumber kebenaran untuk pertanyaan "string ini milik flitch mana".
+
+### 118.1 Dua tes cacat yang dibuang lebih dulu
+
+| Percobaan | Apa yang terjadi |
+|---|---|
+| 1 | Data latihan tidak memuat satu pun string di elevasi lain (`stringLuarFlitch: 0`), tetapi tesnya tetap berbunyi "BENAR" — tidak menguji apa pun |
+| 2 | Dua poligon dibuat **berbagi tepi persis sama**; klik di tepi yang satu berjarak **nol** dari tepi yang lain, dan `d<best` yang ketat selalu memenangkan yang terdaftar lebih dulu — build lama ikut lolos |
+| 3 | Keduanya dipisah 150 m: build lama memilih `String 17 (LG elevasi lain)`, build baru tidak memilih apa pun |
+
+Pelajarannya sama dengan bagian 116 dan 117, kali ini dua kali dalam satu perbaikan: tes yang
+parameternya membuat perilaku benar dan perilaku salah memberi hasil sama bukanlah tes.

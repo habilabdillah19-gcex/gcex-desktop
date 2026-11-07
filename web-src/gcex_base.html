@@ -2717,7 +2717,13 @@ function dbWhy(zs){var d=dbDiag(zs),m=BX.m,U=BX.ui;
 function dbStrSet(i,f,v){var s=DG.S[i];if(!s)return;if(f==='no')v=Math.max(1,parseInt(v)||1);if(f==='d')v=String(v).trim()||s.d;s[f]=v;if(!s.id)s.id=dbId();
   DG.S.forEach(function(q){if(q.inner&&q.parent===s.id){if(f==='col'||f==='no')q[f]=v;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
 function dbPick(e){if(DB.ed||DG.on||!VIEW2D||secGeom().m!=='H')return -1;var A=dgAx();if(!A)return -1;var px=e.clientX-A.r.left,py=e.clientY-A.r.top,best=9,bi=-1;
-  DG.S.forEach(function(s,i){if(!s.vis||!s.closed||s.inner)return;var P=s.pts.map(function(q){return dgPx(A,q[0]+offX,q[1]+offY);});
+  var _FB=null,_fe=1e-6;try{if(window.lyBench)_FB=lyBench();}catch(_){}
+  var _diFl=function(s){if(!_FB||!isFinite(_FB[0])||!isFinite(_FB[1]))return true;
+    if(s.db)return Math.abs(s.db.top-_FB[0])<_fe&&Math.abs(s.db.bot-_FB[1])<_fe;
+    if(s.pl&&s.pl.m&&s.pl.m!=='H')return false;
+    var z=s.pts&&s.pts[0]&&s.pts[0][2];if(!isFinite(z))return true;
+    return z>=_FB[1]-_fe&&z<=_FB[0]+_fe;};
+  DG.S.forEach(function(s,i){if(!s.vis||!s.closed||s.inner||!_diFl(s))return;var P=s.pts.map(function(q){return dgPx(A,q[0]+offX,q[1]+offY);});
     for(var k=0;k<P.length;k++){var a=P[k],b=P[(k+1)%P.length],dx=b[0]-a[0],dy=b[1]-a[1],L2=dx*dx+dy*dy,t=L2?Math.max(0,Math.min(1,((px-a[0])*dx+(py-a[1])*dy)/L2)):0,d=Math.hypot(px-a[0]-t*dx,py-a[1]-t*dy);if(d<best){best=d;bi=i;}}});return bi;}
 function dbPop(i,x,y){var s=DG.S[i];if(!s)return;var d=$('dbPop');if(!d){d=document.createElement('div');d.id='dbPop';document.body.appendChild(d);}DB.sel=s.id||(s.id=dbId());
   var it=lyItems(true).filter(function(o){return o.s===s;})[0],t=it&&it.ton;
