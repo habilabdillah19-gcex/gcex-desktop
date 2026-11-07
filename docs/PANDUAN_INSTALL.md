@@ -3693,3 +3693,57 @@ blok**, pada dua mode komposit (`comp` dan `mid`, yang menempuh cabang berbeda d
 **gagal** bila tebal yang digambar tidak sama persis dengan tebal flitch. Pelajarannya umum: sebuah
 uji yang parameternya kebetulan membuat dua perilaku berbeda memberi angka sama bukanlah uji — ia
 hanya pengesah.
+
+## 117. Judul Properti mengikuti panelnya, dan tiga dialog yang tidak pernah terlihat
+
+**Versi:** GC-Ex Block Model 0.24.33.
+
+Tiga laporan pemilik yang tampak terpisah, satu akar yang sama: sesuatu di layar tidak
+dipertanggungjawabkan oleh node yang sedang dipilih.
+
+### 117.1 Tombol *Per desain pit & progres topo-ke-topo* tidak bereaksi
+
+Node `rep.x` didaftarkan sebagai **kartu aksi** padahal yang ingin ditampilkan adalah sebuah
+**panel**. Tombolnya memanggil panel itu, lalu sistem kartu menggambar kartu node berikutnya di
+atasnya, sehingga yang terlihat pemilik: ditekan, lalu kembali ke *Reporting (constraint)*.
+Perbaikannya satu baris &mdash; node itu diberi `tab: 'Rep'` sehingga menjadi node panel biasa.
+
+### 117.2 Judul Properti tertinggal di node lama
+
+Beberapa perintah memindahkan tab **sendiri**: `lyApply()` menerapkan flitch lalu berpindah ke tab
+Block Model. Pembungkus `uiTab` menanggapinya dengan **melepas fokus panel** dan membiarkan sorotan
+di node sebelumnya. Akibatnya dua hal sekaligus: judulnya berbunyi **Sayatan** di atas panel **Dig
+block**, dan karena fokus dilepas, isian **otomatis dan manual tampil bersamaan** &mdash; persis
+kebalikan dari aturan satu node satu fungsi.
+
+Sekarang perintah yang memindahkan tab sendiri **memilih node pemilik panelnya**
+(`PT.select('fl.2d')`), sehingga judul, sorotan dan isi berasal dari satu sumber.
+
+Diukur A/B pada aplikasi sungguhan, dengan memilih node *Sayatan* lalu menjalankan `lyApply()`:
+
+| Build | Judul sesudah `lyApply` | Segmen `#dbBody` yang tampak |
+|---|---|---|
+| lama | `Sayatan` | &mdash; |
+| baru | `Buat Flitch Aktif` | `fl` saja |
+
+### 117.3 Pemeriksaan dig block, Rekap harian dan Laporan periode tidak muncul
+
+Ketiganya membuat dialognya dengan `class="bxdlg"`. Kelas itu **tidak punya satu pun aturan CSS**
+di seluruh sumber. Dialognya terbuat dengan benar dan `display:flex` dipasang, tetapi tanpa
+`position:fixed` ia ikut aliran halaman biasa dan berhenti di `top=950` pada jendela setinggi 950
+piksel &mdash; tepat di bawah tepi layar. Tombolnya terasa mati padahal fungsinya berjalan penuh.
+
+Aturan yang ditambahkan (berdampingan dengan `.bsdlg` yang sudah ada):
+
+```css
+.bxdlg{position:fixed;inset:0;z-index:9000;background:rgba(10,20,35,.45);
+       display:none;align-items:center;justify-content:center;padding:18px}
+.bxdlg .impBody{overflow:auto}
+```
+
+### 117.4 Mengapa pemeriksaan sebelumnya lolos
+
+Harness pemeriksaan node hanya memastikan elemen dialognya **ada di DOM** &mdash; dan ketiganya
+memang ada, hanya tidak terlihat. `tools/uji/uji_dialog.py` kini mengukur **letak kotaknya terhadap
+jendela**: terhadap build lama ketiganya `DI LUAR LAYAR (top=950)`, terhadap build baru ketiganya
+`TERLIHAT`. Sama seperti pelajaran bagian 116: memeriksa keberadaan, bukan akibat, bukanlah uji.

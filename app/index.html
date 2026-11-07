@@ -190,6 +190,8 @@ body.dm-on #statsCard{display:none}
 #cpSecL{left:78px}#cpSecR{right:28px}
 #imp{position:fixed;inset:0;z-index:20000;background:rgba(9,17,28,.72);display:flex;align-items:center;justify-content:center;padding:16px;font-family:Segoe UI,Roboto,Arial,sans-serif}
 #imp.off{display:none}
+.bxdlg{position:fixed;inset:0;z-index:9000;background:rgba(10,20,35,.45);display:none;align-items:center;justify-content:center;padding:18px}
+.bxdlg .impBody{overflow:auto}
 .impBox{width:min(980px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--bg);color:var(--tx);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
 .impHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--top);color:var(--toptx)}
 .impBrand{display:flex;align-items:center;gap:10px}.impBrand svg{width:30px;height:30px;color:var(--ac)}
@@ -4974,7 +4976,10 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     if(FOC)b.setAttribute('data-f',FOC);else b.removeAttribute('data-f');}
   function focus(f){FOC=f||'';segTag();var b=$('dbBody');if(b&&f){var sd=$('side');if(sd)sd.scrollTop=0;}}
   (function(){var d=window.dbPanel;if(typeof d==='function'&&!d._ptf){window.dbPanel=function(){var r=d.apply(this,arguments);try{segTag();}catch(e){}return r;};window.dbPanel._ptf=1;}})();
-  (function(){var u=window.uiTab;if(typeof u==='function')window.uiTab=function(){var r=u.apply(this,arguments);try{if(Date.now()-(PT._qt||0)>1500){if(FOC)focus('');document.body.classList.remove('pt-bmhd');document.body.classList.remove('pt-nonbm');/* Judul Properti ikut dibetulkan. Bila tab berpindah BUKAN karena pemilihan node (mis. lyApply yang pindah sendiri ke tab Block Model), panel yang tampil bukan lagi milik node terpilih -- dan judulnya tertinggal pada nama node lama, sehingga terbaca 'Sayatan' di atas panel Dig block. Pilihan node dipindahkan ke node yang MEMANG memiliki panel itu, jadi judul, sorotan di pohon, dan isi panel kembali menunjuk hal yang sama. */try{var _t=arguments[0],_n=(PT.flat||[]).filter(function(q){return q.tab===_t&&!q.sub&&!q.foc;})[0]||(PT.flat||[]).filter(function(q){return q.tab===_t;})[0];if(_n&&PT.sel!==_n.id&&(!PT.sel||((PT.flat||[]).filter(function(q){return q.id===PT.sel;})[0]||{}).tab!==_t))PT.mark(_n.id);}catch(e){}}}catch(e){}return r;};})();
+  (function(){['lyApply','lyFlOff'].forEach(function(nm){var f=window[nm];if(typeof f!=='function')return;
+    window[nm]=function(){var r=f.apply(this,arguments);
+      try{setTimeout(function(){if(PT&&PT.select)PT.select('fl.2d');},40);}catch(e){}return r;};});})();
+  (function(){var u=window.uiTab;if(typeof u==='function')window.uiTab=function(){var r=u.apply(this,arguments);try{if(Date.now()-(PT._qt||0)>1500){if(FOC)focus('');document.body.classList.remove('pt-bmhd');document.body.classList.remove('pt-nonbm');/* Judul Properti ikut dibetulkan. Bila tab berpindah BUKAN karena pemilihan node (mis. lyApply yang pindah sendiri ke tab Block Model), panel yang tampil bukan lagi milik node terpilih -- dan judulnya tertinggal pada nama node lama, sehingga terbaca 'Sayatan' di atas panel Dig block. Pilihan node dipindahkan ke node yang MEMANG memiliki panel itu, jadi judul, sorotan di pohon, dan isi panel kembali menunjuk hal yang sama. */try{var _t=arguments[0],_c=(PT.flat||[]).filter(function(q){return q.id===PT.sel;})[0];if(!_c||_c.tab!==_t){var _n=(PT.flat||[]).filter(function(q){return q.tab===_t&&!q.sub&&!q.foc;})[0]||(PT.flat||[]).filter(function(q){return q.tab===_t;})[0];if(_n)PT.mark(_n.id);}}catch(e){}}}catch(e){}return r;};})();
   /* ---------- tampilkan sebagai ---------- */
   var topoAs=function(){var s=U.cb('ovTopoS'),l=U.cb('ovTopoL');return s&&l?'both':s?'surf':l?'line':'';};
   var topoPref=function(){var m='surf';try{m=localStorage.getItem('gcex_pt_topo')||'surf';}catch(e){}return m;};
