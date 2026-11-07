@@ -3594,3 +3594,60 @@ di tooltip — bukan dimatikan diam-diam.
 
 Diperiksa dengan menekan ke-66 node lalu merekam isi panelnya: ekspor `.mdl` / PDF / CSV kini
 muncul di **satu** node saja.
+
+## 115. GC-Ex Drill Hole: semua ekspor menanyakan lokasi & nama berkas
+
+Permintaan pemilik: pola ekspor di bagian 113 diterapkan juga ke modul Drill Hole.
+
+Keadaan sebelumnya sama persis dengan Block Model: **17 titik unduh di 8 berkas**, semuanya memakai
+`<a download>`, sehingga di aplikasi terpasang berkas jatuh diam-diam ke folder Download dengan nama
+yang sudah dipatok — padahal jembatan Electron sudah menyediakan dialog Simpan dan tidak pernah
+dipanggil dari halaman ini juga.
+
+Sekarang semua lewat satu pintu `gxSimpan()` yang identik: dialog Simpan Windows di aplikasi
+terpasang, `showSaveFilePicker` di peramban, dan minimal **menanyakan nama berkas** bila keduanya
+tidak ada.
+
+| Berkas | Yang dialihkan |
+| --- | --- |
+| `gcex_dh_base.html` | tiga pembantu unduh (`gsDl`, `dgDl`, `gxDl`), rencana bor CSV, PNG peta, validasi data bor, viewer `.html` lengkap, proyek `.dh3d` |
+| `flt_dh.js` | sesar CSV + DXF |
+| `sl_dh.js` | laporan lapisan & grid CSV |
+| `prof_dh.js` | profil kadar CSV |
+| `kp_dh.js`, `fq_dh.js` | keluaran panel masing-masing |
+| `arun_dh.js`, `ar3_dh.js` | laporan Autorun CSV |
+
+Berkas `.prj` sudah ikut sejak Block Model, sebab Drill Hole memakai `prj.js` yang sama.
+
+### Cara membuktikannya: perilaku, bukan rupa kode
+
+`tools/uji/uji_ekspor.py` **memalsukan jembatan aplikasi terpasang** (`gcexDesktop.api.saveFile`),
+lalu memanggil fungsi ekspor yang sungguhan dan mencatat dua hal: apakah dialog Simpan benar-benar
+dipanggil (dengan nama berkas dan penyaring jenis apa), dan apakah masih ada yang lolos mengunduh
+diam-diam lewat `<a download>` — yang dicatat terpisah dengan membungkus `HTMLAnchorElement.click`.
+Jadi yang diperiksa perilakunya, bukan tampak luar kodenya.
+
+### Regresi yang nyaris lolos, dan mengapa pemeriksaan biasa tidak menangkapnya
+
+Pengganti untuk ekspor PNG peta membuang `}};im.src=url;});}` di ujung baris aslinya. Akibatnya
+**seluruh sumber viewer gagal diurai**, `SA` tidak pernah terbentuk, dan Drill Hole memuat lubang bor
+tetapi **nol blok**.
+
+Yang berbahaya: tidak ada pesan galat di layar, aplikasi terbuka normal, data bor masuk — hanya block
+model yang diam-diam kosong. Dan `node --check` pada tiap berkas sumber **lolos semua**, sebab tiap
+berkas memang seimbang; yang tidak seimbang adalah hasil gabungannya di dalam
+`<script type="text/plain" id="vsrc">`.
+
+Ditemukan dengan membandingkan **keseimbangan kurung per potongan perubahan** terhadap versi
+sebelumnya: dari 17 perubahan, 16 seimbang dan satu menyimpang +4 kurawal — langsung menunjuk baris
+yang salah tanpa menebak. Terbukti pulih: 610 lubang **dan** 66.147 blok, tanpa galat.
+
+Dua hal yang diubah pada cara kerja setelah ini: perubahan massal seperti ini diperiksa keseimbangan
+kurungnya **sebelum** dibangun, dan pemeriksaan "aplikasi masih hidup dan datanya masuk" dijadikan
+langkah wajib sebelum apa pun dinyatakan selesai — karena pemeriksaan sintaks per berkas lolos untuk
+bug semacam ini.
+
+### Yang tidak disentuh
+
+**DB-Ex sengaja tidak diubah.** Sumbernya tidak ada di pohon ini (dikerjakan sesi lain), jadi
+mengubahnya dari sini berisiko bentrok.
