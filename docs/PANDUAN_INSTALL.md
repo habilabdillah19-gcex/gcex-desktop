@@ -3549,3 +3549,31 @@ pengujian sebelumnya masih menyajikan berkas lama, sehingga uji diam-diam memeri
 Semua harness kini memakai port acak. **Kedua**, probe 3D awalnya mengukur rentang elevasi SEMUA
 lapisan sekaligus, termasuk topografi dan solid pit yang memang setinggi 348 m, sehingga perbaikan
 yang sudah bekerja terbaca seolah tidak berubah. Pengukuran harus per lapisan.
+
+## 114. Ekspor As-Mined disatukan: satu berkas, satu tempat membuatnya
+
+Lanjutan bagian 113, atas prinsip yang sama (satu fungsi satu tempat).
+
+Yang ditemukan: **`amMdl()` bisa dipanggil dari TIGA tempat dengan tiga nama berbeda**, padahal berkas
+yang dihasilkan sama persis:
+
+| Tempat | Nama tombolnya |
+| --- | --- |
+| Panel Register (`am3d.js`) | ⇩ .mdl gabungan |
+| Node *Rekap & model gabungan (.mdl)* | Export .mdl gabungan |
+| Node *Block model as-mined (.mdl)* | Block model as-mined (.mdl) |
+
+Tiga nama untuk satu berkas membuat pemakai wajar mengira ketiganya berbeda — dan perbedaan yang
+disangka itu baru ketahuan tidak ada setelah ketiga berkasnya dibuka.
+
+Sekarang ada satu node **Ekspor As-Mined** yang memuat seluruh keluaran As-Mined: report
+rekonsiliasi (PDF), block model as-mined (.mdl), rekap gabungan (CSV), dan kirim register ke Excel.
+Node *Rekap & model gabungan* berganti nama menjadi **Rekap semua flitch** dan tinggal mengerjakan
+satu hal — menghitung — sesuai namanya. Tombol export di panel Register diganti petunjuk ke tempat
+yang satu itu.
+
+Tombol *Kirim register ke Excel* dinonaktifkan sendiri bila Excel tidak terpasang, dengan alasannya
+di tooltip — bukan dimatikan diam-diam.
+
+Diperiksa dengan menekan ke-66 node lalu merekam isi panelnya: ekspor `.mdl` / PDF / CSV kini
+muncul di **satu** node saja.

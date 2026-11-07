@@ -5040,8 +5040,8 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
             if(!ord.length)return[];ord.sort(function(a,b){return G[b].top-G[a].top;});var f=function(v){return String(+(+v).toFixed(3));};
             return[{id:'reg.fl',t:'Per flitch ('+ord.length+')',ic:'flitch',fold:1,kids:ord.map(function(k){var g=G[k];return{id:'reg.fl.'+k,t:'RL '+f(g.top)+' – '+f(g.bot),ic:'flitch',b:g.n+' pol · '+N(Math.round(g.t))+' t'+(g.t?' @ '+(g.m/g.t).toFixed(2):''),tab:'AM',sub:'Register',
               go:function(){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+g.top.toFixed(3));amApply();}};})}];})()).concat([sub('reg.2','Layout as-mined','map','AM','Layout'),{id:'reg.3d',t:'3D hasil kerja (dig block → as-mined)',ic:'block',chk:ok(function(){return !!(window.AM3&&AM3.on);},false),onChk:function(v){if(window.am3Toggle)am3Toggle(v);},card:{acts:[{t:'Tampilkan / sembunyikan di 3D',pri:1,fn:function(){if(window.am3Toggle)am3Toggle(!(window.AM3&&AM3.on));}}]},hint:'Prisma dig block, poligon as-mined & sub-blok model as-mined di 3D'},
-          {id:'reg.puz',t:'Rekap & model gabungan (.mdl)',ic:'block',card:{acts:[{t:'Hitung semua flitch',pri:1,fn:A('am3RunAll')},{t:'Export .mdl gabungan',fn:A('amMdl')},{t:'Export CSV gabungan',fn:A('am3Csv')}]},menu:function(){return[{t:'Hitung semua flitch',fn:A('am3RunAll')},{t:'Export .mdl gabungan',fn:A('amMdl')},{t:'Export CSV gabungan',fn:A('am3Csv')}];}},{id:'reg.xl',t:'Kirim register ke Excel…',ic:'export',go:A('amXlSend'),dim:typeof window.amXlSend!=='function'},
-          {id:'reg.pdf',t:'Report rekonsiliasi (PDF)',ic:'report',go:A('amPdf')},{id:'reg.mdl',t:'Block model as-mined (.mdl)',ic:'block',go:A('amMdl')}]).concat(window.prdTree?prdTree():[])};},'reg','Register');
+          {id:'reg.puz',t:'Rekap semua flitch',ic:'block',card:{hint:'Menghitung ulang rekonsiliasi untuk SEMUA flitch. Hasilnya diekspor dari <b>Ekspor As-Mined</b> di bawah, supaya satu berkas hanya punya satu tempat untuk dibuat.',acts:[{t:'Hitung semua flitch',pri:1,fn:A('am3RunAll')}]},menu:function(){return[{t:'Hitung semua flitch',fn:A('am3RunAll')}];}},
+          {id:'reg.exp',t:'Ekspor As-Mined',ic:'export',card:{hint:'Semua berkas keluaran As-Mined dibuat dari sini \u2014 amMdl sebelumnya dipanggil dari dua node berbeda dengan nama berlainan. Tiap tombol menanyakan lokasi & nama berkasnya.',acts:[{t:'Report rekonsiliasi (PDF)',pri:1,fn:A('amPdf')},{t:'Block model as-mined (.mdl)',fn:A('amMdl')},{t:'Rekap gabungan (CSV)',fn:A('am3Csv')},{t:'Kirim register ke Excel\u2026',fn:A('amXlSend'),dis:typeof window.amXlSend!=='function',title:'Perlu Excel terpasang di komputer ini'}]}}]).concat(window.prdTree?prdTree():[])};},'reg','Register');
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},kids:[{id:'set.s',t:'Sayatan',ic:'section',tab:'Slice'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     return L;}
   PT.install({app:'bm',nodes:nodes,nav:true,openDef:['bm','fl','dig','am'],
@@ -5459,8 +5459,13 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
   h+='<div class=g2 style="margin-top:4px"><button onclick="am3RunAll()" title="Jalankan as-mined untuk setiap flitch yang punya poligon">&#8635; Hitung semua flitch</button><button class="'+(AM3.on?'btn-pri':'')+'" onclick="am3Toggle()">&#9707; '+(AM3.on?'Sembunyikan 3D':'Lihat 3D hasil kerja')+'</button></div>';
   h+='<div class=am3ly><label class=sw><input type=checkbox '+(AM3.db?'checked':'')+' onchange="AM3.db=this.checked;updatePlot()">Dig block (rencana)</label><label class=sw><input type=checkbox '+(AM3.am?'checked':'')+' onchange="AM3.am=this.checked;updatePlot()">Poligon as-mined</label><label class=sw><input type=checkbox '+(AM3.sb?'checked':'')+' onchange="AM3.sb=this.checked;updatePlot()">Sub-blok model as-mined</label><label class=sw><input type=checkbox '+(AM3.bm?'checked':'')+' onchange="am3Bm(this.checked)">Block model GC (konteks)</label></div>';
   var mdlOk=!!(BX.m&&BX.m.mdl&&BX.m.mdl.hraw);
-  h+='<div class=g2 style="margin-top:4px"><button class=btn-pri onclick="amMdl()" '+(mdlOk&&C.length?'':'disabled')+' title="'+(mdlOk?'Satu file .mdl berisi semua sub-blok as-mined dari semua flitch':'Butuh block model resmi yang dibuka dari file .mdl')+'">&#8681; .mdl gabungan</button><button onclick="am3Csv()" '+(C.length?'':'disabled')+'>&#8681; CSV gabungan</button></div>';
-  h+='<div class=hint>'+(AM3.msg?AM3.msg+' ':'')+'Model gabungan = semua sub-blok as-mined dari semua flitch (sub-blok yang sama dari run berbeda diambil yang terakhir).'+(mdlOk?'':' Export .mdl aktif bila block model dibuka dari file .mdl; untuk block model CSV pakai CSV gabungan.')+'</div></div>';return h;}
+  /* Tombol export dipindahkan ke Register & Laporan As-Mined > Ekspor As-Mined. amMdl() sebelumnya
+     bisa dipanggil dari TIGA tempat dengan tiga nama berbeda (.mdl gabungan di sini, "Export .mdl
+     gabungan" di node Rekap, dan "Block model as-mined (.mdl)" di node tersendiri) -- padahal
+     berkas yang dihasilkan sama persis. */
+  h+='<div class=hint style="margin-top:4px">Export .mdl / CSV gabungan ada di <b>Register &amp; Laporan As-Mined &rsaquo; Ekspor As-Mined</b>.'+
+     (mdlOk?'':' Export .mdl aktif bila block model dibuka dari file .mdl; untuk block model CSV pakai Rekap gabungan (CSV).')+'</div>';
+  h+='<div class=hint>'+(AM3.msg?AM3.msg+' ':'')+'Model gabungan = semua sub-blok as-mined dari semua flitch (sub-blok yang sama dari run berbeda diambil yang terakhir).'+'</div></div>';return h;}
 (function(){var _p=amPanel;amPanel=function(){var r=_p.apply(this,arguments);try{var el=$('amBody');if(!el||!BX.m)return r;var sec=el.querySelector('.uisec[data-k="5"]');var host=sec||el;var d=document.createElement('div');d.innerHTML=am3Box();host.appendChild(d.firstChild);}catch(e){console.error(e);}return r;};})();
 (function(){var st=document.createElement('style');st.textContent='#amBody .am3box{margin-top:10px;padding:7px 8px;border:1px solid var(--bd);border-left:4px solid var(--pr);border-radius:6px;background:var(--sf2)}'+
   '#amBody .am3t{width:100%;font-size:11px;margin-top:4px}#amBody .am3t td,#amBody .am3t th{padding:2px 4px;text-align:right}#amBody .am3t td:first-child,#amBody .am3t th:first-child{text-align:left}#amBody .am3t tr.tot td{font-weight:700;border-top:2px solid var(--pr)}#amBody .am3t tr.am3no{opacity:.7}'+
@@ -9777,7 +9782,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.30';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.31';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
