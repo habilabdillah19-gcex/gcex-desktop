@@ -3883,3 +3883,11 @@ kedua kotak turun dari **12 menjadi 3**.
 - Pada model kecil (`qwen3-vl:2b-instruct`) tabel aktivitas sempat bergeser: rentang jam masuk ke kolom uraian / kategori, uraian hilang.
 - AI kini hanya diminta dua nilai per kegiatan: **rentang jam** dan **uraian**. Program memecah jam menjadi Mulai / Selesai, mengisi kategori dari kata kunci uraian, dan menggabungkan baris lanjutan (tanpa jam) ke kegiatan di atasnya.
 - Borang yang sudah dibaca dengan versi lama: klik **✦ Baca dengan AI** lagi.
+
+## 124. DB-Ex 0.42.12 — Borang lebih cepat, kolom tidak bergeser (RC, Loading Ore, ROM)
+
+- **Lebih cepat**: AI menulis tiap baris tabel sebagai satu teks `nilai|nilai|…` (jawaban ±separuh lebih pendek) dan foto dipotong otomatis ke lembar kertas sebelum dibaca (papan klip / meja tidak ikut dikirim).
+- **RC Drill Logging**: urutan isian mengikuti kolom borang (No, Hole_ID, Tanggal, From, To, Lith, Int_Alt, Min1, Vein_Type, Qt_pct, Remark2). Sample_ID tercetak dihitung program dari No (ditandai kuning — cocokkan dengan scan).
+- **Loading Ore** dan **ROM / Crusher**: AI menyalin sel menurut urutan kolom borang; program yang menentukan kelas material, tumpukan rehandling dan status Baru / Lama dari posisi sel. Bila AI salah menghitung kolom kosong, kelas ditandai kuning. Di borang ROM, isi nama ketiga tumpukan rehandling di header (dibaca AI bila tertulis).
+- Borang yang sudah dibaca dengan versi lama: klik **✦ Baca dengan AI** lagi.
+- Batas kemampuan: model 2b di CPU membaca tulisan tangan kecil (kode litologi / alterasi) kurang andal. Untuk ketelitian pakai mode **Seimbang**, atau `qwen3-vl:4b-instruct` di laptop dengan GPU NVIDIA (jauh lebih cepat dan teliti).

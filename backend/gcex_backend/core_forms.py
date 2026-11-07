@@ -48,6 +48,10 @@ MONTH_ID = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "mei": 5, "may": 5, "jun": 6
             "okt": 10, "oct": 10, "nov": 11, "des": 12, "dec": 12}
 
 # ---------------------------------------------------------------- definisi jenis borang
+def _slug(c: str) -> str:
+    return c.lower().replace("-", "")
+
+
 TYPES: dict[str, dict] = {
     "ore": {
         "name": "Ore Spotter: Loading Pit → ROM / Stockpile",
@@ -56,13 +60,22 @@ TYPES: dict[str, dict] = {
         "rows": [("no", "No", "text"), ("start", "Start loading", "time"), ("finish", "Finish loading", "time"), ("pit", "Pit / blok", "text"),
                  ("elevasi", "Elevasi", "text"), ("kelas", "Kelas material", "text"), ("unit", "Truck", "text"), ("ton", "Tonnage", "num"),
                  ("tujuan", "Tujuan dumping", "text")],
+        # 0.42.12: AI menyalin sel MENURUT URUTAN KOLOM BORANG (tiap kelas punya sub-kolom TRUCK & Tonnage); kelas ditentukan
+        # program dari posisi sel yang terisi (model kecil tidak andal memetakan posisi kolom ke nama kelas -> kolom bergeser)
+        "ai_rows": [("no", "No", "text"), ("start", "Start", "time"), ("finish", "Finish", "time"), ("pit", "PIT", "text"),
+                    ("elevasi", "Elevation", "text")]
+                   + [(f"{_slug(c)}_{x}", f"{c} {x.upper()}", "text") for c in ("OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG",
+                                                                               "OX-MO", "SF-MO") for x in ("trk", "ton")]
+                   + [("tujuan", "Tujuan", "text")],
+        "ai_tail": 1,
         "hint": ("Borang 'Form Loading (atau Rehandling) Ore dari Pit to ROM / Stockpile' (Ore Spotter di front loading), biasanya lanskap. "
                  "Header: NAMA CREW, LOKASI (pit), nomor excavator (mis. EX-123, ditulis tangan di dekat judul), TANGGAL, SHIFT (I / II). "
                  "Tabel bernomor, satu baris per ritase truk. Kolom dari kiri: NO; Start Loading; Finish Loading (jam ditulis di salah satu "
                  "dari dua kolom ini; baris berikutnya sering hanya menulis MENIT, mis. 13 -> salin apa adanya \"13\"); PIT; Elevation; lalu "
                  "kelompok kolom kelas material berwarna " + "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO" + ", masing-masing dengan "
-                 "sub-kolom TRUCK dan Tonnage: di setiap baris hanya SATU kelompok terisi -> isi 'kelas' dengan NAMA kelompok itu, 'unit' "
-                 "dengan nomor truk persis seperti tertulis (boleh singkat, mis. 26) dan 'ton' dengan tonase; kolom terakhir Tujuan Dumping "
+                 "sub-kolom TRUCK dan Tonnage: salin nomor truk & tonase ke sel kelompok TEMPAT TULISAN ITU BERADA (sel kelompok lain "
+                 "kosong), mis. truk T01 tonase 30 di bawah OX-LG -> \"1|19.03||PIT A|100.0|T01|30|||||||||||||||ROM 1\", di bawah SF-LG -> "
+                 "\"2|09|||〃|||T02|31|||||||||||||〃\"; kolom terakhir Tujuan Dumping "
                  "(mis. ROM 418, kadang hanya angka atau \"〃 370\").\n"
                  "Baris yang hanya berisi PIT / Elevation tanpa truk tetap ditulis (unit & ton kosong). Abaikan coretan / tulisan yang dicoret.\n"
                  "TANDA ULANG: bila sel berisi tanda ulang (\" atau 〃 atau = atau ,, atau angka 4 / 11 kecil yang sebenarnya tanda ulang) atau "
@@ -72,20 +85,26 @@ TYPES: dict[str, dict] = {
     "rom": {
         "name": "Ore ke Stockpile / Crusher (Rehandling / Direct)",
         "header": [("tanggal", "Tanggal", "date"), ("shift", "Shift (I / II)", "text"), ("crew", "Crew / spotter", "text"),
-                   ("lokasi", "Lokasi", "text")],
+                   ("lokasi", "Lokasi", "text"), ("rh1", "Nama tumpukan rehandling 1", "text"),
+                   ("rh2", "Nama tumpukan rehandling 2", "text"), ("rh3", "Nama tumpukan rehandling 3", "text")],
         "rows": [("no", "No", "text"), ("unit", "Eq. No. Unit", "text"), ("start", "Start loading", "time"),
                  ("finish", "Finish loading", "time"), ("asal", "Asal material", "text"), ("tujuan", "Tujuan", "text"),
                  ("rehandling", "Rehandling tumpukan", "text"), ("kelas", "Kelas material", "text"), ("ton", "Ton", "num"),
                  ("status", "Status (Baru / Lama)", "text"), ("keterangan", "Keterangan", "text")],
+        "ai_rows": [("no", "No", "text"), ("unit", "Eq. No. Unit", "text"), ("start", "Start", "time"), ("finish", "Finish", "time"),
+                    ("asal", "Asal", "text"), ("tujuan", "Tujuan", "text"), ("rh1", "Rehandling 1", "text"),
+                    ("rh2", "Rehandling 2", "text"), ("rh3", "Rehandling 3", "text")]
+                   + [(_slug(c), c, "text") for c in ("OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "SCAT", "OX-MO", "SF-MO")]
+                   + [("baru", "Baru", "text"), ("lama", "Lama", "text"), ("keterangan", "Keterangan", "text")],
+        "ai_tail": 3,
         "hint": ("Borang 'Form Ore to Stockpile / Crusher (Rehandling / Direct)' (spotter di ROM / crusher), biasanya lanskap. Header: "
                  "CREW (nama spotter, boleh lebih dari satu), LOKASI, TANGGAL, SHIFT (I / II). Tabel bernomor, satu baris per ritase truk. "
                  "Kolom dari kiri: NO; Eq. No. Unit (nomor lambung truk, kadang diawali DT); Start Loading (sering kosong); Finish Loading "
                  "(jam, mis. 19.02; baris berikutnya sering hanya menulis MENIT, mis. 05 -> salin apa adanya \"05\"); Asal Material (mis. "
                  "Pit ..., ROM ..., OPP); Tujuan (mis. Crusher, ROM ...); Rehandling Tumpukan (tiga sub-kolom bernama tumpukan; isi "
-                 "'rehandling' dengan NAMA sub-kolom yang dicentang, kosong bila tidak ada centang); lalu kolom kelas material berwarna "
-                 "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, SF-MO: di setiap baris hanya SATU kolom kelas berisi angka tonase "
-                 "-> isi 'kelas' dengan NAMA kolom itu dan 'ton' dengan angkanya; Status Material (sub-kolom Baru / Lama yang dicentang -> "
-                 "'Baru' atau 'Lama'); Keterangan (mis. Direct, Rehandling, OPP).\n"
+                 "rh1 / rh2 / rh3 di header dengan NAMA ketiga sub-kolom itu; di baris tulis v di sub-kolom yang dicentang); lalu kolom kelas material berwarna "
+                 "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, SF-MO: salin angka tonase ke sel kolom TEMPAT angka itu "
+                 "berada (kolom kelas lain kosong); Status Material (sub-kolom Baru dan Lama: tulis v di sel yang dicentang); Keterangan (mis. Direct, Rehandling, OPP).\n"
                  "TANDA ULANG: bila sel berisi tanda ulang (\" atau = atau ,, ) atau dilewati garis tegak / garis miring yang menyambung "
                  "dari baris di atas, tulis tepat \"〃\" (jangan menyalin nilai di atas sendiri; program yang mengisinya)."),
     },
@@ -109,7 +128,7 @@ TYPES: dict[str, dict] = {
         "hint": ("Borang 'Daily Drilling Report' pemboran RC, portrait. Header kanan atas: Client, DHP_ID, Driller, Date, Drill Rig (nama "
                  "unit, mis. 'Hanjin SDR-07' -> tulis apa adanya), Shift (I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang' (satu objek per lubang). Kolom kanan "
                  "'DRILLING DETAILS and FORMATION DESCRIPTION': tiap kegiatan diawali rentang jam, mis. 0650-0700 atau 07.00-07.05, lalu "
-                 "uraian (boleh dua baris tulisan) -> satu baris per kegiatan: [jam, uraian], mis. [\"0630-0700\", \"TRAVELING TO 370\"] "
+                 "uraian (boleh dua baris tulisan) -> satu teks per kegiatan: jam|uraian, mis. \"0630-0700|TRAVELING TO 370\" "
                  "(gabungkan baris lanjutan uraian ke kegiatan yang sama). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
                  "ENGINE (start, finish, HM running), Geologist approval; catatan di bawah tabel: WH, DL, MNTC, BD, RAIN, STD (jam, "
                  "mis. 5hr -> 5) dan tulisan bebas -> 'catatan'. 'lokasi' (nama area / prospek) biasanya tidak tertulis: kosongkan bila "
@@ -117,12 +136,20 @@ TYPES: dict[str, dict] = {
     },
     "rc": {
         "name": "RC Drill Logging / Chiptray Log",
-        "header": [("hole_id", "Hole ID (bawaan)", "text"), ("tanggal", "Tanggal pengeboran (bawaan)", "date")],
+        "header": [("hole_id", "Hole ID (bawaan)", "text"), ("tanggal", "Tanggal pengeboran (bawaan)", "date"),
+                   ("no_awal", "No baris pertama (tercetak)", "text"), ("sample_awal", "Sample ID baris pertama (tercetak)", "text")],
         "rows": [("hole_id", "Hole ID", "text"), ("tanggal", "Tanggal", "date"), ("sample_id", "Sample ID", "text"),
                  ("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("lith", "Lith", "text"), ("alt", "Int_Alt", "text"),
                  ("min1", "Min1", "text"), ("vein", "Vein_Type", "text"), ("qt", "Qt_pct", "num"), ("remark", "Remark (QAQC)", "text")],
-        "hint": ("Borang RC Drill Logging Form, biasanya lanskap. Kolom No dan Sample_ID TERCETAK (mis. DP_150137_Z4); Remark2 tercetak "
-                 "pada baris QAQC (STD..., BLANK). Tulisan tangan: Hole_ID dan Tanggal Pengeboran HANYA di baris pertama tiap lubang "
+        # urutan jawaban AI = urutan kolom di borang; Sample ID tercetak TIDAK diminta per baris (dihitung program dari No,
+        # lihat rc_fix_all): jawaban jauh lebih pendek, dan model kecil tidak lagi menggeser kolom (galat 0.42.11)
+        "ai_rows": [("no", "No (tercetak)", "text"), ("hole_id", "Hole ID", "text"), ("tanggal", "Tanggal", "date"),
+                    ("from_m", "From", "num"), ("to_m", "To", "num"), ("lith", "Lith", "text"), ("alt", "Int_Alt", "text"),
+                    ("min1", "Min1", "text"), ("vein", "Vein_Type", "text"), ("qt", "Qt_pct", "num"), ("remark", "Remark2", "text")],
+        "hint": ("Borang RC Drill Logging Form, biasanya lanskap. Kolom No dan Sample_ID TERCETAK (mis. 99937, DP_150137_Z4). "
+                 "Header: hole_id & tanggal kosongkan, no_awal = No baris pertama, sample_awal = Sample_ID baris pertama. "
+                 "Setiap baris: No|Hole_ID|Tanggal|From|To|Lith|Int_Alt|Min1|Vein_Type|Qt_pct|Remark2, mis. "
+                 "\"10001|XX-100-01|05-11-26|0|1|VLT|IAR|cly\" lalu \"10002|||1|2|〃|〃|〃\" -> Sample_ID JANGAN ditulis di baris (program menghitungnya dari No). Remark2 tercetak pada baris QAQC (STD..., BLANK). Tulisan tangan: Hole_ID dan Tanggal Pengeboran HANYA di baris pertama tiap lubang "
                  "(kadang dua baris: Hole ID lalu Az/Dip, mis. 'AZ 64-60' -> abaikan baris Az/Dip), From, To, Lith, Int_Alt, Min1, "
                  "Vein_Type, Qt_pct. Tulis HANYA baris yang From/To-nya terisi atau berlabel STD / BLANK. Hole_ID & Tanggal: isi hanya "
                  "di baris tempat tertulis, baris lain kosong (program yang meneruskan). Garis bergelombang / kurung kurawal / garis tegak "
@@ -324,6 +351,46 @@ def fill_rc(lst: list[dict]) -> list[tuple[dict, list[str]]]:
             if str(x.get(k) or "").strip():
                 prev[k] = x[k]
         out.append((x, filled))
+    return out
+
+
+_SAMPLE = re.compile(r"^[A-Za-z]{1,5}[_\-]?\d{4,}[_\-][A-Za-z]\w*$")
+_RC_SHIFT = ("from_m", "to_m", "lith", "alt", "min1", "vein", "qt", "remark")
+
+
+def _int(v: Any) -> Optional[int]:
+    t = re.sub(r"\D", "", str(v or ""))
+    return int(t) if t and len(t) <= 9 else None
+
+
+def rc_fix_all(lst: list[dict], h: dict) -> list[dict]:
+    """Jawaban AI RC logging -> baris tabel:
+    - kolom bergeser karena model menyalin Sample_ID tercetak ([No, Sample_ID, From, To, ...]) -> dikembalikan ke tempatnya;
+    - Sample_ID dihitung dari No tercetak: Sample = Sample baris pertama + (No - No baris pertama), mis. No 99940 dengan
+      99937 = DP_150035_Z4 -> DP_150038_Z4 (ditandai kuning: periksa terhadap scan)."""
+    out = []
+    for r in lst:
+        x = dict(r)
+        x["ragu"] = list(r.get("ragu") or [])
+        hid, tg = str(x.get("hole_id") or "").strip(), str(x.get("tanggal") or "").strip()
+        if not x.get("sample_id") and _SAMPLE.match(hid) and (not tg or parse_num(tg) is not None):
+            vals = [x.get("tanggal")] + [x.get(k) for k in _RC_SHIFT]
+            x["sample_id"], x["hole_id"], x["tanggal"] = hid, "", ""
+            for k, v in zip(_RC_SHIFT, vals):
+                x[k] = v if v is not None else ""
+        out.append(x)
+    no0, s0 = _int(h.get("no_awal")), str(h.get("sample_awal") or "").strip()
+    if not (no0 and re.search(r"\d{3,}", s0)):  # rujukan dari baris pertama yang No dan Sample_ID-nya terbaca
+        ref = next((x for x in out if _int(x.get("no")) and _SAMPLE.match(str(x.get("sample_id") or "").strip())), None)
+        no0, s0 = (_int(ref["no"]), str(ref["sample_id"]).strip()) if ref else (None, "")
+    m = re.match(r"^(.*?)(\d{3,})(.*)$", s0) if no0 else None
+    for x in out:
+        n = _int(x.get("no"))
+        if m and n and not str(x.get("sample_id") or "").strip() and abs(n - no0) < 10000:
+            v = int(m.group(2)) + n - no0
+            if v >= 0:
+                x["sample_id"] = m.group(1) + str(v).zfill(len(m.group(2))) + m.group(3)
+                x["ragu"].append("sample_id")
     return out
 
 
@@ -788,6 +855,72 @@ def ddr_fix(r: dict) -> dict:
     return out
 
 
+def _ragu(r: dict, keys: Any) -> bool:
+    return any(k in (r.get("ragu") or []) for k in keys)
+
+
+def ore_fix(r: dict) -> dict:
+    """Ore Spotter: sel TRUCK / Tonnage per kelas (urutan kolom borang) -> kelas, unit, ton. Jawaban lama (kelas sudah
+    ditulis model) dibiarkan. Lebih dari satu kelompok terisi -> kelompok pertama dipakai, kelas ditandai kuning."""
+    if str(r.get("kelas") or "").strip() or str(r.get("unit") or "").strip():
+        return r
+    out = {k: v for k, v in r.items() if not re.match(r"^[a-z]{2,4}_(trk|ton)$", k)}
+    ragu = [k for k in (r.get("ragu") or []) if not re.match(r"^[a-z]{2,4}_(trk|ton)$", k)]
+    hits = []
+    for c in KELAS:
+        trk, ton = (str(r.get(f"{_slug(c)}_{x}") or "").strip() for x in ("trk", "ton"))
+        if trk or ton:
+            hits.append((c, trk, ton))
+    if hits:
+        c, trk, ton = hits[0]
+        if not ton and re.match(r"^\S+\s+\d+(?:[.,]\d+)?$", trk):  # "H026 30" dalam satu sel
+            trk, ton = trk.rsplit(None, 1)
+        out.update({"kelas": c, "unit": trk, "ton": ton})
+        sl = _slug(c)
+        ragu += (["unit"] if _ragu(r, [f"{sl}_trk"]) else []) + (["ton"] if _ragu(r, [f"{sl}_ton"]) else [])
+        if len(hits) > 1:
+            ragu.append("kelas")
+    out["ragu"] = list(dict.fromkeys(ragu))
+    return out
+
+
+_CHECK = ("", "-")
+
+
+def rom_fix(r: dict, h: dict) -> dict:
+    """ROM / Crusher: sub-kolom rehandling (centang), kolom kelas (angka tonase) dan Baru / Lama (centang) menurut urutan
+    kolom borang -> rehandling (nama tumpukan dari header), kelas + ton, status. Jawaban lama (kelas sudah ditulis) dibiarkan."""
+    if str(r.get("kelas") or "").strip() or str(r.get("status") or "").strip() or str(r.get("rehandling") or "").strip():
+        return r
+    sl = {_slug(c): c for c in KELAS}
+    drop = set(sl) | {"rh1", "rh2", "rh3", "baru", "lama"}
+    out = {k: v for k, v in r.items() if k not in drop}
+    ragu = [k for k in (r.get("ragu") or []) if k not in drop]
+    val = {k: str(r.get(k) or "").strip() for k in drop}
+    rh = [k for k in ("rh1", "rh2", "rh3") if val[k] not in _CHECK]
+    if rh:
+        k = rh[0]
+        v = val[k]
+        name = str(h.get(k) or "").strip()
+        out["rehandling"] = "〃" if v == "〃" else (name or (v if len(v) > 2 else f"Tumpukan {k[-1]}"))
+        if len(rh) > 1 or _ragu(r, [k]) or not name:
+            ragu.append("rehandling")
+    ks = [k for k in sl if val[k] not in _CHECK]
+    if ks:
+        out.update({"kelas": sl[ks[0]], "ton": val[ks[0]]})
+        if len(ks) > 1:
+            ragu.append("kelas")
+        if _ragu(r, [ks[0]]):
+            ragu.append("ton")
+    b, l = val["baru"] not in _CHECK, val["lama"] not in _CHECK
+    if b or l:
+        out["status"] = "〃" if "〃" in (val["baru"], val["lama"]) else ("Baru" if b else "Lama")
+        if b and l:
+            ragu.append("status")
+    out["ragu"] = list(dict.fromkeys(ragu))
+    return out
+
+
 def ai_schema_compact(ftype: str) -> dict:
     """Skema jawaban RINGKAS tetapi DIPAKSA Ollama (structured output): header & tiap baris berupa daftar nilai berurutan
     (tanpa nama kolom yang diulang di setiap baris). Model kecil (2b) tidak bisa lagi menulis penjelasan / format lain
@@ -796,10 +929,13 @@ def ai_schema_compact(ftype: str) -> dict:
 
     def arr(n: int) -> dict:
         return {"type": "array", "items": {"type": "string"}, "minItems": n, "maxItems": n}
-    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": arr(len(ai_rows(t)))}, "c": {"type": "string"}}
+    # 0.42.12: tiap baris tabel = SATU teks "nilai|nilai|…" (bukan daftar ["nilai", "nilai", …]): tanda kutip dan koma per sel
+    # hilang, sel kosong cukup '||' -> jawaban kira-kira separuh token -> separuh waktu tulis di CPU
+    line = {"type": "string"}
+    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": line}, "c": {"type": "string"}}
     req = ["h", "r"]
     for tt in (t.get("tables") or {}).values():
-        props[tt["ai"]] = {"type": "array", "items": arr(len(tt["rows"]))}
+        props[tt["ai"]] = {"type": "array", "items": line}
         req.append(tt["ai"])
     return {"type": "object", "required": req, "properties": props}
 
@@ -825,13 +961,14 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
         lines.append("/no_think")
         return "\n".join(lines)
     lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
-             "Jawab JSON ringkas: daftar nilai berurutan, TANPA nama kolom.",
+             "Jawab JSON ringkas, TANPA nama kolom.",
              '"h": [' + ", ".join(hk) + "]   <- nilai header sesuai urutan itu",
-             '"r": [[' + ", ".join(rk) + "], …]   <- satu daftar per baris tabel yang terisi, urut dari atas"]
+             '"r": ["' + "|".join(rk) + '", …]   <- SATU teks per baris tabel yang terisi, urut dari atas, nilai dipisah |']
     for tt in (t.get("tables") or {}).values():
-        lines.append(f'"{tt["ai"]}": [[' + ", ".join(k for k, _l, _t in tt["rows"]) + f"], …]   <- satu daftar per baris {tt['name']}")
+        lines.append(f'"{tt["ai"]}": ["' + "|".join(k for k, _l, _t in tt["rows"]) + f'", …]   <- satu teks per baris {tt["name"]}, nilai dipisah |')
     lines += ['"c": catatan singkat (boleh "")',
-              "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Sel kosong = \"\". Jangan mengarang baris.",
+              "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Sel kosong: tidak ada apa pun di antara dua |, "
+              "sel kosong di ujung baris boleh tidak ditulis. Jangan mengarang baris.",
               "Salin angka & kode persis. Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?' (mis. \"VLT?\")."]
     if ftype not in ORE_TYPES and ftype != "rc":
         lines.append("Bila tulisan sama dengan baris di atasnya (tanda ulang), tulis nilai baris di atasnya.")
@@ -849,9 +986,19 @@ def _from_compact(ftype: str, o: dict) -> dict:
     names |= {x.lower() for tt in (t.get("tables") or {}).values() for k, lbl, _t in tt["rows"] for x in (k, lbl)}
     names |= {"time", "from", "to", "no", "meterage", "hole id", "azimuth", "dip"}
 
-    def one(vals: Any, keys: list[str]) -> Optional[dict]:
+    def one(vals: Any, keys: list[str], tail: int = 0) -> Optional[dict]:
+        miss = False
+        if isinstance(vals, str):  # "nilai|nilai|…" (0.42.12)
+            vals = vals.split("|")
+            if tail and len(vals) != len(keys) and vals[-1].strip():
+                # jumlah sel meleset (model salah hitung '|' di kolom kosong): kolom ujung kanan (Tujuan / Keterangan ...)
+                # diambil dari kanan, sisanya dari kiri; posisi kelas jadi tidak pasti -> ditandai kuning
+                head = (vals[:-tail] + [""] * len(keys))[:len(keys) - tail]
+                vals, miss = head + vals[-tail:], True
+            elif len(vals) > len(keys):  # '|' di dalam uraian terakhir
+                vals = vals[:len(keys) - 1] + ["|".join(vals[len(keys) - 1:])]
         vals = [str(v if v is not None else "").strip() for v in (vals if isinstance(vals, list) else [])]
-        x: dict[str, Any] = {"ragu": []}
+        x: dict[str, Any] = {"ragu": ["kelas"] if miss else []}
         for k, v in zip(keys, vals):
             if v.endswith("?"):
                 v = v[:-1].strip()
@@ -866,7 +1013,7 @@ def _from_compact(ftype: str, o: dict) -> dict:
     hk = [k for k, _l, _t in t["header"]]
     rk = [k for k, _l, _t in ai_rows(t)]
     out: dict[str, Any] = {"header": one(o.get("h"), hk) or {}, "rows": [], "catatan": str(o.get("c") or "")}
-    out["rows"] = [x for x in (one(v, rk) for v in o.get("r") or []) if x]
+    out["rows"] = [x for x in (one(v, rk, t.get("ai_tail", 0)) for v in o.get("r") or []) if x]
     for tt in (t.get("tables") or {}).values():
         ks = [k for k, _l, _t in tt["rows"]]
         out[tt["ai"]] = [x for x in (one(v, ks) for v in o.get(tt["ai"]) or []) if x]
@@ -931,12 +1078,39 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     return out
 
 
+def crop_paper(im: Any) -> Any:
+    """Potong foto ke lembar kertas (putih / abu muda, tidak berwarna): papan klip, meja dan latar tidak lagi dikirim ke AI.
+    Gambar lebih kecil = AI lebih cepat (token gambar berkurang), dan pada resolusi yang sama tulisan tampak lebih besar.
+    Bila kertas tidak jelas terdeteksi, gambar dikembalikan utuh."""
+    try:
+        import numpy as np
+        t = im.copy()
+        t.thumbnail((400, 400))
+        hsv = np.asarray(t.convert("HSV"), dtype=np.int16)
+        paper = (hsv[..., 1] < 70) & (hsv[..., 2] > 120)
+        rows = np.where(paper.mean(axis=1) > 0.35)[0]
+        cols = np.where(paper.mean(axis=0) > 0.35)[0]
+        if len(rows) < 10 or len(cols) < 10:
+            return im
+        y0, y1, x0, x1 = rows[0], rows[-1] + 1, cols[0], cols[-1] + 1
+        area = (y1 - y0) * (x1 - x0) / (paper.shape[0] * paper.shape[1])
+        if not 0.2 < area < 0.9:
+            return im
+        fx, fy = im.width / paper.shape[1], im.height / paper.shape[0]
+        mx, my = 0.02 * im.width, 0.02 * im.height
+        return im.crop((max(0, int(x0 * fx - mx)), max(0, int(y0 * fy - my)),
+                        min(im.width, int(x1 * fx + mx)), min(im.height, int(y1 * fy + my))))
+    except Exception:  # noqa: BLE001 - pemotongan hanya penghematan; gagal -> gambar utuh
+        return im
+
+
 def _image_b64(s: Store, d: dict, max_px: int) -> tuple[str, tuple[int, int]]:
     from PIL import Image
     with Image.open(s.scans / d["file"]) as im:
         im = im.convert("RGB")
         if d.get("rot"):
             im = im.rotate(-int(d["rot"]), expand=True)  # rot searah jarum jam
+        im = crop_paper(im)
         k = max_px / max(im.size)
         if k < 1:
             im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
@@ -1097,11 +1271,18 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
             if h[k] != raw and k not in hunc:  # dirapikan program (mis. rig, Hole ID) -> kuning, cek terhadap scan
                 hunc.append(k)
     out_rows = []
-    for r in (res or {}).get("rows") or []:
+    rows_in = [r for r in (res or {}).get("rows") or [] if isinstance(r, dict)]
+    if d["type"] == "rc":
+        rows_in = rc_fix_all(rows_in, {**d["header"], **{k: v for k, v in rh.items() if v}})
+    for r in rows_in:
         if not isinstance(r, dict):
             continue
         if d["type"] == "ddr":
             r = ddr_fix(r)
+        elif d["type"] == "ore":
+            r = ore_fix(r)
+        elif d["type"] == "rom":
+            r = rom_fix(r, {**d["header"], **{k: v for k, v in rh.items() if v}})
         data = {k: str(r.get(k) if r.get(k) is not None else "").strip() for k in rk}
         if not any(v for k, v in data.items() if k != "no"):
             continue

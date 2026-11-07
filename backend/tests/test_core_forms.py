@@ -108,7 +108,7 @@ def test_ore_loading_pit_fill_validate_pivot(st, monkeypatch):
     did = cf.add_file(s, str(_scan(tmp)), "ore", "Rina")[0]["id"]
     calls = _ai(monkeypatch, ORE_AI)
     j = cf.ai_read(s, did, "http://x", "qwen2.5vl:7b", "tulisan miring")
-    assert calls[0]["format"]["required"] == ["h", "r"] and '"r": [[no, start, finish' in calls[0]["messages"][0]["content"]  # ringkas & dipaksa skema
+    assert calls[0]["format"]["required"] == ["h", "r"] and '"r": ["no|start|finish' in calls[0]["messages"][0]["content"]  # ringkas & dipaksa skema
     assert "tulisan miring" in calls[0]["messages"][0]["content"] and calls[0]["options"]["num_predict"] > 0
     assert "〃" in calls[0]["messages"][0]["content"]
     rs = j["rows"]
@@ -288,7 +288,7 @@ def test_daily_drilling_report_tables_summary_exports(st, monkeypatch):
     did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
     calls = _ai(monkeypatch, DDR_AI)
     cf.ai_read(s, did, "http://x", "m")
-    assert '"lubang": [[from_m, to_m, hole_id, az, dip' in calls[0]["messages"][0]["content"] and "lubang" in calls[0]["format"]["required"]
+    assert '"lubang": ["from_m|to_m|hole_id|az|dip' in calls[0]["messages"][0]["content"] and "lubang" in calls[0]["format"]["required"]
     rs = cf.rows(s, did)
     act = [r for r in rs if r["tbl"] == ""]
     hole = [r for r in rs if r["tbl"] == "hole"]
@@ -392,14 +392,14 @@ def test_rc_logging_jawaban_ringkas(st, monkeypatch):
     s, tmp = st
     did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
     txt = "\n".join([
-        "H||",
-        "R|hole_id|tanggal|sample_id|from_m|to_m|lith|alt|min1|vein|qt|remark",  # model mengulang nama kolom: diabaikan
-        "R|XX-100-01|05-11-26|SMP_000101_ZZ|0|1|VLT|ARG|ox||||",
-        "R|||SMP_000102_ZZ|1|2|〃|〃|cly||||",
-        "R|||SMP_000103_ZZ|2|3|QMN?|SIL|Qz-Mn|QMN|||",
-        "R|||SMP_000104_ZZ||||||||BLANK",
-        "R|XX-100-02|05-11-26|SMP_000105_ZZ|0|1|VLT|PRO|chl-cly||||",
-        "R|||SMP_000106_ZZ|1|2|{|{|{||||",
+        "H|||101|SMP_000101_ZZ",
+        "R|no|hole_id|tanggal|from_m|to_m|lith|alt|min1|vein|qt|remark",  # model mengulang nama kolom: diabaikan
+        "R|101|XX-100-01|05-11-26|0|1|VLT|ARG|ox|||",
+        "R|102|||1|2|〃|〃|cly|||",
+        "R|103|||2|3|QMN?|SIL|Qz-Mn|QMN||",
+        "R|104||||||||||BLANK",
+        "R|105|XX-100-02|05-11-26|0|1|VLT|PRO|chl-cly|||",
+        "R|106|||1|2|{|{|{|||",
         "C|fiktif"])
     _ai(monkeypatch, None, raw=txt)
     cf.ai_read(s, did, "http://x", "m")
@@ -431,11 +431,9 @@ def test_jawaban_ringkas_dipaksa_skema_dan_baris_sampah_dibuang(st, monkeypatch)
     s, tmp = st
     did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
     calls = []
-    res = {"h": ["", ""], "r": [["hole_id", "tanggal", "sample_id", "from_m", "to_m", "lith", "alt", "min1", "vein", "qt", "remark"],
-                                ["The user says to fill in the header row with the values from the form and then list the rows", "", "", "", "", "", "", "", "", "", ""],
-                                ["XX-1", "05-11-26", "S_001", "0", "1", "VLT?", "ARG", "ox", "", "", ""],
-                                ["", "", "S_002", "1", "2", "〃", "〃", "〃", "", "", ""],
-                                ["", "", "", "", "", "", "", "", "", "", ""]], "c": ""}
+    res = {"h": ["", "", "101", "S_001"], "r": ["no|hole_id|tanggal|from_m|to_m|lith|alt|min1|vein|qt|remark",
+                                              "The user says to fill in the header row with the values from the form and then list the rows",
+                                              "101|XX-1|05-11-26|0|1|VLT?|ARG|ox", "102|||1|2|〃|〃|〃", ""], "c": ""}
 
     def fake(url, body=None, timeout=5.0):
         if url.endswith(("/api/show", "/api/ps")):
@@ -445,7 +443,7 @@ def test_jawaban_ringkas_dipaksa_skema_dan_baris_sampah_dibuang(st, monkeypatch)
     monkeypatch.setattr(cf.core_io, "_http", fake)
     cf.ai_read(s, did, "http://x", "m")
     sch = calls[0]["format"]
-    assert sch["required"] == ["h", "r"] and sch["properties"]["r"]["items"]["minItems"] == 11
+    assert sch["required"] == ["h", "r"] and sch["properties"]["r"]["items"] == {"type": "string"}
     rs = cf.rows(s, did)
     assert [r["data"]["sample_id"] for r in rs] == ["S_001", "S_002"] and "lith" in rs[0]["unc"]
     assert rs[1]["data"]["lith"] == "VLT" and rs[1]["data"]["hole_id"] == "XX_1"
@@ -460,13 +458,13 @@ def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
     """Variasi jawaban: 'R:' / '- R|', jawaban di bagian thinking, dan bila tetap tak terbaca diulang sekali dengan
     JSON berskema. Baris tanpa tanda R (tabel markdown / penjelasan) tidak dipakai."""
     s, tmp = st
-    p = cf.parse_ai_text("rc", "Berikut hasilnya:\n| XX-9 | 05-11-26 | S_009 | 0 | 1 |\n"
-                               "R|XX-1|05-11-26|S_001|0|1|VLT|ARG|ox||||\n- R: | | S_002 | 1 | 2 | 〃 | 〃 | 〃 | | | |")
-    assert [r["sample_id"] for r in p["rows"]] == ["S_001", "S_002"] and p["rows"][0]["hole_id"] == "XX-1"
+    p = cf.parse_ai_text("rc", "Berikut hasilnya:\n| 9 | XX-9 | 05-11-26 | 0 | 1 |\n"
+                               "R|1|XX-1|05-11-26|0|1|VLT|ARG|ox|||\n- R: 2 | | | 1 | 2 | 〃 | 〃 | 〃 | | |")
+    assert [r["no"] for r in p["rows"]] == ["1", "2"] and p["rows"][0]["hole_id"] == "XX-1"
     with pytest.raises(ValueError, match="jawaban kosong"):
         cf.parse_ai_text("rc", "")
     did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
-    seq = [{"message": {"thinking": "R|XX-2|05-11-26|S_010|0|1|VLT|||||", "content": ""}}]
+    seq = [{"message": {"thinking": "H|||10|S_010\nR|10|XX-2|05-11-26|0|1|VLT||||", "content": ""}}]
     monkeypatch.setattr(cf.core_io, "_http", lambda url, body=None, timeout=5.0: {} if url.endswith(("/api/show", "/api/ps")) else seq[0])
     cf.ai_read(s, did, "http://x", "m")
     assert cf.rows(s, did)[0]["data"]["sample_id"] == "S_010"
@@ -479,10 +477,10 @@ def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
         calls.append(body)
         if "format" in body:  # sebagian model + Ollama: content kosong bila format dipaksa
             return {"message": {"content": ""}, "done_reason": "stop", "eval_count": 3}
-        return {"message": {"content": "R|XX-3|05-11-26|S_020|0|1||||||"}}
+        return {"message": {"content": "H|||20|S_020\nR|20|XX-3|05-11-26|0|1|||||"}}
     monkeypatch.setattr(cf.core_io, "_http", fake)
     cf.ai_read(s, did, "http://x", "m")
-    assert len(calls) == 2 and "format" not in calls[1] and "R|hole_id|" in calls[1]["messages"][0]["content"] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"
+    assert len(calls) == 2 and "format" not in calls[1] and "R|no|hole_id|" in calls[1]["messages"][0]["content"] and cf.rows(s, did)[0]["data"]["sample_id"] == "S_020"
 
 
 def test_galat_menyebut_penyebab(st, monkeypatch):
@@ -508,8 +506,8 @@ def test_model_thinking_disarankan_instruct(st, monkeypatch):
 def test_ddr_ai_dua_kolom_dan_kolom_bergeser(st):
     """0.42.11: Daily Drilling Report diminta 2 kolom [jam, uraian]; jawaban yang kolomnya bergeser (jam di uraian / kategori)
     tetap dipetakan ke mulai-selesai, baris tanpa jam digabung ke kegiatan di atasnya."""
-    assert cf.ai_schema_compact("ddr")["properties"]["r"]["items"]["minItems"] == 2
-    res = cf.parse_ai_text("ddr", '{"h":[],"r":[["0630-0700","TRAVELING TO"],["","370"],["07.00 - 07.05","PSM"]],"lubang":[]}')
+    assert '"r": ["jam|aktivitas"' in cf.ai_prompt("ddr")
+    res = cf.parse_ai_text("ddr", '{"h":[],"r":["0630-0700|TRAVELING TO","|370",["07.00 - 07.05","PSM"]],"lubang":[]}')
     s, tmp = st
     did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
     res["rows"] += [{"mulai": "TITIK AMAN", "selesai": "", "aktivitas": "1800-1900", "kategori": "1800-1900"}]
@@ -517,3 +515,49 @@ def test_ddr_ai_dua_kolom_dan_kolom_bergeser(st):
     rs = [r["data"] for r in cf.rows(s, did) if r["tbl"] == ""]
     assert [(r["mulai"], r["selesai"]) for r in rs] == [("06:30", "07:00"), ("07:00", "07:05"), ("18:00", "19:00")]
     assert rs[0]["aktivitas"] == "TRAVELING TO 370" and rs[1]["kategori"] == "P5M" and rs[2]["aktivitas"] == "TITIK AMAN"
+
+
+def test_rc_kolom_no_dan_sample_dari_no(st):
+    """0.42.12: jawaban RC berurutan seperti borang (No dulu); jawaban lama yang menyalin Sample_ID tercetak
+    ([No, Sample_ID, From, To]) dikembalikan ke kolomnya; Sample_ID baris lain dihitung dari No."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "rc", "Rina")[0]["id"]
+    res = cf.parse_ai_text("rc", json.dumps({"h": ["No", "Hole_ID"], "r": [
+        ["20001", "AA_000035_Z9", "0", "1", "", "", "", "", "", "", ""], "20002|XX-7|05-11-26|1|2|VLT|IAR|cly", "20003|||2|3|〃|〃|〃"]}))
+    cf.apply_ai(s, did, res, "m", 1)
+    rs = [r["data"] for r in cf.rows(s, did)]
+    assert [r["sample_id"] for r in rs] == ["AA_000035_Z9", "AA_000036_Z9", "AA_000037_Z9"]
+    assert [(r["from_m"], r["to_m"]) for r in rs] == [("0", "1"), ("1", "2"), ("2", "3")] and rs[2]["lith"] == "VLT"
+
+
+def test_foto_dipotong_ke_kertas():
+    """Papan klip oranye / meja di sekitar borang tidak dikirim ke AI (lebih sedikit token gambar, tulisan tampak lebih besar)."""
+    im = Image.new("RGB", (2000, 1500), (230, 110, 30))
+    ImageDraw.Draw(im).rectangle((300, 200, 1700, 1300), fill=(235, 235, 228))
+    c = cf.crop_paper(im)
+    assert 1400 <= c.width <= 1500 and 1100 <= c.height <= 1200
+    polos = Image.new("RGB", (800, 600), (240, 240, 240))
+    assert cf.crop_paper(polos).size == (800, 600)
+
+
+def test_ore_rom_kelas_dari_posisi_kolom(st):
+    """0.42.12: Loading Ore & ROM/Crusher dibaca MENURUT URUTAN KOLOM BORANG; kelas ditentukan program dari posisi sel
+    (bukan ditulis model). Jumlah sel meleset -> kolom ujung kanan diambil dari kanan, kelas kuning. Data fiktif."""
+    s, tmp = st
+    ore = cf.add_file(s, str(_scan(tmp, "o.jpg")), "ore", "Rina")[0]["id"]
+    e = "|" * 15
+    res = cf.parse_ai_text("ore", json.dumps({"h": [], "r": [
+        "1|19.03||PIT A|100.0|T01|30" + e + "ROM 1",
+        "2|09|||〃|||T02|31" + "|" * 13 + "〃",
+        "3|16|||〃|T03|33|||ROM 2"]}))  # sel kurang: Tujuan tetap dari kanan
+    cf.apply_ai(s, ore, res, "m", 1)
+    rs = cf.rows(s, ore)
+    assert [(r["data"]["kelas"], r["data"]["unit"], r["data"]["ton"]) for r in rs] == [
+        ("OX-LG", "T01", "30"), ("SF-LG", "T02", "31"), ("OX-LG", "T03", "33")]
+    assert rs[1]["data"]["tujuan"] == "ROM 1" and rs[2]["data"]["tujuan"] == "ROM 2" and "kelas" in rs[2]["unc"]
+    rom = cf.add_file(s, str(_scan(tmp, "r.jpg")), "rom", "Rina")[0]["id"]
+    cells = ["1", "DT12", "", "19.02", "PIT A", "Crusher", "", "v", ""] + [""] * 4 + ["12.5"] + [""] * 4 + ["", "v", "Rehandling"]
+    res = cf.parse_ai_text("rom", json.dumps({"h": ["", "", "", "", "STOK A", "STOK B", ""], "r": ["|".join(cells)]}))
+    cf.apply_ai(s, rom, res, "m", 1)
+    d = cf.rows(s, rom)[0]["data"]
+    assert (d["rehandling"], d["kelas"], d["ton"], d["status"], d["keterangan"]) == ("STOK B", "OX-SG", "12.5", "Lama", "Rehandling")
