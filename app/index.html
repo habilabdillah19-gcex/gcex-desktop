@@ -2561,10 +2561,27 @@ function bxTraces(T,o){if(!BX.m||!$('bxShow')||!$('bxShow').checked||VIEW2D)retu
   bx3dNote();
   var hs=m.s0/2,hz=Infinity;for(var q=0;q<m.n;q+=Math.max(1,Math.floor(m.n/50000)))hz=Math.min(hz,m.sz[q]/2);var e0=m.ext[0]-1e3,e2=m.ext[2]-1e3,e4=m.ext[4]-1e3,NX=Math.ceil((m.ext[1]-e0+2e3)/hs)+4,NY=Math.ceil((m.ext[3]-e2+2e3)/hs)+4,NZ=Math.ceil((m.ext[5]-e4+2e3)/hz)+4,SZ={},nsz=0;
   keys.forEach(function(k){var L=G[k],ci=bxClassInfo(k),nm=U.attr+' '+ci.lab+' ('+L.length.toLocaleString()+')',n6=L.length*6,FK=new Float64Array(n6),FI=new Int32Array(n6),cnt=new Map();
-    for(var b=0;b<L.length;b++){var i=L[b],cx=m.x[i],cy=m.y[i],cz=m.z[i],h=[m.sx[i]/2,m.sy[i]/2,m.sz[i]/2],sk=m.sx[i]+'|'+m.sz[i];if(SZ[sk]===undefined)SZ[sk]=nsz++;
+    /* Potong kubus di RL flitch aktif.
+       Sebelumnya blok hanya DIPILIH kalau menyentuh flitch, lalu digambar UTUH setinggi aslinya.
+       Terukur pada data latihan: flitch 1,5 m (239,25-240,75) tetapi yang tergambar 238,75-241,25 =
+       2,5 m, yaitu tinggi penuh bloknya. Pada model dengan sub-blok bertinggi campur (0,75 / 1,5 /
+       3 m) hasilnya lebih buruk lagi: tebalnya melebihi flitch DAN ujung atas-bawahnya bergerigi,
+       sehingga tidak terlihat sebagai pulau-pulau berbatas rata seperti di Surpac.
+       Sekarang tinggi tiap kubus dijepit ke [bawah, atas] flitch. Yang berubah hanya GEOMETRI yang
+       digambar; pemilihan blok, tonase dan laporan tidak tersentuh sama sekali. */
+    var FLz=null;
+    try{ if(BX.ui&&BX.ui.fl&&window.lyBench&&window.secGeom&&secGeom().m==='H'){
+           var FB=lyBench(); if(isFinite(FB[0])&&isFinite(FB[1]))
+             FLz=[Math.min(FB[0],FB[1]),Math.max(FB[0],FB[1])]; } }catch(e){}
+    var ZC=new Float64Array(L.length),ZH=new Float64Array(L.length);
+    for(var b=0;b<L.length;b++){var i0=L[b],lo0=m.z[i0]-m.sz[i0]/2,hi0=m.z[i0]+m.sz[i0]/2;
+      if(FLz){ if(lo0<FLz[0])lo0=FLz[0]; if(hi0>FLz[1])hi0=FLz[1]; if(hi0<lo0)hi0=lo0; }
+      ZC[b]=(lo0+hi0)/2; ZH[b]=(hi0-lo0)/2;}
+    var ZCi={},ZHi={};for(b=0;b<L.length;b++){ZCi[L[b]]=ZC[b];ZHi[L[b]]=ZH[b];}
+    for(var b=0;b<L.length;b++){var i=L[b],cx=m.x[i],cy=m.y[i],cz=ZC[b],h=[m.sx[i]/2,m.sy[i]/2,ZH[b]],sk=m.sx[i]+'|'+ZH[b].toFixed(4);if(SZ[sk]===undefined)SZ[sk]=nsz++;
       for(var f=0;f<6;f++){var a=f>>1,sg=(f&1)?1:-1,c=[cx,cy,cz];c[a]+=sg*h[a];var key=((((SZ[sk]*3+a)*NX+Math.round((c[0]-e0)/hs))*NY+Math.round((c[1]-e2)/hs))*NZ+Math.round((c[2]-e4)/hz));FK[b*6+f]=key;FI[b*6+f]=i;cnt.set(key,(cnt.get(key)||0)+1);}}
     var nv=0;for(var t=0;t<n6;t++)if(cnt.get(FK[t])===1)nv++;var x=new Float32Array(nv*4),y=new Float32Array(nv*4),z=new Float32Array(nv*4),I=new Int32Array(nv*2),J=new Int32Array(nv*2),K=new Int32Array(nv*2),qv=0,PP=[[-1,-1],[1,-1],[1,1],[-1,1]];
-    for(t=0;t<n6;t++){if(cnt.get(FK[t])!==1)continue;var i2=FI[t],f2=t%6,a2=f2>>1,sg2=(f2&1)?1:-1,H=[m.sx[i2]/2,m.sy[i2]/2,m.sz[i2]/2],C=[m.x[i2]-offX,m.y[i2]-offY,m.z[i2]];C[a2]+=sg2*H[a2];var bb=(a2+1)%3,cc=(a2+2)%3,o4=qv*4;
+    for(t=0;t<n6;t++){if(cnt.get(FK[t])!==1)continue;var i2=FI[t],f2=t%6,a2=f2>>1,sg2=(f2&1)?1:-1,H=[m.sx[i2]/2,m.sy[i2]/2,ZHi[i2]],C=[m.x[i2]-offX,m.y[i2]-offY,ZCi[i2]];C[a2]+=sg2*H[a2];var bb=(a2+1)%3,cc=(a2+2)%3,o4=qv*4;
       for(var v=0;v<4;v++){var p=C.slice();p[bb]+=PP[v][0]*H[bb];p[cc]+=PP[v][1]*H[cc];x[o4+v]=p[0];y[o4+v]=p[1];z[o4+v]=p[2];}I[qv*2]=o4;J[qv*2]=o4+1;K[qv*2]=o4+2;I[qv*2+1]=o4;J[qv*2+1]=o4+2;K[qv*2+1]=o4+3;qv++;}
     out.push({type:'mesh3d',x:x,y:y,z:z,i:I,j:J,k:K,color:ci.col,opacity:U.op,flatshading:true,name:nm,hoverinfo:'name',showlegend:true,lighting:{ambient:0.7,diffuse:0.6,specular:0.05}});});
   BX.mc={k:ck,t:out};out.forEach(function(t){T.push(t);});}
