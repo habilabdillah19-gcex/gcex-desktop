@@ -86,9 +86,7 @@
     var t = ['Autorun,' + q(L.judul)].concat(['Nama,Hasil,Sebelum-sesudah,Catatan'],
       L.baris.map(function (b) { return [b.nama, b.lewat ? 'DILEWATI' : b.hasil, b.banding, b.ket].map(q).join(','); })).join('\r\n');
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv' }));
-    a.download = 'Autorun_' + (AR.tahap || 'laporan') + '.csv';
-    document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500);
+    gxSimpan(t, 'Autorun_' + (AR.tahap || 'laporan') + '.csv', 'text/csv');
   };
 
   /* ================= TAHAP 2a — AUTORUN WIREFRAME (VEIN) ================= */

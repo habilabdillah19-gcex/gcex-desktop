@@ -461,9 +461,7 @@
       var u = xlsx(T.sheets);
       var nama = 'GCEx_' + db.name.replace(/[^A-Za-z0-9_+-]+/g, '_').slice(0, 60) + '.xlsx';
       var b = new Blob([u], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      var a2 = document.createElement('a');
-      a2.href = URL.createObjectURL(b); a2.download = nama; document.body.appendChild(a2); a2.click();
-      setTimeout(function () { URL.revokeObjectURL(a2.href); a2.remove(); }, 2000);
+      gxSimpan(b, nama);
       alert('Export "' + db.name + '": ' + T.nH + ' hole.\n\n' +
             T.sheets.map(function (s2) { return s2.name + ' ' + (s2.rows.length - 1) + ' baris'; }).join(' · ') +
             '\n\nKolom "Kampanye" ikut ditulis di tiap sheet supaya asal tiap hole tetap terlacak.');

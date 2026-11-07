@@ -1551,7 +1551,42 @@ var GS={open:false,R:null,rows:[],tab:'S'};
 function gsToggle(){GS.open=!GS.open;$('gsPanel').style.display=GS.open?'block':'none';var b=$('gsBtn');if(b)b.classList.toggle('on',GS.open);setTimeout(function(){uiResize();if(GS.open)gsRun();},40);}
 function gsTab(t){GS.tab=t;['S','V','F','M','E','K','C'].forEach(function(k){$('gsT'+k).style.display=(k===t)?'block':'none';$('gsB'+k).className=(k===t)?'on':'';});gsDraw();}
 var _gt;function gsAutoHook(){if(!GS.open||!$('gAuto').checked)return;clearTimeout(_gt);_gt=setTimeout(gsRun,400);}
-function gsDl(name,txt){var b=new Blob([txt],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
+/* ---------- SATU pintu keluar untuk SEMUA ekspor (sama seperti di GC-Ex Block Model) ----------
+   Permintaan pemilik: apa pun yang diekspor, dalam bentuk apa pun, harus selalu memunculkan jendela
+   "simpan di mana, dengan nama apa".
+   Sebelumnya tidak satu pun ekspor di modul ini melakukannya -- 17 titik unduh di 8 berkas, semuanya
+   memakai <a download>, yang di aplikasi terpasang berarti berkas jatuh diam-diam ke folder Download
+   dengan nama yang sudah dipatok. Padahal jembatan Electron SUDAH menyediakan dialog Simpan
+   (gcexDesktop.api.saveFile) dan tidak pernah dipanggil dari halaman.
+   Tiga jalur, berurutan sesuai yang tersedia:
+     1. aplikasi terpasang  -> dialog Simpan milik Windows (lokasi + nama + jenis berkas);
+     2. peramban modern     -> showSaveFilePicker;
+     3. selebihnya          -> tanya nama berkas lebih dulu, baru unduh.
+   Dipasang di satu tempat supaya ekspor yang ditambahkan nanti ikut menurut tanpa perlu diingatkan. */
+function gxJenis(fn){var e=String(fn).split('.').pop().toLowerCase(),N={
+    csv:'Berkas CSV',txt:'Teks',str:'String Surpac',dxf:'DXF (AutoCAD)',dtm:'DTM Surpac',mdl:'Block model Surpac',
+    pdf:'PDF',png:'Gambar PNG',obj:'OBJ',msh:'Mesh Leapfrog',json:'JSON',prj:'Proyek GC-Ex',dh3d:'Proyek GC-Ex',
+    html:'Halaman HTML',xlsx:'Excel'}[e]||('Berkas .'+e);
+  return[{name:N,extensions:[e]},{name:'Semua berkas',extensions:['*']}];}
+async function gxSimpan(data,fn,type){
+  var blob=(data instanceof Blob)?data:new Blob([data],{type:type||'text/plain'});
+  try{ if(window.gcexDesktop&&gcexDesktop.api&&gcexDesktop.api.saveFile){
+      var buf=new Uint8Array(await blob.arrayBuffer());
+      var path=await gcexDesktop.api.saveFile(fn,buf,gxJenis(fn));
+      if(path&&window.FP&&FP.toast)FP.toast('&#10003; Disimpan: '+path,false,6000);
+      return path||null; } }catch(e){console.warn('saveFile:',e);}
+  if(window.showSaveFilePicker){ try{
+      var h=await showSaveFilePicker({suggestedName:fn});
+      var w=await h.createWritable();await w.write(blob);await w.close();return h.name||fn; }
+    catch(e){ if(e&&e.name==='AbortError')return null; console.warn(e); } }
+  var nm=null;try{nm=prompt('Simpan dengan nama berkas:',fn);}catch(e){nm=fn;}
+  if(nm===null)return null; nm=String(nm).trim()||fn;
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+  return nm;}
+window.gxSimpan=gxSimpan;
+function gsDl(name,txt){return gxSimpan(txt,name,'text/plain;charset=utf-8');}
 function fx(v,d){return(v===null||v===undefined||!isFinite(v))?'-':(+v).toFixed(d===undefined?3:d);}
 function pnum(id){var v=parseFloat($(id).value);return isNaN(v)?null:v;}
 function pctl(s,p){if(!s.length)return NaN;var r=p*(s.length-1),i=Math.floor(r),f=r-i;return(i+1<s.length)?s[i]+(s[i+1]-s[i])*f:s[i];}
@@ -1940,8 +1975,7 @@ function plExport(){if(!PL.h.length){alert('Belum ada titik rencana.');return;}v
   rows=['Drillhole Name,Easting,Northing,Elevation,Azimuth,Dip,Lift Rate,Drift Rate,Distance,Extension,Target Depth,Comment'];
   PL.h.forEach(function(h){rows.push([q(h.n),plF(h.x+offX,4),plF(h.y+offY,4),rd?Math.round(h.z):plF(h.z,2),plF(h.az,2),plF(h.dip,2),plF(h.lift,3),plF(h.drift,3),plF(h.dist,2),plF(h.ext,2),plF(h.td,2),q(h.cm)].join(','));});
   var txt=rows.join('\r\n')+'\r\n',fn='Plan_Bor_'+ZONE+'_'+($('plBench').value||'plan')+'.csv',blob=new Blob([txt],{type:'text/csv'});
-  if(window.navigator&&navigator.msSaveBlob){navigator.msSaveBlob(blob,fn);return;}
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
+  gxSimpan(blob,fn);}
 plInit();
 var DG={S:[],on:false,cur:[],c2:[],pl:null,down:null,hov:null,pal:['#e8590c','#2f9e44','#1971c2','#c2255c','#7048e8','#0c8599','#f08c00','#5c940d']};
 function dgKey(){return 'dh3d_dig_'+ZONE;}
@@ -2000,7 +2034,7 @@ function dgMouse(e,type){if(!DG.on||!VIEW2D)return;var A=dgAx();if(!A)return;var
     if(DG.c2.length>=3){var f=dgPx(A,DG.c2[0][0],DG.c2[0][1]);if(Math.hypot(f[0]-px,f[1]-py)<10){dgFinish(true);return;}}
     var a=A.x.p2d(ix),b=A.y.p2d(iy),sn=dgSnap2(A,px,py);if(sn){a=sn[0];b=sn[1];}
     DG.c2.push([a,b]);DG.cur.push(dg3(DG.pl,a,b).map(function(v){return Math.round(v*1000)/1000;}));dgDraw();dgState();}}
-function dgDl(txt,fn,type){var b=new Blob([txt],{type:type||'text/plain'});if(window.navigator&&navigator.msSaveBlob){navigator.msSaveBlob(b,fn);return;}var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},600);}
+function dgDl(txt,fn,type){return gxSimpan(txt,fn,type);}
 function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.length){alert('Belum ada string yang ditampilkan untuk diekspor.');return;}var base='String_'+String(ZONE).replace(/[^A-Za-z0-9_-]+/g,'_'),r=[],f3=function(v){return(+v).toFixed(3);};
   if(fmt==='str'){var d=new Date(),mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
     r.push(base+','+('0'+d.getDate()).slice(-2)+'-'+mo+'-'+String(d.getFullYear()).slice(-2)+',,SSI_STYLES:styles.ssi');r.push('0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000');
@@ -2715,7 +2749,7 @@ function gxZip(files){var te=new TextEncoder(),parts=[],cen=[],off=0,d=new Date(
     parts.push(h,data);cen.push(c);off+=h.length+data.length;});
   var cs=0;cen.forEach(function(c){cs+=c.length;});var e=new Uint8Array(22),ev=new DataView(e.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cs,true);ev.setUint32(16,off,true);
   return new Blob(parts.concat(cen,[e]),{type:'application/zip'});}
-function gxDl(blob,fn){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);}
+function gxDl(blob,fn){return gxSimpan(blob,fn);}
 function gxQ(v){if(v===null||v===undefined)return '';var s=String(v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function gxSlug(s){return String(s||'proyek').replace(/[^A-Za-z0-9_-]+/g,'_').slice(0,60);}
 function gxDate(){var d=new Date(),p=function(n){return('0'+n).slice(-2);};return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());}
@@ -3890,7 +3924,7 @@ function mapLayoutOut(how){var gd=mapGd(),A=mapAx();if(!gd||!A)return;var P={A4L
       var ty=m+mh+16;x.lineWidth=2;x.strokeRect(m,ty,W-2*m,tb-16);x.font='bold 30px Arial';x.fillText(MAP.title||'Peta Geologi',m+20,ty+44);x.font='18px Arial';x.fillText(MAP.sub||(SA&&SA.D&&SA.D.name)||'',m+20,ty+76);
       x.font='15px Arial';var dt=new Date().toLocaleDateString('id-ID');x.fillText('Dibuat: '+(MAP.auth||'')+'   Tanggal: '+dt+'   Koordinat: sesuai data proyek (Easting / Northing)   GC-Ex',m+20,ty+tb-34);
       var out=c.toDataURL('image/png');if(how==='print'){var w=window.open('');if(!w){alert('Pop-up diblokir browser.');return;}w.document.write('<title>'+mapE(MAP.title)+'</title><style>@page{size:'+(/L$/.test(MAP.paper)?'landscape':'portrait')+';margin:0}body{margin:0}img{width:100%}</style><img src="'+out+'" onload="setTimeout(function(){print()},300)">');w.document.close();}
-      else{var a=document.createElement('a');a.href=out;a.download=(MAP.title||'Peta').replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+gxDate()+'.png';document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},400);}};im.src=url;});}
+      else{fetch(out).then(function(r){return r.blob();}).then(function(b){gxSimpan(b,(MAP.title||'Peta').replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+gxDate()+'.png');});
 
 /* ---------- panel ---------- */
 function mapPanel(){var b=$('mapBody');if(!b)return;var L=MAP.lay,ck=function(k,t,dis){return '<label class=sw style="margin:2px 0"><input type=checkbox '+(L[k]?'checked':'')+(dis?' disabled':'')+' onchange="MAP.lay.'+k+'=this.checked;mapRefresh()">'+t+'</label>';};
@@ -4817,7 +4851,7 @@ SA.valHtml=function(D){var I=SA.validate(D);if(!I.length)return '<br><span style
   return '<details style="margin-top:6px"><summary><b>Validasi:</b> '+(c.DIBUANG?'<span class="bad">'+c.DIBUANG+' dibuang</span> &middot; ':'')+(c.PERINGATAN?'<span style="color:#e8590c">'+c.PERINGATAN+' peringatan</span> &middot; ':'')+c.INFO+' info</summary><div style="max-height:180px;overflow:auto;font-size:11.5px">'+
     Object.keys(k).map(function(x){var p=x.split('|');return '<div>'+(p[0]==='DIBUANG'?'<span class="bad">&#10006;</span>':p[0]==='PERINGATAN'?'<span style="color:#e8590c">&#9888;</span>':'&#8505;')+' '+esc(p[1])+': <b>'+k[x]+'</b></div>';}).join('')+
     '</div><a href="#" onclick="SA.valCsv();return false">&#8681; Unduh laporan validasi (CSV)</a></details>';};
-SA.valCsv=function(){var I=SA.VI||[],q=function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;},t=['Tingkat,Kategori,Hole,Keterangan'].concat(I.map(function(r){return r.map(q).join(',');})).join('\r\n'),b=new Blob([t],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='Validasi_Data_Bor.csv';document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},500);};
+SA.valCsv=function(){var I=SA.VI||[],q=function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;},t=['Tingkat,Kategori,Hole,Keterangan'].concat(I.map(function(r){return r.map(q).join(',');})).join('\r\n');gxSimpan(t,'Validasi_Data_Bor.csv','text/csv');};
 /* ================= data spasial ================= */
 var RASTER=['tif','tiff','jpg','jpeg','png'],WORLD=['tfw','jgw','pgw','wld','tifw','jpgw','pngw'];
 function ext(n){return n.toLowerCase().split('.').pop();}
@@ -5085,8 +5119,8 @@ SA.addPlotly=async function(f){if(!f)return;var t=await f.text();try{evalJs(t);}
   SA.plotlyTxt=t;await idbPut('plotly',t);plOk('dimuat dari '+esc(f.name)+' dan disimpan di browser');};
 SA.saveStandalone=async function(){var t=SA.plotlyTxt;if(!t){try{t=await (await fetch(CDN)).text();}catch(e){}}if(!t||t.indexOf('Plotly')<0){alert('Library Plotly belum tersedia sebagai teks. Pilih file plotly-2.x.min.js dulu.');E('plNeed').style.display='block';return;}
   var src=SA.src0,a='<script id="plotlyInline">',i=src.indexOf(a),j=src.indexOf('<'+'/script>',i);if(i<0||j<0){alert('Struktur file tidak dikenali.');return;}
-  var html=src.slice(0,i+a.length)+t.replace(/<\/script/gi,'<\\/script')+src.slice(j),blob=new Blob([html],{type:'text/html'}),l=document.createElement('a');
-  l.href=URL.createObjectURL(blob);l.download='Drillhole3D_Viewer_Offline_lengkap.html';document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(l.href);l.remove();},800);};
+  var html=src.slice(0,i+a.length)+t.replace(/<\/script/gi,'<\\/script')+src.slice(j),blob=new Blob([html],{type:'text/html'});
+  gxSimpan(blob,'Drillhole3D_Viewer_Offline_lengkap.html','text/html');
 
 /* ================= jalankan viewer ================= */
 SA.go=async function(){var btn=E('btnGo');btn.disabled=true;try{
@@ -5165,8 +5199,8 @@ SA.reopen=async function(){E('pjMenu').style.display='none';if(!confirm('Halaman
 function encTA(k,v){if(v&&typeof v==='object'&&ArrayBuffer.isView(v)){var u=new Uint8Array(v.buffer,v.byteOffset,v.byteLength),s='';for(var i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return{__ta:v.constructor.name,b:btoa(s)};}return v;}
 function decTA(k,v){if(v&&typeof v==='object'&&v.__ta&&typeof v.b==='string'){var s=atob(v.b),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);var C=window[v.__ta]||Uint8Array;return C===Uint8Array?u:new C(u.buffer);}return v;}
 SA.downloadProj=async function(nm){var p=E('pjMenu');if(p)p.style.display='none';if(!nm){await SA.saveWork();nm=SA.pname;}var r=await idbGet('proj:'+nm);if(!r){alert('Proyek tidak ditemukan.');return;}var wk=await SA.loadWork(nm);
-  var txt=JSON.stringify({format:'dh3d-project',version:1,name:r.name,date:r.date,data:r.data,work:wk},encTA),b=new Blob([txt],{type:'application/json'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(b);a.download=String(r.name).replace(/[^A-Za-z0-9_-]+/g,'_')+'.dh3d';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);};
+  var txt=JSON.stringify({format:'dh3d-project',version:1,name:r.name,date:r.date,data:r.data,work:wk},encTA),b=new Blob([txt],{type:'application/json'});
+  gxSimpan(b,String(r.name).replace(/[^A-Za-z0-9_-]+/g,'_')+'.dh3d','application/json');};
 SA.openProjFile=async function(f){if(!f)return;msg('Membuka '+esc(f.name)+'&hellip;');try{var o=JSON.parse(await f.text(),decTA);if(o.format!=='dh3d-project'||!o.data)throw new Error('bukan file proyek Drillhole 3D Viewer');
     await idbPut('proj:'+o.name,{name:o.name,date:o.date,data:o.data});if(o.work){var bm=o.work.bm,md=o.work.md,bx=o.work.bx;delete o.work.bm;delete o.work.md;delete o.work.bx;o.work.hasBm=!!bm;o.work.hasMd=!!md;o.work.hasBx=!!bx;if(bx)await idbPut('bx:'+o.name,bx);else await idbDel('bx:'+o.name);await idbPut('work:'+o.name,o.work);if(bm)await idbPut('bm:'+o.name,bm);else await idbDel('bm:'+o.name);if(md)await idbPut('mdl:'+o.name,md);else await idbDel('mdl:'+o.name);}await idbPut('lastName',o.name);msg('');SA.listProj();SA.openProj(o.name);}catch(er){msg(esc(f.name)+': '+esc(er.message),true);}};
 SA.openProj=async function(nm){if(!window.Plotly){alert('Library Plotly belum siap (lihat langkah 3).');return;}var r=await idbGet('proj:'+nm);if(!r){alert('Proyek tidak ditemukan.');return;}await idbPut('lastName',nm);SA.boot(r.data,await SA.loadWork(nm));};

@@ -160,9 +160,9 @@ function fltDel(id){var f=fltGet(id);if(!f||!confirm('Hapus sesar '+f.name+'?'))
 function fltFlip(id){var f=fltGet(id);if(f)fltSet(id,'dd',(f.dd+180)%360);}
 function fltCsv(){var r=['Nama,Waktu,Urutan_umur,Jenis,Dip,Dip_Direction,Atas_m,Bawah_m,Taper_ujung_m,Slip_Trend,Slip_Plunge,Slip_HW_naik,Offset_m,Batas_keras,Pengaruh_syn_m,Memotong,Jejak_XY,Keterangan'];
   FLT.F.forEach(function(f){var o=fltSlipTP(f);r.push([f.name,f.tm,f.age,f.ty,f.dip,f.dd,f.up,f.dn,f.tip,Math.round(o.tr),Math.round(o.pl),o.up?1:0,fltOff(f),fltHbOn(f)?1:0,f.infl,(f.cuts||[]).map(function(i){var g=fltGet(i);return g?g.name:'';}).join(' '),(f.tr||[]).map(function(p){return(+p[0]).toFixed(2)+' '+(+p[1]).toFixed(2);}).join(' | '),f.ket||''].map(function(v){v=String(v==null?'':v);return /[,"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(','));});
-  var b=new Blob(['﻿'+r.join('\r\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='sesar_3d.csv';a.click();}
+  gxSimpan('﻿'+r.join('\r\n'),'sesar_3d.csv','text/csv');}
 function fltDxf(){var L=fltMeshes(),o=['0','SECTION','2','ENTITIES'];L.forEach(function(q){var m=q.m,ly=String(q.o.f.name).replace(/[^\w\-]/g,'_');for(var t=0;t<m.nt;t++){var V=[m._i[t],m._j[t],m._k[t],m._k[t]];o.push('0','3DFACE','8','SESAR_'+ly);V.forEach(function(v,c){o.push(String(10+c),(m._x[v]+offX).toFixed(3),String(20+c),(m._y[v]+offY).toFixed(3),String(30+c),(+m._z[v]).toFixed(3));});}});o.push('0','ENDSEC','0','EOF');
-  var b=new Blob([o.join('\r\n')],{type:'application/dxf'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='sesar_3d.dxf';a.click();}
+  gxSimpan(o.join('\r\n'),'sesar_3d.dxf','application/dxf');}
 /* ---------- panel ---------- */
 function fltPanel(){var b=$('fltBody');if(!b)return;var F=FLT.F,sel=fltGet(FLT.sel),MF=(window.MAP&&MAP.F||[]).filter(function(x){return x.kind==='str'&&x.pts&&x.pts.length>1;});
   var h='<div class=hint style="margin:-4px 0 8px">Sesar sebagai <b>bidang 3D</b>: jejak (garis struktur di Peta atau koordinat) + dip / dip direction. Panjang bidang searah strike = panjang jejak digitasi. '+

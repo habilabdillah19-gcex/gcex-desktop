@@ -483,9 +483,7 @@
   };
 
   function unduh(blob, nama) {
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = nama;
-    document.body.appendChild(a); a.click();
+    gxSimpan(blob, nama);
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   }
   function csvTeks(rows) {

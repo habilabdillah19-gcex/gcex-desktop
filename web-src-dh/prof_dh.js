@@ -78,7 +78,7 @@ function pfPlot() {
 function pfCsv() {
   var R = PF.last || pfCalc(), h = [(R.ax === 'z' ? 'RL' : R.ax === 'x' ? 'Easting' : 'Northing') + '_tengah', 'Jumlah_interval'].concat(R.S.map(pfLbl)), r = [h.join(',')];
   R.rows.forEach(function (o) { r.push([o.q.toFixed(2), o.n].concat(o.v.map(function (v) { return isFinite(v) ? v.toFixed(4) : ''; })).join(',')); });
-  var b = new Blob(['\ufeff' + r.join('\r\n')], { type: 'text/csv' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'profil_kadar.csv'; a.click();
+  gxSimpan('\ufeff' + r.join('\r\n'), 'profil_kadar.csv', 'text/csv');
 }
 function pfSet(k, v) { PF[k] = v; pfPanel(); }
 function pfS(i, k, v) { var s = PF.S[i]; if (!s) return; s[k] = v; if (k === 't') { if (v === 'cat') { s.ci = (CAT || []).findIndex(function (c) { return c.src === 'g'; }); s.c = []; } else if (!s.a) s.a = elements[0]; if ((v === 'rat' || v === 'sum') && !s.b) s.b = elements[1] || elements[0]; }

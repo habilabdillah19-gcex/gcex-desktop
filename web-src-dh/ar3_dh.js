@@ -122,9 +122,7 @@
     var t = ['Autorun dari nol,' + q(L.judul), 'Nama,Putusan,Data,Parameter,Catatan'].concat(
       L.baris.map(function (b) { return [b.nama, b.verdikt || '', b.hasil, b.par, b.ket].map(q).join(','); })).join('\r\n');
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv' }));
-    a.download = 'Autorun_dari_nol.csv'; document.body.appendChild(a); a.click();
-    setTimeout(function () { a.remove(); }, 500);
+    gxSimpan(t, 'Autorun_dari_nol.csv', 'text/csv');
   };
 
   /* ---------- pilihan ---------- */
