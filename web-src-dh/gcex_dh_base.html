@@ -3924,7 +3924,7 @@ function mapLayoutOut(how){var gd=mapGd(),A=mapAx();if(!gd||!A)return;var P={A4L
       var ty=m+mh+16;x.lineWidth=2;x.strokeRect(m,ty,W-2*m,tb-16);x.font='bold 30px Arial';x.fillText(MAP.title||'Peta Geologi',m+20,ty+44);x.font='18px Arial';x.fillText(MAP.sub||(SA&&SA.D&&SA.D.name)||'',m+20,ty+76);
       x.font='15px Arial';var dt=new Date().toLocaleDateString('id-ID');x.fillText('Dibuat: '+(MAP.auth||'')+'   Tanggal: '+dt+'   Koordinat: sesuai data proyek (Easting / Northing)   GC-Ex',m+20,ty+tb-34);
       var out=c.toDataURL('image/png');if(how==='print'){var w=window.open('');if(!w){alert('Pop-up diblokir browser.');return;}w.document.write('<title>'+mapE(MAP.title)+'</title><style>@page{size:'+(/L$/.test(MAP.paper)?'landscape':'portrait')+';margin:0}body{margin:0}img{width:100%}</style><img src="'+out+'" onload="setTimeout(function(){print()},300)">');w.document.close();}
-      else{fetch(out).then(function(r){return r.blob();}).then(function(b){gxSimpan(b,(MAP.title||'Peta').replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+gxDate()+'.png');});
+      else{fetch(out).then(function(r){return r.blob();}).then(function(b){gxSimpan(b,(MAP.title||'Peta').replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+gxDate()+'.png');});}};im.src=url;});}
 
 /* ---------- panel ---------- */
 function mapPanel(){var b=$('mapBody');if(!b)return;var L=MAP.lay,ck=function(k,t,dis){return '<label class=sw style="margin:2px 0"><input type=checkbox '+(L[k]?'checked':'')+(dis?' disabled':'')+' onchange="MAP.lay.'+k+'=this.checked;mapRefresh()">'+t+'</label>';};
@@ -5120,7 +5120,7 @@ SA.addPlotly=async function(f){if(!f)return;var t=await f.text();try{evalJs(t);}
 SA.saveStandalone=async function(){var t=SA.plotlyTxt;if(!t){try{t=await (await fetch(CDN)).text();}catch(e){}}if(!t||t.indexOf('Plotly')<0){alert('Library Plotly belum tersedia sebagai teks. Pilih file plotly-2.x.min.js dulu.');E('plNeed').style.display='block';return;}
   var src=SA.src0,a='<script id="plotlyInline">',i=src.indexOf(a),j=src.indexOf('<'+'/script>',i);if(i<0||j<0){alert('Struktur file tidak dikenali.');return;}
   var html=src.slice(0,i+a.length)+t.replace(/<\/script/gi,'<\\/script')+src.slice(j),blob=new Blob([html],{type:'text/html'});
-  gxSimpan(blob,'Drillhole3D_Viewer_Offline_lengkap.html','text/html');
+  gxSimpan(blob,'Drillhole3D_Viewer_Offline_lengkap.html','text/html');};
 
 /* ================= jalankan viewer ================= */
 SA.go=async function(){var btn=E('btnGo');btn.disabled=true;try{
