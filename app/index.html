@@ -3843,9 +3843,9 @@ function amPanel(){var el=$('amBody');if(!el)return;var m=BX.m;if(!m){el.innerHT
   /* 3. flitch & poligon */
   h+='<div class=amh>Flitch &amp; poligon aktual</div><div class=g3><div><label>Tinggi flitch</label><input type=number step=any value="'+amE(L.fh)+'" onchange="lySet(\'fh\',this.value);amPanel()"></div><div><label>RL atas</label><input type=number step=any value="'+B[0]+'" onchange="lyU().bot=\'\';lySet(\'top\',this.value);amPanel()"></div><div><label>RL bawah</label><input type=number step=any value="'+B[1]+'" onchange="lySet(\'bot\',this.value);amPanel()"></div></div>'+
     '<button class="'+(on?'':'btn-pri')+'" style="width:100%;margin-top:4px" onclick="amApply()">'+(on?'&#10003; Flitch aktif di Sayatan 2D':'Terapkan flitch (buka Sayatan 2D)')+'</button>'+
-    '<div class=amset><div class=amst><b>Titik pick-up survey</b>'+((D.pts||[]).length?'<button class=x onclick="amPtsClear()" title="Hapus semua titik pick-up">&times;</button>':'')+'</div>'+
-    '<label class="mdbtn'+((D.pts||[]).length?' ok':'')+'" style="margin:0;text-align:center"><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amPtsFile(this.files);this.value=\'\'">&#8679; Import pick-up (.csv / .txt / .str / .dxf)</label>'+
-    '<div class=hint>'+((D.pts||[]).length?'<b>'+D.pts.length.toLocaleString()+'</b> titik &middot; tampil di flitch ini: <b>'+amPtsNear().length.toLocaleString()+'</b>':'CSV: ID, X/East, Y/North, Z/RL, Kode.')+(AM.pmsg?' &middot; '+AM.pmsg:'')+'</div>'+
+    '<div class=amset><div class=amst><b>Titik pick-up LANTAI (floor) penggalian</b>'+((D.pts||[]).length?'<button class=x onclick="amPtsClear()" title="Hapus semua titik lantai">&times;</button>':'')+'</div>'+
+    '<label class="mdbtn'+((D.pts||[]).length?' ok':'')+'" style="margin:0;text-align:center"><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amPtsFile(this.files);this.value=\'\'">&#8679; Import pick-up lantai (.csv / .txt / .str / .dxf)</label>'+
+    '<div class=hint>'+((D.pts||[]).length?'<b>'+D.pts.length.toLocaleString()+'</b> titik lantai &middot; tampil di flitch ini: <b>'+amPtsNear().length.toLocaleString()+'</b>':'Titik lantai hasil survey pick-up. Disimpan TERPISAH dari titik atap. CSV: ID, X/East, Y/North, Z/RL, Kode.')+(AM.pmsg?' &middot; '+AM.pmsg:'')+'</div>'+
     ((D.pts||[]).length?'<div class=g2><label class=sw><input type=checkbox '+(D.pAll?'checked':'')+' onchange="amD().pAll=this.checked;amPanel();updatePlot()">Semua RL</label><label class=sw><input type=checkbox '+(D.plab?'checked':'')+' onchange="amD().plab=this.checked;updatePlot()">Label ID / kode</label></div>':'')+'</div>'+
     (window.amRoofBox?amRoofBox():'')+(window.amFloorBox?amFloorBox():'')+'<div class=amset><div class=amst><b>Default poligon berikutnya</b><small>'+amE(R.pit||lyZone())+' &middot; '+amE(amDateTxt(R.date))+' &middot; '+amE(R.shift)+'</small></div><div class=g2><div><label>Block</label><input type=text value="'+amE(R.block)+'" placeholder="mis. 15" onchange="amRSet(\'block\',this.value)"></div><div><label>Shift</label>'+sel(R.shift,[['DS','DS · Siang'],['NS','NS · Malam']],"amRSet('shift',this.value)")+'</div></div></div>'+
     (AM.digOn?'<div class=amdig><b>&#9679; Mendigit poligon</b> &mdash; klik di Sayatan 2D'+((D.pts||[]).length?' (menempel ke titik pick-up)':'')+', klik titik pertama untuk menutup.<div class=g2 style="margin-top:4px"><button class=btn-pri onclick="dgFinish(true)">Tutup &amp; simpan</button><button onclick="dgCancel()">Batal</button></div></div>':
@@ -7369,7 +7369,7 @@ function amRoofBox() {
   var h = '<div class=amset id=amRoofBox><div class=amst><b>Atap (roof) penggalian</b>' +
     '<small>pick-up dig block hari sebelumnya</small></div>' +
     '<div class=g2><label style="grid-column:1/-1">Titik pick-up ATAP &mdash; pick-up dig block / ' +
-    'poligon ore actual hari sebelumnya. Disimpan TERPISAH dari titik lantai.</label>' +
+    'poligon ore actual hari sebelumnya. Disimpan TERPISAH dari titik lantai, yang di-import di kotak <b>Titik pick-up LANTAI</b> di atas.</label>' +
     '<div><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amRoofFile(this.files)"></div>' +
     '<div><button onclick="amRoofClear()"' + (has ? '' : ' disabled') + '>Hapus titik atap</button></div></div>';
   if (S) {
@@ -9824,7 +9824,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.34';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.35';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

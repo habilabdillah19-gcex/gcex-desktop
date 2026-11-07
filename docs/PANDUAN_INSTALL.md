@@ -3779,3 +3779,40 @@ Satu sumber kebenaran untuk pertanyaan "string ini milik flitch mana".
 
 Pelajarannya sama dengan bagian 116 dan 117, kali ini dua kali dalam satu perbaikan: tes yang
 parameternya membuat perilaku benar dan perilaku salah memberi hasil sama bukanlah tes.
+
+## 119. Import lantai As-Mined diberi nama sesuai isinya
+
+**Versi:** GC-Ex Block Model 0.24.35.
+
+Pertanyaan pemilik ada dua — mengapa masih ada tombol *Import pick-up* padahal sudah ada import
+boundary dan import pick-up atap, dan di mana CSV **lantai** di-import — tetapi jawabannya satu:
+**tombol yang disangka berlebih itu justru import lantai**, dan satu-satunya yang ada.
+
+Di dalam aplikasi keduanya memang terpisah dan keduanya dipakai:
+
+| Simpanan | Isi | Dipakai oleh |
+|---|---|---|
+| `D.pts` | titik pick-up **lantai** | `amFloorFn()` — interpolasi lantai IDW per poligon |
+| `D.ptsR` | titik pick-up **atap** | `amRoofPts()` — batas atas volume as-mined |
+
+Yang salah hanya penamaannya. Judul kotaknya berbunyi "Titik pick-up survey", tombolnya "Import
+pick-up", petunjuknya "CSV: ID, X/East, Y/North, Z/RL, Kode." — tidak satu kata pun menyebut
+**lantai**, sementara kotak tepat di bawahnya menyebut dirinya "Titik pick-up ATAP" dengan jelas.
+Satu kotak bernama spesifik berdampingan dengan kotak bernama umum membuat yang umum terbaca
+sebagai duplikat, sekaligus membuat fungsi yang sedang dicari terlihat seolah tidak ada.
+
+Tidak ada kode perhitungan yang diubah. Yang diubah namanya:
+
+- judul: **Titik pick-up LANTAI (floor) penggalian**
+- tombol: **⇧ Import pick-up lantai (.csv / .txt / .str / .dxf)**
+- petunjuk: menyatakan titik lantai disimpan **terpisah** dari titik atap
+- hitungan titik: "… titik **lantai**"
+- kotak atap menunjuk balik ke kotak lantai di atasnya
+
+sehingga dari mana pun pemakai masuk, pasangannya ketemu.
+
+### 119.1 Cara mengujinya
+
+`tools/uji/uji_label_amined.py` membaca **teks panel yang benar-benar tergambar**, bukan kode
+sumbernya: build lama `menyebut import LANTAI: False`, build baru `True`, dengan import atap tetap
+`True` di keduanya.

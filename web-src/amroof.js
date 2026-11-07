@@ -173,7 +173,7 @@ function amRoofBox() {
   var h = '<div class=amset id=amRoofBox><div class=amst><b>Atap (roof) penggalian</b>' +
     '<small>pick-up dig block hari sebelumnya</small></div>' +
     '<div class=g2><label style="grid-column:1/-1">Titik pick-up ATAP &mdash; pick-up dig block / ' +
-    'poligon ore actual hari sebelumnya. Disimpan TERPISAH dari titik lantai.</label>' +
+    'poligon ore actual hari sebelumnya. Disimpan TERPISAH dari titik lantai, yang di-import di kotak <b>Titik pick-up LANTAI</b> di atas.</label>' +
     '<div><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amRoofFile(this.files)"></div>' +
     '<div><button onclick="amRoofClear()"' + (has ? '' : ' disabled') + '>Hapus titik atap</button></div></div>';
   if (S) {
