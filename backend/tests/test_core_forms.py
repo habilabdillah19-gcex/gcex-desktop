@@ -493,3 +493,13 @@ def test_galat_menyebut_penyebab(st, monkeypatch):
     with pytest.raises(ValueError, match=r"jawaban kosong \(selesai: length, 2500 token, berpikir 3 karakter\)"):
         cf.ai_read(s, did, "http://x", "m")
     assert cf.doc(s, did)["status"] == "error"
+
+
+def test_model_thinking_disarankan_instruct(st, monkeypatch):
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp)), "ddr", "Rina")[0]["id"]
+    monkeypatch.setattr(cf.core_io, "_http", lambda url, body=None, timeout=5.0: {} if url.endswith(("/api/show", "/api/ps"))
+                        else {"message": {"content": "", "thinking": "Okay, let's tackle this problem. Wait…"}, "done_reason": "length", "eval_count": 2500})
+    with pytest.raises(ValueError, match=r"qwen3-vl:2b-instruct"):
+        cf.ai_read(s, did, "http://x", "qwen3-vl:2b")
+    assert cf.thinking_alt("qwen3-vl:4b-thinking") == "qwen3-vl:4b-instruct"

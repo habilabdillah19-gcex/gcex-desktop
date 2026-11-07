@@ -775,6 +775,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
                   "Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?'."]
         if extra and extra.strip():
             lines.append(f"Catatan pengguna: {extra.strip()}")
+        lines.append("/no_think")
         return "\n".join(lines)
     lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
              "Jawab JSON ringkas: daftar nilai berurutan, TANPA nama kolom.",
@@ -789,6 +790,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json") -> str:
         lines.append("Bila tulisan sama dengan baris di atasnya (tanda ulang), tulis nilai baris di atasnya.")
     if extra and extra.strip():
         lines.append(f"Catatan pengguna: {extra.strip()}")
+    lines.append("/no_think")  # sakelar Qwen3: langsung menjawab tanpa penalaran (diabaikan model lain)
     return "\n".join(lines)
 
 
@@ -946,6 +948,13 @@ def _try_parse(ftype: str, msg: dict) -> Optional[dict]:
     return None
 
 
+def thinking_alt(model: str) -> str:
+    """qwen3-vl:2b / qwen3-vl:4b-thinking -> qwen3-vl:2b-instruct (versi tanpa penalaran)."""
+    base, _, tag = model.partition(":")
+    size = re.match(r"\d+b", tag or "")
+    return f"{base}:{size.group(0) if size else '4b'}-instruct" if base.startswith("qwen3-vl") else "qwen3-vl:4b-instruct"
+
+
 def _why_empty(j: dict) -> str:
     m = j.get("message") or {}
     c = (m.get("content") or "").strip()
@@ -1003,6 +1012,11 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             _save_raw(s, did, msg)
             res = _try_parse(d["type"], msg)
             if res is None:
+                if any((x or "").strip() for x in (msg.get("thinking"), why if "berpikir" in why else "")) and "instruct" not in model:
+                    raise ValueError(f"Model {model} adalah versi 'thinking': ia menulis penalaran panjang (sering berputar-putar) "
+                                     "sampai batas token habis sebelum sempat menjawab. Pakai versi -instruct, mis. "
+                                     f"{thinking_alt(model)} (Command Prompt: ollama pull {thinking_alt(model)}), lalu pilih di dialog AI. "
+                                     "Detail: " + why + " · jawaban mentah: _GCEx_Core\\borang\\ai_mentah\\" + f"{did}.txt")
                 raise ValueError("AI tidak memberi isian borang yang bisa dibaca. Percobaan 1 (JSON): " + why
                                  + " · percobaan 2 (teks): " + _why_empty(j)
                                  + ". Jawaban mentah: _GCEx_Core\\borang\\ai_mentah\\" + f"{did}.txt")

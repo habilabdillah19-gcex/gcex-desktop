@@ -352,7 +352,9 @@ class AiDlg(Dlg):
                 w.deleteLater()
         for m in j["models"]:
             size = f"{m['size'] / 1e9:.1f} GB" if m.get("size") else ""
-            rb = QRadioButton(f"{m['name']}   · {m.get('params') or ''} · {size}" + ("" if m.get("vision") else " · tidak bisa melihat gambar"))
+            think = m["name"].startswith("qwen3-vl") and "instruct" not in m["name"]
+            rb = QRadioButton(f"{m['name']}   · {m.get('params') or ''} · {size}" + ("" if m.get("vision") else " · tidak bisa melihat gambar")
+                              + (" · versi 'thinking': lambat, sering gagal di Borang — pakai -instruct" if think else ""))
             rb.setProperty("m", m["name"])
             rb.setEnabled(bool(m.get("vision")))
             self.grp.addButton(rb)

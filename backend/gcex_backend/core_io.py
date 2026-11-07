@@ -42,7 +42,10 @@ PRJ_DIR = "_GCEx_Core"
 DB_NAME = "gcex_core.db"
 SCHEMA_VERSION = 1
 DEFAULT_HOST = "http://127.0.0.1:11434"
-RECOMMENDED_MODELS = ["qwen3-vl:8b", "qwen3-vl:4b", "qwen2.5vl:7b", "gemma3:12b", "llama3.2-vision:11b"]
+# versi -instruct dulu: tag polos qwen3-vl:2b / 4b di Ollama adalah versi "thinking" yang menulis penalaran panjang
+# (bahkan berputar-putar sampai batas token habis) sebelum menjawab -> sangat lambat / jawaban kosong di CPU.
+RECOMMENDED_MODELS = ["qwen3-vl:8b-instruct", "qwen3-vl:4b-instruct", "qwen3-vl:2b-instruct", "qwen3-vl:8b", "qwen3-vl:4b",
+                      "qwen2.5vl:7b", "gemma3:12b", "llama3.2-vision:11b"]
 
 # Kolom interpretasi (urutan = urutan di tabel & Excel). tipe: s = teks, n = angka
 FIELDS: list[tuple[str, str, str]] = [

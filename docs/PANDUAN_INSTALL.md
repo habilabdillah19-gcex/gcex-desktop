@@ -3867,3 +3867,14 @@ kedua kotak turun dari **12 menjadi 3**.
 - Bila tetap gagal, pesan galat menyebut penyebabnya, mis. *jawaban kosong (selesai: length, 2500 token, berpikir 9000 karakter)* — artinya model kehabisan token karena berpikir — beserta lokasi jawaban mentah `_GCEx_Core\borang\ai_mentah\<nomor>.txt`. Kirim pesan / file itu ke admin.
 - Disarankan memperbarui Ollama ke versi terbaru (unduh ulang installer Ollama) supaya `think: false` dan format JSON berjalan benar untuk `qwen3-vl`.
 
+## 122. DB-Ex 0.42.10 — pakai qwen3-vl versi `-instruct` untuk Borang
+
+- Tag polos `qwen3-vl:2b` / `qwen3-vl:4b` di Ollama adalah versi **thinking**: sebelum menjawab, model menulis penalaran panjang — pada borang tulisan tangan sering berputar-putar sampai batas token habis, sehingga jawabannya kosong (galat "Jawaban model bukan JSON" / "jawaban kosong").
+- Pasang versi **instruct** (langsung menjawab, jauh lebih cepat):
+  ```
+  ollama pull qwen3-vl:2b-instruct
+  ollama pull qwen3-vl:4b-instruct
+  ```
+  lalu pilih di dialog AI (tombol **AI lokal** di kanan atas). Laptop tanpa GPU NVIDIA: `2b-instruct`; laptop dengan GPU NVIDIA: `4b-instruct` (atau `8b-instruct` bila memori GPU ≥ 8 GB).
+- Dialog AI kini menandai model qwen3-vl tanpa `-instruct`; pesan galat Borang menyebut model pengganti yang tepat.
+
