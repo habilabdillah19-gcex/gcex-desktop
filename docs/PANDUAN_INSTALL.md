@@ -3510,6 +3510,23 @@ ini murni soal apa yang digambar. Permukaan referensi (topografi, solid pit, sol
 juga tetap digambar utuh dan tetap mengikuti kotak *Potong data*; pada tangkapan layar, benda tinggi
 yang masih terlihat setelah perbaikan adalah solid urat, bukan block model.
 
+**Keputusan pemilik (7 Nov 2026): permukaan referensi dibiarkan UTUH, tidak ikut dipotong di RL
+flitch.** Alasannya topografi dan desain pit berguna sebagai konteks — di mana flitch ini berada
+relatif terhadap permukaan dan desain — dan keduanya jarang memotong flitch yang sama, sehingga
+memotongnya hanya akan menghilangkannya dari layar. Yang terganggu bisa mematikan centangnya per
+objek di Data Referensi. Jadi ini bukan hal yang belum diputuskan: jangan diubah tanpa permintaan
+baru. Elevasi yang digambar tiap objek saat flitch 238,75–241,25 m, sebagai acuan bila nanti
+dipertanyakan lagi:
+
+| Objek | Elevasi tergambar |
+| --- | --- |
+| Block model (5 kelas kadar) | **238,75 – 241,25** (ikut flitch) |
+| `QV_Lensa2_Leapfrog` (solid urat) | 132,09 – 322,93 |
+| `SIM_topo_akhir_juni` | 260 – 348,12 |
+| `SIM_topo_akhir_juli` | 245 – 348,12 |
+| `SIM_pit_fase1` | 240 – 348,12 |
+| `SIM_pit_fase2` | 180 – 348,12 |
+
 ### Dua cacat lain yang ditemukan
 
 1. **Tombol "Simpan preset" mati justru ketika belum ada preset.** Kartu aksi mematikan SELURUH
