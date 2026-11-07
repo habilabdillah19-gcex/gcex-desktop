@@ -3651,3 +3651,45 @@ bug semacam ini.
 
 **DB-Ex sengaja tidak diubah.** Sumbernya tidak ada di pohon ini (dikerjakan sesi lain), jadi
 mengubahnya dari sini berisiko bentrok.
+
+## 116. Block model di 3D dipotong di RL flitch, bukan hanya dipilih
+
+Laporan pemilik, dengan tangkapan layar versi **0.24.31** yang sudah memuat perbaikan bagian 113:
+tampilan 3D masih berbentuk "pagar" tegak, bukan pulau-pulau berbatas rata seperti Surpac.
+
+### Perbaikan sebelumnya baru setengah jalan
+
+Bagian 113 membuat block model **dipilih** berdasarkan flitch aktif. Tetapi blok yang terpilih tetap
+digambar **utuh setinggi aslinya** — tidak dipotong di RL flitch.
+
+Direproduksi dengan setelan yang terlihat di layar pemilik (`flMode` = *Komposit seluruh tebal
+flitch*, metode tonase *Seperti Surpac*, tinggi flitch **1,5 m**):
+
+| Flitch 1,5 m (239,25 – 240,75) | Yang digambar |
+| --- | --- |
+| Sebelum | 238,75 – 241,25 = **2,5 m** (tinggi penuh blok) |
+| Sesudah | **239,25 – 240,75** (tepat flitch) |
+
+Pada model pemilik efeknya lebih parah daripada sekadar "kelebihan 1 m": `bmgczone3` memakai
+sub-blok bertinggi **campur 0,75 / 1,5 / 3 m**. Setiap blok 3 m yang menyentuh flitch 1,5 m digambar
+penuh 3 m, blok 0,75 m digambar 0,75 m — jadi tebalnya melebihi flitch **dan** ujung atas-bawahnya
+bergerigi. Itulah bentuk pagar yang dilaporkan.
+
+Sekarang tinggi tiap kubus **dijepit** ke [bawah, atas] flitch. Yang berubah hanya **geometri yang
+digambar**; pemilihan blok, tonase dan laporan tidak tersentuh sama sekali. Kunci penghapusan muka
+tersembunyi ikut memakai tinggi efektif, supaya penggabungan muka antar-blok bertetangga tetap benar
+dan jumlah segitiga tidak membengkak.
+
+### Mengapa uji sebelumnya lolos padahal cacatnya masih ada
+
+Ini bagian yang paling penting untuk tidak diulang. Uji bagian 113 memakai flitch **2,5 m**, yaitu
+**sama persis dengan tinggi blok** data latihan. Dengan flitch sebesar itu, "blok dipilih lalu
+digambar utuh" dan "blok dipotong di RL flitch" menghasilkan angka yang **identik** — 238,75 – 241,25
+pada keduanya. Ujinya lolos, laporannya meyakinkan, dan cacatnya tetap hidup sampai pemilik
+melihatnya sendiri di lapangan.
+
+`tools/uji/uji_tebal_flitch_3d.py` karena itu sengaja memakai flitch **1,5 m, lebih KECIL dari tinggi
+blok**, pada dua mode komposit (`comp` dan `mid`, yang menempuh cabang berbeda di `bxSel()`), dan
+**gagal** bila tebal yang digambar tidak sama persis dengan tebal flitch. Pelajarannya umum: sebuah
+uji yang parameternya kebetulan membuat dua perilaku berbeda memberi angka sama bukanlah uji — ia
+hanya pengesah.
