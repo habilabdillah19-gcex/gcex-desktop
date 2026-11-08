@@ -230,11 +230,11 @@ def test_buang_bagian_kosong_dan_header_halaman_lain(st, tmp_path, monkeypatch):
     assert cf.trim_empty(polos)[1] == 0.0
     # header dari halaman lain PDF yang sama
     s, tmp = st
-    pdf = tmp / "dua.pdf"
-    a = Image.new("RGB", (800, 1000), "white")
-    a.save(pdf, save_all=True, append_images=[Image.new("RGB", (800, 1000), "white")])
-    ids = [x["id"] for x in cf.add_file(s, str(pdf), "rom", "Rina")]
-    assert len(ids) == 2
+    # dua halaman dari satu file (tanpa pembaca PDF di mesin uji): dua scan, lalu src & halaman disamakan seperti hasil pecah PDF
+    ids = [cf.add_file(s, str(_scan(tmp, f"hal{i}.jpg")), "rom", "Rina")[0]["id"] for i in (1, 2)]
+    with s.lock, s.conn() as c:
+        for i, did in enumerate(ids, 1):
+            c.execute("UPDATE docs SET src=?, page=? WHERE id=?", ("C:/x/dua.pdf", i, did))
     cf.update_doc(s, ids[0], {"header": {"tanggal": "07-11-26", "shift": "II", "crew": "A / B", "lokasi": "ROM X"}}, "Rina")
     calls = _fake(monkeypatch, {"r": ["1|T1|-|:57|340|Crusher|-|OX-LG|37|Baru|Direct"]})
     out = cf.ai_read(s, ids[1], "http://x", "m")
