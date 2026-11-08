@@ -65,6 +65,13 @@ with sync_playwright() as pw:
         if clip:pg.screenshot(path=IMG+fn,clip=clip)
         else:pg.screenshot(path=IMG+fn)
         JEJAK['gambar']=fn;print('shot',fn,flush=True);return fn
+    def menu_shot(node, name, opens=()):
+        # tombol ⋯ node -> menu terbuka -> potret kolom Project Tree + menu (BM 0.24.46 / DH 0.24.53: import langsung dari ⋯)
+        ev("(function(){%sPT.render(true);})()" % ''.join("PT.open[%r]=1;" % o for o in opens)); pg.wait_for_timeout(400)
+        pg.locator("#ptree .ptr[data-id='%s'] .ptx" % node).click(); pg.wait_for_timeout(500)
+        r = pg.evaluate("(function(){var m=document.getElementById('ptMenu'),b=m?m.getBoundingClientRect():null;return b?[b.right,b.bottom]:[0,0];})()")
+        shot(name, {'x': 0, 'y': 0, 'width': int(max(316, r[0] + 12)), 'height': int(min(940, max(560, r[1] + 12)))})
+        ev("var m=document.getElementById('ptMenu');if(m)m.remove();")
     def ev(js):return pg.evaluate(js)
     PANEL={'x':0,'y':0,'width':480,'height':940}
     pg.goto(P);pg.wait_for_timeout(900);ev("localStorage.clear();localStorage.setItem('gcex_user','Habil')");pg.reload();pg.wait_for_timeout(900)
@@ -156,6 +163,8 @@ with sync_playwright() as pw:
     ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));note('solidWf',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));ev("PT.select('gm')");pg.wait_for_timeout(700);shot('wireframe_panel',PANEL)
     ev("var d=GM.doms.find(d=>/Leapfrog/.test(d.name));if(d){d.vis=false;gmDirty();}")
     ev("try{lyrSet('wf',false)}catch(e){MD.models.forEach(m=>m.vis=false);updatePlot()}")
+    # 11b. menu ⋯ Database Bor (import langsung) & Data Spasial
+    menu_shot('db','menu_db',['db']); menu_shot('sp','menu_spasial_dh',['sp'])
     # 12. upsert bor infill
     ev("if(VIEW2D)toggle2D();uiTab('Data')");ev("UP.open()");pg.wait_for_timeout(400)
     for role,f in [('collar','SIM_upsert_collar.csv'),('survey','SIM_upsert_survey.csv'),('assay','SIM_upsert_assay.csv'),('geo','SIM_upsert_geologi.csv')]:

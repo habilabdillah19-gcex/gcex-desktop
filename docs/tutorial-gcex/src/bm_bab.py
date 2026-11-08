@@ -73,7 +73,9 @@ ch('Halaman muka & import block model', dta('<code>data/SIM_BM_GC_kadar.csv</cod
  'Klik <b>Buka / pilih folder proyek</b> lalu pilih folder kosong <code>Proyek_Tutorial_BM</code>.',
  'Pada <b>Block model</b> pilih <code>SIM_BM_GC_kadar.csv</code> ([[import]]), lalu <b>Buka block model &rarr;</b>.')
  + fig('halaman_muka', 'Halaman muka GC-Ex Block Model: nama project site, folder proyek, proyek tersimpan dan impor data.')
- + fig('import', 'Block model dipilih; file sumber disalin ke folder proyek <code>sumber/</code>.'))
+ + fig('import', 'Block model dipilih; file sumber disalin ke folder proyek <code>sumber/</code>.')
+ + tip('Sesudah proyek terbuka, semua import berikutnya dilakukan dari <b>tombol &#8943;</b> di Project Tree, tanpa kembali ke halaman muka: &#8943; <b>Block Model</b> &rarr; <i>Import block model dari file (.mdl / CSV)&hellip;</i> membuka jendela pilih file lalu dialog pemetaan yang sudah terisi ([[menu_bm]]); &#8943; <b>Data Spasial</b> (atau sub-node Topografi / Desain pit / Orthofoto) menanyakan jenis file lalu membuka jendela pilih file &mdash; topografi dan pit bisa <i>ditambah</i> atau <i>diganti</i> ([[menu_spasial]]).')
+ + fig2('menu_bm', 'Menu &#8943; node Block Model: import langsung dari file.', 'menu_spasial', 'Menu &#8943; Data Spasial: pilih jenis file, jendela pilih file terbuka.'))
 
 ch('Mengenal tampilan', dta('lanjutan &mdash; <code>SIM_BM_GC_kadar.csv</code> sudah terbuka',
      [('Filter tampilan', '<code>AU_GC &ge; 0,19</code> (Block Model &rarr; Filter &amp; SG)')]) + '<p>Di kiri ada <b>Project Tree</b> (urut langkah kerja, angka 1–10) dan <b>Properti</b> (isi node yang dipilih). Bilah atas: logo <b>GC-Ex / BLOCK MODEL</b>, <b>Grade Control Excellence</b> + nama project site, Proyek, arah pandang, menu <b>Sayatan</b> (Sayatan 2D / 3D), Ortho, Layer, Gelap, PNG.</p>'

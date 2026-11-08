@@ -37,7 +37,7 @@ for f in sorted(os.listdir(IMG)):
     im = Image.open(os.path.join(IMG, f)).convert('RGB')
     if im.width > 1700: im = im.resize((1700, round(im.height * 1700 / im.width)), Image.LANCZOS)
     j = f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=82, optimize=True)
-    FIG[f[3:-4]] = (j, im.width / im.height)
+    FIG[f[:-4].split('_', 1)[1]] = (j, im.width / im.height)   # 'NN_nama.png' -> 'nama' (nomor boleh 3 digit)
 
 IMGL = os.path.join(HERE, 'img_lat')
 NL = json.load(open(os.path.join(IMGL, 'notes.json'), encoding='utf-8'))
@@ -46,7 +46,7 @@ for f in sorted(os.listdir(IMGL)):
     im = Image.open(os.path.join(IMGL, f)).convert('RGB')
     if im.width > 1700: im = im.resize((1700, round(im.height * 1700 / im.width)), Image.LANCZOS)
     j = 'L' + f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=82, optimize=True)
-    FIG[f[3:-4]] = (j, im.width / im.height)
+    FIG[f[:-4].split('_', 1)[1]] = (j, im.width / im.height)   # 'NN_nama.png' -> 'nama' (nomor boleh 3 digit)
 
 for k, f in (NU.get('F') or {}).items():
     pth = os.path.join(FIGU, f)
@@ -483,6 +483,8 @@ ch('Menambah bor infill dengan upsert', dta('<code>data/SIM_upsert_collar.csv</c
       ('Hasil yang seharusnya', f"<b>{N['upsTambah']} collar baru</b>; {clean(N['upsPrev'])[:120]}"),
       ('Sesudahnya', 'usulan otomatis lagi (parameter sama), koreksi QV_Splay_HW, lalu <b>Semua section</b>'),
       ('String', f"{clean(N['strUpd'])}")]) +  '<p><b>Upsert</b> = tambah atau perbarui. Collar dicocokkan per HoleID (baru ditambah, lama diperbarui). Survey, assay dan geologi <b>diganti per hole</b> untuk hole yang ada di file baru; hole lain tidak disentuh.</p>'
+ + '<p>Menu &#8943; node <b>Database Bor</b> ([[menu_db]]) adalah pintu semua import data bor sesudah proyek terbuka: <b>Import collar / survey / assay / geologi dari file&hellip;</b> membuka jendela pilih file lalu jendela tambah / perbarui dengan file itu sudah terpasang; <b>Tambah / perbarui beberapa tabel sekaligus (upsert)&hellip;</b> untuk beberapa file sekaligus seperti di latihan ini. Sub-node Collar / Survey / Assay / Geologi punya menu import untuk tabelnya sendiri. Menu &#8943; <b>Data Spasial</b> ([[menu_spasial_dh]]) bekerja sama: <i>Tambah versi topografi / desain pit / orthofoto dari file&hellip;</i>.</p>'
+ + fig2('menu_db', 'Menu &#8943; Database Bor: import per tabel langsung dari file, atau beberapa tabel sekaligus.', 'menu_spasial_dh', 'Menu &#8943; Data Spasial: versi baru topografi / pit / orthofoto dari file.')
  + steps('Tombol &#8943; node <b>Database Bor</b> &rarr; <b>Tambah / perbarui beberapa tabel sekaligus (upsert)&hellip;</b>.',
    'Pilih empat file <code>SIM_upsert_*.csv</code>. Baca pratinjau di atas ([[upsert_pratinjau]]) sebelum melanjutkan.',
    'Klik tombol upsert. Folder proyek otomatis membuat backup <i>sebelum upsert</i>.',

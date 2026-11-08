@@ -34,7 +34,7 @@ for f in sorted(os.listdir(IMG)):
     im = Image.open(os.path.join(IMG, f)).convert('RGB')
     if im.width > 1700: im = im.resize((1700, round(im.height * 1700 / im.width)), Image.LANCZOS)
     j = f[:-4] + '.jpg'; im.save(os.path.join(OUT, j), quality=82, optimize=True)
-    FIG[f[3:-4]] = (j, im.width / im.height)
+    FIG[f[:-4].split('_', 1)[1]] = (j, im.width / im.height)   # 'NN_nama.png' -> 'nama' (nomor boleh 3 digit)
 
 fig_no = [0]; FNUM = {}
 def fig(key, cap, w=None):

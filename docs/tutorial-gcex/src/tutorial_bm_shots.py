@@ -56,6 +56,13 @@ with sync_playwright() as pw:
         SEQ[0] += 1; fn = '%02d_%s.png' % (SEQ[0], name); pg.wait_for_timeout(600)
         pg.screenshot(path=IMG + fn, clip=clip) if clip else pg.screenshot(path=IMG + fn); print('shot', fn, flush=True)
     SIDE = {'x': 0, 'y': 0, 'width': 316, 'height': 940}
+    def menu_shot(node, name, opens=()):
+        # tombol ⋯ node -> menu terbuka -> potret kolom Project Tree + menu (BM 0.24.46 / DH 0.24.53: import langsung dari ⋯)
+        ev("(function(){%sPT.render(true);})()" % ''.join("PT.open[%r]=1;" % o for o in opens)); pg.wait_for_timeout(400)
+        pg.locator("#ptree .ptr[data-id='%s'] .ptx" % node).click(); pg.wait_for_timeout(500)
+        r = pg.evaluate("(function(){var m=document.getElementById('ptMenu'),b=m?m.getBoundingClientRect():null;return b?[b.right,b.bottom]:[0,0];})()")
+        shot(name, {'x': 0, 'y': 0, 'width': int(max(SIDE['width'], r[0] + 12)), 'height': int(min(940, max(560, r[1] + 12)))})
+        ev("var m=document.getElementById('ptMenu');if(m)m.remove();")
     def tree(sel, opens=()):
         ev("(function(){%sPT.render(true);PT.select(%r);})()" % (''.join("PT.open[%r]=1;" % o for o in opens), sel)); pg.wait_for_timeout(900)
     pg.goto(P); pg.wait_for_timeout(1200); ev("localStorage.clear();localStorage.setItem('gcex_user','Habil')"); pg.reload(); pg.wait_for_timeout(1500)
@@ -71,6 +78,7 @@ with sync_playwright() as pw:
     # 2. tampilan awal
     ev("BX.ui.fAttr='AU';BX.ui.fOp='ge';BX.ui.fVal='0.19';BX.sc={};BX.mc=null;updatePlot();setCam(1.3,-1.5,0.8)"); pg.wait_for_timeout(2500); shot('bm_3d')
     shot('header', {'x': 0, 'y': 0, 'width': 1600, 'height': 40})
+    menu_shot('bm', 'menu_bm', ['bm']); menu_shot('sp', 'menu_spasial', ['sp'])
     tree('bm.cls', ['bm']); shot('warna_kelas')
     # 3. flitch aktif
     # RL flitch diambil dari block model yang dimuat, bukan angka tetap: ukuran & posisi data

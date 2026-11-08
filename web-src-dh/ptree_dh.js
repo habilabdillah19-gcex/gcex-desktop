@@ -35,7 +35,7 @@
      sudah terpasang di slotnya (pemetaan kolom + pratinjau + tombol Gabungkan). Permintaan pemilik 8 Nov 2026 (0.24.52). */
   var UPACC='.xlsx,.xlsm,.csv,.txt,.tsv',UPN={collar:'collar',survey:'survey',assay:'assay',geo:'geologi'};
   var upsFile=function(role){return{t:'Import '+UPN[role]+' dari file (tambah / perbarui)…',fn:function(){PT.pick(UPACC,false,function(i){var f=i.files&&i.files[0];if(f&&window.UP)UP.openDengan(role,f);});}};};
-  varundoM={t:'Batalkan perubahan database terakhir',fn:function(){if(window.UP)UP.undo();}};
+  var undoM={t:'Batalkan perubahan database terakhir',fn:function(){if(window.UP)UP.undo();}};
   /* ---------- tampilkan sebagai (topografi / pit) ---------- */
   var topoAs=function(){var s=U.cb('ovTopoS'),l=U.cb('ovTopoL');return s&&l?'both':s?'surf':l?'line':'';};
   var setTopo=function(m){if(m)try{localStorage.setItem('gcex_pt_topo',m);}catch(e){}var s=m==='surf'||m==='both',l=m==='line'||m==='both',S=$('ovTopoS'),L=$('ovTopoL');if(S)S.checked=s;if(L)L.checked=l;updatePlot();};

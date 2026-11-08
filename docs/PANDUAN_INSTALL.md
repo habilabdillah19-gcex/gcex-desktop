@@ -4064,3 +4064,9 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Drill Hole, ⋯ Database Bor**: *Import collar / survey / assay / geologi dari file (tambah / perbarui)…* — jendela pilih file → jendela upsert terbuka dengan file terpasang di slotnya (pemetaan kolom + pratinjau), lalu **Gabungkan**. Sub-node Collar / Survey / Assay / Geologi punya menu yang sama untuk tabelnya. *Tambah / perbarui beberapa tabel sekaligus (upsert)…* tetap ada untuk banyak file.
 - Aturan upsert tidak berubah: collar per Hole ID, survey / assay / geologi diganti per hole yang ada di file baru.
 - Uji: `tools/uji/uji_import_langsung.py` (BM & DH: dialog terisi; DH: +32 collar SIM_split_collar.csv).
+
+## 144. Block Model 0.24.46 & Drillhole 0.24.53 — Demo & tutorial menunjuk menu ⋯ import
+
+- **Tombol Demo**: langkah *Import block model* (Block Model) kini menunjuk tombol ⋯ node Block Model dan membuka menunya; langkah baru *Data Spasial lewat ⋯* (Block Model) dan *Import data lewat tombol ⋯* (Drill Hole, node Database Bor) memperlihatkan pintu import langsung dari Project Tree.
+- **Tutorial bergambar**: gambar baru menu ⋯ Block Model & Data Spasial (Tutorial Block Model) dan menu ⋯ Database Bor & Data Spasial (Tutorial Modelling & Estimasi), dibuat dari data latihan simulasi.
+- Tidak ada perubahan perilaku aplikasi di luar teks dan langkah Demo.

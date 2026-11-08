@@ -3340,8 +3340,10 @@ function dmSteps(){var S=[],m=window.BX&&BX.m,hasTopo=!$('ovTopoS').disabled,has
   /* --- Pembuka --- */
   S.push({s:'Pembuka',t:'GC-Ex · Grade Control Excellence · Block Model',d:'Aplikasi grade control berbasis block model: dig block per flitch, tonase & kadar sumproduct, export string Surpac dan plot dig plan PDF. Semua berjalan offline di browser. Model aktif: '+m.name+'.',el:'.brand',dur:7,
     run:function(A){A(0,function(){if(DG.on)dgCancel();lyFlOff();if(VIEW2D)toggle2D();uiTab('BM');dmSet('sliceClip',false);setCam(1.5,-1.5,1);});}});
-  S.push({s:'Block model',t:'Import block model',d:'Block model Surpac .mdl dibaca langsung (octree, sub-blok sesuai ukuran asli, atribut kalkulasi IIF). File besar dibaca bertahap dengan filter RL, desain pit dan topografi asbuilt. '+info+'.',el:'[onclick^=bxDlg]',dur:9,
-    run:function(A){A(1,function(){dmPoint('#bxInfo',false);});A(5,function(){dmPoint('[onclick^=bxDlg]',false);});}});
+  S.push({s:'Block model',t:'Import block model',d:'Tombol \u22ef di baris node Block Model \u2192 Import block model dari file: jendela pilih file langsung terbuka, lalu dialog pemetaan kolom / filter tampil dengan file itu terisi \u2014 tanpa kembali ke layar Mulai. Surpac .mdl dibaca langsung (octree, sub-blok, atribut kalkulasi IIF); file besar dibaca bertahap dengan filter RL, desain pit dan topografi asbuilt. '+info+'.',el:'.ptr[data-id="bm"] .ptx',dur:10,
+    run:function(A){A(0,function(){try{PT.open['bm']=1;PT.render(true);}catch(e){}});A(1.5,function(){var b=document.querySelector('.ptr[data-id="bm"] .ptx');if(b)b.click();});A(5,function(){dmPoint('#ptMenu button',false);});A(8.5,function(){var mm=document.getElementById('ptMenu');if(mm)mm.remove();dmPoint('#bxInfo',false);});}});
+  S.push({s:'Block model',t:'Data Spasial lewat \u22ef',d:'Tombol \u22ef node Data Spasial, Topografi, Desain pit atau Orthofoto menanyakan jenis file lalu membuka jendela pilih file; topografi / pit bisa ditambah atau diganti, orthofoto diganti \u2014 semuanya di tempat, proyek langsung tersimpan.',el:'.ptr[data-id="sp"] .ptx',dur:8,
+    run:function(A){A(0,function(){try{PT.open['sp']=1;PT.render(true);}catch(e){}});A(1.5,function(){var b=document.querySelector('.ptr[data-id="sp"] .ptx');if(b)b.click();});A(4,function(){dmPoint('#ptMenu button',false);});A(7,function(){var mm=document.getElementById('ptMenu');if(mm)mm.remove();});}});
   S.push({s:'Block model',t:'Block model 3D',d:'Setiap blok digambar sebagai kubus sesuai ukurannya; di demo ini hanya blok '+K.a+' \u2265 '+K.lo+' supaya ringan. Putar dengan drag, zoom dengan scroll.',dur:9,orbit:[0.5,8.5,300],run:function(A){A(0,function(){BX.ui.fOp='ge';BX.ui.fAttr=K.a;BX.ui.fVal=K.lo;BX.sc={};BX.mc=null;bxPanel();updatePlot();setCam(1.5,-1.5,1);});}});
   S.push({s:'Block model',t:'Kelas kadar',d:'Warna blok mengikuti kelas kadar yang bisa diedit. Tombol Kuantil mengisi batas kelas otomatis dari distribusi data.',el:'[onclick^=bxClsQ]',dur:8,
     run:function(A){A(1,function(){dmClick('[onclick^=bxClsQ]');});A(4.5,function(){dmPoint('#bxBody .bxcls,#bxBody table',false);});}});
@@ -7732,11 +7734,13 @@ function amRoofFnDtm(o, B) {
     'Estimasi block model GC per domain': 'Model Estimation mengestimasi blok di dalam solid tiap domain dan menambah blok yang belum ada.',
     'Plan bor: rencana pengeboran': 'Titik rencana dibuat per titik, garis, atau grid area; plan hari lain dibuat lewat baris + Tambah plan bor… dan muncul berurutan sebagai sub-node Plan bor (rencana).',
     'Preview 3D & export CSV': 'Rencana tampil bersama lubang lama, lengkap dengan jarak dan kadar perkiraan; export CSV.',
+    'Import data lewat tombol \u22ef': 'Tombol \u22ef node Database Bor / Data Spasial / Block Model membuka jendela pilih file langsung, tanpa kembali ke layar Mulai.',
     'Block model grade control': 'Block model GC (.mdl / CSV) diimport, diwarnai per kelas, dan difilter cut-off.',
     'Data referensi': 'Solid, DTM dan titik survey dari software lain tampil sebagai acuan.',
     'Topografi & orthofoto': 'Topografi dan orthofoto resolusi tinggi memberi konteks lapangan.',
     /* Block Model */
-    'Import block model': 'Block model Surpac .mdl dibaca langsung (octree, sub-blok, atribut kalkulasi) atau dari CSV.',
+    'Import block model': 'Tombol \u22ef node Block Model \u2192 Import dari file: jendela pilih file langsung; .mdl Surpac dibaca langsung (octree, sub-blok) atau CSV.',
+    'Data Spasial lewat \u22ef': 'Tombol \u22ef Data Spasial / Topografi / Desain pit / Orthofoto: pilih jenis file lalu jendela pilih file, data masuk di tempat.',
     'Warna per material': 'Warnai dengan atribut apa pun; kode kategori bisa ditampilkan satu-satu.',
     'Cut-off tampilan': 'Tampilkan hanya blok di atas cut-off agar tubuh ore jelas; ringkasan ikut menyesuaikan.',
     'Penampang vertikal melintang ore': 'Garis sayatan melintang ore; profil topografi dan desain pit ikut tampil.',
@@ -9973,7 +9977,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.45';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.46';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
