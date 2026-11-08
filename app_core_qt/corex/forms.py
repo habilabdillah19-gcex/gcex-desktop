@@ -454,6 +454,14 @@ class FormsPage(QWidget):
         bt.addWidget(self.bnTitle)
         bt.addWidget(self.bnSub)
         bh.addLayout(bt, 1)
+        self.bnFix = QPushButton("Jenis salah? Ganti & baca ulang ▾")
+        self.bnFix.setObjectName("fmBnFix")
+        self.bnFix.setToolTip("Banyak galat sering berarti jenis borang salah terdeteksi (mis. Daily Drilling Report terbaca sebagai Drill "
+                              "Progress Report). Pilih jenis yang benar: baris lama dibuang lalu dibaca ulang AI.")
+        self.bnFixMenu = QMenu(self.bnFix)
+        self.bnFix.setMenu(self.bnFixMenu)
+        self.bnFix.hide()
+        bh.addWidget(self.bnFix)
         cl = QVBoxLayout()
         cl.setSpacing(0)
         cap = QLabel("Keyakinan AI")
@@ -937,11 +945,8 @@ class FormsPage(QWidget):
         self.lst.setCurrentItem(it)
         m = QMenu(self)
         m.addAction("✦ Baca dengan AI", self.run_ai)
-        sub = m.addMenu("Ubah jenis borang")
         has_rows = bool(self.cur and self.cur["rows"])
-        sub.setEnabled(not has_rows)
-        if has_rows:
-            sub.setTitle("Ubah jenis borang (kosongkan baris dulu)")
+        sub = m.addMenu("Ubah jenis borang & baca ulang" if has_rows else "Ubah jenis borang")
         for k, t in self.types.items():
             a = sub.addAction(t["name"], lambda k=k: self.change_type(k))
             a.setCheckable(True)
@@ -957,10 +962,18 @@ class FormsPage(QWidget):
         return SHORT.get(k) or (self.types.get(k) or {}).get("name") or k
 
     def change_type(self, k: str) -> None:
+        """Ganti jenis. Bila sudah ada baris (jenis salah terdeteksi): baris lama dibuang lalu borang dibaca ulang AI."""
         if not self.cur or k == self.cur["doc"]["type"]:
             return
+        n = len(self.cur["rows"])
+        nv = sum(1 for r in self.cur["rows"] if r["verified"])
+        if n and not ask(self, f"Ganti jenis menjadi {self.types[k]['name']}?\n\n{n} baris hasil baca sekarang"
+                               + (f" (termasuk {nv} yang sudah diverifikasi)" if nv else "") + " akan dibuang, lalu borang dibaca ulang oleh AI "
+                               "dengan kolom jenis yang benar."):
+            return
         try:
-            self.cur = api.call("/core/forms/update", {"folder": self.folder, "id": self.cur["doc"]["id"], "values": {"type": k}, "by": self.by()})
+            self.cur = api.call("/core/forms/update", {"folder": self.folder, "id": self.cur["doc"]["id"],
+                                                       "values": {"type": k, "clear": bool(n)}, "by": self.by()})
         except api.ApiError as e:
             say(self, str(e), warn=True)
             return
@@ -968,6 +981,8 @@ class FormsPage(QWidget):
         self.refresh()
         self._sync_list()
         self.toast(f"Jenis borang diganti: {self.types[k]['name']}", 3000)
+        if n:
+            self.run_ai()
 
     def detect_type(self) -> None:
         """Tanya AI jenis borang yang dibuka (jawaban satu kata; tidak membaca isi)."""
@@ -1171,6 +1186,16 @@ class FormsPage(QWidget):
         self.bnIcon.setText(ic)
         self.bnTitle.setText(ti)
         self.bnSub.setText(sub)
+        nbad = len(c["valid"]["rows"]) + len(c["valid"]["header"])
+        main = [r for r in c["rows"] if not r.get("tbl")]
+        heavy = d["status"] == "done" and bool(main) and nbad >= max(3, 0.5 * len(main)) and not any(r["verified"] for r in main)
+        if heavy:
+            self.bnFixMenu.clear()
+            for k_, t_ in self.types.items():
+                if k_ != d["type"]:
+                    self.bnFixMenu.addAction(t_["name"], lambda k_=k_: self.change_type(k_))
+            self.bnSub.setText(sub + f" · {nbad} baris / isian bergalat — mungkin jenis borang salah")
+        self.bnFix.setVisible(heavy)
         cells = sum(1 for r in c["rows"] for v in r["data"].values() if str(v or "").strip())
         cells += sum(1 for v in d["header"].values() if str(v or "").strip())
         unc = sum(len(r.get("unc") or []) for r in c["rows"]) + len(d.get("hdr_unc") or [])

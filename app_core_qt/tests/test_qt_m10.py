@@ -43,6 +43,14 @@ def test_nav_auto_detect_template_riwayat(qtbot, prj, tmp_path, monkeypatch):
     assert pg.cur["doc"]["type"] == "dpr" and "Drill Progress" in pg.lst.item(0).data(0x0101)["type"]
     pg.add_row(None)
     assert len(pg.cur["rows"]) == 1
+    # jenis salah setelah dibaca: ganti jenis -> baris dibuang + baca ulang AI
+    ran = []
+    monkeypatch.setattr("corex.forms.ask", lambda *a, **k: True)
+    monkeypatch.setattr(pg, "run_ai", lambda: ran.append(1))
+    pg.change_type("ddr")
+    assert pg.cur["doc"]["type"] == "ddr" and pg.cur["rows"] == [] and ran == [1]
+    pg.change_type("dpr")
+    assert ran == [1]  # tanpa baris: tidak perlu baca ulang
     # Template kustom
     pg.show_page(2)
     assert pg.pages.currentWidget() is pg.pgTpl and pg.navBtns[2].isChecked()

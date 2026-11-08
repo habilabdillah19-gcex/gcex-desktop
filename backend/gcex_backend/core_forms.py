@@ -774,8 +774,12 @@ def update_doc(s: Store, did: int, values: dict, by: str) -> dict:
                 raise ValueError("Jenis borang tidak dikenal.")
             if values["type"] != d["type"]:
                 n = c.execute("SELECT COUNT(*) FROM rows WHERE doc_id=?", (did,)).fetchone()[0]
-                if n:
+                if n and not values.get("clear"):
                     raise ValueError("Jenis borang tidak bisa diganti setelah ada baris; hapus baris dulu atau tambahkan ulang file-nya.")
+                if n:  # 'clear': jenis salah terdeteksi -> baris hasil baca lama dibuang, lalu dibaca ulang dengan jenis yang benar
+                    c.execute("DELETE FROM rows WHERE doc_id=?", (did,))
+                    c.execute("UPDATE docs SET header_json='{}', hdr_unc='[]', status='pending' WHERE id=?", (did,))
+                    _hist(c, did, "hapus semua baris (ganti jenis)", str(n), None, "edit", by)
                 sets.append("type=?")
                 vals.append(values["type"])
                 _hist(c, did, "jenis", d["type"], values["type"], "edit", by)
@@ -2318,12 +2322,43 @@ def guess_type(name: str) -> str:
     return ""
 
 
+# Ciri tercetak tiap jenis bawaan (judul & kolom pembeda) — dari borang lapangan yang sudah dibaca. Judul paling menentukan.
+TITLE_CUES = {
+    "ore": (r"loading\s*ore|form\s*loading|pit\s*to\s*rom", "judul 'FORM LOADING ORE DARI PIT TO ROM / STOCKPILE'; kolom Start / Finish "
+            "Loading, PIT, Elevation, kelompok kelas OX-LG… masing-masing TRUCK & Tonnage, Tujuan Dumping"),
+    "rom": (r"stockpile\s*/?\s*crusher|rom\s*to\s*(crusher|rom)|ore\s*to\s*stockpile", "judul 'FORM ORE TO STOCKPILE / CRUSHER' atau "
+            "'Form Untuk Rom to Crusher'; kolom Eq. No. Unit, Asal Material, Rehandling Tumpukan, kolom kelas, Status Material Baru / Lama"),
+    "ddr": (r"daily\s*drill", "judul 'DAILY DRILLING REPORT'; kolom TIME, METERAGE From / To, Hole ID, Azimuth, Dip, DRILLING DETAILS "
+            "(jam + uraian kegiatan); bagian bawah BITS / REAMER, HM ENGINE"),
+    "rc": (r"rc\s*drill|logging\s*form|chip\s*tray", "judul 'RC Drill Logging Form'; kolom No, Hole_ID, Tanggal, Sample_ID tercetak, From, "
+           "To, Lith, Int_Alt, Min1, Vein_Type, Qt_pct"),
+    "map": (r"mapping|pemetaan", "judul 'GEOLOGICAL MAPPING' / pemetaan; kolom stasiun, Easting, Northing, litologi, strike, dip"),
+    "chn": (r"channel", "judul 'CHANNEL SAMPLING'; kolom Channel ID, Sample ID, From, To, berat"),
+    "dpr": (r"progress", "judul 'DRILL PROGRESS REPORT' (BUKAN Daily Drilling Report); kolom kedalaman rencana, status lubang; "
+            "TIDAK ada uraian kegiatan per jam"),
+}
+
+
+def _cue(k: str) -> tuple[str, str]:
+    t = TYPES[k]
+    return TITLE_CUES.get(k) or (re.escape(t["name"].lower()).replace("\\ ", r"\s*"), f"judul '{t['name']}'; {t.get('hint', '')[:150]}")
+
+
+def type_from_title(title: str) -> str:
+    """Jenis dari judul tercetak yang disalin AI ('' bila tidak cocok / cocok ke lebih dari satu jenis)."""
+    tl = re.sub(r"\s+", " ", str(title or "").lower())
+    hit = [k for k in TYPES if tl and re.search(_cue(k)[0], tl)]
+    if "ddr" in hit and "dpr" in hit:
+        hit.remove("dpr")
+    return hit[0] if len(hit) == 1 else ""
+
+
 def detect_prompt() -> str:
-    lines = ["Gambar ini foto satu formulir lapangan tambang. Tentukan JENIS formulirnya dari judul tercetak dan susunan kolomnya.",
-             "Pilihan (kunci: ciri):"]
+    lines = ["Gambar ini foto satu formulir lapangan tambang. Salin JUDUL formulir yang tercetak paling besar di bagian atas ke 'judul', "
+             "lalu pilih jenisnya di 'jenis'. Judul tercetak paling menentukan.", "Pilihan:"]
     for k, t in TYPES.items():
-        lines.append(f"- {k}: {t['name']} — {t.get('hint', '')[:180]}")
-    lines += ['Jawab JSON {"type": "<kunci>"} saja.', "/no_think"]
+        lines.append(f"- {t['name']}: {_cue(k)[1]}")
+    lines += ['Jawab JSON {"judul": "...", "jenis": "<nama jenis>"} saja.', "/no_think"]
     return "\n".join(lines)
 
 
@@ -2334,8 +2369,9 @@ def ai_detect(s: Store, did: int, host: str, model: str, by: str = "", timeout: 
     img, size = _image_b64(s, d, 896)
     prompt = detect_prompt()
     body = {"model": model, "messages": [{"role": "user", "content": prompt, "images": [img]}], "stream": False, "keep_alive": "30m",
-            "format": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "enum": list(TYPES)}}},
-            "options": {"temperature": 0, "num_ctx": ctx_for(size, prompt), "num_predict": 40}}
+            "format": {"type": "object", "required": ["judul", "jenis"], "properties": {
+                "judul": {"type": "string", "maxLength": 120}, "jenis": {"type": "string", "enum": [t["name"] for t in TYPES.values()]}}},
+            "options": {"temperature": 0, "num_ctx": ctx_for(size, prompt), "num_predict": 90}}
     if _can_think(host, model):
         body["think"] = False
     try:
@@ -2347,8 +2383,16 @@ def ai_detect(s: Store, did: int, host: str, model: str, by: str = "", timeout: 
         _THINK[(host, model)] = False
         j = core_io._http(host + "/api/chat", body, timeout=timeout)
     txt = ((j.get("message") or {}).get("content") or "").strip()
-    m = re.search(r'"type"\s*:\s*"([\w]+)"', txt) or re.search(r"\b(" + "|".join(map(re.escape, TYPES)) + r")\b", txt)
-    k = m.group(1) if m and m.group(1) in TYPES else ""
+    try:
+        o = json.loads(txt[txt.find("{"):txt.rfind("}") + 1]) if "{" in txt else {}
+    except ValueError:
+        o = {}
+    by_name = {t["name"].lower(): k for k, t in TYPES.items()}
+    # judul tercetak yang disalin AI lebih bisa dipercaya daripada pilihan jenisnya (2b sering tertukar DDR <-> Progress)
+    k = type_from_title(o.get("judul", "")) or by_name.get(str(o.get("jenis") or o.get("type") or "").strip().lower(), "")
+    if not k:
+        m = re.search(r"\b(" + "|".join(map(re.escape, TYPES)) + r")\b", txt)
+        k = m.group(1) if m else ""
     if not k:
         raise ValueError("AI tidak bisa menentukan jenis borang; pilih jenisnya manual (klik kanan → Ubah jenis).")
     with s.lock, s.conn() as c:

@@ -141,6 +141,7 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #fmConf[k="ok"] {{ background: #2e9d57; }}
 #fmConf[k="mid"] {{ background: #d08a1e; }}
 #fmConf[k="lo"] {{ background: {c['er']}; }}
+#fmBnFix {{ background: {c['ers']}; color: {c['er']}; border: 1px solid {c['er']}; border-radius: 4px; padding: 4px 10px; font-weight: 700; }}
 #fmHLab {{ color: {c['mu']}; font-size: 8.8pt; }}
 #fmKpi {{ background: {c['pn2']}; border: 1px solid {c['bd']}; border-radius: 5px; }}
 #fmKpi[warn="true"] {{ border-color: #d08a1e; }}

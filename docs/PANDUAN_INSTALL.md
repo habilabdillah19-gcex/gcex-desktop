@@ -3953,3 +3953,8 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Satu berkas: klik kanan berkasnya › *Pindahkan ke Data Spasial sebagai versi topografi…* atau *…sebagai versi desain pit…*.
 - Hasilnya versi **non-aktif** di Data Spasial; topografi / pit yang aktif tidak berubah. Aktifkan di Data Spasial bila ingin dipakai.
 - Batas DTM di Reporting yang memakai berkas itu ikut dialihkan, jadi angkanya tetap sama.
+
+## 128. DB-Ex 0.44.2 — Auto Detect lewat judul tercetak, ganti jenis & baca ulang
+
+- **Auto Detect** kini menyalin judul formulir yang tercetak (mis. DAILY DRILLING REPORT) dan menentukan jenis dari judul itu — tidak lagi tertukar antara Daily Drilling Report dan Drill Progress Report.
+- Bila jenis tetap salah (tanda: banyak sel merah): klik **Jenis salah? Ganti & baca ulang** di kartu status, atau klik kanan file → **Ubah jenis borang & baca ulang**. Baris lama dibuang (dengan konfirmasi) lalu borang dibaca ulang AI.

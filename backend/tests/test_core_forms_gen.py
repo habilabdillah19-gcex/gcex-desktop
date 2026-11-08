@@ -116,7 +116,7 @@ def test_auto_detect(st, monkeypatch):
     cf.ai_read(s, did, "http://x", "m")
     d = cf.doc(s, did)
     assert d["type"] == "dpr" and d["auto"] == 0 and len(cf.rows(s, did)) == 1
-    assert calls[0]["format"]["properties"]["type"]["enum"][:3] == ["ore", "rom", "ddr"] and calls[0]["options"]["num_predict"] == 40
+    assert "Drill Progress Report" in calls[0]["format"]["properties"]["jenis"]["enum"]
     assert any(h["what"] == "jenis (Auto Detect AI)" for h in cf.history(s, did))
 
 
@@ -160,3 +160,19 @@ def test_rom_urutan_kelas_tercetak(st):
     assert cf.rows(s, b)[0]["data"]["kelas"] == "SCAT"
     assert cf.class_order({"kelas_urut": "OX-LG SF-LG"}, cf.ROM_CLS) == (cf.ROM_CLS, False)
     assert cf.class_order({"kelas_urut": "ox lg,sf-lg,OX HG,SF-HG,OXSG,SF-SG,OX-MO,SF-MO"}, cf.ORE_CLS)[1]
+
+
+def test_deteksi_judul_menang_dan_ganti_jenis_baca_ulang(st, monkeypatch):
+    """0.44.2: AI memilih 'Drill Progress Report' padahal judul tercetak 'DAILY DRILLING REPORT' -> judul yang menang.
+    Jenis salah setelah dibaca -> ganti jenis dengan 'clear' (baris lama dibuang) lalu baca ulang."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "IMG_9999.jpg")), "auto", "Rina")[0]["id"]
+    _fake(monkeypatch, {"judul": "DAILY DRILLING REPORT", "jenis": "Drill Progress Report"})
+    assert cf.ai_detect(s, did, "http://x", "m") == "ddr"
+    cf.update_doc(s, did, {"type": "dpr"}, "Rina")
+    cf.save_rows(s, did, [{"data": {"hole_id": "XX-1", "mulai": "06:30-07:00"}}], "Rina")
+    import pytest
+    with pytest.raises(ValueError, match="setelah ada baris"):
+        cf.update_doc(s, did, {"type": "ddr"}, "Rina")
+    cf.update_doc(s, did, {"type": "ddr", "clear": True}, "Rina")
+    assert cf.doc(s, did)["type"] == "ddr" and cf.rows(s, did) == []
