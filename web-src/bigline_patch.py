@@ -6,7 +6,7 @@ import re
 GO = re.compile(r"var segs=await readLines\(s\),out=s\.role==='topo'\?D\.topoData:D\.pitData,nn=segsOut\(segs,out,s\.k==='xyz'\?0:tol\);(\s*)"
                 r"var x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;segs\.forEach\(function\(P\)\{P\.forEach\(function\(p\)\{if\(p\[0\]<x0\)x0=p\[0\];if\(p\[0\]>x1\)x1=p\[0\];if\(p\[1\]<y0\)y0=p\[1\];if\(p\[1\]>y1\)y1=p\[1\];\}\);\}\);\s*"
                 r"segs\.forEach\(function\(P\)\{P\.forEach\(function\(p\)\{ab\(p\[0\],p\[1\],p\[2\]\);\}\);\}\);")
-GO_NEW = ("var out=s.role==='topo'?D.topoData:D.pitData,_R=await SA.readLinesInto(s,out,s.k==='xyz'?0:tol,ab,function(f){msg('Membaca '+esc(s.f.name)+': '+Math.round(f*100)+'%');}),nn=_R.nn;\\1"
+GO_NEW = ("var out=s.role==='topo'?D.topoData:D.pitData,_R=await SA.readLinesInto(s,out,s.k==='xyz'?0:tol,ab,function(f){msg('Membaca '+esc(s.f.name)+': '+Math.round(f*100)+'%');}),nn=_R.nn,segs={buang:_R.buang,recLen:_R.recLen};\\1"
           "var x0=_R.x0,x1=_R.x1,y0=_R.y0,y1=_R.y1;")
 VER_OLD = "var segs=await readLines(s2),nn=segsOut(segs,out,s2.k==='xyz'?0:tol);"
 VER_NEW = "var nn=(await SA.readLinesInto(s2,out,s2.k==='xyz'?0:tol)).nn;"

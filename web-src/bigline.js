@@ -30,11 +30,19 @@
     /* biner: rekaman 29 byte, big-endian */
     var tl=Math.min(N,67),tu=new Uint8Array(await file.slice(N-tl,N).arrayBuffer()),end=N;
     for(var k=N-3;k>=ds&&N-k<=64;k--){var q=k-(N-tl);if(tu[q]===69&&tu[q+1]===78&&tu[q+2]===68){end=k;break;}}
-    var o=ds+((end-ds)%29),pn=-1,R=29*Math.max(1,Math.floor(G.ch/29));
-    while(o+29<=end){var e2=Math.min(end,o+R),nr=Math.floor((e2-o)/29);if(!nr)break;var u=new Uint8Array(await file.slice(o,o+nr*29).arrayBuffer()),dv=new DataView(u.buffer);
-      for(var r=0,p=0;r<nr;r++,p+=29){var no=u[p+1]*16777216+(u[p+2]<<16|u[p+3]<<8|u[p+4]),Y=dv.getFloat64(p+5,false),X=dv.getFloat64(p+13,false),Z=dv.getFloat64(p+21,false);
+    /* panjang rekaman = 29 byte + 8 byte per kolom deskripsi (D1, D2, …): dideteksi dari contoh rekaman. Dulu selalu 29,
+       sehingga STR ber-deskripsi terbaca bergeser dan koordinatnya jadi angka liar (±1e+250…1e+307) -> layar kosong. */
+    var RL=29,best=-1,ok1=function(v){return isFinite(v)&&Math.abs(v)<1e8;},smp=new Uint8Array(await file.slice(ds,Math.min(end,ds+8388608)).arrayBuffer()),sv=new DataView(smp.buffer);
+    for(var rs=29;rs<=29+8*12;rs+=8){var o0=(end-ds)%rs,nr0=Math.floor((smp.length-o0)/rs),st0=Math.max(1,Math.floor(nr0/3000)),good=0,tot=0;
+      for(var q0=0;q0<nr0;q0+=st0){var p0=o0+q0*rs,y0=sv.getFloat64(p0+5,false),x0=sv.getFloat64(p0+13,false),z0=sv.getFloat64(p0+21,false);tot++;
+        if((x0===0&&y0===0&&z0===0)||(ok1(x0)&&ok1(y0)&&Math.abs(z0)<1e6&&(Math.abs(x0)>1e-3||Math.abs(y0)>1e-3)))good++;}
+      var sc=tot?good/tot:0;if(sc>best+1e-9){best=sc;RL=rs;}if(sc===1)break;}
+    smp=null;sv=null;G.lastRecLen=RL;
+    var o=ds+((end-ds)%RL),pn=-1,R=RL*Math.max(1,Math.floor(G.ch/RL));
+    while(o+RL<=end){var e2=Math.min(end,o+R),nr=Math.floor((e2-o)/RL);if(!nr)break;var u=new Uint8Array(await file.slice(o,o+nr*RL).arrayBuffer()),dv=new DataView(u.buffer);
+      for(var r=0,p=0;r<nr;r++,p+=RL){var no=u[p+1]*16777216+(u[p+2]<<16|u[p+3]<<8|u[p+4]),Y=dv.getFloat64(p+5,false),X=dv.getFloat64(p+13,false),Z=dv.getFloat64(p+21,false);
         if(!yx){var t2=X;X=Y;Y=t2;}if(X===0&&Y===0&&Z===0){flush();pn=-1;}else{if(pn>=0&&no!==pn)flush();pn=no;csn=no;cur.push([X,Y,Z]);}}
-      o+=nr*29;if(prog)prog(o/N);await yieldUI();}
+      o+=nr*RL;if(prog)prog(o/N);await yieldUI();}
     flush();}
   /* ---------- DXF ASCII ---------- */
   async function readDxfS(file,emit,prog){var inE=false,ent=null,idx=0,codeL=null,bin=false;
@@ -76,9 +84,11 @@
   readDxf=async function(file){var S=[];await readDxfS(file,function(P){S.push(P);});return S;};
   readXyz=async function(file){var S=[];await readXyzS(file,function(P){S.push(P);});return S;};
   /* baca + sederhanakan per segmen (sama dengan segsOut) + batas area; titik ditambahkan ke out hanya bila file terbaca utuh */
-  SA.readLinesInto=async function(s,out,tol,ab,prog){var o2=[],n0=0,n1=0,x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;
-    await readLinesS(s,function(P){if(P.length){var k=dpKeep(P,tol);for(var i=0;i<P.length;i++){n0++;if(k[i]){o2.push(P[i]);n1++;}}o2.push(null);}
+  /* titik berkoordinat tidak masuk akal (SA.koordOk) dibuang per titik & dihitung; > separuh rusak -> file ditolak */
+  SA.readLinesInto=async function(s,out,tol,ab,prog){var o2=[],n0=0,n1=0,x0=1e18,x1=-1e18,y0=1e18,y1=-1e18,bad=0,tot=0,okF=SA.koordOk||function(){return true;};G.lastRecLen=0;
+    await readLinesS(s,function(P0){var P=[];for(var t=0;t<P0.length;t++){tot++;if(okF(P0[t][0],P0[t][1],P0[t][2]))P.push(P0[t]);else bad++;}if(P0.sn!=null)P.sn=P0.sn;if(P.length){var k=dpKeep(P,tol);for(var i=0;i<P.length;i++){n0++;if(k[i]){o2.push(P[i]);n1++;}}o2.push(null);}
       for(var j=0;j<P.length;j++){var p=P[j];if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];if(ab)ab(p[0],p[1],p[2]);}},prog);
-    for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1};};
+    if(tot&&bad>tot*0.5)throw new Error(bad.toLocaleString()+' dari '+tot.toLocaleString()+' titik berkoordinat tidak masuk akal — file tidak terbaca benar. Bila ini STR biner Surpac, simpan ulang sebagai STR teks (ASCII) atau DXF lalu import lagi.');
+    for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,buang:bad,recLen:G.lastRecLen};};
   G.eachLine=eachLine;G.readLinesS=readLinesS;G.str0=str0;window.GCBL=G;
 })();

@@ -4043,3 +4043,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 
 - Import CSV struktur **tanpa kolom ID** (mis. `SIM_struktur.csv`: Easting, Northing, RL, …) kini diberi nomor urut **1, 2, 3, …** di kolom **No** tabel titik struktur. Dulu kolom *Northing* terbaca sebagai kolom nomor sehingga No berisi angka Northing.
 - Berkas yang punya kolom nomor (No, ID, Point, Kode, Titik, Nama, …) tetap memakai nilai kolom itu. Koordinat, dip dan dip azimuth tidak berubah, jadi model vein tidak terpengaruh.
+
+## 141. Block Model 0.24.43 & Drillhole 0.24.50 — layar kosong karena koordinat liar (STR biner ber-deskripsi)
+
+- **Gejala**: setelah import, 3D hanya menampilkan kotak abu-abu dan sumbu bertuliskan *Easting (+-2.5e+307)* / *Northing (+-3.1e+307)*.
+- **Sebab**: file **STR biner Surpac yang punya kolom deskripsi** (D1, D2, …) dibaca dengan panjang rekaman tetap 29 byte, sehingga pembacaan bergeser dan koordinat menjadi angka liar (±1e+250…1e+307). Satu titik liar saja sudah menggeser seluruh proyek sehingga data lain jatuh jauh di luar layar.
+- **Perbaikan**: panjang rekaman STR biner dideteksi otomatis (29 byte + 8 byte per kolom deskripsi). Titik berkoordinat tidak masuk akal (> 100.000 km, NaN, 0,0) dibuang per titik dan dilaporkan di daftar file (*⚠ N titik berkoordinat rusak dibuang*). File yang lebih dari separuh titiknya rusak ditolak dengan saran menyimpan ulang sebagai STR teks / DXF. Orthofoto dan batas block model yang tidak masuk akal juga dilaporkan.
+- Proyek yang sudah terlanjur tersimpan dengan koordinat liar: titik rusak dibuang dan area proyek dihitung ulang saat dibuka. Bila tampilan masih kosong, import ulang file-nya.
