@@ -1540,6 +1540,32 @@ def _why_empty(j: dict) -> str:
             f"{j.get('eval_count') or 0} token" + (f", berpikir {len(m['thinking'])} karakter" if m.get("thinking") else "") + ")")
 
 
+def ollama_why(e: Exception) -> str:
+    """Pesan asli Ollama (badan respons HTTP 500 / 4xx) + penjelasan yang bisa ditindaklanjuti pengguna."""
+    body = ""
+    if isinstance(e, urllib.error.HTTPError):
+        try:
+            raw = e.read().decode("utf-8", "replace")
+            body = str((json.loads(raw) if raw.strip().startswith("{") else {}).get("error") or raw).strip()[:300]
+        except Exception:  # noqa: BLE001
+            body = ""
+    low = body.lower()
+    if isinstance(e, urllib.error.HTTPError) and e.code == 404:
+        hint = "model belum diunduh — jalankan 'ollama pull <nama model>' atau pilih model lain di dialog AI"
+    elif any(w in low for w in ("memory", "out of memory", "oom", "alloc", "terminated", "exit status", "runner")):
+        hint = ("memori komputer tidak cukup (mesin AI Ollama berhenti): tutup aplikasi lain (Chrome, Excel besar), pilih kecepatan "
+                "Cepat, lalu baca ulang; bila tetap gagal, tutup Ollama dari ikon di taskbar dan buka lagi")
+    elif isinstance(e, urllib.error.HTTPError) and e.code >= 500:
+        hint = ("mesin AI Ollama gagal memproses (paling sering karena memori penuh setelah banyak borang dibaca): tutup aplikasi lain, "
+                "pilih kecepatan Cepat, lalu baca ulang; bila tetap gagal, tutup Ollama dari ikon di taskbar dan buka lagi")
+    elif isinstance(e, (urllib.error.URLError, ConnectionError, TimeoutError, OSError)):
+        hint = "Ollama tidak menjawab / tidak berjalan: buka aplikasi Ollama, tunggu ikonnya muncul di taskbar, lalu klik Periksa di dialog AI"
+    else:
+        hint = ""
+    head = f"HTTP {e.code}" if isinstance(e, urllib.error.HTTPError) else type(e).__name__
+    return f"Ollama gagal ({head}{': ' + body if body else ''})" + (f". Kemungkinan: {hint}." if hint else ".")
+
+
 def _save_raw(s: Store, did: int, msg: dict, attempt: int = 1) -> None:
     """Simpan jawaban mentah AI per borang (_GCEx_Core/borang/ai_mentah/<id>.txt) untuk menelusuri galat; percobaan ke-2
     (tanpa format JSON) DITAMBAHKAN di bawah percobaan 1, supaya keduanya terlihat."""
@@ -1594,13 +1620,30 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
     t0 = time.time()
     try:
         try:
-            j = core_io._http(host + "/api/chat", body, timeout=timeout)
+            try:
+                j = core_io._http(host + "/api/chat", body, timeout=timeout)
+            except urllib.error.HTTPError as e:
+                if "think" not in body or e.code != 400:
+                    raise
+                body.pop("think")  # Ollama versi lama menolak parameter think: ulangi tanpa itu (dan jangan kirim lagi sesi ini)
+                _THINK[(host, model)] = False
+                j = core_io._http(host + "/api/chat", body, timeout=timeout)
         except urllib.error.HTTPError as e:
-            if "think" not in body or e.code != 400:
-                raise
-            body.pop("think")  # Ollama versi lama menolak parameter think: ulangi tanpa itu (dan jangan kirim lagi sesi ini)
-            _THINK[(host, model)] = False
-            j = core_io._http(host + "/api/chat", body, timeout=timeout)
+            if e.code < 500:
+                raise ValueError(ollama_why(e)) from e
+            # 500 = mesin AI Ollama gagal (paling sering memori penuh): tunggu sebentar, ulangi SEKALI dengan gambar lebih kecil
+            first = ollama_why(e)
+            time.sleep(5)
+            small = min(1280, max(960, int(max(size) * 0.8)))
+            img, size = _image_b64(s, d, small, trim)
+            body["messages"] = [dict(body["messages"][0], images=[img])]
+            body["options"] = dict(body["options"], num_ctx=ctx_for(size, prompt))
+            try:
+                j = core_io._http(host + "/api/chat", body, timeout=timeout)
+            except urllib.error.HTTPError as e2:
+                raise ValueError(first + " Diulang otomatis dengan gambar lebih kecil, tetap gagal: " + ollama_why(e2)) from e2
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+            raise ValueError(ollama_why(e)) from e
         if j.get("error"):
             raise RuntimeError("Ollama: " + str(j["error"]))
         msg = j.get("message") or {}

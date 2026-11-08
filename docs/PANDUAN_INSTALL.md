@@ -4034,3 +4034,4 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Klik node **Data referensi (titik survey, string)** → panel hanya titik survey & string; tab **Struktur** tidak muncul.
 - Data tidak berubah, hanya tampilan panel yang mengikuti node. Gambar tutorial bab Struktur Geologi diambil ulang.
 - Integrasi data tetap: struktur yang dicentang (per sumber) tetap dipakai solid vein RBF, dan saklar **Pakai struktur** per domain tetap berlaku — dibuktikan uji pembanding dengan build sebelum perubahan UI (angka volume identik).
+- **"AI gagal: HTTP Error 500"** = mesin AI Ollama berhenti (biasanya memori penuh). DB-Ex kini mengulang sekali otomatis dengan gambar lebih kecil; bila tetap gagal, tampil pesan Ollama dan sarannya: tutup aplikasi lain, pilih **Cepat**, atau tutup Ollama dari ikon taskbar lalu buka lagi.

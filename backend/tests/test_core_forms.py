@@ -184,7 +184,7 @@ def test_ai_failure_leaves_no_fake_data(st, monkeypatch):
     def down(url, body=None, timeout=5.0):
         raise ConnectionRefusedError("Ollama tidak aktif")
     monkeypatch.setattr(core_io, "_http", down)
-    with pytest.raises(ConnectionRefusedError):
+    with pytest.raises(ValueError, match="Ollama tidak menjawab"):  # 0.44.5: pesan yang bisa ditindaklanjuti
         cf.ai_read(s, did, "http://x", "m")
     d = cf.doc(s, did)
     assert d["status"] == "error" and "Ollama" in d["error"] and cf.rows(s, did) == []

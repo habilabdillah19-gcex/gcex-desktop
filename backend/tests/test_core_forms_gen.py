@@ -267,3 +267,37 @@ def test_teks_baris_tanpa_tanda_r_dan_lubang_berulang():
     p = cf.parse_ai_text("ddr", raw)
     assert [r["aktivitas"] for r in p["rows"]] == ["TRAVELING TO 370", "P5M", "P2H", "START ENGINE"]
     assert [x["hole_id"] for x in p["lubang"]] == ["XX-400", "XX-401"]
+
+
+def test_ollama_500_diulang_dengan_gambar_kecil_lalu_pesan_jelas(st, monkeypatch):
+    """0.44.5: HTTP 500 dari Ollama (memori penuh) -> diulang sekali dengan gambar lebih kecil; tetap gagal -> pesan asli
+    Ollama + saran yang bisa dilakukan pengguna."""
+    import io
+    import urllib.error
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "z.jpg")), "rom", "Rina")[0]["id"]
+    n = []
+
+    def boom(url, body=None, timeout=5.0):
+        if url.endswith(("/api/show", "/api/ps")):
+            return {}
+        n.append(body)
+        if len(n) == 1:
+            raise urllib.error.HTTPError(url, 500, "Internal Server Error", {}, io.BytesIO(b'{"error":"llama runner process has terminated: exit status 2"}'))
+        return {"message": {"content": json.dumps({"h": ["", "", "", ""], "r": ["1|T1|-|1857|PIT-1|Crusher|-|OX-LG|37|Baru|Direct"]})}}
+    monkeypatch.setattr(cf.time, "sleep", lambda *_: None)
+    monkeypatch.setattr(core_io, "_http", boom)
+    cf.ai_read(s, did, "http://x", "m", max_px=1600)
+    assert len(n) == 2 and len(cf.rows(s, did)) == 1
+    n.clear()
+
+    def boom2(url, body=None, timeout=5.0):
+        if url.endswith(("/api/show", "/api/ps")):
+            return {}
+        n.append(1)
+        raise urllib.error.HTTPError(url, 500, "Internal Server Error", {}, io.BytesIO(b'{"error":"model requires more system memory"}'))
+    monkeypatch.setattr(core_io, "_http", boom2)
+    import pytest
+    with pytest.raises(ValueError, match="memori komputer tidak cukup"):
+        cf.ai_read(s, did, "http://x", "m")
+    assert "requires more system memory" in cf.doc(s, did)["error"]
