@@ -121,7 +121,7 @@ ch('Digit manual & rekap string', steps(
  + fig('rekap_string', 'Rekap &amp; edit string.'))
 
 ch('Orthofoto resolusi tinggi di flitch', dta('orthofoto <b>tidak</b> termasuk paket data latihan (berkas raster besar). Pakai orthofoto pit Anda sendiri: <code>.tif</code> + world file, atau <code>.jpg</code> + <code>.jgw</code>',
-     [('Import', 'Data Spasial &rarr; Orthofoto'),
+     [('Import', 'tombol &#8943; node <b>Data Spasial &rarr; Orthofoto</b> &rarr; <b>Import orthofoto&hellip;</b> (langsung, tanpa kembali ke layar Mulai; boleh juga di layar Mulai)'),
       ('Langkah', 'buka flitch (Penampang 2D), lalu centang node <b>Orthofoto (latar plan / flitch)</b>'),
       ('Isian', 'opasitas <b>50&ndash;75%</b> dari menu node'),
       ('Yang dilihat', 'badge node menyebut resolusi yang dipakai; <b>zoom masuk</b> membuat angka m/piksel mengecil dan gambar makin tajam')]) + """<p>Saat menggambar dig block di flitch, yang paling membantu adalah melihat <b>foto lapangannya</b> di bawah poligon: batas material yang terlihat di muka galian, jalan angkut, batas pekerjaan shift sebelumnya. Orthofoto tampil sebagai <b>gambar latar</b> pada Penampang 2D horizontal &mdash; dan flitch adalah penampang horizontal.</p>

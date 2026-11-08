@@ -5013,7 +5013,10 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
   var A=function(fn){var a=[].slice.call(arguments,1);return function(){if(typeof window[fn]==='function')return window[fn].apply(window,a);};};
   var tab=function(t,sub){return function(){uiTab(t);if(sub)setTimeout(function(){PT.goSub(t,sub);},30);};};
   var sub=function(id,t,ic,tb,re,o){return Object.assign({id:id,t:t,ic:ic,tab:tb,sub:re},o||{});};
-  var reimp={t:'Ganti / tambah lewat Import ulang…',fn:function(){if(SA.reopen)SA.reopen();}};
+  /* ⋯ Data Spasial: import langsung (jendela pilih file), tanpa kembali ke layar Mulai — permintaan pemilik 8 Nov 2026 */
+  var spAmbil=function(role,mode){return function(){PT.pick(SA.spAcc[role],true,function(i){SA.spMasuk(role,mode,Array.prototype.slice.call(i.files||[]));});};};
+  var spFile=function(role,ada){var nm={topo:'topografi',pit:'desain pit'}[role];return ada?[{t:'Tambah file '+nm+' (STR / DXF / XYZ)…',fn:spAmbil(role,'tambah')},{t:'Ganti '+nm+' dengan file…',fn:spAmbil(role,'ganti')}]:[{t:'Import '+nm+' (STR / DXF / XYZ)…',fn:spAmbil(role,'tambah')}];};
+  var orFile=function(ada){return[{t:(ada?'Ganti orthofoto dengan file…':'Import orthofoto…')+' (GeoTIFF / JPG + world file)',fn:spAmbil('ortho','ganti')}];};
   var has=function(a){return !!(a&&a.length);};
   /* ---------- fokus bagian panel Dig block (#dbBody dipecah per segmen) ---------- */
   var FOC='';
@@ -5064,13 +5067,13 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
       go:function(){var b=$('pjBtn');if(b)b.click();},
       menu:function(){return[{t:'Simpan sekarang',fn:function(){if(SA.saveNow)SA.saveNow();}},{t:'Simpan sebagai file .prj…',fn:function(){SA.prjSave();}},{t:'Buka file .prj…',fn:function(){PT.pick('.prj',false,function(i){SA.prjOpen(i.files[0]);});}},{t:'Simpan salinan proyek (.dh3d)…',fn:function(){if(SA.downloadProj)SA.downloadProj();}},{t:'Import ulang (data lain dipertahankan)…',fn:function(){if(SA.reopen)SA.reopen();}},{sep:1},{t:'Menu proyek & folder…',fn:function(){var b=$('pjBtn');if(b)b.click();}}];}};},'proj','Proyek');
     add(function(){var T=window.topoData,Pd=window.pitData,O=window.orthoImg;
-      return{id:'sp',step:'2',st:st.sp,t:'Data Spasial',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Topografi, desain pit & orthofoto (opsional)',menu:function(){return[reimp,{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
+      return{id:'sp',step:'2',st:st.sp,t:'Data Spasial',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Topografi, desain pit & orthofoto (opsional)',menu:function(){return[{h:'Import file (langsung)'},{t:'Topografi (STR / DXF / XYZ)…',fn:spAmbil('topo','tambah')},{t:'Desain pit (STR / DXF / XYZ)…',fn:spAmbil('pit','tambah')},{t:'Orthofoto (GeoTIFF / JPG + world file)…',fn:spAmbil('ortho','ganti')},{sep:1},{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
         kids:[{id:'sp.topo',t:'Topografi',ic:'topo',tab:'Overlay',dim:!has(T),chk:has(T)?!!topoAs():undefined,onChk:function(v){setTopo(v?topoPref():'');},
-            b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return[reimp,{sep:1}].concat(asMenu(topoAs(),setTopo));}},
+            b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return spFile('topo',has(T)).concat(has(T)?[{sep:1}].concat(asMenu(topoAs(),setTopo)):[]);}},
           {id:'sp.pit',t:'Desain pit',ic:'pit',tab:'Overlay',dim:!has(Pd),chk:has(Pd)?!!U.cb('ovPit'):undefined,onChk:function(v){U.setCb('ovPit',v);},b:has(Pd)?({surf:'surface',line:'garis',both:'surface+garis'}[U.val('ovPitMode')]||''):'',
-            menu:function(){return[reimp,{sep:1}].concat(asMenu(U.val('ovPitMode'),function(mm){var S2=$('ovPitMode');if(S2)S2.value=mm;U.setCb('ovPit',true);updatePlot();}));}},
+            menu:function(){return spFile('pit',has(Pd)).concat(has(Pd)?[{sep:1}].concat(asMenu(U.val('ovPitMode'),function(mm){var S2=$('ovPitMode');if(S2)S2.value=mm;U.setCb('ovPit',true);updatePlot();})):[]);}},
           {id:'sp.ortho',t:'Orthofoto',ic:'ortho',tab:'Overlay',dim:!O,chk:O?!!U.cb('ovOrtho'):undefined,onChk:function(v){U.setCb('ovOrtho',v);},b:O?({base:'latar',drape:'drape',flat:'datar'}[U.val('orMode')]||''):'',
-            menu:function(){var mm=U.val('orMode');return[reimp,{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:mm==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:mm==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:mm==='flat',fn:function(){U.setVal('orMode','flat');}}];}}]};},'sp','Data Spasial');
+            menu:function(){var mm=U.val('orMode');if(!O)return orFile(false);return orFile(true).concat([{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:mm==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:mm==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:mm==='flat',fn:function(){U.setVal('orMode','flat');}}]);}}]};},'sp','Data Spasial');
     add(function(){var at=m?Object.keys(m.num||{}).concat(Object.keys(m.cat||{})):[],ca=ok(function(){return BX.ui.attr;},'');
       return{id:'bm',step:'3',st:st.bm,t:'Block Model',ic:'folder',fold:1,tab:'BM',sub:'Block model',b:m?N(m.n)+' blok':'',chk:m?U.cb('bxShow'):undefined,onChk:function(v){U.setCb('bxShow',v);},hint:m?m.name:'Import block model resmi (.mdl Surpac atau CSV)',
         menu:function(){return[{t:'Import block model…',fn:A('bxDlg')},{t:'Laporan grade × tonase model (dalam constraint)',dis:!m,fn:function(){PT.select('bm.rep');}},{t:'Ringkasan seluruh model per RL…',fn:A('bsOpen'),dis:!(m&&window.bsOn&&bsOn())},{sep:1},{t:'Hapus block model',danger:1,dis:!m,fn:A('bxClear')}];},
@@ -8585,6 +8588,34 @@ SA.saveStandalone=async function(){return;var t=SA.plotlyTxt;if(!t){try{t=await 
 /* ================= jalankan viewer ================= */
 /* koordinat tidak masuk akal (±1e+8 m ke atas, NaN, atau 0,0) dibuang per titik dan dilaporkan per file, supaya satu file
    rusak tidak membuat seluruh proyek tergeser ke ±1e+307 (layar kosong). Lebih dari separuh rusak -> file ditolak. */
+/* ===== Data Spasial langsung dari menu ⋯ Project Tree (Block Model 0.24.44, permintaan pemilik 8 Nov 2026) =====
+   Tidak kembali ke layar Mulai: file dibaca dengan pembaca yang sama dengan layar Mulai (SA.readLinesInto / readGeoTiff /
+   readImgWorld), lalu overlay (OV, TIDX, ORT) dibangun ulang di tempat dan proyek disimpan. mode 'tambah' = digabung dengan
+   data yang ada; 'ganti' = menggantikannya. Orthofoto selalu satu (mengganti). */
+SA.spAcc={topo:'.str,.dxf,.csv,.txt,.xyz',pit:'.str,.dxf,.csv,.txt,.xyz',ortho:'.tif,.tiff,.jpg,.jpeg,.png,.tfw,.jgw,.pgw,.wld,.tifw,.jpgw,.pngw'};
+SA.spMasuk=async function(role,mode,files){var D=SA.D;if(!D||!files||!files.length)return;var nm={topo:'Topografi',pit:'Desain pit',ortho:'Orthofoto'}[role],info=[],ok=false;
+  var gx0=G.x0+offX,gx1=G.x1+offX,gy0=G.y0+offY,gy1=G.y1+offY,mar=parseFloat((E('oMar')||{}).value);if(!isFinite(mar))mar=250;
+  try{if(role!=='ortho'){var tol=Math.max(0,parseFloat((E('sTol')||{}).value)||0),baru=[];
+      for(var i=0;i<files.length;i++){var f=files[i],x=ext(f.name),k=x==='dxf'?'dxf':x==='str'?'str':'xyz';if(RASTER.indexOf(x)>=0||WORLD.indexOf(x)>=0){info.push(f.name+': file raster masuk ke Orthofoto, dilewati');continue;}
+        try{msg('Membaca '+esc(f.name)+'&hellip;');await tick();var out=[],R=await SA.readLinesInto({f:f,k:k,role:role},out,k==='xyz'?0:tol,null,function(q){msg('Membaca '+esc(f.name)+': '+Math.round(q*100)+'%');});
+          if(R.x1<gx0-2000||R.x0>gx1+2000||R.y1<gy0-2000||R.y0>gy1+2000){info.push(f.name+': tidak overlap dengan area proyek (cek koordinat / urutan kolom) — dilewati');continue;}
+          baru=baru.concat(out);info.push(f.name+': '+R.nn[0].toLocaleString()+' titik'+(R.buang?' ('+R.buang.toLocaleString()+' titik berkoordinat rusak dibuang)':''));}
+        catch(er){info.push(f.name+': '+er.message);}}
+      if(baru.length){var key=role==='topo'?'topoData':'pitData',L=mode==='ganti'?[]:(D[key]||[]).slice();if(L.length&&L[L.length-1]!==null)L.push(null);L=L.concat(baru);D[key]=L;window[key]=L;
+        if(role==='topo'){OV.topoC=prep(L,true);OV.topoF=prep(L,false);OV.meshC=meshOf(OV.topoC,15000);OV.meshF=meshOf(OV.topoF,15000);OV.meshLC=meshOf(OV.topoC,4900);OV.meshLF=meshOf(OV.topoF,4900);TIDX=null;
+          ['ovTopoS','ovTopoL'].forEach(function(id){var c=E(id);if(c)c.disabled=false;});if(E('ovTopoS')&&!E('ovTopoS').checked&&!(E('ovTopoL')&&E('ovTopoL').checked))E('ovTopoS').checked=true;}
+        else{OV.pitC=prep(L,true);OV.pitF=prep(L,false);OV.pmC=meshOf(OV.pitC,15000);OV.pmF=meshOf(OV.pitF,15000);OV.pmLC=meshOf(OV.pitC,4900);OV.pmLF=meshOf(OV.pitF,4900);var c2=E('ovPit');if(c2){c2.disabled=false;c2.checked=true;}}
+        ok=true;}}
+    else{var ras=files.filter(function(f){return RASTER.indexOf(ext(f.name))>=0;})[0];if(!ras)throw new Error('pilih file GeoTIFF / JPG / PNG (boleh bersama world file-nya)');
+      var simpan=SA.sp.ortho;SA.sp.ortho=files.map(function(f){var x=ext(f.name);return{f:f,k:RASTER.indexOf(x)>=0?'raster':'world',role:'ortho'};});
+      try{var s0={f:ras,k:'raster',role:'ortho'},x2=ext(ras.name),res=Math.max(0.05,parseFloat((E('oRes')||{}).value)||1),bb=[gx0-mar,gx1+mar,gy0-mar,gy1+mar];msg('Orthofoto '+esc(ras.name)+'&hellip;');await tick();
+        var O=(x2==='tif'||x2==='tiff')?await readGeoTiff(s0,bb,res,2500000,function(q){msg('Orthofoto '+esc(ras.name)+': '+q+'%');}):await readImgWorld(s0,bb,res,2500000);}finally{SA.sp.ortho=simpan;}
+      if(!SA.koordOk(O.e0,O.n0,NaN))throw new Error('georeferensi orthofoto tidak masuk akal (E '+O.e0+', N '+O.n0+')');
+      D.orthoImg={src:O.src,w:O.w,h:O.h,e0:O.e0,n0:O.n0,dx:+O.dx.toFixed(4),dy:+O.dy.toFixed(4),px:O.px};window.orthoImg=D.orthoImg;ORT=null;orthoInit();var c3=E('ovOrtho');if(c3){c3.disabled=false;c3.checked=true;}
+      info.push(ras.name+': '+O.info+' → '+O.w+'x'+O.h+' @ '+(+O.dx.toFixed(2))+' m');ok=true;}}
+  catch(er){info.push(er.message);console.error(er);}
+  msg('');if(ok){updatePlot();D.date=new Date().toISOString();try{await idbPut('proj:'+D.name,{name:D.name,date:D.date,data:D});}catch(e){}if(window.FP){FP._dRef=null;try{if(FP.dir&&FP.save)FP.save(false,'data spasial');}catch(e){}}SA.dirty();try{PT.render(true);}catch(e){}}
+  alert(nm+(ok?(mode==='ganti'?' diganti':' ditambah')+':\n':' tidak berubah:\n')+info.join('\n'));return ok;};
 SA.koordOk=function(x,y,z){return isFinite(x)&&isFinite(y)&&Math.abs(x)<1e8&&Math.abs(y)<1e8&&(Math.abs(x)>1e-3||Math.abs(y)>1e-3)&&!(isFinite(z)&&Math.abs(z)>=1e6);};
 SA.go=async function(){var btn=E('btnGo');btn.disabled=true;try{
   var D=SA.build(),noDH=!D.collars.length;if(noDH&&!E('dsName').value.trim()){var f0=SA.bmF||(SA.sp.topo[0]||SA.sp.pit[0]||SA.sp.ortho[0]||{}).f;if(f0)D.name=f0.name.replace(/\.[^.]+$/,'');}if(noDH&&!(SA.sp.topo.length+SA.sp.pit.length+SA.sp.ortho.length)&&!SA.bmF)throw new Error('Import minimal satu data: drillhole, topografi, desain pit, orthofoto, atau block model.');
@@ -9942,7 +9973,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.43';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.44';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

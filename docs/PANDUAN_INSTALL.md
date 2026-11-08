@@ -4050,3 +4050,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Sebab**: file **STR biner Surpac yang punya kolom deskripsi** (D1, D2, …) dibaca dengan panjang rekaman tetap 29 byte, sehingga pembacaan bergeser dan koordinat menjadi angka liar (±1e+250…1e+307). Satu titik liar saja sudah menggeser seluruh proyek sehingga data lain jatuh jauh di luar layar.
 - **Perbaikan**: panjang rekaman STR biner dideteksi otomatis (29 byte + 8 byte per kolom deskripsi). Titik berkoordinat tidak masuk akal (> 100.000 km, NaN, 0,0) dibuang per titik dan dilaporkan di daftar file (*⚠ N titik berkoordinat rusak dibuang*). File yang lebih dari separuh titiknya rusak ditolak dengan saran menyimpan ulang sebagai STR teks / DXF. Orthofoto dan batas block model yang tidak masuk akal juga dilaporkan.
 - Proyek yang sudah terlanjur tersimpan dengan koordinat liar: titik rusak dibuang dan area proyek dihitung ulang saat dibuka. Bila tampilan masih kosong, import ulang file-nya.
+
+## 142. Block Model 0.24.44 & Drillhole 0.24.51 — Data Spasial langsung dari tombol ⋯
+
+- Permintaan pemilik: tombol ⋯ pada **Data Spasial** dan sub-node **Topografi / Desain pit / Orthofoto** harus langsung menanyakan *file apa* lalu membuka jendela pilih file, bukan kembali ke layar Mulai.
+- **Block Model**: ⋯ Data Spasial → *Topografi… / Desain pit… / Orthofoto…*; ⋯ Topografi / Desain pit → *Tambah file …* (digabung) atau *Ganti … dengan file…*; ⋯ Orthofoto → *Import / Ganti orthofoto…*. File dibaca dengan pembaca yang sama dengan layar Mulai, overlay dibangun ulang di tempat, proyek tersimpan (browser / folder proyek). Menu lama *Ganti / tambah lewat Import ulang…* dihapus. Topografi hasil import langsung juga dipakai untuk dig block (Z dari topografi) dan filter .mdl berikutnya.
+- **Drill Hole**: ⋯ Data Spasial / Topografi / Desain pit / Orthofoto → *Tambah versi … dari file…* (versi baru, seperti tombol di panel). Tombol di panel tetap ada.
+- Uji: `tools/uji/uji_spasial_langsung_bm.py` (SIM_BM_GC_kadar.csv → topo juni → pit fase 1 → ganti topo juli; data tersimpan), `tools/uji/uji_spasial_langsung_dh.py` (versi +1).

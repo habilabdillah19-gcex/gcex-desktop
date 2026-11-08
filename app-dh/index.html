@@ -5961,7 +5961,9 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
   var asMenu=function(cur,set){return[{h:'Tampilkan sebagai'},{t:'Surface (permukaan)',on:cur==='surf',fn:function(){set('surf');}},{t:'Garis (kontur / crest-toe)',on:cur==='line',fn:function(){set('line');}},{t:'Surface + garis',on:cur==='both',fn:function(){set('both');}}];};
   /* ---------- versi data spasial ---------- */
   var SPN={topo:'topografi',pit:'desain pit',ortho:'orthofoto'},ACC={topo:'.dtm,.str,.dxf,.csv,.txt,.xyz,.asc',pit:'.dtm,.str,.dxf,.csv,.txt,.xyz',ortho:'.tif,.tiff,.jpg,.jpeg,.png,.tfw,.jgw,.pgw,.wld,.tifw,.jpgw,.pngw'};
-  /* versi topo / pit / ortho / block model ditambah dari panel Data Spasial (keputusan pemilik 8 Nov 2026), bukan baris + Tambah */
+  /* versi topo / pit / ortho: tombol di panel Data Spasial TETAP, tanpa baris + Tambah; menu ⋯ juga membuka jendela pilih file
+     langsung (spAdd, versi baru di tempat — tidak kembali ke layar Mulai). Permintaan pemilik 8 Nov 2026 (0.24.51). */
+  var addV=function(role){return{t:'Tambah versi '+SPN[role]+' dari file…',fn:function(){PT.pick(ACC[role],true,function(i){spAdd(role,i);});}};};
   function versions(role){var L=ok(function(){return spL(role);},[]),act=ok(function(){return spAct(role);},null);
     return L.map(function(v){var on=v===act;return{id:'sp.'+role+'.'+v.id,t:v.name||'(tanpa nama)',ic:'ver',mark:on?'aktif':'',b:ok(function(){return spCount(role,v);},''),
       hint:(v.src||'')+(v.note?' · '+v.note:'')+(v.date?' · '+new Date(v.date).toLocaleDateString('id-ID'):''),tab:'SP',
@@ -5978,13 +5980,13 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
       b:m.nt?N(m.nt)+' segitiga':(m.pts&&m.pts.length?N(m.pts.length)+' titik':''),menu:function(){return[{t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}}];}};});},[]);};
     var refK=[].concat(mdK('pts','pts','Titik'),mdK('str','string','String'));
     return{id:'sp',step:'2',t:'Data Spasial',ic:'folder',fold:1,tab:'SP',hint:'Topografi, desain pit, orthofoto (dengan versi) dan data referensi Surpac',
-      menu:function(){return[{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
+      menu:function(){return[{h:'Import file (versi baru, langsung)'},addV('topo'),addV('pit'),addV('ortho'),{sep:1},{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
       kids:[{id:'sp.topo',t:'Topografi',ic:'topo',tab:'SP',sub:'Topografi',chk:!!topoAs(),onChk:function(v){setTopo(v?topoPref():'');},
-          b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return asMenu(topoAs(),setTopo);},kids:versions('topo')},
+          b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return[addV('topo'),{sep:1}].concat(asMenu(topoAs(),setTopo));},kids:versions('topo')},
         {id:'sp.pit',t:'Desain pit',ic:'pit',tab:'SP',sub:'Pit',chk:!!U.cb('ovPit'),onChk:function(v){U.setCb('ovPit',v);},b:{surf:'surface',line:'garis',both:'surface+garis'}[U.val('ovPitMode')]||'',
-          menu:function(){var c=U.val('ovPitMode');return asMenu(c,function(m){var S=$('ovPitMode');if(S)S.value=m;U.setCb('ovPit',true);updatePlot();});},kids:versions('pit')},
+          menu:function(){var c=U.val('ovPitMode');return[addV('pit'),{sep:1}].concat(asMenu(c,function(m){var S=$('ovPitMode');if(S)S.value=m;U.setCb('ovPit',true);updatePlot();}));},kids:versions('pit')},
         {id:'sp.ortho',t:'Orthofoto',ic:'ortho',tab:'SP',sub:'Ortho',chk:!!U.cb('ovOrtho'),onChk:function(v){U.setCb('ovOrtho',v);},
-          menu:function(){var m=U.val('orMode');return[{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:m==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:m==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:m==='flat',fn:function(){U.setVal('orMode','flat');}}];},kids:versions('ortho')},
+          menu:function(){var m=U.val('orMode');return[addV('ortho'),{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:m==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:m==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:m==='flat',fn:function(){U.setVal('orMode','flat');}}];},kids:versions('ortho')},
         {id:'sp.ref',t:'Data referensi (titik survey, string)',ic:'ref',tab:'Model',sub:'Titik survey',b:refK.length||'',dim:!refK.length,
           add:{t:'Tambah titik survey / string…',items:[{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:refK}]};}
   function fDb(){var C=window.collars||[],Sv=window.surveys||[],As=window.assays||[],G=window.geoRows||[],E=window.elements||[],cur=U.val('elementFilter'),ga=U.val('geoAttr');
@@ -14710,7 +14712,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.50';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.51';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
