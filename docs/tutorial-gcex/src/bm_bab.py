@@ -49,7 +49,7 @@ ch('Tentang tutorial ini', """<p>Tutorial ini mengajarkan alur kerja <b>grade co
 <li>Satu folder kosong untuk proyek latihan, misalnya <code>Proyek_Tutorial_BM</code>.</li></ul>
 <h3>Alur kerja di Project Tree</h3><table class="t"><tr><th>Langkah</th><th>Node</th><th>Isi</th></tr>
 <tr><td>1–3</td><td>Proyek &middot; Data Spasial &middot; Block Model</td><td>folder proyek, permukaan, block model &amp; warna kelas</td></tr>
-<tr><td>4–5</td><td>Data Referensi &middot; Flitch Aktif</td><td>string referensi, tinggi flitch &amp; RL, Sayatan 2D</td></tr>
+<tr><td>4–5</td><td>Data Referensi (DTM, titik, string) &middot; Import Wireframe Geologi (4b) &middot; Flitch Aktif</td><td>permukaan pit / topografi (DTM), string referensi, wireframe geologi, tinggi flitch &amp; RL, Sayatan 2D</td></tr>
 <tr><td>6–8</td><td>Dig Block &middot; Laporan &middot; Layout</td><td>dig block, additional flagging, running grade, dig plan PDF / STR</td></tr>
 <tr><td>9–10</td><td>As-Mined &middot; Register</td><td>poligon aktual, rencana vs aktual, register &amp; rekonsiliasi</td></tr></table>""")
 
@@ -217,7 +217,7 @@ ch('Review flitch per flitch di Project Tree', dta('lanjutan &mdash; dua flitch'
 ch('Layout & ekspor dig plan', steps('Project Tree &rarr; <b>Layout &amp; Ekspor Dig Plan &rarr; Layout &amp; plot PDF</b> ([[layout]]): judul, skala, elemen laporan, tabel tonase; PDF siap cetak.',
  '<b>Export STR / DXF (Surpac)</b> untuk string dig block; <b>Simpan gambar PNG</b> untuk tampilan saat ini.') + fig('layout', 'Layout &amp; plot PDF.'))
 
-ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; import lewat <b>Data Referensi</b> &rarr; Import model / solid',
+ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; import lewat klik kanan <b>Data Referensi (DTM, titik, string)</b> &rarr; <b>Import permukaan pit / topografi (DTM)&hellip;</b> (tombol <b>Muat data latihan</b> sudah memuatnya)',
      [('Atribut &amp; cut-off', 'tab &#9312; seperti biasa (latihan: <code>AU_GC</code>, cut-off <b>0</b>, per RL 5 m)'),
       ('Mode 1 &mdash; per pit', 'topografi <code>SIM_topo_akhir_juni</code>; centang <b>SIM_pit_fase1</b> lalu <b>SIM_pit_fase2</b>'),
       ('Mode 2 &mdash; progres', 'atas <code>SIM_topo_akhir_juni</code>, bawah <code>SIM_topo_akhir_juli</code>'),
@@ -225,7 +225,7 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
  + '<p>Dua pekerjaan short term planning yang sebelumnya harus diulang-ulang: membandingkan <b>fase pit</b>, dan menghitung material yang benar-benar <b>tergali bulan ini</b>. Keduanya ada di tab <b>&#9315; Pit &amp; progres</b> pada Reporting Block Model (atau node <b>Per desain pit &amp; progres topo-ke-topo</b> di bawah <b>Laporan</b>).</p>'
  + warn('Tab ini memakai atribut, cut-off, pengelompokan, domain, poligon, SG dan <code>sb_frac</code> yang sudah diatur di tab &#9312; dan &#9313;. Yang diganti hanya <b>permukaan atas &amp; bawah</b>, jadi angkanya sebanding dengan laporan biasa.', 'Yang diganti hanya permukaan')
  + '<h3>1. Beberapa desain pit sekaligus</h3>'
- + steps('Import desain pitnya (DXF / DTM Surpac) di <b>Data Referensi</b>.',
+ + steps('Import desain pitnya (DXF / DTM Surpac): klik kanan <b>Data Referensi (DTM, titik, string)</b> &rarr; <b>Import permukaan pit / topografi (DTM)&hellip;</b>. Wireframe geologi diimport terpisah di node <b>Import Wireframe Geologi</b>; proyek lama yang menyimpan desain pit di sana bisa dipindah lewat klik kanan berkasnya &rarr; <b>Pindahkan ke Data Referensi (permukaan pit / topo)</b>.',
    'Reporting &rarr; tab <b>&#9315; Pit &amp; progres</b> &rarr; mode <b>Per desain pit</b>.',
    'Pilih <b>satu</b> topografi untuk semua pit, lalu centang desain pit dari yang terkecil ke terbesar.',
    'Klik <b>Hitung per pit</b>: satu baris per pit, dan baris <b>tambahan</b> = selisih terhadap pit di atasnya (berlaku untuk pit bersarang).')
@@ -245,12 +245,14 @@ ch('As-mined: rencana vs aktual', dta('lanjutan &mdash; flitch RL 241,25 &ndash;
       ('Jumlah poligon', '<b>68</b>'),
       ('Tanggal &amp; shift', 'isi di <b>Default poligon berikutnya</b> &mdash; mis. tanggal hari ini dan <b>DS &middot; Siang</b>; dipakai <b>Laporan periode</b>'),
       ('Hasil yang seharusnya', 'rencana <b>19.175 t</b> @ 4,58 vs aktual <b>19.152 t</b> @ 3,99')]) + """<p>Sesudah penambangan, batas aktual dicatat sebagai <b>poligon as-mined</b> (pick-up survey, file STR / DXF / CSV, atau digit manual) lalu dihitung dengan model GC + koreksi sampel. Di latihan ini poligon aktual dibuat dari dig block yang bergeser 0,6 m (simulasi penggalian).</p>"""
- + steps('Project Tree &rarr; <b>As-Mined &rarr; Poligon, pick-up &amp; lantai</b>: import pick-up / boundary atau digit manual ([[asmined_poligon]]).',
+ + steps('Project Tree &rarr; <b>As-Mined &rarr; Flitch, poligon, lantai &amp; atap</b>: import pick-up / boundary atau digit manual ([[asmined_poligon]]).',
    f"<b>As-Mined &rarr; Per flitch</b> ([[pertree_asmined]]): tiap flitch menampilkan selisih <b>&Delta;</b>; di dalamnya <b>Rencana (dig block)</b> dan <b>Aktual (as-mined)</b> beserta poligon. Flitch RL {AV[0]} – {AV[1]}: rencana {fN(AV[2])} t @ {fN(AV[3],2)}, aktual {fN(AV[5])} t @ {fN(AV[6],2)}.",
    'Klik flitch: dibuka di Sayatan 2D dengan dig block (rencana) dan poligon as-mined (aktual) bertumpuk ([[asmined_review_2d]]).')
  + fig('asmined_poligon', 'Poligon as-mined di flitch aktif.') + fig('pertree_asmined', 'As-Mined &rarr; Per flitch: selisih, rencana dan aktual.')
  + fig('asmined_review_2d', 'Rencana (dig block) dan aktual (as-mined) bertumpuk.')
- + why('Kadar aktual lebih rendah karena poligon aktual bergeser keluar dari vein sempit: dilusi. Inilah yang ingin dilihat rekonsiliasi flitch per flitch.'))
+ + why('Kadar aktual lebih rendah karena poligon aktual bergeser keluar dari vein sempit: dilusi. Inilah yang ingin dilihat rekonsiliasi flitch per flitch.')
+ + tip('Menu klik-kanan flitch <b>Buka daftar poligon as-mined flitch ini</b> hanya membuka daftar Register; dig block <b>tidak</b> pernah diubah menjadi as-mined. Rencana dan aktual bertemu hanya di laporan <b>Rencana vs Aktual</b>.')
+ + warn('Mode <b>Ikuti lantai pick-up</b>: titik lantai dan titik atap dibedakan dari <b>berkasnya</b>, lalu disaring pita elevasinya sendiri (lantai: RL bawah &minus; 2 m s/d RL bawah + 0,6 &times; tinggi flitch). Panel Lantai melaporkan berapa titik di pita dan berapa yang tidak dipakai, menyebut poligon yang jatuh ke RL bawah nominal (&lt; 3 titik), dan memperingatkan luas yang atapnya menembus lantai (tebal dihitung nol).', 'Titik lantai yang tidak dipakai selalu dilaporkan'))
 
 ch('Laporan periode: mingguan & bulanan', dta('register as-mined dari bab sebelumnya &mdash; tidak ada berkas yang diimpor',
      [('Prasyarat', 'poligon as-mined sudah punya <b>tanggal</b> dan <b>shift</b>'),

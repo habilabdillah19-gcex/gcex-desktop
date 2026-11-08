@@ -319,7 +319,19 @@ B.append('<div class=box>Yang <b>tidak</b> diotomatiskan, dan tidak akan: keputu
          'interpretasi sesar, serta ambang klasifikasi Measured / Indicated / Inferred (itu ranah pelaporan dan '
          'kepatuhan). Autorun mengulang pekerjaan, bukan mengambil keputusan.</div>')
 
-B.append('<div class="page"></div><h2>8. Wireframe luar (Leapfrog / Surpac) sebagai domain</h2>')
+B.append('<div class="page"></div><h2>8. Wireframe geologi (Leapfrog / Surpac): satu node &amp; sebagai domain</h2>')
+B.append('<p><b>Satu node saja.</b> Wireframe / solid geologi diimport dan dilihat hanya di node <b>Import Wireframe '
+         'Geologi</b> (Drill Hole langkah 2b, Block Model langkah 4b; panel <code>pWf</code>). Anak node = berkas di '
+         '<code>MD.models</code> sesuai <b>urutan import</b>. Di Drill Hole seluruh langkah wireframe &rarr; domain '
+         '(serap, iris, flag, kunci eksak) dijalankan dari menu klik-kanan berkasnya; Geomodeller Vein hanya memuat '
+         'domain dan string hasilnya. Tidak ada pintu import wireframe lain &mdash; panel lain (Reporting &rsaquo; '
+         'Batas DTM, Geomodeller &rsaquo; Dari wireframe luar) hanya <i>memilih</i> berkas yang sudah diimport.</p>')
+B.append(D.tabel(['Permukaan', 'Drill Hole', 'Block Model'], [
+    ['Wireframe geologi', 'node Import Wireframe Geologi (<code>MD.models</code>)', 'node Import Wireframe Geologi (<code>MD.models</code>, <code>jenis: geo</code>)'],
+    ['Desain pit / topografi', '<b>Data Spasial</b>, versi pit / topografi; DXF 3DFACE disimpan sebagai TIN seperti .dtm',
+     '<b>Data Referensi (DTM, titik, string)</b> (<code>MD.models</code>, <code>jenis: surf</code>; Block Model tidak punya versi Data Spasial)'],
+    ['Proyek lama', 'klik kanan &rarr; <i>Pindahkan ke Data Spasial&hellip;</i>: versi non-aktif ber-TIN; rujukan Reporting <code>wf:&lt;i&gt;</code> dialihkan ke <code>sp:&lt;peran&gt;:&lt;id&gt;</code>, indeks sesudahnya digeser',
+     'klik kanan &rarr; <i>Pindahkan ke Data Referensi</i> / <i>ke Import Wireframe Geologi</i> (mengubah <code>jenis</code>)']]))
 B.append('<p>Model implicit dari Leapfrog dapat dipakai GC-Ex dengan dua cara yang tujuannya berbeda. Perbedaannya '
          'bukan soal mutu, melainkan soal <b>siapa pemegang bentuknya</b>.</p>')
 B.append(D.tabel(['', 'Mode B &mdash; diserap', 'Mode A &mdash; eksak'], [
@@ -517,9 +529,9 @@ B.append('<p><b>Cara pemasangannya penting untuk dipercaya.</b> Modul ini tidak 
          'berlaku apa adanya, dan angkanya pasti sebanding dengan laporan biasa. Satu-satunya yang diganti '
          'adalah permukaan.</p>')
 B.append(D.tabel(['Hal', 'Perilaku'], [
-    ['Sumber permukaan', 'versi topografi / desain pit di <b>Data Spasial</b> (Drill Hole) dan DTM / wireframe '
-     'di <b>Data Referensi</b> (kedua aplikasi). DTM segitiga dipakai persis seperti Surpac; titik / kontur '
-     'diinterpolasi IDW'],
+    ['Sumber permukaan', 'Drill Hole: versi topografi / desain pit di <b>Data Spasial</b> (DXF 3DFACE / .dtm = TIN) '
+     'dan wireframe di node Import Wireframe Geologi. Block Model: permukaan DTM di <b>Data Referensi</b> dan wireframe '
+     'geologi. DTM segitiga dipakai persis seperti Surpac; titik / kontur diinterpolasi IDW'],
     ['Di luar jangkauan DTM', 'blok tidak dihitung dan dilaporkan terpisah sebagai <i>di luar DTM</i>'],
     ['Kadar tambahan antar pit', 'logam tambahan &divide; tonase tambahan &mdash; bukan rata-rata dua kadar. '
      'Hanya benar untuk pit <b>bersarang</b>; untuk pit terpisah baca baris per pit saja'],
@@ -541,8 +553,10 @@ B.append('<p>Berkas data simulasi yang dipakai buku tutorial dititipkan <b>di da
          'latihan simulasi</b> di halaman import, dan <b>&#8681; Muat data latihan &amp; jalankan Demo</b> di '
          'menu Demo. Impornya memakai jalur yang sama dengan yang dipakai pengguna '
          '(<code>SA.slotFile</code> / <code>SA.addSp</code> / <code>SA.bmPick</code> / <code>SA.go</code>), '
-         'lalu permukaan desain pit &amp; survei bulanan masuk ke Data Referensi lewat '
-         '<code>mdImport</code> &mdash; jadi tidak ada jalur baca kedua yang bisa berbeda hasilnya.</p>')
+         'lalu permukaan desain pit &amp; survei bulanan masuk lewat jalur pengguna juga: Drill Hole '
+         '<code>spAdd</code> (versi Data Spasial; topografi aktif &amp; centang overlay dipulihkan sesudahnya), '
+         'Block Model <code>mdImport(&hellip;, \'surf\')</code> ke Data Referensi; wireframe Leapfrog '
+         '<code>mdImport(&hellip;, \'geo\')</code> &mdash; jadi tidak ada jalur baca kedua yang bisa berbeda hasilnya.</p>')
 B.append(D.tabel(['Aplikasi', 'Berkas yang dititipkan'], [
     ['Drill Hole', '<code>SIM_collar / survey / assay / geologi.csv</code>, <code>SIM_topo_xyz.csv</code>, '
      '<code>SIM_BM_GC_kadar.csv</code> (model <b>berisi kadar</b>: demo tidak menjalankan estimasi), '
@@ -569,6 +583,22 @@ B.append('<p>Tur otomatis di bilah atas kedua aplikasi disusun ulang mengikuti u
          'ditambahkan untuk menu yang belum pernah masuk demo: serap wireframe Leapfrog, kerangka AOI &amp; '
          'sub-blocking, estimasi waste, autorun, pemeriksaan dig block, preset kelas, ringkasan harian, laporan '
          'periode, dan laporan per desain pit / progres topo-ke-topo.</p>')
+
+B.append('<h3>Kinerja 3D: lapisan yang tidak berubah tidak dikirim ulang (Drill Hole 0.24.42)</h3>')
+B.append('<p>Plotly gl3d meng-update <b>setiap</b> lapisan setiap kali satu lapisan saja berubah. Block model latihan '
+         '(66.147 blok, &plusmn;940 ribu titik sudut setelah sisi dalam dibuang) membuat setiap geser sayatan atau ganti '
+         'centang &plusmn;1,3 s kerja JavaScript. <code>glskip_dh.js</code> melewati <code>update()</code> bila objek '
+         'lapisan masukan sama persis dengan panggilan sebelumnya (properti tingkat atas identik per referensi, objek '
+         'kecil per isi JSON, visibilitas dan <code>dataScale</code> adegan sama). Hasil ukur data latihan: gambar ulang '
+         '1.290 &rarr; 158 ms, 3&times; klik Maju sayatan 3.690 &rarr; 494 ms. Maju / Mundur memakai jalur ringan '
+         'slider (gambar penuh sekali setelah 350 ms); Ore Geometry tidak menghitung otomatis saat dibuka; '
+         'Geostatistik memakai ulang hasil bila sayatan, data &amp; setelannya sama.</p>')
+B.append('<h3>Urutan Project Tree Drill Hole</h3>')
+B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
+         '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '
+         'Vein / 6b Strata-Laterit &middot; <b>7 Geostatistik</b> (variogram sebelum estimasi) &middot; 8 Block Model &middot; '
+         '9 Model Estimation &middot; 10 Validasi BM &middot; 11 Reporting BM &middot; 12 Layout &amp; Ekspor. Export database '
+         'hanya di menu Database Bor; export .mdl hanya di menu Block Model.</p>')
 
 B.append('<h2>14. Topografi &amp; orthofoto resolusi tinggi</h2>')
 B.append('<p>Orthofoto disusun menjadi <b>piramida LOD</b>: level 0 piksel asli, tiap level berikutnya '

@@ -47,7 +47,7 @@ SIM_topo_xyz_nov.csv  topografi survei berikutnya (area tambang turun s/d 7 m) -
                       topografi di Data Spasial dan perhitungan volume sisa
 SIM_pit_fase1.dxf     dua tahap DESAIN PIT (DXF 3DFACE, lantai RL 240 dan RL 180, lereng 45 derajat;
 SIM_pit_fase2.dxf     fase 2 memuat fase 1) -> latihan Reporting tab "Pit & progres" mode PER DESAIN PIT:
-                      import di Data Referensi, pilih satu topografi untuk keduanya, centang fase 1 lalu
+                      import di Data Spasial (Drill Hole) atau Data Referensi (Block Model), pilih satu topografi untuk keduanya, centang fase 1 lalu
                       fase 2. Hasil pada data ini: 3.384 blok / 549.900 t dan 16.103 blok / 2.616.738 t.
 SIM_topo_akhir_juni.dxf  dua SURVEI TOPOGRAFI bulanan pit yang sama (lantai RL 260 lalu RL 245)
 SIM_topo_akhir_juli.dxf  -> latihan mode PROGRES TOPO-KE-TOPO: topografi atas = Juni (lebih awal),

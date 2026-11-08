@@ -502,7 +502,7 @@
       var sumber = mg ? (k.ids || []).map(function (x) { var q = byId(x); return q ? q.name : '?'; }) : [];
       out.push({
         id: 'db.kp.' + k.id, t: k.name, ic: mg ? 'db' : 'folder', fold: 1, tab: 'Data',
-        b: (aktif ? 'AKTIF &middot; ' : '') + pr + ' &middot; ' + N(c.c) + ' hole',
+        b: (aktif ? 'AKTIF \u00b7 ' : '') + pr + ' \u00b7 ' + N(c.c) + ' hole',
         mark: aktif ? 'aktif' : '', dim: !aktif,
         chk: show(k), onChk: function (v) { kpVis(k.id, v); },
         hint: (mg ? 'Set merge dari ' + sumber.join(' + ') + ' \u00b7 ' : '') +

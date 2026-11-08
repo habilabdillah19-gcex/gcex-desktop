@@ -901,8 +901,9 @@ B.append(D.tabel(['Mode', 'Untuk apa'], [
      'block model dapat dilaporkan sekaligus, dengan rincian per RL dan export CSV']]))
 B.append('<p>Atribut, cut-off, pengelompokan, domain, poligon, SG dan <code>sb_frac</code> tetap diambil dari '
          'tab &#9312; dan &#9313;; yang diganti hanya permukaan atas &amp; bawah, sehingga angkanya sebanding '
-         'dengan laporan biasa. Permukaan boleh berasal dari versi Data Spasial maupun DTM / DXF di Data '
-         'Referensi; DTM segitiga dipakai persis seperti Surpac.</p>')
+         'dengan laporan biasa. Permukaan berasal dari versi topografi / desain pit di <b>Data Spasial</b> (Drill '
+         'Hole) atau permukaan DTM di <b>Data Referensi (DTM, titik, string)</b> (Block Model); DTM segitiga dan DXF '
+         '3DFACE dipakai persis seperti Surpac.</p>')
 B.append('<p><b>Data latihannya baru:</b> <code>SIM_pit_fase1.dxf</code> dan <code>SIM_pit_fase2.dxf</code> '
          '(dua tahap desain pit, bersarang) serta <code>SIM_topo_akhir_juni.dxf</code> dan '
          '<code>SIM_topo_akhir_juli.dxf</code> (dua survei bulanan pit yang sama). Pada data itu: fase 1 '
@@ -921,14 +922,41 @@ B.append('<p><b>Demo sekarang bisa memuat data latihannya sendiri.</b> Berkas si
          'program.</p>')
 B.append('<p>Tur otomatis di bilah atas kini mengikuti urutan <b>buku tutorial</b>, bukan urutan menu: '
          'Drill Hole berjalan dari data &amp; filter &rarr; sayatan &rarr; Geomodeller Vein &rarr; '
-         'Geostatistik &rarr; Model Estimation &rarr; kerangka AOI &amp; waste &rarr; autorun &rarr; laporan; '
+         'Geostatistik &rarr; kerangka AOI (Block Model) &rarr; Model Estimation &amp; waste &rarr; autorun &rarr; laporan; '
          'Block Model dari block model &rarr; flitch &rarr; dig block &rarr; pemeriksaan &rarr; laporan &rarr; '
          'layout &rarr; as-mined &rarr; laporan periode. Keterangan tiap langkah dipendekkan menjadi satu '
          'kalimat, tempo bawaan dipercepat (0,55&times;, 20 fps) dengan pilihan Pelan / Sedang / Cepat / Kilat, '
          'dan langkah pertamanya menyebutkan <b>data yang sedang terbuka</b> &mdash; demo dimaksudkan '
          'dijalankan di atas data latihan simulasi <code>SIM_*</code>.</p>')
 
-B.append('<div class="page"></div><h2>12. Isi dokumen ini di tutorial bergambar</h2>')
+B.append('<div class="page"></div><h2>12. Wireframe terpusat, Project Tree sesuai alur kerja &amp; 3D lebih ringan</h2>')
+B.append('<p><b>Satu node untuk wireframe geologi.</b> Wireframe / solid geologi (Leapfrog .msh / .obj, Surpac '
+         '.dtm + .str, DXF) kini diimport dan dilihat hanya di node <b>Import Wireframe Geologi</b> (Drill Hole '
+         'langkah 2b, Block Model langkah 4b). Setiap berkas menjadi anak node sesuai urutan import. Di Drill Hole, '
+         'klik kanan berkasnya untuk menjadikannya domain:</p>')
+B.append(D.tabel(['Menu klik-kanan berkas', 'Hasil'], [
+    ['Serap jadi domain yang bisa diedit (Mode B)&hellip;', 'string HW/FW + solid RBF, ikut diperbarui saat ada bor baru'],
+    ['Iris jadi string / flag interval bor (manual)&hellip;', 'membuka bagian iris &amp; flag di panel yang sama, langkah demi langkah per section'],
+    ['Kunci domain &hellip; ke wireframe ini (Mode A)', 'batas EKSAK untuk audit; <i>Lepaskan</i> mengembalikan ke solid RBF'],
+    ['Pindahkan ke Data Spasial sebagai versi topografi / desain pit&hellip;', 'untuk proyek lama yang menyimpan pit / topo di daftar wireframe; versi non-aktif, rujukan Reporting ikut dialihkan']]))
+B.append('<p>Desain pit dan survei topografi bukan wireframe: di Drill Hole masuk <b>Data Spasial</b> sebagai versi '
+         '(DXF 3DFACE disimpan sebagai DTM segitiga), di Block Model masuk <b>Data Referensi (DTM, titik, string)</b>. '
+         'Tombol <i>Import DTM</i> di Reporting &rsaquo; Batas DTM dihapus; memilih DTM yang sudah diimport tetap bisa.</p>')
+B.append('<p><b>Urutan Project Tree Drill Hole</b> kini mengikuti alur kerja nyata: 1 Proyek &middot; 2 Data Spasial '
+         '&middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta &middot; 5 Struktur Geologi &middot; '
+         '<b>5b Ore Geometry</b> &middot; 6 Geomodeller &middot; <b>7 Geostatistik</b> &middot; 8 Block Model &middot; 9 Model '
+         'Estimation &middot; 10 Validasi BM &middot; 11 Reporting BM &middot; 12 Layout &amp; Ekspor. Export database hanya di '
+         'menu Database Bor dan export .mdl hanya di menu Block Model; menu kembar kampanye / merge dihapus.</p>')
+B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block model) tidak lagi dikirim ulang ke kartu '
+         'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
+         '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
+         '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>As-Mined (Block Model).</b> Panel Lantai melaporkan titik lantai di pita elevasi dan yang tidak dipakai, '
+         'menyebut poligon yang jatuh ke RL bawah nominal (&lt; 3 titik), dan memperingatkan luas yang atapnya menembus lantai. '
+         'Tombol import titik atap kini sama dengan tombol titik lantai. Beberapa menu diganti namanya sesuai isinya, '
+         'mis. <i>Buka daftar poligon as-mined flitch ini</i> (hanya membuka daftar; dig block tidak diubah menjadi as-mined).</p>')
+
+B.append('<div class="page"></div><h2>13. Isi dokumen ini di tutorial bergambar</h2>')
 B.append('<p>Semua bab di dokumen ini kini juga ada di dua tutorial bergambar, lengkap dengan <b>tangkapan layar '
          'aplikasi</b> dan angka dari satu kali jalannya latihan. Dokumen ini tetap diterbitkan sebagai ringkasan '
          '&ldquo;apa yang baru&rdquo;; untuk belajar langkah demi langkah, pakai tutorial bergambarnya.</p>')
@@ -941,7 +969,9 @@ B.append(D.tabel(['Bab di dokumen ini', 'Di tutorial bergambar'], [
     ['7. Kerangka AOI', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Block model dari nol: kerangka AOI</b>'],
     ['8. Estimasi waste', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Estimasi waste</b> (jalur vein) dan bab <b>Geomodeller Stratified-Laterite</b> (jalur laterit)'],
     ['9. Sub-blocking &amp; proporsi volume', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Sub-blocking &amp; proporsi volume</b>'],
-    ['10. Kampanye, filter &amp; export terfilter', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Database bor per kampanye</b> dan bab <b>Filter data bor</b> (Bagian I)']]))
+    ['10. Kampanye, filter &amp; export terfilter', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Database bor per kampanye</b> dan bab <b>Filter data bor</b> (Bagian I)'],
+    ['11. Pit &amp; progres topo-ke-topo', 'kedua tutorial: bab <b>Laporan per desain pit &amp; progres topo-ke-topo</b>'],
+    ['12. Wireframe terpusat &amp; Project Tree', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Memakai wireframe dari Leapfrog</b> dan <b>Wireframe Leapfrog menjadi domain</b>; <i>Tutorial Block Model</i>: bab <b>As-mined</b>']]))
 B.append('<p>Nama domain dan angka di kedua tutorial bergambar sudah mengikuti data latihan yang sekarang '
          '(<code>QV_Lensa2</code>, <code>QV_Splay_HW</code>, bor dan assay sesuai berkas yang Anda terima).</p>')
 

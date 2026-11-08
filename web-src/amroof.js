@@ -174,8 +174,9 @@ function amRoofBox() {
     '<small>pick-up dig block hari sebelumnya</small></div>' +
     '<div class=g2><label style="grid-column:1/-1">Titik pick-up ATAP &mdash; pick-up dig block / ' +
     'poligon ore actual hari sebelumnya. Disimpan TERPISAH dari titik lantai, yang di-import di kotak <b>Titik pick-up LANTAI</b> di atas.</label>' +
-    '<div><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amRoofFile(this.files)"></div>' +
-    '<div><button onclick="amRoofClear()"' + (has ? '' : ' disabled') + '>Hapus titik atap</button></div></div>';
+    /* tombol import sama persis dengan kotak LANTAI (biru, tulisan putih) -- permintaan pemilik 8 Nov 2026 */
+    '<label class="mdbtn' + (has ? ' ok' : '') + '" style="grid-column:1/-1;margin:0;text-align:center"><input type=file multiple accept=".csv,.txt,.str,.dxf" onchange="amRoofFile(this.files);this.value=\'\'">&#8679; Import pick-up atap (.csv / .txt / .str / .dxf)</label>' +
+    (has ? '<div style="grid-column:1/-1"><button onclick="amRoofClear()">Hapus titik atap</button></div>' : '') + '</div>';
   if (S) {
     var beda = (isFinite(S.med) && isFinite(S.mean)) ? Math.abs(S.med - S.mean) : NaN;
     h += '<div class=hint>' + S.n.toLocaleString() + ' titik atap, <b>' + S.nPita.toLocaleString() +

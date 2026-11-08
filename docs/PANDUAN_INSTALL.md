@@ -3979,3 +3979,9 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **✕** menghapus potongan. **⧉** memakai potongan yang sama untuk semua halaman dari PDF yang sama, atau semua borang sejenis yang belum dipotong (periksa tiap borang — posisi tabel di foto bisa berbeda).
 - Setelah memotong, klik **✦ Baca dengan AI** lagi.
 - Foto yang hanya memuat sebagian kolom borang (mis. kolom No / Hole ID terpotong) kini tetap terbaca ke kolom yang benar; isi kolom yang tidak tampak (mis. Hole ID) di header / tabel.
+
+## 134. Block Model 0.24.39 & Drillhole 0.24.43 — demo dan tutorial mengikuti tampilan baru
+
+- **Tombol Demo** menunjuk node **Import Wireframe Geologi** untuk langkah wireframe, dan menghitung laporan per pit / progres topo dari versi Data Spasial (Drill Hole) atau permukaan DTM di Data Referensi (Block Model).
+- **Tutorial bergambar** (Modelling & Estimasi, Block Model), **Tutorial Update** dan **Petunjuk Teknis** dibangun ulang dengan tangkapan layar versi ini.
+- Block Model › As-Mined: tombol **Import pick-up atap** kini sama dengan tombol **Import pick-up lantai** (biru, tulisan putih).

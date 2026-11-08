@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 import os, sys, json, time, subprocess, urllib.request
 T = os.path.dirname(os.path.abspath(__file__)) + '/'; R = os.path.abspath(T + '../../../') + '/'; DATA = T + '../data/'; IMG = T + 'img_lat/'; os.makedirs(IMG, exist_ok=True)
 PORT = 8779; P = 'http://localhost:%d/index.html' % PORT
-MOCK = """window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_Laterit',{create:true});};"""
+MOCK = """try{delete window.showSaveFilePicker;window.showSaveFilePicker=undefined;}catch(e){}window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_Laterit',{create:true});};"""
 NOTES = {}; SEQ = [0]
 # Penanda jejak: bila tahap ini gagal, cetak di LANGKAH MANA berhentinya. Tanpa ini log CI
 # hanya memperlihatkan pengecualian Playwright tanpa konteks.
@@ -53,7 +53,7 @@ with sync_playwright() as pw:
         ctx = br.new_context(**_o)
     ctx.add_init_script(MOCK); pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
-    pg.on('dialog', lambda d: (d.accept('Habil') if d.type == 'prompt' else d.accept()))
+    pg.on('dialog', lambda d: (d.accept(d.default_value) if d.type == 'prompt' and 'nama berkas' in d.message else d.accept('Habil') if d.type == 'prompt' else d.accept()))
     def shot(name, clip=None):
         SEQ[0] += 1; fn = '%02d_%s.png' % (SEQ[0], name); pg.wait_for_timeout(600)
         pg.screenshot(path=IMG + fn, clip=clip) if clip else pg.screenshot(path=IMG + fn); print('shot', fn, flush=True); return fn

@@ -28,7 +28,7 @@
   /* ---------- urutan bagian = urutan bab tutorial ---------- */
   var ORD = DH
     ? ['Pembuka', 'Data & filter', 'Warna', 'Tampilan', 'Geologi', 'Sayatan', 'Geomodeller Vein',
-       'Geostatistik', 'Model Estimation', 'Block Model', 'Autorun', 'Laporan', 'Overlay', 'Plan Bor', 'Penutup']
+       'Geostatistik', 'Block Model', 'Model Estimation', 'Autorun', 'Laporan', 'Overlay', 'Plan Bor', 'Penutup']
     : ['Pembuka', 'Block model', 'Tampilan', 'Sayatan', 'Dig block', 'Pemeriksaan', 'Laporan',
        'Layout PDF', 'As-mined', 'Periode', 'Proyek', 'Penutup'];
 
@@ -155,10 +155,12 @@
              (B && isFinite(B[0]) ? ' di flitch RL ' + N0(B[0], 2) + ' \u2013 ' + N0(B[1], 2) : '');
     } catch (e) { return ''; }
   }
-  /* permukaan latihan (desain pit & survei bulanan) yang sudah diimport di Data Referensi */
+  /* permukaan latihan (desain pit & survei bulanan): Drill Hole -> versi pit / topografi di Data Spasial
+     (sejak 0.24.40); Block Model -> permukaan DTM di Data Referensi (MD.models, jenis 'surf') */
   function permukaan() {
     var o = {};
     try { (window.MD && MD.models || []).forEach(function (m, i) { o[m.name] = 'wf:' + i; }); } catch (e) {}
+    try { if (DH && typeof spL === 'function') ['pit', 'topo'].forEach(function (r) { spL(r).forEach(function (v) { if (v.tin) o[v.name] = 'sp:' + r + ':' + v.id; }); }); } catch (e) {}
     var cari = function (re) { var k = Object.keys(o).filter(function (n) { return re.test(n); })[0]; return k ? o[k] : ''; };
     return { juni: cari(/juni/i), juli: cari(/juli/i), f1: cari(/fase1/i), f2: cari(/fase2/i) };
   }
@@ -173,13 +175,13 @@
   function extraSteps() {
     var S = [];
     if (DH) {
-      S.push({ s: 'Geomodeller Vein', t: 'Wireframe Leapfrog menjadi domain', dur: 6, el: 'rbGM',
-        d: 'Wireframe implicit dari Leapfrog diserap menjadi string HW / FW: jadi domain GC-Ex yang bisa diedit.',
-        run: function (A) { A(0, function () { tab('GM'); }); } });
+      S.push({ s: 'Geomodeller Vein', t: 'Wireframe Leapfrog menjadi domain', dur: 7, el: '.ptr[data-id="wf"], #pWf',
+        d: 'Semua wireframe geologi ada di satu node, Import Wireframe Geologi; klik kanan berkasnya untuk diserap menjadi string HW / FW (domain GC-Ex yang bisa diedit), diiris, di-flag, atau dikunci eksak.',
+        run: function (A) { A(0, function () { pilih('wf'); }); A(0.6, function () { try { if (window.wfToolsDraw) wfToolsDraw(); } catch (e) {} }); } });
       S.push({ s: 'Block Model', t: 'Kerangka blok AOI & sub-blocking', dur: 6, el: 'rbBM',
         d: 'Block model bisa dibuat dari nol (kerangka AOI) dan dipecah di batas solid; sb_frac menimbang blok perbatasan.',
         run: function (A) { A(0, function () { tab('BM'); }); } });
-      S.push({ s: 'Block Model', t: 'Estimasi waste di luar solid', dur: 6, el: 'rbME',
+      S.push({ s: 'Model Estimation', t: 'Estimasi waste di luar solid', dur: 6, el: 'rbME',
         d: 'Blok di luar semua solid diestimasi sebagai domain WASTE, sehingga dilusi dan ore loss ikut terhitung.',
         run: function (A) { A(0, function () { tab('ME'); }); } });
       S.push({ s: 'Autorun', t: 'Autorun wireframe & estimasi', dur: 6, el: 'rbGM',
@@ -230,7 +232,7 @@
             var e = $('dmD'); if (!e) return;
             e.innerHTML = 'Per desain pit (topografi sama): <b>' + X.rows.map(function (r) {
               var T = { n: 0, t: 0 }; Object.keys(r.res.rows[0].G).forEach(function (k) { T.n += r.res.rows[0].G[k].n; T.t += r.res.rows[0].G[k].t; });
-              return r.lab.replace(/^Data Referensi: /, '') + ' ' + N0(T.n) + ' blok / ' + N0(T.t) + ' t';
+              return r.lab.replace(/^(Data Referensi|Permukaan DTM|Wireframe|Desain pit|Topografi): /, '').replace(/ \(aktif\)| · DTM/g, '') + ' ' + N0(T.n) + ' blok / ' + N0(T.t) + ' t';
             }).join(' &middot; ') + '</b>';
           } catch (e) {}
         });
@@ -307,6 +309,13 @@
     'Sayatan 2D (plan)': '.ptr[data-id="fl.2d"], #btn2d',
     'Model as-mined (rekonsiliasi bulanan)': '#amBody, .ptr[data-id="am"]'
   };
+  /* Drill Hole: kendali sayatan yang terlihat ada di bilah Sayatan (#slabBar) dan tombol Sayatan di bilah atas;
+     tombol di panel Sayatan & rel kiri tersembunyi sejak Project Tree menggantikan rel. */
+  if (DH) {
+    PTEL['Geser slab'] = '#slabBar button[data-d="1"]';
+    PTEL['Sayatan 2D (plan)'] = '#sb2d';
+    PTEL['Digitasi string pada penampang'] = '#btnSecM';
+  }
   function ikutTree(S) {
     S.forEach(function (st) {
       /* PTEL dipasang LEBIH DULU dan tanpa syarat. Versi sebelumnya keluar dari iterasi ketika

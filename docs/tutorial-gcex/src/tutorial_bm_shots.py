@@ -7,7 +7,7 @@ os.makedirs(IMG, exist_ok=True)
 for f in os.listdir(IMG):
     if f.endswith('.png'): os.remove(IMG + f)
 PORT = 8778; P = 'http://localhost:%d/index.html' % PORT
-MOCK = "window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_BM',{create:true});};"
+MOCK = "try{delete window.showSaveFilePicker;window.showSaveFilePicker=undefined;}catch(e){}window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_BM',{create:true});};"
 NOTES = {}; SEQ = [0]
 # Penanda jejak: bila tahap ini gagal, cetak di LANGKAH MANA berhentinya. Tanpa ini log CI
 # hanya memperlihatkan pengecualian Playwright tanpa konteks.
@@ -50,7 +50,7 @@ with sync_playwright() as pw:
         ctx = br.new_context(**_o)
     ctx.add_init_script(MOCK); pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
-    pg.on('dialog', lambda d: (d.accept('Habil') if d.type == 'prompt' else d.accept()))
+    pg.on('dialog', lambda d: (d.accept(d.default_value) if d.type == 'prompt' and 'nama berkas' in d.message else d.accept('Habil') if d.type == 'prompt' else d.accept()))  # ekspor lewat gxSimpan
     def ev(js): return pg.evaluate(js)
     def shot(name, clip=None):
         SEQ[0] += 1; fn = '%02d_%s.png' % (SEQ[0], name); pg.wait_for_timeout(600)

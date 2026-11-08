@@ -6,7 +6,7 @@ import os,sys,json,time,subprocess,urllib.request
 T=os.path.dirname(os.path.abspath(__file__))+'/';R=os.path.abspath(T+'../../../')+'/';DATA=T+'../data/';IMG=T+'img/';os.makedirs(IMG,exist_ok=True)
 DIST=R+'app-dh/';PORT=8777;P='http://localhost:%d/index.html'%PORT
 PL=None  # Plotly sudah tertanam di aplikasi
-MOCK="""window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_VeinA',{create:true});};"""
+MOCK="""try{delete window.showSaveFilePicker;window.showSaveFilePicker=undefined;}catch(e){}window.showDirectoryPicker=async function(){var r=await navigator.storage.getDirectory();return r.getDirectoryHandle('Proyek_Tutorial_VeinA',{create:true});};"""
 NOTES={};SEQ=[0]
 # Penanda jejak: bila tahap ini gagal, cetak di LANGKAH MANA berhentinya. Tanpa ini log CI
 # hanya memperlihatkan pengecualian Playwright tanpa konteks.
@@ -59,7 +59,7 @@ with sync_playwright() as pw:
     ctx=mkctx()
     ctx.add_init_script(MOCK);pg=ctx.new_page();errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)[:300]))
-    pg.on('dialog',lambda d:(d.accept('Habil') if d.type=='prompt' else d.accept()))
+    pg.on('dialog',lambda d:(d.accept(d.default_value) if d.type=='prompt' and 'nama berkas' in d.message else d.accept('Habil') if d.type=='prompt' else d.accept()))
     def shot(name,clip=None,full=False):
         SEQ[0]+=1;fn='%02d_%s.png'%(SEQ[0],name);pg.wait_for_timeout(500)
         if clip:pg.screenshot(path=IMG+fn,clip=clip)
@@ -143,15 +143,19 @@ with sync_playwright() as pw:
     ev("$('pos').value=0;$('sliceClip').checked=true;if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(700);shot('solid_2d')
     ev("$('pos').value=-20;$('sliceClip').checked=false;if(VIEW2D)toggle2D();updatePlot()")
     # 11. wireframe dari Leapfrog
-    ev("uiTab('Model')");pg.set_input_files("input[onchange='mdImport(this)']",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.length>0",timeout=60000);pg.wait_for_timeout(800)
-    shot('wireframe_import');note('wf',ev("MD.models.map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
-    ev("uiTab('GM');GM._openWf=true;WF.dom='__new';gmPanel();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
-    ev("var w=GM.doms.find(d=>/Leapfrog/.test(d.name));if(w)w.col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty()");pg.wait_for_timeout(500);shot('wireframe_iris')
-    ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));note('solidWf',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));shot('wireframe_panel',PANEL)
+    # 0.24.39+: satu node "Import Wireframe Geologi" (panel pWf) untuk import & melihat wireframe
+    ev("try{PT.open['wf']=1;PT.select('wf')}catch(e){uiTab('Wf')}");pg.wait_for_timeout(500)
+    ev("MD.models=MD.models.filter(m=>!/QV_Lensa2/.test(m.name));mdBump()")   # data latihan mungkin sudah memuatnya: import ulang supaya langkahnya sama dengan buku
+    pg.set_input_files("#pWf input[type=file]",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.some(m=>/QV_Lensa2/.test(m.name))",timeout=60000);pg.wait_for_timeout(800);ev("PT.render(true)")
+    shot('wireframe_import');note('wf',ev("MD.models.filter(m=>/QV_Lensa2/.test(m.name)).map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
+    # klik kanan berkas > Iris jadi string / flag interval bor (manual)... -> bagian #wfTools di panel yang sama
+    ev("PT.select('wf');WF.mi=MD.models.findIndex(m=>/QV_Lensa2/.test(m.name));WF.dom='__new';WF.msg='';wfToolsDraw();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
+    ev("var w=GM.doms.find(d=>/Leapfrog/.test(d.name));if(w)w.col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty();wfToolsDraw();var e=document.getElementById('wfTools');if(e)e.scrollIntoView({block:'start'})");pg.wait_for_timeout(500);shot('wireframe_iris')
+    ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));note('solidWf',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));ev("PT.select('gm')");pg.wait_for_timeout(700);shot('wireframe_panel',PANEL)
     ev("var d=GM.doms.find(d=>/Leapfrog/.test(d.name));if(d){d.vis=false;gmDirty();}")
     ev("try{lyrSet('wf',false)}catch(e){MD.models.forEach(m=>m.vis=false);updatePlot()}")
     # 12. upsert bor infill
-    ev("if(VIEW2D)toggle2D();uiTab('Data')");pg.click('#upsBox button.btn-pri');pg.wait_for_timeout(400)
+    ev("if(VIEW2D)toggle2D();uiTab('Data')");ev("UP.open()");pg.wait_for_timeout(400)
     for role,f in [('collar','SIM_upsert_collar.csv'),('survey','SIM_upsert_survey.csv'),('assay','SIM_upsert_assay.csv'),('geo','SIM_upsert_geologi.csv')]:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]"%role,DATA+f);pg.wait_for_timeout(600)
     ev("document.getElementById('upsBan').scrollIntoView({block:'start'})");shot('upsert_pratinjau',{'x':240,'y':0,'width':1120,'height':720})
@@ -223,7 +227,7 @@ with sync_playwright() as pw:
     ev("""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-90*Math.sin(az)).toFixed(1);$('p1n').value=(cy-90*Math.cos(az)).toFixed(1);$('p2e').value=(cx+90*Math.sin(az)).toFixed(1);$('p2n').value=(cy+90*Math.cos(az)).toFixed(1);
       $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=2.5;$('sliceClip').checked=true;if(!VIEW2D)toggle2D();updatePlot();})()""");pg.wait_for_timeout(800);shot('me_bm2d')
     # 13d. infill tahap 2 -> koreksi hanya sekitar bor baru
-    ev("if(VIEW2D)toggle2D();$('sliceClip').checked=false;uiTab('Data')");pg.click('#upsBox button.btn-pri');pg.wait_for_timeout(400)
+    ev("if(VIEW2D)toggle2D();$('sliceClip').checked=false;uiTab('Data')");ev("UP.open()");pg.wait_for_timeout(400)
     for role,f in [('collar','SIM_upsert2_collar.csv'),('survey','SIM_upsert2_survey.csv'),('assay','SIM_upsert2_assay.csv'),('geo','SIM_upsert2_geologi.csv')]:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]"%role,DATA+f);pg.wait_for_timeout(600)
     nBefore2=ev('collars.length')
@@ -293,7 +297,7 @@ with sync_playwright() as pw:
     # 16c. (0.24.24) Ore Geometry: kipas variogram GT & tebal intersep di bidang vein
     try:
         ev(DISMISS);ev("if(GS.open)gsToggle();if(VIEW2D)toggle2D();uiTab('OG');OG.sec='3'");pg.wait_for_timeout(2500)
-        ev("if(!OG.R)ogRunIc();ogPanel()");pg.wait_for_timeout(3500);ev("ogPanel()");pg.wait_for_timeout(1500)
+        ev("if(!OG.R)ogRunIc();ogPanel()");   # sejak 0.24.42 = menekan tombol "Hitung intercept & GT" (tidak lagi otomatis)pg.wait_for_timeout(3500);ev("ogPanel()");pg.wait_for_timeout(1500)
         ev("var e=document.getElementById('ogFanBox');if(e)e.scrollIntoView({block:'center'})");pg.wait_for_timeout(700);shot('og_kipas',PANEL)
         note('ogFan',ev("(document.getElementById('ogFanTx')||{}).innerText||''"));note('ogN',ev("OG.R?[OG.R.nHit,OG.R.H.length,OG.R.el]:null"))
         ev("uiTab('GM')");pg.wait_for_timeout(500)
@@ -352,7 +356,7 @@ with sync_playwright() as pw:
     # 17. vein bercabang (proyek terpisah, data SIM_split_*)
     ctx2=mkctx()
 
-    ctx2.add_init_script(MOCK.replace('Proyek_Tutorial_VeinA','Proyek_Tutorial_Split'));pg=ctx2.new_page();pg.on('pageerror',lambda e:errs.append(str(e)[:300]));pg.on('dialog',lambda d:(d.accept('Habil') if d.type=='prompt' else d.accept()))
+    ctx2.add_init_script(MOCK.replace('Proyek_Tutorial_VeinA','Proyek_Tutorial_Split'));pg=ctx2.new_page();pg.on('pageerror',lambda e:errs.append(str(e)[:300]));pg.on('dialog',lambda d:(d.accept(d.default_value) if d.type=='prompt' and 'nama berkas' in d.message else d.accept('Habil') if d.type=='prompt' else d.accept()))
     pg.goto(P);pg.wait_for_timeout(900)
     if PL:pg.set_input_files("input[onchange*='SA.addPlotly']",PL);pg.wait_for_function("!!window.Plotly",timeout=60000)
     pg.click("#fpCard button.sb");pg.wait_for_timeout(500)
