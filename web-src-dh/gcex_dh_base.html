@@ -5416,6 +5416,8 @@ UP.open=function(){if(!UP.can())return;var imp=E('imp');SA.upsMode=true;
     '<div id=upsSum class=hint2></div>';
   var f=imp.querySelector('.impFoot');if(!E('btnUps')){var b=document.createElement('button');b.className='ib';b.id='btnUps';b.innerHTML='Gabungkan ke proyek (upsert) &rarr;';b.onclick=UP.go;var c=document.createElement('button');c.className='ib ghost';c.id='btnUpsX';c.textContent='Batal';c.onclick=UP.close;f.appendChild(c);f.appendChild(b);}
   imp.classList.add('ups');imp.classList.remove('off');msg('');UP.sum();};
+/* buka jendela upsert dengan satu file sudah terpasang di slot `role` (dipanggil dari menu ⋯ Project Tree) */
+UP.openDengan=function(role,f){UP.open();if(!SA.upsMode||!f)return;SA.slotFile(role,f);try{var s=E('sf'+role);if(s)s.scrollIntoView({block:'center'});}catch(e){}};
 UP.close=function(){var imp=E('imp');SA.upsMode=false;imp.classList.remove('ups');imp.classList.add('off');var ds=E('dsName');if(ds){ds.disabled=false;if(UP._ds!=null)ds.value=UP._ds;}msg('');};
 /* ---------- gabung ---------- */
 UP.merge=function(D,D2){var R={cNew:0,cUpd:0,cSame:0,sv:0,as:0,asN:0,ge:0,geN:0,el:[],warn:[]},J=JSON.stringify;

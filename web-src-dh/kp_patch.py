@@ -15,10 +15,10 @@ def patch(s: str) -> str:
 
 def _menu_db(s: str) -> str:
     """Menu node "Database Bor" diawali perintah kampanye (kpMenuDb)."""
-    a = ("      menu:function(){return[{t:'Tambah / perbarui data bor (upsert)\u2026',fn:ups},")
+    a = ("      menu:function(){return[{h:'Import file (langsung)'},")
     assert s.count(a) == 1, 'awal menu node Database Bor tidak ditemukan tepat satu kali'
     s = s.replace(a, "      menu:function(){return(window.kpMenuDb?kpMenuDb():[]).concat(["
-                     "{t:'Tambah / perbarui data bor (upsert)\u2026',fn:ups},")
+                     "{h:'Import file (langsung)'},")
     b = "fn:function(){PTD.drop('all');}}];},"
     assert s.count(b) == 1, 'akhir menu node Database Bor tidak ditemukan tepat satu kali'
     s = s.replace(b, "fn:function(){PTD.drop('all');}}]);},")
@@ -67,7 +67,7 @@ def patch_analisis(s: str, tanda: str) -> str:
 
 def patch_tree(s: str) -> str:
     s = _tree_body(s)
-    c = "      menu:function(){return[{t:'Tambah / perbarui data bor (upsert)…',fn:ups}"
+    c = "      menu:function(){return[{h:'Import file (langsung)'}"
     assert s.count(c) == 1, 'menu node Database Bor tidak ditemukan tepat satu kali'
     # Dulu di sini ditambahkan "Kampanye baru…" & "Gabungkan kampanye… (merge)". Keduanya kembar dengan
     # "Tambah kampanye baru…" & "Buat set merge…" dari kpMenuDb() yang sudah tampil di menu yang sama

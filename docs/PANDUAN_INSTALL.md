@@ -4057,3 +4057,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Block Model**: ⋯ Data Spasial → *Topografi… / Desain pit… / Orthofoto…*; ⋯ Topografi / Desain pit → *Tambah file …* (digabung) atau *Ganti … dengan file…*; ⋯ Orthofoto → *Import / Ganti orthofoto…*. File dibaca dengan pembaca yang sama dengan layar Mulai, overlay dibangun ulang di tempat, proyek tersimpan (browser / folder proyek). Menu lama *Ganti / tambah lewat Import ulang…* dihapus. Topografi hasil import langsung juga dipakai untuk dig block (Z dari topografi) dan filter .mdl berikutnya.
 - **Drill Hole**: ⋯ Data Spasial / Topografi / Desain pit / Orthofoto → *Tambah versi … dari file…* (versi baru, seperti tombol di panel). Tombol di panel tetap ada.
 - Uji: `tools/uji/uji_spasial_langsung_bm.py` (SIM_BM_GC_kadar.csv → topo juni → pit fase 1 → ganti topo juli; data tersimpan), `tools/uji/uji_spasial_langsung_dh.py` (versi +1).
+
+## 143. Block Model 0.24.45 & Drillhole 0.24.52 — import block model & data bor langsung dari tombol ⋯
+
+- **⋯ Block Model → Import block model dari file (.mdl / CSV)…** (kedua aplikasi): jendela pilih file terbuka lebih dulu; dialog pemetaan kolom / filter RL-pit-topo lalu tampil dengan file itu sudah terisi, tinggal klik *Muat*.
+- **Drill Hole, ⋯ Database Bor**: *Import collar / survey / assay / geologi dari file (tambah / perbarui)…* — jendela pilih file → jendela upsert terbuka dengan file terpasang di slotnya (pemetaan kolom + pratinjau), lalu **Gabungkan**. Sub-node Collar / Survey / Assay / Geologi punya menu yang sama untuk tabelnya. *Tambah / perbarui beberapa tabel sekaligus (upsert)…* tetap ada untuk banyak file.
+- Aturan upsert tidak berubah: collar per Hole ID, survey / assay / geologi diganti per hole yang ada di file baru.
+- Uji: `tools/uji/uji_import_langsung.py` (BM & DH: dialog terisi; DH: +32 collar SIM_split_collar.csv).

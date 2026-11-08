@@ -479,11 +479,11 @@ ch('Memakai wireframe dari Leapfrog', dta('<code>data/QV_Lensa2_Leapfrog.obj</co
  + warn('Pengecekan <i>di dalam wireframe</i> memakai sinar vertikal. Wireframe harus tertutup; jika ada tepi terbuka GC-Ex memberi peringatan dan hasil flag perlu diperiksa.'))
 
 ch('Menambah bor infill dengan upsert', dta('<code>data/SIM_upsert_collar.csv</code>, <code>SIM_upsert_survey.csv</code>, <code>SIM_upsert_assay.csv</code>, <code>SIM_upsert_geologi.csv</code> &mdash; lubang infill <code>SIM-INF-*</code>',
-     [('Yang diklik', 'menu <b>Data</b> &rarr; <b>Tambah / perbarui data bor (upsert)</b>, pilih keempat berkas, baca pratinjau, lalu tombol upsert'),
+     [('Yang diklik', 'tombol &#8943; node <b>Database Bor</b> &rarr; <b>Tambah / perbarui beberapa tabel sekaligus (upsert)&hellip;</b>, pilih keempat berkas, baca pratinjau, lalu <b>Gabungkan</b>. Untuk satu tabel saja: &#8943; &rarr; <b>Import collar / survey / assay / geologi dari file&hellip;</b> (jendela pilih file langsung)'),
       ('Hasil yang seharusnya', f"<b>{N['upsTambah']} collar baru</b>; {clean(N['upsPrev'])[:120]}"),
       ('Sesudahnya', 'usulan otomatis lagi (parameter sama), koreksi QV_Splay_HW, lalu <b>Semua section</b>'),
       ('String', f"{clean(N['strUpd'])}")]) +  '<p><b>Upsert</b> = tambah atau perbarui. Collar dicocokkan per HoleID (baru ditambah, lama diperbarui). Survey, assay dan geologi <b>diganti per hole</b> untuk hole yang ada di file baru; hole lain tidak disentuh.</p>'
- + steps('Menu <b>Data</b> &rarr; <b>&#8645; Tambah / perbarui data bor (upsert)</b>.',
+ + steps('Tombol &#8943; node <b>Database Bor</b> &rarr; <b>Tambah / perbarui beberapa tabel sekaligus (upsert)&hellip;</b>.',
    'Pilih empat file <code>SIM_upsert_*.csv</code>. Baca pratinjau di atas ([[upsert_pratinjau]]) sebelum melanjutkan.',
    'Klik tombol upsert. Folder proyek otomatis membuat backup <i>sebelum upsert</i>.',
    f"Pesan hasil ([[upsert_hasil]]): <b>{clean(N['upsToast'])}</b>")
@@ -711,7 +711,7 @@ ch('Koreksi setelah bor baru', dta('<code>data/SIM_upsert2_collar.csv</code>, <c
      [('Langkah', 'upsert keempat berkas &rarr; usulan otomatis (<b>Dilusi internal maks. 2 m</b>) &rarr; <b>Semua section</b> &rarr; <b>Jalankan estimasi</b> lagi'),
       ('Yang dibaca', f"kotak status: {clean(N['mePending'])[:140]}"),
       ('Hasil yang seharusnya', f"hanya {m2['QV_Lensa2'][2]} hole baru / berubah yang memicu koreksi, bukan seluruh block model")]) +  '<p>Inilah pemakaian sehari-hari: setiap ada bor baru, GC-Ex hanya mengestimasi ulang blok yang <b>lingkungan kriging-nya</b> berubah, yaitu blok yang memakai komposit dari hole baru / berubah, ditambah blok yang baru masuk solid. Blok lain tetap nilai run sebelumnya.</p>'
- + steps('Menu <b>Data</b> &rarr; <b>Tambah / perbarui data bor (upsert)</b>: pilih <code>SIM_upsert2_*.csv</code> (2 bor infill SIM-INF-05 dan 06 di ujung timur).',
+ + steps('Tombol &#8943; node <b>Database Bor</b> &rarr; <b>Tambah / perbarui beberapa tabel sekaligus (upsert)&hellip;</b>: pilih <code>SIM_upsert2_*.csv</code> (2 bor infill SIM-INF-05 dan 06 di ujung timur).',
    f"Geomodeller Vein: <b>Usulkan ke domain aktif</b> dengan <b>Jangan timpa flag lain</b> (dilusi 2 m): {clean(N['autoInfill2']).split('. Periksa')[0]}. Lalu <b>&#10148;&#10148; Semua section</b>; solid QV_Lensa2 diperbarui otomatis.",
    'Buka <b>Model Estimation</b>. Kotak status di bagian &#9314; menyebut hole yang berubah ([[me_tertunda]]): ' + clean(N['mePending']).replace('\n','; ') + '.',
    'Klik <b>&#9654; Jalankan estimasi</b>. Validasi menunjukkan berapa blok yang dikoreksi ([[me_koreksi]]).',

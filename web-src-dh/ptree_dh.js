@@ -30,7 +30,12 @@
     var t=TB[kind];if(!t)return;var n=(D[t[0]]||[]).length;if(!n){alert('Tabel ini sudah kosong.');return;}
     if(!confirm('Hapus '+t[1]+': '+N(n)+' baris, dari proyek "'+SA.pname+'"?\n\nUntuk mengganti isinya cukup pakai Tambah / perbarui (upsert). Bisa dibatalkan.'))return;
     return PTD.apply('Hapus '+t[1].replace(/ \(.*/,''),function(D){D[t[0]]=[];if(kind==='assay'){D.elements=[];D.asCat=[];}if(kind==='geo')D.geoCat=[];});};
-  var ups=function(){if(window.UP)UP.open();},undoM={t:'Batalkan perubahan database terakhir',fn:function(){if(window.UP)UP.undo();}};
+  var ups=function(){if(window.UP)UP.open();};
+  /* ⋯ Database Bor / Collar / Survey / Assay / Geologi: pilih file dulu, lalu jendela upsert terbuka dengan file itu
+     sudah terpasang di slotnya (pemetaan kolom + pratinjau + tombol Gabungkan). Permintaan pemilik 8 Nov 2026 (0.24.52). */
+  var UPACC='.xlsx,.xlsm,.csv,.txt,.tsv',UPN={collar:'collar',survey:'survey',assay:'assay',geo:'geologi'};
+  var upsFile=function(role){return{t:'Import '+UPN[role]+' dari file (tambah / perbarui)…',fn:function(){PT.pick(UPACC,false,function(i){var f=i.files&&i.files[0];if(f&&window.UP)UP.openDengan(role,f);});}};};
+  varundoM={t:'Batalkan perubahan database terakhir',fn:function(){if(window.UP)UP.undo();}};
   /* ---------- tampilkan sebagai (topografi / pit) ---------- */
   var topoAs=function(){var s=U.cb('ovTopoS'),l=U.cb('ovTopoL');return s&&l?'both':s?'surf':l?'line':'';};
   var setTopo=function(m){if(m)try{localStorage.setItem('gcex_pt_topo',m);}catch(e){}var s=m==='surf'||m==='both',l=m==='line'||m==='both',S=$('ovTopoS'),L=$('ovTopoL');if(S)S.checked=s;if(L)L.checked=l;updatePlot();};
@@ -71,10 +76,10 @@
       menu:function(){return[{t:'Warnai dengan '+e,fn:function(){U.setVal('elementFilter',e);}},{t:'Warna kadar & kelas…',fn:tab('Warna')}];}};});
     var gat=U.opts('geoAttr').map(function(o){return{id:'db.geo.'+o[0],t:o[1],ic:'attr',tab:'Geo',mark:o[0]===ga&&U.val('geoAttr')!==''&&ok(function(){return $('tmL').classList.contains('on');},false)?'warna':'',
       go:function(){U.setVal('geoAttr',o[0]);if(window.trajMode)trajMode('geo');}};});
-    var tb=function(id,t,ic,n,kind,o){return Object.assign({id:id,t:t,ic:ic,b:N(n),dim:!n,menu:function(){var L=[{t:'Ganti / perbarui (upsert)…',fn:ups}];if(kind)L.push({sep:1},{t:'Hapus tabel ini…',danger:1,dis:!n,fn:function(){PTD.drop(kind);}});return L;}},o||{});};
+    var tb=function(id,t,ic,n,kind,o){return Object.assign({id:id,t:t,ic:ic,b:N(n),dim:!n,menu:function(){var L=[upsFile(kind||'collar')];if(kind)L.push({sep:1},{t:'Hapus tabel ini…',danger:1,dis:!n,fn:function(){PTD.drop(kind);}});return L;}},o||{});};
     return{id:'db',step:'3',t:'Database Bor',ic:'folder',fold:1,tab:'Data',b:C.length?N(C.length)+' hole':'',add:{t:'Tambah kampanye…',fn:function(){if(window.kpTambah)kpTambah();}},
-      menu:function(){return[{t:'Tambah / perbarui data bor (upsert)…',fn:ups},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}];},
-      kids:[tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[{t:'Ganti / perbarui (upsert)…',fn:ups},{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
+      menu:function(){return[{h:'Import file (langsung)'},upsFile('collar'),upsFile('survey'),upsFile('assay'),upsFile('geo'),{sep:1},{t:'Tambah / perbarui beberapa tabel sekaligus (upsert)…',fn:ups},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}];},
+      kids:[tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[upsFile('collar'),{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
         tb('db.survey','Survey','table',Sv.length,'survey',{tab:'Data'}),
         tb('db.assay','Assay','table',As.length,'assay',{tab:'Data',kids:els}),
         tb('db.geo','Geologi','geo',G.length,'geo',{tab:'Geo',kids:gat}),
@@ -139,7 +144,7 @@
         .concat([so('sl.1','① Lapisan & kode log','attr',1),so('sl.2','② Permukaan (atap / lantai)','topo',2),so('sl.3','③ Estimasi unfold per lapisan','est',3),so('sl.4','④ Laporan WMT / DMT','report',4)])};}
   function fBM(){var m=window.BX&&BX.m,V=ok(function(){return BXV;},[]),cur=m?ok(function(){return bxvKey(m.src);},''):'',at=m?Object.keys(m.num||{}).concat(Object.keys(m.cat||{})):[],ca=ok(function(){return BX.ui.attr;},'');
     return{id:'bm',step:'7',t:'Block Model',ic:'folder',fold:1,tab:'BM',b:m?N(m.n)+' blok':'',chk:m?U.cb('bxShow'):undefined,onChk:function(v){U.setCb('bxShow',v);},
-      menu:function(){return[{t:'Import block model…',fn:A('bxDlg')},{t:'Export block model GC (.mdl)',fn:A('bxMdlExport'),dis:!m},{sep:1},{t:'Hapus dari tampilan',danger:1,dis:!m,fn:A('bxClear')}];},
+      menu:function(){return[{t:'Import block model dari file (.mdl / CSV)…',fn:function(){PT.pick('.mdl,.csv,.txt,.tsv',false,function(i){var f=i.files&&i.files[0];if(!f)return;bxDlg();bxDlgFile(f);});}},{t:'Export block model GC (.mdl)',fn:A('bxMdlExport'),dis:!m},{sep:1},{t:'Hapus dari tampilan',danger:1,dis:!m,fn:A('bxClear')}];},
       kids:[].concat(V.map(function(v){var on=ok(function(){return bxvKey(v.src)===cur;},false);return{id:'bm.v.'+v.id,t:v.name,ic:'ver',tab:'SP',sub:'Block',mark:on?'aktif':'',b:v.info||'',hint:v.src&&v.src.name,
           rename:function(nm){bmSet(v.id,'name',nm);},menu:function(){return[{t:'Jadikan versi aktif',dis:on,fn:function(){bmActivate(v.id);}},{sep:1},{t:'Hapus dari daftar versi',danger:1,fn:function(){bmDel(v.id);}}];}};}),
         m?[{id:'bm.attr',t:'Atribut',ic:'attr',tab:'BM',b:at.length,kids:at.map(function(k){return{id:'bm.a.'+k,t:k,ic:m.cat&&m.cat[k]?'geo':'el',tab:'BM',mark:k===ca?'warna':'',go:function(){bxSet('attr',k);}};})},

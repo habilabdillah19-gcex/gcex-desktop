@@ -612,6 +612,10 @@ B.append(D.bullets(
     '<b>Data Spasial lewat &#8943; (BM 0.24.44 / DH 0.24.51)</b>: menu &#8943; node Data Spasial, Topografi, Desain pit dan Orthofoto membuka '
     'jendela pilih file dan memasukkan datanya <i>di tempat</i> (Drill Hole: versi baru; Block Model: tambah / ganti data), tanpa kembali ke layar Mulai. '
     'Block Model: <code>SA.spMasuk(role, mode, files)</code> memakai pembaca yang sama dengan layar Mulai lalu membangun ulang overlay.',
+    '<b>Block model &amp; data bor lewat &#8943; (BM 0.24.45 / DH 0.24.52)</b>: &#8943; Block Model &rarr; <i>Import block model dari file&hellip;</i> '
+    '(jendela pilih file &rarr; dialog pemetaan terisi). Drill Hole &#8943; Database Bor / Collar / Survey / Assay / Geologi &rarr; '
+    '<i>Import &hellip; dari file (tambah / perbarui)&hellip;</i> (jendela pilih file &rarr; jendela upsert dengan file terpasang, '
+    '<code>UP.openDengan(role, f)</code>). Tidak ada menu yang mengembalikan pemakai ke layar Mulai, kecuali <i>Import ulang</i> di menu Proyek.',
     '<b>Panel mengikuti node</b> (DH 0.24.48): node <b>Struktur Geologi</b> hanya menampilkan bagian struktur; node '
     '<b>Data referensi</b> hanya titik survey &amp; string (keduanya berbagi panel <code>#pModel</code>, dipisah oleh kelas '
     '<code>ref-st</code> / <code>ref-ref</code> di <code>ptree_dh.js</code>).',
