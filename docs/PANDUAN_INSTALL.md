@@ -4020,3 +4020,4 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   - Tombol *+ Kampanye baru…* di dialog import / upsert → **+ Tambah kampanye…** di node Database Bor (pilihan kampanye tujuan tetap ada di dialog).
 - **Tetap di panel, tanpa baris + Tambah**: *+ Tambah versi topografi / desain pit / orthofoto / block model* di panel **Data Spasial** (Drill Hole) dan tombol *Simpan pengaturan sekarang sebagai preset* di kartu **Preset kelas kadar & tujuan** (Block Model).
 - Tutorial, Petunjuk Teknis dan gambar tutorial mengikuti.
+- **Daily Drilling Report**: AI kini hanya membaca isian header di bagian atas borang (tanggal, shift, rig, driller, client, DHP ID). WH, DL, HM engine dan bit diisi sendiri bila perlu — sebelumnya AI menyalin nama isian ("DHP_ID", "WH") dan membaca sangat lama.

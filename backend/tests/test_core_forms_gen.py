@@ -244,3 +244,26 @@ def test_buang_bagian_kosong_dan_header_halaman_lain(st, tmp_path, monkeypatch):
     calls = _fake(monkeypatch, {"h": ["", "", "", ""], "r": ["1|T1|-|:57|340|Crusher|-|OX-LG|37|Baru|Direct"]})
     cf.ai_read(s, ids[1], "http://x", "m", hdr_prev=False)
     assert "h" in calls[0]["format"]["properties"]
+
+
+def test_ddr_header_ringkas_dan_nama_isian_dibuang():
+    """0.44.6: DDR hanya minta 6 isian header (atas borang); nama isian yang disalin model (DHP_ID, WH, bit_on) dikosongkan;
+    jumlah baris jawaban dibatasi."""
+    sch = cf.ai_schema_compact("ddr")
+    assert sch["properties"]["h"]["minItems"] == 6 and sch["properties"]["r"]["maxItems"] == 80
+    pr = cf.ai_prompt("ddr")
+    assert "<DHP ID>" in pr and "dhp_id, wh" not in pr
+    res = cf.parse_ai_text("ddr", json.dumps({"h": ["04-11-26", "I", "SDR-006", "Driller A", "PT. ABC", "DHP_ID"],
+                                              "r": ["0630-0645|travel to rom 370", "jam|aktivitas"], "lubang": ["0|15|XX-1|60|60"]}))
+    assert res["header"]["dhp_id"] == "" and res["header"]["rig"] == "SDR-006" and len(res["rows"]) == 1
+
+
+def test_teks_baris_tanpa_tanda_r_dan_lubang_berulang():
+    """0.44.5: jawaban mentah uji DDR — hanya baris pertama bertanda R|, lainnya diawali '|'; tabel LUBANG berisi
+    kegiatan (rentang jam) dan baris yang terus berulang. Data fiktif mengikuti pola jawaban itu."""
+    raw = ("H|04-11-26|I|RIG-X|Driller A|Klien A|-\n"
+           "R|0630-0700|TRAVELING TO 370\n|0700-0705|P5M\n|0705-0710|P2H\n|0710-0720|START ENGINE\n"
+           "LUBANG|from_m|to_m|hole_id|az|dip\n|0|15|XX-400|60|60\n|0|15|XX-401|89|60\n|0700-0705|P5M\n|0|15|XX-401|89|60\n")
+    p = cf.parse_ai_text("ddr", raw)
+    assert [r["aktivitas"] for r in p["rows"]] == ["TRAVELING TO 370", "P5M", "P2H", "START ENGINE"]
+    assert [x["hole_id"] for x in p["lubang"]] == ["XX-400", "XX-401"]

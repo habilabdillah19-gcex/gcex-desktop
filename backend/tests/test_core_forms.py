@@ -468,7 +468,7 @@ def test_jawaban_ai_tidak_rapi_tetap_terbaca(st, monkeypatch):
     monkeypatch.setattr(cf.core_io, "_http", lambda url, body=None, timeout=5.0: {} if url.endswith(("/api/show", "/api/ps")) else seq[0])
     cf.ai_read(s, did, "http://x", "m")
     assert cf.rows(s, did)[0]["data"]["sample_id"] == "S_010"
-    assert (s.root / "ai_mentah" / f"{did}.txt").read_text(encoding="utf-8").startswith("[thinking]")
+    assert (s.root / "ai_mentah" / f"{did}.txt").read_text(encoding="utf-8").startswith("[percobaan 1]\n[thinking]")
     calls = []
 
     def fake(url, body=None, timeout=5.0):

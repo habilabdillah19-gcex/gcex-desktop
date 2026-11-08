@@ -97,6 +97,7 @@ TYPES: dict[str, dict] = {
     },
     "ddr": {
         "name": "RC Drilling: Daily Drilling Report",
+        "ai_header": ["tanggal", "shift", "rig", "driller", "client", "dhp_id"],
         "header": [("tanggal", "Date", "date"), ("shift", "Shift (I / II)", "text"), ("rig", "Drill rig (EqType)", "text"),
                    ("lokasi", "Location", "text"), ("driller", "Driller", "text"), ("client", "Client", "text"), ("dhp_id", "DHP ID", "text"),
                    ("wh", "WH (jam kerja)", "num"), ("dl", "DL (delay)", "num"), ("mntc", "MNTC (maintenance)", "num"),
@@ -892,6 +893,13 @@ def ai_schema(ftype: str) -> dict:
     return {"type": "object", "required": req, "properties": props}
 
 
+def ai_header(t: dict) -> list:
+    """Isian header yang diminta dari AI (boleh sebagian; sisanya diisi pengguna / dihitung program). 0.44.6: DDR hanya isian
+    yang tercetak di ATAS borang — 23 kunci header membuat model 2b menyalin nama kuncinya (DHP_ID, WH, DL …) sebagai nilai."""
+    keys = t.get("ai_header")
+    return [c for c in t["header"] if c[0] in keys] if keys else list(t["header"])
+
+
 def ai_rows(t: dict) -> list:
     """Kolom baris yang diminta dari AI (boleh lebih sedikit dari kolom tabel, mis. Daily Drilling Report: jam + uraian)."""
     return t.get("ai_rows") or t["rows"]
@@ -1037,13 +1045,14 @@ def ai_schema_compact(ftype: str, header: bool = True) -> dict:
     # hilang, sel kosong cukup '||' -> jawaban kira-kira separuh token -> separuh waktu tulis di CPU
     # batas panjang per baris: model tidak bisa menumpuk seluruh tabel dalam satu teks (0.44.3: 1 baris, 450 detik)
     line = {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(ai_rows(t))))}
-    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": line}, "c": {"type": "string", "maxLength": 200}}
+    # maxItems: model kecil kadang mengulang baris tanpa henti sampai batas jawaban (ratusan detik)
+    props = {"h": arr(len(ai_header(t))), "r": {"type": "array", "items": line, "maxItems": 80}, "c": {"type": "string", "maxLength": 200}}
     req = ["h", "r"]
     if not header:  # header diambil dari halaman lain PDF yang sama: AI cukup membaca tabel
         props.pop("h")
         req = ["r"]
     for tt in (t.get("tables") or {}).values():
-        props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}}
+        props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}, "maxItems": 30}
         req.append(tt["ai"])
     return {"type": "object", "required": req, "properties": props}
 
@@ -1121,7 +1130,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
     Dibanding JSON (nama field diulang di setiap baris) jumlah token jawaban kira-kira 3-4x lebih sedikit, dan pada
     komputer tanpa GPU waktu baca terutama ditentukan oleh panjang jawaban."""
     t = TYPES[ftype]
-    hk = [k for k, _l, _t in t["header"]]
+    hk = [k for k, _l, _t in ai_header(t)]
     rk = [k for k, _l, _t in ai_rows(t)]
     if mode == "teks":  # cadangan tanpa format Ollama: satu baris teks per baris tabel, nilai dipisah '|'
         lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
@@ -1138,7 +1147,8 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
         return "\n".join(lines)
     lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
              "Jawab JSON ringkas, TANPA nama kolom.",
-             *(['"h": [' + ", ".join(hk) + "]   <- nilai header sesuai urutan itu"] if header else
+             *(['"h": [' + ", ".join(f"<{lab}>" for _k, lab, _t in ai_header(t)) + "]   <- NILAI yang tertulis untuk tiap isian itu "
+                "(bukan namanya); tidak tertulis = \"-\""] if header else
                ["Header borang SUDAH diketahui: JANGAN baca header, baca tabel saja."]),
              '"r": ["' + "|".join(rk) + '", …]   <- SATU teks per baris tabel yang terisi, urut dari atas, nilai dipisah |']
     for tt in (t.get("tables") or {}).values():
@@ -1197,6 +1207,9 @@ def _from_compact(ftype: str, o: dict) -> dict:
     names = {x.lower() for k, lbl, _t in t["rows"] + ai_rows(t) + t["header"] for x in (k, lbl)}
     names |= {x.lower() for tt in (t.get("tables") or {}).values() for k, lbl, _t in tt["rows"] for x in (k, lbl)}
     names |= {"time", "from", "to", "no", "meterage", "hole id", "azimuth", "dip"}
+    own: dict[str, set] = {}  # nama isian sendiri per kunci (kunci + label, tanpa tanda baca)
+    for k, lbl, _t in list(t["header"]) + list(t["rows"]) + list(ai_rows(t)) + [c for tt in (t.get("tables") or {}).values() for c in tt["rows"]]:
+        own.setdefault(k, set()).update(re.sub(r"[^a-z0-9]", "", x.lower()) for x in (k, lbl, re.sub(r"\s*\(.*?\)", "", lbl)))
 
     def one(vals: Any, keys: list[str], tail: int = 0) -> Optional[dict]:
         miss = False
@@ -1215,6 +1228,8 @@ def _from_compact(ftype: str, o: dict) -> dict:
         vals = ["" if v in ("-", "–", "—", "--") else v for v in vals]  # '-' = sel kosong (0.44.3)
         x: dict[str, Any] = {"ragu": (["kelas"] if tail else []) if miss else []}
         for k, v in zip(keys, vals):
+            if v and re.sub(r"[^a-z0-9]", "", v.lower()) in own.get(k, ()):  # model menyalin NAMA isian ini (DHP_ID, WH) -> kosong
+                v = ""
             if v.endswith("?"):
                 v = v[:-1].strip()
                 x["ragu"].append(k)
@@ -1227,7 +1242,7 @@ def _from_compact(ftype: str, o: dict) -> dict:
         if any(len(v) > 60 and v.count(" ") > 8 and re.search(r"\b(the|user|form|image|I|we|this|is|are)\b", v) for v in filled[:2]):
             return None  # kalimat penjelasan model (bahasa Inggris), bukan isian borang
         return x
-    hk = [k for k, _l, _t in t["header"]]
+    hk = [k for k, _l, _t in ai_header(t)]
     rk = [k for k, _l, _t in ai_rows(t)]
     # nama kolom -> kunci (untuk baris judul kolom yang ditulis model sendiri, mis. "Sample_ID|From|To|Lith")
     alias: dict[str, str] = {}
@@ -1283,22 +1298,32 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
             return json.loads(m.group(0))
         except ValueError:
             pass
-    hk = [k for k, _l, _t in t["header"]]
+    hk = [k for k, _l, _t in ai_header(t)]
     rk = [k for k, _l, _t in ai_rows(t)]
     tabs = {tt["ai"].upper(): (tt["ai"], [k for k, _l, _t in tt["rows"]]) for tt in (t.get("tables") or {}).values()}
 
-    def cells(rest: str, keys: list[str]) -> dict:
+    own: dict[str, set] = {}
+    for k, lbl, _t in list(t["header"]) + list(t["rows"]) + list(ai_rows(t)) + [c for tt in (t.get("tables") or {}).values() for c in tt["rows"]]:
+        own.setdefault(k, set()).update(re.sub(r"[^a-z0-9]", "", x.lower()) for x in (k, lbl, re.sub(r"\s*\(.*?\)", "", lbl)))
+    full_hk = [k for k, _l, _t in t["header"]]
+
+    def cells(rest: str, keys: list[str], hdr: bool = False) -> dict:
         vs = [v.strip() for v in rest.split("|")]
+        if hdr and len(vs) >= len(full_hk) - 1 > len(keys):  # model menulis SEMUA isian header: petakan ke urutan lengkap
+            keys = full_hk
         if len(vs) > len(keys):  # pemisah '|' di dalam uraian terakhir: gabungkan ke kolom terakhir
-            vs = vs[:len(keys) - 1] + [" | ".join(vs[len(keys) - 1:])]
+            vs = vs[:len(keys) - 1] + [" | ".join(vs[len(keys) - 1:])] if not hdr else vs[:len(keys)]
         o: dict[str, Any] = {"ragu": []}
         for k, v in zip(keys, vs):
+            if v and re.sub(r"[^a-z0-9]", "", v.lower()) in own.get(k, ()):
+                v = ""  # nama isian ini sendiri yang disalin model
             if v.endswith("?"):
                 v = v[:-1].strip()
                 o["ragu"].append(k)
             o[k] = "" if v in ("-", "…", "...") and k not in ("aktivitas",) else v
         return o
     out: dict[str, Any] = {"header": {}, "rows": [], "catatan": ""}
+    last_tag, seen_rows = "", set()
     for ln in raw.splitlines():
         ln = ln.strip().strip("`").strip()
         # variasi model: "- R|", "1. R|", "**R**|", "R:", "R |"
@@ -1306,12 +1331,22 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
         m = re.match(r"^([A-Za-z_]+)\s*[|:]\s*(.*)$", ln)
         if m and (m.group(1).upper() in ("H", "R", "C") or m.group(1).upper() in tabs) and ("|" in m.group(2) or m.group(1).upper() == "C"):
             tag, rest = m.group(1).upper(), m.group(2)
+        elif ln.startswith("|") and last_tag in ({"R"} | set(tabs)) and ln.count("|") >= 2:
+            tag, rest = last_tag, ln[1:]  # model hanya memberi tanda R| di baris pertama, baris berikutnya diawali '|' (uji DDR 0.44.5)
         else:  # baris tanpa tanda (tabel markdown, penjelasan) tidak dipakai: sumber baris sampah di 0.42.7
             continue
-        if [v.strip() for v in rest.split("|")][:2] == (hk if tag == "H" else rk)[:2]:
+        last_tag = tag
+        if tag in tabs and ftype == "ddr" and _RANGE.search(rest):
+            continue  # baris kegiatan (ada rentang jam) yang tersasar ke tabel lubang
+        sig = (tag, re.sub(r"\s+", "", rest.lower()))
+        if tag != "H" and tag != "C" and sig in seen_rows:
+            continue  # baris kembar persis (model mengulang)
+        seen_rows.add(sig)
+        first2 = [re.sub(r"[^a-z0-9_]", "", v.strip().lower()) for v in rest.split("|")][:2]
+        if first2 == (hk if tag == "H" else (tabs[tag][1] if tag in tabs else rk))[:2]:
             continue  # model mengulang baris nama kolom
         if tag == "H":
-            out["header"] = cells(rest, hk)
+            out["header"] = cells(rest, hk, hdr=True)
         elif tag == "R":
             out["rows"].append(cells(rest, rk))
         elif tag == "C":
@@ -1505,13 +1540,18 @@ def _why_empty(j: dict) -> str:
             f"{j.get('eval_count') or 0} token" + (f", berpikir {len(m['thinking'])} karakter" if m.get("thinking") else "") + ")")
 
 
-def _save_raw(s: Store, did: int, msg: dict) -> None:
-    """Simpan jawaban mentah AI terakhir per borang (_GCEx_Core/borang/ai_mentah/<id>.txt) untuk menelusuri galat."""
+def _save_raw(s: Store, did: int, msg: dict, attempt: int = 1) -> None:
+    """Simpan jawaban mentah AI per borang (_GCEx_Core/borang/ai_mentah/<id>.txt) untuk menelusuri galat; percobaan ke-2
+    (tanpa format JSON) DITAMBAHKAN di bawah percobaan 1, supaya keduanya terlihat."""
     try:
         p = s.root / "ai_mentah"
         p.mkdir(parents=True, exist_ok=True)
-        (p / f"{did}.txt").write_text(("[thinking]\n" + msg["thinking"] + "\n\n" if msg.get("thinking") else "")
-                                      + "[content]\n" + str(msg.get("content") or ""), encoding="utf-8")
+        f = p / f"{did}.txt"
+        txt = (f"[percobaan {attempt}]\n" + ("[thinking]\n" + msg["thinking"] + "\n\n" if msg.get("thinking") else "")
+               + "[content]\n" + str(msg.get("content") or ""))
+        if attempt > 1 and f.exists():
+            txt = f.read_text(encoding="utf-8") + "\n\n" + txt
+        f.write_text(txt, encoding="utf-8")
     except OSError:
         pass
 
@@ -1572,11 +1612,13 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             why = _why_empty(j)
             body2 = {k: v for k, v in body.items() if k != "format"}
             body2["messages"] = [dict(body["messages"][0], content=ai_prompt(d["type"], extra, "teks", vocab=vocab, header=not sib))]
+            # tanpa skema JSON tidak ada batas baris: model kecil bisa mengulang baris tanpa henti (uji DDR: 460 detik)
+            body2["options"] = dict(body["options"], num_predict=min(N_PREDICT, 1400), repeat_penalty=1.15, repeat_last_n=128)
             j = core_io._http(host + "/api/chat", body2, timeout=timeout)
             if j.get("error"):
                 raise RuntimeError("Ollama: " + str(j["error"]))
             msg = j.get("message") or {}
-            _save_raw(s, did, msg)
+            _save_raw(s, did, msg, 2)
             res = _try_parse(d["type"], msg)
             if res is None:
                 if any((x or "").strip() for x in (msg.get("thinking"), why if "berpikir" in why else "")) and "instruct" not in model:
