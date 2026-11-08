@@ -146,7 +146,9 @@ with sync_playwright() as pw:
     # 0.24.39+: satu node "Import Wireframe Geologi" (panel pWf) untuk import & melihat wireframe
     ev("try{PT.open['wf']=1;PT.select('wf')}catch(e){uiTab('Wf')}");pg.wait_for_timeout(500)
     ev("MD.models=MD.models.filter(m=>!/QV_Lensa2/.test(m.name));mdBump()")   # data latihan mungkin sudah memuatnya: import ulang supaya langkahnya sama dengan buku
-    pg.set_input_files("#pWf input[type=file]",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.some(m=>/QV_Lensa2/.test(m.name))",timeout=60000);pg.wait_for_timeout(800);ev("PT.render(true)")
+    ev("PT.open['wf']=1;PT.render(true)")   # import lewat baris "+ Tambah wireframe geologi…" di Project Tree (tombol panel dihapus)
+    with pg.expect_file_chooser() as fcw: pg.locator("#ptree .ptr[data-id='wf.+']").click()
+    fcw.value.set_files(DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.some(m=>/QV_Lensa2/.test(m.name))",timeout=60000);pg.wait_for_timeout(800);ev("PT.render(true)")
     shot('wireframe_import');note('wf',ev("MD.models.filter(m=>/QV_Lensa2/.test(m.name)).map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
     # tombol ⋯ berkas > Iris jadi string / flag interval bor (manual)... -> bagian #wfTools di panel yang sama
     ev("PT.select('wf');WF.mi=MD.models.findIndex(m=>/QV_Lensa2/.test(m.name));WF.dom='__new';WF.msg='';wfToolsDraw();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))

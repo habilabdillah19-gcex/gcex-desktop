@@ -4011,3 +4011,12 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Menu ⋯ berisi perintah untuk isi yang sudah ada (tampilkan sebagai, jadikan aktif, ganti nama, export, pindahkan, hapus). Node yang menunya kosong tidak menampilkan ⋯.
 - Panel Plan Bor tidak lagi punya tombol *+ Plan baru*; plan hari lain dibuat lewat **+ Tambah plan bor…** di Project Tree.
 - Tutorial, Tutorial Update, Petunjuk Teknis dan teks Demo menyebut ⋯ / + Tambah, bukan klik kanan.
+
+## 137. Drillhole 0.24.46 & Block Model 0.24.42 — satu pintu import
+
+- **Dihapus dari panel** (import hanya lewat baris **+ Tambah …** di Project Tree):
+  - Tombol *Import wireframe geologi* di panel **Import Wireframe Geologi** (kedua aplikasi) → **+ Tambah wireframe geologi…**.
+  - Tombol import di panel **Data Referensi** (Block Model: DTM, titik survey, string; Drill Hole: titik survey, string) → **+ Tambah data referensi…** / **+ Tambah titik survey / string…**.
+  - Tombol *+ Kampanye baru…* di dialog import / upsert → **+ Tambah kampanye…** di node Database Bor (pilihan kampanye tujuan tetap ada di dialog).
+- **Tetap di panel, tanpa baris + Tambah**: *+ Tambah versi topografi / desain pit / orthofoto / block model* di panel **Data Spasial** (Drill Hole) dan tombol *Simpan pengaturan sekarang sebagai preset* di kartu **Preset kelas kadar & tujuan** (Block Model).
+- Tutorial, Petunjuk Teknis dan gambar tutorial mengikuti.

@@ -167,7 +167,8 @@ rep("<div class='lyhead'>&#128438; Layout &amp; Plot PDF</div>", "<h4 class='lyh
 
 # ---------- 5. Data Referensi ----------
 # panel Data Referensi (permukaan DTM, titik, string) & panel Import Wireframe Geologi ditulis langsung di gcex_base.html
-assert "<section id='pWf' hidden>" in s and "onchange='mdImport(this,&#39;surf&#39;)'" in s
+# sejak 0.24.42 import keduanya hanya lewat baris "+ Tambah …" di Project Tree (tombol panel dihapus)
+assert "<section id='pWf' hidden>" in s and "<section id='pModel' hidden>" in s
 
 # ---------- 6. Teks tur demo ----------
 rep("d:'Menu Model: solid vein (Leapfrog, Surpac DTM, DXF, OBJ), titik survey", "d:'Wireframe geologi (Leapfrog, Surpac DTM, DXF, OBJ) diimport di node Import Wireframe Geologi; Menu Data Referensi: permukaan pit / topografi (DTM), titik survey")

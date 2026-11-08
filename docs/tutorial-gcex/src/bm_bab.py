@@ -157,12 +157,12 @@ ch('Pemeriksaan dig block sebelum dig plan terbit', dta('lanjutan &mdash; dig bl
  + tip('Dua pemeriksaan ini jarang berbunyi pada pengaturan bawaan, dan itu wajar: <b>tanpa tujuan material</b> hanya mungkin bila materialnya tidak cocok aturan tujuan mana pun <i>dan</i> tujuan cadangan kosong; <b>nama ganda</b> hanya mungkin bila template nama tidak memuat <code>{NO}</code>. Keduanya tetap diperiksa untuk menjaga keadaan yang tidak biasa.'))
 
 ch('Preset kelas kadar & tujuan material', dta('lanjutan &mdash; pengaturan kelas &amp; tujuan dari bab Dig block otomatis',
-     [('Langkah', 'baris <b>+ Tambah preset (dari pengaturan sekarang)&hellip;</b> di node <b>Preset kelas kadar &amp; tujuan</b>'),
+     [('Langkah', 'node <b>Preset kelas kadar &amp; tujuan</b> &rarr; tombol <b>&#10133; Simpan pengaturan sekarang sebagai preset&hellip;</b> di panel'),
       ('Nama preset', 'mis. <code>Pit Simulasi &mdash; Nov 2026</code>'),
       ('Isi yang tersimpan', '2 kelas (LG, HG), 3 aturan tujuan, lebar minimum 1,5 m, ambang sulfida')]) + """<p>Batas kelas kadar dan aturan tujuan material diisi manual tiap kali. Akibatnya shift siang dan shift malam, atau dua orang yang berbeda, bisa memakai batas yang berbeda tanpa ada yang sadar &mdash; dan itu muncul sebagai selisih yang tidak bisa dijelaskan di rekonsiliasi.</p>
 <p>Node <b>Preset kelas kadar &amp; tujuan</b> menyimpannya sebagai preset bernama di berkas proyek.</p>""" +
  kv([('Yang disimpan', 'batas kelas kadar (LG / HG / &hellip;), aturan tujuan material, <b>lebar minimum alat</b>, ambang sulfida, material bawaan, ambang luas'),
-     ('Menyimpan', 'baris <i>+ Tambah preset (dari pengaturan sekarang)&hellip;</i> di bawah node, beri nama mis. <code>Pit A &mdash; Nov 2026</code>'),
+     ('Menyimpan', 'pilih node, lalu tombol <i>&#10133; Simpan pengaturan sekarang sebagai preset&hellip;</i> di panelnya, beri nama mis. <code>Pit A &mdash; Nov 2026</code>'),
      ('Memakai', 'klik nama preset di menu &#8943; node, atau di anak node-nya &rarr; <i>Pakai preset ini</i>'),
      ('Tiap preset tampil', 'jumlah kelas, jumlah aturan tujuan, lebar minimum, dan tanggal disimpan')])
  + warn('Memakai preset <b>tidak menghapus</b> dig block yang sudah ada, tetapi material dan tujuannya dihitung ulang dengan aturan baru. Karena itu selalu ada konfirmasi lebih dulu. Untuk rekonsiliasi yang rapi, ganti preset di <b>awal</b> periode, bukan di tengah.'))

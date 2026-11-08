@@ -141,8 +141,9 @@ def main():
     print("simpan:", B["imp"]["simpan"])
     salah = []
     P = B["pintu"]
-    if P["panelGeo"] != ["pWf"] or P["nodeGeo"] != ["wf"]: salah.append("pintu import wireframe build baru bukan tepat pWf + wf: %s" % P)
-    if P["panelSurf"] != ["pModel"] or P["nodeSurf"] != ["ref"]: salah.append("pintu import permukaan DTM bukan tepat pModel + ref: %s" % P)
+    # sejak BM 0.24.42 pintu import hanya baris + Tambah di node (tombol panel dihapus, keputusan pemilik)
+    if P["panelGeo"] != [] or P["nodeGeo"] != ["wf"]: salah.append("pintu import wireframe build baru bukan tepat node wf: %s" % P)
+    if P["panelSurf"] != [] or P["nodeSurf"] != ["ref"]: salah.append("pintu import permukaan DTM bukan tepat node ref: %s" % P)
     if "pModel" not in H["lama"]["pintu"]["panelGeo"]: salah.append("build lama tidak mengimpor wireframe di Data Referensi -> uji tidak membuktikan")
     d0, d1, d2 = B["d0"], B["d1"], B["d2"]
     if d0["wf"] != ["QV_Lensa2_Leapfrog"] or len(d0["ref"] or []) != 4 or not all(m.endswith(":surf") for m in d0["models"] if "SIM_" in m):

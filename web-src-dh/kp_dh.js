@@ -593,7 +593,7 @@
       d.className = 'row2';
       d.innerHTML = '<div><label title="Seluruh hole dari import ini diberi label kampanye tersebut">Kampanye tujuan</label>' +
         '<select id="kpImpSel" onchange="kpImpSet(this.value)"></select></div>' +
-        '<div><label>&nbsp;</label><button type="button" onclick="kpImpBaru()">+ Kampanye baru…</button></div>';
+        '<div class="hint" style="align-self:end">Kampanye baru: baris <b>+ Tambah kampanye&hellip;</b> di Project Tree (Database Bor).</div>';
       rb.insertBefore(d, rb.firstChild);
       impFill();
     }

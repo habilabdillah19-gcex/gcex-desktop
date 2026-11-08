@@ -599,14 +599,16 @@ B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geolo
          'Vein / 6b Strata-Laterit &middot; <b>7 Geostatistik</b> (variogram sebelum estimasi) &middot; 8 Block Model &middot; '
          '9 Model Estimation &middot; 10 Validasi BM &middot; 11 Reporting BM &middot; 12 Layout &amp; Ekspor. Export database '
          'hanya di menu Database Bor; export .mdl hanya di menu Block Model.</p>')
-B.append('<h3>Menu &#8943; dan baris + Tambah (kedua aplikasi, BM 0.24.41 / DH 0.24.45)</h3>')
+B.append('<h3>Menu &#8943; dan baris + Tambah (kedua aplikasi, BM 0.24.42 / DH 0.24.46)</h3>')
 B.append(D.bullets(
     '<b>Satu pintu menu: tombol &#8943;</b> di ujung baris node, selalu tampak (abu-abu tipis). Klik kanan pada Project Tree '
     'sengaja tidak membuka apa pun. Keyboard: tombol Menu / Shift+F10 pada node terpilih.',
     '<b>Perintah yang menambah isi node</b> tidak ada di menu &#8943;, melainkan baris biru <b>+ Tambah &hellip;</b> paling bawah '
-    'di anak node (properti node <code>add:{t,fn}</code> atau <code>add:{t,items}</code> di <code>ptree.js</code>). Drill Hole: versi '
-    'topografi / desain pit / orthofoto / block model, titik survey &amp; string, wireframe geologi, kampanye, plan bor, titik pick-up, '
-    'struktur, sesar, domain. Block Model: data referensi, wireframe geologi, preset kelas kadar.',
+    'di anak node (properti node <code>add:{t,fn}</code> atau <code>add:{t,items}</code> di <code>ptree.js</code>). Drill Hole: titik '
+    'survey &amp; string, wireframe geologi, kampanye, plan bor, titik pick-up, struktur, sesar, domain. Block Model: data referensi, '
+    'wireframe geologi. Untuk wireframe, data referensi dan kampanye tombol import di panel dihapus (satu pintu).',
+    '<b>Pengecualian (tetap di panel, tanpa baris + Tambah)</b>: versi topografi / desain pit / orthofoto / block model di panel '
+    '<b>Data Spasial</b> (Drill Hole) dan tombol simpan preset di kartu <b>Preset kelas kadar &amp; tujuan</b> (Block Model).',
     'Menu &#8943; berisi perintah atas isi yang sudah ada: tampilkan sebagai, jadikan aktif, ganti nama, export, pindahkan, hapus. '
     'Node yang menunya kosong tidak menampilkan &#8943;.'))
 

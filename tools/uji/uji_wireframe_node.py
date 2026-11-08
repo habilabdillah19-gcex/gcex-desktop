@@ -188,7 +188,8 @@ def main():
     salah = []
     if H["baru"]["boot"]["hole"] <= 0: salah.append("boot baru gagal (0 hole)")
     pb_, nb_ = H["baru"]["pintu"]["panel"], H["baru"]["pintu"]["node"]
-    if pb_ != ["pWf"]: salah.append("pintu import panel baru bukan tepat [pWf]: %s" % pb_)
+    # sejak DH 0.24.46 import wireframe hanya lewat baris + Tambah di node wf (tombol panel dihapus, keputusan pemilik)
+    if pb_ != []: salah.append("pintu import panel baru mestinya tidak ada (hanya baris + Tambah): %s" % pb_)
     if nb_ != ["wf"]: salah.append("menu import node baru bukan tepat [wf]: %s" % nb_)
     if len(H["lama"]["pintu"]["panel"]) + len(H["lama"]["pintu"]["node"]) <= 2: salah.append("build lama tidak punya pintu ganda -> uji tidak membuktikan")
     if H["baru"]["pintu"]["wfxDiGM"]: salah.append("node wfx masih ada di Geomodeller")
@@ -196,7 +197,7 @@ def main():
     if not U["kids"] or U["kids"][-1] != "UJI_URUTAN_TERAKHIR": salah.append("berkas yang baru diimport tidak berada paling bawah")
     if D.get("err") or D.get("wfx") != "UJI_URUTAN_TERAKHIR" or "UJI_DOM" not in (D.get("badge") or "") or not D.get("serap"):
         salah.append("fungsi domain dari menu node gagal: %s" % D)
-    if P["sel"] != "wf" or not P["tampil"] or not P["tombol"]: salah.append("panel pWf tidak tampil saat node wf dipilih: %s" % P)
+    if P["sel"] != "wf" or not P["tampil"]: salah.append("panel pWf tidak tampil saat node wf dipilih: %s" % P)
     print("laporan lama:", H["lama"]["lapor"]); print("laporan baru:", H["baru"]["lapor"])
     LA, LB = H["lama"]["lapor"], H["baru"]["lapor"]
     if LA.get("err") or LB.get("err") or LA != LB: salah.append("tonase Reporting dengan batas DTM / progres topo berubah")

@@ -667,9 +667,8 @@ body.sgdrag #stage{pointer-events:none}
 </section>
 <section id='pWf' hidden>
 <h3>Import Wireframe Geologi</h3>
-<div class='hint' style='margin:-4px 0 8px'>Satu-satunya tempat mengimpor wireframe / solid geologi dari Leapfrog atau software lain. Setiap berkas muncul di Project Tree di bawah node <b>Import Wireframe Geologi</b> sesuai urutan import; tombol &#8943; berkasnya untuk menjadikannya domain.</div>
-<label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>&#8679; Import wireframe geologi (.msh / .obj / .dxf / .dtm)</label>
-<div class='hint'>Leapfrog <b>.msh</b> &middot; Surpac <b>.dtm</b> (pilih bersama file <b>.str</b>-nya) &middot; DXF 3DFACE / polyface &middot; Wavefront <b>.obj</b>. Saat slab dipotong / Penampang 2D, model tampil sebagai garis perpotongan.</div>
+<div class='hint' style='margin:-4px 0 8px'>Wireframe / solid geologi dari Leapfrog atau software lain diimport lewat baris <b>+ Tambah wireframe geologi&hellip;</b> di Project Tree (paling bawah node <b>Import Wireframe Geologi</b>). Setiap berkas muncul di sana sesuai urutan import; tombol &#8943; berkasnya untuk menjadikannya domain.</div>
+<div class='hint'>Format: Leapfrog <b>.msh</b> &middot; Surpac <b>.dtm</b> (pilih bersama file <b>.str</b>-nya) &middot; DXF 3DFACE / polyface &middot; Wavefront <b>.obj</b>. Saat slab dipotong / Penampang 2D, model tampil sebagai garis perpotongan.</div>
 <div id='mdList' class='mdlist'></div>
 <label class='sw'><input type='checkbox' id='mdSolid' checked onchange='updatePlot()'>Tampilkan solid transparan saat slab dipotong (3D)</label>
 <div class='g2 f' style='margin-top:6px'><button onclick='wfxDlg()' title='Wireframe menjadi domain GC-Ex yang bisa diedit (Mode B)'>&#8680; Serap wireframe &rarr; domain&hellip;</button><button onclick='wfxLihat()'>Laporan penyerapan terakhir</button></div>
@@ -681,12 +680,10 @@ body.sgdrag #stage{pointer-events:none}
 <h3>Data referensi (titik survey, string, struktur)</h3>
 <div class='hint' style='margin:-4px 0 8px'>Data dari luar sebagai acuan: titik survey pemetaan, string Surpac. Wireframe / solid geologi diimport di node <b>Import Wireframe Geologi</b>.</div>
 <h4>Titik survey pemetaan lapangan</h4>
-<label class='mdbtn'><input type='file' multiple accept='.csv,.txt' onchange='mdPts(this)'>&#8679; Import titik survey (CSV / TXT)</label>
-<div class='hint'>Kolom X/Easting, Y/Northing, Z/Elevasi (tanpa Z: diambil dari topografi), ID titik dan kolom keterangan / kode untuk pewarnaan.</div>
+<div class='hint'>Import lewat baris <b>+ Tambah titik survey / string&hellip;</b> di Project Tree (Data Spasial &rsaquo; Data referensi). Kolom X/Easting, Y/Northing, Z/Elevasi (tanpa Z: diambil dari topografi), ID titik dan kolom keterangan / kode untuk pewarnaan.</div>
 <div id='ptList' class='mdlist'></div>
 <h4>String Surpac / DXF</h4>
-<label class='mdbtn'><input type='file' multiple accept='.str,.dxf' onchange='mdStr(this)'>&#8679; Import string (.str / .dxf)</label>
-<div class='hint'>Surpac <b>.str</b> (teks / binary) atau <b>.dxf</b> (LINE / POLYLINE / LWPOLYLINE): desain, oreline, kontak geologi, dsb. Di sayatan hanya bagian di dalam slab yang tampil, kecuali opsi proyeksi dinyalakan. Tombol <b>&#8594; Dig</b> menyalin string tertutup ke daftar Digitasi / dig block.</div>
+<div class='hint'>Import lewat baris yang sama. Surpac <b>.str</b> (teks / binary) atau <b>.dxf</b> (LINE / POLYLINE / LWPOLYLINE): desain, oreline, kontak geologi, dsb. Di sayatan hanya bagian di dalam slab yang tampil, kecuali opsi proyeksi dinyalakan. Tombol <b>&#8594; Dig</b> menyalin string tertutup ke daftar Digitasi / dig block.</div>
 <div id='stList' class='mdlist'></div>
 <label class='sw'><input type='checkbox' id='stProj' onchange='updatePlot()'>Proyeksikan semua string ke sayatan aktif</label>
 <div id='mdMsg' class='hint' style='margin-top:6px'></div>

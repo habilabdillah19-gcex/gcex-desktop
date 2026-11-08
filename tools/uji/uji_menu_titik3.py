@@ -15,14 +15,18 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[2]; DATA = ROOT / "docs" / "tutorial-gcex" / "data"
 DASAR = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--dasar=")), "HEAD")
-HARAP = {"app/index.html": ["ref", "wf", "dig.pst"],
-         "app-dh/index.html": ["sp.topo", "sp.pit", "sp.ortho", "sp.ref", "wf", "db", "db.plan", "mp.pf", "st", "st.flt", "gm", "bm"]}
+HARAP = {"app/index.html": ["ref", "wf"],
+         "app-dh/index.html": ["sp.ref", "wf", "db", "db.plan", "mp.pf", "st", "st.flt", "gm"]}
+# keputusan pemilik 8 Nov 2026 (BM 0.24.42 / DH 0.24.46): versi topo / pit / ortho / BM dan preset TETAP di panel,
+# TANPA baris + Tambah; import wireframe, data referensi dan "+ Kampanye baru" DIHAPUS dari panel.
+TANPA = {"app/index.html": ["dig.pst"], "app-dh/index.html": ["sp.topo", "sp.pit", "sp.ortho", "bm"]}
 JS_INFO = r"""(function(){PT.render(true);var L=PT.flatAll(PT.nodes||[]);
   var add=L.filter(function(n){return n.addRow;}).map(function(n){return n.id.replace(/\.\+$/,'');});
   var menuTambah=[];L.forEach(function(n){if(!n.menu||n.addRow)return;var M=[];try{M=n.menu()||[];}catch(e){}
     M.forEach(function(o){if(o&&o.t&&/^(\+ |Tambah (versi|kampanye|wireframe)|Plan baru|Kampanye baru|Import wireframe geologi|Import CSV struktur|Import CSV titik|Simpan pengaturan sekarang sebagai preset)/.test(o.t))menuTambah.push(n.id+': '+o.t);});});
   var x=[].slice.call(document.querySelectorAll('#ptree .ptr:not(.sel) .ptx'))[0],cs=x&&getComputedStyle(x);
-  return {add:add,menuTambah:menuTambah,ptx:cs?[+cs.opacity,cs.visibility]:null};})()"""
+  var pin=[];[].forEach.call(document.querySelectorAll('input[type=file]'),function(i){var o=i.getAttribute('onchange')||'';if(/mdImport|mdPts|mdStr/.test(o)){var q=i.closest('section');pin.push(q?q.id:'(luar)');}});
+  return {add:add,menuTambah:menuTambah,ptx:cs?[+cs.opacity,cs.visibility]:null,panelImport:pin,kpBaru:document.documentElement.outerHTML.indexOf('kpImpBaru()">')>=0};})()"""
 
 def jalan(html, nama):
     port = str(random.randint(9100, 9899)); d = Path(tempfile.mkdtemp())
@@ -50,11 +54,12 @@ def jalan(html, nama):
             H["plan"] = [n0, pg.evaluate("PL.sets.length")]
             pg.evaluate("PT.open['st']=1;PT.render(true)"); pg.locator("#ptree .ptr[data-id='st.+']").click(); pg.wait_for_timeout(300)
             H["stMenu"] = pg.evaluate("(document.getElementById('ptMenu')||{}).innerText||''"); pg.keyboard.press("Escape")
-        if "app-dh" not in nama and H["add"]:
-            n0 = pg.evaluate("(GCO.pstList?GCO.pstList():[]).length") if pg.evaluate("!!(window.GCO&&GCO.pstList)") else None
-            pg.evaluate("PT.open['dig']=1;PT.open['dig.pst']=1;PT.render(true)"); pg.locator("#ptree .ptr[data-id='dig.pst.+']").click(); pg.wait_for_timeout(800)
-            pg.evaluate("PT.render(true)")
-            H["preset"] = pg.evaluate("(function(){var n=PT.flatAll(PT.nodes).filter(function(x){return x.id==='dig.pst';})[0];return n?(n.kids||[]).filter(function(k){return !k.addRow;}).length:-1;})()")
+        if "app-dh" in nama:
+            pg.evaluate("PT.select('sp.topo')"); pg.wait_for_timeout(700)
+            H["spPanel"] = pg.evaluate("document.querySelectorAll('input[onchange*=spAdd]').length")
+        else:
+            pg.evaluate("PT.select('dig.pst')"); pg.wait_for_timeout(500)
+            H["presetKartu"] = pg.evaluate("((document.getElementById('ptCard')||{}).innerText||'').indexOf('Simpan pengaturan sekarang sebagai preset')>=0")
         ctx.close()
     srv.terminate(); return H
 
@@ -71,5 +76,11 @@ for app, harap in HARAP.items():
     if B["menuTambah"]: salah.append(app + ": menu ⋯ masih memuat perintah tambah %s" % B["menuTambah"])
     if "plan" in B and B["plan"][1] != B["plan"][0] + 1: salah.append("DH: + Tambah plan bor tidak menambah plan %s" % B["plan"])
     if "stMenu" in B and "Import CSV struktur" not in B["stMenu"]: salah.append("DH: + Tambah struktur tidak membuka pilihan")
-    if "preset" in B and B["preset"] < 1: salah.append("BM: + Tambah preset tidak menambah preset")
+    ada = [t for t in TANPA[app] if t in B["add"]]
+    if ada: salah.append(app + ": baris + Tambah mestinya tidak ada untuk %s" % ada)
+    if B.get("panelImport"): salah.append(app + ": tombol import wireframe / data referensi masih di panel %s" % B["panelImport"])
+    if not A.get("panelImport"): salah.append(app + ": build lama tanpa tombol import di panel -> uji tidak membuktikan")
+    if "app-dh" in app and B.get("kpBaru"): salah.append("DH: tombol + Kampanye baru masih di dialog import")
+    if "app-dh" in app and not B.get("spPanel"): salah.append("DH: tombol + Tambah versi topografi hilang dari panel Data Spasial")
+    if "app-dh" not in app and not B.get("presetKartu"): salah.append("BM: tombol simpan preset hilang dari kartu")
 print("\nGAGAL:\n  " + "\n  ".join(salah) if salah else "\nLULUS")
