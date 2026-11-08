@@ -30,7 +30,7 @@ JS_KIDS = r"""
   PT.render && PT.render(true);
   var n = PT.flatAll(PT.nodes || []).filter(function (x) { return x.id === 'db.plan'; })[0];
   if (!n) return {ada: false};
-  return {ada: true, b: n.b, kids: (n.kids || []).map(function (k) { return {t: k.t, b: k.b, mark: k.mark || '', chk: k.chk}; })};
+  return {ada: true, b: n.b, kids: (n.kids || []).filter(function (k) { return !k.addRow; }).map(function (k) { return {t: k.t, b: k.b, mark: k.mark || '', chk: k.chk}; })};
 })()
 """
 

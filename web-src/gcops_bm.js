@@ -321,9 +321,9 @@
         card: { kids: 1, hint: 'Simpan batas kelas kadar & aturan tujuan yang sedang dipakai sebagai preset, atau pilih preset di bawah untuk menerapkannya ke flitch aktif.',
                 acts: [{ t: '\u2795 Simpan pengaturan sekarang sebagai preset\u2026', pri: 1,
                          fn: function () { GCO.pstSimpan(); } }] },
+        add: { t: 'Tambah preset (dari pengaturan sekarang)…', fn: function () { GCO.pstSimpan(); } },
         menu: function () {
-          return [{ t: 'Simpan pengaturan sekarang sebagai preset…', fn: function () { GCO.pstSimpan(); } }]
-            .concat(L.length ? [{ sep: 1 }, { h: 'Pakai preset' }] : [])
+          return (L.length ? [{ h: 'Pakai preset' }] : [])
             .concat(L.map(function (x) { return { t: x.name, fn: function () { GCO.pstTerap(x.name); } }; }));
         },
         kids: L.map(function (x) {

@@ -252,10 +252,10 @@ ch('Validasi data bor', dta('untuk melihat pesan kesalahan: <code>data/SIM_rusak
 ch('Database bor per kampanye (multi-campaign)', dta('kampanye kedua memakai <code>data/SIM_gc_collar / survey / assay / geologi.csv</code> (bor grade control tegak pola 7 m)',
      [('Nama kampanye pertama', 'otomatis dari data yang sudah ada'),
       ('Nama kampanye baru', '<code>gc_2025_11</code>'),
-      ('Cara mengisi', 'menu node <b>Database Bor</b> &rarr; <b>Tambah kampanye baru&hellip;</b>, lalu <b>upsert</b> keempat berkas <code>SIM_gc_*</code> dengan kampanye tujuan <code>gc_2025_11</code>'),
+      ('Cara mengisi', 'baris <b>+ Tambah kampanye&hellip;</b> (paling bawah di node <b>Database Bor</b>), lalu <b>upsert</b> keempat berkas <code>SIM_gc_*</code> dengan kampanye tujuan <code>gc_2025_11</code>'),
       ('Set merge', 'nama <code>merge_resource_2025</code>, centang kedua kampanye sumbernya')]) +  '<p>Satu area biasanya dibor berkali-kali: <b>eksplorasi</b>, <b>infill</b>, lalu <b>grade control</b> tiap periode. Ketiganya perlu dilihat bersama untuk memvalidasi bor GC, tetapi <b>tidak boleh</b> tercampur begitu saja saat mengestimasi. Node <b>Database Bor</b> di Project Tree karena itu dipecah per <b>kampanye</b>.</p>'
  + '<h3>Membuat kampanye</h3>'
- + steps('Klik menu node <b>Database Bor</b> (bukan panel) &rarr; <b>Tambah kampanye baru&hellip;</b>, beri nama mis. <code>eksplorasi_2024</code>, <code>infill_2025</code>, <code>gc_2025_11</code>.',
+ + steps('Klik baris <b>+ Tambah kampanye&hellip;</b> paling bawah di node <b>Database Bor</b> (bukan panel), beri nama mis. <code>eksplorasi_2024</code>, <code>infill_2025</code>, <code>gc_2025_11</code>.',
          'Data yang sudah ada otomatis menjadi kampanye pertama. Kampanye baru diisi lewat <b>import / upsert</b>: di dialog import ada <b>pemilih kampanye tujuan</b> (dan tombol <b>Kampanye baru&hellip;</b> langsung di situ).',
          'Untuk memindahkan hole yang salah kampanye: menu node kampanye &rarr; <b>Pindahkan hole ke sini&hellip;</b>, lalu masukkan daftar HoleID.')
  + '<h3>Tiga peran, satu dataset aktif</h3><p>Peran tiap database ditentukan oleh centang dan status aktifnya:</p>'
@@ -312,7 +312,7 @@ ch('Filter data bor (AND / OR)', dta('lanjutan &mdash; tanpa berkas baru',
 ch('Mengenal tampilan', dta('lanjutan &mdash; proyek hasil bab sebelumnya',
      [('Batas kelas (menu Warna)', '<code>0.3,0.5,1,3</code> dengan <b>Klasifikasi diskrit</b> aktif'),
       ('Panel Layer', 'preset <b>Bor + domain</b>'),
-      ('Lebar panel', 'tarik tepi kanan panel menu; klik ganda = kembali ke bawaan')]) +  '<p>Menu utama ada di <b>Project Tree</b> (kiri), bernomor mengikuti alur kerja nyata: <b>1</b> Proyek &rarr; <b>2</b> Data Spasial &rarr; <b>2b</b> Import Wireframe Geologi &rarr; <b>3</b> Database Bor &rarr; <b>4</b> Peta &rarr; <b>5</b> Struktur Geologi &rarr; <b>5b</b> Ore Geometry &rarr; <b>6</b> Geomodeller Vein / <b>6b</b> Strata-Laterit &rarr; <b>7</b> Geostatistik &rarr; <b>8</b> Block Model &rarr; <b>9</b> Model Estimation &rarr; <b>10</b> Validasi BM &rarr; <b>11</b> Reporting BM &rarr; <b>12</b> Layout &amp; Ekspor. Di bawahnya <b>Pengaturan tampilan</b> (Warna kadar, Overlay, Tampilan &amp; performa). Setiap node membuka satu panel di kanan; klik kanan node untuk menunya. Tombol di <b>bar atas</b>: Proyek, arah pandang (Top / Front / Side / Iso / <b>&perp; Tegak lurus</b> sayatan), <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> (pindah section tanpa membuka menu Sayatan), <b>Layer</b> (ikon tumpukan; juga untuk menyembunyikan drillhole), PNG, dan <b>Geostatistik</b>.</p>'
+      ('Lebar panel', 'tarik tepi kanan panel menu; klik ganda = kembali ke bawaan')]) +  '<p>Menu utama ada di <b>Project Tree</b> (kiri), bernomor mengikuti alur kerja nyata: <b>1</b> Proyek &rarr; <b>2</b> Data Spasial &rarr; <b>2b</b> Import Wireframe Geologi &rarr; <b>3</b> Database Bor &rarr; <b>4</b> Peta &rarr; <b>5</b> Struktur Geologi &rarr; <b>5b</b> Ore Geometry &rarr; <b>6</b> Geomodeller Vein / <b>6b</b> Strata-Laterit &rarr; <b>7</b> Geostatistik &rarr; <b>8</b> Block Model &rarr; <b>9</b> Model Estimation &rarr; <b>10</b> Validasi BM &rarr; <b>11</b> Reporting BM &rarr; <b>12</b> Layout &amp; Ekspor. Di bawahnya <b>Pengaturan tampilan</b> (Warna kadar, Overlay, Tampilan &amp; performa). Setiap node membuka satu panel di kanan; tombol <b>&#8943;</b> di ujung baris membuka menunya, dan baris biru <b>+ Tambah &hellip;</b> di bawah anak node menambah isinya (plan, versi, wireframe, domain, struktur &hellip;). Tombol di <b>bar atas</b>: Proyek, arah pandang (Top / Front / Side / Iso / <b>&perp; Tegak lurus</b> sayatan), <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> (pindah section tanpa membuka menu Sayatan), <b>Layer</b> (ikon tumpukan; juga untuk menyembunyikan drillhole), PNG, dan <b>Geostatistik</b>.</p>'
  + fig('header', 'Bar atas: arah pandang + <b>&perp; Tegak lurus</b>, <b>Sayatan 2D</b>, <b>&#9660; Mundur &middot; posisi &middot; Maju &#9650;</b> untuk berpindah section langsung dari sini, lalu Ortho, Layer, Gelap, PNG dan Geostatistik. Drillhole disembunyikan / ditampilkan lewat panel <b>Layer</b>.')
  + '<h3>Warna kadar</h3>' + steps('Klik <b>Warna</b> di rel kiri.', 'Aktifkan <b>Klasifikasi diskrit (kelas kadar)</b> dan isi <b>Batas kelas</b>: <code>0.3,0.5,1,3</code>.', 'Legenda kanan atas menampilkan jumlah interval per kelas ([[menu_warna]]).')
  + fig('menu_warna', 'Menu Warna: kelas kadar Au &lt;0,3 / 0,3&ndash;0,5 / 0,5&ndash;1 / 1&ndash;3 / &ge;3 g/t. Kotak <b>Ringkasan</b> di kiri bawah memberi statistik data yang sedang tampil.')
@@ -464,13 +464,13 @@ ch('Membangun solid vein (RBF)', dta('lanjutan &mdash; string kontrol bab sebelu
    'Satu domain = satu file; beberapa domain dikemas dalam satu ZIP. File STR+DTM bisa dibaca ulang di node <b>Import Wireframe Geologi</b>.'), 'solid')
 
 ch('Memakai wireframe dari Leapfrog', dta('<code>data/QV_Lensa2_Leapfrog.obj</code> &mdash; wireframe lensa 2 hasil Leapfrog, tertutup, 21.596 segitiga',
-     [('Import lewat', 'node <b>Import Wireframe Geologi</b> &rarr; klik kanan &rarr; <b>Import wireframe geologi&hellip;</b> (data latihan sudah memuatnya)'),
+     [('Import lewat', 'baris <b>+ Tambah wireframe geologi&hellip;</b> di node <b>Import Wireframe Geologi</b> (data latihan sudah memuatnya)'),
       ('Domain tujuan', '<code>QV_Lensa2</code>'),
-      ('Yang diklik', 'klik kanan berkas <code>QV_Lensa2_Leapfrog</code> &rarr; <b>Iris jadi string / flag interval bor (manual)&hellip;</b>, lalu <b>Iris jadi string HW/FW (semua section)</b> dan <b>Flag interval bor di dalam wireframe</b>'),
+      ('Yang diklik', 'tombol &#8943; berkas <code>QV_Lensa2_Leapfrog</code> &rarr; <b>Iris jadi string / flag interval bor (manual)&hellip;</b>, lalu <b>Iris jadi string HW/FW (semua section)</b> dan <b>Flag interval bor di dalam wireframe</b>'),
       ('Hasil yang seharusnya', clean(N['wfFlag']))]) +  steps(
- 'Klik kanan node <b>Import Wireframe Geologi</b> (langkah 2b) &rarr; <b>Import wireframe geologi&hellip;</b> dan pilih <code>QV_Lensa2_Leapfrog.obj</code> (format lain: Leapfrog .msh, Surpac .dtm/.str, DXF 3DFACE). Setiap berkas muncul sebagai anak node, berurutan sesuai urutan import. Tombol <b>Muat data latihan</b> sudah memuatnya.',
+ 'Klik baris <b>+ Tambah wireframe geologi&hellip;</b> di node <b>Import Wireframe Geologi</b> (langkah 2b) dan pilih <code>QV_Lensa2_Leapfrog.obj</code> (format lain: Leapfrog .msh, Surpac .dtm/.str, DXF 3DFACE). Setiap berkas muncul sebagai anak node, berurutan sesuai urutan import. Tombol <b>Muat data latihan</b> sudah memuatnya.',
  f"Wireframe tampil di 3D ([[wireframe_import]]): <b>{N['wf']}</b>.",
- 'Klik kanan berkas <code>QV_Lensa2_Leapfrog</code> &rarr; <b>Iris jadi string / flag interval bor (manual)&hellip;</b>; panel Import Wireframe Geologi menampilkan bagian <b>Iris jadi string / flag interval bor</b>. Pilih wireframe dan domain tujuan, lalu klik <b>&#9986; Iris jadi string HW/FW (section ini)</b> atau <b>&#9986; Semua section</b>. Loop irisan dipecah otomatis menjadi string HW dan FW ([[wireframe_iris]]).',
+ 'Klik tombol &#8943; berkas <code>QV_Lensa2_Leapfrog</code> &rarr; <b>Iris jadi string / flag interval bor (manual)&hellip;</b>; panel Import Wireframe Geologi menampilkan bagian <b>Iris jadi string / flag interval bor</b>. Pilih wireframe dan domain tujuan, lalu klik <b>&#9986; Iris jadi string HW/FW (section ini)</b> atau <b>&#9986; Semua section</b>. Loop irisan dipecah otomatis menjadi string HW dan FW ([[wireframe_iris]]).',
  f"Klik <b>&#9873; Flag interval bor di dalam wireframe</b>: {clean(N['wfFlag'])}",
  f"Karena flag QV_Lensa2 bertambah, solid QV_Lensa2 ikut <b>dibangun ulang otomatis</b> ({clean(N['solidWf'])}).")
  + fig('wireframe_import', 'Wireframe QV_Lensa2 hasil Leapfrog di atas data bor. Slider di daftar model mengatur transparansi.')
@@ -511,7 +511,7 @@ ch('Wireframe Leapfrog menjadi domain GC-Ex', dta('<code>data/QV_Lensa2_Leapfrog
  + '<p>Keduanya ada di menu klik-kanan tiap berkas di node <b>Import Wireframe Geologi</b> &mdash; satu-satunya tempat mengimpor dan melihat wireframe geologi.</p>'
  + '<h3>Mode B &mdash; satu perintah</h3>'
  + steps('Node <b>Import Wireframe Geologi</b> &rarr; import wireframe-nya (<code>.msh</code>, <code>.obj</code>, <code>.dxf</code>, atau <code>.dtm</code> + <code>.str</code> Surpac).',
-         'Klik kanan berkasnya &rarr; <b>Serap jadi domain yang bisa diedit (Mode B)&hellip;</b> (atau klik kanan node &rarr; <b>Serap wireframe &rarr; domain&hellip;</b>)',
+         'Klik tombol &#8943; berkasnya &rarr; <b>Serap jadi domain yang bisa diedit (Mode B)&hellip;</b> (atau tombol &#8943; node &rarr; <b>Serap wireframe &rarr; domain&hellip;</b>)',
          'Isi tiga hal saja: <b>wireframe mana</b>, <b>spasi section</b>, dan <b>nama domain</b> (kosongkan untuk ikut nama berkasnya).',
          'Tekan <b>Serap sekarang</b>.')
  + '<p>Yang dikerjakan GC-Ex, berurutan, dan semuanya dilaporkan:</p>'
@@ -542,7 +542,7 @@ ch('Wireframe Leapfrog menjadi domain GC-Ex', dta('<code>data/QV_Lensa2_Leapfrog
  + '<tr><td>String yang <b>Anda edit tangan</b></td><td><b>dilewati</b> &mdash; pekerjaan Anda tidak hilang</td></tr></table>'
  + warn('Konsekuensinya perlu disadari: sejak wireframe diserap, <b>GC-Ex menjadi sumber kebenaran bentuknya</b>, bukan Leapfrog lagi. Bila rekan Anda terus memperbarui di Leapfrog sementara Anda mengedit di GC-Ex, kedua model itu akan berbeda. Laporan penyerapan menyebutkan berapa section yang dilewati karena sudah diedit &mdash; angka itu adalah ukuran seberapa jauh kedua model sudah berpisah. Sepakati di tim siapa yang memegang bentuk resminya.', 'Siapa pemegang bentuk resmi')
  + '<h3>Mode A &mdash; wireframe dipakai eksak</h3>'
- + '<p>Klik kanan berkas wireframe di node <b>Import Wireframe Geologi</b> &rarr; <b>Kunci domain &lt;nama domain&gt; ke wireframe ini</b>. Domain itu lalu memakai <b>mesh Leapfrog apa adanya</b> sebagai batas &mdash; uji titik-di-dalam dan volumenya dari mesh itu, tanpa RBF. Badge berkasnya menjadi <code>eksak: &lt;nama domain&gt;</code>; <b>Lepaskan domain &hellip;</b> mengembalikannya ke solid RBF.</p>'
+ + '<p>Klik tombol &#8943; berkas wireframe di node <b>Import Wireframe Geologi</b> &rarr; <b>Kunci domain &lt;nama domain&gt; ke wireframe ini</b>. Domain itu lalu memakai <b>mesh Leapfrog apa adanya</b> sebagai batas &mdash; uji titik-di-dalam dan volumenya dari mesh itu, tanpa RBF. Badge berkasnya menjadi <code>eksak: &lt;nama domain&gt;</code>; <b>Lepaskan domain &hellip;</b> mengembalikannya ke solid RBF.</p>'
  + '<p>Karena disambungkan pada fungsi pembaca solid domain, mode eksak otomatis berlaku di <b>estimasi</b>, <b>estimasi waste</b>, <b>sub-blocking</b>, <b>filter posisi</b> dan <b>pelaporan</b> &mdash; tidak ada pengaturan lain yang perlu diubah.</p>'
  + steps('Jalankan estimasi dengan <b>solid GC-Ex</b> hasil serap, catat tonase dan kadarnya di Reporting BM.',
          'Node anak domain &rarr; <b>Pakai EKSAK</b>, jalankan estimasi lagi, catat angkanya.',
@@ -838,7 +838,7 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
  + '<p>Reporting BM biasa memakai <b>satu</b> permukaan topografi dan <b>satu</b> desain pit: yang sedang aktif. Dua pekerjaan rutin karena itu jadi berulang &mdash; membandingkan fase pit, dan menghitung material yang benar-benar tergali bulan ini. Tab <b>&#9315; Pit &amp; progres</b> (node <b>Per desain pit &amp; progres topo-ke-topo</b> di bawah Reporting BM) mengerjakan keduanya tanpa mengganti versi aktif.</p>'
  + warn('Tab ini <b>tidak</b> punya pengaturan sendiri untuk atribut, cut-off, domain, poligon, RL, SG atau <code>sb_frac</code>. Semuanya diambil dari tab &#9312; dan &#9313;, dan hanya <b>permukaan atas &amp; bawah</b> yang diganti &mdash; supaya angkanya pasti sebanding dengan laporan biasa.', 'Yang diganti hanya permukaan')
  + '<h3>1. Beberapa desain pit sekaligus, topografi sama</h3>'
- + steps('Import kedua desain pit: klik kanan <b>Data Spasial</b> &rarr; <b>Tambah versi desain pit&hellip;</b> &rarr; <code>SIM_pit_fase1.dxf</code>, lalu ulangi untuk <code>SIM_pit_fase2.dxf</code>. Versi lama tetap tersimpan. (Wireframe geologi tidak diimport di sini, melainkan di node Import Wireframe Geologi.)',
+ + steps('Import kedua desain pit: baris <b>+ Tambah versi desain pit&hellip;</b> di <b>Data Spasial &rarr; Desain pit</b> &rarr; <code>SIM_pit_fase1.dxf</code>, lalu ulangi untuk <code>SIM_pit_fase2.dxf</code>. Versi lama tetap tersimpan. (Wireframe geologi tidak diimport di sini, melainkan di node Import Wireframe Geologi.)',
    'Reporting BM &rarr; tab <b>&#9312;</b>: pilih atribut dan cut-off seperti biasa. Lalu tab <b>&#9315; Pit &amp; progres</b>, mode <b>Per desain pit</b>.',
    'Pilih <b>topografi</b> &mdash; satu untuk semua pit, supaya perbedaan angka benar-benar berasal dari desain pitnya.',
    'Centang desain pit <b>dari yang terkecil ke terbesar</b>, lalu <b>Hitung per pit</b>.')
@@ -849,7 +849,7 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
  + why('Angka yang dicari short term planner adalah <i>berapa tambahan ore bila pit diperdalam ke fase berikutnya</i>. Menghitungnya dari dua laporan terpisah berarti dua kali ganti versi aktif, dua kali catat, dan satu kesempatan salah catat.')
  + '<h3>2. Progres topo-ke-topo (ore reconcile)</h3>'
  + '<p>Material yang tergali antara dua survei adalah blok yang berada <b>di bawah topografi lama</b> dan <b>di atas topografi baru</b>. Dengan begitu seluruh atribut block model bisa dilaporkan untuk periode itu: tonase, kadar tiap unsur, logam, dan rinciannya per RL.</p>'
- + steps('Import kedua survei sebagai versi topografi: klik kanan <b>Data Spasial</b> &rarr; <b>Tambah versi topografi&hellip;</b> &rarr; <code>SIM_topo_akhir_juni.dxf</code> dan <code>SIM_topo_akhir_juli.dxf</code>. Versi aktif tetap <code>SIM_topo_xyz</code> bila Anda mengaktifkannya kembali.',
+ + steps('Import kedua survei sebagai versi topografi: baris <b>+ Tambah versi topografi&hellip;</b> di <b>Data Spasial &rarr; Topografi</b> &rarr; <code>SIM_topo_akhir_juni.dxf</code> dan <code>SIM_topo_akhir_juli.dxf</code>. Versi aktif tetap <code>SIM_topo_xyz</code> bila Anda mengaktifkannya kembali.',
    'Tab <b>&#9315; Pit &amp; progres</b> &rarr; mode <b>Progres topo-ke-topo</b>.',
    'Isi <b>topografi atas</b> = survei yang lebih <b>awal</b> (akhir Juni), <b>topografi bawah</b> = survei yang lebih <b>baru</b> (akhir Juli).',
    'Biarkan <b>Laporkan semua atribut kadar</b> menyala bila ingin seluruh unsur ikut, bukan hanya yang dicentang di tab &#9312;.',
@@ -892,7 +892,7 @@ ch('Vein bercabang: domain induk', dta('<b>proyek terpisah</b>: <code>data/SIM_s
 
 SV = N['strVol'] if isinstance(N.get('strVol'), list) else json.loads(N['strVol'])
 ch('Struktur geologi (dip / dip azimuth)', dta('<code>data/SIM_struktur.csv</code> &mdash; ' + f"{N['strN']} titik struktur (kolom <code>No, X, Y, Z, Dip, Dip_Azimuth, Keterangan</code>)",
-     [('Import lewat', 'node <b>Struktur Geologi</b> (langkah 5) &rarr; klik kanan &rarr; <b>Import CSV struktur&hellip;</b>'),
+     [('Import lewat', 'baris <b>+ Tambah struktur&hellip;</b> &rarr; <b>Import CSV struktur&hellip;</b> di node <b>Struktur Geologi</b> (langkah 5)'),
       ('Flag struktur di Sayatan 2D', '<b>Dip 65</b>, <b>Dip az 135</b>, keterangan <code>kontak HW</code> &mdash; lalu klik dua kali di penampang'),
       ('Radius pemakaian', '<b>25 m</b> (bawaan) dari data vein'),
       ('Hasil yang seharusnya', f"volume QV_Lensa2 {fN(SV[0])} m&sup3; &rarr; {fN(SV[1])} m&sup3; setelah {SV[2]} struktur dipakai")]) +  '<p>Arah dip vein bisa berubah: misalnya ke timur di elevasi 300 dan ke barat di elevasi 100. Titik struktur (dip / dip azimuth) memberi tahu RBF arah kemiringan setempat. Ada tiga sumber: <b>flag struktur</b> di Sayatan 2D per domain, <b>file CSV</b>, dan <b>titik manual</b> di 3D.</p>'
@@ -906,7 +906,7 @@ ch('Struktur geologi (dip / dip azimuth)', dta('<code>data/SIM_struktur.csv</cod
    'Klik <b>&#9998; Flag struktur</b>, lalu klik di Sayatan 2D pada posisi pengukuran ([[struktur_flag]]). Titik ditaruh di bidang sayatan untuk <b>domain aktif</b>.',
    'Klik berikutnya <b>memakai nilai yang sama</b> sampai Anda mengubahnya; nomor bertambah otomatis. Garis pendek di penampang = dip semu (perpotongan bidang struktur dengan bidang sayatan). <b>Esc</b> = selesai.')
  + fig('struktur_flag', 'Flag struktur di Sayatan 2D: dua titik 65/135 untuk QV_Lensa2 (oranye) dan dua struktur dari file di dekat sayatan (hijau), masing-masing tampil sebagai garis dip semu berlabel dip/az.')
- + '<h3>Titik manual di 3D</h3>' + steps('Klik kanan node <b>Struktur Geologi</b> &rarr; <b>+ Titik (klik di 3D)</b>. Arahkan kursor ke bor, solid atau topografi sampai info muncul, lalu klik. Atau <b>+ Titik di tengah area</b>.',
+ + '<h3>Titik manual di 3D</h3>' + steps('Klik baris <b>+ Tambah struktur&hellip;</b> di node <b>Struktur Geologi</b> &rarr; <b>Titik (klik di 3D)</b>. Arahkan kursor ke bor, solid atau topografi sampai info muncul, lalu klik. Atau <b>+ Titik di tengah area</b>.',
    'Geser titik terpilih dengan tombol <b>Maju / Mundur, Kiri / Kanan</b> (relatif arah pandang 3D; di Sayatan 2D relatif bidang sayatan) dan <b>Z + / Z &minus;</b>, dengan langkah yang diatur ([[struktur_manual]]).')
  + fig('struktur_manual', 'Editor titik terpilih: koordinat, dip / dip az, keterangan, dan tombol geser.', '78%')
  + '<h3>Pengaruh pada solid RBF</h3>'
@@ -1136,17 +1136,17 @@ ch('Map: peta geologi 2D', dta('<code>data/SIM_pickup_survey.csv</code> &mdash; 
 PS = N.get('planSet') or []
 if PS:
   ch('Plan bor harian: satu plan per hari / per bench', dta('lanjutan &mdash; tidak ada berkas masuk; titik dibuat di peta plan dari data latihan',
-     [('Yang diklik', 'klik kanan node <b>Database Bor &rarr; Plan bor (rencana)</b> &rarr; <b>Plan baru&hellip;</b>'),
+     [('Yang diklik', 'baris <b>+ Tambah plan bor&hellip;</b> (paling bawah di <b>Database Bor &rarr; Plan bor (rencana)</b>)'),
       ('Plan 1', f"<b>{PS[0][0]}</b>: alat <b>Garis</b>, 5 titik; lalu extend 2 titik &rarr; <b>{PS[0][1]} titik</b> ({PS[0][2]})"),
       ('Plan 2', f"<b>{PS[1][0]}</b>: alat <b>Grid area</b> 3 &times; 2 di timur laut &rarr; <b>{PS[1][1]} titik</b> ({PS[1][2]})" if len(PS) > 1 else '-'),
       ('Hasil yang seharusnya', 'dua sub-node bernomor 1. dan 2. di bawah <b>Plan bor (rencana)</b>, badge <b>' + f"{len(PS)} plan &middot; {sum(x[1] for x in PS)} titik" + '</b>')])
    + '<p>Rencana bor dibuat bertahap: hari ini satu baris di bench RL240, besok grid di bench lain, lusa tambahan di lokasi kemarin. Mulai Drillhole 0.24.44 setiap rencana disimpan sebagai <b>plan tersendiri</b> dan tampil <b>berurutan</b> sebagai sub-node <b>Plan bor (rencana)</b>. Hanya satu plan yang <b>aktif</b>: titik baru, Hapus semua, Nomori ulang dan Export CSV di panel bekerja pada plan aktif saja.</p>'
-   + steps('Klik kanan <b>Plan bor (rencana)</b> &rarr; <b>Plan baru&hellip;</b>. Nama bawaan <i>Plan tanggal &middot; bench</i>; ganti bila perlu, misalnya <code>' + PS[0][0] + '</code>.',
+   + steps('Buka node <b>Plan bor (rencana)</b> dan klik baris <b>+ Tambah plan bor&hellip;</b> di paling bawah ([[plan_set]]). Nama bawaan <i>Plan tanggal &middot; bench</i>; ganti bila perlu, misalnya <code>' + PS[0][0] + '</code>.',
      'Di panel Plan Bor isi <b>Bench</b> <code>RL240</code>, pilih alat <b>Garis</b> lalu tarik garis di peta plan: 5 titik dengan spasi sesuai isian <b>Spasi (m)</b>.',
-     'Hari berikutnya: <b>Plan baru&hellip;</b> lagi, Bench <code>RL235</code>, alat <b>Grid area</b>: klik sudut-sudut area, klik ganda untuk selesai &rarr; ' + (f"{PS[1][1]} titik." if len(PS) > 1 else 'grid titik.'),
-     'Extend di lokasi plan pertama: klik kanan sub-node <b>1.</b> &rarr; <b>Jadikan plan aktif</b> (atau pilih di kotak plan di atas panel), lalu tambah titik. Nomor melanjutkan urutan plan itu: ' + PS[0][2] + '.',
+     'Hari berikutnya: <b>+ Tambah plan bor&hellip;</b> lagi, Bench <code>RL235</code>, alat <b>Grid area</b>: klik sudut-sudut area, klik ganda untuk selesai &rarr; ' + (f"{PS[1][1]} titik." if len(PS) > 1 else 'grid titik.'),
+     'Extend di lokasi plan pertama: tombol &#8943; sub-node <b>1.</b> &rarr; <b>Jadikan plan aktif</b> (atau pilih di kotak plan di atas panel), lalu tambah titik. Nomor melanjutkan urutan plan itu: ' + PS[0][2] + '.',
      'Centang / hapus centang sub-node untuk menampilkan atau menyembunyikan plan di 3D dan di peta. Plan aktif digambar <b>magenta tegas</b>, plan lain <b>ungu pudar</b> ([[plan_peta]]).',
-     'Export: klik kanan sub-node &rarr; <b>Export CSV plan ini&hellip;</b> (nama file dari nama plan), atau node induk &rarr; <b>Export CSV semua plan&hellip;</b> (satu file, kolom Plan).')
+     'Export: tombol &#8943; sub-node &rarr; <b>Export CSV plan ini&hellip;</b> (nama file dari nama plan), atau node induk &rarr; <b>Export CSV semua plan&hellip;</b> (satu file, kolom Plan).')
    + fig('plan_set', 'Project Tree: <b>Plan bor (rencana)</b> berisi ' + ', '.join(f"{i+1}. {x[0]} ({x[1]} titik)" for i, x in enumerate(PS)) + '. Plan 1 bertanda <i>aktif</i>; panel Plan Bor di kanan memakai plan aktif.', '62%')
    + fig('plan_peta', f"Peta plan: plan aktif ({PS[0][0]}, {PS[0][1]} titik) magenta tegas di antara collar lama; plan RL235 ({PS[1][1] if len(PS)>1 else 0} titik) ungu pudar di timur laut.")
    + tip('Plan tersimpan di proyek bersama sesi kerja. Proyek lama yang dibuat sebelum 0.24.44 dibuka dengan satu plan bernama <b>Plan lama</b> berisi semua titik sebelumnya.')
@@ -1176,10 +1176,10 @@ ch('Export database & block model', dta('lanjutan &mdash; tidak ada berkas masuk
       ('Hasil yang seharusnya', clean(N['exportDb'])),
       ('Isi ZIP', '<code>' + ', '.join(N['zipIsi']) + '</code>'),
       ('Block model', '<b>Export .mdl (Surpac)</b> bila dibuka dari .mdl; dari CSV: <b>CSV blok domain</b> &mdash; ' + clean(N['meCsv']))]) +  steps(
- 'Klik kanan node <b>Database Bor</b> &rarr; <b>Export database (CSV)</b> (atau tombol yang sama di panel Data). Pilih <b>Dip di survey</b>: negatif = ke bawah (Surpac / Leapfrog umumnya negatif).',
+ 'Tombol &#8943; node <b>Database Bor</b> &rarr; <b>Export database (CSV)</b> (atau tombol yang sama di panel Data). Pilih <b>Dip di survey</b>: negatif = ke bawah (Surpac / Leapfrog umumnya negatif).',
  f"Hasil: {clean(N['exportDb'])} File ZIP berisi: <code>{', '.join(N['zipIsi'])}</code>.",
  'Kolom <code>Ore_Domain</code> di assay &amp; geologi berisi domain dari flag, siap dipakai sebagai interval selection di Leapfrog atau Surpac.',
- 'Block model hasil Model Estimation: klik kanan node <b>Block Model</b> &rarr; <b>Export block model GC (.mdl)</b>, atau <b>&#8681; Export .mdl (Surpac)</b> di Model Estimation (bila block model dibuka dari file .mdl). Header &amp; atribut asli tetap, atribut baru ditambahkan di akhir, blok tambahan disisipkan sesuai urutan octree Surpac. Block model dari CSV: <b>&#8681; CSV blok domain</b> ' + f"({clean(N['meCsv'])}).",
+ 'Block model hasil Model Estimation: tombol &#8943; node <b>Block Model</b> &rarr; <b>Export block model GC (.mdl)</b>, atau <b>&#8681; Export .mdl (Surpac)</b> di Model Estimation (bila block model dibuka dari file .mdl). Header &amp; atribut asli tetap, atribut baru ditambahkan di akhir, blok tambahan disisipkan sesuai urutan octree Surpac. Block model dari CSV: <b>&#8681; CSV blok domain</b> ' + f"({clean(N['meCsv'])}).",
  'String kontrol: <b>&#8681; Export STR</b> / <b>&#8681; Export DXF</b>; flag: <b>&#8681; Export flag (CSV)</b>; solid: <b>OBJ / DXF / STR+DTM</b> di Geomodeller Vein.')
  + tip('Jika menu <b>Proyek &rarr; Salin setiap export ke folder proyek/export</b> aktif, salinan export juga tersimpan di folder proyek, misalnya <code>export/2026-10-22/GCEx_Database_VeinA_Simulasi_20261022.zip</code>.')
  + warn('Export .mdl dengan atribut &amp; blok tambahan sudah diuji dibaca ulang oleh GC-Ex dan dibandingkan per record dengan file asli (model Z3, 590.478 blok). Uji buka di Surpac tetap disarankan sebelum dipakai produksi.'))

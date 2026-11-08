@@ -667,13 +667,13 @@ body.sgdrag #stage{pointer-events:none}
 </section>
 <section id='pWf' hidden>
 <h3>Import Wireframe Geologi</h3>
-<div class='hint' style='margin:-4px 0 8px'>Satu-satunya tempat mengimpor wireframe / solid geologi dari Leapfrog atau software lain. Setiap berkas muncul di Project Tree di bawah node <b>Import Wireframe Geologi</b> sesuai urutan import; klik kanan berkasnya untuk menjadikannya domain.</div>
+<div class='hint' style='margin:-4px 0 8px'>Satu-satunya tempat mengimpor wireframe / solid geologi dari Leapfrog atau software lain. Setiap berkas muncul di Project Tree di bawah node <b>Import Wireframe Geologi</b> sesuai urutan import; tombol &#8943; berkasnya untuk menjadikannya domain.</div>
 <label class='mdbtn'><input type='file' multiple accept='.msh,.dtm,.str,.dxf,.obj' onchange='mdImport(this)'>&#8679; Import wireframe geologi (.msh / .obj / .dxf / .dtm)</label>
 <div class='hint'>Leapfrog <b>.msh</b> &middot; Surpac <b>.dtm</b> (pilih bersama file <b>.str</b>-nya) &middot; DXF 3DFACE / polyface &middot; Wavefront <b>.obj</b>. Saat slab dipotong / Penampang 2D, model tampil sebagai garis perpotongan.</div>
 <div id='mdList' class='mdlist'></div>
 <label class='sw'><input type='checkbox' id='mdSolid' checked onchange='updatePlot()'>Tampilkan solid transparan saat slab dipotong (3D)</label>
 <div class='g2 f' style='margin-top:6px'><button onclick='wfxDlg()' title='Wireframe menjadi domain GC-Ex yang bisa diedit (Mode B)'>&#8680; Serap wireframe &rarr; domain&hellip;</button><button onclick='wfxLihat()'>Laporan penyerapan terakhir</button></div>
-<div class='hint'>Mode A (batas EKSAK untuk audit): klik kanan berkas wireframe di Project Tree &rsaquo; <i>Kunci domain &hellip; ke wireframe ini</i>.</div>
+<div class='hint'>Mode A (batas EKSAK untuk audit): tombol &#8943; berkas wireframe di Project Tree &rsaquo; <i>Kunci domain &hellip; ke wireframe ini</i>.</div>
 <div id='wfMsg' class='hint' style='margin-top:6px'></div>
 <div id='wfTools'></div>
 </section>
@@ -2154,7 +2154,7 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
       var g=secGeom(),s0=(g.seg||60)/2,z0=zp,Q=[[s0-15,z0+6],[s0,z0+12],[s0+15,z0+4],[s0+8,z0-10],[s0-10,z0-8]];
       Q.forEach(function(q,k){A(2+k*0.7,function(){if(!DG.on)return;DG.c2.push(q);DG.cur.push(dg3(DG.pl,q[0],q[1]));dgDraw();dgState();});});
       A(6,function(){if(DG.on)dgFinish(true);});A(9.4,function(){if(VIEW2D)toggle2D();});}});
-  S.push({s:'Plan Bor',t:'Plan bor: rencana pengeboran',d:'Plan Bor membuat titik bor rencana di peta plan: per titik, sepanjang garis, atau grid area. Setiap Plan baru (mis. per hari) muncul berurutan sebagai sub-node Plan bor (rencana); pilih plan lama untuk extend di lokasi yang sama.',el:'.ptr[data-id="db.plan"]',dur:10,
+  S.push({s:'Plan Bor',t:'Plan bor: rencana pengeboran',d:'Plan Bor membuat titik bor rencana di peta plan: per titik, sepanjang garis, atau grid area. Plan hari lain dibuat lewat baris + Tambah plan bor… di Project Tree dan muncul berurutan sebagai sub-node Plan bor (rencana); pilih plan lama untuk extend di lokasi yang sama.',el:'.ptr[data-id="db.plan"]',dur:10,
     run:function(A){A(0,function(){if(VIEW2D)toggle2D();dmSet('sMode','H');dmSet('sliceClip',false);dmSet('showPlane',false);try{PT.open['db']=1;PT.open['db.plan']=1;PT.select('db.plan');}catch(e){uiTab('Plan');}if(window.PLS)PLS.buat('Plan demo');});A(1.5,function(){dmPoint('#plTools button[data-t=line]',true);plTool(document.querySelector('#plTools button[data-t=line]'));});
       A(3.5,function(){var a={x:L[0]-offX,y:L[1]-offY},b={x:L[2]-offX,y:L[3]-offY},m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},u={x:(b.x-a.x),y:(b.y-a.y)},n=Math.sqrt(u.x*u.x+u.y*u.y)||1,o={x:-u.y/n*12,y:u.x/n*12};
         plLine({x:m.x-u.x*0.25+o.x,y:m.y-u.y*0.25+o.y},{x:m.x+u.x*0.25+o.x,y:m.y+u.y*0.25+o.y});dmHide();});A(8.4,function(){if(DRW.on)drawClose();});}});

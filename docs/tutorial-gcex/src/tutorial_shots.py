@@ -148,7 +148,7 @@ with sync_playwright() as pw:
     ev("MD.models=MD.models.filter(m=>!/QV_Lensa2/.test(m.name));mdBump()")   # data latihan mungkin sudah memuatnya: import ulang supaya langkahnya sama dengan buku
     pg.set_input_files("#pWf input[type=file]",DATA+'QV_Lensa2_Leapfrog.obj');pg.wait_for_function("MD.models.some(m=>/QV_Lensa2/.test(m.name))",timeout=60000);pg.wait_for_timeout(800);ev("PT.render(true)")
     shot('wireframe_import');note('wf',ev("MD.models.filter(m=>/QV_Lensa2/.test(m.name)).map(m=>m.name+' '+m.nv+' v '+m.nt+' f')[0]"))
-    # klik kanan berkas > Iris jadi string / flag interval bor (manual)... -> bagian #wfTools di panel yang sama
+    # tombol ⋯ berkas > Iris jadi string / flag interval bor (manual)... -> bagian #wfTools di panel yang sama
     ev("PT.select('wf');WF.mi=MD.models.findIndex(m=>/QV_Lensa2/.test(m.name));WF.dom='__new';WF.msg='';wfToolsDraw();$('pos').value=-20;if(!VIEW2D)toggle2D();updatePlot()");ev("gmWfStrings(false)");note('wfStr',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"))
     ev("var w=GM.doms.find(d=>/Leapfrog/.test(d.name));if(w)w.col='#0b7285';gmAct(GM.doms[0].id);WF.dom=GM.doms[0].id;gmDirty();wfToolsDraw();var e=document.getElementById('wfTools');if(e)e.scrollIntoView({block:'start'})");pg.wait_for_timeout(500);shot('wireframe_iris')
     ev("WF.keep=true;gmWfFlag()");note('wfFlag',ev("(WF.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));note('solidWf',ev("(IM.msg||'(tidak ada)').replace(/<[^>]+>/g,'')"));ev("PT.select('gm')");pg.wait_for_timeout(700);shot('wireframe_panel',PANEL)

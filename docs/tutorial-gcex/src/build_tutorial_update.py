@@ -858,7 +858,7 @@ B.append('<p>Tiga tambahan di <b>GC-Ex Drill Hole Ultimate</b> yang semuanya dij
          'bukan dari panel &mdash; supaya panel kerja tidak perlu digulung naik-turun.</p>')
 B.append('<h3>10.1 Database bor per kampanye</h3>')
 B.append('<p>Node <b>Database Bor</b> dipecah per <b>kampanye pemboran</b> (eksplorasi, infill, grade control per '
-         'periode). Menu node &rarr; <b>Tambah kampanye baru&hellip;</b>; kampanye tujuan juga bisa dipilih di '
+         'periode). Baris <b>+ Tambah kampanye&hellip;</b> (paling bawah di node Database Bor); kampanye tujuan juga bisa dipilih di '
          'dialog import / upsert.</p>')
 B.append(D.tabel(['Keadaan node', 'Peran', 'Akibat'], [
     ['<b>AKTIF</b>', 'set kerja', 'satu-satunya sumber pemodelan, estimasi, Geostatistik dan statistik'],
@@ -933,8 +933,8 @@ B.append('<div class="page"></div><h2>12. Wireframe terpusat, Project Tree sesua
 B.append('<p><b>Satu node untuk wireframe geologi.</b> Wireframe / solid geologi (Leapfrog .msh / .obj, Surpac '
          '.dtm + .str, DXF) kini diimport dan dilihat hanya di node <b>Import Wireframe Geologi</b> (Drill Hole '
          'langkah 2b, Block Model langkah 4b). Setiap berkas menjadi anak node sesuai urutan import. Di Drill Hole, '
-         'klik kanan berkasnya untuk menjadikannya domain:</p>')
-B.append(D.tabel(['Menu klik-kanan berkas', 'Hasil'], [
+         'tombol &#8943; berkasnya untuk menjadikannya domain:</p>')
+B.append(D.tabel(['Menu &#8943; berkas', 'Hasil'], [
     ['Serap jadi domain yang bisa diedit (Mode B)&hellip;', 'string HW/FW + solid RBF, ikut diperbarui saat ada bor baru'],
     ['Iris jadi string / flag interval bor (manual)&hellip;', 'membuka bagian iris &amp; flag di panel yang sama, langkah demi langkah per section'],
     ['Kunci domain &hellip; ke wireframe ini (Mode A)', 'batas EKSAK untuk audit; <i>Lepaskan</i> mengembalikan ke solid RBF'],

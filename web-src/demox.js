@@ -64,7 +64,7 @@
     'Estimasi Ordinary Kriging': 'Uji estimasi 3 pass untuk menilai parameter sebelum disimpan ke domain.',
     'Block model 3D': 'Hasil estimasi tampil sebagai blok berwarna kadar bersama lubang bor.',
     'Estimasi block model GC per domain': 'Model Estimation mengestimasi blok di dalam solid tiap domain dan menambah blok yang belum ada.',
-    'Plan bor: rencana pengeboran': 'Titik rencana dibuat per titik, garis, atau grid area; setiap Plan baru muncul berurutan sebagai sub-node Plan bor (rencana).',
+    'Plan bor: rencana pengeboran': 'Titik rencana dibuat per titik, garis, atau grid area; plan hari lain dibuat lewat baris + Tambah plan bor… dan muncul berurutan sebagai sub-node Plan bor (rencana).',
     'Preview 3D & export CSV': 'Rencana tampil bersama lubang lama, lengkap dengan jarak dan kadar perkiraan; export CSV.',
     'Block model grade control': 'Block model GC (.mdl / CSV) diimport, diwarnai per kelas, dan difilter cut-off.',
     'Data referensi': 'Solid, DTM dan titik survey dari software lain tampil sebagai acuan.',
@@ -176,7 +176,7 @@
     var S = [];
     if (DH) {
       S.push({ s: 'Geomodeller Vein', t: 'Wireframe Leapfrog menjadi domain', dur: 7, el: '.ptr[data-id="wf"], #pWf',
-        d: 'Semua wireframe geologi ada di satu node, Import Wireframe Geologi; klik kanan berkasnya untuk diserap menjadi string HW / FW (domain GC-Ex yang bisa diedit), diiris, di-flag, atau dikunci eksak.',
+        d: 'Semua wireframe geologi ada di satu node, Import Wireframe Geologi; tombol ⋯ berkasnya untuk diserap menjadi string HW / FW (domain GC-Ex yang bisa diedit), diiris, di-flag, atau dikunci eksak.',
         run: function (A) { A(0, function () { pilih('wf'); }); A(0.6, function () { try { if (window.wfToolsDraw) wfToolsDraw(); } catch (e) {} }); } });
       S.push({ s: 'Block Model', t: 'Kerangka blok AOI & sub-blocking', dur: 6, el: 'rbBM',
         d: 'Block model bisa dibuat dari nol (kerangka AOI) dan dipecah di batas solid; sb_frac menimbang blok perbatasan.',

@@ -483,7 +483,6 @@
     var src = KP.L.filter(function (k) { return !isMg(k); });
     return [
       { h: 'Kampanye pemboran' },
-      { t: 'Tambah kampanye baru\u2026', fn: function () { kpTambah(); } },
       { t: 'Buat set merge\u2026 (gabungkan kampanye)', dis: src.length < 2, fn: function () { kpGabung(); } },
       { sep: 1 }
     ];
@@ -524,7 +523,6 @@
           ]);
           L = L.concat([
             { sep: 1 },
-            { t: 'Kampanye baru…', fn: function () { kpTambah(); } },
             { t: 'Buat set merge… (gabungkan kampanye)', fn: function () { kpGabung(); } },
             { sep: 1 },
             mg ? { t: 'Hapus set merge ini…', danger: 1, fn: function () { kpGHapus(k.id); } }

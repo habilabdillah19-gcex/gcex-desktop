@@ -4001,3 +4001,13 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **PDF berhalaman banyak**: header (tanggal, shift, crew, lokasi) disalin dari halaman yang sudah terisi (kuning — cocokkan); AI hanya membaca tabel. Baca halaman pertama dulu, lalu **Baca Semua dengan AI**.
 - Keduanya bisa dimatikan di **Pengaturan → Meringankan kerja AI**.
 - Di bawah hasil baca kini tampil kecepatan, pemakaian GPU, porsi gambar yang dibuang, dan apakah header disalin.
+
+## 136. Drillhole 0.24.45 & Block Model 0.24.41 — menu ⋯ dan baris "+ Tambah …" di Project Tree
+
+- **Satu pintu menu: tombol ⋯** di ujung baris node, sekarang **selalu tampak** (abu-abu tipis). **Klik kanan di Project Tree tidak lagi membuka menu.**
+- **Perintah yang menambah isi** tidak lagi di menu ⋯, tetapi baris biru **+ Tambah …** paling bawah di bawah node tersebut. Baris dengan beberapa pilihan (mis. *+ Tambah struktur…*) membuka daftar pilihannya.
+  - Drill Hole: + Tambah versi topografi / desain pit / orthofoto, + Tambah titik survey / string, + Tambah wireframe geologi, + Tambah kampanye, + Tambah plan bor, + Tambah titik pick-up (CSV), + Tambah struktur, + Tambah sesar (dari koordinat), + Tambah domain, + Tambah versi block model.
+  - Block Model: + Tambah data referensi, + Tambah wireframe geologi, + Tambah preset (dari pengaturan sekarang).
+- Menu ⋯ berisi perintah untuk isi yang sudah ada (tampilkan sebagai, jadikan aktif, ganti nama, export, pindahkan, hapus). Node yang menunya kosong tidak menampilkan ⋯.
+- Panel Plan Bor tidak lagi punya tombol *+ Plan baru*; plan hari lain dibuat lewat **+ Tambah plan bor…** di Project Tree.
+- Tutorial, Tutorial Update, Petunjuk Teknis dan teks Demo menyebut ⋯ / + Tambah, bukan klik kanan.

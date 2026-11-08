@@ -33,7 +33,7 @@ JS_PINTU = r"""
   });
   var L = PT.flatAll(PT.nodes || []), node = [];
   L.forEach(function (n) {
-    if (!n.menu) return; var M = []; try { M = n.menu() || []; } catch (e) {}
+    var M = []; if (n.menu) { try { M = n.menu() || []; } catch (e) {} } if (n.add) M = M.concat(n.add.items || [n.add]); /* 0.24.45: perintah tambah = baris + Tambah */
     M.forEach(function (it) { if (it && it.fn && (/mdImport/.test(String(it.fn)) || /Import (wireframe|model vein)/i.test(it.t || ''))) node.push(n.id); });
   });
   if (window.rpPanel && /rpImpWf\(this\)/.test(String(rpPanel))) panel.push('pRep (Reporting BM)');
@@ -62,12 +62,12 @@ JS_DOMAIN = r"""
   var d = GM.doms.filter(function (x) { return x.name === 'UJI_DOM'; })[0];
   PT.render && PT.render(true);
   var w = PT.flatAll(PT.nodes || []).filter(function (n) { return n.id === 'wf'; })[0];
-  var k = w.kids[w.kids.length - 1], M = k.menu(), it = M.filter(function (x) { return x.t && x.t.indexOf('Kunci domain UJI_DOM') === 0; })[0];
+  var k = w.kids.filter(function (q) { return !q.addRow; }).slice(-1)[0], M = k.menu(), it = M.filter(function (x) { return x.t && x.t.indexOf('Kunci domain UJI_DOM') === 0; })[0];
   var serap = M.some(function (x) { return x.t && /Serap/.test(x.t); });
   if (!it) return {err: 'menu kunci tidak ada', menu: M.map(function (x) { return x.t || x.h; })};
   it.fn();
   PT.render && PT.render(true);
-  var w2 = PT.flatAll(PT.nodes || []).filter(function (n) { return n.id === 'wf'; })[0], k2 = w2.kids[w2.kids.length - 1];
+  var w2 = PT.flatAll(PT.nodes || []).filter(function (n) { return n.id === 'wf'; })[0], k2 = w2.kids.filter(function (q) { return !q.addRow; }).slice(-1)[0];
   return {wfx: d.wfx || null, badge: k2.b, serap: serap};
 })()
 """

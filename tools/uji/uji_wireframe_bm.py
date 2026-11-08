@@ -33,7 +33,7 @@ JS_PINTU = r"""
   PT.render && PT.render(true);
   var ng = [], ns = [];
   PT.flatAll(PT.nodes || []).forEach(function (n) {
-    if (!n.menu) return; var M = []; try { M = n.menu() || []; } catch (e) {}
+    var M = []; if (n.menu) { try { M = n.menu() || []; } catch (e) {} } if (n.add) M = M.concat(n.add.items || [n.add]); /* 0.24.45: perintah tambah = baris + Tambah */
     M.forEach(function (it) { var f = it && it.fn ? String(it.fn) : ''; if (/mdImport\(i,'surf'\)/.test(f)) ns.push(n.id); else if (/mdImport\(i/.test(f)) ng.push(n.id); });
   });
   return {panelGeo: geo, panelSurf: surf, nodeGeo: ng, nodeSurf: ns};
@@ -43,7 +43,7 @@ JS_PINTU = r"""
 JS_DAFTAR = r"""
 (function () {
   PT.render && PT.render(true);
-  var L = PT.flatAll(PT.nodes || []), kidsOf = function (id, re) { var n = L.filter(function (x) { return x.id === id; })[0]; return n ? (n.kids || []).filter(function (k) { return re.test(k.id); }).map(function (k) { return k.t; }) : null; };
+  var L = PT.flatAll(PT.nodes || []), kidsOf = function (id, re) { var n = L.filter(function (x) { return x.id === id; })[0]; return n ? (n.kids || []).filter(function (k) { return re.test(k.id) && !k.addRow; }).map(function (k) { return k.t; }) : null; };
   return {models: MD.models.map(function (m) { return m.name + ':' + (m.jenis || '-'); }),
           wf: kidsOf('wf', /^wf\./), ref: kidsOf('ref', /^ref\.models\./),
           wfList: ((document.getElementById('wfList') || {}).textContent || ''),
@@ -64,7 +64,7 @@ JS_IMPORT = r"""
 JS_PINDAH = r"""
 (function () {
   PT.render && PT.render(true);
-  var n = PT.flatAll(PT.nodes || []).filter(function (x) { return x.id === 'wf'; })[0], k = n.kids[n.kids.length - 1];
+  var n = PT.flatAll(PT.nodes || []).filter(function (x) { return x.id === 'wf'; })[0], k = n.kids.filter(function (q) { return !q.addRow; }).slice(-1)[0];
   var it = k.menu().filter(function (x) { return x.t && /Pindahkan ke Data Referensi/.test(x.t); })[0];
   if (!it) return {err: 'menu pindah tidak ada'};
   it.fn(); return {ok: 1};

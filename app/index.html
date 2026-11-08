@@ -4710,8 +4710,11 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
 /* ================= GC-Ex: PROJECT TREE (dipakai GC-Ex Block Model & GC-Ex Drillhole) =================
    Konsep seperti Leapfrog: kiri atas = pohon proyek tersusun menurut urutan pekerjaan, kiri bawah = PROPERTI item terpilih
    (isi panel menu yang sudah ada), kanan = tampilan 3D/2D. Rail ikon kiri disembunyikan; semua menu tetap ada.
-   Tiap item: centang tampil/sembunyi (bila relevan), klik = buka propertinya, klik kanan / tombol ⋯ = menu
-   (ganti, tambah versi, tampilkan sebagai, ganti nama, hapus, export ...). Ganda-klik / F2 = ganti nama (bila bisa).
+   Tiap item: centang tampil/sembunyi (bila relevan), klik = buka propertinya, tombol ⋯ (selalu tampak) = menu
+   (tampilkan sebagai, ganti nama, hapus, export ...). Ganda-klik / F2 = ganti nama (bila bisa).
+   Sejak 0.24.45 klik kanan TIDAK membuka menu (keputusan pemilik: satu pintu, tombol ⋯). Perintah yang MENAMBAH
+   isi node (plan, domain, versi, wireframe, struktur …) tidak di menu ⋯ tetapi di baris "+ Tambah …" paling bawah
+   anak node: properti node `add:{t,fn}` atau `add:{t,items:[{t,fn}]}` (pilihan muncul di bawah baris itu).
    Definisi pohon tiap aplikasi: PT.install({app:'dh'|'bm', nodes:function(){return [...]}}).
    Node: {id,t,ic,b(badge),mark,hint,tab,sub(regex teks sub-tab),go(),chk(true/false),onChk(v),menu()->[{t,fn,danger,dis,sep,on}],
           kids:[...],rename(nama),del(),dim} */
@@ -4794,17 +4797,22 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
   function saveOpen(){LS('gcex_pt_open_'+(T.def&&T.def.app),JSON.stringify(T.open));}
   function find(id){var r=null;T.flatAll(T.nodes).some(function(n){if(n.id===id){r=n;return true;}return false;});return r;}
   T.find=find;
-  function build(){var L=ok(function(){return T.def.nodes();})||[];T.nodes=L;return L;}
+  function addRows(L){(L||[]).forEach(function(n){if(n.kids)addRows(n.kids);var a=n.add;if(!a)return;
+    n.kids=(n.kids||[]).concat([{id:n.id+'.+',t:'+ '+a.t,ic:'add',addRow:a,hint:a.hint||a.t}]);});}
+  function build(){var L=ok(function(){return T.def.nodes();})||[];addRows(L);T.nodes=L;return L;}
+  /* ⋯ hanya untuk node yang menunya benar-benar berisi */
+  function hasMenu(n){if(n.rename)return true;if(!n.menu)return false;var M=ok(function(){return n.menu();})||[];return M.some(function(o){return o&&!o.sep&&!o.h;});}
   function sigOf(L){return JSON.stringify(T.flatAll(L).map(function(n){return [n.id,n.t,n.b,n.mark,n.chk,n.dim,n.st,n.kids?n.kids.length:-1,T.open[n.id]?1:0];}));}
   /* ---------- gambar ---------- */
-  function rowHtml(n,d){var has=n.kids&&n.kids.length,op=has&&T.open[n.id],ck=n.chk===true||n.chk===false;
+  function rowHtml(n,d){if(n.addRow)return '<div class="ptr ptadd" role="treeitem" aria-level="'+(d+1)+'" data-id="'+esc(n.id)+'" style="--d:'+d+'" title="'+esc(n.hint)+'"><span class="ptc no"></span><span class="ptk no"></span><span class="ptl">'+esc(n.t)+'</span></div>';
+    var has=n.kids&&n.kids.length,op=has&&T.open[n.id],ck=n.chk===true||n.chk===false;
     return '<div class="ptr'+(T.sel===n.id?' sel':'')+(n.dim?' dim':'')+(n.fold?' fold':'')+'" role="treeitem" aria-level="'+(d+1)+'"'+(has?' aria-expanded="'+(op?'true':'false')+'"':'')+' data-id="'+esc(n.id)+'" style="--d:'+d+'" title="'+esc(n.hint||n.t)+'">'+
       '<span class="ptc'+(has?'':' no')+'">'+(has?(op?'&#9662;':'&#9656;'):'')+'</span>'+
       (ck?'<span class="ptk'+(n.chk?' on':'')+'" role="checkbox" aria-checked="'+(n.chk?'true':'false')+'" title="'+(n.chk?'Sembunyikan':'Tampilkan')+'"></span>':'<span class="ptk no"></span>')+
       (n.step?'<span class="pts'+(n.st?' '+n.st:'')+'" title="'+({done:'Selesai',next:'Langkah berikutnya',todo:'Belum dikerjakan',opt:'Opsional',part:'Sebagian'}[n.st]||'')+'"></span>':'')+'<span class="pti">'+(IC[n.ic]||IC.folder)+'</span><span class="ptl">'+esc(n.t)+'</span>'+(n.mark?'<span class="ptm">'+esc(n.mark)+'</span>':'')+(n.b!=null&&n.b!==''?'<span class="ptn">'+esc(n.b)+'</span>':'')+
-      (n.menu?'<button type="button" class="ptx" tabindex="-1" title="Menu (klik kanan)">'+IC.more+'</button>':'')+'</div>';}
+      (hasMenu(n)?'<button type="button" class="ptx" tabindex="-1" title="Menu">'+IC.more+'</button>':'')+'</div>';}
   function render(force){var el=$('ptree');if(!el||!T.def||T.editing)return;var L=build(),s=sigOf(L);if(!force&&s===T.sig)return;T.sig=s;var h='',flat=[];
-    var walk=function(A,d){A.forEach(function(n){h+=rowHtml(n,d);flat.push(n);if(n.kids&&n.kids.length&&T.open[n.id])walk(n.kids,d+1);});};walk(L,0);
+    var walk=function(A,d){A.forEach(function(n){h+=rowHtml(n,d);if(!n.addRow)flat.push(n);if(n.kids&&n.kids.length&&T.open[n.id])walk(n.kids,d+1);});};walk(L,0);
     var st=el.scrollTop;el.innerHTML=h||'<div class="hint" style="padding:10px">Buka atau buat proyek dulu.</div>';el.scrollTop=st;T.flat=flat;head();try{nav();}catch(e){}}
   T.render=render;
   function markSel(){var el=$('ptree');if(!el)return;el.querySelectorAll('.ptr.sel').forEach(function(r){r.classList.remove('sel');});var r=T.sel&&el.querySelector('.ptr[data-id="'+CSS.escape(T.sel)+'"]');if(r)r.classList.add('sel');head();}
@@ -4838,7 +4846,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     try{var sd=$('ptBody');if(sd){[].forEach.call(sd.querySelectorAll('.ptr.on'),function(r){r.classList.remove('on');});
       var r=sd.querySelector('.ptr[data-id="'+id+'"]');if(r)r.classList.add('on');}}catch(e){}};
   function head(){var ph=$('ptPH');if(!ph)return;var n=T.sel&&find(T.sel);if(!n){ph.innerHTML='<span class="pp">Properti</span>';return;}
-    ph.innerHTML='<span class="pp">Properti</span><span class="pi2">'+(IC[n.ic]||IC.folder)+'</span><b>'+esc(n.t)+'</b>'+(n.menu?'<button type="button" class="ptx" title="Menu item ini">'+IC.more+'</button>':'');
+    ph.innerHTML='<span class="pp">Properti</span><span class="pi2">'+(IC[n.ic]||IC.folder)+'</span><b>'+esc(n.t)+'</b>'+(hasMenu(n)?'<button type="button" class="ptx" title="Menu item ini">'+IC.more+'</button>':'');
     var b=ph.querySelector('.ptx');if(b)b.onclick=function(e){var r=b.getBoundingClientRect();menu(n,r.left,r.bottom+2);e.stopPropagation();};}
   /* ---------- aksi ---------- */
   T.goSub=function(tab,re,tries){if(!re)return;if(Array.isArray(re)){var okk=true;re.forEach(function(r){okk=T.goSub(tab,r,-1)&&okk;});if(!okk&&(tries||0)<8&&tries!==-1)setTimeout(function(){T.goSub(tab,re,(tries||0)+1);},90);return okk;}
@@ -4880,12 +4888,15 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
   /* ---------- event ---------- */
   function bind(){var el=$('ptree');
     el.addEventListener('click',function(e){var r=e.target.closest('.ptr');if(!r)return;var n=find(r.dataset.id);if(!n)return;
+      if(n.addRow){var a=n.addRow;if(a.items){var b=r.getBoundingClientRect();menu({t:n.t.replace(/^\+ /,''),menu:function(){return a.items;}},b.left+24,b.bottom+2);}
+        else if(a.fn)setTimeout(function(){try{a.fn();}catch(x){console.error(x);}setTimeout(function(){render(true);},80);},0);return;}
       if(e.target.closest('.ptc')){toggle(n);return;}if(e.target.closest('.ptk')&&!e.target.closest('.ptk.no')){check(n);return;}
       if(e.target.closest('.ptx')){var b=e.target.closest('.ptx').getBoundingClientRect();menu(n,b.left,b.bottom+2);return;}
       var now=Date.now();if(T._lc&&T._lc.id===n.id&&now-T._lc.t<450){T._lc=null;dbl(n);return;}T._lc={id:n.id,t:now};
       select(n);if(n.kids&&n.kids.length&&!T.open[n.id]&&n.fold){T.open[n.id]=1;saveOpen();render(true);}});
     var dbl=function(n){if(n.rename)rename(n);else if(n.dbl)n.dbl();else if(n.kids&&n.kids.length)toggle(n);};
-    el.addEventListener('contextmenu',function(e){var r=e.target.closest('.ptr');if(!r)return;e.preventDefault();e.stopPropagation();var n=find(r.dataset.id);if(!n)return;if(T.sel!==n.id)select(n);menu(n,e.clientX,e.clientY);});
+    /* klik kanan sengaja tidak membuka menu (0.24.45): satu pintu = tombol ⋯ */
+    el.addEventListener('contextmenu',function(e){if(e.target.closest('.ptr'))e.preventDefault();});
     el.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;var i=-1;T.flat.forEach(function(n,k){if(n.id===T.sel)i=k;});var n=T.flat[i];
       if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();var j=Math.max(0,Math.min(T.flat.length-1,i+(e.key==='ArrowDown'?1:-1)));if(T.flat[j])select(T.flat[j]);scrollSel();}
       else if(e.key==='ArrowRight'&&n&&n.kids&&n.kids.length&&!T.open[n.id]){e.preventDefault();toggle(n);}
@@ -4976,8 +4987,8 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     '.ptl{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}',
     '.ptm{flex:0 0 auto;font-size:9.5px;font-weight:700;padding:0 5px;border-radius:8px;background:var(--pr,#1f3a5f);color:#fff;line-height:15px;text-transform:uppercase;letter-spacing:.03em}',
     '.ptn{flex:0 0 auto;margin-left:auto;font-size:10.5px;color:var(--mu,#6b7785);font-variant-numeric:tabular-nums;padding-left:6px}',
-    '.ptx{all:unset;flex:0 0 18px;height:18px;border-radius:4px;color:var(--mu,#6b7785);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;visibility:hidden}.ptx svg{width:14px;height:14px}',
-    '.ptn+.ptx{margin-left:2px}.ptr .ptl+.ptx,.ptr .ptm+.ptx{margin-left:auto}.ptr:hover .ptx,.ptr.sel .ptx{visibility:visible}.ptx:hover{background:var(--bd,#d5dbe3);color:var(--tx,#1c2733)}',
+    '.ptx{all:unset;flex:0 0 18px;height:18px;border-radius:4px;color:var(--mu,#6b7785);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:.5}.ptx svg{width:14px;height:14px}',
+    '.ptn+.ptx{margin-left:2px}.ptr .ptl+.ptx,.ptr .ptm+.ptx{margin-left:auto}.ptr:hover .ptx,.ptr.sel .ptx{opacity:1}.ptr.ptadd{cursor:pointer}.ptr.ptadd .ptl{color:var(--pr,#1f3a5f);font-weight:600}.ptr.ptadd:hover .ptl{text-decoration:underline}.ptx:hover{background:var(--bd,#d5dbe3);color:var(--tx,#1c2733)}',
     '.ptin{flex:1;min-width:60px;height:18px;font:inherit;padding:0 4px;border:1px solid var(--pr,#1f3a5f);border-radius:3px}',
     '#ptSplit{flex:0 0 5px;cursor:row-resize;background:var(--bg,#f4f6f9);border-top:1px solid var(--bd,#d5dbe3);border-bottom:1px solid var(--bd,#d5dbe3)}#ptSplit:hover,body.ptdrag #ptSplit{background:var(--pr,#1f3a5f)}',
     'body.ptdrag{cursor:row-resize!important;user-select:none}',
@@ -5078,12 +5089,12 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
         b:o.nt?N(o.nt)+' segitiga':'',menu:function(){var L=[];if(kind==='models')L.push({t:'Pindahkan ke Import Wireframe Geologi',fn:function(){o.jenis='geo';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1});L.push({t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}});return L;}};}).filter(Boolean);},[]);};
       var K=[].concat(mdK('models','topo','Permukaan',function(o){return o.jenis==='surf';}),mdK('pts','pts','Titik'),mdK('str','string','String'));
       return{id:'ref',step:'4',st:st.ref,t:'Data Referensi (DTM, titik, string)',ic:'folder',fold:1,tab:'Model',b:K.length||'',hint:'Opsional: permukaan pit / topografi (DTM) untuk Pit & progres, titik survey dan string Surpac sebagai acuan',
-        menu:function(){return[{t:'Import permukaan pit / topografi (DTM)…',fn:function(){PT.pick('.dtm,.str,.dxf,.msh,.obj',true,function(i){mdImport(i,'surf');});}},{t:'Import titik survey…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'Import string (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}];},kids:K};},'ref','Data Referensi');
+        add:{t:'Tambah data referensi…',items:[{t:'Permukaan pit / topografi (DTM)…',fn:function(){PT.pick('.dtm,.str,.dxf,.msh,.obj',true,function(i){mdImport(i,'surf');});}},{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:K};},'ref','Data Referensi');
     /* 4b Import Wireframe Geologi: SATU-SATUNYA tempat import & melihat wireframe geologi (urutan import) */
     add(function(){var W=ok(function(){return MD.models.map(function(o,i){return o.jenis==='surf'?null:{id:'wf.'+i+'.'+o.name,t:o.name,ic:'ref',tab:'Wf',chk:!!o.vis,onChk:function(v){mdSet('models',i,'vis',v);},
           b:o.nt?N(o.nt)+' segitiga':'',hint:'Import ke-'+(i+1),menu:function(){return[{t:'Pindahkan ke Data Referensi (permukaan pit / topo)',fn:function(){o.jenis='surf';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1},{t:'Hapus wireframe ini',danger:1,fn:function(){mdDel('models',i);}}];}};}).filter(Boolean);},[]);
       return{id:'wf',step:'4b',t:'Import Wireframe Geologi',ic:'ref',fold:1,tab:'Wf',b:W.length?W.length+' berkas':'',hint:'Wireframe / solid geologi (Leapfrog .msh / .obj, Surpac .dtm + .str, DXF) — berurutan sesuai urutan import',
-        menu:function(){return[{t:'Import wireframe geologi…',fn:function(){PT.pick('.msh,.obj,.dxf,.dtm,.str',true,function(i){mdImport(i,'geo');});}}];},kids:W};},'wf','Import Wireframe Geologi');
+        add:{t:'Tambah wireframe geologi…',fn:function(){PT.pick('.msh,.obj,.dxf,.dtm,.str',true,function(i){mdImport(i,'geo');});}},kids:W};},'wf','Import Wireframe Geologi');
     /* 5 flitch: SEMUA flitch yang sudah dikerjakan (dig block, string, poligon as-mined) sebagai subnode untuk audit / review */
     add(function(){var Sg=ok(function(){return DG.S;},[]),AMB=ok(function(){return amBndAll();},[]),G={},ord=[],fmt=function(v){return String(+(+v).toFixed(3));};
       var grp=function(top,bot){var k=(+top).toFixed(3)+'|'+(+bot).toFixed(3);if(!G[k]){G[k]={top:+top,bot:+bot,db:[],am:[]};ord.push(k);}return G[k];};
@@ -6505,9 +6516,9 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
         card: { kids: 1, hint: 'Simpan batas kelas kadar & aturan tujuan yang sedang dipakai sebagai preset, atau pilih preset di bawah untuk menerapkannya ke flitch aktif.',
                 acts: [{ t: '\u2795 Simpan pengaturan sekarang sebagai preset\u2026', pri: 1,
                          fn: function () { GCO.pstSimpan(); } }] },
+        add: { t: 'Tambah preset (dari pengaturan sekarang)…', fn: function () { GCO.pstSimpan(); } },
         menu: function () {
-          return [{ t: 'Simpan pengaturan sekarang sebagai preset…', fn: function () { GCO.pstSimpan(); } }]
-            .concat(L.length ? [{ sep: 1 }, { h: 'Pakai preset' }] : [])
+          return (L.length ? [{ h: 'Pakai preset' }] : [])
             .concat(L.map(function (x) { return { t: x.name, fn: function () { GCO.pstTerap(x.name); } }; }));
         },
         kids: L.map(function (x) {
@@ -7720,7 +7731,7 @@ function amRoofFnDtm(o, B) {
     'Estimasi Ordinary Kriging': 'Uji estimasi 3 pass untuk menilai parameter sebelum disimpan ke domain.',
     'Block model 3D': 'Hasil estimasi tampil sebagai blok berwarna kadar bersama lubang bor.',
     'Estimasi block model GC per domain': 'Model Estimation mengestimasi blok di dalam solid tiap domain dan menambah blok yang belum ada.',
-    'Plan bor: rencana pengeboran': 'Titik rencana dibuat per titik, garis, atau grid area; setiap Plan baru muncul berurutan sebagai sub-node Plan bor (rencana).',
+    'Plan bor: rencana pengeboran': 'Titik rencana dibuat per titik, garis, atau grid area; plan hari lain dibuat lewat baris + Tambah plan bor… dan muncul berurutan sebagai sub-node Plan bor (rencana).',
     'Preview 3D & export CSV': 'Rencana tampil bersama lubang lama, lengkap dengan jarak dan kadar perkiraan; export CSV.',
     'Block model grade control': 'Block model GC (.mdl / CSV) diimport, diwarnai per kelas, dan difilter cut-off.',
     'Data referensi': 'Solid, DTM dan titik survey dari software lain tampil sebagai acuan.',
@@ -7832,7 +7843,7 @@ function amRoofFnDtm(o, B) {
     var S = [];
     if (DH) {
       S.push({ s: 'Geomodeller Vein', t: 'Wireframe Leapfrog menjadi domain', dur: 7, el: '.ptr[data-id="wf"], #pWf',
-        d: 'Semua wireframe geologi ada di satu node, Import Wireframe Geologi; klik kanan berkasnya untuk diserap menjadi string HW / FW (domain GC-Ex yang bisa diedit), diiris, di-flag, atau dikunci eksak.',
+        d: 'Semua wireframe geologi ada di satu node, Import Wireframe Geologi; tombol ⋯ berkasnya untuk diserap menjadi string HW / FW (domain GC-Ex yang bisa diedit), diiris, di-flag, atau dikunci eksak.',
         run: function (A) { A(0, function () { pilih('wf'); }); A(0.6, function () { try { if (window.wfToolsDraw) wfToolsDraw(); } catch (e) {} }); } });
       S.push({ s: 'Block Model', t: 'Kerangka blok AOI & sub-blocking', dur: 6, el: 'rbBM',
         d: 'Block model bisa dibuat dari nol (kerangka AOI) dan dipecah di batas solid; sb_frac menimbang blok perbatasan.',
@@ -9799,7 +9810,7 @@ button:disabled,.dbsel button:disabled{opacity:1!important;filter:none!important
 /* kartu Ringkasan & legenda */
 #statsCard .ch{padding:4px 8px!important}
 #statsCard .cb,#statsCard>div:not(.ch){padding-left:8px;padding-right:8px}
-/* menu klik kanan tree */
+/* menu ⋯ tree */
 #ptMenu button{padding:3px 12px!important}
 #ptMenu .pmh{padding:3px 10px 4px!important}
 
@@ -9908,7 +9919,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.40';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.41';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

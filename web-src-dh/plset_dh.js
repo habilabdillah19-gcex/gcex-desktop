@@ -8,7 +8,7 @@
      edit tabel, nomori ulang, export) bekerja pada PL.h, jadi otomatis bekerja pada set aktif =
      "extend di set ini". Bila fungsi lama mengganti PL.h dengan array baru (plClear, applyWork), array itu
      dipasang kembali ke set aktif di plRefresh.
-   - "Plan baru…" membuat set kosong yang langsung aktif; titik berikutnya masuk ke sana.
+   - "+ Tambah plan bor…" (baris di Project Tree) membuat set kosong yang langsung aktif; titik berikutnya masuk ke sana.
    - Data lama (sebelum fitur ini) masuk ke satu set "Plan lama" -- tidak ada titik yang hilang.
    - Tiap set punya centang tampil; set aktif digambar magenta tegas, set lain lebih pudar.        */
 (function () {
@@ -84,10 +84,10 @@
     var sec = $('pPlan'); if (!sec) return; var b = $('plSetBox');
     if (!b) { b = document.createElement('div'); b.id = 'plSetBox'; b.className = 'box'; b.style.cssText = 'font-size:12px;margin-bottom:8px'; var h3 = sec.querySelector('h3'); sec.insertBefore(b, h3 ? h3.nextSibling : sec.firstChild); }
     var c = cur(), tot = 0; PL.sets.forEach(function (s) { tot += s.h.length; });
-    b.innerHTML = '<div class=g2 style="align-items:end"><div><label>Plan aktif (titik baru masuk ke sini)</label><select id=plSetSel onchange="PLS.aktif(this.value)">' +
+    b.innerHTML = '<label>Plan aktif (titik baru masuk ke sini)</label><select id=plSetSel style="width:100%" onchange="PLS.aktif(this.value)">' +
       PL.sets.map(function (s, i) { return '<option value="' + s.id + '"' + (s.id === PL.act ? ' selected' : '') + '>' + (i + 1) + '. ' + esc(s.name) + ' (' + s.h.length + ')</option>'; }).join('') +
-      '</select></div><div><button class=btn-pri style="width:100%" onclick="PLS.baru()">+ Plan baru&hellip;</button></div></div>' +
-      '<div class=hint style="margin-top:4px">' + PL.sets.length + ' plan &middot; ' + tot + ' titik. Untuk <b>extend</b> di lokasi yang sama, pilih plan-nya di atas lalu tambah titik; untuk plan hari lain, tekan <b>Plan baru</b>. Setiap plan muncul berurutan di Project Tree di bawah <b>Plan bor (rencana)</b>.</div>';
+      '</select>' +
+      '<div class=hint style="margin-top:4px">' + PL.sets.length + ' plan &middot; ' + tot + ' titik. Untuk <b>extend</b> di lokasi yang sama, pilih plan-nya di atas lalu tambah titik; untuk plan hari lain, klik <b>+ Tambah plan bor&hellip;</b> di Project Tree (baris terbawah di bawah <b>Plan bor (rencana)</b>). Setiap plan muncul berurutan di sana.</div>';
   }
 
   /* ---------- sambungan ke fungsi lama ---------- */

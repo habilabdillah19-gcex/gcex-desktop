@@ -157,13 +157,13 @@ ch('Pemeriksaan dig block sebelum dig plan terbit', dta('lanjutan &mdash; dig bl
  + tip('Dua pemeriksaan ini jarang berbunyi pada pengaturan bawaan, dan itu wajar: <b>tanpa tujuan material</b> hanya mungkin bila materialnya tidak cocok aturan tujuan mana pun <i>dan</i> tujuan cadangan kosong; <b>nama ganda</b> hanya mungkin bila template nama tidak memuat <code>{NO}</code>. Keduanya tetap diperiksa untuk menjaga keadaan yang tidak biasa.'))
 
 ch('Preset kelas kadar & tujuan material', dta('lanjutan &mdash; pengaturan kelas &amp; tujuan dari bab Dig block otomatis',
-     [('Langkah', 'node <b>Preset kelas kadar &amp; tujuan</b> &rarr; <b>Simpan pengaturan sekarang sebagai preset&hellip;</b>'),
+     [('Langkah', 'baris <b>+ Tambah preset (dari pengaturan sekarang)&hellip;</b> di node <b>Preset kelas kadar &amp; tujuan</b>'),
       ('Nama preset', 'mis. <code>Pit Simulasi &mdash; Nov 2026</code>'),
       ('Isi yang tersimpan', '2 kelas (LG, HG), 3 aturan tujuan, lebar minimum 1,5 m, ambang sulfida')]) + """<p>Batas kelas kadar dan aturan tujuan material diisi manual tiap kali. Akibatnya shift siang dan shift malam, atau dua orang yang berbeda, bisa memakai batas yang berbeda tanpa ada yang sadar &mdash; dan itu muncul sebagai selisih yang tidak bisa dijelaskan di rekonsiliasi.</p>
 <p>Node <b>Preset kelas kadar &amp; tujuan</b> menyimpannya sebagai preset bernama di berkas proyek.</p>""" +
  kv([('Yang disimpan', 'batas kelas kadar (LG / HG / &hellip;), aturan tujuan material, <b>lebar minimum alat</b>, ambang sulfida, material bawaan, ambang luas'),
-     ('Menyimpan', 'menu node &rarr; <i>Simpan pengaturan sekarang sebagai preset&hellip;</i>, beri nama mis. <code>Pit A &mdash; Nov 2026</code>'),
-     ('Memakai', 'klik nama preset di menu node, atau di anak node-nya &rarr; <i>Pakai preset ini</i>'),
+     ('Menyimpan', 'baris <i>+ Tambah preset (dari pengaturan sekarang)&hellip;</i> di bawah node, beri nama mis. <code>Pit A &mdash; Nov 2026</code>'),
+     ('Memakai', 'klik nama preset di menu &#8943; node, atau di anak node-nya &rarr; <i>Pakai preset ini</i>'),
      ('Tiap preset tampil', 'jumlah kelas, jumlah aturan tujuan, lebar minimum, dan tanggal disimpan')])
  + warn('Memakai preset <b>tidak menghapus</b> dig block yang sudah ada, tetapi material dan tujuannya dihitung ulang dengan aturan baru. Karena itu selalu ada konfirmasi lebih dulu. Untuk rekonsiliasi yang rapi, ganti preset di <b>awal</b> periode, bukan di tengah.'))
 
@@ -217,7 +217,7 @@ ch('Review flitch per flitch di Project Tree', dta('lanjutan &mdash; dua flitch'
 ch('Layout & ekspor dig plan', steps('Project Tree &rarr; <b>Layout &amp; Ekspor Dig Plan &rarr; Layout &amp; plot PDF</b> ([[layout]]): judul, skala, elemen laporan, tabel tonase; PDF siap cetak.',
  '<b>Export STR / DXF (Surpac)</b> untuk string dig block; <b>Simpan gambar PNG</b> untuk tampilan saat ini.') + fig('layout', 'Layout &amp; plot PDF.'))
 
-ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; import lewat klik kanan <b>Data Referensi (DTM, titik, string)</b> &rarr; <b>Import permukaan pit / topografi (DTM)&hellip;</b> (tombol <b>Muat data latihan</b> sudah memuatnya)',
+ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase1.dxf</code>, <code>SIM_pit_fase2.dxf</code>, <code>SIM_topo_akhir_juni.dxf</code>, <code>SIM_topo_akhir_juli.dxf</code> &mdash; import lewat baris <b>+ Tambah data referensi&hellip;</b> &rarr; <b>Permukaan pit / topografi (DTM)&hellip;</b> di node <b>Data Referensi (DTM, titik, string)</b> (tombol <b>Muat data latihan</b> sudah memuatnya)',
      [('Atribut &amp; cut-off', 'tab &#9312; seperti biasa (latihan: <code>AU_GC</code>, cut-off <b>0</b>, per RL 5 m)'),
       ('Mode 1 &mdash; per pit', 'topografi <code>SIM_topo_akhir_juni</code>; centang <b>SIM_pit_fase1</b> lalu <b>SIM_pit_fase2</b>'),
       ('Mode 2 &mdash; progres', 'atas <code>SIM_topo_akhir_juni</code>, bawah <code>SIM_topo_akhir_juli</code>'),
@@ -225,7 +225,7 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
  + '<p>Dua pekerjaan short term planning yang sebelumnya harus diulang-ulang: membandingkan <b>fase pit</b>, dan menghitung material yang benar-benar <b>tergali bulan ini</b>. Keduanya ada di tab <b>&#9315; Pit &amp; progres</b> pada Reporting Block Model (atau node <b>Per desain pit &amp; progres topo-ke-topo</b> di bawah <b>Laporan</b>).</p>'
  + warn('Tab ini memakai atribut, cut-off, pengelompokan, domain, poligon, SG dan <code>sb_frac</code> yang sudah diatur di tab &#9312; dan &#9313;. Yang diganti hanya <b>permukaan atas &amp; bawah</b>, jadi angkanya sebanding dengan laporan biasa.', 'Yang diganti hanya permukaan')
  + '<h3>1. Beberapa desain pit sekaligus</h3>'
- + steps('Import desain pitnya (DXF / DTM Surpac): klik kanan <b>Data Referensi (DTM, titik, string)</b> &rarr; <b>Import permukaan pit / topografi (DTM)&hellip;</b>. Wireframe geologi diimport terpisah di node <b>Import Wireframe Geologi</b>; proyek lama yang menyimpan desain pit di sana bisa dipindah lewat klik kanan berkasnya &rarr; <b>Pindahkan ke Data Referensi (permukaan pit / topo)</b>.',
+ + steps('Import desain pitnya (DXF / DTM Surpac): baris <b>+ Tambah data referensi&hellip;</b> &rarr; <b>Permukaan pit / topografi (DTM)&hellip;</b> di node <b>Data Referensi (DTM, titik, string)</b>. Wireframe geologi diimport terpisah di node <b>Import Wireframe Geologi</b>; proyek lama yang menyimpan desain pit di sana bisa dipindah lewat tombol &#8943; berkasnya &rarr; <b>Pindahkan ke Data Referensi (permukaan pit / topo)</b>.',
    'Reporting &rarr; tab <b>&#9315; Pit &amp; progres</b> &rarr; mode <b>Per desain pit</b>.',
    'Pilih <b>satu</b> topografi untuk semua pit, lalu centang desain pit dari yang terkecil ke terbesar.',
    'Klik <b>Hitung per pit</b>: satu baris per pit, dan baris <b>tambahan</b> = selisih terhadap pit di atasnya (berlaku untuk pit bersarang).')

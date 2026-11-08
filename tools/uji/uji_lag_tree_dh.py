@@ -158,7 +158,7 @@ def main():
     for nid, st in (("og", "5b"), ("gs", "7"), ("bm", "8"), ("me", "9"), ("val", "10"), ("rep", "11")):
         if "%s[%s]" % (nid, st) not in T["top"]: salah.append("langkah %s bukan %s" % (nid, st))
     if any(x in T["db"] for x in ("Kampanye baru…", "Gabungkan kampanye… (merge)")): salah.append("menu kembar kampanye masih ada")
-    if not any(x.startswith("Tambah kampanye baru") for x in T["db"]) or not any(x.startswith("Buat set merge") for x in T["db"]): salah.append("menu kampanye yang dipertahankan hilang")
+    if not any(x.startswith("Buat set merge") for x in T["db"]): salah.append("menu kampanye yang dipertahankan hilang")
     if "Export database (CSV)" not in T["db"]: salah.append("export database hilang dari Database Bor")
     if not any("Export block model GC (.mdl)" in x for x in T["bm"]): salah.append("export .mdl hilang dari Block Model")
     if "out.db" in T["out"] or "out.mdl" in T["out"]: salah.append("ekspor ganda masih di Layout & Ekspor: %s" % T["out"])

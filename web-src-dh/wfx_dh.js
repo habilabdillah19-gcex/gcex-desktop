@@ -392,9 +392,9 @@
   window.wfxKeSpasialSemua = function () {
     var M = models(), cand = [];
     M.forEach(function (m, i) { if (SURF_RE.test(m.name)) cand.push({i: i, name: m.name, role: /pit/i.test(m.name) ? 'pit' : 'topo'}); });
-    if (!cand.length) { alert('Tidak ada berkas bernama pit / topo / DTM / survei di daftar wireframe.\n\nUntuk berkas lain, klik kanan berkasnya > Pindahkan ke Data Spasial.'); return; }
+    if (!cand.length) { alert('Tidak ada berkas bernama pit / topo / DTM / survei di daftar wireframe.\n\nUntuk berkas lain, tombol ⋯ berkasnya > Pindahkan ke Data Spasial.'); return; }
     if (!confirm('Pindahkan ' + cand.length + ' berkas ke Data Spasial sebagai versi non-aktif?\n\n' + cand.map(function (c) { return '- ' + c.name + '  ->  ' + SPN[c.role].toLowerCase(); }).join('\n') +
-      '\n\nPeran ditebak dari nama (mengandung "pit" -> desain pit, selain itu -> topografi). Bila ada yang salah, batalkan dan pindahkan satu per satu lewat klik kanan berkasnya.')) return;
+      '\n\nPeran ditebak dari nama (mengandung "pit" -> desain pit, selain itu -> topografi). Bila ada yang salah, batalkan dan pindahkan satu per satu lewat tombol ⋯ berkasnya.')) return;
     var L = [];
     /* maju sesuai urutan import supaya versinya berurutan sama; indeks dikoreksi sebanyak berkas yang sudah dipindah */
     for (var k = 0; k < cand.length; k++) { var v = wfxKeSpasialSatu(cand[k].i - L.length, cand[k].role); if (v) L.push({v: v, role: cand[k].role}); }
@@ -414,7 +414,7 @@
         id: 'wf.' + i + '.' + m.name, t: m.name, ic: 'ref', tab: 'Wf',
         chk: !!m.vis, onChk: function (v) { mdSet('models', i, 'vis', v); },
         b: N(m.nt) + ' segitiga' + (kunci.length ? ' · eksak: ' + kunci.map(function (d) { return d.name; }).join(', ') : ''),
-        hint: 'Import ke-' + (i + 1) + '. Klik kanan: jadikan domain (serap / iris / flag / eksak) atau hapus.',
+        hint: 'Import ke-' + (i + 1) + '. Tombol ⋯: jadikan domain (serap / iris / flag / eksak) atau hapus.',
         menu: function () {
           var L = [{ h: 'Jadikan domain' },
             { t: 'Serap jadi domain yang bisa diedit (Mode B)…', fn: function () { WFX.o.mi = i; wfxDlg(); } },
@@ -445,13 +445,12 @@
       b: M.length ? M.length + ' berkas' + (nk ? ' · ' + nk + ' domain eksak' : '') : '',
       hint: 'Wireframe / solid geologi dari Leapfrog (.msh / .obj), Surpac (.dtm + .str) atau DXF — berurutan sesuai urutan import',
       menu: function () {
-        return [{ t: 'Import wireframe geologi…', fn: imp },
-          { sep: 1 },
-          { t: 'Serap wireframe → domain…', dis: !M.length, fn: function () { wfxDlg(); } },
+        return [{ t: 'Serap wireframe → domain…', dis: !M.length, fn: function () { wfxDlg(); } },
           { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } },
           { sep: 1 },
           { t: 'Pindahkan permukaan pit / topo ke Data Spasial…', dis: !M.some(function (m) { return SURF_RE.test(m.name); }), fn: function () { wfxKeSpasialSemua(); } }];
       },
+      add: { t: 'Tambah wireframe geologi…', fn: imp },
       kids: kids
     };
   };

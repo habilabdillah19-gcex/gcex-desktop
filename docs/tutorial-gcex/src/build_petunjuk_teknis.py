@@ -330,8 +330,8 @@ B.append(D.tabel(['Permukaan', 'Drill Hole', 'Block Model'], [
     ['Wireframe geologi', 'node Import Wireframe Geologi (<code>MD.models</code>)', 'node Import Wireframe Geologi (<code>MD.models</code>, <code>jenis: geo</code>)'],
     ['Desain pit / topografi', '<b>Data Spasial</b>, versi pit / topografi; DXF 3DFACE disimpan sebagai TIN seperti .dtm',
      '<b>Data Referensi (DTM, titik, string)</b> (<code>MD.models</code>, <code>jenis: surf</code>; Block Model tidak punya versi Data Spasial)'],
-    ['Proyek lama', 'klik kanan &rarr; <i>Pindahkan ke Data Spasial&hellip;</i>: versi non-aktif ber-TIN; rujukan Reporting <code>wf:&lt;i&gt;</code> dialihkan ke <code>sp:&lt;peran&gt;:&lt;id&gt;</code>, indeks sesudahnya digeser',
-     'klik kanan &rarr; <i>Pindahkan ke Data Referensi</i> / <i>ke Import Wireframe Geologi</i> (mengubah <code>jenis</code>)']]))
+    ['Proyek lama', 'tombol &#8943; berkas &rarr; <i>Pindahkan ke Data Spasial&hellip;</i>: versi non-aktif ber-TIN; rujukan Reporting <code>wf:&lt;i&gt;</code> dialihkan ke <code>sp:&lt;peran&gt;:&lt;id&gt;</code>, indeks sesudahnya digeser',
+     'tombol &#8943; berkas &rarr; <i>Pindahkan ke Data Referensi</i> / <i>ke Import Wireframe Geologi</i> (mengubah <code>jenis</code>)']]))
 B.append('<p>Model implicit dari Leapfrog dapat dipakai GC-Ex dengan dua cara yang tujuannya berbeda. Perbedaannya '
          'bukan soal mutu, melainkan soal <b>siapa pemegang bentuknya</b>.</p>')
 B.append(D.tabel(['', 'Mode B &mdash; diserap', 'Mode A &mdash; eksak'], [
@@ -599,6 +599,16 @@ B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geolo
          'Vein / 6b Strata-Laterit &middot; <b>7 Geostatistik</b> (variogram sebelum estimasi) &middot; 8 Block Model &middot; '
          '9 Model Estimation &middot; 10 Validasi BM &middot; 11 Reporting BM &middot; 12 Layout &amp; Ekspor. Export database '
          'hanya di menu Database Bor; export .mdl hanya di menu Block Model.</p>')
+B.append('<h3>Menu &#8943; dan baris + Tambah (kedua aplikasi, BM 0.24.41 / DH 0.24.45)</h3>')
+B.append(D.bullets(
+    '<b>Satu pintu menu: tombol &#8943;</b> di ujung baris node, selalu tampak (abu-abu tipis). Klik kanan pada Project Tree '
+    'sengaja tidak membuka apa pun. Keyboard: tombol Menu / Shift+F10 pada node terpilih.',
+    '<b>Perintah yang menambah isi node</b> tidak ada di menu &#8943;, melainkan baris biru <b>+ Tambah &hellip;</b> paling bawah '
+    'di anak node (properti node <code>add:{t,fn}</code> atau <code>add:{t,items}</code> di <code>ptree.js</code>). Drill Hole: versi '
+    'topografi / desain pit / orthofoto / block model, titik survey &amp; string, wireframe geologi, kampanye, plan bor, titik pick-up, '
+    'struktur, sesar, domain. Block Model: data referensi, wireframe geologi, preset kelas kadar.',
+    'Menu &#8943; berisi perintah atas isi yang sudah ada: tampilkan sebagai, jadikan aktif, ganti nama, export, pindahkan, hapus. '
+    'Node yang menunya kosong tidak menampilkan &#8943;.'))
 
 B.append('<h2>14. Topografi &amp; orthofoto resolusi tinggi</h2>')
 B.append('<p>Orthofoto disusun menjadi <b>piramida LOD</b>: level 0 piksel asli, tiap level berikutnya '
