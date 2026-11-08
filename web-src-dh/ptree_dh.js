@@ -156,12 +156,28 @@
     L.push({id:'gs',step:'11',t:'Geostatistik',ic:'gs',fold:1,hint:'Variogram & panduan (panel kanan); pilih domain aktif di bawahnya',go:function(){var p=$('gsPanel');if(!p||p.hidden||!GS.open)gsToggle();},
       kids:tops.map(gsDom).concat([{id:'gs.all',t:'Semua data (tanpa filter domain)',ic:'db',mark:ok(function(){return GS.domOnly===false;},false)?'aktif':'',go:function(){gxDomAct(null,'gs');}}])});
     L.push({id:'out',step:'12',t:'Layout & Ekspor',ic:'folder',fold:1,kids:[{id:'out.map',t:'Peta (layout cetak)',ic:'map',tab:'Map',sub:'Layer peta',kids:[sub('map.1','Layer peta (isi peta)','eye','Map','Layer peta'),sub('map.4','Layout & cetak','export','Map','Layout')]},
-      {id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')},{id:'out.db',t:'Export database (CSV)',ic:'table',go:A('gxDbExport')},{id:'out.mdl',t:'Export block model GC (.mdl)',ic:'block',go:A('bxMdlExport'),dim:!(window.BX&&BX.m)}]});
+      {id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')}]});
+    /* Export database & export block model .mdl hanya di node pemiliknya (Database Bor / Block Model) — satu ekspor, satu node */
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.w',t:'Warna kadar',ic:'color',tab:'Warna'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     if(window.OG)L.push({id:'og',t:'Ore Geometry',ic:'gs',fold:1,tab:'OG',mark:'referensi',b:ok(function(){return OG.R?N(OG.R.nHit)+' bor GT':'';},''),
       hint:'Referensi geologist: intercept & GT long section, ore shoot (pitch / plunge / trend), grade shell 3D. Tidak dipakai pemodelan / estimasi.',
       chk:ok(function(){return OG.on!==false;},true),onChk:function(v){OG.on=v;updatePlot();},
       kids:[sub('og.1','Data & intercept (GT)','attr','OG','Intercept'),sub('og.2','Long section GT','section','OG','Long section'),sub('og.3','Ore shoot (pitch / plunge / trend)','chart','OG','Ore shoot'),sub('og.4','Grade shell 3D','block','OG','Grade shell')]});
+    /* Urutan mengikuti alur kerja nyata (permintaan pemilik 8 Nov 2026): Ore Geometry (referensi geologist,
+       sebelum pemodelan) sesudah Struktur; Geostatistik (variogram) sebelum Block Model & Model Estimation.
+       Node yang tidak dikenal tetap di tempat relatifnya (sesudah pendahulunya). */
+    var URUT=['proj','sp','wf','db','mp','st','og','gm','sl','gs','bm','me','val','rep','out','set'],STEP={og:'5b',gs:'7',bm:'8',me:'9',val:'10',rep:'11',out:'12'};
+    L.forEach(function(n,i){n._o=i;});
+    var rk=function(n){var k=URUT.indexOf(n.id);if(k>=0)return k;for(var j=n._o-1;j>=0;j--){var p=URUT.indexOf(L[j].id);if(p>=0)return p+0.5;}return -0.5;};
+    L.sort(function(a,b){var d=rk(a)-rk(b);return d||a._o-b._o;});
+    L.forEach(function(n){delete n._o;if(STEP[n.id])n.step=STEP[n.id];});
     return L;}
   PT.install({app:'dh',nodes:nodes,openDef:['sp','db','gm','bm']});
+  /* Versi block model dikelola di bagian ④ Block model panel Data Spasial. Saat node versi di bawah
+     Block Model dipilih, hanya bagian itu yang tampil (tab Topografi / Pit / Ortho disembunyikan), supaya
+     panelnya milik node Block Model, bukan terbaca sebagai panel Data Spasial. */
+  (function(){var st=document.createElement('style');st.textContent='#pSP.sp-bmsaja .uitabs{display:none}';document.head.appendChild(st);
+    /* klik di tree memakai select() internal, jadi yang diamati adalah perubahan sorotan node, bukan PT.select */
+    var cek=function(){try{var p=$('pSP');if(p)p.classList.toggle('sp-bmsaja',/^bm\.v\./.test(String(PT.sel||'')));}catch(e){}};
+    var pasang=function(){var t=$('ptree');if(!t)return setTimeout(pasang,300);new MutationObserver(cek).observe(t,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});cek();};pasang();})();
 })();

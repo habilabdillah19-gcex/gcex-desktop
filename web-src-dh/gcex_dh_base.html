@@ -1009,7 +1009,9 @@ function holePick(k){var id=$('h'+k).value,c=null;collars.forEach(function(r){if
   if(c){$('p'+k+'e').value=c[1];$('p'+k+'n').value=c[2];}ptChanged();}
 function ptChanged(){updRange(true);updatePlot();lineInfoUpd();}
 function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');
-  e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));updatePlot();}
+  /* Maju / Mundur memakai jalur ringan yang sama dengan slider: gambar cepat sekarang, gambar penuh sekali
+     setelah 350 ms tanpa klik lagi. Klik beruntun tidak lagi menumpuk gambar ulang penuh satu per satu. */
+  e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));if(PERF_REL())updatePlot();else dDraft();}
 function viewSection(){var g=secGeom();
   if(g.m==='H'){setCam(0,-0.001,2.5);return;}
   var zx=+$('zex').value,nx=g.n[0],ny=g.n[1],nz=g.n[2]/zx,L=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
@@ -1556,7 +1558,9 @@ var GS={open:false,R:null,rows:[],tab:'S'};
       return true;});};
   ['react','newPlot'].forEach(function(fn){var o=Plotly[fn];Plotly[fn]=function(gd,d,l,c){var D=fix(d);try{var r=o.call(this,gd,D,l,c);if(r&&r.catch)r.catch(function(e){console.error(e);});return r;}
     catch(e){console.error('Plotly '+fn+' gagal, gambar ulang penuh:',e);try{Plotly.purge(gd);}catch(e2){}try{return Plotly.newPlot===Plotly[fn]&&fn==='newPlot'?o.call(this,gd,D,l,c):Plotly.newPlot(gd,D,l,c);}catch(e3){var s=$('rtime');if(s)s.textContent='Gagal menggambar: '+(e3&&e3.message||e3)+' - coba ganti layer / kembali ke Iso.';}}};});})();
-function gsToggle(){GS.open=!GS.open;$('gsPanel').style.display=GS.open?'block':'none';var b=$('gsBtn');if(b)b.classList.toggle('on',GS.open);setTimeout(function(){uiResize();if(GS.open)gsRun();},40);}
+/* hasil geostatistik dipakai ulang bila sayatan, data & setelannya sama: membuka ulang panel tidak menghitung ulang */
+function gsKey(){try{var v=function(id){var e=$(id);return e?e.value:'';};return JSON.stringify([secK(),visHoles().length,v('elementFilter'),v('gComp'),v('gTop'),v('gLag'),v('gNL'),v('gTr'),v('gNS'),v('gAT'),v('gCell'),window.DBV||0]);}catch(e){return '';}}
+function gsToggle(){GS.open=!GS.open;$('gsPanel').style.display=GS.open?'block':'none';var b=$('gsBtn');if(b)b.classList.toggle('on',GS.open);setTimeout(function(){uiResize();if(GS.open){var k=gsKey();if(GS.R&&k&&GS._k===k){try{gsDraw();}catch(e){gsRun();}}else gsRun();}},40);}
 function gsTab(t){GS.tab=t;['S','V','F','M','E','K','C'].forEach(function(k){$('gsT'+k).style.display=(k===t)?'block':'none';$('gsB'+k).className=(k===t)?'on':'';});gsDraw();}
 var _gt;function gsAutoHook(){if(!GS.open||!$('gAuto').checked)return;clearTimeout(_gt);_gt=setTimeout(gsRun,400);}
 /* ---------- SATU pintu keluar untuk SEMUA ekspor (sama seperti di GC-Ex Block Model) ----------
@@ -1684,7 +1688,7 @@ function fitSplit(E,c0,sill,minP,B){var r=sill-c0,best=1e300,bb=null,G1=lgrid(B[
   for(var f=0.1;f<=0.901;f+=0.05)for(var i=0;i<G1.length;i++)for(var j=i+1;j<G1.length;j++){var cs=[f*r,(1-f)*r],e=sse(E,c0,cs,[G1[i],G1[j]],minP);if(e<best){best=e;bb={c:cs,a:[G1[i],G1[j]],e:e};}}
   return bb;}
 function rNote(a,B,E,minP){if(!isFinite(a))return '';var hf=E?h1(E,minP):NaN;if(a<=B[0]*1.06||(isFinite(hf)&&a<=hf*1.001))return ' [<= lag pertama'+(isFinite(hf)?' '+fx(hf,1)+' m':'')+': range sebenarnya bisa lebih pendek, butuh data lebih rapat]';if(a>=B[1]*0.94)return ' [>= batas atas: range melebihi jarak lag maksimum]';return '';}
-function gsRun(){if(!GS.open)return;
+function gsRun(){if(!GS.open)return;GS._k=gsKey();
   var S=secK(),ids=visHoles(),el=$('elementFilter').value,ei=elements.indexOf(el);
   var cl=$('gComp').value.trim(),L=(cl==='')?medLen(ids,ei):parseFloat(cl);if(isNaN(L))L=0;
   var C=gsComps(ids,ei,L,S),R={S:S,el:el,L:L,C:C,label:secLabel(S)};GS.R=R;

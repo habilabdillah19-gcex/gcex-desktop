@@ -1009,7 +1009,9 @@ function holePick(k){var id=$('h'+k).value,c=null;collars.forEach(function(r){if
   if(c){$('p'+k+'e').value=c[1];$('p'+k+'n').value=c[2];}ptChanged();}
 function ptChanged(){updRange(true);updatePlot();lineInfoUpd();}
 function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');
-  e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));updatePlot();}
+  /* Maju / Mundur memakai jalur ringan yang sama dengan slider: gambar cepat sekarang, gambar penuh sekali
+     setelah 350 ms tanpa klik lagi. Klik beruntun tidak lagi menumpuk gambar ulang penuh satu per satu. */
+  e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));if(PERF_REL())updatePlot();else dDraft();}
 function viewSection(){var g=secGeom();
   if(g.m==='H'){setCam(0,-0.001,2.5);return;}
   var zx=+$('zex').value,nx=g.n[0],ny=g.n[1],nz=g.n[2]/zx,L=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
@@ -1557,7 +1559,9 @@ var GS={open:false,R:null,rows:[],tab:'S'};
       return true;});};
   ['react','newPlot'].forEach(function(fn){var o=Plotly[fn];Plotly[fn]=function(gd,d,l,c){var D=fix(d);try{var r=o.call(this,gd,D,l,c);if(r&&r.catch)r.catch(function(e){console.error(e);});return r;}
     catch(e){console.error('Plotly '+fn+' gagal, gambar ulang penuh:',e);try{Plotly.purge(gd);}catch(e2){}try{return Plotly.newPlot===Plotly[fn]&&fn==='newPlot'?o.call(this,gd,D,l,c):Plotly.newPlot(gd,D,l,c);}catch(e3){var s=$('rtime');if(s)s.textContent='Gagal menggambar: '+(e3&&e3.message||e3)+' - coba ganti layer / kembali ke Iso.';}}};});})();
-function gsToggle(){GS.open=!GS.open;$('gsPanel').style.display=GS.open?'block':'none';var b=$('gsBtn');if(b)b.classList.toggle('on',GS.open);setTimeout(function(){uiResize();if(GS.open)gsRun();},40);}
+/* hasil geostatistik dipakai ulang bila sayatan, data & setelannya sama: membuka ulang panel tidak menghitung ulang */
+function gsKey(){try{var v=function(id){var e=$(id);return e?e.value:'';};return JSON.stringify([secK(),visHoles().length,v('elementFilter'),v('gComp'),v('gTop'),v('gLag'),v('gNL'),v('gTr'),v('gNS'),v('gAT'),v('gCell'),window.DBV||0]);}catch(e){return '';}}
+function gsToggle(){GS.open=!GS.open;$('gsPanel').style.display=GS.open?'block':'none';var b=$('gsBtn');if(b)b.classList.toggle('on',GS.open);setTimeout(function(){uiResize();if(GS.open){var k=gsKey();if(GS.R&&k&&GS._k===k){try{gsDraw();}catch(e){gsRun();}}else gsRun();}},40);}
 function gsTab(t){GS.tab=t;['S','V','F','M','E','K','C'].forEach(function(k){$('gsT'+k).style.display=(k===t)?'block':'none';$('gsB'+k).className=(k===t)?'on':'';});gsDraw();}
 var _gt;function gsAutoHook(){if(!GS.open||!$('gAuto').checked)return;clearTimeout(_gt);_gt=setTimeout(gsRun,400);}
 /* ---------- SATU pintu keluar untuk SEMUA ekspor (sama seperti di GC-Ex Block Model) ----------
@@ -1685,7 +1689,7 @@ function fitSplit(E,c0,sill,minP,B){var r=sill-c0,best=1e300,bb=null,G1=lgrid(B[
   for(var f=0.1;f<=0.901;f+=0.05)for(var i=0;i<G1.length;i++)for(var j=i+1;j<G1.length;j++){var cs=[f*r,(1-f)*r],e=sse(E,c0,cs,[G1[i],G1[j]],minP);if(e<best){best=e;bb={c:cs,a:[G1[i],G1[j]],e:e};}}
   return bb;}
 function rNote(a,B,E,minP){if(!isFinite(a))return '';var hf=E?h1(E,minP):NaN;if(a<=B[0]*1.06||(isFinite(hf)&&a<=hf*1.001))return ' [<= lag pertama'+(isFinite(hf)?' '+fx(hf,1)+' m':'')+': range sebenarnya bisa lebih pendek, butuh data lebih rapat]';if(a>=B[1]*0.94)return ' [>= batas atas: range melebihi jarak lag maksimum]';return '';}
-function gsRun(){if(!GS.open)return;
+function gsRun(){if(!GS.open)return;GS._k=gsKey();
   var S=secK(),ids=(window.visHolesK?visHolesK():visHoles()),el=$('elementFilter').value,ei=elements.indexOf(el);
   var cl=$('gComp').value.trim(),L=(cl==='')?medLen(ids,ei):parseFloat(cl);if(isNaN(L))L=0;
   var C=gsComps(ids,ei,L,S),R={S:S,el:el,L:L,C:C,label:secLabel(S)};GS.R=R;
@@ -5098,6 +5102,65 @@ function cmdGo(i){var o=CMD.L[i];if(!o)return;cmdClose();if(o.fn){o.fn();return;
 /* ================= inisialisasi akhir viewer (harus file terakhir) ================= */
 updRange(true);benchChanged();
 
+/* ---------- 3D: jangan kirim ulang lapisan yang tidak berubah (Drillhole 0.24.42) ----------
+   Plotly gl3d memanggil update() untuk SETIAP lapisan setiap kali satu lapisan saja berubah (geser
+   sayatan, centang overlay, lapisan Ore Geometry yang dibangun ulang). Untuk block model ber-ratusan
+   ribu titik sudut itu berarti ~1 detik kerja JavaScript per perubahan, walau blok-bloknya sama.
+   Di sini update() dilewati bila objek lapisan masukan (data._input) sama persis dengan panggilan
+   sebelumnya: properti tingkat atasnya identik (array dibandingkan per referensi, objek kecil seperti
+   marker / lighting per isi JSON), visibilitasnya sama, dan skala sumbu adegan (dataScale) tidak
+   berubah. Lapisan yang dibangun ulang (objek atau array baru) tetap di-update seperti biasa. */
+(function () {
+  if (window.GLSKIP) return;
+  var G = window.GLSKIP = { on: true, skip: 0, run: 0 };
+  function nilai(inp) {
+    return Object.keys(inp).map(function (k) {
+      var v = inp[k];
+      if (v && typeof v === 'object' && !ArrayBuffer.isView(v) && !Array.isArray(v)) { try { return k + '=' + JSON.stringify(v); } catch (e) { return v; } }
+      return v;
+    });
+  }
+  function pasang(P) {
+    if (!P || P._glskip || typeof P.update !== 'function') return;
+    var asli = P.update;
+    P.update = function (data) {
+      var inp = data && data._input, ds = this.scene && this.scene.dataScale ? this.scene.dataScale.join(',') : '';
+      if (G.on && inp) {
+        var V = nilai(inp), lama = this._gsV, sama = this._gsIn === inp && this._gsDs === ds && this._gsVis === data.visible && lama && lama.length === V.length;
+        if (sama) for (var i = 0; i < V.length; i++) if (V[i] !== lama[i]) { sama = false; break; }
+        if (sama) { this.data = data; G.skip++; return; }
+        this._gsIn = inp; this._gsDs = ds; this._gsVis = data.visible; this._gsV = V;
+      }
+      G.run++;
+      return asli.apply(this, arguments);
+    };
+    P._glskip = 1;
+  }
+  function pindai(gd) {
+    try {
+      var fl = gd && gd._fullLayout; if (!fl) return;
+      Object.keys(fl).forEach(function (k) {
+        if (!/^scene\d*$/.test(k) || !fl[k] || !fl[k]._scene) return;
+        var tr = fl[k]._scene.traces || {};
+        Object.keys(tr).forEach(function (u) { pasang(Object.getPrototypeOf(tr[u])); });
+      });
+    } catch (e) {}
+  }
+  function bungkus() {
+    var P = window.Plotly; if (!P || P._glskipW) return !!(P && P._glskipW);
+    ['react', 'newPlot'].forEach(function (n) {
+      var f = P[n]; if (typeof f !== 'function') return;
+      P[n] = function (gd) {
+        var r = f.apply(this, arguments), el = typeof gd === 'string' ? document.getElementById(gd) : gd;
+        if (r && typeof r.then === 'function') r.then(function () { pindai(el); }); else pindai(el);
+        return r;
+      };
+    });
+    P._glskipW = 1; return true;
+  }
+  if (!bungkus()) { var n = 0, t = setInterval(function () { if (bungkus() || ++n > 200) clearInterval(t); }, 50); }
+})();
+
 /* ================= GC-Ex Drillhole: bilah sayatan mengambang (Maju / Mundur) =================
    Tombol Maju / Mundur dipindah dari bilah atas ke bilah kecil di area tampilan. Bilah hanya muncul saat
    sayatan dipakai: Sayatan 2D aktif, atau di 3D "Potong data (hanya dalam slab)" / "Tampilkan bidang potong" dicentang.
@@ -5483,7 +5546,7 @@ function ogPanel(){var b=$('ogBody');if(!b)return;var P=OG.p,R=OG.R,L=OG.L,el=og
 /* ---------- pasang: panel, tree tab, 3D, simpan ---------- */
 (function(){var side=$('side');if(!side||$('pOG'))return;var s=document.createElement('section');s.id='pOG';s.hidden=true;s.innerHTML='<h3>Ore Geometry</h3><div id=ogBody></div>';side.appendChild(s);
   var st=document.createElement('style');st.textContent='#ogDiv{position:absolute;inset:0;z-index:8;background:var(--sf);display:none}#ogPlot{position:absolute;inset:0}#ogXY{position:absolute;left:10px;bottom:6px;z-index:3;font:12px Arial;background:rgba(255,255,255,.85);color:#222;padding:2px 6px;border-radius:4px}';document.head.appendChild(st);
-  var _u=uiTab;uiTab=function(n){var r=_u.apply(this,arguments);var p=$('pOG');if(p)p.hidden=n!=='OG';if(n==='OG'){['Rep','Val'].forEach(function(k){var q=$('p'+k);if(q)q.hidden=true;});try{if(uiSideW()<440)uiSideW(440);}catch(e){}if(!OG.R&&window.elements&&elements.length&&!OG._auto){OG._auto=1;setTimeout(function(){try{ogRunIc();}catch(e){console.error(e);}},60);}ogPanel();}else if(OG.view==='ls'){var d=$('ogDiv');if(d)d.style.display='none';OG.view='3d';}return r;};
+  var _u=uiTab;uiTab=function(n){var r=_u.apply(this,arguments);var p=$('pOG');if(p)p.hidden=n!=='OG';if(n==='OG'){['Rep','Val'].forEach(function(k){var q=$('p'+k);if(q)q.hidden=true;});try{if(uiSideW()<440)uiSideW(440);}catch(e){}/* tidak lagi menghitung intercept otomatis saat panel dibuka (±2-3 s beku); tombol Hitung di panel */ogPanel();}else if(OG.view==='ls'){var d=$('ogDiv');if(d)d.style.display='none';OG.view='3d';}return r;};
   if(typeof imTraces==='function'){var _t=imTraces;imTraces=function(T,o){var r=_t.apply(this,arguments);ogTraces(T,o||{});return r;};}
   var _c=SA.collectWork;SA.collectWork=function(){var w=_c.apply(this,arguments);try{w.og={p:OG.p,axes:OG.axes,on:OG.on};}catch(e){}return w;};
   var _a=SA.applyWork;SA.applyWork=function(W){try{if(W&&W.og){var o=W.og;if(o.p){var g=Object.assign({},OG.p.gs,o.p.gs||{});OG.p=Object.assign({},OG.p,o.p);OG.p.gs=g;}OG.axes=o.axes||[];if(o.on!=null)OG.on=o.on;OG.R=null;OG.L=null;OG.S=null;}}catch(e){console.error(e);}return _a.apply(this,arguments);};
@@ -5921,7 +5984,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
       go:function(){U.setVal('geoAttr',o[0]);if(window.trajMode)trajMode('geo');}};});
     var tb=function(id,t,ic,n,kind,o){return Object.assign({id:id,t:t,ic:ic,b:N(n),dim:!n,menu:function(){var L=[{t:'Ganti / perbarui (upsert)…',fn:ups}];if(kind)L.push({sep:1},{t:'Hapus tabel ini…',danger:1,dis:!n,fn:function(){PTD.drop(kind);}});return L;}},o||{});};
     return{id:'db',step:'3',t:'Database Bor',ic:'folder',fold:1,tab:'Data',b:C.length?N(C.length)+' hole':'',
-      menu:function(){return(window.kpMenuDb?kpMenuDb():[]).concat([{t:'Tambah / perbarui data bor (upsert)…',fn:ups},{sep:1},{t:'Kampanye baru…',fn:function(){if(window.kpTambah)kpTambah();}},{t:'Gabungkan kampanye… (merge)',fn:function(){if(window.kpGabung)kpGabung();}},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}]);},
+      menu:function(){return(window.kpMenuDb?kpMenuDb():[]).concat([{t:'Tambah / perbarui data bor (upsert)…',fn:ups},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}]);},
       kids:(window.kpTree?kpTree():[]).concat([tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[{t:'Ganti / perbarui (upsert)…',fn:ups},{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
         tb('db.survey','Survey','table',Sv.length,'survey',{tab:'Data'}),
         tb('db.assay','Assay','table',As.length,'assay',{tab:'Data',kids:els}),
@@ -6006,14 +6069,30 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
     L.push({id:'gs',step:'11',t:'Geostatistik',ic:'gs',fold:1,hint:'Variogram & panduan (panel kanan); pilih domain aktif di bawahnya',go:function(){var p=$('gsPanel');if(!p||p.hidden||!GS.open)gsToggle();},
       kids:tops.map(gsDom).concat([{id:'gs.all',t:'Semua data (tanpa filter domain)',ic:'db',mark:ok(function(){return GS.domOnly===false;},false)?'aktif':'',go:function(){gxDomAct(null,'gs');}}])});
     L.push({id:'out',step:'12',t:'Layout & Ekspor',ic:'folder',fold:1,kids:[{id:'out.map',t:'Peta (layout cetak)',ic:'map',tab:'Map',sub:'Layer peta',kids:[sub('map.1','Layer peta (isi peta)','eye','Map','Layer peta'),sub('map.4','Layout & cetak','export','Map','Layout')]},
-      {id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')},{id:'out.db',t:'Export database (CSV)',ic:'table',go:A('gxDbExport')},{id:'out.mdl',t:'Export block model GC (.mdl)',ic:'block',go:A('bxMdlExport'),dim:!(window.BX&&BX.m)}]});
+      {id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')}]});
+    /* Export database & export block model .mdl hanya di node pemiliknya (Database Bor / Block Model) — satu ekspor, satu node */
     L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.w',t:'Warna kadar',ic:'color',tab:'Warna'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     if(window.OG)L.push({id:'og',t:'Ore Geometry',ic:'gs',fold:1,tab:'OG',mark:'referensi',b:ok(function(){return OG.R?N(OG.R.nHit)+' bor GT':'';},''),
       hint:'Referensi geologist: intercept & GT long section, ore shoot (pitch / plunge / trend), grade shell 3D. Tidak dipakai pemodelan / estimasi.',
       chk:ok(function(){return OG.on!==false;},true),onChk:function(v){OG.on=v;updatePlot();},
       kids:[sub('og.1','Data & intercept (GT)','attr','OG','Intercept'),sub('og.2','Long section GT','section','OG','Long section'),sub('og.3','Ore shoot (pitch / plunge / trend)','chart','OG','Ore shoot'),sub('og.4','Grade shell 3D','block','OG','Grade shell')]});
+    /* Urutan mengikuti alur kerja nyata (permintaan pemilik 8 Nov 2026): Ore Geometry (referensi geologist,
+       sebelum pemodelan) sesudah Struktur; Geostatistik (variogram) sebelum Block Model & Model Estimation.
+       Node yang tidak dikenal tetap di tempat relatifnya (sesudah pendahulunya). */
+    var URUT=['proj','sp','wf','db','mp','st','og','gm','sl','gs','bm','me','val','rep','out','set'],STEP={og:'5b',gs:'7',bm:'8',me:'9',val:'10',rep:'11',out:'12'};
+    L.forEach(function(n,i){n._o=i;});
+    var rk=function(n){var k=URUT.indexOf(n.id);if(k>=0)return k;for(var j=n._o-1;j>=0;j--){var p=URUT.indexOf(L[j].id);if(p>=0)return p+0.5;}return -0.5;};
+    L.sort(function(a,b){var d=rk(a)-rk(b);return d||a._o-b._o;});
+    L.forEach(function(n){delete n._o;if(STEP[n.id])n.step=STEP[n.id];});
     return L;}
   PT.install({app:'dh',nodes:nodes,openDef:['sp','db','gm','bm']});
+  /* Versi block model dikelola di bagian ④ Block model panel Data Spasial. Saat node versi di bawah
+     Block Model dipilih, hanya bagian itu yang tampil (tab Topografi / Pit / Ortho disembunyikan), supaya
+     panelnya milik node Block Model, bukan terbaca sebagai panel Data Spasial. */
+  (function(){var st=document.createElement('style');st.textContent='#pSP.sp-bmsaja .uitabs{display:none}';document.head.appendChild(st);
+    /* klik di tree memakai select() internal, jadi yang diamati adalah perubahan sorotan node, bukan PT.select */
+    var cek=function(){try{var p=$('pSP');if(p)p.classList.toggle('sp-bmsaja',/^bm\.v\./.test(String(PT.sel||'')));}catch(e){}};
+    var pasang=function(){var t=$('ptree');if(!t)return setTimeout(pasang,300);new MutationObserver(cek).observe(t,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});cek();};pasang();})();
 })();
 
 
@@ -14409,7 +14488,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.41';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.42';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

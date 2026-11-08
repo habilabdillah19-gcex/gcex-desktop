@@ -3958,3 +3958,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 
 - **Auto Detect** kini menyalin judul formulir yang tercetak (mis. DAILY DRILLING REPORT) dan menentukan jenis dari judul itu — tidak lagi tertukar antara Daily Drilling Report dan Drill Progress Report.
 - Bila jenis tetap salah (tanda: banyak sel merah): klik **Jenis salah? Ganti & baca ulang** di kartu status, atau klik kanan file → **Ubah jenis borang & baca ulang**. Baris lama dibuang (dengan konfirmasi) lalu borang dibaca ulang AI.
+
+## 133. Drillhole 0.24.42 — 3D lebih ringan, urutan tree sesuai alur kerja
+
+- Geser sayatan, Maju / Mundur, dan ganti centang lapisan kini jauh lebih ringan: lapisan 3D yang tidak berubah (mis. block model) tidak dikirim ulang ke kartu grafis.
+- **Ore Geometry** tidak lagi menghitung otomatis saat dibuka; tekan **Hitung intercept & GT** di panelnya.
+- Urutan Project Tree: … Struktur Geologi (5) › **Ore Geometry (5b)** › Geomodeller (6 / 6b) › **Geostatistik (7)** › Block Model (8) › Model Estimation (9) › Validasi BM (10) › Reporting BM (11) › Layout & Ekspor (12).
+- Export database ada di menu **Database Bor**; export block model .mdl di menu **Block Model** (tidak lagi di Layout & Ekspor).

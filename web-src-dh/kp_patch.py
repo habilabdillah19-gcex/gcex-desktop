@@ -67,9 +67,9 @@ def patch_analisis(s: str, tanda: str) -> str:
 
 def patch_tree(s: str) -> str:
     s = _tree_body(s)
-    # menu node Database Bor: tambah perintah kampanye
     c = "      menu:function(){return[{t:'Tambah / perbarui data bor (upsert)…',fn:ups}"
     assert s.count(c) == 1, 'menu node Database Bor tidak ditemukan tepat satu kali'
-    s = s.replace(c, c + ",{sep:1},{t:'Kampanye baru…',fn:function(){if(window.kpTambah)kpTambah();}}"
-                      ",{t:'Gabungkan kampanye… (merge)',fn:function(){if(window.kpGabung)kpGabung();}}")
+    # Dulu di sini ditambahkan "Kampanye baru…" & "Gabungkan kampanye… (merge)". Keduanya kembar dengan
+    # "Tambah kampanye baru…" & "Buat set merge…" dari kpMenuDb() yang sudah tampil di menu yang sama
+    # (permintaan pemilik 8 Nov 2026: satu perintah satu tempat), jadi tidak ditambahkan lagi.
     return s
