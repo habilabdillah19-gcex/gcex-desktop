@@ -4027,3 +4027,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Tombol **Import CSV struktur** dihapus dari panel Struktur Geologi. Import lewat baris **+ Tambah struktur… › Import CSV struktur…** di Project Tree.
 - **Import titik pick-up (CSV)** tetap di panel **Peta (Mapping)**; baris *+ Tambah titik pick-up* di Project Tree dihapus.
 - Block Model tidak berubah (tetap 0.24.42).
+
+## 139. Drillhole 0.24.48 — panel Struktur Geologi dan Data referensi dipisah
+
+- Klik node **Struktur Geologi** (atau anaknya) → panel hanya berisi struktur (tabel titik, sumber, titik manual). Judul, tab Titik survey / String dan isinya tidak lagi ikut tampil.
+- Klik node **Data referensi (titik survey, string)** → panel hanya titik survey & string; tab **Struktur** tidak muncul.
+- Data tidak berubah, hanya tampilan panel yang mengikuti node. Gambar tutorial bab Struktur Geologi diambil ulang.
+- Integrasi data tetap: struktur yang dicentang (per sumber) tetap dipakai solid vein RBF, dan saklar **Pakai struktur** per domain tetap berlaku — dibuktikan uji pembanding dengan build sebelum perubahan UI (angka volume identik).

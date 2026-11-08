@@ -181,8 +181,19 @@
   /* Versi block model dikelola di bagian ④ Block model panel Data Spasial. Saat node versi di bawah
      Block Model dipilih, hanya bagian itu yang tampil (tab Topografi / Pit / Ortho disembunyikan), supaya
      panelnya milik node Block Model, bukan terbaca sebagai panel Data Spasial. */
-  (function(){var st=document.createElement('style');st.textContent='#pSP.sp-bmsaja .uitabs{display:none}';document.head.appendChild(st);
+  /* Struktur Geologi & Data referensi berbagi panel #pModel (struktur = bagian #stBody). Sejak 0.24.48 panel itu
+     dipisah menurut node (keputusan pemilik 8 Nov 2026): node Struktur Geologi (st, st.*) hanya menampilkan bagian
+     struktur; node Data referensi (sp.ref, ref.*) hanya titik survey & string, tanpa tab Struktur. */
+  (function(){var st=document.createElement('style');st.textContent='#pSP.sp-bmsaja .uitabs{display:none}'+
+      '#pModel.ref-st>*:not(.sec-st){display:none!important}#pModel.ref-st>.sec-st{display:block!important}'+
+      '#pModel.ref-ref>.sec-st,#pModel.ref-ref>.uitabs .tab-st{display:none!important}';document.head.appendChild(st);
+    var refMode=function(){var p=$('pModel');if(!p)return;var n=PT.sel&&PT.find(PT.sel),m=n&&n.tab==='Model'?(/^st(\.|$)/.test(n.id)?'st':'ref'):'';
+      var sb=$('stBody'),sec=sb&&sb.closest('.uisec');
+      [].forEach.call(p.querySelectorAll(':scope>.uisec'),function(d){d.classList.toggle('sec-st',d===sec);});
+      [].forEach.call(p.querySelectorAll(':scope>.uitabs button'),function(b){b.classList.toggle('tab-st',!!sec&&b.dataset.k===sec.dataset.k);});
+      p.classList.toggle('ref-st',m==='st');p.classList.toggle('ref-ref',m==='ref');
+      if(m==='ref'&&sec){var on=p.querySelector(':scope>.uitabs button.on');if(!on||on.dataset.k===sec.dataset.k)uiSecOpen('ref','1');}};
     /* klik di tree memakai select() internal, jadi yang diamati adalah perubahan sorotan node, bukan PT.select */
-    var cek=function(){try{var p=$('pSP');if(p)p.classList.toggle('sp-bmsaja',/^bm\.v\./.test(String(PT.sel||'')));}catch(e){}};
+    var cek=function(){try{var p=$('pSP');if(p)p.classList.toggle('sp-bmsaja',/^bm\.v\./.test(String(PT.sel||'')));}catch(e){}try{refMode();}catch(e){}};
     var pasang=function(){var t=$('ptree');if(!t)return setTimeout(pasang,300);new MutationObserver(cek).observe(t,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});cek();};pasang();})();
 })();

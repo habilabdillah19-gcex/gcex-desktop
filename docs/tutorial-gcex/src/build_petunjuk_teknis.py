@@ -609,6 +609,9 @@ B.append(D.bullets(
     'wireframe geologi. Untuk wireframe, data referensi, kampanye dan CSV struktur tombol import di panel dihapus (satu pintu).',
     '<b>Pengecualian (tetap di panel, tanpa baris + Tambah)</b>: versi topografi / desain pit / orthofoto / block model di panel '
     '<b>Data Spasial</b> (Drill Hole), import titik pick-up CSV di panel <b>Peta (Mapping)</b> (Drill Hole) dan tombol simpan preset di kartu <b>Preset kelas kadar &amp; tujuan</b> (Block Model).',
+    '<b>Panel mengikuti node</b> (DH 0.24.48): node <b>Struktur Geologi</b> hanya menampilkan bagian struktur; node '
+    '<b>Data referensi</b> hanya titik survey &amp; string (keduanya berbagi panel <code>#pModel</code>, dipisah oleh kelas '
+    '<code>ref-st</code> / <code>ref-ref</code> di <code>ptree_dh.js</code>).',
     'Menu &#8943; berisi perintah atas isi yang sudah ada: tampilkan sebagai, jadikan aktif, ganti nama, export, pindahkan, hapus. '
     'Node yang menunya kosong tidak menampilkan &#8943;.'))
 
