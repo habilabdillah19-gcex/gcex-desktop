@@ -3985,3 +3985,12 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Tombol Demo** menunjuk node **Import Wireframe Geologi** untuk langkah wireframe, dan menghitung laporan per pit / progres topo dari versi Data Spasial (Drill Hole) atau permukaan DTM di Data Referensi (Block Model).
 - **Tutorial bergambar** (Modelling & Estimasi, Block Model), **Tutorial Update** dan **Petunjuk Teknis** dibangun ulang dengan tangkapan layar versi ini.
 - Block Model › As-Mined: tombol **Import pick-up atap** kini sama dengan tombol **Import pick-up lantai** (biru, tulisan putih).
+
+## 135. Drillhole 0.24.44 (Block Model 0.24.40) — plan bor per hari / per bench
+
+- Node **Database Bor › Plan bor (rencana)**: klik kanan → **Plan baru…** membuat plan baru (nama bawaan *Plan tanggal · bench*). Setiap plan tampil **berurutan** sebagai sub-node bernomor (1., 2., …) dengan jumlah titiknya.
+- Hanya satu plan **aktif**. Titik baru, Hapus semua, Nomori ulang dan Export CSV di panel bekerja pada plan aktif. Untuk extend di lokasi lama: klik kanan sub-node → **Jadikan plan aktif**, lalu tambah titik.
+- Plan aktif digambar magenta tegas, plan lain ungu pudar (3D dan peta plan). Centang sub-node untuk tampil / sembunyi.
+- Export: per plan (**Export CSV plan ini…**) atau **Export CSV semua plan…** (satu file, kolom Plan).
+- Proyek yang dibuat sebelum versi ini dibuka dengan satu plan bernama **Plan lama**.
+- Tutorial Modelling & Estimasi: bab baru **Plan bor harian**. Tombol Demo langkah *Plan bor* membuat **Plan demo**.

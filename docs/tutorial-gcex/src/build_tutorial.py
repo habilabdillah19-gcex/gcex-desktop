@@ -131,8 +131,8 @@ BAGIAN = [
   'sumber daya &mdash; kadarnya untuk dilusi, ore loss dan perencanaan pit.',
   ['Klasifikasi keyakinan', 'Laporan per desain pit']),
  ('Bagian V &middot; Data pendukung, export &amp; pemeliharaan',
-  'Peta 2D, pergantian topografi / block model per periode, export ke Surpac dan perawatan folder proyek.',
-  ['Map: peta geologi 2D', 'Mengganti topografi', 'Topografi &amp; orthofoto resolusi tinggi',
+  'Peta 2D, plan bor harian, pergantian topografi / block model per periode, export ke Surpac dan perawatan folder proyek.',
+  ['Map: peta geologi 2D', 'Plan bor harian', 'Mengganti topografi', 'Topografi &amp; orthofoto resolusi tinggi',
    'Export database', 'Folder proyek, backup', 'Status pengembangan']),
 ]
 
@@ -1133,6 +1133,25 @@ ch('Map: peta geologi 2D', dta('<code>data/SIM_pickup_survey.csv</code> &mdash; 
  + fig('map_layout', 'Contoh layout A4 lanskap: peta, legenda dari layer yang tampil, panah utara, skala grafis dan perkiraan skala numerik, serta kotak judul.')
  + tip('Fitur peta, titik pick-up, pengaturan layer dan layout tersimpan di proyek. Skala grafis akurat; skala numerik adalah perkiraan dari lebar tampilan.'))
 
+PS = N.get('planSet') or []
+if PS:
+  ch('Plan bor harian: satu plan per hari / per bench', dta('lanjutan &mdash; tidak ada berkas masuk; titik dibuat di peta plan dari data latihan',
+     [('Yang diklik', 'klik kanan node <b>Database Bor &rarr; Plan bor (rencana)</b> &rarr; <b>Plan baru&hellip;</b>'),
+      ('Plan 1', f"<b>{PS[0][0]}</b>: alat <b>Garis</b>, 5 titik; lalu extend 2 titik &rarr; <b>{PS[0][1]} titik</b> ({PS[0][2]})"),
+      ('Plan 2', f"<b>{PS[1][0]}</b>: alat <b>Grid area</b> 3 &times; 2 di timur laut &rarr; <b>{PS[1][1]} titik</b> ({PS[1][2]})" if len(PS) > 1 else '-'),
+      ('Hasil yang seharusnya', 'dua sub-node bernomor 1. dan 2. di bawah <b>Plan bor (rencana)</b>, badge <b>' + f"{len(PS)} plan &middot; {sum(x[1] for x in PS)} titik" + '</b>')])
+   + '<p>Rencana bor dibuat bertahap: hari ini satu baris di bench RL240, besok grid di bench lain, lusa tambahan di lokasi kemarin. Mulai Drillhole 0.24.44 setiap rencana disimpan sebagai <b>plan tersendiri</b> dan tampil <b>berurutan</b> sebagai sub-node <b>Plan bor (rencana)</b>. Hanya satu plan yang <b>aktif</b>: titik baru, Hapus semua, Nomori ulang dan Export CSV di panel bekerja pada plan aktif saja.</p>'
+   + steps('Klik kanan <b>Plan bor (rencana)</b> &rarr; <b>Plan baru&hellip;</b>. Nama bawaan <i>Plan tanggal &middot; bench</i>; ganti bila perlu, misalnya <code>' + PS[0][0] + '</code>.',
+     'Di panel Plan Bor isi <b>Bench</b> <code>RL240</code>, pilih alat <b>Garis</b> lalu tarik garis di peta plan: 5 titik dengan spasi sesuai isian <b>Spasi (m)</b>.',
+     'Hari berikutnya: <b>Plan baru&hellip;</b> lagi, Bench <code>RL235</code>, alat <b>Grid area</b>: klik sudut-sudut area, klik ganda untuk selesai &rarr; ' + (f"{PS[1][1]} titik." if len(PS) > 1 else 'grid titik.'),
+     'Extend di lokasi plan pertama: klik kanan sub-node <b>1.</b> &rarr; <b>Jadikan plan aktif</b> (atau pilih di kotak plan di atas panel), lalu tambah titik. Nomor melanjutkan urutan plan itu: ' + PS[0][2] + '.',
+     'Centang / hapus centang sub-node untuk menampilkan atau menyembunyikan plan di 3D dan di peta. Plan aktif digambar <b>magenta tegas</b>, plan lain <b>ungu pudar</b> ([[plan_peta]]).',
+     'Export: klik kanan sub-node &rarr; <b>Export CSV plan ini&hellip;</b> (nama file dari nama plan), atau node induk &rarr; <b>Export CSV semua plan&hellip;</b> (satu file, kolom Plan).')
+   + fig('plan_set', 'Project Tree: <b>Plan bor (rencana)</b> berisi ' + ', '.join(f"{i+1}. {x[0]} ({x[1]} titik)" for i, x in enumerate(PS)) + '. Plan 1 bertanda <i>aktif</i>; panel Plan Bor di kanan memakai plan aktif.', '62%')
+   + fig('plan_peta', f"Peta plan: plan aktif ({PS[0][0]}, {PS[0][1]} titik) magenta tegas di antara collar lama; plan RL235 ({PS[1][1] if len(PS)>1 else 0} titik) ungu pudar di timur laut.")
+   + tip('Plan tersimpan di proyek bersama sesi kerja. Proyek lama yang dibuat sebelum 0.24.44 dibuka dengan satu plan bernama <b>Plan lama</b> berisi semua titik sebelumnya.')
+   + warn('<b>Hapus semua</b> di panel dan menu <b>Hapus semua titik di plan aktif&hellip;</b> hanya mengosongkan plan aktif. Untuk membuang satu plan utuh pakai <b>Hapus plan ini&hellip;</b> di sub-node-nya.'))
+
 ch('Mengganti topografi & block model (Data Spasial)', dta('<code>data/SIM_topo_xyz_nov.csv</code> &mdash; topografi bulan berikutnya (area pit turun sampai 6 m)',
      [('Yang diklik', '<b>Data Spasial</b> &rarr; &#9312; Topografi &rarr; <b>+ Tambah versi topografi</b>'),
       ('Berkas', '<code>SIM_topo_xyz_nov.csv</code>'),
@@ -1157,10 +1176,10 @@ ch('Export database & block model', dta('lanjutan &mdash; tidak ada berkas masuk
       ('Hasil yang seharusnya', clean(N['exportDb'])),
       ('Isi ZIP', '<code>' + ', '.join(N['zipIsi']) + '</code>'),
       ('Block model', '<b>Export .mdl (Surpac)</b> bila dibuka dari .mdl; dari CSV: <b>CSV blok domain</b> &mdash; ' + clean(N['meCsv']))]) +  steps(
- 'Menu <b>Data</b> &rarr; <b>&#8681; Export database (CSV)</b>. Pilih <b>Dip di survey</b>: negatif = ke bawah (Surpac / Leapfrog umumnya negatif).',
+ 'Klik kanan node <b>Database Bor</b> &rarr; <b>Export database (CSV)</b> (atau tombol yang sama di panel Data). Pilih <b>Dip di survey</b>: negatif = ke bawah (Surpac / Leapfrog umumnya negatif).',
  f"Hasil: {clean(N['exportDb'])} File ZIP berisi: <code>{', '.join(N['zipIsi'])}</code>.",
  'Kolom <code>Ore_Domain</code> di assay &amp; geologi berisi domain dari flag, siap dipakai sebagai interval selection di Leapfrog atau Surpac.',
- 'Block model hasil Model Estimation: <b>&#8681; Export .mdl (Surpac)</b> di Model Estimation (bila block model dibuka dari file .mdl). Header &amp; atribut asli tetap, atribut baru ditambahkan di akhir, blok tambahan disisipkan sesuai urutan octree Surpac. Block model dari CSV: <b>&#8681; CSV blok domain</b> ' + f"({clean(N['meCsv'])}).",
+ 'Block model hasil Model Estimation: klik kanan node <b>Block Model</b> &rarr; <b>Export block model GC (.mdl)</b>, atau <b>&#8681; Export .mdl (Surpac)</b> di Model Estimation (bila block model dibuka dari file .mdl). Header &amp; atribut asli tetap, atribut baru ditambahkan di akhir, blok tambahan disisipkan sesuai urutan octree Surpac. Block model dari CSV: <b>&#8681; CSV blok domain</b> ' + f"({clean(N['meCsv'])}).",
  'String kontrol: <b>&#8681; Export STR</b> / <b>&#8681; Export DXF</b>; flag: <b>&#8681; Export flag (CSV)</b>; solid: <b>OBJ / DXF / STR+DTM</b> di Geomodeller Vein.')
  + tip('Jika menu <b>Proyek &rarr; Salin setiap export ke folder proyek/export</b> aktif, salinan export juga tersimpan di folder proyek, misalnya <code>export/2026-10-22/GCEx_Database_VeinA_Simulasi_20261022.zip</code>.')
  + warn('Export .mdl dengan atribut &amp; blok tambahan sudah diuji dibaca ulang oleh GC-Ex dan dibandingkan per record dengan file asli (model Z3, 590.478 blok). Uji buka di Surpac tetap disarankan sebelum dipakai produksi.'))

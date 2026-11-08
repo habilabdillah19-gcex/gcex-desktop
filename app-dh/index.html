@@ -2456,8 +2456,8 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
       var g=secGeom(),s0=(g.seg||60)/2,z0=zp,Q=[[s0-15,z0+6],[s0,z0+12],[s0+15,z0+4],[s0+8,z0-10],[s0-10,z0-8]];
       Q.forEach(function(q,k){A(2+k*0.7,function(){if(!DG.on)return;DG.c2.push(q);DG.cur.push(dg3(DG.pl,q[0],q[1]));dgDraw();dgState();});});
       A(6,function(){if(DG.on)dgFinish(true);});A(9.4,function(){if(VIEW2D)toggle2D();});}});
-  S.push({s:'Plan Bor',t:'Plan bor: rencana pengeboran',d:'Menu Plan Bor membuat titik bor rencana langsung di peta plan: per titik, sepanjang garis, atau grid di dalam area (bisa zigzag). Nama, azimuth, dip, depth dan elevasi collar terisi otomatis.',el:'rbPlan',dur:9,
-    run:function(A){A(0,function(){if(VIEW2D)toggle2D();dmSet('sMode','H');dmSet('sliceClip',false);dmSet('showPlane',false);uiTab('Plan');});A(1.5,function(){dmPoint('#plTools button[data-t=line]',true);plTool(document.querySelector('#plTools button[data-t=line]'));});
+  S.push({s:'Plan Bor',t:'Plan bor: rencana pengeboran',d:'Plan Bor membuat titik bor rencana di peta plan: per titik, sepanjang garis, atau grid area. Setiap Plan baru (mis. per hari) muncul berurutan sebagai sub-node Plan bor (rencana); pilih plan lama untuk extend di lokasi yang sama.',el:'.ptr[data-id="db.plan"]',dur:10,
+    run:function(A){A(0,function(){if(VIEW2D)toggle2D();dmSet('sMode','H');dmSet('sliceClip',false);dmSet('showPlane',false);try{PT.open['db']=1;PT.open['db.plan']=1;PT.select('db.plan');}catch(e){uiTab('Plan');}if(window.PLS)PLS.buat('Plan demo');});A(1.5,function(){dmPoint('#plTools button[data-t=line]',true);plTool(document.querySelector('#plTools button[data-t=line]'));});
       A(3.5,function(){var a={x:L[0]-offX,y:L[1]-offY},b={x:L[2]-offX,y:L[3]-offY},m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},u={x:(b.x-a.x),y:(b.y-a.y)},n=Math.sqrt(u.x*u.x+u.y*u.y)||1,o={x:-u.y/n*12,y:u.x/n*12};
         plLine({x:m.x-u.x*0.25+o.x,y:m.y-u.y*0.25+o.y},{x:m.x+u.x*0.25+o.x,y:m.y+u.y*0.25+o.y});dmHide();});A(8.4,function(){if(DRW.on)drawClose();});}});
   S.push({s:'Plan Bor',t:'Preview 3D & export CSV',d:'Rencana tampil sebagai garis putus-putus magenta bersama lubang lama, lengkap dengan jarak ke lubang terdekat dan kadar perkiraan dari block model. Tombol Export menghasilkan CSV dengan format plan bor yang dipakai sekarang.',el:'[onclick^=plExport]',dur:10,orbit:[2,9,90],
@@ -5991,8 +5991,11 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
         tb('db.geo','Geologi','geo',G.length,'geo',{tab:'Geo',kids:gat}),
         {id:'db.traj',t:'Trajectory',ic:'hole',tab:'View',chk:U.cb('showTraj'),onChk:function(v){U.setCb('showTraj',v);}},
         {id:'db.lbl',t:'Label hole',ic:'attr',tab:'View',chk:U.cb('showLabel'),onChk:function(v){U.setCb('showLabel',v);}},
-        {id:'db.plan',t:'Plan bor (rencana)',ic:'plan',tab:'Plan',b:ok(function(){return PL.h.length;},0)||'',chk:U.cb('plShow'),onChk:function(v){U.setCb('plShow',v);},
-          menu:function(){return[{t:'Export CSV plan bor',fn:A('plExport')},{sep:1},{t:'Hapus semua titik rencana',danger:1,fn:A('plClear')}];}}]).concat(window.fqTree?fqTree():[])};}
+        {id:'db.plan',t:'Plan bor (rencana)',ic:'plan',tab:'Plan',fold:1,
+          /* sejak 0.24.44: tiap "Plan baru" = satu sub-node, berurutan sesuai waktu dibuat (plset_dh.js) */
+          b:ok(function(){if(!window.PLS)return PL.h.length;var n=0;PL.sets.forEach(function(s){n+=s.h.length;});return PL.sets.length+' plan \u00b7 '+n+' titik';},0)||'',chk:U.cb('plShow'),onChk:function(v){U.setCb('plShow',v);},
+          kids:ok(function(){return window.PLS?PLS.kids():[];},[]),
+          menu:function(){return[{t:'Plan baru…',fn:function(){if(window.PLS)PLS.baru();}},{sep:1},{t:'Export CSV plan aktif…',fn:A('plExport')},{t:'Export CSV semua plan…',fn:function(){if(window.PLS)PLS.exportSemua();}},{sep:1},{t:'Hapus semua titik di plan aktif…',danger:1,fn:A('plClear')}];}}]).concat(window.fqTree?fqTree():[])};}
   function delHoles(){var r=U.ask('HoleID yang akan dihapus (pisahkan dengan koma / spasi):','');if(!r)return;var ids=r.split(/[\s,;]+/).filter(Boolean);if(ids.length)PTD.drop('holes',ids);}
   function fStruct(){var F=ok(function(){return STR.F;},[]),P=ok(function(){return STR.P;},[]),cnt=function(id){return P.filter(function(p){return p.fid===id;}).length;};
     var node=function(f,t){var n=cnt(f.id);return{id:'st.'+f.id,t:t||f.name,ic:'pts',tab:'Model',sub:'Struktur',b:n||'',dim:!n,chk:f.on!==false,onChk:function(v){f.on=v;stDirty();},
@@ -10663,6 +10666,169 @@ function ogFanDraw() {
   }
 })();
 
+/* ---------- SET PLAN BOR (Drillhole 0.24.44) ----------
+   Permintaan pemilik 8 Nov 2026: plan bor yang dibuat setiap hari (di tempat berbeda, atau extend di
+   lokasi yang sama) muncul BERURUTAN sebagai sub-node Project Tree di bawah "Plan bor (rencana)".
+
+   Rancangan:
+   - PL.sets = [{id, name, date, bench, vis, h:[titik...]}], urut sesuai waktu dibuat; PL.act = id set aktif.
+   - PL.h SELALU menunjuk ke array titik set aktif. Seluruh alat lama (titik / garis / grid, impor CSV,
+     edit tabel, nomori ulang, export) bekerja pada PL.h, jadi otomatis bekerja pada set aktif =
+     "extend di set ini". Bila fungsi lama mengganti PL.h dengan array baru (plClear, applyWork), array itu
+     dipasang kembali ke set aktif di plRefresh.
+   - "Plan baru…" membuat set kosong yang langsung aktif; titik berikutnya masuk ke sana.
+   - Data lama (sebelum fitur ini) masuk ke satu set "Plan lama" -- tidak ada titik yang hilang.
+   - Tiap set punya centang tampil; set aktif digambar magenta tegas, set lain lebih pudar.        */
+(function () {
+  if (window.PLS || typeof PL === 'undefined' || typeof plRefresh !== 'function') return;
+  var PLS = window.PLS = {};
+  var $ = function (i) { return document.getElementById(i); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var tgl = function (d) { d = d || new Date(); var p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear(); };
+  var baru = function (name, h) { return { id: 'pls_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: name, date: new Date().toISOString(), bench: ($('plBench') || {}).value || '', vis: true, h: h || [] }; };
+  var KEY = function () { return plKey() + '_sets'; };
+
+  function cur() { var s = null; (PL.sets || []).forEach(function (x) { if (x.id === PL.act) s = x; }); return s; }
+  /* pastikan selalu ada set aktif dan PL.h = titik set aktif */
+  function rapikan() {
+    if (!PL.sets || !PL.sets.length) { PL.sets = [baru(PL.h && PL.h.length ? 'Plan lama' : namaBawaan(), PL.h || [])]; if (PL.h && PL.h.length) PL.sets[0].date = ''; }
+    if (!cur()) PL.act = PL.sets[PL.sets.length - 1].id;
+    var c = cur(); if (PL.h !== c.h) { if (PL.h && PL.h !== c.h && PL._hDari === PL.act) c.h = PL.h; PL.h = c.h; }
+    PL._hDari = PL.act;
+  }
+  PLS.cur = cur;
+
+  function simpan() { try { localStorage.setItem(KEY(), JSON.stringify({ sets: PL.sets, act: PL.act })); } catch (e) {} if (window.SA && SA.dirty) SA.dirty(); }
+  function muat() {
+    try {
+      var o = JSON.parse(localStorage.getItem(KEY()) || 'null');
+      if (o && o.sets && o.sets.length) { PL.sets = o.sets; PL.act = o.act; var c = cur() || PL.sets[PL.sets.length - 1]; PL.act = c.id; PL.h = c.h; PL._hDari = PL.act; return; }
+    } catch (e) {}
+    PL.sets = null; rapikan();
+  }
+
+  /* ---------- perintah ---------- */
+  /* nama bawaan: "Plan <tanggal> · <bench>"; plan kedua di hari & bench yang sama diberi #2, #3, ... */
+  function namaBawaan() {
+    var b = ($('plBench') || {}).value || '', d = 'Plan ' + tgl() + (b ? ' \u00b7 ' + b : ''), nm = d, k = 1;
+    var ada = function (n) { return (PL.sets || []).some(function (s) { return s.name === n; }); };
+    while (ada(nm)) nm = d + ' #' + (++k);
+    return nm;
+  }
+  PLS.buat = function (nm) { rapikan(); var s = baru(String(nm || '').trim() || namaBawaan()); PL.sets.push(s); PL.act = s.id; PL.h = s.h; PL._hDari = s.id; plRefresh(); return s; };
+  PLS.baru = function () {
+    rapikan(); var def = namaBawaan();
+    var nm = prompt('Nama plan bor baru (titik berikutnya masuk ke plan ini):', def); if (nm === null) return;
+    PLS.buat(String(nm).trim() || def);
+  };
+  PLS.aktif = function (id) { var s = null; PL.sets.forEach(function (x) { if (x.id === id) s = x; }); if (!s) return; rapikan(); PL.act = id; PL.h = s.h; PL._hDari = id; s.vis = true; plRefresh(); };
+  PLS.nama = function (id) { var s = null; PL.sets.forEach(function (x) { if (x.id === id) s = x; }); if (!s) return; var nm = prompt('Nama plan bor:', s.name); if (nm === null) return; s.name = String(nm).trim() || s.name; plRefresh(true); };
+  PLS.tampil = function (id, v) { PL.sets.forEach(function (x) { if (x.id === id) x.vis = !!v; }); simpan(); try { updatePlot(); } catch (e) {} try { if (DRW.on) drawRender(); } catch (e) {} };
+  PLS.hapus = function (id) {
+    var i = -1; PL.sets.forEach(function (x, k) { if (x.id === id) i = k; }); if (i < 0) return; var s = PL.sets[i];
+    if (!confirm('Hapus plan "' + s.name + '" beserta ' + s.h.length + ' titiknya?')) return;
+    PL.sets.splice(i, 1); if (PL.act === id) PL.act = null; if (!PL.sets.length) PL.sets = null; PL.h = []; PL._hDari = null; rapikan(); plRefresh();
+  };
+  function baris(h) {
+    var Q = String.fromCharCode(34), rd = ($('plRound') || {}).checked, q = function (s) { s = String(s || ''); return /[,\n]/.test(s) || s.indexOf(Q) >= 0 ? Q + s.split(Q).join(Q + Q) + Q : s; };
+    return [q(h.n), plF(h.x + offX, 4), plF(h.y + offY, 4), rd ? Math.round(h.z) : plF(h.z, 2), plF(h.az, 2), plF(h.dip, 2), plF(h.lift, 3), plF(h.drift, 3), plF(h.dist, 2), plF(h.ext, 2), plF(h.td, 2), q(h.cm)].join(',');
+  }
+  var HDR = 'Drillhole Name,Easting,Northing,Elevation,Azimuth,Dip,Lift Rate,Drift Rate,Distance,Extension,Target Depth,Comment';
+  var slug = function (s) { return String(s || 'plan').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'plan'; };
+  PLS.export = function (id) {
+    var s = null; PL.sets.forEach(function (x) { if (x.id === id) s = x; }); if (!s) return; if (!s.h.length) { alert('Plan "' + s.name + '" belum punya titik.'); return; }
+    gxSimpan(new Blob([[HDR].concat(s.h.map(baris)).join('\r\n') + '\r\n'], { type: 'text/csv' }), 'Plan_Bor_' + ZONE + '_' + slug(s.name) + '.csv');
+  };
+  PLS.exportSemua = function () {
+    var L = []; PL.sets.forEach(function (s) { s.h.forEach(function (h) { L.push(baris(h)); }); }); if (!L.length) { alert('Belum ada titik rencana.'); return; }
+    gxSimpan(new Blob([[HDR].concat(L).join('\r\n') + '\r\n'], { type: 'text/csv' }), 'Plan_Bor_' + ZONE + '_semua_plan.csv');
+  };
+
+  /* ---------- export plan aktif: nama berkas mengikuti nama plan ---------- */
+  window.plExport = plExport = function () { rapikan(); PLS.export(PL.act); };
+
+  /* ---------- kotak "Plan aktif" di atas panel Plan Bor ---------- */
+  function kotak() {
+    var sec = $('pPlan'); if (!sec) return; var b = $('plSetBox');
+    if (!b) { b = document.createElement('div'); b.id = 'plSetBox'; b.className = 'box'; b.style.cssText = 'font-size:12px;margin-bottom:8px'; var h3 = sec.querySelector('h3'); sec.insertBefore(b, h3 ? h3.nextSibling : sec.firstChild); }
+    var c = cur(), tot = 0; PL.sets.forEach(function (s) { tot += s.h.length; });
+    b.innerHTML = '<div class=g2 style="align-items:end"><div><label>Plan aktif (titik baru masuk ke sini)</label><select id=plSetSel onchange="PLS.aktif(this.value)">' +
+      PL.sets.map(function (s, i) { return '<option value="' + s.id + '"' + (s.id === PL.act ? ' selected' : '') + '>' + (i + 1) + '. ' + esc(s.name) + ' (' + s.h.length + ')</option>'; }).join('') +
+      '</select></div><div><button class=btn-pri style="width:100%" onclick="PLS.baru()">+ Plan baru&hellip;</button></div></div>' +
+      '<div class=hint style="margin-top:4px">' + PL.sets.length + ' plan &middot; ' + tot + ' titik. Untuk <b>extend</b> di lokasi yang sama, pilih plan-nya di atas lalu tambah titik; untuk plan hari lain, tekan <b>Plan baru</b>. Setiap plan muncul berurutan di Project Tree di bawah <b>Plan bor (rencana)</b>.</div>';
+  }
+
+  /* ---------- sambungan ke fungsi lama ---------- */
+  var _r = plRefresh;
+  window.plRefresh = plRefresh = function (noPlot) { rapikan(); var r = _r.apply(this, arguments); simpan(); try { kotak(); } catch (e) {} try { if (window.PT && PT.render) PT.render(); } catch (e) {} return r; };
+
+  /* 3D: semua plan yang dicentang; plan aktif tegas, plan lain pudar */
+  window.planTraces = planTraces = function (T, o) {
+    if (!$('plShow') || !$('plShow').checked) return; rapikan();
+    PL.sets.forEach(function (s) {
+      if (!s.vis || !s.h.length) return; var akt = s.id === PL.act, col = akt ? '#d6249f' : '#b77fa8', X = [], Y = [], Z = [], cx = [], cy = [], cz = [], ct = [], ht = [], n = 0;
+      s.h.forEach(function (h) {
+        var a = { x: h.x, y: h.y, z: h.z }, b = plEnd(h), g = [a, b]; if (o.clip) { g = clipSeg(a, b, o.K); if (!g) return; }
+        X.push(g[0].x, g[1].x, null); Y.push(g[0].y, g[1].y, null); Z.push(g[0].z, g[1].z, null); n++;
+        if (!o.clip || inK(o.K, a)) { cx.push(a.x); cy.push(a.y); cz.push(a.z); ct.push(h.n); ht.push('<b>' + esc(h.n) + '</b> (' + esc(s.name) + ')<br>E ' + (h.x + offX).toFixed(2) + ' N ' + (h.y + offY).toFixed(2) + ' RL ' + h.z.toFixed(1) + '<br>Az ' + h.az + '° Dip ' + h.dip + '° Depth ' + h.td + ' m'); }
+      });
+      if (!n) return;
+      T.push({ type: 'scatter3d', mode: 'lines', x: X, y: Y, z: Z, name: s.name + ' (' + s.h.length + ')' + (akt ? ' ← aktif' : ''), line: { color: col, width: akt ? 7 : 4, dash: 'dash' }, opacity: akt ? 1 : 0.7, hoverinfo: 'skip', showlegend: true });
+      if (cx.length) T.push({ type: 'scatter3d', mode: akt && ct.length <= 80 ? 'markers+text' : 'markers', x: cx, y: cy, z: cz, text: ct, textposition: 'top center', textfont: { color: col, size: 11 },
+        marker: { color: col, size: akt ? 5 : 4, symbol: 'diamond' }, hovertext: ht, hoverinfo: 'text', showlegend: false });
+    });
+  };
+  /* peta plan (2D): plan lain digambar tipis di bawah plan aktif yang sedang diedit */
+  var _d = planDraw;
+  window.planDraw = planDraw = function (x, dk) {
+    rapikan();
+    try {
+      x.save(); x.globalAlpha = 0.45; x.strokeStyle = '#b77fa8'; x.fillStyle = '#b77fa8'; x.lineWidth = 1.5;
+      PL.sets.forEach(function (s) { if (s.id === PL.act || !s.vis) return; s.h.forEach(function (h) { var e = plEnd(h), p = w2s(h.x, h.y), q = w2s(e.x, e.y); x.beginPath(); x.moveTo(p[0], p[1]); x.lineTo(q[0], q[1]); x.stroke(); x.beginPath(); x.arc(p[0], p[1], 3.5, 0, 7); x.fill(); }); });
+      x.restore();
+    } catch (e) {}
+    return _d.apply(this, arguments);
+  };
+
+  /* proyek: simpan & buka */
+  var _c = SA.collectWork;
+  SA.collectWork = function () { var w = _c.apply(this, arguments); try { rapikan(); if (w.plan) { w.plan.sets = PL.sets; w.plan.act = PL.act; } } catch (e) {} return w; };
+  var _a = SA.applyWork;
+  SA.applyWork = function (W) {
+    var r = _a.apply(this, arguments);
+    try {
+      if (W && W.plan) {
+        if (W.plan.sets && W.plan.sets.length) { PL.sets = W.plan.sets; PL.act = W.plan.act; var c = cur() || PL.sets[PL.sets.length - 1]; PL.act = c.id; PL.h = c.h; PL._hDari = c.id; }
+        else { PL.sets = null; PL._hDari = null; rapikan(); }
+        plRefresh(true);
+      }
+    } catch (e) { console.error(e); }
+    return r;
+  };
+
+  /* ---------- sub-node Project Tree ---------- */
+  PLS.kids = function () {
+    rapikan();
+    return PL.sets.map(function (s, i) {
+      var tg = s.date ? tgl(new Date(s.date)) : '';
+      return {
+        id: 'db.plan.' + s.id, t: (i + 1) + '. ' + s.name, ic: 'plan', tab: 'Plan', mark: s.id === PL.act ? 'aktif' : '',
+        b: s.h.length + ' titik', chk: !!s.vis, onChk: function (v) { PLS.tampil(s.id, v); },
+        hint: (tg ? 'Dibuat ' + tg + ' · ' : '') + (s.bench ? 'bench ' + s.bench + ' · ' : '') + s.h.length + ' titik. Klik = jadikan plan aktif (titik baru masuk ke sini).',
+        go: function () { if (PL.act !== s.id) PLS.aktif(s.id); },
+        menu: function () {
+          return [{ t: 'Jadikan plan aktif (extend di sini)', dis: s.id === PL.act, fn: function () { PLS.aktif(s.id); } },
+            { t: 'Ganti nama…', fn: function () { PLS.nama(s.id); } },
+            { t: 'Export CSV plan ini…', dis: !s.h.length, fn: function () { PLS.export(s.id); } },
+            { sep: 1 }, { t: 'Hapus plan ini…', danger: 1, fn: function () { PLS.hapus(s.id); } }];
+        }
+      };
+    });
+  };
+
+  muat(); try { _r(true); } catch (e) {} simpan(); try { kotak(); } catch (e) {}
+})();
+
 /* ================= AUTORUN — menjahit langkah yang sudah ada menjadi satu perintah =================
    Tidak ada algoritme baru di sini. Modul ini hanya MEMANGGIL fungsi yang sudah dipakai manual,
    mengulanginya per domain / per lapisan, lalu melaporkan hasilnya. Semua pengaman yang sudah ada
@@ -12314,7 +12480,7 @@ function ogFanDraw() {
     'Estimasi Ordinary Kriging': 'Uji estimasi 3 pass untuk menilai parameter sebelum disimpan ke domain.',
     'Block model 3D': 'Hasil estimasi tampil sebagai blok berwarna kadar bersama lubang bor.',
     'Estimasi block model GC per domain': 'Model Estimation mengestimasi blok di dalam solid tiap domain dan menambah blok yang belum ada.',
-    'Plan bor: rencana pengeboran': 'Titik bor rencana dibuat per titik, sepanjang garis, atau grid di dalam area.',
+    'Plan bor: rencana pengeboran': 'Titik rencana dibuat per titik, garis, atau grid area; setiap Plan baru muncul berurutan sebagai sub-node Plan bor (rencana).',
     'Preview 3D & export CSV': 'Rencana tampil bersama lubang lama, lengkap dengan jarak dan kadar perkiraan; export CSV.',
     'Block model grade control': 'Block model GC (.mdl / CSV) diimport, diwarnai per kelas, dan difilter cut-off.',
     'Data referensi': 'Solid, DTM dan titik survey dari software lain tampil sebagai acuan.',
@@ -14497,7 +14663,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.43';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.44';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

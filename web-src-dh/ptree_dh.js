@@ -78,8 +78,11 @@
         tb('db.geo','Geologi','geo',G.length,'geo',{tab:'Geo',kids:gat}),
         {id:'db.traj',t:'Trajectory',ic:'hole',tab:'View',chk:U.cb('showTraj'),onChk:function(v){U.setCb('showTraj',v);}},
         {id:'db.lbl',t:'Label hole',ic:'attr',tab:'View',chk:U.cb('showLabel'),onChk:function(v){U.setCb('showLabel',v);}},
-        {id:'db.plan',t:'Plan bor (rencana)',ic:'plan',tab:'Plan',b:ok(function(){return PL.h.length;},0)||'',chk:U.cb('plShow'),onChk:function(v){U.setCb('plShow',v);},
-          menu:function(){return[{t:'Export CSV plan bor',fn:A('plExport')},{sep:1},{t:'Hapus semua titik rencana',danger:1,fn:A('plClear')}];}}]};}
+        {id:'db.plan',t:'Plan bor (rencana)',ic:'plan',tab:'Plan',fold:1,
+          /* sejak 0.24.44: tiap "Plan baru" = satu sub-node, berurutan sesuai waktu dibuat (plset_dh.js) */
+          b:ok(function(){if(!window.PLS)return PL.h.length;var n=0;PL.sets.forEach(function(s){n+=s.h.length;});return PL.sets.length+' plan \u00b7 '+n+' titik';},0)||'',chk:U.cb('plShow'),onChk:function(v){U.setCb('plShow',v);},
+          kids:ok(function(){return window.PLS?PLS.kids():[];},[]),
+          menu:function(){return[{t:'Plan baru…',fn:function(){if(window.PLS)PLS.baru();}},{sep:1},{t:'Export CSV plan aktif…',fn:A('plExport')},{t:'Export CSV semua plan…',fn:function(){if(window.PLS)PLS.exportSemua();}},{sep:1},{t:'Hapus semua titik di plan aktif…',danger:1,fn:A('plClear')}];}}]};}
   function delHoles(){var r=U.ask('HoleID yang akan dihapus (pisahkan dengan koma / spasi):','');if(!r)return;var ids=r.split(/[\s,;]+/).filter(Boolean);if(ids.length)PTD.drop('holes',ids);}
   function fStruct(){var F=ok(function(){return STR.F;},[]),P=ok(function(){return STR.P;},[]),cnt=function(id){return P.filter(function(p){return p.fid===id;}).length;};
     var node=function(f,t){var n=cnt(f.id);return{id:'st.'+f.id,t:t||f.name,ic:'pts',tab:'Model',sub:'Struktur',b:n||'',dim:!n,chk:f.on!==false,onChk:function(v){f.on=v;stDirty();},
