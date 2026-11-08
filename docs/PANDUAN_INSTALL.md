@@ -3965,3 +3965,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Ore Geometry** tidak lagi menghitung otomatis saat dibuka; tekan **Hitung intercept & GT** di panelnya.
 - Urutan Project Tree: … Struktur Geologi (5) › **Ore Geometry (5b)** › Geomodeller (6 / 6b) › **Geostatistik (7)** › Block Model (8) › Model Estimation (9) › Validasi BM (10) › Reporting BM (11) › Layout & Ekspor (12).
 - Export database ada di menu **Database Bor**; export block model .mdl di menu **Block Model** (tidak lagi di Layout & Ekspor).
+
+## 129. DB-Ex 0.44.3 — ROM / Crusher & Loading Ore dibaca utuh
+
+- AI kini menulis satu nilai per kolom besar: **Rehandling** dan **Kelas** ditulis sebagai nama judul kolom tempat centang / tonase berada — tidak lagi 21 sel per baris yang membuat baris bergeser.
+- Semua jenis borang: sel kosong ditulis `-` oleh AI; bila jumlah sel satu baris tetap meleset, seluruh isian baris itu disorot kuning untuk dicek.
+- Seluruh tabel tidak bisa lagi tertumpuk dalam satu baris (penyebab "hanya 1 baris" di ROM, "0 baris" di Daily Drilling Report, dan waktu baca sangat lama).
+- Borang ROM / Loading Ore yang sudah dibaca versi lama: klik **✦ Baca dengan AI** lagi.

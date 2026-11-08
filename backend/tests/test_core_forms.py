@@ -443,7 +443,7 @@ def test_jawaban_ringkas_dipaksa_skema_dan_baris_sampah_dibuang(st, monkeypatch)
     monkeypatch.setattr(cf.core_io, "_http", fake)
     cf.ai_read(s, did, "http://x", "m")
     sch = calls[0]["format"]
-    assert sch["required"] == ["h", "r"] and sch["properties"]["r"]["items"] == {"type": "string"}
+    assert sch["required"] == ["h", "r"] and sch["properties"]["r"]["items"]["type"] == "string" and sch["properties"]["r"]["items"]["maxLength"] >= 120
     rs = cf.rows(s, did)
     assert [r["data"]["sample_id"] for r in rs] == ["S_001", "S_002"] and "lith" in rs[0]["unc"]
     assert rs[1]["data"]["lith"] == "VLT" and rs[1]["data"]["hole_id"] == "XX_1"
@@ -540,24 +540,19 @@ def test_foto_dipotong_ke_kertas():
     assert cf.crop_paper(polos).size == (800, 600)
 
 
-def test_ore_rom_kelas_dari_posisi_kolom(st):
-    """0.42.12: Loading Ore & ROM/Crusher dibaca MENURUT URUTAN KOLOM BORANG; kelas ditentukan program dari posisi sel
-    (bukan ditulis model). Jumlah sel meleset -> kolom ujung kanan diambil dari kanan, kelas kuning. Data fiktif."""
+def test_ore_rom_format_ringkas(st):
+    """0.44.3: Loading Ore & ROM/Crusher: satu nilai per kolom besar, kelas = nama judul kolom, sel kosong '-'. Data fiktif."""
     s, tmp = st
     ore = cf.add_file(s, str(_scan(tmp, "o.jpg")), "ore", "Rina")[0]["id"]
-    e = "|" * 15
     res = cf.parse_ai_text("ore", json.dumps({"h": [], "r": [
-        "1|19.03||PIT A|100.0|T01|30" + e + "ROM 1",
-        "2|09|||〃|||T02|31" + "|" * 13 + "〃",
-        "3|16|||〃|T03|33|||ROM 2"]}))  # sel kurang: Tujuan tetap dari kanan
+        "1|19.03|-|PIT A|100.0|OX-LG|T01|30|ROM 1", "2|09|-|〃|〃|SF LG|T02|31|〃", "3|16|-|〃|〃|-|-|-|〃"]}))
     cf.apply_ai(s, ore, res, "m", 1)
     rs = cf.rows(s, ore)
-    assert [(r["data"]["kelas"], r["data"]["unit"], r["data"]["ton"]) for r in rs] == [
-        ("OX-LG", "T01", "30"), ("SF-LG", "T02", "31"), ("OX-LG", "T03", "33")]
-    assert rs[1]["data"]["tujuan"] == "ROM 1" and rs[2]["data"]["tujuan"] == "ROM 2" and "kelas" in rs[2]["unc"]
+    assert [(r["data"]["kelas"], r["data"]["unit"], r["data"]["ton"], r["data"]["tujuan"]) for r in rs] == [
+        ("OX-LG", "T01", "30", "ROM 1"), ("SF LG", "T02", "31", "ROM 1")]  # baris tanpa truk tidak dihitung ritase
+    assert cf._full(s, ore)["recs"][1]["kelas"] == "SF-LG"
     rom = cf.add_file(s, str(_scan(tmp, "r.jpg")), "rom", "Rina")[0]["id"]
-    cells = ["1", "DT12", "", "19.02", "PIT A", "Crusher", "", "v", ""] + [""] * 4 + ["12.5"] + [""] * 4 + ["", "v", "Rehandling"]
-    res = cf.parse_ai_text("rom", json.dumps({"h": ["", "", "", "", "STOK A", "STOK B", ""], "r": ["|".join(cells)]}))
+    res = cf.parse_ai_text("rom", json.dumps({"h": ["", "", "", ""], "r": ["1|DT12|-|19.02|PIT A|Crusher|STOK B|OX-SG|12.5|Lama|Rehandling"]}))
     cf.apply_ai(s, rom, res, "m", 1)
     d = cf.rows(s, rom)[0]["data"]
     assert (d["rehandling"], d["kelas"], d["ton"], d["status"], d["keterangan"]) == ("STOK B", "OX-SG", "12.5", "Lama", "Rehandling")

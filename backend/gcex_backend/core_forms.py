@@ -56,62 +56,44 @@ TYPES: dict[str, dict] = {
     "ore": {
         "name": "Ore Spotter: Loading Pit → ROM / Stockpile",
         "header": [("tanggal", "Tanggal", "date"), ("shift", "Shift (I / II)", "text"), ("crew", "Nama crew / spotter", "text"),
-                   ("lokasi", "Lokasi (pit)", "text"), ("excavator", "Excavator (EX)", "text"),
-                   ("kelas_urut", "Urutan kolom kelas (tercetak, kiri ke kanan)", "text")],
+                   ("lokasi", "Lokasi (pit)", "text"), ("excavator", "Excavator (EX)", "text")],
         "rows": [("no", "No", "text"), ("start", "Start loading", "time"), ("finish", "Finish loading", "time"), ("pit", "Pit / blok", "text"),
                  ("elevasi", "Elevasi", "text"), ("kelas", "Kelas material", "text"), ("unit", "Truck", "text"), ("ton", "Tonnage", "num"),
                  ("tujuan", "Tujuan dumping", "text")],
-        # 0.42.12: AI menyalin sel MENURUT URUTAN KOLOM BORANG (tiap kelas punya sub-kolom TRUCK & Tonnage); kelas ditentukan
-        # program dari posisi sel yang terisi (model kecil tidak andal memetakan posisi kolom ke nama kelas -> kolom bergeser)
-        "ai_rows": [("no", "No", "text"), ("start", "Start", "time"), ("finish", "Finish", "time"), ("pit", "PIT", "text"),
-                    ("elevasi", "Elevation", "text")]
-                   + [(f"{_slug(c)}_{x}", f"{c} {x.upper()}", "text") for c in ("OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG",
-                                                                               "OX-MO", "SF-MO") for x in ("trk", "ton")]
-                   + [("tujuan", "Tujuan", "text")],
-        "ai_tail": 1,
-        "hint": ("Borang 'Form Loading (atau Rehandling) Ore dari Pit to ROM / Stockpile' (Ore Spotter di front loading), biasanya lanskap. "
+        # 0.44.3: satu nilai per kolom besar; kelas = NAMA judul kolom berwarna tempat truk & tonase ditulis; sel kosong "-"
+        "hint": ("Borang 'Form Loading (atau Rehandling) Ore dari Pit to ROM / Stockpile' (Ore Spotter di front loading), lanskap. "
                  "Header: NAMA CREW, LOKASI (pit), nomor excavator (mis. EX-123, ditulis tangan di dekat judul), TANGGAL, SHIFT (I / II). "
-                 "Tabel bernomor, satu baris per ritase truk. Kolom dari kiri: NO; Start Loading; Finish Loading (jam ditulis di salah satu "
-                 "dari dua kolom ini; baris berikutnya sering hanya menulis MENIT, mis. 13 -> salin apa adanya \"13\"); PIT; Elevation; lalu "
-                 "kelompok kolom kelas material berwarna " + "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO" + " (urutan bisa berbeda antar versi borang: tulis nama kolom kelas "
-                 "persis urutan tercetak dari kiri ke kanan di header kelas_urut, dipisah koma), masing-masing dengan "
-                 "sub-kolom TRUCK dan Tonnage: salin nomor truk & tonase ke sel kelompok TEMPAT TULISAN ITU BERADA (sel kelompok lain "
-                 "kosong), mis. truk T01 tonase 30 di bawah OX-LG -> \"1|19.03||PIT A|100.0|T01|30|||||||||||||||ROM 1\", di bawah SF-LG -> "
-                 "\"2|09|||〃|||T02|31|||||||||||||〃\"; kolom terakhir Tujuan Dumping "
-                 "(mis. ROM 418, kadang hanya angka atau \"〃 370\").\n"
-                 "Baris yang hanya berisi PIT / Elevation tanpa truk tetap ditulis (unit & ton kosong). Abaikan coretan / tulisan yang dicoret.\n"
-                 "TANDA ULANG: bila sel berisi tanda ulang (\" atau 〃 atau = atau ,, atau angka 4 / 11 kecil yang sebenarnya tanda ulang) atau "
-                 "dilewati garis tegak / garis miring panjang dari baris di atas, tulis tepat \"〃\" (bila diikuti tulisan, mis. \"〃 370\", "
-                 "tulis \"〃 370\")."),
+                 "Tabel bernomor, satu baris per ritase truk; tulis SEMUA baris bernomor yang ada tulisannya.\n"
+                 "Tiap baris TEPAT 9 nilai: No|Start|Finish|PIT|Elevation|Kelas|Truck|Ton|Tujuan.\n"
+                 "- Jam ditulis di Start atau Finish; baris berikutnya sering hanya MENIT (mis. 13) -> salin apa adanya.\n"
+                 "- Kelas = NAMA judul kolom berwarna tempat nomor truk & tonase ditulis (OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, "
+                 "SF-MO); Truck = nomor truk (mis. H026, 26); Ton = tonase.\n- Tujuan Dumping (kolom paling kanan, mis. ROM 1, 〃).\n"
+                 "Contoh: \"1|19.03|-|PIT A|100.0|OX-LG|T01|30|ROM 1\", \"2|09|-|〃|〃|SF-LG|T02|31|〃\". Baris yang hanya berisi PIT / "
+                 "Elevation tanpa truk tetap ditulis (Kelas, Truck, Ton = -). Abaikan coretan.\n"
+                 "TANDA ULANG: tanda \" 〃 = ,, (atau angka 4 / 11 kecil yang sebenarnya tanda ulang) atau garis tegak / miring dari baris "
+                 "atas ditulis 〃 (bila diikuti tulisan, mis. \"〃 370\", tulis \"〃 370\")."),
     },
     "rom": {
         "name": "Ore ke Stockpile / Crusher (Rehandling / Direct)",
         "header": [("tanggal", "Tanggal", "date"), ("shift", "Shift (I / II)", "text"), ("crew", "Crew / spotter", "text"),
-                   ("lokasi", "Lokasi", "text"), ("rh1", "Nama tumpukan rehandling 1", "text"),
-                   ("rh2", "Nama tumpukan rehandling 2", "text"), ("rh3", "Nama tumpukan rehandling 3", "text"),
-                   ("kelas_urut", "Urutan kolom kelas (tercetak, kiri ke kanan)", "text")],
+                   ("lokasi", "Lokasi", "text")],
         "rows": [("no", "No", "text"), ("unit", "Eq. No. Unit", "text"), ("start", "Start loading", "time"),
                  ("finish", "Finish loading", "time"), ("asal", "Asal material", "text"), ("tujuan", "Tujuan", "text"),
                  ("rehandling", "Rehandling tumpukan", "text"), ("kelas", "Kelas material", "text"), ("ton", "Ton", "num"),
                  ("status", "Status (Baru / Lama)", "text"), ("keterangan", "Keterangan", "text")],
-        "ai_rows": [("no", "No", "text"), ("unit", "Eq. No. Unit", "text"), ("start", "Start", "time"), ("finish", "Finish", "time"),
-                    ("asal", "Asal", "text"), ("tujuan", "Tujuan", "text"), ("rh1", "Rehandling 1", "text"),
-                    ("rh2", "Rehandling 2", "text"), ("rh3", "Rehandling 3", "text")]
-                   + [(_slug(c), c, "text") for c in ("OX-LG", "SF-LG", "OX-HG", "SF-HG", "OX-SG", "SF-SG", "SCAT", "OX-MO", "SF-MO")]
-                   + [("baru", "Baru", "text"), ("lama", "Lama", "text"), ("keterangan", "Keterangan", "text")],
-        "ai_tail": 3,
-        "hint": ("Borang 'Form Ore to Stockpile / Crusher (Rehandling / Direct)' (spotter di ROM / crusher), biasanya lanskap. Header: "
-                 "CREW (nama spotter, boleh lebih dari satu), LOKASI, TANGGAL, SHIFT (I / II). Tabel bernomor, satu baris per ritase truk. "
-                 "Kolom dari kiri: NO; Eq. No. Unit (nomor lambung truk, kadang diawali DT); Start Loading (sering kosong); Finish Loading "
-                 "(jam, mis. 19.02; baris berikutnya sering hanya menulis MENIT, mis. 05 -> salin apa adanya \"05\"); Asal Material (mis. "
-                 "Pit ..., ROM ..., OPP); Tujuan (mis. Crusher, ROM ...); Rehandling Tumpukan (tiga sub-kolom bernama tumpukan; isi "
-                 "rh1 / rh2 / rh3 di header dengan NAMA ketiga sub-kolom itu; di baris tulis v di sub-kolom yang dicentang); lalu kolom kelas material berwarna "
-                 "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, SF-MO (urutannya BISA BERBEDA antar versi borang, mis. SCAT di "
-                 "tengah atau paling kanan: tulis nama kolom kelas persis urutan tercetak dari kiri ke kanan di header kelas_urut, dipisah "
-                 "koma): salin angka tonase ke sel kolom TEMPAT angka itu "
-                 "berada (kolom kelas lain kosong); Status Material (sub-kolom Baru dan Lama: tulis v di sel yang dicentang); Keterangan (mis. Direct, Rehandling, OPP).\n"
-                 "TANDA ULANG: bila sel berisi tanda ulang (\" atau = atau ,, ) atau dilewati garis tegak / garis miring yang menyambung "
-                 "dari baris di atas, tulis tepat \"〃\" (jangan menyalin nilai di atas sendiri; program yang mengisinya)."),
+        # 0.44.3: SATU nilai per kolom besar (bukan 21 sel per sub-kolom): model 2b melewati sel kosong -> seluruh baris bergeser.
+        # Rehandling & kelas ditulis sebagai NAMA judul kolom tempat centang / angka berada; sel kosong wajib "-".
+        "hint": ("Borang 'Form Ore to Stockpile / Crusher (Rehandling / Direct)' atau 'Form Untuk Rom to Crusher dan Rom to Rom' (spotter "
+                 "di ROM / crusher), lanskap. Header: CREW, LOKASI, TANGGAL, SHIFT (I / II). Tabel bernomor 1-36, satu baris per ritase "
+                 "truk; tulis SEMUA baris bernomor yang ada tulisannya.\n"
+                 "Tiap baris TEPAT 11 nilai: No|Unit|Start|Finish|Asal|Tujuan|Rehandling|Kelas|Ton|Status|Keterangan.\n"
+                 "- Unit = Eq. No. Unit (nomor truk, mis. 4028, 502, DT 501). Start Loading sering kosong (-). Finish = jam (19.02) atau "
+                 "hanya menit (:57, 05) -> salin apa adanya.\n- Asal material (mis. 340, 418, OPP, SBG); Tujuan (mis. Crusher).\n"
+                 "- Rehandling = NAMA sub-kolom Rehandling Tumpukan yang dicentang (judul kecil di atasnya, mis. SPR (Z2)), - bila tidak ada.\n"
+                 "- Kelas = NAMA judul kolom berwarna tempat angka tonase berada (OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, SCAT, OX-MO, "
+                 "SF-MO); Ton = angka itu. Status = Baru atau Lama (sub-kolom yang dicentang).\n"
+                 "Contoh: \"1|4011|-|18:57|340|Crusher|-|OX-LG|37|Baru|Direct\", \"2|402|-|:16|〃|〃|SPR (Z2)|OX-LG|36|〃|〃\".\n"
+                 "TANDA ULANG: tanda \" = ,, atau garis tegak / miring yang menyambung dari baris atas ditulis 〃."),
     },
     "ddr": {
         "name": "RC Drilling: Daily Drilling Report",
@@ -1044,11 +1026,12 @@ def ai_schema_compact(ftype: str) -> dict:
         return {"type": "array", "items": {"type": "string"}, "minItems": n, "maxItems": n}
     # 0.42.12: tiap baris tabel = SATU teks "nilai|nilai|…" (bukan daftar ["nilai", "nilai", …]): tanda kutip dan koma per sel
     # hilang, sel kosong cukup '||' -> jawaban kira-kira separuh token -> separuh waktu tulis di CPU
-    line = {"type": "string"}
+    # batas panjang per baris: model tidak bisa menumpuk seluruh tabel dalam satu teks (0.44.3: 1 baris, 450 detik)
+    line = {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(ai_rows(t))))}
     props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": line}, "c": {"type": "string"}}
     req = ["h", "r"]
     for tt in (t.get("tables") or {}).values():
-        props[tt["ai"]] = {"type": "array", "items": line}
+        props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}}
         req.append(tt["ai"])
     return {"type": "object", "required": req, "properties": props}
 
@@ -1148,8 +1131,9 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
     for tt in (t.get("tables") or {}).values():
         lines.append(f'"{tt["ai"]}": ["' + "|".join(k for k, _l, _t in tt["rows"]) + f'", …]   <- satu teks per baris {tt["name"]}, nilai dipisah |')
     lines += ['"c": catatan singkat (boleh "")',
-              "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Sel kosong: tidak ada apa pun di antara dua |, "
-              "sel kosong di ujung baris boleh tidak ditulis. Jangan mengarang baris.",
+              "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Tiap baris TEPAT " + str(len(rk)) + " nilai; sel kosong "
+              "ditulis - (JANGAN dilewati, supaya kolom tidak bergeser). SATU teks per baris tabel — jangan gabungkan beberapa baris. "
+              "Jangan mengarang baris.",
               "Salin angka & kode persis. Sel yang tidak terbaca jelas: tebakan terbaik diakhiri '?' (mis. \"VLT?\").",
               *RULES[:2], RULES[2], *_vocab_lines(vocab, t)]
     if ftype not in ORE_TYPES and ftype != "rc":
@@ -1158,6 +1142,38 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
         lines.append(f"Catatan pengguna: {extra.strip()}")
     lines.append("/no_think")  # sakelar Qwen3: langsung menjawab tanpa penalaran (diabaikan model lain)
     return "\n".join(lines)
+
+
+def _split_giant(rs: list, n: int, numbered: bool, starter: Optional["re.Pattern"] = None) -> list:
+    """Model kadang menulis beberapa / seluruh baris tabel dalam SATU teks. Pecah lagi: di baris baru, atau (borang bernomor)
+    di setiap nomor urut berikutnya (1, 2, 3 …)."""
+    out: list = []
+    for v in rs:
+        if not isinstance(v, str) or (v.count("|") < 2 * n and not (starter is not None and len(starter.findall(v)) > 1)):
+            out.append(v)
+            continue
+        parts = [p for p in re.split(r"\s*[\r\n]+\s*", v) if p.strip()]
+        if len(parts) > 1:
+            out += parts
+            continue
+        cells = v.split("|")
+        if starter is not None:  # mis. Daily Drilling Report: tiap kegiatan diawali rentang jam
+            cut = [i for i, c in enumerate(cells) if starter.search(c)]
+            if len(cut) > 1:
+                cut = [0] + [i for i in cut if i > 0]
+                out += ["|".join(cells[a:b]) for a, b in zip(cut, cut[1:] + [len(cells)])]
+                continue
+        if numbered and re.fullmatch(r"\d{1,3}", cells[0].strip()):
+            cut, nxt = [0], int(cells[0]) + 1
+            for i in range(1, len(cells)):
+                if cells[i].strip() == str(nxt) and i - cut[-1] >= max(3, n // 2):
+                    cut.append(i)
+                    nxt += 1
+            if len(cut) > 1:
+                out += ["|".join(cells[a:b]) for a, b in zip(cut, cut[1:] + [len(cells)])]
+                continue
+        out.append(v)
+    return out
 
 
 def _from_compact(ftype: str, o: dict) -> dict:
@@ -1172,6 +1188,8 @@ def _from_compact(ftype: str, o: dict) -> dict:
         miss = False
         if isinstance(vals, str):  # "nilai|nilai|…" (0.42.12)
             vals = vals.split("|")
+            if not tail and len(vals) != len(keys) and len(keys) > 3 and any(v.strip() for v in vals[1:]):
+                miss = True  # jumlah sel meleset: posisi kolom tidak pasti -> seluruh isian baris ditandai kuning
             if tail and len(vals) != len(keys) and vals[-1].strip():
                 # jumlah sel meleset (model salah hitung '|' di kolom kosong): kolom ujung kanan (Tujuan / Keterangan ...)
                 # diambil dari kanan, sisanya dari kiri; posisi kelas jadi tidak pasti -> ditandai kuning
@@ -1180,22 +1198,26 @@ def _from_compact(ftype: str, o: dict) -> dict:
             elif len(vals) > len(keys):  # '|' di dalam uraian terakhir
                 vals = vals[:len(keys) - 1] + ["|".join(vals[len(keys) - 1:])]
         vals = [str(v if v is not None else "").strip() for v in (vals if isinstance(vals, list) else [])]
-        x: dict[str, Any] = {"ragu": ["kelas"] if miss else []}
+        vals = ["" if v in ("-", "–", "—", "--") else v for v in vals]  # '-' = sel kosong (0.44.3)
+        x: dict[str, Any] = {"ragu": (["kelas"] if tail else []) if miss else []}
         for k, v in zip(keys, vals):
             if v.endswith("?"):
                 v = v[:-1].strip()
                 x["ragu"].append(k)
             x[k] = v
+        if miss and not tail:
+            x["ragu"] = list(dict.fromkeys(x["ragu"] + [k for k in keys if x.get(k)]))
         filled = [v for k, v in x.items() if k != "ragu" and v]
         if not filled or sum(v.lower() in names for v in filled) >= max(1, len(filled) // 2):
             return None  # kosong / salinan kepala tabel
-        if any(len(v) > 60 and v.count(" ") > 8 for v in filled[:2]):
-            return None  # kalimat penjelasan model, bukan isian borang
+        if any(len(v) > 60 and v.count(" ") > 8 and re.search(r"\b(the|user|form|image|I|we|this|is|are)\b", v) for v in filled[:2]):
+            return None  # kalimat penjelasan model (bahasa Inggris), bukan isian borang
         return x
     hk = [k for k, _l, _t in t["header"]]
     rk = [k for k, _l, _t in ai_rows(t)]
     out: dict[str, Any] = {"header": one(o.get("h"), hk) or {}, "rows": [], "catatan": str(o.get("c") or "")}
-    out["rows"] = [x for x in (one(v, rk, t.get("ai_tail", 0)) for v in o.get("r") or []) if x]
+    out["rows"] = [x for x in (one(v, rk, t.get("ai_tail", 0)) for v in _split_giant(o.get("r") or [], len(rk), rk[:1] == ["no"],
+                                                                                         _RANGE if ftype == "ddr" else None)) if x]
     for tt in (t.get("tables") or {}).values():
         ks = [k for k, _l, _t in tt["rows"]]
         out[tt["ai"]] = [x for x in (one(v, ks) for v in o.get(tt["ai"]) or []) if x]

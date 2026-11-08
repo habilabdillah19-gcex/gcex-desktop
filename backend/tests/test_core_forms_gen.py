@@ -120,48 +120,6 @@ def test_auto_detect(st, monkeypatch):
     assert any(h["what"] == "jenis (Auto Detect AI)" for h in cf.history(s, did))
 
 
-def test_rom_kamus_site_titik_dan_menit(st):
-    """0.44.1: kamus site dari baris terverifikasi (prompt + rapikan salah baca), sel kelas berisi titik bukan tonase,
-    menit bertitik ('.05') diteruskan dari jam di atasnya. Data fiktif."""
-    s, tmp = st
-    a = cf.add_file(s, str(_scan(tmp, "a.jpg")), "rom", "Rina")[0]["id"]
-    rows = [{"data": {"unit": "T1", "finish": "19:00", "asal": "PIT ABC", "tujuan": "Crusher", "kelas": "OX-LG", "ton": "30",
-                      "status": "Baru", "keterangan": "Direct"}, "verified": True} for _ in range(3)]
-    cf.save_rows(s, a, rows, "Rina")
-    v = cf.site_vocab(s, "rom")
-    assert v["asal"] == ["PIT ABC"] and v["keterangan"] == ["Direct"]
-    assert "PIT ABC" in cf.ai_prompt("rom", vocab=v) and "jangan |" in cf.ai_prompt("rom")
-    assert cf.snap("P1T A8C", ["PIT ABC"]) == "PIT ABC" and cf.snap("Crusher", ["PIT ABC"]) is None
-    b = cf.add_file(s, str(_scan(tmp, "b.jpg")), "rom", "Rina")[0]["id"]
-    cells = lambda *x: "|".join(x)  # noqa: E731
-    k9 = [""] * 9
-    r1 = cells("1", "T2", "", "20.10", "P1T A8C", "Crusher", "", "v", "", *(["31"] + k9[1:]), "v", "", "Direct")
-    k = list(k9)
-    k[0], k[2] = ".", "35"  # titik di OX-LG, tonase di OX-HG
-    r2 = cells("2", "T3", "", ".05", "〃", "〃", "", "v", "", *k, "〃", "", "〃")
-    res = cf.parse_ai_text("rom", json.dumps({"h": ["05-11-26", "II", "", "", "AA", "BB", "CC"], "r": [r1, r2]}))
-    cf.apply_ai(s, b, res, "m", 1)
-    rs = cf.rows(s, b)
-    d1, d2 = rs[0]["data"], rs[1]["data"]
-    assert d1["asal"] == "PIT ABC" and "asal" in rs[0]["unc"]
-    assert (d2["kelas"], d2["ton"], d2["finish"], d2["asal"], d2["status"]) == ("OX-HG", "35", "21:05", "PIT ABC", "Baru")
-
-
-def test_rom_urutan_kelas_tercetak(st):
-    """Versi borang ROM dengan SCAT paling kanan: sel ke-9 = SCAT bila header kelas_urut terbaca lengkap; bila tidak, urutan baku."""
-    s, tmp = st
-    b = cf.add_file(s, str(_scan(tmp, "c.jpg")), "rom", "Rina")[0]["id"]
-    k = [""] * 9
-    k[8] = "35"
-    row = "|".join(["1", "T9", "", "05.52", "PIT X", "Crusher", "", "", "", *k, "", "", "Rehandling"])
-    urut = "OX-LG, SF-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO, SCAT"
-    res = cf.parse_ai_text("rom", json.dumps({"h": ["05-11-26", "II", "", "", "", "", "", urut], "r": [row]}))
-    cf.apply_ai(s, b, res, "m", 1)
-    assert cf.rows(s, b)[0]["data"]["kelas"] == "SCAT"
-    assert cf.class_order({"kelas_urut": "OX-LG SF-LG"}, cf.ROM_CLS) == (cf.ROM_CLS, False)
-    assert cf.class_order({"kelas_urut": "ox lg,sf-lg,OX HG,SF-HG,OXSG,SF-SG,OX-MO,SF-MO"}, cf.ORE_CLS)[1]
-
-
 def test_deteksi_judul_menang_dan_ganti_jenis_baca_ulang(st, monkeypatch):
     """0.44.2: AI memilih 'Drill Progress Report' padahal judul tercetak 'DAILY DRILLING REPORT' -> judul yang menang.
     Jenis salah setelah dibaca -> ganti jenis dengan 'clear' (baris lama dibuang) lalu baca ulang."""
@@ -176,3 +134,46 @@ def test_deteksi_judul_menang_dan_ganti_jenis_baca_ulang(st, monkeypatch):
         cf.update_doc(s, did, {"type": "ddr"}, "Rina")
     cf.update_doc(s, did, {"type": "ddr", "clear": True}, "Rina")
     assert cf.doc(s, did)["type"] == "ddr" and cf.rows(s, did) == []
+
+
+def test_rom_kamus_site_dan_menit(st):
+    """0.44.1: kamus site dari baris terverifikasi (prompt + rapikan salah baca), menit bertitik ('.05'). Data fiktif."""
+    s, tmp = st
+    a = cf.add_file(s, str(_scan(tmp, "a.jpg")), "rom", "Rina")[0]["id"]
+    rows = [{"data": {"unit": "T1", "finish": "19:00", "asal": "PIT ABC", "tujuan": "Crusher", "kelas": "OX-LG", "ton": "30",
+                      "status": "Baru", "keterangan": "Direct"}, "verified": True} for _ in range(3)]
+    cf.save_rows(s, a, rows, "Rina")
+    v = cf.site_vocab(s, "rom")
+    assert v["asal"] == ["PIT ABC"] and v["keterangan"] == ["Direct"]
+    assert "PIT ABC" in cf.ai_prompt("rom", vocab=v) and "jangan |" in cf.ai_prompt("rom")
+    assert cf.snap("P1T A8C", ["PIT ABC"]) == "PIT ABC" and cf.snap("Crusher", ["PIT ABC"]) is None
+    b = cf.add_file(s, str(_scan(tmp, "b.jpg")), "rom", "Rina")[0]["id"]
+    res = cf.parse_ai_text("rom", json.dumps({"h": ["05-11-26", "II", "", ""], "r": [
+        "1|T2|-|20.10|P1T A8C|Crusher|-|OX-LG|31|Baru|Direct", "2|T3|-|.05|〃|〃|SPR (Z2)|OX-HG|35|〃|〃"]}))
+    cf.apply_ai(s, b, res, "m", 1)
+    rs = cf.rows(s, b)
+    d1, d2 = rs[0]["data"], rs[1]["data"]
+    assert d1["asal"] == "PIT ABC" and "asal" in rs[0]["unc"] and d1["start"] == ""
+    assert (d2["kelas"], d2["ton"], d2["finish"], d2["asal"], d2["status"], d2["rehandling"]) == ("OX-HG", "35", "21:05", "PIT ABC", "Baru", "SPR (Z2)")
+
+
+def test_baris_raksasa_dipecah_dan_sel_meleset_kuning():
+    """0.44.3: seluruh tabel dalam satu teks -> dipecah per nomor urut; jumlah sel meleset -> isian baris kuning."""
+    big = "1|T1|-|18:57|340|Crusher|-|OX-LG|37|Baru|Direct|2|T2|-|:16|〃|〃|-|OX-LG|36|〃|〃|3|T3|-|:24|418|〃|-|SCAT|29|〃|〃"
+    p = cf.parse_ai_text("rom", json.dumps({"h": ["", "", "", ""], "r": [big, "4|T4|:30|418|Crusher|OX-LG|33"]}))
+    assert [r["no"] for r in p["rows"]] == ["1", "2", "3", "4"] and p["rows"][2]["kelas"] == "SCAT"
+    assert not p["rows"][0]["ragu"] and set(p["rows"][3]["ragu"]) >= {"unit", "start", "finish"}
+    assert "TEPAT 11 nilai" in cf.ai_prompt("rom") and "TEPAT 9 nilai" in cf.ai_prompt("ore")
+
+
+def test_ddr_tabel_dalam_satu_teks_dipecah(st):
+    """0.44.3: Daily Drilling Report dengan semua kegiatan dalam satu teks (dulu 0 baris) -> dipecah per rentang jam."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "d.jpg")), "ddr", "Rina")[0]["id"]
+    big = ("0630-0645|travel to opp|0645-0700|general safety talk|0700-0715|travel to location and start engine compressor"
+           "|0715-0730|start drilling + cleaning cyclone and splitter")
+    res = cf.parse_ai_text("ddr", json.dumps({"h": [], "r": [big], "lubang": []}))
+    cf.apply_ai(s, did, res, "m", 1)
+    rs = [r["data"] for r in cf.rows(s, did) if not r.get("tbl")]
+    assert [(r["mulai"], r["aktivitas"]) for r in rs][:2] == [("06:30", "travel to opp"), ("06:45", "general safety talk")]
+    assert len(rs) == 4
