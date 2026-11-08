@@ -3944,3 +3944,12 @@ kedua kotak turun dari **12 menjadi 3**.
 - *Iris jadi string HW/FW* dan *Flag interval bor di dalam wireframe* kini ada di panel **Import Wireframe Geologi** (klik kanan berkas › *Iris jadi string / flag interval bor (manual)…*), tidak lagi di Geomodeller Vein.
 - Data latihan: desain pit dan survei topografi bulanan masuk **Data Spasial** sebagai versi pit / topografi.
 - DXF 3DFACE yang diimport ke Data Spasial disimpan sebagai DTM segitiga (seperti Surpac .dtm).
+
+## 132. Drillhole 0.24.41 — merapikan proyek lama: pit / topo ke Data Spasial
+
+Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topografi di daftar wireframe. Untuk memindahkannya:
+
+- Semua sekaligus: klik kanan **Import Wireframe Geologi** › *Pindahkan permukaan pit / topo ke Data Spasial…*. Berkas dikenali dari namanya (pit / topo / DTM / survei). Periksa daftar di jendela konfirmasi; bila ada yang salah, batalkan dan pindahkan satu per satu.
+- Satu berkas: klik kanan berkasnya › *Pindahkan ke Data Spasial sebagai versi topografi…* atau *…sebagai versi desain pit…*.
+- Hasilnya versi **non-aktif** di Data Spasial; topografi / pit yang aktif tidak berubah. Aktifkan di Data Spasial bila ingin dipakai.
+- Batas DTM di Reporting yang memakai berkas itu ikut dialihkan, jadi angkanya tetap sama.

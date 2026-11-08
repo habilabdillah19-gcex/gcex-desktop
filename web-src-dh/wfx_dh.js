@@ -340,6 +340,67 @@
   }
   window.wfxSetClose = function () { var d = $('wfxSetDlg'); if (d) d.style.display = 'none'; };
 
+  /* ---------- proyek lama: permukaan pit / topo yang dulu tersimpan di daftar wireframe ----------
+     Dipindah menjadi versi NON-AKTIF di Data Spasial (segitiganya utuh sebagai TIN), supaya topografi /
+     pit aktif dan angka Reporting tidak berubah diam-diam. Rujukan 'wf:<i>' di setelan Reporting ikut
+     dialihkan: model yang dipindah -> 'sp:<peran>:<id>', model sesudahnya bergeser satu indeks. */
+  var SURF_RE = /pit|topo|dtm|survei|survey|surface|permukaan/i;
+  function wfxRemap(obj, i, kNew) {
+    var seen = [];
+    (function jalan(o, dalam) {
+      if (!o || typeof o !== 'object' || dalam > 6 || seen.indexOf(o) >= 0) return; seen.push(o);
+      if (ArrayBuffer.isView(o)) return;
+      Object.keys(o).forEach(function (k) {
+        if (k === 'res' || k === 'rows') return;
+        var v = o[k], m = typeof v === 'string' ? /^wf:(\d+)$/.exec(v) : null;
+        if (m) { var j = +m[1]; if (j === i) o[k] = kNew; else if (j > i) o[k] = 'wf:' + (j - 1); }
+        else if (v && typeof v === 'object') jalan(v, dalam + 1);
+      });
+    })(obj, 0);
+  }
+  function wfxKeSpasialSatu(i, role) {
+    var m = models()[i]; if (!m) return null;
+    var V = m.v instanceof Float64Array ? m.v : Float64Array.from(m.v), T = m.t instanceof Uint32Array ? m.t : Uint32Array.from(m.t);
+    var nv = V.length / 3, nt = T.length / 3, stp = Math.max(1, Math.ceil(nv / 200000)), data = [];
+    for (var q = 0; q < nv; q += stp) { data.push([V[q * 3], V[q * 3 + 1], V[q * 3 + 2]]); data.push(null); }
+    var v = SA.spNewV(role, m.name, m.name + ' (dipindah dari daftar wireframe)', 'DTM ' + N(nt) + ' segitiga, ' + N(nv) + ' titik');
+    v.tin = {v: V, t: T}; v.data = data;               /* versi non-aktif menyimpan datanya sendiri */
+    spL(role).push(v);
+    var kNew = 'sp:' + role + ':' + v.id;
+    try { if (window.RP && RP.o) wfxRemap(RP.o, i, kNew); } catch (e) {}
+    try { if (window.RPX) wfxRemap(RPX, i, kNew); } catch (e) {}
+    if (window.WF && typeof WF.mi === 'number') { if (WF.mi === i) WF.mi = 0; else if (WF.mi > i) WF.mi--; }
+    MD.models.splice(i, 1);
+    return v;
+  }
+  function wfxSesudahPindah(L) {
+    try { mdBump(); } catch (e) {}
+    try { spPanel(); } catch (e) {}
+    try { PT.render(true); } catch (e) {}
+    try { if (fn('spSaved')) spSaved('&#10003; ' + L.length + ' permukaan dipindah ke Data Spasial sebagai versi non-aktif: ' + L.map(function (x) { return '<b>' + E(x.v.name) + '</b> (' + SPN[x.role].toLowerCase() + ')'; }).join(', ') + '. Aktifkan di Data Spasial bila ingin dipakai.'); } catch (e) {}
+  }
+  window.wfxKeSpasial = function (i, role) {
+    var m = models()[i]; if (!m) return;
+    var lock = (fn('gmTops') ? gmTops() : []).filter(function (d) { return d.wfx === m.name; });
+    if (!confirm('Pindahkan "' + m.name + '" ke Data Spasial sebagai versi ' + SPN[role].toLowerCase() + '?\n\n' +
+      '- Segitiganya disimpan utuh (TIN), jadi Reporting memakai permukaan yang sama.\n' +
+      '- Versi baru TIDAK langsung aktif: ' + SPN[role].toLowerCase() + ' yang aktif sekarang tetap dipakai.\n' +
+      '- Batas DTM di Reporting yang memakai berkas ini ikut dialihkan ke versi barunya.' +
+      (lock.length ? '\n\nPERHATIAN: domain ' + lock.map(function (d) { return d.name; }).join(', ') + ' terkunci ke berkas ini dan akan kembali ke solid RBF.' : ''))) return;
+    var v = wfxKeSpasialSatu(i, role); if (v) wfxSesudahPindah([{v: v, role: role}]);
+  };
+  window.wfxKeSpasialSemua = function () {
+    var M = models(), cand = [];
+    M.forEach(function (m, i) { if (SURF_RE.test(m.name)) cand.push({i: i, name: m.name, role: /pit/i.test(m.name) ? 'pit' : 'topo'}); });
+    if (!cand.length) { alert('Tidak ada berkas bernama pit / topo / DTM / survei di daftar wireframe.\n\nUntuk berkas lain, klik kanan berkasnya > Pindahkan ke Data Spasial.'); return; }
+    if (!confirm('Pindahkan ' + cand.length + ' berkas ke Data Spasial sebagai versi non-aktif?\n\n' + cand.map(function (c) { return '- ' + c.name + '  ->  ' + SPN[c.role].toLowerCase(); }).join('\n') +
+      '\n\nPeran ditebak dari nama (mengandung "pit" -> desain pit, selain itu -> topografi). Bila ada yang salah, batalkan dan pindahkan satu per satu lewat klik kanan berkasnya.')) return;
+    var L = [];
+    /* maju sesuai urutan import supaya versinya berurutan sama; indeks dikoreksi sebanyak berkas yang sudah dipindah */
+    for (var k = 0; k < cand.length; k++) { var v = wfxKeSpasialSatu(cand[k].i - L.length, cand[k].role); if (v) L.push({v: v, role: cand[k].role}); }
+    wfxSesudahPindah(L);
+  };
+
   /* ---------- node Project Tree: "Import Wireframe Geologi" ----------
      SATU-SATUNYA tempat wireframe geologi diimport dan dilihat (permintaan pemilik, 8 Nov 2026).
      Anak node = berkas di MD.models, berurutan sesuai urutan import. Fungsi menjadikan wireframe
@@ -364,6 +425,9 @@
             if (d.wfx === m.name) L.push({ t: 'Lepaskan domain ' + d.name + ' (kembali ke solid RBF)', fn: function () { wfxLepas(d.id); } });
             else L.push({ t: 'Kunci domain ' + d.name + ' ke wireframe ini', fn: function () { wfxPakai(d.id, m.name); } });
           });
+          L.push({ sep: 1 }, { h: 'Bukan wireframe geologi? (proyek lama)' },
+            { t: 'Pindahkan ke Data Spasial sebagai versi topografi…', fn: function () { wfxKeSpasial(i, 'topo'); } },
+            { t: 'Pindahkan ke Data Spasial sebagai versi desain pit…', fn: function () { wfxKeSpasial(i, 'pit'); } });
           L.push({ sep: 1 }, { t: 'Hapus wireframe ini', danger: 1, fn: function () { mdDel('models', i); } });
           return L;
         }
@@ -384,7 +448,9 @@
         return [{ t: 'Import wireframe geologi…', fn: imp },
           { sep: 1 },
           { t: 'Serap wireframe → domain…', dis: !M.length, fn: function () { wfxDlg(); } },
-          { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } }];
+          { t: 'Lihat laporan penyerapan terakhir', dis: !WFX.log, fn: function () { wfxLihat(); } },
+          { sep: 1 },
+          { t: 'Pindahkan permukaan pit / topo ke Data Spasial…', dis: !M.some(function (m) { return SURF_RE.test(m.name); }), fn: function () { wfxKeSpasialSemua(); } }];
       },
       kids: kids
     };
