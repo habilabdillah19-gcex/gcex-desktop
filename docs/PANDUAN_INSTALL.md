@@ -3972,3 +3972,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Semua jenis borang: sel kosong ditulis `-` oleh AI; bila jumlah sel satu baris tetap meleset, seluruh isian baris itu disorot kuning untuk dicek.
 - Seluruh tabel tidak bisa lagi tertumpuk dalam satu baris (penyebab "hanya 1 baris" di ROM, "0 baris" di Daily Drilling Report, dan waktu baca sangat lama).
 - Borang ROM / Loading Ore yang sudah dibaca versi lama: klik **✦ Baca dengan AI** lagi.
+
+## 130. DB-Ex 0.44.4 — potong area borang
+
+- Di bilah atas scan: **✂ Potong** → tarik kotak mengelilingi **tabel** (judul kolom ikut) → lepas mouse. AI hanya membaca area itu: lebih teliti dan lebih cepat.
+- **✕** menghapus potongan. **⧉** memakai potongan yang sama untuk semua halaman dari PDF yang sama, atau semua borang sejenis yang belum dipotong (periksa tiap borang — posisi tabel di foto bisa berbeda).
+- Setelah memotong, klik **✦ Baca dengan AI** lagi.
+- Foto yang hanya memuat sebagian kolom borang (mis. kolom No / Hole ID terpotong) kini tetap terbaca ke kolom yang benar; isi kolom yang tidak tampak (mis. Hole ID) di header / tabel.

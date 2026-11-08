@@ -295,8 +295,11 @@ def store(folder: str) -> Store:
             c.executescript(_DDL)
             if "tbl" not in {r[1] for r in c.execute("PRAGMA table_info(rows)")}:  # tabel tambahan per borang (0.35)
                 c.execute("ALTER TABLE rows ADD COLUMN tbl TEXT DEFAULT ''")
-            if "auto" not in {r[1] for r in c.execute("PRAGMA table_info(docs)")}:  # Auto Detect (0.44): 1 = menunggu AI, 2 = dari nama file
+            cols = {r[1] for r in c.execute("PRAGMA table_info(docs)")}
+            if "auto" not in cols:  # Auto Detect (0.44): 1 = menunggu AI, 2 = dari nama file
                 c.execute("ALTER TABLE docs ADD COLUMN auto INTEGER DEFAULT 0")
+            if "crop" not in cols:  # area potong manual (0.44.4): [x0, y0, x1, y1] pecahan 0-1 gambar ASLI (sebelum diputar)
+                c.execute("ALTER TABLE docs ADD COLUMN crop TEXT DEFAULT ''")
         _STORES[key] = s
         load_templates(s)
         return s
@@ -633,7 +636,7 @@ def docs(s: Store) -> list[dict]:
 
 def _doc(r: sqlite3.Row) -> dict:
     d = dict(r)
-    for k, dv in (("header_json", {}), ("hdr_unc", [])):
+    for k, dv in (("header_json", {}), ("hdr_unc", []), ("crop", None)):
         try:
             d[k] = json.loads(d.get(k) or json.dumps(dv))
         except ValueError:
@@ -766,6 +769,12 @@ def update_doc(s: Store, did: int, values: dict, by: str) -> dict:
                 vals.append(values["type"])
                 _hist(c, did, "jenis", d["type"], values["type"], "edit", by)
             sets.append("auto=0")
+        if "crop" in values:
+            cr = norm_crop(values["crop"])
+            sets.append("crop=?")
+            vals.append(json.dumps(cr) if cr else "")
+            if cr != d.get("crop"):
+                _hist(c, did, "potong area", json.dumps(d.get("crop")) if d.get("crop") else None, json.dumps(cr) if cr else None, "edit", by)
         if "rot" in values:
             r = int(values["rot"]) % 360
             if r not in (0, 90, 180, 270):
@@ -1028,7 +1037,7 @@ def ai_schema_compact(ftype: str) -> dict:
     # hilang, sel kosong cukup '||' -> jawaban kira-kira separuh token -> separuh waktu tulis di CPU
     # batas panjang per baris: model tidak bisa menumpuk seluruh tabel dalam satu teks (0.44.3: 1 baris, 450 detik)
     line = {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(ai_rows(t))))}
-    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": line}, "c": {"type": "string"}}
+    props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": line}, "c": {"type": "string", "maxLength": 200}}
     req = ["h", "r"]
     for tt in (t.get("tables") or {}).values():
         props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}}
@@ -1131,6 +1140,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
     for tt in (t.get("tables") or {}).values():
         lines.append(f'"{tt["ai"]}": ["' + "|".join(k for k, _l, _t in tt["rows"]) + f'", …]   <- satu teks per baris {tt["name"]}, nilai dipisah |')
     lines += ['"c": catatan singkat (boleh "")',
+              "Bila sebagian kolom tidak tampak di foto (terpotong), tulis - untuk kolom itu; tabel SELALU di 'r', bukan di 'c'.",
               "Isi nilai yang TERTULIS di formulir, bukan nama kolom / judul. Tiap baris TEPAT " + str(len(rk)) + " nilai; sel kosong "
               "ditulis - (JANGAN dilewati, supaya kolom tidak bergeser). SATU teks per baris tabel — jangan gabungkan beberapa baris. "
               "Jangan mengarang baris.",
@@ -1215,9 +1225,39 @@ def _from_compact(ftype: str, o: dict) -> dict:
         return x
     hk = [k for k, _l, _t in t["header"]]
     rk = [k for k, _l, _t in ai_rows(t)]
-    out: dict[str, Any] = {"header": one(o.get("h"), hk) or {}, "rows": [], "catatan": str(o.get("c") or "")}
-    out["rows"] = [x for x in (one(v, rk, t.get("ai_tail", 0)) for v in _split_giant(o.get("r") or [], len(rk), rk[:1] == ["no"],
-                                                                                         _RANGE if ftype == "ddr" else None)) if x]
+    # nama kolom -> kunci (untuk baris judul kolom yang ditulis model sendiri, mis. "Sample_ID|From|To|Lith")
+    alias: dict[str, str] = {}
+    for k, lbl, _t in list(t["rows"]) + list(ai_rows(t)):
+        for x in (k, lbl, re.sub(r"\s*\(.*?\)", "", lbl)):
+            alias[re.sub(r"[^a-z0-9]", "", x.lower())] = k
+    alias.update({"from": "from_m", "to": "to_m", "intalt": "alt", "vein": "vein", "veintype": "vein", "qtpct": "qt", "remark2": "remark",
+                  "holeid": "hole_id", "sampleid": "sample_id", "lith": "lith"})
+
+    def colmap(v: Any) -> Optional[list[str]]:
+        """Baris judul kolom -> daftar kunci (sebagian besar sel = nama kolom yang dikenal), atau None."""
+        cells = v.split("|") if isinstance(v, str) else (v if isinstance(v, list) else [])
+        ks = [alias.get(re.sub(r"[^a-z0-9]", "", str(c).lower()), "") for c in cells]
+        return ks if len(cells) >= 3 and sum(1 for k in ks if k) >= max(3, int(0.7 * len(cells))) else None
+    raw = list(o.get("r") or [])
+    c_txt = str(o.get("c") or "")
+    if not raw and c_txt.count("|") >= 2 * len(rk):  # model menulis tabel di 'catatan' (mis. sebagian kolom terpotong di foto)
+        raw, c_txt = [ln for ln in re.split(r"\s*[\r\n]+\s*", c_txt) if "|" in ln] or [c_txt], ""
+    out: dict[str, Any] = {"header": one(o.get("h"), hk) or {}, "rows": [], "catatan": c_txt}
+    cur_map: Optional[list[str]] = None
+    for v in _split_giant(raw, len(rk), rk[:1] == ["no"], _RANGE if ftype == "ddr" else None):
+        cm = colmap(v)
+        if cm:  # model menulis kepala tabelnya sendiri: baris berikutnya dipetakan menurut kepala itu
+            cur_map = cm
+            continue
+        if cur_map and isinstance(v, str) and len(v.split("|")) == len(cur_map):
+            x = one(v, [k or f"_x{i}" for i, k in enumerate(cur_map)])
+            if x:
+                x = {k: val for k, val in x.items() if not k.startswith("_x")}
+                x["ragu"] = [k for k in x["ragu"] if not k.startswith("_x")]
+        else:
+            x = one(v, rk, t.get("ai_tail", 0))
+        if x:
+            out["rows"].append(x)
     for tt in (t.get("tables") or {}).values():
         ks = [k for k, _l, _t in tt["rows"]]
         out[tt["ai"]] = [x for x in (one(v, ks) for v in o.get(tt["ai"]) or []) if x]
@@ -1282,6 +1322,21 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
     return out
 
 
+def norm_crop(v: Any) -> Optional[list[float]]:
+    """[x0, y0, x1, y1] pecahan 0-1 (urutan bebas) -> kotak sah, atau None (kosong / terlalu kecil = tanpa potongan)."""
+    if not v:
+        return None
+    try:
+        x0, y0, x1, y1 = (min(1.0, max(0.0, float(z))) for z in list(v)[:4])
+    except (TypeError, ValueError):
+        raise ValueError("Area potong harus 4 angka [x0, y0, x1, y1].")
+    x0, x1 = sorted((x0, x1))
+    y0, y1 = sorted((y0, y1))
+    if x1 - x0 < 0.05 or y1 - y0 < 0.05:
+        return None
+    return [round(x0, 4), round(y0, 4), round(x1, 4), round(y1, 4)]
+
+
 def crop_paper(im: Any) -> Any:
     """Potong foto ke lembar kertas (putih / abu muda, tidak berwarna): papan klip, meja dan latar tidak lagi dikirim ke AI.
     Gambar lebih kecil = AI lebih cepat (token gambar berkurang), dan pada resolusi yang sama tulisan tampak lebih besar.
@@ -1312,9 +1367,13 @@ def _image_b64(s: Store, d: dict, max_px: int) -> tuple[str, tuple[int, int]]:
     from PIL import Image
     with Image.open(s.scans / d["file"]) as im:
         im = im.convert("RGB")
+        cr = norm_crop(d.get("crop"))
+        if cr:  # potongan manual pengguna (area tabel) menggantikan pemotongan otomatis ke tepi kertas
+            im = im.crop((round(cr[0] * im.width), round(cr[1] * im.height), round(cr[2] * im.width), round(cr[3] * im.height)))
         if d.get("rot"):
             im = im.rotate(-int(d["rot"]), expand=True)  # rot searah jarum jam
-        im = crop_paper(im)
+        if not cr:
+            im = crop_paper(im)
         k = max_px / max(im.size)
         if k < 1:
             im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)

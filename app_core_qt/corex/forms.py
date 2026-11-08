@@ -144,6 +144,38 @@ class ScanView(Viewer):
         if key == self.pid and self.w:
             self.root.setRotation(self.rot)
             self.fit()
+            self.show_crop(self.pg.cur["doc"].get("crop") if self.pg.cur else None)
+
+    def show_crop(self, cr) -> None:
+        """Area potong: luar kotak diredupkan, tepi kuning putus-putus (anak item foto: ikut zoom / putar)."""
+        from PySide6.QtCore import QRectF
+        from PySide6.QtGui import QBrush, QPainterPath
+        from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem
+        if not hasattr(self, "cropShade"):
+            self.cropShade = QGraphicsPathItem(self.root)
+            self.cropShade.setBrush(QBrush(QColor(0, 0, 0, 120)))
+            self.cropShade.setPen(Qt.NoPen)
+            self.cropShade.setZValue(5)
+            self.cropBox = QGraphicsRectItem(self.root)
+            pen = QPen(QColor("#ffd43b"))
+            pen.setCosmetic(True)
+            pen.setWidth(2)
+            pen.setStyle(Qt.DashLine)
+            self.cropBox.setPen(pen)
+            self.cropBox.setZValue(6)
+        if not cr or not self.w:
+            self.cropShade.hide()
+            self.cropBox.hide()
+            return
+        r = QRectF(cr[0] * self.w, cr[1] * self.h, (cr[2] - cr[0]) * self.w, (cr[3] - cr[1]) * self.h)
+        path = QPainterPath()
+        path.addRect(QRectF(0, 0, self.w, self.h))
+        path.addRect(r)
+        self.cropShade.setPath(path)
+        self.cropBox.setRect(r)
+        self.cropShade.show()
+        self.cropBox.show()
+
 
     def load_full(self) -> None:
         return
@@ -155,6 +187,34 @@ class ScanView(Viewer):
         self.root.setRotation(self.rot)
         self.fit()
         self.pg.save_rot(self.rot)
+
+
+class CropTool:
+    """Tarik kotak di scan -> area potong (pecahan gambar asli, sebelum diputar)."""
+
+    def __init__(self, view: "ScanView", done) -> None:
+        self.v, self.done, self.a = view, done, None
+
+    def _frac(self, p) -> list[float]:
+        return [min(1.0, max(0.0, p.x() / self.v.w)), min(1.0, max(0.0, p.y() / self.v.h))]
+
+    def press(self, p, _e) -> bool:
+        self.a = self._frac(p)
+        return True
+
+    def move(self, p) -> None:
+        if self.a:
+            b = self._frac(p)
+            self.v.show_crop([min(self.a[0], b[0]), min(self.a[1], b[1]), max(self.a[0], b[0]), max(self.a[1], b[1])])
+
+    def release(self, p) -> None:
+        if self.a:
+            b = self._frac(p)
+            self.done([self.a[0], self.a[1], b[0], b[1]])
+        self.a = None
+
+    def hover(self, _p):
+        return Qt.CrossCursor
 
 
 class FormsPage(QWidget):
@@ -301,7 +361,11 @@ class FormsPage(QWidget):
         self.vb: dict[str, QToolButton] = {}
         for k, t_, tip in (("zout", "−", "Perkecil"), ("pct", "100%", "Perbesaran (klik = pas layar)"), ("zin", "+", "Perbesar"),
                            ("sp", "", ""), ("rot", "↻", "Putar 90° (disimpan, dipakai juga saat AI membaca)"),
-                           ("fit", "⤢", "Pas layar (klik ganda di scan)"), ("focus", "⛶", "Fokus scan: sembunyikan panel kiri & kanan")):
+                           ("fit", "⤢", "Pas layar (klik ganda di scan)"), ("focus", "⛶", "Fokus scan: sembunyikan panel kiri & kanan"),
+                           ("sp", "", ""), ("crop", "✂ Potong", "Potong area: tarik kotak di scan mengelilingi TABEL saja. AI hanya membaca area itu "
+                                                               "(tulisan tampak lebih besar -> lebih teliti & lebih cepat). Klik lagi untuk batal."),
+                           ("uncrop", "✕", "Hapus potongan (AI membaca seluruh foto lagi)"),
+                           ("cropall", "⧉ ▾", "Pakai potongan ini untuk borang lain")):
             if k == "sp":
                 zh.addSpacing(14)
                 continue
@@ -309,7 +373,7 @@ class FormsPage(QWidget):
             b_.setText(t_)
             b_.setToolTip(tip)
             b_.setObjectName("fmVBtn")
-            if k == "focus":
+            if k in ("focus", "crop"):
                 b_.setCheckable(True)
             zh.addWidget(b_)
             self.vb[k] = b_
@@ -327,6 +391,15 @@ class FormsPage(QWidget):
         self.vb["fit"].clicked.connect(lambda: (self.view.fit(), self._zoom_pct()))
         self.vb["rot"].clicked.connect(lambda: self.view.btn["rot"].click())
         self.vb["focus"].toggled.connect(self._focus)
+        self.vb["crop"].toggled.connect(self._crop_mode)
+        self.vb["uncrop"].clicked.connect(lambda: self.save_crop(None))
+        mc = QMenu(self.vb["cropall"])
+        mc.addAction("Semua halaman dari file yang sama", lambda: self.crop_to_others("file"))
+        mc.addAction("Semua borang jenis ini yang belum dipotong", lambda: self.crop_to_others("type"))
+        self.vb["cropall"].setMenu(mc)
+        self.vb["cropall"].setPopupMode(QToolButton.InstantPopup)
+        self.vb["uncrop"].setEnabled(False)
+        self.vb["cropall"].setEnabled(False)
         self.aiInfo = QLabel()
         self.aiInfo.setObjectName("note")
         self.aiInfo.setWordWrap(True)
@@ -936,6 +1009,8 @@ class FormsPage(QWidget):
         if not same:
             root = self._root()
             self.view.show_scan(root / "scan" / j["doc"]["file"] if root else Path(j["doc"]["file"]), did, j["doc"].get("rot") or 0)
+            self.vb["crop"].setChecked(False)
+            self._crop_buttons()
         self.refresh()
 
     def _list_menu(self, pos) -> None:
@@ -1056,6 +1131,61 @@ class FormsPage(QWidget):
             self.pgTpl.refresh()
         elif i == 3:
             self.pgSet.refresh()
+
+    def _crop_mode(self, on: bool) -> None:
+        if on and (not self.cur or not self.view.w):
+            self.vb["crop"].setChecked(False)
+            return
+        self.view.set_tool(CropTool(self.view, self._crop_done) if on else None)
+        if on:
+            self.toast("Tarik kotak mengelilingi TABEL borang (judul kolom ikut). Lepas tombol mouse = simpan.", 5000)
+
+    def _crop_done(self, cr: list) -> None:
+        self.vb["crop"].setChecked(False)
+        self.save_crop(cr)
+
+    def save_crop(self, cr) -> None:
+        if not self.cur:
+            return
+        try:
+            self.cur = api.call("/core/forms/update", {"folder": self.folder, "id": self.cur["doc"]["id"], "values": {"crop": cr}, "by": self.by()})
+        except api.ApiError as e:
+            say(self, str(e), warn=True)
+            return
+        c = self.cur["doc"].get("crop")
+        self.view.show_crop(c)
+        self._crop_buttons()
+        self._sync_list()
+        self.toast("Area dipotong — AI hanya membaca bagian ini. Klik ✦ Baca dengan AI." if c else
+                   ("Potongan dihapus — AI membaca seluruh foto." if not cr else "Kotak terlalu kecil — potongan tidak disimpan."), 4000)
+
+    def _crop_buttons(self) -> None:
+        has = bool(self.cur and self.cur["doc"].get("crop"))
+        self.vb["uncrop"].setEnabled(has)
+        self.vb["cropall"].setEnabled(has)
+        self.vb["crop"].setText("✂ Potong ulang" if has else "✂ Potong")
+
+    def crop_to_others(self, scope: str) -> None:
+        """Potongan borang ini dipakai juga untuk halaman lain dari file yang sama, atau borang sejenis yang belum dipotong."""
+        if not self.cur or not self.cur["doc"].get("crop"):
+            return
+        me = self.cur["doc"]
+        if scope == "file":
+            ids = [d["id"] for d in self.docs if d["id"] != me["id"] and d.get("src") and d.get("src") == me.get("src")]
+        else:
+            ids = [d["id"] for d in self.docs if d["id"] != me["id"] and d["type"] == me["type"] and not d.get("crop")]
+        if not ids:
+            say(self, "Tidak ada borang lain yang cocok.")
+            return
+        if not ask(self, f"Pakai potongan ini untuk {len(ids)} borang lain?\nPeriksa hasilnya per borang — posisi tabel di foto bisa berbeda."):
+            return
+        for i in ids:
+            try:
+                api.call("/core/forms/update", {"folder": self.folder, "id": i, "values": {"crop": me["crop"]}, "by": self.by()})
+            except api.ApiError:
+                pass
+        self._sync_list()
+        self.toast(f"Potongan dipakai di {len(ids)} borang lain", 3500)
 
     def _zoom_pct(self) -> None:
         self.vb["pct"].setText(f"{round(self.view.transform().m11() * 100)}%" if self.view.w else "–")

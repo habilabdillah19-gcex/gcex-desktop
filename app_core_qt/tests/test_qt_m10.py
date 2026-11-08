@@ -51,6 +51,17 @@ def test_nav_auto_detect_template_riwayat(qtbot, prj, tmp_path, monkeypatch):
     assert pg.cur["doc"]["type"] == "ddr" and pg.cur["rows"] == [] and ran == [1]
     pg.change_type("dpr")
     assert ran == [1]  # tanpa baris: tidak perlu baca ulang
+    # potong area (0.44.4)
+    qtbot.waitUntil(lambda: pg.view.w > 0, timeout=8000)
+    assert not pg.vb["uncrop"].isEnabled()
+    pg.vb["crop"].setChecked(True)
+    assert pg.view.tool is not None
+    pg.view.tool.press(type("P", (), {"x": lambda s: pg.view.w * 0.1, "y": lambda s: pg.view.h * 0.2})(), None)
+    pg.view.tool.release(type("P", (), {"x": lambda s: pg.view.w * 0.9, "y": lambda s: pg.view.h * 0.7})())
+    assert pg.cur["doc"]["crop"] == [0.1, 0.2, 0.9, 0.7] and pg.view.cropBox.isVisible()
+    assert not pg.vb["crop"].isChecked() and pg.view.tool is None and pg.vb["uncrop"].isEnabled()
+    pg.save_crop(None)
+    assert pg.cur["doc"]["crop"] is None and not pg.view.cropBox.isVisible()
     # Template kustom
     pg.show_page(2)
     assert pg.pages.currentWidget() is pg.pgTpl and pg.navBtns[2].isChecked()

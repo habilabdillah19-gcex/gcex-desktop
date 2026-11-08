@@ -177,3 +177,36 @@ def test_ddr_tabel_dalam_satu_teks_dipecah(st):
     rs = [r["data"] for r in cf.rows(s, did) if not r.get("tbl")]
     assert [(r["mulai"], r["aktivitas"]) for r in rs][:2] == [("06:30", "travel to opp"), ("06:45", "general safety talk")]
     assert len(rs) == 4
+
+
+def test_potong_area_manual(st, monkeypatch):
+    """0.44.4: area potong manual disimpan per borang (pecahan gambar asli) dan dipakai saat AI membaca."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "k.jpg")), "rom", "Rina")[0]["id"]
+    d = cf.update_doc(s, did, {"crop": [0.9, 0.1, 0.1, 0.6]}, "Rina")
+    assert cf.doc(s, did)["crop"] == [0.1, 0.1, 0.9, 0.6]
+    from PIL import Image
+    w, h = Image.open(s.scans / cf.doc(s, did)["file"]).size
+    _b, size = cf._image_b64(s, cf.doc(s, did), 4000)
+    assert abs(size[0] - 0.8 * w) <= 2 and abs(size[1] - 0.5 * h) <= 2
+    cf.update_doc(s, did, {"rot": 90}, "Rina")
+    _b, size = cf._image_b64(s, cf.doc(s, did), 4000)
+    assert abs(size[0] - 0.5 * h) <= 2  # dipotong dulu, baru diputar
+    cf.update_doc(s, did, {"crop": None}, "Rina")
+    assert cf.doc(s, did)["crop"] is None and any(x["what"] == "potong area" for x in cf.history(s, did))
+    assert cf.norm_crop([0.1, 0.1, 0.12, 0.9]) is None
+
+
+def test_rc_kolom_terpotong_tabel_di_catatan(st):
+    """0.44.4: foto RC tanpa kolom No / Hole_ID / Tanggal; model menulis kepala tabelnya sendiri dan seluruh tabel di 'c'.
+    Tabel diambil dari catatan dan dipetakan menurut kepala kolom yang ditulis model. Data fiktif."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "rc.jpg")), "rc", "Rina")[0]["id"]
+    c = ("Sample_ID|From|To|Lith|Int_Alt|Min1|Vein_Type\n" "AA_000069_Z9|0|1|VLT|IAR|cly|\n" "AA_000070_Z9|1|2|〃|〃|〃|\n"
+         "AA_000071_Z9|2|3|VLT|ARG|ox|")
+    res = cf.parse_ai_text("rc", json.dumps({"h": ["", "", "", ""], "r": [], "c": c}))
+    assert [r["sample_id"] for r in res["rows"]] == ["AA_000069_Z9", "AA_000070_Z9", "AA_000071_Z9"] and res["catatan"] == ""
+    cf.apply_ai(s, did, res, "m", 1)
+    rs = [r["data"] for r in cf.rows(s, did)]
+    assert [(r["sample_id"], r["from_m"], r["to_m"], r["lith"], r["alt"]) for r in rs][1] == ("AA_000070_Z9", "1", "2", "VLT", "IAR")
+    assert "terpotong" in cf.ai_prompt("rc")
