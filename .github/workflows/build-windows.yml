@@ -154,7 +154,11 @@ jobs:
       - name: Cek teks syarat penggunaan (halaman lisensi installer)
         run: python -c "b=open('legal/SYARAT_PENGGUNAAN.txt','rb').read(); assert b and all(x < 128 for x in b), 'SYARAT_PENGGUNAAN.txt harus ASCII'; print('OK', len(b))"
       - name: Bangun installer GC-Ex Block Model
-        run: npm run dist
+        shell: pwsh
+        # unduhan electron-builder (winCodeSign / NSIS dari GitHub) kadang 504 sesaat: coba sampai 3 kali
+        run: |
+          for ($i = 1; $i -le 3; $i++) { npm run dist; if ($LASTEXITCODE -eq 0) { exit 0 }; Write-Host "::warning::npm run dist gagal (percobaan $i), ulang 60 detik lagi"; Start-Sleep 60 }
+          exit 1
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Uji jalan GC-Ex Block Model (fuses, asar, gerbang lisensi)
@@ -188,7 +192,11 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "data latihan tidak ikut terkemas: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
       - name: Bangun installer GC-Ex Drillhole
-        run: npm run dist:dh
+        shell: pwsh
+        # unduhan electron-builder (winCodeSign / NSIS dari GitHub) kadang 504 sesaat: coba sampai 3 kali
+        run: |
+          for ($i = 1; $i -le 3; $i++) { npm run dist:dh; if ($LASTEXITCODE -eq 0) { exit 0 }; Write-Host "::warning::npm run dist:dh gagal (percobaan $i), ulang 60 detik lagi"; Start-Sleep 60 }
+          exit 1
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Uji jalan GC-Ex Drillhole (fuses, asar, gerbang lisensi)
@@ -225,7 +233,11 @@ jobs:
       - name: Panduan DB-Ex (HTML)
         run: python docs/md2html.py docs/PANDUAN_CORE.md docs/PANDUAN_CORE.html
       - name: Bangun installer DB-Ex
-        run: npm run dist:core
+        shell: pwsh
+        # unduhan electron-builder (winCodeSign / NSIS dari GitHub) kadang 504 sesaat: coba sampai 3 kali
+        run: |
+          for ($i = 1; $i -le 3; $i++) { npm run dist:core; if ($LASTEXITCODE -eq 0) { exit 0 }; Write-Host "::warning::npm run dist:core gagal (percobaan $i), ulang 60 detik lagi"; Start-Sleep 60 }
+          exit 1
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Cek isi DB-Ex
