@@ -4069,4 +4069,4 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 
 - **Tombol Demo**: langkah *Import block model* (Block Model) kini menunjuk tombol ⋯ node Block Model dan membuka menunya; langkah baru *Data Spasial lewat ⋯* (Block Model) dan *Import data lewat tombol ⋯* (Drill Hole, node Database Bor) memperlihatkan pintu import langsung dari Project Tree.
 - **Tutorial bergambar**: gambar baru menu ⋯ Block Model & Data Spasial (Tutorial Block Model) dan menu ⋯ Database Bor & Data Spasial (Tutorial Modelling & Estimasi), dibuat dari data latihan simulasi.
-- Tidak ada perubahan perilaku aplikasi di luar teks dan langkah Demo.
+- **Perbaikan Drill Hole**: di 0.24.52 tombol ⋯ pada node **Database Bor** tidak membuka menu (menu sub-node tetap bekerja). Sudah diperbaiki.
