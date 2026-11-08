@@ -4038,3 +4038,7 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 ## 132. DB-Ex 0.44.6 — galat "HTTP Error 500" dari Ollama
 
 - **"AI gagal: HTTP Error 500"** = mesin AI Ollama berhenti (biasanya memori penuh setelah banyak borang / mode Seimbang). DB-Ex kini mengulang sekali otomatis dengan gambar lebih kecil; bila tetap gagal, tampil pesan Ollama dan sarannya: tutup aplikasi lain, pilih **Cepat**, atau tutup Ollama dari ikon taskbar lalu buka lagi.
+## 140. Drillhole 0.24.49 — nomor titik struktur
+
+- Import CSV struktur **tanpa kolom ID** (mis. `SIM_struktur.csv`: Easting, Northing, RL, …) kini diberi nomor urut **1, 2, 3, …** di kolom **No** tabel titik struktur. Dulu kolom *Northing* terbaca sebagai kolom nomor sehingga No berisi angka Northing.
+- Berkas yang punya kolom nomor (No, ID, Point, Kode, Titik, Nama, …) tetap memakai nilai kolom itu. Koordinat, dip dan dip azimuth tidak berubah, jadi model vein tidak terpengaruh.

@@ -4092,7 +4092,7 @@ function stParse(t,name){var L=t.replace(/\r/g,'').split('\n').filter(function(l
   var dl=[',',';','\t'].sort(function(a,b){return L[0].split(b).length-L[0].split(a).length;})[0],sp=function(l){return l.split(dl).map(function(x){return x.trim().replace(/^"|"$/g,'');});};
   var H=sp(L[0]).map(function(h){return h.toLowerCase().replace(/[^a-z0-9]/g,'');}),num=function(v){var x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:null;},hasH=H.some(function(h){return /[a-z]/.test(h);});
   var f=function(re,def){for(var i=0;i<H.length;i++)if(re.test(H[i]))return i;return hasH?-1:def;};
-  var cNo=f(/^(no|id|nomor|number|pt|point|kode)/,0),cX=f(/^(x|east|easting|e)$/,1),cY=f(/^(y|north|northing|n)$/,2),cZ=f(/^(z|rl|elev|elevation|elevasi)$/,3),cA=f(/(dipaz|dipazi|dipdir|dipdirection|azimuth|azi|ddir|dd)/,5),cD=-1;
+  /* kolom nomor dicocokkan UTUH: dulu awalan 'no' ikut menangkap 'Northing', sehingga CSV tanpa kolom ID bernomor angka Northing */ var cNo=f(/^(no|nomor|number|nr|id|ptid|pt|point|pointid|kode|code|titik|notitik|nomortitik|idtitik|nama|name)$/,0),cX=f(/^(x|east|easting|e)$/,1),cY=f(/^(y|north|northing|n)$/,2),cZ=f(/^(z|rl|elev|elevation|elevasi)$/,3),cA=f(/(dipaz|dipazi|dipdir|dipdirection|azimuth|azi|ddir|dd)/,5),cD=-1;
   for(var i=0;i<H.length;i++)if(/^dip/.test(H[i])&&i!==cA){cD=i;break;}if(cD<0&&!hasH)cD=4;var cK=f(/^(ket|keterangan|desc|description|remark|remarks|type|tipe|jenis|catatan)/,6),cPl=hasH?f(/^(plunge|pl|plg|linplunge|lplunge|lineasiplunge)$/,-1):-1,cTr=hasH?f(/^(trend|tr|plgaz|plungeaz|plungeazimuth|plungedir|lintrend|ltrend|lineasitrend)$/,-1):-1;
   if(cX<0||cY<0||cD<0||cA<0)throw new Error('kolom X, Y, Dip, Dip azimuth tidak ditemukan (header: No, X, Y, Z, Dip, Dip_Azimuth, Keterangan)');
   var fid=stId(),n=0,bad=0;STR.F.push({id:fid,name:name,on:true,kind:'csv'});
@@ -14683,7 +14683,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.48';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.49';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
