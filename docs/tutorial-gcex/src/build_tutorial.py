@@ -896,7 +896,7 @@ ch('Struktur geologi (dip / dip azimuth)', dta('<code>data/SIM_struktur.csv</cod
       ('Flag struktur di Sayatan 2D', '<b>Dip 65</b>, <b>Dip az 135</b>, keterangan <code>kontak HW</code> &mdash; lalu klik dua kali di penampang'),
       ('Radius pemakaian', '<b>25 m</b> (bawaan) dari data vein'),
       ('Hasil yang seharusnya', f"volume QV_Lensa2 {fN(SV[0])} m&sup3; &rarr; {fN(SV[1])} m&sup3; setelah {SV[2]} struktur dipakai")]) +  '<p>Arah dip vein bisa berubah: misalnya ke timur di elevasi 300 dan ke barat di elevasi 100. Titik struktur (dip / dip azimuth) memberi tahu RBF arah kemiringan setempat. Ada tiga sumber: <b>flag struktur</b> di Sayatan 2D per domain, <b>file CSV</b>, dan <b>titik manual</b> di 3D.</p>'
- + '<h3>Import file struktur</h3>' + steps('Node <b>Struktur Geologi</b> &rarr; <b>&#8679; Import CSV struktur</b>, pilih <code>SIM_struktur.csv</code> ([[struktur_panel]]).',
+ + '<h3>Import file struktur</h3>' + steps('Di Project Tree buka node <b>Struktur Geologi</b>, klik baris <b>+ Tambah struktur&hellip;</b> paling bawah &rarr; <b>Import CSV struktur&hellip;</b>, pilih <code>SIM_struktur.csv</code> ([[struktur_panel]]).',
    'Format kolom: <code>No, X, Y, Z, Dip, Dip_Azimuth, Keterangan</code> (pemisah koma / titik koma / tab; header fleksibel; Z kosong = diambil dari topografi).',
    'Daftar sumber menampilkan file beserta jumlah titik. Centang untuk menampilkan / menyembunyikan, <b>&times;</b> untuk menghapus file.',
    'Klik baris titik untuk memilihnya; nilai X, Y, Z, Dip, Dip az, No dan Keterangan bisa diubah langsung.')

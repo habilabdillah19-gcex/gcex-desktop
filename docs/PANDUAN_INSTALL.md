@@ -4021,3 +4021,9 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Tetap di panel, tanpa baris + Tambah**: *+ Tambah versi topografi / desain pit / orthofoto / block model* di panel **Data Spasial** (Drill Hole) dan tombol *Simpan pengaturan sekarang sebagai preset* di kartu **Preset kelas kadar & tujuan** (Block Model).
 - Tutorial, Petunjuk Teknis dan gambar tutorial mengikuti.
 - **Daily Drilling Report**: AI kini hanya membaca isian header di bagian atas borang (tanggal, shift, rig, driller, client, DHP ID). WH, DL, HM engine dan bit diisi sendiri bila perlu — sebelumnya AI menyalin nama isian ("DHP_ID", "WH") dan membaca sangat lama.
+
+## 138. Drillhole 0.24.47 — import CSV struktur satu pintu; pick-up tetap di panel Peta
+
+- Tombol **Import CSV struktur** dihapus dari panel Struktur Geologi. Import lewat baris **+ Tambah struktur… › Import CSV struktur…** di Project Tree.
+- **Import titik pick-up (CSV)** tetap di panel **Peta (Mapping)**; baris *+ Tambah titik pick-up* di Project Tree dihapus.
+- Block Model tidak berubah (tetap 0.24.42).

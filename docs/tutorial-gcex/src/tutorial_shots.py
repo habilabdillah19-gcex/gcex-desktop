@@ -267,7 +267,9 @@ with sync_playwright() as pw:
     note('rev',ev('FP.base'))
     # 16b. struktur geologi
     ev("uiTab('GM');gmAct(GM.doms[0].id);if(VIEW2D)toggle2D();updatePlot()");v0=ev("Math.round(IM.R[GM.doms[0].id].st.vol)")
-    ev("uiTab('Model')");pg.set_input_files("#stBody input[type=file]",DATA+'SIM_struktur.csv');pg.wait_for_timeout(1200)
+    ev("PT.open['st']=1;PT.render(true)");pg.locator("#ptree .ptr[data-id='st.+']").click();pg.wait_for_timeout(300)   # baris + Tambah struktur… (tombol panel dihapus, DH 0.24.47)
+    with pg.expect_file_chooser() as fcs: pg.locator("#ptMenu button",has_text="Import CSV struktur").click()
+    fcs.value.set_files(DATA+'SIM_struktur.csv');pg.wait_for_timeout(1200);ev("PT.select('st')");pg.wait_for_timeout(500)   # node Struktur Geologi -> panel Struktur (judul Properti sesuai)
     note('strN',ev("STR.P.length"));note('strVol',[v0,ev("Math.round(IM.R[GM.doms[0].id].st.vol)"),ev("IM.R[GM.doms[0].id].st.nst"),ev("IM.R[GM.doms[0].id].st.nstx")])
     ev("STR.sel=STR.P[0].id;stPanel();document.getElementById('stBody').scrollIntoView({block:'start'})");pg.wait_for_timeout(400);shot('struktur_panel',PANEL)
     ev("lyrPreset('gm');STR.sz=7;updatePlot();setCam(1.15,-1.5,0.55)");pg.wait_for_timeout(1500);shot('struktur_3d')

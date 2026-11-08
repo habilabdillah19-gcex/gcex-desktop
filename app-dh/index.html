@@ -4157,7 +4157,8 @@ function stSelHtml(){var p=stGet(STR.sel);if(!p)return '<div class=hint>Pilih ti
     '<button class=x style="width:auto;margin-top:4px" onclick="stDel(\''+id+'\')">Hapus titik ini</button></div>';}
 function stPanel(){var b=$('stBody');if(!b)return;var h='<h4>Struktur geologi (dip / dip azimuth)</h4>';
   h+='<div class=hint style="margin-top:-2px">Import CSV <code>No, X, Y, Z, Dip, Dip_Azimuth, Plunge, Trend, Keterangan</code> (Plunge / Trend = lineasi, opsional) (pemisah koma / titik koma / tab; Z kosong = dari topografi), atau tambah titik manual di 3D. Dipakai sebagai pertimbangan solid vein RBF (Geomodeller Vein &#9315;) dan ditampilkan di menu <b>Map</b> dengan simbol USGS. Satu basis data dengan flag struktur Geomodeller Vein &#9316; dan titik pick-up Map yang berkolom Dip / Dip_Azimuth.</div>';
-  h+='<div class="g2 f"><label class=btn-pri style="text-align:center;cursor:pointer">&#8679; Import CSV struktur<input type=file accept=".csv,.txt" style="display:none" onchange="stImport(this)"></label><button class="'+(STR.mode==='add3d'?'btn-pri':'')+'" onclick="stMode(\'add3d\')">'+(STR.mode==='add3d'?'&#9679; Klik objek di 3D&hellip; (Esc)':'+ Titik (klik di 3D)')+'</button></div>';
+  h+='<div class=hint>Import CSV struktur: baris <b>+ Tambah struktur&hellip;</b> &rsaquo; <b>Import CSV struktur&hellip;</b> di Project Tree (paling bawah node Struktur Geologi).</div>';
+  h+='<div class="g2 f"><button class="'+(STR.mode==='add3d'?'btn-pri':'')+'" onclick="stMode(\'add3d\')">'+(STR.mode==='add3d'?'&#9679; Klik objek di 3D&hellip; (Esc)':'+ Titik (klik di 3D)')+'</button></div>';
   h+='<div class="g2 f"><button onclick="stAddCenter()">+ Titik di tengah area</button><div class=g2><div><label>Dip</label><input type=number step=any value="'+STR.sd.dip+'" onchange="STR.sd.dip=+this.value"></div><div><label>Dip az</label><input type=number step=any value="'+STR.sd.az+'" onchange="STR.sd.az=+this.value"></div></div></div>';
   var cnt={};STR.P.forEach(function(p){cnt[p.fid]=(cnt[p.fid]||0)+1;});
   h+='<div class=gmlist><table class=pltb><tr><th></th><th>Sumber</th><th>Titik</th><th></th></tr>'+STR.F.map(function(f){return '<tr><td><input type=checkbox '+(f.on!==false?'checked':'')+' onchange="stFile(\''+f.id+'\').on=this.checked;stDirty()"></td><td>'+stE(f.name)+'</td><td>'+(cnt[f.id]||0)+'</td><td>'+((cnt[f.id]||f.kind==='csv')?'<button class=x onclick="stDelFile(\''+f.id+'\')" title="Hapus">&times;</button>':'')+'</td></tr>';}).join('')+'</table></div>';
@@ -6026,7 +6027,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
       kids:kids};}
   function fMapping(){var PF=ok(function(){return MAP.PF;},[]),FF=ok(function(){return MAP.F;},[]),KN={alt:'Alterasi',lith:'Litologi',str:'Struktur',oth:'Garis lain'};
     return{id:'mp',step:'4',t:'Peta (Mapping)',ic:'map',fold:1,tab:'Map',sub:'Pick-up',b:(PF.length?PF.length+' pick-up':'')+(PF.length&&FF.length?' · ':'')+(FF.length?FF.length+' fitur':''),hint:'Pemetaan lapangan: titik pick-up, digitasi boundary / garis struktur, titik struktur. Hasilnya terhubung ke Struktur Geologi & Geomodeller Vein',
-      kids:[{id:'mp.pf',t:'Pick-up survei / pemetaan',ic:'pts',tab:'Map',sub:'Pick-up',b:PF.length||'',add:{t:'Tambah titik pick-up (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mapPtImport(i);});}},
+      kids:[{id:'mp.pf',t:'Pick-up survei / pemetaan',ic:'pts',tab:'Map',sub:'Pick-up',b:PF.length||'',
           kids:PF.map(function(f){return{id:'mp.pf.'+f.id,t:f.name,ic:'table',tab:'Map',sub:'Pick-up',b:f.P.length,chk:!!f.on,onChk:function(v){mapPtSet(f.id,'on',v);},menu:function(){return[{t:'Zoom ke titik',fn:function(){mapZoom(f.id);}},{sep:1},{t:'Hapus file',danger:1,fn:function(){mapPtDel(f.id);}}];}};})},
         {id:'mp.dig',t:'Digitasi peta',ic:'digit',tab:'Map',sub:'Digitasi',b:FF.length||'',
           kids:FF.slice(0,300).map(function(f){return{id:'mp.f.'+f.id,t:f.name,ic:f.closed?'poly':'string',tab:'Map',sub:'Digitasi',b:KN[f.kind]||'',chk:f.vis!==false,onChk:function(v){mapSetF(f.id,'vis',v);},go:function(){MAP.sel=f.id;MAP.mode=null;try{mapPanel();mapDraw();}catch(e){}},
@@ -14670,7 +14671,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.46';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.47';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

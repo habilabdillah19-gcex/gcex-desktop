@@ -16,16 +16,16 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[2]; DATA = ROOT / "docs" / "tutorial-gcex" / "data"
 DASAR = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--dasar=")), "HEAD")
 HARAP = {"app/index.html": ["ref", "wf"],
-         "app-dh/index.html": ["sp.ref", "wf", "db", "db.plan", "mp.pf", "st", "st.flt", "gm"]}
+         "app-dh/index.html": ["sp.ref", "wf", "db", "db.plan", "st", "st.flt", "gm"]}
 # keputusan pemilik 8 Nov 2026 (BM 0.24.42 / DH 0.24.46): versi topo / pit / ortho / BM dan preset TETAP di panel,
 # TANPA baris + Tambah; import wireframe, data referensi dan "+ Kampanye baru" DIHAPUS dari panel.
-TANPA = {"app/index.html": ["dig.pst"], "app-dh/index.html": ["sp.topo", "sp.pit", "sp.ortho", "bm"]}
+TANPA = {"app/index.html": ["dig.pst"], "app-dh/index.html": ["sp.topo", "sp.pit", "sp.ortho", "bm", "mp.pf"]}  # pick-up CSV tetap di panel Peta (DH 0.24.47)
 JS_INFO = r"""(function(){PT.render(true);var L=PT.flatAll(PT.nodes||[]);
   var add=L.filter(function(n){return n.addRow;}).map(function(n){return n.id.replace(/\.\+$/,'');});
   var menuTambah=[];L.forEach(function(n){if(!n.menu||n.addRow)return;var M=[];try{M=n.menu()||[];}catch(e){}
     M.forEach(function(o){if(o&&o.t&&/^(\+ |Tambah (versi|kampanye|wireframe)|Plan baru|Kampanye baru|Import wireframe geologi|Import CSV struktur|Import CSV titik|Simpan pengaturan sekarang sebagai preset)/.test(o.t))menuTambah.push(n.id+': '+o.t);});});
   var x=[].slice.call(document.querySelectorAll('#ptree .ptr:not(.sel) .ptx'))[0],cs=x&&getComputedStyle(x);
-  var pin=[];[].forEach.call(document.querySelectorAll('input[type=file]'),function(i){var o=i.getAttribute('onchange')||'';if(/mdImport|mdPts|mdStr/.test(o)){var q=i.closest('section');pin.push(q?q.id:'(luar)');}});
+  var pin=[];[].forEach.call(document.querySelectorAll('input[type=file]'),function(i){var o=i.getAttribute('onchange')||'';if(/mdImport|mdPts|mdStr|stImport/.test(o)){var q=i.closest('section');pin.push(q?q.id:'(luar)');}});
   return {add:add,menuTambah:menuTambah,ptx:cs?[+cs.opacity,cs.visibility]:null,panelImport:pin,kpBaru:document.documentElement.outerHTML.indexOf('kpImpBaru()">')>=0};})()"""
 
 def jalan(html, nama):
