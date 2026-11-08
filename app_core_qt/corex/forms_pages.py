@@ -515,6 +515,17 @@ class SettingsPage(QWidget):
             self.cbSort.addItem(self.pg.cbSort.itemText(i), self.pg.cbSort.itemData(i))
         self.cbSort.currentIndexChanged.connect(lambda i: self.pg.cbSort.setCurrentIndex(i))
         v2.addWidget(self.cbSort)
+        v2.addWidget(QLabel("<b>Meringankan kerja AI</b>"))
+        self.cTrim = QCheckBox("Buang bagian bawah tabel yang kosong sebelum dibaca AI")
+        self.cTrim.setToolTip("Baris borang yang belum diisi (di bawah tulisan terakhir) tidak dikirim ke AI: lebih cepat & tulisan tampak lebih besar."
+                              "\nTinta dikenali dari warna pena (biru / ungu). Tanda tangan di bawah tabel tidak menghalangi.")
+        self.cTrim.toggled.connect(lambda on: SET.set("fmTrim", on))
+        v2.addWidget(self.cTrim)
+        self.cHdr = QCheckBox("Header ikut halaman lain dari PDF yang sama (AI baca tabel saja)")
+        self.cHdr.setToolTip("PDF berhalaman banyak biasanya satu shift: tanggal, shift, crew, lokasi sama. Header disalin dari halaman yang "
+                             "sudah terisi dan ditandai kuning; AI hanya membaca tabel -> lebih cepat.")
+        self.cHdr.toggled.connect(lambda on: SET.set("fmHdrPrev", on))
+        v2.addWidget(self.cHdr)
         n2 = QLabel("<b>Auto Detect</b>: jenis ditebak dari nama file (mis. DDR_…, Rom…, Channel…, RC_Log…, Progress…, Mapping…, nama "
                     "template kustom). Bila nama file tidak memberi petunjuk, AI menentukan jenisnya sebelum membaca (±10–30 detik tambahan).")
         n2.setObjectName("note")
@@ -574,6 +585,8 @@ class SettingsPage(QWidget):
             self.cbType.addItem(self.pg.cbNew.itemText(i), self.pg.cbNew.itemData(i))
         self.cbType.setCurrentIndex(self.pg.cbNew.currentIndex())
         self.cbType.blockSignals(False)
+        self.cTrim.setChecked(bool(SET.get("fmTrim", True)))
+        self.cHdr.setChecked(bool(SET.get("fmHdrPrev", True)))
         self.user.setText(f"Pengguna: <b>{_esc(self.pg.by() or '-')}</b> (dicatat di Riwayat & verifikasi)")
         self.user.setTextFormat(Qt.RichText)
         self.path.setText(f"Folder proyek: {self.pg.folder or '-'}<br>Data borang: {self.pg.rootp or '-'}")

@@ -3994,3 +3994,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Export: per plan (**Export CSV plan ini…**) atau **Export CSV semua plan…** (satu file, kolom Plan).
 - Proyek yang dibuat sebelum versi ini dibuka dengan satu plan bernama **Plan lama**.
 - Tutorial Modelling & Estimasi: bab baru **Plan bor harian**. Tombol Demo langkah *Plan bor* membuat **Plan demo**.
+
+## 131. DB-Ex 0.44.5 — AI membaca lebih sedikit
+
+- **Bagian bawah tabel yang kosong** (baris belum diisi) otomatis tidak dikirim ke AI: lebih cepat dan tulisan tampak lebih besar. Tanda tangan di bawah tabel tidak menghalangi.
+- **PDF berhalaman banyak**: header (tanggal, shift, crew, lokasi) disalin dari halaman yang sudah terisi (kuning — cocokkan); AI hanya membaca tabel. Baca halaman pertama dulu, lalu **Baca Semua dengan AI**.
+- Keduanya bisa dimatikan di **Pengaturan → Meringankan kerja AI**.
+- Di bawah hasil baca kini tampil kecepatan, pemakaian GPU, porsi gambar yang dibuang, dan apakah header disalin.

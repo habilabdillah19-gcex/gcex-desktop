@@ -1743,7 +1743,9 @@ class FormsPage(QWidget):
         if not p:
             return ""
         t = (f"<br>{p['tokens']} token jawaban" + (f" · {p['tok_s']:g} token/dtk" if p.get("tok_s") else "")
-             + f" · gambar {p['px']} px · konteks {p['num_ctx']}")
+             + f" · gambar {p['px']} px · konteks {p['num_ctx']}"
+             + (f" · bagian kosong dibuang {round(p['trim'] * 100)}%" if p.get("trim") else "")
+             + (" · header dari halaman lain PDF ini (kuning)" if p.get("hdr_prev") else ""))
         g = p.get("gpu")
         if g == 0:  # tanpa GPU NVIDIA / AMD yang didukung Ollama (mis. Intel Iris Xe): seluruhnya di CPU
             t += (f"<br><span style='color:{theme.C['half']}'><b>AI berjalan di CPU</b> (kartu grafis tidak dipakai Ollama). "
@@ -1792,7 +1794,8 @@ class FormsPage(QWidget):
         did, folder = self.ai_q.pop(0), self.folder
         self.ai_did, self.ai_busy, self.ai_t0 = did, True, time.time()
         body = {"folder": folder, "id": did, "host": ai.host.text().strip(), "model": ai.model(), "extra": ai.extra.toPlainText(),
-                "max_px": int(self.cbSpeed.currentData() or 1600), "by": self.by()}
+                "max_px": int(self.cbSpeed.currentData() or 1600), "by": self.by(),
+                "trim": bool(SET.get("fmTrim", True)), "hdr_prev": bool(SET.get("fmHdrPrev", True))}
         self.ai_clock.start()
         self._ai_buttons()
         self._relabel()

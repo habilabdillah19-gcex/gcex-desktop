@@ -210,3 +210,37 @@ def test_rc_kolom_terpotong_tabel_di_catatan(st):
     rs = [r["data"] for r in cf.rows(s, did)]
     assert [(r["sample_id"], r["from_m"], r["to_m"], r["lith"], r["alt"]) for r in rs][1] == ("AA_000070_Z9", "1", "2", "VLT", "IAR")
     assert "terpotong" in cf.ai_prompt("rc")
+
+
+def test_buang_bagian_kosong_dan_header_halaman_lain(st, tmp_path, monkeypatch):
+    """0.44.5: (1) bagian bawah tabel tanpa tinta dibuang (tanda tangan kecil di bawah tidak menghalangi);
+    (2) halaman PDF berikutnya: header disalin dari halaman yang sudah terisi, AI hanya membaca tabel. Data fiktif."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (1000, 1400), "white")
+    g = ImageDraw.Draw(im)
+    for y in range(100, 1300, 40):
+        g.line((50, y, 950, y), fill="black", width=2)  # garis tabel tercetak sampai bawah
+    for y in range(120, 560, 40):
+        g.text((100, y), "4028   :57   340", fill=(30, 40, 200))
+        g.line((300, y + 5, 520, y + 12), fill=(30, 40, 200), width=4)  # tulisan pena biru di 40 % atas
+    g.line((700, 1340, 800, 1350), fill=(30, 40, 200), width=3)  # tanda tangan kecil di bawah
+    out, cut = cf.trim_empty(im)
+    assert 0.35 < cut < 0.6 and 560 < out.height < 800
+    polos = Image.new("RGB", (800, 1000), "white")
+    assert cf.trim_empty(polos)[1] == 0.0
+    # header dari halaman lain PDF yang sama
+    s, tmp = st
+    pdf = tmp / "dua.pdf"
+    a = Image.new("RGB", (800, 1000), "white")
+    a.save(pdf, save_all=True, append_images=[Image.new("RGB", (800, 1000), "white")])
+    ids = [x["id"] for x in cf.add_file(s, str(pdf), "rom", "Rina")]
+    assert len(ids) == 2
+    cf.update_doc(s, ids[0], {"header": {"tanggal": "07-11-26", "shift": "II", "crew": "A / B", "lokasi": "ROM X"}}, "Rina")
+    calls = _fake(monkeypatch, {"r": ["1|T1|-|:57|340|Crusher|-|OX-LG|37|Baru|Direct"]})
+    out = cf.ai_read(s, ids[1], "http://x", "m")
+    assert "h" not in calls[0]["format"]["properties"] and "JANGAN baca header" in calls[0]["messages"][0]["content"]
+    d = cf.doc(s, ids[1])
+    assert d["header"]["lokasi"] == "ROM X" and "lokasi" in d["hdr_unc"] and out["perf"]["hdr_prev"]
+    calls = _fake(monkeypatch, {"h": ["", "", "", ""], "r": ["1|T1|-|:57|340|Crusher|-|OX-LG|37|Baru|Direct"]})
+    cf.ai_read(s, ids[1], "http://x", "m", hdr_prev=False)
+    assert "h" in calls[0]["format"]["properties"]

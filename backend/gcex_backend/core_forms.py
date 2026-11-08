@@ -1025,7 +1025,7 @@ def rom_fix(r: dict, h: dict) -> dict:
     return out
 
 
-def ai_schema_compact(ftype: str) -> dict:
+def ai_schema_compact(ftype: str, header: bool = True) -> dict:
     """Skema jawaban RINGKAS tetapi DIPAKSA Ollama (structured output): header & tiap baris berupa daftar nilai berurutan
     (tanpa nama kolom yang diulang di setiap baris). Model kecil (2b) tidak bisa lagi menulis penjelasan / format lain
     (galat 0.42.4-0.42.7: 'The user says…', 'TIME', 'From' masuk sebagai baris)."""
@@ -1039,6 +1039,9 @@ def ai_schema_compact(ftype: str) -> dict:
     line = {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(ai_rows(t))))}
     props = {"h": arr(len(t["header"])), "r": {"type": "array", "items": line}, "c": {"type": "string", "maxLength": 200}}
     req = ["h", "r"]
+    if not header:  # header diambil dari halaman lain PDF yang sama: AI cukup membaca tabel
+        props.pop("h")
+        req = ["r"]
     for tt in (t.get("tables") or {}).values():
         props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}}
         req.append(tt["ai"])
@@ -1113,7 +1116,7 @@ def _vocab_lines(vocab: Optional[dict], t: dict) -> list[str]:
     return ["Nilai yang biasa tertulis di proyek ini (pakai ejaan ini bila tulisan mirip): " + "; ".join(xs)] if xs else []
 
 
-def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[dict] = None) -> str:
+def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[dict] = None, header: bool = True) -> str:
     """Perintah baca borang dengan jawaban RINGKAS: satu baris teks per baris tabel, nilai dipisah '|'.
     Dibanding JSON (nama field diulang di setiap baris) jumlah token jawaban kira-kira 3-4x lebih sedikit, dan pada
     komputer tanpa GPU waktu baca terutama ditentukan oleh panjang jawaban."""
@@ -1123,7 +1126,7 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
     if mode == "teks":  # cadangan tanpa format Ollama: satu baris teks per baris tabel, nilai dipisah '|'
         lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
                  "Jawab HANYA dengan baris-baris berikut, tanpa penjelasan:",
-                 "H|" + "|".join(hk) + "   <- satu baris header",
+                 *(["H|" + "|".join(hk) + "   <- satu baris header"] if header else []),
                  "R|" + "|".join(rk) + "   <- satu baris per baris tabel yang terisi, urut dari atas"]
         for tt in (t.get("tables") or {}).values():
             lines.append(f"{tt['ai'].upper()}|" + "|".join(k for k, _l, _t in tt["rows"]) + f"   <- satu baris per baris {tt['name']}")
@@ -1135,7 +1138,8 @@ def ai_prompt(ftype: str, extra: str = "", mode: str = "json", vocab: Optional[d
         return "\n".join(lines)
     lines = [f"Anda petugas data entry geologi tambang. Baca formulir tulisan tangan pada gambar.\n{t['hint']}\n",
              "Jawab JSON ringkas, TANPA nama kolom.",
-             '"h": [' + ", ".join(hk) + "]   <- nilai header sesuai urutan itu",
+             *(['"h": [' + ", ".join(hk) + "]   <- nilai header sesuai urutan itu"] if header else
+               ["Header borang SUDAH diketahui: JANGAN baca header, baca tabel saja."]),
              '"r": ["' + "|".join(rk) + '", …]   <- SATU teks per baris tabel yang terisi, urut dari atas, nilai dipisah |']
     for tt in (t.get("tables") or {}).values():
         lines.append(f'"{tt["ai"]}": ["' + "|".join(k for k, _l, _t in tt["rows"]) + f'", …]   <- satu teks per baris {tt["name"]}, nilai dipisah |')
@@ -1363,7 +1367,60 @@ def crop_paper(im: Any) -> Any:
         return im
 
 
-def _image_b64(s: Store, d: dict, max_px: int) -> tuple[str, tuple[int, int]]:
+def trim_empty(im: Any) -> tuple[Any, float]:
+    """Buang bagian bawah tabel yang KOSONG (baris borang belum diisi) sebelum dikirim ke AI: gambar lebih kecil = lebih
+    cepat, dan tulisan tampak lebih besar. Tinta tulisan tangan dikenali dari warna pena biru / ungu (cetakan borang hitam);
+    bila tidak ada tinta berwarna, dipakai piksel gelap di luar garis tabel. Potong di awal celah kosong terakhir (>= 8 %
+    tinggi) yang di bawahnya hanya sisa kecil tinta (tanda tangan / catatan). Mengembalikan (gambar, porsi yang dibuang)."""
+    try:
+        import numpy as np
+        t = im.copy()
+        t.thumbnail((700, 700))
+        hsv = np.asarray(t.convert("HSV"), dtype=np.int16)
+        hue, sat, val = hsv[..., 0], hsv[..., 1], hsv[..., 2]
+        ink = (hue >= 135) & (hue <= 205) & (sat > 55) & (val < 215) & (val > 30)  # biru - ungu
+        H, W = ink.shape
+        # pena biru hanya bila tintanya tersebar di banyak baris (bukan blok warna tercetak di kepala kolom, mis. OX-SG ungu)
+        blue_rows = (ink.sum(axis=1) > max(2, 0.004 * W)).mean()
+        if ink.mean() < 0.0008 or blue_rows < 0.05:  # pena hitam: piksel gelap di luar garis tabel
+            dark = val < 110
+            dark[:, dark.mean(axis=0) > 0.30] = False  # garis tegak
+            rowf = dark.mean(axis=1)
+            line = rowf > 0.12  # garis datar (+ baris tetangganya, karena garis tebal / antialias)
+            line = line | np.roll(line, 1) | np.roll(line, -1)
+            dark[line, :] = False
+            ink = dark
+        cnt = ink.sum(axis=1).astype(float)
+        k_ = max(1, H // 120)  # rata-rata bergerak ~ setinggi tulisan
+        cnt = np.convolve(cnt, np.ones(2 * k_ + 1) / (2 * k_ + 1), mode="same")
+        # baris tabel yang hanya berisi nomor tercetak (1, 2, …) bertinta sedikit; baris yang ditulisi jauh lebih banyak
+        hi = np.percentile(cnt[cnt > 0], 90) if (cnt > 0).any() else 0
+        prof = cnt > max(2.0, 0.004 * W, 0.22 * hi)
+        total = int(ink.sum())
+        if total < 50 or not prof.any():
+            return im, 0.0
+        gap_min = max(4, int(0.08 * H))
+        y, n = 0, len(prof)
+        while y < n:
+            if not prof[y]:
+                z = y
+                while z < n and not prof[z]:
+                    z += 1
+                if z - y >= gap_min and y > 0.25 * H and int(ink[z:].sum()) < 0.15 * total:
+                    cut = min(H, y + int(0.03 * H))
+                    if cut < 0.85 * H:
+                        k = im.height / H
+                        return im.crop((0, 0, im.width, int(cut * k))), round(1 - cut / H, 2)
+                    return im, 0.0
+                y = z
+            else:
+                y += 1
+        return im, 0.0
+    except Exception:  # noqa: BLE001 - hanya penghematan; gagal -> gambar utuh
+        return im, 0.0
+
+
+def _image_b64(s: Store, d: dict, max_px: int, trim: bool = False) -> tuple[str, tuple[int, int]]:
     from PIL import Image
     with Image.open(s.scans / d["file"]) as im:
         im = im.convert("RGB")
@@ -1374,6 +1431,8 @@ def _image_b64(s: Store, d: dict, max_px: int) -> tuple[str, tuple[int, int]]:
             im = im.rotate(-int(d["rot"]), expand=True)  # rot searah jarum jam
         if not cr:
             im = crop_paper(im)
+        if trim:
+            im, d["_trim"] = trim_empty(im)
         k = max_px / max(im.size)
         if k < 1:
             im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
@@ -1457,7 +1516,21 @@ def _save_raw(s: Store, did: int, msg: dict) -> None:
         pass
 
 
-def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900) -> dict:
+def sibling_header(s: Store, d: dict) -> Optional[dict]:
+    """Header halaman lain dari FILE yang sama (PDF berhalaman banyak = satu shift / satu borang): dipakai bila sudah terisi
+    (>= 2 isian). Halaman terdekat sebelumnya diutamakan."""
+    if not d.get("src"):
+        return None
+    sib = [x for x in docs(s) if x["id"] != d["id"] and x["type"] == d["type"] and x.get("src") == d["src"]
+           and sum(1 for v in (x.get("header") or {}).values() if str(v or "").strip()) >= 2]
+    if not sib:
+        return None
+    sib.sort(key=lambda x: (x.get("page", 0) > d.get("page", 0), abs((x.get("page") or 0) - (d.get("page") or 0))))
+    return {k: v for k, v in sib[0]["header"].items() if str(v or "").strip()}
+
+
+def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", timeout: float = 900,
+            trim: bool = True, hdr_prev: bool = True) -> dict:
     d = doc(s, did)
     if d.get("auto") == 1:  # Auto Detect: jenis belum diketahui -> tanya AI dulu (jawaban satu kata, cepat)
         try:
@@ -1469,10 +1542,11 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
         d = doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
     vocab = site_vocab(s, d["type"])
-    prompt = ai_prompt(d["type"], extra, vocab=vocab)
-    img, size = _image_b64(s, d, max_px)
+    sib = sibling_header(s, d) if hdr_prev else None
+    prompt = ai_prompt(d["type"], extra, vocab=vocab, header=not sib)
+    img, size = _image_b64(s, d, max_px, trim)
     body = {"model": model, "messages": [{"role": "user", "content": prompt, "images": [img]}],
-            "stream": False, "keep_alive": "30m", "format": ai_schema_compact(d["type"]),
+            "stream": False, "keep_alive": "30m", "format": ai_schema_compact(d["type"], header=not sib),
             # num_predict membatasi jawaban: model kecil kadang mengulang baris tanpa henti sampai batas waktu habis (borang 'gagal')
             "options": {"temperature": 0, "num_ctx": ctx_for(size, prompt), "num_predict": N_PREDICT, "repeat_penalty": 1.05}}
     if _can_think(host, model):
@@ -1497,7 +1571,7 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
             # content kosong bila 'format' dipakai): ulangi SEKALI tanpa format, perintah baris teks H| / R|.
             why = _why_empty(j)
             body2 = {k: v for k, v in body.items() if k != "format"}
-            body2["messages"] = [dict(body["messages"][0], content=ai_prompt(d["type"], extra, "teks", vocab=vocab))]
+            body2["messages"] = [dict(body["messages"][0], content=ai_prompt(d["type"], extra, "teks", vocab=vocab, header=not sib))]
             j = core_io._http(host + "/api/chat", body2, timeout=timeout)
             if j.get("error"):
                 raise RuntimeError("Ollama: " + str(j["error"]))
@@ -1517,11 +1591,13 @@ def ai_read(s: Store, did: int, host: str, model: str, extra: str = "", max_px: 
         with s.lock, s.conn() as c:
             c.execute("UPDATE docs SET status='error', error=? WHERE id=?", (str(e)[:500], did))
         raise
+    if sib:  # header dari halaman lain PDF yang sama (kuning: cocokkan)
+        res["header"] = {**sib, "ragu": list(sib)}
     out = apply_ai(s, did, res, model, time.time() - t0, by)
     ev = j.get("eval_count") or 0
     out["perf"] = {"gpu": gpu_share(host, model), "secs": round(time.time() - t0, 1), "tokens": ev,
                    "tok_s": round(ev / (j["eval_duration"] / 1e9), 1) if j.get("eval_duration") else None,
-                   "num_ctx": body["options"]["num_ctx"], "px": max(size)}
+                   "num_ctx": body["options"]["num_ctx"], "px": max(size), "trim": d.get("_trim") or 0.0, "hdr_prev": bool(sib)}
     return out
 
 
@@ -2719,6 +2795,8 @@ class AiBody(FBody):
     model: str
     extra: str = ""
     max_px: int = 1600
+    trim: bool = True
+    hdr_prev: bool = True
 
 
 class ExpBody(FBody):
@@ -2861,8 +2939,8 @@ def api_detect(b: DetBody) -> dict:
 @router.post("/ai")
 def api_ai(b: AiBody) -> dict:
     s = store(b.folder)
-    ai_read(s, b.id, b.host, b.model, b.extra, b.max_px, b.by)
-    return {"ok": True, **_full(s, b.id)}
+    r = ai_read(s, b.id, b.host, b.model, b.extra, b.max_px, b.by, trim=b.trim, hdr_prev=b.hdr_prev)
+    return {"ok": True, **_full(s, b.id), "perf": r.get("perf")}
 
 
 @router.post("/export/check")
