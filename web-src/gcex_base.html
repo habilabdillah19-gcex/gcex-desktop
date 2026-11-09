@@ -432,7 +432,8 @@ body.sgdrag #stage{pointer-events:none}
 </section>
 <section id='pSlice' hidden>
 <h3>Sayatan / Slicing</h3>
-<div class='f'><label>Arah potongan</label><select id='sMode' onchange='modeChanged()'><option value='H'>Horizontal (plan per elevasi)</option><option value='P'>Garis manual (vertikal / miring)</option></select></div>
+<div class='f'><label>Arah potongan</label><select id='sMode' onchange='modeChanged()'><option value='S'>Slicer (dip &amp; dip azimuth bebas)</option><option value='H'>Horizontal (plan per elevasi)</option><option value='P'>Garis manual (vertikal / miring)</option></select></div>
+<div hidden id='boxS'><input type='number' id='slDip' value='0'><input type='number' id='slAz' value='0'><input type='number' id='slX'><input type='number' id='slY'><input type='number' id='slZ'><input type='number' id='slStep'></div>
 <div id='boxP' style='display:none'>
 <button class='btn-pri' style='width:100%;height:34px;margin-bottom:6px' onclick='drawOpen()'><svg viewBox='0 0 24 24' width='15' height='15' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' style='vertical-align:-3px;margin-right:6px'><path d='M4 20L20 4'/><circle cx='4' cy='20' r='2'/><circle cx='20' cy='4' r='2'/></svg>Gambar garis sayatan</button>
 <div id='lineInfo' class='hint'>Belum ada garis. Klik tombol di atas, lalu tarik garis di peta.</div>
@@ -546,7 +547,7 @@ body.sgdrag #stage{pointer-events:none}
 <div class='f' style='margin-top:8px'><label>Opasitas topografi</label><input type='range' id='ovOp' min='0.1' max='1' step='0.05' value='0.5' oninput='dUpdate()'></div>
 <h4>Orthofoto</h4>
 <label class='sw'><input type='checkbox' id='ovOrtho' onchange='updatePlot()'>Orthofoto (GeoTIFF)</label>
-<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Mode</div><select id='orMode' onchange='updatePlot()'><option value='drape'>Drape ke topo</option><option value='flat'>Bidang datar</option></select></div><div><div class='lab'>Resolusi</div><select id='orRes' onchange='updatePlot()'><option value='4'>4 m (ringan)</option><option value='2' selected>2 m</option><option value='1'>1 m (detail)</option></select></div></div>
+<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Mode</div><select id='orMode' onchange='updatePlot()'><option value='drape'>Drape ke topo</option><option value='flat'>Bidang datar</option></select></div><div><div class='lab'>Resolusi</div><select id='orRes' onchange='updatePlot()'><option value='0' selected>Otomatis (setajam anggaran kinerja)</option><option value='4'>4 m (ringan)</option><option value='2'>2 m</option><option value='1'>1 m</option><option value='0.5'>0,5 m</option><option value='0.25'>0,25 m</option></select></div></div>
 <div class='f'><label>Opasitas orthofoto</label><input type='range' id='orOp' min='0.2' max='1' step='0.05' value='1' oninput='dUpdate()'></div>
 <div class='hint' id='orInfo'></div>
 </section>
@@ -820,6 +821,11 @@ function secGeom(){var m=$('sMode').value,zc=(G.z0+G.z1)/2;
   if(m==='H')return{m:'H',az:0,dip:0,n:[0,0,1],u:[0,1,0],w:[1,0,0],c:[0,0,0],seg:null};
   if(m==='X')return{m:'X',az:0,dip:90,n:[1,0,0],u:[0,1,0],w:[0,0,-1],c:[-offX,0,0],seg:null};
   if(m==='Y')return{m:'Y',az:90,dip:90,n:[0,1,0],u:[1,0,0],w:[0,0,-1],c:[0,-offY,0],seg:null};
+  if(m==='S'){/* Slicer (BM 0.24.50, pola dari Drill Hole 0.24.56): bidang bebas dari dip + dip azimuth melalui pusat slX/slY/slZ (koordinat asli). Dip < 0.5 = plan (geometri H, pos = elevasi). */
+    var sdip=Math.min(90,Math.max(0,parseFloat($('slDip').value)||0)),saz=(((parseFloat($('slAz').value)||0)%360)+360)%360,sx=parseFloat($('slX').value),sy=parseFloat($('slY').value),sz=parseFloat($('slZ').value);
+    if(sdip<0.5)return{m:'H',az:0,dip:0,n:[0,0,1],u:[0,1,0],w:[1,0,0],c:[0,0,0],seg:null,slicer:1};
+    var sa0=(saz-90)*Math.PI/180,sd0=sdip*Math.PI/180,sA=Math.sin(sa0),cA=Math.cos(sa0),sD=Math.sin(sd0),cD=Math.cos(sd0);
+    return{m:'S',az:saz-90,dipAz:saz,dip:sdip,u:[sA,cA,0],w:[cA*cD,-sA*cD,-sD],n:[cA*sD,-sA*sD,cD],c:[isFinite(sx)?sx-offX:CX,isFinite(sy)?sy-offY:CY,isFinite(sz)?sz:zc],seg:null,slicer:1};}
   var az=0,cx=CX,cy=CY,cz=zc,seg=null,dip=Math.min(90,Math.max(0,+$('dipS').value));
   if(m==='A'){az=+$('az').value;var hc=$('hC').value;if(hc&&holeData[hc]){cx=holeData[hc].x;cy=holeData[hc].y;cz=holeData[hc].z;}}
   else{var e1=parseFloat($('p1e').value)-offX,n1=parseFloat($('p1n').value)-offY,e2=parseFloat($('p2e').value)-offX,n2=parseFloat($('p2n').value)-offY;
@@ -831,7 +837,7 @@ function updRange(reset){var g=secGeom(),e=$('pos'),lo,hi;
   if(g.m==='H'){lo=zMin;hi=zMax;}
   else{lo=1e18;hi=-1e18;[G.x0,G.x1].forEach(function(x){[G.y0,G.y1].forEach(function(y){[G.z0,G.z1].forEach(function(z){var d=sd(g.n,g.c,{x:x,y:y,z:z});if(d<lo)lo=d;if(d>hi)hi=d;});});});lo=Math.floor(lo)-10;hi=Math.ceil(hi)+10;}
   e.min=lo;e.max=hi;
-  if(reset)e.value=(g.m==='A'||g.m==='P')?0:Math.round((lo+hi)/2);
+  if(reset)e.value=(g.m==='A'||g.m==='P'||g.m==='S')?0:(g.m==='H'&&g.slicer&&isFinite(parseFloat($('slZ').value))?Math.min(hi,Math.max(lo,parseFloat($('slZ').value))):Math.round((lo+hi)/2));
   else e.value=Math.min(hi,Math.max(lo,+e.value));}
 function modeChanged(){var m=$('sMode').value;$('boxA').style.display=m==='A'?'block':'none';$('boxP').style.display=m==='P'?'block':'none';$('boxD').style.display=(m==='A'||m==='P')?'block':'none';updRange(true);updatePlot();camFollowHook();lineModeHook();}
 function azChanged(fromN){var a=fromN?normAz(parseFloat($('azN').value)||0):+$('az').value;$('az').value=a;$('azN').value=a;updRange(false);dUpdate();camFollowHook();}
@@ -843,7 +849,7 @@ function centerPick(){updRange(true);updatePlot();}
 function holePick(k){var id=$('h'+k).value,c=null;collars.forEach(function(r){if(r[0]===id)c=r;});
   if(c){$('p'+k+'e').value=c[1];$('p'+k+'n').value=c[2];}ptChanged();}
 function ptChanged(){updRange(true);updatePlot();lineInfoUpd();}
-function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');
+function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');if($('sMode').value==='S'){var st=parseFloat($('slStep').value);if(st>0)t=st;}
   e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));updatePlot();}
 function viewSection(){var g=secGeom();
   if(g.m==='H'){setCam(0,-0.001,2.5);return;}
@@ -974,9 +980,9 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var traces=[],op=+$('ovOp').value;
   /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
   var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#b9a58c'),ovPc=(($('ovPitCol')||{}).value||'#d08a4e'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc;
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop,function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
-  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
+  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.pitC:OV.pitF,{opacity:Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
   var pcs=[[0,'#888888'],[1,'#888888']];
@@ -1043,8 +1049,8 @@ function PERF_REL(){var e=$('perfRel');return !!(e&&e.checked);}
 document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.type==='range'&&PERF_REL())updatePlot();},true);
 function perfApply(){var p=$('perfPreset').value,set=function(id,v){var e=$(id);if(e)e.checked=v;};
   if(p==='eco'){set('lightMode',true);set('hoverOn',false);set('showLabel',false);set('perfRel',true);set('sliceClip',true);set('gAuto',false);$('orRes').value='4';$('asMax').value=300;$('bmDisp').value='pt';$('bmMax').value=15000;}
-  else if(p==='bal'){set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='2';$('asMax').value=1500;$('bmDisp').value='cube';$('bmMax').value=25000;}
-  else{set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='1';$('asMax').value=4000;$('bmDisp').value='cube';$('bmMax').value=60000;}
+  else if(p==='bal'){set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='0';$('asMax').value=1500;$('bmDisp').value='cube';$('bmMax').value=25000;}
+  else{set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='0';$('asMax').value=4000;$('bmDisp').value='cube';$('bmMax').value=60000;}
   if(window.ORT)ORT.cache={};updatePlot();}
 function p2fn(g){if(g.m==='H')return function(x,y,z){return[x+offX,y+offY];};
   if(g.m==='X')return function(x,y,z){return[y+offY,z];};
@@ -1641,7 +1647,8 @@ function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
   if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}
   if(x1<=x0||y1<=y0)return null;
-  var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>300000){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}
+  if(!res){res=(window.HR&&HR.resFor)?HR.resFor(x0,x1,y0,y1,(HR.anggaran?HR.anggaran():HR.budget)):1;}/* Otomatis: sehalus anggaran titik profil Kinerja, tidak lebih halus dari piksel ortho (pemilik 10 Nov 2026: ortho harus tajam) */
+  var _bud=(window.HR&&HR.anggaran)?HR.anggaran():300000;if(light)_bud=Math.min(_bud,300000);var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>_bud){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}/* batas titik ortho ikut profil Kinerja (HR.anggaran) */
   var flatZ=Math.ceil(G.z1)+5,X=[],Y=[],Z=[],C=[],id=new Int32Array(nx*ny),n=0,zmin=1e18,zmax=-1e18,i,j;
   for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:topoZ(x,y),c=(z===null)?null:orthoRGB(x,y);
     if(!c){id[j*nx+i]=-1;continue;}id[j*nx+i]=n++;z+=0.3;X.push(x);Y.push(y);Z.push(z);C.push('rgb('+c[0]+','+c[1]+','+c[2]+')');if(z<zmin)zmin=z;if(z>zmax)zmax=z;}
@@ -2983,6 +2990,8 @@ function dmSteps(){var S=[],m=window.BX&&BX.m,hasTopo=!$('ovTopoS').disabled,has
   S.push({s:'Sayatan',t:'Penampang vertikal melintang ore',d:'Garis sayatan manual dibuat melintang tubuh ore (strike '+K.strike+'°). Profil topografi dan desain pit tampil di penampang bersama blok model.',el:'[onclick^=drawOpen]',dur:10,
     run:function(A){A(0.5,function(){dmSet('sMode','P');});A(1.5,function(){if(window.DRW&&DRW.on)drawClose();$('p1e').value=dmF(K.line[0]);$('p1n').value=dmF(K.line[1]);$('p2e').value=dmF(K.line[2]);$('p2n').value=dmF(K.line[3]);$('thick').value=3;$('pos').value=0;ptChanged();setDip(90);dmPoint('[onclick^=drawOpen]',false);});
       A(3,function(){if(!VIEW2D)toggle2D();else updatePlot();});}});
+  S.push({s:'Sayatan',t:'Slicer: potong dari arah mana saja',d:'Satu tombol Slicer di bilah atas membuka popup: dip, dip azimuth, lebar slab, langkah, dan pusat bidang (E, N, RL) \u2014 memotong block model dari arah mana saja tanpa menggambar garis. Contoh: dip 60\u00b0 ke azimuth '+Math.round((K.strike+90)%360)+'\u00b0 (tegak lurus strike), lalu Maju satu langkah.',el:'secMenu',dur:11,
+    run:function(A){A(0,function(){if(VIEW2D)toggle2D();if(window.SLICER)SLICER.open();});A(1.5,function(){dmSet('sliceClip',true);dmSet('showPlane',true);});A(2.5,function(){if(window.SLICER)SLICER.set(60,(K.strike+90)%360);});A(4.5,function(){setTimeout(viewSection,0);});A(6.5,function(){stepPos(1);});A(8.5,function(){stepPos(-1);});A(10.2,function(){if(window.SLICER){SLICER.set(0,null);SLICER.close();}});}});
   /* --- Dig block --- */
   S.push({s:'Dig block',t:'Flitch '+lyFmt(K.top)+' – '+lyFmt(K.top-1.5),d:'Satu dig block = satu flitch setinggi 1,5 m. Isi RL atas; RL bawah terisi otomatis. Terapkan flitch membuka Penampang 2D plan pada flitch tersebut.',el:'#dbBody input',dur:10,
     run:function(A){A(0,function(){if(VIEW2D)toggle2D();BX.ui.fVal='';BX.ui.fAttr='';BX.sc={};uiTab('BM');dbPanel();});A(1.2,function(){var L=lyU();L.top=K.top;L.bot='';dbPanel();dmPoint('#dbBody input',true);});

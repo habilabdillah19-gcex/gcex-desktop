@@ -79,6 +79,11 @@ with sync_playwright() as pw:
     ev("BX.ui.fAttr='AU';BX.ui.fOp='ge';BX.ui.fVal='0.19';BX.sc={};BX.mc=null;updatePlot();setCam(1.3,-1.5,0.8)"); pg.wait_for_timeout(2500); shot('bm_3d')
     shot('header', {'x': 0, 'y': 0, 'width': 1600, 'height': 40})
     menu_shot('bm', 'menu_bm', ['bm']); menu_shot('sp', 'menu_spasial', ['sp'])
+    # Slicer (BM 0.24.50): popup dip 60 / az tegak lurus strike, potong data
+    ev("$('sliceClip').checked=true;$('showPlane').checked=true;if(window.SLICER){SLICER.set(60,45);SLICER.open();}"); pg.wait_for_timeout(1500)
+    rs = ev("(function(){var m=document.getElementById('secMenu'),b=m?m.getBoundingClientRect():null;return b?[b.left,b.top,b.width,b.height]:null;})()")
+    if rs: shot('slicer_popup', {'x': max(0, int(rs[0] - 320)), 'y': max(0, int(rs[1] - 10)), 'width': int(rs[2] + 340), 'height': int(min(880, rs[3] + 20))})
+    ev("if(window.SLICER){SLICER.close();SLICER.set(0,null);}$('sliceClip').checked=false;$('showPlane').checked=false;updatePlot()"); pg.wait_for_timeout(800)
     # kotak Kinerja & grafis di panel Tampilan & performa (BM 0.24.47 / DH 0.24.54)
     ev("PT.select('set.v');if(window.KIN&&KIN.gambar)KIN.gambar();var k=document.getElementById('kinBox');if(k)k.scrollIntoView({block:'center'})"); pg.wait_for_timeout(700)
     rk = ev("(function(){var k=document.getElementById('kinBox'),b=k?k.getBoundingClientRect():null;return b?[b.left,b.top,b.width,b.height]:null;})()")

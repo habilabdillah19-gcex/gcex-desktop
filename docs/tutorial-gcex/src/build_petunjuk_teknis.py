@@ -646,6 +646,19 @@ B.append('<p><b>Block Model besar</b>: <code>bxTraces</code> memakai <b>LOD</b> 
          'overlap dibuang (<code>out.length=_ob</code>); <code>SA.readLinesInto</code> tidak lagi memanggil <code>ab</code> per titik (mengembalikan x0..z1; <code>bigline_patch</code> memberi '
          '<code>segs.forEach</code> tiruan dua pojok). <code>SA.reAnchor(m)</code> (BM): jangkar proyek tersimpan &gt; 100 km dari batas block model dan tanpa collar &rarr; '
          '<code>D.anch</code> = batas model, titik topo / pit &gt; 50 km dibuang, simpan proyek + work, <code>location.reload()</code>.</p>')
+B.append('<h3>Resolusi permukaan &amp; ortho, penyamaan BM &harr; DH (BM 0.24.50 / DH 0.24.57)</h3>')
+B.append('<p><b>TIN penuh</b> (<code>web-src/tinhr.js</code> + <code>delaunator.min.js</code>, ISC): permukaan topo &amp; pit dibangun SEKALI per sumber titik dari seluruh titik '
+         '(cap 400 rb; lebih dari itu satu titik per sel), segitiga sliver di tepi (sisi &gt; 8&times; median) dibuang, lalu trace memakai <code>i/j/k</code> tetap &mdash; Plotly '
+         'tidak men-triangulasi lagi per zoom, glskip bisa melewatinya. Dulu: mesh tanpa indeks dari 15 rb titik terdesimasi (survei 33 rb titik tampil separuh). '
+         'Cadangan otomatis ke cara lama bila Delaunator tidak ada. <code>TIN.info()</code> untuk diagnosis.</p>')
+B.append('<p><b>Ortho</b>: Resolusi bawaan <b>Otomatis</b> (nilai 0) = <code>HR.resFor</code> dengan anggaran menurut profil Kinerja (<code>HR.anggaran()</code>: Hemat 300 rb, '
+         'Seimbang 800 rb, Penuh 1,5 jt titik; batas <code>nx*ny</code> di <code>orthoTrace</code> ikut), tidak lebih halus dari piksel ortho; dulu bawaan 2 m. '
+         '<b>Zoom kamera 3D</b> kini dipakai untuk memperkirakan extent tampilan (<code>HR.fromCamera</code>: pusat kamera &rarr; koordinat data, lebar &prop; jarak mata / 2,165, margin 1,8&times;) '
+         'karena rentang sumbu tetap tidak lagi berubah saat zoom; <code>HR.attach</code> memasang pada <code>#plotDiv</code>. Zoom masuk = area kecil = resolusi lebih halus pada anggaran sama.</p>')
+B.append('<p><b>Penyamaan BM &harr; DH</b>: Drill Hole kini memakai LOD sel untuk block model &gt; 120 rb blok (dulu sampel titik), <code>SA.reAnchor</code> dan pengecualian file spasial '
+         'tidak-overlap juga ada di DH; Block Model mendapat <b>Slicer</b> (<code>sec_bm.js</code>, mode <code>sMode=S</code> di <code>secGeom</code>, langkah Demo <i>Slicer</i>). '
+         'Reporting Block Model BM (<code>rpbm.js</code>) adalah port langsung dari Reporting BM Drill Hole: bagian, filter, constraint dan hasilnya sama; perbedaan hanya label '
+         '(BM: tinggi / RL acuan flitch &amp; tombol = flitch aktif; DH: Densitas, Unsur divalidasi).</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

@@ -1171,6 +1171,7 @@ ch('Mengganti topografi & block model (Data Spasial)', dta('<code>data/SIM_topo_
    'Klik tombol &#8943; node <b>Topografi</b> &rarr; <b>Tambah versi topografi dari file&hellip;</b> dan pilih <code>SIM_topo_xyz_nov.csv</code> (topografi bulan berikutnya: area pit turun hingga 6 m).',
    f"Versi baru langsung aktif. {clean(N.get('spMsg',''))}",
    'Permukaan topografi dan desain pit di 3D digambar dengan <b>satu warna seragam</b> (bawaan). Untuk gradasi menurut elevasi atau mengganti warnanya, buka <b>Pengaturan tampilan &rsaquo; Overlay</b> &rarr; <b>Warna permukaan topo &amp; pit</b>.',
+   'Permukaan digambar dari <b>seluruh titik survei</b> (TIN penuh, lekuk kecil tetap tampak) dan orthofoto digambar <b>setajam anggaran profil Kinerja</b> (Resolusi = Otomatis; makin dekat zoom, makin halus). Bila tampilan terasa berat, turunkan profil Kinerja ke Hemat.',
    'Centang <b>Banding</b> pada versi lama untuk menampilkannya sebagai titik / garis putus-putus ([[data_spasial]]). Klik tombol bulat <b>Aktif</b> untuk kembali ke versi lama kapan saja.',
    'Block model GC baru: <b>+ Tambah versi block model</b> (jendela Import BM). Di proyek folder jawab <b>OK</b> saat ditawari menyalin file ke folder proyek.')
  + fig('data_spasial', 'Menu Data Spasial: dua versi topografi; versi lama ditampilkan sebagai pembanding di 3D.')

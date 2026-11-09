@@ -35,7 +35,7 @@ var HR = window.HR = {
   on: true,
   ext: null,          /* {x0,x1,y0,y1} koordinat LOKAL yang sedang terlihat (null = belum tahu) */
   extW: null,         /* idem dalam koordinat DUNIA (Easting/Northing), untuk peta 2D */
-  budget: 300000,     /* anggaran titik mesh ortho */
+  budget: 300000,     /* anggaran titik mesh ortho (dasar; dinaikkan menurut profil Kinerja lewat HR.anggaran()) */
   tbudget: 15000,     /* anggaran titik mesh topografi */
   mapPx: 4096,        /* batas KERAS sisi gambar ortho di Peta 2D */
   ver: 0              /* naik setiap tampilan berubah -> cache ikut berganti */
@@ -93,7 +93,11 @@ HR.rgb = function (xl, yl, res) {
 };
 
 /* resolusi mesh ortho dari luas tampilan + anggaran titik */
+/* anggaran titik ortho menurut profil Kinerja: Hemat 300 rb, Seimbang 800 rb, Penuh 1,5 jt (permintaan pemilik 10 Nov 2026:
+   ortho harus tajam). Titik dibangun sekali per tampilan (cache), GPU modern menangani 1,5 jt vertex dengan mudah. */
+HR.anggaran = function () { var p = document.getElementById('perfPreset'); p = p ? p.value : 'bal'; return p === 'full' ? 1500000 : p === 'eco' ? 300000 : 800000; };
 HR.resFor = function (x0, x1, y0, y1, budget) {
+  if (budget === HR.budget) budget = HR.anggaran();
   var w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), n = Math.max(1000, budget || HR.budget);
   var r = Math.sqrt(w * h / n);
   var O = window.ORT, mn = (O && O.m && O.m.dx) ? O.m.dx : 0.05;   /* tidak lebih halus dari piksel asli */
@@ -273,15 +277,31 @@ HR.mapImage = function () {
       ev['scene.aspectmode'] === 'auto' || ev.autosize)) { if (HR.ext) { HR.ext = null; HR.extW = null; HR.ver++; } }
     if (HR.ver !== v) bump();
   };
+  /* 3D: zoom kamera TIDAK mengubah rentang sumbu (rentang kini tetap), jadi extent tampilan diperkirakan dari kamera:
+     pusat pandangan = camera.center (koordinat ternormalisasi -> data), lebar tampilan ~ jarak mata-pusat relatif terhadap
+     jarak bawaan (2,165 = |(1.25,1.25,1.25)|). Margin 1,8x supaya tepi mesh tidak pernah terlihat saat digeser sedikit;
+     penyegaran berikutnya (260 ms sesudah kamera berhenti) merapikan lagi. Hasil: zoom masuk -> area kecil -> resolusi
+     ortho / topo jauh lebih halus pada anggaran titik yang sama (permintaan pemilik 10 Nov 2026). */
+  HR.fromCamera = function (gd, cam) {
+    try {
+      var sc = gd && gd._fullLayout && gd._fullLayout.scene; if (!sc || !cam || !cam.eye) return false;
+      var c = cam.center || { x: 0, y: 0, z: 0 }, e = cam.eye, d = Math.sqrt((e.x - c.x) * (e.x - c.x) + (e.y - c.y) * (e.y - c.y) + (e.z - c.z) * (e.z - c.z)) / 2.165;
+      var rx = sc.xaxis.range, ry = sc.yaxis.range, ar = sc.aspectratio || { x: 1, y: 1 }, W = rx[1] - rx[0], Hh = ry[1] - ry[0];
+      var cx = (rx[0] + rx[1]) / 2 + c.x * W / (2 * (ar.x || 1)), cy = (ry[0] + ry[1]) / 2 + c.y * Hh / (2 * (ar.y || 1));
+      var f = Math.min(1, Math.max(0.03, d * 0.9)) * 1.8, hw = W * f / 2, hh = Hh * f / 2;
+      if (f >= 1.8) { if (HR.ext) { HR.ext = null; HR.extW = null; HR.ver++; } return true; }
+      HR.setExt(cx - hw, cx + hw, cy - hh, cy + hh, false); return true;
+    } catch (err) { return false; }
+  };
   HR.attach = function (gd, world) {
     if (!gd || gd._hrOn || !gd.on) return;
     gd._hrOn = 1;
-    try { gd.on('plotly_relayout', function (ev) { HR.fromRelayout(ev, world); }); } catch (e) { }
+    try { gd.on('plotly_relayout', function (ev) { var v = HR.ver; if (ev && ev['scene.camera']) { HR.fromCamera(gd, ev['scene.camera']); if (HR.ver !== v) bump(); } HR.fromRelayout(ev, world); }); } catch (e) { }
   };
   /* pasang ke grafik utama & peta begitu ada */
   var t = setInterval(function () {
     try {
-      var a = document.getElementById('plot') || document.getElementById('graph') || document.querySelector('.js-plotly-plot');
+      var a = document.getElementById('plotDiv') || document.getElementById('plot') || document.getElementById('graph') || document.querySelector('.js-plotly-plot');
       if (a) HR.attach(a, false);
       var b = window.mapGd && mapGd(); if (b) HR.attach(b, true);
     } catch (e) { }

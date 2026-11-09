@@ -549,7 +549,8 @@ tr.elmet td{font-size:11px;color:var(--mu);font-style:italic}
 </section>
 <section id='pSlice' hidden>
 <h3>Sayatan / Slicing</h3>
-<div class='f'><label>Arah potongan</label><select id='sMode' onchange='modeChanged()'><option value='H'>Horizontal (plan per elevasi)</option><option value='P'>Garis manual (vertikal / miring)</option></select></div>
+<div class='f'><label>Arah potongan</label><select id='sMode' onchange='modeChanged()'><option value='S'>Slicer (dip &amp; dip azimuth bebas)</option><option value='H'>Horizontal (plan per elevasi)</option><option value='P'>Garis manual (vertikal / miring)</option></select></div>
+<div hidden id='boxS'><input type='number' id='slDip' value='0'><input type='number' id='slAz' value='0'><input type='number' id='slX'><input type='number' id='slY'><input type='number' id='slZ'><input type='number' id='slStep'></div>
 <div id='boxP' style='display:none'>
 <button class='btn-pri' style='width:100%;height:34px;margin-bottom:6px' onclick='drawOpen()'><svg viewBox='0 0 24 24' width='15' height='15' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' style='vertical-align:-3px;margin-right:6px'><path d='M4 20L20 4'/><circle cx='4' cy='20' r='2'/><circle cx='20' cy='4' r='2'/></svg>Gambar garis sayatan</button>
 <div id='lineInfo' class='hint'>Belum ada garis. Klik tombol di atas, lalu tarik garis di peta.</div>
@@ -664,7 +665,7 @@ tr.elmet td{font-size:11px;color:var(--mu);font-style:italic}
 <div class='f' style='margin-top:8px'><label>Opasitas topografi</label><input type='range' id='ovOp' min='0.1' max='1' step='0.05' value='0.5' oninput='dUpdate()'></div>
 <h4>Orthofoto</h4>
 <label class='sw'><input type='checkbox' id='ovOrtho' onchange='updatePlot()'>Orthofoto (GeoTIFF)</label>
-<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Mode</div><select id='orMode' onchange='updatePlot()'><option value='base' selected>Latar paling bawah (lepas elevasi)</option><option value='drape'>Drape ke topo</option><option value='flat'>Bidang datar (di atas data)</option></select></div><div><div class='lab'>Resolusi</div><select id='orRes' onchange='updatePlot()'><option value='4'>4 m (ringan)</option><option value='2' selected>2 m</option><option value='1'>1 m (detail)</option></select></div></div>
+<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Mode</div><select id='orMode' onchange='updatePlot()'><option value='base' selected>Latar paling bawah (lepas elevasi)</option><option value='drape'>Drape ke topo</option><option value='flat'>Bidang datar (di atas data)</option></select></div><div><div class='lab'>Resolusi</div><select id='orRes' onchange='updatePlot()'><option value='0' selected>Otomatis (setajam anggaran kinerja)</option><option value='4'>4 m (ringan)</option><option value='2'>2 m</option><option value='1'>1 m</option><option value='0.5'>0,5 m</option><option value='0.25'>0,25 m</option></select></div></div>
 <div class='f'><label>Opasitas orthofoto</label><input type='range' id='orOp' min='0.2' max='1' step='0.05' value='1' oninput='dUpdate()'></div>
 <div class='hint' id='orInfo'></div>
 </section>
@@ -938,6 +939,11 @@ function secGeom(){var m=$('sMode').value,zc=(G.z0+G.z1)/2;
   if(m==='H')return{m:'H',az:0,dip:0,n:[0,0,1],u:[0,1,0],w:[1,0,0],c:[0,0,0],seg:null};
   if(m==='X')return{m:'X',az:0,dip:90,n:[1,0,0],u:[0,1,0],w:[0,0,-1],c:[-offX,0,0],seg:null};
   if(m==='Y')return{m:'Y',az:90,dip:90,n:[0,1,0],u:[1,0,0],w:[0,0,-1],c:[0,-offY,0],seg:null};
+  if(m==='S'){/* Slicer (BM 0.24.50, pola dari Drill Hole 0.24.56): bidang bebas dari dip + dip azimuth melalui pusat slX/slY/slZ (koordinat asli). Dip < 0.5 = plan (geometri H, pos = elevasi). */
+    var sdip=Math.min(90,Math.max(0,parseFloat($('slDip').value)||0)),saz=(((parseFloat($('slAz').value)||0)%360)+360)%360,sx=parseFloat($('slX').value),sy=parseFloat($('slY').value),sz=parseFloat($('slZ').value);
+    if(sdip<0.5)return{m:'H',az:0,dip:0,n:[0,0,1],u:[0,1,0],w:[1,0,0],c:[0,0,0],seg:null,slicer:1};
+    var sa0=(saz-90)*Math.PI/180,sd0=sdip*Math.PI/180,sA=Math.sin(sa0),cA=Math.cos(sa0),sD=Math.sin(sd0),cD=Math.cos(sd0);
+    return{m:'S',az:saz-90,dipAz:saz,dip:sdip,u:[sA,cA,0],w:[cA*cD,-sA*cD,-sD],n:[cA*sD,-sA*sD,cD],c:[isFinite(sx)?sx-offX:CX,isFinite(sy)?sy-offY:CY,isFinite(sz)?sz:zc],seg:null,slicer:1};}
   var az=0,cx=CX,cy=CY,cz=zc,seg=null,dip=Math.min(90,Math.max(0,+$('dipS').value));
   if(m==='A'){az=+$('az').value;var hc=$('hC').value;if(hc&&holeData[hc]){cx=holeData[hc].x;cy=holeData[hc].y;cz=holeData[hc].z;}}
   else{var e1=parseFloat($('p1e').value)-offX,n1=parseFloat($('p1n').value)-offY,e2=parseFloat($('p2e').value)-offX,n2=parseFloat($('p2n').value)-offY;
@@ -949,7 +955,7 @@ function updRange(reset){var g=secGeom(),e=$('pos'),lo,hi;
   if(g.m==='H'){lo=zMin;hi=zMax;}
   else{lo=1e18;hi=-1e18;[G.x0,G.x1].forEach(function(x){[G.y0,G.y1].forEach(function(y){[G.z0,G.z1].forEach(function(z){var d=sd(g.n,g.c,{x:x,y:y,z:z});if(d<lo)lo=d;if(d>hi)hi=d;});});});lo=Math.floor(lo)-10;hi=Math.ceil(hi)+10;}
   e.min=lo;e.max=hi;
-  if(reset)e.value=(g.m==='A'||g.m==='P')?0:Math.round((lo+hi)/2);
+  if(reset)e.value=(g.m==='A'||g.m==='P'||g.m==='S')?0:(g.m==='H'&&g.slicer&&isFinite(parseFloat($('slZ').value))?Math.min(hi,Math.max(lo,parseFloat($('slZ').value))):Math.round((lo+hi)/2));
   else e.value=Math.min(hi,Math.max(lo,+e.value));}
 function modeChanged(){var m=$('sMode').value;$('boxA').style.display=m==='A'?'block':'none';$('boxP').style.display=m==='P'?'block':'none';$('boxD').style.display=(m==='A'||m==='P')?'block':'none';updRange(true);updatePlot();camFollowHook();lineModeHook();}
 function azChanged(fromN){var a=fromN?normAz(parseFloat($('azN').value)||0):+$('az').value;$('az').value=a;$('azN').value=a;updRange(false);dUpdate();camFollowHook();}
@@ -961,7 +967,7 @@ function centerPick(){updRange(true);updatePlot();}
 function holePick(k){var id=$('h'+k).value,c=null;collars.forEach(function(r){if(r[0]===id)c=r;});
   if(c){$('p'+k+'e').value=c[1];$('p'+k+'n').value=c[2];}ptChanged();}
 function ptChanged(){updRange(true);updatePlot();lineInfoUpd();}
-function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');
+function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');if($('sMode').value==='S'){var st=parseFloat($('slStep').value);if(st>0)t=st;}
   e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));updatePlot();}
 function viewSection(){var g=secGeom();
   if(g.m==='H'){setCam(0,-0.001,2.5);return;}
@@ -1092,9 +1098,9 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var traces=[],op=+$('ovOp').value;
   /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
   var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#b9a58c'),ovPc=(($('ovPitCol')||{}).value||'#d08a4e'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc;
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)+ovWk,function(){var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop+'|'+((window.HR&&HR.ver)||0),function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
-  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
+  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.pitC:OV.pitF,{opacity:Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
   var pcs=[[0,'#888888'],[1,'#888888']];
@@ -1162,8 +1168,8 @@ function PERF_REL(){var e=$('perfRel');return !!(e&&e.checked);}
 document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.type==='range'&&PERF_REL())updatePlot();},true);
 function perfApply(){var p=$('perfPreset').value,set=function(id,v){var e=$(id);if(e)e.checked=v;};
   if(p==='eco'){set('lightMode',true);set('hoverOn',false);set('showLabel',false);set('perfRel',true);set('sliceClip',true);set('gAuto',false);$('orRes').value='4';$('asMax').value=300;$('bmDisp').value='pt';$('bmMax').value=15000;}
-  else if(p==='bal'){set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='2';$('asMax').value=1500;$('bmDisp').value='cube';$('bmMax').value=25000;}
-  else{set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='1';$('asMax').value=4000;$('bmDisp').value='cube';$('bmMax').value=60000;}
+  else if(p==='bal'){set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='0';$('asMax').value=1500;$('bmDisp').value='cube';$('bmMax').value=25000;}
+  else{set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='0';$('asMax').value=4000;$('bmDisp').value='cube';$('bmMax').value=60000;}
   if(window.ORT)ORT.cache={};updatePlot();}
 function p2fn(g){if(g.m==='H')return function(x,y,z){return[x+offX,y+offY];};
   if(g.m==='X')return function(x,y,z){return[y+offY,z];};
@@ -1776,7 +1782,7 @@ var HR = window.HR = {
   on: true,
   ext: null,          /* {x0,x1,y0,y1} koordinat LOKAL yang sedang terlihat (null = belum tahu) */
   extW: null,         /* idem dalam koordinat DUNIA (Easting/Northing), untuk peta 2D */
-  budget: 300000,     /* anggaran titik mesh ortho */
+  budget: 300000,     /* anggaran titik mesh ortho (dasar; dinaikkan menurut profil Kinerja lewat HR.anggaran()) */
   tbudget: 15000,     /* anggaran titik mesh topografi */
   mapPx: 4096,        /* batas KERAS sisi gambar ortho di Peta 2D */
   ver: 0              /* naik setiap tampilan berubah -> cache ikut berganti */
@@ -1834,7 +1840,11 @@ HR.rgb = function (xl, yl, res) {
 };
 
 /* resolusi mesh ortho dari luas tampilan + anggaran titik */
+/* anggaran titik ortho menurut profil Kinerja: Hemat 300 rb, Seimbang 800 rb, Penuh 1,5 jt (permintaan pemilik 10 Nov 2026:
+   ortho harus tajam). Titik dibangun sekali per tampilan (cache), GPU modern menangani 1,5 jt vertex dengan mudah. */
+HR.anggaran = function () { var p = document.getElementById('perfPreset'); p = p ? p.value : 'bal'; return p === 'full' ? 1500000 : p === 'eco' ? 300000 : 800000; };
 HR.resFor = function (x0, x1, y0, y1, budget) {
+  if (budget === HR.budget) budget = HR.anggaran();
   var w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), n = Math.max(1000, budget || HR.budget);
   var r = Math.sqrt(w * h / n);
   var O = window.ORT, mn = (O && O.m && O.m.dx) ? O.m.dx : 0.05;   /* tidak lebih halus dari piksel asli */
@@ -2014,15 +2024,31 @@ HR.mapImage = function () {
       ev['scene.aspectmode'] === 'auto' || ev.autosize)) { if (HR.ext) { HR.ext = null; HR.extW = null; HR.ver++; } }
     if (HR.ver !== v) bump();
   };
+  /* 3D: zoom kamera TIDAK mengubah rentang sumbu (rentang kini tetap), jadi extent tampilan diperkirakan dari kamera:
+     pusat pandangan = camera.center (koordinat ternormalisasi -> data), lebar tampilan ~ jarak mata-pusat relatif terhadap
+     jarak bawaan (2,165 = |(1.25,1.25,1.25)|). Margin 1,8x supaya tepi mesh tidak pernah terlihat saat digeser sedikit;
+     penyegaran berikutnya (260 ms sesudah kamera berhenti) merapikan lagi. Hasil: zoom masuk -> area kecil -> resolusi
+     ortho / topo jauh lebih halus pada anggaran titik yang sama (permintaan pemilik 10 Nov 2026). */
+  HR.fromCamera = function (gd, cam) {
+    try {
+      var sc = gd && gd._fullLayout && gd._fullLayout.scene; if (!sc || !cam || !cam.eye) return false;
+      var c = cam.center || { x: 0, y: 0, z: 0 }, e = cam.eye, d = Math.sqrt((e.x - c.x) * (e.x - c.x) + (e.y - c.y) * (e.y - c.y) + (e.z - c.z) * (e.z - c.z)) / 2.165;
+      var rx = sc.xaxis.range, ry = sc.yaxis.range, ar = sc.aspectratio || { x: 1, y: 1 }, W = rx[1] - rx[0], Hh = ry[1] - ry[0];
+      var cx = (rx[0] + rx[1]) / 2 + c.x * W / (2 * (ar.x || 1)), cy = (ry[0] + ry[1]) / 2 + c.y * Hh / (2 * (ar.y || 1));
+      var f = Math.min(1, Math.max(0.03, d * 0.9)) * 1.8, hw = W * f / 2, hh = Hh * f / 2;
+      if (f >= 1.8) { if (HR.ext) { HR.ext = null; HR.extW = null; HR.ver++; } return true; }
+      HR.setExt(cx - hw, cx + hw, cy - hh, cy + hh, false); return true;
+    } catch (err) { return false; }
+  };
   HR.attach = function (gd, world) {
     if (!gd || gd._hrOn || !gd.on) return;
     gd._hrOn = 1;
-    try { gd.on('plotly_relayout', function (ev) { HR.fromRelayout(ev, world); }); } catch (e) { }
+    try { gd.on('plotly_relayout', function (ev) { var v = HR.ver; if (ev && ev['scene.camera']) { HR.fromCamera(gd, ev['scene.camera']); if (HR.ver !== v) bump(); } HR.fromRelayout(ev, world); }); } catch (e) { }
   };
   /* pasang ke grafik utama & peta begitu ada */
   var t = setInterval(function () {
     try {
-      var a = document.getElementById('plot') || document.getElementById('graph') || document.querySelector('.js-plotly-plot');
+      var a = document.getElementById('plotDiv') || document.getElementById('plot') || document.getElementById('graph') || document.querySelector('.js-plotly-plot');
       if (a) HR.attach(a, false);
       var b = window.mapGd && mapGd(); if (b) HR.attach(b, true);
     } catch (e) { }
@@ -2061,7 +2087,8 @@ function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
   if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
   if(x1<=x0||y1<=y0)return null;
-  var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>300000){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}
+  if(!res){res=(window.HR&&HR.resFor)?HR.resFor(x0,x1,y0,y1,(HR.anggaran?HR.anggaran():HR.budget)):1;}/* Otomatis: sehalus anggaran titik profil Kinerja, tidak lebih halus dari piksel ortho (pemilik 10 Nov 2026: ortho harus tajam) */
+  var _bud=(window.HR&&HR.anggaran)?HR.anggaran():300000;if(light)_bud=Math.min(_bud,300000);var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>_bud){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}/* batas titik ortho ikut profil Kinerja (HR.anggaran) */
   var flatZ=Math.ceil(G.z1)+5,X=[],Y=[],Z=[],C=[],id=new Int32Array(nx*ny),n=0,zmin=1e18,zmax=-1e18,i,j;
   for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:(mode==='base')?0:HRZ(x,y),c=(z===null)?null:orthoRGB(x,y,res);
     if(!c){id[j*nx+i]=-1;continue;}id[j*nx+i]=n++;z+=0.3;X.push(x);Y.push(y);Z.push(z);C.push('rgb('+c[0]+','+c[1]+','+c[2]+')');if(z<zmin)zmin=z;if(z>zmax)zmax=z;}
@@ -3427,6 +3454,8 @@ function dmSteps(){var S=[],m=window.BX&&BX.m,hasTopo=!$('ovTopoS').disabled,has
   S.push({s:'Sayatan',t:'Penampang vertikal melintang ore',d:'Garis sayatan manual dibuat melintang tubuh ore (strike '+K.strike+'°). Profil topografi dan desain pit tampil di penampang bersama blok model.',el:'[onclick^=drawOpen]',dur:10,
     run:function(A){A(0.5,function(){dmSet('sMode','P');});A(1.5,function(){if(window.DRW&&DRW.on)drawClose();$('p1e').value=dmF(K.line[0]);$('p1n').value=dmF(K.line[1]);$('p2e').value=dmF(K.line[2]);$('p2n').value=dmF(K.line[3]);$('thick').value=3;$('pos').value=0;ptChanged();setDip(90);dmPoint('[onclick^=drawOpen]',false);});
       A(3,function(){if(!VIEW2D)toggle2D();else updatePlot();});}});
+  S.push({s:'Sayatan',t:'Slicer: potong dari arah mana saja',d:'Satu tombol Slicer di bilah atas membuka popup: dip, dip azimuth, lebar slab, langkah, dan pusat bidang (E, N, RL) \u2014 memotong block model dari arah mana saja tanpa menggambar garis. Contoh: dip 60\u00b0 ke azimuth '+Math.round((K.strike+90)%360)+'\u00b0 (tegak lurus strike), lalu Maju satu langkah.',el:'secMenu',dur:11,
+    run:function(A){A(0,function(){if(VIEW2D)toggle2D();if(window.SLICER)SLICER.open();});A(1.5,function(){dmSet('sliceClip',true);dmSet('showPlane',true);});A(2.5,function(){if(window.SLICER)SLICER.set(60,(K.strike+90)%360);});A(4.5,function(){setTimeout(viewSection,0);});A(6.5,function(){stepPos(1);});A(8.5,function(){stepPos(-1);});A(10.2,function(){if(window.SLICER){SLICER.set(0,null);SLICER.close();}});}});
   /* --- Dig block --- */
   S.push({s:'Dig block',t:'Flitch '+lyFmt(K.top)+' – '+lyFmt(K.top-1.5),d:'Satu dig block = satu flitch setinggi 1,5 m. Isi RL atas; RL bawah terisi otomatis. Terapkan flitch membuka Sayatan 2D plan pada flitch tersebut.',el:'#dbBody input',dur:10,
     run:function(A){A(0,function(){if(VIEW2D)toggle2D();BX.ui.fVal='';BX.ui.fAttr='';BX.sc={};uiTab('BM');dbPanel();});A(1.2,function(){var L=lyU();L.top=K.top;L.bot='';dbPanel();dmPoint('#dbBody input',true);});
@@ -5226,6 +5255,70 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
       '#dbBody[data-f=man]{display:flex;flex-direction:column}#dbBody[data-f=man]>[data-seg=man]{order:1}#dbBody[data-f=man]>[data-seg=rule]{order:2}#dbBody[data-f=man]>[data-seg=dest]{order:3}#dbBody[data-f=man]>[data-seg=rep]{order:4}'});
 })();
 
+!function(t,s){"object"==typeof exports&&"undefined"!=typeof module?module.exports=s():"function"==typeof define&&define.amd?define(s):(t="undefined"!=typeof globalThis?globalThis:t||self).Delaunator=s()}(this,function(){"use strict";const t=11102230246251565e-32,s=134217729,i=(3+8*t)*t;function e(t,s,i,e,n){let h,r,l,o,a=s[0],f=e[0],c=0,u=0;f>a==f>-a?(h=a,a=s[++c]):(h=f,f=e[++u]);let _=0;if(c<t&&u<i)for(f>a==f>-a?(r=a+h,l=h-(r-a),a=s[++c]):(r=f+h,l=h-(r-f),f=e[++u]),h=r,0!==l&&(n[_++]=l);c<t&&u<i;)f>a==f>-a?(r=h+a,o=r-h,l=h-(r-o)+(a-o),a=s[++c]):(r=h+f,o=r-h,l=h-(r-o)+(f-o),f=e[++u]),h=r,0!==l&&(n[_++]=l);for(;c<t;)r=h+a,o=r-h,l=h-(r-o)+(a-o),a=s[++c],h=r,0!==l&&(n[_++]=l);for(;u<i;)r=h+f,o=r-h,l=h-(r-o)+(f-o),f=e[++u],h=r,0!==l&&(n[_++]=l);return 0===h&&0!==_||(n[_++]=h),_}function n(t){return new Float64Array(t)}const h=n(4),r=n(8),l=n(12),o=n(16),a=n(4);function f(t,n,f,c,u,_){const d=(n-_)*(f-u),g=(t-u)*(c-_),y=d-g,w=Math.abs(d+g);return Math.abs(y)>=33306690738754716e-32*w?y:-function(t,n,f,c,u,_,d){let g,y,w,b,A,k,x,M,S,p,T,z,U,m,K,L,v,F;const I=t-u,P=f-u,E=n-_,H=c-_;m=I*H,k=s*I,x=k-(k-I),M=I-x,k=s*H,S=k-(k-H),p=H-S,K=M*p-(m-x*S-M*S-x*p),L=E*P,k=s*E,x=k-(k-E),M=E-x,k=s*P,S=k-(k-P),p=P-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,h[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,h[1]=U-(T+A)+(A-L),F=z+T,A=F-z,h[2]=z-(F-A)+(T-A),h[3]=F;let N=function(t,s){let i=s[0];for(let e=1;e<t;e++)i+=s[e];return i}(4,h),j=22204460492503146e-32*d;if(N>=j||-N>=j)return N;if(A=t-I,g=t-(I+A)+(A-u),A=f-P,w=f-(P+A)+(A-u),A=n-E,y=n-(E+A)+(A-_),A=c-H,b=c-(H+A)+(A-_),0===g&&0===y&&0===w&&0===b)return N;if(j=11093356479670487e-47*d+i*Math.abs(N),N+=I*b+H*g-(E*w+P*y),N>=j||-N>=j)return N;m=g*H,k=s*g,x=k-(k-g),M=g-x,k=s*H,S=k-(k-H),p=H-S,K=M*p-(m-x*S-M*S-x*p),L=y*P,k=s*y,x=k-(k-y),M=y-x,k=s*P,S=k-(k-P),p=P-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const q=e(4,h,4,a,r);m=I*b,k=s*I,x=k-(k-I),M=I-x,k=s*b,S=k-(k-b),p=b-S,K=M*p-(m-x*S-M*S-x*p),L=E*w,k=s*E,x=k-(k-E),M=E-x,k=s*w,S=k-(k-w),p=w-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const D=e(q,r,4,a,l);m=g*b,k=s*g,x=k-(k-g),M=g-x,k=s*b,S=k-(k-b),p=b-S,K=M*p-(m-x*S-M*S-x*p),L=y*w,k=s*y,x=k-(k-y),M=y-x,k=s*w,S=k-(k-w),p=w-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const B=e(D,l,4,a,o);return o[B-1]}(t,n,f,c,u,_,w)}const c=Math.pow(2,-52),u=new Uint32Array(512);class _{static from(t,s=A,i=k){const e=t.length,n=new Float64Array(2*e);for(let h=0;h<e;h++){const e=t[h];n[2*h]=s(e),n[2*h+1]=i(e)}return new _(n)}constructor(t){const s=t.length>>1;if(s>0&&"number"!=typeof t[0])throw new Error("Expected coords to contain numbers.");this.coords=t;const i=Math.max(2*s-5,0);this._triangles=new Uint32Array(3*i),this._halfedges=new Int32Array(3*i),this._hashSize=Math.ceil(Math.sqrt(s)),this._hullPrev=new Uint32Array(s),this._hullNext=new Uint32Array(s),this._hullTri=new Uint32Array(s),this._hullHash=new Int32Array(this._hashSize),this._ids=new Uint32Array(s),this._dists=new Float64Array(s),this.trianglesLen=0,this._cx=0,this._cy=0,this._hullStart=0,this.hull=this._triangles,this.triangles=this._triangles,this.halfedges=this._halfedges,this.update()}update(){const{coords:t,_hullPrev:s,_hullNext:i,_hullTri:e,_hullHash:n}=this,h=t.length>>1;let r=1/0,l=1/0,o=-1/0,a=-1/0;for(let s=0;s<h;s++){const i=t[2*s],e=t[2*s+1];i<r&&(r=i),e<l&&(l=e),i>o&&(o=i),e>a&&(a=e),this._ids[s]=s}const u=(r+o)/2,_=(l+a)/2;let g=0,b=0,A=0;for(let s=0,i=1/0;s<h;s++){const e=d(u,_,t[2*s],t[2*s+1]);e<i&&(g=s,i=e)}const k=t[2*g],x=t[2*g+1];for(let s=0,i=1/0;s<h;s++){if(s===g)continue;const e=d(k,x,t[2*s],t[2*s+1]);e<i&&e>0&&(b=s,i=e)}let M=t[2*b],S=t[2*b+1],p=1/0;for(let s=0;s<h;s++){if(s===g||s===b)continue;const i=y(k,x,M,S,t[2*s],t[2*s+1]);i<p&&(A=s,p=i)}let T=t[2*A],z=t[2*A+1];if(p===1/0){for(let s=0;s<h;s++)this._dists[s]=t[2*s]-t[0]||t[2*s+1]-t[1];w(this._ids,this._dists,0,h-1);const s=new Uint32Array(h);let i=0;for(let t=0,e=-1/0;t<h;t++){const n=this._ids[t],h=this._dists[n];h>e&&(s[i++]=n,e=h)}return this.hull=s.subarray(0,i),this.triangles=new Uint32Array(0),void(this.halfedges=new Int32Array(0))}if(f(k,x,M,S,T,z)<0){const t=b,s=M,i=S;b=A,M=T,S=z,A=t,T=s,z=i}const U=function(t,s,i,e,n,h){const r=i-t,l=e-s,o=n-t,a=h-s,f=r*r+l*l,c=o*o+a*a,u=.5/(r*a-l*o);return{x:t+(a*f-l*c)*u,y:s+(r*c-o*f)*u}}(k,x,M,S,T,z);this._cx=U.x,this._cy=U.y;for(let s=0;s<h;s++)this._dists[s]=d(t[2*s],t[2*s+1],U.x,U.y);w(this._ids,this._dists,0,h-1),this._hullStart=g;let m=3;i[g]=s[A]=b,i[b]=s[g]=A,i[A]=s[b]=g,e[g]=0,e[b]=1,e[A]=2,n.fill(-1),n[this._hashKey(k,x)]=g,n[this._hashKey(M,S)]=b,n[this._hashKey(T,z)]=A,this.trianglesLen=0,this._addTriangle(g,b,A,-1,-1,-1);for(let h=0,r=0,l=0;h<this._ids.length;h++){const o=this._ids[h],a=t[2*o],u=t[2*o+1];if(h>0&&Math.abs(a-r)<=c&&Math.abs(u-l)<=c)continue;if(r=a,l=u,o===g||o===b||o===A)continue;let _=0;for(let t=0,s=this._hashKey(a,u);t<this._hashSize&&(_=n[(s+t)%this._hashSize],-1===_||_===i[_]);t++);_=s[_];let d,y=_;for(;d=i[y],f(a,u,t[2*y],t[2*y+1],t[2*d],t[2*d+1])>=0;)if(y=d,y===_){y=-1;break}if(-1===y)continue;let w=this._addTriangle(y,o,i[y],-1,-1,e[y]);e[o]=this._legalize(w+2),e[y]=w,m++;let k=i[y];for(;d=i[k],f(a,u,t[2*k],t[2*k+1],t[2*d],t[2*d+1])<0;)w=this._addTriangle(k,o,d,e[o],-1,e[k]),e[o]=this._legalize(w+2),i[k]=k,m--,k=d;if(y===_)for(;d=s[y],f(a,u,t[2*d],t[2*d+1],t[2*y],t[2*y+1])<0;)w=this._addTriangle(d,o,y,-1,e[y],e[d]),this._legalize(w+2),e[d]=w,i[y]=y,m--,y=d;this._hullStart=s[o]=y,i[y]=s[k]=o,i[o]=k,n[this._hashKey(a,u)]=o,n[this._hashKey(t[2*y],t[2*y+1])]=y}this.hull=new Uint32Array(m);for(let t=0,s=this._hullStart;t<m;t++)this.hull[t]=s,s=i[s];this.triangles=this._triangles.subarray(0,this.trianglesLen),this.halfedges=this._halfedges.subarray(0,this.trianglesLen)}_hashKey(t,s){return Math.floor(function(t,s){const i=t/(Math.abs(t)+Math.abs(s));return(s>0?3-i:1+i)/4}(t-this._cx,s-this._cy)*this._hashSize)%this._hashSize}_legalize(t){const{_triangles:s,_halfedges:i,coords:e}=this;let n=0,h=0;for(;;){const r=i[t],l=t-t%3;if(h=l+(t+2)%3,-1===r){if(0===n)break;t=u[--n];continue}const o=r-r%3,a=l+(t+1)%3,f=o+(r+2)%3,c=s[h],_=s[t],d=s[a],y=s[f];if(g(e[2*c],e[2*c+1],e[2*_],e[2*_+1],e[2*d],e[2*d+1],e[2*y],e[2*y+1])){s[t]=y,s[r]=c;const e=i[f];if(-1===e){let s=this._hullStart;do{if(this._hullTri[s]===f){this._hullTri[s]=t;break}s=this._hullPrev[s]}while(s!==this._hullStart)}this._link(t,e),this._link(r,i[h]),this._link(h,f);const l=o+(r+1)%3;n<u.length&&(u[n++]=l)}else{if(0===n)break;t=u[--n]}}return h}_link(t,s){this._halfedges[t]=s,-1!==s&&(this._halfedges[s]=t)}_addTriangle(t,s,i,e,n,h){const r=this.trianglesLen;return this._triangles[r]=t,this._triangles[r+1]=s,this._triangles[r+2]=i,this._link(r,e),this._link(r+1,n),this._link(r+2,h),this.trianglesLen+=3,r}}function d(t,s,i,e){const n=t-i,h=s-e;return n*n+h*h}function g(t,s,i,e,n,h,r,l){const o=t-r,a=s-l,f=i-r,c=e-l,u=n-r,_=h-l,d=f*f+c*c,g=u*u+_*_;return o*(c*g-d*_)-a*(f*g-d*u)+(o*o+a*a)*(f*_-c*u)<0}function y(t,s,i,e,n,h){const r=i-t,l=e-s,o=n-t,a=h-s,f=r*r+l*l,c=o*o+a*a,u=.5/(r*a-l*o),_=(a*f-l*c)*u,d=(r*c-o*f)*u;return _*_+d*d}function w(t,s,i,e){if(e-i<=20)for(let n=i+1;n<=e;n++){const e=t[n],h=s[e];let r=n-1;for(;r>=i&&s[t[r]]>h;)t[r+1]=t[r--];t[r+1]=e}else{let n=i+1,h=e;b(t,i+e>>1,n),s[t[i]]>s[t[e]]&&b(t,i,e),s[t[n]]>s[t[e]]&&b(t,n,e),s[t[i]]>s[t[n]]&&b(t,i,n);const r=t[n],l=s[r];for(;;){do{n++}while(s[t[n]]<l);do{h--}while(s[t[h]]>l);if(h<n)break;b(t,n,h)}t[i+1]=t[h],t[h]=r,e-n+1>=h-i?(w(t,s,n,e),w(t,s,i,h-1)):(w(t,s,i,h-1),w(t,s,n,e))}}function b(t,s,i){const e=t[s];t[s]=t[i],t[i]=e}function A(t){return t[0]}function k(t){return t[1]}return _});
+
+/* GC-Ex — PERMUKAAN TOPOGRAFI & DESAIN PIT RESOLUSI PENUH (TIN) — Block Model & Drill Hole (0.24.50 / 0.24.57)
+   =============================================================================================================
+   Permintaan pemilik (10 Nov 2026): tampilan permukaan topo / pit / ortho tidak boleh berkualitas jelek; lekuk harus terlihat.
+
+   Sebelumnya permukaan topo & pit digambar sebagai mesh3d TANPA indeks: Plotly men-triangulasi sendiri (Delaunay) setiap kali
+   trace berubah, dan karena itu jumlah titiknya dibatasi (15.000 titik; HR.topoMesh mendesimasi per sel sesuai tampilan). Dua
+   akibat: (1) lekuk kecil hilang — survei 33.000 titik hanya tampil separuh; (2) setiap zoom men-triangulasi ulang.
+
+   Modul ini membangun TIN SEKALI per sumber titik dari SELURUH titik (sampai TIN.cap, bawaan 400.000) dengan Delaunator
+   (ISC, web-src/delaunator.min.js), lalu trace memakai i/j/k tetap: Plotly tidak men-triangulasi lagi, geometrinya sama
+   persis pada semua zoom, dan glskip bisa melewatinya saat tidak berubah.
+
+   - Titik duplikat / sangat berdekatan (< 1e-3 m) disatukan supaya triangulasi stabil.
+   - Segitiga "sliver" di tepi cekung (sisi terpanjang > TIN.faktor x median sisi, bawaan 8) dibuang supaya tidak ada
+     kipas lebar menyeberangi lubang / tepi data kontur. Angka ini hanya memengaruhi gambar, bukan topoZ / reporting.
+   - Cache per objek sumber (WeakMap) + panjang; data baru (prep ulang) membuat TIN baru.
+   - Bila Delaunator tidak ada atau gagal, pemanggil memakai cara lama (mesh tanpa indeks). */
+(function () {
+  var T = window.TIN = { on: true, cap: 400000, faktor: 8, _wm: (typeof WeakMap !== 'undefined') ? new WeakMap() : null, stat: null };
+  function kumpul(src, cap) {
+    var n = src.x.length, X = [], Y = [], Z = [], i, x, y;
+    var b = src.b || null, area = b ? Math.max(1, (b.x1 - b.x0) * (b.y1 - b.y0)) : 0;
+    var nn = 0; for (i = 0; i < n; i++) if (src.x[i] !== null && isFinite(src.z[i])) nn++;
+    /* lebih dari cap: satu titik per sel (bukan "tiap ke-n") supaya sebaran merata; <= cap: semua titik */
+    var cell = (nn > cap && area) ? Math.sqrt(area / cap) : 0, seen = cell ? new Set() : null;
+    var dup = new Set();
+    for (i = 0; i < n; i++) {
+      x = src.x[i]; if (x === null) continue; y = src.y[i]; var z = src.z[i]; if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
+      var kd = (Math.round(x * 1000)) + ':' + (Math.round(y * 1000)); if (dup.has(kd)) continue; dup.add(kd);
+      if (cell) { var kc = Math.floor((x - b.x0) / cell) + ':' + Math.floor((y - b.y0) / cell); if (seen.has(kc)) continue; seen.add(kc); }
+      X.push(x); Y.push(y); Z.push(z);
+    }
+    return { x: X, y: Y, z: Z, dari: nn };
+  }
+  T.build = function (src) {
+    if (!T.on || !src || !src.x || src.x.length < 3 || typeof Delaunator === 'undefined') return null;
+    var c = T._wm && T._wm.get(src); if (c && c.n === src.x.length) return c.tin;
+    var t0 = performance.now(), P = kumpul(src, T.cap), m = P.x.length; if (m < 3) return null;
+    var co = new Float64Array(m * 2); for (var i = 0; i < m; i++) { co[2 * i] = P.x[i]; co[2 * i + 1] = P.y[i]; }
+    var tri; try { tri = new Delaunator(co).triangles; } catch (e) { console.warn('[TIN] gagal', e); return null; }
+    var nt = tri.length / 3, L = new Float64Array(nt), q, a, b2, c2;
+    var ed = function (p, r) { var dx = P.x[p] - P.x[r], dy = P.y[p] - P.y[r]; return dx * dx + dy * dy; };
+    for (q = 0; q < nt; q++) { a = tri[3 * q]; b2 = tri[3 * q + 1]; c2 = tri[3 * q + 2]; L[q] = Math.max(ed(a, b2), ed(b2, c2), ed(c2, a)); }
+    var srt = Float64Array.from(L).sort(), med = srt[Math.floor(nt / 2)] || 0, lim = med * T.faktor * T.faktor, keep = 0;
+    for (q = 0; q < nt; q++) if (!(L[q] > lim && lim > 0)) keep++;
+    var I = new Uint32Array(keep), J = new Uint32Array(keep), K = new Uint32Array(keep), w = 0;
+    for (q = 0; q < nt; q++) { if (L[q] > lim && lim > 0) continue; I[w] = tri[3 * q]; J[w] = tri[3 * q + 1]; K[w] = tri[3 * q + 2]; w++; }
+    var tin = { x: Float64Array.from(P.x), y: Float64Array.from(P.y), z: Float64Array.from(P.z), i: I, j: J, k: K, n: m, dari: P.dari, segitiga: keep, dibuang: nt - keep, ms: Math.round(performance.now() - t0) };
+    T.stat = tin; if (T._wm) T._wm.set(src, { n: src.x.length, tin: tin });
+    return tin;
+  };
+  /* trace mesh3d siap pakai: warna seragam (color) atau gradasi elevasi (intensity+colorscale) */
+  T.trace = function (src, opt) {
+    var tin = T.build(src); if (!tin) return null; opt = opt || {};
+    var t = { type: 'mesh3d', x: tin.x, y: tin.y, z: tin.z, i: tin.i, j: tin.j, k: tin.k, opacity: opt.opacity == null ? 1 : opt.opacity, showscale: false, hoverinfo: 'skip', flatshading: opt.flat !== false, showlegend: false, lighting: opt.lighting || { ambient: 0.7, diffuse: 0.6, specular: 0.05, roughness: 0.9 } };
+    if (opt.grad) { t.intensity = tin.z; t.colorscale = opt.colorscale || 'Earth'; } else t.color = opt.color || '#b9a58c';
+    if (opt.name) t.name = opt.name; if (opt.uid) t.uid = opt.uid;
+    return t;
+  };
+  T.info = function () { var s = T.stat; return s ? (s.n.toLocaleString('id-ID') + ' titik dari ' + s.dari.toLocaleString('id-ID') + ', ' + s.segitiga.toLocaleString('id-ID') + ' segitiga, ' + s.ms + ' ms') : '-'; };
+})();
+
 /* ---------- 3D: jangan kirim ulang lapisan yang tidak berubah (Drillhole 0.24.42; Block Model 0.24.47 — berkas bersama web-src/glskip.js) ----------
    Plotly gl3d memanggil update() untuk SETIAP lapisan setiap kali satu lapisan saja berubah (geser
    sayatan, centang overlay, lapisan Ore Geometry yang dibangun ulang). Untuk block model ber-ratusan
@@ -5698,7 +5791,7 @@ function s3Paint(){var gd=$('plotDiv');if(!gd)return;var c=$('s3Cv');if(!c){c=do
 (function(){if(window.SLB||typeof stepPos!=='function'||typeof updatePlot!=='function')return;
   var $=function(i){return document.getElementById(i);},bar=null;
   var on=function(){try{return !!(VIEW2D||($('sliceClip')&&$('sliceClip').checked)||($('showPlane')&&$('showPlane').checked));}catch(e){return false;}};
-  var axis=function(){var m=$('sMode')?$('sMode').value:'H';return m==='H'?'Elevasi':'offset';};
+  var axis=function(){var m='H';try{m=secGeom().m;}catch(e){}return m==='H'?'Elevasi':'offset';};
   function build(){var st=$('stage');if(!st||bar)return;bar=document.createElement('div');bar.id='slabBar';bar.setAttribute('role','toolbar');
     bar.innerHTML='<span class="sbt" title="Sayatan aktif">Sayatan</span>'+
       '<button type="button" data-d="-1" title="Mundur sejauh tebal slab (PageDown)">&#9664; Mundur</button>'+
@@ -5736,27 +5829,84 @@ function s3Paint(){var gd=$('plotDiv');if(!gd)return;var c=$('s3Cv');if(!c){c=do
 })();
 
 /* ---------- bilah atas: satu menu "Sayatan" ---------- */
+/* ---------- bilah atas: SATU tombol "Slicer" (DH 0.24.56 / BM 0.24.50, contoh dari Leapfrog: dip, dip azimuth, lebar slab, langkah, lokasi) ----------
+   Mengganti menu "Sayatan ▾". Popup memuat seluruh kendali sayatan: dip / dip azimuth bebas (mode S di secGeom), preset plan / E-W / N-S,
+   lebar slab & langkah terpisah, titik pusat (X Y Z, bisa diambil dari pusat data / pusat pandangan), Mundur / Maju, opsi slab,
+   Sayatan 2D, Sayatan 3D garis bebas, garis di peta, digitasi, pengaturan lanjutan (panel Sayatan). Panel Properti Sayatan tetap ada. */
 (function(){var b2=$('btn2d');if(!b2||$('btnSecM'))return;var b3=$('btnSec3');
-  var st=document.createElement('style');st.textContent='#secMenu{position:fixed;z-index:2000;display:none;width:300px;background:var(--sf,#fff);color:var(--tx,#212529);border:1px solid var(--bd,#ced4da);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.2);padding:6px}'+
-    '#secMenu .smh{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--mu,#868e96);margin:6px 8px 3px;text-transform:uppercase}#secMenu button.tb,#secMenu .smi{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start;height:34px;margin:2px 0;padding:0 10px;border-radius:7px;font-size:12.5px;text-align:left}'+
-    '#secMenu .smi{border:0;background:none;color:inherit;cursor:pointer}#secMenu .smi:hover{background:rgba(0,0,0,.06)}#secMenu button.tb svg{width:16px;height:16px}#secMenu label{display:flex;gap:8px;align-items:center;padding:4px 10px;font-size:12.5px;cursor:pointer;border-radius:6px}#secMenu label:hover{background:rgba(0,0,0,.05)}#secMenu hr{border:0;border-top:1px solid var(--bd,#dee2e6);margin:5px 4px}'+
-    '#btnSecM .sm2d{font-size:10px;font-weight:700;background:var(--pr,#1c3d8f);color:#fff;border-radius:4px;padding:0 4px;margin-left:2px}';document.head.appendChild(st);
-  var bt=document.createElement('button');bt.className='tb';bt.id='btnSecM';bt.title='Sayatan & Penampang: Penampang (sayatan) 2D, Sayatan 3D, opsi slab, digitasi string, pengaturan';
-  bt.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L20 4"/><rect x="3" y="5" width="18" height="14" rx="1" stroke-width="1.6"/></svg>Sayatan<span id=secM2d></span> &#9662;';
+  var st=document.createElement('style');st.textContent='#secMenu{position:absolute;z-index:2000;display:none;width:340px;background:var(--sf,#fff);color:var(--tx,#212529);border:1px solid var(--bd,#ced4da);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.2);padding:8px}'+
+    '#secMenu .smh{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--mu,#868e96);margin:6px 4px 3px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}#secMenu .smh button{height:22px;padding:0 7px;font-size:11px}'+
+    '#secMenu button.tb,#secMenu .smi{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start;height:32px;margin:2px 0;padding:0 10px;border-radius:7px;font-size:12.5px;text-align:left}'+
+    '#secMenu .smi{border:0;background:none;color:inherit;cursor:pointer}#secMenu .smi:hover{background:rgba(0,0,0,.06)}#secMenu button.tb svg{width:16px;height:16px}#secMenu label.ck{display:flex;gap:8px;align-items:center;padding:3px 6px;font-size:12.5px;cursor:pointer;border-radius:6px}#secMenu label.ck:hover{background:rgba(0,0,0,.06)}'+
+    '#secMenu .slg{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin:4px 0}#secMenu .slg.c3{grid-template-columns:1fr 1fr 1fr}#secMenu .slf{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--mu,#868e96)}#secMenu .slf input,#secMenu .slf select{font:inherit;font-size:12.5px;color:var(--tx,#212529);height:26px;padding:0 6px;border:1px solid var(--bd,#ced4da);border-radius:5px;background:var(--bg,#fff);width:100%;box-sizing:border-box}'+
+    '#secMenu .slf input[type=range]{height:18px;padding:0;border:0;background:none}#secMenu .slq{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 4px}#secMenu .slq button{height:24px;padding:0 8px;font-size:11.5px;border-radius:5px}#secMenu .slq button.on{background:var(--mj,#c49a4c);border-color:var(--mjln,#b5893e);color:var(--mjtx,#1d2b5e);font-weight:700}'+
+    '#secMenu .slpos{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;margin:6px 0 2px}#secMenu .slpos button{height:28px;padding:0 10px;font-weight:600}#secMenu .slpos .slf input{text-align:center;font-weight:600}'+
+    '#secMenu hr{border:0;border-top:1px solid var(--bd,#e3e7ec);margin:6px 0}#btnSecM .sm2d{font-size:10px;font-weight:700;background:var(--pr,#1c3d8f);color:#fff;border-radius:4px;padding:0 4px;margin-left:2px}';document.head.appendChild(st);
+  var bt=document.createElement('button');bt.className='tb';bt.id='btnSecM';bt.title='Slicer: potong model dari arah mana saja (dip, dip azimuth, lebar slab, langkah, lokasi), Sayatan 2D, Sayatan 3D, digitasi';
+  bt.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L20 4"/><rect x="3" y="5" width="18" height="14" rx="1" stroke-width="1.6"/></svg>Slicer<span id=secM2d></span>';
   b2.parentNode.insertBefore(bt,b2);var m=document.createElement('div');m.id='secMenu';document.body.appendChild(m);
   var t2=[].slice.call(b2.childNodes).filter(function(n){return n.nodeType===3&&/Penampang/.test(n.textContent);})[0];if(t2)t2.textContent='Sayatan 2D';
-  var ck=function(id,t){var e=$(id);if(!e)return '';return '<label><input type=checkbox '+(e.checked?'checked':'')+' onchange="var e=document.getElementById(\''+id+'\');e.checked=this.checked;e.dispatchEvent(new Event(\'change\',{bubbles:true}));">'+t+'</label>';};
-  var head=document.createElement('div');head.innerHTML='<div class=smh>Sayatan &amp; Penampang</div>';m.appendChild(head);m.appendChild(b2);if(b3)m.appendChild(b3);var mx=document.createElement('div');m.appendChild(mx);
+  var ck=function(id,t){var e=$(id);if(!e)return '';return '<label class=ck><input type=checkbox '+(e.checked?'checked':'')+' onchange="var e=document.getElementById(\''+id+'\');e.checked=this.checked;e.dispatchEvent(new Event(\'change\',{bubbles:true}));">'+t+'</label>';};
+  var head=document.createElement('div');head.innerHTML='<div class=smh><span>Slicer</span><button type=button id=slReset title="Kembali ke plan melalui pusat data">Reset</button></div>';m.appendChild(head);
+  var top=document.createElement('div');m.appendChild(top);var mid=document.createElement('div');m.appendChild(mid);m.appendChild(b2);if(b3)m.appendChild(b3);var mx=document.createElement('div');m.appendChild(mx);
   var close=function(){m.style.display='none';};
-  var render=function(){mx.innerHTML='<hr><div class=smh>Opsi slab</div>'+ck('sliceClip','Potong data di dalam slab (3D)')+ck('showPlane','Tampilkan bidang potong')+ck('showProf','Profil topo / pit pada sayatan')+
-      '<hr><button class=smi data-a=line>&#10138; Pilih arah sayatan di tampak atas (gambar garis)&hellip;</button><button class=smi data-a=dig>&#9998; Digitasi string di penampang</button><button class=smi data-a=set>&#9881; Pengaturan Sayatan &amp; Penampang&hellip;</button>';};
-  mx.addEventListener('click',function(e){var b=e.target.closest('button[data-a]');if(!b)return;close();if(b.dataset.a==='set'){uiTab('Slice');}else if(b.dataset.a==='line'){if(window.VIEW2D)toggle2D();if(typeof drawOpen==='function')drawOpen('line');}else{uiTab('Dig');}});
-  bt.addEventListener('click',function(e){e.stopPropagation();if(m.style.display==='block'){close();return;}render();var r=bt.getBoundingClientRect();m.style.display='block';m.style.top=(r.bottom+6)+'px';m.style.left=Math.max(8,Math.min(innerWidth-310,r.left))+'px';});
+  var N=function(v,d){return isFinite(v)?(+v).toFixed(d==null?1:d):'';};
+  var geom=function(){try{return secGeom();}catch(e){return null;}};
+  /* nilai Slicer dari kendali yang ada: mode S memakai slDip / slAz; mode P (garis) dip dari dipS, azimuth dari garis; H = plan */
+  var cur=function(){var md=$('sMode').value,g=geom()||{},dip,az;
+    if(md==='S'){dip=parseFloat($('slDip').value)||0;az=parseFloat($('slAz').value)||0;}
+    else if(md==='P'||md==='A'){dip=parseFloat($('dipS').value)||90;az=((g.az||0)+90+360)%360;}
+    else{dip=0;az=0;}
+    var c=g.c||[0,0,0],cx=isFinite(parseFloat($('slX').value))?parseFloat($('slX').value):c[0]+offX,cy=isFinite(parseFloat($('slY').value))?parseFloat($('slY').value):c[1]+offY,cz=isFinite(parseFloat($('slZ').value))?parseFloat($('slZ').value):(md==='H'||(md==='S'&&dip<0.5)?+$('pos').value:c[2]);
+    return{md:md,dip:dip,az:az,x:cx,y:cy,z:cz,w:parseFloat($('thick').value)||5,step:parseFloat($('slStep').value)||parseFloat($('thick').value)||5,pos:+$('pos').value};};
+  /* pindah ke mode S dengan pusat yang masuk akal: pusat garis (mode P) / pusat data */
+  var keS=function(){var md=$('sMode').value;if(md==='S')return;var g=geom();
+    if(!isFinite(parseFloat($('slX').value))){var c=g&&g.c||[CX,CY,(G.z0+G.z1)/2];if(g&&g.m==='P'&&g.seg){c=[c[0]+g.u[0]*g.seg/2,c[1]+g.u[1]*g.seg/2,c[2]];}if(g&&g.m==='H'){c=[CX,CY,+$('pos').value];}
+      $('slX').value=N(c[0]+offX,1);$('slY').value=N(c[1]+offY,1);$('slZ').value=N(c[2],1);}
+    if(md==='P'||md==='A'){$('slDip').value=parseFloat($('dipS').value)||90;$('slAz').value=N(((g&&g.az||0)+90+360)%360,1);}
+    $('sMode').value='S';modeChanged();};
+  var setDipAz=function(dip,az){keS();var was=(parseFloat($('slDip').value)||0)<0.5;if(dip!=null)$('slDip').value=Math.min(90,Math.max(0,dip));if(az!=null)$('slAz').value=((az%360)+360)%360;
+    var now=(parseFloat($('slDip').value)||0)<0.5;if(was!==now)updRange(true);else if(!now){/* bidang miring: tetap lewat pusat */}
+    updatePlot();try{camFollowHook();}catch(e){}render();};
+  var setPusat=function(x,y,z){if(x!=null)$('slX').value=N(x,1);if(y!=null)$('slY').value=N(y,1);if(z!=null)$('slZ').value=N(z,1);keS();var g=geom();if(g&&g.m==='H'&&isFinite(parseFloat($('slZ').value)))$('pos').value=parseFloat($('slZ').value);else $('pos').value=0;updatePlot();render();};
+  var pusatPandangan=function(){try{var gd=$('plotDiv'),L=gd&&gd._fullLayout,sc=L&&L.scene,cam=sc&&sc.camera;if(cam&&cam.center&&sc._scene){var S=sc._scene,ds=S.dataScale,b=S.glplot?S.glplot.bounds:null;
+        /* pusat kamera dalam koordinat ternormalisasi -> koordinat data */
+        var c=cam.center,ctr=[(sc.xaxis.range[0]+sc.xaxis.range[1])/2,(sc.yaxis.range[0]+sc.yaxis.range[1])/2,(sc.zaxis.range[0]+sc.zaxis.range[1])/2],rng=[sc.xaxis.range[1]-sc.xaxis.range[0],sc.yaxis.range[1]-sc.yaxis.range[0],sc.zaxis.range[1]-sc.zaxis.range[0]],ar=sc.aspectratio;
+        return[ctr[0]+c.x*rng[0]/(2*ar.x)+offX,ctr[1]+c.y*rng[1]/(2*ar.y)+offY,ctr[2]+c.z*rng[2]/(2*ar.z)];}}catch(e){}return null;};
+  var render=function(){var v=cur(),isS=v.md==='S',isP=v.md==='P',plan=v.dip<0.5,g=geom()||{};
+    top.innerHTML='<div class=slg><div class=slf><span>Dip (&deg;) &middot; 0 = plan, 90 = tegak</span><input type=range id=slQd min=0 max=90 step=0.5 value="'+v.dip+'"><input type=number id=slQdn step=any min=0 max=90 value="'+N(v.dip,1)+'"></div>'+
+      '<div class=slf><span>Dip azimuth (&deg;)'+(isP?' &middot; dari garis':'')+'</span><input type=number id=slQa step=any value="'+N(v.az,1)+'" '+(isP?'disabled':'')+'><div class=slq><button type=button data-az=0>U</button><button type=button data-az=90>T</button><button type=button data-az=180>S</button><button type=button data-az=270>B</button></div></div></div>'+
+      '<div class=slq><button type=button data-pre=plan class="'+(plan&&!isP?'on':'')+'">Plan (horizontal)</button><button type=button data-pre=ew class="'+(!plan&&isS&&Math.abs(((v.az%180)+180)%180-0)<0.3&&v.dip>=89.5?'on':'')+'">Tegak E&ndash;W</button><button type=button data-pre=ns class="'+(!plan&&isS&&Math.abs(((v.az%180)+180)%180-90)<0.3&&v.dip>=89.5?'on':'')+'">Tegak N&ndash;S</button><button type=button data-pre=line class="'+(isP?'on':'')+'">Garis di peta&hellip;</button></div>'+
+      '<div class="slg c3"><div class=slf><span>Lebar slab (m)</span><input type=number id=slQw step=any min=0.1 value="'+v.w+'"></div><div class=slf><span>Langkah (m)</span><input type=number id=slQs step=any min=0.1 value="'+v.step+'"></div><div class=slf><span>Posisi &middot; '+(plan||g.m==='H'?'elevasi':'offset dari pusat')+'</span><input type=number id=slQp step=any value="'+N(v.pos,1)+'"></div></div>'+
+      '<div class=slf><span>Pusat bidang (E, N, RL) <small>&middot; dipakai bila dip &gt; 0</small></span><div class="slg c3" style="margin:0"><input type=number id=slQx step=any placeholder=E value="'+N(v.x,1)+'"><input type=number id=slQy step=any placeholder=N value="'+N(v.y,1)+'"><input type=number id=slQz step=any placeholder=RL value="'+N(v.z,1)+'"></div></div>'+
+      '<div class=slq><button type=button data-ps=data>Pusat data</button><button type=button data-ps=view>Pusat pandangan</button></div>'+
+      '<div class=slpos><button type=button data-d=-1 title="Mundur satu langkah (PageDown)">&#9664; Mundur</button><div class=slf><input type=number id=slQp2 step=any value="'+N(v.pos,1)+'"></div><button type=button data-d=1 title="Maju satu langkah (PageUp)">Maju &#9654;</button></div>';
+    mid.innerHTML='<hr>'+ck('sliceClip','Potong data (hanya di dalam slab)')+ck('showPlane','Tampilkan bidang potong')+ck('showProf','Profil topo / pit pada sayatan')+'<hr>';
+    mx.innerHTML='<button class=smi data-a=dig>&#9998; Digitasi string di penampang</button><button class=smi data-a=set>&#9881; Pengaturan lanjutan (panel Sayatan)&hellip;</button>';};
+  var ubah=function(e){var t=e.target,id=t.id;if(!id)return;
+    if(id==='slQd'||id==='slQdn'){var d=Math.min(90,Math.max(0,parseFloat(t.value)||0));if(id==='slQd'&&e.type==='input'){$('slQdn').value=N(d,1);keS();var was=(parseFloat($('slDip').value)||0)<0.5;$('slDip').value=d;if(was!==(d<0.5))updRange(true);dDraft();return;}setDipAz(d,null);}
+    else if(id==='slQa')setDipAz(null,parseFloat(t.value)||0);
+    else if(id==='slQw'){var w=parseFloat(t.value);if(w>0){$('thick').value=w;updatePlot();}}
+    else if(id==='slQs'){var sv=parseFloat(t.value);if(sv>0)$('slStep').value=sv;}
+    else if(id==='slQp'||id==='slQp2'){var p=$('pos'),pv=parseFloat(t.value);if(isFinite(pv)){p.value=Math.min(+p.max,Math.max(+p.min,pv));updatePlot();render();}}
+    else if(id==='slQx'||id==='slQy'||id==='slQz'){setPusat(parseFloat($('slQx').value),parseFloat($('slQy').value),parseFloat($('slQz').value));}};
+  top.addEventListener('change',ubah);top.addEventListener('input',function(e){if(e.target.id==='slQd')ubah(e);});
+  top.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    if(b.dataset.d){stepPos(+b.dataset.d);setTimeout(render,60);return;}
+    if(b.dataset.az!=null){setDipAz(Math.max(parseFloat($('slQdn').value)||0,90),+b.dataset.az);return;}
+    if(b.dataset.ps==='data'){setPusat(CX+offX,CY+offY,(G.z0+G.z1)/2);return;}
+    if(b.dataset.ps==='view'){var c=pusatPandangan();if(c)setPusat(c[0],c[1],c[2]);else alert('Pusat pandangan hanya tersedia di tampilan 3D.');return;}
+    var pre=b.dataset.pre;if(pre==='plan')setDipAz(0,null);else if(pre==='ew')setDipAz(90,0);else if(pre==='ns')setDipAz(90,90);else if(pre==='line'){close();$('sMode').value='P';modeChanged();if(typeof drawOpen==='function'&&!lineGet())setTimeout(drawOpen,50);}});
+  head.addEventListener('click',function(e){if(e.target.id==='slReset'){$('slDip').value=0;$('slAz').value=0;$('slX').value='';$('slY').value='';$('slZ').value='';$('slStep').value='';$('sMode').value='S';modeChanged();render();}});
+  mx.addEventListener('click',function(e){var b=e.target.closest('button[data-a]');if(!b)return;close();if(b.dataset.a==='set'){uiTab('Slice');}else{uiTab('Dig');}});
+  bt.addEventListener('click',function(e){e.stopPropagation();if(m.style.display==='block'){close();return;}render();var r=bt.getBoundingClientRect();m.style.display='block';m.style.top=(r.bottom+6+window.scrollY)+'px';m.style.left=(Math.max(8,Math.min(innerWidth-350,r.left))+window.scrollX)+'px';});
   [b2,b3].forEach(function(b){if(b)b.addEventListener('click',function(){setTimeout(close,0);});});
   document.addEventListener('mousedown',function(e){if(m.style.display==='block'&&!m.contains(e.target)&&e.target!==bt&&!bt.contains(e.target))close();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
-  var sync=function(){var s=$('secM2d');if(s)s.innerHTML=window.VIEW2D?' <span class=sm2d>2D</span>':'';bt.classList.toggle('on',!!window.VIEW2D);};
-  var _t=toggle2D;toggle2D=function(){var r=_t.apply(this,arguments);sync();return r;};sync();})();
+  var sync=function(){var s=$('secM2d');if(s)s.innerHTML=window.VIEW2D?' <span class=sm2d>2D</span>':'';bt.classList.toggle('on',!!window.VIEW2D);if(m.style.display==='block')render();};
+  var _t=toggle2D;toggle2D=function(){var r=_t.apply(this,arguments);sync();return r;};
+  var _sp=stepPos;stepPos=function(){var r=_sp.apply(this,arguments);if(m.style.display==='block')setTimeout(render,80);return r;};
+  window.SLICER={render:render,open:function(){bt.click();},close:close,set:setDipAz,pusat:setPusat};sync();})();
 
 /* ================= GC-Ex Block Model 0.14: 3D hasil kerja & model as-mined gabungan (puzzle) =================
    Di menu Register & Laporan As-Mined:
@@ -10298,7 +10448,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.49';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.50';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

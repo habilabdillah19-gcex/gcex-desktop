@@ -4161,3 +4161,14 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   *Topografi atas / bawah* dulu hanya "Topografi aktif" / "Desain pit aktif". Kini ada tombol **Pilih file topografi (STR / DXF / CSV /
   DTM)…** di bawah tiap pilihan (dan **Pilih file desain pit…** di mode Per desain pit): file survei dibaca langsung dan dipakai untuk
   laporan itu (tidak mengubah topografi tampilan). Untuk menyimpannya di proyek, import sebagai Permukaan DTM di Data Referensi.
+
+## 153. Block Model 0.24.50 & Drillhole 0.24.57 — Permukaan & ortho resolusi tinggi, penyamaan kedua aplikasi
+
+- **Permukaan topografi & desain pit** kini dibangun dari **seluruh titik survei** (TIN penuh), bukan 15 ribu titik contoh: lekuk
+  kecil tetap tampak dan tidak berubah saat zoom. Berlaku di kedua aplikasi.
+- **Orthofoto**: pilihan Resolusi bawaan **Otomatis** — setajam anggaran profil Kinerja (Hemat 300 rb · Seimbang 800 rb · Penuh 1,5 juta
+  titik; tidak lebih halus dari piksel ortho) dan makin halus saat kamera 3D di-zoom masuk. Dulu bawaan 2 m. Bila terasa berat, pilih
+  profil Hemat atau resolusi tetap (4 / 2 / 1 / 0,5 / 0,25 m).
+- **Penyamaan Block Model ↔ Drill Hole**: Block Model mendapat tombol **Slicer** (sama dengan Drill Hole 0.24.56); Drill Hole mendapat
+  tampilan block model besar utuh (LOD sel, dulu sampel titik), perbaikan acuan koordinat otomatis, dan pengabaian file spasial yang tidak
+  overlap. Reporting Block Model di Block Model diperiksa terhadap Drill Hole: engine, bagian dan constraint-nya sama (port langsung).

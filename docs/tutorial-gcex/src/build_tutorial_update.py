@@ -951,6 +951,9 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Permukaan &amp; ortho tajam, penyamaan kedua aplikasi (BM 0.24.50 / DH 0.24.57).</b> Permukaan topografi dan desain pit kini dibangun dari '
+         '<b>seluruh titik survei</b> (bukan 15 ribu titik contoh), orthofoto digambar setajam anggaran profil Kinerja dan makin halus saat zoom masuk (Resolusi = Otomatis). '
+         'Block Model mendapat tombol <b>Slicer</b> yang sama dengan Drill Hole; Drill Hole mendapat tampilan block model besar utuh (LOD) dan perbaikan acuan koordinat yang sama dengan Block Model.</p>')
 B.append('<p><b>Slicer, panel Assay, permukaan topo / pit (DH 0.24.56 / BM 0.24.49).</b> Bilah atas Drill Hole kini punya satu tombol <b>Slicer</b>: '
          'dip, dip azimuth, lebar slab, langkah, pusat bidang (E, N, RL), Mundur / Maju, opsi slab, Sayatan 2D &mdash; memotong model dari arah mana saja tanpa menggambar garis. '
          'Node <b>Assay</b> membuka panel tampilan kadar (unsur, cutoff, deret warna diskrit / gradasi); sub-node unsur hanya daftar. '

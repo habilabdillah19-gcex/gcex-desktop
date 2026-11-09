@@ -43,6 +43,10 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
   --------------------------  --------  ----------------------------  ---------------------------------
   Plotly.js                   2.27.0    MIT                           grafik & tampilan 3D / 2D (tertanam
                                                                       di halaman aplikasi)
+  Delaunator                  5.1.0     ISC                           triangulasi permukaan topografi /
+                                                                      desain pit resolusi penuh (tertanam
+                                                                      di halaman GC-Ex Block Model &
+                                                                      Drillhole; web-src/delaunator.min.js)
   Electron                    33.2.1    MIT                           jendela aplikasi desktop
     (termasuk Chromium & Node.js)       BSD-3-Clause, MIT & lainnya   lihat LISENSI_CHROMIUM.html
   NSIS (installer, via        -         zlib/libpng                   installer & uninstaller Windows
@@ -156,6 +160,29 @@ Plotly.js menyertakan sejumlah pustaka open-source lain di dalam berkas
 plotly.min.js (antara lain modul d3, earcut, regl dan stack.gl) dengan
 lisensi permisif (MIT / BSD / ISC). Pemberitahuannya ada di
 LISENSI_PLOTLY_BUNDEL.txt; sumber resmi: repositori github.com/plotly/plotly.js.
+
+
+2b. DELAUNATOR 5.1.0 — ISC LICENSE
+----------------------------------
+
+Delaunator (github.com/mapbox/delaunator) — triangulasi Delaunay 2D yang dipakai GC-Ex untuk
+membangun permukaan (TIN) topografi dan desain pit dari seluruh titik data.
+
+ISC License
+
+Copyright (c) 2026, Mapbox
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
 
 
 3. ELECTRON, CHROMIUM & NODE.JS

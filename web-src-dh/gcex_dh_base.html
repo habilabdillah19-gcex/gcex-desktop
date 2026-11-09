@@ -712,7 +712,7 @@ body.sgdrag #stage{pointer-events:none}
 <div class='f' style='margin-top:8px'><label>Opasitas topografi</label><input type='range' id='ovOp' min='0.1' max='1' step='0.05' value='0.5' oninput='dUpdate()'></div>
 <h4>Orthofoto</h4>
 <label class='sw'><input type='checkbox' id='ovOrtho' onchange='updatePlot()'>Orthofoto (GeoTIFF)</label>
-<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Mode</div><select id='orMode' onchange='updatePlot()'><option value='drape'>Drape ke topo</option><option value='flat'>Bidang datar</option></select></div><div><div class='lab'>Resolusi</div><select id='orRes' onchange='updatePlot()'><option value='4'>4 m (ringan)</option><option value='2' selected>2 m</option><option value='1'>1 m (detail)</option></select></div></div>
+<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Mode</div><select id='orMode' onchange='updatePlot()'><option value='drape'>Drape ke topo</option><option value='flat'>Bidang datar</option></select></div><div><div class='lab'>Resolusi</div><select id='orRes' onchange='updatePlot()'><option value='0' selected>Otomatis (setajam anggaran kinerja)</option><option value='4'>4 m (ringan)</option><option value='2'>2 m</option><option value='1'>1 m</option><option value='0.5'>0,5 m</option><option value='0.25'>0,25 m</option></select></div></div>
 <div class='f'><label>Opasitas orthofoto</label><input type='range' id='orOp' min='0.2' max='1' step='0.05' value='1' oninput='dUpdate()'></div>
 <div class='hint' id='orInfo'></div>
 </section>
@@ -1151,9 +1151,9 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var traces=[],op=+$('ovOp').value;
   /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
   var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#b9a58c'),ovPc=(($('ovPitCol')||{}).value||'#d08a4e'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc;
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop,function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
-  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
+  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.pitC:OV.pitF,{opacity:Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
   var pcs=[[0,'#888888'],[1,'#888888']];
@@ -1242,8 +1242,8 @@ function dhBesarAuto(){try{
 document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.type==='range'&&PERF_REL())updatePlot();},true);
 function perfApply(){var p=$('perfPreset').value,set=function(id,v){var e=$(id);if(e)e.checked=v;};
   if(p==='eco'){set('lightMode',true);set('hoverOn',false);set('showLabel',false);set('perfRel',true);set('sliceClip',true);set('gAuto',false);$('orRes').value='4';$('asMax').value=300;$('bmDisp').value='pt';$('bmMax').value=15000;}
-  else if(p==='bal'){set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='2';$('asMax').value=1500;$('bmDisp').value='cube';$('bmMax').value=25000;}
-  else{set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='1';$('asMax').value=4000;$('bmDisp').value='cube';$('bmMax').value=60000;}
+  else if(p==='bal'){set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='0';$('asMax').value=1500;$('bmDisp').value='cube';$('bmMax').value=25000;}
+  else{set('lightMode',false);set('hoverOn',true);set('showLabel',true);set('perfRel',false);set('gAuto',true);$('orRes').value='0';$('asMax').value=4000;$('bmDisp').value='cube';$('bmMax').value=60000;}
   if(window.ORT)ORT.cache={};updatePlot();}
 function p2fn(g){if(g.m==='H')return function(x,y,z){return[x+offX,y+offY];};
   if(g.m==='X')return function(x,y,z){return[y+offY,z];};
@@ -1901,7 +1901,8 @@ function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
   if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}
   if(x1<=x0||y1<=y0)return null;
-  var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>300000){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}
+  if(!res){res=(window.HR&&HR.resFor)?HR.resFor(x0,x1,y0,y1,(HR.anggaran?HR.anggaran():HR.budget)):1;}/* Otomatis: sehalus anggaran titik profil Kinerja, tidak lebih halus dari piksel ortho (pemilik 10 Nov 2026: ortho harus tajam) */
+  var _bud=(window.HR&&HR.anggaran)?HR.anggaran():300000;if(light)_bud=Math.min(_bud,300000);var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>_bud){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}/* batas titik ortho ikut profil Kinerja (HR.anggaran) */
   var flatZ=Math.ceil(G.z1)+5,X=[],Y=[],Z=[],C=[],id=new Int32Array(nx*ny),n=0,zmin=1e18,zmax=-1e18,i,j;
   for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:topoZ(x,y),c=(z===null)?null:orthoRGB(x,y);
     if(!c){id[j*nx+i]=-1;continue;}id[j*nx+i]=n++;z+=0.3;X.push(x);Y.push(y);Z.push(z);C.push('rgb('+c[0]+','+c[1]+','+c[2]+')');if(z<zmin)zmin=z;if(z>zmax)zmax=z;}
@@ -2374,25 +2375,34 @@ function bxSel(o){var U=BX.ui,key=JSON.stringify([BX.ver,U.attr,U.fAttr,U.fOp,U.
   idx=idx.subarray(0,n);cl=cl.subarray(0,n);BX.sc={key:key,v:{idx:idx,cl:cl}};bxStats(idx,cl);return BX.sc.v;}
 function bxTraces(T,o){if(!BX.m||!$('bxShow')||!$('bxShow').checked||VIEW2D)return;var S=bxSel(o),U=BX.ui,m=BX.m;
   var ck=[S,U.op,U.attr,JSON.stringify(U.catCol[U.attr]||0),JSON.stringify(U.cls[U.attr]||0),offX,offY];if(BX.mc&&BX.mc.k.every(function(v,q){return v===ck[q];})){window._bxNote=BX.mc.note||'';BX.mc.t.forEach(function(t){T.push(t);});return;}
-  /* block model besar: lebih dari BXCAP blok terpilih -> tampil sebagai titik (sampel merata), bukan kubus.
-     Membangun kubus jutaan blok membekukan browser & memakan GB memori. Potong slab / Penampang 2D / filter = kubus lagi. */
-  var BXCAP=120000,BXPT=150000;window._bxNote='';
-  if(S.idx.length>BXCAP){var stp=Math.max(1,Math.ceil(S.idx.length/BXPT)),GP={},shown=0;for(var j0=0;j0<S.idx.length;j0+=stp){var c0=S.cl[j0];(GP[c0]=GP[c0]||[]).push(S.idx[j0]);shown++;}
-    var outP=[],msz=Math.max(1.5,Math.min(4,3-Math.log10(stp)));Object.keys(GP).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var L=GP[k],ci=bxClassInfo(k),X=new Float32Array(L.length),Y=new Float32Array(L.length),Z=new Float32Array(L.length);
-      for(var q2=0;q2<L.length;q2++){var ii=L[q2];X[q2]=m.x[ii]-offX;Y[q2]=m.y[ii]-offY;Z[q2]=m.z[ii];}
-      outP.push({type:'scatter3d',mode:'markers',x:X,y:Y,z:Z,marker:{size:msz,color:ci.col,opacity:Math.max(0.35,U.op)},name:U.attr+' '+ci.lab+' (titik'+(stp>1?' 1/'+stp:'')+')',hoverinfo:'name',showlegend:true});});
-    window._bxNote='block model '+S.idx.length.toLocaleString('id-ID')+' blok: tampil titik'+(stp>1?' (1 dari '+stp+')':'')+'; potong slab / Penampang 2D untuk kubus';
-    BX.mc={k:ck,t:outP,note:window._bxNote};outP.forEach(function(t){T.push(t);});return;}
+  /* block model besar (> BXCAP blok terpilih): LOD seperti GC-Ex Block Model 0.24.49 (penyamaan pola, 10 Nov 2026) — dulu tampil
+     sebagai sampel titik. Blok digabung ke sel kelipatan ukuran blok induk (faktor 2, 4, ...) sampai jumlah sel <= BXCAP; tiap sel satu
+     kubus berwarna kelas dominan (bobot volume). Seluruh model & semua kelas tampak; pemilihan, statistik & laporan tetap blok asli. */
+  var BXCAP=120000;window._bxNote='';BX.lim3d=null;
   var G={};S.idx.forEach(function(i,j){(G[S.cl[j]]=G[S.cl[j]]||[]).push(i);});var keys=Object.keys(G).map(Number).sort(function(a,b){return a-b;}),out=[];
+  if(S.idx.length>BXCAP){var tot=S.idx.length,bx0=m.ext[0],by0=m.ext[2],bz0=m.ext[4],sxM=0,syM=0,szM=0,stp=Math.max(1,Math.floor(tot/20000));
+    for(var q0=0;q0<tot;q0+=stp){var i0=S.idx[q0];if(m.sx[i0]>sxM)sxM=m.sx[i0];if(m.sy[i0]>syM)syM=m.sy[i0];if(m.sz[i0]>szM)szM=m.sz[i0];}
+    if(!(sxM>0))sxM=1;if(!(syM>0))syM=1;if(!(szM>0))szM=1;var f=1,CX2,CY2,CZ2,cells;
+    for(var it=0;it<12;it++){CX2=sxM*f;CY2=syM*f;CZ2=szM*f;cells=new Map();
+      for(var q2=0;q2<tot;q2++){var i2=S.idx[q2],k2=S.cl[q2],ix=Math.floor((m.x[i2]-bx0)/CX2),iy=Math.floor((m.y[i2]-by0)/CY2),iz=Math.floor((m.z[i2]-bz0)/CZ2),kk=(ix*131071+iy)*131071+iz,c=cells.get(kk);
+        if(!c){c={ix:ix,iy:iy,iz:iz,w:{}};cells.set(kk,c);}c.w[k2]=(c.w[k2]||0)+m.sx[i2]*m.sy[i2]*m.sz[i2];}
+      if(cells.size<=BXCAP)break;f*=2;}
+    var nC=cells.size,mm={n:nC,x:new Float64Array(nC),y:new Float64Array(nC),z:new Float64Array(nC),sx:new Float64Array(nC),sy:new Float64Array(nC),sz:new Float64Array(nC),ext:m.ext,s0:CX2},G2={},j2=0;
+    cells.forEach(function(c){var best=null,bw=-1;Object.keys(c.w).forEach(function(k){if(c.w[k]>bw){bw=c.w[k];best=+k;}});
+      mm.x[j2]=bx0+(c.ix+0.5)*CX2;mm.y[j2]=by0+(c.iy+0.5)*CY2;mm.z[j2]=bz0+(c.iz+0.5)*CZ2;mm.sx[j2]=CX2;mm.sy[j2]=CY2;mm.sz[j2]=CZ2;(G2[best]=G2[best]||[]).push(j2);j2++;});
+    var nAsli={};keys.forEach(function(k){nAsli[k]=G[k].length;});m=mm;G=G2;keys=Object.keys(G).map(Number).sort(function(a,b){return a-b;});
+    BX.lim3d={shown:nC,tot:tot,lim:BXCAP,lod:[CX2,CY2,CZ2],f:f,nAsli:nAsli};
+    window._bxNote='block model '+tot.toLocaleString('id-ID')+' blok: tampilan disederhanakan ke '+nC.toLocaleString('id-ID')+' sel '+[CX2,CY2,CZ2].map(function(v){return +v.toFixed(2);}).join(' × ')+' m (warna = kelas dominan per sel); angka legenda = blok asli; statistik & laporan tetap blok asli';}
+
   var hs=m.s0/2,hz=Infinity;for(var q=0;q<m.n;q+=Math.max(1,Math.floor(m.n/50000)))hz=Math.min(hz,m.sz[q]/2);var e0=m.ext[0]-1e3,e2=m.ext[2]-1e3,e4=m.ext[4]-1e3,NX=Math.ceil((m.ext[1]-e0+2e3)/hs)+4,NY=Math.ceil((m.ext[3]-e2+2e3)/hs)+4,NZ=Math.ceil((m.ext[5]-e4+2e3)/hz)+4,SZ={},nsz=0;
-  keys.forEach(function(k){var L=G[k],ci=bxClassInfo(k),nm=U.attr+' '+ci.lab+' ('+L.length.toLocaleString()+')',n6=L.length*6,FK=new Float64Array(n6),FI=new Int32Array(n6),cnt=new Map();
+  keys.forEach(function(k){var L=G[k],ci=bxClassInfo(k),nm=U.attr+' '+ci.lab+' ('+((BX.lim3d&&BX.lim3d.nAsli&&BX.lim3d.nAsli[k]!=null)?BX.lim3d.nAsli[k]:L.length).toLocaleString()+')',n6=L.length*6,FK=new Float64Array(n6),FI=new Int32Array(n6),cnt=new Map();
     for(var b=0;b<L.length;b++){var i=L[b],cx=m.x[i],cy=m.y[i],cz=m.z[i],h=[m.sx[i]/2,m.sy[i]/2,m.sz[i]/2],sk=m.sx[i]+'|'+m.sz[i];if(SZ[sk]===undefined)SZ[sk]=nsz++;
       for(var f=0;f<6;f++){var a=f>>1,sg=(f&1)?1:-1,c=[cx,cy,cz];c[a]+=sg*h[a];var key=((((SZ[sk]*3+a)*NX+Math.round((c[0]-e0)/hs))*NY+Math.round((c[1]-e2)/hs))*NZ+Math.round((c[2]-e4)/hz));FK[b*6+f]=key;FI[b*6+f]=i;cnt.set(key,(cnt.get(key)||0)+1);}}
     var nv=0;for(var t=0;t<n6;t++)if(cnt.get(FK[t])===1)nv++;var x=new Float32Array(nv*4),y=new Float32Array(nv*4),z=new Float32Array(nv*4),I=new Int32Array(nv*2),J=new Int32Array(nv*2),K=new Int32Array(nv*2),qv=0,PP=[[-1,-1],[1,-1],[1,1],[-1,1]];
     for(t=0;t<n6;t++){if(cnt.get(FK[t])!==1)continue;var i2=FI[t],f2=t%6,a2=f2>>1,sg2=(f2&1)?1:-1,H=[m.sx[i2]/2,m.sy[i2]/2,m.sz[i2]/2],C=[m.x[i2]-offX,m.y[i2]-offY,m.z[i2]];C[a2]+=sg2*H[a2];var bb=(a2+1)%3,cc=(a2+2)%3,o4=qv*4;
       for(var v=0;v<4;v++){var p=C.slice();p[bb]+=PP[v][0]*H[bb];p[cc]+=PP[v][1]*H[cc];x[o4+v]=p[0];y[o4+v]=p[1];z[o4+v]=p[2];}I[qv*2]=o4;J[qv*2]=o4+1;K[qv*2]=o4+2;I[qv*2+1]=o4;J[qv*2+1]=o4+2;K[qv*2+1]=o4+3;qv++;}
     out.push({type:'mesh3d',x:x,y:y,z:z,i:I,j:J,k:K,color:ci.col,opacity:U.op,flatshading:true,name:nm,hoverinfo:'name',showlegend:true,lighting:{ambient:0.7,diffuse:0.6,specular:0.05}});});
-  BX.mc={k:ck,t:out};out.forEach(function(t){T.push(t);});}
+  BX.mc={k:ck,t:out,note:window._bxNote};out.forEach(function(t){T.push(t);});}
 function bxTraces2D(o,F){if(!BX.m||!$('bxShow')||!$('bxShow').checked)return[];var S=bxSel({clip:true,K:o.K}),m=BX.m,g=o.g,G={},out=[];
   var u=g.u||[1,0,0],st2=Math.max(1,Math.ceil(S.idx.length/150000));window._bxNote=st2>1?'block model di slab '+S.idx.length.toLocaleString('id-ID')+' blok: tampil 1 dari '+st2+' (tipiskan slab)':'';S.idx.forEach(function(i,j){if(j%st2)return;(G[S.cl[j]]=G[S.cl[j]]||[]).push(i);});
   Object.keys(G).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var L=G[k],ci=bxClassInfo(k),X=[],Y=[];
@@ -2461,7 +2471,7 @@ async function bxDlgFile(f){if(!f)return;BX.mdlM=null;$('bxDMsg').textContent='M
 function bxDlgGo(){if(BX.mdlM){var m=BX.mdlM;BX.mdlM=null;m.name=($('bxnm')&&$('bxnm').value)||m.name;if(m.ext[1]-offX<G.x0-2000||m.ext[0]-offX>G.x1+2000||m.ext[3]-offY<G.y0-2000||m.ext[2]-offY>G.y1+2000)m.warn=(m.warn?m.warn+' ':'')+'Block model tidak overlap dengan area drillhole.';BX.m=m;BX.ui=bxDefUI(m);BX.ver++;BX.sc={};bxDlgClose();if($('bxShow'))$('bxShow').checked=true;bxPanel();uiTab('BM');updatePlot();if(window.SA&&SA.dirty){SA.bxDirty=true;SA.dirty();}return;}
   var R=BX.raw;if(!R)return;try{var gi=function(id){return +$(id).value;},cfg={x:gi('bxmx'),y:gi('bxmy'),z:gi('bxmz'),sx:gi('bxsx'),sy:gi('bxsy'),sz:gi('bxsz'),
       sxv:NaN,syv:NaN,szv:NaN,org:$('bxorg').value,att:Array.prototype.map.call(document.querySelectorAll('.bxat:checked'),function(e){return +e.value;}),name:$('bxnm').value||'Block model'};
-    ['x','y','z'].forEach(function(a){if(cfg['s'+a]<0)cfg['s'+a+'v']=bxInfer(R,cfg[a]);});var m=SA.buildBM(R,cfg);BX.m=m;BX.ui=bxDefUI(m);BX.ver++;BX.sc={};BX.raw=null;bxDlgClose();if($('bxShow'))$('bxShow').checked=true;bxPanel();uiTab('BM');updatePlot();if(window.SA&&SA.dirty){SA.bxDirty=true;SA.dirty();}}
+    ['x','y','z'].forEach(function(a){if(cfg['s'+a]<0)cfg['s'+a+'v']=bxInfer(R,cfg[a]);});var m=SA.buildBM(R,cfg);BX.m=m;BX.ui=bxDefUI(m);BX.ver++;BX.sc={};if(window.SA&&SA.reAnchor)setTimeout(function(){SA.reAnchor(m);},400);BX.raw=null;bxDlgClose();if($('bxShow'))$('bxShow').checked=true;bxPanel();uiTab('BM');updatePlot();if(window.SA&&SA.dirty){SA.bxDirty=true;SA.dirty();}}
   catch(e){$('bxDMsg').innerHTML='<span class=warn>'+bxE(e.message)+'</span>';console.error(e);}}
 function bxClear(){if(!BX.m||!confirm('Hapus block model '+BX.m.name+'?'))return;BX.m=null;BX.ui=null;BX.ver++;BX.sc={};bxPanel();updatePlot();if(window.SA&&SA.dirty){SA.bxDirty=true;SA.dirty();}}
 bxPanel();
@@ -5245,18 +5255,31 @@ SA.bersihD=function(D){try{var ok=SA.koordOk,bad=0,A=[1e18,-1e18,1e18,-1e18,1e18
       if(p){if(p[0]<A[0])A[0]=p[0];if(p[0]>A[1])A[1]=p[0];if(p[1]<A[2])A[2]=p[1];if(p[1]>A[3])A[3]=p[1];if(isFinite(p[2])){if(p[2]<A[4])A[4]=p[2];if(p[2]>A[5])A[5]=p[2];}}}D[k]=o;});
   if(D.anch&&!(ok(D.anch[0],D.anch[2],NaN)&&ok(D.anch[1],D.anch[3],NaN))&&A[0]<1e17){if(A[4]>1e17){A[4]=0;A[5]=100;}D.anch=A;bad=bad||1;}
   if(bad)console.warn('[GC-Ex] '+bad+' titik / jangkar berkoordinat rusak dibuang saat membuka proyek');}catch(e){console.error(e);}};
+/* Jangkar area (offX/offY) yang terlanjur salah pada proyek tersimpan tanpa collar (STR pit yang dulu salah baca memberi E -5,3e7;
+   lolos koordOk karena |E| < 1e8) -> sumbu bertuliskan +-52882000 dan grid 3D kacau. Saat block model dimuat dan batasnya > 100 km dari jangkar
+   (tanpa collar yang bisa membenarkan), jangkar dihitung ulang dari batas block model, titik topo / pit yang > 50 km dari model dibuang,
+   proyek disimpan, lalu halaman dimuat ulang sekali. */
+SA.reAnchor=async function(m){try{if(!m||!m.ext||(window.collars&&collars.length))return false;var D=SA.D;if(!D||!D.anch)return false;
+  var jauh=Math.abs(m.ext[0]-offX)>1e5||Math.abs(m.ext[2]-offY)>1e5;if(!jauh||SA._reanch)return false;SA._reanch=1;
+  var ok=SA.koordOk,bad=0,dekat=function(p){return p&&ok(p[0],p[1],p[2])&&Math.abs(p[0]-(m.ext[0]+m.ext[1])/2)<5e4&&Math.abs(p[1]-(m.ext[2]+m.ext[3])/2)<5e4;};
+  ['topoData','pitData'].forEach(function(k){var L=D[k];if(!L)return;var o=L.filter(function(p){var d=dekat(p);if(!d&&p)bad++;return d;});D[k]=o;});
+  D.anch=[m.ext[0],m.ext[1],m.ext[2],m.ext[3],isFinite(m.ext[4])?m.ext[4]:0,isFinite(m.ext[5])?m.ext[5]:100];D.date=new Date().toISOString();
+  await idbPut('proj:'+D.name,{name:D.name,date:D.date,data:D});try{if(SA.saveWork)await SA.saveWork();}catch(e){}try{if(window.FP&&FP.dir&&FP.save)await FP.save(false,'jangkar area');}catch(e){}
+  console.warn('[GC-Ex] jangkar area dihitung ulang dari block model; '+bad+' titik topo/pit jauh dibuang');
+  alert('Acuan koordinat proyek ini ('+Math.round(offX)+', '+Math.round(offY)+') jauh dari block model (E '+Math.round(m.ext[0])+', N '+Math.round(m.ext[2])+') — biasanya sisa file STR yang dulu salah terbaca. Acuan dihitung ulang dari block model'+(bad?' dan '+bad.toLocaleString()+' titik topografi / pit yang jauh dibuang':'')+'. Halaman dimuat ulang.');
+  location.reload();return true;}catch(e){console.error(e);return false;}};
 SA.boot=function(D,W){SA.bersihD(D);window.ANCH=D.anch||null;['collars','surveys','elements','asCat','assays','geoCat','geoRows','topoData','pitData','orthoImg'].forEach(function(k){window[k]=D[k]||(k==='orthoImg'?null:[]);});
   window.ZONE=D.name;window.BENCHMAP=D.benchmap||{};SA.pname=D.name;SA.planFmt();document.title='GC-Ex - '+D.name;E('imp').classList.add('off');
   if(!W&&D.collars.length>400&&E('showLabel'))E('showLabel').checked=false;
   evalJs(E('vsrc').textContent);SA.projUI();if(W)SA.applyWork(W);
-  if(SA.bmPend&&SA.bmPend.m){try{BX.m=SA.bmPend.m;BX.ui=bxDefUI(BX.m);BX.ver++;BX.sc={};bxPanel();updatePlot();if(!collars.length)uiTab('BM');}catch(er){msg('Block model: '+esc(er.message),true);}SA.bmPend=null;}
+  if(SA.bmPend&&SA.bmPend.m){try{BX.m=SA.bmPend.m;BX.ui=bxDefUI(BX.m);BX.ver++;BX.sc={};bxPanel();updatePlot();SA.reAnchor(BX.m);if(!collars.length)uiTab('BM');}catch(er){msg('Block model: '+esc(er.message),true);}SA.bmPend=null;}
   if(SA.bmPend){try{var bc=SA.bmPend.cfg;['x','y','z'].forEach(function(a){if(bc['s'+a]<0)bc['s'+a+'v']=bxInfer(SA.bmPend.R,bc[a]);});var m=SA.buildBM(SA.bmPend.R,bc);BX.m=m;BX.ui=bxDefUI(m);BX.ver++;BX.sc={};bxPanel();updatePlot();if(!collars.length)uiTab('BM');}catch(er){msg('Block model: '+esc(er.message),true);}SA.bmPend=null;}
   SA.autosave();};
 /* block model besar tidak disalin ke IndexedDB (salinan GB membekukan browser & cepat memenuhi kuota); dibaca ulang dari file sumber */
 SA.bxBig=function(m){if(!m)return false;var b=m.n*36;Object.keys(m.num||{}).forEach(function(k){b+=m.n*(m.num[k].BYTES_PER_ELEMENT||8);});Object.keys(m.cat||{}).forEach(function(){b+=m.n*2;});return m.n>1500000||b>350*1048576;};
 SA.collectWork=function(){var w={date:new Date().toISOString()};try{if(BX.m&&SA.bxBig(BX.m))w.bxBig={name:BX.m.name,n:BX.m.n,src:BX.m.src||null};}catch(e){}try{w.ui=dmSnap();}catch(e){}try{w.dg=DG.S;}catch(e){}try{w.gs=GS.rows;}catch(e){}try{w.hasBm=!!window.BM;w.bmVer=window.BM?BM.ver:0;}catch(e){}try{w.hasMd=SA.mdHas();w.nMd=[MD.models.length,MD.pts.length];}catch(e){}try{w.hasBx=!!BX.m;w.bxui=BX.ui;w.bxName=BX.m?BX.m.name:'';}catch(e){}
   try{w.plan={h:PL.h,b:E('plBench').value,s:E('plSeq').value,f:E('plFmt')?E('plFmt').value:''};}catch(e){}return w;};
-SA.applyWork=function(W){try{if(W&&!W.bx&&W.bxBig){var bb=W.bxBig,sr=bb.src||{},fs=sr.st||{};setTimeout(function(){var t='Block model besar <b>'+esc(bb.name)+'</b> ('+(bb.n||0).toLocaleString('id-ID')+' blok) tidak disimpan di browser agar hemat memori. Import ulang lewat <b>Block Model &rsaquo; Import BM</b>'+(sr.name?' (file <b>'+esc(sr.name)+'</b>':'')+(fs.lo!=null||fs.hi!=null||fs.x0!=null?', filter sebelumnya: '+[fs.x0!=null?'E '+fs.x0+'–'+fs.x1:'',fs.y0!=null?'N '+fs.y0+'–'+fs.y1:'',fs.lo!=null||fs.hi!=null?'Z '+(fs.lo!=null?fs.lo:'')+'–'+(fs.hi!=null?fs.hi:''):'',fs.keep&&fs.keep.length?fs.keep.join(', '):''].filter(Boolean).join(' · '):'')+(sr.name?')':'')+'. Proyek di folder proyek membacanya ulang otomatis dari sumber/.';if(window.FP&&FP.toast)FP.toast(t,true,0);},2500);}if(W.bx){BX.m=W.bx;BX.ui=W.bxui||bxDefUI(W.bx);BX.ver++;BX.sc={};SA.bxVer=BX.ver;bxPanel();}if(W.md){MD.models=W.md.models||[];MD.pts=W.md.pts||[];MD.str=W.md.str||[];MD.ver++;MD.sc={};mdList();SA.mdVer=MD.ver;}if(W.bm){SA.bmVer=W.bm.ver;window.BM=W.bm;try{okSummary();}catch(e){}}if(W.gs){GS.rows=W.gs;}
+SA.applyWork=function(W){try{if(W&&!W.bx&&W.bxBig){var bb=W.bxBig,sr=bb.src||{},fs=sr.st||{};setTimeout(function(){var t='Block model besar <b>'+esc(bb.name)+'</b> ('+(bb.n||0).toLocaleString('id-ID')+' blok) tidak disimpan di browser agar hemat memori. Import ulang lewat <b>Block Model &rsaquo; Import BM</b>'+(sr.name?' (file <b>'+esc(sr.name)+'</b>':'')+(fs.lo!=null||fs.hi!=null||fs.x0!=null?', filter sebelumnya: '+[fs.x0!=null?'E '+fs.x0+'–'+fs.x1:'',fs.y0!=null?'N '+fs.y0+'–'+fs.y1:'',fs.lo!=null||fs.hi!=null?'Z '+(fs.lo!=null?fs.lo:'')+'–'+(fs.hi!=null?fs.hi:''):'',fs.keep&&fs.keep.length?fs.keep.join(', '):''].filter(Boolean).join(' · '):'')+(sr.name?')':'')+'. Proyek di folder proyek membacanya ulang otomatis dari sumber/.';if(window.FP&&FP.toast)FP.toast(t,true,0);},2500);}if(W.bx){BX.m=W.bx;BX.ui=W.bxui||bxDefUI(W.bx);BX.ver++;BX.sc={};SA.bxVer=BX.ver;bxPanel();if(window.SA&&SA.reAnchor)SA.reAnchor(W.bx);}if(W.md){MD.models=W.md.models||[];MD.pts=W.md.pts||[];MD.str=W.md.str||[];MD.ver++;MD.sc={};mdList();SA.mdVer=MD.ver;}if(W.bm){SA.bmVer=W.bm.ver;window.BM=W.bm;try{okSummary();}catch(e){}}if(W.gs){GS.rows=W.gs;}
     if(W.plan){PL.h=W.plan.h||[];if(W.plan.b!=null)E('plBench').value=W.plan.b;if(W.plan.s)E('plSeq').value=W.plan.s;if(W.plan.f&&E('plFmt'))E('plFmt').value=W.plan.f;plRefresh(true);}
     if(W.dg){DG.S=W.dg;dgSave();dgList();}
     if(W.ui){var u=W.ui;u.pl=JSON.stringify(PL.h);u.dg=JSON.stringify(DG.S);var v=u.v||{};Object.keys(v).forEach(function(k){var e=E(k);if(!e||e.type==='file'||e.closest('#imp'))delete v[k];});dmRestore(u);}
