@@ -344,6 +344,9 @@ class FormsPage(QWidget):
         self.title = QLabel()
         self.title.setTextFormat(Qt.RichText)
         self.title.setObjectName("fmVTitle")
+        from PySide6.QtWidgets import QSizePolicy as _SP
+        self.title.setSizePolicy(_SP.Ignored, _SP.Preferred)  # judul panjang tidak memaksa lebar minimum jendela (layar 1366 px)
+        self.title.setMinimumWidth(120)
         th.addWidget(self.title, 1)
         self.cbSpeed = QComboBox()
         for t_, px in (("Cepat", 1280), ("Seimbang", 1600), ("Teliti", 2000)):
@@ -409,7 +412,7 @@ class FormsPage(QWidget):
         # ---- kanan
         self.tabs = QTabWidget()
         self.tabs.setObjectName("fmTabs")
-        self.tabs.setMinimumWidth(480)
+        self.tabs.setMinimumWidth(420)  # 0.45.1: muat di layar 1280 px logis (1920 px @150%)
         self.tabs.addTab(self._tab_data(), "Data")
         self.tabs.addTab(self._tab_valid(), "Validasi")
         self.tabs.addTab(self._tab_pivot(), "Pivot")

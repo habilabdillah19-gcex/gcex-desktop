@@ -70,7 +70,7 @@ def clean(txt: str) -> str:
 
 
 def ai_transcribe(s: F.Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "",
-                  timeout: float = 900, trim: bool = True) -> dict:
+                  timeout: float = 900, trim: bool = True, mode: str = "ganti", base: Optional[str] = None, sep: str = "auto") -> dict:
     """AI menyalin kertas -> teks; disimpan di docs.teks (+ berkas ai_mentah/<id>_teks.txt). Tidak mengubah baris yang ada."""
     d = F.doc(s, did)
     host = (host or core_io.DEFAULT_HOST).rstrip("/")
@@ -105,9 +105,10 @@ def ai_transcribe(s: F.Store, did: int, host: str, model: str, extra: str = "", 
         raise RuntimeError("Ollama: " + str(j["error"]))
     msg = j.get("message") or {}
     raw = str(msg.get("content") or "")
-    teks = clean(raw)
-    if not teks.strip():
+    piece = clean(raw)
+    if not piece.strip():
         raise ValueError("AI tidak menyalin apa pun: " + F._why_empty(j))
+    teks = merge(get_teks(s, did) if base is None else base, piece, mode, sep)
     try:
         _teks_path(s, did).write_text(raw, encoding="utf-8")
     except OSError:
@@ -115,10 +116,53 @@ def ai_transcribe(s: F.Store, did: int, host: str, model: str, extra: str = "", 
     secs = round(time.time() - t0, 1)
     with s.lock, s.conn() as c:
         c.execute("UPDATE docs SET teks=?, ai_model=?, ai_at=?, ai_secs=?, error=NULL WHERE id=?", (teks, model, core_io.now(), secs, did))
-        F._hist(c, did, "AI menyalin teks", None, f"{teks.count(chr(10)) + 1} baris", "ai:" + model, by or "AI")
+        F._hist(c, did, "AI menyalin teks" + ({"kanan": " (kolom baru di kanan)", "bawah": " (ditambah di bawah)"}.get(mode, "")), None,
+                f"{piece.count(chr(10)) + 1} baris", "ai:" + model, by or "AI")
     ev = j.get("eval_count") or 0
-    return {"teks": teks, "perf": {"secs": secs, "tokens": ev, "px": max(size),
+    return {"teks": teks, "piece": piece, "perf": {"secs": secs, "tokens": ev, "px": max(size),
                                    "tok_s": round(ev / (j["eval_duration"] / 1e9), 1) if j.get("eval_duration") else None}}
+
+
+MODES = ("ganti", "kanan", "bawah")
+
+
+def merge(base: str, new: str, mode: str = "ganti", sep: str = "auto") -> str:
+    """Gabungkan salinan baru ke teks yang ada (alur 'scan kolom satu per satu', usul pemilik 0.45.1):
+    ganti = teks baru saja; bawah = baris baru di bawah teks lama (lembar / potongan berikutnya);
+    kanan = baris tabel ke-i salinan baru ditempel sebagai kolom BARU di kanan baris tabel ke-i teks lama (potongan kolom
+    kiri -> kanan: Meterage, Hole ID, Azimuth, Dip, Drilling details). Isian 'Label: nilai' digabung di atas, tanpa kembar."""
+    base, new = (base or "").strip("\n"), clean(new or "")
+    if mode not in MODES or mode == "ganti" or not base.strip():
+        return new
+    if mode == "bawah":
+        return base.rstrip() + "\n" + new
+    sp = sep if sep in SEPS else guess_sep(base + "\n" + new)
+    ch = SEPS[sp]
+    joiner = f" {ch} " if ch in "|;" else ch if ch == "\t" else ch + " "
+
+    def split(t: str) -> tuple[list[str], list[str]]:
+        hd, rw = [], []
+        for ln in t.split("\n"):
+            if not ln.strip():
+                continue
+            if ch not in ln and _LABEL.match(ln) and not rw:
+                hd.append(ln.strip())
+            elif ch not in ln and _LABEL.match(ln) and ch == "|":
+                hd.append(ln.strip())
+            else:
+                rw.append(ln.strip())
+        return hd, rw
+    bh, br = split(base)
+    nh, nr = split(new)
+    width = max((len(r.split(ch)) for r in br), default=1)
+    out = []
+    for i in range(max(len(br), len(nr))):
+        left = br[i] if i < len(br) else joiner.join(["-"] * width)
+        right = nr[i] if i < len(nr) else "-"
+        out.append(left + joiner + right)
+    seen = {re.sub(r"\s+", "", x.lower()) for x in bh}
+    hd = bh + [x for x in nh if re.sub(r"\s+", "", x.lower()) not in seen]
+    return "\n".join(hd + out)
 
 
 def save_teks(s: F.Store, did: int, teks: str, by: str) -> None:
@@ -369,6 +413,9 @@ class TrBody(F.FBody):
     extra: str = ""
     max_px: int = 1600
     trim: bool = True
+    mode: str = "ganti"
+    base: Optional[str] = None
+    sep: str = "auto"
 
 
 class TeksBody(F.FBody):
@@ -390,8 +437,8 @@ class TerapBody(F.FBody):
 @F.router.post("/transkrip")
 def api_transkrip(b: TrBody) -> dict:
     s = F.store(b.folder)
-    r = ai_transcribe(s, b.id, b.host, b.model, b.extra, b.max_px, b.by, trim=b.trim)
-    return {"ok": True, **r, **preview(s, b.id, r["teks"], "auto")}
+    r = ai_transcribe(s, b.id, b.host, b.model, b.extra, b.max_px, b.by, trim=b.trim, mode=b.mode, base=b.base, sep=b.sep)
+    return {"ok": True, **r, **preview(s, b.id, r["teks"], b.sep if b.mode == "kanan" else "auto")}
 
 
 @F.router.post("/transkrip/simpan")

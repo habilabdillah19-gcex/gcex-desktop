@@ -4113,7 +4113,14 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   (kubus digambar setebal flitch) dan **Sayatan › Opsi slab › Potong data di dalam slab (3D)** (hanya blok di dalam slab di
   sekitar Elevasi sayatan). Lepaskan keduanya untuk melihat model utuh.
 
-## 149. DB-Ex 0.45.1 — Transkrip: baris dropdown menempel, tombol Terapkan di bawah kisi
+## 149. DB-Ex 0.45.1 — Transkrip: baris dropdown menempel
 
 - Baris pertama kisi (dropdown tujuan kolom) tidak lagi ikut tergulir; nomor baris kisi kini = nomor baris teks tabel.
-- Tombol **Terapkan ke tabel ▶** tersedia di atas (kanan) dan di bawah kisi; keduanya sama.
+
+## 150. DB-Ex 0.45.2 — Transkrip: scan kolom satu per satu; jendela muat di layar
+
+- **Scan kolom kiri → kanan** (mis. DDR: Meterage, Hole ID, Azimuth, Dip, Drilling details): pilih **+ kolom di kanan** di sebelah tombol *Salin teks dengan AI*, lalu ulangi untuk tiap kolom: ✂ Potong kolom → Salin. Tiap salinan ditempel sebagai kolom baru di kanan teks (baris ke-1 ke baris ke-1, dst.). Setelah kolom terakhir, atur dropdown tujuan bila perlu lalu **Terapkan** sekali.
+- Pastikan setiap potongan kolom mencakup **baris yang sama** (dari baris judul sampai baris terakhir); sel kosong di kertas sebaiknya ditulis `-` di teks agar baris tetap sejajar — periksa di kisi sebelum Terapkan.
+- **+ di bawah**: potongan atau lembar lanjutan tabel yang sama. **Ganti teks**: teks lama diganti (meminta konfirmasi).
+- Satu tombol **Terapkan ke tabel ▶**, di bawah kisi.
+- Jendela DB-Ex tidak lagi melebar melewati layar (tombol kanan terpotong): halaman bisa digulir mendatar bila jendela sangat sempit.

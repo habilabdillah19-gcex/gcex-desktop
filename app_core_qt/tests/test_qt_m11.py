@@ -56,3 +56,20 @@ def test_transkrip_salin_petakan_terapkan(qtbot, prj, tmp_path, monkeypatch):
     tr.txt.setPlainText("3 | 1002 | T03 | OX-HG | 29 | ROM 2")
     qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 1, timeout=8000)
     assert tr.maprow.cellWidget(0, 1).currentData() == "start" and tr.maprow.cellWidget(0, 2).currentData() == "unit"
+
+
+def test_transkrip_scan_kolom_ke_kanan(qtbot, prj, tmp_path, monkeypatch):
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    from corex.api import core_io
+    outs = iter(["No | Jam\n1 | 0905\n2 | 0916", "Truck\nT01\nT02", "Kelas\nOX-LG\nSF-LG"])
+    monkeypatch.setattr(core_io, "_http", lambda url, body=None, timeout=5.0: {"message": {"content": next(outs)}})
+    w.ai.info = {"running": True}
+    monkeypatch.setattr(w.ai, "model", lambda: "qwen3-vl:2b-instruct")
+    monkeypatch.setattr("corex.forms_transkrip.ask", lambda *a, **k: (_ for _ in ()).throw(AssertionError("tidak boleh bertanya")))
+    tr = pg.tr
+    tr.cbMode.setCurrentIndex(tr.cbMode.findData("kanan"))
+    for n in (2, 3, 4):
+        tr.run_ai()
+        qtbot.waitUntil(lambda: tr.pv is not None and tr.pv.get("ncol") == n and tr.bAI.isEnabled(), timeout=8000)
+    assert tr.txt.toPlainText().split("\n") == ["No | Jam | Truck | Kelas", "1 | 0905 | T01 | OX-LG", "2 | 0916 | T02 | SF-LG"]
+    assert tr.maprow.cellWidget(0, 3).currentData() == "kelas" and tr.bApply.isVisible() is not None

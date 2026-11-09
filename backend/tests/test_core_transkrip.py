@@ -101,3 +101,28 @@ def test_terapkan_tanpa_pemetaan_ditolak(st):
         raise AssertionError("harus ditolak")
     except ValueError as e:
         assert "dipetakan" in str(e)
+
+
+def test_gabung_kolom_kanan_dan_bawah(st, monkeypatch):
+    """0.45.1: scan kolom satu per satu (kiri -> kanan) -> tiap salinan menjadi kolom baru di kanan; lembar berikutnya di bawah."""
+    m = tr.merge("Shift: I\n0 | 15\n0 | 15\n0 | 15", "Hole ID\nAB-1\nAB-2", "kanan", "|")
+    assert m.split("\n") == ["Shift: I", "0 | 15 | Hole ID", "0 | 15 | AB-1", "0 | 15 | AB-2"]
+    assert tr.merge("a | b", "c\nd", "kanan", "|").split("\n") == ["a | b | c", "- | - | d"]  # baris salinan baru lebih banyak
+    assert tr.merge("a | b", "x | y", "bawah") == "a | b\nx | y"
+    assert tr.merge("", "x", "kanan") == "x" and tr.merge("lama", "baru", "ganti") == "baru"
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "k.jpg")), "ddr", "Rina")[0]["id"]
+    outs = iter(["From | To\n0 | 15\n0 | 15", "Hole ID\nAB-100 401\nAB-100 402", "Az | Dip\n65 | 60\n68 | 60"])
+
+    def fake(url, body=None, timeout=5.0):
+        if url.endswith(("/api/show", "/api/ps")):
+            return {}
+        return {"message": {"content": next(outs)}}
+    monkeypatch.setattr(core_io, "_http", fake)
+    tr.ai_transcribe(s, did, "http://x", "m", mode="kanan")
+    tr.ai_transcribe(s, did, "http://x", "m", mode="kanan")
+    r = tr.ai_transcribe(s, did, "http://x", "m", mode="kanan", sep="|")
+    assert r["teks"].split("\n")[1] == "0 | 15 | AB-100 401 | 65 | 60"
+    pv = tr.preview(s, did, None, "|")
+    assert pv["ncol"] == 5 and pv["map"]["title_row"] == 0
+    assert pv["map"]["cols"] == ["hole:from_m", "hole:to_m", "hole:hole_id", "hole:az", "hole:dip"]

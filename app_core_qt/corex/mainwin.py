@@ -86,6 +86,9 @@ class MainWindow(QMainWindow):
         self.prj = QLabel("Core box · Singkapan · Borang · QAQC · 100% offline")
         self.prj.setObjectName("prj")
         self.prj.setMaximumWidth(520)
+        from PySide6.QtWidgets import QSizePolicy as _SP
+        self.prj.setSizePolicy(_SP.Ignored, _SP.Preferred)  # boleh terpotong di layar sempit, jangan melebarkan jendela
+        self.prj.setMinimumWidth(60)
         for x in (k, b, self.prj):
             br.addWidget(x)
         h.addLayout(br)
@@ -123,6 +126,7 @@ class MainWindow(QMainWindow):
         self.pill = QPushButton("○  AI lokal: memeriksa…")
         self.pill.setObjectName("pill")
         self.pill.setToolTip("Status AI lokal (Ollama). Klik untuk pengaturan.")
+        self.pill.setMinimumWidth(150)  # boleh menyempit (teks terpotong) di layar sempit; lebar penuh bila ada ruang
         self.bDark = btn("☾", "Tema gelap / terang")
         for x in (self.bOpen, self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.pill, self.bDark):
             h.addWidget(x)
@@ -206,7 +210,16 @@ class MainWindow(QMainWindow):
         clr.clicked.connect(self.reset_filter)
         # ---- isi: mulai / kerja
         self.stack = QStackedWidget()
-        v.addWidget(self.stack, 1)
+        # 0.45.1: halaman yang minimum lebarnya > layar (Singkapan, Borang di layar 1366 px / skala 125-150 %) tidak lagi
+        # memaksa jendela lebih lebar dari layar (tombol kanan terpotong) — isi digulir mendatar bila jendela terlalu sempit.
+        from PySide6.QtWidgets import QScrollArea
+        self.stackScroll = QScrollArea()
+        self.stackScroll.setObjectName("stackScroll")
+        self.stackScroll.setWidgetResizable(True)
+        self.stackScroll.setFrameShape(QFrame.NoFrame)
+        self.stackScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.stackScroll.setWidget(self.stack)
+        v.addWidget(self.stackScroll, 1)
         self.stack.addWidget(self._start_page())
         sp = QSplitter(Qt.Horizontal)
         sp.setHandleWidth(5)

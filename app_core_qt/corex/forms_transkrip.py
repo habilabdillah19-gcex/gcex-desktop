@@ -43,6 +43,15 @@ class TranscriptTab(QWidget):
                        "TIDAK berubah sampai Anda menekan Terapkan.", pri=True, sm=True)
         self.bAI.clicked.connect(self.run_ai)
         top.addWidget(self.bAI)
+        self.cbMode = QComboBox()
+        for t, k in (("Ganti teks", "ganti"), ("+ kolom di kanan", "kanan"), ("+ di bawah", "bawah")):
+            self.cbMode.addItem(t, k)
+        self.cbMode.setToolTip("Hasil salinan AI:\n• Ganti teks — teks lama diganti.\n• Tambah sebagai kolom di kanan — untuk scan KOLOM satu per "
+                               "satu dari kiri ke kanan (✂ Potong kolom Meterage → salin, potong Hole ID → salin, …): baris ke-1 salinan baru "
+                               "ditempel di kanan baris ke-1 teks, dst.\n• Tambah di bawah — potongan / lembar berikutnya dari tabel yang sama.")
+        self.cbMode.setCurrentIndex(max(0, self.cbMode.findData(SET.get("qt_fm_tr_mode", "ganti"))))
+        self.cbMode.currentIndexChanged.connect(lambda _i: SET.set("qt_fm_tr_mode", self.cbMode.currentData()))
+        top.addWidget(self.cbMode)
         top.addSpacing(10)
         top.addWidget(QLabel("Pemisah sel:"))
         self.cbSep = QComboBox()
@@ -52,10 +61,6 @@ class TranscriptTab(QWidget):
         self.cbSep.currentIndexChanged.connect(lambda _i: self.preview())
         top.addWidget(self.cbSep)
         top.addStretch(1)
-        self.bApply = btn("Terapkan ke tabel ▶", "Susun baris dari kisi sesuai pemetaan kolom, lalu isi tabel Data (baris lama diganti; "
-                          "isian header yang Anda edit tetap). Pemetaan disimpan untuk borang jenis ini.", pri=True, sm=True)
-        self.bApply.clicked.connect(self.apply)
-        top.addWidget(self.bApply)
         v.addLayout(top)
         self.info = QLabel()
         self.info.setObjectName("note")
@@ -70,6 +75,7 @@ class TranscriptTab(QWidget):
         tv.setSpacing(3)
         lt = QLabel("1 · TEKS SALINAN  —  rapikan di sini: sambung baris lanjutan, hapus baris sampah, satu baris tabel = satu baris teks")
         lt.setObjectName("fmSect")
+        lt.setWordWrap(True)
         tv.addWidget(lt)
         self.txt = QPlainTextEdit()
         self.txt.setObjectName("fmTranskrip")
@@ -87,6 +93,7 @@ class TranscriptTab(QWidget):
         hv.setSpacing(3)
         lh = QLabel("2 · ISIAN KOP  —  tentukan isian header untuk tiap 'Label: nilai'")
         lh.setObjectName("fmSect")
+        lh.setWordWrap(True)
         hv.addWidget(lh)
         self.hdr = QTableWidget(0, 3)
         self.hdr.setHorizontalHeaderLabels(["Label di teks", "Nilai", "Masuk ke isian header"])
@@ -125,9 +132,11 @@ class TranscriptTab(QWidget):
         gv.addWidget(self.grid, 1)
         bot = QHBoxLayout()
         bot.addStretch(1)
-        self.bApply2 = btn("Terapkan ke tabel ▶", "Sama dengan tombol di atas: susun baris sesuai pemetaan lalu isi tabel Data.", pri=True, sm=True)
-        self.bApply2.clicked.connect(self.apply)
-        bot.addWidget(self.bApply2)
+        self.bApply = btn("Terapkan ke tabel ▶", "Susun baris dari kisi sesuai pemetaan kolom, lalu isi tabel Data (baris lama diganti; "
+                          "isian header yang Anda edit tetap). Pemetaan disimpan untuk borang jenis ini.", pri=True)
+        self.bApply.clicked.connect(self.apply)
+        self.bApply2 = self.bApply  # nama lama (satu tombol, di bawah kisi — selalu terlihat, tidak memaksa lebar jendela)
+        bot.addWidget(self.bApply)
         gv.addLayout(bot)
         sp.addWidget(gw)
         sp.setSizes(SET.get("qt_fm_tr_split", [260, 120, 320]))
@@ -178,11 +187,15 @@ class TranscriptTab(QWidget):
     def run_ai(self) -> None:
         if self.did is None or not self.page._ai_ready():
             return
-        if self.txt.toPlainText().strip() and not ask(self, "Salin ulang dengan AI? Teks yang ada (termasuk suntingan Anda) akan diganti."):
+        mode = self.cbMode.currentData() or "ganti"
+        if mode == "ganti" and self.txt.toPlainText().strip() and not ask(
+                self, "Salin ulang dengan AI? Teks yang ada (termasuk suntingan Anda) akan diganti.\n\n"
+                      "Untuk scan kolom satu per satu, pilih 'Tambah sebagai kolom di kanan'."):
             return
         ai = self.page.win.ai
         body = {**self._body(), "host": ai.host.text().strip(), "model": ai.model(), "extra": ai.extra.toPlainText(),
-                "max_px": int(self.page.cbSpeed.currentData() or 1600), "trim": bool(SET.get("fmTrim", True))}
+                "max_px": int(self.page.cbSpeed.currentData() or 1600), "trim": bool(SET.get("fmTrim", True)),
+                "mode": mode, "base": self.txt.toPlainText(), "sep": (self.pv or {}).get("sep") or self.cbSep.currentData() or "auto"}
         did = self.did
         self.bAI.setEnabled(False)
         self.bAI.setText("AI menyalin…")
@@ -208,8 +221,10 @@ class TranscriptTab(QWidget):
             self.skip = set()
             self._show(j)
             p = j.get("perf") or {}
-            self.page.toast(f"AI selesai menyalin · {len(j.get('rows') or [])} baris tabel · {round(p.get('secs') or 0)} dtk — periksa teks, "
-                            "atur kolom, lalu Terapkan", 6000)
+            extra = {"kanan": " · ditempel sebagai kolom baru di kanan — potong kolom berikutnya lalu salin lagi",
+                     "bawah": " · ditambah di bawah"}.get(mode, "")
+            self.page.toast(f"AI selesai menyalin · {len(j.get('rows') or [])} baris tabel · {j.get('ncol') or 0} kolom · "
+                            f"{round(p.get('secs') or 0)} dtk{extra} — periksa teks, atur kolom, lalu Terapkan", 7000)
 
         def err(e):
             done()
