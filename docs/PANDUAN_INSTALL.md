@@ -4097,3 +4097,18 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Panel 1 teks (rapikan: `Label: nilai` untuk kop, sel dipisah `|` untuk tabel; pemisah bisa diganti), panel 2 isian kop → header, panel 3 kisi dengan dropdown tujuan kolom di baris pertama (klik nomor baris = lewati). Usulan pemetaan otomatis; pemetaan tersimpan per jenis borang dan dipakai lagi.
 - Cocok untuk borang padat (Daily Drilling Report 30–40 kegiatan) yang salah kolom bila dibaca langsung: kesalahan AI terlihat dan diputuskan manusia, bukan ditebak program. Pembacaan langsung (**✦ Baca dengan AI**) tetap ada untuk borang yang rapi.
 - Teknis: kolom `teks` di tabel `docs`, berkas `transkrip_map.json` dan `ai_mentah\<id>_teks.txt` di `_GCEx_Core\borang`; modul backend `core_transkrip.py`, Qt `forms_transkrip.py`. Uji: `backend/tests/test_core_transkrip.py`, `app_core_qt/tests/test_qt_m11.py`.
+
+## 149. Block Model 0.24.48 & Drillhole 0.24.55 — Tampilan 3D kosong pada proyek tanpa data bor (perbaikan 0.24.47 / 0.24.54)
+
+- **Gejala**: setelah 0.24.47 / 0.24.54, proyek yang hanya berisi block model dan string (tanpa lubang bor) menampilkan kotak 3D
+  dengan sumbu −1…2 dan hanya string dig block yang tampak; block model ada di legenda tetapi di luar kotak.
+- **Sebab**: rentang sumbu tetap yang baru dihitung dari daftar koordinat lubang bor + overlay saja; tanpa lubang bor daftar itu
+  kosong (diisi 0…1). Dulu tidak terasa karena rentang otomatis mengikuti semua lapisan.
+- **Perbaikan**: rentang tetap kini digabung dari batas **semua lapisan 3D** (block model, string, wireframe, overlay, bor).
+  Diuji pada kedua aplikasi: rentang selalu memuat seluruh data pada awal, saat lubang bor / topo / pit dicentang-lepas, dan pada
+  flitch aktif.
+- **Juga diperbaiki**: berganti flitch (Maju / Mundur) pada 0.24.47 bisa menampilkan kubus flitch *sebelumnya* dari cache — kini
+  batas RL flitch ikut diperhitungkan; dan langkah Demo *Topografi, desain pit & orthofoto* yang panelnya tertimpa panel flitch.
+- **Catatan tampilan**: bila block model terlihat hanya sepotong, periksa dua pemotong yang memang disengaja — **Flitch Aktif**
+  (kubus digambar setebal flitch) dan **Sayatan › Opsi slab › Potong data di dalam slab (3D)** (hanya blok di dalam slab di
+  sekitar Elevasi sayatan). Lepaskan keduanya untuk melihat model utuh.

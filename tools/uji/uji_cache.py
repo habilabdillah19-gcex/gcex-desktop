@@ -17,10 +17,13 @@ for _ in range(50):
     except Exception: time.sleep(.4)
 SIG = r"""(function(){var gd=document.getElementById('plotDiv');var o=[];(gd.data||[]).forEach(function(t){if(t.type!=='mesh3d'&&t.type!=='scatter3d')return;if(t.name==='_rentang')return;/* titik batas rentang tetap: bukan data, boleh berbeda */
  var sx=0,sy=0,sz=0,nn=0;for(var q=0;q<t.x.length;q++){if(t.x[q]==null){nn++;continue;}sx+=t.x[q];sy+=t.y[q];sz+=t.z[q];}
- o.push([t.type,t.name||'',t.x.length,nn,t.i?t.i.length:0,Math.round(sx),Math.round(sy),Math.round(sz),JSON.stringify(t.line&&t.line.color&&t.line.color.length>50?t.line.color.length:(t.line||t.color||0)),t.opacity]);});
+ var zlo=1e18,zhi=-1e18;if(t.type==='mesh3d')for(var qz=0;qz<t.z.length;qz++){if(t.z[qz]<zlo)zlo=t.z[qz];if(t.z[qz]>zhi)zhi=t.z[qz];}
+ o.push([t.type,t.name||'',t.x.length,nn,t.i?t.i.length:0,Math.round(sx),Math.round(sy),Math.round(sz),Math.round(zlo*10),Math.round(zhi*10),JSON.stringify(t.line&&t.line.color&&t.line.color.length>50?t.line.color.length:(t.line||t.color||0)),t.opacity]);});
  var st=document.getElementById('stats');return JSON.stringify([o,st?st.innerHTML:'',window.BX&&BX.ui?BX.ui.attr:'',document.getElementById('elementFilter').value,document.getElementById('ttl').textContent]);})()"""
 KLIK = "document.querySelector('#ptree .ptr[data-id=\"%s\"] .ptl').click()"
-LANGKAH_BM = [("tree", "bm.a.CU_PPM"), ("tree", "bm.a.AU_GC"), ("tree", "bm.a.CU_PPM"), ("cb", "ovTopoS"), ("tree", "bm.a.SG"), ("tree", "bm.a.AU_GC"), ("tree", "bm.a.CU_PPM")]
+LANGKAH_BM = [("tree", "bm.a.CU_PPM"), ("tree", "bm.a.AU_GC"), ("tree", "bm.a.CU_PPM"), ("cb", "ovTopoS"), ("tree", "bm.a.SG"), ("tree", "bm.a.AU_GC"), ("tree", "bm.a.CU_PPM"),
+              # flitch aktif: geometri kubus dipotong di RL flitch (FLz) -> harus ikut kunci cache (laporan pemilik 9 Nov 2026: flitch lama tergambar)
+              ("js", "lyApply();if(window.VIEW2D)document.getElementById('btn2d').click()"), ("js", "stepPos(1)"), ("js", "stepPos(-1)"), ("js", "stepPos(1)"), ("tree", "bm.a.AU_GC"), ("js", "stepPos(-1)")]
 LANGKAH_DH = [("tree", "db.el.Ag"), ("tree", "db.el.Au"), ("tree", "db.el.Ag"), ("cb", "ovTopoS"), ("tree", "db.geo.0"), ("tree", "db.el.Au"), ("tree", "db.el.Ag")]
 LANGKAH = LANGKAH_DH if DH else LANGKAH_BM
 BERSIH = "DHCL=[];DHC=null;if(window.BX){BX.scL=[];BX.mcL=[];BX.mc=null;BX.sc={};}"
@@ -35,6 +38,8 @@ with sync_playwright() as pw:
     pg.evaluate("window._LT=0;try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){window._LT+=e.duration;});}).observe({entryTypes:['longtask']});}catch(e){}")
     def jalan(cache):
         out = []
+        # keadaan awal yang sama untuk kedua pass: flitch & slab mati, 3D (langkah flitch di akhir pass sebelumnya mengubahnya)
+        pg.evaluate("if(window.lyFlOff)try{lyFlOff();}catch(e){}var c=document.getElementById('sliceClip');if(c&&c.checked){c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));}if(window.VIEW2D)document.getElementById('btn2d').click();"); pg.wait_for_timeout(2500)
         pg.evaluate(BERSIH)
         if not cache: pg.evaluate("window._uP=window._uP||updatePlot;updatePlot=function(){" + BERSIH + "return _uP.apply(this,arguments);}")
         else: pg.evaluate("if(window._uP)updatePlot=_uP;")
@@ -42,6 +47,7 @@ with sync_playwright() as pw:
         for jenis, target in LANGKAH:
             pg.evaluate("window._LT=0")
             if jenis == "tree": ms = pg.evaluate("(function(){var t=performance.now();%s;return performance.now()-t;})()" % (KLIK % target))
+            elif jenis == "js": ms = pg.evaluate("(function(){var t=performance.now();%s;return performance.now()-t;})()" % target)
             else: ms = pg.evaluate("(function(id){var c=document.getElementById(id);var t=performance.now();c.checked=!c.checked;c.dispatchEvent(new Event('change',{bubbles:true}));return performance.now()-t;})('%s')" % target)
             pg.wait_for_timeout(2500)
             ms += pg.evaluate("(function(){var v=window._LT;window._LT=0;return v;})()")
