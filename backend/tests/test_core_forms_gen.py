@@ -344,3 +344,12 @@ def test_ddr_jawaban_mentah_lapangan(st):
     assert len(res["rows"]) == 2
     p = cf.ai_prompt("ddr")
     assert "TRAVELING TO 370" not in p and "0650-0700" not in p
+
+
+def test_ddr_baris_melintasi_dua_tabel(st):
+    """0.44.8 (uji lapangan dengan potongan): satu baris cetak dibaca melintasi tabel lubang + kegiatan."""
+    res = cf.parse_ai_text("ddr", json.dumps({"h": [], "r": ["06:45-07:20|general safety talk"],
+                                              "lubang": ["0|15|AB_100|404|65|60|06:30-06:45|travel to opp",
+                                                         "0|15|AB_100|405|68|60|07:20-07:35|travel to location"]}))
+    assert [(x["hole_id"], x["az"], x["dip"]) for x in res["lubang"]] == [("AB_100 404", "65", "60"), ("AB_100 405", "68", "60")]
+    assert [x["aktivitas"] for x in res["rows"]] == ["travel to opp", "general safety talk", "travel to location"]

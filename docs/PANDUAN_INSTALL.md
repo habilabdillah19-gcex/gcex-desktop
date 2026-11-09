@@ -4084,3 +4084,9 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Sebab**: model AI kecil menulis tabel satu sel per elemen (bukan satu teks `from|to|hole|az|dip` per lubang), atau "macet" mengulang tanda tanya.
 - **Perbaikan**: DB-Ex mengelompokkan kembali sel itu per lubang (Hole ID yang terpecah dua, mis. kode + nomor, digabung), jam + uraian yang tersasar menjadi baris kegiatan, isian tanpa huruf / angka diabaikan, kegiatan kembar berturut-turut dibuang, dan contoh di petunjuk AI tidak lagi berisi kegiatan nyata (dulu disalin model menjadi baris palsu). Borang yang sudah terbaca dengan gejala ini: klik **Baca dengan AI** sekali lagi.
 - Tulisan sangat padat (± 40 kegiatan dengan jam kecil) tetap sulit bagi model 2b: **✂ Potong** ke tabel kegiatan saja agar tulisan tampak lebih besar bagi AI.
+
+## 147. DB-Ex 0.44.8 — Daily Drilling Report: baris yang melintasi tabel lubang & kegiatan
+
+- **Gejala** (setelah ✂ Potong yang memuat tabel lubang dan kolom kegiatan sekaligus): kolom *Dip* berisi `65|60|06:30-06:45|travel to opp`, Hole ID 24_265 dan nomor lubang terpisah, kegiatan hanya sebagian.
+- **Sebab**: model AI membaca satu baris cetak dari kiri ke kanan melintasi kedua tabel.
+- **Perbaikan**: bagian yang diawali rentang jam dipindah menjadi baris kegiatan (digabung dengan yang sudah ada, urut jam), sisanya disusun sebagai lubang. Klik **Baca dengan AI** lagi pada borang yang terdampak.

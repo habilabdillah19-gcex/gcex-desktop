@@ -1270,9 +1270,14 @@ def _ddr_flat(r: list, holes: list) -> tuple[list, list]:
     else:
         hs = []
         for x in holes:
-            if isinstance(x, str) and _RANGE.search(x):
-                continue
             c = [v.strip() for v in x.split("|")] if isinstance(x, str) else []
+            k = next((i for i, v in enumerate(c) if _RANGE.search(v)), None)
+            if k is not None:  # model membaca satu baris cetak MELINTASI dua tabel: "0|15|24_265|404|65|60|06:30-06:45|travel to opp"
+                acts += pairs(c[k:])
+                c = c[:k]
+                if len(c) < 3:
+                    continue
+                x = "|".join(c)
             if len(c) == 6:  # Hole ID ditulis dengan '|' di tengah ("0|15|24-265|400|60|60")
                 g = _hole_groups(c)
                 x = g[0] if len(g) == 1 else x
@@ -1287,6 +1292,18 @@ def _ddr_flat(r: list, holes: list) -> tuple[list, list]:
     r = dd
     if not [x for x in r if str(x).strip()]:
         r = acts
+    elif acts:  # kegiatan dari tabel lubang yang belum ada di daftar kegiatan (rentang jam sama = kegiatan sama) -> disisipkan urut jam
+        def key(x: Any) -> Optional[str]:
+            m = _RANGE.search(str(x).split("|")[0])
+            return f"{int(m.group(1)):02d}{m.group(2)}" if m else None
+        have = {key(x) for x in r}
+        new_ = [x for x in acts if key(x) and key(x) not in have]
+        if new_:
+            r = list(r) + new_
+            ks = [key(x) for x in r]
+            if all(ks):
+                base = ks[0]
+                r = [x for _k, x in sorted(zip(ks, r), key=lambda z: (z[0] < base and int(z[0]) < 1200 <= int(base), z[0]))]
     return r, holes
 
 
