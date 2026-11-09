@@ -19,7 +19,7 @@ def _backend_path() -> None:
 
 
 _backend_path()
-from gcex_backend import core_dh, core_forms, core_io, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_qaqc, core_segs  # noqa: E402
+from gcex_backend import core_dh, core_forms, core_io, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_qaqc, core_segs, core_transkrip  # noqa: E402,F401  (core_transkrip: rute ditambahkan ke core_forms.router)
 
 _ROUTES: dict[str, Any] = {}
 for _m in (core_io, core_dh, core_marks, core_segs, core_outcrop, core_ocanalisis, core_oclokasi, core_oc3d, core_forms, core_qaqc):

@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from . import __version__, access_io, core_dh, core_forms, core_io, core_qaqc, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_segs, excel_io, geostat, krige, laporan, mdl_io, subblok, xlsx_patch
+from . import __version__, access_io, core_dh, core_forms, core_io, core_transkrip, core_qaqc, core_marks, core_oc3d, core_ocanalisis, core_oclokasi, core_outcrop, core_segs, excel_io, geostat, krige, laporan, mdl_io, subblok, xlsx_patch
 
 log = logging.getLogger("gcex")
 app = FastAPI(title="GC-Ex Backend", version=__version__)

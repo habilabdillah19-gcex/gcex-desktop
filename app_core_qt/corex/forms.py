@@ -414,6 +414,11 @@ class FormsPage(QWidget):
         self.tabs.addTab(self._tab_valid(), "Validasi")
         self.tabs.addTab(self._tab_pivot(), "Pivot")
         self.tabs.addTab(self._tab_export(), "Ekspor")
+        from .forms_transkrip import TranscriptTab
+        self.tr = TranscriptTab(self)
+        self.tabs.addTab(self.tr, "✎ Transkrip")
+        self.tabs.setTabToolTip(4, "Mode Transkrip: AI hanya menyalin tulisan menjadi teks; Anda yang menentukan pemisah & kolom, "
+                                   "program menyusun tabel, validasi dan pivot. Untuk borang padat yang salah kolom bila dibaca langsung.")
         sp.addWidget(self.tabs)
         sp.setStretchFactor(1, 1)
         sp.setSizes(SET.get("qt_fm_split2", [260, 640, 660]))
@@ -988,6 +993,7 @@ class FormsPage(QWidget):
 
     def _clear(self) -> None:
         self.cur = None
+        self.tr.set_doc(None)
         self.set_enabled(False)
         self.title.setText("")
         self.t.setRowCount(0)
@@ -1020,6 +1026,7 @@ class FormsPage(QWidget):
         self.lst.setCurrentItem(it)
         m = QMenu(self)
         m.addAction("✦ Baca dengan AI", self.run_ai)
+        m.addAction("✎ Salin teks dengan AI (Mode Transkrip)", lambda: (self.tabs.setCurrentWidget(self.tr), self.tr.run_ai()))
         has_rows = bool(self.cur and self.cur["rows"])
         sub = m.addMenu("Ubah jenis borang & baca ulang" if has_rows else "Ubah jenis borang")
         for k, t in self.types.items():
@@ -1295,6 +1302,7 @@ class FormsPage(QWidget):
         self._kpis(d, c)
         self.tblFold.setText(f"Data {dict(tbs).get(self.tbl, 'Tabel')}"
                              f" ({sum(1 for r in c['rows'] if (r.get('tbl') or '') == self.tbl)} baris)")
+        self.tr.set_doc(d)
 
     def _banner(self, d: dict, t: dict, c: dict) -> None:
         """Status ekstraksi + keyakinan AI (porsi isian yang tidak ditandai ragu)."""

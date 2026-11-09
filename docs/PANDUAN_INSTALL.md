@@ -4090,3 +4090,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Gejala** (setelah ✂ Potong yang memuat tabel lubang dan kolom kegiatan sekaligus): kolom *Dip* berisi `65|60|06:30-06:45|travel to opp`, Hole ID 24_265 dan nomor lubang terpisah, kegiatan hanya sebagian.
 - **Sebab**: model AI membaca satu baris cetak dari kiri ke kanan melintasi kedua tabel.
 - **Perbaikan**: bagian yang diawali rentang jam dipindah menjadi baris kegiatan (digabung dengan yang sudah ada, urut jam), sisanya disusun sebagai lubang. Klik **Baca dengan AI** lagi pada borang yang terdampak.
+
+## 148. DB-Ex 0.45.0 — Mode Transkrip: AI menyalin, pengguna menentukan kolom
+
+- Tab baru **✎ Transkrip** di panel kanan Borang (atau klik kanan file → *Salin teks dengan AI*). AI hanya menyalin tulisan menjadi teks; tabel Data tidak berubah sampai Anda menekan **Terapkan ke tabel ▶**.
+- Panel 1 teks (rapikan: `Label: nilai` untuk kop, sel dipisah `|` untuk tabel; pemisah bisa diganti), panel 2 isian kop → header, panel 3 kisi dengan dropdown tujuan kolom di baris pertama (klik nomor baris = lewati). Usulan pemetaan otomatis; pemetaan tersimpan per jenis borang dan dipakai lagi.
+- Cocok untuk borang padat (Daily Drilling Report 30–40 kegiatan) yang salah kolom bila dibaca langsung: kesalahan AI terlihat dan diputuskan manusia, bukan ditebak program. Pembacaan langsung (**✦ Baca dengan AI**) tetap ada untuk borang yang rapi.
+- Teknis: kolom `teks` di tabel `docs`, berkas `transkrip_map.json` dan `ai_mentah\<id>_teks.txt` di `_GCEx_Core\borang`; modul backend `core_transkrip.py`, Qt `forms_transkrip.py`. Uji: `backend/tests/test_core_transkrip.py`, `app_core_qt/tests/test_qt_m11.py`.

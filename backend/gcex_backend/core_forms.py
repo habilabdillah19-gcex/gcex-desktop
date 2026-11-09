@@ -302,6 +302,8 @@ def store(folder: str) -> Store:
                 c.execute("ALTER TABLE docs ADD COLUMN auto INTEGER DEFAULT 0")
             if "crop" not in cols:  # area potong manual (0.44.4): [x0, y0, x1, y1] pecahan 0-1 gambar ASLI (sebelum diputar)
                 c.execute("ALTER TABLE docs ADD COLUMN crop TEXT DEFAULT ''")
+            if "teks" not in cols:  # Mode Transkrip (0.45): salinan teks AI yang dirapikan pengguna
+                c.execute("ALTER TABLE docs ADD COLUMN teks TEXT DEFAULT ''")
         _STORES[key] = s
         load_templates(s)
         return s
