@@ -2994,6 +2994,7 @@ class AiBody(FBody):
     max_px: int = 1600
     trim: bool = True
     hdr_prev: bool = True
+    cara: str = "langsung"  # "transkrip" (0.46): AI menyalin teks, tabel disusun dengan pemetaan pengguna (core_transkrip.auto_read)
 
 
 class ExpBody(FBody):
@@ -3136,6 +3137,10 @@ def api_detect(b: DetBody) -> dict:
 @router.post("/ai")
 def api_ai(b: AiBody) -> dict:
     s = store(b.folder)
+    if b.cara == "transkrip":
+        from . import core_transkrip
+        r = core_transkrip.auto_read(s, b.id, b.host, b.model, b.extra, b.max_px, b.by, trim=b.trim)
+        return {"ok": True, **_full(s, b.id), "perf": r.get("perf"), "transkrip": r}
     r = ai_read(s, b.id, b.host, b.model, b.extra, b.max_px, b.by, trim=b.trim, hdr_prev=b.hdr_prev)
     return {"ok": True, **_full(s, b.id), "perf": r.get("perf")}
 

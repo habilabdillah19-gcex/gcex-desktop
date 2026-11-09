@@ -53,6 +53,8 @@ def _open_forms(qtbot, prj, tmp_path, monkeypatch):
 
 def _fake_ai(w, monkeypatch, res=None, fail=False):
     from corex.api import core_io
+    from corex.util import SET
+    SET.set("fmCara", "langsung")  # uji di berkas ini = cara baca langsung (JSON); cara transkrip diuji di test_qt_m11
 
     def fake(url, body=None, timeout=5.0):
         if fail:
@@ -200,6 +202,8 @@ def test_forms_antrean_ai_cepat_tanpa_think(qtbot, prj, tmp_path, monkeypatch):
     import urllib.error
     from corex.api import core_io
     from corex import api as capi
+    from corex.util import SET
+    SET.set("fmCara", "langsung")
     w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
     src2 = _scan(tmp_path).with_name("Borang_Spotter_fiktif_2.jpg")
     Image.new("RGB", (1000, 1300), "white").save(src2)

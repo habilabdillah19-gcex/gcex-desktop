@@ -36,7 +36,8 @@ NAV = [("Borang", "▣"), ("Riwayat", "↺"), ("Template", "▤"), ("Pengaturan"
 EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp", ".pdf")
 # status di daftar file: (teks, warna titik)
 ST = {"run": ("Memproses", "#2f6fd6"), "queue": ("Dalam antrean", "#8a94a3"), "err": ("AI gagal", "#c0392b"),
-      "ok": ("Selesai", "#2e9d57"), "check": ("Perlu verifikasi", "#e09a1e"), "new": ("Belum dibaca", "#8a94a3")}
+      "ok": ("Selesai", "#2e9d57"), "check": ("Perlu verifikasi", "#e09a1e"), "new": ("Belum dibaca", "#8a94a3"),
+      "map": ("Perlu pemetaan kolom", "#7048e8")}
 ROLE_D = Qt.UserRole + 1   # dict status untuk FileCard
 
 
@@ -808,6 +809,8 @@ class FormsPage(QWidget):
             st = "queue"
         elif d["status"] == "error" and not n:
             st = "err"
+        elif not n and str(d.get("error") or "").startswith("PEMETAAN"):
+            st = "map"  # AI sudah menyalin teks (cara Transkrip), kolom menunggu keputusan pengguna
         elif n and nv >= n:
             st = "ok"
         elif n:
@@ -835,7 +838,7 @@ class FormsPage(QWidget):
 
     def _sorted(self, docs: list[dict]) -> list[dict]:
         k = self.cbSort.currentData() if hasattr(self, "cbSort") else "add"
-        order = {"run": 0, "queue": 1, "err": 2, "check": 3, "new": 4, "ok": 5}
+        order = {"run": 0, "queue": 1, "err": 2, "map": 3, "check": 3, "new": 4, "ok": 5}
         if k == "new":
             return sorted(docs, key=lambda d: -d["id"])
         if k == "name":
@@ -1730,6 +1733,10 @@ class FormsPage(QWidget):
         if self.cur["rows"] and not ask(self, f"Baca ulang dengan AI? {len(self.cur['rows'])} baris yang ada (termasuk {n_ver} terverifikasi) "
                                               "akan diganti hasil AI. Isian header yang Anda edit tetap."):
             return
+        if (not self.cur["rows"] and (self.cur["doc"].get("teks") or "").strip() and SET.get("fmCara", "transkrip") == "transkrip"
+                and not ask(self, "Borang ini sudah punya teks salinan (tab ✎ Transkrip), mungkin sudah Anda rapikan. Baca ulang dengan AI "
+                                  "dan ganti teks itu?\n\nUntuk memakai teks yang ada: buka tab ✎ Transkrip lalu Terapkan.")):
+            return
         self.ai_q.insert(0, did)
         self._ai_next()
 
@@ -1738,6 +1745,7 @@ class FormsPage(QWidget):
         if not self.folder or not self._ai_ready():
             return
         todo = [d["id"] for d in self.docs if d["status"] in ("pending", "error") and not d.get("n_rows")
+                and not (d.get("teks") or "").strip()  # sudah tersalin, menunggu pemetaan: jangan dibaca ulang
                 and d["id"] != self.ai_did and d["id"] not in self.ai_q]
         if not todo:
             say(self, "Semua borang sudah dibaca AI (atau sudah ada isinya).\nUntuk membaca ulang satu borang, buka borangnya lalu klik ✦ Baca dengan AI.")
@@ -1806,7 +1814,8 @@ class FormsPage(QWidget):
         self.ai_did, self.ai_busy, self.ai_t0 = did, True, time.time()
         body = {"folder": folder, "id": did, "host": ai.host.text().strip(), "model": ai.model(), "extra": ai.extra.toPlainText(),
                 "max_px": int(self.cbSpeed.currentData() or 1600), "by": self.by(),
-                "trim": bool(SET.get("fmTrim", True)), "hdr_prev": bool(SET.get("fmHdrPrev", True))}
+                "trim": bool(SET.get("fmTrim", True)), "hdr_prev": bool(SET.get("fmHdrPrev", True)),
+                "cara": SET.get("fmCara", "transkrip")}
         self.ai_clock.start()
         self._ai_buttons()
         self._relabel()
@@ -1828,11 +1837,20 @@ class FormsPage(QWidget):
                 return
             if j.get("perf"):
                 self.perf[did] = j["perf"]
+            tk = j.get("transkrip") or {}
             if self.cur and self.cur["doc"]["id"] == did:
                 self.cur = j
                 self.refresh()
+                if tk and not tk.get("applied"):
+                    self.tabs.setCurrentWidget(self.tr)
             secs = j["doc"].get("ai_secs")
+            if tk and not tk.get("applied"):
+                self.toast(f"AI selesai menyalin: {j['doc']['name']} · {tk.get('n_text_rows', 0)} baris teks, {tk.get('ncol', 0)} kolom"
+                           + (f" · {round(secs)} dtk" if secs is not None else "")
+                           + " — kolom menunggu keputusan Anda di tab ✎ Transkrip (" + str(tk.get("why") or "") + ")", 8000)
+                return
             self.toast(f"AI selesai: {j['doc']['name']} · {len(j['rows'])} baris"
+                       + (" · disusun dengan pemetaan Anda" if tk.get("applied") else "")
                        + (f" · {round(secs)} dtk" if secs is not None else "") + " — periksa sel kuning / merah lalu verifikasi", 5000)
 
         def err(e):

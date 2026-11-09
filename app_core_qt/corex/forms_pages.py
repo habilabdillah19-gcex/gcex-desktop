@@ -495,6 +495,15 @@ class SettingsPage(QWidget):
             self.cbSpeed.addItem(self.pg.cbSpeed.itemText(i), self.pg.cbSpeed.itemData(i))
         self.cbSpeed.currentIndexChanged.connect(lambda i: self.pg.cbSpeed.setCurrentIndex(i))
         v1.addWidget(self.cbSpeed)
+        v1.addWidget(QLabel("Cara AI membaca borang (✦ Baca dengan AI & Baca Semua)"))
+        self.cbCara = QComboBox()
+        self.cbCara.addItem("Transkrip + pemetaan Anda (disarankan)", "transkrip")
+        self.cbCara.addItem("Langsung ke tabel (cara lama)", "langsung")
+        self.cbCara.setToolTip("Transkrip: AI hanya menyalin tulisan; tabel disusun dengan keputusan kolom yang Anda buat di tab ✎ Transkrip "
+                               "(disimpan per jenis borang). Borang yang kolomnya belum pernah Anda tentukan ditandai 'Perlu pemetaan kolom'.\n"
+                               "Langsung: AI menyalin sekaligus menebak kolom (lebih sering bergeser / kosong pada borang padat).")
+        self.cbCara.currentIndexChanged.connect(lambda _i: SET.set("fmCara", self.cbCara.currentData()))
+        v1.addWidget(self.cbCara)
         n = QLabel("Model yang disarankan: <b>qwen3-vl:2b-instruct</b> (laptop tanpa GPU NVIDIA) atau <b>qwen3-vl:4b-instruct</b> (GPU NVIDIA). "
                    "Versi tanpa <i>-instruct</i> (thinking) lambat dan sering gagal di Borang.")
         n.setObjectName("note")
@@ -585,6 +594,9 @@ class SettingsPage(QWidget):
             self.cbType.addItem(self.pg.cbNew.itemText(i), self.pg.cbNew.itemData(i))
         self.cbType.setCurrentIndex(self.pg.cbNew.currentIndex())
         self.cbType.blockSignals(False)
+        self.cbCara.blockSignals(True)
+        self.cbCara.setCurrentIndex(max(0, self.cbCara.findData(SET.get("fmCara", "transkrip"))))
+        self.cbCara.blockSignals(False)
         self.cTrim.setChecked(bool(SET.get("fmTrim", True)))
         self.cHdr.setChecked(bool(SET.get("fmHdrPrev", True)))
         self.user.setText(f"Pengguna: <b>{_esc(self.pg.by() or '-')}</b> (dicatat di Riwayat & verifikasi)")

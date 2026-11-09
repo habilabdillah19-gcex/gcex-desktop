@@ -4124,3 +4124,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **+ di bawah**: potongan atau lembar lanjutan tabel yang sama. **Ganti teks**: teks lama diganti (meminta konfirmasi).
 - Satu tombol **Terapkan ke tabel ▶**, di bawah kisi.
 - Jendela DB-Ex tidak lagi melebar melewati layar (tombol kanan terpotong): halaman bisa digulir mendatar bila jendela sangat sempit.
+
+## 151. DB-Ex 0.46.0 — AI menyalin, Anda memutuskan (Baca dengan AI cara Transkrip)
+
+- **Cara baca bawaan berubah**: Pengaturan → *Cara AI membaca borang* = **Transkrip + pemetaan Anda** (disarankan). *Langsung ke tabel* (cara lama) tetap bisa dipilih.
+- **✦ Baca dengan AI / Baca Semua**: AI menyalin teks borang. Tabel langsung disusun bila DB-Ex **yakin** — judul kolom di teks dikenali dari pilihan Anda sebelumnya, atau Anda pernah memutuskan pemetaan untuk jumlah kolom yang sama. Bila belum: borang berstatus ungu **Perlu pemetaan kolom**, tab ✎ Transkrip terbuka, Anda tentukan kolomnya lalu **Terapkan**. Keputusan itu dipakai untuk borang berikutnya (jenis sama), dan **Terapkan juga ke n borang lain ▶▶** menerapkannya ke borang yang sudah tersalin & menunggu.
+- **Alat di kisi** (panel 3): klik ganda sel = sunting · klik kanan sel = sisipkan / hapus sel (sel kanan bergeser), gabung / pecah sel, gabung ke baris atas, jadikan isian kop, lewati, sisipkan / hapus baris · klik kanan judul kolom = gabungkan baris-baris yang kolom ini kosong ke atas (uraian dua baris), pecah kolom (spasi / rentang jam │ sisanya), gabung, tukar, sisipkan, hapus kolom. Tujuan kolom **Kop · Tanggal / Shift / …** untuk nilai kop yang ditulis di tiap baris. Semua suntingan tertulis kembali di teks (panel 1).
+- Keputusan tersimpan di `_GCEx_Core\borang\transkrip_map.json` (per jenis: per jumlah kolom, judul kolom → tujuan, label kop → isian header). Hapus berkas itu untuk mulai dari nol.

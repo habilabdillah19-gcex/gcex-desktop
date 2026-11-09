@@ -73,3 +73,87 @@ def test_transkrip_scan_kolom_ke_kanan(qtbot, prj, tmp_path, monkeypatch):
         qtbot.waitUntil(lambda: tr.pv is not None and tr.pv.get("ncol") == n and tr.bAI.isEnabled(), timeout=8000)
     assert tr.txt.toPlainText().split("\n") == ["No | Jam | Truck | Kelas", "1 | 0905 | T01 | OX-LG", "2 | 0916 | T02 | SF-LG"]
     assert tr.maprow.cellWidget(0, 3).currentData() == "kelas" and tr.bApply.isVisible() is not None
+
+
+def test_baca_ai_cara_transkrip_keputusan_pengguna(qtbot, prj, tmp_path, monkeypatch):
+    """0.46: ✦ Baca dengan AI = salin teks; tanpa pemetaan yakin -> 'Perlu pemetaan kolom' + tab Transkrip; pengguna menyunting kisi
+    (geser sel, gabung baris, pecah kolom jam, kolom -> kop), Terapkan; borang berikutnya disusun otomatis dengan keputusan itu."""
+    from corex.util import SET
+    SET.set("fmCara", "transkrip")
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    from corex.api import core_io
+    raw = ("0905 OX-LG | T01 | 30 | ROM 1 | 05-11-26\n"
+           "0916 SF-LG | 31 | ROM 1 | 05-11-26\n"   # sel Truck terlewat -> perlu digeser
+           "- | - | - | dekat ramp | -\n")            # lanjutan catatan / tujuan
+    outs = iter([raw, "0930 OX-HG | T09 | 28 | ROM 2 | 06-11-26"])
+    monkeypatch.setattr(core_io, "_http", lambda url, body=None, timeout=5.0: {"message": {"content": next(outs)}, "eval_count": 20})
+    w.ai.info = {"running": True}
+    monkeypatch.setattr(w.ai, "model", lambda: "qwen3-vl:2b-instruct")
+    monkeypatch.setattr("corex.forms_transkrip.say", lambda *a, **k: None)
+    pg.run_ai()
+    qtbot.waitUntil(lambda: pg.ai_did is None and pg.tabs.currentWidget() is pg.tr and pg.tr.pv is not None, timeout=8000)
+    tr = pg.tr
+    d = next(x for x in pg.docs if x["id"] == pg.cur["doc"]["id"])
+    assert pg._info(d)["st"] == "map" and pg.cur["rows"] == [] and "menunggu keputusan" in tr.info.text()
+    assert tr.grid.rowCount() == 3 and tr.grid.columnCount() == 5
+    # pecah kolom 1 "0905 OX-LG" -> jam | kelas  (lewat aksi kolom)
+    hdr, rows = tr._model()
+    ch = ["", "unit", "ton", "tujuan", "kop:tanggal"]
+    from PySide6.QtWidgets import QMenu
+    m = QMenu()
+    tr._col_actions(m, 0, hdr, rows, ch)
+    tr.choice = ch
+    next(a for a in m.actions() if a.text().startswith("✂ Pecah kolom di spasi")).trigger()  # aksi menu kolom yang sebenarnya
+    qtbot.waitUntil(lambda: tr.grid.columnCount() == 6, timeout=8000)
+    cb = tr.maprow.cellWidget(0, 0)
+    cb.setCurrentIndex(cb.findData("start"))
+    cb = tr.maprow.cellWidget(0, 1)
+    cb.setCurrentIndex(cb.findData("kelas"))
+    qtbot.waitUntil(lambda: tr.grid.columnCount() == 6, timeout=8000)
+    assert tr._cols() == ["start", "kelas", "unit", "ton", "tujuan", "kop:tanggal"]
+    # baris 2: sisipkan sel kosong di kolom Truck (geser kanan)
+    hdr, rows = tr._model()
+    rows[1].insert(2, "")
+    rows[1] = rows[1][:6]
+    tr._commit(hdr, rows)
+    qtbot.waitUntil(lambda: tr.grid.item(1, 3) is not None and tr.grid.item(1, 3).text() == "31", timeout=8000)
+    # baris 3 = lanjutan tujuan baris 2 -> gabung ke atas
+    hdr, rows = tr._model()
+    for j, v in enumerate(rows[2]):
+        if v.strip() and v != "-":
+            rows[1][j] = (rows[1][j] + " " + v).strip()
+    rows.pop(2)
+    tr._commit(hdr, rows)
+    qtbot.waitUntil(lambda: tr.grid.rowCount() == 2, timeout=8000)
+    assert tr._cols()[5] == "kop:tanggal"  # pilihan pengguna bertahan selama teks disunting
+    tr.apply()
+    qtbot.waitUntil(lambda: len(pg.cur["rows"]) == 2, timeout=8000)
+    rs = [r["data"] for r in pg.cur["rows"]]
+    assert rs[1]["tujuan"] == "ROM 1 dekat ramp" and rs[1]["unit"] == "" and rs[0]["kelas"] == "OX-LG"
+    assert pg.cur["doc"]["header"]["tanggal"]
+    # borang kedua jenis sama: Baca dengan AI -> langsung tersusun dengan keputusan tadi? (teks tanpa judul, 5 kolom != 6) -> menunggu
+    from test_qt_m5 import _scan
+    import shutil
+    src = tmp_path / "b_borang_kedua.jpg"
+    shutil.copy(_scan(tmp_path), src)
+    monkeypatch.setattr("corex.forms.QFileDialog.getOpenFileNames", lambda *a, **k: ([str(src)], ""))
+    pg.add_files()
+    qtbot.waitUntil(lambda: pg.cur is not None and pg.cur["doc"]["name"].startswith("b"), timeout=8000)
+    pg.run_ai()
+    qtbot.waitUntil(lambda: pg.ai_did is None and pg.tr.pv is not None and pg.tr.did == pg.cur["doc"]["id"], timeout=8000)
+    assert pg.cur["rows"] == [] and pg.tabs.currentWidget() is pg.tr  # 5 kolom: belum pernah diputuskan -> tidak menebak
+
+
+def test_gabung_baris_tanpa_jam(qtbot, prj, tmp_path, monkeypatch):
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    tr = pg.tr
+    tr.txt.setPlainText("0835-0900 | Start drilling + cleaning\n- | cyclone and splitter\n0900-0905 | Move")
+    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 3, timeout=8000)
+    from PySide6.QtWidgets import QMenu
+    hdr, rows = tr._model()
+    m = QMenu()
+    tr._col_actions(m, 0, hdr, rows, tr._cols())
+    a = next(a for a in m.actions() if a.text().startswith("⤒ Gabungkan 1 baris"))
+    a.trigger()
+    qtbot.waitUntil(lambda: tr.grid.rowCount() == 2, timeout=8000)
+    assert tr.grid.item(0, 1).text() == "Start drilling + cleaning cyclone and splitter"

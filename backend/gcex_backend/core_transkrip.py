@@ -119,7 +119,7 @@ def ai_transcribe(s: F.Store, did: int, host: str, model: str, extra: str = "", 
         F._hist(c, did, "AI menyalin teks" + ({"kanan": " (kolom baru di kanan)", "bawah": " (ditambah di bawah)"}.get(mode, "")), None,
                 f"{piece.count(chr(10)) + 1} baris", "ai:" + model, by or "AI")
     ev = j.get("eval_count") or 0
-    return {"teks": teks, "piece": piece, "perf": {"secs": secs, "tokens": ev, "px": max(size),
+    return {"teks": teks, "piece": piece, "perf": {"secs": secs, "tokens": ev, "px": max(size), "num_ctx": body["options"]["num_ctx"],
                                    "tok_s": round(ev / (j["eval_duration"] / 1e9), 1) if j.get("eval_duration") else None}}
 
 
@@ -231,6 +231,8 @@ def options(ftype: str) -> list[dict]:
     for tb, tt in (t.get("tables") or {}).items():
         for k, lbl, _tt in tt["rows"]:
             out.append({"key": f"{tb}:{k}", "label": f"{tt['name']} · {lbl}"})
+    for k, lbl, _tt in t["header"]:  # kolom berisi nilai kop yang sama di tiap baris (mis. tanggal, shift, rig) -> isian header
+        out.append({"key": f"kop:{k}", "label": f"Kop · {lbl}"})
     return out
 
 
@@ -255,12 +257,21 @@ def _alias(ftype: str) -> dict[str, str]:
 
 
 def suggest(ftype: str, g: dict, saved: Optional[dict]) -> dict:
-    """Usulan pemetaan: (1) pemetaan tersimpan untuk jenis ini bila jumlah kolom cocok; (2) baris judul kolom di teks;
-    (3) urutan kolom AI bawaan. hdr: label kop -> kunci header (padanan nama)."""
+    """Usulan pemetaan, keputusan pengguna didahulukan:
+    (1) baris judul kolom di teks, dicocokkan dengan nama kolom yang PERNAH dipilih pengguna untuk judul itu (alias tersimpan)
+        lalu nama kolom bawaan; kolom judul yang tidak dikenal diisi dari pemetaan tersimpan untuk jumlah kolom yang sama;
+    (2) pemetaan tersimpan untuk jumlah kolom yang sama (by_n), lalu pemetaan terakhir bila jumlah kolom cocok;
+    (3) urutan kolom AI bawaan.
+    src = title / saved / default; sure = boleh diterapkan otomatis (Baca dengan AI cara Transkrip) tanpa ditanyakan dulu."""
     n = g["ncol"]
     cols: list[str] = [""] * n
     title_row = -1
+    saved = saved or {}
+    by_n = (saved.get("by_n") or {}).get(str(n))
+    if by_n is None and len(saved.get("cols") or []) == n:
+        by_n = list(saved["cols"])
     al = _alias(ftype)
+    al.update({k: v for k, v in (saved.get("alias") or {}).items() if k})  # kosakata judul kolom pengguna menang
     def look(c: str) -> str:
         nc = _norm(c)
         if not nc:
@@ -269,14 +280,24 @@ def suggest(ftype: str, g: dict, saved: Optional[dict]) -> dict:
             return al[nc]
         cand = [k for k in al if len(k) >= 4 and len(nc) >= 4 and (k.startswith(nc) or nc.startswith(k) or (len(nc) >= 6 and nc in k))]
         return al[max(cand, key=len)] if cand else ""
+    def look_or_ignored(c: str) -> Optional[str]:
+        nc = _norm(c)
+        if nc and nc in (saved.get("alias") or {}):
+            return saved["alias"][nc]  # bisa "" = pengguna sengaja mengabaikan kolom berjudul ini
+        return None
+    src = "default"
     for i, r in enumerate(g["rows"][:3]):
         hit = [look(c) for c in r]
-        if n >= 2 and sum(1 for h in hit if h) >= max(2, int(0.6 * len([c for c in r if c]))):
-            cols, title_row = [h for h in hit] + [""] * (n - len(hit)), i
+        known = [h if h else (look_or_ignored(c) or "") for h, c in zip(hit, r)]
+        decided = sum(1 for h, c in zip(hit, r) if h or look_or_ignored(c) is not None)
+        if n >= 2 and decided >= max(2, int(0.6 * len([c for c in r if c]))):
+            cols, title_row, src = known + [""] * (n - len(known)), i, "title"
+            if by_n:
+                cols = [c or (by_n[j] if j < len(by_n) and look_or_ignored(r[j] if j < len(r) else "") is None else "") for j, c in enumerate(cols)]
             break
     if title_row < 0:
-        if saved and len(saved.get("cols") or []) == n:
-            cols = list(saved["cols"])
+        if by_n is not None:
+            cols, src = list(by_n), "saved"
         else:
             ai = [k for k, _l, _t in F.ai_rows(F.TYPES[ftype])]
             cols = (ai + [""] * n)[:n]
@@ -287,10 +308,22 @@ def suggest(ftype: str, g: dict, saved: Optional[dict]) -> dict:
     for lbl, _v in g["hdr"]:
         nl = _norm(lbl)
         k = hk.get(nl) or next((v for kk, v in hk.items() if kk and (kk in nl or nl in kk) and len(kk) >= 3), "")
-        if saved and (saved.get("hdr") or {}).get(nl):
+        if nl in (saved.get("hdr") or {}):
             k = saved["hdr"][nl]
         hdr.append(k)
-    return {"cols": cols, "hdr": hdr, "title_row": title_row}
+    # yakin: semua kolom yang berisi (>= 30% baris) punya tujuan, atau pengguna sudah memutuskan pemetaan untuk jumlah kolom ini
+    body = [r for i, r in enumerate(g["rows"]) if i != title_row]
+    filled = [j for j in range(n) if sum(1 for r in body if j < len(r) and r[j].strip()) >= max(1, 0.3 * len(body))]
+    if src == "saved":
+        sure = any(cols)
+    elif src == "title":
+        alias = saved.get("alias") or {}
+        tr_ = g["rows"][title_row]
+        sure = any(cols) and all(cols[j] or (_norm(tr_[j]) in alias if j < len(tr_) else False) for j in filled)
+    else:
+        sure = False
+    return {"cols": cols, "hdr": hdr, "title_row": title_row, "src": src, "sure": bool(sure),
+            "unmapped": [j for j in filled if not cols[j]]}
 
 
 def _map_path(s: F.Store) -> Path:
@@ -304,12 +337,21 @@ def load_map(s: F.Store) -> dict:
         return {}
 
 
-def save_map(s: F.Store, ftype: str, sep: str, cols: list[str], hdr_pairs: list[tuple[str, str]]) -> None:
+def save_map(s: F.Store, ftype: str, sep: str, cols: list[str], hdr_pairs: list[tuple[str, str]],
+             titles: Optional[list[str]] = None) -> None:
+    """Simpan keputusan pengguna: pemetaan per JUMLAH KOLOM (versi borang berbeda bisa berdampingan), label kop -> isian
+    header, dan judul kolom di teks -> tujuan (termasuk '' = sengaja diabaikan) agar baris judul berikutnya langsung dikenali."""
     m = load_map(s)
     cur = m.get(ftype) or {}
     hd = dict(cur.get("hdr") or {})
-    hd.update({_norm(lbl): k for lbl, k in hdr_pairs if k})
-    m[ftype] = {"sep": sep, "cols": list(cols), "hdr": hd}
+    hd.update({_norm(lbl): k for lbl, k in hdr_pairs if _norm(lbl)})
+    by_n = dict(cur.get("by_n") or {})
+    by_n[str(len(cols))] = list(cols)
+    alias = dict(cur.get("alias") or {})
+    for t_, k in zip(titles or [], cols):
+        if _norm(t_) and not re.fullmatch(r"[\d.,:\-\s]+", t_):
+            alias[_norm(t_)] = k
+    m[ftype] = {"sep": sep, "cols": list(cols), "hdr": hd, "by_n": by_n, "alias": alias}
     try:
         _map_path(s).write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
     except OSError:
@@ -362,6 +404,13 @@ def build(ftype: str, g: dict, cols: list[str], hdr_keys: list[str], skip_rows: 
             ragu = v.endswith("?")
             if ragu:
                 v = v[:-1].strip()
+            if k.startswith("kop:"):
+                hk_ = k[4:]
+                if v and not out["header"].get(hk_):
+                    out["header"][hk_] = v
+                    if ragu:
+                        out["header"]["ragu"].append(hk_)
+                continue
             if ":" in k:
                 tb, kk = k.split(":", 1)
                 x = extra.setdefault(tb, {"ragu": []})
@@ -386,7 +435,7 @@ def build(ftype: str, g: dict, cols: list[str], hdr_keys: list[str], skip_rows: 
 
 
 def apply(s: F.Store, did: int, teks: str, sep: str, cols: list[str], hdr: list[str], by: str, skip_rows: Optional[list[int]] = None,
-          save: bool = True) -> dict:
+          save: bool = True, title_row: int = -1, store_teks: bool = True) -> dict:
     d = F.doc(s, did)
     g = grid(teks, sep)
     if not g["rows"] and not g["hdr"]:
@@ -397,12 +446,66 @@ def apply(s: F.Store, did: int, teks: str, sep: str, cols: list[str], hdr: list[
     n_rows = len(res["rows"]) + sum(len(v) for k, v in res.items() if isinstance(v, list) and k != "rows")
     if not n_rows and not any(v for k, v in res["header"].items() if k != "ragu"):
         raise ValueError("Tidak ada kolom yang dipetakan ke isian borang: pilih tujuan kolom pada kisi pratinjau.")
-    save_teks(s, did, teks, by)
-    model = (d.get("ai_model") or "transkrip")
-    out = F.apply_ai(s, did, res, "transkrip/" + model, 0.0, by)
+    if store_teks:
+        save_teks(s, did, teks, by)
+    model = re.sub(r"^(transkrip/)+", "", d.get("ai_model") or "") or "manual"
+    out = F.apply_ai(s, did, res, "transkrip/" + model, d.get("ai_secs") or 0.0, by)
     if save:
-        save_map(s, d["type"], g["sep"], cols, list(zip([h for h, _v in g["hdr"]], hdr)))
+        titles = g["rows"][title_row] if 0 <= title_row < len(g["rows"]) else None
+        save_map(s, d["type"], g["sep"], cols, list(zip([h for h, _v in g["hdr"]], hdr)), titles)
     return out
+
+
+def render(hdr: list, rows: list, sep: str = "|") -> str:
+    """Kisi (hasil suntingan pengguna di kisi: geser / gabung / pecah sel, baris, kolom) -> teks transkrip."""
+    ch = SEPS.get(sep, "|")
+    j = f" {ch} " if ch in "|;" else ("\t" if ch == "\t" else ch + " ")
+    out = [f"{a}: {b}" for a, b in hdr]
+    out += [j.join((str(c) if str(c).strip() else "-") for c in r) for r in rows]
+    return "\n".join(out)
+
+
+def auto_read(s: F.Store, did: int, host: str, model: str, extra: str = "", max_px: int = 1600, by: str = "", trim: bool = True) -> dict:
+    """✦ Baca dengan AI cara Transkrip (bawaan 0.46): AI menyalin teks; bila pemetaan yakin (baris judul kolom dikenali dengan
+    keputusan pengguna sebelumnya, atau pemetaan tersimpan untuk jumlah kolom ini) tabel langsung diisi. Bila tidak yakin, teks
+    disimpan dan borang ditandai 'perlu pemetaan' — pengguna memutuskan di tab Transkrip (tidak ada tebakan diam-diam)."""
+    r = ai_transcribe(s, did, host, model, extra, max_px, by, trim=trim, mode="ganti", base="")
+    pv = preview(s, did, r["teks"], "auto")
+    mp = pv["map"]
+    out = {"perf": r["perf"], "ncol": pv["ncol"], "n_text_rows": len(pv["rows"]), "src": mp["src"], "applied": False}
+    if mp["sure"] and pv["rows"]:
+        skip = [mp["title_row"]] if mp["title_row"] >= 0 else []
+        apply(s, did, r["teks"], pv["sep"], mp["cols"], mp["hdr"], by or "AI", skip, save=False, store_teks=False)
+        out["applied"] = True
+        return out
+    why = ("baris judul kolom tidak dikenali dan belum ada pemetaan tersimpan untuk " + f"{pv['ncol']} kolom") if mp["src"] == "default" else \
+        (f"kolom {', '.join(str(j + 1) for j in mp['unmapped'])} belum punya tujuan") if mp.get("unmapped") else "belum ada kolom yang dipetakan"
+    out["why"] = why
+    with s.lock, s.conn() as c:
+        c.execute("UPDATE docs SET error=? WHERE id=?", ("PEMETAAN: " + why, did))
+        F._hist(c, did, "teks tersalin — perlu pemetaan kolom", None, why, "transkrip", by or "AI")
+    return out
+
+
+def apply_all(s: F.Store, ftype: str, by: str, ids: Optional[list[int]] = None) -> dict:
+    """Terapkan pemetaan tersimpan ke semua borang jenis ini yang sudah punya teks tetapi belum punya baris (atau ke ids)."""
+    done, left = [], []
+    for d in F.docs(s):
+        if d["type"] != ftype or not (d.get("teks") or "").strip():
+            continue
+        if ids is not None and d["id"] not in ids:
+            continue
+        if ids is None and d.get("n_rows"):
+            continue
+        pv = preview(s, d["id"], None, "auto")
+        mp = pv["map"]
+        if mp["sure"] and pv["rows"]:
+            apply(s, d["id"], pv["teks"], pv["sep"], mp["cols"], mp["hdr"], by, [mp["title_row"]] if mp["title_row"] >= 0 else [],
+                  save=False, store_teks=False)
+            done.append(d["id"])
+        else:
+            left.append({"id": d["id"], "name": d["name"], "ncol": pv["ncol"]})
+    return {"done": done, "left": left}
 
 
 # ---------------------------------------------------------------- API
@@ -432,6 +535,12 @@ class TerapBody(F.FBody):
     hdr: list[str] = []
     skip_rows: list[int] = []
     save_map: bool = True
+    title_row: int = -1
+
+
+class SemuaBody(F.FBody):
+    type: str
+    ids: Optional[list[int]] = None
 
 
 @F.router.post("/transkrip")
@@ -456,5 +565,10 @@ def api_transkrip_pratinjau(b: TeksBody) -> dict:
 @F.router.post("/transkrip/terapkan")
 def api_transkrip_terapkan(b: TerapBody) -> dict:
     s = F.store(b.folder)
-    apply(s, b.id, b.teks, b.sep, b.cols, b.hdr, b.by, b.skip_rows, b.save_map)
+    apply(s, b.id, b.teks, b.sep, b.cols, b.hdr, b.by, b.skip_rows, b.save_map, b.title_row)
     return {"ok": True, **F._full(s, b.id)}
+
+
+@F.router.post("/transkrip/terapkan_semua")
+def api_transkrip_terapkan_semua(b: SemuaBody) -> dict:
+    return {"ok": True, **apply_all(F.store(b.folder), b.type, b.by, b.ids)}

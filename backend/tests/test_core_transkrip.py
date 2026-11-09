@@ -126,3 +126,51 @@ def test_gabung_kolom_kanan_dan_bawah(st, monkeypatch):
     pv = tr.preview(s, did, None, "|")
     assert pv["ncol"] == 5 and pv["map"]["title_row"] == 0
     assert pv["map"]["cols"] == ["hole:from_m", "hole:to_m", "hole:hole_id", "hole:az", "hole:dip"]
+
+
+def test_keputusan_pengguna_diingat_dan_baca_otomatis(st, monkeypatch):
+    """0.46: judul kolom yang dipetakan pengguna diingat (alias, termasuk 'abaikan'); pemetaan per jumlah kolom;
+    ✦ Baca dengan AI cara transkrip menerapkan otomatis bila yakin, bila tidak -> 'perlu pemetaan' tanpa menebak."""
+    s, tmp = st
+    a = cf.add_file(s, str(_scan(tmp, "a.jpg")), "ore", "Rina")[0]["id"]
+    txt = "Tanggal: 05-11-26\nNo | Waktu muat | Unit DT | Kls | Ton | Ke | Paraf\n1 | 0905 | T01 | OX-LG | 30 | ROM 1 | ok\n2 | 0916 | T02 | SF-LG | 31 | ROM 1 | ok"
+    pv = tr.preview(s, a, txt, "auto")
+    assert pv["map"]["src"] == "title" and not pv["map"]["sure"]  # judul 'Waktu muat', 'Unit DT', 'Kls', 'Ke', 'Paraf' belum dikenal
+    cols = ["no", "start", "unit", "kelas", "ton", "tujuan", ""]
+    tr.apply(s, a, txt, "|", cols, ["tanggal"], "Rina", skip_rows=[0], title_row=0)
+    m = tr.load_map(s)["ore"]
+    assert m["alias"]["waktumuat"] == "start" and m["alias"]["paraf"] == "" and m["by_n"]["7"] == cols
+    # borang kedua, urutan kolom berbeda: dikenali dari judul -> yakin
+    b = cf.add_file(s, str(_scan(tmp, "b.jpg")), "ore", "Rina")[0]["id"]
+    txt2 = "Kls | Unit DT | Waktu muat | Ton | Ke | Paraf | No\nOX-HG | T05 | 1002 | 29 | ROM 2 | ok | 1"
+    pv2 = tr.preview(s, b, txt2, "auto")
+    assert pv2["map"]["cols"] == ["kelas", "unit", "start", "ton", "tujuan", "", "no"] and pv2["map"]["sure"]
+    # baca otomatis (AI tiruan)
+    outs = iter([txt2, "1 | 2 | 3"])
+
+    def fake(url, body=None, timeout=5.0):
+        if url.endswith(("/api/show", "/api/ps")):
+            return {}
+        return {"message": {"content": next(outs)}, "eval_count": 9}
+    monkeypatch.setattr(core_io, "_http", fake)
+    r = tr.auto_read(s, b, "http://x", "m", by="AI")
+    assert r["applied"] and r["perf"]["num_ctx"] > 0
+    rs = [x["data"] for x in cf.rows(s, b)]
+    assert rs[0]["kelas"] == "OX-HG" and rs[0]["unit"] == "T05" and cf.doc(s, b)["ai_model"] == "transkrip/m"
+    c = cf.add_file(s, str(_scan(tmp, "c.jpg")), "ore", "Rina")[0]["id"]
+    r = tr.auto_read(s, c, "http://x", "m", by="AI")  # 3 kolom tanpa judul & tanpa pemetaan tersimpan -> tidak menebak
+    assert not r["applied"] and "3 kolom" in r["why"] and cf.rows(s, c) == []
+    assert cf.doc(s, c)["error"].startswith("PEMETAAN:") and tr.get_teks(s, c) == "1 | 2 | 3"
+    # pengguna memetakan sekali -> borang lain jenis sama yang menunggu bisa diterapkan sekaligus
+    tr.apply(s, c, "1 | 0905 | 30", "|", ["no", "start", "ton"], [], "Rina")
+    d = cf.add_file(s, str(_scan(tmp, "d.jpg")), "ore", "Rina")[0]["id"]
+    tr.save_teks(s, d, "2 | 0910 | 31", "Rina")
+    res = tr.apply_all(s, "ore", "Rina")
+    assert res["done"] == [d] and cf.rows(s, d)[0]["data"]["ton"] == "31"
+
+
+def test_kolom_ke_kop_dan_render():
+    g = tr.grid("0905 | T01 | 05-11-26\n0916 | T02 | 05-11-26", "|")
+    out = tr.build("ore", g, ["start", "unit", "kop:tanggal"], [])
+    assert out["header"]["tanggal"] == "05-11-26" and len(out["rows"]) == 2 and "kop:tanggal" in {o["key"] for o in tr.options("ore")}
+    assert tr.render([["Shift", "I"]], [["a", ""], ["b", "c"]], "|") == "Shift: I\na | -\nb | c"
