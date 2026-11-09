@@ -301,3 +301,46 @@ def test_ollama_500_diulang_dengan_gambar_kecil_lalu_pesan_jelas(st, monkeypatch
     with pytest.raises(ValueError, match="memori komputer tidak cukup"):
         cf.ai_read(s, did, "http://x", "m")
     assert "requires more system memory" in cf.doc(s, did)["error"]
+
+
+def test_ddr_satu_sel_per_elemen_disusun_ulang(st):
+    """0.44.7: model menulis tabel lubang (dan kegiatan) SATU NILAI per elemen -> dulu 30 'lubang' berisi satu angka / jam."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "f.jpg")), "ddr", "Rina")[0]["id"]
+    lub = ["0", "15", "AB-100", "401", "65", "60", "0", "15", "AB-100", "402", "68", "60", "0", "15", "AB-100 403", "65", "60",
+           "06:30-06:45", "travel to opp", "06:45-07:20", "general safety talk", "0720-0730", "travel", "to location"]
+    res = cf.parse_ai_text("ddr", json.dumps({"h": ["08/11/26", "I", "SDR-01", "Driller A", "PT X", "RDC"], "r": [], "lubang": lub}))
+    assert [(x["from_m"], x["to_m"], x["hole_id"], x["az"], x["dip"]) for x in res["lubang"]] == [
+        ("0", "15", "AB-100 401", "65", "60"), ("0", "15", "AB-100 402", "68", "60"), ("0", "15", "AB-100 403", "65", "60")]
+    cf.apply_ai(s, did, res, "m", 1)
+    rs = [r["data"] for r in cf.rows(s, did) if not r.get("tbl")]
+    assert [(r["mulai"], r["selesai"], r["aktivitas"]) for r in rs] == [
+        ("06:30", "06:45", "travel to opp"), ("06:45", "07:20", "general safety talk"), ("07:20", "07:30", "travel to location")]
+    # kegiatan juga satu sel per elemen di 'r'; lubang sudah benar -> tidak diubah
+    res = cf.parse_ai_text("ddr", json.dumps({"h": [], "r": ["0630-0645", "travel", "0645-0700", "P5M"], "lubang": ["0|15|AB-1|60|60"]}))
+    assert len(res["rows"]) == 2 and res["lubang"][0]["hole_id"] == "AB-1"
+
+
+def test_isian_macet_dikosongkan(st):
+    """0.44.7: '?|?|?' (model macet) tidak masuk header; nilai sampah lama di header ikut dibersihkan saat dibaca ulang."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "g.jpg")), "ddr", "Rina")[0]["id"]
+    with s.conn() as c:
+        c.execute("UPDATE docs SET header_json=? WHERE id=?", (json.dumps({"geologist": "? | ? | ? | ?", "rig": "SDR-01"}), did))
+    res = cf.parse_ai_text("ddr", "H|08/11/26|I|?|-|PT X|RDC\nR|0630-0700|travel\nR|-|-\nR|?|?")
+    cf.apply_ai(s, did, res, "m", 1)
+    d = cf.doc(s, did)
+    assert d["header"]["geologist"] == "" and d["header"]["rig"] == "SDR-01" and d["header"]["client"] == "PT X"
+    assert len([r for r in cf.rows(s, did) if not r.get("tbl")]) == 1
+
+
+def test_ddr_jawaban_mentah_lapangan(st):
+    """0.44.7 (jawaban mentah uji lapangan, ID diganti fiktif): Hole ID ber-'|' (6 sel) dan kegiatan kembar berturut-turut."""
+    res = cf.parse_ai_text("ddr", json.dumps({"h": ["04-11-2026", "I", "SDR-01", "A", "PT X", "RDO"],
+                                              "r": ["", "0650-0700|travel", "07.00-07.05|p2h", "07.00-07.05|p2h", "07.00-07.05|P2H"],
+                                              "lubang": ["0|15|AB-100|400|60|60", "0|15|AB-100|401|89|60", "0|15|AB-1|60|60"]}))
+    assert [x["hole_id"] for x in res["lubang"]] == ["AB-100 400", "AB-100 401", "AB-1"]
+    assert [(x["az"], x["dip"]) for x in res["lubang"][:2]] == [("60", "60"), ("89", "60")]
+    assert len(res["rows"]) == 2
+    p = cf.ai_prompt("ddr")
+    assert "TRAVELING TO 370" not in p and "0650-0700" not in p

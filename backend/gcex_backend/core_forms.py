@@ -114,10 +114,11 @@ TYPES: dict[str, dict] = {
                             "rows": [("from_m", "From (m)", "num"), ("to_m", "To (m)", "num"), ("hole_id", "Hole ID", "text"),
                                      ("az", "Az", "num"), ("dip", "Dip", "num")]}},
         "hint": ("Borang 'Daily Drilling Report' pemboran RC, portrait. Header kanan atas: Client, DHP_ID, Driller, Date, Drill Rig (nama "
-                 "unit, mis. 'Hanjin SDR-07' -> tulis apa adanya), Shift (I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang' (satu objek per lubang). Kolom kanan "
-                 "'DRILLING DETAILS and FORMATION DESCRIPTION': tiap kegiatan diawali rentang jam, mis. 0650-0700 atau 07.00-07.05, lalu "
-                 "uraian (boleh dua baris tulisan) -> satu teks per kegiatan: jam|uraian, mis. \"0630-0700|TRAVELING TO 370\" "
-                 "(gabungkan baris lanjutan uraian ke kegiatan yang sama). Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
+                 "unit, mis. 'Hanjin SDR-07' -> tulis apa adanya), Shift (I / II). Tabel kiri METERAGE (From, To), Hole ID, Az, Dip -> isi 'lubang': SATU teks per lubang: <from>|<to>|<hole id lengkap>|<az>|<dip> (5 nilai; bukan satu angka per elemen). Kolom kanan "
+                 "'DRILLING DETAILS and FORMATION DESCRIPTION': tiap kegiatan diawali rentang jam (jam mulai-jam selesai, menit sering ditulis "
+                 "kecil di atas), lalu uraian (boleh dua baris tulisan) -> satu teks per kegiatan: <jam mulai>-<jam selesai>|<uraian yang "
+                 "TERTULIS> (gabungkan baris lanjutan uraian ke kegiatan yang sama). Baca SEMUA kegiatan dari atas sampai baris terakhir "
+                 "yang terisi (sering 20-40 kegiatan); jangan berhenti di tengah dan jangan mengulang kegiatan yang sama. Kotak bawah: BITS / REAMER (type, serial no., on, off, drilled), HM "
                  "ENGINE (start, finish, HM running), Geologist approval; catatan di bawah tabel: WH, DL, MNTC, BD, RAIN, STD (jam, "
                  "mis. 5hr -> 5) dan tulisan bebas -> 'catatan'. 'lokasi' (nama area / prospek) biasanya tidak tertulis: kosongkan bila "
                  "tidak ada."),
@@ -1052,7 +1053,7 @@ def ai_schema_compact(ftype: str, header: bool = True) -> dict:
         props.pop("h")
         req = ["r"]
     for tt in (t.get("tables") or {}).values():
-        props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}, "maxItems": 30}
+        props[tt["ai"]] = {"type": "array", "items": {"type": "string", "maxLength": max(120, min(400, 24 + 16 * len(tt["rows"])))}, "maxItems": 60}
         req.append(tt["ai"])
     return {"type": "object", "required": req, "properties": props}
 
@@ -1200,6 +1201,95 @@ def _split_giant(rs: list, n: int, numbered: bool, starter: Optional["re.Pattern
     return out
 
 
+_JUNK = re.compile(r"[\s?|\-–—.…_]*")  # isian tanpa huruf / angka (tanda ulang 〃 TIDAK termasuk): '?|?|?' model yang macet
+
+
+def _num(v: Any) -> Optional[float]:
+    try:
+        return float(str(v).strip().rstrip("?").replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _hole_groups(tok: list[str]) -> list[str]:
+    """Daftar sel lubang yang ditulis model SATU NILAI per elemen (0.44.7: "0", "15", "24-265", "404", "65", "60", …) -> satu teks
+    "from|to|hole_id|az|dip" per lubang. Hole ID boleh terpecah 2 elemen (kode + nomor); dipilih yang membuat From <= To,
+    Az 0-360, Dip -90..90 dan lubang berikutnya juga masuk akal."""
+    def ok(g: list[str]) -> bool:
+        a, b, az, dp = _num(g[0]), _num(g[1]), _num(g[3]), _num(g[4])
+        return (a is not None and b is not None and a <= b and (az is None or 0 <= az <= 360) and (dp is None or -90 <= dp <= 90))
+    out, i = [], 0
+    while len(tok) - i >= 5:
+        best = None
+        for hl in (1, 2):
+            if len(tok) - i < 4 + hl:
+                continue
+            g = tok[i:i + 2] + [" ".join(tok[i + 2:i + 2 + hl])] + tok[i + 2 + hl:i + 4 + hl]
+            nx = tok[i + 4 + hl:i + 6 + hl]
+            nok = len(nx) < 2 or (_num(nx[0]) is not None and _num(nx[1]) is not None and _num(nx[0]) <= _num(nx[1]))
+            sc = 2 * ok(g) + nok
+            if best is None or sc > best[0]:
+                best = (sc, g, 4 + hl)
+        out.append("|".join(best[1]))
+        i += best[2]
+    if i < len(tok):
+        out.append("|".join(tok[i:]))
+    return out
+
+
+def _ddr_flat(r: list, holes: list) -> tuple[list, list]:
+    """Daily Drilling Report, model menulis SATU SEL per elemen (bukan "jam|uraian" / "from|to|…"): susun ulang.
+    Elemen berisi rentang jam memulai kegiatan baru, teks sesudahnya = uraiannya; elemen sebelum rentang jam pertama di daftar
+    lubang = sel tabel lubang. Kegiatan yang tersasar ke daftar lubang dipakai bila daftar kegiatan kosong."""
+    def flat(xs: list) -> bool:
+        s = [x for x in xs if isinstance(x, str) and x.strip()]
+        return len(s) >= 4 and sum("|" not in x for x in s) >= 0.8 * len(s)
+
+    def pairs(xs: list) -> list:
+        out: list = []
+        open_ = False  # elemen terakhir = kegiatan yang disusun di sini (uraian boleh menyambung)
+        for x in xs:
+            x = str(x).strip()
+            if not x:
+                continue
+            m = _RANGE.search(x)
+            if "|" in x:
+                out.append(x)
+                open_ = False
+            elif m:
+                out.append(x[:m.end()] + "|" + x[m.end():].strip(" -:"))
+                open_ = True
+            elif open_:
+                out[-1] = out[-1] + ("" if out[-1].endswith("|") else " ") + x
+        return out
+    acts: list = []
+    if flat(holes):
+        hs = [str(x).strip() for x in holes if str(x).strip()]
+        k = next((i for i, x in enumerate(hs) if _RANGE.search(x)), len(hs))
+        holes, acts = _hole_groups(hs[:k]), pairs(hs[k:])
+    else:
+        hs = []
+        for x in holes:
+            if isinstance(x, str) and _RANGE.search(x):
+                continue
+            c = [v.strip() for v in x.split("|")] if isinstance(x, str) else []
+            if len(c) == 6:  # Hole ID ditulis dengan '|' di tengah ("0|15|24-265|400|60|60")
+                g = _hole_groups(c)
+                x = g[0] if len(g) == 1 else x
+            hs.append(x)
+        holes = hs
+    if flat(r):
+        r = pairs(r)
+    dd: list = []
+    for x in r:  # kegiatan kembar berturut-turut = model mengulang (uji 0.44.7: 4x baris yang sama)
+        if not (dd and isinstance(x, str) and re.sub(r"\s+", "", x.lower()) == re.sub(r"\s+", "", str(dd[-1]).lower())):
+            dd.append(x)
+    r = dd
+    if not [x for x in r if str(x).strip()]:
+        r = acts
+    return r, holes
+
+
 def _from_compact(ftype: str, o: dict) -> dict:
     """{h:[…], r:[[…]], <tabel>:[[…]], c} -> {header, rows, <tabel>, catatan}; sel diakhiri '?' masuk ragu;
     baris yang isinya nama / judul kolom (model menyalin kepala tabel) dibuang."""
@@ -1258,6 +1348,9 @@ def _from_compact(ftype: str, o: dict) -> dict:
         ks = [alias.get(re.sub(r"[^a-z0-9]", "", str(c).lower()), "") for c in cells]
         return ks if len(cells) >= 3 and sum(1 for k in ks if k) >= max(3, int(0.7 * len(cells))) else None
     raw = list(o.get("r") or [])
+    tabs_in = {tt["ai"]: list(o.get(tt["ai"]) or []) for tt in (t.get("tables") or {}).values()}
+    if ftype == "ddr" and "lubang" in tabs_in:  # satu sel per elemen / kegiatan tersasar ke tabel lubang (0.44.7)
+        raw, tabs_in["lubang"] = _ddr_flat(raw, tabs_in["lubang"])
     c_txt = str(o.get("c") or "")
     if not raw and c_txt.count("|") >= 2 * len(rk):  # model menulis tabel di 'catatan' (mis. sebagian kolom terpotong di foto)
         raw, c_txt = [ln for ln in re.split(r"\s*[\r\n]+\s*", c_txt) if "|" in ln] or [c_txt], ""
@@ -1279,7 +1372,7 @@ def _from_compact(ftype: str, o: dict) -> dict:
             out["rows"].append(x)
     for tt in (t.get("tables") or {}).values():
         ks = [k for k, _l, _t in tt["rows"]]
-        out[tt["ai"]] = [x for x in (one(v, ks) for v in o.get(tt["ai"]) or []) if x]
+        out[tt["ai"]] = [x for x in (one(v, ks) for v in tabs_in[tt["ai"]]) if x]
     return out
 
 
@@ -1320,7 +1413,7 @@ def parse_ai_text(ftype: str, txt: str) -> dict:
             if v.endswith("?"):
                 v = v[:-1].strip()
                 o["ragu"].append(k)
-            o[k] = "" if v in ("-", "…", "...") and k not in ("aktivitas",) else v
+            o[k] = "" if _JUNK.fullmatch(v) else v  # '-', '…', '?|?|?' (model macet) = kosong
         return o
     out: dict[str, Any] = {"header": {}, "rows": [], "catatan": ""}
     last_tag, seen_rows = "", set()
@@ -1695,10 +1788,10 @@ def apply_ai(s: Store, did: int, res: dict, model: str, secs: float, by: str = "
     rh = (res or {}).get("header") or {}
     with s.conn() as c:
         edited_hdr = {r["what"][7:] for r in c.execute("SELECT what FROM history WHERE doc_id=? AND what LIKE 'header %' AND src='edit'", (did,))}
-    h = dict(d["header"])
+    h = {k: ("" if isinstance(v, str) and v and _JUNK.fullmatch(v) and k not in edited_hdr else v) for k, v in d["header"].items()}
     hunc = [k for k in (rh.get("ragu") or []) if k in hk and k not in edited_hdr]
     for k in hk:
-        if k not in edited_hdr and str(rh.get(k) or "").strip():
+        if k not in edited_hdr and str(rh.get(k) or "").strip() and not _JUNK.fullmatch(str(rh[k])):
             raw = str(rh[k]).strip()
             h[k] = norm_header(d["type"], k, raw)
             if h[k] != raw and k not in hunc:  # dirapikan program (mis. rig, Hole ID) -> kuning, cek terhadap scan
