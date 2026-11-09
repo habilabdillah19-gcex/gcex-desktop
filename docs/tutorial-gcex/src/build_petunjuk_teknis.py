@@ -593,6 +593,34 @@ B.append('<p>Plotly gl3d meng-update <b>setiap</b> lapisan setiap kali satu lapi
          '1.290 &rarr; 158 ms, 3&times; klik Maju sayatan 3.690 &rarr; 494 ms. Maju / Mundur memakai jalur ringan '
          'slider (gambar penuh sekali setelah 350 ms); Ore Geometry tidak menghitung otomatis saat dibuka; '
          'Geostatistik memakai ulang hasil bila sayatan, data &amp; setelannya sama.</p>')
+B.append('<h3>Jeda saat berganti panel / atribut &amp; kotak Kinerja (BM 0.24.47 / DH 0.24.54)</h3>')
+B.append('<p>Hasil profil per node (<code>tools/uji/profil_panel.py</code>): berpindah panel sendiri murah (&lt; 35 ms). Yang mahal: '
+         '(1) <b>ganti atribut warna</b> &mdash; Block Model membangun ulang geometri kubus per kelas (1&ndash;2 dtk pada 66 ribu blok), Drill Hole '
+         'membangun ulang semua segmen + teks hover (1&ndash;3 dtk pada 1.600 hole) lalu <code>Plotly.react</code> &plusmn;1 dtk; di Drill Hole '
+         'klik atribut sempat memanggil <code>updatePlot</code> dua kali (mode lintasan + nilai) &mdash; kini sekali (<code>trajModeDiam</code>); '
+         '(2) <b>centang overlay</b> &mdash; dengan autorange rentang sumbu berubah &rarr; <code>dataScale</code> adegan berubah &rarr; semua lapisan '
+         'diunggah ulang; (3) <b>resize</b> jendela / panel memicu <code>Plotly.Plots.resize</code> berulang; (4) dialog Satuan elemen memanggil '
+         '<code>elRefresh</code> walau tidak ada yang diubah.</p>')
+B.append('<p>Perbaikan: <code>glskip.js</code> kini dipakai kedua aplikasi dan membandingkan larik per <b>nilai</b> (panjang + checksum seluruh isi untuk larik angka, '
+         '16 contoh untuk larik teks; <code>GLSKIP.debug=true</code> mencatat alasan tiap update di <code>GLSKIP.alasan</code>), bukan per referensi; setiap lapisan '
+         'diberi <b>uid tetap</b> (hash nama + urutan ke-n; lapisan bor <code>dhTraj / dhNoData / dhCollar / dhLblAssay / dhLblHole</code>) karena tanpa uid Plotly '
+         'mencocokkan lapisan lama-baru menurut posisi dalam daftar &mdash; menyisipkan satu overlay menggeser semua lapisan di belakangnya dan semuanya diunggah ulang; '
+         '<code>dataScale</code> gl3d ternyata dihitung dari <b>batas data</b> semua lapisan (bukan rentang sumbu), maka ditambah lapisan dua titik tak kasatmata '
+         '<code>_rentang</code> di pojok rentang tetap sehingga overlay di dalam kotak tidak mengubah skala (hasil: centang topo / collar di Drill Hole = 0 lapisan '
+         'di-update; Block Model 10 dilewati, 1 di-update); '
+         'rentang sumbu 3D <b>tetap</b> (<code>rngTetap</code>: gabungan rentang untuk filter hole / bench / sayatan yang sama; filter berganti = '
+         'dihitung ulang seperti autorange; rasio aspek dari rentang tetap itu juga) sehingga centang overlay tidak memaksa unggah ulang; '
+         'cache 6 pemilihan blok (<code>BX.scL</code>) + 6 geometri kubus (<code>BX.mcL</code>) dan 4 hasil <code>buildDH</code> (<code>DHCL</code>) '
+         '&mdash; kembali ke atribut yang pernah tampil tidak dihitung ulang; reset &ldquo;polos&rdquo; <code>BX.sc={}</code> dari modul lain '
+         '(unit, SG, laporan) tetap membuang semua cache; <code>uiResize</code> ditunda 40 ms dan dilewati bila ukuran tidak berubah; '
+         '<code>elUnitDlg</code> hanya menyegarkan bila ada perubahan. Uji <code>tools/uji/uji_cache.py</code>: tanda tangan lapisan (nama, jumlah titik / '
+         'segitiga, jumlah koordinat) + teks statistik dari cache harus identik dengan hitung ulang tanpa cache; <code>uji_glskip_gambar.py</code>: PNG adegan '
+         'dengan dan tanpa glskip identik.</p>')
+B.append('<p><b>Kotak Kinerja &amp; grafis</b> (<code>kinerja.js</code>, panel Tampilan &amp; performa) membaca <code>WEBGL_debug_renderer_info</code>: bila '
+         'renderer SwiftShader / llvmpipe / Microsoft Basic Render / WARP, 3D digambar prosesor &mdash; ini penyebab paling mungkin bila jeda terasa di '
+         'laptop walau pengukuran di atas sudah kecil. Kotak mencatat 12 aksi terakhir (sinkron, long task, panggilan Plotly) dan tombol <b>Salin laporan '
+         'kinerja</b> menyalin teksnya. Catatan ukur: pada lingkungan uji tanpa GPU, waktu render (<code>(program)</code>) tidak mewakili; bandingkan '
+         'waktu sinkron JavaScript.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

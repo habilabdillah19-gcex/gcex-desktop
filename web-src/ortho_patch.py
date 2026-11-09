@@ -19,10 +19,10 @@ def patch(s):
     R("var od=(VIEW2D||draft)?null:orthoTrace(crop,light);if(od)addB(od.b);",
       "var od=(VIEW2D||draft)?null:orthoTrace(crop,light);if(od&&!od.base)addB(od.b);")
     # z latar = sedikit di bawah SEMUA data yang tampil (dihitung dari semua trace final, termasuk block model & model referensi)
-    R("  var xr=Math.max(rx[1]-rx[0],1),yr=Math.max(ry[1]-ry[0],1),zr=Math.max(rz[1]-rz[0],1),base=Math.max(xr,yr,zr);",
+    R("  /* rasio aspek juga dari rentang TETAP (bukan rentang data saat ini) supaya skala adegan tidak berubah saat overlay dicentang */",
       "  if(od&&od.base){var _zl=Infinity,_zh=-Infinity,_sc=function(v){if(v!=null&&isFinite(v)){if(v<_zl)_zl=v;if(v>_zh)_zh=v;}};traces.forEach(function(t){if(t===od.tr||!t.z)return;var a=t.z;for(var _i=0;_i<a.length;_i++){var _r=a[_i];if(_r!=null&&typeof _r==='object'&&_r.length!==undefined){for(var _j=0;_j<_r.length;_j++)_sc(_r[_j]);}else _sc(_r);}});"
       "if(!isFinite(_zl)){_zl=rz[0];_zh=rz[1];}var _zb=_zl-Math.max(0.5,(_zh-_zl)*0.02);if(od.zb!==_zb){od.zb=_zb;var _z=new Array(od.tr.x.length);for(var _k=0;_k<_z.length;_k++)_z[_k]=_zb;od.tr.z=_z;}if(_zb<rz[0])rz[0]=_zb;}\n"
-      "  var xr=Math.max(rx[1]-rx[0],1),yr=Math.max(ry[1]-ry[0],1),zr=Math.max(rz[1]-rz[0],1),base=Math.max(xr,yr,zr);")
+      "  /* rasio aspek juga dari rentang TETAP (bukan rentang data saat ini) supaya skala adegan tidak berubah saat overlay dicentang */")
     # penampang 2D horizontal: orthofoto sebagai gambar latar
     R("L.yaxis.scaleanchor='x';L.yaxis.scaleratio=(g.m==='H')?1:o.zex;",
       "L.yaxis.scaleanchor='x';L.yaxis.scaleratio=(g.m==='H')?1:o.zex;try{if(g.m==='H'&&window.ORT&&$('ovOrtho')&&$('ovOrtho').checked){var _oi=orthoImg2D();if(_oi)L.images=[_oi];}}catch(_e){console.warn(_e);}")

@@ -79,6 +79,10 @@ with sync_playwright() as pw:
     ev("BX.ui.fAttr='AU';BX.ui.fOp='ge';BX.ui.fVal='0.19';BX.sc={};BX.mc=null;updatePlot();setCam(1.3,-1.5,0.8)"); pg.wait_for_timeout(2500); shot('bm_3d')
     shot('header', {'x': 0, 'y': 0, 'width': 1600, 'height': 40})
     menu_shot('bm', 'menu_bm', ['bm']); menu_shot('sp', 'menu_spasial', ['sp'])
+    # kotak Kinerja & grafis di panel Tampilan & performa (BM 0.24.47 / DH 0.24.54)
+    ev("PT.select('set.v');if(window.KIN&&KIN.gambar)KIN.gambar();var k=document.getElementById('kinBox');if(k)k.scrollIntoView({block:'center'})"); pg.wait_for_timeout(700)
+    rk = ev("(function(){var k=document.getElementById('kinBox'),b=k?k.getBoundingClientRect():null;return b?[b.left,b.top,b.width,b.height]:null;})()")
+    if rk: shot('kinerja_panel', {'x': max(0, int(rk[0] - 8)), 'y': max(0, int(rk[1] - 8)), 'width': int(rk[2] + 16), 'height': int(min(900, rk[3] + 16))})
     tree('bm.cls', ['bm']); shot('warna_kelas')
     # 3. flitch aktif
     # RL flitch diambil dari block model yang dimuat, bukan angka tetap: ukuran & posisi data

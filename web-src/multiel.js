@@ -46,8 +46,8 @@ function elRefresh(){if(window.BX)BX.sc={};
   ['bxPanel','dbPanel','lyPanel','amPanel'].forEach(function(f){try{if(window[f])window[f]();}catch(e){}});try{updatePlot();}catch(e){}try{if(window.SA&&SA.dirty)SA.dirty();}catch(e){}try{if(window.amDirty)amDirty();}catch(e){}}
 function elToggle(a,on){var s=elSel().slice(),i=s.indexOf(a);if(on&&i<0)s.push(a);if(!on&&i>=0)s.splice(i,1);BX.ui.rptEl=s;elRefresh();}
 function elAll(k){BX.ui.rptEl=k===1?elCands().filter(function(a){return a!==elPrim();}):(k===2?elDef():[]);elRefresh();}
-function elUnitDlg(){var L=elList(),U=BX.ui;U.rptU=U.rptU||{};var t=prompt('Satuan elemen, format  nama=satuan  dipisah koma (g/t, %, ppm, ppb, atau kosong).\nContoh: cugpt=ppm, pbpct=%',L.map(function(a){return a+'='+elUnit(a);}).join(', '));if(t==null)return;
-  t.split(',').forEach(function(p){var q=p.split('=');if(q.length<2)return;var a=q[0].trim(),u=q[1].trim();if(!a)return;if(['g/t','%','ppm','ppb',''].indexOf(u)<0)return;U.rptU[a]=u;});elRefresh();}
+function elUnitDlg(){var L=elList(),U=BX.ui;U.rptU=U.rptU||{};var sebelum=JSON.stringify(U.rptU);var t=prompt('Satuan elemen, format  nama=satuan  dipisah koma (g/t, %, ppm, ppb, atau kosong).\nContoh: cugpt=ppm, pbpct=%',L.map(function(a){return a+'='+elUnit(a);}).join(', '));if(t==null)return;
+  t.split(',').forEach(function(p){var q=p.split('=');if(q.length<2)return;var a=q[0].trim(),u=q[1].trim();if(!a)return;if(['g/t','%','ppm','ppb',''].indexOf(u)<0)return;U.rptU[a]=u;});if(JSON.stringify(U.rptU)!==sebelum)elRefresh();}
 /* ---------- ringkasan per kelas block model (per blok & komposit flitch) dengan kolom per elemen ---------- */
 function elStTbl(C,cnt,hint){var L=elList(bxStatPrim()),T=elAgg(),keys=Object.keys(C).map(Number).sort(function(p,q){return p-q;}),tn=0,tv=0;
   var hd='<tr><th>Kelas</th><th>'+cnt+'</th><th>Vol (m3)</th><th>Ton</th>'+L.map(function(a){return '<th>'+bxE(a)+'</th>';}).join('')+'</tr>';

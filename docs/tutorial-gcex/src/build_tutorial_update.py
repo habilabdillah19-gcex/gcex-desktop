@@ -951,6 +951,13 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Jeda saat berganti panel / atribut (BM 0.24.47 / DH 0.24.54).</b> Berpindah panel sendiri murah; yang terasa adalah '
+         'ganti atribut warna, centang overlay, dan ubah ukuran jendela. Kini: kembali ke atribut yang pernah tampil seketika (geometri / segmen '
+         'disimpan untuk beberapa atribut terakhir), centang overlay tidak lagi mengunggah ulang semua lapisan 3D (rentang sumbu dibuat tetap selama '
+         'filter hole / bench / sayatan sama &mdash; kotak 3D juga tidak melompat), ubah ukuran jendela digambar ulang sekali. Kotak baru '
+         '<b>Kinerja &amp; grafis</b> di <b>Tampilan &amp; performa</b> memberi tahu apakah kartu grafis dipakai &mdash; bila tertulis <i>render '
+         'perangkat lunak</i>, itulah penyebab lambatnya dan kotak memberi langkah di Windows &mdash; serta mencatat jeda 12 aksi terakhir; '
+         '<b>Salin laporan kinerja</b> untuk dikirim saat melapor.</p>')
 B.append('<p><b>As-Mined (Block Model).</b> Panel Lantai melaporkan titik lantai di pita elevasi dan yang tidak dipakai, '
          'menyebut poligon yang jatuh ke RL bawah nominal (&lt; 3 titik), dan memperingatkan luas yang atapnya menembus lantai. '
          'Tombol import titik atap kini sama dengan tombol titik lantai. Beberapa menu diganti namanya sesuai isinya, '

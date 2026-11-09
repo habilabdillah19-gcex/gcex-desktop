@@ -45,7 +45,7 @@ with sync_playwright() as pw:
     pg.evaluate(JS_HOOK)
     pg.evaluate("dmStart()")
     # tunggu sampai demo selesai (DM.on jadi false) atau batas waktu
-    for _ in range(600):
+    for _ in range(900):   # dulu 600 dtk: demo Drill Hole (38 langkah di atas SwiftShader) terpotong di langkah 35 -> 'TIDAK TAMPAK' palsu
         if not pg.evaluate("!!DM.on"): break
         pg.wait_for_timeout(1000)
     R=pg.evaluate(JS_DUMP)

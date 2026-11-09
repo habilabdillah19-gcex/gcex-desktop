@@ -165,6 +165,10 @@ with sync_playwright() as pw:
     ev("try{lyrSet('wf',false)}catch(e){MD.models.forEach(m=>m.vis=false);updatePlot()}")
     # 11b. menu ⋯ Database Bor (import langsung) & Data Spasial
     menu_shot('db','menu_db',['db']); menu_shot('sp','menu_spasial_dh',['sp'])
+    # kotak Kinerja & grafis di panel Tampilan & performa (BM 0.24.47 / DH 0.24.54)
+    ev("PT.select('set.v');if(window.KIN&&KIN.gambar)KIN.gambar();var k=document.getElementById('kinBox');if(k)k.scrollIntoView({block:'center'})"); pg.wait_for_timeout(700)
+    rk = ev("(function(){var k=document.getElementById('kinBox'),b=k?k.getBoundingClientRect():null;return b?[b.left,b.top,b.width,b.height]:null;})()")
+    if rk: shot('kinerja_panel', {'x': max(0, int(rk[0] - 8)), 'y': max(0, int(rk[1] - 8)), 'width': int(rk[2] + 16), 'height': int(min(900, rk[3] + 16))})
     # 12. upsert bor infill
     ev("if(VIEW2D)toggle2D();uiTab('Data')");ev("UP.open()");pg.wait_for_timeout(400)
     for role,f in [('collar','SIM_upsert_collar.csv'),('survey','SIM_upsert_survey.csv'),('assay','SIM_upsert_assay.csv'),('geo','SIM_upsert_geologi.csv')]:
