@@ -76,6 +76,7 @@ ch('Halaman muka & import block model', dta('<code>data/SIM_BM_GC_kadar.csv</cod
  + fig('import', 'Block model dipilih; file sumber disalin ke folder proyek <code>sumber/</code>.')
  + tip('Sesudah proyek terbuka, semua import berikutnya dilakukan dari <b>tombol &#8943;</b> di Project Tree, tanpa kembali ke halaman muka: &#8943; <b>Block Model</b> &rarr; <i>Import block model dari file (.mdl / CSV)&hellip;</i> membuka jendela pilih file lalu dialog pemetaan yang sudah terisi ([[menu_bm]]); &#8943; <b>Data Spasial</b> (atau sub-node Topografi / Desain pit / Orthofoto) menanyakan jenis file lalu membuka jendela pilih file &mdash; topografi dan pit bisa <i>ditambah</i> atau <i>diganti</i> ([[menu_spasial]]).')
  + fig2('menu_bm', 'Menu &#8943; node Block Model: import langsung dari file.', 'menu_spasial', 'Menu &#8943; Data Spasial: pilih jenis file, jendela pilih file terbuka.')
+ + tip('Permukaan topografi dan desain pit di 3D digambar <b>satu warna seragam</b> (bawaan). Gradasi menurut elevasi atau warna lain: panel <b>Overlay</b> (node Topografi / Desain pit) &rarr; <b>Warna permukaan topo &amp; pit</b>.')
  + '<h3>Kinerja &amp; grafis</h3><p>Bila aplikasi terasa <b>tersendat saat berganti panel atau atribut warna</b>, buka <b>Pengaturan tampilan &rsaquo; Tampilan &amp; performa</b>. Kotak <b>Kinerja &amp; grafis</b> ([[kinerja_panel]]) menyebutkan apakah <b>kartu grafis</b> benar-benar dipakai (bila tertulis <i>render perangkat lunak</i>, kubus 3D digambar oleh prosesor dan semuanya lambat &mdash; ikuti saran di kotak itu) dan mencatat jeda 12 aksi terakhir (<i>sinkron</i> = layar terkunci oleh JavaScript, <i>long task</i> = total kerja berat 1,5 detik sesudah klik termasuk render 3D; merah = terasa, &gt; 0,4 detik). <b>Salin laporan kinerja</b> menyalin semuanya sebagai teks untuk dikirim saat melapor. Berganti atribut warna yang pernah ditampilkan kini seketika karena geometri kubusnya disimpan (6 atribut / filter terakhir).</p>'
  + fig('kinerja_panel', 'Kotak Kinerja &amp; grafis di panel Tampilan &amp; performa. Di komputer uji otomatis ini tertulis render perangkat lunak, karena memang tanpa kartu grafis.'))
 
@@ -236,6 +237,7 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
  + '<h3>2. Progres topo-ke-topo</h3>'
  + steps('Mode <b>Progres topo-ke-topo</b>.',
    '<b>Topografi atas</b> = survei lebih awal (mis. akhir Juni), <b>topografi bawah</b> = survei lebih baru (akhir Juli).',
+   'Survei yang belum ada di proyek bisa dipilih <b>langsung dari file</b> (tombol <b>Pilih file topografi (STR / DXF / CSV / DTM)&hellip;</b> di bawah tiap pilihan) &mdash; Block Model hanya menyimpan satu topografi aktif, jadi inilah cara memasukkan survei bulan sebelumnya untuk rekonsiliasi.',
    'Biarkan <b>Laporkan semua atribut kadar</b> menyala agar seluruh unsur masuk laporan.',
    'Klik <b>Hitung progres</b>, lalu <b>Export CSV</b>.')
  + kv([('Yang dihitung', 'blok yang titik pusatnya <b>di bawah</b> topografi atas dan <b>di atas</b> topografi bawah'),

@@ -1,10 +1,10 @@
 /* ================= ORE GEOMETRY (GC-Ex Drillhole) =================
    Referensi geologist untuk melihat deposit secara utuh SEBELUM pemodelan & estimasi.
    TIDAK menulis apa pun ke basis data struktur, Geological Modelling, maupun Model Estimation.
-   ① Intercept otomatis per bor (cut-off, panjang min, dilusi) -> GT (kadar x m) dijumlah per bor, tebal sebenarnya terhadap bidang acuan
-   ② Long section GT (bawaan vertikal, azimuth / dip bisa disetel): RBF spheroidal lokal 2D, kontur kelas GT, juga permukaan berwarna di 3D
-   ③ Ore shoot: gambar sumbu di long section / usulan otomatis -> pitch, plunge / trend (hanya di menu ini; export CSV opsional)
-   ④ Grade shell 3D: RBF indikator / numerik spheroidal lokal (Web Worker), N baris assay terbawah, marching tetrahedra, validasi, export OBJ / DXF */
+   Intercept otomatis per bor (cut-off, panjang min, dilusi) -> GT (kadar x m) dijumlah per bor, tebal sebenarnya terhadap bidang acuan
+   Long section GT (bawaan vertikal, azimuth / dip bisa disetel): RBF spheroidal lokal 2D, kontur kelas GT, juga permukaan berwarna di 3D
+   Ore shoot: gambar sumbu di long section / usulan otomatis -> pitch, plunge / trend (hanya di menu ini; export CSV opsional)
+   Grade shell 3D: RBF indikator / numerik spheroidal lokal (Web Worker), N baris assay terbawah, marching tetrahedra, validasi, export OBJ / DXF */
 
 /* ---------- mesin numerik (dipakai di halaman & di Web Worker) ---------- */
 function OGENG(){var E={};
@@ -109,7 +109,7 @@ function ogNz(v){var l=Math.hypot(v[0],v[1],v[2])||1;return[v[0]/l,v[1]/l,v[2]/l
 function ogPT(l){l=ogNz(l);if(l[2]>0)l=[-l[0],-l[1],-l[2]];return{pl:Math.asin(Math.min(1,-l[2]))/OGR,tr:((Math.atan2(l[0],l[1])/OGR)+360)%360,l:l};}
 function ogPitch(l,pl){/* pitch: sudut dari arah strike (aturan tangan kanan) ke garis, di bidang vein, 0-180 */var V=ogVec(pl.dip,pl.ddir),a=Math.atan2(ogDot(l,V.dd),ogDot(l,V.s))/OGR;if(a<0)a+=180;return a%180;}
 
-/* ---------- ① intercept per bor ---------- */
+/* ---------- intercept per bor ---------- */
 function ogRuns(A,ei,cut,minL,dil){/* A: interval terurut [f,t,v]; hasil: [{f,t,len,gt,avg}] */
   var S=[],cur=null;A.forEach(function(a){var v=a[2];if(v!=null&&v>=cut){if(cur&&a[0]-cur.t<=0.05){cur.t=a[1];cur.s.push(a);}else{cur={f:a[0],t:a[1],s:[a]};S.push(cur);}}else cur=null;});
   var gtOf=function(f,t){var g=0;A.forEach(function(a){if(a[1]<=f||a[0]>=t||a[2]==null)return;g+=a[2]*(Math.min(t,a[1])-Math.max(f,a[0]));});return g;};
@@ -141,7 +141,7 @@ function ogIcpt(){var P=OG.p,el=ogEl(),ei=elements.indexOf(el);if(ei<0){OG.msg='
     if(best){out.push({id:h.id,n:0,gtA:0,gt:0,len:0,tt:0,avg:0,p:best.p,ic:[],zero:true});nZero++;}else nSkip++;});
   OG.R={el:el,cut:cut,minL:minL,dil:dil,pl:pl,H:out,nIc:all.length,nHit:out.filter(function(h){return h.n;}).length,nZero:nZero,nSkip:nSkip,when:Date.now()};OG.L=null;return OG.R;}
 
-/* ---------- ② long section ---------- */
+/* ---------- long section ---------- */
 function ogLSFrame(){var R=OG.R,P=OG.p;if(!R)return null;var pl=R.pl,az,dp;
   if(P.ls==='vein'){az=pl.strike;dp=pl.dip;}else{az=P.lsAz===''||P.lsAz==null?pl.strike:ogNum(P.lsAz,pl.strike);dp=P.ls==='man'?Math.max(1,Math.min(90,ogNum(P.lsDip,70))):90;}
   var V=ogVec(dp,(az+90)%360),eu=V.s,ev=[-V.dd[0],-V.dd[1],-V.dd[2]],nl=ogCr(eu,ev),c=pl.c,vert=dp>=89.999;
@@ -170,7 +170,7 @@ var OGCS=[[0,'#2b3a8c'],[0.2,'#2c7bb6'],[0.4,'#abd9e9'],[0.55,'#ffffbf'],[0.75,'
 function ogShowLS(on){OG.view=on?'ls':'3d';var host=$('plotDiv').parentNode,d=$('ogDiv');if(on&&!d){d=document.createElement('div');d.id='ogDiv';host.appendChild(d);d.innerHTML='<div id=ogPlot></div><div id=ogXY></div>';ogEvents();}
   if(d)d.style.display=on?'block':'none';if(on)ogPlotLS();else{try{updatePlot();}catch(e){}}ogPanel();}
 function ogPlotLS(){var gd=$('ogPlot');if(!gd||OG.view!=='ls')return;var L=OG.L||(OG.R?ogLS():null),dark=document.body.classList.contains('dark'),T=[],ann=[];
-  if(!L){Plotly.react(gd,[],{title:{text:'Hitung intercept dulu (① Data & intercept)'},paper_bgcolor:dark?'#1f232b':'#fff'});return;}
+  if(!L){Plotly.react(gd,[],{title:{text:'Hitung intercept dulu (Data & intercept)'},paper_bgcolor:dark?'#1f232b':'#fff'});return;}
   var mx=Math.max.apply(null,L.G.concat([1])),B=ogCls(mx);
   if(L.grid){var Zi=L.grid.z.map(function(r){return r.map(function(v){return ogIdx(v,B);});});
     T.push({type:'contour',x:L.grid.x,y:L.grid.y,z:Zi,zmin:0,zmax:B.length+1,colorscale:OGCS,contours:{start:1,end:B.length,size:1,coloring:'fill',showlabels:false},line:{color:'rgba(20,20,20,.55)',width:0.8},connectgaps:false,hoverinfo:'skip',
@@ -193,7 +193,7 @@ function ogEvents(){var gd=$('ogPlot');if(!gd)return;
   gd.addEventListener('mousemove',function(e){if(!gd._fullLayout)return;var xa=gd._fullLayout.xaxis,ya=gd._fullLayout.yaxis,r=gd.getBoundingClientRect(),x=xa.p2l(e.clientX-r.left-xa._offset),y=ya.p2l(e.clientY-r.top-ya._offset),t=$('ogXY');if(t&&isFinite(x)&&isFinite(y))t.textContent=(OG.draw?(OG.draw.a?'Klik titik ke-2 (arah menunjam) · Esc batal · ':'Klik titik ke-1 sumbu shoot · '):'')+'jarak '+x.toFixed(1)+' m · '+(OG.L&&OG.L.F.vert?'RL ':'v ')+y.toFixed(1);});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&OG.draw){OG.draw=null;ogPlotLS();ogPanel();}});}
 
-/* ---------- ③ ore shoot ---------- */
+/* ---------- ore shoot ---------- */
 function ogAxisFrom(l,cen,len,name,auto){var pl=OG.R.pl,o=ogPT(l),half=Math.max(5,len/2),p1=[cen[0]-o.l[0]*half,cen[1]-o.l[1]*half,cen[2]-o.l[2]*half],p2=[cen[0]+o.l[0]*half,cen[1]+o.l[1]*half,cen[2]+o.l[2]*half];
   return{id:'ax'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:name,pl:o.pl,tr:o.tr,pitch:ogPitch(o.l,pl),p1:p1,p2:p2,len:2*half,auto:!!auto,ls:{az:1},vein:{dip:pl.dip,ddir:pl.ddir}};}
 function ogAxisLS(a,b){var L=OG.L,F=L.F;var A=ogToVein(F.from(a[0],a[1]),F),B=ogToVein(F.from(b[0],b[1]),F),dls=[(b[0]-a[0])*F.eu[0]+(F.vert?0:(b[1]-a[1])*F.ev[0]),(b[0]-a[0])*F.eu[1]+(F.vert?0:(b[1]-a[1])*F.ev[1]),(b[0]-a[0])*F.eu[2]+(F.vert?(b[1]-a[1]):(b[1]-a[1])*F.ev[2])];
@@ -223,7 +223,7 @@ function ogAxCsv(){if(!OG.axes.length){alert('Belum ada sumbu shoot.');return;}v
 function ogFieldLin(){/* lineasi lapangan di basis data struktur: hanya ditampilkan sebagai pembanding (dibaca, tidak diubah) */if(!window.STR||!OG.R)return[];var pl=OG.R.pl;
   return STR.P.filter(function(p){return p.pl!=null&&p.tr!=null&&isFinite(+p.pl)&&isFinite(+p.tr)&&(typeof stOn!=='function'||stOn(p));}).map(function(p){var l=[Math.cos(p.pl*OGR)*Math.sin(p.tr*OGR),Math.cos(p.pl*OGR)*Math.cos(p.tr*OGR),-Math.sin(p.pl*OGR)],off=Math.asin(Math.min(1,Math.abs(ogDot(l,pl.n))))/OGR;return{no:p.no,pl:+p.pl,tr:+p.tr,pitch:ogPitch(l,pl),off:off};});}
 
-/* ---------- ④ grade shell 3D ---------- */
+/* ---------- grade shell 3D ---------- */
 function ogGsRows(){var gs=OG.p.gs,el=gs.el&&elements.indexOf(gs.el)>=0?gs.el:ogEl(),ei=elements.indexOf(el),A=window.assays||[],N=Math.max(1000,ogNum(gs.rows,100000)|0),L=[];
   for(var i=A.length-1;i>=0&&L.length<N;i--){var a=A[i],v=a[4]&&a[4][ei];if(v==null||!isFinite(v)||!(a[2]>a[1])||!holeData[a[0]])continue;L.push(a);}return{el:el,ei:ei,rows:L,total:A.length};}
 function ogGsPts(){var X=ogGsRows(),gs=OG.p.gs,cl=Math.max(0,ogNum(gs.comp,2)),by={},out=[];X.rows.forEach(function(a){(by[a[0]]=by[a[0]]||[]).push(a);});
@@ -291,7 +291,7 @@ function ogSet(k,v,re){OG.p[k]=v;if(re==='ic'){OG.R=null;OG.L=null;}else if(re==
 function ogGs(k,v){OG.p.gs[k]=v;ogPanel();}
 function ogSec(s){OG.sec=s;if(s==='2'&&OG.R&&OG.view!=='ls')ogShowLS(true);else if(s!=='2'&&s!=='3'&&OG.view==='ls')ogShowLS(false);else ogPanel();}
 function ogRunIc(){var t0=performance.now();var R=ogIcpt();OG.msg=R?'&#10003; '+ogN(R.nIc)+' intercept di '+R.nHit+' bor, '+R.nZero+' bor GT 0 ('+((performance.now()-t0)/1000).toFixed(1)+' s)':OG.msg;if(R)ogLS();ogDirty();}
-function ogPanel(){var b=$('ogBody');if(!b)return;var P=OG.p,R=OG.R,L=OG.L,el=ogEl(),sec=OG.sec,tabs=[['1','① Intercept'],['2','② Long section'],['3','③ Ore shoot'],['4','④ Grade shell'],['a','Semua']];
+function ogPanel(){var b=$('ogBody');if(!b)return;var P=OG.p,R=OG.R,L=OG.L,el=ogEl(),sec=OG.sec,tabs=[['1','Intercept'],['2','Long section'],['3','Ore shoot'],['4','Grade shell'],['a','Semua']];
   var inp=function(k,v,st,tt,re){return '<input type=number step='+(st||'any')+' value="'+ogE(v)+'"'+(tt?' title="'+ogE(tt)+'"':'')+' onchange="ogSet(\''+k+'\',this.value'+(re?',\''+re+'\'':'')+')">';},
     gin=function(k,v,st,tt){return '<input type=number step='+(st||'any')+' value="'+ogE(v)+'"'+(tt?' title="'+ogE(tt)+'"':'')+' onchange="ogGs(\''+k+'\',this.value)">';},
     sel=function(oc,opts,cur){return '<select onchange="'+oc+'">'+opts.map(function(o){return '<option value="'+ogE(o[0])+'"'+(String(cur)===String(o[0])?' selected':'')+'>'+ogE(o[1])+'</option>';}).join('')+'</select>';},on=function(s){return sec==='a'||sec===s;};
@@ -325,7 +325,7 @@ function ogPanel(){var b=$('ogBody');if(!b)return;var P=OG.p,R=OG.R,L=OG.L,el=og
       '<div class="g3 f"><div><label>Metode</label>'+sel("ogGs('mode',this.value)",[['ind','Indikator (peluang)'],['num','Numerik']],gs.mode)+'</div><div><label>Unsur</label>'+sel("ogGs('el',this.value)",elements.map(function(e){return[e,e];}),gs.el||el)+'</div><div><label>Cut-off (pisah koma)</label><input type=text value="'+ogE(gs.cuts)+'" onchange="ogGs(\'cuts\',this.value)"></div></div>'+
       '<div class="g3 f">'+(gs.mode!=='num'?'<div><label>Ambang peluang</label>'+gin('pth',gs.pth,'any','Shell = peluang ≥ nilai ini (bawaan 0,5)')+'</div>':'<div><label>Transformasi</label>'+sel("ogGs('tr',this.value)",[['log','Log'],['none','Tanpa']],gs.tr)+'</div>')+'<div><label>Maks baris assay</label>'+gin('rows',gs.rows,1,'Bila data lebih besar, dipakai baris paling bawah (terbaru) tabel assay')+'</div><div><label>Komposit (m, 0 = asli)</label>'+gin('comp',gs.comp)+'</div></div>'+
       '<div class=hint style="margin-top:-4px">'+(gs.mode==='num'?'Numerik cenderung menyusutkan shell pada vein tipis (kadar dirata-rata dengan sampel di luar vein); untuk emas disarankan indikator. ':'')+'Tabel assay: '+ogN(nA)+' baris'+(nA>ogNum(gs.rows,100000)?' &rarr; dipakai <b>'+ogN(ogNum(gs.rows,100000))+' baris paling bawah</b>':'')+'. Tanpa batas domain.</div>'+
-      '<div class=imsec>Elipsoid (spheroidal lokal)</div><div class="g3 f"><div><label>Orientasi</label>'+sel("ogGs('ori',this.value)",[['plane','Bidang acuan ①'],['man','Manual']],gs.ori)+'</div>'+(gs.ori==='man'?'<div><label>Dip (&deg;)</label>'+gin('dip',gs.dip)+'</div><div><label>Dip dir (&deg;)</label>'+gin('ddir',gs.ddir)+'</div>':'<div class=hint style="grid-column:span 2;align-self:end;margin:0">'+(OG.R?'dip '+ogN(Ax.dip,0)+'&deg; &rarr; '+ogN(Ax.ddir,0)+'&deg;':'hitung intercept dulu, atau pilih Manual')+'</div>')+'</div>'+
+      '<div class=imsec>Elipsoid (spheroidal lokal)</div><div class="g3 f"><div><label>Orientasi</label>'+sel("ogGs('ori',this.value)",[['plane','Bidang acuan '],['man','Manual']],gs.ori)+'</div>'+(gs.ori==='man'?'<div><label>Dip (&deg;)</label>'+gin('dip',gs.dip)+'</div><div><label>Dip dir (&deg;)</label>'+gin('ddir',gs.ddir)+'</div>':'<div class=hint style="grid-column:span 2;align-self:end;margin:0">'+(OG.R?'dip '+ogN(Ax.dip,0)+'&deg; &rarr; '+ogN(Ax.ddir,0)+'&deg;':'hitung intercept dulu, atau pilih Manual')+'</div>')+'</div>'+
       '<div class="g3 f"><div><label>Pitch mayor (&deg;)</label>'+gin('pitch',gs.pitch,'any','Sudut sumbu mayor dari strike di bidang')+'</div><div class=hint style="grid-column:span 2;align-self:end;margin:0">Sumbu mayor: plunge <b>'+ogN(Ax.pt.pl,0)+'&deg; &rarr; '+ogN(Ax.pt.tr,0)+'&deg;</b>'+(OG.axes.length?' · <a href=javascript:void(0) onclick="var a=OG.axes[OG.axes.length-1];OG.p.gs.ori=\'man\';OG.p.gs.dip=+a.vein.dip.toFixed(1);OG.p.gs.ddir=+a.vein.ddir.toFixed(1);OG.p.gs.pitch=+a.pitch.toFixed(1);ogPanel()">pakai sumbu shoot terakhir</a>':'')+'</div></div>'+
       '<div class="g3 f"><div><label>Range mayor (m)</label>'+gin('r1',gs.r1)+'</div><div><label>Semi (m)</label>'+gin('r2',gs.r2)+'</div><div><label>Minor (m)</label>'+gin('r3',gs.r3)+'</div></div>'+
       '<div class="g3 f"><div><label>Alpha</label>'+sel("ogGs('alpha',+this.value)",[[3,'3'],[5,'5'],[7,'7'],[9,'9']],gs.alpha)+'</div><div><label>Nugget (0–0,9)</label>'+gin('nug',gs.nug)+'</div><div><label>Resolusi (m, 0 = auto)</label>'+gin('res',gs.res)+'</div></div>'+

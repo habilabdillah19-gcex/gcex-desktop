@@ -185,12 +185,12 @@
                   (tav != null ? ' dan tebal rata-rata solid ' + N(tav, 2) + ' m' : '') +
                   ' &mdash; solid dipatok di tebal minimumnya, jadi mengembang sekitar ' +
                   N(100 * (minT / tb.med - 1), 0) + '%';
-        o.saran = 'Turunkan <b>Tebal minimum</b> di Geomodeller Vein &#9315; menjadi &le; ' + N(tb.med, 2) +
+        o.saran = 'Turunkan <b>Tebal minimum</b> di Geomodeller Vein menjadi &le; ' + N(tb.med, 2) +
                   ' m, lalu serap ulang. <b>Merapatkan spasi section tidak akan menolong</b> untuk sebab ini.';
       } else if (aoi > 0) {
         o.sebab = 'solid diperpanjang searah strike oleh <b>radius pengaruh ' + N(aoi, 1) + ' m</b> di luar ' +
                   'ujung irisan wireframe' + (tav != null ? ', tebal rata-rata solid ' + N(tav, 2) + ' m' : '');
-        o.saran = 'Kecilkan <b>radius pengaruh strike</b> di Geomodeller Vein &#9315;, atau rapatkan spasi section ' +
+        o.saran = 'Kecilkan <b>radius pengaruh strike</b> di Geomodeller Vein , atau rapatkan spasi section ' +
                   'supaya ujung wireframe terwakili.';
       } else {
         o.saran = 'Rapatkan spasi section lalu serap ulang ke domain yang sama.';

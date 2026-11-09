@@ -5,7 +5,7 @@
 (function(){if(window.SLB||typeof stepPos!=='function'||typeof updatePlot!=='function')return;
   var $=function(i){return document.getElementById(i);},bar=null;
   var on=function(){try{return !!(VIEW2D||($('sliceClip')&&$('sliceClip').checked)||($('showPlane')&&$('showPlane').checked));}catch(e){return false;}};
-  var axis=function(){var m=$('sMode')?$('sMode').value:'H';return m==='H'?'Elevasi':'offset';};
+  var axis=function(){var m='H';try{m=secGeom().m;}catch(e){}return m==='H'?'Elevasi':'offset';};
   function build(){var st=$('stage');if(!st||bar)return;bar=document.createElement('div');bar.id='slabBar';bar.setAttribute('role','toolbar');
     bar.innerHTML='<span class="sbt" title="Sayatan aktif">Sayatan</span>'+
       '<button type="button" data-d="-1" title="Mundur sejauh tebal slab (PageDown)">&#9664; Mundur</button>'+

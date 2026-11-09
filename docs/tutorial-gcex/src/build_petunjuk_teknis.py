@@ -621,6 +621,31 @@ B.append('<p><b>Kotak Kinerja &amp; grafis</b> (<code>kinerja.js</code>, panel T
          'laptop walau pengukuran di atas sudah kecil. Kotak mencatat 12 aksi terakhir (sinkron, long task, panggilan Plotly) dan tombol <b>Salin laporan '
          'kinerja</b> menyalin teksnya. Catatan ukur: pada lingkungan uji tanpa GPU, waktu render (<code>(program)</code>) tidak mewakili; bandingkan '
          'waktu sinkron JavaScript.</p>')
+B.append('<h3>Slicer, panel Assay, permukaan overlay, STR deskripsi teks (DH 0.24.56 / BM 0.24.49)</h3>')
+B.append('<p><b>Permukaan topo &amp; pit tidak pernah tampil di 3D Drill Hole</b>: pengaman <code>Plotly.react</code> (<code>_gcexSafe</code>) membuang setiap '
+         'mesh3d tanpa <code>i/j/k</code> &mdash; padahal permukaan topo / pit adalah mesh Delaunay (tanpa indeks). Kini mesh tanpa indeks sah bila &ge; 3 titik. '
+         'Ditambah <code>ovWarna</code> (seragam / gradasi) + <code>ovTopoCol</code> / <code>ovPitCol</code> di panel Overlay kedua aplikasi; kunci <code>ovCache</code> memuatnya. '
+         'Sekalian: uid lapisan hasil hitungan dihitung ulang tiap gambar (objek dari cache membawa uid lama &rarr; dua lapisan ber-uid sama &rarr; Plotly membuang satu).</p>')
+B.append('<p><b>Slicer</b> (<code>ui4_dh.js</code>, menggantikan menu Sayatan &#9662;): mode baru <code>sMode=S</code> di <code>secGeom()</code> &mdash; bidang dari '
+         '<code>slDip</code> / <code>slAz</code> (dip azimuth; strike = azimuth &minus; 90&deg;) melalui pusat <code>slX/slY/slZ</code> (koordinat asli); dip &lt; 0,5&deg; '
+         'dikembalikan sebagai geometri H (plan, pos = elevasi) sehingga semua jalur lama (2D, slab bar, geostatistik) tetap berlaku; <code>slStep</code> = langkah '
+         '<code>stepPos</code> terpisah dari <code>thick</code>. <code>window.SLICER</code> = {open, close, set(dip,az), pusat(x,y,z)} untuk Demo / uji. Pusat pandangan '
+         'dihitung dari <code>scene.camera.center</code> (koordinat ternormalisasi &rarr; data). Riwayat geostatistik (<code>gsgGeo</code>) menyimpan nilai Slicer.</p>')
+B.append('<p><b>Node Assay</b> &rarr; tab <code>Warna</code> (panel &ldquo;Assay &mdash; tampilan kadar&rdquo;: <code>elementFilter</code> &amp; <code>cutoff</code> pindah dari pData); '
+         'sub-node unsur <code>info:1</code> (<code>ptree.js</code>: klik diabaikan, kelas <code>.info</code>); node <code>set.w</code> dihapus. Nomor lingkaran (&#9312;&hellip;) dihapus dari semua label; '
+         'pengelompokan bagian Geomodeller (<code>key()</code>) kini mengenali judul h4, bukan nomornya; <code>uiSecTabs</code> membuang nomor dari label tab.</p>')
+B.append('<p><b>STR biner Surpac</b> (<code>bigline.js readStrS</code>): rekaman = <code>[0x00][int32 string][Y][X][Z]</code> 29 byte lalu <b>deskripsi teks berpanjang bebas</b> '
+         '(&ldquo;,2&rdquo;, &ldquo;,Lensa A&rdquo;) sampai byte 0x00 berikutnya; 4 byte awalan sesudah header; 29 byte nol = pemisah string; bantalan nol + END. '
+         'Pembaca lama (deskripsi 8 byte biner per kolom, rekaman tetap) tetap sebagai cadangan <code>strTetap</code> bila &gt; 50 % rekaman tidak sah. '
+         'Uji <code>uji_str_desc_teks.py</code>: biner-teks = teks = biner-lama, kedua aplikasi. Garis plan bor utuh (tanpa putus-putus) di 3D dan peta.</p>')
+B.append('<p><b>Block Model besar</b>: <code>bxTraces</code> memakai <b>LOD</b> bila blok terpilih &gt; <code>bxLim3D()</code> &mdash; sel = ukuran blok induk terbesar &times; faktor '
+         '2<sup>k</sup> (dinaikkan sampai jumlah sel &le; batas), kelas per sel = dominan menurut bobot volume, model tiruan <code>mm</code> dialirkan ke pembangun kubus yang sama '
+         '(culling sisi bersama, potongan flitch) sehingga seluruh model &amp; semua kelas tampak; <code>BX.lim3d={shown,tot,lod,f,nAsli}</code>, legenda memakai <code>nAsli</code>. '
+         'Dulu kelas yang tidak muat disembunyikan. Drill Hole masih memakai sampel titik (<code>BXCAP</code>) untuk kasus yang sama. '
+         '<b>Jangkar area</b>: <code>SA.go</code> hanya memanggil <code>ab()</code> untuk file spasial yang overlap dengan collar atau (tanpa collar) block model; titik file yang tidak '
+         'overlap dibuang (<code>out.length=_ob</code>); <code>SA.readLinesInto</code> tidak lagi memanggil <code>ab</code> per titik (mengembalikan x0..z1; <code>bigline_patch</code> memberi '
+         '<code>segs.forEach</code> tiruan dua pojok). <code>SA.reAnchor(m)</code> (BM): jangkar proyek tersimpan &gt; 100 km dari batas block model dan tanpa collar &rarr; '
+         '<code>D.anch</code> = batas model, titik topo / pit &gt; 50 km dibuang, simpan proyek + work, <code>location.reload()</code>.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

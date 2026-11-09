@@ -65,11 +65,11 @@
     p.style.left=x+'px';p.style.top=(below?r.bottom+9:r.top-ph-9)+'px';p.classList.add(below?'dn':'up');p.style.setProperty('--ax',Math.max(10,Math.min(pw-20,r.left+r.width/2-x-5))+'px');
     p.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;G.popClose();try{list[+b.getAttribute('data-i')][1]();}catch(x){console.warn(x);}});};
   /* alasan khusus per fungsi tombol (GC-Ex Block Model); selain itu dipakai keterangan tombol / pesan umum */
-  var AMP=['Buka ③ Poligon',go('AM',['am','3'])],AMH=['Buka ④ Parameter',go('AM',['am','4'])];
+  var AMP=['Buka Poligon',go('AM',['am','3'])],AMH=['Buka Parameter',go('AM',['am','4'])];
   var WHY={
-    amLyPreview:['Belum ada poligon as-mined yang dicentang dan sudah dihitung. Digit atau import boundary di ③ Poligon, lalu klik Hitung.',[AMP,AMH]],
+    amLyPreview:['Belum ada poligon as-mined yang dicentang dan sudah dihitung. Digit atau import boundary di Poligon, lalu klik Hitung.',[AMP,AMH]],
     amLyPdf:'amLyPreview',amRegCopy:'amLyPreview',amRegCsv:'amLyPreview',amStr:'amLyPreview',amAuditCsv:'amLyPreview',
-    amPdf:['Belum ada hasil hitung as-mined. Buka ④ Parameter lalu klik Hitung di flitch yang ingin dilaporkan.',[AMH]],amCsv:'amPdf',amCells:'amPdf',
+    amPdf:['Belum ada hasil hitung as-mined. Buka Parameter lalu klik Hitung di flitch yang ingin dilaporkan.',[AMH]],amCsv:'amPdf',amCells:'amPdf',
     amMdl:['Export .mdl butuh block model resmi yang dibuka dari file Surpac .mdl dan hasil hitung as-mined.',[['Import BM…',function(){if(fn('bxDlg'))bxDlg();}],AMH]],
     amXlPlan:['Pilih workbook register dulu (tombol Pilih workbook…) dan pastikan ada poligon yang sudah dihitung.',[]],
     amXlSend:['Klik Periksa dulu: GC-Ex menunjukkan kolom yang diisi dan baris tujuan sebelum menulis ke workbook.',[]],

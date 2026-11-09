@@ -86,7 +86,7 @@ function mapGmBox(){var f=MAP.sel&&MAP.F.filter(function(x){return x.id===MAP.se
   var opt=function(v,cur,t){return '<option value="'+mapE(v)+'"'+(String(cur)===String(v)?' selected':'')+'>'+mapE(t)+'</option>';},h='<div class="box mapgm" style="margin:6px 0"><b>Integrasi ke Geological Modelling: '+mapE(f.name)+'</b>';
   if(isL){h+='<div class="g3 f"><div><label>Tren pitch RBF</label><select onchange="mapSetF('+q+',\'lin\',this.value)">'+opt('',f.lin||'','Tidak dipakai')+opt('*',f.lin||'','Semua domain di dekatnya')+D.map(function(d){return opt(d.id,f.lin||'',d.name);}).join('')+'</select></div>'+
       '<div><label>Plunge (&deg;)</label><input type=number step=any min=0 max=90 value="'+(+f.pl||0)+'" onchange="mapSetF('+q+',\'pl\',+this.value)"></div><div><label>Arah plunge</label><select onchange="mapSetF('+q+',\'rev\',this.value===\'1\')">'+opt('0',f.rev?'1':'0','Searah digitasi')+opt('1',f.rev?'1':'0','Berlawanan')+'</select></div></div>'+
-      '<div class=hint style="margin-top:-4px">Arah garis (trend) + plunge = lineasi untuk tren pitch elipsoid RBF (Geological Modelling &#9315; &rsaquo; Orientasi bervariasi). Elevasi dari topografi.</div>';}
+      '<div class=hint style="margin-top:-4px">Arah garis (trend) + plunge = lineasi untuk tren pitch elipsoid RBF (Geological Modelling &rsaquo; Orientasi bervariasi). Elevasi dari topografi.</div>';}
   else if(f.kind==='str'&&!/^(Vein|Kontak)/.test(f.type))h+='<div class=hint>Garis <b>'+mapE(f.type)+'</b> hanya untuk peta. Untuk pemodelan pakai tipe <b>Vein / urat</b> atau <b>Kontak</b> (jejak singkapan), atau <b>Sumbu antiklin / sinklin / Lineasi / shoot</b> (tren pitch).</div>';
   else{var vr=f.vr||'mid';h+='<div class="g2 f"><div><label>Jejak singkapan vein untuk domain</label><select onchange="mapSetF('+q+',\'dom\',this.value||null)">'+opt('',f.dom||'','Tidak dipakai')+D.map(function(d){return opt(d.id,f.dom||'',d.name);}).join('')+'</select></div>'+
       '<div><label>Garis ini adalah</label><select onchange="mapSetF('+q+',\'vr\',this.value)">'+opt('mid',vr,'Tengah vein (pakai lebar)')+opt('HW',vr,'Kontak HW')+opt('FW',vr,'Kontak FW')+'</select></div></div>';
@@ -113,7 +113,7 @@ function mapGmTag(f){var d=f.dom&&window.gmDom?(GM.doms.filter(function(x){retur
 /* ringkasan basis data struktur terpadu di GM (5) */
 function stDbHtml(){var c={gm:0,ref:0,map:0},nl=0,pl=0,mo=0,ml=0;STR.P.forEach(function(p){var f=stFile(p.fid);if(p.fid==='gm')c.gm++;else if(f&&/^map/.test(f.kind||''))c.map++;else c.ref++;if(p.pl!=null&&p.tr!=null)nl++;});
   if(mapOk()){(MAP.PF||[]).forEach(function(f){f.P.forEach(function(p){if(p[5]&&p[5].dip==null&&p[5].pl!=null)pl++;});});MAP.F.forEach(function(f){if(f.dom!=null&&f.dom!=='')mo++;if(f.lin)ml++;});}
-  return '<div class="box gmstate" style="margin-top:6px"><b>Basis data struktur terpadu</b> <small>(satu tabel: dipakai RBF &#9315;, OK dinamis, Map &amp; 3D)</small><br>Bidang: '+c.gm+' flag GM &middot; '+c.ref+' Data Referensi / CSV / manual &middot; '+c.map+' Peta (Mapping)<br>Lineasi: '+(nl+pl)+' titik'+(pl?' (termasuk '+pl+' lineasi saja dari pick-up Map)':'')+(ml?' &middot; '+ml+' garis sumbu lipatan / lineasi Map':'')+'<br>Jejak singkapan vein dari Map: '+mo+' garis</div>';}
+  return '<div class="box gmstate" style="margin-top:6px"><b>Basis data struktur terpadu</b> <small>(satu tabel: dipakai RBF , OK dinamis, Map &amp; 3D)</small><br>Bidang: '+c.gm+' flag GM &middot; '+c.ref+' Data Referensi / CSV / manual &middot; '+c.map+' Peta (Mapping)<br>Lineasi: '+(nl+pl)+' titik'+(pl?' (termasuk '+pl+' lineasi saja dari pick-up Map)':'')+(ml?' &middot; '+ml+' garis sumbu lipatan / lineasi Map':'')+'<br>Jejak singkapan vein dari Map: '+mo+' garis</div>';}
 (function(){var _s=stGmHtml;stGmHtml=function(){var h=_s.apply(this,arguments);try{h+=stDbHtml();}catch(e){console.error(e);}return h;};})();
 """
 
@@ -140,9 +140,9 @@ def patch(s):
     s = rep(s, "'<div class=imsec>Orientasi vein (strike / dip relatif)</div>'+",
             "imMapHtml(act,P,Ra)+'<div class=imsec>Orientasi vein (strike / dip relatif)</div>'+")
     s = rep(s, "(lineasi: arah shoot, striasi, sumbu lipatan) — isi di Data Referensi &rsaquo; Struktur atau kolom Plunge / Trend di CSV. ",
-            "(lineasi: arah shoot, striasi, sumbu lipatan) dari basis data struktur: flag GM &#9316;, Data Referensi &rsaquo; Struktur / CSV, titik pick-up Map (kolom Plunge / Trend), dan garis sumbu lipatan / lineasi di Map. ")
+            "(lineasi: arah shoot, striasi, sumbu lipatan) dari basis data struktur: flag GM , Data Referensi &rsaquo; Struktur / CSV, titik pick-up Map (kolom Plunge / Trend), dan garis sumbu lipatan / lineasi di Map. ")
     # ---- GM (5): lineasi pada flag struktur ----
-    s = rep(s, "<h4>&#9316; Flag struktur (dip / dip azimuth)</h4>", "<h4>&#9316; Flag struktur (bidang + lineasi)</h4>")
+    s = rep(s, "<h4>Flag struktur (dip / dip azimuth)</h4>", "<h4>Flag struktur (bidang + lineasi)</h4>")
     s = rep(s, "Struktur ikut membentuk solid RBF.</div>';",
             "Struktur ikut membentuk solid RBF. Isi <b>plunge / trend</b> bila ada lineasi (arah shoot, striasi, sumbu lipatan): dipakai tren pitch RBF &amp; OK dinamis.</div>';")
     s = rep(s, """<div><label>No berikut</label><input type=number step=1 value="'+STR.nx+'" onchange="STR.nx=+this.value||1"></div></div>';""",
@@ -156,7 +156,7 @@ def patch(s):
     # ---- Data Referensi > Struktur: sumber Map ----
     s = rep(s, "p.fid==='man'?'manual':'file'", "p.fid==='man'?'manual':(/^map/.test((stFile(p.fid)||{}).kind||'')?'Mapping':'file')")
     s = rep(s, "ditampilkan di menu <b>Map</b> dengan simbol USGS.</div>",
-            "ditampilkan di menu <b>Map</b> dengan simbol USGS. Satu basis data dengan flag struktur Geological Modelling &#9316; dan titik pick-up Map yang berkolom Dip / Dip_Azimuth.</div>")
+            "ditampilkan di menu <b>Map</b> dengan simbol USGS. Satu basis data dengan flag struktur Geological Modelling dan titik pick-up Map yang berkolom Dip / Dip_Azimuth.</div>")
     # ---- Map: pick-up dengan kolom struktur ----
     s = rep(s, "cC=f(/^(code|kode|desc|description|ket|keterangan|feature|fitur|layer)/,4);",
             "cC=f(/^(code|kode|desc|description|ket|keterangan|feature|fitur|layer)/,4),sDp=hasH?f(/^(dip|kemiringan)$/,-1):-1,sAz=hasH?f(/^(dipaz|dipazi|dipazimuth|dipdir|dipdirection|ddir|dd|azimuth|azi|az|arahdip)$/,-1):-1,sPl=hasH?f(/^(plunge|pl|plg)$/,-1):-1,sTr=hasH?f(/^(trend|tr|plungeaz|plungeazimuth|plungedir)$/,-1):-1;")

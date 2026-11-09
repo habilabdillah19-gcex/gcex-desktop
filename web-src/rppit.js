@@ -24,7 +24,11 @@
    sb_frac, cut-off) berlaku apa adanya dan angkanya pasti konsisten dengan laporan biasa.      */
 (function () {
   if (window.RPX || typeof BX === 'undefined' || typeof rpRun !== 'function') return;
-  var RPX = window.RPX = { mode: 'pit', pits: [], topo: '', ta: '', tb: '', allAtt: true, res: null, busy: false, msg: '', ci: 0 };
+  var RPX = window.RPX = { mode: 'pit', pits: [], topo: '', ta: '', tb: '', allAtt: true, res: null, busy: false, msg: '', ci: 0, surf: [] };
+  /* Block Model tidak punya "versi" topografi seperti Drill Hole: hanya SATU topografi & SATU desain pit aktif. Untuk progres
+     topo-ke-topo pemilik butuh dua survei (laporan 9 Nov 2026: pilihan hanya "Topografi aktif" / "Desain pit aktif"). Maka panel ini
+     bisa MEMILIH FILE permukaan langsung (STR / DXF / CSV-XYZ / DTM): titiknya disimpan di RPX.surf (koordinat lokal) sebagai sumber 'pt:i'
+     dan dipakai lewat IDW yang sama dengan topografi aktif. Hanya untuk laporan ini; tidak mengubah topografi tampilan. */
   var $ = function (i) { return document.getElementById(i); };
   function E(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
   function N(v, d) { if (v == null || !isFinite(v)) return '-'; return (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
@@ -47,6 +51,7 @@
     } else {                                                          /* Block Model: satu permukaan aktif per jenis */
       if (window.OV && OV.topoF && OV.topoF.x && OV.topoF.x.length) L.push(['ov:topo', 'Topografi aktif']);
       if (window.OV && OV.pitF && OV.pitF.x && OV.pitF.x.length) L.push(['ov:pit', 'Desain pit aktif']);
+      (RPX.surf || []).forEach(function (q, i) { L.push(['pt:' + i, 'File: ' + q.name + ' (' + q.x.length.toLocaleString('id-ID') + ' titik)']); });
     }
     (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, (w.jenis === 'surf' ? 'Permukaan DTM: ' : 'Wireframe: ') + w.name]); });
     return L;
@@ -68,6 +73,11 @@
       if (!(o && o.x && o.x.length) || !api('surf')) return null;
       var fn = api('surf')(o);
       return { n: k === 'ov:pit' ? 'desain pit aktif' : 'topografi aktif', tin: false, f: fn };
+    }
+    if (k.indexOf('pt:') === 0) {
+      var q = (RPX.surf || [])[+k.slice(3)];
+      if (!(q && q.x && q.x.length) || !api('surf')) return null;
+      return { n: 'file ' + q.name, tin: false, f: api('surf')(q) };
     }
     var a = k.split(':'), v = null;
     try { spL(a[1]).forEach(function (x) { if (x.id === a[2]) v = x; }); } catch (e) {}
@@ -199,6 +209,25 @@
 
   /* ---------- panel (tab tambahan di Reporting) ---------- */
   RPX.set = function (k, v) { RPX[k] = v; RPX.panel(); };
+  /* pilih file permukaan untuk slot 'ta' / 'tb' (Block Model): dibaca dengan pembaca STR / DXF / XYZ yang sama dengan Data Spasial */
+  RPX.pilihFile = function (slot) {
+    if (!window.PT || !PT.pick) return;
+    PT.pick('.str,.dxf,.csv,.txt,.xyz,.dtm', false, function (inp) {
+      var f = inp.files && inp.files[0]; if (!f) return; var ex = (f.name.split('.').pop() || '').toLowerCase();
+      RPX.msg = 'Membaca ' + E(f.name) + '&hellip;'; RPX.panel();
+      (async function () {
+        try {
+          var ox = window.offX || 0, oy = window.offY || 0, X = [], Y = [], Z = [];
+          if (ex === 'dtm') { var L = await SA.readMeshes([f]); var m = L[0]; for (var i = 0; i < m.v.length; i += 3) { X.push(m.v[i] - ox); Y.push(m.v[i + 1] - oy); Z.push(m.v[i + 2]); } }
+          else { var kind = ex === 'str' ? 'str' : ex === 'dxf' ? 'dxf' : 'xyz', out = [], R = await SA.readLinesInto({ f: f, k: kind }, out, 0, null, null);
+            out.forEach(function (p) { if (p && isFinite(p[2])) { X.push(p[0] - ox); Y.push(p[1] - oy); Z.push(p[2]); } }); }
+          if (X.length < 3) throw new Error('tidak ada titik berkoordinat lengkap (E, N, RL) di file ini');
+          RPX.surf.push({ name: f.name, x: X, y: Y, z: Z }); var kid = 'pt:' + (RPX.surf.length - 1); if (slot === 'pit') { if (RPX.pits.indexOf(kid) < 0) RPX.pits.push(kid); } else RPX[slot] = kid; RPX.msg = '';
+        } catch (e) { RPX.msg = '<span class=warn>' + E(f.name) + ': ' + E(e.message) + '</span>'; console.error(e); }
+        RPX.panel();
+      })();
+    });
+  };
   RPX.pit = function (k, on) { var i = RPX.pits.indexOf(k); if (on && i < 0) RPX.pits.push(k); if (!on && i >= 0) RPX.pits.splice(i, 1); RPX.panel(); };
   RPX.open = function () { if (window.RP) RP.sec = 'x'; if (window.uiTab) uiTab('Rep'); RPX.panel(); };
   RPX.panel = function () {
@@ -219,11 +248,14 @@
       h += '<h4>Desain pit yang dilaporkan</h4>' + (SP.length ? '<div class=rpcat>' + SP.map(function (p) {
         return '<label><input type=checkbox ' + (RPX.pits.indexOf(p[0]) >= 0 ? 'checked' : '') + ' onchange="RPX.pit(\'' + E(p[0]) + '\',this.checked)"> ' + E(p[1]) + '</label>';
       }).join('') + '</div>' : '<div class=hint><span class=warn>Belum ada desain pit / DTM.</span></div>');
+      if (!window.spL) h += '<button style="margin-top:4px" onclick="RPX.pilihFile(\'pit\')">&#128194; Pilih file desain pit / topografi (STR / DXF / CSV / DTM)&hellip;</button>';
       h += '<div class=hint>Centang beberapa fase pit. Tiap pit dihitung dengan topografi di atas: blok dihitung bila titik pusatnya <b>di bawah topografi</b> dan <b>di atas desain pit</b> itu. Urutkan centangnya dari pit terkecil ke terbesar supaya kolom <b>tambahan</b> bermakna (hanya benar untuk pit bersarang).</div>';
     } else {
-      h += '<h4>Topografi atas (lebih awal)</h4>' + sel(ST.length ? ST : [['', '(belum ada)']], RPX.ta, "RPX.set('ta',this.value)");
-      h += '<h4>Topografi bawah (lebih baru)</h4>' + sel(ST.length ? ST : [['', '(belum ada)']], RPX.tb, "RPX.set('tb',this.value)");
-      h += '<label class=sw style="margin-top:6px"><input type=checkbox ' + (RPX.allAtt ? 'checked' : '') + ' onchange="RPX.set(\'allAtt\',this.checked)"> Laporkan <b>semua</b> atribut kadar block model (bukan hanya yang dicentang di )</label>';
+      var pf = function (slot) { return window.spL ? '' : '<button style="margin-top:4px" onclick="RPX.pilihFile(\'' + slot + '\')">&#128194; Pilih file topografi (STR / DXF / CSV / DTM)&hellip;</button>'; };
+      h += '<h4>Topografi atas (lebih awal)</h4>' + sel(ST.length ? ST : [['', '(belum ada)']], RPX.ta, "RPX.set('ta',this.value)") + pf('ta');
+      h += '<h4>Topografi bawah (lebih baru)</h4>' + sel(ST.length ? ST : [['', '(belum ada)']], RPX.tb, "RPX.set('tb',this.value)") + pf('tb');
+      if (!window.spL) h += '<div class=hint>Block Model menyimpan satu topografi aktif. Survei lain (mis. bulan sebelumnya) dipilih langsung dari file di sini &mdash; dipakai hanya untuk laporan ini &mdash; atau diimport sebagai <b>Permukaan DTM</b> di Data Referensi supaya tersimpan di proyek.</div>';
+      h += '<label class=sw style="margin-top:6px"><input type=checkbox ' + (RPX.allAtt ? 'checked' : '') + ' onchange="RPX.set(\'allAtt\',this.checked)"> Laporkan <b>semua</b> atribut kadar block model (bukan hanya yang dicentang di tab Atribut)</label>';
       h += '<div class=hint>Material tergali antara dua survei = blok <b>di bawah</b> topografi atas dan <b>di atas</b> topografi bawah. Pakai ini untuk rekonsiliasi bulanan: mis. atas = akhir Juni, bawah = akhir Juli.</div>';
     }
     h += '<button class=btn-pri style="width:100%;height:32px;margin-top:8px" onclick="RPX.run()" ' + (RPX.busy ? 'disabled' : '') + '>&#9654; ' + (RPX.busy ? 'Menghitung…' : 'Hitung ' + (RPX.mode === 'pit' ? 'per pit' : 'progres')) + '</button>';

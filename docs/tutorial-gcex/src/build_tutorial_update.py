@@ -951,6 +951,11 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Slicer, panel Assay, permukaan topo / pit (DH 0.24.56 / BM 0.24.49).</b> Bilah atas Drill Hole kini punya satu tombol <b>Slicer</b>: '
+         'dip, dip azimuth, lebar slab, langkah, pusat bidang (E, N, RL), Mundur / Maju, opsi slab, Sayatan 2D &mdash; memotong model dari arah mana saja tanpa menggambar garis. '
+         'Node <b>Assay</b> membuka panel tampilan kadar (unsur, cutoff, deret warna diskrit / gradasi); sub-node unsur hanya daftar. '
+         'Permukaan <b>topografi &amp; desain pit</b> akhirnya tampil di 3D Drill Hole (sebelumnya selalu dibuang oleh pengaman gambar) dengan warna seragam (bawaan) atau gradasi elevasi, di kedua aplikasi. '
+         'Tombol bernomor lingkaran dihapus; garis plan bor utuh; STR biner Surpac berdeskripsi teks (berkas pit) kini terbaca benar.</p>')
 B.append('<p><b>Jeda saat berganti panel / atribut (BM 0.24.47 / DH 0.24.54).</b> Berpindah panel sendiri murah; yang terasa adalah '
          'ganti atribut warna, centang overlay, dan ubah ukuran jendela. Kini: kembali ke atribut yang pernah tampil seketika (geometri / segmen '
          'disimpan untuk beberapa atribut terakhir), centang overlay tidak lagi mengunggah ulang semua lapisan 3D (rentang sumbu dibuat tetap selama '

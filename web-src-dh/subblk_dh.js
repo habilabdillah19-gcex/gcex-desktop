@@ -82,7 +82,7 @@
     var m = BX.m;
     if (!m) throw new Error('Belum ada block model aktif.');
     var W = solids();
-    if (!W.length) throw new Error('Belum ada solid domain yang terbangun (Geological Modelling ④). Sub-blocking memakai batas solid sebagai acuan.');
+    if (!W.length) throw new Error('Belum ada solid domain yang terbangun (Geological Modelling ). Sub-blocking memakai batas solid sebagai acuan.');
     var lv = Math.max(1, Math.min(3, Math.round(+c.lv || 1))), i;
     /* ukuran minimum dihitung dari ukuran blok DOMINAN (bukan terkecil) dibagi 2^tingkat, per sumbu.
        Blok yang sudah lebih halus dari batas itu - mis. sub-blok bawaan Surpac - tidak dipecah lagi. */
@@ -201,7 +201,7 @@
     var h = '';
     if (!m) h += '<div class=hint><span class=warn>Belum ada block model aktif.</span> Import block model, atau buat kerangka blok (AOI) dulu.</div>';
     else h += '<div class=hint><b>' + sE(m.name) + '</b> &middot; ' + fmt(m.n) + ' blok &middot; ukuran ' + sE(m.sizes) + '</div>';
-    if (!W.length) h += '<div class=hint><span class=warn>Belum ada solid domain terbangun.</span> Sub-blocking memakai batas solid sebagai acuan: bangun solid di Geological Modelling &#9315; dulu.</div>';
+    if (!W.length) h += '<div class=hint><span class=warn>Belum ada solid domain terbangun.</span> Sub-blocking memakai batas solid sebagai acuan: bangun solid di Geological Modelling dulu.</div>';
     else h += '<div class=hint>Acuan: ' + W.length + ' solid &mdash; ' + sE(W.map(function (q) { return q.name; }).join(', ')) + '</div>';
     h += '<div class=cmh>Tingkat pecah</div><div class=cm>' +
       '<div><label title="Setiap tingkat membelah blok menjadi 2 x 2 x 2 (8 anak). Hanya blok yang menyeberangi batas solid yang dipecah.">Jumlah tingkat</label>' +
@@ -283,7 +283,7 @@
     if (!m) { if (!quiet) alert('Belum ada block model aktif.'); return null; }
     var W;
     try { W = solids(); } catch (e) { if (!quiet) alert(e.message || e); return null; }
-    if (!W.length) { if (!quiet) alert('Belum ada solid domain terbangun (Geological Modelling ④).'); return null; }
+    if (!W.length) { if (!quiet) alert('Belum ada solid domain terbangun (Geological Modelling ).'); return null; }
     var N = Math.max(4, Math.min(16, Math.round(+nF || 10)));
     var F = new Float32Array(m.n), nPart = 0, nFull = 0, nNol = 0, i;
     for (i = 0; i < m.n; i++) {

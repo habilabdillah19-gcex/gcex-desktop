@@ -97,7 +97,7 @@
   /* ---------- gambar ---------- */
   function rowHtml(n,d){if(n.addRow)return '<div class="ptr ptadd" role="treeitem" aria-level="'+(d+1)+'" data-id="'+esc(n.id)+'" style="--d:'+d+'" title="'+esc(n.hint)+'"><span class="ptc no"></span><span class="ptk no"></span><span class="ptl">'+esc(n.t)+'</span></div>';
     var has=n.kids&&n.kids.length,op=has&&T.open[n.id],ck=n.chk===true||n.chk===false;
-    return '<div class="ptr'+(T.sel===n.id?' sel':'')+(n.dim?' dim':'')+(n.fold?' fold':'')+'" role="treeitem" aria-level="'+(d+1)+'"'+(has?' aria-expanded="'+(op?'true':'false')+'"':'')+' data-id="'+esc(n.id)+'" style="--d:'+d+'" title="'+esc(n.hint||n.t)+'">'+
+    return '<div class="ptr'+(T.sel===n.id?' sel':'')+(n.dim?' dim':'')+(n.fold?' fold':'')+(n.info?' info':'')+'" role="treeitem" aria-level="'+(d+1)+'"'+(has?' aria-expanded="'+(op?'true':'false')+'"':'')+' data-id="'+esc(n.id)+'" style="--d:'+d+'" title="'+esc(n.hint||n.t)+'">'+
       '<span class="ptc'+(has?'':' no')+'">'+(has?(op?'&#9662;':'&#9656;'):'')+'</span>'+
       (ck?'<span class="ptk'+(n.chk?' on':'')+'" role="checkbox" aria-checked="'+(n.chk?'true':'false')+'" title="'+(n.chk?'Sembunyikan':'Tampilkan')+'"></span>':'<span class="ptk no"></span>')+
       (n.step?'<span class="pts'+(n.st?' '+n.st:'')+'" title="'+({done:'Selesai',next:'Langkah berikutnya',todo:'Belum dikerjakan',opt:'Opsional',part:'Sebagian'}[n.st]||'')+'"></span>':'')+'<span class="pti">'+(IC[n.ic]||IC.folder)+'</span><span class="ptl">'+esc(n.t)+'</span>'+(n.mark?'<span class="ptm">'+esc(n.mark)+'</span>':'')+(n.b!=null&&n.b!==''?'<span class="ptn">'+esc(n.b)+'</span>':'')+
@@ -183,6 +183,7 @@
         else if(a.fn)setTimeout(function(){try{a.fn();}catch(x){console.error(x);}setTimeout(function(){render(true);},80);},0);return;}
       if(e.target.closest('.ptc')){toggle(n);return;}if(e.target.closest('.ptk')&&!e.target.closest('.ptk.no')){check(n);return;}
       if(e.target.closest('.ptx')){var b=e.target.closest('.ptx').getBoundingClientRect();menu(n,b.left,b.bottom+2);return;}
+      if(n.info)return;/* baris informasi (mis. daftar unsur assay): tidak memilih node & tidak mengganti panel (pemilik 9 Nov 2026) */
       var now=Date.now();if(T._lc&&T._lc.id===n.id&&now-T._lc.t<450){T._lc=null;dbl(n);return;}T._lc={id:n.id,t:now};
       select(n);if(n.kids&&n.kids.length&&!T.open[n.id]&&n.fold){T.open[n.id]=1;saveOpen();render(true);}});
     var dbl=function(n){if(n.rename)rename(n);else if(n.dbl)n.dbl();else if(n.kids&&n.kids.length)toggle(n);};
@@ -254,7 +255,7 @@
     '#ptree{flex:1;overflow:auto;padding:3px 0 8px;outline:none;font-size:12px;user-select:none}',
     '.ptr{display:flex;align-items:center;gap:3px;height:22px;padding:0 4px 0 calc(4px + var(--d)*14px);cursor:default;white-space:nowrap;color:var(--tx,#1c2733);border:1px solid transparent;border-left:0;border-right:0}',
     '.ptr:hover{background:var(--pthov)}.ptr.sel{background:var(--ptsel);border-color:var(--ptselln)}#ptree:focus .ptr.sel{box-shadow:inset 3px 0 0 var(--pr,#1f3a5f)}',
-    '.ptr.dim .ptl{color:var(--mu,#8a95a3)}.ptr.fold>.ptl{font-weight:600}',
+    '.ptr.dim .ptl{color:var(--mu,#8a95a3)}.ptr.fold>.ptl{font-weight:600}.ptr.info{cursor:default}.ptr.info:hover{background:transparent}.ptr.info .ptl{color:var(--mu,#8a95a3)}',
     '.ptc{flex:0 0 12px;text-align:center;font-size:10px;color:var(--mu,#6b7785);cursor:pointer}.ptc.no{cursor:default}',
     '.ptk{flex:0 0 13px;height:13px;border:1px solid #8996a6;border-radius:3px;background:var(--sf,#fff);cursor:pointer;position:relative}.ptk.no{border-color:transparent;background:none;cursor:default}',
     '.ptk.on{background:var(--pr,#1f3a5f);border-color:var(--pr,#1f3a5f)}.ptk.on::after{content:"";position:absolute;left:3.5px;top:0.5px;width:3.5px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}',

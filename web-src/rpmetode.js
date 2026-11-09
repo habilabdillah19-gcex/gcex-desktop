@@ -100,7 +100,7 @@
     o.show = false;
     try { rpRun(); } finally { o.frac = f0; o.show = sh0; RP.sec = sec0; }
     var R = RP.res;
-    if (!R) throw new Error('Reporting tidak menghasilkan apa pun. Periksa tab ① Atribut dan ② Constraint.');
+    if (!R) throw new Error('Reporting tidak menghasilkan apa pun. Periksa tab Atribut dan Constraint.');
     /* hanya yang diperlukan yang disalin, supaya hasil lama tidak ikut berubah saat dihitung ulang */
     return {
       rows: R.rows.map(function (r) { var T = total(r.G); return { c: r.c, n: T.n, v: T.v, t: T.t, s: T.s }; }),

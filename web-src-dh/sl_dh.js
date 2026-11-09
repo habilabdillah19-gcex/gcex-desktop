@@ -1,13 +1,13 @@
 /* ================= GC-Ex Drillhole 0.21: GEOMODELLER STRATIFIED-LATERITE DEPOSIT =================
    Untuk endapan berlapis mengikuti permukaan (laterit Ni / bauksit) dan stratiform (sedex):
-   ① Lapisan  : urutan lapisan atas -> bawah dari kode log geologi (Limonit / Saprolit / Bedrock …), densitas & kadar air.
-   ② Permukaan: kontak bor -> grid 2D: atap (topografi / kontak) lalu ketebalan per lapisan (isopach, ditumpuk ke bawah)
+   Lapisan  : urutan lapisan atas -> bawah dari kode log geologi (Limonit / Saprolit / Bedrock …), densitas & kadar air.
+   Permukaan: kontak bor -> grid 2D: atap (topografi / kontak) lalu ketebalan per lapisan (isopach, ditumpuk ke bawah)
                 atau elevasi langsung (urutan dipaksa). Interpolasi IDW anisotropis-bebas, ekstrapolasi dibatasi jarak.
                 Sesar 3D: post + offset -> kontak dipulihkan dulu, permukaan digeser kembali (terpotong di bidang sesar);
                 batas keras / syn (growth fault) -> interpolasi tidak menyeberang sesar.
-   ③ Estimasi : per lapisan di koordinat UNFOLD (proporsional di antara atap & lantai lapisan, atau kedalaman dari atap)
+   Estimasi : per lapisan di koordinat UNFOLD (proporsional di antara atap & lantai lapisan, atau kedalaman dari atap)
                 - 3D blok (OK / IDW) atau 2D akumulasi (ketebalan × kadar, untuk lapisan tipis / sedex). Multi-unsur.
-   ④ Laporan  : volume, WMT, DMT (kadar air), kadar rata-rata (basis kering), rasio unsur (mis. SiO2/MgO), cut-off.
+   Laporan  : volume, WMT, DMT (kadar air), kadar rata-rata (basis kering), rasio unsur (mis. SiO2/MgO), cut-off.
    Hasil ke block model GC aktif sebagai atribut sl_lapisan, sl_<unsur>, sl_pass, sl_ns (+ sl_rasio). */
 var SL={ci:-1,L:[],o:{cell:5,ext:30,p:2,nmax:12,top:'auto',sm:'tebal',base:true,comp:1,el:[],ra:'',rb:'',cut:0,pel:''},R:null,S:null,job:null,msg:'',lay:true,op:0.5,ctc:true,ver:0};
 var SLPAL=['#c2410c','#a16207','#65a30d','#0f766e','#1d4ed8','#7c3aed','#be185d','#57534e'];
@@ -27,7 +27,7 @@ function slFlt(){return typeof fltPrep==='function'?fltPrep():{rest:[],hb:[]};}
 function slRest(x,y,z){return typeof fltRestore==='function'?fltRestore(x,y,z):[x,y,z];}
 function slCode(q){return typeof fltCode==='function'?fltCode(q):null;}
 function slSame(a,b){return typeof fltSame==='function'?fltSame(a,b):true;}
-/* ---------- ① data kontak per hole ---------- */
+/* ---------- data kontak per hole ---------- */
 function slData(){var ci=SL.ci,L=SL.L,nl=L.length,H=[];if(ci<0||!CAT[ci]||!nl)return H;var cm={};L.forEach(function(l,i){(l.codes||[]).forEach(function(c){cm[c]=i;});});
   Object.keys(holeData).forEach(function(id){var h=holeData[id],T=L.map(function(){return null;});
     geoIntervals(ci,id).forEach(function(v){var i=cm[v[2]];if(i==null)return;var f=v[0],t=Math.min(v[1],h.maxD);if(!(t>f))return;var o=T[i];if(!o)T[i]={f:f,t:t};else{o.f=Math.min(o.f,f);o.t=Math.max(o.t,t);}});
@@ -39,7 +39,7 @@ function slData(){var ci=SL.ci,L=SL.L,nl=L.length,H=[];if(ci<0||!CAT[ci]||!nl)re
         r.x=(ra[0]+rb[0])/2;r.y=(ra[1]+rb[1])/2;r.zt=ra[2];r.zb=rb[2];r.T=Math.max(0,ra[2]-rb[2]);r.pt=[a.x,a.y,a.z];r.pb=[b.x,b.y,b.z];r.c=slCode([r.x,r.y,(r.zt+r.zb)/2]);}
       rec.L.push(r);}
     H.push(rec);});return H;}
-/* ---------- ② interpolasi grid (IDW, tetangga terdekat, batas keras sesar) ---------- */
+/* ---------- interpolasi grid (IDW, tetangga terdekat, batas keras sesar) ---------- */
 function slIdx(D,B){var M={};D.forEach(function(d,i){var k=Math.floor(d.x/B)+'_'+Math.floor(d.y/B);(M[k]||(M[k]=[])).push(i);});return{B:B,M:M};}
 function slNear(D,I,x,y,n,code,maxR){var B=I.B,ci=Math.floor(x/B),cj=Math.floor(y/B),best=[],r=0,lim=Math.max(2,Math.ceil((maxR||1e9)/B)+1);
   while(r<=lim){for(var i=ci-r;i<=ci+r;i++)for(var j=cj-r;j<=cj+r;j++){if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r)continue;var L=I.M[i+'_'+j];if(!L)continue;
@@ -88,7 +88,7 @@ function slAt(R,Sk,x,y){var fx=(x-R.x0)/R.cell,fy=(y-R.y0)/R.cell,i=Math.floor(f
 function slLayerAt(R,x,y,z){var q=slRest(x,y,z),t=slAt(R,R.S[0],q[0],q[1]);if(!isFinite(t)||q[2]>t)return null;
   for(var k=0;k<R.nT;k++){var a=slAt(R,R.S[k],q[0],q[1]),b=slAt(R,R.S[k+1],q[0],q[1]);if(!isFinite(b))return null;if(q[2]>b)return{k:k,top:a,bot:b,q:q};}
   if(R.hasB)return{k:SL.L.length-1,top:slAt(R,R.S[R.nT],q[0],q[1]),bot:-1e9,q:q};return null;}
-/* ---------- ③ estimasi ---------- */
+/* ---------- estimasi ---------- */
 function slMo(e,two){if(e.m&&e.m.vM){var M=e.m,o={vM:M.vM.slice(),vS:M.vS.slice(),vN:two?[0,0,1]:M.vN.slice(),c0:+M.c0,cs:M.cs.map(Number),A:M.A.map(Number),B:M.B.map(Number),Cn:two?M.Cn.map(function(){return 1;}):M.Cn.map(Number)};o.R=[Math.max.apply(null,o.A),Math.max.apply(null,o.B),Math.max.apply(null,o.Cn)];return o;}
   var a=(+e.az||0)*Math.PI/180,c0=Math.max(0,Math.min(0.95,+e.nug||0));return{vM:[Math.sin(a),Math.cos(a),0],vS:[Math.sin(a+Math.PI/2),Math.cos(a+Math.PI/2),0],vN:[0,0,1],c0:c0,cs:[1-c0],A:[Math.max(1,+e.r1||50)],B:[Math.max(1,+e.r2||50)],Cn:[two?1:Math.max(0.2,+e.r3||3)],R:[Math.max(1,+e.r1||50),Math.max(1,+e.r2||50),two?1:Math.max(0.2,+e.r3||3)]};}
 function slEls(){var E=(window.elements||[]);var L=(SL.o.el||[]).filter(function(e){return E.indexOf(e)>=0;});if(!L.length&&E.length)L=E.slice(0,Math.min(6,E.length));return L;}
@@ -142,7 +142,7 @@ function slApply(force){var m=window.BX&&BX.m,S=SL.S;if(!m)return;var A=['sl_lap
   var ra=SL.o.ra,rb=SL.o.rb;if(ra&&rb&&S.V[ra]&&S.V[rb]){var o=new Float64Array(n).fill(-99);for(i=0;i<n;i++){var a=S.V[ra][i],b=S.V[rb][i];if(a>=0&&b>0)o[i]=a/b;}m.num.sl_rasio=o;}else delete m.num.sl_rasio;
   if(m.mdl){m.mdl.add=(m.mdl.add||[]).filter(function(a){return !/^sl_/.test(a.name);}).concat(S.els.map(function(e){return{name:slAN(e),type:2,dec:3,def:-99};}),[{name:'sl_pass',type:2,dec:0,def:0},{name:'sl_ns',type:2,dec:0,def:0}],m.num.sl_rasio?[{name:'sl_rasio',type:2,dec:3,def:-99}]:[],[{name:'sl_lapisan',type:3,def:'-'}]);}
   m._slVer=S.when;BX.ver++;BX.sc={};}
-/* ---------- ④ laporan ---------- */
+/* ---------- laporan ---------- */
 function slReport(){var m=window.BX&&BX.m,S=SL.S;if(!m||!S||S.key!==slBmKey(m))return null;var els=S.els,pel=els.indexOf(SL.o.pel)>=0?SL.o.pel:els[0],cut=+SL.o.cut||0,ra=SL.o.ra,rb=SL.o.rb,R=SL.R;
   var rows=SL.L.map(function(l,k){return{k:k,name:l.name,dens:+l.dens||0,moist:+l.moist||0,n:0,vol:0,g:els.map(function(){return[0,0];}),gv:R&&R.vol[k]!=null?R.vol[k]:null};});
   for(var i=0;i<m.n;i++){var k=S.lay[i];if(k===65535||!rows[k])continue;var pv=S.V[pel]?S.V[pel][i]:-99;if(cut>0&&!(pv>=cut))continue;var r=rows[k],v=m.sx[i]*m.sy[i]*m.sz[i],dmt=v*r.dens*(1-r.moist/100);r.n++;r.vol+=v;
@@ -184,8 +184,8 @@ function slMove(i,d){var j=i+d;if(j<0||j>=SL.L.length)return;var t=SL.L[i];SL.L[
 function slElT(e,on){var L=slEls().slice();L=L.filter(function(x){return x!==e;});if(on)L.push(e);SL.o.el=L;slDirty(true);}
 function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.L,E=window.elements||[];if(SL.ci<0&&cats.length){var pf=-1;cats.forEach(function(i){if(pf<0&&/LITH|LAPIS|LAYER|HORIZ|ZONE/i.test(CAT[i].name))pf=i;});SL.ci=pf>=0?pf:cats[0];}
   var h='<div class=hint style="margin:-4px 0 8px">Pemodelan endapan <b>berlapis</b>: laterit nikel &amp; bauksit (mengikuti permukaan), stratiform / sedex. Lapisan dari kode log geologi &rarr; permukaan atap / lantai (grid) &rarr; estimasi per lapisan di koordinat <b>unfold</b> &rarr; laporan WMT / DMT. Sesar 3D (menu Sesar) ikut diperhitungkan.</div>';
-  /* ① Lapisan */
-  h+='<h4>&#9312; Lapisan</h4><div class="g2 f"><div><label>Kolom geologi</label><select onchange="SL.ci=+this.value;slDirty()">'+cats.map(function(i){return '<option value='+i+(i===SL.ci?' selected':'')+'>'+slE(CAT[i].name)+'</option>';}).join('')+'</select></div>'+
+  /* Lapisan */
+  h+='<h4>Lapisan</h4><div class="g2 f"><div><label>Kolom geologi</label><select onchange="SL.ci=+this.value;slDirty()">'+cats.map(function(i){return '<option value='+i+(i===SL.ci?' selected':'')+'>'+slE(CAT[i].name)+'</option>';}).join('')+'</select></div>'+
     '<div><label>Preset</label><select onchange="if(this.value)slPreset(this.value);this.value=\'\'"><option value="">— pilih —</option>'+Object.keys(SLPRE).map(function(k){return '<option value='+k+'>'+SLPRE[k].t+'</option>';}).join('')+'</select></div></div>';
   if(!cats.length)h+='<div class=warn>Tabel geologi belum ada di proyek ini (import geologi dengan kolom litologi / zona laterit).</div>';
   var d=SL.ci>=0?slDict(SL.ci):[];
@@ -196,9 +196,9 @@ function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.
         '<td><input type=number step=0.01 value="'+l.dens+'" style="width:52px" onchange="slSetL('+i+',\'dens\',+this.value)"></td><td><input type=number step=1 value="'+l.moist+'" style="width:44px" onchange="slSetL('+i+',\'moist\',+this.value)"></td>'+
         '<td style="white-space:nowrap"><a href="#" onclick="slMove('+i+',-1);return false">&#9650;</a> <a href="#" onclick="slMove('+i+',1);return false">&#9660;</a> <a href="#" class=warn onclick="slDel('+i+');return false">&#10005;</a></td></tr>';}).join('')+'</table></div>';
   h+='<div class="g2 f"><button onclick="slAdd()">+ Lapisan</button><label class=sw style="margin:0" title="Lapisan terakhir = batuan dasar: hanya atapnya yang dimodelkan"><input type=checkbox '+(o.base?'checked':'')+' onchange="slSetO(\'base\',this.checked)">Lapisan terakhir = dasar</label></div>';
-  /* ② Permukaan */
+  /* Permukaan */
   var R=SL.L.length&&SL.ci>=0?slEnsure():null;
-  h+='<h4>&#9313; Permukaan lapisan</h4><div class="g3 f"><div><label>Sel grid (m)</label><input type=number step=any value="'+o.cell+'" onchange="slSetO(\'cell\',+this.value)"></div><div><label>Ekstrapolasi maks (m)</label><input type=number step=any value="'+o.ext+'" onchange="slSetO(\'ext\',+this.value)"></div><div><label>Pangkat IDW / N tetangga</label><div style="display:flex;gap:3px"><input type=number step=0.5 value="'+o.p+'" onchange="slSetO(\'p\',+this.value)"><input type=number step=1 value="'+o.nmax+'" onchange="slSetO(\'nmax\',+this.value)"></div></div></div>'+
+  h+='<h4>Permukaan lapisan</h4><div class="g3 f"><div><label>Sel grid (m)</label><input type=number step=any value="'+o.cell+'" onchange="slSetO(\'cell\',+this.value)"></div><div><label>Ekstrapolasi maks (m)</label><input type=number step=any value="'+o.ext+'" onchange="slSetO(\'ext\',+this.value)"></div><div><label>Pangkat IDW / N tetangga</label><div style="display:flex;gap:3px"><input type=number step=0.5 value="'+o.p+'" onchange="slSetO(\'p\',+this.value)"><input type=number step=1 value="'+o.nmax+'" onchange="slSetO(\'nmax\',+this.value)"></div></div></div>'+
     '<div class="g2 f"><div><label>Atap lapisan pertama</label><select onchange="slSetO(\'top\',this.value)"><option value=auto'+(o.top==='auto'?' selected':'')+'>Otomatis</option><option value=topo'+(o.top==='topo'?' selected':'')+'>Topografi − kedalaman kontak</option><option value=bor'+(o.top==='bor'?' selected':'')+'>Elevasi kontak bor</option></select></div>'+
     '<div><label>Metode lapisan bawah</label><select onchange="slSetO(\'sm\',this.value)"><option value=tebal'+(o.sm!=='elev'?' selected':'')+'>Ketebalan (isopach) ditumpuk</option><option value=elev'+(o.sm==='elev'?' selected':'')+'>Elevasi kontak langsung</option></select></div></div>';
   if(SL.err&&!R)h+='<div class=warn>'+slE(SL.err)+'</div>';
@@ -206,21 +206,21 @@ function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.
       '<div class=gmlist><table class=pltb><tr><th>Lapisan</th><th>Hole tembus</th><th>Tebal rata² (min–maks)</th><th>Volume grid</th></tr>'+R.st.map(function(s,i){return '<tr><td>'+slE(SL.L[i].name)+'</td><td>'+s.np+(s.nc-(s.ns||0)>0?' <span class=hint title="hole berhenti di dalam lapisan (tebal minimum, tidak dipakai untuk isopach)">('+(s.nc-(s.ns||0))+' berhenti di lapisan)</span>':'')+(s.ns?' <span class=hint title="atap dan lantai lapisan di hole ini ada di blok sesar berbeda: kontak dipakai, ketebalan tidak">('+s.ns+' terpotong sesar)</span>':'')+'</td><td>'+slN(s.tav,2)+' ('+slN(s.tmin,1)+'–'+slN(s.tmax,1)+') m</td><td>'+slN(R.vol[i],0)+' m&sup3;</td></tr>';}).join('')+'</table></div>'+
       '<div class="g3 f"><label class=sw style="margin:0"><input type=checkbox '+(SL.lay?'checked':'')+' onchange="SL.lay=this.checked;updatePlot()">Tampil 3D</label><label class=sw style="margin:0"><input type=checkbox '+(SL.ctc?'checked':'')+' onchange="SL.ctc=this.checked;updatePlot()">Titik kontak</label><input type=range min=0.1 max=1 step=0.05 value="'+SL.op+'" title="Transparansi" onchange="SL.op=+this.value;updatePlot()"></div>'+
       '<div class="g2 f"><button onclick="slGridCsv()">&#8681; Grid CSV (atap / tebal)</button><button onclick="slDxf()">&#8681; DXF permukaan</button></div>';}
-  /* ③ Estimasi */
-  var els=slEls();h+='<h4>&#9314; Estimasi per lapisan</h4><div class=f><label>Unsur</label><div class=chips>'+E.map(function(e){return '<label class=sw style="margin:0 8px 0 0;display:inline-flex"><input type=checkbox '+(els.indexOf(e)>=0?'checked':'')+' onchange="slElT(\''+slE(e)+'\',this.checked)">'+slE(e)+'</label>';}).join('')+'</div></div>'+
+  /* Estimasi */
+  var els=slEls();h+='<h4>Estimasi per lapisan</h4><div class=f><label>Unsur</label><div class=chips>'+E.map(function(e){return '<label class=sw style="margin:0 8px 0 0;display:inline-flex"><input type=checkbox '+(els.indexOf(e)>=0?'checked':'')+' onchange="slElT(\''+slE(e)+'\',this.checked)">'+slE(e)+'</label>';}).join('')+'</div></div>'+
     '<div class="g3 f"><div><label>Komposit (m, 0 = per lapisan)</label><input type=number step=any value="'+o.comp+'" onchange="slSetO(\'comp\',+this.value)"></div><div><label>Rasio: pembilang</label><select onchange="slSetO(\'ra\',this.value)"><option value="">—</option>'+els.map(function(e){return '<option'+(e===o.ra?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div><div><label>penyebut</label><select onchange="slSetO(\'rb\',this.value)"><option value="">—</option>'+els.map(function(e){return '<option'+(e===o.rb?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div></div>';
   if(L.length)h+='<div class=gmlist><table class=pltb><tr><th>Lapisan</th><th>Aktif</th><th>Mode</th><th>Metode</th><th>Unfold</th><th>Az</th><th>R mayor / minor / vert</th><th>Nug</th><th>Min / Maks / per hole</th></tr>'+L.map(function(l,i){var e=l.est,n=function(k,w,st){return '<input type=number step="'+(st||'any')+'" value="'+e[k]+'" style="width:'+(w||40)+'px" onchange="slSetE('+i+',\''+k+'\',+this.value)">';},s=function(k,O){return '<select onchange="slSetE('+i+',\''+k+'\',this.value)">'+O.map(function(q){return '<option value="'+q[0]+'"'+(e[k]===q[0]?' selected':'')+'>'+q[1]+'</option>';}).join('')+'</select>';};
       return '<tr><td>'+slE(l.name)+(e.m?'<div class=hint title="'+slE(e.vsrc||'')+'">variogram: Geostatistik</div>':'')+'</td><td><input type=checkbox '+(e.on?'checked':'')+' onchange="slSetE('+i+',\'on\',this.checked)"></td><td>'+s('mode',[['3d','Blok 3D'],['2d','Akumulasi 2D']])+'</td><td>'+s('met',[['ok','OK'],['idw','IDW']])+'</td><td>'+(e.mode==='2d'?'-':s('unf',[['prop','Proporsional'],['top','Dari atap']]))+'</td><td>'+n('az',38)+'</td><td style="white-space:nowrap">'+n('r1')+n('r2')+(e.mode==='2d'?'':n('r3',34))+'</td><td>'+n('nug',38)+'</td><td style="white-space:nowrap">'+n('nmin',30,1)+n('nmax',30,1)+(e.mode==='2d'?'':n('mph',30,1))+'</td></tr>';}).join('')+'</table></div>'+
     '<div class=hint>Unfold <b>proporsional</b>: posisi relatif antara atap &amp; lantai lapisan (cocok laterit, ketebalan bervariasi). <b>Dari atap</b>: kedalaman di bawah atap. <b>Akumulasi 2D</b>: tebal × kadar per hole, kadar blok = &Sigma;(w·T·kadar)/&Sigma;(w·T) — untuk lapisan tipis / sedex. R vertikal di ruang unfold (m).</div>';
   h+='<div class="g2 f"><button class=btn-pri id=slBtn onclick="slRun()"'+(window.BX&&BX.m?'':' disabled title="Import block model GC dulu"')+'>'+(SL.job?'&#9632; Batalkan':'&#9654; Jalankan estimasi lapisan')+'</button><span id=slPct class=hint></span></div><div class=prog style="height:5px;background:var(--bd,#ddd);border-radius:3px"><div id=slBar style="height:5px;width:0;background:#e8590c;border-radius:3px"></div></div>'+(SL.msg?'<div class="box gmstate" style="margin-top:6px">'+SL.msg+'</div>':'');
-  /* ④ Laporan */
-  h+='<h4>&#9315; Laporan</h4>';var Q=slReport();
+  /* Laporan */
+  h+='<h4>Laporan</h4>';var Q=slReport();
   h+='<div class="g2 f"><div><label>Cut-off unsur</label><select onchange="slSetO(\'pel\',this.value)">'+els.map(function(e){return '<option'+(e===(Q?Q.pel:o.pel)?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div><div><label>Cut-off (&ge;)</label><input type=number step=any value="'+o.cut+'" onchange="slSetO(\'cut\',+this.value)"></div></div>';
   if(!Q)h+='<div class=hint>'+(SL.S&&window.BX&&BX.m?'Block model berubah sejak estimasi terakhir — jalankan ulang.':'Jalankan estimasi lapisan dulu.')+'</div>';
   else h+='<div class=gmlist><table class=pltb><tr><th>Lapisan</th><th>Volume</th><th>WMT</th><th>DMT</th>'+Q.els.map(function(e){return '<th>'+slE(e)+'</th>';}).join('')+(Q.ra&&Q.rb?'<th>'+slE(Q.ra+'/'+Q.rb)+'</th>':'')+'</tr>'+Q.rows.map(function(r){return '<tr><td>'+slE(r.name)+'</td><td>'+slN(r.vol,0)+'</td><td>'+slN(r.wmt,0)+'</td><td><b>'+slN(r.dmt,0)+'</b></td>'+r.avg.map(function(v){return '<td>'+slN(v,3)+'</td>';}).join('')+(Q.ra&&Q.rb?'<td>'+slN(r.rat,2)+'</td>':'')+'</tr>';}).join('')+'</table></div>'+
     '<div class=hint>WMT = volume × densitas basah; DMT = WMT × (1 − kadar air). Kadar rata-rata ditimbang DMT. Blok di-assign ke lapisan dari titik tengahnya.</div><button style="width:100%" onclick="slRepCsv()">&#8681; Laporan CSV</button>';
   try{h+=slValHtml();}catch(e){console.error(e);}
-  b.innerHTML=h;try{uiSecTabs(b,'sl',['① Lapisan','② Permukaan','③ Estimasi','④ Laporan','⑤ Validasi']);}catch(e){}}
+  b.innerHTML=h;try{uiSecTabs(b,'sl',['Lapisan','Permukaan','Estimasi','Laporan','Validasi']);}catch(e){}}
 /* ---------- pasang: rail, panel, tree, 3D / 2D, simpan ---------- */
 function gxRail(id,html,title,after,body,h3){var side=$('side');if(!side||$('p'+id))return;var s=document.createElement('section');s.id='p'+id;s.hidden=true;s.innerHTML='<h3>'+h3+'</h3><div id='+body+'></div>';side.appendChild(s);
   var ref=$(after);if(ref&&ref.parentNode){var bt=document.createElement('button');bt.className='rb';bt.id='rb'+id;bt.title=title;bt.innerHTML=html;bt.onclick=function(){uiTab(id);};ref.parentNode.insertBefore(bt,ref.nextSibling);}}
@@ -250,7 +250,7 @@ function gxRail(id,html,title,after,body,h3){var side=$('side');if(!side||$('p'+
 /* ================= 0.21.1: GEOSTATISTIK PER LAPISAN (ruang unfold) & VALIDASI =================
    Geostatistik → pilih "Lapisan (unfold)": komposit lapisan (koordinat pulih sesar, Z = unfold; akumulasi 2D: nilai = tebal × kadar, Z = 0)
    dipakai Statistik / Variogram / Anisotropi (bidang datar: arah 0° = timur) / Model / KNA. "Simpan ke lapisan" mengisi
-   model variogram, pass, diskretisasi & top-cut lapisan (③ Estimasi). Validasi: swath komposit vs blok, grade-tonase DMT. */
+   model variogram, pass, diskretisasi & top-cut lapisan (Estimasi). Validasi: swath komposit vs blok, grade-tonase DMT. */
 GS.sl=null;
 function slGsComps(k,ei){var R=slEnsure();if(!R)throw new Error(SL.err||'permukaan lapisan belum ada');var l=SL.L[k];if(!l)return[];var el=elements[ei],e=l.est,two=e.mode==='2d',tc0=e.tc;e.tc=null;var C;try{C=slComps(R,k,[el]);}finally{e.tc=tc0;}
   return C.filter(function(c){return isFinite(c.v[0]);}).map(function(c){var v=two?c.v[0]*c.T:c.v[0];return{id:c.id,f:c.f,t:c.t,d:(c.f+c.t)/2,len:c.len,v:v,x:c.x,y:c.y,z:c.z,s:c.x,w:c.y,fc:c.fc};});}
@@ -262,12 +262,12 @@ function slGsLabel(k){var l=SL.L[k],e=l?l.est:{},R=SL.R;return 'Lapisan '+(l?l.n
     secK=function(){return slGsS();};secLabel=function(){return slGsLabel(k);};window.secK=secK;window.secLabel=secLabel;
     try{var r=_gr.apply(this,arguments);if(GS.R){GS.R.sl=k;GS.R.slMode=SL.L[k].est.mode;}return r;}catch(e){console.error(e);try{$('gsSum').innerHTML='<span class=warn>'+slE(e.message)+'</span>';}catch(e2){}}
     finally{secK=_sk;secLabel=_sl;window.secK=_sk;window.secLabel=_sl;}};window.gsRun=gsRun;
-  if(typeof okRun==='function'){var _or=okRun;okRun=function(){if(GS.sl!=null){try{$('okMsg').innerHTML='<span class=warn>Uji estimasi grid tidak tersedia untuk sumber Lapisan (ruang unfold). Pakai KNA, lalu <b>Simpan ke lapisan</b> dan jalankan estimasi di Geomodeller Stratified-Laterite ③.</span>';}catch(e){}return;}return _or.apply(this,arguments);};window.okRun=okRun;}
+  if(typeof okRun==='function'){var _or=okRun;okRun=function(){if(GS.sl!=null){try{$('okMsg').innerHTML='<span class=warn>Uji estimasi grid tidak tersedia untuk sumber Lapisan (ruang unfold). Pakai KNA, lalu <b>Simpan ke lapisan</b> dan jalankan estimasi di Geomodeller Stratified-Laterite .</span>';}catch(e){}return;}return _or.apply(this,arguments);};window.okRun=okRun;}
   var _gb=window.gsBar;window.gsBar=function(){if(_gb)_gb.apply(this,arguments);var b=$('gsDomBar');if(!b||!SL.L.length)return;var on=GS.sl!=null&&SL.L[GS.sl];
     var h='<span style="margin-left:10px">Lapisan</span><select onchange="slGsSet(this.value)"><option value="">— (domain / sayatan)</option>'+SL.L.map(function(l,i){return '<option value='+i+(on&&GS.sl===i?' selected':'')+'>'+slE(l.name)+(l.est.mode==='2d'?' (akumulasi 2D)':' (unfold)')+'</option>';}).join('')+'</select>'+(on?'<small>'+slE(slGsLabel(GS.sl))+'</small>':'');
     b.insertAdjacentHTML('beforeend',h);if(on){b.classList.add('on');var s0=b.querySelector('select');if(s0)s0.disabled=true;}};
   var _td=window.gsToDomHtml;if(_td){gsToDomHtml=function(){if(GS.sl==null||!SL.L[GS.sl])return _td.apply(this,arguments);var l=SL.L[GS.sl];
-      return '<div class=box style="margin-top:8px"><b>Simpan parameter ke lapisan</b><div class=note>Model variogram (tab Model), pass &amp; diskretisasi (di atas) dan top-cut disimpan ke lapisan <b>'+slE(l.name)+'</b> untuk dipakai <b>Geomodeller Stratified-Laterite &#9314; Estimasi</b>. Satu model dipakai semua unsur lapisan itu.</div><button class=btn-pri onclick="slFromGs()">&#8681; Simpan ke lapisan '+slE(l.name)+'</button><div id=slGsMsg class=note></div></div>';};window.gsToDomHtml=gsToDomHtml;}
+      return '<div class=box style="margin-top:8px"><b>Simpan parameter ke lapisan</b><div class=note>Model variogram (tab Model), pass &amp; diskretisasi (di atas) dan top-cut disimpan ke lapisan <b>'+slE(l.name)+'</b> untuk dipakai <b>Geomodeller Stratified-Laterite Estimasi</b>. Satu model dipakai semua unsur lapisan itu.</div><button class=btn-pri onclick="slFromGs()">&#8681; Simpan ke lapisan '+slE(l.name)+'</button><div id=slGsMsg class=note></div></div>';};window.gsToDomHtml=gsToDomHtml;}
 })();
 function slGsSet(v){GS.sl=v===''||v==null?null:+v;try{gsBar();}catch(e){}try{gsRun();}catch(e){console.error(e);}try{if(GS.tab==='E'&&$('gsDomBox'))$('gsDomBox').innerHTML=gsToDomHtml();}catch(e){}}
 function slFromGs(){var k=GS.sl,l=SL.L[k];if(!l||!GS.R||GS.R.sl!==k){alert('Jalankan Geostatistik dengan sumber Lapisan dulu.');return;}var m=okModel();if(!m){alert('Lakukan fitting model variogram dulu (tab Model).');return;}
@@ -277,8 +277,8 @@ function slFromGs(){var k=GS.sl,l=SL.L[k];if(!l||!GS.R||GS.R.sl!==k){alert('Jala
   e.az=Math.round(az);e.r1=Math.round(Math.max.apply(null,m.A)*10)/10;e.r2=Math.round(Math.max.apply(null,m.B)*10)/10;e.r3=Math.round(Math.max.apply(null,m.Cn)*100)/100;e.nug=Math.round(m.c0*1000)/1000;
   if(P.length){e.nmin=P[0].min;e.nmax=P[0].max;e.mph=P[0].mph;}e.met='ok';e.tc=e.tc||{};if(GS.R.slMode!=='2d'){if(GS.R.tc)e.tc[GS.R.el]=GS.R.tc;else delete e.tc[GS.R.el];}
   e.vsrc='vertikal: '+vsrc+' · '+GS.R.el+' · '+(GS.R.label||'')+' · '+new Date().toISOString().slice(0,16).replace('T',' ');slDirty(true);
-  try{$('slGsMsg').innerHTML='&#10003; Tersimpan ke '+slE(l.name)+': az '+e.az+'&deg;, range '+e.r1+' / '+e.r2+' / '+e.r3+' m, nugget '+e.nug+'. Lanjut di Geomodeller Stratified-Laterite &#9314;.';}catch(x){}}
-/* ---------- ⑤ validasi ---------- */
+  try{$('slGsMsg').innerHTML='&#10003; Tersimpan ke '+slE(l.name)+': az '+e.az+'&deg;, range '+e.r1+' / '+e.r2+' / '+e.r3+' m, nugget '+e.nug+'. Lanjut di Geomodeller Stratified-Laterite .';}catch(x){}}
+/* ---------- validasi ---------- */
 SL.v={k:0,el:'',dir:'x',bw:25,cuts:'0,0.5,1,1.2,1.5,1.8,2'};
 function slVal(){var m=window.BX&&BX.m,S=SL.S,R=SL.R;if(!m||!S||S.key!==slBmKey(m)||!R)return null;var v=SL.v,k=Math.min(SL.L.length-1,+v.k||0),l=SL.L[k],el=S.els.indexOf(v.el)>=0?v.el:S.els[0];if(!l)return null;
   var E=S.V[el],C=slComps(R,k,[el]),two=l.est.mode==='2d',dir=v.dir,bw=Math.max(0.1,+v.bw||25),sw={},key=function(x,y,z){var q=dir==='x'?x:dir==='y'?y:z;return Math.floor(q/bw);};
@@ -289,7 +289,7 @@ function slVal(){var m=window.BX&&BX.m,S=SL.S,R=SL.R;if(!m||!S||S.key!==slBmKey(
   var rows=Object.keys(sw).map(Number).sort(function(a,b){return a-b;}).map(function(kk){var b=sw[kk];return[(kk+0.5)*bw,b.cw?b.c/b.cw:null,b.ne?b.e/b.ne:null,null,b.nc];});
   var cuts=String(v.cuts).split(/[;, ]+/).map(Number).filter(function(x){return isFinite(x);}).sort(function(a,b){return a-b;}),dens=+l.dens||0,ms=+l.moist||0,gt=cuts.map(function(c){var vol=0,mt=0;for(var i=0;i<m.n;i++){if(S.lay[i]!==k||!(E[i]>=c)||!(E[i]>=0))continue;var vv=m.sx[i]*m.sy[i]*m.sz[i];vol+=vv;mt+=vv*dens*(1-ms/100)*E[i];}var dmt=vol*dens*(1-ms/100);return[c,vol,dmt,dmt>0?mt/dmt:NaN];});
   return{k:k,l:l,el:el,two:two,nC:C.length,cm:sl?sc/sl:NaN,em:ne?se/ne:NaN,ne:ne,sw:rows,gt:gt,dir:dir,bw:bw};}
-function slValHtml(){var h='<h4>&#9316; Validasi lapisan</h4>',S=SL.S;if(!S){return h+'<div class=hint>Jalankan estimasi lapisan dulu.</div>';}var v=SL.v;
+function slValHtml(){var h='<h4>Validasi lapisan</h4>',S=SL.S;if(!S){return h+'<div class=hint>Jalankan estimasi lapisan dulu.</div>';}var v=SL.v;
   h+='<div class="g3 f"><div><label>Lapisan</label><select onchange="SL.v.k=+this.value;slPanel()">'+SL.L.map(function(l,i){return '<option value='+i+(i===+v.k?' selected':'')+'>'+slE(l.name)+'</option>';}).join('')+'</select></div>'+
     '<div><label>Unsur</label><select onchange="SL.v.el=this.value;slPanel()">'+S.els.map(function(e){return '<option'+(e===v.el?' selected':'')+'>'+slE(e)+'</option>';}).join('')+'</select></div>'+
     '<div><label>Swath / bin (m)</label><div style="display:flex;gap:3px"><select onchange="SL.v.dir=this.value;slPanel()"><option value=x'+(v.dir==='x'?' selected':'')+'>Easting</option><option value=y'+(v.dir==='y'?' selected':'')+'>Northing</option><option value=z'+(v.dir==='z'?' selected':'')+'>Unfold Z</option></select><input type=number step=any value="'+v.bw+'" style="width:46px" onchange="SL.v.bw=+this.value;slPanel()"></div></div></div>';

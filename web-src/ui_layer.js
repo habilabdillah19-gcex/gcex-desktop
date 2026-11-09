@@ -9,7 +9,7 @@ function uiSecSel(key,k){try{localStorage.setItem('gcex_sec_'+key,k);}catch(e){}
   c.querySelectorAll(':scope>.uitabs button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k);});
   c.querySelectorAll(':scope>.uisec').forEach(function(d){var on=k==='all'||d.dataset.k===k;d.style.display=on?'':'none';d.classList.toggle('dock',on&&k!=='all');});
   var t=c.querySelector(':scope>.uitabs');if(t&&t.getBoundingClientRect().top<0)t.scrollIntoView({block:'start'});}
-function uiSecTabs(c,key,labels,opt){if(!c)return;opt=opt||{};UISEC[key]=c;
+function uiSecTabs(c,key,labels,opt){if(!c)return;opt=opt||{};UISEC[key]=c;labels=(labels||[]).map(function(l){return String(l).replace(/^(?:&#931[2-9];|&#932[0-9];|[\u2460-\u2473\u2776-\u277f])b?\s*/,'');});/* tanpa nomor lingkaran */
   c.querySelectorAll(':scope>.uitabs').forEach(function(t){t.remove();});
   c.querySelectorAll(':scope>.uisec').forEach(function(d){while(d.firstChild)c.insertBefore(d.firstChild,d);d.remove();});
   var G=[{n:[]}],AL=[];

@@ -334,7 +334,7 @@
     }
     usai(adaKode ? 'Pemetaan kode yang sudah ada dipertahankan; hanya permukaannya dibangun ulang.'
                  : buat + ' lapisan diusulkan dari log geologi, diurutkan dari yang paling atas. ' +
-                   '<b>Periksa dan perbaiki pemetaan kodenya</b> di ① Lapisan & kode log sebelum mengestimasi &mdash; ' +
+                   '<b>Periksa dan perbaiki pemetaan kodenya</b> di Lapisan & kode log sebelum mengestimasi &mdash; ' +
                    'usulan ini hanya berdasarkan kedalaman, bukan pengertian geologi.');
   }
 
@@ -346,7 +346,7 @@
       var on = fn('imPar') ? imPar(d).on : false;
       var R = fn('meGrpR') ? meGrpR(d) : null;
       var P = fn('meParOf') ? meParOf(d) : null;
-      var sebab = !on ? 'solid belum dinyalakan (Geomodeller Vein ③)'
+      var sebab = !on ? 'solid belum dinyalakan (Geomodeller Vein )'
                 : !(R && R.mesh) ? 'solid gagal / belum terbentuk'
                 : !P ? 'belum ada parameter tersimpan — di Geostatistik: fitting model, lalu "Simpan ke domain"'
                 : '';
@@ -428,7 +428,7 @@
       if (AR.o.rep && fn('rpRun')) { try { rpRun(); baris({ nama: 'Reporting BM', hasil: 'laporan disegarkan', ket: 'grade-tonase memakai hasil run terbaru' }); } catch (e) {} }
       usai('Selesai. Parameter variogram <b>tidak</b> diubah: autorun memakai yang sudah Anda simpan per domain. ' +
            'Bandingkan kolom kadar dan tonase sebelum &rarr; sesudah; bila ada yang berubah jauh tanpa penambahan bor yang sepadan, ' +
-           'telusuri run itu di menu Model Estimation &#9315; (riwayat run bisa dibatalkan).');
+           'telusuri run itu di menu Model Estimation (riwayat run bisa dibatalkan).');
     }
   };
 
@@ -450,7 +450,7 @@
     L.forEach(function (l) {
       var e = l.est || {};
       if (!(l.codes || []).length) { baris({ nama: l.name, lewat: 1, ket: 'belum ada kode log yang dipetakan ke lapisan ini' }); return; }
-      if (e.on === false) { baris({ nama: l.name, lewat: 1, ket: 'estimasi lapisan ini dimatikan di ③' }); return; }
+      if (e.on === false) { baris({ nama: l.name, lewat: 1, ket: 'estimasi lapisan ini dimatikan di ' }); return; }
       ikut++;
       baris({ nama: l.name, hasil: 'ikut run', banding: (l.codes || []).length + ' kode',
               ket: 'metode ' + E(e.met || 'ok') + ', ruang ' + E(e.mode === '3d' ? '3D' : 'unfold ' + (e.unf || 'prop')) +
@@ -461,7 +461,7 @@
     try { slRun(); } catch (e) { usai('<span class=warn>gagal memulai: ' + E(e.message || e) + '</span>'); return; }
     tunggu(function () { return window.SL && SL.job; }, function (err) {
       baris({ nama: 'Estimasi unfold per lapisan', hasil: err ? '<span class=warn>' + err + '</span>' : 'selesai',
-              ket: 'hasil per lapisan ada di ④ Laporan WMT / DMT' });
+              ket: 'hasil per lapisan ada di Laporan WMT / DMT' });
       if (!AR.o.waste || !fn('wlRun')) return usai('Selesai.');
       var c = fn('wlCheck') ? wlCheck() : null;
       if (c && c.err) { baris({ nama: 'Estimasi waste laterit', lewat: 1, ket: E(c.err) }); return usai('Selesai.'); }

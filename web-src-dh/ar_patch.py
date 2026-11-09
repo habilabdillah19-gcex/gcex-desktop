@@ -23,9 +23,9 @@ def patch_tree(s: str) -> str:
                      ".concat(window.arWfTree?arWfTree():[])};}")
 
     # --- Stratified-Laterite
-    b = ("so('sl.4','④ Laporan WMT / DMT','report',4)])};}")
+    b = ("so('sl.4','Laporan WMT / DMT','report',4)])};}")
     assert s.count(b) == 1, 'akhir kids node Stratified-Laterite tidak ditemukan tepat satu kali'
-    s = s.replace(b, "so('sl.4','④ Laporan WMT / DMT','report',4)])"
+    s = s.replace(b, "so('sl.4','Laporan WMT / DMT','report',4)])"
                      ".concat(window.arLatTree?arLatTree():[])};}")
 
     # --- Model Estimation

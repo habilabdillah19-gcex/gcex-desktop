@@ -27,18 +27,42 @@
         if(!ok)return;if(yx){var t=x;x=y;y=t;}
         if(x===0&&y===0&&z===0){flush();prev=null;return;}if(prev!==null&&sn!==prev)flush();prev=sn;csn=+sn;cur.push([x,y,z]);},prog);
       flush();return;}
-    /* biner: rekaman 29 byte, big-endian */
+    /* biner Surpac (big-endian): tiap rekaman = [1 byte flag 0x00][int32 nomor string][Y][X][Z] (29 byte) lalu DESKRIPSI sebagai
+       TEKS berpanjang bebas (",2", ",9", ",Lensa A", … — dimulai koma, hanya karakter cetak) sampai byte awal rekaman berikutnya (0x00).
+       Rekaman 29 byte nol = pemisah string. Sesudah header ada 4 byte awalan (nol). Akhir file: bantalan nol lalu "END".
+       Dulu deskripsi dianggap 8 byte biner per kolom (rekaman tetap 29+8k) sehingga STR pit berdeskripsi teks (laporan pemilik
+       9 Nov 2026: pit_z2_*.str) terbaca bergeser -> koordinat liar / kosong. Pembaca lama tetap jadi cadangan. */
     var tl=Math.min(N,67),tu=new Uint8Array(await file.slice(N-tl,N).arrayBuffer()),end=N;
     for(var k=N-3;k>=ds&&N-k<=64;k--){var q=k-(N-tl);if(tu[q]===69&&tu[q+1]===78&&tu[q+2]===68){end=k;break;}}
-    /* panjang rekaman = 29 byte + 8 byte per kolom deskripsi (D1, D2, …): dideteksi dari contoh rekaman. Dulu selalu 29,
-       sehingga STR ber-deskripsi terbaca bergeser dan koordinatnya jadi angka liar (±1e+250…1e+307) -> layar kosong. */
+    var ok1=function(v){return isFinite(v)&&Math.abs(v)<1e8;},sane=function(dv,p){var y0=dv.getFloat64(p+5,false),x0=dv.getFloat64(p+13,false),z0=dv.getFloat64(p+21,false);return (x0===0&&y0===0&&z0===0)||(ok1(x0)&&ok1(y0)&&Math.abs(z0)<1e6&&(Math.abs(x0)>1e-3||Math.abs(y0)>1e-3));};
+    var hb=new Uint8Array(await file.slice(ds,Math.min(end,ds+4096)).arrayBuffer()),hv=new DataView(hb.buffer),start=-1;
+    for(var k0=0;k0<=16&&k0+58<=hb.length;k0++){if(hb[k0]!==0)continue;if(sane(hv,k0)){var nx=k0+29;while(nx<hb.length&&hb[nx]>=32&&hb[nx]<=126)nx++;if(nx+29>hb.length||(hb[nx]===0&&sane(hv,nx))){start=k0;break;}}}
+    if(start<0){await strTetap(file,yx,emit,prog,ds,end,flush,function(P){cur=P.cur;csn=P.csn;});return;}
+    var o=ds+start,pn=-1,nTot=0,nBad=0,carry=null,co=0;
+    while(o<end){var e2=Math.min(end,o+G.ch),u=new Uint8Array(await file.slice(o,e2).arrayBuffer()),dv=new DataView(u.buffer),p=0,last=e2>=end,lim=u.length;
+      while(p+29<=lim){
+        if(!last&&lim-p<29+256)break;/* deskripsi bisa terpotong di batas potongan: sisakan untuk potongan berikutnya */
+        var zero=true;for(var zq=0;zq<29;zq++){if(u[p+zq]!==0){zero=false;break;}}
+        if(zero){flush();pn=-1;p+=29;continue;}
+        if(u[p]!==0){p++;nBad++;continue;}/* bukan awal rekaman: geser 1 byte (sinkronisasi ulang) */
+        var no=u[p+1]*16777216+(u[p+2]<<16|u[p+3]<<8|u[p+4]),Y=dv.getFloat64(p+5,false),X=dv.getFloat64(p+13,false),Z=dv.getFloat64(p+21,false);p+=29;
+        while(p<lim&&u[p]>=32&&u[p]<=126)p++;/* deskripsi teks */
+        if(!yx){var t2=X;X=Y;Y=t2;}nTot++;
+        if(!(ok1(X)&&ok1(Y)&&Math.abs(Z)<1e6)){nBad++;continue;}
+        if(X===0&&Y===0&&Z===0){flush();pn=-1;}else{if(pn>=0&&no!==pn)flush();pn=no;csn=no;cur.push([X,Y,Z]);}}
+      o+=p;if(p===0)break;if(prog)prog(o/N);await yieldUI();}
+    G.lastRecLen='teks';G.lastBad=nBad;
+    if(nTot&&nBad>nTot/2){/* hampir semua rusak: coba pembaca rekaman tetap lama */cur=[];await strTetap(file,yx,emit,prog,ds,end,flush,function(P){cur=P.cur;csn=P.csn;});return;}
+    flush();}
+  /* cadangan: rekaman tetap 29 + 8 byte per kolom deskripsi biner (dideteksi), pembaca sebelum 9 Nov 2026 */
+  async function strTetap(file,yx,emit,prog,ds,end,flush0,setCur){var N=file.size,cur=[],csn=null,pn=-1,flush=function(){if(cur.length){cur.sn=csn;emit(cur);}cur=[];};
     var RL=29,best=-1,ok1=function(v){return isFinite(v)&&Math.abs(v)<1e8;},smp=new Uint8Array(await file.slice(ds,Math.min(end,ds+8388608)).arrayBuffer()),sv=new DataView(smp.buffer);
     for(var rs=29;rs<=29+8*12;rs+=8){var o0=(end-ds)%rs,nr0=Math.floor((smp.length-o0)/rs),st0=Math.max(1,Math.floor(nr0/3000)),good=0,tot=0;
       for(var q0=0;q0<nr0;q0+=st0){var p0=o0+q0*rs,y0=sv.getFloat64(p0+5,false),x0=sv.getFloat64(p0+13,false),z0=sv.getFloat64(p0+21,false);tot++;
         if((x0===0&&y0===0&&z0===0)||(ok1(x0)&&ok1(y0)&&Math.abs(z0)<1e6&&(Math.abs(x0)>1e-3||Math.abs(y0)>1e-3)))good++;}
       var sc=tot?good/tot:0;if(sc>best+1e-9){best=sc;RL=rs;}if(sc===1)break;}
     smp=null;sv=null;G.lastRecLen=RL;
-    var o=ds+((end-ds)%RL),pn=-1,R=RL*Math.max(1,Math.floor(G.ch/RL));
+    var o=ds+((end-ds)%RL),R=RL*Math.max(1,Math.floor(G.ch/RL));
     while(o+RL<=end){var e2=Math.min(end,o+R),nr=Math.floor((e2-o)/RL);if(!nr)break;var u=new Uint8Array(await file.slice(o,o+nr*RL).arrayBuffer()),dv=new DataView(u.buffer);
       for(var r=0,p=0;r<nr;r++,p+=RL){var no=u[p+1]*16777216+(u[p+2]<<16|u[p+3]<<8|u[p+4]),Y=dv.getFloat64(p+5,false),X=dv.getFloat64(p+13,false),Z=dv.getFloat64(p+21,false);
         if(!yx){var t2=X;X=Y;Y=t2;}if(X===0&&Y===0&&Z===0){flush();pn=-1;}else{if(pn>=0&&no!==pn)flush();pn=no;csn=no;cur.push([X,Y,Z]);}}
@@ -85,10 +109,10 @@
   readXyz=async function(file){var S=[];await readXyzS(file,function(P){S.push(P);});return S;};
   /* baca + sederhanakan per segmen (sama dengan segsOut) + batas area; titik ditambahkan ke out hanya bila file terbaca utuh */
   /* titik berkoordinat tidak masuk akal (SA.koordOk) dibuang per titik & dihitung; > separuh rusak -> file ditolak */
-  SA.readLinesInto=async function(s,out,tol,ab,prog){var o2=[],n0=0,n1=0,x0=1e18,x1=-1e18,y0=1e18,y1=-1e18,bad=0,tot=0,okF=SA.koordOk||function(){return true;};G.lastRecLen=0;
+  SA.readLinesInto=async function(s,out,tol,ab,prog){var o2=[],n0=0,n1=0,x0=1e18,x1=-1e18,y0=1e18,y1=-1e18,z0=1e18,z1=-1e18,bad=0,tot=0,okF=SA.koordOk||function(){return true;};G.lastRecLen=0;
     await readLinesS(s,function(P0){var P=[];for(var t=0;t<P0.length;t++){tot++;if(okF(P0[t][0],P0[t][1],P0[t][2]))P.push(P0[t]);else bad++;}if(P0.sn!=null)P.sn=P0.sn;if(P.length){var k=dpKeep(P,tol);for(var i=0;i<P.length;i++){n0++;if(k[i]){o2.push(P[i]);n1++;}}o2.push(null);}
-      for(var j=0;j<P.length;j++){var p=P[j];if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];if(ab)ab(p[0],p[1],p[2]);}},prog);
+      for(var j=0;j<P.length;j++){var p=P[j];if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];if(isFinite(p[2])){if(p[2]<z0)z0=p[2];if(p[2]>z1)z1=p[2];}if(ab)ab(p[0],p[1],p[2]);}},prog);
     if(tot&&bad>tot*0.5)throw new Error(bad.toLocaleString()+' dari '+tot.toLocaleString()+' titik berkoordinat tidak masuk akal — file tidak terbaca benar. Bila ini STR biner Surpac, simpan ulang sebagai STR teks (ASCII) atau DXF lalu import lagi.');
-    for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,buang:bad,recLen:G.lastRecLen};};
+    for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,z0:z0<1e17?z0:NaN,z1:z1>-1e17?z1:NaN,buang:bad,recLen:G.lastRecLen};};
   G.eachLine=eachLine;G.readLinesS=readLinesS;G.str0=str0;window.GCBL=G;
 })();

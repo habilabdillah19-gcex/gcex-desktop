@@ -72,8 +72,8 @@
         {id:'sp.ref',t:'Data referensi (titik survey, string)',ic:'ref',tab:'Model',sub:'Titik survey',b:refK.length||'',dim:!refK.length,
           add:{t:'Tambah titik survey / string…',items:[{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:refK}]};}
   function fDb(){var C=window.collars||[],Sv=window.surveys||[],As=window.assays||[],G=window.geoRows||[],E=window.elements||[],cur=U.val('elementFilter'),ga=U.val('geoAttr');
-    var els=E.map(function(e){return{id:'db.el.'+e,t:e,ic:'el',tab:'Data',mark:e===cur?'warna':'',hint:'Warnai trajectory dengan '+e,go:function(){if(window.trajModeDiam)trajModeDiam('grade');U.setVal('elementFilter',e);},
-      menu:function(){return[{t:'Warnai dengan '+e,fn:function(){U.setVal('elementFilter',e);}},{t:'Warna kadar & kelas…',fn:tab('Warna')}];}};});
+    /* sub-node unsur = baris informasi saja (pemilik 9 Nov 2026): unsur yang ditampilkan dipilih di panel Assay (tab Warna), bukan dengan mengklik node */
+    var els=E.map(function(e){return{id:'db.el.'+e,t:e,ic:'el',info:1,mark:e===cur?'warna':'',hint:(e===cur?'Unsur yang sedang ditampilkan. ':'')+'Ganti unsur di panel Assay'};});
     var gat=U.opts('geoAttr').map(function(o){return{id:'db.geo.'+o[0],t:o[1],ic:'attr',tab:'Geo',mark:o[0]===ga&&U.val('geoAttr')!==''&&ok(function(){return $('tmL').classList.contains('on');},false)?'warna':'',
       go:function(){if(window.trajModeDiam)trajModeDiam('geo');U.setVal('geoAttr',o[0]);}};});
     var tb=function(id,t,ic,n,kind,o){return Object.assign({id:id,t:t,ic:ic,b:N(n),dim:!n,menu:function(){var L=[upsFile(kind||'collar')];if(kind)L.push({sep:1},{t:'Hapus tabel ini…',danger:1,dis:!n,fn:function(){PTD.drop(kind);}});return L;}},o||{});};
@@ -81,7 +81,7 @@
       menu:function(){return[{h:'Import file (langsung)'},upsFile('collar'),upsFile('survey'),upsFile('assay'),upsFile('geo'),{sep:1},{t:'Tambah / perbarui beberapa tabel sekaligus (upsert)…',fn:ups},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}];},
       kids:[tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[upsFile('collar'),{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
         tb('db.survey','Survey','table',Sv.length,'survey',{tab:'Data'}),
-        tb('db.assay','Assay','table',As.length,'assay',{tab:'Data',kids:els}),
+        tb('db.assay','Assay','table',As.length,'assay',{tab:'Warna',hint:'Tampilan kadar: unsur, cutoff, kelas diskrit / gradasi warna',kids:els}),
         tb('db.geo','Geologi','geo',G.length,'geo',{tab:'Geo',kids:gat}),
         {id:'db.traj',t:'Trajectory',ic:'hole',tab:'View',chk:U.cb('showTraj'),onChk:function(v){U.setCb('showTraj',v);}},
         {id:'db.lbl',t:'Label hole',ic:'attr',tab:'View',chk:U.cb('showLabel'),onChk:function(v){U.setCb('showLabel',v);}},
@@ -141,7 +141,7 @@
       hint:'Laterit Ni / bauksit / stratiform (sedex): lapisan dari log geologi → permukaan atap / lantai → estimasi unfold per lapisan → laporan WMT / DMT',
       menu:function(){return[{t:'Preset laterit nikel',fn:function(){uiTab('SL');slPreset('lat');}},{t:'Preset bauksit',fn:function(){uiTab('SL');slPreset('bx');}},{t:'Preset stratiform (sedex)',fn:function(){uiTab('SL');slPreset('sdx');}},{sep:1},{t:'Jalankan estimasi lapisan',fn:A('slRun')},{t:'Export laporan WMT / DMT (CSV)',fn:A('slRepCsv')}];},
       kids:LL.map(function(l,i){return{id:'sl.l.'+l.id,t:l.name,ic:'dom',chk:l.vis!==false,onChk:function(v){slSetL(i,'vis',v);},tab:'SL',b:(l.codes||[]).length?'':'kode?',rename:function(nm){slSetL(i,'name',nm);},go:function(){uiTab('SL');setTimeout(function(){try{uiSecOpen('sl',1);}catch(e){}},40);}};})
-        .concat([so('sl.1','① Lapisan & kode log','attr',1),so('sl.2','② Permukaan (atap / lantai)','topo',2),so('sl.3','③ Estimasi unfold per lapisan','est',3),so('sl.4','④ Laporan WMT / DMT','report',4)])};}
+        .concat([so('sl.1','Lapisan & kode log','attr',1),so('sl.2','Permukaan (atap / lantai)','topo',2),so('sl.3','Estimasi unfold per lapisan','est',3),so('sl.4','Laporan WMT / DMT','report',4)])};}
   function fBM(){var m=window.BX&&BX.m,V=ok(function(){return BXV;},[]),cur=m?ok(function(){return bxvKey(m.src);},''):'',at=m?Object.keys(m.num||{}).concat(Object.keys(m.cat||{})):[],ca=ok(function(){return BX.ui.attr;},'');
     return{id:'bm',step:'7',t:'Block Model',ic:'folder',fold:1,tab:'BM',b:m?N(m.n)+' blok':'',chk:m?U.cb('bxShow'):undefined,onChk:function(v){U.setCb('bxShow',v);},
       menu:function(){return[{t:'Import block model dari file (.mdl / CSV)…',fn:function(){PT.pick('.mdl,.csv,.txt,.tsv',false,function(i){var f=i.files&&i.files[0];if(!f)return;bxDlg();bxDlgFile(f);});}},{t:'Export block model GC (.mdl)',fn:A('bxMdlExport'),dis:!m},{sep:1},{t:'Hapus dari tampilan',danger:1,dis:!m,fn:A('bxClear')}];},
@@ -170,7 +170,7 @@
     L.push({id:'out',step:'12',t:'Layout & Ekspor',ic:'folder',fold:1,kids:[{id:'out.map',t:'Peta (layout cetak)',ic:'map',tab:'Map',sub:'Layer peta',kids:[sub('map.1','Layer peta (isi peta)','eye','Map','Layer peta'),sub('map.4','Layout & cetak','export','Map','Layout')]},
       {id:'out.png',t:'Simpan gambar PNG',ic:'image',go:A('savePNG')}]});
     /* Export database & export block model .mdl hanya di node pemiliknya (Database Bor / Block Model) — satu ekspor, satu node */
-    L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[{id:'set.w',t:'Warna kadar',ic:'color',tab:'Warna'},{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
+    L.push({id:'set',t:'Pengaturan tampilan',ic:'folder',fold:1,kids:[/* 'Warna kadar' pindah ke node Assay (satu fitur satu node, 9 Nov 2026) */{id:'set.o',t:'Overlay',ic:'eye',tab:'Overlay'},{id:'set.v',t:'Tampilan & performa',ic:'gear',tab:'View'}]});
     if(window.OG)L.push({id:'og',t:'Ore Geometry',ic:'gs',fold:1,tab:'OG',mark:'referensi',b:ok(function(){return OG.R?N(OG.R.nHit)+' bor GT':'';},''),
       hint:'Referensi geologist: intercept & GT long section, ore shoot (pitch / plunge / trend), grade shell 3D. Tidak dipakai pemodelan / estimasi.',
       chk:ok(function(){return OG.on!==false;},true),onChk:function(v){OG.on=v;updatePlot();},
@@ -185,7 +185,7 @@
     L.forEach(function(n){delete n._o;if(STEP[n.id])n.step=STEP[n.id];});
     return L;}
   PT.install({app:'dh',nodes:nodes,openDef:['sp','db','gm','bm']});
-  /* Versi block model dikelola di bagian ④ Block model panel Data Spasial. Saat node versi di bawah
+  /* Versi block model dikelola di bagian Block model panel Data Spasial. Saat node versi di bawah
      Block Model dipilih, hanya bagian itu yang tampil (tab Topografi / Pit / Ortho disembunyikan), supaya
      panelnya milik node Block Model, bukan terbaca sebagai panel Data Spasial. */
   /* Struktur Geologi & Data referensi berbagi panel #pModel (struktur = bagian #stBody). Sejak 0.24.48 panel itu

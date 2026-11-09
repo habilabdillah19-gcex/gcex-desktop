@@ -62,7 +62,7 @@
     if (!m) { pesan('<span class=warn>Belum ada block model aktif.</span>'); return; }
     var W;
     try { W = solidKirim(); } catch (e) { pesan('<span class=warn>' + sE(e.message || e) + '</span>'); return; }
-    if (!W.length) { pesan('<span class=warn>Belum ada solid domain terbangun (Geological Modelling &#9316;). Proporsi volume memakai batas solid sebagai acuan.</span>'); return;  }
+    if (!W.length) { pesan('<span class=warn>Belum ada solid domain terbangun (Geological Modelling ). Proporsi volume memakai batas solid sebagai acuan.</span>'); return;  }
 
     PY.busy = true;
     var btn = document.getElementById('sbPyBtn');

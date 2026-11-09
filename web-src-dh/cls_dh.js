@@ -124,7 +124,7 @@
     if (C) h += '<div class=clssum>' + KLS.map(function (k, j) {
       if (k === WKLS && !C.cnt[j]) return '';
       return '<span><i style="background:' + COL[k] + '"></i>' + k + ' <b>' + (window.rpN ? rpN(C.cnt[j]) : C.cnt[j]) + '</b> blok</span>';
-    }).join('') + '</div><div class=hint>Tersedia sebagai atribut kategori <b>' + ATTR + '</b>: pilih grup <b>Per atribut kategori</b> di bagian &#9312; untuk laporan tonase per kelas, dan atribut ini juga bisa diwarnai di tampilan 3D.</div>';
+    }).join('') + '</div><div class=hint>Tersedia sebagai atribut kategori <b>' + ATTR + '</b>: pilih grup <b>Per atribut kategori</b> di bagian untuk laporan tonase per kelas, dan atribut ini juga bisa diwarnai di tampilan 3D.</div>';
     h += '<div class=clsnote>&#9888; Ambang di atas adalah usulan geostatistik yang dapat diulang, <b>bukan</b> keputusan klasifikasi. Penetapan Measured / Indicated / Inferred tetap wewenang <b>Competent Person</b> (KCMI / JORC), yang juga menimbang hal-hal yang tidak terbaca dari angka: kemenerusan geologi antar bor, keyakinan pada model domain, kualitas QAQC, ketersediaan data densitas, dan kelayakan penambangan.</div>';
     return h;
   };

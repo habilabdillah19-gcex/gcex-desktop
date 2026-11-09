@@ -105,7 +105,7 @@
         if (!o.clip || inK(o.K, a)) { cx.push(a.x); cy.push(a.y); cz.push(a.z); ct.push(h.n); ht.push('<b>' + esc(h.n) + '</b> (' + esc(s.name) + ')<br>E ' + (h.x + offX).toFixed(2) + ' N ' + (h.y + offY).toFixed(2) + ' RL ' + h.z.toFixed(1) + '<br>Az ' + h.az + '° Dip ' + h.dip + '° Depth ' + h.td + ' m'); }
       });
       if (!n) return;
-      T.push({ type: 'scatter3d', mode: 'lines', x: X, y: Y, z: Z, name: s.name + ' (' + s.h.length + ')' + (akt ? ' ← aktif' : ''), line: { color: col, width: akt ? 7 : 4, dash: 'dash' }, opacity: akt ? 1 : 0.7, hoverinfo: 'skip', showlegend: true });
+      T.push({ type: 'scatter3d', mode: 'lines', x: X, y: Y, z: Z, name: s.name + ' (' + s.h.length + ')' + (akt ? ' ← aktif' : ''), line: { color: col, width: akt ? 7 : 4 }, opacity: akt ? 1 : 0.7 /* garis utuh: putus-putus tidak jelas (pemilik 9 Nov 2026) */, hoverinfo: 'skip', showlegend: true });
       if (cx.length) T.push({ type: 'scatter3d', mode: akt && ct.length <= 80 ? 'markers+text' : 'markers', x: cx, y: cy, z: cz, text: ct, textposition: 'top center', textfont: { color: col, size: 11 },
         marker: { color: col, size: akt ? 5 : 4, symbol: 'diamond' }, hovertext: ht, hoverinfo: 'text', showlegend: false });
     });

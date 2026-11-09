@@ -566,12 +566,13 @@ body.sgdrag #stage{pointer-events:none}
 <div class='sws box'><label class='sw'><input type='checkbox' id='lightMode' onchange='lightChanged()'>Mode ringan</label><label class='sw'><input type='checkbox' id='hoverOn' checked onchange='updatePlot()'>Hover detail</label></div>
 <div class='f'><label>Bench</label><select id='benchFilter' onchange='benchChanged()'><option value='ALL'>Semua Bench</option></select></div>
 <div class='f'><label>Hole ID</label><select id='holeFilter' onchange='updatePlot()'><option value='ALL'>Semua Hole</option></select></div>
-<div class='f'><label>Unsur geokimia</label><select id='elementFilter' onchange='updatePlot()'></select></div>
-<div class='f'><label>Cutoff tampilan (&ge; nilai)</label><input type='number' step='any' id='cutoff' placeholder='tanpa cutoff' onchange='updatePlot()'></div>
-<div class='hint'>Cutoff hanya memengaruhi tampilan 3D, tidak dipakai di analisis geostatistik.</div>
 </section>
 <section id='pWarna' hidden>
-<h3>Warna Kadar</h3>
+<h3>Assay &mdash; tampilan kadar</h3>
+<div class='f'><label>Unsur yang ditampilkan</label><select id='elementFilter' onchange='updatePlot()'></select></div>
+<div class='f'><label>Cutoff tampilan (&ge; nilai)</label><input type='number' step='any' id='cutoff' placeholder='tanpa cutoff' onchange='updatePlot()'></div>
+<div class='hint'>Cutoff hanya memengaruhi tampilan 3D, tidak dipakai di analisis geostatistik.</div>
+<h4>Deret warna</h4>
 <label class='sw'><input type='checkbox' id='clsMode' checked onchange='updatePlot()'>Klasifikasi diskrit (kelas kadar)</label>
 <div class='f' style='margin-top:6px'><label>Batas kelas (pisah koma)</label><div class='rng'><input type='text' id='thr' value='0.5,1' onchange='updatePlot()'><button onclick='autoQ()' style='flex:0 0 auto'>Auto kuartil</button></div></div>
 <h4>Mode kontinu</h4>
@@ -603,7 +604,8 @@ body.sgdrag #stage{pointer-events:none}
 </section>
 <section id='pSlice' hidden>
 <h3>Sayatan / Slicing</h3>
-<div class='f'><label>Arah potongan</label><select id='sMode' onchange='modeChanged()'><option value='H'>Horizontal (plan per elevasi)</option><option value='P'>Garis manual (vertikal / miring)</option></select></div>
+<div class='f'><label>Arah potongan</label><select id='sMode' onchange='modeChanged()'><option value='S'>Slicer (dip &amp; dip azimuth bebas)</option><option value='H'>Horizontal (plan per elevasi)</option><option value='P'>Garis manual (vertikal / miring)</option></select></div>
+<div hidden id='boxS'><input type='number' id='slDip' value='0'><input type='number' id='slAz' value='0'><input type='number' id='slX'><input type='number' id='slY'><input type='number' id='slZ'><input type='number' id='slStep'></div>
 <div id='boxP' style='display:none'>
 <button class='btn-pri' style='width:100%;height:34px;margin-bottom:6px' onclick='drawOpen()'><svg viewBox='0 0 24 24' width='15' height='15' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' style='vertical-align:-3px;margin-right:6px'><path d='M4 20L20 4'/><circle cx='4' cy='20' r='2'/><circle cx='20' cy='4' r='2'/></svg>Gambar garis sayatan</button>
 <div id='lineInfo' class='hint'>Belum ada garis. Klik tombol di atas, lalu tarik garis di peta.</div>
@@ -705,6 +707,7 @@ body.sgdrag #stage{pointer-events:none}
 <label class='sw'><input type='checkbox' id='ovTopoS' onchange='updatePlot()'>Topografi (permukaan)</label>
 <label class='sw'><input type='checkbox' id='ovTopoL' onchange='updatePlot()'>Topografi (kontur / garis)</label>
 <label class='sw'><input type='checkbox' id='ovPit' onchange='updatePlot()'>Desain pit</label><div class='f'><select id='ovPitMode' onchange='updatePlot()'><option value='surf' selected>Surface (seperti topografi)</option><option value='line'>Garis</option><option value='both'>Surface + garis</option></select></div>
+<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Warna permukaan topo &amp; pit</div><select id='ovWarna' onchange='updatePlot()'><option value='seragam' selected>Seragam (satu warna)</option><option value='grad'>Gradasi menurut elevasi</option></select></div><div><div class='lab'>Topo / pit</div><input type='color' id='ovTopoCol' value='#b9a58c' onchange='updatePlot()' style='width:46%'> <input type='color' id='ovPitCol' value='#d08a4e' onchange='updatePlot()' style='width:46%'></div></div>
 <label class='sw'><input type='checkbox' id='ovCrop' checked onchange='updatePlot()'>Batasi ke area pemboran</label>
 <div class='f' style='margin-top:8px'><label>Opasitas topografi</label><input type='range' id='ovOp' min='0.1' max='1' step='0.05' value='0.5' oninput='dUpdate()'></div>
 <h4>Orthofoto</h4>
@@ -982,6 +985,11 @@ function secGeom(){var m=$('sMode').value,zc=(G.z0+G.z1)/2;
   if(m==='H')return{m:'H',az:0,dip:0,n:[0,0,1],u:[0,1,0],w:[1,0,0],c:[0,0,0],seg:null};
   if(m==='X')return{m:'X',az:0,dip:90,n:[1,0,0],u:[0,1,0],w:[0,0,-1],c:[-offX,0,0],seg:null};
   if(m==='Y')return{m:'Y',az:90,dip:90,n:[0,1,0],u:[1,0,0],w:[0,0,-1],c:[0,-offY,0],seg:null};
+  if(m==='S'){/* Slicer (0.24.56): bidang bebas dari dip + dip azimuth melalui titik pusat (slX/slY/slZ, koordinat asli). Dip < 0.5 = plan (perilaku mode H, pos = elevasi). */
+    var sdip=Math.min(90,Math.max(0,parseFloat($('slDip').value)||0)),saz=(((parseFloat($('slAz').value)||0)%360)+360)%360,sx=parseFloat($('slX').value),sy=parseFloat($('slY').value),sz=parseFloat($('slZ').value);
+    if(sdip<0.5)return{m:'H',az:0,dip:0,n:[0,0,1],u:[0,1,0],w:[1,0,0],c:[0,0,0],seg:null,slicer:1};
+    var sa0=(saz-90)*Math.PI/180,sd0=sdip*Math.PI/180,sA=Math.sin(sa0),cA=Math.cos(sa0),sD=Math.sin(sd0),cD=Math.cos(sd0);
+    return{m:'S',az:saz-90,dipAz:saz,dip:sdip,u:[sA,cA,0],w:[cA*cD,-sA*cD,-sD],n:[cA*sD,-sA*sD,cD],c:[isFinite(sx)?sx-offX:CX,isFinite(sy)?sy-offY:CY,isFinite(sz)?sz:zc],seg:null,slicer:1};}
   var az=0,cx=CX,cy=CY,cz=zc,seg=null,dip=Math.min(90,Math.max(0,+$('dipS').value));
   if(m==='A'){az=+$('az').value;var hc=$('hC').value;if(hc&&holeData[hc]){cx=holeData[hc].x;cy=holeData[hc].y;cz=holeData[hc].z;}}
   else{var e1=parseFloat($('p1e').value)-offX,n1=parseFloat($('p1n').value)-offY,e2=parseFloat($('p2e').value)-offX,n2=parseFloat($('p2n').value)-offY;
@@ -993,7 +1001,7 @@ function updRange(reset){var g=secGeom(),e=$('pos'),lo,hi;
   if(g.m==='H'){lo=zMin;hi=zMax;}
   else{lo=1e18;hi=-1e18;[G.x0,G.x1].forEach(function(x){[G.y0,G.y1].forEach(function(y){[G.z0,G.z1].forEach(function(z){var d=sd(g.n,g.c,{x:x,y:y,z:z});if(d<lo)lo=d;if(d>hi)hi=d;});});});lo=Math.floor(lo)-10;hi=Math.ceil(hi)+10;}
   e.min=lo;e.max=hi;
-  if(reset)e.value=(g.m==='A'||g.m==='P')?0:Math.round((lo+hi)/2);
+  if(reset)e.value=(g.m==='A'||g.m==='P'||g.m==='S')?0:(g.m==='H'&&g.slicer&&isFinite(parseFloat($('slZ').value))?Math.min(hi,Math.max(lo,parseFloat($('slZ').value))):Math.round((lo+hi)/2));
   else e.value=Math.min(hi,Math.max(lo,+e.value));}
 function modeChanged(){var m=$('sMode').value;$('boxA').style.display=m==='A'?'block':'none';$('boxP').style.display=m==='P'?'block':'none';$('boxD').style.display=(m==='A'||m==='P')?'block':'none';updRange(true);updatePlot();camFollowHook();lineModeHook();}
 function azChanged(fromN){var a=fromN?normAz(parseFloat($('azN').value)||0):+$('az').value;$('az').value=a;$('azN').value=a;updRange(false);dUpdate();camFollowHook();}
@@ -1005,7 +1013,7 @@ function centerPick(){updRange(true);updatePlot();}
 function holePick(k){var id=$('h'+k).value,c=null;collars.forEach(function(r){if(r[0]===id)c=r;});
   if(c){$('p'+k+'e').value=c[1];$('p'+k+'n').value=c[2];}ptChanged();}
 function ptChanged(){updRange(true);updatePlot();lineInfoUpd();}
-function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');
+function stepPos(d){var t=Math.max(0.1,parseFloat($('thick').value)||5),e=$('pos');if($('sMode').value==='S'){var st=parseFloat($('slStep').value);if(st>0)t=st;}/* Slicer: langkah terpisah dari lebar slab */
   /* Maju / Mundur memakai jalur ringan yang sama dengan slider: gambar cepat sekarang, gambar penuh sekali
      setelah 350 ms tanpa klik lagi. Klik beruntun tidak lagi menumpuk gambar ulang penuh satu per satu. */
   e.value=Math.min(+e.max,Math.max(+e.min,+e.value+d*t));if(PERF_REL())updatePlot();else dDraft();}
@@ -1141,9 +1149,11 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   if(!X.length){X=[0,1];Y=[0,1];Z=[0,1];}
   var rx=rng(X),ry=rng(Y),rz=rng(Z);
   var traces=[],op=+$('ovOp').value;
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op,function(){return{type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,intensity:ms.z,colorscale:'Earth',delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false};}));
+  /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
+  var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#b9a58c'),ovPc=(($('ovPitCol')||{}).value||'#d08a4e'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc;
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop,function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
-  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op,function(){return{type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,intensity:pm.z,colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};}));
+  if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
   var pcs=[[0,'#888888'],[1,'#888888']];
@@ -1181,7 +1191,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   /* uid tetap per lapisan (nama + urutan ke-n di antara nama yang sama). Tanpa uid, Plotly mencocokkan lapisan lama-baru
      menurut POSISI dalam daftar: menyisipkan satu overlay di depan menggeser semua lapisan di belakangnya sehingga semuanya
      dianggap berubah dan diunggah ulang. Dengan uid, lapisan yang sama tetap pada objek WebGL yang sama. */
-  else{var UIDN={};traces.forEach(function(t){if(t.uid)return;var k=(t.name||t.type||'t')+'',n=UIDN[k]||0,h=5381;UIDN[k]=n+1;for(var q=0;q<k.length;q++)h=((h*33)^k.charCodeAt(q))>>>0;t.uid='u'+h.toString(36)+'_'+n;/* uid dipakai Plotly sebagai nama kelas CSS: hanya huruf/angka */});
+  else{var UIDN={};traces.forEach(function(t){if(t.uid&&!/^u[0-9a-z]+_\d+$/.test(t.uid))return;/* uid eksplisit (dhTraj dll.) dipertahankan; uid hasil hitungan DIHITUNG ULANG tiap gambar — objek lapisan dari cache (ovCache, bxTraces) membawa uid lama sehingga dua lapisan bisa ber-uid sama dan Plotly membuang salah satunya (topo + pit DH hilang, 9 Nov 2026) */var k=(t.name||t.type||'t')+'',n=UIDN[k]||0,h=5381;UIDN[k]=n+1;for(var q=0;q<k.length;q++)h=((h*33)^k.charCodeAt(q))>>>0;t.uid='u'+h.toString(36)+'_'+n;/* uid dipakai Plotly sebagai nama kelas CSS: hanya huruf/angka */});
     Plotly.react('plotDiv',traces,layout,{responsive:true,displaylogo:false});}
   $('stats').innerHTML=dh.html;
   if(!draft){gsAutoHook();if(!$('pGeo').hidden)geoStat();}
@@ -1587,7 +1597,7 @@ var GS={open:false,R:null,rows:[],tab:'S'};
 (function(){if(!window.Plotly||Plotly._gcexSafe)return;Plotly._gcexSafe=1;
   var fix=function(D){if(!Array.isArray(D))return D;return D.filter(function(t){if(!t)return false;
       if(t.type==='scatter3d'){var n=t.x?t.x.length:0;if(!n){t.x=[null];t.y=[null];t.z=[null];if(Array.isArray(t.text))t.text=[''];if(t.marker&&Array.isArray(t.marker.color))t.marker.color=[t.marker.color[0]||'#999'];if(t.line&&Array.isArray(t.line.color))t.line.color=[t.line.color[0]||'#999'];}return true;}
-      if(t.type==='mesh3d'){var nv=t.x?t.x.length:0;if(!nv||!t.i||!t.i.length)return false;var I=t.i,J=t.j,K=t.k,m=Math.min(I.length,J.length,K.length),bad=false;for(var q=0;q<m;q++)if(!(I[q]>=0&&I[q]<nv&&J[q]>=0&&J[q]<nv&&K[q]>=0&&K[q]<nv)){bad=true;break;}
+      if(t.type==='mesh3d'){var nv=t.x?t.x.length:0;if(!nv)return false;if(!t.i||!t.i.length)return nv>=3;/* mesh tanpa i/j/k = Delaunay (permukaan topo / pit): SAH. Dulu dibuang di sini -> permukaan topo & desain pit tidak pernah tampil di 3D Drill Hole (laporan pemilik 9 Nov 2026) */var I=t.i,J=t.j,K=t.k,m=Math.min(I.length,J.length,K.length),bad=false;for(var q=0;q<m;q++)if(!(I[q]>=0&&I[q]<nv&&J[q]>=0&&J[q]<nv&&K[q]>=0&&K[q]<nv)){bad=true;break;}
         if(bad||m!==I.length||m!==J.length||m!==K.length){var a=[],b=[],c=[];for(q=0;q<m;q++)if(I[q]>=0&&I[q]<nv&&J[q]>=0&&J[q]<nv&&K[q]>=0&&K[q]<nv){a.push(I[q]);b.push(J[q]);c.push(K[q]);}console.warn('mesh "'+t.name+'": '+(m-a.length)+' segitiga tidak valid dibuang');t.i=a;t.j=b;t.k=c;if(!a.length)return false;}return true;}
       return true;});};
   ['react','newPlot'].forEach(function(fn){var o=Plotly[fn];Plotly[fn]=function(gd,d,l,c){var D=fix(d);try{var r=o.call(this,gd,D,l,c);if(r&&r.catch)r.catch(function(e){console.error(e);});return r;}
@@ -1988,10 +1998,10 @@ function planDraw(x,dk){if(!PL.h.length&&!PL.poly.length&&!PL.la)return;var col=
     x.beginPath();x.arc(p[0],p[1],5,0,7);x.fillStyle=dk?'#16202c':'#fff';x.fill();x.lineWidth=2.5;x.strokeStyle=h._w?'#e11d48':col;x.stroke();
     if(lab){x.lineWidth=3;x.strokeStyle=dk?'rgba(14,22,33,.85)':'rgba(255,255,255,.9)';x.strokeText(h.n,p[0]+7,p[1]-9);x.fillStyle=col;x.fillText(h.n,p[0]+7,p[1]-9);}});
   if(PL.la&&PL.lb){var a=w2s(PL.la.x,PL.la.y),b=w2s(PL.lb.x,PL.lb.y),L2=Math.sqrt(Math.pow(PL.lb.x-PL.la.x,2)+Math.pow(PL.lb.y-PL.la.y,2)),su=Math.max(0.5,plNum('plSu',10)),n=Math.floor(L2/su+1e-6);
-    x.setLineDash([6,4]);x.strokeStyle=col;x.lineWidth=2;x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke();x.setLineDash([]);
+    x.setLineDash([]);x.strokeStyle=col;x.lineWidth=2.5;x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke();/* garis plan bor utuh (pemilik 9 Nov 2026) */
     for(var i=0;i<=n&&L2>0;i++){var t=i*su/L2,c=w2s(PL.la.x+(PL.lb.x-PL.la.x)*t,PL.la.y+(PL.lb.y-PL.la.y)*t);x.beginPath();x.arc(c[0],c[1],4,0,7);x.fillStyle=col;x.fill();}
     x.fillStyle=dk?'#dbe3ec':'#1c2733';x.fillText((n+1)+' titik \u00b7 '+L2.toFixed(1)+' m',b[0]+10,b[1]+12);}
-  if(PL.poly.length){x.setLineDash([5,4]);x.strokeStyle=col;x.lineWidth=2;x.fillStyle='rgba(214,36,159,.08)';x.beginPath();PL.poly.forEach(function(p,i){var q=w2s(p.x,p.y);if(i)x.lineTo(q[0],q[1]);else x.moveTo(q[0],q[1]);});
+  if(PL.poly.length){x.setLineDash([]);x.strokeStyle=col;x.lineWidth=2.5;x.fillStyle='rgba(214,36,159,.08)';x.beginPath();PL.poly.forEach(function(p,i){var q=w2s(p.x,p.y);if(i)x.lineTo(q[0],q[1]);else x.moveTo(q[0],q[1]);});
     if(PL.hov){var hq=w2s(PL.hov.x,PL.hov.y);x.lineTo(hq[0],hq[1]);}x.closePath();x.fill();x.stroke();x.setLineDash([]);
     PL.poly.forEach(function(p,i){var q=w2s(p.x,p.y);x.beginPath();x.arc(q[0],q[1],i?3.5:6,0,7);x.fillStyle=col;x.fill();});}
   x.restore();}
@@ -1999,7 +2009,7 @@ function planTraces(T,o){if(!PL.h.length||!$('plShow').checked)return;var X=[],Y
   PL.h.forEach(function(h){var a={x:h.x,y:h.y,z:h.z},b=plEnd(h),s=[a,b];if(o.clip){s=clipSeg(a,b,o.K);if(!s)return;}
     X.push(s[0].x,s[1].x,null);Y.push(s[0].y,s[1].y,null);Z.push(s[0].z,s[1].z,null);n++;
     if(!o.clip||inK(o.K,a)){cx.push(a.x);cy.push(a.y);cz.push(a.z);ct.push(h.n);ht.push('<b>'+h.n+'</b> (rencana)<br>E '+(h.x+offX).toFixed(2)+' N '+(h.y+offY).toFixed(2)+' RL '+h.z.toFixed(1)+'<br>Az '+h.az+'\u00b0 Dip '+h.dip+'\u00b0 Depth '+h.td+' m');}});
-  if(!n)return;T.push({type:'scatter3d',mode:'lines',x:X,y:Y,z:Z,name:'Plan bor ('+PL.h.length+')',line:{color:col,width:7,dash:'dash'},hoverinfo:'skip',showlegend:true});
+  if(!n)return;T.push({type:'scatter3d',mode:'lines',x:X,y:Y,z:Z,name:'Plan bor ('+PL.h.length+')',line:{color:col,width:7},hoverinfo:'skip',showlegend:true});
   if(cx.length)T.push({type:'scatter3d',mode:ct.length<=80?'markers+text':'markers',x:cx,y:cy,z:cz,text:ct,textposition:'top center',textfont:{color:col,size:11},
     marker:{color:col,size:5,symbol:'diamond'},hovertext:ht,hoverinfo:'text',showlegend:false});}
 function plImport(){$('plFile').value='';$('plFile').click();}
@@ -2154,11 +2164,11 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
     run:function(A){A(0,function(){try{PT.open['db']=1;PT.render(true);}catch(e){}});A(1.5,function(){var b=document.querySelector('.ptr[data-id="db"] .ptx');if(b)b.click();});A(5,function(){dmPoint('#ptMenu button',false);});A(8.5,function(){var mm=document.getElementById('ptMenu');if(mm)mm.remove();});}});
   if(mid!==null)S.push({s:'Data & filter',t:'Filter bench',d:'Pilih bench untuk menampilkan lubang pada level tertentu saja; daftar Hole ID ikut menyesuaikan.',el:'benchFilter',dur:6,
     run:function(A){A(0.8,function(){dmSet('benchFilter',mid);});A(4.5,function(){dmSet('benchFilter','ALL');});}});
-  if(el2)S.push({s:'Data & filter',t:'Ganti unsur',d:'Kolom unsur dibaca otomatis dari header sheet Assay. Contoh: tampilkan '+el2+', lalu kembali ke '+el0+'.',el:'elementFilter',dur:7,
-    run:function(A){A(0.8,function(){dmSet('elementFilter',el2);});A(4.5,function(){dmSet('elementFilter',el0);});}});
-  S.push({s:'Data & filter',t:'Cutoff tampilan',d:'Sembunyikan interval di bawah nilai tertentu agar zona kadar tinggi terlihat jelas. Cutoff hanya untuk tampilan, tidak memengaruhi statistik.',el:'cutoff',dur:7,
-    run:function(A){A(0.8,function(){dmSet('cutoff','0.5');});A(5.5,function(){dmSet('cutoff','');});}});
-  S.push({s:'Warna',t:'Kelas kadar',d:'Pewarnaan bisa per kelas (batas kelas bebas) atau gradasi kontinu. Tombol Kuartil mengisi batas kelas otomatis dari data.',el:'thr',dur:7,
+  if(el2)S.push({s:'Assay',t:'Ganti unsur',d:'Node Assay di Project Tree membuka panel tampilan kadar: unsur, cutoff, dan deret warna. Kolom unsur dibaca otomatis dari header sheet Assay; sub-node unsur hanya daftar (yang berwarna = sedang ditampilkan). Contoh: tampilkan '+el2+', lalu kembali ke '+el0+'.',el:'elementFilter',dur:8,
+    run:function(A){A(0,function(){try{PT.select('db.assay');}catch(e){uiTab('Warna');}});A(1.2,function(){dmSet('elementFilter',el2);});A(5,function(){dmSet('elementFilter',el0);});}});
+  S.push({s:'Assay',t:'Cutoff tampilan',d:'Sembunyikan interval di bawah nilai tertentu agar zona kadar tinggi terlihat jelas. Cutoff hanya untuk tampilan, tidak memengaruhi statistik.',el:'cutoff',dur:7,
+    run:function(A){A(0,function(){uiTab('Warna');});A(0.8,function(){dmSet('cutoff','0.5');});A(5.5,function(){dmSet('cutoff','');});}});
+  S.push({s:'Assay',t:'Kelas kadar',d:'Deret warna di panel Assay: per kelas (batas kelas bebas) atau gradasi kontinu. Tombol Kuartil mengisi batas kelas otomatis dari data.',el:'thr',dur:7,
     run:function(A){A(0,function(){uiTab('Warna');});A(1.5,function(){dmClick('[onclick^=autoQ]');});A(5.5,function(){dmSet('thr','0.5,1');});}});
   S.push({s:'Tampilan',t:'Sudut pandang cepat',d:'Tombol Top, Front, Side dan Iso memindahkan kamera ke arah baku dalam satu klik.',el:'.seg',dur:8,
     run:function(A){var b=document.querySelectorAll('.seg button');[0,1,2,3].forEach(function(k,j){A(0.6+j*1.8,function(){dmClick(b[k]);});});}});
@@ -2170,7 +2180,7 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
     S.push({s:'Geologi',t:'Ganti atribut geologi',d:'Setiap kolom di sheet Geologi menjadi atribut. Legenda menampilkan jumlah interval per kode dan pilihan hatch.',el:'geoAttr',dur:2+no*2.2,
       run:function(A){for(var k=0;k<no;k++)(function(k){A(0.6+k*2.2,function(){dmSet('geoAttr',ga.options[k].value);});})(k);}});
     S.push({s:'Geologi',t:'Kembali ke warna kadar',d:'Satu klik untuk kembali ke pewarnaan kadar.',el:'tmG',dur:4,run:function(A){A(0.8,function(){dmClick('tmG');});}});}
-  S.push({s:'Sayatan',t:'Sayatan horizontal',d:'Potong model pada elevasi tertentu dengan tebal slab \u00b1 5 m; hanya data di dalam slab yang ditampilkan. Elevasi '+zp+' m dipilih karena datanya paling banyak.',el:'sMode',dur:8,
+  S.push({s:'Sayatan',t:'Sayatan horizontal',d:'Potong model pada elevasi tertentu dengan tebal slab \u00b1 5 m; hanya data di dalam slab yang ditampilkan. Elevasi '+zp+' m dipilih karena datanya paling banyak. Semua kendali ini juga ada di popup Slicer (bilah atas).',el:'sMode',dur:8,
     run:function(A){A(0,function(){uiTab('Slice');dmSet('sMode','H');});A(1.2,function(){$('thick').value=10;$('pos').value=zp;dmSet('sliceClip',true);});A(2.5,function(){dmSet('showPlane',true);});A(3.5,function(){setCam(1.5,-1.5,1);});}});
   S.push({s:'Sayatan',t:'Geser slab',d:'Tombol langkah memindahkan slab setebal satu slab ke atas atau ke bawah, seperti membuka bench satu per satu.',el:'[onclick^=stepPos]',dur:8,
     run:function(A){[1,1,-1,-1].forEach(function(d,j){A(0.8+j*1.6,function(){dmClick(d>0?'[onclick=\'stepPos(1)\']':'[onclick=\'stepPos(-1)\']');});});}});
@@ -2183,6 +2193,8 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
       A(1.5,function(){setDip(90);});A(3,function(){dmClick('[onclick^=viewSection]');});}});
   S.push({s:'Sayatan',t:'Sayatan miring (dip)',d:'Bidang sayatan bisa dimiringkan, misalnya mengikuti kemiringan vein, untuk analisis searah dip.',el:'dipS',dur:8,
     run:function(A){A(0.8,function(){dmClick('[onclick=\'setDip(60)\']');});A(2.5,function(){viewSection();});A(6.2,function(){dmClick('[onclick=\'setDip(90)\']');});A(7,function(){viewSection();});}});
+  S.push({s:'Sayatan',t:'Slicer: potong dari arah mana saja',d:'Satu tombol Slicer di bilah atas membuka popup: dip, dip azimuth, lebar slab, langkah, dan titik pusat bidang (E, N, RL) — bidang potong bebas tanpa menggambar garis. Contoh: dip 60° ke azimuth 45°, lalu Maju satu langkah.',el:'secMenu',dur:11,
+    run:function(A){A(0,function(){if(window.SLICER)SLICER.open();});A(1.5,function(){dmSet('sliceClip',true);dmSet('showPlane',true);});A(2.5,function(){if(window.SLICER)SLICER.set(60,45);});A(4.5,function(){setTimeout(viewSection,0);});A(6.5,function(){stepPos(1);});A(8.5,function(){stepPos(-1);});A(10.2,function(){if(window.SLICER){SLICER.set(0,null);SLICER.close();}});}});
   S.push({s:'Sayatan',t:'Penampang 2D (section)',d:'Penampang vertikal 2D dengan label assay di sepanjang lubang, siap untuk interpretasi.',el:'btn2d',dur:8,
     run:function(A){A(0.8,function(){dmClick('btn2d');});A(7.4,function(){if(VIEW2D)dmClick('btn2d');});}});
   S.push({s:'Sayatan',t:'Digitasi string pada penampang',d:'Menu Digitasi: klik di Penampang 2D untuk membuat string (terbuka atau tertutup). Titiknya otomatis terkunci pada bidang slab aktif, lalu bisa diekspor ke DXF atau STR.',el:'rbDig',dur:10,
@@ -2726,13 +2738,13 @@ var _gmRB=geoRibbons2D;geoRibbons2D=function(o,F){var r=_gmRB(o,F);try{r=r.conca
 function gmOpt(k,v){GM.opt[k]=v;if(window.SA&&SA.dirty)SA.dirty();}
 function gmPanel(){var b=$('gmBody');if(!b)return;var S=gmStats(),act=gmDom(GM.act),h='';
   h+='<div class=hint style="margin:-4px 0 8px">Domain vein &rarr; flag interval bor &rarr; string kontrol HW / FW per section. Flag disimpan per kedalaman (aman saat upsert), ikut proyek &amp; backup, dan tersedia sebagai atribut geologi <b>Domain vein (Geological Modelling)</b> untuk filter domain &amp; estimasi.</div>';
-  h+='<h4>&#9312; Domain vein</h4><div class=gmdoms>'+(GM.doms.length?gmOrdered().map(function(d){var s=S[d.id]||{h:{},n:0,l:0,vl:0,lv:0},nh=Object.keys(s.h).length;
+  h+='<h4>Domain vein</h4><div class=gmdoms>'+(GM.doms.length?gmOrdered().map(function(d){var s=S[d.id]||{h:{},n:0,l:0,vl:0,lv:0},nh=Object.keys(s.h).length;
       return '<div class="gmd'+(d.id===GM.act?' on':'')+(gmIsKid(d)?' kid':'')+'"><input type=radio name=gmAct '+(d.id===GM.act?'checked':'')+' onchange="gmAct(\''+d.id+'\')" title="Domain aktif"><input type=color value="'+d.col+'" onchange="gmSetDom(\''+d.id+'\',\'col\',this.value)">'+
         '<input type=text value="'+gmE(d.name)+'" onchange="gmRename(\''+d.id+'\',this.value)" title="Nama domain (bebas)"><input type=checkbox '+(d.vis?'checked':'')+' onchange="gmSetDom(\''+d.id+'\',\'vis\',this.checked)" title=Tampilkan>'+
         '<button class=x onclick="gmDelDom(\''+d.id+'\')" title="Hapus domain">&times;</button>'+gmParSel(d)+'<small>'+nh+' hole &middot; '+s.n+' run &middot; '+s.l.toFixed(1)+' m'+(s.lv?' &middot; '+(s.vl/s.lv).toFixed(2)+' '+gmE(GM.opt.el||$('elementFilter').value):'')+'</small></div>';}).join(''):'<div class=hint>Belum ada domain. Contoh nama: QV_Utama, QV_HW1.</div>')+'</div>';
   h+='<div class="g2 f"><input type=text id=gmNewNm placeholder="Nama domain baru"><button onclick="gmAddDom($(\'gmNewNm\').value);$(\'gmNewNm\').value=\'\'">+ Domain</button></div>';
   var md=GM.mode;
-  h+='<h4>&#9313; Flag interval bor</h4><div class="box gmstate">'+(md==='flag'?'<b style="color:'+(act?act.col:'#e8590c')+'">&#9679; Flag aktif: '+gmE(act?act.name:'-')+'</b>':md==='erase'?'<b style="color:#c92a2a">&#9679; Hapus flag</b>':'Pilih mode, lalu bekerja di <b>Penampang 2D</b>.')+
+  h+='<h4>Flag interval bor</h4><div class="box gmstate">'+(md==='flag'?'<b style="color:'+(act?act.col:'#e8590c')+'">&#9679; Flag aktif: '+gmE(act?act.name:'-')+'</b>':md==='erase'?'<b style="color:#c92a2a">&#9679; Hapus flag</b>':'Pilih mode, lalu bekerja di <b>Penampang 2D</b>.')+
     (md==='flag'||md==='erase'?'<br>Klik interval: '+(md==='flag'?'flag / lepas':'hapus')+' &middot; tarik sepanjang lubang: rentang &middot; Shift + tarik: kotak &middot; Ctrl+Z: urungkan &middot; Esc: selesai':'')+'</div>';
   h+='<div class="g3 f"><button class="'+(md==='flag'?'btn-pri':'')+'" onclick="gmStart(\'flag\')">&#9998; Flag</button><button class="'+(md==='erase'?'btn-pri':'')+'" onclick="gmStart(\'erase\')">&#9003; Hapus flag</button><button onclick="gmStop()">Selesai</button></div>';
   h+='<div class="g2 f"><button onclick="gmUndo()" '+(GM.und.length?'':'disabled')+'>&#8630; Urungkan ('+GM.und.length+')</button><label class=sw style="margin:0"><input type=checkbox '+(GM.showC?'checked':'')+' onchange="GM.showC=this.checked;updatePlot()">Titik kontak HW/FW</label></div>';
@@ -2743,7 +2755,7 @@ function gmPanel(){var b=$('gmBody');if(!b)return;var S=gmStats(),act=gmDom(GM.a
     '<button class="btn-pri" style="width:100%" onclick="gmAuto()">Usulkan ke domain aktif</button><div class=hint>Run kadar &ge; cut-off digabung bila sela waste &le; dilusi maks. dan kadar gabungan tetap &ge; cut-off; run lebih pendek dari panjang min. dibuang kecuali panjang &times; kadar &ge; panjang min. &times; cut-off.</div></details>';
   if(GM.lastAuto)h+='<div class=hint>'+GM.lastAuto+'</div>';
   h+='<div class="g2 f"><button onclick="gmFlagCsv()">&#8681; Export flag (CSV)</button><label class=gmfile><input type=file accept=".csv,.txt" onchange="gmFlagImport(this)">&#8679; Import flag (CSV)</label></div>';
-  h+='<h4>&#9314; String kontrol vein (HW / FW)</h4><div class=hint style="margin-top:-2px">Terpisah dari menu Digitasi. Nama otomatis <b>&lt;Domain&gt;_HW_01</b> / <b>_FW_01</b>; HW garis penuh, FW putus-putus. Dipakai membentuk permukaan HW / FW dan solid vein (bagian &#9315;).</div>';
+  h+='<h4>String kontrol vein (HW / FW)</h4><div class=hint style="margin-top:-2px">Terpisah dari menu Digitasi. Nama otomatis <b>&lt;Domain&gt;_HW_01</b> / <b>_FW_01</b>; HW garis penuh, FW putus-putus. Dipakai membentuk permukaan HW / FW dan solid vein (bagian ).</div>';
   h+='<div class="box gmstate">'+(md==='digit'?'<b style="color:'+(act?act.col:'')+'">&#9679; Digit '+GM.role+' &middot; '+gmE(act?act.name:'')+'</b> &middot; '+GM.cur.length+' titik<br>Klik: titik (snap ke kontak '+GM.role+' &amp; titik string) &middot; Enter: simpan &middot; Backspace: hapus titik &middot; Esc: batal':md==='edit'&&GM.str[GM.edit]?'<b>&#9679; Edit '+gmE(GM.str[GM.edit].name)+'</b><br>Tarik kotak titik: pindah (snap) &middot; klik bulatan tengah: sisip &middot; Shift+klik titik: hapus &middot; Ctrl+klik: tambah di ujung terdekat &middot; '+(GM.live?'klik area kosong / ':'')+'Enter / Esc: selesai':'Bidang aktif: '+dgPlTxt(dgPlane())+(GM.opt.live!==false?'<br><small>&#9998; Edit langsung: di Penampang 2D arahkan kursor ke string &rarr; tarik kotak titik / bulatan tengah, Shift+klik titik = hapus.</small>':''))+'</div>';
   h+='<label class=sw style="margin:-2px 0 6px"><input type=checkbox '+(GM.opt.live!==false?'checked':'')+' onchange="gmOpt(\'live\',this.checked);GM.lh=null;gmDraw();gmPanel()">Edit string langsung di layar (tanpa tombol &#9998;)</label>';
   h+='<div class="g3 f"><select onchange="GM.role=this.value;gmPanel();gmDraw()"><option'+(GM.role==='HW'?' selected':'')+'>HW</option><option'+(GM.role==='FW'?' selected':'')+'>FW</option></select><button class="'+(md==='digit'?'btn-pri':'')+'" onclick="gmStart(\'digit\')">&#9998; Digit</button><button onclick="gmFinish()">'+(md==='digit'?'Simpan':'Selesai')+'</button></div>';
@@ -3211,7 +3223,7 @@ function imExport(fmt){var X=imFiles(fmt,!!GM.opt.imSurf);if(!X){alert('Belum ad
 
 /* ---------- panel (bagian 4 Geological Modelling) ---------- */
 function imN(v,dg){return(+v).toLocaleString('id-ID',{maximumFractionDigits:dg==null?0:dg,minimumFractionDigits:dg==null?0:dg});}
-function imPanelHtml(){var act=gmDom(GM.act),P=imPar(act),sg=GM.opt.imSG||2.6,h='<h4>&#9315; Model vein HW / FW &rarr; solid (RBF)</h4>';
+function imPanelHtml(){var act=gmDom(GM.act),P=imPar(act),sg=GM.opt.imSG||2.6,h='<h4>Model vein HW / FW &rarr; solid (RBF)</h4>';
   h+='<div class=hint style="margin-top:-2px">Permukaan <b>HW</b> dan <b>FW</b> dimodelkan terpisah (RBF thin-plate + elipsoid anisotropi) dari string kontrol yang tampil + titik kontak bor. Searah <b>strike</b> model dipotong tegas pada radius pengaruh; searah <b>dip</b> pinch-out atau dipotong topografi. Dibangun ulang otomatis setiap string / flag berubah.</div>';
   if(!GM.doms.length)return h+'<div class=hint>Buat domain vein dulu.</div>';
   h+='<div class=gmlist><table class=pltb><tr><th></th><th>Domain</th><th>Solid</th><th></th></tr>'+GM.doms.map(function(d){var Q=imPar(d),R=IM.R[d.id],st='-';
@@ -3423,7 +3435,7 @@ function meEnsure(){try{return meApply(false);}catch(e){console.error(e);return 
 /* ---------- run ---------- */
 function meDomsReady(){return (window.gmTops?gmTops():GM.doms).filter(function(d){return ME.sel[d.id]!==false&&meParOf(d)&&imPar(d).on;});}
 function meRun(){if(ME.job){ME.job.cancel=true;return;}var m=window.BX&&BX.m;if(!m){alert('Import block model GC dulu (menu Block Model).');return;}meEnsure();
-  imSync();var L=meDomsReady();if(!L.length){alert('Belum ada domain yang siap: perlu solid vein (Geological Modelling ④) dan parameter estimasi (Geostatistik → Simpan parameter ke domain).');return;}
+  imSync();var L=meDomsReady();if(!L.length){alert('Belum ada domain yang siap: perlu solid vein (Geological Modelling ) dan parameter estimasi (Geostatistik → Simpan parameter ke domain).');return;}
   var el=meParOf(L[0]).el,bad=L.filter(function(d){return meParOf(d).el!==el;});if(bad.length){alert('Semua domain dalam satu run harus memakai unsur yang sama ('+el+'); periksa parameter '+bad.map(function(d){return d.name;}).join(', ')+'.');return;}
   if(ME.store&&ME.store.el&&ME.store.el!==el&&!confirm('Hasil tersimpan memakai unsur '+ME.store.el+'. Ganti ke '+el+'? (hasil lama dihapus)'))return;
   ME.undo=JSON.stringify(ME.store);if(!ME.store||ME.store.el!==el){ME.store=meNew();ME.store.el=el;}ME.store.gc=ME.store.gc||meGcAttr();
@@ -3520,19 +3532,19 @@ function meExHtml(ready){var pel=ready.length?meParOf(ready[0]).el:(ME.store&&ME
     (on&&e!==pel?'<span><small>top-cut</small> <input type=number step=any style="width:64px;height:24px" value="'+(+o[e]||0)+'" onchange=\'meExTc('+JSON.stringify(e).replace(/'/g,'&#39;')+',this.value)\'></span>':'')+(on?'<small class=mu style="margin-left:4px">&rarr; '+gmE(e.toLowerCase())+'_final'+(gc?' (GC: '+gmE(gc)+')':'')+'</small>':'')+'</div>';});
   return h+'</div><div class=hint>Unsur tambahan diestimasi dengan <b>bobot kriging unsur utama</b> (variogram, elipsoid &amp; sampel tetangga yang sama) pada komposit yang sama; top-cut per unsur. Hasil: atribut <b>unsur_est</b> &amp; <b>unsur_final</b> (blok di luar estimasi memakai kolom GC unsur tsb). Mengubah centang = semua blok diestimasi ulang. Top-cut 0 = tanpa top-cut.</div></div>';}
 function mePanel(){var b=$('meBody');if(!b)return;if(ME.job){var bar=$('meBar');if(bar)return;}var m=window.BX&&BX.m,S=ME.store,h='';meEnsure();
-  h+='<div class=hint style="margin:-4px 0 8px">Estimasi <b>block model GC</b> per domain vein, di dalam solid (Geological Modelling &#9315;), dengan parameter tersimpan per domain. Hanya blok sekitar bor baru / berubah dan blok yang baru masuk solid yang diestimasi ulang; bagian solid tanpa blok GC ditambah. Atribut GC asli tidak diubah. Mencari parameter: menu <b>Geostatistik</b>.</div>';
-  h+='<h4>&#9312; Block model GC</h4>';
+  h+='<div class=hint style="margin:-4px 0 8px">Estimasi <b>block model GC</b> per domain vein, di dalam solid (Geological Modelling ), dengan parameter tersimpan per domain. Hanya blok sekitar bor baru / berubah dan blok yang baru masuk solid yang diestimasi ulang; bagian solid tanpa blok GC ditambah. Atribut GC asli tidak diubah. Mencari parameter: menu <b>Geostatistik</b>.</div>';
+  h+='<h4>Block model GC</h4>';
   if(!m)h+='<div class="box gmstate">Belum ada block model GC. Import lewat menu <b>Block Model</b> (.mdl Surpac / CSV).</div>';
   else{var nums=Object.keys((m._meBase||m).num),gc=meGcAttr();h+='<div class="box gmstate"><b>'+gmE(m.mdl&&m.mdl.file||m.name)+'</b> &middot; '+m.n.toLocaleString()+' blok'+(m._meBase&&m.n>m._meBase.n?' (+'+(m.n-m._meBase.n)+' tambahan)':'')+' &middot; '+gmE((m._meBase||m).sizes||'')+(m._meMiss?'<br><span class=warn>'+m._meMiss+' blok hasil tersimpan tidak ditemukan di block model ini.</span>':'')+'</div>';
     h+='<div class="g2 f"><div><label title="Pembanding dan nilai akhir di luar blok terestimasi">Kadar GC asli</label><select onchange="if(!ME.store){ME.store=meNew();}ME.store.gc=this.value;meSaved();meApply(true);mePanel()">'+nums.map(function(k){return '<option'+(k===gc?' selected':'')+'>'+gmE(k)+'</option>';}).join('')+'</select></div><div><label>SG (tonase)</label><input type=number step=any value="'+(S?S.sg:2.6)+'" onchange="if(!ME.store){ME.store=meNew();}ME.store.sg=+this.value||2.6;meSaved();mePanel()"></div></div>';}
-  h+='<h4>&#9313; Domain &amp; parameter</h4>';
+  h+='<h4>Domain &amp; parameter</h4>';
   if(!GM.doms.length)h+='<div class=hint>Belum ada domain vein (menu Geological Modelling).</div>';
   else{h+='<div class=gmlist><table class=pltb><tr><th></th><th>Domain</th><th>Solid</th><th>Parameter</th><th>Hasil</th></tr>'+gmTops().map(function(d){var P=meParOf(d),R=meGrpR(d),on=imPar(d).on,ok=on&&R&&R.mesh,nb=0,last=null,nk=gmKids(d.id).length;
       if(S){for(var r=0;r<S.B.x.length;r++)if(S.B.dom[r]===d.id)nb++;S.runs.forEach(function(q){if(q.domId===d.id)last=q;});}
       return '<tr'+(d.id===ME.ed?' class=on':'')+'><td><input type=checkbox '+(ME.sel[d.id]!==false?'checked':'')+' onchange="ME.sel[\''+d.id+'\']=this.checked" title="Ikut run"></td><td><a href=javascript:void(0) onclick="ME.ed=\''+d.id+'\';mePanel()" style="color:'+d.col+';font-weight:700">'+gmE(d.name)+'</a>'+(nk?'<br><small>+ '+nk+' cabang: '+gmE(gmKids(d.id).map(function(k){return k.name;}).join(', '))+'</small>':'')+'</td>'+
         '<td>'+(ok?'&#10003; '+meN(R.st.vol)+' m&sup3;'+(nk?'<br><small>gabungan</small>':''):'<span class=warn>'+(on?'gagal':'belum')+'</span>')+'</td><td>'+(P?gmE(P.el)+' &middot; '+P.P.length+' pass':'<span class=warn>belum</span>')+'</td><td>'+(nb?nb.toLocaleString()+' blok'+(last?'<br><small>run #'+last.id+' '+gmE(last.date)+'</small>':''):'-')+'</td></tr>';}).join('')+'</table></div>';
     var ed=gmDom(gmTopId(ME.ed||''))||gmDom(gmTopId(GM.act||''))||gmTops()[0];ME.ed=ed.id;h+='<details class=gmdet'+(ME._openPar?' open':'')+' ontoggle="ME._openPar=this.open"><summary>Parameter estimasi: '+gmE(ed.name)+'</summary>'+meParHtml(ed)+'</details>';}
-  h+='<h4>&#9314; Jalankan estimasi</h4>';
+  h+='<h4>Jalankan estimasi</h4>';
   var ready=meDomsReady();
   h+=meExHtml(ready);
   h+='<label class=sw><input type=checkbox '+(ME.opt.add?'checked':'')+' onchange="ME.opt.add=this.checked">Tambah blok baru di bagian solid tanpa blok GC</label>';
@@ -3542,7 +3554,7 @@ function mePanel(){var b=$('meBody');if(!b)return;if(ME.job){var bar=$('meBar');
   h+='<div class=row><button id=meBtn class=btn-pri onclick="meRun()" '+(m&&ready.length?'':'disabled')+'>'+(ME.job?'Batalkan':'&#9654; Jalankan estimasi')+'</button><div class=prog><div id=meBar></div></div></div><div id=mePct class=note></div>';
   if(ME.msg)h+='<div class=hint>'+ME.msg+'</div>';
   if(ME.undo!=null&&!ME.job)h+='<button style="width:100%" onclick="meUndo()">&#8630; Batalkan run terakhir</button>';
-  if(S&&S.runs.length){h+='<h4>&#9315; Validasi &amp; hasil</h4>';var lastBy={};S.runs.forEach(function(q){lastBy[q.domId]=q;});
+  if(S&&S.runs.length){h+='<h4>Validasi &amp; hasil</h4>';var lastBy={};S.runs.forEach(function(q){lastBy[q.domId]=q;});
     Object.keys(lastBy).forEach(function(id){var q=lastBy[id],d=gmDom(id),v=d?meValid(d):null;if(!v)return;
       var curBm=BX.m&&BX.m.src?BX.m.src.name:(BX.m?BX.m.name:''),bmWarn=q.bm&&curBm&&q.bm!==curBm?'<span class=warn>Run ini memakai block model <b>'+gmE(q.bmN||q.bm)+'</b>; block model aktif sekarang <b>'+gmE(BX.m.name)+'</b>. Jalankan lagi dengan opsi semua blok.</span><br>':'';
       h+='<div class="box gmstate"><b style="color:'+d.col+'">'+gmE(d.name)+'</b> &middot; run #'+q.id+' '+gmE(q.date)+(q.user?' ('+gmE(q.user)+')':'')+'<br>'+bmWarn+
@@ -3665,8 +3677,8 @@ function spRows(role){var L=spL(role),act=spAct(role);if(!L.length)return '<div 
 function spPanel(){var b=$('spBody');if(!b)return;var h='<div class=hint style="margin:-4px 0 8px">Setiap jenis data bisa punya beberapa <b>versi</b>. Satu versi <b>aktif</b> dipakai tampilan &amp; analisis; versi lain tetap tersimpan di proyek (ikut folder &amp; backup) dan bisa diaktifkan lagi. Versi baru tidak menghapus yang lama.</div>';
   if(SPV.msg)h+='<div class="box gmstate">'+SPV.msg+'</div>';
   [['topo','.dtm,.str,.dxf,.csv,.txt,.xyz,.asc','Surpac <b>.dtm + .str</b> (segitiga DTM: dipakai persis untuk constraint Reporting BM), Surpac .str, DXF, titik XYZ (CSV/TXT)'],['pit','.dtm,.str,.dxf,.csv,.txt,.xyz','Surpac <b>.dtm + .str</b> (segitiga DTM), Surpac .str, DXF, titik XYZ'],['ortho','.tif,.tiff,.jpg,.jpeg,.png,.tfw,.jgw,.pgw,.wld,.tifw,.jpgw,.pngw','GeoTIFF, atau JPG/PNG + world file (pilih keduanya)']].forEach(function(R,i){var role=R[0];
-    h+='<h4>&#'+(9312+i)+'; '+SPN[role]+'</h4>'+spRows(role)+'<label class="gmfile spadd"><input type=file multiple accept="'+R[1]+'" onchange="spAdd(\''+role+'\',this)" '+(SPV.busy?'disabled':'')+'>+ Tambah versi '+SPN[role].toLowerCase()+'</label><div class=hint>'+R[2]+(role==='topo'?'. Dipakai juga oleh: solid vein (potong topografi) dan batas atas uji estimasi.':'')+'</div>';});
-  var cur=BX.m?bxvKey(BX.m.src):'';h+='<h4>&#9315; Block model GC</h4>';
+    h+='<h4>'+SPN[role]+'</h4>'+spRows(role)+'<label class="gmfile spadd"><input type=file multiple accept="'+R[1]+'" onchange="spAdd(\''+role+'\',this)" '+(SPV.busy?'disabled':'')+'>+ Tambah versi '+SPN[role].toLowerCase()+'</label><div class=hint>'+R[2]+(role==='topo'?'. Dipakai juga oleh: solid vein (potong topografi) dan batas atas uji estimasi.':'')+'</div>';});
+  var cur=BX.m?bxvKey(BX.m.src):'';h+='<h4>Block model GC</h4>';
   h+=BXV.length?'<table class="pltb sptb"><tr><th>Aktif</th><th>Versi</th><th></th></tr>'+BXV.map(function(v){var on=bxvKey(v.src)===cur;
     return '<tr'+(on?' class=on':'')+'><td><input type=radio name=spa_bm '+(on?'checked':'')+' onchange="bmActivate(\''+v.id+'\')"></td><td><input type=text value="'+spE(v.name)+'" onchange="bmSet(\''+v.id+'\',\'name\',this.value)"><small>'+spE(v.info||'')+(v.date?' &middot; '+spDate(v.date):'')+(v.user?' &middot; '+spE(v.user):'')+'<br>'+spE(v.src.name)+'</small>'+
       '<input type=text class=spnote placeholder="catatan (mis. model GC Oktober)" value="'+spE(v.note||'')+'" onchange="bmSet(\''+v.id+'\',\'note\',this.value)"></td><td><button class=x onclick="bmDel(\''+v.id+'\')" title="Hapus dari daftar">&times;</button></td></tr>';}).join('')+'</table>':'<div class=hint>Belum ada block model.</div>';
@@ -3773,7 +3785,7 @@ function stSelHtml(){var p=stGet(STR.sel);if(!p)return '<div class=hint>Pilih ti
     '<div class=stnud><button onclick="stNudge(\'f\')">&#9650; Maju</button><button onclick="stNudge(\'u\')">Z +</button><button onclick="stNudge(\'l\')">&#9664; Kiri</button><button onclick="stNudge(\'r\')">Kanan &#9654;</button><button onclick="stNudge(\'b\')">&#9660; Mundur</button><button onclick="stNudge(\'d\')">Z &minus;</button></div>'+
     '<button class=x style="width:auto;margin-top:4px" onclick="stDel(\''+id+'\')">Hapus titik ini</button></div>';}
 function stPanel(){var b=$('stBody');if(!b)return;var h='<h4>Struktur geologi (dip / dip azimuth)</h4>';
-  h+='<div class=hint style="margin-top:-2px">Import CSV <code>No, X, Y, Z, Dip, Dip_Azimuth, Keterangan</code> (pemisah koma / titik koma / tab; Z kosong = dari topografi), atau tambah titik manual di 3D. Dipakai sebagai pertimbangan solid vein RBF (Geological Modelling &#9315;) dan ditampilkan di menu <b>Map</b> dengan simbol USGS.</div>';
+  h+='<div class=hint style="margin-top:-2px">Import CSV <code>No, X, Y, Z, Dip, Dip_Azimuth, Keterangan</code> (pemisah koma / titik koma / tab; Z kosong = dari topografi), atau tambah titik manual di 3D. Dipakai sebagai pertimbangan solid vein RBF (Geological Modelling ) dan ditampilkan di menu <b>Map</b> dengan simbol USGS.</div>';
   h+='<div class=hint>Import CSV struktur: baris <b>+ Tambah struktur&hellip;</b> &rsaquo; <b>Import CSV struktur&hellip;</b> di Project Tree (paling bawah node Struktur Geologi).</div>';
   h+='<div class="g2 f"><button class="'+(STR.mode==='add3d'?'btn-pri':'')+'" onclick="stMode(\'add3d\')">'+(STR.mode==='add3d'?'&#9679; Klik objek di 3D&hellip; (Esc)':'+ Titik (klik di 3D)')+'</button></div>';
   h+='<div class="g2 f"><button onclick="stAddCenter()">+ Titik di tengah area</button><div class=g2><div><label>Dip</label><input type=number step=any value="'+STR.sd.dip+'" onchange="STR.sd.dip=+this.value"></div><div><label>Dip az</label><input type=number step=any value="'+STR.sd.az+'" onchange="STR.sd.az=+this.value"></div></div></div>';
@@ -3788,7 +3800,7 @@ function stPanel(){var b=$('stBody');if(!b)return;var h='<h4>Struktur geologi (d
 
 /* ---------- Geological Modelling: flag struktur per domain (bagian 5) ---------- */
 function stGmHtml(){var act=gmDom(GM.act),L=STR.P.filter(function(p){return p.fid==='gm'&&p.dom===GM.act;}),on=STR.mode==='gm2d';
-  var h='<h4>&#9316; Flag struktur (dip / dip azimuth)</h4><div class=hint style="margin-top:-2px">Untuk vein yang arah dip-nya berubah (mis. ke timur di elevasi 300, ke barat di elevasi 100): klik di Penampang 2D untuk menaruh titik struktur domain aktif. Nilai di bawah <b>tetap dipakai untuk klik berikutnya</b> sampai diubah; nomor bertambah otomatis. Struktur ikut membentuk solid RBF.</div>';
+  var h='<h4>Flag struktur (dip / dip azimuth)</h4><div class=hint style="margin-top:-2px">Untuk vein yang arah dip-nya berubah (mis. ke timur di elevasi 300, ke barat di elevasi 100): klik di Penampang 2D untuk menaruh titik struktur domain aktif. Nilai di bawah <b>tetap dipakai untuk klik berikutnya</b> sampai diubah; nomor bertambah otomatis. Struktur ikut membentuk solid RBF.</div>';
   h+='<div class="g3 f"><div><label>Dip (&deg;)</label><input type=number step=any min=0 max=90 value="'+STR.sd.dip+'" onchange="STR.sd.dip=+this.value"></div><div><label>Dip az (&deg;)</label><input type=number step=any min=0 max=360 value="'+STR.sd.az+'" onchange="STR.sd.az=+this.value"></div><div><label>No berikut</label><input type=number step=1 value="'+STR.nx+'" onchange="STR.nx=+this.value||1"></div></div>';
   h+='<input type=text placeholder="Keterangan (mis. kontak HW, sesar)" value="'+stE(STR.sd.ket)+'" onchange="STR.sd.ket=this.value" style="margin-bottom:4px">';
   h+='<div class="g2 f"><button class="'+(on?'btn-pri':'')+'" onclick="stMode(\'gm2d\')">'+(on?'&#9679; Klik di Penampang 2D&hellip; (Esc)':'&#9998; Flag struktur')+'</button><div class=hint style="align-self:center">'+L.length+' titik untuk '+gmE(act?act.name:'-')+'</div></div>';
@@ -4212,8 +4224,8 @@ function gsgEll(){var rows=GS.rows.filter(function(r){return r.vM&&r.n;});if(row
   return best?{p:p,o:best.r,minor:Math.min(best.rg,p.rb),al:best.al}:{p:p,o:null};}
 function gsgSave(){var R=GS.R;if(!R||!R.M)return;var t=GS.tab;gsSave();if(t==='R'){gsTab('R');}}
 var GSGK=['gComp','gTop','gTr','gLag','gNL','gLT','gAT','gBW','gMinP','gNS','gCell','mMin'];
-function gsgGeo(){var o={m:$('sMode').value,p1e:$('p1e').value,p1n:$('p1n').value,p2e:$('p2e').value,p2n:$('p2n').value,dip:$('dipN').value,pos:$('pos').value,thick:$('thick').value,lim:$('limSeg')?$('limSeg').checked:true,par:{}};GSGK.forEach(function(k){if($(k))o.par[k]=$(k).value;});return o;}
-function gsgGo(i){var r=GS.rows[i];if(!r||!r.geo)return;var g=r.geo;$('sMode').value=g.m;['p1e','p1n','p2e','p2n'].forEach(function(k){$(k).value=g[k];});$('dipS').value=g.dip;$('dipN').value=g.dip;if($('limSeg'))$('limSeg').checked=g.lim;modeChanged();$('pos').value=g.pos;$('thick').value=g.thick;if(g.par)GSGK.forEach(function(k){if($(k)&&g.par[k]!=null)$(k).value=g.par[k];});GSG.scan=null;updatePlot();gsRun();}
+function gsgGeo(){var o={m:$('sMode').value,p1e:$('p1e').value,p1n:$('p1n').value,p2e:$('p2e').value,p2n:$('p2n').value,dip:$('dipN').value,pos:$('pos').value,thick:$('thick').value,lim:$('limSeg')?$('limSeg').checked:true,par:{},sl:{}};['slDip','slAz','slX','slY','slZ','slStep'].forEach(function(k){if($(k))o.sl[k]=$(k).value;});GSGK.forEach(function(k){if($(k))o.par[k]=$(k).value;});return o;}
+function gsgGo(i){var r=GS.rows[i];if(!r||!r.geo)return;var g=r.geo;$('sMode').value=g.m;['p1e','p1n','p2e','p2n'].forEach(function(k){$(k).value=g[k];});if(g.sl)Object.keys(g.sl).forEach(function(k){if($(k))$(k).value=g.sl[k];});$('dipS').value=g.dip;$('dipN').value=g.dip;if($('limSeg'))$('limSeg').checked=g.lim;modeChanged();$('pos').value=g.pos;$('thick').value=g.thick;if(g.par)GSGK.forEach(function(k){if($(k)&&g.par[k]!=null)$(k).value=g.par[k];});GSG.scan=null;updatePlot();gsRun();}
 function gsgPerp(){var R=GS.R;if(!R)return;var g=R.S.g,az;if(g.m==='P')az=g.az+90;else if(g.m==='H')az=R.M?gsAxes().maj[0]:0;else if(g.m==='X')az=90;else az=0;
   gsgLine(az,'&#10004; Sayatan tegak lurus dibuat (arah '+fx(normAz(az),0)+'&deg;, melewati pusat data). Ulangi langkah 1&ndash;3 untuk sayatan ini lalu <b>Simpan sayatan ini</b>.');}
 function gsgLine(az,note){var R=GS.R;if(!R)return;var g=R.S.g,cx=0,cy=0;R.C.forEach(function(c){cx+=c.x;cy+=c.y;});if(R.C.length){cx/=R.C.length;cy/=R.C.length;}else{cx=(G.x0+G.x1)/2;cy=(G.y0+G.y1)/2;}
@@ -4301,11 +4313,12 @@ function gsrAuto(){var R=GS.R;if(!R||!R.st||GSR.busy)return;GSR.busy=true;var b=
    Daftar domain dalam kotak gulir sendiri (tinggi tetap), bagian lain (Flag, String, Solid RBF, Struktur)
    tampil sebagai panel menempel (non-floating) yang dipilih lewat tab lengket di atas -> satu bagian terbuka,
    tidak perlu menggulir jauh walau domain banyak. Tab "Semua" = tampilan lama. */
-(function(){var SEC=[['flag','&#9313; Flag'],['str','&#9314; String'],['rbf','&#9315; Solid'],['st','&#9316; Struktur'],['all','&#9776; Semua']];
+(function(){var SEC=[['flag','Flag'],['str','String'],['rbf','Solid'],['st','Struktur'],['all','&#9776; Semua']];/* tanpa nomor lingkaran (pemilik 9 Nov 2026) */
   if(GM._sec==null){var v=null;try{v=localStorage.getItem('gcex_gmsec');}catch(e){}GM._sec=v||'flag';}
   window.gmSec=function(k){GM._sec=k;try{localStorage.setItem('gcex_gmsec',k);}catch(e){}gmPanel();var b=$('gmBody');if(b){var t=b.querySelector('.gmtabs');if(t&&t.getBoundingClientRect().top<0)t.scrollIntoView({block:'start'});}};
   var key=function(n){var t=(n.textContent||'').trim();
-    if(/^②/.test(t))return 'flag';if(/^③/.test(t))return 'str';if(/^④/.test(t))return 'rbf';if(/^⑤/.test(t)||/^Struktur geologi/.test(t))return 'st';return null;};
+    /* kunci bagian dari JUDUL h4 (dulu dari nomor lingkaran yang kini dihapus) */
+    if(/^(②|Flag interval bor)/.test(t))return 'flag';if(/^(③|String kontrol vein)/.test(t))return 'str';if(/^(④|Model vein HW)/.test(t))return 'rbf';if(/^⑤/.test(t)||/^Struktur geologi|^Flag struktur/.test(t))return 'st';return null;};
   var _gp=gmPanel;gmPanel=function(){var b=$('gmBody'),dl=b&&b.querySelector('.gmdoms'),sc=dl?dl.scrollTop:0;var r=_gp.apply(this,arguments);
     try{b=$('gmBody');if(!b||!GM.doms.length)return r;var cur='dom',G={dom:[],flag:[],str:[],rbf:[],st:[]},pend=[];
       Array.prototype.slice.call(b.childNodes).forEach(function(n){var k=null;
@@ -4334,7 +4347,7 @@ function uiSecSel(key,k){try{localStorage.setItem('gcex_sec_'+key,k);}catch(e){}
   c.querySelectorAll(':scope>.uitabs button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k);});
   c.querySelectorAll(':scope>.uisec').forEach(function(d){var on=k==='all'||d.dataset.k===k;d.style.display=on?'':'none';d.classList.toggle('dock',on&&k!=='all');});
   var t=c.querySelector(':scope>.uitabs');if(t&&t.getBoundingClientRect().top<0)t.scrollIntoView({block:'start'});}
-function uiSecTabs(c,key,labels,opt){if(!c)return;opt=opt||{};UISEC[key]=c;
+function uiSecTabs(c,key,labels,opt){if(!c)return;opt=opt||{};UISEC[key]=c;labels=(labels||[]).map(function(l){return String(l).replace(/^(?:&#931[2-9];|&#932[0-9];|[\u2460-\u2473\u2776-\u277f])b?\s*/,'');});/* tanpa nomor lingkaran */
   c.querySelectorAll(':scope>.uitabs').forEach(function(t){t.remove();});
   c.querySelectorAll(':scope>.uisec').forEach(function(d){while(d.firstChild)c.insertBefore(d.firstChild,d);d.remove();});
   var G=[{n:[]}],AL=[];
@@ -4355,7 +4368,7 @@ function uiSecOpen(key,k){if(UISEC[key])uiSecSel(key,String(k));}
 (function(){
   var wrap=function(fn,after){var f=window[fn];if(typeof f!=='function')return;window[fn]=function(){var r=f.apply(this,arguments);try{after();}catch(e){console.error(e);}return r;};};
   /* Model Estimation */
-  var meN0=-1;wrap('mePanel',function(){var b=$('meBody');if(!b||(ME.job&&b.querySelector(':scope>.uitabs')))return;uiSecTabs(b,'me',['&#9312; Block model','&#9313; Domain','&#9314; Jalankan','&#9315; Hasil'],{def:'2'});
+  var meN0=-1;wrap('mePanel',function(){var b=$('meBody');if(!b||(ME.job&&b.querySelector(':scope>.uitabs')))return;uiSecTabs(b,'me',['Block model','Domain','Jalankan','Hasil'],{def:'2'});
     /* run baru selesai -> buka Hasil; sedang berjalan -> Jalankan */
     var n=ME.store&&ME.store.runs?ME.store.runs.length:0;if(ME.job)uiSecOpen('me',3);else if(meN0>=0&&n>meN0)uiSecOpen('me',4);meN0=n;});
   /* Block Model: judul bagian disisipkan */
@@ -4364,7 +4377,7 @@ function uiSecOpen(key,k){if(UISEC[key])uiSecSel(key,String(k));}
     mk('Warna & kelas',kids[0]);mk('Filter & tampilan',fl);mk('Statistik & tonase',$('bxStat'));
     uiSecTabs(b,'bm',['Warna &amp; kelas','Filter &amp; SG','Statistik']);});
   /* Data Spasial, Map */
-  wrap('spPanel',function(){uiSecTabs($('spBody'),'sp',['&#9312; Topografi','&#9313; Pit','&#9314; Ortho','&#9315; Block model']);});
+  wrap('spPanel',function(){uiSecTabs($('spBody'),'sp',['Topografi','Pit','Ortho','Block model']);});
   wrap('mapPanel',function(){uiSecTabs($('mapBody'),'map',['Layer','Pick-up','Digitasi','Layout']);});
   /* Data Referensi (statis + #stBody) */
   uiSecTabs($('pModel'),'ref',['Titik survey','String','Struktur'],{always:'#mdMsg'});
@@ -4429,7 +4442,7 @@ function rpDomList(){var L=[['all','Semua blok (tanpa batas domain)']];(window.G
 function rpDomFn(o,m){var v=o.dom;if(!v||v==='all')return{f:null,lab:'semua blok'};
   if(v.indexOf('gm:')===0){var d=gmDom(v.slice(3));if(!d)throw new Error('domain tidak ditemukan');var A=meAN(),dc=m.cat[A.dom],code=dc?dc.dict.indexOf(d.name):-1,R=meGrpR(d);
     if(R&&R.mesh){var W=R.W||R._W||(R._W=wfInside(R.mesh));return{f:function(i,x,y,z){return W.f(x,y,z);},lab:'di dalam solid '+d.name};}
-    if(code>=0)return{f:function(i){return dc.codes[i]===code;},lab:'domain_est = '+d.name};throw new Error('Solid '+d.name+' belum dibangun (Geological Modelling ④).');}
+    if(code>=0)return{f:function(i){return dc.codes[i]===code;},lab:'domain_est = '+d.name};throw new Error('Solid '+d.name+' belum dibangun (Geological Modelling ).');}
   if(v.indexOf('cat:')===0){var C=m.cat[v.slice(4)],on=o.cat||{},sel=C.dict.map(function(s){return on[s]!==false;});return{f:function(i){var c=C.codes[i];return c!==65535&&sel[c];},lab:v.slice(4)+' = '+C.dict.filter(function(s,k){return sel[k];}).join(', ')};}
   if(v.indexOf('wf:')===0){var w=MD.models[+v.slice(3)],W2=RPTIN.get(w)||(function(){var q=wfInside(w);RPTIN.set(w,q);return q;})();return{f:function(i,x,y,z){return W2.f(x,y,z);},lab:'di dalam wireframe '+w.name};}return{f:null,lab:''};}
 function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performance.now(),msg=$('rpMsg');
@@ -4495,7 +4508,7 @@ function rpShow(on){if(on&&BX.rpSrc!=='rep'){var o0=rpO();if(o0){o0.show=true;rp
 function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b.innerHTML='<div class="box gmstate">Belum ada block model. Import lewat menu <b>Block Model</b> (atau jendela import). Hasil <b>Model Estimation</b> ('+rpE(meAN().fin)+', '+rpE(meAN().est)+') otomatis tersedia sebagai atribut.</div>';return;}
   var o=rpO(),nums=Object.keys(m.num),sel=function(id,opts,val,on){return '<select '+(id?'id='+id+' ':'')+'onchange="'+on+'">'+opts.map(function(p){return '<option value="'+rpE(p[0])+'"'+(String(p[0])===String(val)?' selected':'')+'>'+rpE(p[1])+'</option>';}).join('')+'</select>';};
   var h='<div class=hint style="margin:-4px 0 8px">Hitung <b>tonase × kadar</b> block model <b>'+rpE(m.name)+'</b> ('+rpN(m.n)+' blok) dengan batasan tertentu. Blok dihitung utuh berdasarkan titik pusatnya.</div>';
-  h+='<div class=rptabs><button class="'+(RP.sec==='1'?'on':'')+'" onclick="RP.sec=\'1\';rpPanel()">&#9312; Atribut</button><button class="'+(RP.sec==='c'?'on':'')+'" onclick="RP.sec=\'c\';rpPanel()">&#9313; Constraint</button><button class="'+(RP.sec==='2'?'on':'')+'" onclick="RP.sec=\'2\';rpPanel()">&#9314; Hasil</button></div>';
+  h+='<div class=rptabs><button class="'+(RP.sec==='1'?'on':'')+'" onclick="RP.sec=\'1\';rpPanel()">Atribut</button><button class="'+(RP.sec==='c'?'on':'')+'" onclick="RP.sec=\'c\';rpPanel()">Constraint</button><button class="'+(RP.sec==='2'?'on':'')+'" onclick="RP.sec=\'2\';rpPanel()">Hasil</button></div>';
   if(RP.sec==='1'){
     h+='<h4>Atribut yang dilaporkan</h4><div class=hint style="margin-top:-2px">Centang atribut kadar yang ingin dilaporkan; pilih satuannya. Logam: g/t &amp; ppm &rarr; gram; % &rarr; ton logam.</div><div class=rpatt>'+nums.map(function(a){var on=o.atts.indexOf(a)>=0;return '<div class="rpa'+(on?' on':'')+'"><label><input type=checkbox '+(on?'checked':'')+' onchange="rpAtt(\''+rpE(a)+'\',this.checked)"> '+rpE(a)+'</label>'+(on?sel('',[['g/t','g/t'],['ppm','ppm'],['%','%']],o.unit[a]||'g/t',"RP.o.unit['"+rpE(a)+"']=this.value"):'')+'</div>';}).join('')+'</div>';
     h+='<div class="g2 f"><div><label>Atribut untuk cut-off</label>'+sel('',nums.map(function(a){return[a,a];}),o.gr,"rpSet('gr',this.value)")+'</div><div><label>Cut-off (pisah koma)</label><input type=text value="'+rpE(o.cuts)+'" onchange="RP.o.cuts=this.value"></div></div>';
@@ -5195,14 +5208,14 @@ SA.go=async function(){var btn=E('btnGo');btn.disabled=true;try{
   else if(SA.bmF){msg('Membaca block model '+esc(SA.bmF.name)+'&hellip;');await tick();try{var R=await SA.readBMcsv(SA.bmF),cfg=SA.bmAuto(R,SA.bmF.name.replace(/\.[^.]+$/,''));if(cfg.x<0||cfg.y<0||cfg.z<0)throw new Error('kolom X/Y/Z tidak dikenali (import lewat menu Block Model)');
       var st=Math.max(1,Math.floor(R.n/20000));for(var q=0;q<R.n;q+=st){var w=R.r[q],x=numV(w[cfg.x]),y=numV(w[cfg.y]),z=numV(w[cfg.z]);if(x!==null&&y!==null)ab(x,y,z===null?NaN:z);}SA.bmPend={R:R,cfg:cfg};SA.bmInfo=R.n.toLocaleString()+' blok';}
     catch(er){notes.push(SA.bmF.name+': '+er.message);SA.bmInfo='';}}
-  D.topoData=[];D.pitData=[];D.orthoImg=null;var bb=null;var mkBB=function(){bb=AB[0]<1e17?[AB[0]-mar,AB[1]+mar,AB[2]-mar,AB[3]+mar]:[-1e12,1e12,-1e12,1e12];};if(!noDH)mkBB();
+  D.topoData=[];D.pitData=[];D.orthoImg=null;var bb=null;var mkBB=function(){bb=AB[0]<1e17?[AB[0]-mar,AB[1]+mar,AB[2]-mar,AB[3]+mar]:[-1e12,1e12,-1e12,1e12];};/* tanpa collar: batas block model (bila ada) jadi acuan overlap & jangkar */var bbBM=noDH&&AB[0]<1e17;if(!noDH||bbBM)mkBB();
   var SPL=SA.sp.topo.concat(SA.sp.pit,SA.sp.ortho.filter(function(x){return x.k==='raster';}));SPL.sort(function(a,b){return(a.role==='ortho')-(b.role==='ortho');});for(var i=0;i<SPL.length;i++){var s=SPL[i];s.err=s.ok=false;
     try{if(s.role==='ortho'){if(!bb)mkBB();if(D.orthoImg){s.info='dilewati (orthofoto sudah ada)';continue;}msg('Orthofoto '+esc(s.f.name)+'&hellip;');await tick();
         var k=ext(s.f.name),O=(k==='tif'||k==='tiff')?await readGeoTiff(s,bb,res,2500000,function(p){msg('Orthofoto '+esc(s.f.name)+': '+p+'%');}):await readImgWorld(s,bb,res,2500000);
         s.info=O.info+' → '+O.w+'x'+O.h+' @ '+(+O.dx.toFixed(2))+' m';if(!SA.koordOk(O.e0,O.n0,NaN))throw new Error('georeferensi orthofoto tidak masuk akal (E '+O.e0+', N '+O.n0+')');s.ok=true;ab(O.e0,O.n0,NaN);ab(O.e0+O.w*O.dx,O.n0-O.h*O.dy,NaN);D.orthoImg={src:O.src,w:O.w,h:O.h,e0:O.e0,n0:O.n0,dx:+O.dx.toFixed(4),dy:+O.dy.toFixed(4),px:O.px};}
-      else{msg('Membaca '+esc(s.f.name)+'&hellip;');await tick();var segs=await readLines(s),out=s.role==='topo'?D.topoData:D.pitData,nn=segsOut(segs,out,s.k==='xyz'?0:tol);
+      else{msg('Membaca '+esc(s.f.name)+'&hellip;');await tick();var out=s.role==='topo'?D.topoData:D.pitData,_ob=out.length,segs=await readLines(s),nn=segsOut(segs,out,s.k==='xyz'?0:tol);
         var x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;segs.forEach(function(P){P.forEach(function(p){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];});});
-        segs.forEach(function(P){P.forEach(function(p){ab(p[0],p[1],p[2]);});});var ov=noDH||!(x1<bb[0]-2000||x0>bb[1]+2000||y1<bb[2]-2000||y0>bb[3]+2000);s.info=(segs.buang?'⚠ '+segs.buang.toLocaleString()+' titik berkoordinat rusak dibuang · ':'')+(segs.recLen>29?'STR biner ber-deskripsi · ':'')+nn[0]+' titik'+(nn[1]<nn[0]?' → '+nn[1]:'')+(ov?'':' — TIDAK overlap dengan collar (cek koordinat / urutan kolom)');s.ok=ov;s.err=!ov;if(!nn[0])throw new Error('tidak ada titik terbaca');}}
+        var ov=(noDH&&!bbBM)||!(x1<bb[0]-2000||x0>bb[1]+2000||y1<bb[2]-2000||y0>bb[3]+2000);if(ov)segs.forEach(function(P){P.forEach(function(p){ab(p[0],p[1],p[2]);});});else out.length=_ob;/* file yang tidak overlap: titiknya tidak dipakai & tidak ikut jangkar */s.info=(segs.buang?'⚠ '+segs.buang.toLocaleString()+' titik berkoordinat rusak dibuang · ':'')+(segs.recLen>29?'STR biner ber-deskripsi · ':'')+nn[0]+' titik'+(nn[1]<nn[0]?' → '+nn[1]:'')+(ov?'':' — TIDAK overlap dengan '+(bbBM?'block model':'collar')+' (cek koordinat / urutan kolom)');s.ok=ov;s.err=!ov;if(!nn[0])throw new Error('tidak ada titik terbaca');}}
     catch(er){s.err=true;s.info=er.message;notes.push(s.f.name+': '+er.message);console.error(er);}}
   if(noDH){if(AB[0]>1e17)throw new Error('Tidak ada data spasial yang terbaca.');if(AB[4]>1e17){AB[4]=0;AB[5]=100;}D.anch=AB.slice();}
   SA.spRender();D.date=new Date().toISOString();

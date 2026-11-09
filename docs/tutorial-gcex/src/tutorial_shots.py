@@ -96,7 +96,12 @@ with sync_playwright() as pw:
     shot('viewer_3d')
     shot('header',{'x':0,'y':0,'width':1600,'height':62})
     # 4. Warna
-    ev("uiTab('Warna')");shot('menu_warna')
+    ev("PT.select('db.assay')");pg.wait_for_timeout(400);shot('menu_warna')
+    # 4b. Slicer (0.24.56): popup dip 60 / az 45, potong data
+    ev("$('sliceClip').checked=true;$('showPlane').checked=true;if(window.SLICER){SLICER.set(60,45);SLICER.open();}");pg.wait_for_timeout(1200)
+    rs = ev("(function(){var m=document.getElementById('secMenu'),b=m?m.getBoundingClientRect():null;return b?[b.left,b.top,b.width,b.height]:null;})()")
+    if rs: shot('slicer_popup', {'x': max(0, int(rs[0] - 320)), 'y': max(0, int(rs[1] - 10)), 'width': int(rs[2] + 340), 'height': int(min(880, rs[3] + 20))})
+    ev("if(window.SLICER){SLICER.close();SLICER.set(0,null);}$('sliceClip').checked=false;$('showPlane').checked=false;updatePlot()");pg.wait_for_timeout(600)
     # 5. sayatan vertikal tegak lurus strike lewat tengah vein
     ev("""(()=>{var cx=505000,cy=9012000,az=135*Math.PI/180;$('sMode').value='P';$('p1e').value=(cx-90*Math.sin(az)).toFixed(1);$('p1n').value=(cy-90*Math.cos(az)).toFixed(1);$('p2e').value=(cx+90*Math.sin(az)).toFixed(1);$('p2n').value=(cy+90*Math.cos(az)).toFixed(1);
       $('dipS').value=90;$('dipN').value=90;modeChanged();$('pos').value=0;$('thick').value=12;$('sliceClip').checked=true;uiTab('Slice');updatePlot();})()""")

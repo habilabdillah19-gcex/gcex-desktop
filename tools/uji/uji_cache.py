@@ -24,7 +24,7 @@ KLIK = "document.querySelector('#ptree .ptr[data-id=\"%s\"] .ptl').click()"
 LANGKAH_BM = [("tree", "bm.a.CU_PPM"), ("tree", "bm.a.AU_GC"), ("tree", "bm.a.CU_PPM"), ("cb", "ovTopoS"), ("tree", "bm.a.SG"), ("tree", "bm.a.AU_GC"), ("tree", "bm.a.CU_PPM"),
               # flitch aktif: geometri kubus dipotong di RL flitch (FLz) -> harus ikut kunci cache (laporan pemilik 9 Nov 2026: flitch lama tergambar)
               ("js", "lyApply();if(window.VIEW2D)document.getElementById('btn2d').click()"), ("js", "stepPos(1)"), ("js", "stepPos(-1)"), ("js", "stepPos(1)"), ("tree", "bm.a.AU_GC"), ("js", "stepPos(-1)")]
-LANGKAH_DH = [("tree", "db.el.Ag"), ("tree", "db.el.Au"), ("tree", "db.el.Ag"), ("cb", "ovTopoS"), ("tree", "db.geo.0"), ("tree", "db.el.Au"), ("tree", "db.el.Ag")]
+LANGKAH_DH = [("js", "trajModeDiam('grade');(function(){var e=document.getElementById('elementFilter');e.value='Ag';e.dispatchEvent(new Event('change',{bubbles:true}));})()"), ("js", "(function(){var e=document.getElementById('elementFilter');e.value='Au';e.dispatchEvent(new Event('change',{bubbles:true}));})()"), ("js", "(function(){var e=document.getElementById('elementFilter');e.value='Ag';e.dispatchEvent(new Event('change',{bubbles:true}));})()"), ("cb", "ovTopoS"), ("tree", "db.geo.0"), ("js", "trajModeDiam('grade');(function(){var e=document.getElementById('elementFilter');e.value='Au';e.dispatchEvent(new Event('change',{bubbles:true}));})()"), ("js", "(function(){var e=document.getElementById('elementFilter');e.value='Ag';e.dispatchEvent(new Event('change',{bubbles:true}));})()")]  # sub-node unsur kini baris informasi (0.24.56)
 LANGKAH = LANGKAH_DH if DH else LANGKAH_BM
 BERSIH = "DHCL=[];DHC=null;if(window.BX){BX.scL=[];BX.mcL=[];BX.mc=null;BX.sc={};}"
 hasil = []

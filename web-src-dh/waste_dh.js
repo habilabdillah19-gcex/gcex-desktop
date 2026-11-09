@@ -361,7 +361,7 @@
     if (typeof updatePlot === 'function') updatePlot();
   }
 
-  /* ---------- panel: bagian ⑤ di Model Estimation ---------- */
+  /* ---------- panel: bagian di Model Estimation ---------- */
   function fld(k, lab, tip, step) {
     var o = wsPar();
     return '<div><label title="' + tip + '">' + lab + '</label><input type=number step="' + (step || 'any') + '" value="' + o[k] +
@@ -370,7 +370,7 @@
 
   window.wsBox = function () {
     var m = BX.m, o = wsPar();
-    var h = '<div class=gmsec><h4>&#9317; Estimasi waste (material di luar seluruh solid)</h4>';
+    var h = '<div class=gmsec><h4>Estimasi waste (material di luar seluruh solid)</h4>';
     if (!m) return h + '<div class=hint>Belum ada block model aktif. Import block model, atau buat <b>kerangka blok (AOI)</b> di menu Block Model.</div></div>';
     var DL = ((window.gmTops ? gmTops() : GM.doms) || []).filter(function (d) { return meParOf(d); });
     h += '<div class=hint>Blok di luar semua solid domain diestimasi dari komposit interval yang <b>tidak di-flag domain apa pun</b> (hard boundary waste). ' +
@@ -422,7 +422,7 @@
     return h + '</div>';
   };
 
-  /* sisipkan bagian ⑤ di akhir panel Model Estimation */
+  /* sisipkan bagian di akhir panel Model Estimation */
   if (typeof window.mePanel === 'function') {
     var _mp = window.mePanel;
     window.mePanel = function () {

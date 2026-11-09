@@ -15,7 +15,7 @@ for _ in range(50):
     try: urllib.request.urlopen(P, timeout=1); break
     except Exception: time.sleep(.4)
 AKSI_BM = [("tree", "bm.a.CU_PPM"), ("cb", "ovTopoS"), ("tree", "fl"), ("tree", "bm.a.AU_GC"), ("cb", "ovPit"), ("tree", "dig.auto")]
-AKSI_DH = [("tree", "db.el.Ag"), ("cb", "ovTopoS"), ("tree", "db.geo.0"), ("tree", "sp.topo"), ("tree", "db.el.Au"), ("cb", "showCollar")]
+AKSI_DH = [("js", "trajModeDiam('grade');(function(){var e=document.getElementById('elementFilter');e.value='Ag';e.dispatchEvent(new Event('change',{bubbles:true}));})()"), ("cb", "ovTopoS"), ("tree", "db.geo.0"), ("tree", "sp.topo"), ("js", "trajModeDiam('grade');(function(){var e=document.getElementById('elementFilter');e.value='Au';e.dispatchEvent(new Event('change',{bubbles:true}));})()"), ("cb", "showCollar")]
 AKSI = AKSI_DH if "dh" in APP else AKSI_BM
 IMG = r"""(async function(){var gd=document.getElementById('plotDiv');var u=await Plotly.toImage(gd,{format:'png',width:900,height:600});return u;})()"""
 hasil = []
@@ -30,6 +30,7 @@ with sync_playwright() as pw:
     for jenis, target in AKSI:
         pg.evaluate("GLSKIP.on=true;GLSKIP.skip=0;GLSKIP.run=0")
         if jenis == "tree": pg.evaluate("document.querySelector('#ptree .ptr[data-id=\"%s\"] .ptl').click()" % target)
+        elif jenis == "js": pg.evaluate(target)
         else: pg.evaluate("(function(id){var c=document.getElementById(id);c.checked=!c.checked;c.dispatchEvent(new Event('change',{bubbles:true}));})('%s')" % target)
         pg.wait_for_timeout(2500)
         sk = pg.evaluate("[GLSKIP.skip,GLSKIP.run]")

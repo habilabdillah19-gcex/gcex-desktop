@@ -4131,3 +4131,33 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **✦ Baca dengan AI / Baca Semua**: AI menyalin teks borang. Tabel langsung disusun bila DB-Ex **yakin** — judul kolom di teks dikenali dari pilihan Anda sebelumnya, atau Anda pernah memutuskan pemetaan untuk jumlah kolom yang sama. Bila belum: borang berstatus ungu **Perlu pemetaan kolom**, tab ✎ Transkrip terbuka, Anda tentukan kolomnya lalu **Terapkan**. Keputusan itu dipakai untuk borang berikutnya (jenis sama), dan **Terapkan juga ke n borang lain ▶▶** menerapkannya ke borang yang sudah tersalin & menunggu.
 - **Alat di kisi** (panel 3): klik ganda sel = sunting · klik kanan sel = sisipkan / hapus sel (sel kanan bergeser), gabung / pecah sel, gabung ke baris atas, jadikan isian kop, lewati, sisipkan / hapus baris · klik kanan judul kolom = gabungkan baris-baris yang kolom ini kosong ke atas (uraian dua baris), pecah kolom (spasi / rentang jam │ sisanya), gabung, tukar, sisipkan, hapus kolom. Tujuan kolom **Kop · Tanggal / Shift / …** untuk nilai kop yang ditulis di tiap baris. Semua suntingan tertulis kembali di teks (panel 1).
 - Keputusan tersimpan di `_GCEx_Core\borang\transkrip_map.json` (per jenis: per jumlah kolom, judul kolom → tujuan, label kop → isian header). Hapus berkas itu untuk mulai dari nol.
+
+## 152. Drillhole 0.24.56 & Block Model 0.24.49 — Slicer satu tombol, panel Assay, permukaan topo/pit, STR berdeskripsi teks
+
+- **Permukaan topografi & desain pit kini tampil di 3D Drill Hole.** Sebelumnya pengaman gambar membuang semua permukaan hasil
+  Delaunay (tanpa indeks segitiga), sehingga hanya garis kontur yang terlihat walau node aktif. Warna permukaan bawaan **seragam**;
+  pilihan gradasi elevasi + pemilih warna ada di panel Overlay (kedua aplikasi).
+- **Tombol bernomor lingkaran** (① Topografi, ② Pit, …) dihapus di seluruh aplikasi.
+- **Node Assay** membuka panel *Assay — tampilan kadar*: unsur yang ditampilkan, cutoff, klasifikasi diskrit / gradasi, colorscale.
+  Sub-node unsur hanya daftar (tidak bisa diklik; yang bertanda warna = sedang tampil). Fitur upsert / export / filter bench & hole
+  tetap di node Database Bor dan Collar.
+- **Slicer** (Drill Hole): satu tombol di bilah atas menggantikan menu Sayatan ▾. Popup: Dip, Dip azimuth, preset Plan / Tegak E–W /
+  Tegak N–S / Garis di peta, Lebar slab, Langkah (terpisah), Posisi, Pusat bidang (E, N, RL; Pusat data / Pusat pandangan),
+  Mundur / Maju, Potong data / Tampilkan bidang / Profil topo, Sayatan 2D, Sayatan 3D, Digitasi, Pengaturan lanjutan. Panel Sayatan
+  di Properti tetap ada (mode Slicer = pilihan pertama).
+- **Plan bor** digambar garis utuh (tidak putus-putus) di 3D dan peta.
+- **STR biner Surpac berdeskripsi teks** (mis. berkas desain pit dengan kolom D1 = "2"): deskripsi disimpan sebagai teks berpanjang
+  bebas di belakang tiap titik, bukan angka biner tetap — pembaca lama membaca bergeser sehingga koordinat liar / kosong. Kini
+  dibaca benar; format lama tetap didukung lewat jalur cadangan. Uji: `tools/uji/uji_str_desc_teks.py`.
+- **Block model besar tampil utuh (LOD).** Bila jumlah blok terpilih melebihi batas profil Kinerja, dulu hanya kelas tertinggi yang
+  digambar (model terlihat "sepotong-sepotong"). Kini blok digabung ke sel yang lebih besar (kelipatan ukuran blok induk) dan tiap sel
+  digambar dengan warna kelas dominannya — seluruh model dan semua kelas tetap terlihat; angka legenda tetap jumlah blok asli;
+  statistik, tonase & laporan tidak berubah. Naikkan profil Kinerja (Seimbang / Penuh) untuk sel yang lebih halus atau blok asli.
+- **Acuan koordinat proyek yang terlanjur salah** (sumbu bertuliskan *Easting (+−52882000)*; sisa STR pit yang dulu salah terbaca):
+  saat block model dimuat dan acuannya > 100 km dari model, acuan dihitung ulang dari batas block model, titik topografi / pit yang jauh
+  dibuang, proyek disimpan dan halaman dimuat ulang (ada pemberitahuan). File spasial yang tidak overlap dengan collar / block model kini
+  tidak dipakai sama sekali (ditandai merah di daftar).
+- **Reporting Block Model › Pit & progres**: Block Model hanya menyimpan satu topografi dan satu desain pit aktif, sehingga pilihan
+  *Topografi atas / bawah* dulu hanya "Topografi aktif" / "Desain pit aktif". Kini ada tombol **Pilih file topografi (STR / DXF / CSV /
+  DTM)…** di bawah tiap pilihan (dan **Pilih file desain pit…** di mode Per desain pit): file survei dibaca langsung dan dipakai untuk
+  laporan itu (tidak mengubah topografi tampilan). Untuk menyimpannya di proyek, import sebagai Permukaan DTM di Data Referensi.

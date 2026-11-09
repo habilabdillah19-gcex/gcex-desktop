@@ -46,7 +46,7 @@
         if(!L.querySelector('.gmd.on')&&rows.length&&!b.querySelector('.gxNoAct'))L.insertAdjacentHTML('afterend','<div class="hint gxNoAct">Pilih domain di Project Tree (Geological Modelling) untuk mengerjakannya di sini.</div>');}
       /* tambah domain pindah ke Project Tree */
       Array.prototype.forEach.call(b.querySelectorAll('button'),function(bt){if(!/^\+\s*Domain$/i.test(bt.textContent.trim()))return;var r=bt.parentNode;while(r&&r!==b&&!r.querySelector('input[type=text]'))r=r.parentNode;if(r&&r!==b)r.style.display='none';});
-      /* tanpa nomor bagian (② Flag, ③ String, ...) */
+      /* tanpa nomor bagian (Flag, String, ...) */
       Array.prototype.forEach.call(b.querySelectorAll('h4,.gmtabs button,.imsec,summary'),function(h){var w=document.createTreeWalker(h,NodeFilter.SHOW_TEXT,null),n;while((n=w.nextNode())){if(CIR.test(n.textContent)){n.textContent=n.textContent.replace(CIR,'');break;}if(n.textContent.trim())break;}});
       Array.prototype.forEach.call(b.querySelectorAll('h4'),function(h){if(/^domain vein$/i.test(h.textContent.trim()))h.textContent='Domain aktif';});};
     var _gp=gmPanel;gmPanel=function(){var r=_gp.apply(this,arguments);try{tidy();}catch(e){console.error(e);}return r;};

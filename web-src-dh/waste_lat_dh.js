@@ -80,7 +80,7 @@
   /* ---------- komposit dari interval yang kodenya tidak dipetakan ke lapisan ---------- */
   function comps(R, els, tz) {
     var o = wlPar(), ci = SL.ci, cm = {}, out = { bawah: [], atas: [], luar: [] }, nSkip = 0;
-    if (ci < 0 || !(window.CAT || [])[ci]) throw new Error('kolom geologi lapisan belum dipilih (bagian ① Lapisan).');
+    if (ci < 0 || !(window.CAT || [])[ci]) throw new Error('kolom geologi lapisan belum dipilih (bagian Lapisan).');
     SL.L.forEach(function (l, i) { (l.codes || []).forEach(function (c) { cm[c] = i; }); });
     var EI = els.map(function (e) { return elements.indexOf(e); }), cl = Math.max(0, +o.comp || 0);
     Object.keys(holeData).forEach(function (id) {
@@ -137,7 +137,7 @@
   function prep() {
     var m = window.BX && BX.m, S = SL.S;
     if (!m) throw new Error('Belum ada block model aktif. Import block model, atau buat kerangka blok (AOI) di menu Block Model.');
-    if (!S) throw new Error('Jalankan estimasi lapisan (bagian ③) dulu — estimasi waste menulis ke hasil itu.');
+    if (!S) throw new Error('Jalankan estimasi lapisan (bagian ) dulu — estimasi waste menulis ke hasil itu.');
     if (S.key !== slBmKey(m)) throw new Error('Hasil estimasi lapisan tidak cocok dengan block model aktif; jalankan ulang estimasi lapisan.');
     var R = slEnsure();
     if (!R) throw new Error('Permukaan lapisan belum bisa dibangun: ' + (SL.err || ''));
@@ -174,7 +174,7 @@
       var J = prep(), items = [].concat(J.B.bawah, J.B.atas, J.B.luar);
       if (!items.length) throw new Error('Tidak ada blok di luar permukaan lapisan' + (J.o.luar ? '' : ' (zona "di luar cakupan grid" sedang dimatikan)') + '. Bila cakupan block model lebih sempit dari area of interest, lengkapi dulu dengan "Buat kerangka blok (AOI)".');
       var tot = J.C.bawah.length + J.C.atas.length + J.C.luar.length;
-      if (!tot) throw new Error('Tidak ada komposit dari interval di luar kode lapisan. Semua kode geologi sudah dipetakan ke lapisan, jadi tidak ada sampel waste. Lepaskan kode yang memang bukan lapisan dari pemetaan (bagian ① Lapisan), atau nyalakan estimasi untuk lapisan itu sendiri (bagian ③).');
+      if (!tot) throw new Error('Tidak ada komposit dari interval di luar kode lapisan. Semua kode geologi sudah dipetakan ke lapisan, jadi tidak ada sampel waste. Lepaskan kode yang memang bukan lapisan dari pemetaan (bagian Lapisan), atau nyalakan estimasi untuk lapisan itu sendiri (bagian ).');
       WL.job = { J: J, items: items, i: 0, res: new Array(items.length), cancel: false, t0: performance.now(), nE: 0, nF: 0, byZn: {} };
       WL.msg = ''; if (typeof slPanel === 'function') slPanel();
       setTimeout(step, 10);
@@ -250,14 +250,14 @@
 
   window.wlBox = function () {
     var o = wlPar(), S = SL.S, m = window.BX && BX.m;
-    var h = '<div class=gmsec><h4>&#9316;b Estimasi waste (di luar permukaan lapisan)</h4>';
+    var h = '<div class=gmsec><h4>bEstimasi waste (di luar permukaan lapisan)</h4>';
     h += '<div class=hint>Blok yang tidak jatuh di lapisan mana pun diisi <b>IDW di ruang unfold</b>, sehingga pencarian sampel mengikuti kelengkungan permukaan lapisan, bukan jarak lurus: ' +
       'zona <b>bawah</b> memakai kedalaman di bawah permukaan terbawah, zona <b>atas</b> memakai tinggi di atas kontak teratas. ' +
       'Sampelnya komposit dari interval yang <b>kodenya tidak dipetakan ke lapisan mana pun</b> (hard boundary waste). ' +
       'Hasil: <code>sl_pass = 9</code> dan kategori <code>sl_lapisan = ' + lE(WNAME) + '</code>. ' +
       'Blok di atas topografi adalah udara dan tidak pernah ikut.</div>';
     if (!m) return h + '<div class=hint>Belum ada block model aktif.</div></div>';
-    if (!S) return h + '<div class=hint>Jalankan <b>estimasi lapisan</b> (bagian &#9314;) dulu — estimasi waste menulis ke hasil itu.</div></div>';
+    if (!S) return h + '<div class=hint>Jalankan <b>estimasi lapisan</b> (bagian ) dulu — estimasi waste menulis ke hasil itu.</div></div>';
     h += '<div class=g2 style="margin-bottom:4px">' +
       fld('comp', 'Panjang komposit (m)', 'Komposit panjang tetap pada interval di luar kode lapisan. 0 = satu komposit per interval.', '0.5') +
       fld('p', 'Pangkat jarak IDW', 'Bobot = 1 / jarak^pangkat, jarak diukur di ruang unfold dengan elipsoid di bawah.', '0.5') +

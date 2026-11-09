@@ -1,11 +1,11 @@
 /* ================= GC-Ex Drillhole 0.24.24: GRAFIK ANALISIS DARI DATA PROYEK =================
-   ① Geostatistik → tab PROFIL: profil kadar per pita RL / Easting / Northing — beberapa panel sekaligus:
+   Geostatistik → tab PROFIL: profil kadar per pita RL / Easting / Northing — beberapa panel sekaligus:
       unsur (rata-rata tertimbang panjang), rasio dua unsur (mis. Ag/Au), jumlah dua unsur (mis. Pb+Zn),
       % panjang kode geologi (mis. tekstur colloform). Garis acuan (mis. paleo-muka air tanah). CSV & PNG.
       Dipakai untuk menentukan batas zona sebelum membuat domain estimasi.
-   ② Geostatistik → tab Statistik: KURVA PEMUSATAN LOGAM (% sampel teratas → % logam), angka 1 / 5 / 10 %,
+   Geostatistik → tab Statistik: KURVA PEMUSATAN LOGAM (% sampel teratas → % logam), angka 1 / 5 / 10 %,
       ambang kadar tiap titik, tombol "Pakai sebagai top-cut".
-   ③ Ore Geometry → Ore shoot: KIPAS VARIOGRAM GT & TEBAL INTERSEP di bidang vein (36 arah dari garis strike),
+   Ore Geometry → Ore shoot: KIPAS VARIOGRAM GT & TEBAL INTERSEP di bidang vein (36 arah dari garis strike),
       lembah terdalam = arah paling menerus, garis pitch usulan / sumbu shoot. */
 var PF = { ax: 'z', bw: 10, slab: false, ref: '', refLbl: 'garis acuan', S: null, last: null };
 function pfE(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -103,7 +103,7 @@ function pfPanel() {
     '<div id=pfPlot class=chart style="height:420px"></div>';
   b.innerHTML = h; try { pfPlot(); } catch (e) { console.error(e); }
 }
-/* ---------- ② kurva pemusatan logam ---------- */
+/* ---------- kurva pemusatan logam ---------- */
 function mcCalc(R) {
   var C = R.C, n = C.length; if (n < 5) return null; var A = C.map(function (c) { return [c.v, c.len || 1]; }).filter(function (a) { return isFinite(a[0]) && a[0] >= 0; }).sort(function (a, b) { return b[0] - a[0]; });
   var tot = A.reduce(function (s, a) { return s + a[0] * a[1]; }, 0); if (!(tot > 0)) return null; var X = [0], Y = [0], cum = 0;
@@ -126,7 +126,7 @@ function mcDraw() {
       return '<tr><td>' + q.p + '% (' + q.k + ')</td><td>' + fx(q.thr) + '</td><td>' + q.m.toFixed(1) + '%</td><td><button onclick="$(\'gTop\').value=' + (+q.thr).toPrecision(4) + ';gsRun()">Pakai sebagai top-cut</button></td></tr>'; }).join('') +
     '</table><div class=note>Bila 1% sampel teratas memuat &gt; 10% logam, kadar ekstrem terlalu berpengaruh: top-cut perlu dipertimbangkan (cocokkan dengan titik patah kurva log-probability &amp; tabel top-cut di bawah). Nilai maksimum ' + fx(M.max) + '.</div>';
 }
-/* ---------- ③ kipas variogram GT & tebal di Ore Geometry ---------- */
+/* ---------- kipas variogram GT & tebal di Ore Geometry ---------- */
 function ogFan(val) {
   var R = OG.R; if (!R) return null; var V = R.pl, H = R.H.filter(function (h) { return isFinite(val(h)); }); if (H.filter(function (h) { return val(h) > 0; }).length < 5) return null;
   var P = H.map(function (h) { var e = [h.p[0] - V.c[0], h.p[1] - V.c[1], h.p[2] - V.c[2]]; return [ogDot(e, V.s), ogDot(e, V.dd), Math.log(val(h) + 1)]; }), n = P.length;
