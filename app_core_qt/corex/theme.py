@@ -111,6 +111,7 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #modH {{ font-size: 11.5pt; color: {c['ink']}; }}
 /* ---- ruang kerja Borang (0.43.0) ---- */
 #fmLeft {{ background: {c['bg']}; }}
+#fmMapRow {{ background: #eef5ff; border: 1px solid #c9d6e8; border-bottom: none; }}
 #fmTranskrip {{ font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; }}
 #fmSect {{ font-size: 8.2pt; font-weight: 700; letter-spacing: 1px; color: {c['ink']}; padding: 4px 2px 0 2px; }}
 #fmTypes {{ background: {c['pn']}; border: 1px solid {c['bd']}; border-radius: 6px; padding: 2px; font-size: 10pt; }}

@@ -104,12 +104,31 @@ class TranscriptTab(QWidget):
         lg.setObjectName("fmSect")
         lg.setWordWrap(True)
         gv.addWidget(lg)
+        self.maprow = QTableWidget(1, 0)  # baris dropdown tujuan kolom: tabel 1 baris yang MENEMPEL di atas kisi (tidak ikut tergulir)
+        self.maprow.setObjectName("fmMapRow")
+        self.maprow.setVerticalHeaderLabels(["→ isian"])
+        self.maprow.horizontalHeader().setVisible(False)
+        self.maprow.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.maprow.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.maprow.setFixedHeight(34)
+        self.maprow.setEditTriggers(QTableWidget.NoEditTriggers)
+        gv.addWidget(self.maprow)
         self.grid = QTableWidget(0, 0)
         self.grid.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.grid.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.grid.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.grid.horizontalHeader().setStretchLastSection(True)
         self.grid.verticalHeader().sectionClicked.connect(self._toggle_skip)
+        self.grid.horizontalScrollBar().valueChanged.connect(self.maprow.horizontalScrollBar().setValue)
+        self.grid.horizontalHeader().sectionResized.connect(lambda i, _o, w: self.maprow.setColumnWidth(i, w))
+        self.grid.verticalHeader().setFixedWidth(52)
+        self.maprow.verticalHeader().setFixedWidth(52)
         gv.addWidget(self.grid, 1)
+        bot = QHBoxLayout()
+        bot.addStretch(1)
+        self.bApply2 = btn("Terapkan ke tabel ▶", "Sama dengan tombol di atas: susun baris sesuai pemetaan lalu isi tabel Data.", pri=True, sm=True)
+        self.bApply2.clicked.connect(self.apply)
+        bot.addWidget(self.bApply2)
+        gv.addLayout(bot)
         sp.addWidget(gw)
         sp.setSizes(SET.get("qt_fm_tr_split", [260, 120, 320]))
         sp.splitterMoved.connect(lambda *_: SET.set("qt_fm_tr_split", sp.sizes()))
@@ -129,12 +148,14 @@ class TranscriptTab(QWidget):
         self._filling = False
         self.bAI.setEnabled(d is not None)
         self.bApply.setEnabled(d is not None)
+        self.bApply2.setEnabled(d is not None)
         self.txt.setEnabled(d is not None)
         if d is None:
             self.pv = None
             self.hdr.setRowCount(0)
             self.grid.setRowCount(0)
             self.grid.setColumnCount(0)
+            self.maprow.setColumnCount(0)
             self.info.setText("Pilih borang di daftar kiri.")
             return
         if (d.get("teks") or "").strip():
@@ -235,12 +256,13 @@ class TranscriptTab(QWidget):
         n = int(j.get("ncol") or 0)
         self.grid.clear()
         self.grid.setColumnCount(n)
-        self.grid.setRowCount(len(g_rows) + 1)
+        self.grid.setRowCount(len(g_rows))
         self.grid.setHorizontalHeaderLabels([f"Kolom {i + 1}" for i in range(n)])
-        self.grid.setVerticalHeaderLabels(["→ isian"] + [str(i + 1) for i in range(len(g_rows))])
+        self.grid.setVerticalHeaderLabels([str(i + 1) for i in range(len(g_rows))])
+        self.maprow.setColumnCount(n)
         cols = list(mp.get("cols") or []) + [""] * n
         for c in range(n):
-            self.grid.setCellWidget(0, c, self._combo(j.get("options") or [], cols[c]))
+            self.maprow.setCellWidget(0, c, self._combo(j.get("options") or [], cols[c]))
         for r, row in enumerate(g_rows):
             for c in range(n):
                 it = QTableWidgetItem(row[c] if c < len(row) else "")
@@ -251,12 +273,16 @@ class TranscriptTab(QWidget):
                     it.setBackground(QColor(MAP_BG))
                 if str(row[c] if c < len(row) else "").endswith("?"):
                     it.setBackground(QColor("#fff3bf"))
-                self.grid.setItem(r + 1, c, it)
+                self.grid.setItem(r, c, it)
         self.grid.resizeColumnsToContents()
+        for c in range(n):
+            w = min(420, max(self.grid.columnWidth(c) + 12, 150))
+            self.grid.setColumnWidth(c, w)
+            self.maprow.setColumnWidth(c, w)
         self._mapped()
 
     def _cols(self) -> list[str]:
-        return [(self.grid.cellWidget(0, c).currentData() or "") if self.grid.cellWidget(0, c) else "" for c in range(self.grid.columnCount())]
+        return [(self.maprow.cellWidget(0, c).currentData() or "") if self.maprow.cellWidget(0, c) else "" for c in range(self.maprow.columnCount())]
 
     def _hdr_keys(self) -> list[str]:
         return [(self.hdr.cellWidget(i, 2).currentData() or "") if self.hdr.cellWidget(i, 2) else "" for i in range(self.hdr.rowCount())]
@@ -265,7 +291,7 @@ class TranscriptTab(QWidget):
         if not self.pv:
             return
         cols = self._cols()
-        n_rows = max(0, self.grid.rowCount() - 1 - len(self.skip))
+        n_rows = max(0, self.grid.rowCount() - len(self.skip))
         used = [c for c in cols if c]
         dup = {c for c in used if used.count(c) > 1 and ":" not in c}
         hk = [k for k in self._hdr_keys() if k]
@@ -276,11 +302,12 @@ class TranscriptTab(QWidget):
             s += " · baris judul kolom dilewati"
         self.info.setText(s)
         self.bApply.setEnabled(bool(used or hk))
+        self.bApply2.setEnabled(bool(used or hk))
 
     def _toggle_skip(self, row: int) -> None:
-        if row <= 0 or not self.pv:
+        if row < 0 or not self.pv:
             return
-        i = row - 1
+        i = row
         self.skip ^= {i}
         for c in range(self.grid.columnCount()):
             it = self.grid.item(row, c)
@@ -303,9 +330,11 @@ class TranscriptTab(QWidget):
                 "hdr": self._hdr_keys(), "skip_rows": sorted(self.skip), "save_map": True}
         did = self.did
         self.bApply.setEnabled(False)
+        self.bApply2.setEnabled(False)
 
         def ok(j):
             self.bApply.setEnabled(True)
+            self.bApply2.setEnabled(True)
             if self.page.cur and self.page.cur["doc"]["id"] == did:
                 self.page.cur = j
                 self.page.refresh()
@@ -315,5 +344,6 @@ class TranscriptTab(QWidget):
 
         def err(e):
             self.bApply.setEnabled(True)
+            self.bApply2.setEnabled(True)
             say(self, "Transkrip tidak bisa diterapkan:\n" + e, warn=True)
         run_bg(api.call, "/core/forms/transkrip/terapkan", body, ok=ok, err=err)

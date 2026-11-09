@@ -4112,3 +4112,8 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Catatan tampilan**: bila block model terlihat hanya sepotong, periksa dua pemotong yang memang disengaja — **Flitch Aktif**
   (kubus digambar setebal flitch) dan **Sayatan › Opsi slab › Potong data di dalam slab (3D)** (hanya blok di dalam slab di
   sekitar Elevasi sayatan). Lepaskan keduanya untuk melihat model utuh.
+
+## 149. DB-Ex 0.45.1 — Transkrip: baris dropdown menempel, tombol Terapkan di bawah kisi
+
+- Baris pertama kisi (dropdown tujuan kolom) tidak lagi ikut tergulir; nomor baris kisi kini = nomor baris teks tabel.
+- Tombol **Terapkan ke tabel ▶** tersedia di atas (kanan) dan di bawah kisi; keduanya sama.

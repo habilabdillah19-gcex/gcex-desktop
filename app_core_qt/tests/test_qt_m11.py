@@ -29,19 +29,19 @@ def test_transkrip_salin_petakan_terapkan(qtbot, prj, tmp_path, monkeypatch):
     tr = pg.tr
     assert pg.tabs.tabText(4).endswith("Transkrip") and tr.did == pg.cur["doc"]["id"]
     tr.run_ai()
-    qtbot.waitUntil(lambda: said or (tr.pv is not None and tr.grid.rowCount() == 4), timeout=8000)
+    qtbot.waitUntil(lambda: said or (tr.pv is not None and tr.grid.rowCount() == 3), timeout=8000)
     assert not said, said
     assert tr.txt.toPlainText().startswith("Tanggal: 05-11-26") and "Here is" not in tr.txt.toPlainText()
     assert tr.hdr.rowCount() == 2 and tr.hdr.cellWidget(0, 2).currentData() == "tanggal" and tr.hdr.cellWidget(1, 2).currentData() == "shift"
     assert 0 in tr.skip  # baris judul kolom dilewati
-    assert tr.grid.cellWidget(0, 0).currentData() == "no" and tr.grid.cellWidget(0, 3).currentData() == "kelas"
-    assert tr.grid.cellWidget(0, 4).currentData() == "ton" and tr.grid.cellWidget(0, 5).currentData() == "tujuan"
+    assert tr.maprow.cellWidget(0, 0).currentData() == "no" and tr.maprow.cellWidget(0, 3).currentData() == "kelas"
+    assert tr.maprow.cellWidget(0, 4).currentData() == "ton" and tr.maprow.cellWidget(0, 5).currentData() == "tujuan"
     # 'Jam' -> start (dipilih pengguna), 'Truck' -> unit
-    cb = tr.grid.cellWidget(0, 1)
+    cb = tr.maprow.cellWidget(0, 1)
     cb.setCurrentIndex(cb.findData("start"))
-    cb = tr.grid.cellWidget(0, 2)
+    cb = tr.maprow.cellWidget(0, 2)
     cb.setCurrentIndex(cb.findData("unit"))
-    assert "6/6 kolom" in tr.info.text()
+    assert "6/6 kolom" in tr.info.text() and tr.bApply2.isEnabled()
     assert pg.cur["rows"] == []  # menyalin belum mengubah tabel Data
     tr.apply()
     qtbot.waitUntil(lambda: pg.t.rowCount() == 2, timeout=8000)
@@ -54,5 +54,5 @@ def test_transkrip_salin_petakan_terapkan(qtbot, prj, tmp_path, monkeypatch):
     tr.set_doc(pg.cur["doc"])
     assert tr.txt.toPlainText().startswith("Tanggal: 05-11-26")
     tr.txt.setPlainText("3 | 1002 | T03 | OX-HG | 29 | ROM 2")
-    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 2, timeout=8000)
-    assert tr.grid.cellWidget(0, 1).currentData() == "start" and tr.grid.cellWidget(0, 2).currentData() == "unit"
+    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 1, timeout=8000)
+    assert tr.maprow.cellWidget(0, 1).currentData() == "start" and tr.maprow.cellWidget(0, 2).currentData() == "unit"
