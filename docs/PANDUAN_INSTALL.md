@@ -4270,7 +4270,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Hover bor**: bila keterangan saat kursor di atas lubang bor tidak muncul, periksa tombol **Hover detail** di Database Bor ›
   panel Data & Filter — hover mati bila tombol itu mati atau *Mode ringan* menyala.
 
-## 161. DB-Ex 0.46.2 — tab Transkrip: daftar tujuan terlihat, jendela muat di layar
+## 161. DB-Ex 0.46.2 — kelompok tulisan; tab Transkrip: daftar tujuan terlihat, jendela muat di layar
+
+- **Kelompok tulisan** (DDR uji lapangan: tabel lubang dan tabel kegiatan berdampingan): teks dibagi per tabel — baris kosong, baris judul kolom baru, atau penanda `# Kelompok n` di teks. Di kisi, setiap kelompok punya **baris biru ▸ K1, ▸ K2 …** berisi dropdown tujuan kolom kelompok itu sendiri (mis. K1 = Meterage / lubang · From, To, Hole ID, Az, Dip; K2 = Rentang jam, Uraian kegiatan). Klik kanan nomor baris → *Mulai KELOMPOK baru di baris ini* / *Gabungkan kelompok ke kelompok di atasnya*. Alat kolom (mis. *Gabungkan baris yang kolom ini kosong ke atas*) hanya bekerja di kelompoknya.
+- AI kini diminta menyalin **satu tabel sampai selesai**, lalu baris kosong, lalu tabel berikutnya — tidak lagi menyejajarkan tabel lubang dengan tabel kegiatan (dulu menghasilkan lubang karangan dan satu baris kegiatan raksasa). Menit yang ditulis kecil di atas (`06'30''`) terbaca sebagai 06:30.
 
 - Tab **✎ Transkrip** sebelum ada teks tidak lagi menampilkan *"Pratinjau gagal: 'cols'"*. Area kisi kini memperlihatkan **semua tujuan yang bisa Anda pilih** untuk jenis borang yang terbuka (tabel utama, tabel tambahan seperti Meterage / lubang di DDR, dan isian Kop), alat-alat kisi, dan cara scan kolom satu per satu. Begitu teks ada, tiap kolom teks mendapat dropdown tujuan di baris biru atas kisi.
 - Judul kolom umum di teks (*Jam*, *Truck*, *Uraian*, *From* …) hanya diusulkan ke tujuan yang memang ada di jenis borang itu (Ore Spotter: *Jam* → *Start loading*).

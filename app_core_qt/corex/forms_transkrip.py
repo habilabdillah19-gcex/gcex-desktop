@@ -29,11 +29,20 @@ MAP_BG, SKIP_BG, UNC_BG = "#eef5ff", "#f1f3f5", "#fff3bf"
 SEPCH = {"|": "|", "tab": "\t", ",": ",", ";": ";"}
 
 
-def render(hdr: list, rows: list, sep: str) -> str:
-    """Kisi -> teks (sama dengan core_transkrip.render)."""
+def render(hdr: list, rows: list, sep: str, grp: list | None = None) -> str:
+    """Kisi -> teks (sama dengan core_transkrip.render): '# Kelompok n' memisahkan kelompok tulisan bila lebih dari satu."""
     ch = SEPCH.get(sep, "|")
     j = f" {ch} " if ch in "|;" else ("\t" if ch == "\t" else ch + " ")
-    return "\n".join([f"{a}: {b}" for a, b in hdr] + [j.join((str(c) if str(c).strip() else "-") for c in r) for r in rows])
+    out = [f"{a}: {b}" for a, b in hdr]
+    gs = [g_ for g_ in (grp or []) if g_[0] < g_[1]]
+    starts = {a: k for k, (a, _b) in enumerate(gs)} if len(gs) > 1 else {}
+    for i, r in enumerate(rows):
+        if i in starts:
+            if out:
+                out.append("")
+            out.append(f"# Kelompok {starts[i] + 1}")
+        out.append(j.join((str(c) if str(c).strip() else "-") for c in r))
+    return "\n".join(out)
 
 
 class TranscriptTab(QWidget):
@@ -49,6 +58,9 @@ class TranscriptTab(QWidget):
         self.choice: list[str] | None = None   # tujuan kolom yang DIPILIH pengguna (dipertahankan selama teks disunting)
         self.hchoice: dict[str, str] = {}       # label kop -> isian header pilihan pengguna
         self._filling = False
+        self.grp: list[list[int]] = []   # kelompok tulisan [awal, akhir) dalam baris kisi
+        self.gw: list[int] = []          # lebar (jumlah kolom) tiap kelompok
+        self.vmap: list[tuple[str, int]] = []  # baris tampilan -> ("map", kelompok) / ("row", indeks baris teks)
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(600)
@@ -136,8 +148,9 @@ class TranscriptTab(QWidget):
         gv = QVBoxLayout(gw)
         gv.setContentsMargins(0, 0, 0, 0)
         gv.setSpacing(3)
-        lg = QLabel("3 · KISI  —  baris biru: tujuan tiap kolom. Klik ganda sel = sunting; klik kanan sel / judul kolom = geser, gabung, "
-                    "pecah, jadikan kop, hapus; klik nomor baris = lewati / pakai.")
+        lg = QLabel("3 · KISI  —  tiap KELOMPOK tulisan (mis. tabel lubang dan tabel kegiatan) punya baris biru ▸ berisi tujuan tiap kolomnya. "
+                    "Klik ganda sel = sunting; klik kanan sel / nomor baris / judul kolom = geser, gabung, pecah, pindah kelompok, jadikan kop, "
+                    "hapus; klik nomor baris = lewati / pakai.")
         lg.setObjectName("fmSect")
         lg.setWordWrap(True)
         gv.addWidget(lg)
@@ -158,24 +171,12 @@ class TranscriptTab(QWidget):
         gpv.setContentsMargins(0, 0, 0, 0)
         gpv.setSpacing(0)
         self.gstack.addWidget(gpage)
-        self.maprow = QTableWidget(1, 0)  # baris dropdown tujuan kolom: tabel 1 baris yang MENEMPEL di atas kisi (tidak ikut tergulir)
-        self.maprow.setObjectName("fmMapRow")
-        self.maprow.setVerticalHeaderLabels(["→ isian"])
-        self.maprow.horizontalHeader().setVisible(False)
-        self.maprow.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.maprow.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.maprow.setFixedHeight(34)
-        self.maprow.setEditTriggers(QTableWidget.NoEditTriggers)
-        gpv.addWidget(self.maprow)
         self.grid = QTableWidget(0, 0)
         self.grid.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
         self.grid.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.grid.horizontalHeader().setStretchLastSection(True)
         self.grid.verticalHeader().sectionClicked.connect(self._toggle_skip)
-        self.grid.horizontalScrollBar().valueChanged.connect(self.maprow.horizontalScrollBar().setValue)
-        self.grid.horizontalHeader().sectionResized.connect(lambda i, _o, w: self.maprow.setColumnWidth(i, w))
-        self.grid.verticalHeader().setFixedWidth(52)
-        self.maprow.verticalHeader().setFixedWidth(52)
+        self.grid.verticalHeader().setFixedWidth(58)
         self.grid.itemChanged.connect(self._cell_edited)
         self.grid.setContextMenuPolicy(Qt.CustomContextMenu)
         self.grid.customContextMenuRequested.connect(self._cell_menu)
@@ -217,6 +218,7 @@ class TranscriptTab(QWidget):
             return
         if did != self.did:
             self.choice, self.hchoice = None, {}
+            self.grp: list[list[int]] = []
         self.did, self.loaded = did, teks
         self.skip = set()
         self._filling = True
@@ -230,7 +232,6 @@ class TranscriptTab(QWidget):
             self.hdr.setRowCount(0)
             self.grid.setRowCount(0)
             self.grid.setColumnCount(0)
-            self.maprow.setColumnCount(0)
             self.help.setText("Pilih borang di daftar kiri.")
             self.gstack.setCurrentIndex(0)
             self.info.setText("")
@@ -292,8 +293,8 @@ class TranscriptTab(QWidget):
                 return
             if mode == "ganti":
                 self.choice, self.skip = None, set()
-            elif mode == "kanan" and self.choice is not None:
-                self.choice = self.choice + [""] * max(0, int(j.get("ncol") or 0) - len(self.choice))
+            elif mode == "kanan" and self.choice is not None and len(self.choice) == 1:
+                self.choice = [self.choice[0] + [""] * max(0, int(j.get("ncol") or 0) - len(self.choice[0]))]
             self.loaded = j["teks"]
             self._filling = True
             self.txt.setPlainText(j["teks"])
@@ -346,16 +347,25 @@ class TranscriptTab(QWidget):
         return cb
 
     def _show(self, j: dict) -> None:
+        """Kisi = per KELOMPOK tulisan: satu baris biru ▸ berisi dropdown tujuan kolom kelompok itu, lalu baris-baris datanya."""
         self.pv = j
         g_rows, mp = j.get("rows") or [], j.get("map") or {}
+        gs = j.get("groups") or ([{"start": 0, "end": len(g_rows), "cols": mp.get("cols") or [], "ncol": j.get("ncol") or 0,
+                                   "title_row": mp.get("title_row", -1)}] if g_rows else [])
         n = int(j.get("ncol") or 0)
-        if self.choice is not None and len(self.choice) == n:
-            cols = list(self.choice)  # keputusan pengguna menang atas usulan
+        self.grp = [[x["start"], x["end"]] for x in gs]
+        self.gw = [int(x.get("ncol") or n) for x in gs]
+        if self.choice is not None and len(self.choice) == len(gs) and all(len(c) == w for c, w in zip(self.choice, self.gw)):
+            cols = [list(c) for c in self.choice]  # keputusan pengguna menang atas usulan
         else:
-            cols = (list(mp.get("cols") or []) + [""] * n)[:n]
-            self.choice = None
-        if mp.get("title_row", -1) >= 0 and not self.skip:
-            self.skip.add(int(mp["title_row"]))
+            old = self.choice or []
+            cols = []
+            for k, x in enumerate(gs):
+                w = self.gw[k]
+                cols.append(list(old[k]) if k < len(old) and len(old[k]) == w else (list(x.get("cols") or []) + [""] * w)[:w])
+            self.choice = None if not old else cols
+        if not self.skip:
+            self.skip = {int(x["title_row"]) for x in gs if x.get("title_row", -1) >= 0}
         self.skip = {i for i in self.skip if i < len(g_rows)}
         # kop
         self._filling = True
@@ -367,25 +377,48 @@ class TranscriptTab(QWidget):
             self.hdr.setItem(i, 1, QTableWidgetItem(val))
             k = self.hchoice.get(lbl, (mp.get("hdr") or [])[i] if i < len(mp.get("hdr") or []) else "")
             self.hdr.setCellWidget(i, 2, self._combo(j.get("hdr_options") or [], k, self._hdr_changed))
-        # kisi
+        # kisi: [▸ K1 tujuan] [baris…] [▸ K2 tujuan] [baris…]
+        self.vmap: list[tuple[str, int]] = []
+        for k, (a, b) in enumerate(self.grp):
+            self.vmap.append(("map", k))
+            self.vmap += [("row", i) for i in range(a, b)]
         self.grid.clear()
         self.grid.setColumnCount(n)
-        self.grid.setRowCount(len(g_rows))
+        self.grid.setRowCount(len(self.vmap))
         self.grid.setHorizontalHeaderLabels([f"Kolom {i + 1}" for i in range(n)])
-        self.grid.setVerticalHeaderLabels([str(i + 1) for i in range(len(g_rows))])
-        self.maprow.setColumnCount(n)
-        for c in range(n):
-            self.maprow.setCellWidget(0, c, self._combo(j.get("options") or [], cols[c], self._col_changed))
-        for r, row in enumerate(g_rows):
-            for c in range(n):
-                self.grid.setItem(r, c, QTableWidgetItem(row[c] if c < len(row) else ""))
+        multi = len(self.grp) > 1
+        labels = []
+        for vr, (kind, x) in enumerate(self.vmap):
+            if kind == "map":
+                labels.append(f"▸ K{x + 1}" if multi else "▸ isian")
+                for c in range(n):
+                    if c < self.gw[x]:
+                        cb = self._combo(j.get("options") or [], cols[x][c], self._col_changed)
+                        cb.setProperty("kel", x)
+                        cb.setProperty("kol", c)
+                        self.grid.setCellWidget(vr, c, cb)
+                    else:
+                        it = QTableWidgetItem("")
+                        it.setFlags(Qt.NoItemFlags)
+                        self.grid.setItem(vr, c, it)
+                self.grid.setRowHeight(vr, 32)
+            else:
+                labels.append(str(x + 1))
+                row = g_rows[x]
+                for c in range(n):
+                    self.grid.setItem(vr, c, QTableWidgetItem(row[c] if c < len(row) else ""))
+        self.grid.setVerticalHeaderLabels(labels)
+        for vr, (kind, x) in enumerate(self.vmap):
+            if kind == "map":
+                hi = self.grid.verticalHeaderItem(vr)
+                if hi:
+                    a, b = self.grp[x]
+                    hi.setToolTip(f"Kelompok {x + 1}: baris {a + 1}–{b}, {self.gw[x]} kolom — pilih tujuan tiap kolom kelompok ini")
         self._paint()
         self._filling = False
         self.grid.resizeColumnsToContents()
         for c in range(n):
-            w = min(420, max(self.grid.columnWidth(c) + 12, 150))
-            self.grid.setColumnWidth(c, w)
-            self.maprow.setColumnWidth(c, w)
+            self.grid.setColumnWidth(c, min(420, max(self.grid.columnWidth(c) + 12, 150)))
         self.gstack.setCurrentIndex(1 if n else 0)
         if not n:
             self.help.setText(self._help_html(j))
@@ -430,21 +463,45 @@ class TranscriptTab(QWidget):
     def _paint(self) -> None:
         cols = self._cols()
         was, self._filling = self._filling, True
-        for r in range(self.grid.rowCount()):
+        kel = {}
+        for k, (a, b) in enumerate(self.grp):
+            for i in range(a, b):
+                kel[i] = k
+        for vr, (kind, x) in enumerate(getattr(self, "vmap", [])):
             for c in range(self.grid.columnCount()):
-                it = self.grid.item(r, c)
+                it = self.grid.item(vr, c)
                 if not it:
                     continue
-                if r in self.skip:
+                if kind == "map":
+                    it.setBackground(QColor("#e9ecef"))
+                    continue
+                k = kel.get(x, 0)
+                inside = c < (self.gw[k] if k < len(self.gw) else 0)
+                if x in self.skip:
                     it.setBackground(QColor(SKIP_BG))
                     it.setForeground(QColor("#868e96"))
+                elif not inside:
+                    it.setBackground(QColor("#f8f9fa"))
+                    it.setForeground(QColor("#adb5bd"))
                 else:
                     it.setForeground(QColor("#111"))
-                    it.setBackground(QColor(UNC_BG) if it.text().endswith("?") else (QColor(MAP_BG) if c < len(cols) and cols[c] else QColor("#ffffff")))
+                    mapped = k < len(cols) and c < len(cols[k]) and cols[k][c]
+                    it.setBackground(QColor(UNC_BG) if it.text().endswith("?") else (QColor(MAP_BG) if mapped else QColor("#ffffff")))
         self._filling = was
 
-    def _cols(self) -> list[str]:
-        return [(self.maprow.cellWidget(0, c).currentData() or "") if self.maprow.cellWidget(0, c) else "" for c in range(self.maprow.columnCount())]
+    def combo(self, k: int, c: int) -> QComboBox | None:
+        """Dropdown tujuan kolom c pada kelompok k."""
+        for vr, (kind, x) in enumerate(getattr(self, "vmap", [])):
+            if kind == "map" and x == k:
+                w = self.grid.cellWidget(vr, c)
+                return w if isinstance(w, QComboBox) else None
+        return None
+
+    def _cols(self) -> list[list[str]]:
+        out = []
+        for k in range(len(self.grp)):
+            out.append([((self.combo(k, c).currentData() or "") if self.combo(k, c) else "") for c in range(self.gw[k])])
+        return out
 
     def _hdr_keys(self) -> list[str]:
         return [(self.hdr.cellWidget(i, 2).currentData() or "") if self.hdr.cellWidget(i, 2) else "" for i in range(self.hdr.rowCount())]
@@ -457,57 +514,79 @@ class TranscriptTab(QWidget):
     def _hdr_changed(self) -> None:
         for i in range(self.hdr.rowCount()):
             if self.hdr.item(i, 0):
-                self.hchoice[self.hdr.item(i, 0).text()] = self.hdr.cellWidget(i, 2).currentData() or ""
+                self.hdr_choice_set(self.hdr.item(i, 0).text(), self.hdr.cellWidget(i, 2).currentData() or "")
         self._mapped()
+
+    def hdr_choice_set(self, lbl: str, k: str) -> None:
+        self.hchoice[lbl] = k
 
     def _mapped(self) -> None:
         if not self.pv:
             return
         cols = self._cols()
-        n_rows = max(0, self.grid.rowCount() - len(self.skip))
-        used = [c for c in cols if c]
-        dup = sorted({c for c in used if used.count(c) > 1})
+        valid = {o["key"] for o in (self.pv.get("options") or []) if o["key"]}
+        n_rows = max(0, sum(b - a for a, b in self.grp) - len(self.skip))
+        parts = []
+        all_used = []
+        for k, cg in enumerate(cols):
+            used = [c for c in cg if c in valid]
+            all_used += used
+            parts.append(f"{'K' + str(k + 1) + ': ' if len(cols) > 1 else ''}<b>{len(used)}/{len(cg)} kolom</b>")
+        dup = sorted({c for cg in cols for c in cg if c and cg.count(c) > 1})
         hk = [k for k in self._hdr_keys() if k]
         mp = self.pv.get("map") or {}
         src = {"title": "dari judul kolom", "saved": "dari keputusan Anda sebelumnya", "default": "urutan bawaan — periksa!"}.get(mp.get("src"), "")
-        s = (f"Pemisah «{self.pv.get('sep')}» · {n_rows} baris tabel · <b>{len(used)}/{len(cols)} kolom</b> dipetakan"
+        s = (f"Pemisah «{self.pv.get('sep')}» · {len(self.grp)} kelompok · {n_rows} baris tabel · " + " · ".join(parts) + " dipetakan"
              + (f" ({src})" if src and self.choice is None else " (pilihan Anda)") + f" · {len(hk)} isian kop"
              + (f" · kolom bertujuan sama digabung: {', '.join(dup)}" if dup else "")
-             + ("" if used or hk else " · <span style='color:#c0392b'>⚠ belum ada kolom yang dipetakan</span>"))
+             + ("" if all_used or hk else " · <span style='color:#c0392b'>⚠ belum ada kolom yang dipetakan</span>"))
         if self.skip:
             s += f" · {len(self.skip)} baris dilewati"
         if (self.page.cur and self.page.cur["doc"]["id"] == self.did and str(self.page.cur["doc"].get("error") or "").startswith("PEMETAAN")):
             s = ("<span style='color:#7048e8'><b>AI sudah menyalin borang ini, kolomnya menunggu keputusan Anda</b></span> — "
                  + str(self.page.cur["doc"]["error"])[10:] + ".<br>" + s)
         self.info.setText(s)
-        self.bApply.setEnabled(bool(used or hk))
+        self.bApply.setEnabled(bool(all_used or hk))
 
     # ---------------------------------------------------------------- suntingan kisi -> teks
+    def _kel(self, i: int) -> int:
+        return next((k for k, (a, b) in enumerate(self.grp) if a <= i < b), max(0, len(self.grp) - 1))
+
     def _model(self) -> tuple[list, list]:
         hdr = [[self.hdr.item(i, 0).text(), self.hdr.item(i, 1).text() if self.hdr.item(i, 1) else ""] for i in range(self.hdr.rowCount())
                if self.hdr.item(i, 0)]
-        rows = [[(self.grid.item(r, c).text() if self.grid.item(r, c) else "") for c in range(self.grid.columnCount())]
-                for r in range(self.grid.rowCount())]
+        rows = []
+        for vr, (kind, x) in enumerate(getattr(self, "vmap", [])):
+            if kind == "row":
+                rows.append([(self.grid.item(vr, c).text() if self.grid.item(vr, c) else "") for c in range(self.grid.columnCount())])
         return hdr, rows
 
-    def _commit(self, hdr: list, rows: list, choice: list | None = None, skip: set | None = None) -> None:
-        """Tulis kisi hasil suntingan kembali ke teks, lalu pratinjau ulang (pilihan kolom & baris yang dilewati dipertahankan)."""
-        if choice is not None:
-            self.choice = choice
-        elif self.choice is None:
-            self.choice = self._cols()
+    def _commit(self, hdr: list, rows: list, choice: list | None = None, skip: set | None = None, grp: list | None = None) -> None:
+        """Tulis kisi hasil suntingan kembali ke teks ('# Kelompok n' memisahkan kelompok), lalu pratinjau ulang; pilihan kolom
+        dan baris yang dilewati dipertahankan."""
+        self.choice = [list(c) for c in (choice if choice is not None else (self.choice if self.choice is not None else self._cols()))]
         if skip is not None:
-            self.skip = skip
+            self.skip = set(skip)
+        if grp is not None:
+            self.grp = [list(g_) for g_ in grp]
         sep = (self.pv or {}).get("sep") or "|"
         if self.cbSep.currentData() == "auto" and sep != "auto":
             self.cbSep.blockSignals(True)
             self.cbSep.setCurrentIndex(max(0, self.cbSep.findData(sep)))
             self.cbSep.blockSignals(False)
-        n = max((len(r) for r in rows), default=0)
-        rows = [r + [""] * (n - len(r)) for r in rows]
-        self.choice = (self.choice + [""] * n)[:n]
+        # baris dipotong ke lebar kelompoknya (sel kosong di kanan tidak ikut ditulis)
+        out = []
+        for i, r in enumerate(rows):
+            k = self._kel(i)
+            w = max(len(self.choice[k]) if k < len(self.choice) else 0, max((j + 1 for j, v in enumerate(r) if str(v).strip()), default=1))
+            out.append(list(r[:w]) + [""] * max(0, w - len(r)))
+        for k in range(len(self.grp)):
+            if k < len(self.choice):
+                a, b = self.grp[k]
+                w = max([len(out[i]) for i in range(a, min(b, len(out)))] or [len(self.choice[k])])
+                self.choice[k] = (self.choice[k] + [""] * w)[:w]
         self._filling = True
-        self.txt.setPlainText(render(hdr, rows, sep))
+        self.txt.setPlainText(render(hdr, out, sep, self.grp))
         self._filling = False
         self.preview()
 
@@ -523,22 +602,32 @@ class TranscriptTab(QWidget):
         hdr, rows = self._model()
         self._commit(hdr, rows)
 
-    def _cell_menu(self, pos) -> None:
-        it = self.grid.itemAt(pos)
-        if not it:
-            return
-        r, c = it.row(), it.column()
+    def _ctx(self) -> tuple[list, list, list, list]:
         hdr, rows = self._model()
-        ch = list(self.choice if self.choice is not None else self._cols())
-        n = self.grid.columnCount()
+        ch = [list(c) for c in (self.choice if self.choice is not None else self._cols())]
+        return hdr, rows, ch, [list(g_) for g_ in self.grp]
+
+    def _cell_menu(self, pos) -> None:
+        vr = self.grid.rowAt(pos.y())
+        c = self.grid.columnAt(pos.x())
+        if vr < 0 or c < 0 or vr >= len(self.vmap):
+            return
+        kind, x = self.vmap[vr]
+        if kind == "map":
+            return self._col_menu(c, self.grid.viewport().mapToGlobal(pos), x)
+        r = x
+        it = self.grid.item(vr, c)
+        hdr, rows, ch, grp = self._ctx()
+        k = self._kel(r)
+        n = self.gw[k]
         m = QMenu(self)
-        m.addSection(f"Sel baris {r + 1}, kolom {c + 1}")
+        m.addSection(f"Sel baris {r + 1}, kolom {c + 1}" + (f" · kelompok {k + 1}" if len(grp) > 1 else ""))
 
         def shift_right():
             rows[r].insert(c, "")
-            if rows[r][-1].strip() == "" and len(rows[r]) > n:
+            if len(rows[r]) > n and not rows[r][-1].strip():
                 rows[r].pop()
-            self._commit(hdr, rows, ch + [""] * (max(len(x) for x in rows) - len(ch)))
+            self._commit(hdr, rows, ch)
 
         def shift_left():
             rows[r].pop(c)
@@ -553,117 +642,158 @@ class TranscriptTab(QWidget):
             self._commit(hdr, rows, ch)
 
         def split_cell():
-            parts = it.text().split(None, 1)
+            parts = (it.text() if it else "").split(None, 1)
             if len(parts) == 2:
                 rows[r][c:c + 1] = parts
-                if rows[r][-1].strip() == "" and len(rows[r]) > n:
+                if len(rows[r]) > n and not rows[r][-1].strip():
                     rows[r].pop()
-            self._commit(hdr, rows, ch + [""] * (max(len(x) for x in rows) - len(ch)))
+            self._commit(hdr, rows, ch)
         m.addAction("⇥ Sisipkan sel kosong di sini (sel kanan bergeser)", shift_right)
         m.addAction("⇤ Hapus sel ini (sel kanan bergeser ke kiri)", shift_left)
         a = m.addAction("⊕ Gabung dengan sel di kanannya", join_right)
         a.setEnabled(c + 1 < n)
         a = m.addAction("✂ Pecah sel di spasi pertama (sel kanan bergeser)", split_cell)
-        a.setEnabled(len(it.text().split(None, 1)) == 2)
+        a.setEnabled(len((it.text() if it else "").split(None, 1)) == 2)
         m.addSeparator()
-        self._row_actions(m, r, hdr, rows, ch)
+        self._row_actions(m, r, hdr, rows, ch, grp)
         m.addSeparator()
-        sub = m.addMenu(f"Kolom {c + 1}")
-        self._col_actions(sub, c, hdr, rows, ch)
+        sub = m.addMenu(f"Kolom {c + 1}" + (f" (kelompok {k + 1})" if len(grp) > 1 else ""))
+        self._col_actions(sub, c, k, hdr, rows, ch, grp)
         m.exec(self.grid.viewport().mapToGlobal(pos))
 
-    def _row_actions(self, m: QMenu, r: int, hdr: list, rows: list, ch: list) -> None:
+    def _row_actions(self, m: QMenu, r: int, hdr: list, rows: list, ch: list, grp: list) -> None:
+        k = self._kel(r)
+        a0, b0 = grp[k]
+
+        def shrink(at: int) -> list:  # baris 'at' dihapus -> batas kelompok sesudahnya bergeser
+            return [[a - (1 if a > at else 0), b - (1 if b > at else 0)] for a, b in grp if not (a == at and b == at + 1)]
+
         def up():
-            if r > 0:
+            if r > a0:
                 for j, v in enumerate(rows[r]):
                     if v.strip() and v.strip() != "-":
                         rows[r - 1][j] = (rows[r - 1][j] + " " + v).strip() if rows[r - 1][j].strip() not in ("", "-") else v
                 rows.pop(r)
-            self._commit(hdr, rows, ch, {i - (1 if i > r else 0) for i in self.skip if i != r})
+            self._commit(hdr, rows, ch, {i - (1 if i > r else 0) for i in self.skip if i != r}, shrink(r))
 
         def to_kop():
             vals = [v for v in rows[r] if v.strip() and v.strip() != "-"]
             if vals:
                 hdr.append([vals[0].rstrip(":"), " ".join(vals[1:])])
             rows.pop(r)
-            self._commit(hdr, rows, ch, {i - (1 if i > r else 0) for i in self.skip if i != r})
+            g2 = shrink(r)
+            ch2 = ch if len(g2) == len(grp) else [c for i, c in enumerate(ch) if i != k]
+            self._commit(hdr, rows, ch2, {i - (1 if i > r else 0) for i in self.skip if i != r}, g2)
 
         def delete():
             rows.pop(r)
-            self._commit(hdr, rows, ch, {i - (1 if i > r else 0) for i in self.skip if i != r})
+            g2 = shrink(r)
+            ch2 = ch if len(g2) == len(grp) else [c for i, c in enumerate(ch) if i != k]
+            self._commit(hdr, rows, ch2, {i - (1 if i > r else 0) for i in self.skip if i != r}, g2)
 
         def insert():
             rows.insert(r, [""] * len(rows[r]))
-            self._commit(hdr, rows, ch, {i + (1 if i >= r else 0) for i in self.skip})
+            g2 = [[a + (1 if a > r else 0), b + (1 if b > r else 0)] for a, b in grp]
+            self._commit(hdr, rows, ch, {i + (1 if i >= r else 0) for i in self.skip}, g2)
+
+        def new_group():  # baris ini dan sesudahnya (dalam kelompok yang sama) menjadi kelompok baru
+            g2 = grp[:k] + [[a0, r], [r, b0]] + grp[k + 1:]
+            self._commit(hdr, rows, ch[:k + 1] + [[""] * len(ch[k])] + ch[k + 1:], None, g2)
+
+        def join_group():  # kelompok ini digabung ke kelompok di atasnya (memakai tujuan kolom kelompok atas)
+            g2 = grp[:k - 1] + [[grp[k - 1][0], b0]] + grp[k + 1:]
+            self._commit(hdr, rows, ch[:k] + ch[k + 1:], None, g2)
         a = m.addAction("⤒ Gabungkan ke baris di atasnya (uraian lanjutan)", up)
-        a.setEnabled(r > 0)
+        a.setEnabled(r > a0)
         m.addAction("☰ Jadikan isian kop (sel pertama = label, sisanya = nilai)", to_kop)
-        m.addAction(("✓ Pakai baris ini" if r in self.skip else "⊘ Lewati baris ini (tidak diterapkan)"), lambda: self._toggle_skip(r))
+        m.addAction(("✓ Pakai baris ini" if r in self.skip else "⊘ Lewati baris ini (tidak diterapkan)"), lambda: self._toggle_skip_row(r))
         m.addAction("＋ Sisipkan baris kosong di atas", insert)
         m.addAction("✕ Hapus baris ini dari teks", delete)
+        m.addSeparator()
+        a = m.addAction("▸ Mulai KELOMPOK baru di baris ini (tabel lain, tujuan kolom sendiri)", new_group)
+        a.setEnabled(r > a0)
+        a = m.addAction(f"▴ Gabungkan kelompok {k + 1} ke kelompok di atasnya", join_group)
+        a.setEnabled(k > 0)
 
-    def _row_menu(self, r: int, gpos) -> None:
-        if r < 0:
+    def _row_menu(self, vr: int, gpos) -> None:
+        if vr < 0 or vr >= len(getattr(self, "vmap", [])):
             return
-        hdr, rows = self._model()
-        ch = list(self.choice if self.choice is not None else self._cols())
+        kind, x = self.vmap[vr]
+        if kind == "map":
+            return
+        hdr, rows, ch, grp = self._ctx()
         m = QMenu(self)
-        m.addSection(f"Baris {r + 1}")
-        self._row_actions(m, r, hdr, rows, ch)
+        m.addSection(f"Baris {x + 1}" + (f" · kelompok {self._kel(x) + 1}" if len(grp) > 1 else ""))
+        self._row_actions(m, x, hdr, rows, ch, grp)
         m.exec(gpos)
 
-    def _col_actions(self, m: QMenu, c: int, hdr: list, rows: list, ch: list) -> None:
-        n = self.grid.columnCount()
+    def _col_actions(self, m: QMenu, c: int, k: int, hdr: list, rows: list, ch: list, grp: list) -> None:
+        a0, b0 = grp[k] if grp else (0, len(rows))
+        n = len(ch[k]) if k < len(ch) else self.grid.columnCount()
+        R = range(a0, b0)
+
+        def setch(new_k: list) -> list:
+            c2 = [list(x) for x in ch]
+            c2[k] = new_k
+            return c2
 
         def split_col():
-            for row in rows:
-                p = row[c].split(None, 1) if c < len(row) else []
-                row[c:c + 1] = (p + [""])[:2] if p else ["", ""]
-            self._commit(hdr, rows, ch[:c + 1] + [""] + ch[c + 1:])
+            for i in R:
+                p = rows[i][c].split(None, 1) if c < len(rows[i]) else []
+                rows[i][c:c + 1] = (p + [""])[:2] if p else ["", ""]
+            self._commit(hdr, rows, setch(ch[k][:c + 1] + [""] + ch[k][c + 1:]))
 
         def split_time():  # "0645-0710 Travel to location" -> jam | uraian
-            for row in rows:
-                v = row[c] if c < len(row) else ""
-                mm = re.match(r"^\s*([0-9.:]{3,5}\s*[-–]\s*[0-9.:]{3,5})\s*(.*)$", v)
-                row[c:c + 1] = [mm.group(1), mm.group(2)] if mm else ["", v]
-            self._commit(hdr, rows, ch[:c] + ["jam" if "jam" in {o["key"] for o in (self.pv or {}).get("options") or []} else ch[c]] + [ch[c]] + ch[c + 1:])
+            opts = {o["key"] for o in (self.pv or {}).get("options") or []}
+            for i in R:
+                v = rows[i][c] if c < len(rows[i]) else ""
+                mm = re.match(r"^\s*([0-9.:'’]{3,8}\s*[-–]\s*[0-9.:'’]{3,8})\s*(.*)$", v)
+                rows[i][c:c + 1] = [mm.group(1), mm.group(2)] if mm else ["", v]
+            self._commit(hdr, rows, setch(ch[k][:c] + ["jam" if "jam" in opts else ch[k][c]] + [ch[k][c]] + ch[k][c + 1:]))
 
         def join_col():
-            for row in rows:
-                row[c] = " ".join(x for x in (row[c], row[c + 1]) if x.strip() and x.strip() != "-")
-                row.pop(c + 1)
-            self._commit(hdr, rows, ch[:c + 1] + ch[c + 2:])
+            for i in R:
+                rows[i][c] = " ".join(x for x in (rows[i][c], rows[i][c + 1] if c + 1 < len(rows[i]) else "") if x.strip() and x.strip() != "-")
+                if c + 1 < len(rows[i]):
+                    rows[i].pop(c + 1)
+            self._commit(hdr, rows, setch(ch[k][:c + 1] + ch[k][c + 2:]))
 
         def swap():
-            for row in rows:
-                row[c], row[c + 1] = row[c + 1], row[c]
-            ch2 = list(ch)
-            ch2[c], ch2[c + 1] = ch2[c + 1], ch2[c]
-            self._commit(hdr, rows, ch2)
+            for i in R:
+                if c + 1 < len(rows[i]):
+                    rows[i][c], rows[i][c + 1] = rows[i][c + 1], rows[i][c]
+            c2 = list(ch[k])
+            c2[c], c2[c + 1] = c2[c + 1], c2[c]
+            self._commit(hdr, rows, setch(c2))
 
         def ins():
-            for row in rows:
-                row.insert(c, "")
-            self._commit(hdr, rows, ch[:c] + [""] + ch[c:])
+            for i in R:
+                rows[i].insert(c, "")
+            self._commit(hdr, rows, setch(ch[k][:c] + [""] + ch[k][c:]))
 
         def drop():
-            for row in rows:
-                row.pop(c)
-            self._commit(hdr, rows, ch[:c] + ch[c + 1:])
-        def up_empty():  # semua baris yang kolom ini kosong = lanjutan baris di atasnya (mis. uraian dua baris tanpa jam)
-            out, sk = [], set()
+            for i in R:
+                if c < len(rows[i]):
+                    rows[i].pop(c)
+            self._commit(hdr, rows, setch(ch[k][:c] + ch[k][c + 1:]))
+
+        def up_empty():  # semua baris kelompok ini yang kolom ini kosong = lanjutan baris di atasnya (mis. uraian dua baris tanpa jam)
+            out, sk, g2, removed = [], set(), [], []
             for i, row in enumerate(rows):
-                if out and not row[c].strip().strip("-").strip() and any(v.strip() not in ("", "-") for v in row):
+                if a0 < i < b0 and out and not row[c].strip().strip("-").strip() and any(v.strip() not in ("", "-") for v in row):
                     for jj, v in enumerate(row):
                         if v.strip() not in ("", "-"):
                             out[-1][jj] = (out[-1][jj] + " " + v).strip() if out[-1][jj].strip() not in ("", "-") else v
+                    removed.append(i)
                     continue
                 if i in self.skip:
                     sk.add(len(out))
                 out.append(row)
-            self._commit(hdr, out, ch, sk)
-        n_up = sum(1 for i, row in enumerate(rows) if i and c < len(row) and not row[c].strip().strip("-").strip()
-                   and any(v.strip() not in ("", "-") for v in row))
+            for a, b in grp:
+                g2.append([a - sum(1 for x in removed if x < a), b - sum(1 for x in removed if x < b)])
+            self._commit(hdr, out, ch, sk, g2)
+        n_up = sum(1 for i in R if i > a0 and c < len(rows[i]) and not rows[i][c].strip().strip("-").strip()
+                   and any(v.strip() not in ("", "-") for v in rows[i]))
         a = m.addAction(f"⤒ Gabungkan {n_up} baris yang kolom ini kosong ke baris di atasnya", up_empty)
         a.setEnabled(n_up > 0)
         m.addSeparator()
@@ -676,14 +806,17 @@ class TranscriptTab(QWidget):
         m.addAction("＋ Sisipkan kolom kosong di kiri", ins)
         m.addAction("✕ Hapus kolom ini dari teks", drop)
 
-    def _col_menu(self, c: int, gpos) -> None:
-        if c < 0:
+    def _col_menu(self, c: int, gpos, k: int | None = None) -> None:
+        if c < 0 or not self.grp:
             return
-        hdr, rows = self._model()
-        ch = list(self.choice if self.choice is not None else self._cols())
+        if k is None:  # judul kolom: kelompok dari sel yang sedang dipilih
+            cur = self.grid.currentRow()
+            k = self._kel(self.vmap[cur][1]) if 0 <= cur < len(self.vmap) and self.vmap[cur][0] == "row" else \
+                (self.vmap[cur][1] if 0 <= cur < len(self.vmap) else 0)
+        hdr, rows, ch, grp = self._ctx()
         m = QMenu(self)
-        m.addSection(f"Kolom {c + 1}")
-        self._col_actions(m, c, hdr, rows, ch)
+        m.addSection(f"Kolom {c + 1}" + (f" · kelompok {k + 1}" if len(grp) > 1 else ""))
+        self._col_actions(m, c, k, hdr, rows, ch, grp)
         m.exec(gpos)
 
     def _hdr_menu(self, pos) -> None:
@@ -691,13 +824,18 @@ class TranscriptTab(QWidget):
         if not it:
             return
         i = it.row()
-        hdr, rows = self._model()
+        hdr, rows, ch, grp = self._ctx()
 
         def to_row():
             lbl, val = hdr.pop(i)
-            n = max(1, self.grid.columnCount())
-            rows.append(([lbl, val] + [""] * n)[:max(n, 2)])
-            self._commit(hdr, rows)
+            w = len(ch[-1]) if ch else 2
+            rows.append(([lbl, val] + [""] * w)[:max(w, 2)])
+            g2 = [list(x) for x in grp]
+            if g2:
+                g2[-1][1] += 1
+            else:
+                g2 = [[0, len(rows)]]
+            self._commit(hdr, rows, ch or [["", ""]], None, g2)
 
         def delete():
             hdr.pop(i)
@@ -707,10 +845,13 @@ class TranscriptTab(QWidget):
         m.addAction("✕ Hapus isian kop ini dari teks", delete)
         m.exec(self.hdr.viewport().mapToGlobal(pos))
 
-    def _toggle_skip(self, row: int) -> None:
-        if row < 0 or not self.pv:
+    def _toggle_skip(self, vr: int) -> None:
+        if vr < 0 or not self.pv or vr >= len(getattr(self, "vmap", [])) or self.vmap[vr][0] != "row":
             return
-        self.skip ^= {row}
+        self._toggle_skip_row(self.vmap[vr][1])
+
+    def _toggle_skip_row(self, r: int) -> None:
+        self.skip ^= {r}
         self._paint()
         self._mapped()
 
@@ -724,10 +865,10 @@ class TranscriptTab(QWidget):
             if not ask(self, f"Terapkan transkrip? {len(cur['rows'])} baris yang ada (termasuk {n_ver} terverifikasi) akan diganti. "
                              "Isian header yang Anda edit tetap."):
                 return
-        tr_ = (self.pv.get("map") or {}).get("title_row", -1)
+        gs = self.pv.get("groups") or []
+        trs = [x["title_row"] for x in gs if x.get("title_row", -1) >= 0 and x["title_row"] in self.skip]
         body = {**self._body(), "teks": self.txt.toPlainText(), "sep": self.pv.get("sep") or "|", "cols": self._cols(),
-                "hdr": self._hdr_keys(), "skip_rows": sorted(self.skip), "save_map": True,
-                "title_row": tr_ if tr_ in self.skip else -1}
+                "hdr": self._hdr_keys(), "skip_rows": sorted(self.skip), "save_map": True, "title_row": trs, "groups": self.grp}
         did = self.did
         self.bApply.setEnabled(False)
 
@@ -739,8 +880,9 @@ class TranscriptTab(QWidget):
                 self.page.refresh()
                 self.page.tabs.setCurrentIndex(0)
             self.page._sync_list()
-            self.page.toast(f"Transkrip diterapkan · {len(j['rows'])} baris — keputusan kolom disimpan untuk borang jenis ini. "
-                            "Periksa sel kuning / merah di tab Data lalu verifikasi", 6000)
+            n_t = sum(1 for r in j["rows"] if r.get("tbl"))
+            self.page.toast(f"Transkrip diterapkan · {len(j['rows']) - n_t} baris" + (f" + {n_t} baris tabel tambahan" if n_t else "")
+                            + " — keputusan kolom disimpan untuk borang jenis ini. Periksa sel kuning / merah di tab Data lalu verifikasi", 6000)
 
         def err(e):
             self.bApply.setEnabled(True)

@@ -29,17 +29,17 @@ def test_transkrip_salin_petakan_terapkan(qtbot, prj, tmp_path, monkeypatch):
     tr = pg.tr
     assert pg.tabs.tabText(4).endswith("Transkrip") and tr.did == pg.cur["doc"]["id"]
     tr.run_ai()
-    qtbot.waitUntil(lambda: said or (tr.pv is not None and tr.grid.rowCount() == 3), timeout=8000)
+    qtbot.waitUntil(lambda: said or (tr.pv is not None and tr.grid.rowCount() == 4), timeout=8000)
     assert not said, said
     assert tr.txt.toPlainText().startswith("Tanggal: 05-11-26") and "Here is" not in tr.txt.toPlainText()
     assert tr.hdr.rowCount() == 2 and tr.hdr.cellWidget(0, 2).currentData() == "tanggal" and tr.hdr.cellWidget(1, 2).currentData() == "shift"
     assert 0 in tr.skip  # baris judul kolom dilewati
-    assert tr.maprow.cellWidget(0, 0).currentData() == "no" and tr.maprow.cellWidget(0, 3).currentData() == "kelas"
-    assert tr.maprow.cellWidget(0, 4).currentData() == "ton" and tr.maprow.cellWidget(0, 5).currentData() == "tujuan"
+    assert tr.combo(0, 0).currentData() == "no" and tr.combo(0, 3).currentData() == "kelas"
+    assert tr.combo(0, 4).currentData() == "ton" and tr.combo(0, 5).currentData() == "tujuan"
     # 'Jam' -> start (dipilih pengguna), 'Truck' -> unit
-    cb = tr.maprow.cellWidget(0, 1)
+    cb = tr.combo(0, 1)
     cb.setCurrentIndex(cb.findData("start"))
-    cb = tr.maprow.cellWidget(0, 2)
+    cb = tr.combo(0, 2)
     cb.setCurrentIndex(cb.findData("unit"))
     assert "6/6 kolom" in tr.info.text() and tr.bApply2.isEnabled()
     assert pg.cur["rows"] == []  # menyalin belum mengubah tabel Data
@@ -54,8 +54,8 @@ def test_transkrip_salin_petakan_terapkan(qtbot, prj, tmp_path, monkeypatch):
     tr.set_doc(pg.cur["doc"])
     assert tr.txt.toPlainText().startswith("Tanggal: 05-11-26")
     tr.txt.setPlainText("3 | 1002 | T03 | OX-HG | 29 | ROM 2")
-    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 1, timeout=8000)
-    assert tr.maprow.cellWidget(0, 1).currentData() == "start" and tr.maprow.cellWidget(0, 2).currentData() == "unit"
+    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 2, timeout=8000)
+    assert tr.combo(0, 1).currentData() == "start" and tr.combo(0, 2).currentData() == "unit"
 
 
 def test_transkrip_scan_kolom_ke_kanan(qtbot, prj, tmp_path, monkeypatch):
@@ -72,7 +72,7 @@ def test_transkrip_scan_kolom_ke_kanan(qtbot, prj, tmp_path, monkeypatch):
         tr.run_ai()
         qtbot.waitUntil(lambda: tr.pv is not None and tr.pv.get("ncol") == n and tr.bAI.isEnabled(), timeout=8000)
     assert tr.txt.toPlainText().split("\n") == ["No | Jam | Truck | Kelas", "1 | 0905 | T01 | OX-LG", "2 | 0916 | T02 | SF-LG"]
-    assert tr.maprow.cellWidget(0, 3).currentData() == "kelas" and tr.bApply.isVisible() is not None
+    assert tr.combo(0, 3).currentData() == "kelas" and tr.bApply.isVisible() is not None
 
 
 def test_baca_ai_cara_transkrip_keputusan_pengguna(qtbot, prj, tmp_path, monkeypatch):
@@ -91,33 +91,33 @@ def test_baca_ai_cara_transkrip_keputusan_pengguna(qtbot, prj, tmp_path, monkeyp
     monkeypatch.setattr(w.ai, "model", lambda: "qwen3-vl:2b-instruct")
     monkeypatch.setattr("corex.forms_transkrip.say", lambda *a, **k: None)
     pg.run_ai()
-    qtbot.waitUntil(lambda: pg.ai_did is None and pg.tabs.currentWidget() is pg.tr and pg.tr.pv is not None and pg.tr.grid.rowCount() == 3,
+    qtbot.waitUntil(lambda: pg.ai_did is None and pg.tabs.currentWidget() is pg.tr and pg.tr.pv is not None and pg.tr.grid.rowCount() == 4,
                     timeout=8000)
     tr = pg.tr
     d = next(x for x in pg.docs if x["id"] == pg.cur["doc"]["id"])
     assert pg._info(d)["st"] == "map" and pg.cur["rows"] == [] and "menunggu keputusan" in tr.info.text()
-    assert tr.grid.rowCount() == 3 and tr.grid.columnCount() == 5
+    assert tr.grid.rowCount() == 4 and tr.grid.columnCount() == 5  # baris tujuan + 3 baris
     # pecah kolom 1 "0905 OX-LG" -> jam | kelas  (lewat aksi kolom)
     hdr, rows = tr._model()
     ch = ["", "unit", "ton", "tujuan", "kop:tanggal"]
     from PySide6.QtWidgets import QMenu
     m = QMenu()
-    tr._col_actions(m, 0, hdr, rows, ch)
-    tr.choice = ch
+    tr._col_actions(m, 0, 0, hdr, rows, [ch], tr.grp)
+    tr.choice = [ch]
     next(a for a in m.actions() if a.text().startswith("✂ Pecah kolom di spasi")).trigger()  # aksi menu kolom yang sebenarnya
     qtbot.waitUntil(lambda: tr.grid.columnCount() == 6, timeout=8000)
-    cb = tr.maprow.cellWidget(0, 0)
+    cb = tr.combo(0, 0)
     cb.setCurrentIndex(cb.findData("start"))
-    cb = tr.maprow.cellWidget(0, 1)
+    cb = tr.combo(0, 1)
     cb.setCurrentIndex(cb.findData("kelas"))
     qtbot.waitUntil(lambda: tr.grid.columnCount() == 6, timeout=8000)
-    assert tr._cols() == ["start", "kelas", "unit", "ton", "tujuan", "kop:tanggal"]
+    assert tr._cols() == [["start", "kelas", "unit", "ton", "tujuan", "kop:tanggal"]]
     # baris 2: sisipkan sel kosong di kolom Truck (geser kanan)
     hdr, rows = tr._model()
     rows[1].insert(2, "")
     rows[1] = rows[1][:6]
     tr._commit(hdr, rows)
-    qtbot.waitUntil(lambda: tr.grid.item(1, 3) is not None and tr.grid.item(1, 3).text() == "31", timeout=8000)
+    qtbot.waitUntil(lambda: tr.grid.item(2, 3) is not None and tr.grid.item(2, 3).text() == "31", timeout=8000)
     # baris 3 = lanjutan tujuan baris 2 -> gabung ke atas
     hdr, rows = tr._model()
     for j, v in enumerate(rows[2]):
@@ -125,8 +125,8 @@ def test_baca_ai_cara_transkrip_keputusan_pengguna(qtbot, prj, tmp_path, monkeyp
             rows[1][j] = (rows[1][j] + " " + v).strip()
     rows.pop(2)
     tr._commit(hdr, rows)
-    qtbot.waitUntil(lambda: tr.grid.rowCount() == 2, timeout=8000)
-    assert tr._cols()[5] == "kop:tanggal"  # pilihan pengguna bertahan selama teks disunting
+    qtbot.waitUntil(lambda: tr.grid.rowCount() == 3, timeout=8000)
+    assert tr._cols()[0][5] == "kop:tanggal"  # pilihan pengguna bertahan selama teks disunting
     tr.apply()
     qtbot.waitUntil(lambda: len(pg.cur["rows"]) == 2, timeout=8000)
     rs = [r["data"] for r in pg.cur["rows"]]
@@ -149,15 +149,15 @@ def test_gabung_baris_tanpa_jam(qtbot, prj, tmp_path, monkeypatch):
     w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
     tr = pg.tr
     tr.txt.setPlainText("0835-0900 | Start drilling + cleaning\n- | cyclone and splitter\n0900-0905 | Move")
-    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 3, timeout=8000)
+    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.rowCount() == 4, timeout=8000)
     from PySide6.QtWidgets import QMenu
     hdr, rows = tr._model()
     m = QMenu()
-    tr._col_actions(m, 0, hdr, rows, tr._cols())
+    tr._col_actions(m, 0, 0, hdr, rows, tr._cols(), tr.grp)
     a = next(a for a in m.actions() if a.text().startswith("⤒ Gabungkan 1 baris"))
     a.trigger()
-    qtbot.waitUntil(lambda: tr.grid.rowCount() == 2, timeout=8000)
-    assert tr.grid.item(0, 1).text() == "Start drilling + cleaning cyclone and splitter"
+    qtbot.waitUntil(lambda: tr.grid.rowCount() == 3, timeout=8000)
+    assert tr.grid.item(1, 1).text() == "Start drilling + cleaning cyclone and splitter"
 
 
 def test_tab_transkrip_kosong_menampilkan_tujuan(qtbot, prj, tmp_path, monkeypatch):
@@ -172,3 +172,52 @@ def test_tab_transkrip_kosong_menampilkan_tujuan(qtbot, prj, tmp_path, monkeypat
     w.resize(1260, 800)
     qtbot.wait(100)
     assert w.minimumSizeHint().width() <= 1200  # muat di layar 1.280 px logis (1920 px @150 %)
+
+
+DDR2 = ("Client: PT X\nDrill Rig: SDR-01\n"
+        "From | To | Hole ID | Azimuth | Dip\n0 | 15 | AB-100 401 | 65 | 60\n0 | 15 | AB-100 402 | 68 | 60\n\n"
+        "TIME | DRILLING DETAILS\n06'30''-06'45'' | travel to opp\n06'45''-07'10'' | P5M\n- | dan briefing\n07'10''-07'20'' | travel to location\n")
+
+
+def test_kelompok_tulisan_ddr(qtbot, prj, tmp_path, monkeypatch):
+    """0.46.2 (uji lapangan DDR): tabel lubang & tabel kegiatan = dua KELOMPOK dengan baris tujuan sendiri; uraian lanjutan
+    digabung per kelompok; Terapkan -> kegiatan berjam & lubang tanpa karangan; 'Mulai kelompok baru' memecah kelompok."""
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    from gcex_backend import core_forms as cf
+    s = cf.store(pg.folder)
+    did = pg.cur["doc"]["id"]
+    with s.conn() as c:
+        c.execute("UPDATE docs SET type='ddr' WHERE id=?", (did,))
+    pg._sync_list()
+    pg.cur = None
+    pg._pick(0)
+    qtbot.waitUntil(lambda: pg.cur is not None and pg.cur["doc"]["type"] == "ddr", timeout=8000)
+    tr = pg.tr
+    tr.txt.setPlainText(DDR2)
+    qtbot.waitUntil(lambda: tr.pv is not None and len(tr.grp) == 2 and tr.grid.rowCount() == 10, timeout=8000)
+    assert tr.grp == [[0, 3], [3, 8]] and tr.gw == [5, 2]
+    assert [tr.combo(0, c).currentData() for c in range(5)] == ["hole:from_m", "hole:to_m", "hole:hole_id", "hole:az", "hole:dip"]
+    assert [tr.combo(1, c).currentData() for c in range(2)] == ["jam", "aktivitas"] and tr.combo(1, 2) is None
+    assert tr.skip == {0, 3} and "2 kelompok" in tr.info.text()
+    # kelompok 2, kolom 1: gabungkan baris tanpa jam ke atas (hanya di kelompok 2)
+    from PySide6.QtWidgets import QMenu
+    hdr, rows, ch, grp = tr._ctx()
+    m = QMenu()
+    tr._col_actions(m, 0, 1, hdr, rows, ch, grp)
+    next(a for a in m.actions() if a.text().startswith("⤒ Gabungkan 1 baris")).trigger()
+    qtbot.waitUntil(lambda: tr.grid.rowCount() == 9, timeout=8000)
+    assert "# Kelompok 2" in tr.txt.toPlainText() and tr.grp == [[0, 3], [3, 7]]
+    tr.apply()
+    qtbot.waitUntil(lambda: any(r.get("tbl") == "hole" for r in pg.cur["rows"]), timeout=8000)
+    act = [r["data"] for r in pg.cur["rows"] if not r.get("tbl")]
+    hole = [r["data"] for r in pg.cur["rows"] if r.get("tbl") == "hole"]
+    assert [(a["mulai"], a["aktivitas"]) for a in act] == [("06:30", "travel to opp"), ("06:45", "P5M dan briefing"), ("07:10", "travel to location")]
+    assert len(hole) == 2 and pg.cur["doc"]["header"]["rig"] == "SDR-01"
+    # pecah kelompok: baris 5 (indeks 4) mulai kelompok baru
+    pg.tabs.setCurrentWidget(tr)
+    hdr, rows, ch, grp = tr._ctx()
+    m = QMenu()
+    tr._row_actions(m, 5, hdr, rows, ch, grp)
+    next(a for a in m.actions() if a.text().startswith("▸ Mulai KELOMPOK baru")).trigger()
+    qtbot.waitUntil(lambda: sum(1 for k_, _x in tr.vmap if k_ == "map") == 3, timeout=8000)
+    assert tr.grp == [[0, 3], [3, 5], [5, 7]] and tr.combo(2, 0) is not None and "# Kelompok 3" in tr.txt.toPlainText()

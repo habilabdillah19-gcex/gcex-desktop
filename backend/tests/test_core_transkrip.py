@@ -194,3 +194,64 @@ def test_judul_umum_ke_tujuan_yang_ada():
     assert all(c in keys for c in sg["cols"] if c) and sg["cols"][1] == "start" and sg["sure"]
     g2 = tr.grid("Jam | Uraian\n0630-0700 | travel", "|")
     assert tr.suggest("ddr", g2, None)["cols"] == ["jam", "aktivitas"]
+
+
+DDR_DUA = """Client: PT X
+Drill Rig: SDR-01
+Tabel lain pada borang: Meterage / lubang: From (m), To (m), Hole ID, Az, Dip
+(Petunjuk, jangan disalin) kolom yang biasanya ada di borang 'Daily Drilling Report': Jam
+From | To | Hole ID | Azimuth | Dip
+0 | 15 | AB-100 401 | 65 | 60
+0 | 15 | AB-100 402 | 68 | 60
+
+TIME | DRILLING DETAILS
+06'30''-06'45'' | travel to opp
+06'45''-07'10'' | P5M
+
+07'10''-07'20'' | travel to location
+"""
+
+
+def test_kelompok_tulisan_dipetakan_sendiri_sendiri(st):
+    """0.46.2 (uji lapangan): dua tabel berdampingan di DDR -> dua KELOMPOK tulisan, masing-masing dengan pemetaan kolomnya sendiri;
+    gema petunjuk tidak masuk kop; menit kecil ber-apostrof (06'30'') terbaca 06:30."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "k2.jpg")), "ddr", "Rina")[0]["id"]
+    pv = tr.preview(s, did, DDR_DUA, "auto")
+    assert [h[0] for h in pv["hdr"]] == ["Client", "Drill Rig"]  # gema petunjuk dibuang
+    gs = pv["groups"]
+    assert [(x["start"], x["end"], x["ncol"]) for x in gs] == [(0, 3, 5), (3, 7, 2)]  # baris kosong di tengah tabel 2 digabung
+    assert gs[0]["cols"] == ["hole:from_m", "hole:to_m", "hole:hole_id", "hole:az", "hole:dip"] and gs[0]["title_row"] == 0
+    assert gs[1]["cols"] == ["jam", "aktivitas"] and gs[1]["title_row"] == 3 and pv["map"]["sure"]
+    tr.apply(s, did, DDR_DUA, pv["sep"], [x["cols"] for x in gs], pv["map"]["hdr"], "Rina",
+             skip_rows=[0, 3], title_row=[0, 3], grp=[[x["start"], x["end"]] for x in gs])
+    rs = cf.rows(s, did)
+    act = [r["data"] for r in rs if not r.get("tbl")]
+    hole = [r["data"] for r in rs if r.get("tbl") == "hole"]
+    assert [(a["mulai"], a["selesai"], a["aktivitas"]) for a in act] == [
+        ("06:30", "06:45", "travel to opp"), ("06:45", "07:10", "P5M"), ("07:10", "07:20", "travel to location")]
+    assert len(hole) == 2 and hole[1]["az"] == "68"  # tidak ada lubang karangan
+    m = tr.load_map(s)["ddr"]
+    assert m["by_n"]["5"][2] == "hole:hole_id" and m["by_n"]["2"] == ["jam", "aktivitas"] and m["alias"]["drillingdetails"] == "aktivitas"
+    # render kisi -> teks mempertahankan batas kelompok
+    t2 = tr.render(pv["hdr"], pv["rows"], "|", [[x["start"], x["end"]] for x in gs])
+    assert tr.preview(s, did, t2, "|")["groups"][1]["start"] == 3
+
+
+def test_tujuan_tersimpan_yang_tidak_ada_dibuang(st):
+    """0.46.1 menyimpan tujuan 'az' (tidak ada di tabel utama DDR) -> dropdown '? az'; kini dibuang dari usulan."""
+    s, tmp = st
+    tr.save_map(s, "ddr", "|", ["jam", "az", "aktivitas"], [])
+    g = tr.grid("0630-0700 | 60 | travel", "|")
+    assert tr.suggest("ddr", g, tr.load_map(s)["ddr"])["cols"] == ["jam", "", "aktivitas"]
+
+
+def test_batas_kelompok_pengguna():
+    """'# Kelompok n' di teks = batas yang ditetapkan pengguna: tidak digabung walau lebar sama dan tanpa judul."""
+    t = "a | b\nc | d\n# Kelompok 2\ne | f\n# judul markdown model\ng | h"
+    g = tr.grid(t, "|")
+    assert g["hard"] == [2] and g["brk"] == [2, 3]
+    assert tr.groups("ore", g, {}) == [[0, 2], [2, 4]]  # baris kosong / judul markdown digabung, '# Kelompok' tidak
+    out = tr.render([], g["rows"], "|", [[0, 2], [2, 4]])
+    assert out.split("\n") == ["# Kelompok 1", "a | b", "c | d", "", "# Kelompok 2", "e | f", "g | h"]
+    assert tr.groups("ore", tr.grid(out, "|"), {}) == [[0, 2], [2, 4]]
