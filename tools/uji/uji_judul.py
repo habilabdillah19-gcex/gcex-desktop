@@ -32,8 +32,8 @@ with sync_playwright() as pw:
     pg.evaluate("document.getElementById('dlatBtn').click()")
     pg.wait_for_function("window.BX && BX.m && BX.m.n>0",timeout=600000)
     pg.wait_for_function("!DLAT.busy",timeout=600000); pg.wait_for_timeout(3000)
-    pg.evaluate("PT.select('set.s')"); pg.wait_for_timeout(1200)
-    a=pg.evaluate(JS); print("  pilih node Sayatan      ->",a)
+    pg.evaluate("PT.select('set.o')"); pg.wait_for_timeout(1200)
+    a=pg.evaluate(JS); print("  pilih node Overlay      ->",a)
     # jalankan sesuatu yang memindahkan tab sendiri
     pg.evaluate("""(function(){var m=BX.m,zc={},i;for(i=0;i<m.n;i++){var k=Math.round(m.z[i]*100);zc[k]=(zc[k]||0)+1;}
       var zb=null,nb=-1;Object.keys(zc).forEach(function(k){if(zc[k]>nb){nb=zc[k];zb=+k/100;}});

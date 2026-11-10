@@ -89,6 +89,36 @@
       try { Plotly.relayout(gd, { 'scene.camera': { center: c, eye: { x: c.x + d * 0.62, y: c.y - d * 0.62, z: c.z + d * 0.5 }, up: { x: 0, y: 0, z: 1 } } }); } catch (e) {} };
     setTimeout(function () { go(0); }, 150); };
   (function () { var _g = window.am3Toggle; if (typeof _g === 'function') window.am3Toggle = am3Toggle = function () { var r = _g.apply(this, arguments); try { if (AM3.on) setTimeout(function () { AMN.zoom(true); }, 900); } catch (e) {} return r; }; })();
+  /* ---------- 7. titik ATAP tampil & jadi sasaran snap saat mendigit (BM 0.24.56) ----------
+     Laporan pemilik 10-11-2026: "sistem meminta mendigit poligon roof, tetapi titik roof tidak ada di jendela; yang tampak
+     hanya titik floor". Plan as-mined hanya menggambar titik lantai (amD().pts); titik atap (amD().ptsR) tidak pernah
+     digambar dan tidak bisa di-snap. Titik atap milik flitch = titik dari file yang RL flitch-nya (nama file) sama dengan
+     flitch ini; file tanpa RL di namanya -> titik ber-Z antara RL bawah dan RL atas + toleransi tampil. */
+  var flF = {}; function flFile(nm) { if (!(nm in flF)) { var o = AMN.nama(nm); flF[nm] = isFinite(o.top) ? o : null; } return flF[nm]; }
+  AMN.roofNear = function (B) { B = B || lyBench(); var D = amD(), P = D.ptsR || [], t = (window.amPTol ? amPTol() : 3);
+    if (D.pAll) return P.slice(); return P.filter(function (q) { var f = q.f && flFile(q.f); if (f) return Math.abs(f.top - B[0]) < 1e-3 && Math.abs(f.bot - B[1]) < 1e-3; return isFinite(q.z) && q.z >= B[1] && q.z <= B[0] + t; }); };
+  (function () { var _t = window.amTraces2D; if (typeof _t !== 'function') return; window.amTraces2D = amTraces2D = function () { var out = _t.apply(this, arguments); try { var D = amD(), B = lyBench(), P = AMN.roofNear(B); if (!P.length) return out;
+        var x = [], y = [], t = [], h = []; P.forEach(function (q) { x.push(q.x); y.push(q.y); t.push(D.plab ? (q.id || '') + (isFinite(q.z) ? ' ' + q.z.toFixed(2) : '') : ''); h.push('<b>ATAP</b> ' + (q.id ? amE(q.id) + ' ' : '') + (q.f ? '<br>' + amE(q.f) : '') + '<br>Z ' + (isFinite(q.z) ? q.z.toFixed(2) + ' &middot; &Delta; RL atas ' + (q.z - B[0] >= 0 ? '+' : '') + (q.z - B[0]).toFixed(2) + ' m' : '-')); });
+        out.push({ type: 'scatter', mode: D.plab ? 'markers+text' : 'markers', x: x, y: y, text: t, hovertext: h, hoverinfo: 'text', textposition: 'bottom right', textfont: { size: 9, color: '#7048e8' }, marker: { symbol: 'x-thin-open', size: 11, color: '#7048e8', line: { width: 2.2, color: '#7048e8' } }, name: 'Pick-up ATAP (' + P.length + ')', showlegend: true }); } catch (e) { console.error(e); } return out; }; })();
+  (function () { var _h = window.dgSnapHook; window.dgSnapHook = function (A, px, py) { if (AM.digOn && amD().snap !== false) { var best = 12, res = null; AMN.roofNear().forEach(function (q) { var p = dgPx(A, q.x, q.y), d = Math.hypot(p[0] - px, p[1] - py); if (d < best) { best = d; res = [q.x, q.y]; } }); if (res) return res; } return _h ? _h(A, px, py) : null; }; })();
+  /* titik atap untuk hitungan: titik file ber-flitch sama ikut dipakai walau Z-nya di luar pita atap (atap nyata naik-turun) */
+  (function () { var _r = window.amRoofPts; if (typeof _r !== 'function') return; window.amRoofPts = amRoofPts = function (o, B) { var r = _r.apply(this, arguments); try { var F = amRoofPar(B), seen = {}; r.pts.forEach(function (q) { seen[q.x + ',' + q.y + ',' + q.z] = 1; });
+        (amD().ptsR || []).forEach(function (q) { var f = q.f && flFile(q.f); if (!f || Math.abs(f.top - B[0]) > 1e-3 || !isFinite(q.z) || seen[q.x + ',' + q.y + ',' + q.z]) return; var b = o.b, buf = F.buf; if (q.x < b[0] - buf || q.x > b[1] + buf || q.y < b[2] - buf || q.y > b[3] + buf) return; if (!lyInS(o.r, q.x, q.y) && amDistPoly(o.r, q.x, q.y) > buf) return; r.pts.push(q); }); } catch (e) { console.error(e); } return r; }; })();
+
+  /* 8. tombol tampil / sembunyikan lapisan titik LANTAI & ATAP (pemilik 10-11-2026: "biar mudah melakukan digitasi").
+     Hanya tampilan + snap: titik yang disembunyikan tidak digambar dan tidak ditempeli kursor saat mendigit, tetapi TETAP
+     dipakai hitungan permukaan atap / lantai. Dipasang paling luar (setelah semua skrip, termasuk amfloor.js). */
+  AMN.vis = function (k) { var D = amD(); D[k] = D[k] === false ? true : false; try { amPanel(); } catch (e) { } updatePlot(); };
+  AMN.isRoofTr = function (t) { return /^Pick-up ATAP/.test(String(t && t.name || '')); };
+  AMN.isFloorTr = function (t) { var n = String(t && t.name || ''); return /^Pick-up /.test(n) && !AMN.isRoofTr(t); };
+  setTimeout(function () {
+    var _t = window.amTraces2D; if (typeof _t === 'function' && !_t._vis) { window.amTraces2D = amTraces2D = function () { var out = _t.apply(this, arguments); try { var D = amD(); if (D.vF === false || D.vR === false) out = out.filter(function (t) { return !(D.vF === false && AMN.isFloorTr(t)) && !(D.vR === false && AMN.isRoofTr(t)); }); } catch (e) { console.error(e); } return out; }; amTraces2D._vis = 1; }
+    var _h = window.dgSnapHook; if (typeof _h === 'function' && !_h._vis) { window.dgSnapHook = function (A, px, py) { var D = amD(); if (!AM.digOn || D.snap === false || (D.vF !== false && D.vR !== false)) return _h(A, px, py);
+        var best = 12, res = null, P = [].concat(D.vF === false ? [] : amPtsNear(), D.vR === false ? [] : AMN.roofNear()); P.forEach(function (q) { var p = dgPx(A, q.x, q.y), d = Math.hypot(p[0] - px, p[1] - py); if (d < best) { best = d; res = [q.x, q.y]; } }); if (res) return res;
+        /* kait lain (sudut blok, dll.) tetap jalan; kait titik as-mined dilewati supaya titik tersembunyi tidak ditempeli */
+        AM.digOn = false; try { return _h(A, px, py); } finally { AM.digOn = true; } }; window.dgSnapHook._vis = 1; }
+  }, 0);
+
   /* ---------- panel: tombol & keterangan ---------- */
   (function () { var _b = window.am3Box; if (typeof _b === 'function') window.am3Box = am3Box = function () { var h = _b.apply(this, arguments);
       var add = '<div class=am3ly><label class=sw title="Poligon OB di antara permukaan atap dan lantai yang dipakai hitungan: bentuk yang benar-benar dihitung"><input type=checkbox ' + (AM3.sol ? 'checked' : '') + ' onchange="AM3.sol=this.checked;updatePlot()">Solid as-mined (atap &ndash; lantai, dipotong poligon)</label></div>' +
@@ -100,5 +130,5 @@
         box.innerHTML = '<b>Kelas kadar:</b> ' + (R.cls || []).map(function (q) { return amE(q.m) + ' ' + q.lo + (q.hi === '' ? '+' : '&ndash;' + q.hi); }).join(' &middot; ') + (R.clsSrc ? ' <small>(dari ' + amE(R.clsSrc) + ')</small>' : ' <small>(bawaan aplikasi / diubah manual)</small>') + ' <button onclick="AMN.pakaiKelas()" title="Samakan batas kelas As-Mined dengan aturan kelas di block model">Ambil dari block model</button>' +
           '<br><b>SG tonase:</b> ' + (U.sgCol ? 'kolom <code>' + amE(U.sgCol) + '</code> block model' + (U.sgAuto === U.sgCol ? ' (dipilih otomatis)' : '') : 'tetap ' + U.sg + (Object.keys(BX.m.num).some(function (n) { return /^(sg|dens|bd)/i.test(n); }) ? ' <span class=warn>&mdash; model punya kolom SG; pilih di Block Model &rsaquo; Filter &amp; SG</span>' : ''));
         var sec = el.querySelector('.uisec[data-k="1"]') || el.querySelector('.uisec') || el; sec.appendChild(box); } catch (e) { console.error(e); } return r; }; })();
-  (function () { var st = document.createElement('style'); st.textContent = '#amBody .amnbox{margin-top:8px;padding:6px 8px;border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:6px;line-height:1.5}#amBody .amnbox button{font-size:11px;min-height:20px;padding:0 6px}'; document.head.appendChild(st); })();
+  (function () { var st = document.createElement('style'); st.textContent = '#amBody .amnbox{margin-top:8px;padding:6px 8px;border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:6px;line-height:1.5}#amBody .amnbox button{font-size:11px;min-height:20px;padding:0 6px}#amBody .amvis{display:flex;gap:6px;align-items:center;margin:6px 0 2px;flex-wrap:wrap}#amBody .amvis span{font-size:11.5px;color:var(--mu)}#amBody .amvis button{height:24px;padding:0 9px;font-size:11.5px;border-radius:12px}#amBody .amvis button.on{background:var(--mj,#f0c047);border-color:var(--mjln,#d6a12b);color:var(--mjtx,#1d2b5e);font-weight:700}'; document.head.appendChild(st); })();
 })();

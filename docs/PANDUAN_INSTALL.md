@@ -4278,3 +4278,17 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - Tab **✎ Transkrip** sebelum ada teks tidak lagi menampilkan *"Pratinjau gagal: 'cols'"*. Area kisi kini memperlihatkan **semua tujuan yang bisa Anda pilih** untuk jenis borang yang terbuka (tabel utama, tabel tambahan seperti Meterage / lubang di DDR, dan isian Kop), alat-alat kisi, dan cara scan kolom satu per satu. Begitu teks ada, tiap kolom teks mendapat dropdown tujuan di baris biru atas kisi.
 - Judul kolom umum di teks (*Jam*, *Truck*, *Uraian*, *From* …) hanya diusulkan ke tujuan yang memang ada di jenis borang itu (Ore Spotter: *Jam* → *Start loading*).
 - Jendela DB-Ex kini muat di layar 1.280 px logis (mis. 1920 px dengan skala 150 %): tombol kanan (Terapkan, status AI) tidak lagi terpotong.
+
+## 162. Block Model 0.24.56 & Drillhole 0.24.61 — block model .mdl yang gagal dibuka, titik atap, menu As-Mined, Slicer
+
+- **Block model .mdl** yang menampilkan "Tipe atribut "" (…) belum didukung" kini terbaca: daftar atributnya dibaca dengan
+  pemeriksaan silang (berlaku di Block Model dan Drillhole). Bila tetap gagal, pesan menyebut atribut terakhir yang terbaca —
+  kirim file .mdl itu ke admin.
+- **As-Mined**: titik pick-up **atap** (OB) tampil di plan sebagai × ungu bersama titik lantai, dan kursor digit menempel ke
+  keduanya. Tombol **Tampil di jendela: Titik lantai / Titik atap** (di atas tombol *Digit poligon*) mematikan salah satu
+  lapisan agar digitasi lebih jelas; titik yang disembunyikan tidak ditempeli kursor, hitungan tidak berubah. **Per flitch** membuka panel As-Mined flitch itu (tidak lagi kembali ke *Buat Flitch Aktif*). **Register untuk database**
+  (Salin ke Excel, Register CSV, Kirim ke workbook) kini node tersendiri di *Register & Laporan As-Mined*.
+- **Slicer (Block Model)**: *Sayatan Garis Bebas* (dulu *Garis di peta…*), *Tampilan 2D / Tampilan 3D* (hanya mengganti cara
+  melihat), tanpa *Pengaturan lanjutan*; node *Pengaturan tampilan › Sayatan* dihapus. Galat *k.pick* saat kursor di atas model
+  ditambal seperti di Drillhole.
+- **Laporan kinerja** (kedua aplikasi) tidak lagi menghitung waktu selama kotak dialog terbuka.

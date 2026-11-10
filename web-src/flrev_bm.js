@@ -71,7 +71,9 @@
     r.it.forEach(function(o){r.t+=o.t;if(isFinite(o.g))r.m+=o.g*o.t;var k=(o.d||'-')+' → '+(o.dest||'-');var b=r.by[k]||(r.by[k]={t:0,m:0,n:0});b.t+=o.t;b.n++;if(isFinite(o.g))b.m+=o.g*o.t;});
     FLC[g.k]={sig:sig,r:r};return r;};
   var tg=function(t,m){return t?N(t)+' t @ '+(m/t).toFixed(2):'0 t';};
-  window.flOpen=function(g,then){lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+(+g.top).toFixed(3));lyApply();if(then)setTimeout(then,150);};
+  /* PT.mau(null): node Per flitch yang diklik tetap terpilih. Tanpa ini lyApply memilih 'Buat Flitch Aktif' 40 ms kemudian
+     sehingga panelnya kembali ke Buat Flitch (laporan pemilik 10-11-2026). */
+  window.flOpen=function(g,then){try{if(window.PT&&PT.mau)PT.mau(null);}catch(e){}lySet('fh',+(g.top-g.bot).toFixed(3));lyU().bot='';lySet('top',+(+g.top).toFixed(3));lyApply();if(then)setTimeout(then,150);};
   window.flCsvAll=function(){var a=lyGradeAttr();
     /* SEMUA unsur yang dicentang di "Elemen laporan" ikut, bukan hanya kadar utama; plus metal tiap
        unsur yang satuannya memungkinkan, dan centroid poligon untuk dispatch / fleet system. */
@@ -108,11 +110,11 @@
       var am=find('am');if(am&&GA.length)am.kids=(am.kids||[]).concat([{id:'am.fl',t:'Per flitch ('+GA.length+')',ic:'flitch',fold:1,hint:'Rencana (dig block) vs aktual (as-mined) per flitch',kids:GA.map(function(g){var c=flCalc(g),at=0,am2=0,nc=0;
           g.am.forEach(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}if(I&&I.calc&&x.on!==false){nc++;at+=I.ton;if(isFinite(I.gA))am2+=I.gA*I.ton;}});
           var pt=c?c.t:0,d=pt&&nc?' · Δ '+((at-pt)/pt*100).toFixed(1)+' %':'';
-          return{id:'am.fl.'+g.k,t:lab(g),ic:'flitch',b:nc&&pt?'Δ '+((at-pt)/pt*100).toFixed(1)+' %':(g.am.length?g.am.length+' pol':'rencana'),
+          return{id:'am.fl.'+g.k,t:lab(g),ic:'flitch',tab:'AM',sub:'Poligon',b:nc&&pt?'Δ '+((at-pt)/pt*100).toFixed(1)+' %':(g.am.length?g.am.length+' pol':'rencana'),
             hint:'Klik: buka flitch dengan dig block (rencana) dan poligon as-mined (aktual) bertumpuk di Sayatan 2D',
             go:function(){flOpen(g,function(){try{AM.show=true;}catch(e){}try{uiTab('AM');PT.goSub('AM','Poligon');}catch(e){}try{if(window.amApply&&g.am.length)amApply();}catch(e){}updatePlot();});},
-            kids:[{id:'am.fl.'+g.k+'.r',t:'Rencana (dig block)',ic:'poly',b:c?g.db.length+' DB · '+tg(c.t,c.m):'-',go:function(){flOpen(g,function(){PT.goSub('BM','Dig block');});}},
-              {id:'am.fl.'+g.k+'.a',t:'Aktual (as-mined)',ic:'asmined',b:nc?nc+' pol · '+tg(at,am2)+d:(g.am.length?g.am.length+' pol (belum dihitung)':'belum ada poligon'),go:function(){flOpen(g,function(){try{AM.show=true;uiTab('AM');PT.goSub('AM','Register');if(window.amApply&&g.am.length)amApply();}catch(e){}updatePlot();});}}].concat(g.am.map(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}return{id:'am.fl.'+g.k+'.'+x.id,t:(I&&I.code)||x.name||x.id,ic:'poly',b:I&&I.calc?tg(I.ton,isFinite(I.gA)?I.gA*I.ton:0):'belum dihitung',
+            kids:[{id:'am.fl.'+g.k+'.r',t:'Rencana (dig block)',ic:'poly',tab:'BM',sub:'Dig block',b:c?g.db.length+' DB · '+tg(c.t,c.m):'-',go:function(){flOpen(g,function(){PT.goSub('BM','Dig block');});}},
+              {id:'am.fl.'+g.k+'.a',t:'Aktual (as-mined)',ic:'asmined',tab:'AM',sub:'Register',b:nc?nc+' pol · '+tg(at,am2)+d:(g.am.length?g.am.length+' pol (belum dihitung)':'belum ada poligon'),go:function(){flOpen(g,function(){try{AM.show=true;uiTab('AM');PT.goSub('AM','Register');if(window.amApply&&g.am.length)amApply();}catch(e){}updatePlot();});}}].concat(g.am.map(function(x){var I=null;try{I=amInfoById(x.id);}catch(e){}return{id:'am.fl.'+g.k+'.'+x.id,t:(I&&I.code)||x.name||x.id,ic:'poly',tab:'AM',sub:'Register',b:I&&I.calc?tg(I.ton,isFinite(I.gA)?I.gA*I.ton:0):'belum dihitung',
               go:function(){flOpen(g,function(){uiTab('AM');PT.goSub('AM','Register');amBndAll().forEach(function(q){q.open=q.id===x.id;});amPanel();});}};}))};})}]);
     }catch(e){console.error(e);}return L;};
     try{PT.render(true);}catch(e){}}

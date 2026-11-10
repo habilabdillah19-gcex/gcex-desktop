@@ -20,15 +20,20 @@
     } catch (e) { return { ok: false, renderer: '(gagal membaca: ' + e.message + ')', vendor: '' }; }
   }
 
-  function catat(nama, sync) {
-    var o = { t: new Date().toISOString().slice(11, 19), aksi: nama, sync: Math.round(sync), lt: 0, pl: [] };
+  /* Waktu kotak dialog (prompt / confirm / alert) TIDAK dihitung (BM 0.24.56 / DH 0.24.61): selama dialog terbuka layar
+     memang tertahan menunggu pemakai, bukan karena aplikasi lambat. Dulu "Pakai cut-off" tercatat 7,4 detik padahal
+     hitungannya ±0,4 detik -- sisanya waktu pemilik mengetik batas kelas. */
+  K.dlg = 0;
+  ['prompt', 'confirm', 'alert'].forEach(function (k) { var f = window[k]; if (typeof f !== 'function' || f._kin) return; var w = function () { var t = performance.now(); try { return f.apply(window, arguments); } finally { var d = performance.now() - t; K.dlg += d; if (K.aktif) K.aktif.dlg = (K.aktif.dlg || 0) + d; } }; w._kin = 1; window[k] = w; });
+  function catat(nama, sync, dlg) {
+    var o = { t: new Date().toISOString().slice(11, 19), aksi: nama + (dlg > 50 ? ' (dialog ' + (dlg / 1000).toFixed(1) + ' dtk tidak dihitung)' : ''), sync: Math.round(Math.max(0, sync)), lt: 0, pl: [], dlg: dlg || 0 };
     K.log.unshift(o); if (K.log.length > K.maks) K.log.length = K.maks;
     K.aktif = o; setTimeout(function () { if (K.aktif === o) K.aktif = null; gambar(); }, 1600);
     return o;
   }
   function pasangPengamat() {
     try {
-      new PerformanceObserver(function (l) { l.getEntries().forEach(function (e) { if (K.aktif) K.aktif.lt += e.duration; }); }).observe({ entryTypes: ['longtask'] });
+      new PerformanceObserver(function (l) { l.getEntries().forEach(function (e) { if (!K.aktif) return; var o = K.aktif, d = e.duration, sisa = Math.max(0, (o.dlg || 0) - (o._dlgLt || 0)), pot = Math.min(d, sisa); o._dlgLt = (o._dlgLt || 0) + pot; o.lt += d - pot; }); }).observe({ entryTypes: ['longtask'] });
     } catch (e) {}
     var P = window.Plotly; if (!P || P._kinW) return;
     ['react', 'newPlot', 'relayout', 'restyle'].forEach(function (k) {
@@ -48,10 +53,10 @@
     return (t.tagName === 'SELECT' ? 'Pilih: ' : t.type === 'checkbox' ? 'Centang: ' : 'Tombol: ') + (s || t.id);
   }
   function pasangKlik() {
-    var t0 = 0, nama = null;
-    document.addEventListener('click', function (e) { nama = namaAksi(e); t0 = nama ? performance.now() : 0; }, true);
-    window.addEventListener('click', function () { if (!t0) return; catat(nama, performance.now() - t0); t0 = 0; }, false);
-    document.addEventListener('change', function (e) { var n = namaAksi(e); if (n) { t0 = performance.now(); setTimeout(function () { if (t0) { catat(n, performance.now() - t0); t0 = 0; } }, 0); } }, true);
+    var t0 = 0, nama = null, d0 = 0;
+    document.addEventListener('click', function (e) { nama = namaAksi(e); t0 = nama ? performance.now() : 0; d0 = K.dlg; }, true);
+    window.addEventListener('click', function () { if (!t0) return; var dl = K.dlg - d0; catat(nama, performance.now() - t0 - dl, dl); t0 = 0; }, false);
+    document.addEventListener('change', function (e) { var n = namaAksi(e); if (n) { t0 = performance.now(); d0 = K.dlg; setTimeout(function () { if (t0) { var dl = K.dlg - d0; catat(n, performance.now() - t0 - dl, dl); t0 = 0; } }, 0); } }, true);
   }
 
   function laporan() {

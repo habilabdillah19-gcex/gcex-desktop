@@ -55,7 +55,7 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(5000)
     # buka panel Sayatan dulu: slidernya ada di panel itu, dan selama panel lain yang tampil
     # slider #pos tidak terlihat sehingga tidak bisa diseret (ini yang bikin pengukuran sebelumnya gagal)
-    pg.evaluate("PT.select('set.s')")
+    pg.evaluate("PT.select('set.o')")
     pg.wait_for_timeout(1200)
     # nyalakan pemotongan slab supaya geseran slider benar-benar menggambar ulang block model
     pg.evaluate("(function(){var c=document.getElementById('sliceClip');if(c&&!c.checked){c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));}})()")

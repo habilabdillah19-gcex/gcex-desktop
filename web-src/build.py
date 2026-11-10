@@ -3,6 +3,9 @@ import os
 W = os.path.dirname(os.path.abspath(__file__)) + '/'
 OUT = os.path.join(W, '..', 'app', 'index.html')
 s = open(W + 'gcex_base.html', encoding='utf-8').read()
+# pembaca daftar atribut .mdl (bersama Drillhole) disisipkan di bagian IMPORT, bukan di EXTRA (yang hanya jalan di viewer)
+assert s.count('/* @@MDLATTR@@ */') == 1, 'penanda MDLATTR hilang'
+s = s.replace('/* @@MDLATTR@@ */', open(W + 'mdlattr.js', encoding='utf-8').read())
 
 def rep(a, b, cnt=1):
     global s

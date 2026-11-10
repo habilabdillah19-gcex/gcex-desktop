@@ -5353,8 +5353,7 @@ SA.readMDL=async function(f,prog){var buf=await f.arrayBuffer(),u=new Uint8Array
   var D=[];for(var i=0;i<9;i++)D.push(dv.getFloat64(p+i*8));p+=72;var O=[D[0],D[1],D[2]],RT=[D[3],D[4],D[5]],EX=[D[6],D[7],D[8]];
   var rot=dv.getInt32(p),na=dv.getInt32(p+4),pNa=p+4;p+=8;if(!(na>0&&na<500))throw new Error('Header .mdl tidak dikenali (jumlah atribut '+na+').');
   if(!(RT[0]>0&&RT[1]>0&&RT[2]>0&&EX[0]>0))throw new Error('Header .mdl tidak dikenali (ukuran model).');
-  var A=[];for(i=0;i<na;i++){var s=str(p);p=s.p;var calc=dv.getInt32(p),q2=dv.getInt32(p+4);p+=8;var a={name:s.s,calc:calc===1};
-    if(a.calc){var e=str(p);a.expr=e.s;p=e.p;}else{var ty=dv.getInt32(p);p+=4;a.type=ty;if(ty===2||ty===4||ty===5){a.def=dv.getFloat64(p);p+=8;p+=1;}else if(ty===3){var d=str(p);a.def=d.s;p=d.p+1;}else if(ty===1){a.def=dv.getInt32(p);p+=4;p+=1;}else throw new Error('Tipe atribut "'+a.name+'" ('+ty+') belum didukung.');}A.push(a);}
+  /* daftar atribut: web-src/mdlattr.js (lebar nilai bawaan diverifikasi; 0.24.61) */var R=mdlAttrs(u,p,na),A=R.A;p=R.p;
   p+=4;var pData=p,ST=A.filter(function(a){return !a.calc;}),recMin=8;ST.forEach(function(a){recMin+=a.type===3||a.type===1?4:8;});
   var cap=Math.floor((N-p)/recMin)+2,X=new Float64Array(cap),Y=new Float64Array(cap),Z=new Float64Array(cap),SX=new Float32Array(cap),SY=new Float32Array(cap),SZ=new Float32Array(cap),num={},cat={},dict={},n=0;
   ST.forEach(function(a){if(a.type===3)cat[a.name]=new Int32Array(cap);else num[a.name]=new Float64Array(cap);});/* float64: nilai persis sama saat diexport kembali ke .mdl */
@@ -5391,8 +5390,7 @@ SA.mdlHead=async function(f){var n0=Math.min(f.size,8*1048576),u=new Uint8Array(
   if(u[p]===0)p++;var nm0=p,nm=str(p);p=nm.p+1;p+=12;var D=[];for(var i=0;i<9;i++)D.push(dv.getFloat64(p+i*8));p+=72;
   var rot=dv.getInt32(p),na=dv.getInt32(p+4),pNa=p+4;p+=8;if(!(na>0&&na<500))throw new Error('Header .mdl tidak dikenali (jumlah atribut '+na+').');
   var RT=[D[3],D[4],D[5]];if(!(RT[0]>0&&RT[1]>0&&RT[2]>0&&D[6]>0))throw new Error('Header .mdl tidak dikenali (ukuran model).');
-  var A=[];for(i=0;i<na;i++){var s=str(p);p=s.p;var calc=dv.getInt32(p);p+=8;var a={name:s.s,calc:calc===1};
-    if(a.calc){var e=str(p);a.expr=e.s;p=e.p;}else{var ty=dv.getInt32(p);p+=4;a.type=ty;if(ty===2||ty===4||ty===5){a.def=dv.getFloat64(p);p+=9;}else if(ty===3){var d=str(p);a.def=d.s;p=d.p+1;}else if(ty===1){a.def=dv.getInt32(p);p+=5;}else throw new Error('Tipe atribut "'+a.name+'" ('+ty+') belum didukung.');}A.push(a);}
+  /* daftar atribut: web-src/mdlattr.js (lebar nilai bawaan diverifikasi; 0.24.61) */var R=mdlAttrs(u,p,na),A=R.A;p=R.p;
   p+=4;var ST=A.filter(function(a){return !a.calc;}),recMin=8;ST.forEach(function(a){recMin+=a.type===3||a.type===1?4:8;});
   return{file:f.name,size:f.size,nm:nm.s,nmA:nm0,nmB:nm.p-1,O:[D[0],D[1],D[2]],RT:RT,EX:[D[6],D[7],D[8]],rot:rot,A:A,ST:ST,pData:p,pNa:pNa,pAE:p-4,recMin:recMin,hraw:u.slice(0,p),estN:Math.max(0,Math.floor((f.size-p)/recMin))};};
 SA.mdlFmt=function(b){return b>=1073741824?(b/1073741824).toFixed(2)+' GB':(b/1048576).toFixed(0)+' MB';};
