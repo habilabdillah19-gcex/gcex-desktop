@@ -227,7 +227,8 @@ ch('Membuat folder proyek & import data', dta('<code>data/SIM_collar.csv</code>,
  + fig('import_database', 'Empat file database sudah dipilih. Ringkasan hijau di bawah memastikan jumlah collar, survey, assay dan geologi terbaca benar.')
  + why('Dengan folder proyek, semua pekerjaan (flag, string, hasil estimasi) tersimpan otomatis ke folder 3 detik setelah ada perubahan, lengkap dengan backup berversi. Rekan lain cukup membuka folder yang sama.')
  + fig('viewer_3d', f"Viewer 3D setelah import: {N['nHole']} lubang bor, {fN(N['nAssay'])} interval assay diwarnai kelas Au. Pesan di bawah: <i>SIM_BM_GC.csv tersalin ke folder proyek sumber/</i>.")
- + tip('Jika ringkasan menulis <i>hole di assay tidak ada di collar</i>, buka <b>Pemetaan kolom &amp; unsur</b> dan cek kolom Hole ID.'))
+ + tip('Jika ringkasan menulis <i>hole di assay tidak ada di collar</i>, buka <b>Pemetaan kolom &amp; unsur</b> dan cek kolom Hole ID.')
+ + tip('<b>Data per lubang (pop-up).</b> Tombol di bawah <i>Hole ID</i> (atau node <i>Database Bor › Data per lubang</i>) membuka jendela berisi collar, survey, assay dan geologi satu lubang. Jendela mengikuti pilihan Hole ID dan klik lubang di 3D; kolom unsur yang sedang ditampilkan disorot. Panel <b>Geostatistik</b> dan hasil <b>Reporting BM</b> juga bisa dilepas menjadi jendela lewat tombol <b>&#10697; Pop-up</b>.'))
 
 VL = N.get('valid', []) if isinstance(N.get('valid', []), list) else json.loads(N['valid'])
 ch('Validasi data bor', dta('untuk melihat pesan kesalahan: <code>data/SIM_rusak_collar.csv</code> + <code>SIM_rusak_assay.csv</code> (dipilih sebagai Collar / Assay di halaman import, pada proyek coba-coba)',
@@ -575,6 +576,7 @@ ch('Filter domain & statistik', dta('lanjutan &mdash; komposit dari interval ber
  + ('<h3>Kurva pemusatan logam (0.24.24)</h3>' + steps('Masih di tab <b>Statistik</b>, gulir ke grafik <b>Pemusatan logam</b>: % sampel teratas terhadap % logam terkumpul ([[geostat_logam]]).',
      'Tabel di bawahnya memberi <b>ambang kadar</b> untuk 1 / 2,5 / 5 / 10% sampel teratas; tombol <b>Pakai sebagai top-cut</b> mengisi top-cut dan menghitung ulang.')
     + fig('geostat_logam', 'Pemusatan logam domain QV_Lensa2: ' + '; '.join('%s%% sampel teratas (&ge; %s g/t) = %s%% logam' % (str(q[0]).replace('.', ','), fN(q[1], 2), str(q[2]).replace('.', ',')) for q in (N.get('mc') or [])[:3]) + '.')
+    + tip('Panel Geostatistik bisa dilepas menjadi jendela yang bisa digeser dan diubah ukurannya (tombol <b>&#10697; Pop-up</b> di judulnya) supaya grafik statistik &amp; variogram lebih lebar.')
     + tip('Bila 1% sampel teratas memuat lebih dari &plusmn;10% logam, kadar ekstrem terlalu berpengaruh pada rata-rata: pertimbangkan top-cut, lalu cocokkan dengan titik patah kurva log-probability dan tabel top-cut.') if ('geostat_logam' in FIG) else '')
  + ('<h3>Profil vertikal: zonasi kadar (0.24.24)</h3>' + steps('Tab <b>Profil</b> di panel Geostatistik. Sumbu <b>RL</b>, lebar pita 10 m. Panel bawaan: Au, rasio Ag/Au, jumlah Pb+Zn, dan % kode tekstur colloform / crustiform (bila ada kolom tekstur).',
      'Isi <b>Garis acuan</b> (mis. paleo-muka air tanah RL 250) dan labelnya. Panel bisa ditambah / diganti: unsur, rasio, jumlah, atau % kode geologi apa pun.',

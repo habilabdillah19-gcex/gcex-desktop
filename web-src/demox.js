@@ -210,7 +210,7 @@
         d: 'Tonase × kadar seluruh model dengan batasan topografi, pit, RL dan poligon; hasilnya bisa diexport CSV.',
         run: function (A) { A(0, function () { tab('Rep'); }); } });
       S.push({ s: 'Periode', t: 'Laporan mingguan & bulanan', dur: 6,
-        d: 'Register as-mined dijumlahkan per minggu atau bulan, per shift / tujuan / flitch, dibanding periode sebelumnya.',
+        d: 'Register as-mined dijumlahkan per minggu atau bulan, per shift / tujuan / flitch, dibanding periode sebelumnya. Report harian, mingguan dan bulanan per poligon (dengan kunci tanggal-shift saat laporan harian dikirim) ada di Register untuk database.',
         run: function (A) { A(0.8, function () { try { PRD.dlg(); } catch (e) {} }); A(5.2, function () { try { PRD.close(); } catch (e) {} }); } });
     }
     /* fitur baru: beberapa desain pit sekaligus & progres topo-ke-topo.

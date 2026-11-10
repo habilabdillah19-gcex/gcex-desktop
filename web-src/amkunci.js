@@ -141,8 +141,7 @@
     '.gxpop{position:fixed;left:380px;top:70px;z-index:60;width:min(860px,calc(100vw - 400px));max-height:calc(100vh - 90px);display:none;flex-direction:column;background:var(--sf,#fff);color:var(--tx);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.25)}' +
     '.gxpop .gxph{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;background:var(--pr,#1c3d8f);color:#fff;border-radius:8px 8px 0 0;cursor:move;user-select:none}.gxpop .gxph button{background:none;border:0;color:#fff;font-size:16px;width:26px;height:24px;cursor:pointer}' +
     '.gxpop .gxpb{overflow:auto;padding:8px 10px}.gxpop.min .gxpb{display:none}.gxpop.min{width:320px}' +
-    '.gxpop table{border-collapse:collapse;width:100%;font-size:11.5px}.gxpop th,.gxpop td{border-bottom:1px solid var(--bd);padding:3px 5px;text-align:right;white-space:nowrap}.gxpop th:nth-child(-n+5),.gxpop td:nth-child(-n+5){text-align:left}.gxpop tr.tot td{font-weight:700;border-top:2px solid var(--bd)}.gxpop tr.sub td{font-weight:600;background:var(--prs,#eef2fb)}' +
-    '.gxpop .rpt{display:flex;flex-wrap:wrap;gap:6px;align-items:end;margin-bottom:6px}.gxpop .rpt label{display:block;font-size:11px;color:var(--mu)}.gxpop .lk{color:#7048e8;font-weight:700}.gxpop .warn{color:var(--dn,#c92a2a)}'; document.head.appendChild(st); })();
+    ''; document.head.appendChild(st); })();
 
   /* ---------- Report As-Mined per tanggal ---------- */
   AMK.f = AMK.f || { shift: '' };

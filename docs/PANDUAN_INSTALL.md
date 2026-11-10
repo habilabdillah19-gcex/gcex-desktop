@@ -4378,3 +4378,22 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   di periode itu yang belum dilaporkan harian.
 - Bagian **Register untuk database** kini tampil sebagai **jendela pop-up** (bisa digeser, diperkecil, ditutup; *↩ Panel* untuk
   mengembalikan ke panel).
+
+## 172. Block Model 0.24.64 & Drillhole 0.24.63 — pop-up tahap 2, Report block model dalam Solid Vein, Data per lubang
+
+**Block Model**
+- Tombol **⧉ Pop-up** kini juga ada pada: daftar **dig block** flitch aktif (bagian *Running grade & tonnage*), **hasil Reporting**
+  (tab *Hasil*; jendela tetap memperlihatkan hasil terakhir saat Anda pindah ke tab *Constraint* untuk mengubah batas), dan
+  **Solid Vein › Poligon per flitch**. Jendela pop-up bisa diubah ukurannya dari pojok kanan bawah.
+- **Solid Vein › [periode] › Report block model dalam solid**: grade × tonase **block model resmi** di dalam solid periode itu —
+  per cut-off, per pulau, per flitch — dengan *Salin ke Excel* dan *CSV*. Blok dihitung utuh bila titik pusatnya di dalam solid
+  (cara Surpac). Periode (cut-off date) mengikuti tanggal periode Solid Vein; pilihan *Kumulatif* ikut. Bangun solid dulu.
+
+**Drillhole**
+- **Data per lubang (pop-up)**: tombol di bawah *Hole ID* (panel Data & Filter) atau node *Database Bor › Data per lubang*.
+  Jendela berisi collar, survey, assay (dengan rata-rata tertimbang panjang) dan geologi satu lubang; mengikuti pilihan Hole ID dan
+  klik lubang di 3D; kolom unsur yang sedang ditampilkan disorot; *Salin assay ke Excel*.
+- **Hasil Reporting BM** dan **panel Geostatistik** (statistik & variogram) bisa dilepas jadi jendela lewat tombol **⧉ Pop-up**.
+
+**Kedua aplikasi**: *Laporan kinerja* (Tampilan & performa) tetap mencatat setiap klik — termasuk di dalam jendela pop-up — untuk
+dikirim bila ada galat, jeda, atau lag.

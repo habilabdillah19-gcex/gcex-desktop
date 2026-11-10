@@ -6447,6 +6447,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
     return{id:'db',step:'3',t:'Database Bor',ic:'folder',fold:1,tab:'Data',b:C.length?N(C.length)+' hole':'',add:{t:'Tambah kampanye…',fn:function(){if(window.kpTambah)kpTambah();}},
       menu:function(){return(window.kpMenuDb?kpMenuDb():[]).concat([{h:'Import file (langsung)'},upsFile('collar'),upsFile('survey'),upsFile('assay'),upsFile('geo'),{sep:1},{t:'Tambah / perbarui beberapa tabel sekaligus (upsert)…',fn:ups},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}]);},
       kids:(window.kpTree?kpTree():[]).concat([tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[upsFile('collar'),{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
+        {id:'db.hole',t:'Data per lubang (pop-up)',ic:'table',tab:'Data',dim:!C.length,hint:'Collar, survey, assay & geologi satu lubang dalam jendela pop-up; ikut klik lubang di 3D',go:function(){if(window.HD)HD.buka();}},
         tb('db.survey','Survey','table',Sv.length,'survey',{tab:'Data'}),
         tb('db.assay','Assay','table',As.length,'assay',{tab:'Warna',hint:'Tampilan kadar: unsur, cutoff, kelas diskrit / gradasi warna',kids:els}),
         tb('db.geo','Geologi','geo',G.length,'geo',{tab:'Geo',kids:gat}),
@@ -6570,6 +6571,174 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
     /* klik di tree memakai select() internal, jadi yang diamati adalah perubahan sorotan node, bukan PT.select */
     var cek=function(){try{var p=$('pSP');if(p)p.classList.toggle('sp-bmsaja',/^bm\.v\./.test(String(PT.sel||'')));}catch(e){}try{refMode();}catch(e){}};
     var pasang=function(){var t=$('ptree');if(!t)return setTimeout(pasang,300);new MutationObserver(cek).observe(t,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});cek();};pasang();})();
+})();
+
+/* ================= GC-Ex (Block Model 0.24.60+ / Drillhole 0.24.63+): BAGIAN PANEL → JENDELA POP-UP =================
+   Usulan pemilik (10 Nov 2026): panel di dalam panel yang harus di-scroll naik-turun diganti pop-up yang bisa
+   disembunyikan bila tidak dipakai. Modul bersama kedua aplikasi (Drillhole lewat SHARED di build_dh.py); bagian yang
+   host-nya tidak ada di aplikasi itu dilewati.
+
+   Cara kerja: tiap bagian punya tombol "⧉ Pop-up" di judulnya. Saat menyala, isi bagian itu DIPINDAH (bukan disalin)
+   ke jendela mengambang setiap kali panel digambar ulang (MutationObserver), sehingga semua tombol / isian tetap
+   bekerja seperti di panel. Di panel tersisa satu baris "ditampilkan di jendela pop-up · kembalikan". Jendela bisa
+   digeser, diubah ukurannya (pojok kanan bawah), diperkecil (–) dan ditutup (×); menutup = kembali ke panel. Pilihan
+   diingat per komputer (localStorage). Gaya panel '#host …' disalin ke '.gxpb.h-host …' supaya isi tampil sama.
+
+   Bagian (pemilik 10 Nov 2026):
+     Block Model : Register poligon (bawaan pop-up), Register untuk database (bawaan), Layout & export As-Mined,
+                   Solid Vein titik atap & poligon per flitch, daftar dig block per flitch (Running grade & tonnage),
+                   hasil Reporting.
+     Drillhole   : hasil Reporting; panel Geostatistik (statistik & variogram) bisa dilepas jadi jendela;
+                   jendela "Data per lubang" (web-src-dh/holedata_dh.js) memakai POP.win. */
+(function () {
+  if (window.POP) return;
+  /* ---------- jendela mengambang umum ---------- */
+  var ZT = 60;
+  function win(id, judul, isi) { var w = document.getElementById(id);
+    if (!w) { w = document.createElement('div'); w.id = id; w.className = 'gxpop'; w.innerHTML = '<div class=gxph><b></b><span><button type=button data-m title="Perkecil / perbesar">&#8211;</button><button type=button data-x title="Tutup">&times;</button></span></div><div class=gxpb></div>'; document.body.appendChild(w);
+      var h = w.firstChild, dr = null; w.addEventListener('mousedown', function () { w.style.zIndex = ++ZT; }, true);
+      h.addEventListener('mousedown', function (e) { if (e.target.closest('button')) return; var r = w.getBoundingClientRect(); dr = [e.clientX - r.left, e.clientY - r.top]; e.preventDefault(); });
+      window.addEventListener('mousemove', function (e) { if (!dr) return; w.style.left = Math.max(0, Math.min(innerWidth - 120, e.clientX - dr[0])) + 'px'; w.style.top = Math.max(0, Math.min(innerHeight - 40, e.clientY - dr[1])) + 'px'; });
+      window.addEventListener('mouseup', function () { dr = null; });
+      h.querySelector('[data-x]').onclick = function () { w.style.display = 'none'; }; h.querySelector('[data-m]').onclick = function () { w.classList.toggle('min'); }; }
+    w.querySelector('.gxph b').textContent = judul; if (isi != null) w.querySelector('.gxpb').innerHTML = isi; w.style.display = 'flex'; if (isi != null) w.classList.remove('min'); w.style.zIndex = ++ZT; return w; }
+
+  var ON = {}; try { ON = JSON.parse(localStorage.getItem('gcex_popout') || '{}') || {}; } catch (e) { ON = {}; }
+  /* bawaan pop-up (pemilik 10-11-2026: "Flitch asmined banyak loh, mengapa tidak disajikan dalam bentuk pop up";
+     "Setelah saya lihat layout nya, jadikan ini menu pop up") */
+  ['am.reg', 'am.db'].forEach(function (k) { if (ON[k] === undefined) ON[k] = true; });
+  var simpan = function () { try { localStorage.setItem('gcex_popout', JSON.stringify(ON)); } catch (e) {} };
+
+  /* judul .amh (As-Mined): saudara sesudah judul sampai judul berikutnya */
+  var amh = function (re) { return { hd: function (host) { var H = host.querySelectorAll('.amh'); for (var i = 0; i < H.length; i++) if (re.test(H[i].textContent.trim())) return H[i]; return null; }, grab: sampai('amh') }; };
+  function sampai(cls) { return function (hd) { var out = [], n = hd.nextSibling; while (n && !(n.nodeType === 1 && n.classList && n.classList.contains(cls))) { out.push(n); n = n.nextSibling; } return out; }; }
+  var svsec = function (k) { return { hd: function (host) { var s = host.querySelector('.svsec[data-sec="' + k + '"]'); return s ? s.querySelector('.svh') : null; }, grab: sampai('__tidakada__') }; };
+  var ext = function (a, b) { for (var k in b) a[k] = b[k]; return a; };
+  var DEF = [
+    ext({ k: 'am.reg', host: 'amBody', t: 'Daftar poligon per flitch (Register poligon)' }, amh(/^Register poligon/)),
+    ext({ k: 'am.db', host: 'amBody', t: 'Register untuk database · Report As-Mined', w: 'min(760px,calc(100vw - 440px))' }, amh(/^Register untuk database/)),
+    ext({ k: 'am.ly', host: 'amBody', t: 'Layout & export As-Mined' }, amh(/^Layout/)),
+    ext({ k: 'sv.pts', host: 'svBody', t: 'Solid Vein — titik atap (pick-up roof)' }, svsec('pts')),
+    ext({ k: 'sv.poly', host: 'svBody', t: 'Solid Vein — poligon per flitch', w: 'min(700px,calc(100vw - 440px))' }, svsec('poly')),
+    /* daftar dig block flitch aktif: judul "Σ Running grade & tonnage" sampai sub-judul .dbsub berikutnya */
+    { k: 'db.list', host: 'dbBody', t: 'Daftar dig block (running grade & tonnage)', w: 'min(680px,calc(100vw - 440px))', css: ['#pBM .lyb'],
+      hd: function (host) { var H = host.querySelectorAll('.dbsub'); for (var i = 0; i < H.length; i++) if (/Running grade/.test(H[i].textContent)) return H[i]; return null; }, grab: sampai('dbsub') },
+    /* hasil Reporting (BM & DH): semua isi sesudah tab Atribut / Constraint / Hasil, hanya saat tab Hasil berisi hasil;
+       saat pindah ke Constraint, jendela tetap memperlihatkan hasil terakhir */
+    { k: 'rp.res', host: 'rpBody', t: 'Hasil Reporting Block Model', w: 'min(820px,calc(100vw - 440px))', css: ['#pRep'], btnIn: true,
+      hd: function (host) { if (!(window.RP && RP.sec === '2' && RP.res)) return null; return host.querySelector('.rptabs'); }, grab: sampai('__tidakada__') }
+  ];
+  var sibuk = false;
+  function wOf(d) { var id = 'gxpo_' + d.k.replace(/\W/g, '_'), w = document.getElementById(id);
+    if (!w) { var i = DEF.indexOf(d); w = win(id, d.t, ''); w.style.left = (420 + 28 * i) + 'px'; w.style.top = (80 + 24 * i) + 'px'; w.style.width = d.w || 'min(620px,calc(100vw - 440px))'; w.style.display = 'none';
+      w.querySelector('.gxpb').classList.add('h-' + d.host); salinCss(); w.querySelector('[data-x]').onclick = function () { POP.set(d.k, false); }; }
+    return w; }
+  /* ---------- gaya panel → jendela ---------- */
+  var cssN = -1; function salinCss() { var map = {}; DEF.forEach(function (d) { map['#' + d.host] = d.host; (d.css || []).forEach(function (c) { map[c] = d.host; }); });
+    var esc = function (k) { return k.replace(/[.#]/g, '\\$&').replace(/ /g, '\\s+'); }, keys = Object.keys(map).sort(function (a, b) { return b.length - a.length; }), RX = keys.map(function (k) { return [new RegExp(esc(k) + '(?![\\w-])', 'g'), '.gxpb.h-' + map[k]]; }), out = [], n = 0;
+    try { [].forEach.call(document.styleSheets, function (sh) { var R; try { R = sh.cssRules; } catch (e) { return; } if (!R || (sh.ownerNode && sh.ownerNode.id === 'gxpoCss')) return;
+        [].forEach.call(R, function (r) { var sel = r.selectorText; if (!sel) return; var ub = false; RX.forEach(function (q) { q[0].lastIndex = 0; if (q[0].test(sel)) { q[0].lastIndex = 0; sel = sel.replace(q[0], q[1]); ub = true; } }); if (ub) { n++; out.push(sel + '{' + r.style.cssText + '}'); } }); }); } catch (e) {}
+    if (n === cssN) return; cssN = n; var el = document.getElementById('gxpoCss'); if (!el) { el = document.createElement('style'); el.id = 'gxpoCss'; document.head.appendChild(el); }
+    el.textContent = out.join('\n') + '\n.gxpb .lylist{max-height:none!important}'; }
+  function render(d) { try { ({ amBody: window.amPanel, svBody: window.SV && SV.panel, dbBody: window.dbPanel, rpBody: window.rpPanel }[d.host] || function () {})(); } catch (e) {} }
+  function tampil(d, w, vis) { if (d._force || (vis && !d._vis)) { w.style.display = 'flex'; w.classList.remove('min'); w.style.zIndex = ++ZT; } d._force = 0; d._vis = vis; }
+  function apply() { if (sibuk) return; amati(); sibuk = true;
+    try { DEF.forEach(function (d) { var host = document.getElementById(d.host); if (!host) return; var hd = d.hd(host); if (!hd) { d._vis = false; return; }
+        if (!hd.querySelector('.gxpob')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'gxpob'; b.title = ON[d.k] ? 'Kembalikan ke panel' : 'Tampilkan bagian ini di jendela pop-up (bisa digeser, diperkecil, ditutup)'; b.innerHTML = ON[d.k] ? '&#8617; Panel' : '&#10697; Pop-up';
+          b.onclick = function (e) { e.stopPropagation(); e.preventDefault(); POP.set(d.k, !ON[d.k]); }; hd.appendChild(b); }
+        if (!ON[d.k]) return; var N = d.grab(hd); if (!N.length) return; var w = wOf(d), vis = hd.offsetParent !== null;
+        if (N.some(function (n) { return n.nodeType === 1 && n.classList && n.classList.contains('gxpoph'); })) { tampil(d, w, vis); return; } /* sudah dipindah, panel belum digambar ulang */
+        var body = w.querySelector('.gxpb'), st = body.scrollTop;
+        var ph = document.createElement('div'); ph.className = 'gxpoph'; ph.innerHTML = '&#10697; Ditampilkan di jendela pop-up <b>' + d.t.replace(/</g, '&lt;') + '</b> &middot; <a href="#">tampilkan jendela</a> &middot; <a href="#" data-k>kembalikan ke panel</a>';
+        ph.querySelector('a').onclick = function (e) { e.preventDefault(); w.style.display = 'flex'; w.classList.remove('min'); w.style.zIndex = ++ZT; }; ph.querySelector('[data-k]').onclick = function (e) { e.preventDefault(); POP.set(d.k, false); };
+        hd.parentNode.insertBefore(ph, N[0]); body.innerHTML = ''; N.forEach(function (n) { body.appendChild(n); }); body.scrollTop = st;
+        /* grafik Plotly di dalam isi yang dipindah perlu mengukur ulang lebarnya */
+        setTimeout(function () { try { [].forEach.call(body.querySelectorAll('.js-plotly-plot'), function (g) { Plotly.Plots.resize(g); }); } catch (e) {} }, 60);
+        tampil(d, w, vis); }); } catch (e) { console.error('popout', e); }
+    sibuk = false; }
+  var POP = window.POP = { def: DEF, apply: apply, win: win,
+    set: function (k, v) { ON[k] = !!v; simpan(); var d = DEF.filter(function (q) { return q.k === k; })[0]; if (!d) return; var w = document.getElementById('gxpo_' + k.replace(/\W/g, '_'));
+      if (!v && w) { w.style.display = 'none'; w.querySelector('.gxpb').innerHTML = ''; } d._force = !!v; render(d); setTimeout(apply, 0); },
+    on: function (k) { return !!ON[k]; } };
+  var T = null, kick = function () { if (sibuk) return; clearTimeout(T); T = setTimeout(apply, 0); };
+  function amati() { DEF.forEach(function (d) { var e = document.getElementById(d.host); if (e && !e._gxpo) { e._gxpo = 1; new MutationObserver(kick).observe(e, { childList: true, attributes: true, attributeFilter: ['data-f', 'hidden', 'class', 'style'] }); } }); }
+  amati(); setTimeout(function () { amati(); apply(); }, 0); setInterval(amati, 3000);
+  /* pindah node di Project Tree sering hanya menyembunyikan / menampilkan bagian (tanpa menggambar ulang): periksa lagi sesudahnya */
+  (function () { var tunggu = function () { if (!window.PT || !PT.select) return setTimeout(tunggu, 500); if (PT.select._gxpo) return; var _s = PT.select; PT.select = function () { var r = _s.apply(this, arguments); setTimeout(apply, 250); setTimeout(apply, 700); return r; }; PT.select._gxpo = 1; }; tunggu(); })();
+
+  /* ---------- panel Geostatistik (statistik & variogram) dilepas jadi jendela ---------- */
+  (function () { var gs = function () { var p = document.getElementById('gsPanel'); if (!p) return; var gh = p.querySelector('.gh'); if (!gh || gh.querySelector('.gxpob')) return;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'gxpob'; var lepas = function (v) { p.classList.toggle('gxfloat', v); b.innerHTML = v ? '&#8617; Panel' : '&#10697; Pop-up'; b.title = v ? 'Kembalikan ke panel kanan' : 'Lepas panel Geostatistik menjadi jendela yang bisa digeser & diubah ukurannya';
+          if (v && !p.style.left) { p.style.left = Math.max(40, innerWidth - 900) + 'px'; p.style.top = '70px'; } ON['gs.float'] = v; simpan();
+          setTimeout(function () { try { if (window.uiResize) uiResize(); } catch (e) {} try { [].forEach.call(p.querySelectorAll('.js-plotly-plot'), function (g) { Plotly.Plots.resize(g); }); } catch (e) {} try { var gd = document.getElementById('plotDiv'); if (gd) Plotly.Plots.resize(gd); } catch (e) {} }, 80); };
+      b.onclick = function (e) { e.stopPropagation(); lepas(!p.classList.contains('gxfloat')); }; var tg = gh.querySelector('span') || gh; tg.insertBefore(b, tg.firstChild);
+      var dr = null; gh.addEventListener('mousedown', function (e) { if (!p.classList.contains('gxfloat') || e.target.closest('button,select,input')) return; var r = p.getBoundingClientRect(); dr = [e.clientX - r.left, e.clientY - r.top]; e.preventDefault(); });
+      window.addEventListener('mousemove', function (e) { if (!dr) return; p.style.left = Math.max(0, Math.min(innerWidth - 160, e.clientX - dr[0])) + 'px'; p.style.top = Math.max(0, Math.min(innerHeight - 60, e.clientY - dr[1])) + 'px'; });
+      window.addEventListener('mouseup', function () { if (dr) { dr = null; } });
+      try { new ResizeObserver(function () { if (!p.classList.contains('gxfloat')) return; clearTimeout(p._rz); p._rz = setTimeout(function () { try { [].forEach.call(p.querySelectorAll('.js-plotly-plot'), function (g) { Plotly.Plots.resize(g); }); } catch (e) {} }, 120); }).observe(p); } catch (e) {}
+      if (ON['gs.float']) lepas(true); };
+    gs(); setTimeout(gs, 0); setTimeout(gs, 1500); })();
+
+  var st = document.createElement('style'); st.textContent =
+    '.gxpop{position:fixed;left:380px;top:70px;z-index:60;width:min(860px,calc(100vw - 400px));height:auto;max-height:calc(100vh - 90px);display:none;flex-direction:column;background:var(--sf,#fff);color:var(--tx);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.25);resize:both;overflow:hidden;min-width:300px;min-height:80px}' +
+    '.gxpop .gxph{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;background:var(--pr,#1c3d8f);color:#fff;border-radius:8px 8px 0 0;cursor:move;user-select:none}.gxpop .gxph button{background:none;border:0;color:#fff;font-size:16px;width:26px;height:24px;cursor:pointer}' +
+    '.gxpop .gxpb{flex:1 1 auto;overflow:auto;padding:8px 10px}.gxpop.min .gxpb{display:none}.gxpop.min{width:320px!important;height:auto!important;resize:none}' +
+    '.gxpop table.gxtb{border-collapse:collapse;width:100%;font-size:11.5px}.gxpop .gxtb th,.gxpop .gxtb td{border-bottom:1px solid var(--bd);padding:3px 5px;text-align:right;white-space:nowrap}.gxpop .gxtb th:first-child,.gxpop .gxtb td:first-child{text-align:left}.gxpop .gxtb th{position:sticky;top:0;background:var(--sf2,#eef1f6)}.gxpop .gxtb tr.tot td{font-weight:700;border-top:2px solid var(--bd)}.gxpop .gxtb tr.sub td{font-weight:600;background:var(--prs,#eef2fb)}.gxpop .gxtb tr.hl td{background:rgba(196,154,76,.25)}' +
+    '.gxpob{float:right;height:20px;padding:0 7px;font-size:11px;font-weight:600;margin-left:6px;border-radius:10px}.rptabs .gxpob{float:none;flex:0 0 auto!important;align-self:center}.gxpoph{font-size:11.5px;color:var(--mu);border:1px dashed var(--bd);border-radius:6px;padding:4px 8px;margin:4px 0}.gxpop .gxpb .amh{margin-top:6px}' +
+    '#gsPanel.gxfloat{position:fixed!important;z-index:59;width:820px;height:72vh;max-width:none;min-width:420px;min-height:260px;resize:both;overflow:hidden;border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.25)}#gsPanel.gxfloat .gh{cursor:move}';
+  document.head.appendChild(st);
+})();
+
+/* ================= GC-Ex Drillhole 0.24.63: JENDELA "DATA PER LUBANG" =================
+   Permintaan pemilik (10 Nov 2026): tabel data per lubang (collar, survey, assay, geologi) dalam jendela pop-up, supaya
+   isi lubang yang sedang disorot di 3D bisa dibaca tanpa meninggalkan tampilannya.
+   - Lubang dipilih dari daftar (ketik untuk mencari), tombol ◀ ▶, mengikuti filter Hole ID di Data & Filter, atau klik
+     lintasan / collar lubang di jendela 3D / plan (plotly_click: id lubang dicari di nama trace & teks hover).
+   - Tabel memakai larik global aplikasi (collars, surveys, assays, elements, asCat, geoRows, geoCat) apa adanya:
+     tidak mengubah data, tidak ikut disimpan. Kolom unsur yang sedang ditampilkan disorot.
+   - Jendela memakai POP.win (web-src/popout.js): digeser, diubah ukurannya, diperkecil, ditutup. */
+(function () {
+  var HD = window.HD = { id: '', ikut: true };
+  var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
+  var N = function (v, d) { if (v == null || !isFinite(v)) return ''; return (+v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d == null ? 3 : d }); };
+  var arr = function (k) { var v = window[k]; return Array.isArray(v) ? v : []; };
+  function ids() { return arr('collars').map(function (c) { return c[0]; }); }
+  HD.buka = function (id) { if (!arr('collars').length) { alert('Belum ada data collar. Import database bor dulu.'); return; } if (id) HD.id = id; if (!HD.id || ids().indexOf(HD.id) < 0) { var hf = document.getElementById('holeFilter'); HD.id = hf && hf.value !== 'ALL' ? hf.value : ids()[0]; } HD.render(true); };
+  HD.geser = function (d) { var L = ids(), i = L.indexOf(HD.id); if (i < 0) i = 0; i = (i + d + L.length) % L.length; HD.id = L[i]; HD.render(); };
+  HD.pakai = function (v) { var L = ids(), v2 = String(v || '').trim(); if (L.indexOf(v2) < 0) { var c = L.filter(function (x) { return x.toUpperCase() === v2.toUpperCase(); })[0] || L.filter(function (x) { return x.toUpperCase().indexOf(v2.toUpperCase()) >= 0; })[0]; if (!c) return; v2 = c; } HD.id = v2; HD.render(); };
+  HD.zoom = function () { var hf = document.getElementById('holeFilter'); if (!hf) return; if (![].some.call(hf.options, function (o) { return o.value === HD.id; })) { var b = document.getElementById('benchFilter'); if (b) { b.value = 'ALL'; if (window.benchChanged) benchChanged(); } } hf.value = HD.id; if (window.updatePlot) updatePlot(); };
+  HD.tsv = function () { var id = HD.id, el = arr('elements'), ac = arr('asCat'), out = [['HOLE_ID', 'FROM', 'TO', 'LENGTH', 'SAMPLE'].concat(el).concat(ac.map(function (c) { return c.n; })).join('\t')];
+    arr('assays').filter(function (r) { return r[0] === id; }).sort(function (a, b) { return a[1] - b[1]; }).forEach(function (r) { out.push([r[0], r[1], r[2], +(r[2] - r[1]).toFixed(3), r[3]].concat((r[4] || []).map(function (v) { return v == null ? '' : v; })).concat((r[5] || []).map(function (x, i) { return x >= 0 && ac[i] ? ac[i].d[x] : ''; })).join('\t')); }); return out.join('\r\n'); };
+  HD.salin = function () { var t = HD.tsv(), ok = false; try { var a = document.createElement('textarea'); a.value = t; a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select(); ok = document.execCommand('copy'); a.remove(); } catch (e) {} var m = document.getElementById('hdMsg'); if (m) m.textContent = ok ? 'Assay lubang ' + HD.id + ' tersalin — tempel (Ctrl+V) di Excel.' : 'Gagal menyalin.'; };
+  HD.render = function (paksa) { var w0 = document.getElementById('hdPop'); if (!paksa && (!w0 || w0.style.display === 'none')) return; var id = HD.id, c = arr('collars').filter(function (r) { return r[0] === id; })[0];
+    var el = arr('elements'), ac = arr('asCat'), gc = arr('geoCat'), ef = (document.getElementById('elementFilter') || {}).value, ei = el.indexOf(ef);
+    var S = arr('surveys').filter(function (r) { return r[0] === id; }).sort(function (a, b) { return a[1] - b[1]; }), A = arr('assays').filter(function (r) { return r[0] === id; }).sort(function (a, b) { return a[1] - b[1]; }), G = arr('geoRows').filter(function (r) { return r[0] === id; }).sort(function (a, b) { return a[1] - b[1]; });
+    var L = ids(), h = '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><button onclick="HD.geser(-1)" title="Lubang sebelumnya">&#9664;</button><input list=hdList value="' + E(id) + '" style="width:150px" onchange="HD.pakai(this.value)" title="Ketik Hole ID"><datalist id=hdList>' + L.slice(0, 5000).map(function (x) { return '<option value="' + E(x) + '">'; }).join('') + '</datalist><button onclick="HD.geser(1)" title="Lubang berikutnya">&#9654;</button>' +
+      '<label class=sw style="margin:0 6px"><input type=checkbox ' + (HD.ikut ? 'checked' : '') + ' onchange="HD.ikut=this.checked">Ikuti klik di 3D / filter Hole ID</label><span style="margin-left:auto;display:flex;gap:4px"><button onclick="HD.zoom()" title="Tampilkan hanya lubang ini (filter Hole ID)">Sorot di 3D</button><button onclick="HD.salin()">Salin assay ke Excel</button></span></div>';
+    if (!c) { h += '<div class=hint>Lubang tidak ditemukan.</div>'; }
+    else { var td = c[4], dmax = Math.max(td || 0, A.length ? A[A.length - 1][2] : 0, G.length ? G[G.length - 1][2] : 0, S.length ? S[S.length - 1][1] : 0);
+      h += '<table class=gxtb><tr><th>Collar</th><th>Easting</th><th>Northing</th><th>RL</th><th>Total depth</th><th>Survey</th><th>Assay</th><th>Geologi</th></tr><tr><td><b>' + E(id) + '</b></td><td>' + N(c[1], 3) + '</td><td>' + N(c[2], 3) + '</td><td>' + N(c[3], 3) + '</td><td>' + (td ? N(td, 2) : '<span class=hint>' + N(dmax, 2) + ' (dari data)</span>') + '</td><td>' + S.length + '</td><td>' + A.length + '</td><td>' + G.length + '</td></tr></table>';
+      if (S.length) h += '<h4 style="margin:8px 0 4px">Survey</h4><table class=gxtb><tr><th>Depth</th><th>Dip</th><th>Azimuth</th></tr>' + S.map(function (r) { return '<tr><td>' + N(r[1], 2) + '</td><td>' + N(r[2], 2) + '</td><td>' + N(r[3], 2) + '</td></tr>'; }).join('') + '</table>';
+      if (A.length) { var tot = 0, sm = {}; A.forEach(function (r) { var L2 = r[2] - r[1]; tot += L2; (r[4] || []).forEach(function (v, i) { if (v != null && isFinite(v)) { sm[i] = sm[i] || [0, 0]; sm[i][0] += v * L2; sm[i][1] += L2; } }); });
+        h += '<h4 style="margin:8px 0 4px">Assay (' + A.length + ' interval)</h4><table class=gxtb><tr><th>From</th><th>To</th><th>Length</th><th>Sample</th>' + el.map(function (e, i) { return '<th' + (i === ei ? ' style="background:rgba(196,154,76,.45)"' : '') + '>' + E(e) + '</th>'; }).join('') + ac.map(function (q) { return '<th>' + E(q.n) + '</th>'; }).join('') + '</tr>' +
+          A.map(function (r) { return '<tr><td>' + N(r[1], 2) + '</td><td>' + N(r[2], 2) + '</td><td>' + N(r[2] - r[1], 2) + '</td><td>' + E(r[3]) + '</td>' + (r[4] || []).map(function (v, i) { return '<td' + (i === ei ? ' style="background:rgba(196,154,76,.18);font-weight:600"' : '') + '>' + (v == null ? '' : N(v)) + '</td>'; }).join('') + (r[5] || []).map(function (x, i) { return '<td>' + (x >= 0 && ac[i] ? E(ac[i].d[x]) : '') + '</td>'; }).join('') + '</tr>'; }).join('') +
+          '<tr class=tot><td colspan=2>Rata-rata tertimbang panjang</td><td>' + N(tot, 2) + '</td><td></td>' + el.map(function (e, i) { return '<td>' + (sm[i] ? N(sm[i][0] / sm[i][1]) : '') + '</td>'; }).join('') + ac.map(function () { return '<td></td>'; }).join('') + '</tr></table>'; }
+      if (G.length) h += '<h4 style="margin:8px 0 4px">Geologi (' + G.length + ' interval)</h4><table class=gxtb><tr><th>From</th><th>To</th><th>Length</th>' + gc.map(function (q) { return '<th>' + E(q.n) + '</th>'; }).join('') + '</tr>' + G.map(function (r) { return '<tr><td>' + N(r[1], 2) + '</td><td>' + N(r[2], 2) + '</td><td>' + N(r[2] - r[1], 2) + '</td>' + (r[3] || []).map(function (x, i) { return '<td>' + (x >= 0 && gc[i] ? E(gc[i].d[x]) : '') + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>'; }
+    h += '<div class=hint id=hdMsg>Data apa adanya dari database bor (tidak diubah). Kolom unsur yang sedang ditampilkan disorot.</div>';
+    var w = window.POP && POP.win ? POP.win('hdPop', 'Data per lubang — ' + id, h) : null; if (w && !w._pos) { w._pos = 1; w.style.left = Math.max(380, innerWidth - 820) + 'px'; w.style.top = '80px'; w.style.width = 'min(760px,calc(100vw - 420px))'; } };
+  /* ikuti filter Hole ID & klik di 3D */
+  function cari(t) { if (!t) return null; var L = ids(); if (!L.length) return null; var s = String(t).replace(/<[^>]+>/g, ' '), best = null; L.forEach(function (x) { if (x && s.indexOf(x) >= 0) { var i = s.indexOf(x), ok = (i === 0 || !/[A-Za-z0-9_-]/.test(s[i - 1])) && !/[A-Za-z0-9_-]/.test(s[i + x.length] || ''); if (ok && (!best || x.length > best.length)) best = x; } }); return best; }
+  function pasang() { var gd = document.getElementById('plotDiv'); if (gd && gd.on && !gd._hd) { gd._hd = 1; gd.on('plotly_click', function (ev) { try { var w = document.getElementById('hdPop'); if (!HD.ikut || !w || w.style.display === 'none') return; var p = ev.points && ev.points[0]; if (!p) return;
+        var id = cari((p.data && p.data.name) || '') || cari(p.hovertext || p.text || '') || cari(Array.isArray(p.customdata) ? p.customdata.join(' ') : p.customdata); if (id && id !== HD.id) { HD.id = id; HD.render(); } } catch (e) {} }); }
+    var hf = document.getElementById('holeFilter'); if (hf && !hf._hd) { hf._hd = 1; hf.addEventListener('change', function () { if (HD.ikut && hf.value !== 'ALL') { HD.id = hf.value; HD.render(); } }); }
+    var ef = document.getElementById('elementFilter'); if (ef && !ef._hd) { ef._hd = 1; ef.addEventListener('change', function () { HD.render(); }); }
+    var p = document.getElementById('pData'), hfw = hf && hf.parentNode; if (p && hfw && !document.getElementById('hdBtn')) { var b = document.createElement('button'); b.id = 'hdBtn'; b.type = 'button'; b.style.cssText = 'width:100%;margin-top:4px'; b.innerHTML = '&#128203; Data per lubang (pop-up)&hellip;'; b.title = 'Collar, survey, assay & geologi lubang terpilih dalam jendela pop-up'; b.onclick = function () { HD.buka(); }; hfw.parentNode.insertBefore(b, hfw.nextSibling); } }
+  pasang(); setTimeout(pasang, 0); setInterval(pasang, 2000);
+  /* langkah Demo (aturan repo: setiap perubahan UI ikut Demo) */
+  (function () { if (typeof window.dmSteps !== 'function' || window.dmSteps._hd) return; var _ds = dmSteps; var f = function () { var S = _ds.apply(this, arguments); try { if (!arr('collars').length) return S; var k = -1; S.forEach(function (st, i) { if (k < 0 && st.s === 'Assay') k = i - 1; }); if (k < 0) k = Math.min(2, S.length - 1);
+      S.splice(k + 1, 0, { s: 'Database', t: 'Data per lubang (pop-up)', d: 'Collar, survey, assay dan geologi satu lubang dalam jendela pop-up yang mengikuti pilihan Hole ID dan klik lubang di 3D; kolom unsur aktif disorot.', el: 'hdBtn', dur: 7,
+        run: function (A) { A(0, function () { try { uiTab('Data'); } catch (e) {} }); A(0.8, function () { HD.buka(arr('collars')[0][0]); }); A(3.8, function () { HD.geser(1); }); A(6.4, function () { var w = document.getElementById('hdPop'); if (w) w.style.display = 'none'; }); } }); } catch (e) { console.warn(e); } return S; };
+    f._hd = 1; window.dmSteps = dmSteps = f; })();
 })();
 
 
@@ -13129,7 +13298,7 @@ function ogFanDraw() {
         d: 'Tonase × kadar seluruh model dengan batasan topografi, pit, RL dan poligon; hasilnya bisa diexport CSV.',
         run: function (A) { A(0, function () { tab('Rep'); }); } });
       S.push({ s: 'Periode', t: 'Laporan mingguan & bulanan', dur: 6,
-        d: 'Register as-mined dijumlahkan per minggu atau bulan, per shift / tujuan / flitch, dibanding periode sebelumnya.',
+        d: 'Register as-mined dijumlahkan per minggu atau bulan, per shift / tujuan / flitch, dibanding periode sebelumnya. Report harian, mingguan dan bulanan per poligon (dengan kunci tanggal-shift saat laporan harian dikirim) ada di Register untuk database.',
         run: function (A) { A(0.8, function () { try { PRD.dlg(); } catch (e) {} }); A(5.2, function () { try { PRD.close(); } catch (e) {} }); } });
     }
     /* fitur baru: beberapa desain pit sekaligus & progres topo-ke-topo.
@@ -15240,7 +15409,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.62';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.63';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
