@@ -14,6 +14,9 @@
     tertinggi, tetapi isinya memuat installer KETIGA aplikasi pada versinya masing-masing (CI membangun ketiganya tiap run;
     versi tiap aplikasi disebut di catatan rilis). Tambahkan baris versi di `README.md` + bagian di `docs/PANDUAN_INSTALL.md`.
   - **Jangan memakai `[skip ci]`** di pesan commit (commit itu tidak akan masuk Release).
+  - **`[lompat]`** di pesan commit membatalkan build yang sedang berjalan dan langsung membangun commit itu (pemilik,
+    10 Nov 2026: revisi di tengah proses langsung melompat ke versi baru). Pakai bila pemilik meminta revisi sementara build
+    push sesi ini masih berjalan; push biasa TIDAK memakainya (sesi paralel jangan saling membatalkan build).
   - Sebelum push: `git fetch` + `git pull --rebase` (beberapa sesi push paralel); bila versi sudah dipakai sesi lain, naikkan lagi.
   - **Hanya naikkan versi aplikasi yang berkasnya benar-benar berubah** (Block Model tidak ikut naik karena perubahan Drill Hole saja).
     Periksa dengan `python tools/rilis/kemas_rilis.py --cek` sebelum push; CI menolak commit yang melanggar.

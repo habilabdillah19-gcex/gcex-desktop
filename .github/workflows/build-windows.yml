@@ -35,9 +35,15 @@ on:
 #
 # Penghematan tetap didapat dari cache di bawah dan dari pembatalan run yang mengantre, yang
 # memang sudah dilakukan GitHub sendiri.
+#
+# PENGECUALIAN "[lompat]" (pemilik 10 Nov 2026: "otomatis melompat ke nomor versi baru ketika saya minta revisi di
+# tengah proses"): commit yang pesannya memuat [lompat] MEMBATALKAN build yang sedang berjalan dan langsung membangun
+# commit terbaru (yang sudah memuat semua perubahan sebelumnya -> tidak ada yang hilang, hanya versi antara yang
+# dilewati). Sesi Claude memakainya bila pemilik meminta revisi sementara build push-nya sendiri masih berjalan.
+# Push lain tetap 'false' supaya sesi paralel tidak saling membunuh build (lihat riwayat 6 November di atas).
 concurrency:
   group: build-windows-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[lompat]') }}
 
 jobs:
   build:
