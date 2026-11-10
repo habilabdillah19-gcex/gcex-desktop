@@ -303,7 +303,7 @@ jobs:
           Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER -ErrorAction SilentlyContinue
           python -c "import PyInstaller,hashlib,pathlib,time; p=pathlib.Path(PyInstaller.__file__).parent/'bootloader'/'Windows-64bit-intel'/'runw.exe'; print('bootloader runw.exe', hashlib.sha256(p.read_bytes()).hexdigest()[:16], p.stat().st_size, 'B, dibuat', time.ctime(p.stat().st_mtime))"
           "QT_BOOT=$boot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          python tools/rilis/versi_exe.py build/versi_dbex.txt $v DB-Ex "DB-Ex (Database Excellence) - data lapangan geologi offline" | Out-Null
+          python app_core_qt/versi_exe.py build/versi_dbex.txt $v DB-Ex "DB-Ex (Database Excellence) - data lapangan geologi offline" | Out-Null
           pyinstaller --noconfirm --onedir --windowed --noupx --version-file build/versi_dbex.txt --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
             --add-data "models;models" --hidden-import cv2 --hidden-import onnxruntime --hidden-import shapely --hidden-import shapely.geometry --hidden-import pypdfium2 --collect-all pypdfium2 --collect-all pypdfium2_raw `

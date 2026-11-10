@@ -1,8 +1,9 @@
 """Tulis berkas VERSIONINFO untuk PyInstaller (--version-file) agar .exe membawa identitas lengkap (nama produk, versi,
 pembuat, hak cipta, nama berkas asli). Exe tanpa identitas ini lebih sering ditandai heuristik antivirus — DB-Ex 0.46.0
 ditandai Microsoft Defender sebagai "Trojan:Win32/Bearfoos.A!ml" (deteksi pembelajaran mesin, bukan tanda tangan virus).
+Bagian dari pengemasan DB-Ex Qt (dipanggil CI sebelum PyInstaller); tidak diimpor aplikasi.
 
-Pemakaian:  python tools/rilis/versi_exe.py <keluaran.txt> <versi x.y.z> <NamaExe tanpa .exe> "<deskripsi>"
+Pemakaian:  python app_core_qt/versi_exe.py <keluaran.txt> <versi x.y.z> <NamaExe tanpa .exe> "<deskripsi>"
 """
 from __future__ import annotations
 
