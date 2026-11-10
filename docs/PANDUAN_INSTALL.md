@@ -4316,3 +4316,18 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   langsung didigit dengan *Digit poligon*.
 - Flitch Dig Block / As-Mined **tidak diubah**; tampilan flitch-nya hanya dimatikan selama plan Solid Vein dibuka.
 - CSV titik tanpa baris judul yang kolom kodenya berupa teks (mis. `OB`) tidak lagi kehilangan titik pertama.
+
+## 166. Block Model 0.24.58 — As-Mined: kunci tanggal-shift & Report As-Mined per tanggal
+
+- **Report As-Mined per tanggal** (Project Tree › *Register & Laporan As-Mined* › *Report As-Mined per tanggal*, atau tombol di
+  bagian *Register untuk database*): pilih **tanggal** dan **shift** (DS / NS / semua) → tonase, BCM, dan kadar tiap unsur per
+  poligon, subtotal per shift, total tertimbang tonase. Bisa **Salin ke Excel** atau **CSV**. Jendelanya pop-up: bisa digeser,
+  diperkecil, dan ditutup tanpa kehilangan data.
+- **Kunci tanggal-shift** (satu tombol per shift): semua poligon hari & shift itu dibekukan. Tombol *Hitung* berikutnya — mis. dua
+  minggu kemudian di flitch yang sama — **tidak mengubah** angka poligon terkunci walau sampel, titik lantai/atap, SG, atau
+  parameter berubah; rekap flitch memakai angka beku. Poligon terkunci tidak bisa dihapus, dimatikan, atau diedit. **Buka kunci**
+  perlu konfirmasi dan dicatat.
+- Poligon yang ditambahkan **setelah** dikunci dengan tanggal-shift sama ditandai *ditambah setelah dikunci*; tombol *Kunci yang baru*
+  ikut mengunci.
+- **Tampalan**: poligon baru yang bertampalan dengan poligon terkunci di flitch yang sama memunculkan peringatan; **OK** mengurangi
+  area tampalan dari poligon baru (material itu sudah dilaporkan), **Batal** membiarkannya dan menandainya ⚠ di report.
