@@ -4198,3 +4198,16 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Garis luar otomatis (semua file)**: usulan poligon dari gugus titik tiap file, dengan parameter *Sisi terpanjang (m)*. Ini usulan:
   periksa di plan tiap flitch; poligon yang tidak cocok dihapus lalu didigit.
 - **Jarak sambung maks** bawaan kini 3 m (dulu 10 m), supaya dua flitch yang hanya bersebelahan tidak ikut tersambung.
+
+## 156. Block Model 0.24.53 — Solid Vein Aktual berdiri sendiri, edit titik poligon, data susulan
+
+- **Berdiri sendiri.** Titik atap menu ini disimpan terpisah (tidak lagi berbagi dengan As-Mined); tombol *Ambil as-mined* dan
+  *Ambil dig block* dihapus. **Titik atap yang diimport pada 0.24.51 / 0.24.52 perlu diimport ulang di menu ini.**
+- **Poligon**: digit manual dengan snap ke titik atap, atau usulan **Garis luar otomatis**.
+- **Edit titik poligon** (tombol ✎ di baris poligon): seret titik untuk menggeser (menempel ke titik atap), seret kotak kecil di tengah
+  sisi untuk menyisip titik, klik ganda / klik kanan titik untuk menghapus, lalu **Selesai**.
+- **Data susulan**: import ulang file bernama sama mengganti titik file itu; file baru menambah baris. Sesudah poligon baru didigit,
+  **Bangun solid** membangun ulang seluruh solid periode. Panel menandai bila solid belum diperbarui. Opsi **Kumulatif** mengikutkan
+  poligon periode-periode sebelumnya.
+- **Poligon bertampalan di flitch yang sama** (dig block dipasang dua kali): diperingatkan dengan luas tampalan dan perkiraan volume
+  yang terhitung dua kali. Penggabungan otomatisnya belum ada.

@@ -678,6 +678,10 @@ B.append('<p><b>0.24.52 &mdash; sesudah uji pick-up nyata.</b> Titik atap membaw
          '<code>SV.flParse(nama)</code> membaca RL flitch dari pola <code>_&lt;atas&gt;_&lt;bawah&gt;_</code> (tanda hubung = koma desimal), isian tabel menimpanya (<code>filt.fl</code>); <code>ptsLv(top)</code> = titik file ber-flitch itu (file tanpa flitch: pita Z lama). '
          '<code>zRoof</code>: titik berimpit &le; 2 cm memberi Z persis. <code>SV.outline(Q, L)</code> = alpha shape: Delaunay (<code>Delaunator</code>), buang segitiga bersisi &gt; L, sisi yang dipakai satu segitiga dirangkai jadi loop (belokan paling kiri di titik jepit), lubang &amp; serpihan &lt; 1 m&sup2; dibuang. '
          'Catatan: <code>sArea()</code> modul ini negatif untuk loop berlawanan jarum jam. Bawaan <code>dmax</code> 3 m.</p>')
+B.append('<p><b>0.24.53 &mdash; berdiri sendiri.</b> Titik atap pindah ke <code>BX.ui.sv.pts</code> (tidak lagi <code>amD().ptsR</code>); pembaca <code>SV.bacaCsv</code> / <code>SV.importFiles</code> (upsert per nama file); <code>fromAM</code> / <code>fromDB</code> dihapus. '
+         'Penyunting titik sendiri: <code>SV.edit(id)</code> / <code>SV.edDone(batal)</code>, kanvas <code>#svCv</code>, peristiwa mouse ditangkap di <code>#plotDiv</code> (capture) hanya saat mengenai titik / pegangan tengah sisi. '
+         '<code>p.stale</code> menandai solid usang. <code>polysOf(p)</code> + <code>par.kum</code> = bangun kumulatif lintas periode. '
+         'Tampalan poligon satu flitch: luas diukur dengan kisi di irisan kotak batas, volume ganda = luas &times; (atap rata-rata terendah &minus; RL bawah), masuk <code>res.ovl</code> dan peringatan; geometri belum digabung.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

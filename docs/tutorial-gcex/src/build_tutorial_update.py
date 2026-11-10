@@ -951,6 +951,8 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Solid Vein Aktual berdiri sendiri (BM 0.24.53).</b> Menu ini tidak lagi mengambil data dari Dig Block maupun As-Mined: titik atap disimpan sendiri (import ulang titik atap yang dimasukkan di versi sebelumnya). '
+         'Baru: <b>edit titik poligon</b> (tombol &#9998;), import ulang file bernama sama <b>mengganti</b> titiknya, tanda solid belum diperbarui, opsi <b>Kumulatif</b> lintas periode, dan peringatan <b>poligon bertampalan</b> di flitch yang sama beserta perkiraan volume gandanya.</p>')
 B.append('<p><b>Solid Vein Aktual sesudah diuji pick-up nyata (BM 0.24.52).</b> Tabel titik atap kini per <b>file</b>, dengan <b>RL flitch dibaca dari nama file</b> '
          '(bisa dikoreksi) &mdash; titik tidak lagi dipilah dari elevasinya. Tombol baru <b>Garis luar otomatis</b> mengusulkan poligon dari gugus titik tiap file. Jarak sambung bawaan 3 m.</p>')
 B.append('<p><b>Solid Vein Aktual &mdash; trial (BM 0.24.51).</b> Node baru paling bawah di Project Tree Block Model. Per <b>Periode</b>: import titik pick-up <b>atap</b> galian (saring RL), '

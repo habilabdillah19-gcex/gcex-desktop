@@ -66,7 +66,7 @@ with sync_playwright() as pw:
         cek(e["n"] == 1 and e["isl"][0]["closed"] and e["isl"][0]["vol"] > 0 and not e["warn"], "E cekung, metode %s: tertutup, vol %.2f, luas %.2f" % (mt, e["isl"][0]["vol"], e["isl"][0]["area"]))
     cek(luas["min"] <= luas["equi"] + 1e-6 and luas["min"] <= luas["prop"] + 1e-6, "E luas permukaan metode minimum <= dua metode lain")
     # F
-    pg.evaluate("""(function(){var D=amD();D.ptsR=[];for(var i=0;i<=10;i++)for(var j=0;j<=6;j++){D.ptsR.push({x:offX+98+i*2.4,y:offY+98+j*2.4,z:T0+0.3*Math.sin(i*0.7)*Math.cos(j*0.9),id:'R'+i+'_'+j,c:'atap_sintetis'});}})()""")
+    pg.evaluate("""(function(){var D=SV.D();D.pts=[];for(var i=0;i<=10;i++)for(var j=0;j<=6;j++){D.pts.push({x:offX+98+i*2.4,y:offY+98+j*2.4,z:T0+0.3*Math.sin(i*0.7)*Math.cos(j*0.9),id:'R'+i+'_'+j,c:'atap_sintetis'});}})()""")
     f = pg.evaluate("mk('F',[[0,rect(100,100,20,10)],[1,rect(101,101,18,8)]],{zMode:'idw',capPts:true})"); print("F", f)
     f0 = pg.evaluate("mk('F0',[[0,rect(100,100,20,10)],[1,rect(101,101,18,8)]],{zMode:'idw',capPts:false})")
     cek(f["n"] == 1 and f["isl"][0]["closed"] and f["isl"][0]["nt"] > f0["isl"][0]["nt"] and f0["isl"][0]["closed"], "F Z atap IDW + titik pick-up di atap: tertutup (%d segitiga vs %d tanpa titik dalam)" % (f["isl"][0]["nt"], f0["isl"][0]["nt"]))
@@ -123,7 +123,7 @@ with sync_playwright() as pw:
     # J (0.24.52): pick-up nyata = CSV tanpa judul "ID,X,Y,Z,kode", beberapa file, RL flitch di NAMA FILE (data sintetis, tata letak sama)
     j = pg.evaluate("""(async function(){var mkf=function(nm,x0,y0,top,pts){var s='';pts.forEach(function(q,i){s+=(i+1)+','+(offX+x0+q[0]).toFixed(3)+','+(offY+y0+q[1]).toFixed(3)+','+(top+q[2]).toFixed(3)+',204\\n';});return new File([s],nm);};
       var L=[[0,0],[20,0],[20,6],[8,6],[8,18],[0,18],[4,3],[14,3],[4,12],[10,0],[0,9],[20,3],[8,12],[4,18],[14,6]].map(function(q,i){return [q[0],q[1],(i%3-1)*0.8];});   /* bentuk L, Z naik-turun +-0,8 m */
-      amD().ptsR=[];amPtsFile([mkf('ACT_SO261108OB_235-5_234_ZX.csv',300,300,235.5,L),mkf('ACT_SO261109OB_234_232-5_ZX.csv',302,301,234,L.slice(0,9)),mkf('titik_tanpa_rl.csv',500,500,240,L.slice(0,5))],'ptsR');
+      SV.D().pts=[];window.MKF=mkf;window.LL=L;await SV.importFiles([mkf('ACT_SO261108OB_235-5_234_ZX.csv',300,300,235.5,L),mkf('ACT_SO261109OB_234_232-5_ZX.csv',302,301,234,L.slice(0,9)),mkf('titik_tanpa_rl.csv',500,500,240,L.slice(0,5))]);
       await new Promise(function(r){setTimeout(r,1500);});var F=SV.files(),d=SV.D();d.per=[];d.filt={};SV.addPer();var p=SV.per();p.par.aEdge=13;p.par.dmax=3;p.par.capPts=true;p.par.zMode='idw';SV.auto();
       var R=SV.build(p);return {F:F.map(function(f){return [f.c,f.n,f.top,f.bot];}),lv:[SV.ptsLv(235.5).length,SV.ptsLv(234).length],pol:p.polys.map(function(v){return [v.top,v.bot,v.pts.length,v.src];}),
         isl:R.IS.map(function(s){return [s.closed,s.nLv,+s.vol.toFixed(2)];}),par:[SV.flParse('ACT_SO2611109OB_248-5_246_Z4.csv'),SV.flParse('pickup_roof.csv'),SV.flParse('A_251-5_250_Z4.str')]};})()"""); print("J", j)
@@ -132,7 +132,26 @@ with sync_playwright() as pw:
     cek(j["lv"] == [15, 9], "J titik dipilah ke flitch menurut file walau Z-nya +-0,8 m dari RL atas (%s)" % j["lv"])
     cek(len(j["pol"]) == 2 and j["pol"][0][:2] == [235.5, 234] and j["pol"][0][3] == "auto" and j["pol"][0][2] >= 6, "J garis luar otomatis: 1 poligon per file ber-flitch, file tanpa RL dilewati (%s)" % j["pol"])
     cek(len(j["isl"]) == 1 and j["isl"][0][0] and j["isl"][0][1] == 2 and j["isl"][0][2] > 0, "J dua flitch bertumpuk -> 1 pulau tertutup 2 flitch, vol %s" % (j["isl"][0][2] if j["isl"] else None))
-    pg.evaluate("(function(){amD().ptsR=[];var d=SV.D();d.per=d.per.slice(0,0);})()")
+    # K (0.24.53): berdiri sendiri, upsert file, tampalan, kumulatif, edit titik
+    k = pg.evaluate("""(async function(){var n0=SV.D().pts.length,am=(amD().ptsR||[]).length;await SV.importFiles([MKF('ACT_SO261109OB_234_232-5_ZX.csv',302,301,234,LL.slice(0,12))]);
+      return {n0:n0,n1:SV.D().pts.length,am:am,f:SV.files().map(function(f){return f.n;}),tombol:/Ambil as-mined|Ambil dig block/.test(document.getElementById('svBody').textContent),fn:[typeof SV.fromAM,typeof SV.fromDB]};})()"""); print("K", k)
+    cek(k["n1"] == k["n0"] + 3 and k["f"][:2] == [15, 12] or sorted(k["f"]) == [5, 12, 15], "K import ulang file bernama sama MENGGANTI titiknya (9 -> 12), file lain utuh")
+    cek(k["am"] == 0 and not k["tombol"] and k["fn"] == ["undefined", "undefined"], "K berdiri sendiri: titik tidak masuk As-Mined; tombol Ambil as-mined / dig block tidak ada")
+    o = pg.evaluate("mk('O',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]])"); print("O", o)
+    cek(o["n"] == 2 and any("BERTAMPALAN" in w for w in o["warn"]) and any("100.0 m" in w or "99." in w or "100." in w for w in o["warn"]), "K dua poligon bertampalan di flitch sama: diperingatkan dengan luas tampalan (~100 m2)")
+    km = pg.evaluate("""(function(){var d=SV.D();d.per=[];var mkp=function(nm,lv,P){var p={id:'k'+nm,name:nm,from:'',to:'',polys:[{id:'q'+nm,top:T0-lv*FH,bot:T0-(lv+1)*FH,pts:P,key:nm,src:'digit',name:nm,on:true}],par:{dmax:3,zMode:'flat',capPts:false,method:'min',sg:2.5,reg:false},res:null};d.per.push(p);return p;};
+      mkp('W1',0,rect(100,100,20,10));var p2=mkp('W2',1,rect(100,100,20,10));d.cur=p2.id;var a=SV.build(p2);p2.par.kum=true;var b=SV.build(p2);return {a:a.IS.map(function(s){return [s.nLv,+s.vol.toFixed(3)];}),b:b.IS.map(function(s){return [s.nLv,s.closed,+s.vol.toFixed(3)];})};})()"""); print("KUM", km)
+    cek(km["a"] == [[1, round(200 * fh, 3)]] and km["b"] == [[2, True, round(400 * fh, 3)]], "K kumulatif: poligon periode sebelumnya ikut -> 1 pulau 2 flitch; tanpa kumulatif hanya periode ini")
+    pg.evaluate("(function(){var p=SV.per();p.par.kum=false;SV.edit(p.polys[0].id);})()"); pg.wait_for_timeout(3500)
+    e0 = pg.evaluate("(function(){var A=dgAx(),q=SV.ed&&SV.ed.pts[1];if(!A||!q)return null;var px=dgPx(A,q[0]+offX,q[1]+offY);return {x:px[0]+A.r.left,y:px[1]+A.r.top,v2d:VIEW2D,n:SV.ed.pts.length,cv:!!document.getElementById('svCv')};})()"); print("ED", e0)
+    cek(bool(e0) and e0["v2d"] and e0["cv"], "K edit titik: plan 2D flitch poligon terbuka & kanvas edit terpasang")
+    if e0:
+        pg.mouse.move(e0["x"], e0["y"]); pg.mouse.down(); pg.mouse.move(e0["x"] + 30, e0["y"] - 20, steps=4); pg.mouse.up(); pg.wait_for_timeout(300)
+        e1 = pg.evaluate("(function(){var A=dgAx(),a=SV.ed.pts[1],b=SV.ed.pts[2],m=dgPx(A,(a[0]+b[0])/2+offX,(a[1]+b[1])/2+offY);return {p:SV.ed.pts[1],mx:m[0]+A.r.left,my:m[1]+A.r.top};})()")
+        pg.mouse.move(e1["mx"], e1["my"]); pg.mouse.down(); pg.mouse.move(e1["mx"] + 12, e1["my"] + 6, steps=3); pg.mouse.up(); pg.wait_for_timeout(300)
+        e2 = pg.evaluate("(function(){var n=SV.ed.pts.length;SV.edDone();var p=SV.per(),v=p.polys[0];return {n:n,pts:v.pts.length,p1:v.pts[1],stale:p.stale,ed:!!SV.ed,dg:DG.S.length};})()"); print("ED2", e1["p"], e2)
+        cek(abs(e1["p"][0] - 120) > 0.05 and e2["n"] == e0["n"] + 1 and e2["pts"] == e0["n"] + 1 and e2["stale"] and not e2["ed"], "K seret titik menggesernya, seret tengah sisi menyisip titik, Selesai menyimpan & menandai solid perlu dibangun ulang")
+    pg.evaluate("(function(){SV.D().pts=[];var d=SV.D();d.per=d.per.slice(0,0);})()")
     cek(not err, "tanpa galat halaman: %s" % err[:3])
     ctx.close()
 srv.terminate()
