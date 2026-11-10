@@ -701,6 +701,10 @@ B.append('<p><b>Data latihan di aplikasi terpasang (BM 0.24.55 / DH 0.24.58).</b
          'Uji peramban tidak melewati jalur ini; <code>tools/uji/uji_url_latihan.js</code> meniru penangan untuk menjaganya.</p>')
 B.append('<p><b>Jangkar tanpa bor (DH 0.24.59).</b> <code>SA.boot</code>: <code>ANCH = D.anch || (tanpa collar ? SA.anchSpasial(D) : null)</code> &mdash; batas topografi + desain pit (titik lolos <code>SA.koordOk</code>). '
          'Tanpa ini proyek yang database bornya dihapus (<code>PTD.drop(\'all\')</code>) memakai <code>offX/offY</code> = 0 dan <code>G</code> = 0&ndash;100 m, sehingga <code>OV.topoC</code> / <code>OV.pitC</code> (overlay dipotong area kerja) kosong. Uji: <code>uji_hapus_bor_overlay.py</code>.</p>')
+B.append('<p><b>Slicer DH 0.24.60.</b> <code>ui4_dh.js</code>: <code>data-pre=line</code> &rarr; <code>s3Open()</code> (kotak <code>#s3Box</code>); <code>#btn2d</code> / <code>#btnSec3</code> dilabel ulang "Tampilan 2D / 3D" dan kliknya ditangkap di fase capture pada <code>#secMenu</code> '
+         '(<code>if(in2&amp;&amp;!VIEW2D)toggle2D(); if(in3&amp;&amp;VIEW2D)toggle2D()</code>) sehingga <code>onclick</code> lama tidak jalan; butir <code>data-a=set</code> dihapus. '
+         'Baris <code>showLabel / showCollar / showTraj / showNoData</code> di panel View diberi <code>display:none</code> (tetap dibaca <code>updatePlot</code> &amp; preset). '
+         'Plotly tersemat: <code>k.pick</code> (gl-mesh3d) kini <code>if(!r)return null</code> bila <code>this.cells[e]</code> tidak ada. Uji: <code>uji_slicer_tombol_dh.py</code>.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

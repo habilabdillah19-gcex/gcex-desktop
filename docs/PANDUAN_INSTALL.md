@@ -4257,3 +4257,15 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Sebelum mengizinkan, periksa**: (1) Windows Security → *See details* → berkas yang ditandai harus `%LOCALAPPDATA%\Programs\DB-Ex\DB-Ex.exe` atau installer DB-Ex yang Anda unduh dari Release; (2) PowerShell `Get-FileHash <installer>` harus sama persis dengan baris installer itu di `SHA256SUMS.txt` Release. Bila keduanya cocok: pilih **Allow on device** → *Start actions* (atau *Protection history* → *Restore*), lalu laporkan sebagai salah deteksi di https://www.microsoft.com/en-us/wdsi/filesubmission. Bila tidak cocok: biarkan dikarantina dan laporkan ke admin.
 - **Catatan rilis**: dua build 0.46.1 pertama gagal menerbitkan Release (HTTP 403) karena commit-nya mengubah berkas workflow CI; Release terbit dari commit dokumen sesudahnya (aturan ini dicatat di `CLAUDE.md`). Sejak 0.46.1 CI juga tidak lagi membangun tutorial PDF di setiap push — Release memakai PDF yang ada di repo.
 - **Perbaikan 0.46.1**: bootloader PyInstaller dikompilasi sendiri, exe membawa identitas (VERSIONINFO) lengkap, tanpa UPX, dan CI memindai DB-Ex.exe & installer dengan Microsoft Defender sebelum rilis. Ini mengurangi, tetapi tidak menjamin hilangnya, salah deteksi; obat tuntas adalah tanda tangan kode (sertifikat berbayar).
+
+## 160. Drillhole 0.24.60 — popup Slicer dirapikan, menu kembar dibuang, galat saat kursor di atas model
+
+- **Popup Slicer**: tombol *Garis di peta…* menjadi **Sayatan Garis Bebas** dan membuka kotak *Sayatan garis bebas* (tarik garis di
+  jendela 3D). *Sayatan 2D* / *Sayatan 3D* menjadi **Tampilan 2D** / **Tampilan 3D** — hanya mengganti cara melihat sayatan yang aktif.
+- **Pengaturan sayatan terpusat di popup Slicer.** Baris *Pengaturan lanjutan (panel Sayatan)* dihapus; panel Sayatan tidak lagi
+  muncul di Properti.
+- **Panel Tampilan & performa** tidak lagi memuat Label hole / Collar / Trajectory / No-data; semuanya diatur dari panel **Layer**.
+- **Galat** "Cannot read properties of undefined (reading 'length') … k.pick" saat kursor melewati block model / permukaan: tidak
+  lagi muncul (titik itu hanya tidak menampilkan hover).
+- **Hover bor**: bila keterangan saat kursor di atas lubang bor tidak muncul, periksa tombol **Hover detail** di Database Bor ›
+  panel Data & Filter — hover mati bila tombol itu mati atau *Mode ringan* menyala.
