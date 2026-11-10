@@ -4249,3 +4249,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   desain pit yang ada. Proyek yang sudah terlanjur kosong pulih begitu dibuka dengan versi ini — tidak perlu import ulang.
 - Cara menghapus data bor: **⋯** di node Database Bor → *Hapus seluruh database bor…* atau *Hapus hole tertentu…*; **⋯** di node
   Survey / Assay / Geologi → *Hapus tabel ini…*. Bisa dibatalkan lewat *Batalkan perubahan database terakhir*.
+
+## 160. DB-Ex 0.46.1 — Windows Defender menandai DB-Ex.exe (salah deteksi)
+
+- **Gejala** (DB-Ex 0.46.0): Windows Security → *Threats found* `Trojan:Win32/Bearfoos.A!ml`; pintasan DB-Ex memberi pesan *"The item 'DB-Ex.exe' … has been changed or moved"* karena exe sudah dikarantina.
+- **Arti `!ml`**: deteksi heuristik pembelajaran mesin (kemiripan pola), bukan tanda tangan virus yang dikenal. Exe buatan PyInstaller tanpa tanda tangan digital sering kena.
+- **Sebelum mengizinkan, periksa**: (1) Windows Security → *See details* → berkas yang ditandai harus `%LOCALAPPDATA%\Programs\DB-Ex\DB-Ex.exe` atau installer DB-Ex yang Anda unduh dari Release; (2) PowerShell `Get-FileHash <installer>` harus sama persis dengan baris installer itu di `SHA256SUMS.txt` Release. Bila keduanya cocok: pilih **Allow on device** → *Start actions* (atau *Protection history* → *Restore*), lalu laporkan sebagai salah deteksi di https://www.microsoft.com/en-us/wdsi/filesubmission. Bila tidak cocok: biarkan dikarantina dan laporkan ke admin.
+- **Perbaikan 0.46.1**: bootloader PyInstaller dikompilasi sendiri, exe membawa identitas (VERSIONINFO) lengkap, tanpa UPX, dan CI memindai DB-Ex.exe & installer dengan Microsoft Defender sebelum rilis. Ini mengurangi, tetapi tidak menjamin hilangnya, salah deteksi; obat tuntas adalah tanda tangan kode (sertifikat berbayar).

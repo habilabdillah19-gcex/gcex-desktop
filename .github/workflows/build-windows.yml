@@ -287,13 +287,35 @@ jobs:
           }
           $v = (Get-Content builder-core.json -Raw | ConvertFrom-Json).extraMetadata.version
           Set-Content -Path app_core_qt/version.txt -Value $v -NoNewline -Encoding ascii
-          pyinstaller --noconfirm --onedir --windowed --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
+          # Salah-deteksi antivirus (DB-Ex 0.46.0 ditandai Microsoft Defender "Trojan:Win32/Bearfoos.A!ml" = heuristik
+          # pembelajaran mesin, laporan pemilik 10 Nov 2026). Bootloader PyInstaller bawaan wheel dipakai juga oleh banyak
+          # malware, sehingga sidik exe-nya mirip -> bootloader DIKOMPILASI SENDIRI dari sumber (MSVC di runner), exe diberi
+          # VERSIONINFO lengkap, tanpa UPX. Hanya untuk DB-Ex Qt; sesudah build wheel bawaan dipasang lagi supaya build
+          # aplikasi lain di job ini tidak berubah. Gagal kompilasi -> tetap pakai bootloader bawaan + peringatan.
+          $env:PYINSTALLER_COMPILE_BOOTLOADER = "1"
+          pip install --force-reinstall --no-deps --no-cache-dir --no-binary pyinstaller pyinstaller==6.22.3
+          $boot = "sendiri"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::warning::kompilasi bootloader PyInstaller gagal - DB-Ex Qt memakai bootloader bawaan (lebih sering ditandai antivirus)"
+            $boot = "bawaan"
+            pip install --force-reinstall --no-deps pyinstaller==6.22.3
+          }
+          Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER -ErrorAction SilentlyContinue
+          python -c "import PyInstaller,hashlib,pathlib,time; p=pathlib.Path(PyInstaller.__file__).parent/'bootloader'/'Windows-64bit-intel'/'runw.exe'; print('bootloader runw.exe', hashlib.sha256(p.read_bytes()).hexdigest()[:16], p.stat().st_size, 'B, dibuat', time.ctime(p.stat().st_mtime))"
+          "QT_BOOT=$boot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          python tools/rilis/versi_exe.py build/versi_dbex.txt $v DB-Ex "DB-Ex (Database Excellence) - data lapangan geologi offline" | Out-Null
+          pyinstaller --noconfirm --onedir --windowed --noupx --version-file build/versi_dbex.txt --name DB-Ex --icon build/icon-core.ico --paths backend --paths app_core_qt `
             --add-data "app-core/fonts;fonts" --add-data "app_core_qt/version.txt;." --add-data "build/icon-core.ico;." `
             --add-data "models;models" --hidden-import cv2 --hidden-import onnxruntime --hidden-import shapely --hidden-import shapely.geometry --hidden-import pypdfium2 --collect-all pypdfium2 --collect-all pypdfium2_raw `
             --hidden-import matplotlib --hidden-import matplotlib.backends.backend_agg --collect-data matplotlib --hidden-import openpyxl.drawing.image `
             --collect-binaries onnxruntime --exclude-module sympy --exclude-module mpmath `
             --exclude-module tkinter --exclude-module uvicorn --distpath dist-qt --workpath build-pyqt app_core_qt/main.py
-          if ($LASTEXITCODE -ne 0) { throw "PyInstaller DB-Ex Qt gagal" }
+          $rc = $LASTEXITCODE
+          if ($boot -eq "sendiri") { pip install --force-reinstall --no-deps pyinstaller==6.22.3 | Out-Null }  # build lain: wheel bawaan
+          if ($rc -ne 0) { throw "PyInstaller DB-Ex Qt gagal" }
+          $vi = (Get-Item dist-qt/DB-Ex/DB-Ex.exe).VersionInfo
+          Write-Host ("VERSIONINFO DB-Ex.exe: " + $vi.ProductName + " " + $vi.ProductVersion + " / " + $vi.CompanyName + " / " + $vi.FileDescription)
+          if ($vi.ProductVersion -ne $v) { throw "VERSIONINFO DB-Ex.exe tidak terpasang (ProductVersion '$($vi.ProductVersion)' != $v)" }
           # Teks lisensi GNU diambil dari gnu.org. Satu gangguan jaringan dulu menggagalkan SELURUH
           # rilis, jadi: coba 3x, lalu ambil salinan dari rilis sebelumnya (selalu terjangkau dari
           # runner), baru menyerah. Teksnya tidak pernah diubah - hanya disalin.
@@ -386,6 +408,29 @@ jobs:
           Start-Sleep -Seconds 3
           if (Test-Path "$inst\DB-Ex.exe") { throw "uninstaller tidak menghapus DB-Ex.exe" }
           Write-Host ("installer OK: " + [math]::Round((Get-Item $out).Length / 1MB, 1) + " MB")
+      # Peringatan dini salah-deteksi: Microsoft Defender di runner (tanda tangan diperbarui dulu) memindai DB-Ex.exe dan
+      # installer. Tidak menahan rilis (Defender di runner tanpa perlindungan cloud tidak selalu sama dengan laptop
+      # pengguna), tetapi hasilnya tampil sebagai ::warning:: / ::notice:: di ringkasan run.
+      - name: DB-Ex Qt - pindai Microsoft Defender
+        if: env.QT_BUILD != 'gagal'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $mp = Join-Path $env:ProgramFiles "Windows Defender\MpCmdRun.exe"
+          if (-not (Test-Path $mp)) { Write-Host "::warning::MpCmdRun.exe tidak ada di runner - pindai Defender dilewati"; exit 0 }
+          & $mp -SignatureUpdate 2>&1 | Select-Object -Last 2 | ForEach-Object { Write-Host "  $_" }
+          $files = @((Resolve-Path "dist-qt/DB-Ex/DB-Ex.exe").Path) + @(Get-ChildItem dist-qt -Filter "DB-Ex-Qt-Setup-*.exe" | ForEach-Object FullName)
+          $hit = @()
+          foreach ($f in $files) {
+            $r = & $mp -Scan -ScanType 3 -File $f -DisableRemediation 2>&1
+            $code = $LASTEXITCODE
+            Write-Host ("Defender {0}: kode {1}" -f (Split-Path $f -Leaf), $code)
+            $r | Select-Object -Last 6 | ForEach-Object { Write-Host "  $_" }
+            if ($code -eq 2) { $hit += (Split-Path $f -Leaf) }
+          }
+          if ($hit) { Write-Host ("::warning::Microsoft Defender menandai " + ($hit -join ", ") + " (bootloader $env:QT_BOOT) - kirim ke https://www.microsoft.com/en-us/wdsi/filesubmission sebagai salah deteksi") }
+          else { Write-Host "::notice::Microsoft Defender di runner tidak menandai DB-Ex.exe maupun installer (bootloader $env:QT_BOOT)" }
+          exit 0
       - uses: actions/upload-artifact@v6
         continue-on-error: true
         with:
