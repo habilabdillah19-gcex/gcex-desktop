@@ -682,6 +682,20 @@ B.append('<p><b>0.24.53 &mdash; berdiri sendiri.</b> Titik atap pindah ke <code>
          'Penyunting titik sendiri: <code>SV.edit(id)</code> / <code>SV.edDone(batal)</code>, kanvas <code>#svCv</code>, peristiwa mouse ditangkap di <code>#plotDiv</code> (capture) hanya saat mengenai titik / pegangan tengah sisi. '
          '<code>p.stale</code> menandai solid usang. <code>polysOf(p)</code> + <code>par.kum</code> = bangun kumulatif lintas periode. '
          'Tampalan poligon satu flitch: luas diukur dengan kisi di irisan kotak batas, volume ganda = luas &times; (atap rata-rata terendah &minus; RL bawah), masuk <code>res.ovl</code> dan peringatan; geometri belum digabung.</p>')
+B.append('<h3>As-Mined sesudah uji data nyata &mdash; Block Model 0.24.54</h3>')
+B.append('<p>Modul <code>web-src/amnyata.js</code> (BM saja, sesudah <code>amroof.js</code> di <code>EXTRA</code>) membungkus fungsi As-Mined yang ada: '
+         '<code>amBndFile</code> (CSV / TXT ditangani di sini: <code>AMN.csvPts</code> &rarr; satu poligon, <code>AMN.nama(nama)</code> &rarr; <code>{top,bot,date,pit}</code>, '
+         'diteruskan sebagai argumen ketiga <code>amBndAdd(pts,name,opt)</code>; titik juga masuk <code>amD().ptsR</code> dengan upsert per nama file), '
+         '<code>amR</code> (sekali per proyek: bila <code>R.cls</code> masih persis bawaan, <code>AMN.pakaiKelas</code> mengisi dari <code>AMN.kelasModel()</code> &mdash; '
+         'rumus IIF di <code>BX.m.mdl.expr</code> yang kini disimpan pembaca .mdl, cadangan: kadar terendah tiap kategori kolom material), '
+         '<code>am3Traces</code> (<code>AMN.solid(I)</code>: ring poligon dirapatkan + kisi dalam, Delaunay, segitiga bertitik berat di luar poligon dibuang, '
+         'Z atas = <code>amRoofFn</code>, Z bawah = <code>amFloorFn</code> / RL bawah; <code>AM3.sol</code> bawaan menyala, <code>AM3.sb</code> bawaan mati), '
+         '<code>am3Toggle</code> (zoom otomatis) dan <code>am3Box</code> / <code>amPanel</code> (tombol &amp; keterangan). <code>AMN.zoom(semua)</code>: 3D = <code>scene.camera</code>, plan = rentang sumbu. '
+         '<code>bxDefUI</code> memilih <code>sgCol</code> otomatis (nama sg / sg&lt;n&gt; / density / dens / bd, nilai tengah 1,2&ndash;5). Uji: <code>tools/uji/uji_asmined_nyata.py</code>.</p>')
+B.append('<p><b>Solid Vein &mdash; gabung tampalan.</b> <code>SV.polyUnion(A,B)</code>: kedua poligon disearahkan, sisi dipecah di titik potong dan di titik lawan yang menempel, '
+         'potongan di luar poligon lawan dirangkai (sisi berimpit searah dipakai sekali, berlawanan dibuang; belokan paling kanan di simpang), loop terluar dipakai. '
+         'Di <code>SV.build</code> langkah 1c: kelompok tampalan (&ge; 0,5 m&sup2;) digabung, Z ring = maksimum permukaan anggota yang memuat titik itu (IDW sudut-sudut anggota); '
+         'gagal menggabung &rarr; tetap terpisah + peringatan. <code>par.gab=false</code> mematikan.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

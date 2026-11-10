@@ -4211,3 +4211,26 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   poligon periode-periode sebelumnya.
 - **Poligon bertampalan di flitch yang sama** (dig block dipasang dua kali): diperingatkan dengan luas tampalan dan perkiraan volume
   yang terhitung dua kali. Penggabungan otomatisnya belum ada.
+
+## 157. Block Model 0.24.54 — As-Mined sesudah diuji data nyata; Solid Vein menggabung poligon bertampalan
+
+**As-Mined**
+
+- **Import boundary dari CSV pick-up OB.** Tombol *Import boundary* kini menerima `.csv` / `.txt` (ID, X, Y, Z, kode): titik berurutan
+  menjadi satu poligon. **RL flitch, tanggal dan pit dibaca dari nama file** (mis. `ACT_SO261106OB_272-5_271_Z3.csv` = RL 272,5–271,
+  6 Nov 2026, pit Z3) — tidak lagi memakai flitch aktif dan tanggal hari ini. Titik OB sekaligus disimpan sebagai titik atap.
+  Bila urutan titik membuat poligon memotong dirinya (file berisi lebih dari satu dig block), panel memperingatkan.
+- **Kelas kadar mengikuti block model.** Batas kelas As-Mined diambil dari aturan kolom material di block model `.mdl`
+  (tombol *Ambil dari block model* di panel; otomatis bila kelas masih bawaan aplikasi).
+- **SG dari kolom block model.** Bila block model `.mdl` punya kolom SG / densitas yang masuk akal, kolom itu dipakai otomatis untuk model yang
+  baru dibuka (dulu selalu SG tetap 2,6). **Tonase proyek baru bisa berbeda dari versi sebelumnya karena hal ini** — periksa di
+  Block Model › Filter & SG. Proyek lama tidak berubah sampai Anda memilih kolomnya.
+- **3D hasil kerja menampilkan solid as-mined**: poligon OB di antara permukaan atap dan lantai yang dipakai hitungan. Kubus
+  sub-blok ukuran penuh (yang tampak lebih besar dari volume terhitung) kini pilihan.
+- **Zoom ke poligon**: tombol *Zoom ke poligon flitch ini* / *Zoom semua poligon* (3D dan plan 2D); otomatis saat 3D hasil kerja dibuka.
+- Material di luar poligon OB tidak dihitung; dilusi hanya yang berada di dalam poligon OB.
+
+**Solid Vein Aktual**
+
+- Poligon yang **bertampalan di flitch yang sama** (dig block dipasang ulang karena lantai belum tuntas) kini **digabung otomatis**
+  jadi satu tubuh; atap memakai permukaan tertinggi, sehingga tampalan tidak terhitung dua kali. Bisa dimatikan di *Parameter solid*.

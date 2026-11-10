@@ -2150,7 +2150,12 @@ var BXPAL=['#2166ac','#4daf4a','#ffd92f','#fc8d59','#d7301f','#7a0177','#1b1b1b'
 var BXCAT=['#e8590c','#2f9e44','#1971c2','#c2255c','#f08c00','#7048e8','#0c8599','#5c940d','#862e9c','#495057','#d6336c','#364fc7'];
 function bxE(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function bxDefUI(m){var nums=Object.keys(m.num),cats=Object.keys(m.cat),pref=nums.filter(function(n){return /^AU/i.test(n);})[0]||nums[0]||null;
-  var big=m.n>300000&&pref;return{attr:pref||cats[0],cls:{},catCol:{},catOn:{},fAttr:big?pref:'',fOp:'ge',fVal:big?'0.01':'',disp:'cube',op:0.85,max:40000,sg:2.6,sgCol:'',grad:false,olMode:'all',olMin:2,olDesc:'ORE',olSrc:'slab'};}
+  var big=m.n>300000&&pref;
+  /* Kolom SG dipilih otomatis bila block model membawanya (pemilik 10-11-2026: model nyata punya 'sg3', tetapi tonase
+     diam-diam memakai SG tetap 2,6). Hanya kolom bernama sg / sg<angka> / density / dens / bd / bulk_density yang
+     nilai tengahnya masuk akal untuk batuan (1,2-5 t/m3); selain itu tetap SG tetap. Berlaku untuk model .mdl yang BARU dibuka. */
+  var sgAuto='';try{/* hanya block model .mdl: impor CSV punya dialog pemetaan sendiri, dan data latihan / tutorial memakai SG tetap */if(m.mdl)nums.filter(function(n){return /^(sg\d*|sg_?\w{0,4}|density|dens|bd|bulk_?density)$/i.test(n);}).some(function(n){var a=m.num[n],v=[],st=Math.max(1,Math.floor(m.n/400));for(var i=0;i<m.n;i+=st)if(isFinite(a[i])&&a[i]>0)v.push(a[i]);if(v.length<5)return false;v.sort(function(x,y){return x-y;});var md=v[v.length>>1];if(md>=1.2&&md<=5){sgAuto=n;return true;}return false;});}catch(e){}
+  return{attr:pref||cats[0],cls:{},catCol:{},catOn:{},fAttr:big?pref:'',fOp:'ge',fVal:big?'0.01':'',disp:'cube',op:0.85,max:40000,sg:2.6,sgCol:sgAuto,sgAuto:sgAuto,grad:false,olMode:'all',olMin:2,olDesc:'ORE',olSrc:'slab'};}
 function bxIsCat(a){return !!(BX.m&&BX.m.cat[a]);}
 function bxCls(a){var U=BX.ui;if(U.cls[a])return U.cls[a];var A=BX.m.num[a],v=[];for(var i=0;i<A.length;i+=Math.max(1,Math.floor(A.length/20000)))if(isFinite(A[i]))v.push(A[i]);v.sort(function(p,q){return p-q;});
   var q=function(p){return v.length?+v[Math.floor(p*(v.length-1))].toPrecision(2):0;},b=[q(.5),q(.75),q(.9),q(.97)].filter(function(x,i,arr){return arr.indexOf(x)===i;});
@@ -3968,7 +3973,7 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
   m.s0=n?s0:1;m.ext=n?[x0,x1,y0,y1,z0,z1]:[O[0],O[0]+H.extent[0],O[1],O[1]+H.extent[1],O[2],O[2]+H.extent[2]];
   var ks2=Object.keys(szs).sort(function(a,b){return szs[b]-szs[a];});m.sizes=ks2.slice(0,3).map(function(v){return LX[v]+'×'+LY[v]+'×'+LZ[v];}).join(', ')+' m (sub-blok, '+ks2.length+' ukuran)';
   var fd=[];if(isFinite(zLo)||isFinite(zHi))fd.push('RL '+(isFinite(zLo)?zLo:'min')+'–'+(isFinite(zHi)?zHi:'max'));if(PG)fd.push('di dalam desain pit');if(TG)fd.push('di bawah topografi');
-  m.mdl={origin:O,root:RT,extent:H.extent,levels:maxL,rot:rot,attrs:A.map(function(a){return a.name+(a.calc?' (kalkulasi)':'');}),notes:notes,ms:Date.now()-t0,
+  m.mdl={expr:(function(){var o={};A.forEach(function(a){if(a.calc&&a.expr)o[a.name]=String(a.expr);});return o;})(),origin:O,root:RT,extent:H.extent,levels:maxL,rot:rot,attrs:A.map(function(a){return a.name+(a.calc?' (kalkulasi)':'');}),notes:notes,ms:Date.now()-t0,
     nRead:nRead,flt:fd.join(' · '),hraw:H.hraw,nmA:H.nmA,nmB:H.nmB,st:ST.map(function(a){return{name:a.name,type:a.type,def:a.def};}),maxL:maxL,drop:{rl:nZ,pit:nPit,topo:nTopo},topoOut:nTopoOut,file:H.fname,size:N};
   if(TG&&nTopoOut)notes.push(nTopoOut.toLocaleString()+' blok di luar cakupan topografi tetap dimuat');
   if(rot)m.warn='Model .mdl ini memakai rotasi; rotasi belum diterapkan.';

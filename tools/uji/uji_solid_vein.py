@@ -137,8 +137,20 @@ with sync_playwright() as pw:
       return {n0:n0,n1:SV.D().pts.length,am:am,f:SV.files().map(function(f){return f.n;}),tombol:/Ambil as-mined|Ambil dig block/.test(document.getElementById('svBody').textContent),fn:[typeof SV.fromAM,typeof SV.fromDB]};})()"""); print("K", k)
     cek(k["n1"] == k["n0"] + 3 and k["f"][:2] == [15, 12] or sorted(k["f"]) == [5, 12, 15], "K import ulang file bernama sama MENGGANTI titiknya (9 -> 12), file lain utuh")
     cek(k["am"] == 0 and not k["tombol"] and k["fn"] == ["undefined", "undefined"], "K berdiri sendiri: titik tidak masuk As-Mined; tombol Ambil as-mined / dig block tidak ada")
-    o = pg.evaluate("mk('O',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]])"); print("O", o)
-    cek(o["n"] == 2 and any("BERTAMPALAN" in w for w in o["warn"]) and any("100.0 m" in w or "99." in w or "100." in w for w in o["warn"]), "K dua poligon bertampalan di flitch sama: diperingatkan dengan luas tampalan (~100 m2)")
+    o = pg.evaluate("mk('O',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]],{gab:false})"); print("O", o)
+    cek(o["n"] == 2 and any("BERTAMPALAN" in w for w in o["warn"]) and any("100.0 m" in w or "99." in w or "100." in w for w in o["warn"]), "K gabung dimatikan: dua poligon bertampalan diperingatkan dengan luas tampalan (~100 m2)")
+    # L (0.24.54): poligon bertampalan DIGABUNG otomatis (atap = permukaan tertinggi)
+    o2 = pg.evaluate("mk('O2',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]])"); print("O2", o2)
+    cek(o2["n"] == 1 and o2["isl"][0]["closed"] and abs(o2["isl"][0]["vol"] - 300 * fh) < 1e-6 and not o2["warn"], "L dua persegi bertampalan (sisi berimpit) -> 1 pulau tertutup, volume %.2f = luas gabungan 300 x %.2f (bukan 600 x)" % (o2["isl"][0]["vol"], fh))
+    o3 = pg.evaluate("mk('O3',[[0,rect(100,100,20,10)],[0,rect(104,102,6,4)]])"); print("O3", o3)
+    cek(o3["n"] == 1 and o3["isl"][0]["closed"] and abs(o3["isl"][0]["vol"] - 200 * fh) < 1e-6, "L poligon di dalam poligon lain -> tubuhnya = poligon luar (%.2f)" % o3["isl"][0]["vol"])
+    o4 = pg.evaluate("mk('O4',[[0,rect(100,100,20,6)],[0,rect(107,95,6,16)],[1,rect(100,100,20,6)]])"); print("O4", o4)
+    cek(o4["n"] == 1 and o4["isl"][0]["closed"] and o4["isl"][0]["nLv"] == 2, "L tampalan menyilang (bentuk +) digabung lalu tetap tersambung ke flitch bawahnya, tertutup")
+    hz = pg.evaluate("""(function(){var d=SV.D();d.pts=[];var add=function(f,x0,y0,w,h,z){[[0,0],[w,0],[w,h],[0,h]].forEach(function(q,i){d.pts.push({x:offX+x0+q[0],y:offY+y0+q[1],z:z,id:''+i,c:'',f:f});});};
+      add('A_'+String(T0).replace('.','-')+'_'+String(T0-FH).replace('.','-')+'_ZX.csv',100,100,20,10,T0);add('B_'+String(T0).replace('.','-')+'_'+String(T0-FH).replace('.','-')+'_ZX.csv',110,100,20,10,T0-0.5);
+      var p={id:'hz',name:'HZ',from:'',to:'',polys:[{id:'a',top:T0,bot:T0-FH,pts:rect(100,100,20,10),key:'a',src:'digit',name:'A',on:true},{id:'b',top:T0,bot:T0-FH,pts:rect(110,100,20,10),key:'b',src:'digit',name:'B',on:true}],par:{dmax:3,zMode:'idw',rIdw:6,zTol:FH/2,capPts:false,method:'min',sg:2.5,reg:false},res:null};d.per.push(p);
+      var R=SV.build(p),z=[];R.IS[0].tri.forEach(function(t){t.forEach(function(v){if(Math.abs(R.V.x[v]-115)<1e-6&&R.V.z[v]>T0-FH+1e-6)z.push(R.V.z[v]);});});d.per.pop();d.pts=[];return {n:R.IS.length,vol:R.IS[0].vol,closed:R.IS[0].closed,z115:z,info:R.info,exp:200*FH+100*(FH-0.5)};})()"""); print("HZ", hz)
+    cek(hz["n"] == 1 and hz["closed"] and hz["info"] and hz["vol"] > hz["exp"] - 1e-6, "L atap gabungan = permukaan TERTINGGI: volume %.2f >= %.2f (bagian tampalan memakai atap pick-up pertama)" % (hz["vol"], hz["exp"]))
     km = pg.evaluate("""(function(){var d=SV.D();d.per=[];var mkp=function(nm,lv,P){var p={id:'k'+nm,name:nm,from:'',to:'',polys:[{id:'q'+nm,top:T0-lv*FH,bot:T0-(lv+1)*FH,pts:P,key:nm,src:'digit',name:nm,on:true}],par:{dmax:3,zMode:'flat',capPts:false,method:'min',sg:2.5,reg:false},res:null};d.per.push(p);return p;};
       mkp('W1',0,rect(100,100,20,10));var p2=mkp('W2',1,rect(100,100,20,10));d.cur=p2.id;var a=SV.build(p2);p2.par.kum=true;var b=SV.build(p2);return {a:a.IS.map(function(s){return [s.nLv,+s.vol.toFixed(3)];}),b:b.IS.map(function(s){return [s.nLv,s.closed,+s.vol.toFixed(3)];})};})()"""); print("KUM", km)
     cek(km["a"] == [[1, round(200 * fh, 3)]] and km["b"] == [[2, True, round(400 * fh, 3)]], "K kumulatif: poligon periode sebelumnya ikut -> 1 pulau 2 flitch; tanpa kumulatif hanya periode ini")

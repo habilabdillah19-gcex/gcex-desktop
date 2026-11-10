@@ -142,7 +142,7 @@ with sync_playwright() as pw:
     tree('am.fl.%s' % k); pg.wait_for_timeout(1500); shot('asmined_review_2d')
     # 12. register & 3D hasil kerja
     tree('reg.1', ['reg']); shot('register', SIDE)
-    ev("if(window.am3Toggle)am3Toggle(true)"); pg.wait_for_timeout(2500); ev("if(VIEW2D)toggle2D();setCam(1.2,-1.4,0.9)"); pg.wait_for_timeout(2500); shot('hasil_kerja_3d')
+    ev("if(window.am3Toggle)am3Toggle(true)"); pg.wait_for_timeout(2500); ev("if(VIEW2D)toggle2D()"); pg.wait_for_timeout(2500); ev("if(window.AMN)AMN.zoom(false)"); pg.wait_for_timeout(3000); shot('hasil_kerja_3d')
     # 13. Solid Vein Aktual (trial, BM 0.24.51): poligon sintetis 4 flitch (bercabang) + 1 pulau terpisah -> solid di 3D
     ev("if(window.am3Toggle)am3Toggle(false)")
     ev("""(function(){var m=BX.m,cx=0,cy=0,n=Math.min(m.n,5000);for(var i=0;i<n;i++){cx+=m.x[i];cy+=m.y[i];}cx=cx/n-offX;cy=cy/n-offY;var B=lyBench(),fh=B[0]-B[1],T0=B[0];

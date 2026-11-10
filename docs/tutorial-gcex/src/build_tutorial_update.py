@@ -951,6 +951,10 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>As-Mined sesudah diuji data nyata (BM 0.24.54).</b> <i>Import boundary</i> kini menerima <b>CSV pick-up OB</b>: RL flitch, tanggal dan pit dibaca dari nama file, dan titiknya langsung jadi titik atap. '
+         '<b>Kelas kadar</b> As-Mined mengikuti aturan block model; <b>SG</b> memakai kolom SG model bila ada (tonase proyek baru bisa berubah karenanya). '
+         '<b>3D hasil kerja</b> menampilkan solid as-mined di antara atap dan lantai pick-up, dengan <b>zoom ke poligon</b>. '
+         'Di Solid Vein, poligon yang <b>bertampalan</b> di satu flitch digabung otomatis jadi satu tubuh (atap = permukaan tertinggi).</p>')
 B.append('<p><b>Solid Vein Aktual berdiri sendiri (BM 0.24.53).</b> Menu ini tidak lagi mengambil data dari Dig Block maupun As-Mined: titik atap disimpan sendiri (import ulang titik atap yang dimasukkan di versi sebelumnya). '
          'Baru: <b>edit titik poligon</b> (tombol &#9998;), import ulang file bernama sama <b>mengganti</b> titiknya, tanda solid belum diperbarui, opsi <b>Kumulatif</b> lintas periode, dan peringatan <b>poligon bertampalan</b> di flitch yang sama beserta perkiraan volume gandanya.</p>')
 B.append('<p><b>Solid Vein Aktual sesudah diuji pick-up nyata (BM 0.24.52).</b> Tabel titik atap kini per <b>file</b>, dengan <b>RL flitch dibaca dari nama file</b> '
