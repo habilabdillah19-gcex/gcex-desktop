@@ -4292,3 +4292,9 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   melihat), tanpa *Pengaturan lanjutan*; node *Pengaturan tampilan › Sayatan* dihapus. Galat *k.pick* saat kursor di atas model
   ditambal seperti di Drillhole.
 - **Laporan kinerja** (kedua aplikasi) tidak lagi menghitung waktu selama kotak dialog terbuka.
+
+## 163. DB-Ex 0.46.3 — Transkrip untuk Ore Spotter & Ore to Crusher (borang lama & DBX)
+
+- **Borang lama dengan kolom per kelas** (angka Truck / Tonnage atau Ton ditulis di bawah kolom kelas OX-LG, SF-LG, …): di dropdown tujuan kolom tersedia *Kolom kelas OX-LG · Truck*, *Kolom kelas OX-LG · Tonnage* … (Ore Spotter) dan *Kolom kelas OX-LG · Ton* …, *Rehandling · tumpukan 1–3*, *Status · Baru / Lama* (ROM / Crusher). Pilih sekali per kolom; DB-Ex mengisi Kelas + Truck + Tonnage (atau Kelas + Ton + Rehandling + Status) seperti cara baca langsung. Pilihan ini diingat untuk borang berikutnya dengan jumlah kolom yang sama.
+- **Ore Spotter**: kolom baru **Block**, **Dig-block ID** dan **Catatan** (borang DBX-ORE). Sel kosong / tanda ulang mengikuti baris atas seperti Pit dan Elevasi.
+- Judul kolom borang DBX (*Jam (JJMM)*, *No. Truk*, *Tonase (t)*, *Kelas (kode)*, *Dig-block ID*, …) dikenali otomatis.

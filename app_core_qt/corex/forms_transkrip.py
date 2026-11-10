@@ -336,6 +336,8 @@ class TranscriptTab(QWidget):
             cb.addItem(o["label"], o["key"])
             if o["key"].startswith("kop:"):
                 cb.setItemData(cb.count() - 1, QColor("#7048e8"), Qt.ForegroundRole)
+            elif o.get("grp") == "kelas":
+                cb.setItemData(cb.count() - 1, QColor("#0c8599"), Qt.ForegroundRole)
             elif ":" in o["key"]:
                 cb.setItemData(cb.count() - 1, QColor("#1c7ed6"), Qt.ForegroundRole)
         i = cb.findData(key or "")
@@ -427,12 +429,14 @@ class TranscriptTab(QWidget):
 
     def _help_html(self, j: dict) -> str:
         """Halaman kisi sebelum ada teks: apa yang akan bisa Anda putuskan + SEMUA tujuan yang tersedia untuk jenis borang ini."""
-        main, tabs, kop = [], {}, []
+        main, tabs, kop, kls = [], {}, [], []
         for o in j.get("options") or []:
             k, lbl = o["key"], o["label"]
             if not k:
                 continue
-            if k.startswith("kop:"):
+            if o.get("grp") == "kelas":
+                kls.append(lbl.replace("Kolom kelas ", ""))
+            elif k.startswith("kop:"):
                 kop.append(lbl.split("·", 1)[-1].strip())
             elif ":" in k:
                 t, _, f = lbl.partition("·")
@@ -451,6 +455,9 @@ class TranscriptTab(QWidget):
              f"<p style='line-height:170%'><b>Tabel utama</b><br>{chips(main)}</p>"]
         for t, fs in tabs.items():
             h.append(f"<p style='line-height:170%'><b>Tabel {t}</b> — boleh dalam baris teks yang sama dengan tabel utama<br>{chips(fs)}</p>")
+        if kls:
+            h.append("<p style='line-height:170%'><b>Kolom per kelas</b> — borang lama yang menulis angka di bawah kolom kelasnya; "
+                     f"Kelas diisi dari kolom yang Anda pilih<br>{chips(kls)}</p>")
         if kop:
             h.append(f"<p style='line-height:170%'><b>Kop</b> — untuk kolom berisi nilai kop yang sama di tiap baris<br>{chips(kop)}</p>")
         h.append("<p><b>— abaikan —</b> untuk kolom yang tidak dipakai (keputusan ini juga diingat).</p>"

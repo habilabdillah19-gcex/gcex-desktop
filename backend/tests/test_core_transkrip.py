@@ -255,3 +255,44 @@ def test_batas_kelompok_pengguna():
     out = tr.render([], g["rows"], "|", [[0, 2], [2, 4]])
     assert out.split("\n") == ["# Kelompok 1", "a | b", "c | d", "", "# Kelompok 2", "e | f", "g | h"]
     assert tr.groups("ore", tr.grid(out, "|"), {}) == [[0, 2], [2, 4]]
+
+
+def test_kolom_per_kelas_borang_lama(st):
+    """0.46.3: Ore Spotter lama — Truck / Tonnage ditulis di bawah kolom kelas -> Kelas + Truck + Tonnage (urutan baku, bukan
+    kelas_urut dari bacaan lama); judul kembar TRUCK / TONNAGE tidak dihafal; ROM: ton per kelas, rehandling, Baru / Lama."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "ol.jpg")), "ore", "Rina")[0]["id"]
+    with s.conn() as c:  # bacaan lama menyimpan urutan kelas tercetak yang lain -> tidak boleh dipakai untuk kolom pilihan pengguna
+        c.execute("UPDATE docs SET header_json=? WHERE id=?", (json.dumps({"kelas_urut": "SF-LG, OX-LG, OX-HG, SF-HG, OX-SG, SF-SG, OX-MO, SF-MO"}), did))
+    txt = ("No | Start | Finish | Pit | TRUCK | TONNAGE | TRUCK | TONNAGE | Tujuan\n"
+           "1 | 0905 | 0910 | P1 | H026 | 30 | - | - | ROM 1\n2 | 0916 | 0920 | 〃 | - | - | H027 | 31 | 〃")
+    opts = {o["key"]: o for o in tr.options("ore")}
+    assert opts["oxlg_trk"]["grp"] == "kelas" and "sflg_ton" in opts and "block" in opts and "digblock" in opts and "catatan" in opts
+    pv = tr.preview(s, did, txt, "auto")
+    assert pv["groups"][0]["cols"][4:8] == ["", "", "", ""]  # judul kembar: tidak ditebak
+    cols = ["no", "start", "finish", "pit", "oxlg_trk", "oxlg_ton", "sflg_trk", "sflg_ton", "tujuan"]
+    tr.apply(s, did, txt, "|", [cols], [], "Rina", skip_rows=[0], title_row=[0], grp=[[0, 3]])
+    rs = [r["data"] for r in cf.rows(s, did)]
+    assert [(r["kelas"], r["unit"], r["ton"], r["pit"], r["tujuan"]) for r in rs] == [
+        ("OX-LG", "H026", "30", "P1", "ROM 1"), ("SF-LG", "H027", "31", "P1", "ROM 1")]
+    m = tr.load_map(s)["ore"]
+    assert "truck" not in m["alias"] and m["by_n"]["9"][4] == "oxlg_trk"
+    pv2 = tr.preview(s, did, txt, "auto")  # borang berikutnya: judul kembar diisi dari keputusan tersimpan -> yakin
+    assert pv2["groups"][0]["cols"] == cols and pv2["map"]["sure"]
+    # ROM / Crusher lama
+    r_ = cf.add_file(s, str(_scan(tmp, "rl.jpg")), "rom", "Rina")[0]["id"]
+    t2 = "1 | DT01 | 1857 | 25 | - | v | v | -\n2 | DT02 | 1903 | - | 28 | - | - | v"
+    tr.apply(s, r_, t2, "|", ["no", "unit", "start", "oxlg", "sflg", "rh1", "baru", "lama"], [], "Rina")
+    rr = [r["data"] for r in cf.rows(s, r_)]
+    assert [(r["kelas"], r["ton"], r["status"]) for r in rr] == [("OX-LG", "25", "Baru"), ("SF-LG", "28", "Lama")]
+    assert rr[0]["rehandling"] and not rr[1]["rehandling"]
+
+
+def test_borang_dbx_ore():
+    """Borang Ramah AI DBX-ORE: semua judul kolom dikenali, termasuk Block & Dig-block ID (0.46.3)."""
+    g = tr.grid("No | Jam (JJMM) | No. Truk | Elevasi (m) | Block | Dig-block ID | Kelas (kode) | Tonase (t) | Tujuan (kode) | Catatan\n"
+                "1 | 0905 | T01 | 120 | B12 | DB-12-03 | OX-LG | 30 | ROM-1 | -", "|")
+    sg = tr.suggest("ore", g, None)
+    assert sg["cols"] == ["no", "start", "unit", "elevasi", "block", "digblock", "kelas", "ton", "tujuan", "catatan"] and sg["sure"]
+    out = tr.build("ore", g, sg["cols"], [], [0])
+    assert out["rows"][0]["digblock"] == "DB-12-03" and out["rows"][0]["block"] == "B12"

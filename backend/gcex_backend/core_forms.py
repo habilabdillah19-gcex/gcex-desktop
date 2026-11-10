@@ -59,7 +59,12 @@ TYPES: dict[str, dict] = {
                    ("lokasi", "Lokasi (pit)", "text"), ("excavator", "Excavator (EX)", "text")],
         "rows": [("no", "No", "text"), ("start", "Start loading", "time"), ("finish", "Finish loading", "time"), ("pit", "Pit / blok", "text"),
                  ("elevasi", "Elevasi", "text"), ("kelas", "Kelas material", "text"), ("unit", "Truck", "text"), ("ton", "Tonnage", "num"),
-                 ("tujuan", "Tujuan dumping", "text")],
+                 ("tujuan", "Tujuan dumping", "text"),
+                 # 0.46.3: kolom borang DBX-ORE (Block & Dig-block ID tiap ritase, Catatan) — tidak diminta dari AI cara langsung
+                 ("block", "Block", "text"), ("digblock", "Dig-block ID", "text"), ("catatan", "Catatan", "text")],
+        "ai_rows": [("no", "No", "text"), ("start", "Start loading", "time"), ("finish", "Finish loading", "time"), ("pit", "Pit / blok", "text"),
+                    ("elevasi", "Elevasi", "text"), ("kelas", "Kelas material", "text"), ("unit", "Truck", "text"), ("ton", "Tonnage", "num"),
+                    ("tujuan", "Tujuan dumping", "text")],
         # 0.44.3: satu nilai per kolom besar; kelas = NAMA judul kolom berwarna tempat truk & tonase ditulis; sel kosong "-"
         "hint": ("Borang 'Form Loading (atau Rehandling) Ore dari Pit to ROM / Stockpile' (Ore Spotter di front loading), lanskap. "
                  "Header: NAMA CREW, LOKASI (pit), nomor excavator (mis. EX-123, ditulis tangan di dekat judul), TANGGAL, SHIFT (I / II). "
@@ -213,8 +218,8 @@ TYPES.update(GEN_BUILTIN)
 BUILTIN_KEYS = set(TYPES)
 SHIFT_DS = (6, 18)  # shift I / siang (DS) 06:00-18:00, shift II / malam (NS) 18:00-06:00
 # sel kosong hasil AI -> diisi dari baris atas (ditandai kuning); tanda ulang -> nilai baris atas
-CARRY = {"ore": ("pit", "elevasi", "tujuan"), "rom": ("asal", "tujuan", "status", "keterangan")}
-DITTO = {"ore": ("start", "finish", "pit", "elevasi", "kelas", "tujuan"),
+CARRY = {"ore": ("pit", "elevasi", "tujuan", "block", "digblock"), "rom": ("asal", "tujuan", "status", "keterangan")}
+DITTO = {"ore": ("start", "finish", "pit", "elevasi", "kelas", "tujuan", "block", "digblock"),
          "rom": ("start", "finish", "asal", "tujuan", "rehandling", "kelas", "status", "keterangan")}
 # Daily Drilling Report: kategori aktivitas (urutan = prioritas kata kunci) dan kelompok jam di borang (WH / DL / MNTC / BD / RAIN / STD)
 # sesuai aturan site: WH = drilling, traveling antar titik bor, persiapan, P2H, P5M; DL = istirahat, standby, wait blasting, traveling

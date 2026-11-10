@@ -263,8 +263,25 @@ def options(ftype: str) -> list[dict]:
     for tb, tt in (t.get("tables") or {}).items():
         for k, lbl, _tt in tt["rows"]:
             out.append({"key": f"{tb}:{k}", "label": f"{tt['name']} · {lbl}"})
+    out += class_options(ftype)
     for k, lbl, _tt in t["header"]:  # kolom berisi nilai kop yang sama di tiap baris (mis. tanggal, shift, rig) -> isian header
         out.append({"key": f"kop:{k}", "label": f"Kop · {lbl}"})
+    return out
+
+
+def class_options(ftype: str) -> list[dict]:
+    """Borang lama dengan KOLOM PER KELAS (0.46.3): kelas ditentukan oleh kolom tempat angka ditulis. Tujuan ini memakai kunci yang
+    sama dengan cara baca langsung (ore_fix / rom_fix) sehingga hasilnya identik: Kelas + Truck + Tonnage (Ore Spotter), Kelas + Ton,
+    Rehandling, Status Baru / Lama (ROM / Crusher)."""
+    out: list[dict] = []
+    if ftype == "ore":
+        for c in F.ORE_CLS:
+            out += [{"key": f"{F._slug(c)}_trk", "label": f"Kolom kelas {c} · Truck", "grp": "kelas"},
+                    {"key": f"{F._slug(c)}_ton", "label": f"Kolom kelas {c} · Tonnage", "grp": "kelas"}]
+    elif ftype == "rom":
+        out += [{"key": F._slug(c), "label": f"Kolom kelas {c} · Ton", "grp": "kelas"} for c in F.ROM_CLS]
+        out += [{"key": f"rh{i}", "label": f"Rehandling · tumpukan {i} (centang / nama)", "grp": "kelas"} for i in (1, 2, 3)]
+        out += [{"key": "baru", "label": "Status · Baru (centang)", "grp": "kelas"}, {"key": "lama", "label": "Status · Lama (centang)", "grp": "kelas"}]
     return out
 
 
@@ -296,7 +313,10 @@ def _alias(ftype: str) -> dict[str, str]:
            "dip": ("dip",), "time": ("jam", "start", "mulai"), "jam": ("jam", "start", "mulai"), "waktu": ("jam", "start", "mulai"),
            "pukul": ("jam", "start", "mulai"), "description": ("aktivitas", "keterangan", "catatan"),
            "uraian": ("aktivitas", "keterangan", "catatan"), "kegiatan": ("aktivitas",), "truck": ("unit", "truck"), "truk": ("unit", "truck"),
-           "dt": ("unit", "truck"), "ton": ("ton",), "tonase": ("ton",), "kelas": ("kelas",), "tujuan": ("tujuan",)}
+           "dt": ("unit", "truck"), "ton": ("ton",), "tonase": ("ton",), "kelas": ("kelas",), "tujuan": ("tujuan",),
+           "notruk": ("unit", "truck"), "notruck": ("unit", "truck"), "nounit": ("unit",), "eqnounit": ("unit",), "block": ("block", "pit"),
+           "blok": ("block", "pit"), "digblock": ("digblock",), "digblockid": ("digblock",), "catatan": ("catatan", "keterangan"),
+           "remarks": ("catatan", "keterangan"), "asal": ("asal",), "bl": ("status",), "rehandling": ("rehandling",)}
     for name, cands in gen.items():
         if name not in al or al[name] not in valid:
             k = first(*cands)
@@ -331,6 +351,9 @@ class _Look:
             return ""
         if nc in self.al:
             return self.al[nc]
+        nb = _norm(re.sub(r"\(.*?\)|\[.*?\]", "", str(c)))  # 'Jam (JJMM)', 'Tonase (t)' -> jam, tonase
+        if nb and nb in self.al:
+            return self.al[nb]
         cand = [k for k in self.al if len(k) >= 4 and len(nc) >= 4 and (k.startswith(nc) or nc.startswith(k) or (len(nc) >= 6 and nc in k))]
         return self.al[max(cand, key=len)] if cand else ""
 
@@ -389,8 +412,13 @@ def suggest_group(ftype: str, rows: list, saved: dict) -> dict:
         hit = lk.title(r[:n])
         if hit is not None:
             cols, title_row, src = (hit + [""] * n)[:n], i, "title"
+            nr = [_norm(x) for x in r[:n]]
+            dup = {j for j, x in enumerate(nr) if x and nr.count(x) > 1}  # judul kembar (TRUCK, TONNAGE per kelas) tidak menentukan kelas
+            if dup:
+                cols = [("" if j in dup else c) for j, c in enumerate(cols)]
             if by_n:
-                cols = [c or (by_n[j] if j < len(by_n) and not lk.ignored(r[j] if j < len(r) else "") else "") for j, c in enumerate(cols)]
+                cols = [c or (by_n[j] if j < len(by_n) and (j in dup or not lk.ignored(r[j] if j < len(r) else "")) else "")
+                        for j, c in enumerate(cols)]
             break
     if title_row < 0:
         if by_n is not None:
@@ -467,8 +495,9 @@ def save_map(s: F.Store, ftype: str, sep: str, cols: list, hdr_pairs: list[tuple
     tts = titles if titles and isinstance(titles[0], (list, type(None))) else [titles]
     for gi, cg in enumerate(per):
         by_n[str(len(cg))] = list(cg)
+        tl = [_norm(x) for x in ((tts[gi] if gi < len(tts) else None) or [])]
         for t_, k in zip((tts[gi] if gi < len(tts) else None) or [], cg):
-            if _norm(t_) and not re.fullmatch(r"[\d.,:\-\s]+", t_):
+            if _norm(t_) and not re.fullmatch(r"[\d.,:\-\s]+", t_) and tl.count(_norm(t_)) == 1:  # judul kembar tidak dihafal
                 alias[_norm(t_)] = k
     m[ftype] = {"sep": sep, "cols": list(per[0]) if per else [], "hdr": hd, "by_n": by_n, "alias": alias}
     try:
@@ -562,6 +591,10 @@ def build(ftype: str, g: dict, cols: list, hdr_keys: list[str], skip_rows: Optio
                 main[k] = (main[k] + " " + v).strip() if main.get(k) else v
                 if ragu:
                     main["ragu"].append(k)
+        cls_keys = {o["key"] for o in class_options(ftype)}
+        if cls_keys & {k for k, v in main.items() if v and k != "ragu"}:
+            # nama kolom kelas sudah dipilih pengguna (kunci = kelas itu sendiri) -> urutan baku, bukan header kelas_urut lama
+            main = F.ore_fix(main, {}) if ftype == "ore" else F.rom_fix(main, {}) if ftype == "rom" else main
         filled = [v for k, v in main.items() if k != "ragu" and v]
         if filled and sum(1 for v in filled if _norm(v) in names) < max(1, len(filled) // 2 + 1):
             out["rows"].append(main)
