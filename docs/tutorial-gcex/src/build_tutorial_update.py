@@ -951,6 +951,7 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Tombol Muat data latihan simulasi (BM 0.24.55 / DH 0.24.58).</b> Di aplikasi terpasang tombol ini gagal dengan pesan <i>HTTP 404</i>; sudah diperbaiki di kedua aplikasi.</p>')
 B.append('<p><b>As-Mined sesudah diuji data nyata (BM 0.24.54).</b> <i>Import boundary</i> kini menerima <b>CSV pick-up OB</b>: RL flitch, tanggal dan pit dibaca dari nama file, dan titiknya langsung jadi titik atap. '
          '<b>Kelas kadar</b> As-Mined mengikuti aturan block model; <b>SG</b> memakai kolom SG model bila ada (tonase proyek baru bisa berubah karenanya). '
          '<b>3D hasil kerja</b> menampilkan solid as-mined di antara atap dan lantai pick-up, dengan <b>zoom ke poligon</b>. '

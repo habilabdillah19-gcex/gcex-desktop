@@ -9,7 +9,7 @@
    Karena itu berkas data latihan yang dipakai tutorial dititipkan DI DALAM installer
    (extraResources -> resources/data-latihan) dan modul ini memuatnya dalam satu perintah:
    tombol "Muat data latihan & jalankan Demo" di menu Demo. Isinya dibaca lewat protokol
-   gcexfile://latihan/<nama berkas> (desktop) atau folder data-latihan/ di sebelah index.html
+   gcexfile://open/latihan/<nama berkas> (desktop) atau folder data-latihan/ di sebelah index.html
    (versi HTML / pengujian), lalu disuapkan ke jalur import yang sama dengan yang dipakai
    pengguna -- SA.slotFile / SA.addSp / SA.bmPick / SA.go -- jadi tidak ada jalur baca kedua
    yang bisa berbeda hasilnya.
@@ -41,7 +41,13 @@
   var $ = function (i) { return document.getElementById(i); };
   var KUNCI = 'gcex_demo_latihan';            /* penanda: muat lagi sesudah halaman dimuat ulang */
 
-  function url(nm) { return DLAT.src === 'desktop' ? 'gcexfile://latihan/' + nm : 'data-latihan/' + nm; }
+  /* gcexfile://open/latihan/<nama>, BUKAN gcexfile://latihan/<nama>: skema ini terdaftar 'standard', jadi bagian
+     pertama sesudah // adalah HOST dan hilang dari pathname. Penangan di electron/main.js memeriksa
+     pathname.startsWith('latihan/'); dengan bentuk lama pathname-nya hanya '<nama>' sehingga SELALU 404
+     ("Gagal membaca data latihan SIM_collar.csv (HTTP 404)" di aplikasi terpasang, laporan pemilik 10-11-2026).
+     Tidak tertangkap uji karena uji berjalan di peramban (jalur 'data-latihan/'). Uji: tools/uji/uji_url_latihan.js. */
+  function url(nm) { return DLAT.src === 'desktop' ? 'gcexfile://open/latihan/' + nm : 'data-latihan/' + nm; }
+  DLAT.url = url;
 
   /* daftar berkas yang benar-benar ada */
   DLAT.cari = async function () {

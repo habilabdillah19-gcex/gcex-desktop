@@ -4234,3 +4234,10 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 
 - Poligon yang **bertampalan di flitch yang sama** (dig block dipasang ulang karena lantai belum tuntas) kini **digabung otomatis**
   jadi satu tubuh; atap memakai permukaan tertinggi, sehingga tampalan tidak terhitung dua kali. Bisa dimatikan di *Parameter solid*.
+
+## 158. Block Model 0.24.55 & Drillhole 0.24.58 — tombol "Muat data latihan simulasi" di aplikasi terpasang
+
+- Di aplikasi yang **terpasang**, tombol *Muat data latihan simulasi* (dan Demo yang memakainya) gagal dengan pesan
+  "Gagal membaca data latihan SIM_collar.csv (HTTP 404)". Berkas latihannya ada di folder instalasi, tetapi alamat yang diminta
+  aplikasi salah bentuk sehingga tidak pernah sampai ke sana. Sudah diperbaiki di kedua aplikasi.
+- Tidak ada perubahan lain pada Drillhole.
