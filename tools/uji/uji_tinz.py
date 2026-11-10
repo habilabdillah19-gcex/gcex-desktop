@@ -37,6 +37,32 @@ with sync_playwright() as pw:
     cek(a["bidang"] < 1e-6, "TIN: titik pada bidang miring -> interpolasi tepat (galat %.2e m)" % a["bidang"])
     cek(abs(a["puncak"] - 241) < 1e-9 and abs(a["antara"] - 240.5) < 1e-9 and a["diluar"] is None, "TIN: puncak pick-up dihormati persis, linear di antaranya, di luar selubung = cadangan")
     cek(a["tin"] > 0 and a["atap"] < 0.05, "atap As-Mined mode pick-up memakai TIN (%d segitiga), galat terhadap bidang %.3f m" % (a["tin"], a["atap"]))
+    t = pg.evaluate("""(async function(){var w=function(t){return new Promise(function(r){setTimeout(r,t);});};var o={};var pl=function(x,y){return 200+0.04*x-0.02*y;};
+      var lama=OV.topoF,X=[],Y=[],Z=[];for(var i=0;i<3000;i++){var x=Math.random()*600-300,y=Math.random()*600-300;X.push(x);Y.push(y);Z.push(pl(x,y));}
+      OV.topoF={x:X,y:Y,z:Z};if(window.TIDX!==undefined)TIDX=null;var e=0,ei=0;for(var k=0;k<300;k++){var x=Math.random()*400-200,y=Math.random()*400-200,v=topoZ(x,y);e=Math.max(e,Math.abs(v-pl(x,y)));var vi=topoZ._idw(x,y);ei=Math.max(ei,Math.abs(vi-pl(x,y)));}
+      o.topo=e;o.topoIdw=ei;o.tin=!!topoZ._tin;var f=RP.api.surf(OV.topoF),e2=0;for(k=0;k<200;k++){var x2=Math.random()*400-200,y2=Math.random()*400-200;e2=Math.max(e2,Math.abs(f(x2,y2)-pl(x2,y2)));}o.rp=e2;o.api=true;
+      /* permukaan string (potong saat import): crest bertangga -> TIN */
+      var L=[];for(var r=0;r<=4;r++){var R=40+r*20,zz=250-r*10;for(var a=0;a<=36;a++){var t2=a/36*2*Math.PI;L.push([R*Math.cos(t2),R*Math.sin(t2),zz]);}L.push(null);}
+      var G=SA.surfGrid(L,'crest'),e3=0,nn=0;for(k=0;k<200;k++){var rr=45+Math.random()*70,aa=Math.random()*6.283,xx=rr*Math.cos(aa),yy=rr*Math.sin(aa),zs=SA.surfAt(G,xx,yy);if(!isFinite(zs))continue;nn++;var hv=250-(rr-40)/2;e3=Math.max(e3,Math.abs(zs-hv));}o.sg=e3;o.sgn=nn;
+      OV.topoF=lama;if(window.TIDX!==undefined)TIDX=null;
+      /* lantai As-Mined */
+      var D=amD(),X0=505000,Y0=9012000,pf=function(x,y){return 237+0.03*(x-X0)+0.01*(y-Y0);};D.pts=[];for(i=0;i<60;i++){var px=X0+Math.random()*40,py=Y0+Math.random()*40;D.pts.push({x:px,y:py,z:pf(px,py),id:'',c:''});}var Rr=amR();Rr.floor='pickup';Rr.flDn=5;Rr.flUp=5;
+      var poly={r:[[X0+10,Y0+10],[X0+30,Y0+10],[X0+30,Y0+30],[X0+10,Y0+30]]};poly.b=lyBB(poly.r);var F=amFloorFn(poly,[238.5,237]),e4=0;for(k=0;k<200;k++){var x4=X0+15+Math.random()*10,y4=Y0+15+Math.random()*10;e4=Math.max(e4,Math.abs(F.f(x4,y4)-pf(x4,y4)));}o.lantai=e4;o.ltin=F.tin||0;
+      /* pop-up */
+      uiTab('AM');amPanel();await w(300);POP.set('am.ly',true);await w(400);var W=document.getElementById('gxpo_am_ly');o.lyWin=!!(W&&W.style.display!=='none'&&/Layout|PDF|export/i.test(W.textContent));o.lyPh=!!document.querySelector('#amBody .gxpoph');
+      amPanel();await w(400);o.lyWin2=!!(W&&W.querySelector('.gxpb').children.length);o.lyGanda=document.querySelectorAll('#amBody .gxpoph').length;
+      POP.set('am.reg',true);await w(400);var W2=document.getElementById('gxpo_am_reg');o.regWin=!!(W2&&W2.style.display!=='none'&&W2.querySelector('.gxpb').textContent.length>10);
+      POP.set('am.ly',false);POP.set('am.reg',false);await w(400);o.balik=!document.querySelector('#amBody .gxpoph')&&W.style.display==='none';
+      var dS=SV.D();if(!dS.per.length){dS.per.push({id:'pp',name:'Uji',from:'',to:'',polys:[],par:{},res:null});dS.cur='pp';}uiTab('SV');SV.panel();await w(300);POP.set('sv.pts',true);await w(400);var W3=document.getElementById('gxpo_sv_pts');o.svWin=!!(W3&&/Import titik atap/.test(W3.textContent));o.svDbg=[!!document.getElementById('svBody'),!!document.querySelector('#svBody .svsec[data-sec="pts"]'),W3?W3.textContent.slice(0,80):'-',document.querySelectorAll('.svsec').length];POP.set('sv.pts',false);await w(300);
+      return o;})()""")
+    print(t)
+    cek(t["tin"] and t["topo"] < 1e-6 and t["topoIdw"] > t["topo"], "topoZ memakai TIN: bidang miring tepat (galat %.1e; IDW lama %.3f m)" % (t["topo"], t["topoIdw"]))
+    cek(t["rp"] < 1e-6 and t["api"], "Reporting (rpSurf & RP.api.surf) memakai TIN")
+    cek(t["sgn"] > 50 and t["sg"] < 0.5, "permukaan string (potong saat import) dari TIN: galat %.3f m (sel grid 1 m x lereng 0,5) pada %d titik" % (t["sg"], t["sgn"]))
+    cek(t["ltin"] > 0 and t["lantai"] < 1e-6, "lantai As-Mined dari pick-up memakai TIN (galat %.1e m)" % t["lantai"])
+    cek(t["lyWin"] and t["lyPh"] and t["lyWin2"] and t["lyGanda"] == 1, "Layout & export pindah ke pop-up, tetap di pop-up setelah panel digambar ulang")
+    cek(t["regWin"] and t["balik"], "Daftar poligon per flitch di pop-up; tombol tutup mengembalikan ke panel")
+    cek(t["svWin"], "tabel titik atap Solid Vein di pop-up")
     cek(not err, "tanpa galat halaman: %s" % err[:3])
     ctx.close()
 srv.terminate()

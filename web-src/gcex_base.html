@@ -4000,6 +4000,8 @@ SA.surfGrid=function(lines,mode){var segs=[],cur=[];(lines||[]).forEach(function
     for(var t=0;t<=m;t++){var f=t/m;put(a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f);}}});
   var Z=new Float32Array(NN),KN=new Uint8Array(NN);for(var q=0;q<NN;q++){if(K[q]){Z[q]=S[q]/K[q];KN[q]=1;}}S=K=null;
   SA.gridFill(Z,KN,nx,ny);
+  /* 0.24.60 (pemilik 10-11-2026): Z sel = TRIANGULASI vertex string (seperti DTM Surpac, web-src/tinz.js); rata-rata per sel + isian piramida di atas hanya cadangan di luar segitiga */
+  if(window.TINZ){var TPv=[];segs.forEach(function(P){P.forEach(function(p){TPv.push({x:p[0],y:p[1],z:p[2]});});});var TN=TINZ(TPv,{faktor:(window.TIN&&TIN.faktor)||8});if(TN){for(var jy=0;jy<ny;jy++)for(var ix2=0;ix2<nx;ix2++){var zv=TN.f(x0+(ix2+0.5)*c,y0+(jy+0.5)*c);if(zv!=null&&isFinite(zv))Z[jy*nx+ix2]=zv;}}}
   /* mask cakupan */
   var M=new Uint8Array(NN),polys=[];
   if(mode==='crest'){segs.forEach(function(P){if(P.length<4)return;var a=P[0],b=P[P.length-1];if(Math.hypot(a[0]-b[0],a[1]-b[1])<=Math.max(2*c,1.5))polys.push(P);});}

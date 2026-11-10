@@ -51,7 +51,7 @@ with sync_playwright() as pw:
       o.kunci=AMK.lock('2026-11-01','DS');o.isLk=AMK.isLk(A);
       BX.ui.sg=(BX.ui.sg||2.6)*1.2;if(BX.ui.sgCol)BX.ui.sgCol='';
       amBndAdd(R(cx+30,cy+30,15,15),'B',{top:238.75,bot:236.25,date:'2026-11-15'});var Bp=amBndAll().filter(function(x){return x.name==='B';})[0];Bp.shift='NS';
-      amRun(true);await w(500);o.a1=A.st.t;o.aNow=A._stNow&&A._stNow.t;o.b=Bp.st&&Bp.st.t;var r=AM.res[lyFmt(238.75)+'_'+lyFmt(236.25)];o.sum=r.sum.t;
+      amRun(true);await w(1500);o.a1=A.st.t;var lab=(document.getElementById('plotDiv').data||[]).map(function(t){return (t.text||[]).join ? (t.text||[]).join('|') : '';}).join('|');o.lab=lab.indexOf(A.st.t.toFixed(0)+' t')>=0;o.aNow=A._stNow&&A._stNow.t;o.b=Bp.st&&Bp.st.t;var r=AM.res[lyFmt(238.75)+'_'+lyFmt(236.25)];o.sum=r.sum.t;
       var n0=amBndAll().length;amBndAdd(R(cx-10,cy-30,20,20),'C',{top:238.75,bot:236.25,date:'2026-11-15'});var C=amBndAll().filter(function(x){return x.name==='C';})[0];
       var sh=function(P){var a=0;for(var i=0;i<P.length;i++){var q=P[i],r=P[(i+1)%P.length];a+=q[0]*r[1]-r[0]*q[1];}return Math.abs(a/2);};o.cLuas=C?sh(C.pts):-1;
       amBndDel(A.id);o.aMasih=!!amBndAll().filter(function(x){return x.id===A.id;})[0];amPSet(A.id,'ore','ZZ');o.aOre=A.ore||'';
@@ -60,6 +60,7 @@ with sync_playwright() as pw:
     print(a)
     cek(a["a0"] and a["kunci"] == 1 and a["isLk"], "Hitung poligon A (1 Nov DS) lalu kunci tanggal-shift itu")
     cek(abs(a["a1"] - a["a0"]) < 1e-9 and a["aNow"] and abs(a["aNow"] - a["a0"] * 1.2) < 1, "SG berubah + flitch sama digali lagi (B): A tetap %.1f t (bila dihitung ulang %.1f t)" % (a["a1"], a["aNow"] or 0))
+    cek(a["lab"], "label poligon terkunci di plan memakai angka beku")
     cek(a["b"] and abs(a["sum"] - (a["a0"] + a["b"])) < 1e-6, "rekap flitch = A beku + B baru")
     cek(abs(a["cLuas"] - 300) < 2, "poligon baru C (400 m2) bertampalan 100 m2 dengan A terkunci -> dikurangi jadi %.1f m2" % a["cLuas"])
     cek(a["aMasih"] and a["aOre"] != 'ZZ', "poligon terkunci tidak bisa dihapus / diubah atributnya")

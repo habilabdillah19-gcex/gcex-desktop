@@ -4340,3 +4340,16 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Solid Vein Aktual**: Z atap tiap sudut poligon juga dari triangulasi titik atap (pilihan *Triangulasi (TIN) titik atap*,
   bawaan; *IDW radius* tetap ada sebagai cara lama). Permukaan gabungan poligon bertampalan juga dari triangulasi.
 - Bangun ulang solid / Hitung ulang flitch untuk memakai cara baru (poligon yang tanggal-shift-nya **terkunci** tidak berubah).
+
+## 168. Block Model 0.24.60 & Drillhole 0.24.62 — topografi, pit & lantai dihitung dengan triangulasi; panel pop-up
+
+- **Topografi & desain pit** kini dihitung dari **triangulasi (TIN) yang sama dengan yang tampil di 3D** — interpolasi linear di
+  dalam segitiga seperti DTM Surpac. Berlaku untuk: estimasi (blok di atas topografi dilewati), Reporting di bawah topografi / di
+  dalam pit, laporan per fase pit & topo-ke-topo, potong block model saat import, orthofoto di atas topografi, dan di Drillhole
+  kedalaman dari topografi, sesar, dan kontur. Crest dan toe bench tidak lagi dihaluskan. Di luar jangkauan data (tepi, celah
+  kontur lebar) dipakai cara lama sebagai cadangan.
+- **Lantai As-Mined** dari pick-up juga triangulasi, sama dengan atap — tebal galian konsisten.
+- Angka Reporting / As-Mined lama di dekat tepi bench bisa sedikit bergeser setelah dihitung ulang; poligon yang tanggal-shift-nya
+  **terkunci** tidak berubah.
+- **Pop-up panel**: tombol **⧉ Pop-up** di judul *Register poligon* (daftar poligon per flitch), *Layout & export* As-Mined, dan
+  *Titik atap* Solid Vein memindah bagian itu ke jendela mengambang — geser, perkecil (–), tutup (×, kembali ke panel). Pilihan diingat.

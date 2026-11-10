@@ -26,7 +26,7 @@
   AMK.isLk = function (x) { var r = x && LK()[kDS(x)]; return !!(r && r.ids && r.ids.indexOf(x.id) >= 0); };
   AMK.lkOf = function (x) { return x ? LK()[kDS(x)] || null : null; };
   function tLk(r) { try { return new Date(r.t).toLocaleString('id-ID'); } catch (e) { return r.t; } }
-  function tolak(x, apa) { var r = AMK.lkOf(x); alert('Poligon ' + (x.name || '') + ' terkunci (tanggal ' + amDateTxt(x.date) + ' shift ' + (x.shift || '-') + ', dikunci ' + tLk(r) + ').\n' + apa + ' tidak bisa dilakukan sebelum kuncinya dibuka di "Report As-Mined per tanggal".'); }
+  function tolak(x, apa) { var r = AMK.lkOf(x), nm = x.name || ''; try { var I = amAllInfo().filter(function (q) { return q.x === x; })[0]; if (I && I.code) nm = I.code; } catch (e) {} alert('Poligon ' + nm + ' terkunci (tanggal ' + amDateTxt(x.date) + ' shift ' + (x.shift || '-') + ', dikunci ' + tLk(r) + ').\n' + apa + ' tidak bisa dilakukan sebelum kuncinya dibuka di "Report As-Mined per tanggal".'); }
 
   /* ---------- geometri: luas tampalan (sampel grid) & selisih A - B ---------- */
   function shoe(P) { var a = 0; for (var i = 0, n = P.length; i < n; i++) { var q = P[i], r = P[(i + 1) % n]; a += q[0] * r[1] - r[0] * q[1]; } return a / 2; }
@@ -88,6 +88,8 @@
       var dT = L.reduce(function (t, x) { var a = st0[x.id], b = x._stNow; return t + (a && b ? num(b.t) - num(a.t) : 0); }, 0);
       AM.msg = (AM.msg || '') + '<div class=hint style="border-left:3px solid #7048e8;padding-left:6px">&#128274; <b>' + L.length + ' poligon terkunci</b> tidak dihitung ulang (angka beku dipakai di register, rekap & laporan).' + (Math.abs(dT) > 0.5 ? ' Bila dihitung ulang sekarang tonasenya berselisih ' + (dT > 0 ? '+' : '') + N(dT) + ' t.' : '') + '</div>';
       try { amPanel(); } catch (e) {} }
+    /* label plan / register digambar ulang dengan angka beku (amRun menggambar saat x.st masih hasil hitung ulang) */
+    try { updatePlot(); } catch (e) {}
     return r; };
   /* angka beku tidak pernah "kedaluwarsa" karena SG / metode berubah */
   var _inf = window.amInfo; window.amInfo = amInfo = function (x) { var I = _inf.apply(this, arguments); if (AMK.isLk(x)) { I.stale = false; I.lk = true; } else if (AMK.lkOf(x)) I.lkBaru = true; return I; };

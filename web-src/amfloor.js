@@ -13,14 +13,14 @@ function amZStat(pts){var z=[];(pts||[]).forEach(function(q){var v=q&&q.length>2
 function amFlitchOfZ(z,B){var fh=B[0]-B[1];if(!(fh>0)||!isFinite(z))return B;var k=Math.round((B[1]-z)/fh);return[+(B[0]-k*fh).toFixed(4),+(B[1]-k*fh).toFixed(4)];}
 function amDistPoly(P,x,y){var d=Infinity;for(var i=0,n=P.length;i<n;i++){var a=P[i],b=P[(i+1)%n],vx=b[0]-a[0],vy=b[1]-a[1],L=vx*vx+vy*vy,t=L>0?((x-a[0])*vx+(y-a[1])*vy)/L:0;t=t<0?0:t>1?1:t;var dx=a[0]+t*vx-x,dy=a[1]+t*vy-y,q=Math.sqrt(dx*dx+dy*dy);if(q<d)d=q;}return d;}
 function amFloorPar(B){var R=amR(),fh=B[0]-B[1];return{dn:Math.max(0,amNumOr(R.flDn,2)),up:Math.max(0,amNumOr(R.flUp,+(0.6*fh).toFixed(2))),buf:Math.max(0,amNumOr(R.flBuf,2)),code:String(R.flCode||'').trim()};}
-function amFloorKey(){var R=amR();return R.floor==='pickup'?'|fl:'+[R.flDn,R.flUp,R.flBuf,R.flCode,(amD().pts||[]).length].join(','):'';}
+function amFloorKey(){var R=amR();return R.floor==='pickup'?'|fl:'+['tin',R.flDn,R.flUp,R.flBuf,R.flCode,(amD().pts||[]).length].join(','):'';}
 /* titik lantai untuk satu poligon */
 function amFloorPts(o,B){var D=amD(),P=D.pts||[],F=amFloorPar(B),lo=B[1]-F.dn,hi=Math.min(B[0]-0.05,B[1]+F.up),b=o.b,buf=F.buf,rx=null,out=[];
   if(F.code){try{rx=new RegExp(F.code,'i');}catch(e){rx=null;}}
   for(var i=0;i<P.length;i++){var q=P[i];if(!isFinite(q.z)||q.z<lo||q.z>hi)continue;if(rx&&!rx.test(q.c||'')&&!rx.test(q.id||''))continue;
     if(q.x<b[0]-buf||q.x>b[1]+buf||q.y<b[2]-buf||q.y>b[3]+buf)continue;if(!lyInS(o.r,q.x,q.y)&&amDistPoly(o.r,q.x,q.y)>buf)continue;out.push(q);}
   return{pts:out,lo:lo,hi:hi};}
-/* fungsi lantai z(x,y) satu poligon: IDW pangkat 2 (≤300 titik: semua titik; lebih: 16 terdekat lewat grid 5 m) */
+/* fungsi lantai z(x,y) satu poligon: triangulasi (TIN) titik pick-up; IDW pangkat 2 (≤300 titik: semua; lebih: 16 terdekat lewat grid 5 m) = cadangan di luar segitiga */
 function amFloorFn(o,B){var Q=amFloorPts(o,B),A=Q.pts,n=A.length;if(n<3)return{ok:false,n:n,f:function(){return B[1];}};
   var z=A.map(function(q){return q.z;}).sort(function(a,b){return a-b;}),med=n%2?z[(n-1)/2]:(z[n/2-1]+z[n/2])/2,lo=Q.lo,hi=Q.hi;
   var idw=function(L,x,y){var sw=0,sz=0;for(var i=0;i<L.length;i++){var q=L[i],dx=q.x-x,dy=q.y-y,d2=dx*dx+dy*dy;if(d2<1e-6)return q.z;var w=1/d2;sw+=w;sz+=w*q.z;}return sz/sw;};
@@ -28,7 +28,9 @@ function amFloorFn(o,B){var Q=amFloorPts(o,B),A=Q.pts,n=A.length;if(n<3)return{o
   else{var cs=5,H={},key=function(i,j){return i+'|'+j;};A.forEach(function(q){var k=key(Math.floor(q.x/cs),Math.floor(q.y/cs));(H[k]=H[k]||[]).push(q);});
     f=function(x,y){var ci=Math.floor(x/cs),cj=Math.floor(y/cs),L=[];for(var r=0;r<40&&L.length<16;r++){for(var i=ci-r;i<=ci+r;i++)for(var j=cj-r;j<=cj+r;j++){if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r)continue;var c=H[key(i,j)];if(c)L=L.concat(c);}}
       if(L.length>16){L.sort(function(a,b){return(a.x-x)*(a.x-x)+(a.y-y)*(a.y-y)-(b.x-x)*(b.x-x)-(b.y-y)*(b.y-y);});L=L.slice(0,16);}var v=idw(L,x,y);return v<lo?lo:v>hi?hi:v;};}
-  return{ok:true,n:n,f:f,zmin:z[0],zmax:z[n-1],med:med};}
+  /* 0.24.60 (pemilik 10-11-2026): lantai = TRIANGULASI titik pick-up (seperti atap, web-src/tinz.js); IDW di atas hanya cadangan di luar jangkauan titik */
+  var TN=window.TINZ?TINZ(A):null,tin=0;if(TN){var fi=f;tin=TN.nt;f=function(x,y){var v=TN.f(x,y);if(v==null||!isFinite(v))return fi(x,y);return v<lo?lo:v>hi?hi:v;};}
+  return{ok:true,n:n,f:f,zmin:z[0],zmax:z[n-1],med:med,tin:tin};}
 /* ---------- titik pick-up: toleransi tampil & kategori Z ---------- */
 function amPTol(){var D=amD();return Math.max(0,amNumOr(D.pTol,3));}
 function amPtsNear(){var D=amD(),P=D.pts||[],B=lyBench();if(D.pAll)return P;var t=amPTol(),lo=B[1]-t,hi=B[0]+t;return P.filter(function(q){return !isFinite(q.z)||(q.z>=lo&&q.z<=hi);});}
@@ -80,7 +82,7 @@ function amFloorBox(){var D=amD(),R=amR(),B=lyBench(),fh=B[0]-B[1],F=amFloorPar(
       '<div class=hint style="align-self:end;margin:0">Median Z titik tampil: <b>'+(isFinite(S.med)?S.med.toFixed(2):'-')+'</b>'+(isFinite(S.med)?' ('+(S.med-B[1]>=0?'+':'')+(S.med-B[1]).toFixed(2)+' m dari RL bawah)':'')+'</div></div>'+
       '<div class=amzc>'+AMPC.map(function(c){return S.c[c[0]]?'<span><i style="background:'+c[2]+'"></i>'+c[1]+' <b>'+S.c[c[0]].toLocaleString()+'</b></span>':'';}).join('')+'</div>';}
   h+='<div class=g2 style="margin-top:4px"><div><label>Import boundary masuk ke</label>'+sel(R.bndZ||'active',[['active','Flitch aktif (abaikan Z)'],['auto','Flitch menurut elevasi string']],"amRSet('bndZ',this.value)")+'</div>'+
-    '<div><label>Volume as-mined</label>'+sel(R.floor||'flitch',[['flitch','Tebal flitch penuh'],['pickup','Ikuti lantai pick-up']],"amRSet('floor',this.value);amAuto()")+'</div></div>';
+    '<div><label>Volume as-mined</label>'+sel(R.floor||'flitch',[['flitch','Tebal flitch penuh'],['pickup','Ikuti lantai pick-up (triangulasi / TIN)']],"amRSet('floor',this.value);amAuto()")+'</div></div>';
   if(R.floor==='pickup'){h+=amFloorWarn(B)+'<details class=amadv><summary>Setelan lanjutan (pita, jarak, kode titik)</summary><div class=g3 style="margin-top:4px"><div><label>Lantai s/d bawah RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.dn)+'" onchange="amRSet(\'flDn\',this.value);amAuto()"></div>'+
       '<div><label>s/d atas RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.up)+'" onchange="amRSet(\'flUp\',this.value);amAuto()"></div><div><label>Jarak dari poligon (m)</label><input type=number step=any min=0 value="'+amE(F.buf)+'" onchange="amRSet(\'flBuf\',this.value);amAuto()"></div></div>'+
       '<div style="margin-top:4px"><label>Hanya kode / ID titik (opsional, mis. TOE|FLOOR)</label><input type=text value="'+amE(F.code)+'" placeholder="semua titik" onchange="amRSet(\'flCode\',this.value);amAuto()"></div>'+

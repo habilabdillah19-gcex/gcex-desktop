@@ -201,7 +201,7 @@ def jalankan(app: str, galat: list) -> None:
             tempfile.mkdtemp(prefix="mtd_"),
             args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
             viewport={"width": 1500, "height": 900}, accept_downloads=True)
-        ctx.add_init_script("window.showDirectoryPicker=async function(){throw new Error('batal');};")
+        ctx.add_init_script("window.showDirectoryPicker=async function(){throw new Error('batal');};window.showSaveFilePicker=undefined;")  # gxSimpan (DB-Ex 0.44.1) memakai pemilih berkas; headless menggantung
         pg = ctx.new_page()
         pg.on("dialog", lambda d: d.accept())
         pg.on("pageerror", lambda e: galat.append("%s: galat halaman: %s" % (app, str(e)[:160])))
