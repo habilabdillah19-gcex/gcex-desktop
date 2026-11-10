@@ -3,6 +3,8 @@
    - Model as-mined dipakai untuk laporan produksi harian (tonase x kadar) pada hari poligon dibuat. Poligon & model hari
      yang sudah dilaporkan TIDAK boleh berubah ketika dua minggu kemudian flitch yang sama digali lagi di tempat lain.
    - Satuan kunci = TANGGAL-SHIFT (satu tombol untuk semua poligon hari & shift itu), bukan per poligon.
+   - (koreksi pemilik, 10 Nov 21:28) Kunci terjadi OTOMATIS saat laporan harian keluar: Salin ke Excel, Register CSV
+     (berkas benar-benar tersimpan) atau Kirim ke workbook berhasil -- bukan tombol tersendiri. Buka kunci tetap manual.
    - Laporan grade & tonnage as-mined diberi pilihan "Report As-Mined tanggal berapa".
    - Poligon baru yang bertampalan dengan poligon terkunci: peringatan + pilihan mengurangi area tampalan dari poligon baru.
 
@@ -65,6 +67,15 @@
       LK()[k] = { t: new Date().toISOString(), ids: ids, n: On.length, ton: ton }; ok++; }
     if (pesan.length) alert(pesan.join('\n'));
     if (ok) { amDirty(); try { amPanel(); } catch (e) {} AMK.render(); try { if (window.PT) PT.render(true); } catch (e) {} } return ok; };
+  /* KUNCI OTOMATIS saat laporan harian keluar (pemilik 10-11-2026: "suatu block atau polygon asmined baru terkunci setelah
+     laporan dailynya dikirimkan ke Workbook atau sudah diexport ke Excel"). Yang dikunci = poligon yang BENAR-BENAR ikut
+     keluar (baris register), dikelompokkan per tanggal-shift. Hanya dalam mode harian (tanggal dipilih); "Semua tanggal" tidak mengunci. */
+  AMK.lockRows = function (rows, via) { if (!AMK.f.date || !rows || !rows.length) return 0; var by = {}, n = 0; amAllInfo().forEach(function (I) { by[I.code] = I; });
+    var G = {}; rows.forEach(function (r) { var I = by[r[0]]; if (!I || !I.calc) return; var k = kDS(I.x); (G[k] = G[k] || []).push(I); });
+    Object.keys(G).forEach(function (k) { var L = G[k], lama = LK()[k], ids = (lama && lama.ids || []).slice(), ton = lama ? lama.ton || 0 : 0, baru = 0;
+      L.forEach(function (I) { if (ids.indexOf(I.x.id) < 0) { ids.push(I.x.id); ton += I.ton || 0; baru++; } }); if (!baru) return;
+      LK()[k] = { t: new Date().toISOString(), ids: ids, n: ids.length, ton: ton, via: via }; n += baru; });
+    if (n) { amDirty(); var m = document.getElementById('amRegMsg'); setTimeout(function () { try { amPanel(); } catch (e) {} var m2 = document.getElementById('amRegMsg'); if (m2) m2.innerHTML = '&#128274; ' + n + ' poligon terkunci (' + via + ').'; }, 0); try { if (window.PT) PT.render(true); } catch (e) {} } return n; };
   AMK.unlock = function (date, shift) { var k = date + '|' + shift, r = LK()[k]; if (!r) return;
     if (!confirm('Buka kunci tanggal ' + amDateTxt(date) + ' shift ' + shift + '?\n\nPoligon hari itu akan bisa diedit dan DIHITUNG ULANG pada Hitung berikutnya, sehingga angka yang sudah dilaporkan dapat berubah.')) return;
     var D = amD(); D.lockLog = D.lockLog || []; D.lockLog.push({ k: k, kunci: r.t, buka: new Date().toISOString(), n: r.n, ton: r.ton }); delete LK()[k]; amDirty(); try { amPanel(); } catch (e) {} AMK.render(); };
@@ -134,7 +145,7 @@
     '.gxpop .rpt{display:flex;flex-wrap:wrap;gap:6px;align-items:end;margin-bottom:6px}.gxpop .rpt label{display:block;font-size:11px;color:var(--mu)}.gxpop .lk{color:#7048e8;font-weight:700}.gxpop .warn{color:var(--dn,#c92a2a)}'; document.head.appendChild(st); })();
 
   /* ---------- Report As-Mined per tanggal ---------- */
-  AMK.f = AMK.f || { date: '', shift: '' };
+  AMK.f = AMK.f || { shift: '' };
   AMK.rows = function () { var f = AMK.f; return amAllInfo().filter(function (I) { var x = I.x; return x.on && String(x.date || '') === f.date && (!f.shift || String(x.shift || '') === f.shift); })
       .sort(function (a, b) { return String(a.x.shift).localeCompare(String(b.x.shift)) || b.x.top - a.x.top || String(a.code).localeCompare(String(b.code)); }); };
   function elsOf(R) { var o = []; R.forEach(function (I) { (I.elA || []).forEach(function (e) { if (o.indexOf(e) < 0) o.push(e); }); }); return o; }
@@ -146,24 +157,42 @@
     dgDl('﻿' + t + '\r\n', 'Report_AsMined_' + (f.date || 'tanggal') + (f.shift ? '_' + f.shift : '') + '.csv', 'text/csv'); };
   AMK.set = function (k, v) { AMK.f[k] = v; AMK.render(); };
   AMK.tanggal = function () { var o = {}; amBndAll().forEach(function (x) { if (x.date) o[x.date] = 1; }); return Object.keys(o).sort().reverse(); };
-  AMK.render = function () { var w = document.getElementById('amkPop'); if (!w || w.style.display === 'none') return; AMK.open(true); };
-  AMK.open = function (diam) { if (!BX.m) { alert('Buka block model dulu.'); return; } var f = AMK.f, T = AMK.tanggal(); if (!f.date) f.date = T[0] || amToday();
-    var R = AMK.rows(), els = elsOf(R), h = '<div class=rpt><div><label>Tanggal</label><input type=date value="' + E(f.date) + '" onchange="AMK.set(\'date\',this.value)"></div><div><label>Shift</label><select onchange="AMK.set(\'shift\',this.value)"><option value=""' + (f.shift ? '' : ' selected') + '>Semua (DS + NS)</option><option value=DS' + (f.shift === 'DS' ? ' selected' : '') + '>DS &middot; Siang</option><option value=NS' + (f.shift === 'NS' ? ' selected' : '') + '>NS &middot; Malam</option></select></div>' +
-      (T.length ? '<div><label>Tanggal yang punya poligon</label><select onchange="if(this.value)AMK.set(\'date\',this.value)"><option value="">&mdash; pilih &mdash;</option>' + T.slice(0, 120).map(function (d) { return '<option value="' + d + '">' + E(amDateTxt(d)) + '</option>'; }).join('') + '</select></div>' : '') +
-      '<div style="margin-left:auto;display:flex;gap:4px"><button onclick="AMK.copy()"' + (R.length ? '' : ' disabled') + '>Salin ke Excel</button><button onclick="AMK.csv()"' + (R.length ? '' : ' disabled') + '>CSV</button></div></div>';
-    /* status kunci per shift */
-    var sh = f.shift ? [f.shift] : ['DS', 'NS'];
-    h += '<div class=rpt>' + sh.map(function (s) { var k = f.date + '|' + s, r = LK()[k], P = R.filter(function (I) { return I.x.shift === s; }); if (!P.length && !r) return '<span class=hint>' + s + ': tidak ada poligon</span>';
-      return r ? '<span class=lk>&#128274; ' + s + ' terkunci ' + E(tLk(r)) + ' (' + r.n + ' poligon, ' + N(r.ton) + ' t)</span> <button onclick="AMK.unlock(\'' + f.date + '\',\'' + s + '\')">Buka kunci ' + s + '</button>' + (P.some(function (I) { return I.lkBaru; }) ? ' <button onclick="AMK.lock(\'' + f.date + '\',\'' + s + '\')" title="Ikut kunci poligon yang ditambahkan setelah dikunci">Kunci yang baru</button>' : '')
-        : '<button class=btn-pri onclick="if(confirm(\'Kunci laporan ' + E(amDateTxt(f.date)) + ' shift ' + s + '?\\n\\nSemua poligon hari & shift ini dibekukan: tidak dihitung ulang, tidak bisa diedit / dihapus sampai kuncinya dibuka.\'))AMK.lock(\'' + f.date + '\',\'' + s + '\')">&#128274; Kunci ' + s + ' (' + P.length + ' poligon)</button>'; }).join(' ') + '</div>';
-    if (!R.length) h += '<div class=hint>Tidak ada poligon as-mined bertanggal ' + E(amDateTxt(f.date)) + (f.shift ? ' shift ' + f.shift : '') + '. Tanggal & shift poligon diisi di panel As-Mined (Default poligon berikutnya / edit poligon).</div>';
-    else { h += '<table><tr><th>Shift</th><th>Kode</th><th>Flitch</th><th>Ore</th><th>Tujuan</th><th>BCM</th><th>Ton</th>' + els.map(function (e) { return '<th>' + E(e) + '</th>'; }).join('') + '<th>Status</th></tr>';
-      var baris = function (I) { var x = I.x; return '<tr><td>' + E(x.shift) + '</td><td>' + E(I.code) + '</td><td>' + E(lyNum(x.top) + '–' + lyNum(x.bot)) + '</td><td>' + E(I.ore) + '</td><td>' + E(I.dest) + '</td><td>' + (I.calc ? N(I.bcm, 1) : '-') + '</td><td>' + (I.calc ? N(I.ton, 1) : '-') + '</td>' + els.map(function (e) { var v = I.el && I.el[e]; return '<td>' + (I.calc && isFinite(v) ? N(v, 3) : '-') + '</td>'; }).join('') +
-          '<td>' + (I.lk ? '<span class=lk>&#128274; terkunci</span>' : !I.calc ? '<span class=warn>belum dihitung</span>' : I.lkBaru ? '<span class=warn>ditambah setelah dikunci</span>' : 'belum dikunci') + (x.tampal ? ' <span class=warn title="Tampalan dengan poligon terkunci tidak dikurangkan">&#9888; tampal ' + E(x.tampal) + '</span>' : '') + '</td></tr>'; };
-      var tot = function (lab, P, cls) { var a = agg(P, els); return '<tr class=' + cls + '><td colspan=5>' + lab + '</td><td>' + N(a.b, 1) + '</td><td>' + N(a.t, 1) + '</td>' + els.map(function (e) { return '<td>' + N(a.g[e], 3) + '</td>'; }).join('') + '<td></td></tr>'; };
-      sh.forEach(function (s) { var P = R.filter(function (I) { return I.x.shift === s; }); if (!P.length) return; h += P.map(baris).join(''); if (sh.length > 1) h += tot('Subtotal ' + s, P, 'sub'); });
-      h += tot('TOTAL ' + amDateTxt(f.date) + (f.shift ? ' ' + f.shift : ''), R, 'tot') + '</table>';
-      if (R.some(function (I) { return !I.calc; })) h += '<div class="hint warn">Poligon "belum dihitung" tidak masuk total: buka flitch-nya di As-Mined lalu tekan Hitung.</div>'; }
-    h += '<div class=hint id=amkMsg>Kadar = rata-rata tertimbang tonase. Poligon terkunci memakai angka beku saat dikunci; poligon lain memakai hasil Hitung terakhir.</div>';
-    AMK.pop('amkPop', 'Report As-Mined per tanggal', h); };
+  /* Report As-Mined harian ada DI DALAM panel "Register untuk database" (pemilik 10-11-2026: "Tidak perlu pop up lah buat
+     menu ini. Pakai saja panel Register untuk Database"). Tanggal + shift yang dipilih di sini juga menjadi cakupan
+     Salin ke Excel / Register CSV / Kirim ke workbook di bawahnya (amRegRows dibungkus). Tanggal kosong = semua. */
+  AMK.render = function () { try { amPanel(); } catch (e) {} };
+  AMK.open = function () { if (!BX.m) { alert('Buka block model dulu.'); return; } try { if (window.PT && PT.select) PT.select('reg.db'); else { uiTab('AM'); amPanel(); } } catch (e) {} };
+  AMK.keXl = function () { var e = document.getElementById('amXlWrap'); if (e) { e.scrollIntoView({ block: 'start', behavior: 'smooth' }); e.classList.add('amkhl'); setTimeout(function () { e.classList.remove('amkhl'); }, 2500); } };
+  (function () {
+    var _cp = window.amRegCopy; if (typeof _cp === 'function') window.amRegCopy = amRegCopy = function () { var rows = amRegRows(), r = _cp.apply(this, arguments); var m = document.getElementById('amRegMsg'); if (rows.length && !(m && /gagal/i.test(m.textContent))) AMK.lockRows(rows, 'disalin ke Excel'); return r; };
+    var _csv = window.amRegCsv; if (typeof _csv === 'function') window.amRegCsv = amRegCsv = function () { var rows = amRegRows(); if (!rows.length) return _csv.apply(this, arguments);
+      /* simpan berkas bisa dibatalkan di dialog Simpan: kunci hanya bila berkasnya benar-benar tersimpan */
+      var _gs = window.gxSimpan, pakai = false; if (typeof _gs === 'function') { var w = function () { var p = _gs.apply(this, arguments); window.gxSimpan = _gs; try { gxSimpan = _gs; } catch (e) {} pakai = true; Promise.resolve(p).then(function (v) { if (v) AMK.lockRows(rows, 'diekspor ke CSV'); }); return p; }; window.gxSimpan = w; try { gxSimpan = w; } catch (e) {} }
+      try { return _csv.apply(this, arguments); } finally { if (!pakai && typeof _gs === 'function') { window.gxSimpan = _gs; try { gxSimpan = _gs; } catch (e) {} } } };
+    var _xs = window.amXlSend; if (typeof _xs === 'function') window.amXlSend = amXlSend = async function () { var rows = amRegRows(), r = await _xs.apply(this, arguments); if (AM.xl && AM.xl.res) AMK.lockRows(rows, 'dikirim ke workbook'); return r; };
+  })();
+  var _rr = window.amRegRows; if (typeof _rr === 'function') { window.amRegRows = amRegRows = function () { var f = AMK.f; if (!f.date) return _rr.apply(this, arguments);
+      var keep = {}; AMK.rows().forEach(function (I) { keep[I.code] = 1; }); return _rr.apply(this, arguments).filter(function (r) { return keep[r[0]]; }); }; }
+  AMK.inline = function () { var f = AMK.f, T = AMK.tanggal(); if (f.date === undefined || f._init !== 1) { f.date = T[0] || ''; f._init = 1; }
+    var sh = f.shift ? [f.shift] : ['DS', 'NS'], R = f.date ? AMK.rows() : [], els = elsOf(R).slice(0, 3);
+    var h = '<div class=amset><div class=amst><b>&#128197; Report As-Mined harian</b><small>tanggal-shift = cakupan salin / kirim di bawah</small></div>' +
+      '<div class=g3><div><label>Tanggal</label><input type=date value="' + E(f.date) + '" onchange="AMK.set(\'date\',this.value)"></div><div><label>Shift</label><select onchange="AMK.set(\'shift\',this.value)"><option value=""' + (f.shift ? '' : ' selected') + '>DS + NS</option><option value=DS' + (f.shift === 'DS' ? ' selected' : '') + '>DS</option><option value=NS' + (f.shift === 'NS' ? ' selected' : '') + '>NS</option></select></div>' +
+      '<div><label>Tanggal berpoligon</label><select onchange="AMK.set(\'date\',this.value)"><option value=""' + (f.date ? '' : ' selected') + '>Semua tanggal</option>' + T.slice(0, 120).map(function (d) { return '<option value="' + d + '"' + (d === f.date ? ' selected' : '') + '>' + E(amDateTxt(d)) + '</option>'; }).join('') + '</select></div></div>';
+    if (!f.date) return h + '<div class=hint>Semua tanggal: salin / kirim memakai seluruh register (cara lama) dan <b>tidak mengunci</b>. Pilih tanggal untuk report harian: poligon terkunci otomatis saat laporannya keluar.</div></div>';
+    h += '<div class=amkst>' + sh.map(function (s) { var k = f.date + '|' + s, r = LK()[k], P = R.filter(function (I) { return I.x.shift === s; }); if (!P.length && !r) return '<span class=hint>' + s + ': tidak ada poligon</span>';
+      var nb = P.filter(function (I) { return !I.lk && I.calc; }).length;
+      return '<div>' + (r ? '<span class=lk>&#128274; ' + s + ' terkunci</span> <small>' + E(tLk(r)) + (r.via ? ' &middot; ' + E(r.via) : '') + '</small> <button onclick="AMK.unlock(\'' + f.date + '\',\'' + s + '\')">Buka kunci</button>' : '<span>' + s + ': belum dilaporkan</span>') +
+        (nb ? '<div class=hint style="margin:0">' + nb + ' poligon ' + (r ? 'baru ' : '') + 'akan terkunci otomatis saat <b>Salin ke Excel</b>, <b>Register CSV</b> atau <b>Kirim ke workbook</b> di bawah.</div>' : '') + '</div>'; }).join('') + '</div>';
+    if (!R.length) return h + '<div class=hint>Tidak ada poligon bertanggal ' + E(amDateTxt(f.date)) + (f.shift ? ' shift ' + f.shift : '') + '.</div></div>';
+    var sel = function (I) { return '<tr><td title="' + E(I.code) + '">' + (I.lk ? '&#128274; ' : '') + E(I.x.shift) + ' &middot; ' + E(String(I.x.blk || I.code).slice(0, 14)) + '</td><td>' + E(lyNum(I.x.top)) + '</td><td>' + (I.calc ? N(I.ton, 1) : '<span class=warn>belum dihitung</span>') + '</td>' + els.map(function (e) { var v = I.el && I.el[e]; return '<td>' + (I.calc && isFinite(v) ? N(v, 3) : '-') + '</td>'; }).join('') + '</tr>'; };
+    var tot = function (lab, P, cls) { var a = agg(P, els); return '<tr class=' + cls + '><td>' + lab + '</td><td></td><td>' + N(a.t, 1) + '</td>' + els.map(function (e) { return '<td>' + N(a.g[e], 3) + '</td>'; }).join('') + '</tr>'; };
+    h += '<div class=amktb><table class=pltb><tr><th>Shift &middot; block</th><th>RL</th><th>Ton</th>' + els.map(function (e) { return '<th>' + E(e) + '</th>'; }).join('') + '</tr>';
+    sh.forEach(function (s) { var P = R.filter(function (I) { return I.x.shift === s; }); if (!P.length) return; h += P.map(sel).join(''); if (sh.length > 1) h += tot('Subtotal ' + s, P, 'sub'); });
+    h += tot('TOTAL ' + amDateTxt(f.date), R, 'tot') + '</table></div>';
+    if (R.some(function (I) { return I.x.tampal; })) h += '<div class="hint warn">&#9888; Ada poligon yang tampalannya dengan poligon terkunci tidak dikurangkan.</div>';
+    if (R.some(function (I) { return !I.calc; })) h += '<div class="hint warn">Poligon "belum dihitung" tidak masuk total &amp; register: buka flitch-nya lalu Hitung.</div>';
+    var nLk = R.filter(function (I) { return I.lk; }).length;
+    h += '<div class=hint>' + R.length + ' poligon (' + nLk + ' terkunci). Kadar tertimbang tonase. ' + '<a href="javascript:void(0)" onclick="AMK.keXl()">&darr; Kirim ke workbook</a> &middot; ' + 'Salin / CSV / Kirim di bawah hanya memakai baris tanggal ini.</div></div>';
+    return h; };
+  (function () { var st = document.createElement('style'); st.textContent = '#amBody .amkst{display:flex;flex-direction:column;gap:4px;margin:4px 0}#amBody .amkst .lk{color:#7048e8;font-weight:700}#amBody .amktb{overflow-x:auto;margin-top:4px}#amBody .amktb table{font-size:11px;width:100%}#amBody .amktb td,#amBody .amktb th{white-space:nowrap;padding:2px 4px;text-align:right}#amBody .amktb td:first-child,#amBody .amktb th:first-child{text-align:left}#amBody .amktb tr.sub td{background:var(--prs,#eef2fb);font-weight:600}#amBody .amktb tr.tot td{font-weight:700;border-top:2px solid var(--bd)}#amXlWrap.amkhl{outline:3px solid #7048e8;outline-offset:2px;border-radius:6px;transition:outline .3s}'; document.head.appendChild(st); })();
 })();

@@ -14,6 +14,8 @@
     { k: 'sv.pts', host: 'svBody', t: 'Solid Vein — titik atap (pick-up roof)', sv: 'pts' }
   ];
   var ON = {}; try { ON = JSON.parse(localStorage.getItem('gcex_popout') || '{}') || {}; } catch (e) { ON = {}; }
+  /* daftar poligon per flitch (Register poligon) tampil sebagai pop-up secara bawaan (pemilik 10-11-2026: "Flitch asmined banyak loh, mengapa tidak disajikan dalam bentuk pop up") */
+  if (ON['am.reg'] === undefined) ON['am.reg'] = true;
   var simpan = function () { try { localStorage.setItem('gcex_popout', JSON.stringify(ON)); } catch (e) {} };
   var sibuk = false;
   function hdOf(d, host) { if (d.sv) { var s = host.querySelector('.svsec[data-sec="' + d.sv + '"]'); return s ? s.querySelector('.svh') : null; }
@@ -30,18 +32,20 @@
     try { DEF.forEach(function (d) { var host = document.getElementById(d.host); if (!host) return; var hd = hdOf(d, host); if (!hd) return;
         if (!hd.querySelector('.gxpob')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'gxpob'; b.title = ON[d.k] ? 'Kembalikan ke panel' : 'Tampilkan bagian ini di jendela pop-up (bisa digeser, diperkecil, ditutup)'; b.innerHTML = ON[d.k] ? '&#8617; Panel' : '&#10697; Pop-up';
           b.onclick = function (e) { e.stopPropagation(); e.preventDefault(); POP.set(d.k, !ON[d.k]); }; hd.appendChild(b); }
-        if (!ON[d.k]) return; var N = grab(d, hd); if (!N.length || N.some(function (n) { return n.nodeType === 1 && n.classList && n.classList.contains('gxpoph'); })) return; /* sudah dipindah, panel belum digambar ulang */ var w = win(d); if (!w) return; var body = w.querySelector('.gxpb'), st = body.scrollTop;
+        if (!ON[d.k]) return; var N = grab(d, hd); if (!N.length) return; if (N.some(function (n) { return n.nodeType === 1 && n.classList && n.classList.contains('gxpoph'); })) { var vv = hd.offsetParent !== null, ww = document.getElementById('gxpo_' + d.k.replace(/\W/g, '_')); if (ww && (d._force || (vv && !d._vis))) { ww.style.display = 'flex'; ww.classList.remove('min'); } d._force = 0; d._vis = vv; return; } /* sudah dipindah, panel belum digambar ulang */ var w = win(d); if (!w) return; var body = w.querySelector('.gxpb'), st = body.scrollTop;
         var ph = document.createElement('div'); ph.className = 'gxpoph'; ph.innerHTML = '&#10697; Ditampilkan di jendela pop-up <b>' + d.t.replace(/</g, '&lt;') + '</b> &middot; <a href="#">tampilkan jendela</a> &middot; <a href="#" data-k>kembalikan ke panel</a>';
         ph.querySelector('a').onclick = function (e) { e.preventDefault(); w.style.display = 'flex'; w.classList.remove('min'); }; ph.querySelector('[data-k]').onclick = function (e) { e.preventDefault(); POP.set(d.k, false); };
         hd.parentNode.insertBefore(ph, N[0]); body.innerHTML = ''; N.forEach(function (n) { body.appendChild(n); }); body.scrollTop = st;
-        if (!d._shown) { w.style.display = 'flex'; d._shown = 1; } }); } catch (e) { console.error('popout', e); }
+        /* jendela dimunculkan saat bagiannya mulai terlihat di panel (node-nya dipilih), atau saat tombol Pop-up ditekan */ var vis = hd.offsetParent !== null; if (d._force || (vis && !d._vis)) { w.style.display = 'flex'; w.classList.remove('min'); } d._force = 0; d._vis = vis; }); } catch (e) { console.error('popout', e); }
     sibuk = false; }
   var POP = window.POP = { def: DEF, apply: apply,
     set: function (k, v) { ON[k] = !!v; simpan(); var d = DEF.filter(function (q) { return q.k === k; })[0]; if (!d) return; var w = document.getElementById('gxpo_' + k.replace(/\W/g, '_'));
-      if (!v && w) { w.style.display = 'none'; w.querySelector('.gxpb').innerHTML = ''; } d._shown = 0; render(d.host); setTimeout(apply, 0); },
+      if (!v && w) { w.style.display = 'none'; w.querySelector('.gxpb').innerHTML = ''; } d._shown = 0; d._force = !!v; render(d.host); setTimeout(apply, 0); },
     on: function (k) { return !!ON[k]; } };
   var T = null, kick = function () { if (sibuk) return; clearTimeout(T); T = setTimeout(apply, 0); };
-  function amati() { ['amBody', 'svBody'].forEach(function (id) { var e = document.getElementById(id); if (e && !e._gxpo) { e._gxpo = 1; new MutationObserver(kick).observe(e, { childList: true }); } }); }
+  function amati() { ['amBody', 'svBody'].forEach(function (id) { var e = document.getElementById(id); if (e && !e._gxpo) { e._gxpo = 1; new MutationObserver(kick).observe(e, { childList: true, attributes: true, attributeFilter: ['data-f', 'hidden', 'class', 'style'] }); } }); }
   amati(); setTimeout(function () { amati(); apply(); }, 0); setInterval(amati, 3000);
+  /* pindah node di Project Tree sering hanya menyembunyikan / menampilkan bagian (tanpa menggambar ulang): periksa lagi sesudahnya */
+  (function () { var tunggu = function () { if (!window.PT || !PT.select) return setTimeout(tunggu, 500); var _s = PT.select; PT.select = function () { var r = _s.apply(this, arguments); setTimeout(apply, 250); setTimeout(apply, 700); return r; }; }; tunggu(); })();
   var st = document.createElement('style'); st.textContent = '.gxpob{float:right;height:20px;padding:0 7px;font-size:11px;font-weight:600;margin-left:6px;border-radius:10px}.gxpoph{font-size:11.5px;color:var(--mu);border:1px dashed var(--bd);border-radius:6px;padding:4px 8px;margin:4px 0}.gxpop .gxpb .amh{margin-top:6px}'; document.head.appendChild(st);
 })();

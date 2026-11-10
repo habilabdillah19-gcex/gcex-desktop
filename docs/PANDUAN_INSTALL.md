@@ -4353,3 +4353,13 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   **terkunci** tidak berubah.
 - **Pop-up panel**: tombol **⧉ Pop-up** di judul *Register poligon* (daftar poligon per flitch), *Layout & export* As-Mined, dan
   *Titik atap* Solid Vein memindah bagian itu ke jendela mengambang — geser, perkecil (–), tutup (×, kembali ke panel). Pilihan diingat.
+
+## 169. Block Model 0.24.61 — Report As-Mined harian di panel Register untuk database
+
+- *Report As-Mined per tanggal* kini **di dalam panel *Register untuk database*** (Project Tree › *Register & Laporan As-Mined* ›
+  *Register untuk database (report harian & kunci)*), tidak lagi jendela pop-up. Urutannya satu alur: pilih **tanggal & shift** →
+  periksa tabel ton & kadar → **Salin ke Excel / Register CSV / Kirim ke workbook** di bawahnya (hanya poligon tanggal-shift
+  itu). Begitu laporan itu **keluar** (tersalin, CSV tersimpan, atau terkirim ke workbook), poligonnya **terkunci otomatis** 🔒.
+  *Buka kunci* tetap tersedia (dengan konfirmasi). Pilih *Semua tanggal* untuk menyalin seluruh register seperti dulu.
+- **Daftar poligon per flitch** (*Register poligon*) tampil sebagai **jendela pop-up** secara bawaan saat node-nya dipilih — tidak
+  perlu scroll panjang ketika flitch banyak. Tombol *↩ Panel* mengembalikannya ke panel.

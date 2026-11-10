@@ -49,8 +49,8 @@ with sync_playwright() as pw:
       var D=amD(),X0=505000,Y0=9012000,pf=function(x,y){return 237+0.03*(x-X0)+0.01*(y-Y0);};D.pts=[];for(i=0;i<60;i++){var px=X0+Math.random()*40,py=Y0+Math.random()*40;D.pts.push({x:px,y:py,z:pf(px,py),id:'',c:''});}var Rr=amR();Rr.floor='pickup';Rr.flDn=5;Rr.flUp=5;
       var poly={r:[[X0+10,Y0+10],[X0+30,Y0+10],[X0+30,Y0+30],[X0+10,Y0+30]]};poly.b=lyBB(poly.r);var F=amFloorFn(poly,[238.5,237]),e4=0;for(k=0;k<200;k++){var x4=X0+15+Math.random()*10,y4=Y0+15+Math.random()*10;e4=Math.max(e4,Math.abs(F.f(x4,y4)-pf(x4,y4)));}o.lantai=e4;o.ltin=F.tin||0;
       /* pop-up */
-      uiTab('AM');amPanel();await w(300);POP.set('am.ly',true);await w(400);var W=document.getElementById('gxpo_am_ly');o.lyWin=!!(W&&W.style.display!=='none'&&/Layout|PDF|export/i.test(W.textContent));o.lyPh=!!document.querySelector('#amBody .gxpoph');
-      amPanel();await w(400);o.lyWin2=!!(W&&W.querySelector('.gxpb').children.length);o.lyGanda=document.querySelectorAll('#amBody .gxpoph').length;
+      uiTab('AM');amPanel();await w(300);PT.select('reg.1');await w(800);var W0=document.getElementById('gxpo_am_reg');o.regDef=!!(W0&&W0.style.display!=='none'&&W0.querySelector('.gxpb').textContent.length>10);POP.set('am.ly',true);await w(400);var W=document.getElementById('gxpo_am_ly');o.lyWin=!!(W&&W.style.display!=='none'&&/Layout|PDF|export/i.test(W.textContent));o.lyPh=!!document.querySelector('#amBody .gxpoph');
+      amPanel();await w(400);o.lyWin2=!!(W&&W.querySelector('.gxpb').children.length);o.lyGanda=[].filter.call(document.querySelectorAll('#amBody .gxpoph'),function(e){return /Layout/.test(e.textContent);}).length;
       POP.set('am.reg',true);await w(400);var W2=document.getElementById('gxpo_am_reg');o.regWin=!!(W2&&W2.style.display!=='none'&&W2.querySelector('.gxpb').textContent.length>10);
       POP.set('am.ly',false);POP.set('am.reg',false);await w(400);o.balik=!document.querySelector('#amBody .gxpoph')&&W.style.display==='none';
       var dS=SV.D();if(!dS.per.length){dS.per.push({id:'pp',name:'Uji',from:'',to:'',polys:[],par:{},res:null});dS.cur='pp';}uiTab('SV');SV.panel();await w(300);POP.set('sv.pts',true);await w(400);var W3=document.getElementById('gxpo_sv_pts');o.svWin=!!(W3&&/Import titik atap/.test(W3.textContent));o.svDbg=[!!document.getElementById('svBody'),!!document.querySelector('#svBody .svsec[data-sec="pts"]'),W3?W3.textContent.slice(0,80):'-',document.querySelectorAll('.svsec').length];POP.set('sv.pts',false);await w(300);
@@ -62,6 +62,7 @@ with sync_playwright() as pw:
     cek(t["ltin"] > 0 and t["lantai"] < 1e-6, "lantai As-Mined dari pick-up memakai TIN (galat %.1e m)" % t["lantai"])
     cek(t["lyWin"] and t["lyPh"] and t["lyWin2"] and t["lyGanda"] == 1, "Layout & export pindah ke pop-up, tetap di pop-up setelah panel digambar ulang")
     cek(t["regWin"] and t["balik"], "Daftar poligon per flitch di pop-up; tombol tutup mengembalikan ke panel")
+    cek(t["regDef"], "daftar poligon per flitch (Register poligon) tampil sebagai pop-up secara bawaan saat node-nya dipilih")
     cek(t["svWin"], "tabel titik atap Solid Vein di pop-up")
     cek(not err, "tanpa galat halaman: %s" % err[:3])
     ctx.close()
