@@ -50,7 +50,7 @@ function amRoofKey() {
     var M = amRoofModel();
     return '|rf:dtm,' + String(R.rfModel || '') + ',' + (M ? M.nt : 0);
   }
-  return '|rf:' + [m, R.rfUp, R.rfDn, R.rfBuf, R.rfCode, R.rfStat,
+  return '|rf:' + [m, 'tin', R.rfUp, R.rfDn, R.rfBuf, R.rfCode, R.rfStat,
                    (amD().ptsR || []).length].join(',');
 }
 
@@ -136,6 +136,10 @@ function amRoofFn(o, B) {
       var v = idw(L, x, y); return v < lo ? lo : v > hi ? hi : v;
     };
   }
+  /* 0.24.59 (pemilik 10-11-2026): permukaan atap = TRIANGULASI titik pick-up, interpolasi linear di dalam segitiga (cara
+     Surpac DTM, web-src/tinz.js). IDW di atas hanya cadangan di luar selubung titik (tepi poligon di luar jangkauan pick-up). */
+  var TN = window.TINZ ? TINZ(A) : null;
+  if (TN) { var fi = out.f; out.tin = TN.nt; out.f = function (x, y) { var v = TN.f(x, y); if (v == null || !isFinite(v)) return fi(x, y); return v < lo ? lo : v > hi ? hi : v; }; }
   return out;
 }
 
@@ -209,7 +213,7 @@ function amRoofBox() {
     '<select onchange="amRSet(\'roof\',this.value)">' +
     '<option value=flitch' + (mode === 'flitch' ? ' selected' : '') + '>RL atas flitch (nominal, rumus lama)</option>' +
     '<option value=flat' + (mode === 'flat' ? ' selected' : '') + '>Atap rata dari pick-up (satu elevasi per poligon)</option>' +
-    '<option value=pickup' + (mode === 'pickup' ? ' selected' : '') + '>Atap ikut permukaan pick-up (IDW, seperti lantai)</option>' +
+    '<option value=pickup' + (mode === 'pickup' ? ' selected' : '') + '>Atap ikut permukaan pick-up (triangulasi / TIN, seperti Surpac)</option>' +
     '<option value=dtm' + (mode === 'dtm' ? ' selected' : '') + '>Atap dari permukaan / DTM yang sudah dimuat (menu Model)</option>' +
     '</select>';
   if (mode === 'dtm') {

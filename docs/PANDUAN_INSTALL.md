@@ -4331,3 +4331,12 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   ikut mengunci.
 - **Tampalan**: poligon baru yang bertampalan dengan poligon terkunci di flitch yang sama memunculkan peringatan; **OK** mengurangi
   area tampalan dari poligon baru (material itu sudah dilaporkan), **Batal** membiarkannya dan menandainya ⚠ di report.
+
+## 167. Block Model 0.24.59 — atap As-Mined & Solid Vein dari titik pick-up memakai triangulasi (seperti Surpac)
+
+- **Atap As-Mined** pada pilihan *Atap ikut permukaan pick-up*: titik pick-up atap kini **ditriangulasi** (TIN) dan elevasi atap di
+  setiap titik = interpolasi linear di dalam segitiga — sama dengan DTM Surpac. Elevasi titik pick-up dipakai persis; tidak ada
+  penghalusan yang menurunkan puncak atau menaikkan cekungan. Bagian tepi poligon yang di luar jangkauan titik memakai IDW sebagai cadangan.
+- **Solid Vein Aktual**: Z atap tiap sudut poligon juga dari triangulasi titik atap (pilihan *Triangulasi (TIN) titik atap*,
+  bawaan; *IDW radius* tetap ada sebagai cara lama). Permukaan gabungan poligon bertampalan juga dari triangulasi.
+- Bangun ulang solid / Hitung ulang flitch untuk memakai cara baru (poligon yang tanggal-shift-nya **terkunci** tidak berubah).
