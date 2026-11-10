@@ -466,6 +466,10 @@ jobs:
       # tangkapan layar aplikasi (Chromium membuka folder proyek lewat File System Access API) -
       # itulah sebabnya langkah ini tidak dapat dijalankan di kontainer Linux. Tutorial tambahan 0.24
       # tidak memerlukan tangkapan layar dan selalu dibangun.
+      # 10 Nov 2026 (pemilik: "tidak usah membuat pdf"): PDF TIDAK lagi dibangun di setiap push - langkah bergambar
+      # memakan ±16 menit tiap rilis. Release memakai PDF yang ada di repo (dibangun & di-commit oleh sesi yang mengubah
+      # tutorialnya). Bangun ulang di CI hanya bila pesan commit memuat [pdf] atau run dijalankan manual (workflow_dispatch).
+      # Data latihan tetap dibuat setiap run (dikemas di _2_Data-Latihan.zip).
       - name: Tutorial PDF - pasang alat
         if: github.ref == 'refs/heads/main'
         run: |
@@ -484,7 +488,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Host "::warning::gagal membuat data latihan laterit"; }
           exit 0
       - name: Tutorial PDF - Update & Petunjuk Teknis (tanpa tangkapan layar)
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[pdf]'))
         shell: pwsh
         env:
           PYTHONIOENCODING: utf-8
@@ -499,7 +503,7 @@ jobs:
           }
           exit 0
       - name: Tutorial PDF - bergambar (tangkapan layar aplikasi)
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[pdf]'))
         shell: pwsh
         env:
           PYTHONIOENCODING: utf-8
