@@ -250,10 +250,27 @@ def _alias(ftype: str) -> dict[str, str]:
         for k, lbl, _tt in tt["rows"]:
             for x in (k, lbl, re.sub(r"\s*\(.*?\)", "", lbl)):
                 al.setdefault(_norm(x), f"{tb}:{k}")
-    al.update({"from": al.get("from", "from_m"), "to": al.get("to", "to_m"), "time": "jam", "jam": "jam", "waktu": "jam",
-               "holeid": al.get("holeid", "hole_id"), "az": al.get("az", "az"), "azimuth": al.get("azimuth", "az"),
-               "description": al.get("description", "aktivitas"), "uraian": al.get("uraian", "aktivitas"), "kegiatan": al.get("kegiatan", "aktivitas")})
-    return {k: v for k, v in al.items() if k}
+    # judul umum di borang -> tujuan PERTAMA yang benar-benar ada di jenis ini (0.46.2: 'Jam' di Ore Spotter dulu menjadi
+    # tujuan 'jam' yang tidak ada -> dropdown "? jam"; kini 'start' = Start loading)
+    valid = {o["key"] for o in options(ftype) if o["key"]}
+
+    def first(*cands: str) -> str:
+        for c in cands:
+            hit = c if c in valid else next((v for v in valid if v.endswith(":" + c) and not v.startswith("kop:")), "")
+            if hit:
+                return hit
+        return ""
+    gen = {"from": ("from_m",), "to": ("to_m",), "holeid": ("hole_id",), "hole": ("hole_id",), "az": ("az",), "azimuth": ("az",),
+           "dip": ("dip",), "time": ("jam", "start", "mulai"), "jam": ("jam", "start", "mulai"), "waktu": ("jam", "start", "mulai"),
+           "pukul": ("jam", "start", "mulai"), "description": ("aktivitas", "keterangan", "catatan"),
+           "uraian": ("aktivitas", "keterangan", "catatan"), "kegiatan": ("aktivitas",), "truck": ("unit", "truck"), "truk": ("unit", "truck"),
+           "dt": ("unit", "truck"), "ton": ("ton",), "tonase": ("ton",), "kelas": ("kelas",), "tujuan": ("tujuan",)}
+    for name, cands in gen.items():
+        if name not in al or al[name] not in valid:
+            k = first(*cands)
+            if k:
+                al[name] = k
+    return {k: v for k, v in al.items() if k and v in valid}
 
 
 def suggest(ftype: str, g: dict, saved: Optional[dict]) -> dict:
@@ -268,7 +285,7 @@ def suggest(ftype: str, g: dict, saved: Optional[dict]) -> dict:
     title_row = -1
     saved = saved or {}
     by_n = (saved.get("by_n") or {}).get(str(n))
-    if by_n is None and len(saved.get("cols") or []) == n:
+    if by_n is None and n and len(saved.get("cols") or []) == n:  # n = 0 (teks kosong): jangan pakai pemetaan apa pun
         by_n = list(saved["cols"])
     al = _alias(ftype)
     al.update({k: v for k, v in (saved.get("alias") or {}).items() if k})  # kosakata judul kolom pengguna menang

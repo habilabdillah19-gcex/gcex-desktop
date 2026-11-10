@@ -306,6 +306,8 @@ class FormsPage(QWidget):
         self.lstHead.setObjectName("fmSect")
         r.addWidget(self.lstHead, 1)
         self.cbSort = QComboBox()
+        self.cbSort.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)  # 0.46.2: panel kiri boleh lebih sempit
+        self.cbSort.setMinimumContentsLength(6)
         for t_, k in (("Urut: Ditambahkan", "add"), ("Urut: Terbaru", "new"), ("Urut: Nama", "name"), ("Urut: Status", "status"),
                       ("Urut: Jenis", "type")):
             self.cbSort.addItem(t_, k)

@@ -124,7 +124,7 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #fmVHead QLabel {{ color: #ffffff; }}
 #fmVTitle {{ font-size: 10pt; }}
 #fmVBtn {{ background: rgba(255,255,255,0.08); color: #ffffff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px;
-           min-width: 26px; min-height: 22px; font-size: 10.5pt; font-weight: 700; padding: 1px 6px; }}
+           min-width: 22px; min-height: 22px; font-size: 10.5pt; font-weight: 700; padding: 1px 3px; }}
 #fmVBtn:hover, #fmVBtn:checked {{ background: rgba(255,255,255,0.22); }}
 #fmBottom {{ background: {c['pn']}; border-top: 1px solid {c['bd']}; }}
 #fmTabs QTabBar::tab {{ padding: 7px 18px; font-weight: 600; }}
@@ -149,7 +149,7 @@ QLabel#box[k="ok"] {{ border-left-color: {c['ac2']}; }}
 #fmKpi[warn="true"] {{ border-color: #d08a1e; }}
 #fmKpiL {{ color: {c['mu']}; font-size: 7.8pt; }}
 #fmKpiV {{ color: {c['ink']}; font-size: 13pt; font-weight: 800; }}
-#fmNav QPushButton#fmNavBtn {{ border: 0; border-radius: 0; background: transparent; color: {c['mu']}; padding: 8px 12px;
+#fmNav QPushButton#fmNavBtn {{ border: 0; border-radius: 0; background: transparent; color: {c['mu']}; padding: 8px 8px;
                              font-weight: 600; border-bottom: 3px solid transparent; }}
 #fmNav QPushButton#fmNavBtn:hover {{ color: {c['ink']}; background: {c['pn2']}; }}
 #fmNav QPushButton#fmNavBtn:checked {{ color: {c['ac2']}; background: {c['acs']}; border-bottom-color: {c['ac2']}; }}

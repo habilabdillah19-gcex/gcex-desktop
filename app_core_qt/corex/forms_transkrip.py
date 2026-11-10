@@ -16,8 +16,8 @@ import re
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QHBoxLayout, QHeaderView, QLabel, QMenu, QPlainTextEdit, QSplitter, QTableWidget,
-                               QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QHBoxLayout, QHeaderView, QLabel, QMenu, QPlainTextEdit, QScrollArea, QSplitter,
+                               QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from . import api
 from .card import btn
@@ -65,6 +65,8 @@ class TranscriptTab(QWidget):
         self.bAI.clicked.connect(self.run_ai)
         top.addWidget(self.bAI)
         self.cbMode = QComboBox()
+        self.cbMode.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.cbMode.setMinimumContentsLength(7)
         for t, k in (("Ganti teks", "ganti"), ("+ kolom di kanan", "kanan"), ("+ di bawah", "bawah")):
             self.cbMode.addItem(t, k)
         self.cbMode.setToolTip("Hasil salinan AI:\n• Ganti teks — teks lama diganti.\n• + kolom di kanan — untuk scan KOLOM satu per "
@@ -73,9 +75,11 @@ class TranscriptTab(QWidget):
         self.cbMode.setCurrentIndex(max(0, self.cbMode.findData(SET.get("qt_fm_tr_mode", "ganti"))))
         self.cbMode.currentIndexChanged.connect(lambda _i: SET.set("qt_fm_tr_mode", self.cbMode.currentData()))
         top.addWidget(self.cbMode)
-        top.addSpacing(10)
-        top.addWidget(QLabel("Pemisah sel:"))
+        top.addSpacing(6)
+        top.addWidget(QLabel("Pemisah:"))
         self.cbSep = QComboBox()
+        self.cbSep.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.cbSep.setMinimumContentsLength(5)
         for t, k in SEP_ITEMS:
             self.cbSep.addItem(t, k)
         self.cbSep.setToolTip("Tanda yang memisahkan sel dalam satu baris teks. Otomatis = yang paling sering muncul.")
@@ -137,6 +141,23 @@ class TranscriptTab(QWidget):
         lg.setObjectName("fmSect")
         lg.setWordWrap(True)
         gv.addWidget(lg)
+        # halaman 0 = bantuan + daftar tujuan yang bisa dipilih (sebelum ada teks); halaman 1 = baris tujuan + kisi
+        self.gstack = QStackedWidget()
+        self.help = QLabel()
+        self.help.setObjectName("fmTrHelp")
+        self.help.setWordWrap(True)
+        self.help.setTextFormat(Qt.RichText)
+        self.help.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.help.setMargin(10)
+        hs = QScrollArea()
+        hs.setWidgetResizable(True)
+        hs.setWidget(self.help)
+        self.gstack.addWidget(hs)
+        gpage = QWidget()
+        gpv = QVBoxLayout(gpage)
+        gpv.setContentsMargins(0, 0, 0, 0)
+        gpv.setSpacing(0)
+        self.gstack.addWidget(gpage)
         self.maprow = QTableWidget(1, 0)  # baris dropdown tujuan kolom: tabel 1 baris yang MENEMPEL di atas kisi (tidak ikut tergulir)
         self.maprow.setObjectName("fmMapRow")
         self.maprow.setVerticalHeaderLabels(["→ isian"])
@@ -145,7 +166,7 @@ class TranscriptTab(QWidget):
         self.maprow.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.maprow.setFixedHeight(34)
         self.maprow.setEditTriggers(QTableWidget.NoEditTriggers)
-        gv.addWidget(self.maprow)
+        gpv.addWidget(self.maprow)
         self.grid = QTableWidget(0, 0)
         self.grid.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
         self.grid.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
@@ -164,7 +185,8 @@ class TranscriptTab(QWidget):
         self.grid.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
         self.grid.verticalHeader().customContextMenuRequested.connect(
             lambda p: self._row_menu(self.grid.verticalHeader().logicalIndexAt(p), self.grid.verticalHeader().mapToGlobal(p)))
-        gv.addWidget(self.grid, 1)
+        gpv.addWidget(self.grid, 1)
+        gv.addWidget(self.gstack, 1)
         bot = QHBoxLayout()
         self.bAll = btn("", "Terapkan pemetaan tersimpan ke borang jenis ini yang sudah tersalin tetapi belum punya baris "
                         "(status 'Perlu pemetaan kolom'). Borang yang jumlah / judul kolomnya berbeda dibiarkan untuk Anda.", sm=True)
@@ -203,15 +225,15 @@ class TranscriptTab(QWidget):
         for b in (self.bAI, self.bApply):
             b.setEnabled(d is not None)
         self.txt.setEnabled(d is not None)
-        if d is None or not teks.strip():
+        if d is None:
             self.pv = None
             self.hdr.setRowCount(0)
             self.grid.setRowCount(0)
             self.grid.setColumnCount(0)
             self.maprow.setColumnCount(0)
-            self.info.setText("Pilih borang di daftar kiri." if d is None else
-                              "AI menyalin tulisan di kertas menjadi teks; <b>Anda</b> yang menentukan tiap kelompok tulisan menjadi data apa. "
-                              "Klik <b>✦ Salin teks dengan AI</b>.")
+            self.help.setText("Pilih borang di daftar kiri.")
+            self.gstack.setCurrentIndex(0)
+            self.info.setText("")
             self._waiting()
             return
         self.preview()
@@ -249,10 +271,14 @@ class TranscriptTab(QWidget):
         self.bAI.setEnabled(False)
         self.bAI.setText("AI menyalin…")
         self.info.setText("AI sedang menyalin tulisan di kertas… Anda bisa membuka borang lain sementara menunggu.")
+        if self.pv is not None and not self.pv.get("ncol"):
+            self.help.setText(self._help_html(self.pv))
 
         def done():
             self.bAI.setText("✦ Salin teks dengan AI")
             self.bAI.setEnabled(self.did is not None)
+            if self.pv is not None and not self.pv.get("ncol"):
+                self.help.setText(self._help_html(self.pv))
 
         def ok(j):
             done()
@@ -290,9 +316,11 @@ class TranscriptTab(QWidget):
         txt = self.txt.toPlainText()
         did = self.did
         body = {**self._body(), "teks": txt, "sep": self.cbSep.currentData() or "auto"}
+        self._pseq = getattr(self, "_pseq", 0) + 1
+        seq = self._pseq
 
         def ok(j):
-            if self.did == did:
+            if self.did == did and seq == self._pseq:  # jawaban pratinjau lama yang datang terlambat diabaikan
                 self._show(j)
 
         def err(e):
@@ -358,8 +386,46 @@ class TranscriptTab(QWidget):
             w = min(420, max(self.grid.columnWidth(c) + 12, 150))
             self.grid.setColumnWidth(c, w)
             self.maprow.setColumnWidth(c, w)
+        self.gstack.setCurrentIndex(1 if n else 0)
+        if not n:
+            self.help.setText(self._help_html(j))
         self._mapped()
         self._waiting()
+
+    def _help_html(self, j: dict) -> str:
+        """Halaman kisi sebelum ada teks: apa yang akan bisa Anda putuskan + SEMUA tujuan yang tersedia untuk jenis borang ini."""
+        main, tabs, kop = [], {}, []
+        for o in j.get("options") or []:
+            k, lbl = o["key"], o["label"]
+            if not k:
+                continue
+            if k.startswith("kop:"):
+                kop.append(lbl.split("·", 1)[-1].strip())
+            elif ":" in k:
+                t, _, f = lbl.partition("·")
+                tabs.setdefault(t.strip(), []).append(f.strip())
+            else:
+                main.append(lbl)
+
+        def chips(xs: list) -> str:
+            return " ".join(f"<span style='background:#eef5ff;border:1px solid #c9d6e8;border-radius:3px;padding:1px 5px'>&nbsp;{x}&nbsp;</span>"
+                            for x in xs)
+        busy = not self.bAI.isEnabled() and self.did is not None
+        h = [("<b>AI sedang menyalin tulisan…</b> Kisi akan muncul di sini begitu teks selesai." if busy else
+              "<b>Belum ada teks.</b> Klik <b>✦ Salin teks dengan AI</b>, atau ketik / tempel teks di panel 1."),
+             "<br><br>Begitu teks ada, setiap kolom teks mendapat <b>dropdown tujuan</b> di baris biru atas kisi. <b>Anda yang memutuskan</b> "
+             f"tiap kelompok tulisan menjadi data apa. Tujuan yang tersedia untuk <b>{j.get('type_name') or 'borang ini'}</b>:",
+             f"<p style='line-height:170%'><b>Tabel utama</b><br>{chips(main)}</p>"]
+        for t, fs in tabs.items():
+            h.append(f"<p style='line-height:170%'><b>Tabel {t}</b> — boleh dalam baris teks yang sama dengan tabel utama<br>{chips(fs)}</p>")
+        if kop:
+            h.append(f"<p style='line-height:170%'><b>Kop</b> — untuk kolom berisi nilai kop yang sama di tiap baris<br>{chips(kop)}</p>")
+        h.append("<p><b>— abaikan —</b> untuk kolom yang tidak dipakai (keputusan ini juga diingat).</p>"
+                 "<p><b>Alat di kisi:</b> klik ganda sel = sunting · klik kanan sel = sisipkan / hapus sel (geser), gabung / pecah sel, "
+                 "gabungkan ke baris atas, jadikan isian kop, lewati baris · klik kanan judul kolom = pecah kolom (rentang jam │ uraian), "
+                 "gabungkan semua baris lanjutan ke atas, tukar / sisipkan / hapus kolom. Isian <i>Label: nilai</i> di teks masuk panel 2.</p>"
+                 "<p>Scan kolom satu per satu: pilih <b>+ kolom di kanan</b>, ✂ potong satu kolom, salin; ulangi untuk kolom berikutnya.</p>")
+        return "".join(h)
 
     def _paint(self) -> None:
         cols = self._cols()

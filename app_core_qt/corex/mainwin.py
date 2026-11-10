@@ -24,6 +24,25 @@ def natural_key(s) -> list:
     return [(0, int(t), "") if t.isdigit() else (1, 0, t.lower()) for t in re.split(r"(\d+)", str(s or ""))]
 
 
+
+class _CurStack(QStackedWidget):
+    """Tumpukan halaman yang ukuran minimumnya = halaman AKTIF saja (0.46.2). QStackedWidget bawaan memakai minimum terbesar
+    dari SEMUA halaman (Singkapan ±1.320 px) sehingga Borang di layar 1.280 px ikut tergulir mendatar dan tombol kanan terpotong."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        from PySide6.QtWidgets import QLayout
+        self.layout().setSizeConstraint(QLayout.SetNoConstraint)
+        self.currentChanged.connect(lambda _i: self.updateGeometry())
+
+    def sizeHint(self):  # noqa: N802
+        w = self.currentWidget()
+        return w.sizeHint() if w is not None else super().sizeHint()
+
+    def minimumSizeHint(self):  # noqa: N802
+        w = self.currentWidget()
+        return w.minimumSizeHint() if w is not None else super().minimumSizeHint()
+
 class MainWindow(QMainWindow):
     def __init__(self, version: str, store: lic.Store | None = None):
         super().__init__()
@@ -79,6 +98,9 @@ class MainWindow(QMainWindow):
         br.setSpacing(0)
         k = QLabel("DATABASE EXCELLENCE")
         k.setObjectName("kick")
+        from PySide6.QtWidgets import QSizePolicy as _KSP
+        k.setSizePolicy(_KSP.Ignored, _KSP.Preferred)  # 'DATABASE EXCELLENCE' boleh terpotong di layar sempit
+        k.setMinimumWidth(70)
         k.setToolTip("DB-Ex (Database Excellence) · keluarga GC-Ex")
         b = QLabel(f"DB<span style='color:{theme.C['sb']}'>-Ex</span>")
         b.setObjectName("brand")
@@ -92,7 +114,7 @@ class MainWindow(QMainWindow):
         for x in (k, b, self.prj):
             br.addWidget(x)
         h.addLayout(br)
-        h.addSpacing(18)
+        h.addSpacing(8)
         self.topH = h
         h.addStretch(1)
         # ruang kerja: Core box (foto core) | Singkapan (foto singkapan / trenching hasil mapping)
@@ -126,7 +148,7 @@ class MainWindow(QMainWindow):
         self.pill = QPushButton("○  AI lokal: memeriksa…")
         self.pill.setObjectName("pill")
         self.pill.setToolTip("Status AI lokal (Ollama). Klik untuk pengaturan.")
-        self.pill.setMinimumWidth(150)  # boleh menyempit (teks terpotong) di layar sempit; lebar penuh bila ada ruang
+        self.pill.setMinimumWidth(120)  # boleh menyempit (teks terpotong) di layar sempit; lebar penuh bila ada ruang
         self.bDark = btn("☾", "Tema gelap / terang")
         for x in (self.bOpen, self.bRescan, self.bDH, self.bImport, self.bExport, self.bAI, self.pill, self.bDark):
             h.addWidget(x)
@@ -209,7 +231,7 @@ class MainWindow(QMainWindow):
             x.currentIndexChanged.connect(lambda *_: self.apply_filter())
         clr.clicked.connect(self.reset_filter)
         # ---- isi: mulai / kerja
-        self.stack = QStackedWidget()
+        self.stack = _CurStack()
         # 0.45.1: halaman yang minimum lebarnya > layar (Singkapan, Borang di layar 1366 px / skala 125-150 %) tidak lagi
         # memaksa jendela lebih lebar dari layar (tombol kanan terpotong) — isi digulir mendatar bila jendela terlalu sempit.
         from PySide6.QtWidgets import QScrollArea

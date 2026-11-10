@@ -91,7 +91,8 @@ def test_baca_ai_cara_transkrip_keputusan_pengguna(qtbot, prj, tmp_path, monkeyp
     monkeypatch.setattr(w.ai, "model", lambda: "qwen3-vl:2b-instruct")
     monkeypatch.setattr("corex.forms_transkrip.say", lambda *a, **k: None)
     pg.run_ai()
-    qtbot.waitUntil(lambda: pg.ai_did is None and pg.tabs.currentWidget() is pg.tr and pg.tr.pv is not None, timeout=8000)
+    qtbot.waitUntil(lambda: pg.ai_did is None and pg.tabs.currentWidget() is pg.tr and pg.tr.pv is not None and pg.tr.grid.rowCount() == 3,
+                    timeout=8000)
     tr = pg.tr
     d = next(x for x in pg.docs if x["id"] == pg.cur["doc"]["id"])
     assert pg._info(d)["st"] == "map" and pg.cur["rows"] == [] and "menunggu keputusan" in tr.info.text()
@@ -157,3 +158,17 @@ def test_gabung_baris_tanpa_jam(qtbot, prj, tmp_path, monkeypatch):
     a.trigger()
     qtbot.waitUntil(lambda: tr.grid.rowCount() == 2, timeout=8000)
     assert tr.grid.item(0, 1).text() == "Start drilling + cleaning cyclone and splitter"
+
+
+def test_tab_transkrip_kosong_menampilkan_tujuan(qtbot, prj, tmp_path, monkeypatch):
+    """0.46.2: tab Transkrip sebelum ada teks -> dulu 'Pratinjau gagal: 'cols'' dan kisi kosong; kini halaman bantuan berisi semua tujuan."""
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    pg.tabs.setCurrentWidget(pg.tr)
+    qtbot.waitUntil(lambda: pg.tr.pv is not None, timeout=8000)
+    tr = pg.tr
+    assert tr.gstack.currentIndex() == 0 and "gagal" not in tr.info.text()
+    h = tr.help.text()
+    assert "Tabel utama" in h and "Kelas material" in h and "Kop" in h and "Anda yang memutuskan" in h
+    w.resize(1260, 800)
+    qtbot.wait(100)
+    assert w.minimumSizeHint().width() <= 1200  # muat di layar 1.280 px logis (1920 px @150 %)

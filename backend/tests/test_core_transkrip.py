@@ -174,3 +174,23 @@ def test_kolom_ke_kop_dan_render():
     out = tr.build("ore", g, ["start", "unit", "kop:tanggal"], [])
     assert out["header"]["tanggal"] == "05-11-26" and len(out["rows"]) == 2 and "kop:tanggal" in {o["key"] for o in tr.options("ore")}
     assert tr.render([["Shift", "I"]], [["a", ""], ["b", "c"]], "|") == "Shift: I\na | -\nb | c"
+
+
+def test_pratinjau_teks_kosong(st):
+    """0.46.2: tab Transkrip dibuka sebelum ada teks -> dulu 'Pratinjau gagal: 'cols'' (KeyError) karena 0 kolom == 0 kolom tersimpan."""
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "e.jpg")), "ddr", "Rina")[0]["id"]
+    for t in ("", None, "   \n"):
+        pv = tr.preview(s, did, t, "auto")
+        assert pv["ncol"] == 0 and pv["rows"] == [] and pv["map"]["cols"] == [] and not pv["map"]["sure"]
+        assert any(o["key"] == "hole:hole_id" for o in pv["options"]) and any(o["key"].startswith("kop:") for o in pv["options"])
+
+
+def test_judul_umum_ke_tujuan_yang_ada():
+    """0.46.2: judul 'Jam' / 'Truck' di Ore Spotter -> Start loading / Truck (dulu tujuan 'jam' yang tidak ada: dropdown '? jam')."""
+    g = tr.grid("No | Jam | Truck | Kelas | Ton | Tujuan\n1 | 0905 | T01 | OX-LG | 30 | ROM 1", "|")
+    sg = tr.suggest("ore", g, None)
+    keys = {o["key"] for o in tr.options("ore")}
+    assert all(c in keys for c in sg["cols"] if c) and sg["cols"][1] == "start" and sg["sure"]
+    g2 = tr.grid("Jam | Uraian\n0630-0700 | travel", "|")
+    assert tr.suggest("ddr", g2, None)["cols"] == ["jam", "aktivitas"]

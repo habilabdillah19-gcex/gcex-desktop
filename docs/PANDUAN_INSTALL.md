@@ -4269,3 +4269,9 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   lagi muncul (titik itu hanya tidak menampilkan hover).
 - **Hover bor**: bila keterangan saat kursor di atas lubang bor tidak muncul, periksa tombol **Hover detail** di Database Bor ›
   panel Data & Filter — hover mati bila tombol itu mati atau *Mode ringan* menyala.
+
+## 161. DB-Ex 0.46.2 — tab Transkrip: daftar tujuan terlihat, jendela muat di layar
+
+- Tab **✎ Transkrip** sebelum ada teks tidak lagi menampilkan *"Pratinjau gagal: 'cols'"*. Area kisi kini memperlihatkan **semua tujuan yang bisa Anda pilih** untuk jenis borang yang terbuka (tabel utama, tabel tambahan seperti Meterage / lubang di DDR, dan isian Kop), alat-alat kisi, dan cara scan kolom satu per satu. Begitu teks ada, tiap kolom teks mendapat dropdown tujuan di baris biru atas kisi.
+- Judul kolom umum di teks (*Jam*, *Truck*, *Uraian*, *From* …) hanya diusulkan ke tujuan yang memang ada di jenis borang itu (Ore Spotter: *Jam* → *Start loading*).
+- Jendela DB-Ex kini muat di layar 1.280 px logis (mis. 1920 px dengan skala 150 %): tombol kanan (Terapkan, status AI) tidak lagi terpotong.
