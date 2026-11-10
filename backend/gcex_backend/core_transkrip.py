@@ -19,6 +19,11 @@ from . import core_io
 from . import core_forms as F
 
 SEPS = {"|": "|", "tab": "\t", ",": ",", ";": ";"}
+# 0.46.4 (usul pemilik, seperti Text Import di Excel): pemisah SPASI dan LEBAR TETAP (garis pemisah yang ditarik pengguna)
+WS = {"spasi2": re.compile(r"\t+| {2,}"),   # spasi lebar: >= 2 spasi atau tab (kolom rata) — uraian bersepasi tunggal tetap utuh
+      "spasi": re.compile(r"\s+")}          # setiap spasi (spasi berurutan = satu pemisah)
+SEP_ALL = tuple(SEPS) + tuple(WS) + ("fixed",)
+TABW = 8
 MAP_FILE = "transkrip_map.json"
 _LABEL = re.compile(r"^\s*([A-Za-z][A-Za-z0-9 _./()\-]{1,40}?)\s*[:=]\s*(.+?)\s*$")
 
@@ -59,21 +64,37 @@ _ECHO = ("petunjuk, jangan disalin", "tabel lain pada borang", "kolom tabel yang
          "bila ada beberapa tabel", "catatan pengguna:", "/no_think")
 
 
-def clean(txt: str) -> str:
+def clean(txt: str, keep_indent: bool = False) -> str:
     """Rapikan jawaban model: buang pagar kode / markdown, baris penjelasan Inggris, baris kembar berturut-turut, garis tabel,
     gema kalimat petunjuk (0.46.2: model menyalin 'Tabel lain pada borang: …' menjadi isian kop). SATU baris kosong
     dipertahankan sebagai batas kelompok tulisan (tabel berbeda)."""
     out: list[str] = []
     for ln in (txt or "").replace("\r", "").split("\n"):
+        if keep_indent:  # lebar tetap: posisi karakter dipertahankan (tab -> spasi, tanpa membuang awalan)
+            ln = re.sub(r"^```\w*|```$", "", ln.expandtabs(TABW)).replace("**", "  ").rstrip()
+            if not ln.strip():
+                if out and out[-1] != "":
+                    out.append("")
+                continue
+            if any(ln.strip().lower().lstrip("(").startswith(e) for e in _ECHO):
+                continue
+            if out and ln == out[-1]:
+                continue
+            out.append(ln)
+            continue
+        lead = len(re.match(r"[ \t]*", ln).group(0).expandtabs(TABW))
         ln = re.sub(r"^```\w*|```$", "", ln).replace("**", "").strip()
-        ln = re.sub(r"^(?:[-*•]\s+|\d+[.)]\s+(?=[A-Za-z]))", "", ln)
+        if not re.match(r"^[-*•](?:\t| {2,})", ln):  # '-' + spasi lebar / tab = sel kosong teks rata kolom, bukan butir daftar
+            ln = re.sub(r"^(?:[-*•]\s+|\d+[.)]\s+(?=[A-Za-z]))", "", ln)
+        if lead and re.search(r"\S(?:\t| {2,})\S", ln):
+            ln = " " * lead + ln  # 0.46.4: teks rata kolom — indentasi = kolom pertama kosong, dipertahankan untuk garis pemisah
         if not ln:
             if out and out[-1] != "":
                 out.append("")
             continue
         if re.fullmatch(r"[|\s:\-=–—]+", ln):  # garis pemisah tabel markdown
             continue
-        if any(ln.lower().lstrip("(").startswith(e) for e in _ECHO):
+        if any(ln.strip().lower().lstrip("(").startswith(e) for e in _ECHO):
             continue
         if (len(ln) > 60 and ln.count(" ") > 8 and re.search(r"\b(the|here|this|image|form|I |we |shows|contains)\b", ln)) or \
                 re.match(r"^(here|this|the|below|sure|okay|note)\b.*:?$", ln, re.I) and "|" not in ln and not _LABEL.match(ln):
@@ -157,6 +178,7 @@ def merge(base: str, new: str, mode: str = "ganti", sep: str = "auto") -> str:
     if mode == "bawah":
         return base.rstrip() + "\n" + new
     sp = sep if sep in SEPS else guess_sep(base + "\n" + new)
+    sp = sp if sp in SEPS else "|"  # spasi / lebar tetap: kolom baru ditempel dengan ' | '
     ch = SEPS[sp]
     joiner = f" {ch} " if ch in "|;" else ch if ch == "\t" else ch + " "
 
@@ -198,23 +220,79 @@ def get_teks(s: F.Store, did: int) -> str:
 
 
 # ---------------------------------------------------------------- teks -> kisi
+def _nsplit(ln: str, sep: str) -> int:
+    if sep in WS:
+        return len([c for c in WS[sep].split(ln.strip()) if c != ""]) - 1
+    return ln.count(SEPS[sep])
+
+
 def guess_sep(txt: str) -> str:
-    """Pemisah yang paling konsisten muncul (>= 1 kali) pada baris terbanyak."""
-    best, bn = "|", -1
-    for name, ch in SEPS.items():
-        n = sum(1 for ln in txt.split("\n") if ln.count(ch) >= 1)
-        if n > bn:
-            best, bn = name, n
+    """Pemisah otomatis: yang memberi jumlah pemisah per baris paling KONSISTEN dan terbanyak (median x porsi baris yang sama
+    dengan median). 0.46.4: teks rata kolom dengan spasi lebar ('99971;   DP_265…   05/11/26') dulu terbaca 'titik koma' karena
+    tiap baris punya satu ';' -> 2 kolom."""
+    lines = [ln for ln in txt.split("\n") if ln.strip() and not (_LABEL.match(ln) and not re.search(r"\t| {2,}|\|", ln))
+             and not ln.lstrip().startswith("#")]
+    if not lines:
+        return "|"
+    best, bs = "|", 0.0
+    for sp in ("|", "tab", ";", ",", "spasi2"):
+        ns = sorted(_nsplit(ln, sp) for ln in lines)
+        med = ns[len(ns) // 2]
+        if med < 1:
+            continue
+        frac = sum(1 for x in ns if abs(x - med) <= max(1, med // 4)) / len(ns)
+        sc = med * frac * (0.9 if sp == "spasi2" else 1.0)  # seri: pemisah tertulis lebih dipercaya daripada spasi
+        if sc > bs:
+            best, bs = sp, sc
     return best
 
 
-def grid(txt: str, sep: str = "auto") -> dict:
+def auto_breaks(lines: list[str]) -> list[int]:
+    """Usulan garis pemisah lebar tetap: awal tiap 'pita' karakter sesudah kolom yang (hampir) selalu kosong di semua baris."""
+    L = [ln for ln in lines if ln.strip()]
+    if not L:
+        return []
+    w = max(len(ln) for ln in L)
+    occ = [sum(1 for ln in L if p < len(ln) and ln[p] != " ") for p in range(w)]
+    lim = max(0, int(0.08 * len(L)))
+    out = []
+    for p in range(1, w):
+        if occ[p - 1] <= lim and occ[p] > lim:
+            out.append(p)
+    return out
+
+
+def split_line(ln: str, sep: str, breaks: Optional[list] = None) -> Optional[list[str]]:
+    """Satu baris teks -> sel, atau None bila bukan baris tabel (isian 'Label: nilai')."""
+    if sep == "fixed":
+        if _LABEL.match(ln.strip()) and not re.search(r" {2,}", ln.strip()):
+            return None
+        bs = sorted({int(b) for b in (breaks or []) if int(b) > 0})
+        cuts = [0] + bs + [max(len(ln), (bs[-1] if bs else 0) + 1)]
+        cells = [ln[a:b].strip() for a, b in zip(cuts, cuts[1:])]
+        return cells if len(cells) >= 2 or (cells and cells[0]) else None
+    if sep in WS:
+        t = ln.strip()
+        if _LABEL.match(t) and (sep == "spasi" or not WS["spasi2"].search(t)):
+            return None
+        cells = [c for c in WS[sep].split(t)]
+        if len(cells) >= 2 and re.match(r"(?:\t| {2,})\S", ln):
+            cells = [""] + cells  # baris menjorok = kolom pertama kosong
+        return cells if len(cells) >= 2 else None
+    ch = SEPS[sep]
+    if ch in ln and not (ch != "|" and _LABEL.match(ln) and ln.count(ch) == 1 and ch == ","):
+        return [c.strip() for c in ln.split(ch)]
+    return None
+
+
+def grid(txt: str, sep: str = "auto", breaks: Optional[list] = None) -> dict:
     """Teks -> {sep, hdr: [[label, nilai]], rows: [[sel…]], raw: [baris asli untuk kisi]}. Baris 'Label: nilai' tanpa pemisah =
     isian kop; baris berpemisah = baris tabel. Baris tanpa pemisah & tanpa ':' = lanjutan sel terakhir baris tabel sebelumnya."""
-    txt = clean(txt)
-    if sep == "auto" or sep not in SEPS:
+    txt = clean(txt, keep_indent=(sep == "fixed"))
+    if sep == "auto" or sep not in SEP_ALL:
         sep = guess_sep(txt)
-    ch = SEPS[sep]
+    if sep == "fixed" and breaks is None:
+        breaks = auto_breaks([ln for ln in txt.split("\n") if not (_LABEL.match(ln.strip()) and not re.search(r" {2,}", ln.strip()))])
     hdr: list[list[str]] = []
     rows: list[list[str]] = []
     brk: set[int] = set()
@@ -229,12 +307,13 @@ def grid(txt: str, sep: str = "auto") -> dict:
             if rows:
                 brk.add(len(rows))
             continue
-        if ch in ln and ln.count(ch) >= 1 and not (ch != "|" and _LABEL.match(ln) and ln.count(ch) == 1 and ch == ","):
-            cells = [c.strip() for c in ln.split(ch)]
+        cells = split_line(ln, sep, breaks)
+        if cells is not None:
             cells = ["" if F._JUNK.fullmatch(c) and "〃" not in c else c for c in cells]
             if any(cells):
                 rows.append(cells)
             continue
+        ln = ln.strip()
         m = _LABEL.match(ln)
         if m and not rows:
             hdr.append([m.group(1).strip(), m.group(2).strip()])
@@ -244,7 +323,8 @@ def grid(txt: str, sep: str = "auto") -> dict:
             rows[-1][-1] = (rows[-1][-1] + " " + ln.strip()).strip()
     n = max((len(r) for r in rows), default=0)
     rows = [r + [""] * (n - len(r)) for r in rows]
-    return {"sep": sep, "hdr": hdr, "rows": rows, "ncol": n, "brk": sorted(b for b in brk if 0 < b < len(rows)),
+    return {"sep": sep, "breaks": list(breaks or []) if sep == "fixed" else [], "hdr": hdr, "rows": rows, "ncol": n,
+            "brk": sorted(b for b in brk if 0 < b < len(rows)),
             "hard": sorted(b for b in hard if 0 < b < len(rows))}
 
 
@@ -506,14 +586,15 @@ def save_map(s: F.Store, ftype: str, sep: str, cols: list, hdr_pairs: list[tuple
         pass
 
 
-def preview(s: F.Store, did: int, teks: Optional[str], sep: str) -> dict:
+def preview(s: F.Store, did: int, teks: Optional[str], sep: str, breaks: Optional[list] = None) -> dict:
     d = F.doc(s, did)
     txt = teks if teks is not None else get_teks(s, did)
     saved = (load_map(s).get(d["type"]) or None)
-    if sep == "auto" and saved and saved.get("sep") in SEPS:
-        g = grid(txt, saved["sep"])
-    else:
-        g = grid(txt, sep)
+    g = grid(txt, sep, breaks)
+    if sep == "auto" and g["ncol"] < 2 and saved and saved.get("sep") in SEP_ALL and saved["sep"] not in ("fixed", g["sep"]):
+        g2 = grid(txt, saved["sep"])  # tebakan otomatis hanya 1 kolom: coba pemisah yang terakhir Anda pakai untuk jenis ini
+        if g2["ncol"] >= 2:
+            g = g2
     sg = suggest(d["type"], g, saved)
     return {"teks": txt, **g, "map": sg, "groups": sg["groups"], "options": options(d["type"]), "hdr_options": hdr_options(d["type"]),
             "type": d["type"], "type_name": F.TYPES[d["type"]]["name"]}
@@ -606,11 +687,12 @@ def build(ftype: str, g: dict, cols: list, hdr_keys: list[str], skip_rows: Optio
 
 
 def apply(s: F.Store, did: int, teks: str, sep: str, cols: list, hdr: list[str], by: str, skip_rows: Optional[list[int]] = None,
-          save: bool = True, title_row: Any = -1, store_teks: bool = True, grp: Optional[list] = None) -> dict:
+          save: bool = True, title_row: Any = -1, store_teks: bool = True, grp: Optional[list] = None,
+          breaks: Optional[list] = None) -> dict:
     """cols = satu daftar tujuan (semua baris) ATAU satu daftar per kelompok tulisan (grp = [[awal, akhir), …], title_row =
     daftar baris judul global per kelompok)."""
     d = F.doc(s, did)
-    g = grid(teks, sep)
+    g = grid(teks, sep, breaks)
     if not g["rows"] and not g["hdr"]:
         raise ValueError("Teks belum berisi baris tabel (pisahkan sel dengan pemisah yang dipilih) atau isian 'Label: nilai'.")
     per = bool(cols) and isinstance(cols[0], list)
@@ -682,7 +764,8 @@ def _apply_pv(s: F.Store, did: int, pv: dict, by: str) -> None:
     """Terapkan usulan pemetaan yang YAKIN (semua kelompok) tanpa menyimpan keputusan (bukan keputusan pengguna)."""
     gs = pv["groups"]
     apply(s, did, pv["teks"], pv["sep"], [x["cols"] for x in gs], pv["map"]["hdr"], by,
-          [x["title_row"] for x in gs if x["title_row"] >= 0], save=False, store_teks=False, grp=[[x["start"], x["end"]] for x in gs])
+          [x["title_row"] for x in gs if x["title_row"] >= 0], save=False, store_teks=False, grp=[[x["start"], x["end"]] for x in gs],
+          breaks=pv.get("breaks") or None)
 
 
 def apply_all(s: F.Store, ftype: str, by: str, ids: Optional[list[int]] = None) -> dict:
@@ -722,6 +805,7 @@ class TeksBody(F.FBody):
     id: int
     teks: Optional[str] = None
     sep: str = "auto"
+    breaks: Optional[list[int]] = None  # garis pemisah lebar tetap (posisi karakter); None = usulan otomatis
 
 
 class TerapBody(F.FBody):
@@ -734,6 +818,7 @@ class TerapBody(F.FBody):
     save_map: bool = True
     title_row: Any = -1           # int atau list[int] (baris judul global per kelompok)
     groups: list[list[int]] = []  # [[awal, akhir), …] kelompok tulisan seperti yang ditampilkan di kisi
+    breaks: Optional[list[int]] = None  # garis pemisah lebar tetap (sep = "fixed"); None = usulan otomatis
 
 
 class SemuaBody(F.FBody):
@@ -757,13 +842,14 @@ def api_transkrip_simpan(b: TeksBody) -> dict:
 
 @F.router.post("/transkrip/pratinjau")
 def api_transkrip_pratinjau(b: TeksBody) -> dict:
-    return {"ok": True, **preview(F.store(b.folder), b.id, b.teks, b.sep)}
+    return {"ok": True, **preview(F.store(b.folder), b.id, b.teks, b.sep, b.breaks)}
 
 
 @F.router.post("/transkrip/terapkan")
 def api_transkrip_terapkan(b: TerapBody) -> dict:
     s = F.store(b.folder)
-    apply(s, b.id, b.teks, b.sep, b.cols, b.hdr, b.by, b.skip_rows, b.save_map, b.title_row, grp=b.groups or None)
+    apply(s, b.id, b.teks, b.sep, b.cols, b.hdr, b.by, b.skip_rows, b.save_map, b.title_row, grp=b.groups or None,
+          breaks=b.breaks or None)
     return {"ok": True, **F._full(s, b.id)}
 
 

@@ -221,3 +221,66 @@ def test_kelompok_tulisan_ddr(qtbot, prj, tmp_path, monkeypatch):
     next(a for a in m.actions() if a.text().startswith("▸ Mulai KELOMPOK baru")).trigger()
     qtbot.waitUntil(lambda: sum(1 for k_, _x in tr.vmap if k_ == "map") == 3, timeout=8000)
     assert tr.grp == [[0, 3], [3, 5], [5, 7]] and tr.combo(2, 0) is not None and "# Kelompok 3" in tr.txt.toPlainText()
+
+
+RATA = ("Tanggal: 05-11-26\n"
+        "No   Jam    Truck   Kelas    Ton   Tujuan\n"
+        "1    0905   T01     OX-LG    30    ROM 1\n"
+        "2    0916   T02     SF-LG    31    ROM 1\n")
+
+
+def test_pemisah_spasi_dan_garis(qtbot, prj, tmp_path, monkeypatch):
+    """0.46.4 (usul pemilik): teks salinan AI yang rata kolom dengan spasi -> pemisah 'Spasi lebar' otomatis (dulu 'titik koma',
+    2 kolom); 'Garis pemisah' = penggaris seperti impor teks Excel (klik buat, klik ganda hapus); Terapkan memakai garisnya;
+    suntingan kisi menulis ulang teks dengan '|'."""
+    w, pg = _open_forms(qtbot, prj, tmp_path, monkeypatch)
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+    import corex.forms_transkrip as FT
+    from corex.forms_pemisah import BreakDialog
+    tr = pg.tr
+    tr.txt.setPlainText(RATA)
+    qtbot.waitUntil(lambda: tr.pv is not None and tr.grid.columnCount() == 6, timeout=8000)
+    assert tr.pv["sep"] == "spasi2" and "spasi lebar" in tr.info.text() and tr.grid.rowCount() == 4
+    # penggaris: usulan otomatis, klik = garis baru, klik ganda = hapus
+    d = BreakDialog(tr, RATA, None)
+    assert d.ruler.breaks == [5, 12, 20, 29, 35] and d.pv.columnCount() == 6 and d.pv.item(1, 5).text() == "ROM 1"
+    r = d.ruler
+    y = int(r.top + 3)
+    QTest.mouseClick(r, Qt.LeftButton, Qt.NoModifier, QPoint(int(r.x_of(3)), y))
+    assert r.breaks == [3, 5, 12, 20, 29, 35] and d.pv.columnCount() == 7
+    QTest.mouseDClick(r, Qt.LeftButton, Qt.NoModifier, QPoint(int(r.x_of(3)), y))
+    assert 3 not in r.breaks and d.pv.columnCount() == 6
+    d.ruler.set_breaks([5, 12, 20, 35])  # Kelas & Ton sengaja disatukan lalu dipisah lagi lewat dialog berikutnya
+    d._ok()
+    assert d.breaks == [5, 12, 20, 35]
+
+    class Fake:
+        breaks = [5, 12, 20, 29, 35]
+        ok = True
+
+        def __init__(self, *_a):
+            pass
+
+        def exec(self):
+            return Fake.ok
+    monkeypatch.setattr(FT, "BreakDialog", Fake)
+    # Batal -> pemisah kembali seperti semula
+    Fake.ok = False
+    tr.cbSep.setCurrentIndex(tr.cbSep.findData("fixed"))
+    assert tr.cbSep.currentData() == "auto" and not tr.bLines.isVisible()
+    Fake.ok = True
+    tr.cbSep.setCurrentIndex(tr.cbSep.findData("fixed"))
+    qtbot.waitUntil(lambda: tr.pv["sep"] == "fixed", timeout=8000)
+    assert tr.pv["breaks"] == [5, 12, 20, 29, 35] and tr.grid.columnCount() == 6 and "garis pemisah (5 garis)" in tr.info.text()
+    assert tr.bLines.isVisibleTo(tr)
+    assert tr.combo(0, 3).currentData() == "kelas" and tr.combo(0, 4).currentData() == "ton"
+    tr.apply()
+    qtbot.waitUntil(lambda: pg.t.rowCount() == 2, timeout=8000)
+    cols = [k for k, _l in pg.cols(pg.types["ore"])]
+    assert pg.t.item(1, 1 + cols.index("kelas")).text() == "SF-LG" and pg.t.item(0, 1 + cols.index("tujuan")).text() == "ROM 1"
+    # sunting sel kisi -> teks ditulis ulang dengan '|', pemisah ikut berganti
+    pg.tabs.setCurrentWidget(tr)
+    tr.grid.item(2, 2).setText("T09")
+    qtbot.waitUntil(lambda: tr.pv["sep"] == "|" and "T09" in tr.txt.toPlainText(), timeout=8000)
+    assert tr.cbSep.currentData() == "|" and " | T09 | " in tr.txt.toPlainText() and not tr.bLines.isVisibleTo(tr)

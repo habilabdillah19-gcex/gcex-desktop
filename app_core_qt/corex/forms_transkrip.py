@@ -15,16 +15,20 @@ from __future__ import annotations
 import re
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QFontMetricsF
 from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QHBoxLayout, QHeaderView, QLabel, QMenu, QPlainTextEdit, QScrollArea, QSplitter,
                                QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from . import api
 from .card import btn
 from .dialogs import ask, say
+from .forms_pemisah import BreakDialog
 from .util import SET, run_bg
 
-SEP_ITEMS = (("Otomatis", "auto"), ("Garis tegak  |", "|"), ("Tab", "tab"), ("Koma  ,", ","), ("Titik koma  ;", ";"))
+SEP_ITEMS = (("Otomatis", "auto"), ("Garis tegak  |", "|"), ("Tab", "tab"), ("Koma  ,", ","), ("Titik koma  ;", ";"),
+             ("Spasi lebar (≥2 / tab)", "spasi2"), ("Setiap spasi", "spasi"), ("Garis pemisah (lebar tetap)…", "fixed"))
+SEPNAME = {"|": "garis tegak |", "tab": "tab", ",": "koma", ";": "titik koma", "spasi2": "spasi lebar", "spasi": "setiap spasi",
+           "fixed": "garis pemisah"}
 MAP_BG, SKIP_BG, UNC_BG = "#eef5ff", "#f1f3f5", "#fff3bf"
 SEPCH = {"|": "|", "tab": "\t", ",": ",", ";": ";"}
 
@@ -61,6 +65,8 @@ class TranscriptTab(QWidget):
         self.grp: list[list[int]] = []   # kelompok tulisan [awal, akhir) dalam baris kisi
         self.gw: list[int] = []          # lebar (jumlah kolom) tiap kelompok
         self.vmap: list[tuple[str, int]] = []  # baris tampilan -> ("map", kelompok) / ("row", indeks baris teks)
+        self.breaks: list[int] | None = None   # garis pemisah lebar tetap (posisi karakter) pilihan pengguna
+        self._sep_prev = 0
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(600)
@@ -94,9 +100,16 @@ class TranscriptTab(QWidget):
         self.cbSep.setMinimumContentsLength(5)
         for t, k in SEP_ITEMS:
             self.cbSep.addItem(t, k)
-        self.cbSep.setToolTip("Tanda yang memisahkan sel dalam satu baris teks. Otomatis = yang paling sering muncul.")
-        self.cbSep.currentIndexChanged.connect(lambda _i: self.preview())
+        self.cbSep.setToolTip("Tanda yang memisahkan sel dalam satu baris teks. Otomatis = yang paling konsisten di semua baris.\n"
+                              "• Spasi lebar — teks rata kolom: 2 spasi atau lebih / tab = batas sel (spasi tunggal tetap di dalam sel).\n"
+                              "• Setiap spasi — tiap spasi memisahkan sel.\n"
+                              "• Garis pemisah — tarik garis batas kolom sendiri pada teks, seperti mengimpor teks di Excel.")
+        self.cbSep.currentIndexChanged.connect(self._sep_changed)
         top.addWidget(self.cbSep)
+        self.bLines = btn("┆ Atur garis…", "Buka lagi penggaris garis pemisah: klik = buat garis, seret = pindahkan, klik ganda = hapus", sm=True)
+        self.bLines.clicked.connect(self.edit_breaks)
+        self.bLines.hide()
+        top.addWidget(self.bLines)
         top.addStretch(1)
         v.addLayout(top)
         self.info = QLabel()
@@ -121,6 +134,8 @@ class TranscriptTab(QWidget):
                                     "Isian kop:  Label: nilai   (satu per baris)\n"
                                     "Baris tabel:  nilai | nilai | nilai   (pemisah bisa diganti di atas)")
         self.txt.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.txt.ensurePolished()
+        self.txt.setTabStopDistance(QFontMetricsF(self.txt.font()).horizontalAdvance(" ") * 8)  # tab = 8 kolom (sama dengan garis pemisah)
         self.txt.textChanged.connect(self._text_changed)
         tv.addWidget(self.txt, 1)
         sp.addWidget(tw)
@@ -219,6 +234,7 @@ class TranscriptTab(QWidget):
         if did != self.did:
             self.choice, self.hchoice = None, {}
             self.grp: list[list[int]] = []
+            self.breaks = None
         self.did, self.loaded = did, teks
         self.skip = set()
         self._filling = True
@@ -311,12 +327,38 @@ class TranscriptTab(QWidget):
             say(self, "AI gagal menyalin teks:\n" + e, warn=True)
         run_bg(api.call, "/core/forms/transkrip", body, ok=ok, err=err)
 
+    def _sep_changed(self, i: int) -> None:
+        """Pemisah diganti. 'Garis pemisah' langsung membuka penggaris (garis usulan otomatis) — Batal = kembali ke pemisah lama."""
+        k = self.cbSep.itemData(i)
+        if k == "fixed" and self.did is not None and self.txt.toPlainText().strip():
+            if not self.edit_breaks(preview=False):
+                self.cbSep.blockSignals(True)
+                self.cbSep.setCurrentIndex(self._sep_prev if self._sep_prev != i else 0)
+                self.cbSep.blockSignals(False)
+                self.bLines.setVisible(self.cbSep.currentData() == "fixed")
+                return
+        self._sep_prev = self.cbSep.currentIndex()
+        self.bLines.setVisible(k == "fixed")
+        self.preview()
+
+    def edit_breaks(self, preview: bool = True) -> bool:
+        """Penggaris garis pemisah (lebar tetap). True bila pengguna memakai garisnya."""
+        cur = self.breaks if self.breaks else ((self.pv or {}).get("breaks") or None)
+        d = BreakDialog(self, self.txt.toPlainText(), cur)
+        if not d.exec():
+            return False
+        self.breaks = list(d.breaks)
+        if preview:
+            self.preview()
+        return True
+
     def preview(self) -> None:
         if self.did is None:
             return
         txt = self.txt.toPlainText()
         did = self.did
-        body = {**self._body(), "teks": txt, "sep": self.cbSep.currentData() or "auto"}
+        sep = self.cbSep.currentData() or "auto"
+        body = {**self._body(), "teks": txt, "sep": sep, "breaks": self.breaks if sep == "fixed" else None}
         self._pseq = getattr(self, "_pseq", 0) + 1
         seq = self._pseq
 
@@ -543,7 +585,9 @@ class TranscriptTab(QWidget):
         hk = [k for k in self._hdr_keys() if k]
         mp = self.pv.get("map") or {}
         src = {"title": "dari judul kolom", "saved": "dari keputusan Anda sebelumnya", "default": "urutan bawaan — periksa!"}.get(mp.get("src"), "")
-        s = (f"Pemisah «{self.pv.get('sep')}» · {len(self.grp)} kelompok · {n_rows} baris tabel · " + " · ".join(parts) + " dipetakan"
+        sp_ = self.pv.get("sep")
+        sn = SEPNAME.get(sp_, sp_) + (f" ({len(self.pv.get('breaks') or [])} garis)" if sp_ == "fixed" else "")
+        s = (f"Pemisah «{sn}» · {len(self.grp)} kelompok · {n_rows} baris tabel · " + " · ".join(parts) + " dipetakan"
              + (f" ({src})" if src and self.choice is None else " (pilihan Anda)") + f" · {len(hk)} isian kop"
              + (f" · kolom bertujuan sama digabung: {', '.join(dup)}" if dup else "")
              + ("" if all_used or hk else " · <span style='color:#c0392b'>⚠ belum ada kolom yang dipetakan</span>"))
@@ -577,10 +621,15 @@ class TranscriptTab(QWidget):
         if grp is not None:
             self.grp = [list(g_) for g_ in grp]
         sep = (self.pv or {}).get("sep") or "|"
-        if self.cbSep.currentData() == "auto" and sep != "auto":
+        if sep not in SEPCH:  # spasi / garis pemisah: sesudah kisi disunting, teks ditulis ulang dengan '|' (seperti data sudah di sel)
+            sep = "|"
+            self.breaks = None
+        if self.cbSep.currentData() != sep:
             self.cbSep.blockSignals(True)
             self.cbSep.setCurrentIndex(max(0, self.cbSep.findData(sep)))
             self.cbSep.blockSignals(False)
+            self._sep_prev = self.cbSep.currentIndex()
+            self.bLines.setVisible(sep == "fixed")
         # baris dipotong ke lebar kelompoknya (sel kosong di kanan tidak ikut ditulis)
         out = []
         for i, r in enumerate(rows):
@@ -875,7 +924,8 @@ class TranscriptTab(QWidget):
         gs = self.pv.get("groups") or []
         trs = [x["title_row"] for x in gs if x.get("title_row", -1) >= 0 and x["title_row"] in self.skip]
         body = {**self._body(), "teks": self.txt.toPlainText(), "sep": self.pv.get("sep") or "|", "cols": self._cols(),
-                "hdr": self._hdr_keys(), "skip_rows": sorted(self.skip), "save_map": True, "title_row": trs, "groups": self.grp}
+                "hdr": self._hdr_keys(), "skip_rows": sorted(self.skip), "save_map": True, "title_row": trs, "groups": self.grp,
+                "breaks": self.pv.get("breaks") or None}
         did = self.did
         self.bApply.setEnabled(False)
 

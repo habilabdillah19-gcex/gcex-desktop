@@ -296,3 +296,50 @@ def test_borang_dbx_ore():
     assert sg["cols"] == ["no", "start", "unit", "elevasi", "block", "digblock", "kelas", "ton", "tujuan", "catatan"] and sg["sure"]
     out = tr.build("ore", g, sg["cols"], [], [0])
     assert out["rows"][0]["digblock"] == "DB-12-03" and out["rows"][0]["block"] == "B12"
+
+
+RATA = """99971;   DP_265-405-24   05/11/26   DP_150069_Z4   0    1   VLT   ARG   Cy
+99972;   DP_265-405-24   05/11/26   DP_150070_Z4   1    2   VLT   ARG   ox
+99973;   DP_265-405-24   05/11/26   DP_150071_Z4   2    3   VLT   PRO   chl-cy
+99974;   DP_265-405-24   05/11/26   DP_150072_Z4   3    4   AND   ARG   ox"""
+
+
+def test_pemisah_spasi_dan_lebar_tetap():
+    """0.46.4 (usul pemilik, seperti Text Import Excel): teks rata kolom dengan spasi -> 'Spasi lebar' otomatis (dulu ';' -> 2 kolom);
+    'Setiap spasi'; 'Lebar tetap' dengan garis pemisah usulan otomatis / pilihan pengguna."""
+    g = tr.grid(RATA, "auto")
+    assert g["sep"] == "spasi2" and g["ncol"] == 9 and g["rows"][2][8] == "chl-cy" and g["rows"][0][0] == "99971;"
+    assert tr.grid("a b c\nd e f", "spasi")["ncol"] == 3
+    assert tr.grid("Shift: I\n0630-0700  travel to opp\n0700-0710  P5M", "auto")["rows"][0] == ["0630-0700", "travel to opp"]
+    # lebar tetap: usulan garis pemisah = awal tiap kolom rata
+    gf = tr.grid(RATA, "fixed")
+    assert gf["sep"] == "fixed" and gf["ncol"] == 9 and gf["rows"][3][6] == "AND" and gf["breaks"][0] == 9
+    # garis pemisah pilihan pengguna: hanya tiga kolom
+    g3 = tr.grid(RATA, "fixed", [9, 25])
+    assert g3["ncol"] == 3 and g3["rows"][0][2].startswith("05/11/26   DP_150069_Z4")
+    # isian kop tetap terbaca dalam mode lebar tetap / spasi; tab diperlakukan sebagai 8 spasi
+    gt = tr.grid("Tanggal: 05-11-26\n1\tT01\t30\n2\tT02\t31", "fixed")
+    assert gt["hdr"] == [["Tanggal", "05-11-26"]] and gt["rows"] == [["1", "T01", "30"], ["2", "T02", "31"]]
+
+
+def test_terapkan_lebar_tetap(st):
+    s, tmp = st
+    did = cf.add_file(s, str(_scan(tmp, "lt.jpg")), "ore", "Rina")[0]["id"]
+    t = "No  Jam   Truck  Ton\n1   0905  T01    30\n2   0916  T02    31"
+    pv = tr.preview(s, did, t, "fixed")
+    assert pv["breaks"] == [4, 10, 17] and pv["ncol"] == 4
+    tr.apply(s, did, t, "fixed", [["no", "start", "unit", "ton"]], [], "Rina", skip_rows=[0], grp=[[0, 3]], breaks=pv["breaks"])
+    assert [r["data"]["unit"] for r in cf.rows(s, did)] == ["T01", "T02"]
+
+
+def test_indentasi_teks_rata_kolom():
+    """0.46.4: baris menjorok / diawali '-' pada teks rata kolom = kolom pertama kosong (bukan butir daftar) — dipertahankan
+    supaya garis pemisah & spasi lebar tidak menggeser kolom."""
+    t = "99971;   DP_265   05/11/26\n         DP_266   06/11/26\n-        DP_267   07/11/26\n- butir biasa"
+    c = tr.clean(t)
+    assert c.split("\n")[1].startswith("         DP_266") and c.split("\n")[2].startswith("-        DP_267")
+    assert c.split("\n")[3] == "butir biasa"
+    g = tr.grid(c, "spasi2")
+    assert [r[:2] for r in g["rows"][:3]] == [["99971;", "DP_265"], ["", "DP_266"], ["", "DP_267"]]
+    g = tr.grid(c.rsplit("\n", 1)[0], "fixed")
+    assert g["breaks"] == [9, 18] and g["rows"][1][:2] == ["", "DP_266"]
