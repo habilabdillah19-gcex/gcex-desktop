@@ -20,6 +20,10 @@
 - **CI tidak membangun tutorial PDF di setiap push** (pemilik, 10 Nov 2026: "tidak usah membuat pdf"; langkah bergambar ±16 menit).
   Release memakai PDF yang ada di repo: sesi yang mengubah tutorial membangunnya di kontainer lalu meng-commit PDF-nya.
   Minta CI membangun ulang hanya bila perlu: tulis `[pdf]` di pesan commit, atau jalankan workflow secara manual.
+- **Commit yang mengubah `.github/workflows/*` tidak bisa menjadi titik tag Release BARU**: GITHUB_TOKEN ditolak
+  membuat tag / Release di commit itu (HTTP 403 "Resource not accessible by integration"; DB-Ex 0.46.1, 10 Nov 2026 —
+  dua run gagal di langkah *Kemas & terbitkan*). Memperbarui Release yang tag-nya sudah ada tetap jalan. Jadi bila
+  versi naik bersamaan dengan perubahan workflow, susulkan satu commit lain (mis. dokumen) yang tidak menyentuh workflow.
 - Isi Release: 3 installer terpisah (GC-Ex Block Model, GC-Ex Drillhole, DB-Ex — tidak dibundel, masing-masing pada versinya sendiri) + `DB-Ex-Qt-Setup` (DB-Ex versi Qt, versi = builder-core.json; satu-satunya yang memuat Singkapan / Borang / QAQC), `_1_Dokumen.zip`,
   `_2_Data-Latihan.zip`, `_3_Lisensi-dan-Tentang.zip`, `_CATATAN_RILIS.md` (commit sejak rilis sebelumnya), `SHA256SUMS.txt`,
   plus kode sumber otomatis dari tag. File baru yang perlu ikut rilis didaftarkan di `tools/rilis/kemas_rilis.py`.
