@@ -951,6 +951,7 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Block Model 0.24.57.</b> Solid Vein Aktual punya <b>flitch kerja sendiri</b>: selesai import titik atap, plan flitch file itu langsung terbuka dan titiknya siap didigit; mencentang file / <b>Buka</b> / isian RL memindah flitch kerja tanpa mengubah flitch Dig Block / As-Mined.</p>')
 B.append('<p><b>Block Model 0.24.56 / Drillhole 0.24.61.</b> Block model .mdl yang gagal dibuka dengan pesan <i>Tipe atribut "" belum didukung</i> kini terbaca. As-Mined: titik <b>atap</b> tampil di plan (&times; ungu) dan bisa di-snap, dan tombol <b>Titik lantai / Titik atap</b> mematikan salah satu lapisan saat mendigit; <b>Per flitch</b> membuka panel As-Mined flitch itu; <b>Register untuk database</b> menjadi node sendiri. '
          'Slicer Block Model disamakan dengan Drillhole (<b>Sayatan Garis Bebas</b>, <b>Tampilan 2D / 3D</b>, tanpa Pengaturan lanjutan). Laporan kinerja tidak lagi menghitung waktu kotak dialog.</p>')
 B.append('<p><b>Slicer dirapikan (DH 0.24.60).</b> Di popup Slicer: <b>Sayatan Garis Bebas</b> (dulu <i>Garis di peta&hellip;</i>) membuka kotak sayatan garis bebas; <b>Tampilan 2D</b> / <b>Tampilan 3D</b> hanya mengganti cara melihat. '

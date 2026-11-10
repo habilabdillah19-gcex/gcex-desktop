@@ -4306,3 +4306,13 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Garis pemisah**: jendela penggaris seperti *Text Import* Excel — garis biru diusulkan otomatis; **klik** untuk membuat garis, **seret** untuk memindahkan, **klik ganda** untuk menghapus; pratinjau kolom di bawahnya ikut berubah. Tekan **Pakai garis ini**, lalu petakan kolom dan **Terapkan** seperti biasa. Tombol **┆ Atur garis…** membuka penggaris lagi.
 - Baris yang menjorok (kolom pertama kosong) atau diawali `-` tidak lagi menggeser kolom.
 - Setelah sel kisi disunting, teks ditulis ulang dengan pemisah `|`.
+
+## 165. Block Model 0.24.57 — Solid Vein Aktual tidak lagi terikat flitch aktif
+
+- Menu **Solid Vein Aktual (trial)** kini punya **flitch kerja sendiri**. Mencentang file titik atap (mis. RL 275,5–274),
+  menekan **Buka**, atau mengisi *Tinggi flitch / RL atas / RL bawah* di bagian *Poligon per flitch* langsung membuka plan
+  di RL itu dan menampilkan titiknya — tidak perlu kembali ke menu Dig Block atau As-Mined.
+- **Selesai import** CSV titik atap, plan flitch file itu (RL dari nama file) langsung terbuka dan titiknya tampil — bisa
+  langsung didigit dengan *Digit poligon*.
+- Flitch Dig Block / As-Mined **tidak diubah**; tampilan flitch-nya hanya dimatikan selama plan Solid Vein dibuka.
+- CSV titik tanpa baris judul yang kolom kodenya berupa teks (mis. `OB`) tidak lagi kehilangan titik pertama.

@@ -72,14 +72,20 @@
     while ((m = re.exec(b))) { var a = parseFloat(m[1].replace('-', '.')), c = parseFloat(m[2].replace('-', '.')), t = Math.max(a, c), bo = Math.min(a, c); if (t - bo > 0 && t - bo <= 12) best = { top: t, bot: bo }; re.lastIndex = m.index + 1; } return best; }
   function fileFl(nm) { var o = (D().filt.fl || {})[nm]; if (o && isFinite(+o.top) && isFinite(+o.bot) && +o.top > +o.bot) return { top: +o.top, bot: +o.bot, man: 1 }; return flParse(nm); }
   function files() { var F = {}, o = []; pts().forEach(function (q) { var c = fname(q), r = F[c]; if (!r) { r = F[c] = { c: c, n: 0, z0: 1e18, z1: -1e18 }; o.push(c); } r.n++; if (isFinite(q.z)) { if (q.z < r.z0) r.z0 = q.z; if (q.z > r.z1) r.z1 = q.z; } }); return o.map(function (c) { var r = F[c], fl = fileFl(c); r.top = fl ? fl.top : NaN; r.bot = fl ? fl.bot : NaN; r.man = fl ? !!fl.man : false; return r; }); }
-  function band() { var f = D().filt, B = null; try { B = lyBench(); } catch (e) {} var lo = parseFloat(f.z0), hi = parseFloat(f.z1); if (!isFinite(lo) && B) lo = B[1] - (B[0] - B[1]); if (!isFinite(hi) && B) hi = B[0] + (B[0] - B[1]); return [isFinite(lo) ? lo : -1e9, isFinite(hi) ? hi : 1e9]; }
+  /* FLITCH KERJA SOLID VEIN (pemilik 10-11-2026): milik menu ini sendiri (D().lv), TIDAK terikat flitch aktif Dig Block /
+     As-Mined. Belum pernah diisi -> mulai dari flitch aktif saat itu (hanya sebagai nilai awal). */
+  function lvB() { var v = D().lv; if (v && isFinite(+v.top) && isFinite(+v.bot) && +v.top > +v.bot) return [+v.top, +v.bot]; var B = null; try { B = lyBench(); } catch (e) {} return B || [NaN, NaN]; }
+  /* plan 2D sedang memperlihatkan flitch kerja ini? */
+  function lvOn() { var B = lvB(); try { if (!window.VIEW2D || secGeom().m !== 'H') return false; var pos = +$('pos').value; return Math.abs(pos - (B[0] + B[1]) / 2) < 1e-6 && Math.abs((parseFloat($('thick').value) || 0) - (B[0] - B[1])) < 1e-3; } catch (e) { return false; } }
+  SV.lvB = lvB; SV.lvOn = lvOn;
+  function band() { var f = D().filt, B = lvB(); if (!isFinite(B[0])) B = null; var lo = parseFloat(f.z0), hi = parseFloat(f.z1); if (!isFinite(lo) && B) lo = B[1] - (B[0] - B[1]); if (!isFinite(hi) && B) hi = B[0] + (B[0] - B[1]); return [isFinite(lo) ? lo : -1e9, isFinite(hi) ? hi : 1e9]; }
   function bandMan() { var f = D().filt; return isFinite(parseFloat(f.z0)) || isFinite(parseFloat(f.z1)); }
   /* titik milik flitch ber-RL atas `top`: file yang flitch-nya (nama file / isian) = flitch itu; file tanpa
      flitch -> titik yang Z-nya dalam +-tol dari RL atas (cara lama) */
   function ptsLv(top, tol) { var off = D().filt.off || {}, C = {}, t = isFinite(tol) ? tol : 0.75; return pts().filter(function (q) { var c = fname(q); if (off[c] || !isFinite(q.z)) return false; var fl = C[c]; if (fl === undefined) fl = C[c] = fileFl(c) || null; return fl ? Math.abs(fl.top - top) < 1e-3 : Math.abs(q.z - top) <= t; }); }
   /* titik yang dipakai di layar (snap & gambar): RL min/maks diisi -> pita itu; kosong -> titik flitch aktif */
   function ptsOn(bd) { var off = D().filt.off || {}; if (bd || bandMan()) { var b = bd || band(); return pts().filter(function (q) { return !off[fname(q)] && isFinite(q.z) && q.z >= b[0] && q.z <= b[1]; }); }
-    var B = null; try { B = lyBench(); } catch (e) {} if (!B) return pts().filter(function (q) { return !off[fname(q)] && isFinite(q.z); }); return ptsLv(B[0], B[0] - B[1]); }
+    var B = lvB(); if (!isFinite(B[0])) return pts().filter(function (q) { return !off[fname(q)] && isFinite(q.z); }); return ptsLv(B[0], B[0] - B[1]); }
   SV.ptsLv = ptsLv; SV.files = files; SV.flParse = flParse;
   SV.ptsOn = ptsOn;
 
@@ -314,7 +320,16 @@
   SV.selPer = function (id) { D().cur = id; SV._R = null; dirty(); panel(); tree(); updatePlot(); };
   SV.setPar = function (k, v) { var p = per(); if (!p) return; P(p)[k] = v; if (['snap', 'reg', 'sg', 'aEdge'].indexOf(k) < 0) p.stale = true; dirty(); if (k === 'reg') { if (v) { var r = R(p); if (r) reg(p, r); } else unreg(p); updatePlot(); } panel(); };
   SV.setFilt = function (k, v) { D().filt[k] = v; dirty(); panel(); updatePlot(); };
-  SV.fileOn = function (c, v) { var f = D().filt; f.off = f.off || {}; if (v) delete f.off[c]; else f.off[c] = 1; dirty(); panel(); updatePlot(); };
+  SV.fileOn = function (c, v) { var f = D().filt; f.off = f.off || {}; if (v) delete f.off[c]; else f.off[c] = 1; dirty();
+    /* pemilik 10-11-2026: mencentang file harus langsung memperlihatkan titiknya, tanpa kembali ke menu Dig Block / As-Mined
+       untuk mengganti flitch -> flitch kerja pindah ke flitch file itu (RL dari nama file). Pita RL manual tidak diganggu. */
+    if (v && !bandMan()) { var fl = fileFl(c), B = lvB(); if (fl && isFinite(fl.top) && isFinite(fl.bot) && !(Math.abs(B[0] - fl.top) < 1e-3 && Math.abs(B[1] - fl.bot) < 1e-3 && lvOn())) { SV.goLv(fl.top, fl.bot); return; } }
+    panel(); updatePlot(); };
+  /* flitch kerja diatur dari panel ini sendiri (seperti As-Mined): tinggi, RL atas, RL bawah, Terapkan */
+  SV.flSet = function (k, v) { var B = lvB(), x = parseFloat(v), t = B[0], b = B[1], fh = isFinite(t - b) && t > b ? t - b : 1.5; if (!isFinite(x)) return;
+    if (k === 'fh') { if (x > 0 && isFinite(t)) b = t - x; } else if (k === 'top') { t = x; b = x - fh; } else b = x; if (!(t > b)) { alert('RL atas harus di atas RL bawah.'); panel(); return; }
+    D().lv = { top: +(+t).toFixed(3), bot: +(+b).toFixed(3) }; dirty(); panel(); updatePlot(); };
+  SV.flApply = function () { var B = lvB(); SV.goLv(B[0], B[1]); };
   /* Pembaca sendiri (tidak memakai pembaca As-Mined). CSV / TXT: pemisah , ; tab; dengan atau tanpa baris judul.
      Kolom E & N dikenali dari judul, atau -- tanpa judul -- dari besarannya (dua kolom berdampingan bernilai >= 1000);
      Z = kolom sesudah N, ID = kolom sebelum E, kode = kolom sesudah Z. STR / DXF lewat pembaca garis umum SA.readLines.
@@ -323,8 +338,9 @@
     var R = L.map(function (l) { return l.split(dl).map(function (v) { return v.trim().replace(/^"|"$/g, ''); }); }), num = function (v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : NaN; }, h = R[0], ix = -1, iy = -1, iz = -1, ii = -1, ic = -1, body = R;
     var col = function (re) { for (var k = 0; k < h.length; k++) if (re.test(h[k])) return k; return -1; };
     if (h.some(function (v) { return v !== '' && !isFinite(num(v)); }) && (col(/^(x|east|easting|e)$/i) >= 0)) { ix = col(/^(x|east|easting|e)$/i); iy = col(/^(y|north|northing|n)$/i); iz = col(/^(z|rl|elev|elevation|h|height)$/i); ii = col(/^(id|pt|point|ptid|point_?id|name|no|nama)$/i); ic = col(/^(code|kode|desc|description|keterangan|ket|remark|layer)$/i); body = R.slice(1); }
-    if (ix < 0 || iy < 0) { if (h.some(function (v) { return v !== '' && !isFinite(num(v)); })) body = R.slice(1); var nc = 0; body.forEach(function (r) { if (r.length > nc) nc = r.length; }); var med = function (c) { var v = []; for (var q = 0; q < body.length && q < 200; q++) { var t = num(body[q][c]); if (isFinite(t)) v.push(Math.abs(t)); } if (!v.length) return NaN; v.sort(function (a, b) { return a - b; }); return v[v.length >> 1]; }, M = []; for (var c = 0; c < nc; c++) M.push(med(c));
-      var j0 = -1; for (c = 0; c + 1 < nc; c++) if (M[c] >= 1000 && M[c + 1] >= 1000) { j0 = c; break; } if (j0 < 0) { j0 = isFinite(M[0]) && isFinite(M[1]) && isFinite(M[2]) && nc === 3 ? 0 : (nc >= 4 ? 1 : 0); } ix = j0; iy = j0 + 1; iz = j0 + 2 < nc ? j0 + 2 : -1; ii = j0 > 0 ? j0 - 1 : -1; ic = j0 + 3 < nc ? j0 + 3 : -1; }
+    if (ix < 0 || iy < 0) { body = R; var nc = 0; body.forEach(function (r) { if (r.length > nc) nc = r.length; }); var med = function (c) { var v = []; for (var q = 0; q < body.length && q < 200; q++) { var t = num(body[q][c]); if (isFinite(t)) v.push(Math.abs(t)); } if (!v.length) return NaN; v.sort(function (a, b) { return a - b; }); return v[v.length >> 1]; }, M = []; for (var c = 0; c < nc; c++) M.push(med(c));
+      var j0 = -1; for (c = 0; c + 1 < nc; c++) if (M[c] >= 1000 && M[c + 1] >= 1000) { j0 = c; break; } if (j0 < 0) { j0 = isFinite(M[0]) && isFinite(M[1]) && isFinite(M[2]) && nc === 3 ? 0 : (nc >= 4 ? 1 : 0); } ix = j0; iy = j0 + 1; iz = j0 + 2 < nc ? j0 + 2 : -1; ii = j0 > 0 ? j0 - 1 : -1; ic = j0 + 3 < nc ? j0 + 3 : -1;
+      /* baris pertama = judul hanya bila kolom E / N-nya bukan angka (kolom kode berisi teks spt 'OB' bukan tanda judul) */ if (!isFinite(num(h[ix])) || !isFinite(num(h[iy]))) body = R.slice(1); }
     var out = []; body.forEach(function (r) { var x = num(r[ix]), y = num(r[iy]), z = iz >= 0 ? num(r[iz]) : NaN; if (isFinite(x) && isFinite(y)) out.push({ x: x, y: y, z: z, id: ii >= 0 ? String(r[ii] || '') : '', c: ic >= 0 ? String(r[ic] || '') : '' }); }); return out; }
   SV.bacaCsv = bacaCsv;
   SV.importFiles = async function (files) { var L = Array.prototype.slice.call(files || []), d = D(), info = [], ganti = 0; pts();
@@ -333,14 +349,19 @@
       if (!Q.length) { info.push('<span class=warn>' + E(f.name) + ': tidak ada titik terbaca</span>'); continue; }
       var n0 = d.pts.length; d.pts = d.pts.filter(function (q) { return q.f !== f.name; }); var lama = n0 - d.pts.length; if (lama) ganti++; Q.forEach(function (q) { q.f = f.name; d.pts.push(q); }); var fl = fileFl(f.name);
       info.push(E(f.name) + ': ' + Q.length + ' titik' + (lama ? ' (mengganti ' + lama + ' titik lama file ini)' : '') + (fl ? ' &middot; RL ' + f2(fl.top) + '&ndash;' + f2(fl.bot) : ' &middot; <span class=warn>RL flitch belum dikenali, isi di tabel</span>')); }
-    SV.msgPts = info.join('<br>'); dirty(); panel(); tree(); updatePlot(); return info; };
+    SV.msgPts = info.join('<br>'); dirty();
+    /* pemilik 10-11-2026: selesai import, titik langsung tampil & siap didigit -> flitch kerja = flitch file terakhir yang
+       terbaca (RL dari nama file), file itu dicentang, plan-nya dibuka. Pita RL manual tidak diganggu. */
+    var akhir = null; for (var j = L.length - 1; j >= 0 && !akhir; j--) { var fj = fileFl(L[j].name); if (fj && pts().some(function (q) { return q.f === L[j].name; })) akhir = { c: L[j].name, fl: fj }; }
+    if (akhir && !bandMan()) { var fo = d.filt.off || {}; delete fo[akhir.c]; SV.view(akhir.fl.top, akhir.fl.bot); return info; }
+    panel(); tree(); updatePlot(); return info; };
   SV.import = function (inp) { if (!inp || !inp.files || !inp.files.length) return; var F = Array.prototype.slice.call(inp.files); inp.value = ''; SV.importFiles(F); };
   SV.clearPts = function () { if (!confirm('Hapus SEMUA titik atap Solid Vein? (Poligon yang sudah didigit tetap ada.)')) return; D().pts = []; SV.msgPts = ''; dirty(); panel(); tree(); updatePlot(); };
   SV.delFile = function (i) { var f = files()[i]; if (!f || !confirm('Hapus ' + f.n + ' titik dari file ' + f.c + '?')) return; D().pts = pts().filter(function (q) { return fname(q) !== f.c; }); dirty(); panel(); tree(); updatePlot(); };
 
   /* ---------- poligon: digit (snap titik atap), ambil dari as-mined / dig block ---------- */
   SV.dig = function () { var p = per(); if (!p) { alert('Tambah periode dulu.'); return; } if (!BX.m) { alert('Import block model dulu.'); return; }
-    if (!(window.dbFlOn && dbFlOn())) { if (window.PT && PT.mau) PT.mau('sv'); lyApply(); } if (window.VIEW2D === false) toggle2D(); uiTab('SV'); DG.svm = p.id; if ($('dgDesc')) $('dgDesc').value = 'VEIN'; dgStart(); panel(); };
+    var B = lvB(); if (!isFinite(B[0])) { alert('Isi RL atas / bawah flitch kerja dulu (atau centang file titik atap).'); return; } if (!lvOn()) SV.view(B[0], B[1]); uiTab('SV'); DG.svm = p.id; if ($('dgDesc')) $('dgDesc').value = 'VEIN'; dgStart(); panel(); };
   /* snap ke titik atap dalam pita RL (9 px), dipanggil dgSnap2 lebih dulu */
   var _hook = window.dgSnapHook; window.dgSnapHook = function (A, px, py) { if (DG.svm) { var Q = ptsOn(), best = 9, res = null, pr = P(); if (pr.snap === false) return _hook ? _hook(A, px, py) : null;
       for (var i = 0; i < Q.length; i++) { var q = Q[i], pp = dgPx(A, q.x, q.y), dd = Math.hypot(pp[0] - px, pp[1] - py); if (dd < best) { best = dd; res = [q.x, q.y]; } } if (res) return res; }
@@ -348,7 +369,7 @@
   (function () { var _f = dgFinish; dgFinish = function (closed) { if (!DG.svm) return _f.apply(this, arguments); var pid = DG.svm, p = D().per.filter(function (q) { return q.id === pid; })[0];
       if (!closed) { alert('Poligon vein harus tertutup: klik titik pertama lagi atau tekan Enter.'); return; }
       if (!DG.on || DG.cur.length < 3) { alert('Poligon butuh minimal 3 titik.'); return; }
-      var B = lyBench(), o = p ? addPoly(p, DG.cur.map(function (q) { return [q[0], q[1]]; }), B[0], B[1], 'digit', 'V' + (p.polys.length + 1)) : null;
+      var B = lvB(), o = p ? addPoly(p, DG.cur.map(function (q) { return [q[0], q[1]]; }), B[0], B[1], 'digit', 'V' + (p.polys.length + 1)) : null;
       DG.svm = null; dgCancel(); if (o) { dirty(); SV.msg = 'Poligon ' + E(o.name) + ' (' + N(Math.abs(sArea(o.pts)), 1) + ' m²) ditambahkan di flitch RL ' + f2(B[0]) + '–' + f2(B[1]) + '.'; } panel(); tree(); updatePlot(); }; })();
   (function () { var _c = dgCancel; dgCancel = function () { var r = _c.apply(this, arguments); if (DG.svm) { DG.svm = null; try { panel(); } catch (e) {} } return r; }; })();
   SV.setFl = function (i, k, v) { var f = files()[i]; if (!f) return; var d = D().filt; d.fl = d.fl || {}; var o = d.fl[f.c] || { top: isFinite(f.top) ? f.top : '', bot: isFinite(f.bot) ? f.bot : '' }; o[k] = v === '' ? '' : +v; d.fl[f.c] = o; dirty(); panel(); updatePlot(); };
@@ -393,7 +414,7 @@
   (function () { var gd = $('plotDiv'); if (!gd) return; gd.addEventListener('mousedown', function (e) { edMouse(e, 'down'); }, true); window.addEventListener('mousemove', function (e) { edMouse(e, 'move'); }, true); window.addEventListener('mouseup', function (e) { edMouse(e, 'up'); }, true);
     gd.addEventListener('dblclick', function (e) { edMouse(e, 'del'); }, true); gd.addEventListener('contextmenu', function (e) { edMouse(e, 'del'); }, true); })();
   SV.edit = function (id) { var p = per(); if (!p) return; var v = p.polys.filter(function (x) { return x.id === id; })[0]; if (!v) return; if (SV.ed) SV.edDone(); if (window.DG && DG.on) dgCancel();
-    var B = lyBench(), sama = window.dbFlOn && dbFlOn() && Math.abs(B[0] - v.top) < 1e-3 && Math.abs(B[1] - v.bot) < 1e-3; SV.ed = { id: id, pts: v.pts.map(function (q) { return [q[0], q[1]]; }), drag: -1, moved: false };
+    var B = lvB(), sama = lvOn() && Math.abs(B[0] - v.top) < 1e-3 && Math.abs(B[1] - v.bot) < 1e-3; SV.ed = { id: id, pts: v.pts.map(function (q) { return [q[0], q[1]]; }), drag: -1, moved: false };
     if (!sama) SV.goLv(v.top, v.bot); var buka = function (k) { if (!SV.ed) return; if (!window.VIEW2D) { if (k === 0) toggle2D(); if (k < 30) setTimeout(function () { buka(k + 1); }, 200); return; } edCv(); edDraw(); }; setTimeout(function () { buka(0); }, sama ? 0 : 500);
     clearInterval(SV._edT); SV._edT = setInterval(function () { if (!SV.ed) { clearInterval(SV._edT); return; } if (SV.ed.drag < 0) edDraw(); }, 300); panel(); };
   SV.edDone = function (batal) { var ed = SV.ed; if (!ed) return; SV.ed = null; clearInterval(SV._edT); edDraw(); var p = per(), v = p && p.polys.filter(function (x) { return x.id === ed.id; })[0];
@@ -402,7 +423,13 @@
     panel(); tree(); updatePlot(); };
   SV.delPoly = function (id) { var p = per(); if (!p) return; p.polys = p.polys.filter(function (x) { return x.id !== id; }); p.stale = true; if (SV.ed && SV.ed.id === id) SV.edDone(true); dirty(); panel(); tree(); updatePlot(); };
   SV.polyOn = function (id, v) { var p = per(); if (!p) return; p.polys.forEach(function (x) { if (x.id === id) x.on = v; }); p.stale = true; dirty(); panel(); updatePlot(); };
-  SV.goLv = function (top, bot) { try { lySet('fh', +(top - bot).toFixed(3)); lyU().bot = ''; lySet('top', +(+top).toFixed(3)); if (window.PT && PT.mau) PT.mau('sv'); lyApply(); uiTab('SV'); panel(); } catch (e) { console.error(e); } };
+  /* buka plan flitch kerja Solid Vein: sayatan horizontal di RL itu (seperti lyApply), TANPA mengubah flitch Dig Block /
+     As-Mined (lySet tidak disentuh). Flitch global yang sedang aktif dimatikan tampilannya supaya model yang tampak = RL ini. */
+  SV.view = function (top, bot) { top = +top; bot = +bot; if (!(top > bot)) return; D().lv = { top: top, bot: bot }; dirty();
+    try { if (window.DG && DG.on && !DG.svm) dgCancel(); if (window.BX && BX.ui && BX.ui.fl) { BX.ui.fl = false; BX.sc = {}; }
+      $('sMode').value = 'H'; modeChanged(); $('pos').step = 'any'; $('pos').value = (top + bot) / 2; $('thick').value = +(top - bot).toFixed(3); $('sliceClip').checked = true;
+      if (window.PT && PT.select && !/^sv(\.|$)/.test(PT.sel || '')) { try { PT.select('sv'); } catch (e) {} } uiTab('SV'); if (!window.VIEW2D) toggle2D(); else updatePlot(); if (window.bxPanel) bxPanel(); } catch (e) { console.error(e); } panel(); tree(); };
+  SV.goLv = function (top, bot) { SV.view(top, bot); };
   SV.islVis = function (n, v) { var p = per(); if (!p || !p.res) return; p.res.IS.forEach(function (s) { if (s.n === n) s.vis = v; }); (MD.models || []).forEach(function (m) { if (m.sv === p.id && m.svn === n) m.vis = v; }); if (window.mdBump) mdBump(); dirty(); panel(); };
 
   /* ---------- ekspor ---------- */
@@ -431,7 +458,8 @@
   function svTraces(T, o, aktif) { /* di 3D poligon & solid vein TIDAK ikut dipotong slab (pemilik 10-11-2026: keduanya harus terlihat di jendela 3D); di plan 2D tetap per slab */ var clip = !!window.VIEW2D, Q = aktif ? ptsOn() : [], x = [], y = [], z = [], h = [];
     var p0 = per(); if (p0 && p0.res && !P(p0).reg && !window.VIEW2D) { var r0 = R(p0); if (r0) r0.IS.forEach(function (s, i) { var vis = true; p0.res.IS.forEach(function (q) { if (q.n === s.n && q.vis === false) vis = false; }); if (!vis) return; var I = [], J = [], K = []; s.tri.forEach(function (t) { I.push(t[0]); J.push(t[1]); K.push(t[2]); });
         T.push({ type: 'mesh3d', name: 'Vein aktual ' + (p0.name || '') + ' #' + s.n, x: r0.V.x, y: r0.V.y, z: r0.V.z, i: I, j: J, k: K, color: PAL[i % PAL.length], opacity: 0.7, flatshading: true, lighting: { ambient: 0.55, diffuse: 0.75, specular: 0.15, roughness: 0.7 }, hoverinfo: 'name', showlegend: true, showscale: false }); }); }
-    Q.forEach(function (q) { var pp = { x: q.x - offX, y: q.y - offY, z: q.z }; if (clip && !inK(o.K, pp)) return; x.push(pp.x); y.push(pp.y); z.push(pp.z); h.push((q.id || q.c || '') + ' Z ' + (+q.z).toFixed(2)); });
+    var plan2 = false; try { plan2 = !!window.VIEW2D && secGeom().m === 'H'; } catch (e) { }
+    Q.forEach(function (q) { var pp = { x: q.x - offX, y: q.y - offY, z: q.z }; if (clip && !plan2 && !inK(o.K, pp)) return; /* plan: titik sudah dipilih per flitch file, Z boleh di luar slab */ x.push(pp.x); y.push(pp.y); z.push(pp.z); h.push((q.id || q.c || '') + ' Z ' + (+q.z).toFixed(2)); });
     if (x.length) T.push({ type: 'scatter3d', mode: 'markers', x: x, y: y, z: z, hovertext: h, hoverinfo: 'text', name: 'Titik atap (' + x.length + ')', marker: { size: 2.6, color: '#c2185b', symbol: 'cross' }, showlegend: true });
     var p = per(); if (!p) return; p.polys.forEach(function (v, i) { if (v.on === false) return; var pts2 = v.pts.map(function (q) { return { x: q[0], y: q[1], z: v.top }; }); pts2.push(pts2[0]); var X = [], Y = [], Z = [], any = false;
       for (var k = 1; k < pts2.length; k++) { var sg = [pts2[k - 1], pts2[k]]; if (clip) { sg = clipSeg(pts2[k - 1], pts2[k], o.K); if (!sg) continue; } X.push(sg[0].x, sg[1].x, null); Y.push(sg[0].y, sg[1].y, null); Z.push(sg[0].z, sg[1].z, null); any = true; }
@@ -454,7 +482,7 @@
   /* ---------- panel ---------- */
   function sec(id, title, body) { return '<div class="svsec' + (SV.foc === id ? ' foc' : '') + '" data-sec="' + id + '"><div class=svh>' + title + '</div>' + body + '</div>'; }
   function panel() { var el = $('svBody'); if (!el) return; var m = BX.m; if (!m) { el.innerHTML = '<div class=hint>Buka block model dulu (menu <b>Block Model</b>). Flitch, SG dan titik atap mengikuti block model aktif.</div>'; return; }
-    var d = D(), p = per(), pr = P(p), B = lyBench(), fl = window.dbFlOn && dbFlOn(), bd = band(), F = files(), on = ptsOn(bd), off = d.filt.off || {};
+    var d = D(), p = per(), pr = P(p), B = lvB(), fl = lvOn(), bd = band(), F = files(), on = ptsOn(bd), off = d.filt.off || {};
     var h = '<div class=hint style="margin-bottom:6px"><b>Trial.</b> Tubuh vein aktual: poligon per flitch (didigit dari titik pick-up atap) + titik pick-up atap &rarr; solid wireframe tertutup (cara Surpac: semua titik dipakai, luas permukaan minimum, validasi tertutup).</div>';
     /* periode */
     h += sec('per', 'Periode', '<div class=svrow><select onchange="SV.selPer(this.value)" title="Periode aktif">' + (d.per.length ? d.per.map(function (q) { return '<option value="' + E(q.id) + '"' + (q.id === d.cur ? ' selected' : '') + '>' + E(q.name) + (q.polys.length ? ' · ' + q.polys.length + ' pol' : '') + '</option>'; }).join('') : '<option value="">(belum ada periode)</option>') + '</select><button onclick="SV.addPer()" title="Periode baru (mingguan / bulanan)">+ Periode</button>' + (p ? '<button onclick="var v=prompt(\'Nama periode:\',\'' + E(p.name).replace(/'/g, '') + '\');if(v)SV.renPer(\'' + p.id + '\',v)" title="Ganti nama">&#9998;</button><button class=x onclick="SV.delPer(\'' + p.id + '\')" title="Hapus periode">&times;</button>' : '') + '</div>' +
@@ -464,15 +492,19 @@
     h += sec('pts', 'Titik atap (pick-up roof)', '<div class=svrow><label class=svbtn><input type=file multiple accept=".csv,.txt,.str,.dxf" style="display:none" onchange="SV.import(this)">Import titik atap (CSV / STR / DXF)&hellip;</label>' + (pts().length ? '<button class=x onclick="SV.clearPts()" title="Hapus semua titik atap">&times;</button>' : '') + '</div>' +
       (pts().length ? '<table class=pltb style="margin-top:4px"><tr><th></th><th>File</th><th>Titik</th><th>Z titik</th><th>RL atas</th><th>RL bawah</th><th></th></tr>' + F.map(function (f, i) { var cur = fl && isFinite(f.top) && Math.abs(f.top - B[0]) < 1e-3 && Math.abs(f.bot - B[1]) < 1e-3; return '<tr' + (cur ? ' class=svcur' : '') + '><td><input type=checkbox ' + (off[f.c] ? '' : 'checked') + ' onchange="SV.fileOn(SV.files()[' + i + '].c,this.checked)" title="Pakai file ini"></td><td title="' + E(f.c) + '" style="max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + E(f.c) + '</td><td>' + N(f.n) + '</td><td><small>' + (f.n && f.z1 >= f.z0 ? f2(f.z0) + '&ndash;' + f2(f.z1) : '-') + '</small></td>' +
           '<td><input type=number step=any style="width:54px" value="' + (isFinite(f.top) ? f.top : '') + '" onchange="SV.setFl(' + i + ',\'top\',this.value)" title="RL atas flitch file ini (dibaca dari nama file; bisa dikoreksi)"></td><td><input type=number step=any style="width:54px" value="' + (isFinite(f.bot) ? f.bot : '') + '" onchange="SV.setFl(' + i + ',\'bot\',this.value)"></td>' +
-          '<td>' + (isFinite(f.top) ? '<button onclick="SV.goLv(' + f.top + ',' + f.bot + ')" title="Jadikan flitch aktif & buka plan-nya">Buka</button>' + '<button class=x onclick="SV.delFile(' + i + ')" title="Hapus titik file ini">&times;</button>' : '<span class=warn title="Nama file tidak memuat RL flitch: isi RL atas & bawah">?</span>') + '</td></tr>'; }).join('') + '</table>' +
+          '<td>' + (isFinite(f.top) ? '<button onclick="SV.goLv(' + f.top + ',' + f.bot + ')" title="Jadikan flitch kerja Solid Vein & buka plan-nya">Buka</button>' + '<button class=x onclick="SV.delFile(' + i + ')" title="Hapus titik file ini">&times;</button>' : '<span class=warn title="Nama file tidak memuat RL flitch: isi RL atas & bawah">?</span>') + '</td></tr>'; }).join('') + '</table>' +
         (SV.msgPts ? '<div class=hint>' + SV.msgPts + '</div>' : '') +
         '<div class=hint>Import ulang file <b>bernama sama</b> mengganti titik file itu (pick-up susulan / koreksi); file lain tidak berubah. RL flitch dibaca dari <b>nama file</b> (mis. <code>&hellip;_235-5_234_&hellip;</code> = RL 235,5&ndash;234) dan menentukan titik mana milik flitch mana &mdash; bukan dari Z titiknya, karena atap galian nyata naik-turun melewati batas flitch.</div>' +
         '<div class=g3><div><label>RL min</label><input type=number step=any value="' + (d.filt.z0 === undefined || d.filt.z0 === '' ? '' : d.filt.z0) + '" placeholder="' + f2(bd[0]) + '" onchange="SV.setFilt(\'z0\',this.value)"></div><div><label>RL maks</label><input type=number step=any value="' + (d.filt.z1 === undefined || d.filt.z1 === '' ? '' : d.filt.z1) + '" placeholder="' + f2(bd[1]) + '" onchange="SV.setFilt(\'z1\',this.value)"></div><div><label>&nbsp;</label><button onclick="SV.setFilt(\'z0\',\'\');SV.setFilt(\'z1\',\'\')" title="Kosongkan = titik milik flitch aktif (menurut file)">Auto</button></div></div>' +
-        '<div class=hint>' + N(on.length) + ' dari ' + N(pts().length) + ' titik dipakai untuk ' + (bandMan() ? 'pita RL ' + f2(bd[0]) + '&ndash;' + f2(bd[1]) : 'flitch aktif') + '. Titik ini jadi sasaran <b>snap</b> saat mendigit dan sumber Z atap tiap sudut poligon. RL min / maks hanya diisi bila ingin menyaring manual.</div>' : '<div class=hint>Belum ada titik atap. Import pick-up survey atap galian (ID, X, Y, Z, kode) atau STR/DXF.</div>'));
+        '<div class=hint>' + N(on.length) + ' dari ' + N(pts().length) + ' titik dipakai untuk ' + (bandMan() ? 'pita RL ' + f2(bd[0]) + '&ndash;' + f2(bd[1]) : 'flitch kerja RL ' + f2(B[0]) + '&ndash;' + f2(B[1])) + '. Titik ini jadi sasaran <b>snap</b> saat mendigit dan sumber Z atap tiap sudut poligon. RL min / maks hanya diisi bila ingin menyaring manual.</div>' : '<div class=hint>Belum ada titik atap. Import pick-up survey atap galian (ID, X, Y, Z, kode) atau STR/DXF.</div>'));
     /* poligon */
     var Lv = levels(p);
-    h += sec('poly', 'Poligon per flitch', '<div class=hint>Flitch aktif: <b>' + (fl ? 'RL ' + f2(B[0]) + '&ndash;' + f2(B[1]) : 'belum diterapkan (tombol Digit menerapkannya)') + '</b>. Satu poligon per pulau per flitch; snap ke titik atap otomatis.</div>' +
-      '<div><button class=btn-pri style="width:100%" onclick="SV.dig()" ' + (DG.svm ? 'disabled' : '') + ' title="Digit poligon tertutup di plan flitch aktif (snap ke titik atap). Klik titik pertama lagi / Enter untuk menutup.">' + (DG.svm ? '&#9679; Mendigit&hellip;' : 'Digit poligon') + '</button></div>' +
+    var Ff = F.filter(function (f) { return isFinite(f.top) && isFinite(f.bot) && !off[f.c]; }), seenF = {};
+    h += sec('poly', 'Poligon per flitch', '<div class=g3><div><label>Tinggi flitch</label><input type=number step=any value="' + f2(B[0] - B[1]) + '" onchange="SV.flSet(\'fh\',this.value)"></div><div><label>RL atas</label><input type=number step=any value="' + B[0] + '" onchange="SV.flSet(\'top\',this.value)"></div><div><label>RL bawah</label><input type=number step=any value="' + B[1] + '" onchange="SV.flSet(\'bot\',this.value)"></div></div>' +
+      (Ff.length ? '<div class=svrow style="margin-top:4px"><label style="margin:0">Flitch dari file titik:</label>' + Ff.filter(function (f) { var k = f.top + '|' + f.bot; if (seenF[k]) return false; seenF[k] = 1; return true; }).sort(function (a, b) { return b.top - a.top; }).map(function (f) { var cur = fl && Math.abs(f.top - B[0]) < 1e-3 && Math.abs(f.bot - B[1]) < 1e-3; return '<button' + (cur ? ' class=btn-pri' : '') + ' onclick="SV.goLv(' + f.top + ',' + f.bot + ')" title="Jadikan flitch kerja & buka plan-nya">RL ' + f2(f.top) + '&ndash;' + f2(f.bot) + '</button>'; }).join('') + '</div>' : '') +
+      '<button class="' + (fl ? '' : 'btn-pri') + '" style="width:100%;margin-top:4px" onclick="SV.flApply()">' + (fl ? '&#10003; Flitch kerja RL ' + f2(B[0]) + '&ndash;' + f2(B[1]) + ' di Sayatan 2D' : 'Buka plan flitch kerja (2D)') + '</button>' +
+      '<div class=hint>Flitch kerja Solid Vein <b>milik menu ini sendiri</b> &mdash; tidak mengubah dan tidak bergantung pada flitch Dig Block / As-Mined. Mencentang file titik langsung memindah flitch kerja ke flitch file itu dan membuka plan-nya. Satu poligon per pulau per flitch; snap ke titik atap otomatis.</div>' +
+      '<div><button class=btn-pri style="width:100%" onclick="SV.dig()" ' + (DG.svm ? 'disabled' : '') + ' title="Digit poligon tertutup di plan flitch kerja Solid Vein (snap ke titik atap). Klik titik pertama lagi / Enter untuk menutup.">' + (DG.svm ? '&#9679; Mendigit&hellip;' : 'Digit poligon') + '</button></div>' +
       '<div class=g2 style="margin-top:4px"><button onclick="SV.auto()" ' + (pts().length ? '' : 'disabled') + ' title="Usulan poligon untuk SEMUA file ber-flitch: garis luar gugus titik pick-up (alpha shape). Periksa hasilnya di plan; hapus & digit ulang yang tidak cocok.">Garis luar otomatis (semua file)</button><div><label>Sisi terpanjang (m)</label><input type=number step=any min=1 value="' + pr.aEdge + '" onchange="SV.setPar(\'aEdge\',+this.value)" title="Dua titik dianggap satu tubuh bila bisa dihubungkan segitiga dengan sisi <= ini. Kecil = mengikuti lekuk & memisah pulau; besar = lebih membulat & menyatukan."></div></div>' +
       (DG.svm ? '<div class=hint><label class=sw><input type=checkbox ' + (pr.snap === false ? '' : 'checked') + ' onchange="SV.setPar(\'snap\',this.checked)">Snap ke titik atap</label> &middot; <button onclick="dgUndo()">Undo titik</button> <button onclick="dgCancel()">Batal</button></div>' : '') +
       (SV.ed ? '<div class=hint style="border-left:3px solid var(--ac);padding-left:6px"><b>&#9998; Mengedit titik poligon.</b> Seret titik bulat untuk menggeser (menempel ke titik atap), seret kotak kecil di tengah sisi untuk menyisip titik, klik ganda / klik kanan titik untuk menghapusnya. <button class=btn-pri onclick="SV.edDone()">Selesai</button> <button onclick="SV.edDone(true)">Batal</button></div>' : '') +
@@ -515,7 +547,7 @@
         kids: [{ id: 'sv.p.' + q.id + '.pts', t: 'Titik atap', ic: 'pts', tab: 'SV', b: pts().length ? N(ptsOn().length) + '/' + N(pts().length) : '', dim: !pts().length, go: function () { SV.selPer(q.id); SV.focus('pts'); }, hint: 'Pick-up roof: import, filter pita RL, pilih file' },
           { id: 'sv.p.' + q.id + '.poly', t: 'Poligon per flitch', ic: 'poly', tab: 'SV', b: q.polys.length ? Lv.length + ' flitch' : '', dim: !q.polys.length, go: function () { SV.selPer(q.id); SV.focus('poly'); }, hint: 'Digit (snap titik atap), ambil dari as-mined / dig block', fold: 1,
             kids: Lv.map(function (g) { return { id: 'sv.p.' + q.id + '.lv.' + g.top.toFixed(3), t: 'RL ' + f2(g.top) + ' – ' + f2(g.bot), ic: 'flitch', tab: 'SV', b: g.L.length + ' pol', go: function () { SV.selPer(q.id); SV.goLv(g.top, g.bot); SV.focus('poly'); } }; }),
-            add: { t: '+ Digit poligon di flitch aktif', fn: function () { SV.selPer(q.id); SV.dig(); } } },
+            add: { t: '+ Digit poligon di flitch kerja', fn: function () { SV.selPer(q.id); SV.dig(); } } },
           { id: 'sv.p.' + q.id + '.par', t: 'Parameter & bangun', ic: 'gear', tab: 'SV', go: function () { SV.selPer(q.id); SV.focus('par'); }, hint: 'Jarak sambung maks, metode Surpac, Z atap, SG' },
           { id: 'sv.p.' + q.id + '.res', t: 'Solid (' + (r ? r.IS.length : 0) + ')', ic: 'solid', tab: 'SV', dim: !r, go: function () { SV.selPer(q.id); SV.focus('res'); }, hint: 'Volume & tonase per pulau, export DTM/STR/DXF/CSV', fold: 1,
             kids: r ? r.IS.map(function (s) { return { id: 'sv.p.' + q.id + '.isl.' + s.n, t: 'Pulau #' + s.n + ' RL ' + f2(s.top) + '–' + f2(s.bot), ic: 'solid', tab: 'SV', b: N(s.vol, 0) + ' m³' + (s.closed ? '' : ' · terbuka'), chk: s.vis !== false, onChk: function (v) { SV.islVis(s.n, v); }, go: function () { SV.selPer(q.id); SV.focus('res'); } }; }) : [] }] }; });
