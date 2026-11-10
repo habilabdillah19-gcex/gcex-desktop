@@ -659,6 +659,21 @@ B.append('<p><b>Penyamaan BM &harr; DH</b>: Drill Hole kini memakai LOD sel untu
          'tidak-overlap juga ada di DH; Block Model mendapat <b>Slicer</b> (<code>sec_bm.js</code>, mode <code>sMode=S</code> di <code>secGeom</code>, langkah Demo <i>Slicer</i>). '
          'Reporting Block Model BM (<code>rpbm.js</code>) adalah port langsung dari Reporting BM Drill Hole: bagian, filter, constraint dan hasilnya sama; perbedaan hanya label '
          '(BM: tinggi / RL acuan flitch &amp; tombol = flitch aktif; DH: Densitas, Unsur divalidasi).</p>')
+B.append('<h3>Solid Vein Aktual (trial) &mdash; Block Model 0.24.51</h3>')
+B.append('<p>Modul <code>web-src/svein_bm.js</code> (hanya Block Model; terdaftar di <code>EXTRA</code> <code>build.py</code>), panel <code>#pSV</code> / tab <code>SV</code>, '
+         'node Project Tree <code>sv</code> dari <code>svTree()</code> (dipanggil <code>ptree_bm.js</code>). Data di <code>BX.ui.sv = {per:[{id,name,from,to,polys:[{top,bot,pts,src,on}],par,res}],cur,filt}</code> '
+         '&mdash; ikut proyek seperti <code>amData</code>; geometri hasil tidak disimpan, dibangun ulang (<code>SV.build</code>) saat diperlukan. Titik atap = <code>amD().ptsR</code> (satu sumber dengan As-Mined).</p>')
+B.append('<p><b>Algoritma (mengikuti Surpac).</b> (1) Ring tiap poligon dibuat berlawanan jarum jam, Z sudut = IDW titik atap dalam radius &amp; pita RL flitch (atau RL atas flitch). '
+         '(2) Poligon dua flitch <i>berurutan</i> dipasangkan bila <code>dPoly</code> (jarak datar tepi-ke-tepi, 0 bila bertumpuk) &le; jarak sambung maks; flitch kosong memutus. '
+         '(3) Komponen 1&ndash;1 langsung di-loft; 1&ndash;n / n&ndash;1: ring pemilik dibelah garis bagi tegak lurus sumbu centroid anak (<code>splitRing</code>, titik potong disisipkan ke semua ring yang memuat sisi itu supaya tidak ada T-junction). '
+         '(4) <code>loft</code> = <i>triangulate between segments</i>: tanpa resample, dynamic programming di kisi (m+1)&times;(n+1) dengan biaya luas segitiga (minimum surface area), + kuadrat diagonal (equi-angular) atau + selisih posisi keliling (proporsional); semua titik awal dicoba. '
+         '(5) Tutup atas = ear clipping (<code>ears</code>), opsional disisipi titik pick-up di dalam poligon + Lawson flip sisi dalam (<code>refine</code>); pulau terbawah: dinding tegak ke RL bawah flitch + tutup bawah. '
+         '(6) Validasi per pulau (<code>edges</code>): tiap sisi berarah harus punya pasangan berlawanan tepat satu; volume = jumlah tetrahedron bertanda (<code>volume</code>), orientasi dibalik bila negatif.</p>')
+B.append('<p><b>Tampilan.</b> Garis poligon digambar lewat pembungkus <code>dgTraces</code> (3D &amp; plan 2D) selama centang node menyala; titik atap hanya saat node <code>sv</code> aktif / mendigit. '
+         'Solid: bila <i>Daftarkan ke Wireframe geologi</i> menyala masuk <code>MD.models</code> (<code>jenis:geo</code>, tanda <code>sv</code>/<code>svn</code>, ikut <code>SA.mdPack</code>) sehingga tampil di 3D, sayatan 2D dan daftar domain Reporting; bila mati tetap digambar langsung sebagai <code>mesh3d</code>. '
+         '<code>SV.lihat()</code> mengubah kotak batas vein ke koordinat kubus adegan Plotly (rentang sumbu &times; rasio aspek) lalu menyetel <code>scene.camera</code> center / eye. '
+         'Digitasi memakai mesin <code>DG</code> dengan penanda <code>DG.svm</code>: <code>dgSnapHook</code> snap ke titik atap, <code>dgFinish</code> dibelokkan ke periode (tidak masuk daftar string / dig block). '
+         'Ekspor: DTM (OBJECT / TRISOLATION per pulau, indeks tetangga) + STR, DXF 3DFACE, CSV. Uji: <code>tools/uji/uji_solid_vein.py</code> (prisma volume eksak, pulau terpisah, flitch kosong, cabang, cekung 3 metode, atap pick-up, tampil 3D, baca-ulang DTM, digit &amp; simpan).</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

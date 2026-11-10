@@ -4172,3 +4172,18 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Penyamaan Block Model ↔ Drill Hole**: Block Model mendapat tombol **Slicer** (sama dengan Drill Hole 0.24.56); Drill Hole mendapat
   tampilan block model besar utuh (LOD sel, dulu sampel titik), perbaikan acuan koordinat otomatis, dan pengabaian file spasial yang tidak
   overlap. Reporting Block Model di Block Model diperiksa terhadap Drill Hole: engine, bagian dan constraint-nya sama (port langsung).
+
+## 154. Block Model 0.24.51 — Solid Vein Aktual (trial): tubuh vein tergali sebagai solid 3D
+
+- **Node baru** paling bawah di Project Tree Block Model: **Solid Vein Aktual (trial)**. Terpisah dari As-Mined; isinya dikelompokkan per
+  **Periode** (+ Tambah periode…).
+- **Titik atap**: import pick-up survey atap galian (CSV / STR / DXF), pilih file yang dipakai, saring **RL min – RL maks**.
+- **Poligon per flitch**: **Digit poligon** di plan flitch aktif (kursor snap ke titik atap), atau **Ambil as-mined** / **Ambil dig block**.
+- **Bangun solid**: poligon flitch berurutan disambung dengan cara kerja Surpac (semua titik dipakai; metode luas permukaan minimum,
+  equi-angular atau proporsional). **Jarak sambung maks** menentukan kapan dua poligon dianggap satu tubuh — lebih jauh dari itu menjadi
+  pulau tertutup sendiri. Flitch tanpa poligon memutus solid; poligon bercabang dibelah otomatis.
+- **Tampil di 3D**: garis poligon dan tubuh solid selalu digambar di jendela 3D selama centang node menyala; tombol
+  **Lihat di 3D (zoom ke vein)** mendekatkan kamera ke sana. Tiap pulau punya centang tampil sendiri.
+- **Hasil**: volume & tonase (× SG) per pulau, tanda tertutup, ekspor **DTM + STR Surpac**, **DXF 3DFACE**, **CSV**. Solid bisa dipakai
+  sebagai batas domain di Reporting Block Model.
+- Masih **trial**: bandingkan volumenya dengan Surpac sebelum dipakai untuk laporan resmi. GC-Ex Drillhole tidak berubah (0.24.57).

@@ -391,6 +391,7 @@ body.sgdrag #stage{pointer-events:none}
 <button class='rb' id='rbModel' onclick='uiTab(&#39;Model&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M3 15l6-8 5 4 7-6v9l-7 6-5-4-6 5z'/><path d='M9 7v8M14 11v8' stroke-width='1.2'/></svg>Model</button>
 <button class='rb' id='rbWf' onclick='uiTab(&#39;Wf&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M12 3l8 5v8l-8 5-8-5V8z'/><path d='M4 8l8 5 8-5M12 13v8' stroke-width='1.2'/></svg>Wireframe Geologi</button>
 <button class='rb' id='rbBM' onclick='uiTab(&#39;BM&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linejoin='round'><path d='M3 8l5-3 5 3v6l-5 3-5-3z'/><path d='M13 8l4-2.4 4 2.4v6l-4 2.4-4-2.4'/><path d='M8 11l5-3M8 11v6M8 11L3 8'/></svg>Block Model</button>
+<button class='rb' id='rbSV' hidden onclick='uiTab(&#39;SV&#39;)' title='Solid Vein Aktual (trial)'></button>
 <button class='rb' id='rbAM' onclick='uiTab(&#39;AM&#39;)' title='Model as-mined (rekonsiliasi)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 20h18'/><path d='M5 20l3-7h8l3 7'/><path d='M9 13l2-5h2l2 5'/><path d='M12 3v3'/></svg>As-Mined</button>
 <button class='rb' id='rbOverlay' onclick='uiTab(&#39;Overlay&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'><path d='M2 20l6-10 4 6 3-4 7 8z'/><circle cx='17' cy='6' r='2'/></svg>Overlay</button>
 <button class='rb' id='rbView' onclick='uiTab(&#39;View&#39;)'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><path d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/><circle cx='12' cy='12' r='3'/></svg>Tampilan</button>
@@ -536,6 +537,10 @@ body.sgdrag #stage{pointer-events:none}
 <section id='pAM' hidden>
 <h3>Model as-mined (rekonsiliasi)</h3>
 <div id='amBody'></div>
+</section>
+<section id='pSV' hidden>
+<h3>Solid Vein Aktual (trial)</h3>
+<div id='svBody'></div>
 </section>
 <section id='pOverlay' hidden>
 <h3>Overlay Surpac</h3>
@@ -1373,7 +1378,7 @@ function knaApply(){if(!KNA||!KNA.rec)return;$('okM1').value=KNA.rec.rf;$('okX1'
 var UIRS={w:0,h:0,t:0};
 function uiResize(){clearTimeout(UIRS.t);UIRS.t=setTimeout(function(){try{var gd=$('plotDiv');if(!gd)return;var w=gd.clientWidth,h=gd.clientHeight;if(w===UIRS.w&&h===UIRS.h&&gd._fullLayout&&gd._fullLayout.width===w&&gd._fullLayout.height===h)return;UIRS.w=w;UIRS.h=h;
   if(window.Plotly&&Plotly.Plots&&Plotly.Plots.resize)Plotly.Plots.resize(gd);}catch(e){}},40);}
-function uiTab(n){if(['Data','Warna','Geo','Plan'].indexOf(n)>=0)n='BM';var sd=$('side');['Data','Warna','Geo','Slice','Dig','Plan','Model','Wf','BM','AM','Overlay','View'].forEach(function(k){$('p'+k).hidden=(k!==n);$('rb'+k).className='rb'+(k===n?' on':'');});
+function uiTab(n){if(['Data','Warna','Geo','Plan'].indexOf(n)>=0)n='BM';var sd=$('side');['Data','Warna','Geo','Slice','Dig','Plan','Model','Wf','BM','AM','SV','Overlay','View'].forEach(function(k){$('p'+k).hidden=(k!==n);$('rb'+k).className='rb'+(k===n?' on':'');});
   if(sd.classList.contains('hide')){sd.classList.remove('hide');setTimeout(uiResize,30);}
   try{localStorage.setItem('dh3d_tab',n);}catch(e){}}
 function uiSide(){var sd=$('side');sd.classList.toggle('hide');$('rbHide').style.transform=sd.classList.contains('hide')?'scaleX(-1)':'';setTimeout(uiResize,30);}
@@ -2009,7 +2014,7 @@ function dmSteps(){var nH=collars.length,nA=assays.length,el0=$('elementFilter')
     run:function(A){A(0,function(){if(GS.open)gsToggle();uiTab('Data');setCam(1.5,-1.5,1);});}});
   return S;}
 function dmSnap(){var v={};document.querySelectorAll('input[id],select[id]').forEach(function(e){if(e.id.indexOf('dm')===0)return;v[e.id]=e.type==='checkbox'?e.checked:e.value;});
-  var tab='Data';['Data','Warna','Geo','Slice','Dig','Plan','Model','Wf','BM','AM','Overlay','View'].forEach(function(k){if($('rb'+k)&&$('rb'+k).className.indexOf('on')>=0)tab=k;});
+  var tab='Data';['Data','Warna','Geo','Slice','Dig','Plan','Model','Wf','BM','AM','SV','Overlay','View'].forEach(function(k){if($('rb'+k)&&$('rb'+k).className.indexOf('on')>=0)tab=k;});
   return{v:v,tab:tab,gs:GS.open,v2:VIEW2D,traj:TRAJ,eye:dmEye(),pl:JSON.stringify(PL.h),dg:JSON.stringify(DG.S)};}
 function dmRestore(s){if(!s)return;if(DRW.on)drawClose();try{PL.h=JSON.parse(s.pl);}catch(er){}try{if(DG.on)dgCancel();DG.S=JSON.parse(s.dg);dgSave();dgList();}catch(er){}if(VIEW2D!==s.v2)toggle2D();if(GS.open!==s.gs)gsToggle();
   for(var id in s.v){var e=$(id);if(!e)continue;if(e.type==='checkbox')e.checked=s.v[id];else if(id!=='holeFilter')e.value=s.v[id];}
@@ -2942,7 +2947,7 @@ function dbPickDraw(){var c=$('dgCv');if(!c||!VIEW2D)return;var ids=Object.keys(
 })();
 
 updRange(true);benchChanged();
-try{$('showDH').checked=false;var _t=null;try{_t=localStorage.getItem('dh3d_tab');}catch(e){}uiTab(_t&&['Slice','Dig','Model','BM','AM','Overlay','View'].indexOf(_t)>=0?_t:'BM');}catch(e){}
+try{$('showDH').checked=false;var _t=null;try{_t=localStorage.getItem('dh3d_tab');}catch(e){}uiTab(_t&&['Slice','Dig','Model','BM','AM','SV','Overlay','View'].indexOf(_t)>=0?_t:'BM');}catch(e){}
 /* ================= Demo GC-Ex Block Model (tur langkah demi langkah, 5 fps, rekam video) ================= */
 DM.fps=5;
 /* selama demo, 3D dibatasi lebih ketat (demo memicu banyak gambar ulang berturut-turut) */

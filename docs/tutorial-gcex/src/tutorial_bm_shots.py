@@ -143,6 +143,17 @@ with sync_playwright() as pw:
     # 12. register & 3D hasil kerja
     tree('reg.1', ['reg']); shot('register', SIDE)
     ev("if(window.am3Toggle)am3Toggle(true)"); pg.wait_for_timeout(2500); ev("if(VIEW2D)toggle2D();setCam(1.2,-1.4,0.9)"); pg.wait_for_timeout(2500); shot('hasil_kerja_3d')
+    # 13. Solid Vein Aktual (trial, BM 0.24.51): poligon sintetis 4 flitch (bercabang) + 1 pulau terpisah -> solid di 3D
+    ev("if(window.am3Toggle)am3Toggle(false)")
+    ev("""(function(){var m=BX.m,cx=0,cy=0,n=Math.min(m.n,5000);for(var i=0;i<n;i++){cx+=m.x[i];cy+=m.y[i];}cx=cx/n-offX;cy=cy/n-offY;var B=lyBench(),fh=B[0]-B[1],T0=B[0];
+      var el=function(x,y,a,b,k,rot){var o=[];for(var i=0;i<k;i++){var t=i/k*6.2832,px=a*Math.cos(t)*(1+0.15*Math.sin(3*t)),py=b*Math.sin(t);o.push([x+px*Math.cos(rot)-py*Math.sin(rot),y+px*Math.sin(rot)+py*Math.cos(rot)]);}return o;};
+      var d=SV.D(),p={id:'ptut',name:'Contoh W1',from:'',to:'',polys:[],par:{dmax:8,zMode:'flat',capPts:false,method:'min',sg:2.6,reg:true,rIdw:6,zTol:fh/2},res:null};window._svPer=d.per;window._svCur=d.cur;d.per=[p];d.cur=p.id;
+      [[0,el(cx,cy,22,5,26,0.3)],[1,el(cx+1,cy+0.5,24,6,30,0.32)],[2,el(cx-9,cy-2,10,4.5,18,0.3)],[2,el(cx+16,cy+6,8,4,16,0.35)],[3,el(cx-10,cy-2.5,8,4,16,0.3)],[1,el(cx+60,cy+25,9,4,14,0.2)],[2,el(cx+61,cy+25,7,3.5,12,0.2)]].forEach(function(q,i){p.polys.push({id:'v'+i,top:T0-q[0]*fh,bot:T0-(q[0]+1)*fh,pts:q[1],key:'k'+i,src:'digit',name:'V'+(i+1),on:true});});
+      window._svVis=MD.models.map(function(m){return m.vis;});MD.models.forEach(function(m){m.vis=false;});window._svBx=$('bxShow').checked;$('bxShow').checked=false;lyFlOff();if(VIEW2D)toggle2D();})()""")
+    pg.wait_for_timeout(800); ev("PT.open['sv']=1;PT.select('sv');SV.run()"); pg.wait_for_function("!SV.busy && SV.per() && SV.per().res", timeout=60000); pg.wait_for_timeout(1500)
+    ev("PT.open['sv.p.ptut']=1;PT.render(true);SV.focus('res');SV.lihat()"); pg.wait_for_timeout(3500); shot('solidvein_3d')
+    note('solidvein', ev("SV.per().res.IS.map(function(s){return [s.n,s.closed,+s.vol.toFixed(1),s.nLv,s.nPoly];})"))
+    ev("(function(){var d=SV.D(),p=SV.per();SV.setPar('reg',false);d.per=window._svPer||[];d.cur=window._svCur||'';MD.models.forEach(function(m,i){m.vis=window._svVis[i]!==false;});$('bxShow').checked=window._svBx;updatePlot();})()")
     note('errs', errs)
     json.dump(NOTES, open(IMG + 'notes.json', 'w'), ensure_ascii=False, indent=1)
     (br.close() if br else ctx.close())

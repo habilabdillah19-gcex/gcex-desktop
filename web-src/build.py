@@ -151,7 +151,7 @@ for ln in lines:
     if k: B[k.group(1)] = ln
 B['rbModel'] = B['rbModel'].replace(">Model</button>", ">Data Referensi</button>").replace("<button class='rb' id='rbModel'", "<button class='rb' id='rbModel' title='Data referensi eksternal: permukaan pit / topografi (DTM), titik survey, string Surpac / DXF'")
 B['rbAM'] = B['rbAM'].replace("title='Model as-mined (rekonsiliasi)'", "title='As-Mined: model as-mined &amp; rekonsiliasi per flitch'")
-order = ['rbData', 'rbGeo', 'rbSlice', 'rbBM', 'rbAM', '|', 'rbModel', 'rbWf', 'rbDig', 'rbPlan', 'rbWarna', 'rbOverlay', 'rbView']
+order = ['rbData', 'rbGeo', 'rbSlice', 'rbBM', 'rbAM', 'rbSV', '|', 'rbModel', 'rbWf', 'rbDig', 'rbPlan', 'rbWarna', 'rbOverlay', 'rbView']
 out = []
 for k in order:
     out.append("<div class=rsep title='Menu pendukung'></div>" if k == '|' else B.pop(k))
@@ -236,7 +236,7 @@ rep1("var pg={W:W,H:H,ops:ops,scale:0},b=lyPdf([pg]);", "var pg={W:W,H:H,ops:ops
 # ---------- 7z. Cek sintaks semua modul JS (bila Node.js tersedia) supaya galat ketahuan saat build ----------
 import shutil as _sh, subprocess as _sp
 # modul tambahan 0.14.0+ (dipasang di akhir lapisan UI, berurutan)
-EXTRA = ['delaunator.min.js', 'tinhr.js', 'glskip.js', 'kinerja.js', 'theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js', 'ortho2d_bm.js', 'period_bm.js', 'gcops_bm.js', 'rppit.js', 'rpmetode.js', 'digqt.js', 'amroof.js', 'demox.js']
+EXTRA = ['delaunator.min.js', 'tinhr.js', 'glskip.js', 'kinerja.js', 'theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js', 'ortho2d_bm.js', 'period_bm.js', 'gcops_bm.js', 'rppit.js', 'rpmetode.js', 'digqt.js', 'amroof.js', 'demox.js', 'svein_bm.js']
 if _sh.which('node'):
     for _m in EXTRA + ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
         _r = _sp.run(['node', '--check', W + _m], capture_output=True, text=True)

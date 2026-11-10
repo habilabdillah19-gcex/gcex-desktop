@@ -34,7 +34,7 @@ BAGIAN = [
  ('Bagian IV &middot; As-mined &amp; rekonsiliasi',
   'Membandingkan rencana dengan aktual: permukaan as-mined, register pekerjaan, dan rekonsiliasi flitch per '
   'flitch antara dig plan dan material yang benar-benar tergali.',
-  ['As-mined', 'Register, 3D hasil kerja', 'Laporan periode: mingguan']),
+  ['As-mined', 'Register, 3D hasil kerja', 'Laporan periode: mingguan', 'Solid Vein Aktual']),
  ('Bagian V &middot; Pembaruan',
   'Ringkasan yang baru pada versi terakhir, untuk pembaca yang sudah memakai versi sebelumnya.',
   ['Yang baru di 0.24']),
@@ -291,6 +291,19 @@ ch('Register, 3D hasil kerja & rekonsiliasi', steps(
  'Project Tree &rarr; <b>Register &amp; Laporan As-Mined &rarr; Register poligon</b> ([[register]]): kode poligon, BCM, ton, kadar, ritase; <b>Kirim register ke Excel</b>, CSV, <b>Report rekonsiliasi (PDF)</b>.',
  '<b>3D hasil kerja</b>: prisma dig block, poligon as-mined dan sub-blok model as-mined per flitch ([[hasil_kerja_3d]]). <b>Rekap &amp; model gabungan (.mdl)</b> menggabungkan semua flitch ke satu block model Surpac.')
  + fig('register', 'Register poligon as-mined.') + fig('hasil_kerja_3d', '3D hasil kerja: dig block (rencana) dan as-mined (aktual).'))
+
+ch('Solid Vein Aktual (trial): tubuh vein yang benar-benar tergali', dta('titik pick-up <b>atap</b> galian (CSV: ID, X, Y, Z, kode &mdash; atau STR / DXF) dan poligon as-mined tiap flitch; gambar di bab ini memakai poligon sintetis',
+     [('Jarak sambung maks', '<code>8</code> m'), ('Metode sambung', 'Luas permukaan minimum'), ('SG', '<code>2,6</code>')])
+ + '<p>Node <b>Solid Vein Aktual (trial)</b> berada paling bawah di Project Tree, terpisah dari As-Mined. Isinya dikelompokkan per <b>Periode</b>. Hasilnya <b>solid wireframe tertutup</b> tubuh vein yang tergali: poligon tiap flitch disambung ke flitch di bawahnya dengan cara kerja Surpac (<i>triangulate between segments</i>), lalu divalidasi tertutup dan dihitung volumenya.</p>'
+ + steps('Klik <b>+ Tambah periode&hellip;</b> (atau tombol <b>+ Periode</b> di panel), beri nama, isi rentang tanggal bila poligonnya akan diambil dari register as-mined.',
+   '<b>Titik atap</b>: <i>Import titik atap</i>. Centang file yang dipakai dan isi <b>RL min / RL maks</b> untuk menyaring elevasi (kosong = otomatis &plusmn; 1 flitch dari flitch aktif). Titik ini sama dengan titik atap di As-Mined.',
+   '<b>Poligon per flitch</b>: <b>Digit poligon</b> membuka plan flitch aktif; kursor <b>snap ke titik atap</b>; klik titik pertama lagi (atau Enter) untuk menutup. Satu poligon untuk tiap pulau galian di tiap flitch. Pindah flitch, ulangi. Atau <b>Ambil as-mined</b> (semua poligon register dalam rentang tanggal periode) / <b>Ambil dig block</b> (flitch aktif).',
+   '<b>Parameter solid</b>: <b>Jarak sambung maks</b> &mdash; dua poligon di flitch berurutan disambung bila jarak datarnya tidak lebih dari nilai ini; lebih jauh berarti <b>pulau terpisah</b> yang ditutup sendiri. Flitch tanpa poligon = solid <b>putus</b>. Poligon yang bercabang ke dua poligon di bawahnya dibelah otomatis.',
+   'Klik <b>Bangun solid</b>, lalu <b>Lihat di 3D (zoom ke vein)</b>: kamera didekatkan ke garis poligon dan tubuh solidnya, dan pemotongan slab dimatikan supaya seluruh flitch tampak ([[solidvein_3d]]).',
+   'Tabel hasil: tiap pulau dengan RL, jumlah flitch, tanda <b>tertutup</b> (&#10003;), volume dan tonase (volume &times; SG). Ekspor <b>DTM + STR</b> Surpac, <b>DXF 3DFACE</b>, <b>CSV volume</b>.')
+ + fig('solidvein_3d', 'Solid Vein Aktual di 3D: garis poligon tiap flitch dan dua pulau solid tertutup; pulau besar bercabang dua di flitch ketiga.')
+ + tip('Garis poligon <b>semua flitch</b> dan solidnya <b>selalu tampil di jendela 3D</b> (tidak ikut terpotong slab) selama centang node <b>Solid Vein Aktual</b> menyala (titik atap hanya tampil saat node ini dibuka). Tiap pulau punya centang sendiri di tabel hasil dan di Project Tree. Dengan <b>Daftarkan ke Wireframe geologi</b>, solid juga muncul di sayatan 2D dan bisa dipilih sebagai batas domain di Reporting Block Model.')
+ + tip('<b>Metode sambung</b> mengikuti Surpac: <i>Luas permukaan minimum</i> (bawaan), <i>Equi-angular</i>, <i>Proporsional keliling</i>. Semua titik poligon dipakai apa adanya (tidak dihaluskan). <b>Z atap</b> tiap sudut poligon diambil dari titik pick-up di sekitarnya (IDW dalam radius) atau datar di RL atas flitch; pulau terbawah diteruskan tegak sampai RL bawah flitchnya. Fitur ini masih <b>trial</b>: bandingkan dulu volumenya dengan Surpac sebelum dipakai untuk laporan resmi.', 'warn', 'Catatan'))
 
 ch('Yang baru di 0.24', """<p>Perbaikan GC-Ex Block Model 0.24 berpusat pada satu keluhan: digitasi manual dulu terasa kalah dari dig block otomatis. Sekarang keduanya setara, dan seluruh hasil kerja &mdash; dari dig block sampai as-mined &mdash; bisa ditinjau dan diedit dari satu tempat.</p>"""
  + '<table class="t"><tr><th>Yang berubah</th><th>Di tutorial ini</th></tr>'

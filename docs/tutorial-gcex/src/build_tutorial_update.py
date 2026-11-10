@@ -951,6 +951,10 @@ B.append('<p><b>3D lebih ringan.</b> Lapisan 3D yang tidak berubah (mis. block m
          'grafis setiap kali sayatan digeser atau centang diganti. Pada data latihan: gambar ulang 1.290 &rarr; 158 ms, '
          '3&times; klik Maju sayatan 3.690 &rarr; 494 ms. <b>Ore Geometry</b> tidak lagi menghitung otomatis saat dibuka '
          '&mdash; tekan <b>Hitung intercept &amp; GT</b>.</p>')
+B.append('<p><b>Solid Vein Aktual &mdash; trial (BM 0.24.51).</b> Node baru paling bawah di Project Tree Block Model. Per <b>Periode</b>: import titik pick-up <b>atap</b> galian (saring RL), '
+         'digit poligon tiap flitch (snap ke titik atap) atau ambil dari register as-mined / dig block, lalu <b>Bangun solid</b>. Poligon flitch berurutan disambung cara Surpac '
+         '(semua titik dipakai; luas permukaan minimum / equi-angular / proporsional) bila jaraknya &le; <b>jarak sambung maks</b>; lebih jauh menjadi pulau tertutup sendiri, flitch kosong memutus solid, cabang dibelah otomatis. '
+         'Tombol <b>Lihat di 3D (zoom ke vein)</b> mendekatkan kamera ke garis poligon dan tubuh solidnya. Hasil: volume &amp; tonase per pulau, tanda tertutup, ekspor DTM + STR Surpac / DXF / CSV; solid bisa dipakai sebagai batas domain Reporting.</p>')
 B.append('<p><b>Permukaan &amp; ortho tajam, penyamaan kedua aplikasi (BM 0.24.50 / DH 0.24.57).</b> Permukaan topografi dan desain pit kini dibangun dari '
          '<b>seluruh titik survei</b> (bukan 15 ribu titik contoh), orthofoto digambar setajam anggaran profil Kinerja dan makin halus saat zoom masuk (Resolusi = Otomatis). '
          'Block Model mendapat tombol <b>Slicer</b> yang sama dengan Drill Hole; Drill Hole mendapat tampilan block model besar utuh (LOD) dan perbaikan acuan koordinat yang sama dengan Block Model.</p>')
