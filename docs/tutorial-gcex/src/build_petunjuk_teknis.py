@@ -674,6 +674,10 @@ B.append('<p><b>Tampilan.</b> Garis poligon digambar lewat pembungkus <code>dgTr
          '<code>SV.lihat()</code> mengubah kotak batas vein ke koordinat kubus adegan Plotly (rentang sumbu &times; rasio aspek) lalu menyetel <code>scene.camera</code> center / eye. '
          'Digitasi memakai mesin <code>DG</code> dengan penanda <code>DG.svm</code>: <code>dgSnapHook</code> snap ke titik atap, <code>dgFinish</code> dibelokkan ke periode (tidak masuk daftar string / dig block). '
          'Ekspor: DTM (OBJECT / TRISOLATION per pulau, indeks tetangga) + STR, DXF 3DFACE, CSV. Uji: <code>tools/uji/uji_solid_vein.py</code> (prisma volume eksak, pulau terpisah, flitch kosong, cabang, cekung 3 metode, atap pick-up, tampil 3D, baca-ulang DTM, digit &amp; simpan).</p>')
+B.append('<p><b>0.24.52 &mdash; sesudah uji pick-up nyata.</b> Titik atap membawa nama file (<code>q.f</code> dari <code>amPtsFile</code>; dulu CSV dikelompokkan menurut kolom kode). '
+         '<code>SV.flParse(nama)</code> membaca RL flitch dari pola <code>_&lt;atas&gt;_&lt;bawah&gt;_</code> (tanda hubung = koma desimal), isian tabel menimpanya (<code>filt.fl</code>); <code>ptsLv(top)</code> = titik file ber-flitch itu (file tanpa flitch: pita Z lama). '
+         '<code>zRoof</code>: titik berimpit &le; 2 cm memberi Z persis. <code>SV.outline(Q, L)</code> = alpha shape: Delaunay (<code>Delaunator</code>), buang segitiga bersisi &gt; L, sisi yang dipakai satu segitiga dirangkai jadi loop (belokan paling kiri di titik jepit), lubang &amp; serpihan &lt; 1 m&sup2; dibuang. '
+         'Catatan: <code>sArea()</code> modul ini negatif untuk loop berlawanan jarum jam. Bawaan <code>dmax</code> 3 m.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

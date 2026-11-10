@@ -120,6 +120,19 @@ with sync_playwright() as pw:
     cek(n1[0] == n0[0] and n1[1] == n0[1] + 1 and not n1[2] and not n1[3], "I poligon digit masuk ke periode, daftar string / dig block tidak berubah")
     w = pg.evaluate("(function(){var w=SA.collectWork();return !!(w.bxui&&w.bxui.sv&&w.bxui.sv.per.length===1&&w.bxui.sv.per[0].polys.length===%d);})()" % n1[1])
     cek(w, "I data Solid Vein ikut tersimpan di proyek (BX.ui.sv)")
+    # J (0.24.52): pick-up nyata = CSV tanpa judul "ID,X,Y,Z,kode", beberapa file, RL flitch di NAMA FILE (data sintetis, tata letak sama)
+    j = pg.evaluate("""(async function(){var mkf=function(nm,x0,y0,top,pts){var s='';pts.forEach(function(q,i){s+=(i+1)+','+(offX+x0+q[0]).toFixed(3)+','+(offY+y0+q[1]).toFixed(3)+','+(top+q[2]).toFixed(3)+',204\\n';});return new File([s],nm);};
+      var L=[[0,0],[20,0],[20,6],[8,6],[8,18],[0,18],[4,3],[14,3],[4,12],[10,0],[0,9],[20,3],[8,12],[4,18],[14,6]].map(function(q,i){return [q[0],q[1],(i%3-1)*0.8];});   /* bentuk L, Z naik-turun +-0,8 m */
+      amD().ptsR=[];amPtsFile([mkf('ACT_SO261108OB_235-5_234_ZX.csv',300,300,235.5,L),mkf('ACT_SO261109OB_234_232-5_ZX.csv',302,301,234,L.slice(0,9)),mkf('titik_tanpa_rl.csv',500,500,240,L.slice(0,5))],'ptsR');
+      await new Promise(function(r){setTimeout(r,1500);});var F=SV.files(),d=SV.D();d.per=[];d.filt={};SV.addPer();var p=SV.per();p.par.aEdge=13;p.par.dmax=3;p.par.capPts=true;p.par.zMode='idw';SV.auto();
+      var R=SV.build(p);return {F:F.map(function(f){return [f.c,f.n,f.top,f.bot];}),lv:[SV.ptsLv(235.5).length,SV.ptsLv(234).length],pol:p.polys.map(function(v){return [v.top,v.bot,v.pts.length,v.src];}),
+        isl:R.IS.map(function(s){return [s.closed,s.nLv,+s.vol.toFixed(2)];}),par:[SV.flParse('ACT_SO2611109OB_248-5_246_Z4.csv'),SV.flParse('pickup_roof.csv'),SV.flParse('A_251-5_250_Z4.str')]};})()"""); print("J", j)
+    cek(len(j["F"]) == 3 and j["F"][0][1:] == [15, 235.5, 234] and j["F"][1][1:] == [9, 234, 232.5] and j["F"][2][2] != j["F"][2][2], "J file dipisah menurut NAMA FILE (bukan kolom kode) dan RL flitch dibaca dari namanya")
+    cek(j["par"][0] == {"top": 248.5, "bot": 246} and j["par"][1] is None and j["par"][2] == {"top": 251.5, "bot": 250}, "J pola nama file: 248-5_246 -> 248,5-246; tanpa pola -> kosong")
+    cek(j["lv"] == [15, 9], "J titik dipilah ke flitch menurut file walau Z-nya +-0,8 m dari RL atas (%s)" % j["lv"])
+    cek(len(j["pol"]) == 2 and j["pol"][0][:2] == [235.5, 234] and j["pol"][0][3] == "auto" and j["pol"][0][2] >= 6, "J garis luar otomatis: 1 poligon per file ber-flitch, file tanpa RL dilewati (%s)" % j["pol"])
+    cek(len(j["isl"]) == 1 and j["isl"][0][0] and j["isl"][0][1] == 2 and j["isl"][0][2] > 0, "J dua flitch bertumpuk -> 1 pulau tertutup 2 flitch, vol %s" % (j["isl"][0][2] if j["isl"] else None))
+    pg.evaluate("(function(){amD().ptsR=[];var d=SV.D();d.per=d.per.slice(0,0);})()")
     cek(not err, "tanpa galat halaman: %s" % err[:3])
     ctx.close()
 srv.terminate()

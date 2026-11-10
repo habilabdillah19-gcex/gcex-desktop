@@ -4187,3 +4187,14 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 - **Hasil**: volume & tonase (× SG) per pulau, tanda tertutup, ekspor **DTM + STR Surpac**, **DXF 3DFACE**, **CSV**. Solid bisa dipakai
   sebagai batas domain di Reporting Block Model.
 - Masih **trial**: bandingkan volumenya dengan Surpac sebelum dipakai untuk laporan resmi. GC-Ex Drillhole tidak berubah (0.24.57).
+
+## 155. Block Model 0.24.52 — Solid Vein Aktual: perbaikan sesudah diuji dengan pick-up nyata
+
+- **File pick-up tetap terpisah.** Tabel *Titik atap* kini satu baris per **file** (dulu file CSV melebur menurut kolom kode survey).
+- **RL flitch dibaca dari nama file** (mis. `ACT_SO261108OB_235-5_234_Z4.csv` = RL 235,5–234) dan bisa dikoreksi di tabel. Titik
+  dipakai untuk flitch file-nya, bukan dipilah dari elevasinya — atap galian nyata naik-turun melewati batas flitch. Tombol **Buka**
+  menjadikan flitch file itu flitch aktif.
+- **Z sudut poligon** yang tepat di titik pick-up memakai elevasi titik itu apa adanya.
+- **Garis luar otomatis (semua file)**: usulan poligon dari gugus titik tiap file, dengan parameter *Sisi terpanjang (m)*. Ini usulan:
+  periksa di plan tiap flitch; poligon yang tidak cocok dihapus lalu didigit.
+- **Jarak sambung maks** bawaan kini 3 m (dulu 10 m), supaya dua flitch yang hanya bersebelahan tidak ikut tersambung.

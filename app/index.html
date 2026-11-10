@@ -3770,7 +3770,7 @@ AM.dn=0;AM.digOn=false;
    disalin, perbaikan pada salah satunya tidak akan ikut ke yang lain. */
 function amPtsFile(files,slot){if(!files||!files.length)return;slot=(slot==='ptsR')?'ptsR':'pts';var L=Array.prototype.slice.call(files),n0=amD()[slot]?amD()[slot].length:0;AM.pmsg='Membaca titik pick-up '+(slot==='ptsR'?'ATAP':'lantai')+'&hellip;';amPanel();
   (async function(){var D=amD();D[slot]=D[slot]||[];var TG=D[slot];for(var i=0;i<L.length;i++){var f=L[i],ext=(f.name.split('.').pop()||'').toLowerCase();try{
-      if(ext==='str'||ext==='dxf'){var segs=await SA.readLines({f:f,k:ext});segs.forEach(function(P){P.forEach(function(q){TG.push({x:+q[0],y:+q[1],z:+q[2],id:'',c:f.name.replace(/\.[^.]+$/,'')});});});}
+      if(ext==='str'||ext==='dxf'){var segs=await SA.readLines({f:f,k:ext});segs.forEach(function(P){P.forEach(function(q){TG.push({x:+q[0],y:+q[1],z:+q[2],id:'',c:f.name.replace(/\.[^.]+$/,''),f:f.name});});});}
       else{var T=amParse(await f.text()),h=T.h,ix=amCol(h,/^(x|east|easting|e)$/i),iy=amCol(h,/^(y|north|northing|n)$/i),iz=amCol(h,/^(z|rl|elev|elevation|h|height)$/i),ii=amCol(h,/^(id|pt|point|ptid|point_?id|name|no|nama)$/i),ic=amCol(h,/^(code|kode|desc|description|keterangan|ket|remark|layer)$/i),rows=T.r;
         if(ix<0||iy<0){var num=h.map(function(v){return isFinite(amNum(v));});rows=T.r.concat(num.filter(Boolean).length>=3?[h]:[]);
         /* Tanpa baris judul, kolom tidak boleh ditebak dari urutannya. Berkas survey pick-up
@@ -3787,7 +3787,7 @@ function amPtsFile(files,slot){if(!files||!files.length)return;slot=(slot==='pts
         if(j>=0){ix=j;iy=j+1;iz=(j+2<nc&&isFinite(M[j+2]))?j+2:-1;ic=(j+3<nc)?j+3:-1;ii=(j>0)?j-1:-1;}
         else{var r0=rows[0]||[],nn=r0.map(function(v){return isFinite(amNum(v));});
           if(nn[0]&&nn[1]&&nn[2]&&!nn[3]){ix=0;iy=1;iz=2;ic=3;}else if(!nn[0]){ii=0;ix=1;iy=2;iz=3;ic=4;}else{ix=0;iy=1;iz=2;}}}
-        rows.forEach(function(r){var x=amNum(r[ix]),y=amNum(r[iy]),z=iz>=0?amNum(r[iz]):NaN;if(isFinite(x)&&isFinite(y))TG.push({x:x,y:y,z:z,id:ii>=0?String(r[ii]||''):'',c:ic>=0?String(r[ic]||''):''});});}
+        rows.forEach(function(r){var x=amNum(r[ix]),y=amNum(r[iy]),z=iz>=0?amNum(r[iz]):NaN;if(isFinite(x)&&isFinite(y))TG.push({x:x,y:y,z:z,id:ii>=0?String(r[ii]||''):'',c:ic>=0?String(r[ic]||''):'',f:f.name});});}
     }catch(e){AM.pmsg='<span class=warn>'+amE(f.name)+': '+amE(e.message)+'</span>';}}
     AM.pmsg=(TG.length-n0).toLocaleString()+' titik pick-up '+(slot==='ptsR'?'ATAP':'lantai')+' ditambahkan.';amPanel();updatePlot();amDirty();})();}
 function amPtsClear(slot){slot=(slot==='ptsR')?'ptsR':'pts';amD()[slot]=[];AM.pmsg='';amPanel();updatePlot();amDirty();}
@@ -8574,16 +8574,33 @@ function amRoofFnDtm(o, B) {
   function dirty() { try { if (window.SA && SA.dirty) SA.dirty(); } catch (e) {} }
   function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
   function per() { var d = D(), p = null; d.per.forEach(function (q) { if (q.id === d.cur) p = q; }); if (!p && d.per.length) { p = d.per[0]; d.cur = p.id; } return p; }
-  function parDef() { var fh = 1.5; try { var B = lyBench(); fh = +(B[0] - B[1]).toFixed(3) || 1.5; } catch (e) {} return { dmax: 10, zMode: 'idw', rIdw: 6, zTol: +(fh / 2).toFixed(3), capPts: true, method: 'min', sg: (BX.ui && BX.ui.sg) || 2.6, reg: true }; }
+  function parDef() { var fh = 1.5; try { var B = lyBench(); fh = +(B[0] - B[1]).toFixed(3) || 1.5; } catch (e) {} return { dmax: 3, aEdge: 12, zMode: 'idw', rIdw: 6, zTol: +(fh / 2).toFixed(3), capPts: true, method: 'min', sg: (BX.ui && BX.ui.sg) || 2.6, reg: true }; }
   function P(p) { p = p || per(); if (!p) return parDef(); p.par = p.par || {}; var d = parDef(); for (var k in d) if (p.par[k] === undefined) p.par[k] = d[k]; return p.par; }
   SV.D = D; SV.per = per;
 
   /* ---------- titik atap ---------- */
   function pts() { try { return (amD().ptsR || []); } catch (e) { return []; } }
-  function files() { var F = {}, o = []; pts().forEach(function (q) { var c = q.c || '(tanpa nama)'; if (!F[c]) { F[c] = 0; o.push(c); } F[c]++; }); return o.map(function (c) { return { c: c, n: F[c] }; }); }
+  /* Tiap titik membawa NAMA FILE asalnya (q.f, sejak 0.24.52). Sebelumnya pengelompokan memakai q.c,
+     padahal untuk CSV q.c = kolom KODE survey (mis. "204" di semua file) -- enam file pick-up nyata
+     pemilik melebur jadi satu baris dan tidak bisa dipilih per file.
+     RL flitch dibaca dari NAMA FILE (pola pemilik: ACT_SO261108OB_235-5_234_Z4.csv = RL 235,5-234).
+     Titik atap TIDAK boleh dipilah ke flitch dari Z-nya: pada data nyata Z atap flitch 235,5-234
+     tersebar 234,23-236,32 (0,8 m di atas RL atas, 1,3 m di bawahnya), jadi pita +-setengah flitch
+     membuang sepertiga titik dan mencampur flitch bertetangga. */
+  function fname(q) { return q.f || q.c || '(tanpa nama)'; }
+  function flParse(nm) { var b = String(nm || '').replace(/\.[^.]+$/, ''), re = /(?:^|_)(\d{1,4}(?:-\d{1,2})?)_(\d{1,4}(?:-\d{1,2})?)(?=_|$)/g, m, best = null;
+    while ((m = re.exec(b))) { var a = parseFloat(m[1].replace('-', '.')), c = parseFloat(m[2].replace('-', '.')), t = Math.max(a, c), bo = Math.min(a, c); if (t - bo > 0 && t - bo <= 12) best = { top: t, bot: bo }; re.lastIndex = m.index + 1; } return best; }
+  function fileFl(nm) { var o = (D().filt.fl || {})[nm]; if (o && isFinite(+o.top) && isFinite(+o.bot) && +o.top > +o.bot) return { top: +o.top, bot: +o.bot, man: 1 }; return flParse(nm); }
+  function files() { var F = {}, o = []; pts().forEach(function (q) { var c = fname(q), r = F[c]; if (!r) { r = F[c] = { c: c, n: 0, z0: 1e18, z1: -1e18 }; o.push(c); } r.n++; if (isFinite(q.z)) { if (q.z < r.z0) r.z0 = q.z; if (q.z > r.z1) r.z1 = q.z; } }); return o.map(function (c) { var r = F[c], fl = fileFl(c); r.top = fl ? fl.top : NaN; r.bot = fl ? fl.bot : NaN; r.man = fl ? !!fl.man : false; return r; }); }
   function band() { var f = D().filt, B = null; try { B = lyBench(); } catch (e) {} var lo = parseFloat(f.z0), hi = parseFloat(f.z1); if (!isFinite(lo) && B) lo = B[1] - (B[0] - B[1]); if (!isFinite(hi) && B) hi = B[0] + (B[0] - B[1]); return [isFinite(lo) ? lo : -1e9, isFinite(hi) ? hi : 1e9]; }
-  /* titik yang dipakai: file tidak dimatikan + di dalam pita RL (lokal: dikurangi offX/offY) */
-  function ptsOn(bd) { var off = D().filt.off || {}, b = bd || band(); return pts().filter(function (q) { return !off[q.c || '(tanpa nama)'] && isFinite(q.z) && q.z >= b[0] && q.z <= b[1]; }); }
+  function bandMan() { var f = D().filt; return isFinite(parseFloat(f.z0)) || isFinite(parseFloat(f.z1)); }
+  /* titik milik flitch ber-RL atas `top`: file yang flitch-nya (nama file / isian) = flitch itu; file tanpa
+     flitch -> titik yang Z-nya dalam +-tol dari RL atas (cara lama) */
+  function ptsLv(top, tol) { var off = D().filt.off || {}, C = {}, t = isFinite(tol) ? tol : 0.75; return pts().filter(function (q) { var c = fname(q); if (off[c] || !isFinite(q.z)) return false; var fl = C[c]; if (fl === undefined) fl = C[c] = fileFl(c) || null; return fl ? Math.abs(fl.top - top) < 1e-3 : Math.abs(q.z - top) <= t; }); }
+  /* titik yang dipakai di layar (snap & gambar): RL min/maks diisi -> pita itu; kosong -> titik flitch aktif */
+  function ptsOn(bd) { var off = D().filt.off || {}; if (bd || bandMan()) { var b = bd || band(); return pts().filter(function (q) { return !off[fname(q)] && isFinite(q.z) && q.z >= b[0] && q.z <= b[1]; }); }
+    var B = null; try { B = lyBench(); } catch (e) {} if (!B) return pts().filter(function (q) { return !off[fname(q)] && isFinite(q.z); }); return ptsLv(B[0], B[0] - B[1]); }
+  SV.ptsLv = ptsLv; SV.files = files; SV.flParse = flParse;
   SV.ptsOn = ptsOn;
 
   /* ---------- poligon ---------- */
@@ -8611,7 +8628,7 @@ function amRoofFnDtm(o, B) {
 
   /* ---------- Z atap tiap titik poligon: IDW titik pick-up dalam radius & pita RL flitch ---------- */
   function zRoof(x, y, top, pr, Q) { if (pr.zMode !== 'idw' || !Q.length) return top; var R = +pr.rIdw || 6, R2 = R * R, sw = 0, sz = 0, ex = null;
-    for (var i = 0; i < Q.length; i++) { var q = Q[i], dx = q.x - x, dy = q.y - y, d2 = dx * dx + dy * dy; if (d2 > R2) continue; if (d2 < 1e-6) { ex = q.z; break; } var w = 1 / d2; sw += w; sz += w * q.z; }
+    for (var i = 0; i < Q.length; i++) { var q = Q[i], dx = q.x - x, dy = q.y - y, d2 = dx * dx + dy * dy; if (d2 > R2) continue; if (d2 < 4e-4) { ex = q.z; break; } /* sudut poligon = titik pick-up (snap / garis luar otomatis): Z-nya dipakai persis */ var w = 1 / d2; sw += w; sz += w * q.z; }
     if (ex !== null) return ex; return sw > 0 ? sz / sw : top; }
 
   /* ================= geometri solid (cara Surpac) ================= */
@@ -8684,11 +8701,11 @@ function amRoofFnDtm(o, B) {
 
   /* ---------- bangun solid satu periode ---------- */
   SV.build = function (p) { p = p || per(); if (!p) return null; var pr = P(p), Lv = levels(p), V = { x: [], y: [], z: [], add: function (x, y, z) { this.x.push(x); this.y.push(y); this.z.push(z); return this.x.length - 1; } };
-    var Q = pts().filter(function (q) { return !((D().filt.off || {})[q.c || '(tanpa nama)']) && isFinite(q.z); }).map(function (q) { return { x: q.x - offX, y: q.y - offY, z: q.z }; });
+    var Q = pts().filter(function (q) { return !((D().filt.off || {})[fname(q)]) && isFinite(q.z); }).map(function (q) { return { x: q.x - offX, y: q.y - offY, z: q.z }; });
     var warn = [], nodes = [], byLv = [];
     /* 1. ring tiap poligon (CCW, z atap) */
     Lv.forEach(function (g, li) { var row = []; g.L.forEach(function (x) { if (x.on === false) return; var Pp = ccw(clean(x.pts)); if (Pp.length < 3) return; if (!simple(Pp)) warn.push('Poligon ' + (x.name || x.id) + ' RL ' + f2(x.top) + ' memotong dirinya sendiri: hasil di situ bisa cacat.');
-      var Qb = Q.filter(function (q) { return Math.abs(q.z - g.top) <= (+pr.zTol || 0.75); });
+      var Qb = ptsLv(g.top, +pr.zTol || 0.75).map(function (q) { return { x: q.x - offX, y: q.y - offY, z: q.z }; });
       var ring = Pp.map(function (q) { return V.add(q[0], q[1], zRoof(q[0], q[1], g.top, pr, Qb)); });
       var nd = { poly: x, lv: li, top: g.top, bot: g.bot, ring: ring, P: Pp, c: cen(Pp), kids: [], pars: [], Qb: Qb }; nodes.push(nd); row.push(nd); }); byLv.push(row); });
     if (!nodes.length) return { err: 'Belum ada poligon yang aktif.' };
@@ -8790,6 +8807,28 @@ function amRoofFnDtm(o, B) {
     SV.msg = n ? n + ' poligon as-mined diambil' + (f || t ? ' (tanggal ' + (f || '…') + ' s.d. ' + (t || '…') + ')' : '') + '.' : '<span class=warn>Tidak ada poligon as-mined baru' + (f || t ? ' pada rentang tanggal periode ini' : '') + '.</span>'; dirty(); panel(); tree(); updatePlot(); };
   SV.fromDB = function () { var p = per(); if (!p || !BX.m) return; var B = lyBench(), n = 0; (window.lyPolys ? lyPolys() : []).forEach(function (o) { if (addPoly(p, o.s.pts.map(function (q) { return [q[0], q[1]]; }), B[0], B[1], 'db', o.s.d ? o.s.d + ' ' + o.s.no : 'DB ' + o.s.no)) n++; });
     SV.msg = n ? n + ' dig block flitch aktif diambil sebagai poligon.' : '<span class=warn>Tidak ada dig block baru di flitch aktif.</span>'; dirty(); panel(); tree(); updatePlot(); };
+  SV.setFl = function (i, k, v) { var f = files()[i]; if (!f) return; var d = D().filt; d.fl = d.fl || {}; var o = d.fl[f.c] || { top: isFinite(f.top) ? f.top : '', bot: isFinite(f.bot) ? f.bot : '' }; o[k] = v === '' ? '' : +v; d.fl[f.c] = o; dirty(); panel(); updatePlot(); };
+  /* ---------- garis luar otomatis (alpha shape) ----------
+     Pick-up nyata = sudut-sudut dig block aktual, beberapa dig block per file, TANPA pemisah, dan sisi
+     bersama antar dig block tidak diukur ulang -- jadi urutan titik tidak bisa dipakai sebagai poligon.
+     Yang bisa diturunkan dengan jujur dari titik saja adalah GARIS LUAR gugusnya: triangulasi Delaunay,
+     buang segitiga yang punya sisi > `L`, sisi yang tersisa dipakai satu segitiga saja = batas. Titik di
+     dalam batas tetap dipakai sebagai atap (opsi atap ikut titik pick-up). Ini USULAN: pemakai memeriksa. */
+  function outline(Q, L) { var P = [], seen = {}; Q.forEach(function (q) { var k = q.x.toFixed(2) + ',' + q.y.toFixed(2); if (!seen[k]) { seen[k] = 1; P.push([q.x, q.y]); } }); if (P.length < 3 || !window.Delaunator) return [];
+    var dl; try { dl = Delaunator.from(P); } catch (e) { return []; } var T = dl.triangles, E2 = {}, L2 = L * L, d2 = function (a, b) { var dx = P[a][0] - P[b][0], dy = P[a][1] - P[b][1]; return dx * dx + dy * dy; };
+    for (var t = 0; t < T.length; t += 3) { var a = T[t], b = T[t + 1], c = T[t + 2]; if (d2(a, b) > L2 || d2(b, c) > L2 || d2(c, a) > L2) continue; var cr = (P[b][0] - P[a][0]) * (P[c][1] - P[a][1]) - (P[b][1] - P[a][1]) * (P[c][0] - P[a][0]); if (Math.abs(cr) < 1e-9) continue; if (cr < 0) { var w = b; b = c; c = w; }
+      [[a, b], [b, c], [c, a]].forEach(function (e) { var r = e[1] + '>' + e[0]; if (E2[r]) delete E2[r]; else E2[e[0] + '>' + e[1]] = e; }); }
+    /* sisi batas berarah (segitiga di kiri) -> rangkai jadi loop; di titik jepit pilih belokan paling KIRI: tiap cuping jadi loop sendiri yang sederhana */
+    var out = {}; for (var k in E2) { var e = E2[k]; (out[e[0]] = out[e[0]] || []).push(e[1]); } var loops = [];
+    for (var s0 in out) { while (out[s0] && out[s0].length) { var st = +s0, cur = st, nx = out[st].pop(), lp = [st], prev = st, g = 0; while (nx !== st && g++ < 100000) { lp.push(nx); var O = out[nx]; if (!O || !O.length) { lp = null; break; } var pick = 0; if (O.length > 1) { var bx = P[nx][0] - P[prev][0], by = P[nx][1] - P[prev][1], ba = -9; O.forEach(function (c2, ix) { var cx = P[c2][0] - P[nx][0], cy = P[c2][1] - P[nx][1], an = Math.atan2(bx * cy - by * cx, bx * cx + by * cy); if (an > ba) { ba = an; pick = ix; } }); }
+          prev = nx; nx = O.splice(pick, 1)[0]; } if (lp && lp.length >= 3) loops.push(lp.map(function (ix) { return P[ix]; })); } }
+    return loops.filter(function (lp) { return -sArea(lp) > 1; }); /* sArea() di modul ini NEGATIF untuk loop berlawanan jarum jam = loop luar; lubang & serpihan < 1 m2 dibuang */ }
+  SV.outline = outline;
+  SV.auto = function () { var p = per(); if (!p) { alert('Tambah periode dulu.'); return; } var pr = P(p), F = files().filter(function (f) { return isFinite(f.top) && !(D().filt.off || {})[f.c]; }), n = 0, tanpa = files().length - F.length, off = D().filt.off || {};
+    if (!F.length) { alert('Tidak ada file titik atap yang RL flitch-nya diketahui. Isi RL atas & bawah di tabel file.'); return; }
+    var ada = p.polys.filter(function (x) { return x.src === 'auto'; }).length; if (ada && !confirm('Ganti ' + ada + ' poligon garis-luar otomatis yang sudah ada? (Poligon hasil digit / as-mined tidak disentuh.)')) return; p.polys = p.polys.filter(function (x) { return x.src !== 'auto'; });
+    F.forEach(function (f) { var Q = pts().filter(function (q) { return fname(q) === f.c && isFinite(q.z); }).map(function (q) { return { x: q.x - offX, y: q.y - offY }; }), nm = f.c.replace(/\.[^.]+$/, ''); outline(Q, +pr.aEdge || 12).forEach(function (lp, i) { if (addPoly(p, lp, f.top, f.bot, 'auto', nm.length > 22 ? nm.slice(0, 20) + '… #' + (i + 1) : nm + ' #' + (i + 1))) n++; }); });
+    SV.msg = n + ' poligon garis luar dibuat dari ' + F.length + ' file' + (tanpa ? ' (' + tanpa + ' file dilewati: RL flitch belum diisi / dimatikan)' : '') + '. <b>Periksa di plan tiap flitch</b> (tombol Buka); poligon yang tidak cocok dihapus lalu didigit.'; dirty(); panel(); tree(); updatePlot(); };
   SV.delPoly = function (id) { var p = per(); if (!p) return; p.polys = p.polys.filter(function (x) { return x.id !== id; }); dirty(); panel(); tree(); updatePlot(); };
   SV.polyOn = function (id, v) { var p = per(); if (!p) return; p.polys.forEach(function (x) { if (x.id === id) x.on = v; }); dirty(); panel(); updatePlot(); };
   SV.goLv = function (top, bot) { try { lySet('fh', +(top - bot).toFixed(3)); lyU().bot = ''; lySet('top', +(+top).toFixed(3)); if (window.PT && PT.mau) PT.mau('sv'); lyApply(); uiTab('SV'); panel(); } catch (e) { console.error(e); } };
@@ -8852,15 +8891,19 @@ function amRoofFnDtm(o, B) {
     if (!p) { el.innerHTML = h; return; }
     /* titik atap */
     h += sec('pts', 'Titik atap (pick-up roof)', '<div class=svrow><label class=svbtn><input type=file multiple accept=".csv,.txt,.str,.dxf" style="display:none" onchange="SV.import(this)">Import titik atap (CSV / STR / DXF)&hellip;</label>' + (pts().length ? '<button class=x onclick="SV.clearPts()" title="Hapus semua titik atap">&times;</button>' : '') + '</div>' +
-      (pts().length ? '<div class=svfiles>' + F.map(function (f) { return '<label class=sw><input type=checkbox ' + (off[f.c] ? '' : 'checked') + ' onchange="SV.fileOn(\'' + E(f.c).replace(/'/g, '') + '\',this.checked)">' + E(f.c) + ' <small>' + N(f.n) + '</small></label>'; }).join('') + '</div>' +
-        '<div class=g3><div><label>RL min</label><input type=number step=any value="' + (d.filt.z0 === undefined || d.filt.z0 === '' ? '' : d.filt.z0) + '" placeholder="' + f2(bd[0]) + '" onchange="SV.setFilt(\'z0\',this.value)"></div><div><label>RL maks</label><input type=number step=any value="' + (d.filt.z1 === undefined || d.filt.z1 === '' ? '' : d.filt.z1) + '" placeholder="' + f2(bd[1]) + '" onchange="SV.setFilt(\'z1\',this.value)"></div><div><label>&nbsp;</label><button onclick="SV.setFilt(\'z0\',\'\');SV.setFilt(\'z1\',\'\')" title="Kosongkan = otomatis ±1 flitch di sekitar flitch aktif">Auto</button></div></div>' +
-        '<div class=hint>' + N(on.length) + ' dari ' + N(pts().length) + ' titik dalam pita RL ' + f2(bd[0]) + '&ndash;' + f2(bd[1]) + '. Titik ini jadi sasaran <b>snap</b> saat mendigit dan sumber Z atap tiap sudut poligon. (Sama dengan titik atap di As-Mined &rsaquo; Poligon.)</div>' : '<div class=hint>Belum ada titik atap. Import pick-up survey atap galian (ID, X, Y, Z, kode) atau STR/DXF.</div>'));
+      (pts().length ? '<table class=pltb style="margin-top:4px"><tr><th></th><th>File</th><th>Titik</th><th>Z titik</th><th>RL atas</th><th>RL bawah</th><th></th></tr>' + F.map(function (f, i) { var cur = fl && isFinite(f.top) && Math.abs(f.top - B[0]) < 1e-3 && Math.abs(f.bot - B[1]) < 1e-3; return '<tr' + (cur ? ' class=svcur' : '') + '><td><input type=checkbox ' + (off[f.c] ? '' : 'checked') + ' onchange="SV.fileOn(SV.files()[' + i + '].c,this.checked)" title="Pakai file ini"></td><td title="' + E(f.c) + '" style="max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + E(f.c) + '</td><td>' + N(f.n) + '</td><td><small>' + (f.n && f.z1 >= f.z0 ? f2(f.z0) + '&ndash;' + f2(f.z1) : '-') + '</small></td>' +
+          '<td><input type=number step=any style="width:54px" value="' + (isFinite(f.top) ? f.top : '') + '" onchange="SV.setFl(' + i + ',\'top\',this.value)" title="RL atas flitch file ini (dibaca dari nama file; bisa dikoreksi)"></td><td><input type=number step=any style="width:54px" value="' + (isFinite(f.bot) ? f.bot : '') + '" onchange="SV.setFl(' + i + ',\'bot\',this.value)"></td>' +
+          '<td>' + (isFinite(f.top) ? '<button onclick="SV.goLv(' + f.top + ',' + f.bot + ')" title="Jadikan flitch aktif & buka plan-nya">Buka</button>' : '<span class=warn title="Nama file tidak memuat RL flitch: isi RL atas & bawah">?</span>') + '</td></tr>'; }).join('') + '</table>' +
+        '<div class=hint>RL flitch dibaca dari <b>nama file</b> (mis. <code>&hellip;_235-5_234_&hellip;</code> = RL 235,5&ndash;234) dan menentukan titik mana milik flitch mana &mdash; bukan dari Z titiknya, karena atap galian nyata naik-turun melewati batas flitch.</div>' +
+        '<div class=g3><div><label>RL min</label><input type=number step=any value="' + (d.filt.z0 === undefined || d.filt.z0 === '' ? '' : d.filt.z0) + '" placeholder="' + f2(bd[0]) + '" onchange="SV.setFilt(\'z0\',this.value)"></div><div><label>RL maks</label><input type=number step=any value="' + (d.filt.z1 === undefined || d.filt.z1 === '' ? '' : d.filt.z1) + '" placeholder="' + f2(bd[1]) + '" onchange="SV.setFilt(\'z1\',this.value)"></div><div><label>&nbsp;</label><button onclick="SV.setFilt(\'z0\',\'\');SV.setFilt(\'z1\',\'\')" title="Kosongkan = titik milik flitch aktif (menurut file)">Auto</button></div></div>' +
+        '<div class=hint>' + N(on.length) + ' dari ' + N(pts().length) + ' titik dipakai untuk ' + (bandMan() ? 'pita RL ' + f2(bd[0]) + '&ndash;' + f2(bd[1]) : 'flitch aktif') + '. Titik ini jadi sasaran <b>snap</b> saat mendigit dan sumber Z atap tiap sudut poligon. RL min / maks hanya diisi bila ingin menyaring manual.</div>' : '<div class=hint>Belum ada titik atap. Import pick-up survey atap galian (ID, X, Y, Z, kode) atau STR/DXF.</div>'));
     /* poligon */
     var Lv = levels(p);
     h += sec('poly', 'Poligon per flitch', '<div class=hint>Flitch aktif: <b>' + (fl ? 'RL ' + f2(B[0]) + '&ndash;' + f2(B[1]) : 'belum diterapkan (tombol Digit menerapkannya)') + '</b>. Satu poligon per pulau per flitch; snap ke titik atap otomatis.</div>' +
       '<div class=g3><button class=btn-pri onclick="SV.dig()" ' + (DG.svm ? 'disabled' : '') + ' title="Digit poligon tertutup di plan flitch aktif (snap ke titik atap). Klik titik pertama lagi / Enter untuk menutup.">' + (DG.svm ? '&#9679; Mendigit&hellip;' : 'Digit poligon') + '</button><button onclick="SV.fromAM()" title="Semua poligon register as-mined (semua flitch) dalam rentang tanggal periode">Ambil as-mined</button><button onclick="SV.fromDB()" title="Dig block flitch aktif menjadi poligon">Ambil dig block</button></div>' +
+      '<div class=g2 style="margin-top:4px"><button onclick="SV.auto()" ' + (pts().length ? '' : 'disabled') + ' title="Usulan poligon untuk SEMUA file ber-flitch: garis luar gugus titik pick-up (alpha shape). Periksa hasilnya di plan; hapus & digit ulang yang tidak cocok.">Garis luar otomatis (semua file)</button><div><label>Sisi terpanjang (m)</label><input type=number step=any min=1 value="' + pr.aEdge + '" onchange="SV.setPar(\'aEdge\',+this.value)" title="Dua titik dianggap satu tubuh bila bisa dihubungkan segitiga dengan sisi <= ini. Kecil = mengikuti lekuk & memisah pulau; besar = lebih membulat & menyatukan."></div></div>' +
       (DG.svm ? '<div class=hint><label class=sw><input type=checkbox ' + (pr.snap === false ? '' : 'checked') + ' onchange="SV.setPar(\'snap\',this.checked)">Snap ke titik atap</label> &middot; <button onclick="dgUndo()">Undo titik</button> <button onclick="dgCancel()">Batal</button></div>' : '') +
-      (Lv.length ? '<table class=pltb style="margin-top:4px"><tr><th></th><th>Flitch</th><th>Nama</th><th>Titik</th><th>Luas</th><th>Sumber</th><th></th></tr>' + Lv.map(function (g) { return g.L.map(function (v, i) { return '<tr' + (Math.abs(g.top - B[0]) < 1e-6 && fl ? ' class=svcur' : '') + '><td><input type=checkbox ' + (v.on === false ? '' : 'checked') + ' onchange="SV.polyOn(\'' + v.id + '\',this.checked)" title="Ikut dibangun"></td>' + (i === 0 ? '<td rowspan=' + g.L.length + '><a href="javascript:void(0)" onclick="SV.goLv(' + g.top + ',' + g.bot + ')" title="Buka flitch ini">RL ' + f2(g.top) + '<br><small>' + f2(g.bot) + '</small></a></td>' : '') + '<td>' + E(v.name || '-') + '</td><td>' + v.pts.length + '</td><td>' + N(Math.abs(sArea(v.pts)), 0) + ' m&sup2;</td><td><small>' + ({ digit: 'digit', am: 'as-mined', db: 'dig block' }[v.src] || v.src) + '</small></td><td><button class=x onclick="SV.delPoly(\'' + v.id + '\')" title="Hapus">&times;</button></td></tr>'; }).join(''); }).join('') + '</table>' + '<button style="margin-top:4px;width:100%" onclick="SV.lihat()" title="Poligon digambar di RL atas flitchnya; kamera 3D didekatkan ke sana">Lihat poligon di 3D</button>' : '<div class=hint>Belum ada poligon.</div>'));
+      (Lv.length ? '<table class=pltb style="margin-top:4px"><tr><th></th><th>Flitch</th><th>Nama</th><th>Titik</th><th>Luas</th><th>Sumber</th><th></th></tr>' + Lv.map(function (g) { return g.L.map(function (v, i) { return '<tr' + (Math.abs(g.top - B[0]) < 1e-6 && fl ? ' class=svcur' : '') + '><td><input type=checkbox ' + (v.on === false ? '' : 'checked') + ' onchange="SV.polyOn(\'' + v.id + '\',this.checked)" title="Ikut dibangun"></td>' + (i === 0 ? '<td rowspan=' + g.L.length + '><a href="javascript:void(0)" onclick="SV.goLv(' + g.top + ',' + g.bot + ')" title="Buka flitch ini">RL ' + f2(g.top) + '<br><small>' + f2(g.bot) + '</small></a></td>' : '') + '<td>' + E(v.name || '-') + '</td><td>' + v.pts.length + '</td><td>' + N(Math.abs(sArea(v.pts)), 0) + ' m&sup2;</td><td><small>' + ({ digit: 'digit', am: 'as-mined', db: 'dig block', auto: 'garis luar' }[v.src] || v.src) + '</small></td><td><button class=x onclick="SV.delPoly(\'' + v.id + '\')" title="Hapus">&times;</button></td></tr>'; }).join(''); }).join('') + '</table>' + '<button style="margin-top:4px;width:100%" onclick="SV.lihat()" title="Poligon digambar di RL atas flitchnya; kamera 3D didekatkan ke sana">Lihat poligon di 3D</button>' : '<div class=hint>Belum ada poligon.</div>'));
     /* parameter */
     h += sec('par', 'Parameter solid', '<div class=g2><div><label>Jarak sambung maks (m)</label><input type=number step=any min=0 value="' + pr.dmax + '" onchange="SV.setPar(\'dmax\',+this.value)" title="Poligon dua flitch berurutan disambung bila jarak datarnya <= ini; lebih jauh = pulau terpisah (ditutup sendiri)"></div><div><label>Metode sambung (Surpac)</label><select onchange="SV.setPar(\'method\',this.value)"><option value=min' + (pr.method === 'min' ? ' selected' : '') + '>Luas permukaan minimum</option><option value=equi' + (pr.method === 'equi' ? ' selected' : '') + '>Equi-angular</option><option value=prop' + (pr.method === 'prop' ? ' selected' : '') + '>Proporsional keliling</option></select></div></div>' +
       '<div class=g3><div><label>Z atap sudut poligon</label><select onchange="SV.setPar(\'zMode\',this.value)"><option value=idw' + (pr.zMode === 'idw' ? ' selected' : '') + '>IDW titik atap</option><option value=flat' + (pr.zMode === 'flat' ? ' selected' : '') + '>Datar = RL atas flitch</option></select></div><div><label>Radius IDW (m)</label><input type=number step=any min=0.1 value="' + pr.rIdw + '" onchange="SV.setPar(\'rIdw\',+this.value)"></div><div><label>Pita RL titik &plusmn; (m)</label><input type=number step=any min=0 value="' + pr.zTol + '" onchange="SV.setPar(\'zTol\',+this.value)" title="Titik atap yang dipakai untuk flitch = yang Z-nya dalam ± ini dari RL atas flitch"></div></div>' +
@@ -10841,7 +10884,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.51';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.52';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

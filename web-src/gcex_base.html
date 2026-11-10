@@ -3306,7 +3306,7 @@ AM.dn=0;AM.digOn=false;
    disalin, perbaikan pada salah satunya tidak akan ikut ke yang lain. */
 function amPtsFile(files,slot){if(!files||!files.length)return;slot=(slot==='ptsR')?'ptsR':'pts';var L=Array.prototype.slice.call(files),n0=amD()[slot]?amD()[slot].length:0;AM.pmsg='Membaca titik pick-up '+(slot==='ptsR'?'ATAP':'lantai')+'&hellip;';amPanel();
   (async function(){var D=amD();D[slot]=D[slot]||[];var TG=D[slot];for(var i=0;i<L.length;i++){var f=L[i],ext=(f.name.split('.').pop()||'').toLowerCase();try{
-      if(ext==='str'||ext==='dxf'){var segs=await SA.readLines({f:f,k:ext});segs.forEach(function(P){P.forEach(function(q){TG.push({x:+q[0],y:+q[1],z:+q[2],id:'',c:f.name.replace(/\.[^.]+$/,'')});});});}
+      if(ext==='str'||ext==='dxf'){var segs=await SA.readLines({f:f,k:ext});segs.forEach(function(P){P.forEach(function(q){TG.push({x:+q[0],y:+q[1],z:+q[2],id:'',c:f.name.replace(/\.[^.]+$/,''),f:f.name});});});}
       else{var T=amParse(await f.text()),h=T.h,ix=amCol(h,/^(x|east|easting|e)$/i),iy=amCol(h,/^(y|north|northing|n)$/i),iz=amCol(h,/^(z|rl|elev|elevation|h|height)$/i),ii=amCol(h,/^(id|pt|point|ptid|point_?id|name|no|nama)$/i),ic=amCol(h,/^(code|kode|desc|description|keterangan|ket|remark|layer)$/i),rows=T.r;
         if(ix<0||iy<0){var num=h.map(function(v){return isFinite(amNum(v));});rows=T.r.concat(num.filter(Boolean).length>=3?[h]:[]);
         /* Tanpa baris judul, kolom tidak boleh ditebak dari urutannya. Berkas survey pick-up
@@ -3323,7 +3323,7 @@ function amPtsFile(files,slot){if(!files||!files.length)return;slot=(slot==='pts
         if(j>=0){ix=j;iy=j+1;iz=(j+2<nc&&isFinite(M[j+2]))?j+2:-1;ic=(j+3<nc)?j+3:-1;ii=(j>0)?j-1:-1;}
         else{var r0=rows[0]||[],nn=r0.map(function(v){return isFinite(amNum(v));});
           if(nn[0]&&nn[1]&&nn[2]&&!nn[3]){ix=0;iy=1;iz=2;ic=3;}else if(!nn[0]){ii=0;ix=1;iy=2;iz=3;ic=4;}else{ix=0;iy=1;iz=2;}}}
-        rows.forEach(function(r){var x=amNum(r[ix]),y=amNum(r[iy]),z=iz>=0?amNum(r[iz]):NaN;if(isFinite(x)&&isFinite(y))TG.push({x:x,y:y,z:z,id:ii>=0?String(r[ii]||''):'',c:ic>=0?String(r[ic]||''):''});});}
+        rows.forEach(function(r){var x=amNum(r[ix]),y=amNum(r[iy]),z=iz>=0?amNum(r[iz]):NaN;if(isFinite(x)&&isFinite(y))TG.push({x:x,y:y,z:z,id:ii>=0?String(r[ii]||''):'',c:ic>=0?String(r[ic]||''):'',f:f.name});});}
     }catch(e){AM.pmsg='<span class=warn>'+amE(f.name)+': '+amE(e.message)+'</span>';}}
     AM.pmsg=(TG.length-n0).toLocaleString()+' titik pick-up '+(slot==='ptsR'?'ATAP':'lantai')+' ditambahkan.';amPanel();updatePlot();amDirty();})();}
 function amPtsClear(slot){slot=(slot==='ptsR')?'ptsR':'pts';amD()[slot]=[];AM.pmsg='';amPanel();updatePlot();amDirty();}
