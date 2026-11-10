@@ -4363,3 +4363,7 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   *Buka kunci* tetap tersedia (dengan konfirmasi). Pilih *Semua tanggal* untuk menyalin seluruh register seperti dulu.
 - **Daftar poligon per flitch** (*Register poligon*) tampil sebagai **jendela pop-up** secara bawaan saat node-nya dipilih — tidak
   perlu scroll panjang ketika flitch banyak. Tombol *↩ Panel* mengembalikannya ke panel.
+
+## 170. Block Model 0.24.62 — isian Report As-Mined harian sejajar
+
+- Isian *Tanggal* dan *Shift* kini sejajar dalam satu baris; pilihan *tanggal yang punya poligon* dipindah ke baris sendiri.
