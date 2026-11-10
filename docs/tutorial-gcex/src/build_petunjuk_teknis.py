@@ -699,6 +699,8 @@ B.append('<p><b>Solid Vein &mdash; gabung tampalan.</b> <code>SV.polyUnion(A,B)<
 B.append('<p><b>Data latihan di aplikasi terpasang (BM 0.24.55 / DH 0.24.58).</b> Skema <code>gcexfile</code> terdaftar <i>standard</i>: bagian pertama sesudah <code>//</code> adalah host dan tidak masuk <code>pathname</code>. '
          'Penangan di <code>electron/main.js</code> memeriksa <code>pathname.startsWith(\'latihan/\')</code>, jadi alamat yang benar adalah <code>gcexfile://open/latihan/&lt;nama&gt;</code> (<code>DLAT.url</code> di <code>demodata.js</code>), bukan <code>gcexfile://latihan/&lt;nama&gt;</code> yang selalu 404. '
          'Uji peramban tidak melewati jalur ini; <code>tools/uji/uji_url_latihan.js</code> meniru penangan untuk menjaganya.</p>')
+B.append('<p><b>Jangkar tanpa bor (DH 0.24.59).</b> <code>SA.boot</code>: <code>ANCH = D.anch || (tanpa collar ? SA.anchSpasial(D) : null)</code> &mdash; batas topografi + desain pit (titik lolos <code>SA.koordOk</code>). '
+         'Tanpa ini proyek yang database bornya dihapus (<code>PTD.drop(\'all\')</code>) memakai <code>offX/offY</code> = 0 dan <code>G</code> = 0&ndash;100 m, sehingga <code>OV.topoC</code> / <code>OV.pitC</code> (overlay dipotong area kerja) kosong. Uji: <code>uji_hapus_bor_overlay.py</code>.</p>')
 B.append('<h3>Urutan Project Tree Drill Hole</h3>')
 B.append('<p>1 Proyek &middot; 2 Data Spasial &middot; 2b Import Wireframe Geologi &middot; 3 Database Bor &middot; 4 Peta '
          '&middot; 5 Struktur Geologi &middot; <b>5b Ore Geometry</b> (referensi, sebelum pemodelan) &middot; 6 Geomodeller '

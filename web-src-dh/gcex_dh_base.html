@@ -5268,7 +5268,14 @@ SA.reAnchor=async function(m){try{if(!m||!m.ext||(window.collars&&collars.length
   console.warn('[GC-Ex] jangkar area dihitung ulang dari block model; '+bad+' titik topo/pit jauh dibuang');
   alert('Acuan koordinat proyek ini ('+Math.round(offX)+', '+Math.round(offY)+') jauh dari block model (E '+Math.round(m.ext[0])+', N '+Math.round(m.ext[2])+') — biasanya sisa file STR yang dulu salah terbaca. Acuan dihitung ulang dari block model'+(bad?' dan '+bad.toLocaleString()+' titik topografi / pit yang jauh dibuang':'')+'. Halaman dimuat ulang.');
   location.reload();return true;}catch(e){console.error(e);return false;}};
-SA.boot=function(D,W){SA.bersihD(D);window.ANCH=D.anch||null;['collars','surveys','elements','asCat','assays','geoCat','geoRows','topoData','pitData','orthoImg'].forEach(function(k){window[k]=D[k]||(k==='orthoImg'?null:[]);});
+/* Jangkar area tanpa lubang bor. D.anch hanya diisi saat IMPORT proyek tanpa bor; proyek yang semula punya bor lalu
+   seluruh database bornya dihapus (menu Database Bor > Hapus seluruh database bor) tidak punya D.anch, sehingga
+   offX/offY jatuh ke 0 dan area kerja G ke kotak 0-100 m: topografi & desain pit yang dipotong ke area kerja (ovCrop)
+   jadi KOSONG dan sumbu tertulis "Easting (+0)" -- laporan pemilik 10-11-2026. Kini, bila tidak ada collar dan
+   tidak ada D.anch, jangkar dihitung dari batas topografi + desain pit yang ada (tidak disimpan; dihitung tiap buka). */
+SA.anchSpasial=function(D){var b=[1e18,-1e18,1e18,-1e18,1e18,-1e18],n=0;[D.topoData,D.pitData].forEach(function(A){(A||[]).forEach(function(p){if(!p||!isFinite(p[0])||!isFinite(p[1]))return;if(SA.koordOk&&!SA.koordOk(p[0],p[1],isFinite(p[2])?p[2]:0))return;n++;if(p[0]<b[0])b[0]=p[0];if(p[0]>b[1])b[1]=p[0];if(p[1]<b[2])b[2]=p[1];if(p[1]>b[3])b[3]=p[1];if(isFinite(p[2])){if(p[2]<b[4])b[4]=p[2];if(p[2]>b[5])b[5]=p[2];}});});
+  if(n<3)return null;if(b[4]>b[5]){b[4]=0;b[5]=100;}return b;};
+SA.boot=function(D,W){SA.bersihD(D);window.ANCH=D.anch||((D.collars||[]).length?null:SA.anchSpasial(D));['collars','surveys','elements','asCat','assays','geoCat','geoRows','topoData','pitData','orthoImg'].forEach(function(k){window[k]=D[k]||(k==='orthoImg'?null:[]);});
   window.ZONE=D.name;window.BENCHMAP=D.benchmap||{};SA.pname=D.name;SA.planFmt();document.title='GC-Ex - '+D.name;E('imp').classList.add('off');
   if(!W&&D.collars.length>400&&E('showLabel'))E('showLabel').checked=false;
   evalJs(E('vsrc').textContent);SA.projUI();if(W)SA.applyWork(W);

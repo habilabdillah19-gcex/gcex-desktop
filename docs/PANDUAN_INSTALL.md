@@ -4241,3 +4241,11 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
   "Gagal membaca data latihan SIM_collar.csv (HTTP 404)". Berkas latihannya ada di folder instalasi, tetapi alamat yang diminta
   aplikasi salah bentuk sehingga tidak pernah sampai ke sana. Sudah diperbaiki di kedua aplikasi.
 - Tidak ada perubahan lain pada Drillhole.
+
+## 159. Drillhole 0.24.59 — topografi & desain pit tetap tampil sesudah database bor dihapus
+
+- Sesudah **Database Bor › ⋯ › Hapus seluruh database bor**, topografi dan desain pit tidak bisa ditampilkan (jendela 3D kosong,
+  sumbu "Easting (+0)"). Sebabnya acuan koordinat proyek ikut hilang bersama lubang bor. Kini acuan dihitung dari topografi dan
+  desain pit yang ada. Proyek yang sudah terlanjur kosong pulih begitu dibuka dengan versi ini — tidak perlu import ulang.
+- Cara menghapus data bor: **⋯** di node Database Bor → *Hapus seluruh database bor…* atau *Hapus hole tertentu…*; **⋯** di node
+  Survey / Assay / Geologi → *Hapus tabel ini…*. Bisa dibatalkan lewat *Batalkan perubahan database terakhir*.
