@@ -31,6 +31,10 @@
       GM.doms.map(function(d){return '<option value="'+d.id+'"'+(on&&d.id===GM.act?' selected':'')+'>'+gmE(d.name)+(d.par?' (cabang)':'')+'</option>';}).join('')+'</select>'+
       (on?'<small>hanya sampel di dalam domain aktif</small>':(GM.doms.length?'<small class=warn>semua sampel tercampur</small>':'<small>belum ada domain (Geological Modelling)</small>'));};
   if(typeof window.gsRun==='function'){var _gr=gsRun;gsRun=function(){try{gsBar();}catch(e){}return _gr.apply(this,arguments);};}
+  /* 0.24.65 (uji data nyata Zona 3): bilah domain dulu tetap "belum ada domain" bila panel dibuka sebelum domain dibuat --
+     segarkan juga saat panel dibuka / ditutup-buka dan setiap daftar domain berubah */
+  /* (gsToggle TIDAK dibungkus: pembungkus di sini membuat tombol Geostatistik tidak membuka panel; lihat nyata_dh.js -- pengamat tampilan panel) */
+  if(typeof window.gmDirty==='function'){var _gd=gmDirty;gmDirty=function(){var r=_gd.apply(this,arguments);try{if(window.GS&&GS.open)gsBar();}catch(e){}return r;};}
   if(typeof window.gsTab==='function'){var _gt=gsTab;gsTab=function(t){var r=_gt.apply(this,arguments);try{var s=$('gsDomSel');if(s&&GM.act){var v=top(GM.act);if(s.querySelector('option[value="'+v+'"]'))s.value=v;}}catch(e){}return r;};}
   /* ---------- Model Estimation: jalankan domain aktif / semua ---------- */
   if(typeof window.meDomsReady==='function'){var _mr=meDomsReady;meDomsReady=function(){var L=_mr.apply(this,arguments);if(ME._only)L=L.filter(function(d){return d.id===ME._only;});return L;};}

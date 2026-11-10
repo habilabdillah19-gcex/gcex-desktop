@@ -14,7 +14,7 @@
    - Vein bercabang (domain induk + cabang): selubung dibuat dari domain INDUK dan memakai interval induk + semua cabang.
      Opsi 'Satukan cabang' (bawaan): satu bentang per bor dari kontak teratas s/d terbawah -> selubung melingkupi induk & cabang,
      sela waste di antaranya ikut selubung (sampelnya = sampel halo). */
-var ENVD={cut:0.2,dil:3,minL:1,ext:0,iso:false,soft:true,bridge:true};
+var ENVD={cut:0.2,dil:3,minL:1,ext:0,iso:false,soft:true,softD:2,bridge:true};
 function envIs(d){if(typeof d==='string')d=gmDom(d);return !!(d&&d.env);}
 function envOf(vid){for(var i=0;i<GM.doms.length;i++)if(GM.doms[i].env===vid)return GM.doms[i];return null;}
 function envO(d){return Object.assign({},ENVD,d&&d.envO||{});}
@@ -80,7 +80,7 @@ function envCopyEst(eid){var d=gmDom(eid),v=d&&gmDom(d.env);if(!v||!meParOf(v)){
           box.innerHTML='<div class=g2><div><label title="Batas kadar halo">COG halo</label><input type=number step=any value="'+O.cut+'" onchange="envSetO(\''+d.id+'\',\'cut\',+this.value)"></div><div><label title="Sela waste maks. di dalam halo">Dilusi (m)</label><input type=number step=any min=0 value="'+O.dil+'" onchange="envSetO(\''+d.id+'\',\'dil\',+this.value)"></div><div><label>Panjang min.</label><input type=number step=any min=0 value="'+O.minL+'" onchange="envSetO(\''+d.id+'\',\'minL\',+this.value)"></div><div><label title="Perluasan maks. halo dari kontak vein di sepanjang bor (0 = bebas)">Maks dari vein</label><input type=number step=any min=0 value="'+O.ext+'" onchange="envSetO(\''+d.id+'\',\'ext\',+this.value)"></div></div>'+
             '<label class=sw><input type=checkbox '+(O.iso?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'iso\',this.checked)">Ikutkan bor yang tidak menembus vein (halo tanpa vein)</label>'+
             (gmKids(d.env).length?'<label class=sw title="Untuk vein bercabang / split: di tiap bor selubung membentang dari kontak teratas s/d terbawah (vein induk + cabang + halo); sela waste di antara vein ikut selubung"><input type=checkbox '+(O.bridge!==false?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'bridge\',this.checked);gmDirty()">Satukan induk &amp; '+gmKids(d.env).length+' cabang dalam satu selubung (sela di antara vein ikut selubung)</label>':'')+
-            '<label class=sw><input type=checkbox '+(O.soft?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'soft\',this.checked);gmDirty(true)">Estimasi soft boundary (komposit halo + vein)</label>'+
+            '<label class=sw><input type=checkbox '+(O.soft?'checked':'')+' onchange="envSetO(\''+d.id+'\',\'soft\',this.checked);gmDirty(true)">Estimasi soft boundary (komposit halo + vein di zona transisi)</label>'+(O.soft?'<div class=g2><div><label title="Sampel vein yang ikut estimasi halo hanya yang berjarak &le; ini dari kontak vein (sepanjang lubang). 0 = seluruh vein.">Zona transisi vein (m)</label><input type=number step=any min=0 value="'+(O.softD!=null?O.softD:2)+'" onchange="envSetO(\''+d.id+'\',\'softD\',+this.value);gmDirty(true)"></div></div>':'')+
             '<div class=g2><button class=btn-pri onclick="envAuto(\''+d.id+'\')">&#9676; Usulkan halo</button><button onclick="envCopyEst(\''+d.id+'\')" title="Salin variogram, pass & top-cut dari domain vein">Salin parameter vein</button></div>'+
             (d.envMsg?'<div class=hint>'+d.envMsg+'</div>':'')+'<div class=hint>Koreksi manual: tab Flag &rarr; &#9998; Flag / &#9003; Hapus flag saat selubung aktif hanya mengubah halo (flag vein aman). Lalu String &rarr; Tarik otomatis &amp; Solid seperti vein biasa; di sisi tanpa halo selubung pinch-out ke kontak vein.</div>';
           box.insertAdjacentHTML('afterbegin','<div class=envh>&#9676; Selubung <b>'+gmE(d.name)+'</b> <small>(halo '+gmE(v?v.name:'?')+')</small></div>');
@@ -92,11 +92,26 @@ function envCopyEst(eid){var d=gmDom(eid),v=d&&gmDom(d.env);if(!v||!meParOf(v)){
 (function(){if(typeof meRuns!=='function')return;
   var _mr=meRuns;meRuns=function(dom){var d=gmDom(dom);if(!d||!d.env)return _mr.apply(this,arguments);var O=envO(d),R={};
     var hs={};Object.keys((GM.envF&&GM.envF[d.id])||{}).forEach(function(h){hs[h]=1;});if(O.soft)Object.keys(GM.flags).forEach(function(h){hs[h]=1;});
-    Object.keys(hs).forEach(function(h){if(!holeData[h])return;var V=envVeinIv(d,h),L=envBridge(d)?envSub(envSpan(d,h),V):envHalo(d,h);if(O.soft)L=L.concat(V);L=envMerge(L).map(function(r){return[r[0],Math.min(r[1],holeData[h].maxD)];}).filter(function(r){return r[1]>r[0];});if(L.length)R[h]=L;});return R;};
+    Object.keys(hs).forEach(function(h){if(!holeData[h])return;var V=envVeinIv(d,h),L=envBridge(d)?envSub(envSpan(d,h),V):envHalo(d,h);if(O.soft){var sd=O.softD!=null?+O.softD:2;
+      /* 0.24.65 (uji data nyata Zona 3): soft boundary = hanya sampel vein dalam sd m dari kontak (zona transisi), bukan seluruh vein --
+         dulu seluruh sampel vein ikut sehingga kadar halo naik dari 0,20 ke 0,76 g/t */
+      L=L.concat(sd>0?envMerge([].concat.apply([],V.map(function(r){return[[r[0],Math.min(r[1],r[0]+sd)],[Math.max(r[0],r[1]-sd),r[1]]];}))):V);}L=envMerge(L).map(function(r){return[r[0],Math.min(r[1],holeData[h].maxD)];}).filter(function(r){return r[1]>r[0];});if(L.length)R[h]=L;});return R;};
   var _mg=meGrpR;meGrpR=function(d){if(!d||!d.env)return _mg.apply(this,arguments);var R0=IM.R[d.id];if(!R0||!R0.mesh)return R0;var v=gmDom(d.env),RV=v?_mg(v):null;
     var key=R0.key+'|'+(RV&&RV.key||RV&&RV.mesh&&RV.mesh.x&&RV.mesh.x.length||'-');ME._env=ME._env||{};var c=ME._env[d.id];if(c&&c.key===key)return c;
     var WO=R0._W||(R0._W=wfInside(R0.mesh)),WV=RV&&RV.mesh?(RV.W||RV._W||(RV._W=wfInside(RV.mesh))):null;
     c={key:key,mesh:R0.mesh,W:{f:function(x,y,z){return WO.f(x,y,z)&&!(WV&&WV.f(x,y,z));},open:WO.open||0},fr:R0.fr,st:R0.st,env:true};ME._env[d.id]=c;return c;};
+  /* 0.24.65 (uji data nyata Zona 3): soft boundary -- sampel vein yang ikut estimasi halo dipotong dengan top-cut VEIN
+     (atau tidak dipotong bila vein tanpa top-cut), bukan top-cut halo. Sebelumnya top-cut halo (mis. 1,3 g/t) memangkas
+     sampel vein kadar tinggi sehingga populasi campuran itu tidak lagi mewakili keduanya. */
+  var _mc=meComps;meComps=function(d,P){var C=_mc.apply(this,arguments);if(!d||!d.env||!envO(d).soft)return C;var v=gmDom(d.env),PV=v&&meParOf(v),tv=PV?(+PV.tc||0):0,ns=0;
+    C.forEach(function(c){var V=envVeinIv(d,c.id),m=(c.f+c.t)/2;if(V.some(function(r){return m>=r[0]&&m<r[1];})){c.vein=1;c.vc=tv>0?Math.min(c.v,tv):c.v;ns++;}});C.nVein=ns;return C;};
   var _rd=meDomsReady;meDomsReady=function(){var L=_rd.apply(this,arguments);return L.filter(function(d){return !d.env;}).concat(L.filter(function(d){return d.env;}));};})();
 (function(){var st=document.createElement('style');st.textContent='#gmBody .gmd.envd{border-left:3px dotted var(--ac,#c49a4c);margin-left:10px}#gmBody .envlab{font-size:11px;color:var(--mu)}'+
   '#gmBody button.envadd{margin-left:6px;font-size:10.5px;padding:0 6px;min-height:18px}#gmBody .envbox{margin:8px 0 4px;padding:7px 8px;border:1px solid var(--bd);border-left:4px solid var(--ac,#c49a4c);border-radius:6px;background:var(--sf2)}#gmBody .envbox .envh{font-size:12px;margin-bottom:4px}#gmBody .envbox .g2{gap:5px;margin-bottom:4px}#gmBody .envbox label{font-size:10.5px}#gmBody .envbox input[type=number]{width:100%}';document.head.appendChild(st);})();
+
+/* 0.24.65: interval yang divalidasi di solid -- selubung memakai interval halo (GM.envF), bukan flag vein */
+function imFlagList(d){var o=[];if(d&&d.env){Object.keys((GM.envF&&GM.envF[d.id])||{}).forEach(function(h){envHalo(d,h).forEach(function(r){o.push([h,r[0],r[1]]);});});return o;}
+  Object.keys(GM.flags).forEach(function(id){(GM.flags[id]||[]).forEach(function(f){if(f[2]===d.id)o.push([id,f[0],f[1]]);});});return o;}
+/* 0.24.65: statistik domain selubung (jumlah bor, panjang, kadar rata-rata) dari interval halo */
+(function(){if(typeof gmStats!=='function')return;var _gs=gmStats;gmStats=function(){var S=_gs.apply(this,arguments);try{
+    GM.doms.forEach(function(d){if(!d.env||!S[d.id])return;var s=S[d.id];imFlagList(d).forEach(function(f){s.h[f[0]]=1;s.n++;s.l+=f[2]-f[1];});});/* kadar (vl/lv) sudah dihitung gmStats lewat gmCodeAt yang mengenali halo */}catch(e){console.error(e);}return S;};})();

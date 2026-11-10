@@ -325,7 +325,7 @@
       else del.delete(row);
       B.x[row] = it.x; B.y[row] = it.y; B.z[row] = it.z; B.sx[row] = it.sx; B.sy[row] = it.sy; B.sz[row] = it.sz;
       B.dom[row] = WID; B.type[row] = 3; B.date[row] = J.today; B.run[row] = J.runId;
-      B.est[row] = res.est; B.pass[row] = res.pass; B.sor[row] = res.sor; B.ke[row] = res.ke; B.kv[row] = res.kv; B.ns[row] = res.ns;
+      B.est[row] = res.est; B.pass[row] = res.pass; B.sor[row] = res.sor; B.ke[row] = res.ke; B.kv[row] = res.kv; B.ns[row] = res.ns; if (B.idw) B.idw[row] = -99; /* 0.24.65: ID² pembanding hanya untuk domain vein */
       if (B.nh) { B.nh[row] = res.nh == null ? 0 : res.nh; B.dmin[row] = res.dmin == null ? -99 : res.dmin; B.spasi[row] = res.spasi == null ? -99 : res.spasi; }
       Object.keys(B.ex || {}).forEach(function (e) { B.ex[e][row] = -99; });
       sum += res.est; nv++; if (res.est < mn) mn = res.est; if (res.est > mx) mx = res.est;

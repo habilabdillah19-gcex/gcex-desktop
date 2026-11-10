@@ -53,5 +53,9 @@ for nm, R in (("lama", A), ("baru", B)):
     if R["v2"][1] != 0 or R["v2"][0] != R["v0"][0]: salah.append(nm + ": sumber dimatikan tapi struktur masih dipakai %s" % R)
     if R["v3"][1] != 0 or R["v3"][0] != R["v0"][0]: salah.append(nm + ": 'Pakai struktur' domain dimatikan tapi masih dipakai %s" % R)
     if R["v4"] != R["v1"]: salah.append(nm + ": dihidupkan lagi tidak kembali ke hasil semula %s" % R)
-if {k: A.get(k) for k in ("v0", "v1", "v2", "v3", "v4", "nP")} != {k: B.get(k) for k in ("v0", "v1", "v2", "v3", "v4", "nP")}: salah.append("angka build baru berbeda dari build lama")
+# DH 0.24.65: kontak berjarak < 2 m sepanjang string dirata-rata & batas tebal solid -> volume boleh bergeser <= 0,1 %;
+# jumlah struktur & perilaku sumber on/off tetap harus identik
+for k in ("v0", "v1", "v2", "v3", "v4"):
+    if A[k][1:] != B[k][1:] or abs(A[k][0] - B[k][0]) > 0.001 * max(1, A[k][0]): salah.append("angka build baru berbeda dari build lama: %s %s vs %s" % (k, A[k], B[k]))
+if A.get("nP") != B.get("nP"): salah.append("jumlah titik struktur berbeda")
 print("\nGAGAL:\n  " + "\n  ".join(salah) if salah else "\nLULUS")

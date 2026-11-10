@@ -122,8 +122,8 @@ def patch(s):
     # ---- helper (sebelum imBuild) ----
     s = rep(s, "/* ---------- bangun solid satu domain ---------- */", HELPERS + "\n/* ---------- bangun solid satu domain ---------- */")
     # ---- imPts: jejak singkapan dari Map ----
-    s = rep(s, "return{H:H,W:W,nc:nc,nj:nj,sn:SN,nsp:nsp,spk:Object.keys(SP)};}",
-            "var MO={n:0,f:[],miss:[]};try{MO=mapOutcrop(d,P,H,W,r);}catch(e){console.error(e);}return{H:H,W:W,nc:nc,nj:nj,sn:SN,nsp:nsp,spk:Object.keys(SP),nmo:MO.n,mof:MO.f,mom:MO.miss};}")
+    s = rep(s, "return{H:H,W:W,nc:nc,nj:nj,njAll:njAll,sn:SN,nsp:nsp,spk:Object.keys(SP)};}",
+            "var MO={n:0,f:[],miss:[]};try{MO=mapOutcrop(d,P,H,W,r);}catch(e){console.error(e);}return{H:H,W:W,nc:nc,nj:nj,njAll:njAll,sn:SN,nsp:nsp,spk:Object.keys(SP),nmo:MO.n,mof:MO.f,mom:MO.miss};}")
     # ---- imKey: lineasi Map (hanya bila ada -> kunci proyek lama tetap) ----
     s = rep(s, "return imHash(JSON.stringify([5,window.STR?STR.ver:0,",
             "var _mk=window.mapGmKey?mapGmKey():'';return imHash((_mk?_mk+'#':'')+JSON.stringify([5,window.STR?STR.ver:0,")

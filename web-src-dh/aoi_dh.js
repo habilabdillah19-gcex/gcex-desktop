@@ -52,11 +52,13 @@
     var x0 = G.x0 - mg + offX, x1 = G.x1 + mg + offX, y0 = G.y0 - mg + offY, y1 = G.y1 + mg + offY;
     if (m && m.ext) { x0 = Math.min(x0, m.ext[0]); x1 = Math.max(x1, m.ext[1]); y0 = Math.min(y0, m.ext[2]); y1 = Math.max(y1, m.ext[3]); }
     var zt = G.z1 + 10, zb = G.z0 - 20;
+    var org = (m && m.mdl && m.mdl.origin) ? m.mdl.origin.slice() : [0, 0, 0];
     if (m && m.ext) { zt = Math.max(zt, m.ext[5]); zb = Math.min(zb, m.ext[4]); }
     return { x0: Math.round(x0), x1: Math.round(x1), y0: Math.round(y0), y1: Math.round(y1),
              zb: Math.round(zb), zt: Math.round(zt), bx: bs, by: bs, bz: bz, snap: true,
              topo: (typeof imTopoOk === 'function' && imTopoOk()) ? 1 : 0, pit: 0, poly: '',
-             mode: (m ? 'isi' : 'penuh'), name: '' };
+             mode: (m ? 'isi' : 'penuh'), name: '',
+             ox: org[0], oy: org[1], oz: org[2] };
   }
   function aoiO() { if (!AOI.cfg) AOI.cfg = aoiDef(); return AOI.cfg; }
 
@@ -213,6 +215,9 @@
       row('E minimum', inp('aoix0', o.x0)) + row('E maksimum', inp('aoix1', o.x1)) +
       row('N minimum', inp('aoiy0', o.y0)) + row('N maksimum', inp('aoiy1', o.y1)) +
       row('RL dasar', inp('aoizb', o.zb)) + row('RL atas', inp('aoizt', o.zt)) + '</div>' +
+      '<div class=cmh>Origin grid (pangkal kisi saat snap)</div><div class=cm>' +
+      row('Origin E', inp('aoiox', o.ox)) + row('Origin N', inp('aoioy', o.oy)) + row('Origin RL', inp('aoioz', o.oz)) + '</div>' +
+      '<label class=sw><input type=checkbox ' + (o.snap ? 'checked' : '') + ' onchange="AOI.tog(&#39;snap&#39;,this.checked)">Snap extent ke kisi origin (bawaan: origin block model .mdl aktif) &mdash; blok sejajar dengan model Surpac</label>' +
       '<div class=cmh>Ukuran blok</div><div class=cm>' +
       row('Ukuran X (m)', inp('aoibx', o.bx)) + row('Ukuran Y (m)', inp('aoiby', o.by)) + row('Ukuran Z / tinggi flitch (m)', inp('aoibz', o.bz)) + '</div>' +
       '<div class=cmh>Batas (blok di luar batas tidak dibuat)</div>' +
@@ -255,7 +260,10 @@
     var c = JSON.parse(JSON.stringify(o));
     ['bx', 'by', 'bz'].forEach(function (k) { if (!(c[k] > 0)) throw new Error('Ukuran blok harus lebih besar dari nol.'); });
     if (c.x1 <= c.x0 || c.y1 <= c.y0 || c.zt <= c.zb) throw new Error('Extent tidak valid: maksimum harus lebih besar dari minimum.');
-    if (c.snap) { c.x0 = Math.floor(c.x0 / c.bx) * c.bx; c.y0 = Math.floor(c.y0 / c.by) * c.by; c.zb = Math.floor(c.zb / c.bz) * c.bz; }
+    /* 0.24.65 (uji data nyata Zona 3): snap ke kisi yang berpangkal di ORIGIN grid (bawaan: origin .mdl aktif), bukan di
+       koordinat 0 -- sebelumnya grid bergeser 1,0 m (X) / 0,5 m (Y) dari .mdl Surpac berorigin 558550 / 9009950 */
+    if (c.snap) { var ox = +c.ox || 0, oy = +c.oy || 0, oz = +c.oz || 0;
+      c.x0 = ox + Math.floor((c.x0 - ox) / c.bx + 1e-9) * c.bx; c.y0 = oy + Math.floor((c.y0 - oy) / c.by + 1e-9) * c.by; c.zb = oz + Math.floor((c.zb - oz) / c.bz + 1e-9) * c.bz; }
     c.x1 = c.x0 + Math.ceil((c.x1 - c.x0) / c.bx) * c.bx;
     c.y1 = c.y0 + Math.ceil((c.y1 - c.y0) / c.by) * c.by;
     c.zt = c.zb + Math.ceil((c.zt - c.zb) / c.bz) * c.bz;

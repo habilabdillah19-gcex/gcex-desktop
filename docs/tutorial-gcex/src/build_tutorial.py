@@ -117,7 +117,7 @@ BAGIAN = [
    'Filter domain &amp; statistik',
    'Domain aktif di Geostatistik', 'Variogram, anisotropi', 'Kriging Neighbourhood Analysis',
    'Uji estimasi &amp; simpan parameter', 'Block model dari nol', 'Sub-blocking',
-   'Model Estimation: estimasi block model GC', 'Estimasi waste',
+   'Model Estimation: estimasi block model GC', 'Area pengaruh, radius', 'Estimasi waste',
    'Koreksi setelah bor baru', 'Autorun: wireframe', 'Autorun Estimasi dari Nol', 'Latihan terpandu']),
  ('Bagian III &middot; Deposit laterit / stratiform berlapis',
   'Endapan <b>laterit</b> (nikel, bauksit) dan <b>stratiform</b> (sedex, seam) &mdash; lapisan tipis '
@@ -674,6 +674,15 @@ ch('Model Estimation: estimasi block model GC', dta('block model <code>SIM_BM_GC
  + '<h3>Atribut baru di block model</h3>' + kv([('au_est','kadar hasil estimasi (&minus;99 bila tidak diestimasi)'),('au_final','au_est bila ada, selain itu kadar GC asli &mdash; dipakai untuk perencanaan'),('domain_est','nama domain vein'),('est_pass / est_nsamp','pass yang berhasil, jumlah sampel'),('est_sor / est_ke / est_kv','slope of regression, kriging efficiency, kriging variance'),('est_type','1 = koreksi blok GC, 2 = blok tambahan'),('est_date / est_run','tanggal (yyyymmdd) dan nomor run terakhir yang mengestimasi blok itu')])
  + why('Atribut GC asli dibiarkan utuh supaya perubahan bisa diaudit dan dibandingkan (rekonsiliasi). Keputusan memakai nilai baru ada di atribut <code>au_final</code>.')
  + warn('Rata-rata estimasi bisa berbeda cukup jauh dari GC lama di zona vein (di sini GC lama jauh lebih rendah karena blok GC 2,5 m mencampur vein dengan waste). Periksa swath plot dan penampang sebelum memakai hasil.'), 'me')
+
+ch('Area pengaruh, radius pencarian & pembanding ID² (versi 0.24.65)', '<p>Mulai GC-Ex Drill Hole <b>0.24.65</b> (hasil uji dengan data GC nyata), radius pencarian dan jarak pengaruh sampel bisa diatur langsung di <b>Model Estimation</b>, per domain. Gunanya: menyamakan tonase &amp; kadar dengan block model lama (mis. BMGC Surpac berelipsoid 15 m), atau mencegah bor yang jarang &ldquo;mengisi&rdquo; blok yang jauh darinya.</p>'
+ + steps('Model Estimation &rarr; Properti domain &rarr; bagian <b>Area pengaruh &amp; radius pencarian</b>.',
+   '<b>Elipsoid pass 1 (m)</b> mayor / semi / minor: kosong = range variogram domain. Pass 2&ndash;3 tetap memakai <i>faktor radius</i> di tabel pass, dikalikan elipsoid ini. Untuk meniru BMGC satu pass, samakan ketiga pass (faktor 1, min / maks sampel acuan).',
+   '<b>Jarak pengaruh maks sampel (m)</b>: sampel yang lebih jauh dari pusat blok tidak dipakai. Berlaku untuk <b>semua lubang</b>; isi <b>Hanya untuk lubang berawalan</b> (mis. <code>PDH, SDH</code>) bila hanya sebagian lubang yang dibatasi.',
+   'Klik <b>&#9654; Jalankan</b>. Domain yang parameternya berubah diestimasi ulang otomatis. Blok tanpa sampel cukup bernilai -99 dan tidak ikut laporan.',
+   'Bandingkan <b>au_final</b> dengan atribut baru <b>au_id2</b> (ID&sup2; dari sampel yang sama) di Reporting.')
+ + tip('Pada uji data nyata, elipsoid 15 &times; 11 &times; 6 m dengan jarak pengaruh 9 m menyamakan tonase GC-Ex dengan BMGC lama (selisih 0,6%). Kadar yang masih berbeda menunjuk ke perbedaan wireframe, bukan ke radius.')
+ + '<p><b>Alat bantu lain dari versi yang sama.</b> Tombol <b>&#9745; Status alur pemodelan</b> (Geomodeller Vein &amp; Model Estimation) membuka jendela berisi langkah data &rarr; domain &rarr; string &rarr; solid &rarr; parameter &rarr; block model &rarr; estimasi &rarr; reporting &rarr; export beserta statusnya. Di Geostatistik, tombol <b>&#9638; Sayatan di bidang domain</b> memasang sayatan panjang di bidang vein domain aktif sehingga statistik &amp; variogram memakai seluruh data domain. Panel solid kini juga menulis interval yang <b>sudah tertambang</b> (di atas topografi) dan persen volume yang jauh dari kontak bor. Block model dari Kerangka AOI bisa diexport ke <b>.mdl Surpac</b>; isi <b>Origin grid</b> di dialog AOI dengan origin model Surpac agar blok sejajar.</p>')
 
 ch('Autorun Estimasi dari Nol: domain baru', dta('lanjutan &mdash; dipakai pada domain yang <b>belum</b> punya parameter (mis. QV_Splay_HW bila Anda belum menyimpan parameter ke sana)',
      [('Blok X / Y', 'usulan <b>5 m</b> (&asymp; sepertiga spasi bor 14,5 m) &mdash; boleh diubah'),

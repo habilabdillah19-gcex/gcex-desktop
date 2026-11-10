@@ -301,6 +301,10 @@ def fit_auto(E: Dict[str, Any], sill: float, P: Dict[str, Any]) -> Dict[str, Any
         c0 = fit_nug(E["O"], sill, minP, B)
     if c0 is None:
         c0 = 0.2 * sill
+    # DH 0.24.65: nugget minimal = ekstrapolasi linier dua lag downhole pertama (gsNugDH)
+    nx = nug_dh(E["DH"], minP)
+    if nx is not None and nx > c0:
+        c0 = min(nx, 0.95 * sill)
 
     fan: List[Optional[float]] = []
     for j in range(ND):
@@ -335,8 +339,29 @@ def fit_auto(E: Dict[str, Any], sill: float, P: Dict[str, Any]) -> Dict[str, Any
     M["b"] = (bs if dua else [bs[0], bs[0]]) if bs else list(M["a"])
     ds = fit_r(E["DH"], c0, cs, minP, BD)
     M["d"] = (ds if dua else [ds[0], ds[0]]) if ds else list(M["b"])
+    # DH 0.24.65: mayor >= semi-mayor (pitch diputar 90 bila struktur dominan lebih menerus tegak lurus pitch)
+    wA = sum(c * M["a"][i] for i, c in enumerate(cs))
+    wB = sum(c * M["b"][i] for i, c in enumerate(cs))
+    if wB > wA * 1.0001:
+        M["pitch"] = (M["pitch"] + 90) % 180
+        M["a"], M["b"] = M["b"], M["a"]
+    M["a"] = list(M["a"]); M["b"] = list(M["b"])
+    for q in range(len(M["a"])):
+        if M["b"][q] > M["a"][q]:
+            M["a"][q], M["b"][q] = M["b"][q], M["a"][q]
     M["fan"] = fan
     return M
+
+
+def nug_dh(E: Sequence[Dict[str, float]], minP: int) -> Optional[float]:
+    L = sorted([e for e in (E or []) if e and e.get("g") is not None and math.isfinite(e["g"]) and e.get("n", 0) >= (minP or 10) and e.get("h", 0) > 0], key=lambda e: e["h"])
+    if len(L) < 2:
+        return None
+    a, b = L[0], L[1]
+    if not b["h"] > a["h"]:
+        return None
+    x = a["g"] - (b["g"] - a["g"]) * a["h"] / (b["h"] - a["h"])
+    return max(0.0, min(a["g"], x))
 
 
 def run(payload: Dict[str, Any]) -> Dict[str, Any]:

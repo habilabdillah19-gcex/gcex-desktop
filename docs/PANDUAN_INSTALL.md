@@ -4397,3 +4397,37 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 
 **Kedua aplikasi**: *Laporan kinerja* (Tampilan & performa) tetap mencatat setiap klik — termasuk di dalam jendela pop-up — untuk
 dikirim bila ada galat, jeda, atau lag.
+
+## 173. Drillhole 0.24.65 — perbaikan dari uji data nyata Zona 3; area pengaruh & radius pencarian
+
+Pembaruan ini hanya untuk **GC-Ex Drillhole** (Block Model tetap 0.24.64). Isinya hasil uji pemodelan & estimasi vein
+dari nol dengan data GC nyata; seluruh 18 temuan diperbaiki.
+
+**Model Estimation**
+- Bagian baru **Area pengaruh & radius pencarian** di parameter tiap domain:
+  - *Elipsoid pass 1 (m)* mayor / semi / minor — kosong = range variogram. Pass 2–3 = faktor radius × elipsoid ini.
+  - *Jarak pengaruh maks sampel (m)* — sampel yang lebih jauh dari pusat blok tidak dipakai, sehingga blok jauh dari bor tetap
+    kosong (-99). Berlaku untuk **semua lubang**; isi *Hanya untuk lubang berawalan* (mis. `PDH, SDH`) bila ingin membatasi
+    sebagian lubang saja.
+  - Parameter domain diubah → domain itu diestimasi ulang otomatis pada run berikutnya.
+- Atribut baru **au_id2** (ID² pembanding dari sampel yang sama dengan kriging) ikut di block model, Reporting, dan export.
+- Export **.mdl Surpac** kini juga untuk block model yang dibuat dari nol (Kerangka AOI): header disusun baru, ukuran sel & origin
+  grid mengikuti kerangka.
+
+**Geomodeller Vein**
+- Solid: baris *flag di atas topografi (sudah tertambang)*, *% volume jauh dari kontak bor* (peringatan bila > 25% berjarak > 15 m),
+  tebal dibatasi 1,5 × tebal kontak terbesar.
+- Vein bercabang: titik *sambung ke induk* dibatasi sebanyak kontak cabang dan menyatu di sumbu induk (cabang tidak menggembung).
+- Selubung (halo): jumlah lubang, panjang, dan validasi solid kini terisi; soft boundary hanya memakai sampel vein di zona transisi
+  (bawaan 2 m, bisa diubah).
+- Import flag CSV menawarkan menghapus flag lama domain yang sama di lubang yang tidak ada di file.
+- String HW/FW otomatis lebih halus di zona bor GC rapat.
+- Tombol **☑ Status alur pemodelan**: daftar langkah data → domain → string → solid → parameter → block model → estimasi →
+  reporting → export beserta statusnya.
+
+**Geostatistik**: tombol **▦ Sayatan di bidang domain** (statistik & variogram memakai seluruh data domain aktif); fitting otomatis
+memakai nugget dari variogram downhole dan selalu mayor ≥ semi-mayor; isian *Range downhole / minor* per struktur dipakai bila diubah.
+
+**Impor & tampilan**: CSV yang bukan UTF-8 (mis. karakter ±) dibaca benar dengan peringatan; validasi menyebut Hole ID per butir;
+Kerangka AOI punya *Origin grid* (blok sejajar model Surpac); label hole dimatikan otomatis bila > 150 lubang; topografi yang baru
+diimpor langsung tampil; nama lengkap node Project Tree muncul saat kursor diarahkan.
