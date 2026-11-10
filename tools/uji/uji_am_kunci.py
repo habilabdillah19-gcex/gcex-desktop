@@ -55,9 +55,10 @@ with sync_playwright() as pw:
       var n0=amBndAll().length;amBndAdd(R(cx-10,cy-30,20,20),'C',{top:238.75,bot:236.25,date:'2026-11-15'});var C=amBndAll().filter(function(x){return x.name==='C';})[0];
       var sh=function(P){var a=0;for(var i=0;i<P.length;i++){var q=P[i],r=P[(i+1)%P.length];a+=q[0]*r[1]-r[0]*q[1];}return Math.abs(a/2);};o.cLuas=C?sh(C.pts):-1;
       amBndDel(A.id);o.aMasih=!!amBndAll().filter(function(x){return x.id===A.id;})[0];amPSet(A.id,'ore','ZZ');o.aOre=A.ore||'';
-      AMK.f={date:'2026-11-01',shift:'',_init:1};AMK.open();uiTab('AM');amPanel();await w(500);var tb=document.querySelector('#amBody .amktb tr.tot');o.rep=tb?tb.textContent:'';o.repLk=!!document.querySelector('#amBody .amkst .lk');o.nReg=amRegRows().length;o.xl=!!document.getElementById('amXlWrap');AMK.f={date:'',shift:'',_init:1};o.nAll=amRegRows().length;
+      AMK.f={date:'2026-11-01',shift:'',_init:1};AMK.open();uiTab('AM');amPanel();await w(500);var tb=document.querySelector('.amktb tr.tot');o.rep=tb?tb.textContent:'';o.repLk=!!document.querySelector('.amkst .lk');o.nReg=amRegRows().length;o.xl=!!document.getElementById('amXlWrap');AMK.f={date:'',shift:'',_init:1};o.nAll=amRegRows().length;
       amRun(true);await w(800);AMK.f={date:'',shift:'',_init:1};amRegCopy();o.semua=AMK.isLk(Bp);
-      AMK.f={date:'2026-11-15',shift:'',_init:1};amRegCsv();await w(1500);o.csvLk=AMK.isLk(Bp);o.via=(AMK.lkOf(Bp)||{}).via;o.ui=!!document.querySelector('#amBody .amkst .lk');
+      AMK.f={date:'2026-11-15',shift:'',_init:1};amRegCsv();await w(1500);o.csvLk=AMK.isLk(Bp);o.via=(AMK.lkOf(Bp)||{}).via;o.ui=!!document.querySelector('.amkst .lk');
+      AMK.f={mode:'bulan',date:'2026-11-20',shift:'',_init:1};o.bulan=AMK.rows().length;o.rng=AMK.range();var lk0=JSON.stringify(amD().lock);A.date='2026-11-03';amRegCopy();o.bulanLk=JSON.stringify(amD().lock)!==lk0;A.date='2026-11-01';AMK.f={mode:'minggu',date:'2026-11-04',shift:'',_init:1};o.minggu=AMK.range();o.popDb=!!(document.getElementById('gxpo_am_db')&&document.querySelector('#gxpo_am_db .amktb, #gxpo_am_db .amkf'));AMK.f={mode:'hari',date:'2026-11-01',shift:'',_init:1};
       AMK.unlock('2026-11-01','DS');o.lepas=!AMK.isLk(A);amRun(true);await w(500);o.a2=A.st.t;return o;})()""")
     print(a)
     cek(a["a0"] and a["kunci"] == 1 and a["isLk"], "Hitung poligon A (1 Nov DS) lalu kunci tanggal-shift itu")
@@ -69,6 +70,8 @@ with sync_playwright() as pw:
     cek(a["repLk"] and N_(a["a0"]) in a["rep"], "Report harian di panel Register untuk database, 1 Nov: total = angka beku A (%s)" % a["rep"][:80])
     cek(a["nReg"] == 1 and a["nAll"] >= 2 and a["xl"], "Register untuk database: tanggal terpilih = cakupan salin / kirim (%s baris; semua tanggal %s)" % (a["nReg"], a["nAll"]))
     cek(not a["semua"] and a["csvLk"] and a["via"] == "diekspor ke CSV", "kunci otomatis: Register CSV tanggal 15 Nov mengunci poligonnya; salin 'Semua tanggal' tidak mengunci (via=%s)" % a["via"])
+    cek(a["bulan"] == 3 and a["rng"] == ["2026-11-01", "2026-11-30"] and a["minggu"] == ["2026-11-02", "2026-11-08"] and not a["bulanLk"], "periode bulanan / mingguan: semua poligon November (%d), Senin-Minggu, tanpa kunci" % a["bulan"])
+    cek(a["popDb"], "Register untuk database tampil di jendela pop-up")
     cek(a["lepas"] and abs(a["a2"] - a["a0"] * 1.2) < 1, "buka kunci -> Hitung berikutnya menghitung ulang A")
     cek(any("bertampalan" in m for m in dlg), "peringatan tampalan muncul")
     cek(not err, "tanpa galat halaman: %s" % err[:3])

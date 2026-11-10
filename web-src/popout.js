@@ -10,23 +10,31 @@
 (function () {
   var DEF = [
     { k: 'am.reg', host: 'amBody', t: 'Daftar poligon per flitch (Register poligon)', hd: /^Register poligon/ },
+    { k: 'am.db', host: 'amBody', t: 'Register untuk database · Report As-Mined', hd: /^Register untuk database/, w: 'min(760px,calc(100vw - 440px))' },
     { k: 'am.ly', host: 'amBody', t: 'Layout & export As-Mined', hd: /^Layout/ },
     { k: 'sv.pts', host: 'svBody', t: 'Solid Vein — titik atap (pick-up roof)', sv: 'pts' }
   ];
   var ON = {}; try { ON = JSON.parse(localStorage.getItem('gcex_popout') || '{}') || {}; } catch (e) { ON = {}; }
   /* daftar poligon per flitch (Register poligon) tampil sebagai pop-up secara bawaan (pemilik 10-11-2026: "Flitch asmined banyak loh, mengapa tidak disajikan dalam bentuk pop up") */
   if (ON['am.reg'] === undefined) ON['am.reg'] = true;
+  /* Register untuk database / Report As-Mined juga pop-up bawaan (pemilik 10-11-2026: "Setelah saya lihat layout nya, jadikan ini menu pop up") */
+  if (ON['am.db'] === undefined) ON['am.db'] = true;
   var simpan = function () { try { localStorage.setItem('gcex_popout', JSON.stringify(ON)); } catch (e) {} };
-  var sibuk = false;
+  var sibuk = false, POPCSS = null;
   function hdOf(d, host) { if (d.sv) { var s = host.querySelector('.svsec[data-sec="' + d.sv + '"]'); return s ? s.querySelector('.svh') : null; }
     var H = host.querySelectorAll('.amh'); for (var i = 0; i < H.length; i++) if (d.hd.test(H[i].textContent.trim())) return H[i]; return null; }
   /* simpul yang dipindah: Solid Vein = isi .svsec selain judul; As-Mined = saudara sesudah judul sampai judul .amh berikutnya */
   function grab(d, hd) { var out = [], n; if (d.sv) { n = hd.nextSibling; while (n) { out.push(n); n = n.nextSibling; } return out; }
     n = hd.nextSibling; while (n && !(n.nodeType === 1 && n.classList && n.classList.contains('amh'))) { out.push(n); n = n.nextSibling; } return out; }
   function win(d) { var id = 'gxpo_' + d.k.replace(/\W/g, '_'), w = document.getElementById(id);
-    if (!w) { var i = DEF.indexOf(d); w = window.AMK && AMK.pop ? AMK.pop(id, d.t, '') : null; if (!w) return null; w.style.left = (420 + 28 * i) + 'px'; w.style.top = (80 + 28 * i) + 'px'; w.style.width = 'min(620px,calc(100vw - 440px))';
+    if (!w) { var i = DEF.indexOf(d); w = window.AMK && AMK.pop ? AMK.pop(id, d.t, '') : null; if (!w) return null; w.style.left = (420 + 28 * i) + 'px'; w.style.top = (80 + 28 * i) + 'px'; w.style.width = d.w || 'min(620px,calc(100vw - 440px))'; w.querySelector('.gxpb').classList.add('h-' + d.host); salinCss();
       w.querySelector('[data-x]').onclick = function () { POP.set(d.k, false); }; }
     return w; }
+  /* gaya panel ditulis untuk '#amBody …' / '#svBody …': di jendela pop-up (di luar #amBody) disalin dengan pemilih '.gxpb.h-amBody …' */
+  var cssN = -1; function salinCss() { var out = [], n = 0; try { [].forEach.call(document.styleSheets, function (sh) { var R; try { R = sh.cssRules; } catch (e) { return; } if (!R || (sh.ownerNode && sh.ownerNode.id === 'gxpoCss')) return;
+        [].forEach.call(R, function (r) { if (r.selectorText && /#(amBody|svBody)\b/.test(r.selectorText)) { n++; out.push(r.selectorText.replace(/#(amBody|svBody)\b/g, '.gxpb.h-$1') + '{' + r.style.cssText + '}'); } }); }); } catch (e) {}
+    if (n === cssN) return; cssN = n; var el = document.getElementById('gxpoCss'); if (!el) { el = document.createElement('style'); el.id = 'gxpoCss'; document.head.appendChild(el); } el.textContent = out.join('\n'); }
+  POPCSS = salinCss;
   function render(host) { if (host === 'amBody') { try { amPanel(); } catch (e) {} } else { try { if (window.SV && SV.panel) SV.panel(); } catch (e) {} } }
   function apply() { if (sibuk) return; amati(); sibuk = true;
     try { DEF.forEach(function (d) { var host = document.getElementById(d.host); if (!host) return; var hd = hdOf(d, host); if (!hd) return;

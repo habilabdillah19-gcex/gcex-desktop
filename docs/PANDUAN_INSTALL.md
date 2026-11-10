@@ -4367,3 +4367,14 @@ Proyek yang dibuat sebelum 0.24.39 bisa menyimpan desain pit dan survei topograf
 ## 170. Block Model 0.24.62 — isian Report As-Mined harian sejajar
 
 - Isian *Tanggal* dan *Shift* kini sejajar dalam satu baris; pilihan *tanggal yang punya poligon* dipindah ke baris sendiri.
+
+## 171. Block Model 0.24.63 — Report As-Mined mingguan / bulanan; Register untuk database jadi jendela pop-up
+
+- Report As-Mined diikat **tanggal & shift poligon**, bukan elevasi flitch: semua flitch pada tanggal itu ikut (kolom RL
+  menunjukkan flitch tiap poligon).
+- Pilihan **Periode**: *Harian*, *Mingguan* (Senin–Minggu dari tanggal yang dipilih), *Bulanan*, atau *Rentang tanggal*
+  (Dari–Sampai). Tabel diberi subtotal per tanggal; Salin ke Excel / Register CSV / Kirim ke workbook memakai periode itu.
+- Kunci otomatis hanya terjadi pada **report harian**. Report mingguan / bulanan tidak mengunci, dan memberi tahu berapa poligon
+  di periode itu yang belum dilaporkan harian.
+- Bagian **Register untuk database** kini tampil sebagai **jendela pop-up** (bisa digeser, diperkecil, ditutup; *↩ Panel* untuk
+  mengembalikan ke panel).
