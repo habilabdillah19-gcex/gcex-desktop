@@ -4510,3 +4510,27 @@ solid yang terbangun identik dengan versi 0.24.70.
 - Data latihan: `SIM_geologi.csv` dan `SIM_kecil_geologi.csv` kini punya kolom **Vein** (QV_Lensa1–4, QV_Splay_HW) untuk melatih
   *Flag dari kolom kode*. Kolom lama tidak berubah.
 
+## 181. Drillhole 0.24.72 — Ore Geometry Studio: semua menu Ore Geometry dalam satu jendela
+
+Node **Ore Geometry** › tombol **Buka Ore Geometry Studio**. Panel samping kini hanya ringkasan; semua menu ada di jendela lebar
+(bisa digeser, diperkecil, ditutup). Studio adalah **referensi geologist**: hasilnya tidak menulis flag Geomodeller dan tidak dipakai
+Model Estimation. Berlaku untuk kedua jalur proyek.
+
+1. **Data & domain** — pilih wireframe domain (solid GC-Ex dari Geological Modelling dan / atau wireframe impor Surpac / Leapfrog),
+   atur prioritas ▲▼, lalu **Hitung flag domain & intercept**. Interval assay yang titik tengahnya di dalam wireframe di-flag otomatis;
+   interval sedomain berurutan di satu lubang digabung menjadi satu intercept. *Pemeriksaan data* hanya menampilkan temuan
+   (nilai negatif, banyak nol, nilai ekstrem yang mencurigakan satuan); tidak ada data yang diubah.
+2. **Geometri & tebal** — strike, dip, panjang, tinggi, RL dan tebal sebenarnya (median, P10–P90) per domain; pilih bidang acuan.
+3. **Kadar & multi-elemen** — statistik unsur di vein vs luar vein, kontras, korelasi Spearman, kadar per domain, geologi di vein.
+4. **Long section** — sampai 6 panel (GT dan unsur), proyeksi ke bidang acuan.
+5. **Envelope RBF & 3D** — RBF linear di bidang tiap domain; garis envelope GT, arsir bagian jauh dari intercept, volume / tonase
+   (SG bisa diubah) dan tampilan 3D. Gambaran geometri, bukan estimasi sumber daya.
+6. **Zonasi vertikal** — median per pita RL di dalam vein vs halo.
+7. **Profil per domain** — format sama dengan Geostatistik › Profil (unsur, rasio, jumlah, % kode geologi).
+8. **Penampang** — sayatan Studio sendiri (tidak menggerakkan Slicer): **Usulkan sayatan**, tambah, Maju / Mundur, ubah azimuth dan
+   lebar jendela, atau **Gambar di peta** (klik dua titik). Panel unsur + kolom geologi, potongan wireframe, tabel sampel tertinggi dan
+   sampel ≥ 0,5 di luar wireframe.
+
+Alat lama (Intercept & GT, Long section GT, Ore shoot, Grade shell) dan pintasan Geostatistik › Profil / Slicer ada di bagian *Alat lain*.
+Setiap grafik punya tombol **PNG**, setiap tabel **CSV**. Tahap 2 (berikutnya): struktur, garis interpretasi, pertemuan vein, target
+bor, laporan PDF.
