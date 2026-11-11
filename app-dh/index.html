@@ -17197,6 +17197,9 @@ if(window.FP&&FP.menu){var _m=FP.menu;FP.menu=async function(){var r=await _m.ap
     var _go = SA.go;
     SA.go = function () {
       try {
+        /* data latihan: jalur mengikuti tombol yang ditekan, bukan kartu (supaya isi & jalur tidak bertentangan) */
+        if (demo()) JLR.pend = JLR.dlatNol ? { mode: 'nol', acuan: { wf: false, bm: false, par: false }, demo: true }
+                                         : { mode: 'lanjut', acuan: { wf: true, bm: true, par: false }, demo: true };
         if (!JLR.pend || !JLR.pend.mode) {
           if (demo()) JLR.pend = { mode: 'lanjut', acuan: { wf: true, bm: true, par: false }, demo: true };
           else if (SA.bmF) JLR.pend = { mode: 'lanjut', acuan: { wf: false, bm: true, par: false }, tebak: true };
@@ -17227,6 +17230,56 @@ if(window.FP&&FP.menu){var _m=FP.menu;FP.menu=async function(){var r=await _m.ap
     try { var W = await SA.loadWork(SA.reopenName); if (W && W.jalur && W.jalur.mode) JLR.pend = { mode: W.jalur.mode, acuan: Object.assign({ wf: false, bm: false, par: false }, W.jalur.acuan || {}) }; } catch (e) {}
     JLR.impRender();
   }
+  /* ---------- data latihan: dua pintu (pemilik 12 Nov 2026) ----------
+     Lanjutkan = seperti sebelumnya (bor + topografi + block model GC + wireframe Leapfrog).
+     Mulai dari nol = data bor + topografi + permukaan latihan saja; block model & wireframe latihan tidak dibaca.
+     demodata.js (berkas bersama) tidak diubah: DLAT.ada dibungkus selama pemuatan jalur nol. */
+  var ACUAN_LAT = /_BM_GC|Leapfrog\.obj$/i, KUNCI_NOL = 'gcex_dlat_nol';
+  function bungkusDlat() {
+    if (!window.DLAT || DLAT.ada._jlr) return !!window.DLAT;
+    var _ada = DLAT.ada;
+    DLAT.ada = function (nm) { if (JLR.dlatNol && ACUAN_LAT.test(String(nm))) return false; return _ada.apply(this, arguments); };
+    DLAT.ada._jlr = 1;
+    var _muat = DLAT.muat;
+    DLAT.muat = async function () {
+      try { if (JLR.dlatNol) sessionStorage.setItem(KUNCI_NOL, '1'); } catch (e) {}
+      try { return await _muat.apply(this, arguments); }
+      finally { if (!DLAT.busy) { try { sessionStorage.removeItem(KUNCI_NOL); } catch (e) {} } }
+    };
+    return true;
+  }
+  try { if (sessionStorage.getItem(KUNCI_NOL)) { JLR.dlatNol = true; sessionStorage.removeItem(KUNCI_NOL); setTimeout(function () { try { JLR.pilih('nol'); } catch (e) {} }, 0); } } catch (e) {}
+  JLR.dlat = function (nol) {
+    bungkusDlat();
+    JLR.dlatNol = !!nol;
+    if (nol) JLR.pilih('nol');
+    else { JLR.pilih('lanjut'); JLR.acuanPend('wf', true); JLR.acuanPend('bm', true); }
+    var r = DLAT.muat(false);
+    Promise.resolve(r).then(function () { var dn = document.getElementById('dsName'); if (nol && dn && /^VeinA_Simulasi$/.test(dn.value)) dn.value = 'VeinA_Nol'; },
+                           function () {}).then(function () { JLR.dlatNol = false; });
+    return r;
+  };
+  function tombolLatihan() {
+    var b = document.getElementById('dlatBtn');
+    if (!b || !window.DLAT) return false;
+    bungkusDlat();
+    if (document.getElementById('dlatNolBtn')) return true;
+    b.innerHTML = '&#8681; Data latihan &mdash; Lanjutkan';
+    b.title = 'Data simulasi buku tutorial: bor, topografi, block model GC dan wireframe Leapfrog. Proyek masuk jalur Lanjutkan dari Surpac / Leapfrog. Angka sama dengan tutorial PDF.';
+    b.onclick = function () { JLR.dlat(false); };
+    var n = b.cloneNode(false);
+    n.id = 'dlatNolBtn';
+    n.innerHTML = '&#8681; Data latihan &mdash; Mulai dari nol';
+    n.title = 'Data simulasi yang sama, tetapi hanya bor, topografi dan permukaan latihan. Block model GC dan wireframe Leapfrog tidak dibaca: domain, solid, kerangka blok dan parameter Anda buat sendiri di GC-Ex.';
+    n.onclick = function () { JLR.dlat(true); };
+    b.parentNode.insertBefore(n, b.nextSibling);
+    /* tampil / sembunyi mengikuti tombol aslinya (DLAT.cari menyalakannya bila berkas latihan ada) */
+    var ikut = function () { n.style.display = b.style.display; };
+    ikut(); new MutationObserver(ikut).observe(b, { attributes: true, attributeFilter: ['style'] });
+    return true;
+  }
+  var nT = 0, tT = setInterval(function () { if (tombolLatihan() || ++nT > 80) clearInterval(tT); }, 250);
+
   function mulai() { JLR.impRender(); pasangTombol(); setTimeout(bacaReopen, 400); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulai); else mulai();
   setTimeout(function () { JLR.impRender(); pasangTombol(); }, 600);
@@ -17555,7 +17608,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.75';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.76';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

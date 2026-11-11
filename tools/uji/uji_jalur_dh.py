@@ -11,6 +11,7 @@
    acuan yang objeknya ada tidak bisa dimatikan; Kembali ke nol ditolak.
 4. Proyek lama tanpa jalur: ditebak dari isinya (lanjut bila ada wireframe / BM acuan), tanda perlu konfirmasi.
 5. Demo data latihan: jalur Lanjutan (wireframe + block model) tanpa memblokir alur Demo.
+6. Tombol "Data latihan - Mulai dari nol": jalur nol, tanpa block model & wireframe latihan, walau kartu sempat diisi Lanjutkan.
 Pemakaian: python tools/uji/uji_jalur_dh.py
 """
 import json, os, random, subprocess, sys, tempfile, time, urllib.request
@@ -131,6 +132,18 @@ with sync_playwright() as pw:
     e = pg.evaluate(TREE); e["models"] = pg.evaluate("MD.models.length"); e["bx"] = pg.evaluate("!!(BX&&BX.m)"); e["err"] = err; ctx.close(); hasil["demo"] = e
     if e["mode"] != "lanjut" or not (e["acuan"]["wf"] and e["acuan"]["bm"]) or not e["wf"] or e["models"] < 1 or not e["bx"] or e["tebak"]: salah.append("demo: %s" % e)
     if err: salah.append("galat halaman (demo): %s" % err[:3])
+
+    # ---------- 6: Data latihan - Mulai dari nol (0.24.76): bor + topografi saja, kartu jalur sengaja diisi Lanjutkan dulu ----------
+    ctx = ctxBaru(); pg, err = buka(ctx)
+    pg.wait_for_function("window.DLAT && DLAT.siap && document.getElementById('dlatNolBtn')", timeout=90000)
+    t = pg.evaluate("(function(){var a=document.getElementById('dlatBtn'),b=document.getElementById('dlatNolBtn');return {lanjut:a.innerText,nol:b.innerText,tampil:b.style.display!=='none'&&!!b.offsetParent};})()")
+    pg.evaluate("JLR.pilih('lanjut');JLR.acuanPend('bm',true);document.getElementById('dlatNolBtn').click()"); pg.wait_for_timeout(3000)
+    pg.wait_for_function("window.DLAT && !DLAT.busy && document.getElementById('imp').classList.contains('off')", timeout=900000); pg.wait_for_timeout(2500)
+    f = pg.evaluate(TREE); f["models"] = pg.evaluate("MD.models.filter(function(m){return m.jenis!=='surf';}).length"); f["bx"] = pg.evaluate("!!(window.BX&&BX.m)")
+    f["bor"] = pg.evaluate("collars.length"); f["topo"] = pg.evaluate("(function(){try{return !!spAct('topo');}catch(e){return null;}})()"); f["tombol"] = t; f["err"] = err
+    f["ds"] = pg.evaluate("(document.getElementById('dsName')||{}).value||''"); ctx.close(); hasil["latihanNol"] = f
+    if f["mode"] != "nol" or f["wf"] or f["models"] or f["bx"] or f["bmImport"] or not f["bor"] or f["topo"] is False or f["tebak"] or not t["tampil"] or "Mulai dari nol" not in t["nol"]: salah.append("data latihan nol: %s" % f)
+    if err: salah.append("galat halaman (latihan nol): %s" % err[:3])
 
 srv.terminate()
 print(json.dumps(hasil, ensure_ascii=False, indent=1))

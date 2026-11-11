@@ -4577,3 +4577,13 @@ yang sedang terpasang; pada data nyata sayatan horizontal bawaan bisa hanya memu
   di Geostatistik (strike & dip dari kontak bor, tebal = sebaran kontak). Semua komposit domain ikut.
 - Laporan autorun menyebut sayatan yang dipakai per domain. Sayatan Anda dikembalikan sesudah autorun selesai.
 - Pilihan **Variogram dari sayatan di bidang tiap domain** di dialog Autorun Estimasi dari Nol (bawaan nyala). Dimatikan = perilaku lama.
+
+## 185. Drillhole 0.24.76 — Data latihan untuk jalur Mulai dari nol
+
+Halaman import kini punya dua tombol data latihan:
+
+- **Data latihan — Lanjutkan**: seperti sebelumnya (bor, topografi, block model GC, wireframe Leapfrog). Angka sama dengan buku tutorial.
+- **Data latihan — Mulai dari nol**: data bor dan topografi simulasi yang sama, tanpa block model GC dan wireframe Leapfrog. Buat domain dengan
+  *Flag dari kolom kode* (kolom *Vein*), lalu *Autorun Wireframe* dan *Autorun Estimasi dari Nol*.
+
+Jalur proyek mengikuti tombol yang ditekan, bukan kartu jalur. Tombol Demo tetap memakai jalur Lanjutkan.

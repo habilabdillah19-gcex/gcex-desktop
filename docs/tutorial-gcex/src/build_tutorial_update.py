@@ -1118,8 +1118,11 @@ B.append('<p><b>Pindah jalur.</b> Node <i>Proyek &rsaquo; Jalur</i> &rsaquo; <b>
          'proyek disimpan dulu ke folder, dan perpindahan tercatat di jejak (siapa, kapan). Kembali ke nol hanya mungkin selama belum ada objek acuan di proyek.</p>')
 B.append('<p><b>Proyek lama.</b> Proyek dari versi sebelum 0.24.73 dibuka tanpa jalur. GC-Ex menebak dari isinya (wireframe / block model dari file '
          '&rarr; Lanjutkan, selain itu &rarr; Mulai dari nol) dan menandai node Jalur <b>perlu konfirmasi</b>. Sebelum dikonfirmasi tidak ada '
-         'menu yang disembunyikan, sehingga proyek lama tetap bisa dikerjakan seperti biasa. <b>Muat data latihan</b> selalu masuk jalur '
-         'Lanjutkan (data latihan memuat wireframe Leapfrog dan block model GC).</p>')
+         'menu yang disembunyikan, sehingga proyek lama tetap bisa dikerjakan seperti biasa.</p>')
+B.append('<p><b>Data latihan untuk kedua jalur (DH 0.24.76).</b> Halaman import punya dua tombol: <b>&#8681; Data latihan &mdash; Lanjutkan</b> '
+         '(bor, topografi, block model GC dan wireframe Leapfrog &mdash; angka sama dengan buku tutorial) dan <b>&#8681; Data latihan &mdash; Mulai dari nol</b> '
+         '(data simulasi yang sama tanpa block model GC dan wireframe Leapfrog). Jalur proyek mengikuti tombol yang ditekan, bukan kartu jalur, supaya isi '
+         'dan jalur tidak bertentangan. Tombol Demo tetap memakai jalur Lanjutkan.</p>')
 
 B.append('<h3>15a. Autorun Estimasi dari Nol: sayatan di bidang tiap domain (Drill Hole 0.24.75)</h3>')
 B.append('<p>Variogram di Geostatistik dihitung dari komposit di dalam <b>sayatan aktif</b>. Autorun Estimasi dari Nol dulu memakai sayatan apa pun '

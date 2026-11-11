@@ -403,7 +403,10 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Jejak', '<code>log</code>: [ket, waktu, pengguna], dari pemilihan di halaman Import, konfirmasi tebakan, ubah acuan, '
      '<i>Jadikan jalur Lanjutan</i> (didahului <code>FP.flush</code>).'],
     ['Halaman Import', 'proyek baru wajib memilih jalur sebelum <b>Tampilkan viewer</b>; import ulang membaca jalur dari pekerjaan tersimpan (baca saja). '
-     '<code>SA.go()</code> dari skrip tanpa pilihan: demo &rarr; lanjut (wf, bm); ada berkas block model &rarr; lanjut (bm) + tebak; selain itu nol.']]))
+     '<code>SA.go()</code> dari skrip tanpa pilihan: demo &rarr; lanjut (wf, bm); ada berkas block model &rarr; lanjut (bm) + tebak; selain itu nol.'],
+    ['Data latihan', '0.24.76: tombol <code>#dlatNolBtn</code> di samping <code>#dlatBtn</code> (dipasang dari <code>jalur_imp_dh.js</code>; <code>demodata.js</code> bersama tidak diubah). '
+     '<code>JLR.dlat(nol)</code> menyetel jalur, lalu <code>DLAT.muat</code>; selama <code>JLR.dlatNol</code>, <code>DLAT.ada</code> menolak <code>*_BM_GC*</code> dan <code>*Leapfrog.obj</code>. '
+     'Saat data latihan dimuat, jalur di <code>SA.go</code> mengikuti tombol (bukan kartu).']]))
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
