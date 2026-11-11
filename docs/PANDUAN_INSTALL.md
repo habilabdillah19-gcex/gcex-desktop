@@ -4465,3 +4465,11 @@ Mesh Leapfrog (.msh) yang membawa nilai per titik tanpa jumlah komponen di bagia
 dari ekspor wireframe vein beserta ketebalannya) dulu ditolak dengan pesan *indeks segitiga di luar jumlah titik*. Kini kolom
 seperti itu dibaca sebagai satu komponen dan dilewati, sehingga Location dan Tri terbaca benar. Berlaku di Import Wireframe
 Geologi (Drillhole) dan Wireframe geologi (Block Model).
+
+## 177. Drillhole 0.24.68 — Model Estimation selalu memakai semua sampel, seperti Surpac
+
+Keputusan pemilik (11 Nov 2026): estimasi harus sama persis dengan Surpac. Pilihan *Sampel yang dipakai* (0.24.66) dihapus.
+Model Estimation kini SELALU memakai semua sampel database untuk menaksir blok, seperti *BM FILL* Surpac dengan data source
+`constrain = N`; blok tetap hanya di dalam solid atau wireframe domain. Lubang eksplorasi digabung ke database GC lewat
+Project Tree › Database › **Tambah / perbarui beberapa tabel sekaligus (upsert)**. Validasi dan statistik domain tetap
+memakai komposit domain.

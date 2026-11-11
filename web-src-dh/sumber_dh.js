@@ -1,14 +1,12 @@
-/* ============ SUMBER SAMPEL ESTIMASI & DOMAIN WIREFRAME EKSAK (GC-Ex Drillhole 0.24.66) ============
-   Temuan simulasi wireframe BMGC (pemilik 11-11-2026, "jika saya berikan wireframe yang sama ... apakah block model
-   hasil estimasinya akan sama?"): log Surpac BMGC menjalankan BM FILL OK dengan data source constrain = "N".
-   Artinya BLOK dibatasi wireframe, tetapi SAMPEL tidak: komposit di luar vein (waste) ikut menimbang kadar blok
-   vein. GC-Ex selalu memakai sampel di dalam domain (hard boundary), sehingga kadarnya lebih tinggi walau
-   wireframenya sama persis.
-   1. Parameter domain `est.sAll`: "Sampel yang dipakai" = hanya di dalam domain (bawaan, hard boundary) atau
-      SEMUA sampel database (seperti Surpac BM FILL dengan data tidak dibatasi constraint). Blok tetap hanya di
-      dalam solid / wireframe domain. Mengubahnya = domain diestimasi ulang (hash parameter berubah).
-   2. Mengunci domain ke wireframe impor (mode eksak, wfx_dh.js) sekarang langsung siap estimasi: interval bor di
-      dalam wireframe di-flag otomatis bila domain belum punya flag, dan solid domain dianggap aktif.          */
+/* ============ SUMBER SAMPEL ESTIMASI & DOMAIN WIREFRAME EKSAK (GC-Ex Drillhole 0.24.66 / 0.24.68) ============
+   Temuan simulasi wireframe BMGC (pemilik 11-11-2026): log Surpac BMGC menjalankan BM FILL OK dengan data source
+   constrain = "N": BLOK dibatasi wireframe, SAMPEL tidak; komposit di luar vein ikut menimbang kadar blok vein.
+   0.24.66 menambah pilihan per domain (hanya sampel domain / semua sampel).
+   0.24.68 (keputusan pemilik 11-11-2026: "Harus sama persis seperti Surpac. Hilangkan opsi lain selain itu."):
+   Model Estimation SELALU memakai semua sampel database, seperti Surpac; pilihan hard boundary dihapus.
+   Blok tetap hanya di dalam solid / wireframe domain. Lubang eksplorasi digabung lewat menu upsert database.
+   Mengunci domain ke wireframe impor (mode eksak, wfx_dh.js) langsung siap estimasi: interval bor di dalam
+   wireframe di-flag otomatis bila domain belum punya flag, dan solid domain dianggap aktif.                 */
 (function () {
   if (window.SUMBER || typeof window.meComps !== 'function') return;
   var SUMBER = window.SUMBER = {};
@@ -21,27 +19,23 @@
     return R;
   };
   var _mc = window.meComps;
+  /* hanya saat Model Estimation menjalankan estimasi; validasi & statistik domain tetap memakai komposit domain */
   window.meComps = meComps = function (d, P) {
-    if (!(P && P.sAll)) return _mc.apply(this, arguments);
+    if (!SUMBER.on) return _mc.apply(this, arguments);
     var _r = window.meRuns; window.meRuns = meRuns = function () { return SUMBER.runsAll(); };
     try { return _mc.apply(this, arguments); } finally { window.meRuns = meRuns = _r; }
   };
-  SUMBER.set = function (id, v) {
-    var d = typeof gmDom === 'function' ? gmDom(id) : null; if (!d || !d.est) return;
-    if (v === 'all') d.est.sAll = true; else delete d.est.sAll;
-    try { gmDirty(true); } catch (e) {} try { mePanel(); } catch (e) {}
-  };
+  if (typeof window.meRun === 'function') {
+    var _run = window.meRun;
+    window.meRun = meRun = function () { SUMBER.on = true; try { return _run.apply(this, arguments); } finally { SUMBER.on = false; } };
+  }
+  /* parameter lama (0.24.66) masih bisa membawa sAll; tidak berpengaruh lagi -- semua domain memakai semua sampel */
   if (typeof window.meParHtml === 'function') {
     var _ph = window.meParHtml;
     window.meParHtml = meParHtml = function (id) {
       var h = _ph.apply(this, arguments), d = typeof gmDom === 'function' ? gmDom(id) : null; if (!d || !d.est) return h;
-      var all = !!d.est.sAll;
-      var box = '<div class=box style="margin:6px 0"><b>Sampel yang dipakai</b>' +
-        '<select style="width:100%;margin-top:3px" onchange="SUMBER.set(\'' + id + '\',this.value)">' +
-        '<option value="dom"' + (all ? '' : ' selected') + '>Hanya sampel di dalam domain (hard boundary, bawaan GC-Ex)</option>' +
-        '<option value="all"' + (all ? ' selected' : '') + '>Semua sampel database (seperti Surpac: data tidak dibatasi constraint)</option></select>' +
-        '<div class=hint>' + (all ? '<span class=warn>Sampel di luar domain (termasuk waste) ikut menimbang kadar blok.</span> Blok tetap hanya di dalam solid / wireframe domain. Pilihan ini meniru BMGC Surpac yang menjalankan <i>BM FILL OK</i> dengan data source <i>constrain = N</i>; biasanya menurunkan kadar dan menaikkan tonase di cut-off rendah.'
-          : 'Hanya interval yang di-flag domain ini. Pilih &quot;Semua sampel&quot; untuk meniru block model Surpac yang dibuat dengan data tidak dibatasi constraint.') + '</div></div>';
+      var box = '<div class=box style="margin:6px 0"><b>Sampel yang dipakai: semua sampel database</b>' +
+        '<div class=hint>Sama dengan Surpac <i>BM FILL</i> (data source <i>constrain = N</i>): semua komposit di database, termasuk lubang eksplorasi yang digabung lewat <b>Database &rsaquo; Tambah / perbarui beberapa tabel sekaligus (upsert)</b>, ikut menimbang kadar blok. Blok tetap hanya di dalam solid / wireframe domain.</div></div>';
       var at = h.indexOf('<div class="g3 f"><div><label>Unsur</label>');
       return at >= 0 ? h.slice(0, at) + box + h.slice(at) : h + box;
     };
