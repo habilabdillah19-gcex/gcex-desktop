@@ -4473,3 +4473,12 @@ Model Estimation kini SELALU memakai semua sampel database untuk menaksir blok, 
 `constrain = N`; blok tetap hanya di dalam solid atau wireframe domain. Lubang eksplorasi digabung ke database GC lewat
 Project Tree › Database › **Tambah / perbarui beberapa tabel sekaligus (upsert)**. Validasi dan statistik domain tetap
 memakai komposit domain.
+
+## 178. Drillhole 0.24.69 — pilihan Soft / Hard boundary kembali (bawaan: seperti Surpac)
+
+Permintaan pemilik (11 Nov 2026): pilihan hard boundary dan soft boundary jangan dihilangkan. Model Estimation › parameter
+domain › **Batas sampel**:
+- **Soft boundary** (bawaan): semua sampel database menimbang kadar blok, sama dengan Surpac *BM FILL* data `constrain = N`.
+- **Hard boundary**: hanya interval yang di-flag domain itu.
+Blok selalu hanya di dalam solid atau wireframe domain. Mengubah pilihan = domain itu diestimasi ulang. Pilihan *zona transisi*
+di selubung (halo) tetap seperti sebelumnya.

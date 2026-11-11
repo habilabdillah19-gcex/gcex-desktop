@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""DH 0.24.66 / 0.24.68 (web-src-dh/sumber_dh.js): sumber sampel estimasi & domain wireframe eksak. Data latihan fiktif.
+"""DH 0.24.66 / 0.24.69 (web-src-dh/sumber_dh.js): sumber sampel estimasi & domain wireframe eksak. Data latihan fiktif.
 Diperiksa:
   1. wireframe QV_Lensa2_Leapfrog.obj dikunci ke domain baru -> interval bor di dalamnya di-flag otomatis, domain siap estimasi
-  2. estimasi SELALU memakai semua sampel database seperti Surpac (0.24.68, tanpa pilihan hard boundary): komposit saat
-     run = seluruh database; di luar run (validasi) tetap komposit domain; blok tetap hanya di dalam wireframe
-  3. panel parameter Model Estimation menyebut "semua sampel database" dan tidak lagi punya pilihan lain
+  2. bawaan soft boundary = semua sampel database seperti Surpac: komposit saat run = seluruh database; hard boundary
+     = komposit domain; di luar run (validasi) tetap komposit domain; blok tetap hanya di dalam wireframe
+  3. panel parameter punya pilihan Soft / Hard boundary; mengubahnya mengubah hash parameter (domain diestimasi ulang)
 Pemakaian: python tools/uji/uji_sumber_dh.py"""
 import os, random, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
@@ -38,13 +38,14 @@ with sync_playwright() as pw:
       return {wfx:d.wfx,on:imPar(d).on,holes:Object.keys(R).length,runs:n,ready:meDomsReady().map(function(x){return x.name;}),id:d.id,m:m.name};})()""")
     print("1", a)
     cek(a.get("wfx") and a["on"] and a["holes"] > 0 and "WF_Lensa" in a["ready"], "1 wireframe dikunci -> %d lubang di-flag otomatis, domain siap estimasi" % a.get("holes", 0))
-    b = pg.evaluate("""(function(){var d=gmDom('%s'),P0=meParOf(d),c0=meComps(d,P0);SUMBER.on=true;var c1;try{c1=meComps(d,P0);}finally{SUMBER.on=false;}var html=meParHtml(d.id);
+    b = pg.evaluate("""(function(){var d=gmDom('%s'),P0=meParOf(d),c0=meComps(d,P0);SUMBER.on=true;var c1,c2,h1=imHash(JSON.stringify(meParOf(d)));try{c1=meComps(d,meParOf(d));SUMBER.set(d.id,'hard');c2=meComps(d,meParOf(d));}finally{SUMBER.on=false;}
+      var h2=imHash(JSON.stringify(meParOf(d))),html=meParHtml(d.id);SUMBER.set(d.id,'soft');var html2=meParHtml(d.id);
       var mean=function(C){var s=0;C.forEach(function(c){s+=c.v;});return s/C.length;};
-      return {n0:c0.length,n1:c1.length,m0:mean(c0),m1:mean(c1),ui:html.indexOf('semua sampel database')>=0,sel:html.indexOf('SUMBER.set')>=0||html.indexOf('hard boundary, bawaan')>=0,all:assays.length};})()""" % a["id"])
+      return {n0:c0.length,n1:c1.length,n2:c2.length,m0:mean(c0),m1:mean(c1),hchg:h1!==h2,ui:html.indexOf('value="hard" selected')>=0&&html2.indexOf('value="soft" selected')>=0,all:assays.length};})()""" % a["id"])
     print("2", b)
-    cek(b["n1"] > 3 * b["n0"] and b["n0"] >= 3, "2 saat run: komposit = semua sampel (%d), di luar run = komposit domain (%d); database %d assay" % (b["n1"], b["n0"], b["all"]))
+    cek(b["n1"] > 3 * b["n0"] and b["n0"] >= 3 and b["n2"] == b["n0"], "2 soft (bawaan): komposit = semua sampel (%d); hard = komposit domain (%d); di luar run = komposit domain (%d)" % (b["n1"], b["n2"], b["n0"]))
     cek(b["m1"] < b["m0"], "2 kadar rata-rata komposit turun saat sampel waste ikut (%.3f -> %.3f)" % (b["m0"], b["m1"]))
-    cek(b["ui"] and not b["sel"], "3 panel parameter: 'semua sampel database', tanpa pilihan lain")
+    cek(b["ui"] and b["hchg"], "3 pilihan Soft / Hard boundary tampil & mengubah hash parameter")
     pg.evaluate("uiTab('BM');AOI.dlg();(function(){var m=MD.models[0];mdLocal(m);var x0=1e18,x1=-1e18,y0=1e18,y1=-1e18,z0=1e18,z1=-1e18;for(var i=0;i<m.nv;i++){var x=m.v[i*3],y=m.v[i*3+1],z=m.v[i*3+2];x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);z0=Math.min(z0,z);z1=Math.max(z1,z);}Object.assign(AOI.cfg,{x0:x0-2,x1:x1+2,y0:y0-2,y1:y1+2,zb:z0-2,zt:z1+2,bx:2,by:2,bz:2,snap:false,topo:0,pit:0,poly:'',mode:'penuh',name:'uji'});AOI.body();AOI.go();})()")
     pg.wait_for_function("!AOI.busy && window.BX && BX.m", timeout=600000); pg.wait_for_timeout(800)
     pg.evaluate("uiTab('ME');meRun()"); pg.wait_for_function("ME.store && ME.store.runs.length>0 && !ME.job", timeout=600000); pg.wait_for_timeout(800)
