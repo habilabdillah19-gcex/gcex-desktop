@@ -408,6 +408,21 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
      '<code>JLR.dlat(nol)</code> menyetel jalur, lalu <code>DLAT.muat</code>; selama <code>JLR.dlatNol</code>, <code>DLAT.ada</code> menolak <code>*_BM_GC*</code> dan <code>*Leapfrog.obj</code>. '
      'Saat data latihan dimuat, jalur di <code>SA.go</code> mengikuti tombol (bukan kartu).']]))
 
+B.append('<h3>8.5 Parameter estimasi dari log Surpac (Drill Hole 0.24.79)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Kode', '<code>web-src-dh/slog_dh.js</code> (<code>SLOG</code>), disambung sesudah <code>sumber_dh.js</code>. Pintu: <code>meParHtml</code> dibungkus (tombol per domain) dan menu node <code>me</code>; '
+     'hanya bila <code>JLR.boleh(\'par\')</code>, proyek tanpa jalur, atau jalur masih tebakan.'],
+    ['Pembaca', '<code>SLOG.parse</code>: blok perintah <code>BM FILL OK / ORDINARY KRIGING / INVERSE DISTANCE / NEAREST NEIGHBOUR</code> sampai perintah berikutnya; '
+     '<code>frm20030.attname</code>, <code>frm20040</code> (location &rarr; <code>compositeXX.str</code> &rarr; unsur; constrain), <code>frm20080</code> (majordist, semimajfact, minorfact, min/max, max_samp_per_id, axis_1..3), '
+     '<code>frm20101</code> (co, c1..c5, a1..a5, azimuth/plunge/dip, semi_ratio, minor_ratio), constraint <code>INSIDE/OUTSIDE CONSTRAINT nama</code>.'],
+    ['Orientasi', '<code>SLOG.vek(b,p,d)</code>: ZXY LRL &mdash; bearing searah jarum jam; plunge tangan kanan (positif mengangkat mayor); dip tangan kiri (positif mengangkat semi). '
+     'Dipilih secara empiris pada BMGC Zona 3 (korelasi 0,871 vs 0,733&ndash;0,819 untuk tafsiran lain).'],
+    ['Salin', '<code>SLOG.est</code>: <code>m</code> = {vM,vS,vN,c0,cs,A,B=a/semi_ratio,Cn=a/minor_ratio}; <code>sr</code> = [majordist, majordist/semimajfact, majordist/minorfact]; '
+     '<code>P</code> = [{mult 1, min, max, mph (0 bila &ge; max)}]; <code>hard</code> = constrain Y; <code>nd</code> dari dialog (bawaan 1&times;1&times;1); <code>surpac</code> = sudut asli & waktu run.'],
+    ['Uji kecocokan', '<code>SLOG.ujiJalan</code>: run beratribut = kolom acuan (<code>SLOG.kolomAcuan</code>) dikelompokkan per set parameter; tiap set &rarr; <code>meRun</code> penuh (<code>ME.opt.force</code> sementara) pada domain terpilih (ME.sel sementara); '
+     'salinan <code>&lt;unsur&gt;_est</code> disimpan; korelasi dihitung pada blok yang diisi semua set (<code>rS</code>), cakupan = blok terisi / maks. Sesudahnya: <code>d.est</code> & <code>ME.sel</code> dipulihkan, '
+     '<code>ME.store.runs</code> dipotong ke panjang awal, rekomendasi = rS tertinggi (seri &rarr; run terbaru), jejak jalur.']]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

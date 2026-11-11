@@ -87,7 +87,7 @@
     d.wfx = nama; WFX.c = {};
     alert('Domain "' + d.name + '" sekarang memakai wireframe "' + nama + '" sebagai batas EKSAK' +
           (V ? ' (volume ' + N(V) + ' m³)' : '') + '.\n\n' +
-          'Bentuknya milik Leapfrog: tidak bisa diedit di GC-Ex dan TIDAK berubah saat ada bor baru. ' +
+          'Bentuknya milik software asalnya (Leapfrog / Surpac): tidak bisa diedit di GC-Ex dan TIDAK berubah saat ada bor baru. ' +
           'Untuk domain yang bisa diedit dan ikut diperbarui, pakai "Serap wireframe".');
     try { gmDirty(); } catch (e) {}
     try { if (window.PT && PT.render) PT.render(true); } catch (e) {}

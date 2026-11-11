@@ -4599,3 +4599,19 @@ Panduan bergambar: Tutorial Ore Geometry Studio bab 10.
 ## 187. Drillhole 0.24.78 — Peta level: posisi bebas, kadar halus, sakelar lapisan
 
 Di Ore Geometry Studio › 15 · Peta level: tarik **judul**, **panah utara & skala** (tarik huruf N) dan **legenda** ke tempat kosong; tombol *posisi otomatis* mengembalikannya. Warna kadar kini halus (tidak kotak-kotak). Setiap lapisan bisa dinyalakan / dimatikan dengan sakelar **Lapisan** di atas peta.
+
+## 188. Drillhole 0.24.79 — Parameter estimasi dari log Surpac
+
+Untuk proyek jalur **Lanjutkan** dengan acuan *Parameter estimasi*: Model Estimation › **⋯ › Isi parameter dari log Surpac…**
+(atau tombol **Isi dari log Surpac…** di panel parameter domain).
+
+- Pilih berkas log Surpac. GC-Ex menampilkan semua run *BM FILL* (terbaru di atas) dengan variogram, orientasi (bearing / plunge / dip),
+  elipsoid pencarian, jumlah sampel dan constraint; run kriging Au terakhir terpilih otomatis.
+- **Memilih run**: run yang benar adalah run yang menghasilkan nilai di block model yang diserahkan — atributnya sama dengan kolom kadar
+  block model, biasanya run terakhir atribut itu. Tombol **Uji kecocokan dengan block model acuan** mengestimasi domain terpilih dengan tiap
+  set parameter berbeda dan membandingkannya dengan kolom kadar block model Surpac yang aktif; run paling cocok ditandai ★ dan dipilih.
+  Run uji tidak masuk riwayat Model Estimation dan parameter domain tidak berubah sampai Anda menekan **Salin parameter ke domain terpilih**.
+- Orientasi Surpac ZXY LRL diterjemahkan ke sumbu GC-Ex; sumber sampel `constrain = N` = soft boundary (semua sampel), `Y` = hard.
+  Log tidak mencatat diskretisasi blok: atur di dialog (bawaan 1×1×1).
+- **Tanpa log**: parameter tidak tersimpan di .mdl. Buat dari data bor dengan *Autorun Estimasi dari Nol* (hilangkan centang acuan
+  *Parameter estimasi* di Proyek › Jalur), lalu bandingkan dengan block model pendahulu pada blok yang sama.

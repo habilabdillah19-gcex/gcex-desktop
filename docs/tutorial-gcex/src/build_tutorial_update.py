@@ -1133,6 +1133,17 @@ B.append('<p>Variogram di Geostatistik dihitung dari komposit di dalam <b>sayata
          '<b>Variogram dari sayatan di bidang tiap domain</b> (bawaan nyala) di dialog Autorun Estimasi dari Nol; dimatikan = perilaku lama. '
          'Kerangka AOI yang dibuat autorun juga tidak lagi memunculkan jendela &ldquo;langkah berikutnya&rdquo; di tengah proses.</p>')
 
+B.append('<h3>15b. Parameter estimasi dari log Surpac (Drill Hole 0.24.79)</h3>')
+B.append('<p>Di jalur Lanjutkan dengan acuan <i>Parameter estimasi</i>, Model Estimation &rsaquo; &#8943; &rsaquo; <b>Isi parameter dari log Surpac&hellip;</b> membaca log Surpac '
+         'pendahulu: semua run <i>BM FILL</i> (variogram, orientasi ZXY LRL, elipsoid pencarian, sampel minimum&ndash;maksimum, komposit &rarr; unsur, constrain sumber sampel) '
+         'dan menyalin run pilihan ke domain. Orientasi Surpac diterjemahkan ke sumbu GC-Ex; <code>constrain = N</code> = soft boundary.</p>')
+B.append('<p><b>Memilih run.</b> Satu log berisi banyak run (percobaan, re-run sebagian area, unsur lain). Yang benar adalah run yang menghasilkan nilai di block model '
+         'yang diserahkan. Tombol <b>Uji kecocokan dengan block model acuan</b> mengestimasi domain dengan tiap set parameter berbeda dan membandingkannya dengan kolom kadar '
+         'block model Surpac aktif. Perbandingan dilakukan pada blok yang diisi semua kandidat, karena elipsoid kecil hanya mengisi blok dekat bor dan korelasinya tampak tinggi. '
+         'Run paling cocok ditandai &#9733;. Run uji tidak masuk riwayat Model Estimation.</p>')
+B.append('<p><b>Tanpa log.</b> Surpac tidak menyimpan parameter di .mdl. Buat parameter dari data bor dengan Autorun Estimasi dari Nol, lalu bandingkan dengan block model '
+         'pendahulu pada blok yang sama. Tombol log Surpac tidak tampil di jalur Mulai dari nol.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
