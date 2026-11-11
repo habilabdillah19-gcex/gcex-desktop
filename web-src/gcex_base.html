@@ -3663,7 +3663,7 @@ async function readImgWorld(s,bb,res,maxpx){var g=await rasterWorld(s);if(!g)thr
 function bname(n){return n.replace(/\.[^.]+$/,'');}
 async function readMsh(f){var b=new Uint8Array(await f.arrayBuffer()),hd=new TextDecoder('latin1').decode(b.subarray(0,Math.min(b.length,4096)));
   if(hd.indexOf('%ARANZ')!==0)throw new Error(f.name+': bukan mesh Leapfrog (ARANZ)');var bi=hd.indexOf('[binary]');if(bi<0)throw new Error(f.name+': blok [binary] tidak ditemukan');
-  var idx=hd.slice(hd.indexOf('[index]')+7,bi).split(';').map(function(l){return l.trim().split(/\s+/);}).filter(function(a){return a.length>=4;}),o=bi+8,le=true;
+  var idx=hd.slice(hd.indexOf('[index]')+7,bi).split(';').map(function(l){return l.trim().split(/\s+/);}).filter(function(a){return a.length>=3;}).map(function(a){return a.length===3?[a[0],a[1],'1',a[2]]:a;}),o=bi+8,le=true;
   if(b[o]===0x00&&b[o+1]===0xf0)le=false;o+=4;var dv=new DataView(b.buffer,b.byteOffset,b.byteLength);var chk=dv.getFloat64(o,le);if(Math.abs(chk-1.23456789)>1e-6)throw new Error(f.name+': format biner mesh tidak dikenali');o+=8;
   var V=null,Tr=null;idx.forEach(function(a){var nm=a[0],ty=a[1].toLowerCase(),nc=+a[2],n=+a[3],sz=ty.indexOf('double')===0?8:4,len=nc*n*sz;
     if(/^loc/i.test(nm)&&sz===8&&nc===3){V=new Float64Array(n*3);for(var i=0;i<n*3;i++)V[i]=dv.getFloat64(o+i*8,le);}

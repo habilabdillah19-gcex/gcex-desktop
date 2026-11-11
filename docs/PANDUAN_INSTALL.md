@@ -4458,3 +4458,10 @@ Dari simulasi wireframe BMGC Zona 3 (11 Nov 2026). Log Surpac BMGC menjalankan *
 
 **Kunci domain ke wireframe** (Project Tree › Import Wireframe Geologi › wireframe › *Kunci domain … ke wireframe ini*):
 interval bor di dalam wireframe kini di-flag otomatis bila domain belum punya flag, dan domain langsung siap di Model Estimation.
+
+## 176. Block Model 0.24.66 & Drillhole 0.24.67 — mesh Leapfrog dengan kolom nilai per titik
+
+Mesh Leapfrog (.msh) yang membawa nilai per titik tanpa jumlah komponen di bagian `[index]` (mis. `Thickness_Value Double 1407;`,
+dari ekspor wireframe vein beserta ketebalannya) dulu ditolak dengan pesan *indeks segitiga di luar jumlah titik*. Kini kolom
+seperti itu dibaca sebagai satu komponen dan dilewati, sehingga Location dan Tri terbaca benar. Berlaku di Import Wireframe
+Geologi (Drillhole) dan Wireframe geologi (Block Model).
