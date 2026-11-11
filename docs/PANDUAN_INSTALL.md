@@ -4431,3 +4431,15 @@ memakai nugget dari variogram downhole dan selalu mayor ≥ semi-mayor; isian *R
 **Impor & tampilan**: CSV yang bukan UTF-8 (mis. karakter ±) dibaca benar dengan peringatan; validasi menyebut Hole ID per butir;
 Kerangka AOI punya *Origin grid* (blok sejajar model Surpac); label hole dimatikan otomatis bila > 150 lubang; topografi yang baru
 diimpor langsung tampil; nama lengkap node Project Tree muncul saat kursor diarahkan.
+
+## 174. Block Model 0.24.65 — Display 3D As-Mined menampilkan block model di dalam solid as-mined
+
+**Register & Laporan As-Mined › 3D hasil kerja** (*Lihat 3D hasil kerja*) kini menampilkan **blok-blok block model yang
+masuk hitungan as-mined**, bukan bentuk solid as-mined-nya:
+- Mode *Presisi*: tiap blok dipotong garis poligon OB (XY) serta permukaan atap & lantai di titik tengah blok (Z), persis
+  seperti hitungan, sehingga volume blok yang tampak = volume hitungan. Mode *Seperti Surpac*: blok utuh.
+- Warna = kelas kadar As-Mined (MO / LG / HG / … / waste) dari kadar hasil as-mined blok itu; legenda menyebut jumlah blok,
+  tonase dan kadar tiap kelas; garis tepi blok digambar tipis.
+- **Solid as-mined** tetap ada sebagai pilihan *selubung* (kotak centang, mati secara bawaan). *Sub-blok model as-mined*
+  (ukuran penuh) dan *Block model GC (konteks)* tidak berubah.
+- Bila blok belum muncul, klik **Hitung semua flitch** dulu (blok berasal dari hasil running as-mined).

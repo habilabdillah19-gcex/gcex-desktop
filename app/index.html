@@ -8280,10 +8280,57 @@ function amRoofFnDtm(o, B) {
     var nr = ring.length; for (i = 0; i < nr; i++) { var j2 = (i + 1) % nr; Ii.push(i, j2); Jj.push(m + i, m + i); Kk.push(j2, m + j2); }
     var zs = Z.slice(0, m), zl = Z.slice(m), mean = function (A) { var t = 0; A.forEach(function (v) { t += v; }); return t / A.length; };
     return { x: X, y: Y, z: Z, i: Ii, j: Jj, k: Kk, atap: mean(zs), lantai: mean(zl), rf: !!(rf && rf.ok), fl: !!(fl && fl.ok) }; };
-  if (window.AM3) { AM3.sol = true; AM3.sb = false; }
+  /* BM 0.24.65 (pemilik 11-11-2026): Display 3D As-Mined menampilkan BLOCK MODEL di dalam solid as-mined (bagian 9),
+     bukan solid-nya. Solid tetap tersedia sebagai pilihan (selubung). */
+  if (window.AM3) { AM3.sol = false; AM3.sb = false; AM3.bmIn = true; }
   (function () { var _t = window.am3Traces; if (typeof _t !== 'function') return; window.am3Traces = am3Traces = function (T) { var r = _t.apply(this, arguments); try { if (!AM3.sol) return r; var n = 0; amAllInfo().forEach(function (I) { var x = I.x; if (!x.on || !I.calc) return; var S = AMN.solid(I); if (!S) return; n++;
           T.push({ type: 'mesh3d', x: S.x, y: S.y, z: S.z, i: S.i, j: S.j, k: S.k, color: I.col || '#2b8a3e', opacity: 0.82, flatshading: true, lighting: { ambient: 0.6, diffuse: 0.7, specular: 0.1, roughness: 0.8 }, name: 'Solid as-mined ' + I.code + ' · ' + lyFmt(I.ton.toFixed(0)) + ' t @ ' + amF(I.gA, 2) + ' · atap ' + S.atap.toFixed(2) + ' lantai ' + S.lantai.toFixed(2), hoverinfo: 'name', showlegend: false, showscale: false }); });
         /* satu baris legenda untuk semua solid (dulu satu baris per poligon memenuhi layar); rinciannya di hover */ if (n) T.push({ type: 'scatter3d', mode: 'markers', x: [null], y: [null], z: [null], marker: { size: 9, color: '#2b8a3e', symbol: 'square' }, name: 'Solid as-mined (' + n + ' poligon, warna = kelas)', showlegend: true }); } catch (e) { console.error(e); } return r; }; })();
+  /* ---------- 9. BLOCK MODEL di dalam solid as-mined (BM 0.24.65) ----------
+     Setiap sub-blok hasil hitungan as-mined digambar persis sebesar bagian yang dihitung: mode Presisi = sel dipotong
+     poligon OB (XY) dan dipotong permukaan atap / lantai di titik tengah sel (Z), sama dengan am2.js amRun; mode Surpac =
+     sel utuh. Warna = kelas kadar As-Mined (amCls) dari kadar hasil as-mined sel itu. */
+  function clipRect(P, x0, x1, y0, y1) { var out = P.map(function (p) { return [+p[0], +p[1]]; });
+    [[0, x0, 1], [0, x1, -1], [1, y0, 1], [1, y1, -1]].forEach(function (e) { if (out.length < 3) { out = []; return; } var a = e[0], v = e[1], sg = e[2], inp = out, n = inp.length; out = [];
+      var ins = function (p) { return sg * (p[a] - v) >= -1e-12; }, cut = function (p, c) { var t = (v - p[a]) / (c[a] - p[a]), q = [p[0] + (c[0] - p[0]) * t, p[1] + (c[1] - p[1]) * t]; q[a] = v; return q; };
+      for (var i = 0; i < n; i++) { var c = inp[i], p = inp[(i + n - 1) % n], ci = ins(c), pi = ins(p); if (ci) { if (!pi) out.push(cut(p, c)); out.push(c); } else if (pi) out.push(cut(p, c)); } });
+    return out; }
+  function earTri(Q) { var n = Q.length, A = 0, i; for (i = 0; i < n; i++) { var p = Q[i], q = Q[(i + 1) % n]; A += p[0] * q[1] - q[0] * p[1]; }
+    var V = []; for (i = 0; i < n; i++) V.push(A > 0 ? i : n - 1 - i); var T = [], g = 0;
+    var cr = function (a, b, c) { return (Q[b][0] - Q[a][0]) * (Q[c][1] - Q[a][1]) - (Q[b][1] - Q[a][1]) * (Q[c][0] - Q[a][0]); };
+    while (V.length > 3 && g++ < 400) { var m = V.length, ok = false; for (i = 0; i < m && !ok; i++) { var a = V[(i + m - 1) % m], b = V[i], c = V[(i + 1) % m]; if (cr(a, b, c) <= 1e-12) continue; var e = true;
+        for (var j = 0; j < m && e; j++) { var p2 = V[j]; if (p2 === a || p2 === b || p2 === c) continue; if (cr(a, b, p2) >= 0 && cr(b, c, p2) >= 0 && cr(c, a, p2) >= 0) e = false; }
+        if (e) { T.push([a, b, c]); V.splice(i, 1); ok = true; } }
+      if (!ok) break; }
+    for (i = 1; i + 1 < V.length; i++) T.push([V[0], V[i], V[i + 1]]); return T; }
+  AMN.bmCells = function () { if (!BX.m || !AM.res) return []; var G = amGrid(), O = G.O, dx = G.dx, dy = G.dy, dz = G.dz, CM = lyCalcM(), R = amR(), byId = {}, S = {}, seen = {}, out = [];
+    amBndAll().forEach(function (x) { if (x.on) byId[x.id] = x; });
+    var RM = typeof amRoofMode === 'function' && amRoofMode() !== 'flitch', FM = R.floor === 'pickup';
+    var surf = function (x) { if (S[x.id]) return S[x.id]; var B = [+x.top, +x.bot], P = x.pts, o = { id: x.id, r: P, b: lyBB(P), area: lyArea(P), name: x.name }, L = lyU(), sv = { fh: L.fh, top: L.top, bot: L.bot }, rf = null, fl = null;
+      try { L.fh = +(B[0] - B[1]).toFixed(4); L.top = B[0]; L.bot = B[1]; if (RM && window.amRoofFn) { rf = amRoofFn(o, B); if (!rf || !rf.ok) rf = null; } if (FM && window.amFloorFn) { fl = amFloorFn(o, B); if (!fl || !fl.ok) fl = null; } } catch (e) { rf = fl = null; } finally { L.fh = sv.fh; L.top = sv.top; L.bot = sv.bot; }
+      return (S[x.id] = { P: P, rt: function (a, b) { var v = rf ? rf.f(a, b) : B[0]; return isFinite(v) ? v : B[0]; }, fb: function (a, b) { var v = fl ? fl.f(a, b) : B[1]; return isFinite(v) ? v : B[1]; } }); };
+    Object.keys(AM.res).forEach(function (k) { var r = AM.res[k]; (r.cells || []).forEach(function (c) { var key = c.ix + '|' + c.iy + '|' + c.iz + '|' + (c.pid || ''); if (seen[key]) return; seen[key] = 1;
+        var x0 = O[0] + c.ix * dx, y0 = O[1] + c.iy * dy, z0 = O[2] + c.iz * dz, Q, zt = z0 + dz, zb = z0, x = c.pid != null ? byId[c.pid] : null;
+        if (c.pid != null && !x) return; /* poligon dimatikan */
+        if (CM === 'surpac' || !x) Q = [[x0, y0], [x0 + dx, y0], [x0 + dx, y0 + dy], [x0, y0 + dy]];
+        else { var sf = surf(x); Q = clipRect(sf.P, x0, x0 + dx, y0, y0 + dy); if (Q.length < 3) return; var cx = x0 + dx / 2, cy = y0 + dy / 2; zt = Math.min(zt, sf.rt(cx, cy)); zb = Math.max(zb, sf.fb(cx, cy)); if (zt - zb <= 1e-6) return; }
+        out.push({ Q: Q, zt: zt, zb: zb, g: c.g, t: c.t }); }); });
+    return out; };
+  AMN.bmTraces = function (T) { var C = AMN.bmCells(); if (!C.length) return 0; var R = amR(), U = amU(), grp = {}, ord = [];
+    C.forEach(function (c) { var q = isFinite(c.g) ? amCls(c.g) : null, k = q ? q.m : ((R.ws && R.ws.m) || 'WASTE'); if (!grp[k]) { grp[k] = { k: k, col: (q && q.c) || (R.ws && R.ws.c) || '#9e9e9e', lo: q ? +q.lo : -1, L: [], t: 0, gt: 0 }; ord.push(grp[k]); } var G = grp[k]; G.L.push(c); if (isFinite(c.t)) { G.t += c.t; if (isFinite(c.g)) G.gt += c.g * c.t; } });
+    ord.sort(function (a, b) { return b.lo - a.lo; }).forEach(function (G) { var X = [], Y = [], Z = [], I = [], J = [], K = [];
+      G.L.forEach(function (c) { var Q = c.Q, n = Q.length, b = X.length, tr = n === 4 ? [[0, 1, 2], [0, 2, 3]] : earTri(Q);
+        Q.forEach(function (p) { X.push(p[0] - offX); Y.push(p[1] - offY); Z.push(c.zt); }); Q.forEach(function (p) { X.push(p[0] - offX); Y.push(p[1] - offY); Z.push(c.zb); });
+        tr.forEach(function (f) { I.push(b + f[0]); J.push(b + f[1]); K.push(b + f[2]); I.push(b + n + f[0]); J.push(b + n + f[2]); K.push(b + n + f[1]); });
+        for (var i = 0; i < n; i++) { var j = (i + 1) % n; I.push(b + i, b + j); J.push(b + j, b + n + j); K.push(b + n + j, b + n + i); } });
+      T.push({ type: 'mesh3d', x: X, y: Y, z: Z, i: I, j: J, k: K, color: G.col, opacity: 1, flatshading: true, lighting: { ambient: 0.7, diffuse: 0.55, specular: 0.05, roughness: 0.9 },
+        name: 'Block model as-mined ' + G.k + ' (' + G.L.length.toLocaleString('id-ID') + ' blok' + (G.t ? ' · ' + lyFmt(G.t.toFixed(0)) + ' t @ ' + amF(G.gt / G.t, 2) + ' ' + U.attr : '') + ')', hoverinfo: 'name', showlegend: true, showscale: false }); });
+    /* garis tepi tiap blok (seperti tampilan block model Surpac), supaya blok bersebelahan sewarna tetap terbaca */
+    if (C.length <= 20000) { var lx = [], ly = [], lz = [], seg = function (a, b, za, zb) { lx.push(a[0] - offX, b[0] - offX, null); ly.push(a[1] - offY, b[1] - offY, null); lz.push(za, zb, null); };
+      C.forEach(function (c) { var Q = c.Q, n = Q.length; for (var i = 0; i < n; i++) { var a = Q[i], b = Q[(i + 1) % n]; seg(a, b, c.zt, c.zt); seg(a, b, c.zb, c.zb); seg(a, a, c.zt, c.zb); } });
+      T.push({ type: 'scatter3d', mode: 'lines', x: lx, y: ly, z: lz, line: { color: 'rgba(30,30,30,0.55)', width: 1 }, name: 'Tepi blok as-mined', hoverinfo: 'skip', showlegend: false }); }
+    return C.length; };
+  (function () { var _t = window.am3Traces; if (typeof _t !== 'function') return; window.am3Traces = am3Traces = function (T) { var r = _t.apply(this, arguments); try { if (AM3.bmIn) AMN.bmTraces(T); } catch (e) { console.error(e); } return r; }; })();
   /* ---------- 6. zoom ke poligon as-mined ---------- */
   AMN.zoom = function (semua) { var b = [1e18, -1e18, 1e18, -1e18, 1e18, -1e18], B = lyBench(), n = 0; amBndAll().forEach(function (x) { if (!x.on) return; if (!semua && !(Math.abs(x.top - B[0]) < 1e-6 && Math.abs(x.bot - B[1]) < 1e-6)) return; n++; x.pts.forEach(function (q) { var X = q[0] - offX, Y = q[1] - offY; if (X < b[0]) b[0] = X; if (X > b[1]) b[1] = X; if (Y < b[2]) b[2] = Y; if (Y > b[3]) b[3] = Y; }); if (x.bot - 0.5 < b[4]) b[4] = x.bot - 0.5; if (x.top + 0.5 > b[5]) b[5] = x.top + 0.5; });
     if (!n) { if (!semua) return AMN.zoom(true); alert('Belum ada poligon as-mined.'); return; }
@@ -8326,9 +8373,10 @@ function amRoofFnDtm(o, B) {
 
   /* ---------- panel: tombol & keterangan ---------- */
   (function () { var _b = window.am3Box; if (typeof _b === 'function') window.am3Box = am3Box = function () { var h = _b.apply(this, arguments);
-      var add = '<div class=am3ly><label class=sw title="Poligon OB di antara permukaan atap dan lantai yang dipakai hitungan: bentuk yang benar-benar dihitung"><input type=checkbox ' + (AM3.sol ? 'checked' : '') + ' onchange="AM3.sol=this.checked;updatePlot()">Solid as-mined (atap &ndash; lantai, dipotong poligon)</label></div>' +
+      var add = '<div class=am3ly><label class=sw title="Blok-blok block model yang masuk hitungan as-mined, dipotong poligon OB dan permukaan atap / lantai persis seperti hitungan; warna = kelas kadar"><input type=checkbox ' + (AM3.bmIn ? 'checked' : '') + ' onchange="AM3.bmIn=this.checked;updatePlot()"><b>Block model di dalam solid as-mined</b> (warna kelas kadar)</label>' +
+        '<label class=sw title="Selubung: poligon OB di antara permukaan atap dan lantai yang dipakai hitungan"><input type=checkbox ' + (AM3.sol ? 'checked' : '') + ' onchange="AM3.sol=this.checked;updatePlot()">Solid as-mined (selubung atap &ndash; lantai)</label></div>' +
         '<div class=g2 style="margin-top:4px"><button onclick="AMN.zoom(false)" title="Dekatkan tampilan ke poligon as-mined flitch aktif (3D: kamera; plan 2D: rentang sumbu)">&#8982; Zoom ke poligon flitch ini</button><button onclick="AMN.zoom(true)">&#8982; Zoom semua poligon</button></div>' +
-        '<div class=hint>Kotak <b>Sub-blok model as-mined</b> menggambar sub-blok <b>ukuran penuh</b> (lebih besar dari volume yang dihitung); yang sesuai hitungan adalah <b>Solid as-mined</b>. Material di luar poligon OB tidak dihitung.</div>';
+        '<div class=hint><b>Block model di dalam solid as-mined</b> = blok yang dihitung, dipotong poligon OB, atap dan lantai (volumenya sama dengan hitungan). <b>Sub-blok model as-mined</b> menggambar sub-blok <b>ukuran penuh</b> (lebih besar dari volume yang dihitung). Material di luar poligon OB tidak dihitung.</div>';
       return h.replace(/<\/div>\s*$/, add + '</div>'); }; })();
   (function () { var _p = window.amPanel; if (typeof _p !== 'function') return; window.amPanel = amPanel = function () { var r = _p.apply(this, arguments); try { var el = $('amBody'); if (!el || !BX.m) return r; var R = amR(), U = BX.ui, t = el.querySelector('.amcls,table.amct') || null;
         var box = document.createElement('div'); box.className = 'hint amnbox'; box.setAttribute('data-amn', '1');
@@ -11669,7 +11717,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.64';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.65';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

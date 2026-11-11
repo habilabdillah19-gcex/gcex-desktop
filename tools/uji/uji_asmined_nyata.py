@@ -4,7 +4,8 @@
   A. nama file -> RL flitch, tanggal, pit (termasuk salah ketik 7 angka)
   B. import boundary dari CSV OB: 1 poligon di flitch NAMA FILE (bukan flitch aktif), tanggal & pit ikut, titiknya jadi titik atap
   C. kelas kadar dari aturan IIF block model; kolom SG dipilih otomatis
-  D. 3D hasil kerja: solid as-mined (mesh) tampil, kubus sub-blok penuh tidak lagi bawaan; zoom mengubah kamera / rentang plan
+  D. 3D hasil kerja: BLOCK MODEL di dalam solid as-mined tampil (BM 0.24.65; volume blok yang digambar = volume hitungan),
+     solid as-mined jadi pilihan selubung, kubus sub-blok penuh tidak bawaan; zoom mengubah kamera / rentang plan
 Pemakaian: python tools/uji/uji_asmined_nyata.py"""
 import json, os, random, subprocess, sys, tempfile, time, urllib.request
 from pathlib import Path
@@ -31,7 +32,7 @@ with sync_playwright() as pw:
     cek(a[1]["top"] == 248.5 and a[1]["bot"] == 246 and a[1]["date"] == "2026-11-10" and a[1]["pit"] == "Z4", "A nama salah ketik (7 angka) tetap terbaca: %s" % a[1])
     cek(a[2]["date"] == "2026-11-07" and a[2]["pit"] == "Z3" and a[2]["top"] != a[2]["top"] and a[3]["date"] == "" and a[3]["pit"] == "", "A PROG: tanggal & pit, tanpa RL; nama tanpa pola -> kosong")
     # B: poligon sintetis di tengah model, flitch 238,75-236,25 (BUKAN flitch aktif)
-    b = pg.evaluate("""(async function(){var m=BX.m,cx=0,cy=0,n=Math.min(m.n,5000);for(var i=0;i<n;i++){cx+=m.x[i];cy+=m.y[i];}cx/=n;cy/=n;lySet('fh',2.5);lyU().bot='';lySet('top',241.25);
+    b = pg.evaluate("""(async function(){var m=BX.m,cx=0,cy=0,n=0,i;for(i=0;i<m.n;i++)if(m.z[i]>236.25&&m.z[i]<238.75){cx+=m.x[i];cy+=m.y[i];n++;}cx/=n;cy/=n;var bd=1e18,bi=-1;for(i=0;i<m.n;i++)if(m.z[i]>236.25&&m.z[i]<238.75){var d=Math.hypot(m.x[i]-cx,m.y[i]-cy);if(d<bd){bd=d;bi=i;}}cx=m.x[bi]-6;cy=m.y[bi]-7;lySet('fh',2.5);lyU().bot='';lySet('top',241.25);
       var P=[[0,0],[12,1],[13,9],[6,14],[-1,8]],s='';P.forEach(function(q,i){s+=(i+1)+','+(cx+q[0]).toFixed(3)+','+(cy+q[1]).toFixed(3)+','+(238.2+0.1*i).toFixed(3)+',204\\n';});s+='5,'+(cx-1).toFixed(3)+','+(cy+8).toFixed(3)+',238.600,204\\n';
       var n0=amBndAll().length,r0=(amD().ptsR||[]).length;amBndFile([new File([s],'ACT_SO261106OB_238-75_236-25_ZX.csv')]);await new Promise(function(r){setTimeout(r,1500);});var x=amBndAll()[amBndAll().length-1];window._x=x;
       return {n:amBndAll().length-n0,top:x.top,bot:x.bot,date:x.date,pit:x.pit,np:x.pts.length,roof:(amD().ptsR||[]).length-r0,msg:(AM.bmsg||'').replace(/<[^>]+>/g,' '),aktif:lyBench()};})()"""); print("B", b)
@@ -46,9 +47,16 @@ with sync_playwright() as pw:
     # D
     pg.evaluate("lySet('fh',2.5);lyU().bot='';lySet('top',238.75);lyApply()"); pg.wait_for_timeout(3000); pg.evaluate("amR().roof='pickup';amRun(true)"); pg.wait_for_timeout(3500)
     pg.evaluate("lyFlOff();if(VIEW2D)toggle2D();"); pg.wait_for_timeout(1500); pg.evaluate("PT.select('reg.3d');am3Toggle(true)"); pg.wait_for_timeout(6000)
+    bm = pg.evaluate("""(function(){var gd=document.getElementById('plotDiv'),T=gd.data||[],B=T.filter(function(t){return t.type==='mesh3d'&&/^Block model as-mined/.test(t.name||'');}),S=T.filter(function(t){return /^Solid as-mined/.test(t.name||'');}),
+      C=AMN.bmCells(),v=0,ar=function(Q){var a=0;for(var i=0;i<Q.length;i++){var p=Q[i],q=Q[(i+1)%Q.length];a+=p[0]*q[1]-q[0]*p[1];}return Math.abs(a)/2;};C.forEach(function(c){v+=ar(c.Q)*(c.zt-c.zb);});
+      var vr=0;Object.keys(AM.res).forEach(function(k){vr+=AM.res[k].sum.vol;});var zt=Math.max.apply(null,C.map(function(c){return c.zt;}));return {nb:B.length,ns:S.length,blok:C.length,v:v,vr:vr,zt:zt,nm:B.map(function(t){return t.name;})};})()"""); print("BM", bm)
+    cek(bm["nb"] >= 1 and bm["ns"] == 0 and bm["blok"] > 0, "D bawaan: block model di dalam solid as-mined tampil (%d kelas, %d blok), solid tidak" % (bm["nb"], bm["blok"]))
+    cek(abs(bm["v"] - bm["vr"]) <= 1e-3 * max(1, bm["vr"]), "D volume blok yang digambar = volume hitungan as-mined (%.2f vs %.2f m3)" % (bm["v"], bm["vr"]))
+    cek(bm["zt"] < 238.75 - 0.05, "D blok dipotong atap pick-up (puncak %.2f < 238,75)" % bm["zt"])
+    pg.evaluate("AM3.sol=true;updatePlot()"); pg.wait_for_timeout(3000)
     dd = pg.evaluate("""(function(){var gd=document.getElementById('plotDiv'),T=gd.data||[],S=T.filter(function(t){return t.type==='mesh3d'&&/^Solid as-mined/.test(t.name||'');}),K=T.filter(function(t){return /sub-blok\\)/.test(t.name||'');}),c=gd._fullLayout.scene.camera,I=amInfoById(_x.id),z=S[0]?Array.from(S[0].z):[];
       return {solid:S.length,kubus:K.length,zmax:z.length?Math.max.apply(null,z):null,zmin:z.length?Math.min.apply(null,z):null,ton:I&&I.ton,de:Math.hypot(c.eye.x-c.center.x,c.eye.y-c.center.y,c.eye.z-c.center.z),code:I&&I.code};})()"""); print("D", dd)
-    cek(dd["solid"] == 1 and dd["kubus"] == 0 and dd["ton"] > 0, "D 3D hasil kerja: 1 solid as-mined, kubus sub-blok penuh tidak digambar (bawaan)")
+    cek(dd["solid"] == 1 and dd["kubus"] == 0 and dd["ton"] > 0, "D solid as-mined (selubung, dicentang): 1 solid; kubus sub-blok penuh tidak digambar")
     cek(dd["zmax"] is not None and dd["zmax"] <= 238.75 + 1e-6 and dd["zmax"] < 238.75 - 0.05 and abs(dd["zmin"] - 236.25) < 1e-6, "D solid mengikuti atap pick-up (%.2f < RL atas 238,75) sampai lantai %.2f" % (dd["zmax"] or 0, dd["zmin"] or 0))
     cek(dd["de"] < 0.6, "D kamera otomatis mendekat ke poligon as-mined (jarak mata %.3f)" % dd["de"])
     pg.evaluate("lyApply()"); pg.wait_for_timeout(3000); pg.evaluate("AMN.zoom(false)"); pg.wait_for_timeout(2500)
