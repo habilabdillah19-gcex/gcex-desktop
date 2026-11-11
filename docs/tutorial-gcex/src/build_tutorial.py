@@ -745,6 +745,7 @@ ch('Autorun Estimasi dari Nol: domain baru', dta('lanjutan &mdash; dipakai pada 
       ('Yang dibaca', 'putusan per domain: <b>tersimpan</b> / <b>tinjau</b> / <b>dilewati</b> beserta alasannya')]) +  '<p>Autorun Estimation (update) memakai parameter yang <b>sudah Anda setujui</b>. Untuk domain yang belum punya parameter sama sekali, itu tidak bisa dipakai. Node <b>Autorun Estimasi dari Nol</b> (di bawah Model Estimation) mengisi kekosongan itu &mdash; dan perlu dibaca dengan kesadaran bahwa ia <b>mengusulkan</b>, bukan memutuskan.</p>'
  + '<h3>Yang dikerjakannya</h3>'
  + kv([('Kerangka blok', 'memakai block model aktif, atau membuat <b>kerangka AOI baru</b> bila belum ada'),
+       ('Sayatan', 'tiap domain dipasangi <b>sayatan di bidang domain</b>-nya sendiri (strike &amp; dip dari kontak bor, tebal = sebaran kontak), sehingga <b>semua komposit domain</b> ikut; sayatan Anda dikembalikan sesudahnya (0.24.75)'),
        ('Variogram', 'rekomendasi otomatis (lag, transform, top-cut) lalu <b>fitting model</b> &mdash; fungsi yang sama dengan tombol di Geostatistik'),
        ('Lingkungan kriging', '<b>KNA</b> dipindai, lalu kombinasi terbaik (radius &times; faktor, jumlah sampel maksimal) diterapkan'),
        ('Parameter', 'disimpan ke domain, seperti <b>Simpan ke domain</b> yang Anda lakukan manual')])
@@ -753,6 +754,7 @@ ch('Autorun Estimasi dari Nol: domain baru', dta('lanjutan &mdash; dipakai pada 
  + '<tr><td><b>Blok X / Y</b></td><td>&asymp; <b>sepertiga spasi bor</b> (median jarak tiap collar ke collar terdekat). Pada data latihan: spasi 14,5 m &rarr; blok 5 m</td></tr>'
  + '<tr><td><b>Blok Z</b></td><td>&asymp; <b>tebal vein median</b> (jarak pasangan kontak HW&ndash;FW). Pada data latihan: 3 m</td></tr>'
  + '<tr><td><b>Sub-blocking + N</b></td><td>disarankan otomatis bila tebal vein kurang dari <b>3&times;</b> tinggi blok &mdash; batas solid akan kasar tanpa itu</td></tr>'
+ + '<tr><td><b>Variogram dari sayatan di bidang tiap domain</b></td><td>bawaan <b>nyala</b>. Dimatikan = variogram dari sayatan yang sedang aktif (perilaku sebelum 0.24.75). Pada uji data nyata, sayatan horizontal bawaan hanya memuat 13 dari 489 komposit satu vein, sehingga domain itu dilewati</td></tr>'
  + '<tr><td><b>Minimal komposit</b></td><td>bawaan 30; di bawah ini domain <b>dilewati</b></td></tr>'
  + '<tr><td><b>Nugget maksimal</b></td><td>bawaan 80%; di atas ini ditandai perlu ditinjau</td></tr></table>'
  + tip('Angka blok itu <b>usulan dari data</b>, bukan keharusan. Kalau tinggi bench atau selektivitas alat gali Anda menentukan lain, ganti saja &mdash; alasan usulannya ditampilkan supaya Anda bisa menilai mana yang lebih masuk akal untuk tambang Anda.')

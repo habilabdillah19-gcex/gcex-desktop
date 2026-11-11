@@ -4566,3 +4566,14 @@ Tutorial lengkap bergambar: **docs/tutorial-gcex/GCEx_Tutorial_Ore_Geometry_Stud
   (usulan + klik; E/N/RL, collar, azimuth, panjang), **13 Di luar wireframe** (sampel ≥ cut-off per kategori).
 - **14 Laporan PDF** — template deck (navy / emas, 13,333 × 7,5 in). Tulis judul kalimat & catatan per slide, lalu **Buat laporan & cetak
   ke PDF** (dialog cetak → *Simpan sebagai PDF* / *Microsoft Print to PDF*, margin 0, centang *Grafik latar belakang*) atau simpan HTML.
+
+## 184. Drillhole 0.24.75 — Autorun Estimasi dari Nol: sayatan di bidang tiap domain
+
+Variogram di Geostatistik dihitung dari komposit di dalam **sayatan aktif**. Autorun Estimasi dari Nol dulu memakai sayatan apa pun
+yang sedang terpasang; pada data nyata sayatan horizontal bawaan bisa hanya memuat sebagian kecil komposit sebuah vein (Zona 3: 13 dari
+489), sehingga domain dilewati karena di bawah ambang komposit.
+
+- Sekarang tiap domain dipasangi **sayatan di bidang domain** sebelum variogram dihitung — sama dengan tombol *Sayatan di bidang domain*
+  di Geostatistik (strike & dip dari kontak bor, tebal = sebaran kontak). Semua komposit domain ikut.
+- Laporan autorun menyebut sayatan yang dipakai per domain. Sayatan Anda dikembalikan sesudah autorun selesai.
+- Pilihan **Variogram dari sayatan di bidang tiap domain** di dialog Autorun Estimasi dari Nol (bawaan nyala). Dimatikan = perilaku lama.

@@ -21,7 +21,7 @@
 (function () {
   if (window.AR3) return;
   var AR3 = window.AR3 = {
-    o: { bx: 0, by: 0, bz: 0, aoi: 'auto', sb: false, sbN: 10, minKomp: 30, maxNug: 80, simpan: true, lanjut: false },
+    o: { bx: 0, by: 0, bz: 0, aoi: 'auto', sb: false, sbN: 10, minKomp: 30, maxNug: 80, simpan: true, lanjut: false, bidang: true },
     pil: {}, log: null, busy: false
   };
 
@@ -167,6 +167,9 @@
       '<div><label>Nugget maksimal (%)</label><input type=number step=1 value="' + o.maxNug + '" onchange="ar3Set(\'maxNug\',this.value)">' +
       '<div class=hint>Di atas ini parameter tetap disimpan tetapi ditandai <b>perlu ditinjau</b>.</div></div></div>' +
 
+      '<label class=sw><input type=checkbox ' + (o.bidang !== false ? 'checked' : '') + ' onchange="ar3Set(\'bidang\',this.checked)">Variogram dari sayatan di bidang tiap domain</label>' +
+      '<div class=hint>Seperti tombol <b>Sayatan di bidang domain</b> di Geostatistik: semua komposit domain masuk. Dimatikan = memakai sayatan yang sedang aktif. Sayatan Anda dikembalikan sesudah autorun.</div>' +
+
       '<div class=imsec>Sesudah parameter diusulkan</div>' +
       '<label class=sw><input type=checkbox ' + (o.simpan ? 'checked' : '') + ' onchange="ar3Set(\'simpan\',this.checked)">Simpan parameter ke domain</label>' +
       '<label class=sw><input type=checkbox ' + (o.lanjut ? 'checked' : '') + ' onchange="ar3Set(\'lanjut\',this.checked)">Langsung lanjut mengestimasi sesudahnya</label>' +
@@ -198,6 +201,8 @@
 
     if (!window.GS || !GS.open) { try { gsToggle(); } catch (e) {} }
 
+    var SEC_ID = ['sMode', 'p1e', 'p1n', 'p2e', 'p2n', 'dipS', 'dipN', 'pos', 'thick'], secAwal = null;
+    if (o.bidang !== false) secSimpan();
     langkahBlok(function () {
       var i = 0;
       (function next() {
@@ -244,6 +249,30 @@
       lanjut();
     }
 
+    /* ---- sayatan di bidang domain (0.24.75, disetujui pemilik 11 Nov 2026) ----
+       Variogram Geostatistik dihitung dari komposit di dalam SAYATAN AKTIF. Dulu autorun memakai sayatan apa pun
+       yang sedang terpasang: pada Zona 3 sayatan horizontal bawaan hanya memuat 13 dari 489 komposit QV3, sehingga
+       domain dilewati. Sekarang tiap domain dipasangi sayatan di bidangnya sendiri (strike & dip dari kontak bor,
+       tebal = sebaran kontak) -- sama dengan tombol "Sayatan di bidang domain" di Geostatistik. Sayatan Anda
+       dikembalikan sesudah autorun selesai. */
+    function secSimpan() { secAwal = {}; SEC_ID.forEach(function (k) { var e = $(k); if (e) secAwal[k] = e.value; }); var l = $('limSeg'); if (l) secAwal._lim = l.checked; }
+    function secPulih() {
+      if (!secAwal) return;
+      SEC_ID.forEach(function (k) { var e = $(k); if (e && secAwal[k] != null) e.value = secAwal[k]; });
+      var l = $('limSeg'); if (l && secAwal._lim != null) l.checked = secAwal._lim;
+      try { modeChanged(); } catch (e) {} try { updatePlot(); } catch (e) {}
+      secAwal = null;
+    }
+    function bidang(d) {
+      if (!(window.NY && NY.planeSec)) return '';
+      var al = window.alert, pesan = '';
+      window.alert = function (m) { pesan = String(m || ''); };
+      try { NY.lastPlane = null; NY.planeSec(); } catch (e) { pesan = e.message || String(e); } finally { window.alert = al; }
+      var L = NY.lastPlane;
+      if (!L) return '<span class=warn>sayatan di bidang domain tidak bisa dipasang' + (pesan ? ' (' + E(pesan) + ')' : '') + '; dipakai sayatan aktif.</span> ';
+      return '<small>Sayatan di bidang domain: strike ' + N(L.az, 0) + '&deg;, dip ' + N(L.dip, 0) + '&deg;, tebal ' + N(L.thick) + ' m.</small><br>';
+    }
+
     /* ---- 2. per domain: variogram -> KNA -> simpan ---- */
     function domain(x, next) {
       var d = x.d, nm = d.name;
@@ -256,6 +285,7 @@
         return next();
       }
       try { gxDomAct(d.id, 'gs'); } catch (e) {}
+      var bid = o.bidang !== false ? bidang(d) : '';
       try { gsRun(); } catch (e) {
         baris({ nama: nm, verdikt: 'lewat', ket: 'gagal menghitung variogram: ' + E(e.message || e) });
         return next();
@@ -264,7 +294,7 @@
       var nK = R && R.C ? R.C.length : 0;
       if (!R || nK < Math.max(5, +o.minKomp || 30)) {
         baris({ nama: nm, verdikt: 'lewat', hasil: N(nK) + ' komposit',
-                ket: 'di bawah ambang ' + N(o.minKomp) + ' &mdash; variogram dari sampel sesedikit ini tidak bermakna. Tambah bor, atau gabungkan domain sejenis lebih dulu.' });
+                ket: bid + 'di bawah ambang ' + N(o.minKomp) + ' &mdash; variogram dari sampel sesedikit ini tidak bermakna. Tambah bor, atau gabungkan domain sejenis lebih dulu.' });
         return next();
       }
       /* rekomendasi otomatis (asinkron), lalu fitting */
@@ -322,7 +352,7 @@
                  (R2.tc ? '<br><small>top-cut ' + N(R2.tc, 2) + '</small>' : ''),
           par: 'nugget <b>' + N(nug, 0) + '%</b><br><small>range mayor ' + N(ra, 1) + ' m · semi ' + N(rb, 1) + ' m · downhole ' + N(rd, 1) + ' m</small>' +
                (kna ? '<br><small>KNA: ' + kna + '</small>' : ''),
-          ket: (alasan.length ? '<span class=warn>Perlu ditinjau:</span> ' + alasan.join('; ') + '. ' : '') +
+          ket: bid + (alasan.length ? '<span class=warn>Perlu ditinjau:</span> ' + alasan.join('; ') + '. ' : '') +
                (o.simpan ? (tersimpan ? 'Parameter tersimpan ke domain.' : '<span class=warn>Gagal menyimpan ke domain.</span>')
                          : 'Tidak disimpan (pilihan "Simpan parameter ke domain" dimatikan).')
         });
@@ -332,6 +362,7 @@
 
     /* ---- 3. penutup ---- */
     function tutup() {
+      secPulih();
       var B = AR3.log.baris, sim = B.filter(function (b) { return b.verdikt === 'simpan'; }).length;
       var tj = B.filter(function (b) { return b.verdikt === 'tinjau'; }).length;
       var lw = B.filter(function (b) { return b.verdikt === 'lewat'; }).length;

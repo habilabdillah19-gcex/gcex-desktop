@@ -1121,6 +1121,15 @@ B.append('<p><b>Proyek lama.</b> Proyek dari versi sebelum 0.24.73 dibuka tanpa 
          'menu yang disembunyikan, sehingga proyek lama tetap bisa dikerjakan seperti biasa. <b>Muat data latihan</b> selalu masuk jalur '
          'Lanjutkan (data latihan memuat wireframe Leapfrog dan block model GC).</p>')
 
+B.append('<h3>15a. Autorun Estimasi dari Nol: sayatan di bidang tiap domain (Drill Hole 0.24.75)</h3>')
+B.append('<p>Variogram di Geostatistik dihitung dari komposit di dalam <b>sayatan aktif</b>. Autorun Estimasi dari Nol dulu memakai sayatan apa pun '
+         'yang sedang terpasang. Pada simulasi jalur Mulai dari nol dengan data nyata, sayatan horizontal bawaan hanya memuat 13 dari 489 komposit '
+         'sebuah vein, sehingga domain itu dilewati. Sekarang autorun memasang <b>sayatan di bidang domain</b> untuk tiap domain (sama dengan tombol '
+         '<i>Sayatan di bidang domain</i> di Geostatistik): strike &amp; dip dari kontak bor, tebal = sebaran kontak, sehingga semua komposit domain ikut. '
+         'Laporan autorun menyebut sayatan yang dipakai; sayatan Anda dikembalikan sesudah autorun selesai. Pilihan '
+         '<b>Variogram dari sayatan di bidang tiap domain</b> (bawaan nyala) di dialog Autorun Estimasi dari Nol; dimatikan = perilaku lama. '
+         'Kerangka AOI yang dibuat autorun juga tidak lagi memunculkan jendela &ldquo;langkah berikutnya&rdquo; di tengah proses.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
