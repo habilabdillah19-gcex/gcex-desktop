@@ -428,6 +428,33 @@ ch('String kontrol hanging wall / footwall', dta('lanjutan &mdash; flag hasil du
 SOL = {r[0]: r for r in (json.loads(N['solid']) if isinstance(N['solid'], str) else N['solid'])}
 SOLI = {r[0]: r for r in (json.loads(N['solidInfill']) if isinstance(N['solidInfill'], str) else N['solidInfill'])}
 su, sh = SOL['QV_Lensa2'], SOL['QV_Splay_HW']
+_J = lambda k, d: (json.loads(N[k]) if isinstance(N.get(k), str) and N[k][:1] in '[{' else N.get(k, d))
+VSC, VSG, VSA = _J('vsScan', []), _J('vsGab', [0, 0, 0, 0]), _J('vsAdp', [0, 0, 0, 0])
+VSK = [r for r in VSC if r[0] not in ('-', '')]
+VSYS = ('<h3>Vein system: banyak vein sekaligus</h3>'
+ + '<p>Bila interpretasi vein sudah ada di database bor sebagai <b>kolom kode</b> (mis. <i>Orebody</i>, <i>Vein</i>), setiap kode bisa '
+   'langsung menjadi satu domain vein &mdash; seperti <i>vein system</i> di Leapfrog. Data latihan punya kolom geologi <b>Vein</b>: '
+   + ', '.join('<code>%s</code> (%s interval, %s bor)' % (r[0], fN(r[1]), fN(r[2])) for r in VSK) + '.</p>'
+ + steps('Geomodeller Vein &rsaquo; tab <b>Flag</b> &rsaquo; buka <b>Flag dari kolom kode (satu domain per kode)</b> ([[vs_flag]]).',
+   'Pilih <b>Kolom kode</b>. Tabel menampilkan setiap kode dengan jumlah interval, bor dan panjangnya. Kode kosong atau &ldquo;-&rdquo; tidak dicentang.',
+   'Isi <b>Domain tujuan</b> bila beberapa kode adalah vein yang sama (mis. <code>2001V</code> dan <code>2001_V</code> &rarr; <code>2001_V</code>): kode bernama tujuan sama digabung.',
+   'Pilih <b>Flag lama domain tujuan</b>: <i>Diganti seluruhnya</i> (kolom = interpretasi lengkap) atau <i>Dipertahankan</i>. Klik <b>Terapkan</b>; bisa diurungkan.')
+ + fig2('vs_flag', 'Flag dari kolom kode di panel Properti, kolom <b>Vein (geologi)</b> data latihan.', 'vs_flag_pop', 'Tombol <b>&#10697; Jendela lebar</b>: tabel yang sama di jendela yang bisa digeser; kolom <i>Domain tujuan</i> bisa diubah.')
+ + warn('Flag domain lain di interval yang sama tertimpa (satu interval satu domain). Latihan di buku ini tidak menekan <b>Terapkan</b> supaya langkah berikutnya tetap sama; cobalah sesudahnya.')
+ + '<p><b>Opsi semua vein (tabel) &amp; prioritas</b> di tab <b>Solid</b> ([[vs_opsi_pop]]) menampilkan pengaturan setiap domain dalam satu tabel: '
+   '<i>Snap / halus</i> (<b>Tepat</b> = permukaan melewati kontak bor), <i>Pinch bor kosong</i>, <i>Pinch-out dip</i>, <i>Tebal min</i>, <i>Radius strike</i>, '
+   '<i>Ujung atas</i>, <i>Resolusi</i> dan <i>Adaptif</i>. Tombol &#9650;&#9660; mengubah <b>prioritas</b>: bila dua solid bertumpang, blok menjadi milik domain yang lebih atas saat Model Estimation.</p>'
+ + fig('vs_opsi_pop', 'Opsi semua vein di <b>&#10697; Jendela lebar</b>: satu baris per domain, prioritas (&#9650;&#9660;) di kolom pertama. Di panel Properti tabel yang sama bisa digulir ke samping.')
+ + '<p>Kotak <b>Vein system (gabungan semua solid)</b> ([[vs_gabung]]) menjumlahkan volume dan, sesudah <b>Hitung volume gabungan</b>, '
+   'mengurangi tumpang tindih supaya tidak terhitung dua kali. Pada latihan ini: %s solid, jumlah %s m&sup3;, tumpang tindih %s m&sup3;, gabungan <b>%s m&sup3;</b>. '
+   'Tombol <b>Gabungan OBJ / DXF / STR+DTM</b> mengekspor semua solid dalam satu berkas (tiap solid tetap tertutup), setara <i>Merge Vein</i> Leapfrog.</p>' % (fN(VSG[0]), fN(VSG[1]), fN(VSG[2]), fN(VSG[3]))
+ + fig('vs_gabung', 'Kotak Vein system: volume gabungan dan ekspor satu berkas.', '78%')
+ + '<p><b>Resolusi adaptif</b> (Parameter domain aktif &rsaquo; RBF &amp; mesh, atau kolom <i>Adaptif</i>): segitiga rapat di dekat data dan menjarang sampai '
+   '<i>Jarang maks.</i> &times; resolusi di bagian perpanjangan. QV_Lensa2: %s &rarr; <b>%s verteks</b>, volume %s &rarr; %s m&sup3;. Bawaan: mati.</p>' % (fN(VSA[0]), fN(VSA[2]), fN(VSA[1]), fN(VSA[3]))
+ + '<p><b>Solid usang.</b> Bila <i>Jalankan ulang otomatis</i> dimatikan (mis. saat mengedit banyak string), domain yang data bor / flag / string atau parameternya '
+   'berubah ditandai <b>usang</b> beserta sebabnya ([[vs_usang]]), juga di Project Tree. <b>Bangun ulang yang usang</b> (atau menu &#8943; node Geomodeller) membangun semuanya sekaligus.</p>'
+ + fig('vs_usang', 'Solid QV_Lensa2 usang sesudah tebal minimum diubah dengan Jalankan ulang otomatis mati.', '78%'))
+
 ch('Membangun solid vein (RBF)', dta('lanjutan &mdash; string kontrol bab sebelumnya',
      [('Radius pengaruh strike', '<b>15 m</b> (bawaan), potong tegas'),
       ('Pinch-out searah dip', '<b>15 m</b>; ujung atas dipotong <b>topografi aktif</b>'),
@@ -470,7 +497,8 @@ ch('Membangun solid vein (RBF)', dta('lanjutan &mdash; string kontrol bab sebelu
  + tip('Bila permukaan masih bergelombang antar section, naikkan <b>Kehalusan permukaan</b> satu tingkat atau beri <b>Elipsoid RBF</b> memanjang searah kemenerusan vein. Ringkasan solid menampilkan &ldquo;selisih di kontak bor&rdquo; untuk memeriksa bahwa data bor tetap dihormati.')
  + '<h3>Export solid</h3>' + steps('Tombol <b>&#8681; OBJ</b> (Leapfrog / umum), <b>&#8681; DXF</b> (3DFACE, layer = nama solid) atau <b>&#8681; STR+DTM</b> (Surpac, ZIP berisi file string dan DTM tertutup dengan tetangga segitiga).',
    'Centang <b>Export juga permukaan HW &amp; FW</b> bila ingin membawa kedua permukaan ke Leapfrog / Surpac sebagai surface terpisah.',
-   'Satu domain = satu file; beberapa domain dikemas dalam satu ZIP. File STR+DTM bisa dibaca ulang di node <b>Import Wireframe Geologi</b>.'), 'solid')
+   'Satu domain = satu file; beberapa domain dikemas dalam satu ZIP. File STR+DTM bisa dibaca ulang di node <b>Import Wireframe Geologi</b>.')
+ + VSYS, 'solid')
 
 ch('Memakai wireframe dari Leapfrog', dta('<code>data/QV_Lensa2_Leapfrog.obj</code> &mdash; wireframe lensa 2 hasil Leapfrog, tertutup, 21.596 segitiga',
      [('Import lewat', 'baris <b>+ Tambah wireframe geologi&hellip;</b> di node <b>Import Wireframe Geologi</b> (data latihan sudah memuatnya)'),

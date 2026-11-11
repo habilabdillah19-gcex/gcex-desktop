@@ -20,6 +20,17 @@
  "w_n": 32029,
  "fr_part": 22,
  "fr_full": 0,
+ "vs_kode": {
+  "QV_Lensa1": 458,
+  "QV_Lensa2": 511,
+  "QV_Lensa3": 535,
+  "QV_Lensa4": 521,
+  "QV_Splay_HW": 86
+ },
+ "vs_simpul": [
+  142,
+  109
+ ],
  "dip_ukur": 65.7,
  "daz_ukur": 139.0,
  "n_bor": 610,
@@ -44,6 +55,7 @@
   "klas": "f7_klas.png",
   "aoi": "aoi.png",
   "waste": "waste.png",
-  "frac": "frac.png"
+  "frac": "frac.png",
+  "vsys": "vsys.png"
  }
 }

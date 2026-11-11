@@ -68,7 +68,7 @@ function meSetVa(id,v){var d=gmDom(id);if(!d||!d.est)return;d.est.va=v;gmDirty(t
 def patch(s):
     # ---- parameter bawaan baru; domain lama (d.im tanpa pinE) tetap seperti sebelumnya ----
     s = rep(s, "var IMDEF={on:false,minT:1,pinD:15,aoi:15,res:2,smo:1,rob:true,src:'both',topo:true,ori:'auto',dip:60,ddir:0,aS:50,aD:50,pitch:0};",
-            "var IMDEF={on:false,minT:1,pinD:15,aoi:15,res:2,smo:1,rob:true,src:'both',topo:true,ori:'auto',dip:60,ddir:0,aS:50,aD:50,pitch:0,vo:'lin',voR:40,pinE:true,pinR:0};")
+            "var IMDEF={on:false,minT:1,pinD:15,aoi:15,res:2,smo:1,rob:true,src:'both',topo:true,ori:'auto',dip:60,ddir:0,aS:50,aD:50,pitch:0,vo:'lin',voR:40,pinE:true,pinR:0,adp:false,adpK:4};")
     s = rep(s, "function imPar(d){var P=Object.assign({},IMDEF,d&&d.im||{});",
             "function imPar(d){var P=Object.assign({},IMDEF,d&&d.im||{});if(d&&d.im&&d.im.pinE===undefined)P.pinE=false;")
     s = rep(s, "/* ---------- bangun solid satu domain ---------- */", HELPERS + "\n/* ---------- bangun solid satu domain ---------- */")

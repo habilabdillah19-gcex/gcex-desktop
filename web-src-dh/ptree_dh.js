@@ -128,14 +128,16 @@
         {id:'sec.dig',t:'Digitasi string',ic:'digit',tab:'Dig',b:S.length||'',menu:function(){return[{t:'Export string digitasi (DXF)',fn:function(){dgExport('dxf');}},{t:'Export string digitasi (STR)',fn:function(){dgExport('str');}}];},
           kids:S.slice(0,300).map(function(s,i){return{id:'dg.'+(s.id||i)+'.'+s.no,t:'String '+s.no+(s.d?' · '+s.d:''),ic:'string',tab:'Dig',chk:!!s.vis,onChk:function(v){dgVis(i,v);},dbl:function(){dgGo(i);},
             menu:function(){return[{t:'Buka di penampangnya',fn:function(){dgGo(i);}},{sep:1},{t:'Hapus string',danger:1,fn:function(){dgDel(i);}}];}};})}]};}
-  function fGM(){var D=ok(function(){return GM.doms;},[]),act=ok(function(){return GM.act;});
+  function fGM(){var D=ok(function(){return GM.doms;},[]),act=ok(function(){return GM.act;}),
+      /* 0.24.71: solid usang (Jalankan ulang otomatis mati, masukan berubah sejak dibangun) -- vsys_dh.js */
+      US=ok(function(){return window.VS&&!imAuto()?VS.usang():[];},[]),usg=function(id){return US.some(function(o){return o.d.id===id;});};
     var kid=function(d){var ns=ok(function(){return GM.str.filter(function(s){return s.dom===d.id;}).length;},0),ch=D.filter(function(x){return x.par===d.id;});
-      return{id:'gm.'+d.id,t:d.name,ic:'dom',tab:'GM',mark:d.id===act?'aktif':'',b:ns?ns+' string':'',chk:d.vis!==false,onChk:function(v){d.vis=v;gmDirty();},
+      return{id:'gm.'+d.id,t:d.name,ic:'dom',tab:'GM',mark:d.id===act?'aktif':'',b:(usg(d.id)?'usang':'')+(usg(d.id)&&ns?' · ':'')+(ns?ns+' string':''),chk:d.vis!==false,onChk:function(v){d.vis=v;gmDirty();},
         go:function(){if(GM.act!==d.id){GM.act=d.id;gmPanel();}},rename:function(nm){gmRename(d.id,nm);},
         menu:function(){return[{t:'Jadikan domain aktif',dis:d.id===act,fn:function(){GM.act=d.id;gmPanel();}},{sep:1},{t:'Hapus domain…',danger:1,fn:function(){gmDelDom(d.id);}}];},kids:ch.map(kid)};};
-    return{id:'gm',step:'6',t:'Geomodeller Vein System Deposit',ic:'folder',fold:1,tab:'GM',b:D.length?D.length+' domain':'',hint:'Domain vein → flag interval → string kontrol HW/FW → solid',
+    return{id:'gm',step:'6',t:'Geomodeller Vein System Deposit',ic:'folder',fold:1,tab:'GM',b:D.length?D.length+' domain'+(US.length?' · '+US.length+' usang':''):'',hint:'Domain vein → flag interval → string kontrol HW/FW → solid',
       add:{t:'Tambah domain…',hint:'Domain vein / zona baru; dikerjakan di Properti setelah dipilih',fn:function(){var r=U.ask('Nama domain baru:','');if(r!=null&&String(r).trim()){gmAddDom(String(r).trim());uiTab('GM');}}},
-      menu:function(){return[{t:'Export flag (CSV)',fn:A('gmFlagCsv')},{t:'Export string kontrol (STR)',fn:function(){gmStrExport('str');}},{t:'Export string kontrol (DXF)',fn:function(){gmStrExport('dxf');}}];},
+      menu:function(){return[{t:'Bangun ulang solid usang'+(US.length?' ('+US.length+')':''),dis:!US.length,fn:function(){VS.bangunUsang();}},{sep:1},{t:'Export flag (CSV)',fn:A('gmFlagCsv')},{t:'Export string kontrol (STR)',fn:function(){gmStrExport('str');}},{t:'Export string kontrol (DXF)',fn:function(){gmStrExport('dxf');}}];},
       kids:[].concat(D.filter(function(d){return !d.par;}).map(kid))};}
   function fSL(){var LL=ok(function(){return SL.L;},[]),so=function(id,t,ic,k){return{id:id,t:t,ic:ic,tab:'SL',go:function(){uiTab('SL');setTimeout(function(){try{uiSecOpen('sl',k);}catch(e){}},40);}};};
     return{id:'sl',step:'6b',t:'Geomodeller Stratified-Laterite Deposit',ic:'folder',fold:1,tab:'SL',b:LL.length?LL.length+' lapisan':'',chk:ok(function(){return SL.lay!==false;},true),onChk:function(v){SL.lay=v;updatePlot();},

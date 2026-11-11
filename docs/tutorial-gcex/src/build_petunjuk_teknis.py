@@ -363,6 +363,28 @@ B.append('<div class=box><b>Konsekuensi yang perlu disepakati di tim.</b> Sejak 
          'diedit tangan &mdash; jumlah section yang dilewati itulah ukuran seberapa jauh model GC-Ex dan model '
          'Leapfrog sudah berpisah.</div>')
 
+B.append('<h3>8.3 Vein system: banyak vein dari satu kolom kode (Drill Hole 0.24.71)</h3>')
+B.append('<p>Diadopsi dari review mesh <i>Vein System</i> Leapfrog. Algoritma solid RBF per domain tetap sama; yang ditambahkan adalah '
+         'cara mengelola banyak domain sekaligus (<code>web-src-dh/vsys_dh.js</code>) dan resolusi adaptif di <code>imBuild</code>.</p>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Flag dari kolom kode', 'baris kolom terpilih (atribut geologi <code>geoRows</code> atau kategori assay) dikelompokkan per <b>domain tujuan</b>; '
+     'interval sekode di lubang yang sama digabung bila selanya &le; nilai <i>Gabung run</i>; ditulis dengan <code>gmSetRange</code> '
+     '(satu flag per kedalaman, flag domain lain di interval itu tertimpa). Mode <i>Diganti seluruhnya</i> menghapus dulu flag lama '
+     'domain tujuan di semua lubang. Domain baru memakai parameter domain aktif dan solidnya dinyalakan. Diurungkan dengan <i>Urungkan</i>.'],
+    ['Prioritas', 'urutan domain induk di <code>GM.doms</code>. Model Estimation mengklaim blok per domain menurut urutan ini '
+     '(<code>claimed</code>): blok di dalam dua solid menjadi milik domain yang lebih atas. Cabang ikut induknya.'],
+    ['Volume gabungan', 'jumlah volume solid dikurangi tumpang tindih. Tumpang tindih tiap pasangan dihitung dengan titik grid '
+     '(0,5&ndash;2 m, &le; &plusmn;200 rb titik) di irisan kotak batas kedua solid; titik yang berada di &ge; 3 solid dihitung '
+     'hanya sekali per solid tambahan. Hasil disimpan dengan kunci solid; berubah = &ldquo;usang&rdquo;, hitung ulang.'],
+    ['Ekspor gabungan', 'mesh semua solid tampil disambung (<code>imMerge</code>) lalu ditulis dengan penulis OBJ / DXF / STR+DTM yang '
+     'sama dengan ekspor per domain. Solid tidak di-boolean-kan: bagian yang bertumpang tetap ada di kedua solid.'],
+    ['Solid usang', 'saat solid dibangun dicatat dua sidik: <b>data</b> (titik HW/FW dari kontak bor, flag dan string) dan '
+     '<b>parameter</b> (kunci <code>imKey</code> tanpa titik). Bila <i>Jalankan ulang otomatis</i> mati dan kunci berubah, '
+     'domain ditandai usang; sebabnya dari sidik mana yang berbeda.'],
+    ['Resolusi adaptif', 'simpul mesh searah strike dan searah dip tidak lagi seragam. Jarak simpul pada posisi <i>x</i> = '
+     'resolusi &times; min(K, 1 + d/(3 &times; resolusi)), d = jarak ke koordinat data terdekat di arah itu, K = <i>Jarang maks.</i> '
+     '(bawaan 4). Luas &amp; volume ekstrapolasi memakai lebar simpul setempat. Mati = rumus lama persis (A/B identik).']]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

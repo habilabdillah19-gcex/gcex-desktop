@@ -413,9 +413,42 @@ def f_frac():
 
 
 
+def adp_nodes(a0, a1, D, h0, K):
+    """Sama dengan imAdpNodes (GC-Ex Drill Hole 0.24.71): simpul rapat (= h0) di dekat data, menjarang sampai K x h0."""
+    D = np.sort(np.asarray(D)); o = [a0]; x = a0
+    while x < a1 - 1e-9:
+        near = float(np.min(np.abs(D - x))) if len(D) else 1e9
+        h = h0 * min(K, 1 + near / (3 * h0)); x = x + h
+        if x > a1 - 0.3 * h: x = a1
+        o.append(x)
+    return np.array(o)
+
+
+def f_vsys():
+    """Vein system: satu kolom kode -> satu domain per kode (kiri); resolusi adaptif sepanjang strike (kanan)."""
+    VC = np.array([x.get('Vein', '-') for x in GEO]); m = VC != '-'
+    cod = sorted(set(VC[m])); col = ['#1f4e8c', '#c98a16', '#2f9e44', '#c2255c', '#7048e8']
+    fig, ax = plt.subplots(1, 2, figsize=(7.4, 3.2), gridspec_kw={'width_ratios': [1.25, 1]})
+    a = ax[0]
+    for k, c in zip(cod, col):
+        q = P[m & (VC == k)]; a.scatter(q[:, 0] - g['E0'], q[:, 1] - g['N0'], s=3, c=c, label='%s (%d)' % (k, int((VC == k).sum())))
+    a.set_aspect('equal'); a.set_xlabel('Easting relatif (m)'); a.set_ylabel('Northing relatif (m)')
+    a.set_title('Kolom geologi "Vein" \u2192 %d domain' % len(cod)); a.legend(fontsize=6, markerscale=3, loc='best')
+    sv = np.array([math.sin(math.radians(STRIKE)), math.cos(math.radians(STRIKE)), 0.0])
+    q = P[m & (VC == 'QV_Lensa2')]; s = (q - q.mean(0)) @ sv; s0, s1 = s.min() - 15, s.max() + 15
+    nU = np.linspace(s0, s1, int(math.ceil((s1 - s0) / 2)) + 1); nA = adp_nodes(s0, s1, s, 2.0, 4.0)
+    b = ax[1]; b.plot(s, np.full(len(s), 2.0), '|', color=INK, ms=8, label='kontak bor')
+    b.plot(nU, np.full(len(nU), 1.0), '|', color=MUT, ms=8, label='seragam 2 m: %d simpul' % len(nU))
+    b.plot(nA, np.zeros(len(nA)), '|', color=ACC2, ms=8, label='adaptif \u00d74: %d simpul' % len(nA))
+    b.set_ylim(-0.8, 3.2); b.set_yticks([]); b.set_xlabel('jarak searah strike QV_Lensa2 (m)')
+    b.set_title('Simpul mesh searah strike'); b.legend(fontsize=6, loc='upper center', ncol=1)
+    NOTE['vs_kode'] = {k: int((VC == k).sum()) for k in cod}; NOTE['vs_simpul'] = [len(nU), len(nA)]
+    fig.tight_layout(); return save(fig, 'vsys')
+
+
 F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), ('kipas', f_kipas),
                          ('zonasi', f_zonasi), ('topcut', f_topcut), ('klas', f_klas),
-                         ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac))}
+                         ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys))}
 
 # angka ringkas untuk narasi
 Q = HP[np.ones(len(HK), bool)]
@@ -1012,9 +1045,27 @@ B.append(D.tabel(['Bab di dokumen ini', 'Di tutorial bergambar'], [
     ['9. Sub-blocking &amp; proporsi volume', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Sub-blocking &amp; proporsi volume</b>'],
     ['10. Kampanye, filter &amp; export terfilter', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Database bor per kampanye</b> dan bab <b>Filter data bor</b> (Bagian I)'],
     ['11. Pit &amp; progres topo-ke-topo', 'kedua tutorial: bab <b>Laporan per desain pit &amp; progres topo-ke-topo</b>'],
-    ['12. Wireframe terpusat &amp; Project Tree', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Memakai wireframe dari Leapfrog</b> dan <b>Wireframe Leapfrog menjadi domain</b>; <i>Tutorial Block Model</i>: bab <b>As-mined</b>']]))
+    ['12. Wireframe terpusat &amp; Project Tree', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Memakai wireframe dari Leapfrog</b> dan <b>Wireframe Leapfrog menjadi domain</b>; <i>Tutorial Block Model</i>: bab <b>As-mined</b>'],
+    ['14. Vein system', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Membangun solid vein (RBF)</b>, bagian <b>Vein system: banyak vein sekaligus</b>']]))
 B.append('<p>Nama domain dan angka di kedua tutorial bergambar sudah mengikuti data latihan yang sekarang '
          '(<code>QV_Lensa2</code>, <code>QV_Splay_HW</code>, bor dan assay sesuai berkas yang Anda terima).</p>')
+
+B.append('<div class="page"></div><h2>14. Vein system: banyak vein sekaligus, opsi per vein, solid usang, resolusi adaptif</h2>')
+B.append('<p><b>Drill Hole 0.24.71.</b> Diadopsi dari review mesh <i>Vein System</i> Leapfrog Zona 2. Algoritma solid RBF tidak '
+         'berubah: dengan pengaturan bawaan solid yang terbangun identik dengan versi sebelumnya. Yang baru ada di Geomodeller Vein:</p>')
+B.append(D.tabel(['Di mana', 'Apa', 'Untuk apa'], [
+    ['Tab <i>Flag</i> &rsaquo; <b>Flag dari kolom kode</b>', 'satu kolom kode interval (mis. <i>Orebody</i>, <i>Vein</i>) &rarr; satu domain per kode; beberapa kode boleh ke satu domain; kode kosong / &ldquo;-&rdquo; dilewati', 'interpretasi vein yang sudah ada di database langsung jadi domain, tanpa flag manual per section'],
+    ['Tab <i>Solid</i> &rsaquo; <b>Opsi semua vein (tabel) &amp; prioritas</b>', 'snap / kehalusan, pinch-out bor kosong, pinch-out dip, tebal minimum, radius strike, ujung atas, resolusi, adaptif &mdash; semua domain sekaligus; &#9650;&#9660; prioritas', 'mengatur puluhan vein tanpa membuka satu per satu; prioritas menentukan domain pemilik blok bila solid bertumpang'],
+    ['Tab <i>Solid</i> &rsaquo; kotak <b>Vein system</b>', 'volume gabungan (tumpang tindih dihitung sekali), ekspor semua solid dalam SATU berkas OBJ / DXF / STR+DTM', 'setara &ldquo;Merge Vein&rdquo; Leapfrog untuk pertukaran data'],
+    ['Panel Solid &amp; Project Tree', '<b>solid usang</b> beserta sebabnya bila <i>Jalankan ulang otomatis</i> mati; <b>Bangun ulang solid usang</b>', 'tidak ada solid yang diam-diam tertinggal dari data bor baru'],
+    ['Parameter domain &rsaquo; RBF &amp; mesh', '<b>Resolusi adaptif</b>: simpul rapat di dekat data, menjarang sampai <i>Jarang maks.</i> &times; resolusi', 'mesh lebih ringan untuk vein panjang dengan data jarang']]))
+B.append(fig_html('vsys', 'Kiri: kolom geologi <b>Vein</b> data latihan &rarr; %d domain (jumlah interval dalam kurung). '
+                  'Kanan: simpul mesh searah strike QV_Lensa2, seragam 2 m (%d simpul) vs adaptif &times;4 (%d simpul); '
+                  'rapat di dekat kontak bor, jarang di ujung perpanjangan.' % (len(NOTE['vs_kode']), NOTE['vs_simpul'][0], NOTE['vs_simpul'][1])))
+B.append('<p><b>Latihan.</b> Muat data latihan, buka Geomodeller Vein &rsaquo; tab <i>Flag</i> &rsaquo; <b>Flag dari kolom kode</b>, '
+         'pilih kolom <b>Vein (geologi)</b>, lalu <b>Terapkan</b>: domain QV_Lensa1&ndash;4 dan QV_Splay_HW dibuat beserta solidnya. '
+         'Di tab <i>Solid</i> tekan <b>Hitung volume gabungan</b>: lensa en-echelon yang saling tumpang menghasilkan volume gabungan '
+         'sedikit lebih kecil daripada jumlah volumenya. Lubang L1 juga menembus Lensa2 (dan seterusnya), seperti vein array sungguhan.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

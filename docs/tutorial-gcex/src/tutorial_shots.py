@@ -154,6 +154,25 @@ with sync_playwright() as pw:
     ev("gmOpt('imEll',false);imSet('aS',50);imSet('aD',50);updatePlot()")
     ev("$('pos').value=0;$('sliceClip').checked=true;if(!VIEW2D)toggle2D();updatePlot()");pg.wait_for_timeout(700);shot('solid_2d')
     ev("$('pos').value=-20;$('sliceClip').checked=false;if(VIEW2D)toggle2D();updatePlot()")
+    # 10c. Vein system (DH 0.24.71): flag dari kolom kode, opsi semua vein, gabungan, resolusi adaptif, solid usang.
+    #      Hanya menampilkan / menghitung; flag & domain latihan TIDAK diubah supaya langkah berikutnya tetap sama.
+    ev("window._vsSec=GM._sec;var c=VS.kolom().find(x=>x.n==='Vein');if(c)gmOpt('vsCol',c.key);GM._openVs=true;gmSec('flag')");pg.wait_for_timeout(400)
+    note('vsScan',ev("JSON.stringify(VS.scan(VS.kolomDef()).map(s=>[s.kode,s.n,s.nh,Math.round(s.l)]))"))
+    ev("var d=document.getElementById('vsFlag');if(d){d.open=true;d.scrollIntoView({block:'start'});}");pg.wait_for_timeout(300);shot('vs_flag',PANEL)
+    ev("var w=VS.pop('flag');w.style.left='300px';w.style.top='70px'");pg.wait_for_timeout(400)
+    rb=ev("(function(){var r=document.getElementById('vsPopFlag').getBoundingClientRect();return[r.x,r.y,r.width,r.height]})()")
+    shot('vs_flag_pop',{'x':max(0,int(rb[0]-6)),'y':max(0,int(rb[1]-6)),'width':int(rb[2]+12),'height':int(min(900,rb[3]+12))});ev("document.querySelector('#vsPopFlag [data-x]').click()")
+    ev("GM._openVs=false;GM._openVo=true;gmSec('rbf')");pg.wait_for_timeout(400)
+    ev("var d=document.getElementById('vsOpsi');if(d){d.open=true;d.scrollIntoView({block:'start'});}");pg.wait_for_timeout(300);shot('vs_opsi',PANEL)
+    ev("var w=VS.pop('opsi');w.style.left='300px';w.style.top='100px'");pg.wait_for_timeout(400)
+    rb=ev("(function(){var r=document.getElementById('vsPopOpsi').getBoundingClientRect();return[r.x,r.y,r.width,r.height]})()")
+    shot('vs_opsi_pop',{'x':max(0,int(rb[0]-6)),'y':max(0,int(rb[1]-6)),'width':int(min(1600-rb[0]+6,rb[2]+12)),'height':int(min(900,rb[3]+12))});ev("document.querySelector('#vsPopOpsi [data-x]').click()")
+    note('vsGab',ev("(function(){var M=VS.hitung();return M?JSON.stringify([M.n,Math.round(M.sum),Math.round(M.ov),Math.round(M.vol)]):'-';})()"))
+    ev("GM._openVo=false;gmPanel();var b=document.getElementById('vsGab');if(b)b.scrollIntoView({block:'start'})");pg.wait_for_timeout(300);shot('vs_gabung',PANEL)
+    note('vsAdp',ev("(function(){var d=GM.doms.find(x=>x.name==='QV_Lensa2')||GM.doms[0],a=IM.R[d.id].st,o=[a.nnode,Math.round(a.vol)];VS.set(d.id,'adp',true);imSync(true);var b=IM.R[d.id].st;o.push(b.nnode,Math.round(b.vol));VS.set(d.id,'adp',false);imSync(true);return JSON.stringify(o);})()"))
+    ev("gmOpt('imAuto',false);var d=GM.doms.find(x=>x.name==='QV_Lensa2')||GM.doms[0];window._vsMin=imPar(d).minT;VS.set(d.id,'minT',_vsMin+0.5);imSync();gmPanel();var b=document.getElementById('vsUsang');if(b)b.scrollIntoView({block:'center'})");pg.wait_for_timeout(400);shot('vs_usang',PANEL)
+    ev("var d=GM.doms.find(x=>x.name==='QV_Lensa2')||GM.doms[0];VS.set(d.id,'minT',_vsMin);gmOpt('imAuto',true);imSync(true);GM._sec=window._vsSec||GM._sec;gmPanel();updatePlot()")
+    note('vsSesudah',ev(SOL))
     # 11. wireframe dari Leapfrog
     # 0.24.39+: satu node "Import Wireframe Geologi" (panel pWf) untuk import & melihat wireframe
     ev("try{PT.open['wf']=1;PT.select('wf')}catch(e){uiTab('Wf')}");pg.wait_for_timeout(500)

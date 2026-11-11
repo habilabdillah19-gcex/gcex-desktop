@@ -4488,3 +4488,25 @@ di selubung (halo) tetap seperti sebelumnya.
 Sejak 0.24.61, memilih file `.mdl` di layar Import (slot *Block model*, sebelum **Mulai**) gagal dengan pesan
 *mdlAttrs is not defined*. Pembaca daftar atribut .mdl kini juga dimuat di layar Import. Import .mdl lewat Project Tree /
 panel Block Model (sesudah proyek terbuka) tidak terpengaruh.
+
+## 180. Drillhole 0.24.71 — Vein System: banyak vein sekaligus, opsi per vein, solid usang, resolusi adaptif
+
+Diadopsi dari review mesh *Vein System* Leapfrog Zona 2. Algoritma solid RBF GC-Ex tidak berubah: dengan pengaturan bawaan
+solid yang terbangun identik dengan versi 0.24.70.
+
+- **Flag dari kolom kode** (Geomodeller Vein › tab *Flag*, di bawah *Usulan otomatis dari kadar*): pilih kolom kode di database
+  bor (atribut geologi atau kategori assay, mis. *Orebody*, *Vein*, *Lith*). Setiap kode menjadi satu domain; kolom *Domain
+  tujuan* bisa diisi nama yang sama untuk menggabungkan beberapa kode (mis. `2001V` dan `2001_V`). Kode kosong atau `-` tidak
+  dicentang. *Flag lama domain tujuan*: **Diganti seluruhnya** (kolom = interpretasi lengkap) atau **Dipertahankan**. Bisa diurungkan.
+- **Opsi semua vein (tabel) & prioritas** (tab *Solid*): satu baris per domain untuk snap ke bor (*Tepat*) / kehalusan, pinch-out
+  di bor kosong, pinch-out searah dip, tebal minimum, radius strike, ujung atas, resolusi, dan resolusi adaptif. Tombol ▲▼ mengubah
+  **prioritas**: bila solid bertumpang, blok diklaim domain yang lebih atas saat Model Estimation.
+- **Vein system (gabungan semua solid)** (tab *Solid*): jumlah volume, **volume gabungan** (tumpang tindih dihitung sekali) dan
+  ekspor **Gabungan OBJ / DXF / STR+DTM** — semua solid dalam satu berkas, tiap solid tetap tertutup.
+- **Solid usang**: bila *Jalankan ulang otomatis* dimatikan, domain yang masukannya berubah (data bor / flag / string, atau parameter)
+  ditandai **usang** di panel Solid dan di Project Tree; tombol / menu ⋯ **Bangun ulang solid usang** membangun semuanya sekaligus.
+- **Resolusi adaptif** (Parameter domain aktif › RBF & mesh, atau tabel opsi): segitiga rapat di dekat data dan menjarang sampai
+  *Jarang maks.* × resolusi. Pada data latihan QV_Lensa2: verteks berkurang ±34 %, volume bergeser ±0,7 %. Bawaan: mati.
+- Data latihan: `SIM_geologi.csv` dan `SIM_kecil_geologi.csv` kini punya kolom **Vein** (QV_Lensa1–4, QV_Splay_HW) untuk melatih
+  *Flag dari kolom kode*. Kolom lama tidak berubah.
+
