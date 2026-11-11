@@ -40,6 +40,20 @@ JS = r"""(async function(){var W=function(ms){return new Promise(function(r){set
   var S=ogsSrc();S.forEach(function(s){OGS.p.mesh[s.k]=s.k[0]==='i';});var F2=ogsFlag();
   o.nol={src:S.map(function(s){return [s.nm,s.j,!!OGS.p.mesh[s.k]];}),dom:F2?F2.dom.length:0,nI:F2?F2.I.length:0,isi:F2?F2.dom.map(function(d,q){return ogsIn(F2,q).length;}):[]};
   ogsGo('env');await W(2500);o.nol.env=!!document.querySelector('#ogsEnv .main-svg');ogsGo('sec');await W(1200);o.nol.sec=!!document.querySelector('#ogsSP .main-svg');
+  /* ---- tahap 2 (5 domain solid GC-Ex) ---- */
+  var t2={};OGS.noPrint=true;
+  ['struk','par','jun','tgt','luar','lap'].forEach(function(){});
+  for(var nv of ['struk','par','jun','tgt','luar','lap']){ogsGo(nv);await W(nv==='jun'||nv==='par'?4000:1500);var c=document.getElementById('ogsC');t2.hal=t2.hal||{};t2.hal[nv]={plot:c.querySelectorAll('.js-plotly-plot').length,galat:/Galat:/.test(c.textContent)};}
+  ogsGo('struk');await W(1500);var n0=ogsIgL('struk').length;OGS.ig={key:'struk',typ:'line',pts:[[0,200],[50,250]]};ogsIgEnd();await W(1200);
+  t2.ig={tambah:ogsIgL('struk').length-n0,shape:(document.getElementById('ogsST').layout.shapes||[]).length,legenda:document.getElementById('ogsST').data.some(function(d){return /^Garis/.test(d.name||'');}),usulan:ogsIgL('struk').filter(function(g){return g.usul;}).length};
+  var dl=[],sv=window.gxDl;window.gxDl=function(b,fn){dl.push([fn,b]);};ogsIgExp('struk','csv');ogsIgExp('struk','str');window.gxDl=sv;
+  var txt=[];for(var q of dl)txt.push(await q[1].text());t2.eks={nama:dl.map(function(x){return x[0];}),csvBaris:txt[0].split(/\r\n/).length,str:/END/.test(txt[1])&&txt[1].split(/\r\n/).length};
+  ogsGo('sec');await W(1500);OGS.ig={key:'sec',typ:'v',pts:[[5,250]]};ogsIgEnd();await W(1500);var gs=document.getElementById('ogsSP');t2.igSec=(gs.layout.shapes||[]).length;
+  ogsGo('tgt');await W(1200);ogsTgtUsul();await W(1500);t2.tgt={n:OGS.p.tgt.length,cek:OGS.p.tgt.map(function(t){var q=ogsTgtHit(t),l=ogsLsOf(q.X);return Math.abs(l[0]-t.ls)+Math.abs(l[1]-q.w)+Math.abs(q.X[2]-t.z);})};
+  var J=ogsJun();t2.jun={n1:J.ss.n,n2:J.sm.n,sel:J.strat.n,smp:[J.smp.n1,J.smp.n2]};
+  var L=ogsLuar(),au=ogsEi(ogsAu()),F3=OGS.F,nl=0;for(var i=0;i<F3.n;i++)if(F3.D[i]<0&&F3.V[au][i]>=OGS.p.cutS)nl++;t2.luar={kat:L.map(function(r){return r.L.length;}),total:nl};
+  ogsGo('lap');await W(800);var pg=await ogsLapBuat('pdf');await W(1500);t2.lap={slide:pg,section:(OGS._lapHtml.match(/<section/g)||[]).length,img:(OGS._lapHtml.match(/<img /g)||[]).length,html:OGS._lapHtml.length};
+  window._LAP=OGS._lapHtml;o.t2=t2;
   /* simpan / buka */
   OGS.p.sec[0].nm='Uji';var w=SA.collectWork();OGS.p.sec=[];SA.applyWork(w);await W(300);o.simpan=OGS.p.sec.length&&OGS.p.sec[0].nm==='Uji';
   return o;})()"""
@@ -66,8 +80,10 @@ def jalan(html):
         pg.wait_for_function("!DLAT.busy", timeout=900000); pg.wait_for_timeout(2500)
         r = pg.evaluate(JS)
         if GBR:
+            os.makedirs(GBR, exist_ok=True); open(os.path.join(GBR, 'laporan.html'), 'w', encoding='utf-8').write(pg.evaluate("window._LAP||''"))
+        if GBR:
             os.makedirs(GBR, exist_ok=True)
-            for nav in ['data', 'geo', 'kadar', 'ls', 'env', 'zon', 'prof', 'sec', 'lama']:
+            for nav in ['data', 'geo', 'kadar', 'ls', 'env', 'zon', 'prof', 'sec', 'lama', 'struk', 'par', 'jun', 'tgt', 'luar', 'lap']:
                 pg.evaluate(SHOT + "('%s')" % nav); pg.screenshot(path=os.path.join(GBR, nav + '.png'))
         ctx.close()
     srv.terminate(); r["pageerror"] = err; return r
@@ -89,6 +105,18 @@ s = R["sec"]
 if s["n"] < 1 or abs(s["geser"] - 2 * s["win"]) > 1e-6 or not s["slicerTetap"] or not s["plot"]: salah.append("penampang: %s" % s)
 n = R["nol"]
 if n["dom"] < 2 or n["nI"] < 1 or min(n["isi"] or [0]) < 1 or not n["env"] or not n["sec"]: salah.append("jalur Mulai dari Nol (solid GC-Ex): %s" % n)
+t2 = R["t2"]
+for k in ("struk", "par", "jun", "tgt", "luar", "lap"):
+    if t2["hal"][k]["galat"]: salah.append("halaman %s galat" % k)
+    if k != "lap" and not t2["hal"][k]["plot"]: salah.append("halaman %s tanpa grafik" % k)
+g = t2["ig"]
+if g["tambah"] != 1 or g["shape"] < 1 or not g["legenda"]: salah.append("garis interpretasi: %s" % g)
+if len(t2["eks"]["nama"]) != 2 or t2["eks"]["csvBaris"] < 3 or not t2["eks"]["str"]: salah.append("ekspor garis: %s" % t2["eks"])
+if t2["igSec"] < 5: salah.append("garis interpretasi penampang tidak di semua panel: %s" % t2["igSec"])
+if not t2["tgt"]["n"] or max(t2["tgt"]["cek"]) > 0.5: salah.append("target bor: %s" % t2["tgt"])
+if not (t2["jun"]["n1"] and t2["jun"]["n2"]): salah.append("pertemuan vein: %s" % t2["jun"])
+if sum(t2["luar"]["kat"]) != t2["luar"]["total"]: salah.append("kategori di luar wireframe tidak lengkap: %s" % t2["luar"])
+if t2["lap"]["slide"] < 15 or t2["lap"]["section"] != t2["lap"]["slide"] or t2["lap"]["img"] < 12: salah.append("laporan: %s" % t2["lap"])
 if not R["simpan"]: salah.append("parameter Studio tidak tersimpan")
 if R["pageerror"]: salah.append("galat halaman: %s" % R["pageerror"][:3])
 print("\nGAGAL:\n  " + "\n  ".join(salah) if salah else "\nLULUS")

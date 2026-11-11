@@ -25,3 +25,4 @@ models/
 # folder penyajian sementara untuk uji paritas (dibuat ulang oleh tools/uji/paritas_geostat.py)
 tools/uji/_srv_dh/
 tools/uji/_srv_bm/
+docs/tutorial-gcex/src/fig_ogs/

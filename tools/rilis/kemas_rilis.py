@@ -198,7 +198,7 @@ def main():
         (D / "PANDUAN_INSTALL.md", "Panduan_Teknis/PANDUAN_INSTALL.md"),
         (D / "GC-Ex_Tutorial_Aktivasi_Lisensi.pdf", "Tutorial/GC-Ex_Tutorial_Aktivasi_Lisensi.pdf"),
         (D / "tutorial-aktivasi" / "BACA_SAYA.md", "Tutorial/Aktivasi_tutorial_BACA_SAYA.md"),
-    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "GCEx_Tutorial_Update.pdf", "Tutorial/GC-Ex_Tutorial_Update.pdf"), (D / "GCEx_Petunjuk_Teknis.pdf", "Panduan_Teknis/GC-Ex_Petunjuk_Teknis.pdf")] if has_gcex else [])
+    ] + ([(D / "tutorial-gcex" / "GCEx_Tutorial_Modelling_Estimasi.pdf", "Tutorial/GC-Ex_Tutorial_Modelling_Estimasi.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Block_Model.pdf", "Tutorial/GC-Ex_Tutorial_Block_Model.pdf"), (D / "GCEx_Tutorial_Update.pdf", "Tutorial/GC-Ex_Tutorial_Update.pdf"), (D / "tutorial-gcex" / "GCEx_Tutorial_Ore_Geometry_Studio.pdf", "Tutorial/GC-Ex_Tutorial_Ore_Geometry_Studio.pdf"), (D / "GCEx_Petunjuk_Teknis.pdf", "Panduan_Teknis/GC-Ex_Petunjuk_Teknis.pdf")] if has_gcex else [])
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
           (D / "DB-Ex_Tutorial_Penggunaan.pdf", "Tutorial/DB-Ex_Tutorial_Penggunaan.pdf"),
           (D / "DB-Ex_Panduan_Teknis.pdf", "Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf"),
@@ -269,7 +269,7 @@ def main():
                             "Borang lapangan, QAQC Database. Menggantikan DB-Ex versi HTML bila dipasang")
         desc["DB-Ex-Setup-" + next((v for n, _a, v in inst if n.startswith("DB-Ex-Setup")), "") + ".exe"] = (
             "Installer DB-Ex versi HTML (Core box saja) " + next((v for n, _a, v in inst if n.startswith("DB-Ex-Setup")), ""))
-    desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, DB-Ex, aktivasi lisensi)"
+    desc[dok.name] = "README, panduan teknis, tutorial PDF (GC-Ex Modelling & Estimasi, Ore Geometry Studio, DB-Ex, aktivasi lisensi)"
     desc[dat.name] = "Data latihan dummy/simulasi (" + ", ".join(nm for _, nm, _ in inst) + ") + generator"
     desc[lis.name] = "Tentang, syarat penggunaan, lisensi open source, penafian merek, alat pembuat lisensi admin (tanpa kunci privat)"
     if qtbm_zip is not None:

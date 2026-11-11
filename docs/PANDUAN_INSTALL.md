@@ -4552,3 +4552,17 @@ Data mentah (collar, survey, assay, geologi, topografi) tidak dihitung. Tidak ad
 - **Proyek lama** (sebelum 0.24.73): jalur ditebak dari isi proyek dan ditandai *perlu konfirmasi*; sebelum dikonfirmasi tidak ada menu yang
   disembunyikan. **Muat data latihan** selalu masuk jalur Lanjutkan (wireframe Leapfrog + block model GC).
 - Dokumen: Tutorial Modelling & Estimasi (bab *Jalur proyek: mulai dari nol atau lanjutkan*), Tutorial Update bab 15, Petunjuk Teknis 8.4.
+
+## 183. Drillhole 0.24.74 — Ore Geometry Studio tahap 2: struktur, garis interpretasi, pertemuan vein, target, laporan PDF
+
+Tutorial lengkap bergambar: **docs/tutorial-gcex/GCEx_Tutorial_Ore_Geometry_Studio.pdf** (juga di `_1_Dokumen.zip` › Tutorial).
+
+- **9 Struktur bawah permukaan** — long section dengan garis otomatis dari data (collar tertinggi, dasar lubang GC, puncak ore, zona
+  belum teruji GC) dan tabel per segmen strike. Lubang eksplorasi dikenali dari pola nama (regex, bisa diubah).
+- **Garis interpretasi** (dibuat geologist) di long section struktur, penampang dan grafik posisi tegak lurus: penanda posisi, polyline,
+  pita / zona, poligon, teks. Beri nama (masuk legenda), warna, gaya, keterangan. Usulan otomatis tampil abu-abu bertanda *usulan* sampai
+  ditekan **Terima**. Ekspor **CSV E/N/RL** atau **string Surpac .str**.
+- **10 Struktur paralel & tekukan**, **11 Pertemuan vein** (zona ≥ 2 vein vs 1 vein, uji per sel lokasi), **12 Target bor**
+  (usulan + klik; E/N/RL, collar, azimuth, panjang), **13 Di luar wireframe** (sampel ≥ cut-off per kategori).
+- **14 Laporan PDF** — template deck (navy / emas, 13,333 × 7,5 in). Tulis judul kalimat & catatan per slide, lalu **Buat laporan & cetak
+  ke PDF** (dialog cetak → *Simpan sebagai PDF* / *Microsoft Print to PDF*, margin 0, centang *Grafik latar belakang*) atau simpan HTML.

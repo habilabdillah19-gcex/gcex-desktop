@@ -141,6 +141,9 @@ function ogsEnv(q) {
 /* ---------- jendela ---------- */
 var OGS_NAV = [['data', '1 · Data & domain'], ['geo', '2 · Geometri & tebal'], ['kadar', '3 · Kadar & multi-elemen'], ['ls', '4 · Long section'], ['env', '5 · Envelope RBF & 3D'], ['zon', '6 · Zonasi vertikal'], ['prof', '7 · Profil per domain'], ['sec', '8 · Penampang (sayatan)'],
   ['-', 'Alat lain'], ['lama', 'Intercept · LS GT · Ore shoot · Grade shell'], ['red', 'Profil Geostatistik & Slicer'], ['-', 'Tahap 2 (berikutnya)'], ['t2', 'Struktur · Pertemuan vein · Target · Laporan PDF']];
+/* halaman & penggambar grafik per menu (ogs2_dh.js menambah halaman tahap 2) */
+var OGS_PG = { data: ogsPgData, geo: ogsPgGeo, kadar: ogsPgKadar, ls: ogsPgLS, env: ogsPgEnv, zon: ogsPgZon, prof: ogsPgProf, sec: ogsPgSec, lama: ogsPgLama, red: ogsPgRed, t2: ogsPgT2 };
+var OGS_DR = { data: ogsDrData, geo: ogsDrGeo, ls: ogsDrLS, env: ogsDrEnv, zon: ogsDrZon, prof: ogsDrProf, sec: ogsDrSec, lama: function () { try { ogPanel(); } catch (e) {} } };
 function ogsOpen(nav) {
   if (!window.POP || !POP.win) { alert('Jendela pop-up tidak tersedia.'); return; }
   if (nav) OGS.nav = nav; OGS.open = true;
@@ -155,10 +158,10 @@ function ogsRender() {
   nv.innerHTML = OGS_NAV.map(function (x) { return x[0] === '-' ? '<div class=ogsnh>' + x[1] + '</div>' : '<button class="' + (OGS.nav === x[0] ? 'on' : '') + (x[0] === 't2' ? ' dim' : '') + '" onclick="ogsGo(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
   var F = OGS.F, stale = F && F.key !== ogsKunci();
   var h = '<div class=ogsbar><button class=btn-pri onclick="ogsRun()">&#9654; ' + (F ? 'Hitung ulang' : 'Hitung flag domain &amp; intercept') + '</button>' + (stale ? ' <span class=warn>Data / wireframe berubah sejak dihitung: hitung ulang.</span>' : '') + (OGS.msg ? ' <span class=ogsmsg>' + OGS.msg + '</span>' : '') + '</div>';
-  try { h += ({ data: ogsPgData, geo: ogsPgGeo, kadar: ogsPgKadar, ls: ogsPgLS, env: ogsPgEnv, zon: ogsPgZon, prof: ogsPgProf, sec: ogsPgSec, lama: ogsPgLama, red: ogsPgRed, t2: ogsPgT2 }[OGS.nav] || ogsPgData)(); }
+  try { h += (OGS_PG[OGS.nav] || ogsPgData)(); }
   catch (e) { console.error(e); h += '<div class=warn>Galat: ' + ogsE(e.message) + '</div>'; }
   c.innerHTML = h; var sc = c.scrollTop;
-  setTimeout(function () { try { ({ data: ogsDrData, geo: ogsDrGeo, ls: ogsDrLS, env: ogsDrEnv, zon: ogsDrZon, prof: ogsDrProf, sec: ogsDrSec, lama: function () { try { ogPanel(); } catch (e) {} } }[OGS.nav] || function () {})(); } catch (e) { console.error(e); } c.scrollTop = sc; }, 0);
+  setTimeout(function () { try { (OGS_DR[OGS.nav] || function () {})(); } catch (e) { console.error(e); } c.scrollTop = sc; }, 0);
 }
 function ogsRun() { OGS.msg = 'Menghitung&hellip;'; ogsRender(); setTimeout(function () { try { ogsFlag(); } catch (e) { console.error(e); OGS.msg = '<span class=warn>Gagal: ' + ogsE(e.message) + '</span>'; } ogsRender(); }, 30); }
 function ogsNeed() { return OGS.F ? '' : '<div class=hint>Tekan <b>Hitung flag domain &amp; intercept</b> dulu (atas).</div>'; }
