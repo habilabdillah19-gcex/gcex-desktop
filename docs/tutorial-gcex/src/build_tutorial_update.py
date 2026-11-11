@@ -446,9 +446,36 @@ def f_vsys():
     fig.tight_layout(); return save(fig, 'vsys')
 
 
+def f_jalur():
+    """Jalur proyek (DH 0.24.73): tiap tahap punya pintu "Buat di GC-Ex" dan, di jalur Lanjutan, "Pakai acuan"."""
+    from matplotlib.patches import FancyBboxPatch
+    tahap = [('Domain & solid', 'Geomodeller Vein / Autorun Wireframe', 'wireframe Leapfrog / Surpac\n(Serap atau Eksak)'),
+             ('Block model', 'Buat kerangka blok (AOI)', 'block model .mdl / CSV\n(versi acuan)'),
+             ('Parameter estimasi', 'Geostatistik, auto-fit, KNA,\nAutorun Estimasi dari Nol', 'parameter dari log Surpac\n(konfirmasi bila ditimpa)'),
+             ('Estimasi & laporan', 'Model Estimation, Autorun Estimation', 'sama: memakai domain,\nblok & parameter di atas')]
+    fig, ax = plt.subplots(figsize=(7.4, 3.6)); ax.set_xlim(0, 10); ax.set_ylim(0, len(tahap) + 1.1); ax.axis('off')
+    ax.text(2.05, len(tahap) + 0.6, 'Tahap', ha='center', fontsize=8.5, weight='bold', color=INK)
+    ax.text(5.0, len(tahap) + 0.6, 'Mulai dari nol', ha='center', fontsize=8.5, weight='bold', color='#2f9e44')
+    ax.text(8.05, len(tahap) + 0.6, 'Lanjutkan dari Surpac / Leapfrog', ha='center', fontsize=8.5, weight='bold', color=ACC2)
+    for i, (t, nol, acu) in enumerate(tahap):
+        y = len(tahap) - i - 0.1
+        ax.add_patch(FancyBboxPatch((0.6, y - 0.36), 2.9, 0.72, boxstyle='round,pad=0.02', fc='#eef2f7', ec=MUT, lw=0.6))
+        ax.text(2.05, y, t, ha='center', va='center', fontsize=8, color=INK, weight='bold')
+        ax.add_patch(FancyBboxPatch((3.7, y - 0.36), 2.6, 0.72, boxstyle='round,pad=0.02', fc='#e8f5ec', ec='#2f9e44', lw=0.8))
+        ax.text(5.0, y, 'Buat di GC-Ex:\n' + nol, ha='center', va='center', fontsize=6.3, color=INK)
+        last = i == len(tahap) - 1
+        ax.add_patch(FancyBboxPatch((6.5, y - 0.36), 1.45, 0.72, boxstyle='round,pad=0.02', fc='#e8f5ec', ec='#2f9e44', lw=0.8))
+        ax.text(7.22, y, 'Buat baru\n(alat yang sama)', ha='center', va='center', fontsize=6.0, color=INK)
+        ax.add_patch(FancyBboxPatch((8.05, y - 0.36), 1.85, 0.72, boxstyle='round,pad=0.02', fc='#fdf3e1' if not last else '#f4f4f4', ec=ACC2 if not last else MUT, lw=0.8))
+        ax.text(8.97, y, ('Pakai acuan:\n' if not last else '') + acu, ha='center', va='center', fontsize=5.9, color=INK)
+    ax.text(5.0, 0.15, 'fitur adaptasi tidak tampil', ha='center', fontsize=6.5, color=MUT, style='italic')
+    ax.text(8.05, 0.15, 'pintu acuan terbuka hanya bila acuannya dicentang', ha='center', fontsize=6.5, color=MUT, style='italic')
+    fig.tight_layout(); return save(fig, 'jalur')
+
+
 F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), ('kipas', f_kipas),
                          ('zonasi', f_zonasi), ('topcut', f_topcut), ('klas', f_klas),
-                         ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys))}
+                         ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys), ('jalur', f_jalur))}
 
 # angka ringkas untuk narasi
 Q = HP[np.ones(len(HK), bool)]
@@ -1046,7 +1073,8 @@ B.append(D.tabel(['Bab di dokumen ini', 'Di tutorial bergambar'], [
     ['10. Kampanye, filter &amp; export terfilter', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Database bor per kampanye</b> dan bab <b>Filter data bor</b> (Bagian I)'],
     ['11. Pit &amp; progres topo-ke-topo', 'kedua tutorial: bab <b>Laporan per desain pit &amp; progres topo-ke-topo</b>'],
     ['12. Wireframe terpusat &amp; Project Tree', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Memakai wireframe dari Leapfrog</b> dan <b>Wireframe Leapfrog menjadi domain</b>; <i>Tutorial Block Model</i>: bab <b>As-mined</b>'],
-    ['14. Vein system', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Membangun solid vein (RBF)</b>, bagian <b>Vein system: banyak vein sekaligus</b>']]))
+    ['14. Vein system', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Membangun solid vein (RBF)</b>, bagian <b>Vein system: banyak vein sekaligus</b>'],
+    ['15. Jalur proyek', '<i>Tutorial Modelling &amp; Estimasi</i>: bab <b>Membuat folder proyek &amp; import data</b> dan bab <b>Jalur proyek: mulai dari nol atau lanjutkan</b>']]))
 B.append('<p>Nama domain dan angka di kedua tutorial bergambar sudah mengikuti data latihan yang sekarang '
          '(<code>QV_Lensa2</code>, <code>QV_Splay_HW</code>, bor dan assay sesuai berkas yang Anda terima).</p>')
 
@@ -1067,6 +1095,32 @@ B.append('<p><b>Latihan.</b> Muat data latihan, buka Geomodeller Vein &rsaquo; t
          'Di tab <i>Solid</i> tekan <b>Hitung volume gabungan</b>: lensa en-echelon yang saling tumpang menghasilkan volume gabungan '
          'sedikit lebih kecil daripada jumlah volumenya. Lubang L1 juga menembus Lensa2 (dan seterusnya), seperti vein array sungguhan.</p>')
 
+B.append('<div class="page"></div><h2>15. Jalur proyek: mulai dari nol atau lanjutkan dari Surpac / Leapfrog</h2>')
+B.append('<p><b>Drill Hole 0.24.73.</b> GC-Ex Drill Hole punya dua kelompok fitur yang tujuannya berlawanan. Yang satu <b>membuat</b> model '
+         'dari data bor (domain, solid, kerangka blok, parameter). Yang lain <b>mempertahankan</b> model dari software lain supaya pembaruan '
+         'di GC-Ex tidak mengubahnya (Serap / Eksak wireframe, versi block model acuan, parameter dari log). Sekarang keduanya dipisah dengan '
+         '<b>jalur proyek</b> yang dipilih di halaman pembuka.</p>')
+B.append(fig_html('jalur', 'Empat tahap pekerjaan dan pintunya di tiap jalur. Algoritmanya sama di kedua jalur; yang berbeda hanya '
+                  'pintu yang terbuka.'))
+B.append('<p><b>Aturan penentu.</b> Jalur ditentukan oleh ada-tidaknya <b>objek model dari software lain</b> yang dipakai: wireframe / domain, '
+         'block model <code>.mdl</code> / CSV, atau parameter estimasi. Data mentah (collar, survey, assay, geologi, topografi) tidak dihitung. '
+         'Contoh: Anda diberi wireframe domain Leapfrog lalu diminta mengestimasi block model dari awal &rarr; <b>Lanjutkan</b> dengan acuan '
+         '<i>Wireframe</i> saja; kerangka blok dan parameter tetap dibuat baru di GC-Ex. Block model <code>.mdl</code> yang hanya dipakai sebagai '
+         'pembanding juga termasuk Lanjutkan.</p>')
+B.append(D.tabel(['Di mana', 'Mulai dari nol', 'Lanjutkan dari Surpac / Leapfrog'], [
+    ['Halaman Import', 'slot <i>Block model</i> tidak tampil', 'slot <i>Block model</i> tampil bila acuan block model dicentang'],
+    ['Project Tree', 'tanpa node <i>Import Wireframe Geologi</i>; menu &#8943; Block Model tanpa <i>Import block model dari file</i>', 'semua node; objek acuan bertanda <b>&middot; acuan</b>, domain dari wireframe <b>acuan eksak</b> / <b>diserap</b>'],
+    ['Panel &amp; pintasan', '&ldquo;Import BM&hellip;&rdquo; (pesan panduan, skrip lama) membuka <b>Buat kerangka blok (AOI)</b>', 'tidak berubah'],
+    ['Autorun Wireframe', 'membangun semua domain', 'domain <b>acuan eksak</b> dilewati (bentuknya milik wireframe asal)'],
+    ['Simpan parameter ke domain', 'langsung', 'bila domain sudah berparameter dan acuan parameter dicentang: konfirmasi, lalu tercatat di jejak'],
+    ['Autorun Estimasi dari Nol, auto-fit, KNA', 'sama', 'sama &mdash; hanya domain tanpa parameter yang diisi; tidak ada yang ditimpa']]))
+B.append('<p><b>Pindah jalur.</b> Node <i>Proyek &rsaquo; Jalur</i> &rsaquo; <b>Jadikan jalur Lanjutan&hellip;</b>: satu arah (dari nol ke Lanjutan), '
+         'proyek disimpan dulu ke folder, dan perpindahan tercatat di jejak (siapa, kapan). Kembali ke nol hanya mungkin selama belum ada objek acuan di proyek.</p>')
+B.append('<p><b>Proyek lama.</b> Proyek dari versi sebelum 0.24.73 dibuka tanpa jalur. GC-Ex menebak dari isinya (wireframe / block model dari file '
+         '&rarr; Lanjutkan, selain itu &rarr; Mulai dari nol) dan menandai node Jalur <b>perlu konfirmasi</b>. Sebelum dikonfirmasi tidak ada '
+         'menu yang disembunyikan, sehingga proyek lama tetap bisa dikerjakan seperti biasa. <b>Muat data latihan</b> selalu masuk jalur '
+         'Lanjutkan (data latihan memuat wireframe Leapfrog dan block model GC).</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
@@ -1080,7 +1134,7 @@ B.insert(0, D.cover(
     'data latihan simulasi baru, klasifikasi keyakinan sumber daya, kerapatan bor per blok, '
     'topografi &amp; orthofoto resolusi tinggi, block model dari nol (kerangka AOI), estimasi '
     '<b>waste</b> untuk jalur vein maupun laterit, serta sub-blocking dan proporsi volume di batas '
-    'solid. Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
+    'solid, vein system, dan <b>jalur proyek</b> (mulai dari nol / lanjutkan dari Surpac-Leapfrog). Pendamping <i>Petunjuk Teknis GC-Ex</i>.',
     _ISI,
     'GC-Ex Block Model %s &middot; GC-Ex Drill Hole Ultimate %s &middot; disusun otomatis %s.<br>'
     'Semua gambar di dokumen ini <b>dihitung langsung dari model dan berkas data latihan</b>, bukan '

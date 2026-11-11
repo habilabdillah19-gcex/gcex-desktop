@@ -290,8 +290,11 @@
         AOI.close(); updatePlot();
         if (typeof uiTab === 'function') uiTab('BM');
         AOI.msg = '';
-        alert('Kerangka blok dibuat: ' + fmt(R.n) + ' blok baru' + (R.nBase && o.mode === 'isi' ? ' + ' + fmt(R.nBase) + ' blok impor dipertahankan' : '') +
-          ' (total ' + fmt(m.n) + ').\n\nBlok baru belum punya kadar. Isi dengan Model Estimation: domain vein untuk ore, domain WASTE untuk material di luar solid.');
+        var tAoi = 'Kerangka blok dibuat: ' + fmt(R.n) + ' blok baru' + (R.nBase && o.mode === 'isi' ? ' + ' + fmt(R.nBase) + ' blok impor dipertahankan' : '') + ' (total ' + fmt(m.n) + ').';
+        /* 0.24.73: di dalam autorun (Autorun Estimasi dari Nol / Autorun) tidak ada jendela "langkah berikutnya" yang menyela:
+           langkah berikutnya dikerjakan autorun itu sendiri, hasilnya tercatat di laporannya. */
+        if ((window.AR3 && AR3.busy) || (window.AR && AR.busy)) AOI.msg = tAoi;
+        else alert(tAoi + '\n\nBlok baru belum punya kadar. Isi dengan Model Estimation: domain vein untuk ore, domain WASTE untuk material di luar solid.');
       } catch (e) {
         console.error(e);
         if (msg) msg.innerHTML = '<span class=warn>' + aE(e.message || e) + '</span>';

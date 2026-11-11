@@ -53,6 +53,7 @@ def jalan(html):
         pg = ctx.new_page(); pg.on("dialog", lambda x: x.accept(x.default_value) if x.type == "prompt" else x.accept())
         pg.goto(P); pg.wait_for_timeout(1500)
         if pg.query_selector('#fpCard button.sb'): pg.click('#fpCard button.sb'); pg.wait_for_timeout(500)
+        pg.evaluate("if(window.JLR&&JLR.pilih){JLR.pilih('lanjut');JLR.acuanPend('bm',true);}")  # DH: jalur proyek (0.24.73)
         if pg.query_selector("input[onchange*='SA.bmPick']"): pg.set_input_files("input[onchange*='SA.bmPick']", str(DATA / "SIM_BM_GC_kadar.csv"))
         pg.set_input_files("input[onchange*=\"SA.addSp('topo'\"]", str(TMP / "topo_d1.str"))
         pg.set_input_files("input[onchange*=\"SA.addSp('pit'\"]", str(TMP / "pit_rusak.str")); pg.wait_for_timeout(800)

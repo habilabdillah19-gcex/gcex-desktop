@@ -65,6 +65,7 @@ with sync_playwright() as pw:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]" % role, DATA + f); pg.wait_for_timeout(600)
     ev("document.getElementById('dsName').value='Laterit_Simulasi';SA.preview&&SA.preview()")
     pg.set_input_files("input[onchange*=\"addSp('topo'\"]", DATA + 'SIM_LAT_topo_xyz.csv'); pg.wait_for_timeout(500)
+    pg.evaluate("JLR.pilih('lanjut');JLR.acuanPend('bm',true)")  # jalur Lanjutkan, acuan block model (DH 0.24.73)
     pg.set_input_files("input[onchange*='SA.bmPick']", DATA + 'SIM_LAT_BM_GC.csv'); pg.wait_for_timeout(500)
     pg.click('#btnGo'); pg.wait_for_function("document.getElementById('imp').classList.contains('off')", timeout=180000); pg.wait_for_timeout(2500)
     ev("var t=document.getElementById('fpToast');if(t)t.style.display='none'")

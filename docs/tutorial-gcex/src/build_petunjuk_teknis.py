@@ -385,6 +385,26 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
      'resolusi &times; min(K, 1 + d/(3 &times; resolusi)), d = jarak ke koordinat data terdekat di arah itu, K = <i>Jarang maks.</i> '
      '(bawaan 4). Luas &amp; volume ekstrapolasi memakai lebar simpul setempat. Mati = rumus lama persis (A/B identik).']]))
 
+B.append('<h3>8.4 Jalur proyek: mulai dari nol / lanjutkan (Drill Hole 0.24.73)</h3>')
+B.append('<p>Jalur adalah status proyek, bukan algoritma: tidak ada perhitungan yang berubah. Kode: <code>web-src-dh/jalur_imp_dh.js</code> '
+         '(halaman Import) dan <code>web-src-dh/jalur_dh.js</code> (viewer, disambung sesudah <code>vsys_dh.js</code>). Disimpan di pekerjaan '
+         'proyek sebagai <code>jalur = {mode, acuan:{wf,bm,par}, log, tebak}</code>.</p>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Penentu', '<code>mode</code> = <i>nol</i> / <i>lanjut</i>. Objek acuan: wireframe dari file (<code>MD.models</code>, domain <code>d.wfx</code> atau string '
+     '<code>src: wf:</code>), versi block model dengan <code>src.kind</code> <i>mdl</i> / <i>csv</i> (atau AOI / sub-blok yang <code>base</code>-nya acuan), '
+     'parameter dari log. Data mentah tidak dihitung.'],
+    ['Pintu', '<code>JLR.boleh(k)</code> = jalur lanjut dan acuan <i>k</i> dicentang. Dipakai oleh pengaman <code>bxDlg</code>, <code>bmAdd</code> '
+     '(di jalur tanpa acuan block model dialihkan ke <code>AOI.dlg</code>), <code>mdImport</code> (wireframe geologi; permukaan / '
+     '<i>surf</i> selalu boleh), <code>uiTab(\'Wf\')</code>, dan penyaring node Project Tree (<code>PT.def.nodes</code>).'],
+    ['Sinkron', '<code>JLR.sinkron()</code> sesudah proyek dibuka: jalur kosong &rarr; ditebak dari isi (<code>tebak</code>); jalur nol tetapi ada objek '
+     'acuan &rarr; lanjut + <code>tebak</code>; jalur lanjut &rarr; acuan yang objeknya ada dinyalakan. Selama <code>tebak</code> tidak ada pintu ditutup.'],
+    ['Otomasi', '<code>arWfDoms</code> mengeluarkan domain <code>d.wfx</code> (eksak). <code>meFromGs</code> pada domain berparameter dengan acuan parameter '
+     '&rarr; <code>confirm</code> + jejak. <code>ar3</code>, <code>arEst</code>, <code>gsFitAuto</code>, <code>knaRun</code> tidak diubah (sudah tidak menimpa). <code>AOI.go</code> di dalam autorun (<code>AR3.busy</code> / <code>AR.busy</code>) tidak memanggil <code>alert</code> langkah berikutnya; teksnya masuk <code>AOI.msg</code> dan laporan autorun.'],
+    ['Jejak', '<code>log</code>: [ket, waktu, pengguna], dari pemilihan di halaman Import, konfirmasi tebakan, ubah acuan, '
+     '<i>Jadikan jalur Lanjutan</i> (didahului <code>FP.flush</code>).'],
+    ['Halaman Import', 'proyek baru wajib memilih jalur sebelum <b>Tampilkan viewer</b>; import ulang membaca jalur dari pekerjaan tersimpan (baca saja). '
+     '<code>SA.go()</code> dari skrip tanpa pilihan: demo &rarr; lanjut (wf, bm); ada berkas block model &rarr; lanjut (bm) + tebak; selain itu nol.']]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

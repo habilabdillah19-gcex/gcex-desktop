@@ -4534,3 +4534,21 @@ Model Estimation. Berlaku untuk kedua jalur proyek.
 Alat lama (Intercept & GT, Long section GT, Ore shoot, Grade shell) dan pintasan Geostatistik › Profil / Slicer ada di bagian *Alat lain*.
 Setiap grafik punya tombol **PNG**, setiap tabel **CSV**. Tahap 2 (berikutnya): struktur, garis interpretasi, pertemuan vein, target
 bor, laporan PDF.
+
+## 182. Drillhole 0.24.73 — Jalur proyek: Mulai dari nol / Lanjutkan dari Surpac / Leapfrog
+
+Setiap proyek GC-Ex Drill Hole kini berada di salah satu dari dua **jalur**, dipilih di halaman pembuka (kartu *Jalur proyek*).
+Penentunya: apakah proyek memakai **model dari software lain** (wireframe / domain, block model `.mdl` / CSV, parameter estimasi).
+Data mentah (collar, survey, assay, geologi, topografi) tidak dihitung. Tidak ada algoritma yang berubah.
+
+- **Mulai dari nol**: domain, solid, kerangka blok (AOI) dan parameter dibuat di GC-Ex. Fitur adaptasi tidak tampil: node
+  *Import Wireframe Geologi*, *Import block model dari file*, Serap / Eksak. Pintasan "Import BM…" membuka *Buat kerangka blok (AOI)*.
+- **Lanjutkan dari Surpac / Leapfrog**: centang acuan yang Anda punya. Tahap beracuan bisa *Pakai acuan* atau *Buat baru*; tahap tanpa
+  acuan dibuat di GC-Ex. Tidak ada alat yang disembunyikan. Contoh: wireframe Leapfrog + estimasi dari awal = Lanjutkan, acuan *Wireframe* saja.
+- **Project Tree › Proyek › Jalur**: label jalur, acuan, dialog *detail & jejak*. *Jadikan jalur Lanjutan…* satu arah dan tercatat.
+- **Otomasi**: Autorun Wireframe tidak membangun ulang domain *acuan eksak*; menyimpan parameter Geostatistik ke domain yang parameternya
+  acuan meminta konfirmasi. Autorun Estimasi dari Nol, auto-fit variogram dan KNA berjalan sama di kedua jalur (hanya mengisi domain tanpa parameter).
+  Kerangka blok (AOI) yang dibuat oleh autorun tidak lagi memunculkan jendela "langkah berikutnya" di tengah proses; hasilnya tercatat di laporan autorun.
+- **Proyek lama** (sebelum 0.24.73): jalur ditebak dari isi proyek dan ditandai *perlu konfirmasi*; sebelum dikonfirmasi tidak ada menu yang
+  disembunyikan. **Muat data latihan** selalu masuk jalur Lanjutkan (wireframe Leapfrog + block model GC).
+- Dokumen: Tutorial Modelling & Estimasi (bab *Jalur proyek: mulai dari nol atau lanjutkan*), Tutorial Update bab 15, Petunjuk Teknis 8.4.

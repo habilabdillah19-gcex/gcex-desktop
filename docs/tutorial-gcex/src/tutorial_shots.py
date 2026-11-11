@@ -79,6 +79,12 @@ with sync_playwright() as pw:
     # 1. jendela awal + folder proyek
     shot('jendela_awal',{'x':240,'y':0,'width':1120,'height':640})
     pg.click("#fpCard button.sb");pg.wait_for_timeout(500)
+    # 1b. Jalur proyek (DH 0.24.73): latihan utama = Lanjutkan, acuan wireframe Leapfrog + block model GC
+    def kartu(name):
+        ev("document.getElementById('jlrCard').scrollIntoView({block:'center'})");pg.wait_for_timeout(300)
+        b=pg.locator('#jlrCard').bounding_box();shot(name,{'x':max(0,b['x']-10),'y':max(0,b['y']-10),'width':min(1600-max(0,b['x']-10),b['width']+20),'height':min(940,b['height']+20)})
+    kartu('jalur_kartu')
+    ev("JLR.pilih('lanjut');JLR.acuanPend('wf',true);JLR.acuanPend('bm',true)");pg.wait_for_timeout(300);kartu('jalur_lanjut')
     # 2. import database + topo + BM GC
     for role,f in [('collar','SIM_collar.csv'),('survey','SIM_survey.csv'),('assay','SIM_assay.csv'),('geo','SIM_geologi.csv')]:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]"%role,DATA+f);pg.wait_for_timeout(700)
@@ -91,6 +97,12 @@ with sync_playwright() as pw:
     note('dbSum',ev("document.getElementById('dbSum').innerText"))
     pg.click('#btnGo');pg.wait_for_function("document.getElementById('imp').classList.contains('off')",timeout=180000);pg.wait_for_timeout(2500)
     note('nHole',ev('collars.length'));note('nAssay',ev('assays.length'));note('bx',ev("BX.m&&BX.m.n"))
+    # 2b. node Proyek > Jalur + dialog jejak
+    ev("PT.open['proj']=1;PT.render(true);PT.select('proj.jalur')");pg.wait_for_timeout(500);shot('jalur_node',PANEL)
+    ev("JLR.dlg()");pg.wait_for_timeout(400)
+    rb=ev("(function(){var r=document.querySelector('#jlrDlg .impBox').getBoundingClientRect();return[r.x,r.y,r.width,r.height]})()")
+    shot('jalur_dlg',{'x':max(0,int(rb[0]-6)),'y':max(0,int(rb[1]-6)),'width':int(min(1600,rb[2]+12)),'height':int(min(940,rb[3]+12))});ev("JLR.dlgTutup()")
+    note('jalur',ev("JSON.stringify({m:JLR.mode,a:JLR.acuan,n:(JLR.log||[]).length})"))
     # 3. tampilan 3D awal
     ev("$('thr').value='0.3,0.5,1,3';$('clsMode').checked=true;$('bxShow').checked=false;updatePlot();setCam(1.3,-1.5,0.8)");pg.wait_for_timeout(800)
     shot('viewer_3d')
@@ -405,6 +417,7 @@ with sync_playwright() as pw:
         pg.set_input_files("input[onchange*=\"slotFile('%s'\"]"%role,DATA+f);pg.wait_for_timeout(600)
     ev("document.getElementById('dsName').value='VeinSplit_Simulasi';SA.preview&&SA.preview()")
     pg.set_input_files("input[onchange*=\"addSp('topo'\"]",DATA+'SIM_topo_xyz.csv');pg.wait_for_timeout(400)
+    ev("JLR.pilih('lanjut');JLR.acuanPend('bm',true)")  # jalur Lanjutkan, acuan block model (DH 0.24.73)
     pg.set_input_files("input[onchange*='SA.bmPick']",DATA+'SIM_split_BM_GC.csv');pg.wait_for_timeout(500)
     pg.click('#btnGo');pg.wait_for_function("document.getElementById('imp').classList.contains('off')",timeout=120000);pg.wait_for_timeout(2500)
     ev("uiTab('GM');gmAddDom('QVS_Utama');gmAddDom('QVS_Cabang');GM.doms[1].col='#1971c2';gmAct(GM.doms[0].id);GM.opt.el='Au';GM.opt.cut=0.5;GM.opt.minL=1;GM.opt.dil=1;GM.opt.scope='all';GM.opt.keep=true;gmAuto()")

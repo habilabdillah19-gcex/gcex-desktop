@@ -101,7 +101,7 @@ BAGIAN = [
  ('Bagian I &middot; Persiapan &amp; database bor',
   'Berlaku untuk <b>semua tipe deposit</b>. Menyiapkan folder proyek, memasukkan data bor, memeriksa '
   'kesehatan datanya, menata kampanye pemboran, dan menyaring data yang akan dipakai.',
-  ['Tentang tutorial ini', 'Data simulasi', 'Membuat folder proyek', 'Validasi data bor',
+  ['Tentang tutorial ini', 'Data simulasi', 'Membuat folder proyek', 'Jalur proyek', 'Validasi data bor',
    'Database bor per kampanye', 'Menambah bor infill dengan upsert', 'Filter data bor',
    'Mengenal tampilan', 'Sayatan &amp; penampang 2D', 'Geologi: pita litologi']),
  ('Bagian II &middot; Deposit vein / urat',
@@ -215,10 +215,12 @@ ch('Data simulasi', f'''
 ch('Membuat folder proyek & import data', dta('<code>data/SIM_collar.csv</code>, <code>SIM_survey.csv</code>, <code>SIM_assay.csv</code>, <code>SIM_geologi.csv</code> &middot; topografi <code>SIM_topo_xyz.csv</code> &middot; block model <code>SIM_BM_GC.csv</code>',
      [('Nama project site', 'bebas, mis. <code>Vein A &middot; Latihan</code>'),
       ('Folder proyek', 'folder <b>kosong</b> bernama <code>Proyek_Tutorial_VeinA</code>'),
+      ('Jalur proyek', '<i>Lanjutkan dari Surpac / Leapfrog</i>; acuan <i>Wireframe / domain</i> dan <i>Block model</i> dicentang'),
       ('Nama dataset', '<code>VeinA_Simulasi</code>'),
       ('Hasil yang seharusnya', f"<b>{N['nHole']:,} collar</b>, <b>{fN(N['nAssay'])} interval assay</b>, block model <b>{fN(N['bx'])} blok</b>".replace(',', '.'))]) +  steps(
  'Buka <b>GC-Ex Drill Hole Ultimate</b> dari menu Start. Halaman muka <b>Import data</b> tampil penuh ([[jendela_awal]]); isi <b>Nama project site</b> bila perlu (tampil di bilah atas, disimpan per proyek).',
  'Pada kartu <b>Folder proyek</b>, klik <b>Buka / pilih folder proyek</b> lalu pilih folder kosong <code>Proyek_Tutorial_VeinA</code>. Izinkan akses ketika browser bertanya (<i>Lihat file</i> dan <i>Simpan perubahan</i>).',
+ 'Pada kartu <b>Jalur proyek</b> ([[jalur_kartu]]) klik <b>Lanjutkan dari Surpac / Leapfrog</b>, lalu centang <b>Wireframe / domain</b> dan <b>Block model</b> ([[jalur_lanjut]]). Latihan ini memakai block model GC dan wireframe Leapfrog dari data latihan; bab {{B:Jalur proyek}} menjelaskan pilihannya.',
  'Pada <b>&#9312; Database drillhole</b>, klik <b>Import Collar</b>, <b>Import Survey</b>, <b>Import Assay</b>, <b>Import Geologi</b> dan pilih empat file SIM_*.csv yang sesuai.',
  'Isi <b>Nama dataset</b>: <code>VeinA_Simulasi</code>. Periksa ringkasan di bawahnya ([[import_database]]): harus tertulis <b>'+f"{N['nHole']:,} collar &middot; {N['nHole']*3:,} survey ({N['nHole']:,} hole) &middot; {fN(N['nAssay'])} interval assay &middot; {fN(N['nAssay'])} interval geologi".replace(",",".")+'</b>, unsur <b>Au, Ag, Cu, Pb, Zn, S, As_ppm, SG</b>.',
  'Gulir ke <b>&#9313; Data spasial &amp; block model</b>: pada <b>Topografi</b> pilih <code>SIM_topo_xyz.csv</code>; pada <b>Block model</b> pilih <code>SIM_BM_GC.csv</code>.',
@@ -229,6 +231,28 @@ ch('Membuat folder proyek & import data', dta('<code>data/SIM_collar.csv</code>,
  + fig('viewer_3d', f"Viewer 3D setelah import: {N['nHole']} lubang bor, {fN(N['nAssay'])} interval assay diwarnai kelas Au. Pesan di bawah: <i>SIM_BM_GC.csv tersalin ke folder proyek sumber/</i>.")
  + tip('Jika ringkasan menulis <i>hole di assay tidak ada di collar</i>, buka <b>Pemetaan kolom &amp; unsur</b> dan cek kolom Hole ID.')
  + tip('<b>Data per lubang (pop-up).</b> Tombol di bawah <i>Hole ID</i> (atau node <i>Database Bor › Data per lubang</i>) membuka jendela berisi collar, survey, assay dan geologi satu lubang. Jendela mengikuti pilihan Hole ID dan klik lubang di 3D; kolom unsur yang sedang ditampilkan disorot. Panel <b>Geostatistik</b> dan hasil <b>Reporting BM</b> juga bisa dilepas menjadi jendela lewat tombol <b>&#10697; Pop-up</b>.'))
+
+ch('Jalur proyek: mulai dari nol atau lanjutkan', dta('lanjutan &mdash; proyek hasil bab sebelumnya (jalur <i>Lanjutkan</i>, acuan wireframe + block model)',
+     [('Dipilih di', 'kartu <i>Jalur proyek</i> di halaman Import, sebelum <i>Tampilkan viewer</i>'),
+      ('Dilihat / diubah di', 'Project Tree &rsaquo; <i>Proyek</i> &rsaquo; <i>Jalur: &hellip;</i> (dan pita di atas panel Properti)')])
+ + '<p>Proyek di GC-Ex Drill Hole selalu berada di salah satu dari dua <b>jalur</b>. Jalur ditentukan oleh satu pertanyaan: '
+   '<i>apakah proyek memakai model dari software lain</i> (wireframe / domain, block model <code>.mdl</code> / CSV, parameter estimasi)? '
+   'Data mentah (collar, survey, assay, geologi, topografi) tidak dihitung &mdash; data itu selalu diimport.</p>'
+ + kv([('<b>Mulai dari nol</b>', 'semua model dibuat di GC-Ex dari data bor: domain &amp; solid (Geomodeller Vein), kerangka blok (<b>Buat kerangka blok AOI</b>), '
+        'parameter (Geostatistik, Autorun Estimasi dari Nol). Fitur adaptasi <b>tidak tampil</b>: node <i>Import Wireframe Geologi</i>, import block model dari file, '
+        'Serap / Eksak. Pintasan lama &ldquo;Import BM&hellip;&rdquo; langsung membuka <b>Buat kerangka blok (AOI)</b>.'),
+       ('<b>Lanjutkan dari Surpac / Leapfrog</b>', 'tiap tahap punya dua pintu: <b>Pakai acuan</b> (untuk tahap yang acuannya dicentang) atau <b>Buat baru</b> di GC-Ex. '
+        'Tidak ada alat GC-Ex yang disembunyikan: wireframe Leapfrog boleh dipakai bersama kerangka AOI dan Autorun dari nol. '
+        'Objek acuan diberi tanda <b>&middot; acuan</b> di Project Tree; domain dari wireframe bertanda <b>acuan eksak</b> atau <b>diserap</b>.')])
+ + fig2('jalur_kartu', 'Kartu <b>Jalur proyek</b> di halaman Import. Proyek baru tidak bisa dibuka sebelum jalur dipilih.',
+        'jalur_lanjut', 'Jalur <b>Lanjutkan</b> dengan acuan yang dimiliki. Slot <b>Block model</b> hanya tampil bila acuan block model dicentang.')
+ + steps('Project Tree &rsaquo; <b>Proyek</b> &rsaquo; <b>Jalur: Lanjutkan dari Surpac / Leapfrog</b> ([[jalur_node]]): anak node menampilkan acuan yang dipakai.',
+         'Klik <b>Buka detail jalur &amp; jejak&hellip;</b> ([[jalur_dlg]]): daftar acuan dan <b>jejak</b> (siapa, kapan, apa). Acuan yang objeknya sudah ada di proyek terkunci.',
+         'Proyek <b>Mulai dari nol</b> bisa dipindah dengan <b>Jadikan jalur Lanjutan&hellip;</b> (mis. Anda baru menerima wireframe Leapfrog). Pindah ini <b>satu arah</b> dan tercatat; proyek disimpan dulu ke folder sebelum pindah.')
+ + fig2('jalur_node', 'Node <b>Jalur</b> di bawah Proyek dan pita jalur di atas panel Properti.', 'jalur_dlg', 'Detail jalur: acuan dan jejak perubahan.')
+ + why('Jalur memisahkan dua cara kerja yang hasilnya berbeda arti. Di jalur Lanjutan, angka GC-Ex harus bisa dibandingkan dengan model lama, sehingga fitur yang mempertahankan model lama (Serap, Eksak, versi block model acuan) perlu terlihat. Di jalur Mulai dari nol fitur itu hanya membingungkan &mdash; tidak ada model lama yang dipertahankan.')
+ + tip('<b>Proyek lama</b> (dibuat sebelum 0.24.73) belum punya jalur. Saat dibuka, GC-Ex menebak dari isinya: ada wireframe / block model dari file &rarr; Lanjutkan; tidak ada &rarr; Mulai dari nol. Node Jalur ditandai <b>perlu konfirmasi</b> sampai Anda menekan <b>Konfirmasi</b>; sebelum itu tidak ada menu yang disembunyikan.')
+ + tip('<b>Otomasi mengikuti jalur.</b> Autorun Wireframe tidak membangun ulang domain <b>acuan eksak</b> (bentuknya milik wireframe Leapfrog / Surpac). Menyimpan parameter Geostatistik ke domain yang parameternya acuan meminta konfirmasi dan tercatat di jejak. Autorun Estimasi dari Nol dan auto-fit variogram berjalan sama di kedua jalur: hanya domain tanpa parameter yang diisi.'))
 
 VL = N.get('valid', []) if isinstance(N.get('valid', []), list) else json.loads(N['valid'])
 ch('Validasi data bor', dta('untuk melihat pesan kesalahan: <code>data/SIM_rusak_collar.csv</code> + <code>SIM_rusak_assay.csv</code> (dipilih sebagai Collar / Assay di halaman import, pada proyek coba-coba)',
@@ -912,6 +936,7 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
 
 ch('Vein bercabang: domain induk', dta('<b>proyek terpisah</b>: <code>data/SIM_split_collar / survey / assay / geologi.csv</code> + block model <code>SIM_split_BM_GC.csv</code>, topografi <code>SIM_topo_xyz.csv</code>',
      [('Folder proyek', 'folder kosong baru, mis. <code>Proyek_Tutorial_Split</code>'),
+      ('Jalur proyek', '<i>Lanjutkan</i>, acuan <i>Block model</i> (<code>SIM_split_BM_GC.csv</code>)'),
       ('Nama dataset', '<code>VeinSplit_Simulasi</code>'),
       ('Domain', '<code>QVS_Utama</code> dan <code>QVS_Cabang</code>'),
       ('Usulan otomatis', 'Au, cut-off <b>0,5</b>, panjang min <b>1 m</b>, dilusi <b>1 m</b>, semua hole'),
@@ -1017,6 +1042,7 @@ if NU:
 
 ch('Geomodeller Stratified-Laterite: laterit nikel', dta('<b>proyek terpisah</b>: <code>data/SIM_LAT_collar / survey / assay / geologi.csv</code> + topografi <code>SIM_LAT_topo_xyz.csv</code> + block model <code>SIM_LAT_BM_GC.csv</code> &mdash; ' + f"{NL['nHole']} bor vertikal grid 25 m, {fN(NL['nAssay'])} sampel 1 m, unsur Ni, Co, Fe, MgO, SiO2".replace(',', '.'),
      [('Nama dataset', '<code>Laterit_Simulasi</code>'),
+      ('Jalur proyek', '<i>Lanjutkan</i>, acuan <i>Block model</i> (<code>SIM_LAT_BM_GC.csv</code>)'),
       ('Kolom geologi', '<code>Zona</code> (kode <b>TS, LIM, SAP, BRK</b>)'),
       ('Preset lapisan', '<b>Laterit nikel</b> &rarr; Limonit, Saprolit, Bedrock'),
       ('Unsur estimasi', '<b>Ni, Co, Fe, MgO, SiO2</b>; rasio <b>SiO2 / MgO</b>'),
