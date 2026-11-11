@@ -4482,3 +4482,9 @@ domain › **Batas sampel**:
 - **Hard boundary**: hanya interval yang di-flag domain itu.
 Blok selalu hanya di dalam solid atau wireframe domain. Mengubah pilihan = domain itu diestimasi ulang. Pilihan *zona transisi*
 di selubung (halo) tetap seperti sebelumnya.
+
+## 179. Drillhole 0.24.70 — Import Block Model .mdl di layar Import kembali berfungsi
+
+Sejak 0.24.61, memilih file `.mdl` di layar Import (slot *Block model*, sebelum **Mulai**) gagal dengan pesan
+*mdlAttrs is not defined*. Pembaca daftar atribut .mdl kini juga dimuat di layar Import. Import .mdl lewat Project Tree /
+panel Block Model (sesudah proyek terbuka) tidak terpengaruh.
