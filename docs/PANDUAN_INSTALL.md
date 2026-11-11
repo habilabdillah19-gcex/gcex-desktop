@@ -4595,3 +4595,7 @@ arsir alterasi, garis tengah wireframe domain, lubang yang menembus RL, kontur, 
 legenda di dalam peta. Kontur: **Impor string kontur (.str / .dxf)**; tanpa string dipakai kontur dari collar (bukan topografi asli).
 Label domain dan Hole ID bisa digeser dengan mouse. Isi *RL peta yang dicetak* (mis. 280; 300; 320) untuk slide peta di Laporan PDF.
 Panduan bergambar: Tutorial Ore Geometry Studio bab 10.
+
+## 187. Drillhole 0.24.78 — Peta level: posisi bebas, kadar halus, sakelar lapisan
+
+Di Ore Geometry Studio › 15 · Peta level: tarik **judul**, **panah utara & skala** (tarik huruf N) dan **legenda** ke tempat kosong; tombol *posisi otomatis* mengembalikannya. Warna kadar kini halus (tidak kotak-kotak). Setiap lapisan bisa dinyalakan / dimatikan dengan sakelar **Lapisan** di atas peta.

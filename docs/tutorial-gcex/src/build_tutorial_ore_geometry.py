@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Menyusun 'Tutorial Ore Geometry Studio' (HTML -> PDF A4) untuk GC-Ex Drill Hole Ultimate 0.24.77.
+"""Menyusun 'Tutorial Ore Geometry Studio' (HTML -> PDF A4) untuk GC-Ex Drill Hole Ultimate 0.24.78.
 
 Berbeda dengan build_tutorial_update.py, tutorial ini MEMAKAI tangkapan layar aplikasi: GC-Ex Drill Hole
 (app-dh/index.html hasil build_dh.py) dijalankan di Chromium tanpa layar, data latihan simulasi dimuat
@@ -271,13 +271,16 @@ B.append('<p>Halaman 15 mengubah irisan horizontal di satu RL menjadi <b>peta</b
          'garis wireframe domain, lubang yang menembus RL, kontur, garis interpretasi, judul, panah utara, skala dan legenda <b>di dalam peta</b>.</p>')
 B.append(D.steps('Pilih <b>RL</b> (tombol &#9650; &#9660; menggeser sebesar <i>langkah</i>, bawaan 5 m) dan <b>tebal irisan</b> (bawaan &plusmn;5 m).',
                  '<b>Mode kadar</b>: <i>Anomali</i> (bawaan) = interpolasi IDW anisotropi searah strike bidang acuan (bawaan 4:1, jangkauan 40 m, '
-                 'tidak diwarnai bila &gt; 25 m dari sampel). <i>Di dalam domain saja</i> = warna hanya di dalam wireframe; lebih jujur untuk vein tipis.',
+                 'tidak diwarnai bila &gt; 25 m dari sampel), grid 1,5 m yang dihaluskan sehingga batas kelas tampil mulus. <i>Di dalam domain saja</i> = warna hanya di dalam wireframe; lebih jujur untuk vein tipis.',
                  '<b>Kelas</b>: 4 batas, bawaan 0,4; 0,5; 1; 3 g/t (5 warna: biru, kuning, oranye, merah, magenta).',
                  '<b>Alterasi</b>: pilih kolom geologi; setiap sel diberi alterasi yang menguasai &ge; 50% sampel di sekitarnya, digambar sebagai <b>arsir</b> di atas warna kadar.',
                  '<b>Wireframe</b>: <i>garis tengah</i> (bawaan) atau <i>dinding</i>; tebal garis bisa diatur; tiap domain bisa dimatikan.',
                  '<b>Kontur</b>: <b>Impor string kontur (.str / .dxf)</b>. Tanpa string, kontur dibuat dari collar sebagai cadangan; '
                  'collar ada di lantai pit saat pemboran, jadi itu bukan topografi asli.',
-                 '<b>Geser label</b> domain dan Hole ID dengan mouse (tarik kotak label). Posisi tersimpan per RL di proyek.',
+                 '<b>Geser</b> dengan mouse: label domain dan Hole ID (tarik kotak label), <b>judul</b>, <b>panah utara &amp; skala</b> (tarik huruf N; skala ikut) dan <b>legenda</b>. '
+                 'Posisi awalnya otomatis di sudut peta yang paling kosong; tombol <i>&#8634; posisi otomatis</i> mengembalikannya. Posisi tersimpan di proyek.',
+                 '<b>Lapisan</b>: kadar, arsir alterasi, wireframe, label domain, lubang, Hole ID, kontur, garis interpretasi, judul, panah utara &amp; skala, legenda '
+                 'dan grid koordinat bisa dinyalakan / dimatikan dengan sakelar di atas peta.',
                  'Tarik <b>garis interpretasi</b> (struktur, lode baru); namanya tampil sejajar garis. Ekspor .str memberi koordinat 3D pada RL peta.'))
 B.append(F('18_peta_ctrl.png', 'Halaman 15: kontrol peta level di atas, peta di bawah.'))
 B.append(F('18_peta.png', 'Peta level pada data latihan (jalur Mulai dari Nol): kelas Au, arsir alterasi, garis tengah wireframe tiap lensa dengan label, '

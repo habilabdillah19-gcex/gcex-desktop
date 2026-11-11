@@ -57,11 +57,15 @@ JS = r"""(async function(){var W=function(ms){return new Promise(function(r){set
   /* ---- 15 peta level ---- */
   var pt={};ogsGo('peta');await W(4000);var gp=document.getElementById('ogsPT'),M=OGS._pt;
   pt.hm=gp.data.some(function(d){return d.type==='heatmap';});pt.wf=gp.data.filter(function(d){return d.line&&d.line.color==='#c00000'&&d.x.length>3;}).length;
-  pt.alt=gp.data.filter(function(d){return d.fillpattern;}).length;pt.legDalam=gp.layout.legend.x<1&&gp.layout.legend.y<0.5;pt.lub=M.LB.length;pt.sel=M.K.reduce(function(s,r){return s+r.filter(function(v){return v!=null;}).length;},0);
+  pt.alt=gp.data.filter(function(d){return d.fillpattern;}).length;pt.legDalam=gp.layout.legend.x>=0&&gp.layout.legend.x<=1&&gp.layout.legend.y>=0&&gp.layout.legend.y<=1;pt.lub=M.LB.length;pt.sel=M.K.reduce(function(s,r){return s+r.filter(function(v){return v!=null;}).length;},0);
   /* kelas sesuai batas */
   var sal=0;M.Z.forEach(function(r,b){r.forEach(function(v,a){if(v==null)return;var k=0;while(k<4&&v>=OGS.p.pt.cls[k])k++;if(k!==M.K[b][a])sal++;});});pt.kelasSalah=sal;
   /* geser label -> tersimpan */
   var K=OGS._ptKey,ia=K.findIndex(function(k){return k&&/:d:/.test(k);});var up={};up['annotations['+ia+'].ax']=-123;Plotly.relayout(gp,up);await W(300);pt.labSimpan=OGS.p.pt.lab[K[ia]]&&OGS.p.pt.lab[K[ia]].ax===-123;
+  /* panah utara digeser -> posisi tersimpan; lapisan kadar dimatikan -> heatmap hilang */
+  var FX=OGS._ptFix,iu=+Object.keys(FX).find(function(i){return FX[i]==='utara';});var u2={};u2['annotations['+iu+'].x']=0.5;u2['annotations['+iu+'].y']=0.5;Plotly.relayout(document.getElementById('ogsPT'),u2);await W(2500);
+  pt.utaraSimpan=OGS.p.pt.pos.utara&&OGS.p.pt.pos.utara.x===0.5&&OGS.p.pt.pos.utara.y===0.5;
+  ogsLySet('kadar',false);await W(2500);pt.kadarMati=!document.getElementById('ogsPT').data.some(function(d){return d.type==='heatmap';});ogsLySet('kadar',true);await W(2500);
   /* mode di dalam domain: sel berwarna <= mode anomali */
   ogsPtSet('mode','dom');await W(4000);pt.selDom=OGS._pt.K.reduce(function(s,r){return s+r.filter(function(v){return v!=null;}).length;},0);ogsPtSet('mode','anom');await W(3000);
   /* kontur string */
@@ -138,7 +142,8 @@ if t2["lap"]["slide"] < 15 or t2["lap"]["section"] != t2["lap"]["slide"] or t2["
 p = R["pt"]
 if not (p["hm"] and p["wf"] and p["alt"] and p["legDalam"] and p["lub"] and p["sel"]): salah.append("peta level: %s" % p)
 if p["kelasSalah"]: salah.append("kelas kadar peta salah: %s sel" % p["kelasSalah"])
-if not p["labSimpan"]: salah.append("posisi label peta tidak tersimpan")
+if not p["labSimpan"] or not p["utaraSimpan"]: salah.append("posisi label / panah utara peta tidak tersimpan: %s" % p)
+if not p["kadarMati"]: salah.append("lapisan kadar tidak bisa dimatikan")
 if not (0 < p["selDom"] < p["sel"]): salah.append("mode di dalam domain: %s vs %s" % (p["selDom"], p["sel"]))
 if p["kontur"] != [2, 22] or not p["konturTampil"]: salah.append("kontur string: %s" % p)
 if abs(float(p["igRL"]) - p["rl"]) > 1e-6 or not p["namaGaris"]: salah.append("garis interpretasi peta: %s" % p)
