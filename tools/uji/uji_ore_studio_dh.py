@@ -54,11 +54,29 @@ JS = r"""(async function(){var W=function(ms){return new Promise(function(r){set
   var L=ogsLuar(),au=ogsEi(ogsAu()),F3=OGS.F,nl=0;for(var i=0;i<F3.n;i++)if(F3.D[i]<0&&F3.V[au][i]>=OGS.p.cutS)nl++;t2.luar={kat:L.map(function(r){return r.L.length;}),total:nl};
   ogsGo('lap');await W(800);var pg=await ogsLapBuat('pdf');await W(1500);t2.lap={slide:pg,section:(OGS._lapHtml.match(/<section/g)||[]).length,img:(OGS._lapHtml.match(/<img /g)||[]).length,html:OGS._lapHtml.length};
   window._LAP=OGS._lapHtml;o.t2=t2;
+  /* ---- 15 peta level ---- */
+  var pt={};ogsGo('peta');await W(4000);var gp=document.getElementById('ogsPT'),M=OGS._pt;
+  pt.hm=gp.data.some(function(d){return d.type==='heatmap';});pt.wf=gp.data.filter(function(d){return d.line&&d.line.color==='#c00000'&&d.x.length>3;}).length;
+  pt.alt=gp.data.filter(function(d){return d.fillpattern;}).length;pt.legDalam=gp.layout.legend.x<1&&gp.layout.legend.y<0.5;pt.lub=M.LB.length;pt.sel=M.K.reduce(function(s,r){return s+r.filter(function(v){return v!=null;}).length;},0);
+  /* kelas sesuai batas */
+  var sal=0;M.Z.forEach(function(r,b){r.forEach(function(v,a){if(v==null)return;var k=0;while(k<4&&v>=OGS.p.pt.cls[k])k++;if(k!==M.K[b][a])sal++;});});pt.kelasSalah=sal;
+  /* geser label -> tersimpan */
+  var K=OGS._ptKey,ia=K.findIndex(function(k){return k&&/:d:/.test(k);});var up={};up['annotations['+ia+'].ax']=-123;Plotly.relayout(gp,up);await W(300);pt.labSimpan=OGS.p.pt.lab[K[ia]]&&OGS.p.pt.lab[K[ia]].ax===-123;
+  /* mode di dalam domain: sel berwarna <= mode anomali */
+  ogsPtSet('mode','dom');await W(4000);pt.selDom=OGS._pt.K.reduce(function(s,r){return s+r.filter(function(v){return v!=null;}).length;},0);ogsPtSet('mode','anom');await W(3000);
+  /* kontur string */
+  var c=OGS.F.fr.c,str='kontur,,\n0, 0.000, 0.000, 0.000,\n';[0,1].forEach(function(j){for(var q=-100;q<=100;q+=20)str+=(j+1)+', '+(c[1]+offY+q).toFixed(3)+', '+(c[0]+offX+q*0.3+j*15).toFixed(3)+', '+(400+j*5).toFixed(3)+',\n';str+='0, 0.000, 0.000, 0.000,\n';});
+  var Kp=ogsKontParse(str,'uji.str');pt.kontur=[Kp.L.length,Kp.n];OGS.p.pt.kstr=Kp;ogsRender();await W(3500);pt.konturTampil=document.getElementById('ogsPT').data.some(function(d){return /uji\.str/.test(d.name||'');});
+  /* garis interpretasi peta -> ekspor di RL */
+  OGS.ig={key:'peta',typ:'line',pts:[[c[0]+offX-40,c[1]+offY+40],[c[0]+offX+40,c[1]+offY-40]]};ogsIgEnd();await W(3500);
+  var dl2=[],sv2=window.gxDl;window.gxDl=function(b,fn){dl2.push(b);};ogsIgExp('peta','csv');window.gxDl=sv2;var tx2=await dl2[0].text();pt.igRL=tx2.split(/\r\n/)[1].split(',')[5];pt.rl=OGS.p.pt.rl;
+  pt.namaGaris=document.getElementById('ogsPT').layout.annotations.some(function(a){return /Garis/.test(a.text)&&a.textangle;});
+  o.pt=pt;
   /* simpan / buka */
   OGS.p.sec[0].nm='Uji';var w=SA.collectWork();OGS.p.sec=[];SA.applyWork(w);await W(300);o.simpan=OGS.p.sec.length&&OGS.p.sec[0].nm==='Uji';
   return o;})()"""
 
-SHOT = r"""(async function(nav){var W=function(ms){return new Promise(function(r){setTimeout(r,ms);});};if(!OGS.F)ogsFlag();ogsGo(nav);await W(nav==='env'?2500:1200);return 1;})"""
+SHOT = r"""(async function(nav){var W=function(ms){return new Promise(function(r){setTimeout(r,ms);});};if(!OGS.F)ogsFlag();ogsGo(nav);await W(nav==='env'||nav==='peta'?4000:1200);return 1;})"""
 
 
 def jalan(html):
@@ -83,7 +101,7 @@ def jalan(html):
             os.makedirs(GBR, exist_ok=True); open(os.path.join(GBR, 'laporan.html'), 'w', encoding='utf-8').write(pg.evaluate("window._LAP||''"))
         if GBR:
             os.makedirs(GBR, exist_ok=True)
-            for nav in ['data', 'geo', 'kadar', 'ls', 'env', 'zon', 'prof', 'sec', 'lama', 'struk', 'par', 'jun', 'tgt', 'luar', 'lap']:
+            for nav in ['data', 'geo', 'kadar', 'ls', 'env', 'zon', 'prof', 'sec', 'lama', 'struk', 'par', 'jun', 'tgt', 'luar', 'peta', 'lap']:
                 pg.evaluate(SHOT + "('%s')" % nav); pg.screenshot(path=os.path.join(GBR, nav + '.png'))
         ctx.close()
     srv.terminate(); r["pageerror"] = err; return r
@@ -117,6 +135,13 @@ if not t2["tgt"]["n"] or max(t2["tgt"]["cek"]) > 0.5: salah.append("target bor: 
 if not (t2["jun"]["n1"] and t2["jun"]["n2"]): salah.append("pertemuan vein: %s" % t2["jun"])
 if sum(t2["luar"]["kat"]) != t2["luar"]["total"]: salah.append("kategori di luar wireframe tidak lengkap: %s" % t2["luar"])
 if t2["lap"]["slide"] < 15 or t2["lap"]["section"] != t2["lap"]["slide"] or t2["lap"]["img"] < 12: salah.append("laporan: %s" % t2["lap"])
+p = R["pt"]
+if not (p["hm"] and p["wf"] and p["alt"] and p["legDalam"] and p["lub"] and p["sel"]): salah.append("peta level: %s" % p)
+if p["kelasSalah"]: salah.append("kelas kadar peta salah: %s sel" % p["kelasSalah"])
+if not p["labSimpan"]: salah.append("posisi label peta tidak tersimpan")
+if not (0 < p["selDom"] < p["sel"]): salah.append("mode di dalam domain: %s vs %s" % (p["selDom"], p["sel"]))
+if p["kontur"] != [2, 22] or not p["konturTampil"]: salah.append("kontur string: %s" % p)
+if abs(float(p["igRL"]) - p["rl"]) > 1e-6 or not p["namaGaris"]: salah.append("garis interpretasi peta: %s" % p)
 if not R["simpan"]: salah.append("parameter Studio tidak tersimpan")
 if R["pageerror"]: salah.append("galat halaman: %s" % R["pageerror"][:3])
 print("\nGAGAL:\n  " + "\n  ".join(salah) if salah else "\nLULUS")

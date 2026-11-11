@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Menyusun 'Tutorial Ore Geometry Studio' (HTML -> PDF A4) untuk GC-Ex Drill Hole Ultimate 0.24.74.
+"""Menyusun 'Tutorial Ore Geometry Studio' (HTML -> PDF A4) untuk GC-Ex Drill Hole Ultimate 0.24.77.
 
 Berbeda dengan build_tutorial_update.py, tutorial ini MEMAKAI tangkapan layar aplikasi: GC-Ex Drill Hole
 (app-dh/index.html hasil build_dh.py) dijalankan di Chromium tanpa layar, data latihan simulasi dimuat
@@ -53,6 +53,8 @@ LANGKAH = [
     ('14_jun', "ogsGo('jun');", '#ogsWin', 4500),
     ('15_tgt', "ogsGo('tgt');await W(800);ogsTgtUsul();", '#ogsWin', 2200),
     ('16_luar', "ogsGo('luar');", '#ogsWin', 2000),
+    ('18_peta_ctrl', "ogsGo('peta');", '#ogsWin', 6000),
+    ('18_peta', "var L=ogsIgL('peta');L.push({id:'pS',nm:'Struktur (contoh interpretasi)',typ:'line',pts:[[OGS.F.fr.c[0]+offX-150,OGS.F.fr.c[1]+offY+40],[OGS.F.fr.c[0]+offX+150,OGS.F.fr.c[1]+offY+190]],col:'#111111',dash:'solid',leg:true,ket:'contoh'});ogsRender();", '#ogsPT', 6000),
     ('17_lap', "ogsGo('lap');await W(600);OGS.p.lap.s.data.h='Lima lensa kuarsa sejajar, satu sistem vein';OGS.p.lap.s.rek={on:true,h:'Tiga tindakan untuk tim',t:'Revisi wireframe di sekitar pertemuan vein\\nUji target T1 dan T2 dari arah SE\\nLogging tekstur vein pada lubang baru'};ogsGo('lap');", '#ogsWin', 1200),
 ]
 ANGKA = r"""(function(){var F=OGS.F,au=ogsEi(ogsAu()),V=ogsIn(F),T=F.I.map(function(c){return c.T;}),J=ogsJun(),L=ogsLuar(),d=F.dom[F.ref];
@@ -137,7 +139,8 @@ B.append(D.tabel(['Halaman', 'Isi', 'Hasil yang bisa diambil'], [
     ['11 Pertemuan vein', 'GT / tebal / kadar zona 2 vein atau lebih vs 1 vein', 'grafik, tabel, uji per lokasi'],
     ['12 Target bor', 'usulan otomatis + klik di long section', 'tabel E/N/RL, collar, azimuth, panjang (CSV)'],
     ['13 Di luar wireframe', 'sampel &ge; cut-off di luar wireframe per kategori', 'tabel, peta'],
-    ['14 Laporan PDF', 'deck bertemplate navy / emas, judul ditulis geologist', 'PDF / HTML']]))
+    ['14 Laporan PDF', 'deck bertemplate navy / emas, judul ditulis geologist', 'PDF / HTML'],
+    ['15 Peta level', 'sayatan horizontal jadi peta: kadar, arsir alterasi, wireframe, lubang, kontur, legenda di dalam peta', 'peta PNG, slide laporan, garis .str di RL']]))
 
 B.append('<div class="page"></div><h2>2. Menyiapkan data: dua jalur proyek</h2>')
 B.append('<p>Studio hanya butuh tiga hal: <b>data bor dengan assay</b>, <b>wireframe domain</b>, dan (opsional) <b>kolom geologi</b>. '
@@ -263,7 +266,29 @@ B.append(F('lap_penampang.png', 'Contoh slide penampang.'))
 B.append('<div class=warn>Laporan memakai parameter dan garis interpretasi saat tombol ditekan. Garis yang masih berstatus <i>usulan</i> '
          'tetap tercetak abu-abu bertanda usulan; terima atau hapus dulu sebelum laporan dibagikan.</div>')
 
-B.append('<div class="page"></div><h2>10. Batasan dan catatan</h2>')
+B.append('<div class="page"></div><h2>10. Peta level (sayatan horizontal)</h2>')
+B.append('<p>Halaman 15 mengubah irisan horizontal di satu RL menjadi <b>peta</b> bergaya peta eksplorasi: warna kelas kadar, arsir alterasi, '
+         'garis wireframe domain, lubang yang menembus RL, kontur, garis interpretasi, judul, panah utara, skala dan legenda <b>di dalam peta</b>.</p>')
+B.append(D.steps('Pilih <b>RL</b> (tombol &#9650; &#9660; menggeser sebesar <i>langkah</i>, bawaan 5 m) dan <b>tebal irisan</b> (bawaan &plusmn;5 m).',
+                 '<b>Mode kadar</b>: <i>Anomali</i> (bawaan) = interpolasi IDW anisotropi searah strike bidang acuan (bawaan 4:1, jangkauan 40 m, '
+                 'tidak diwarnai bila &gt; 25 m dari sampel). <i>Di dalam domain saja</i> = warna hanya di dalam wireframe; lebih jujur untuk vein tipis.',
+                 '<b>Kelas</b>: 4 batas, bawaan 0,4; 0,5; 1; 3 g/t (5 warna: biru, kuning, oranye, merah, magenta).',
+                 '<b>Alterasi</b>: pilih kolom geologi; setiap sel diberi alterasi yang menguasai &ge; 50% sampel di sekitarnya, digambar sebagai <b>arsir</b> di atas warna kadar.',
+                 '<b>Wireframe</b>: <i>garis tengah</i> (bawaan) atau <i>dinding</i>; tebal garis bisa diatur; tiap domain bisa dimatikan.',
+                 '<b>Kontur</b>: <b>Impor string kontur (.str / .dxf)</b>. Tanpa string, kontur dibuat dari collar sebagai cadangan; '
+                 'collar ada di lantai pit saat pemboran, jadi itu bukan topografi asli.',
+                 '<b>Geser label</b> domain dan Hole ID dengan mouse (tarik kotak label). Posisi tersimpan per RL di proyek.',
+                 'Tarik <b>garis interpretasi</b> (struktur, lode baru); namanya tampil sejajar garis. Ekspor .str memberi koordinat 3D pada RL peta.'))
+B.append(F('18_peta_ctrl.png', 'Halaman 15: kontrol peta level di atas, peta di bawah.'))
+B.append(F('18_peta.png', 'Peta level pada data latihan (jalur Mulai dari Nol): kelas Au, arsir alterasi, garis tengah wireframe tiap lensa dengan label, '
+           'kontur cadangan dari collar dan satu contoh garis struktur. Legenda, judul, panah utara dan skala ada di dalam peta.'))
+B.append(D.tabel(['Lubang yang ditampilkan', 'Aturan'], [
+    ['Titik tembus', 'semua lubang yang <b>menembus RL</b> di dalam batas peta (titik abu kecil)'],
+    ['Berakhir di irisan', 'lubang yang tidak sampai RL tetapi ujungnya di dalam &plusmn;tebal irisan (lingkaran kosong)'],
+    ['Lubang eksplorasi', 'dikenali dari pola nama (halaman 9); digambar besar dengan jejak lubang dan Hole ID. '
+                          'Hole ID yang terlalu rapat dilewati supaya tidak bertumpuk; label bisa digeser']]))
+B.append('<p>Untuk laporan, isi <b>RL peta yang dicetak</b> (mis. <code>280; 300; 320</code>): setiap RL menjadi satu slide peta di Laporan PDF.</p>')
+B.append('<div class="page"></div><h2>11. Batasan dan catatan</h2>')
 B.append(D.bullets(
     'Studio adalah referensi: tidak menulis flag Geomodeller dan tidak dipakai Model Estimation.',
     'Envelope RBF dan volume / tonase adalah gambaran geometri, bukan estimasi sumber daya. Bagian berarsir didukung sedikit data.',
@@ -271,7 +296,8 @@ B.append(D.bullets(
     'Tebal intercept lubang yang menembus vein dengan sudut kecil sangat peka terhadap orientasi bidang domain.',
     'Uji statistik (Mann-Whitney, Wilcoxon) memakai pendekatan normal; dengan sedikit sel / sampel, nilai p kurang andal.',
     'Pembersihan data tidak otomatis. Perbaiki satuan, batas deteksi atau batch lab di database bor, lalu hitung ulang.',
-    'Lubang eksplorasi dikenali dari pola nama; sesuaikan regex dengan penamaan proyek Anda.'))
+    'Lubang eksplorasi dikenali dari pola nama; sesuaikan regex dengan penamaan proyek Anda.',
+    'Peta level adalah interpolasi visual dari sampel di irisan; di elevasi dengan sedikit lubang, warnanya hanya mengikuti beberapa titik.'))
 
 import re
 ISI = [re.sub('<[^>]+>', '', q) for x in B for q in re.findall(r'<h2>(.*?)</h2>', x)]

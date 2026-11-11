@@ -4587,3 +4587,11 @@ Halaman import kini punya dua tombol data latihan:
   *Flag dari kolom kode* (kolom *Vein*), lalu *Autorun Wireframe* dan *Autorun Estimasi dari Nol*.
 
 Jalur proyek mengikuti tombol yang ditekan, bukan kartu jalur. Tombol Demo tetap memakai jalur Lanjutkan.
+
+## 186. Drillhole 0.24.77 — Ore Geometry Studio: 15 · Peta level
+
+Ore Geometry Studio › **15 · Peta level** mengubah irisan horizontal di satu RL menjadi peta: kelas kadar (Anomali / Di dalam domain),
+arsir alterasi, garis tengah wireframe domain, lubang yang menembus RL, kontur, garis interpretasi, dengan judul, panah utara, skala dan
+legenda di dalam peta. Kontur: **Impor string kontur (.str / .dxf)**; tanpa string dipakai kontur dari collar (bukan topografi asli).
+Label domain dan Hole ID bisa digeser dengan mouse. Isi *RL peta yang dicetak* (mis. 280; 300; 320) untuk slide peta di Laporan PDF.
+Panduan bergambar: Tutorial Ore Geometry Studio bab 10.
