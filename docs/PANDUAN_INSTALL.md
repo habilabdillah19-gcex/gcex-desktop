@@ -4443,3 +4443,18 @@ masuk hitungan as-mined**, bukan bentuk solid as-mined-nya:
 - **Solid as-mined** tetap ada sebagai pilihan *selubung* (kotak centang, mati secara bawaan). *Sub-blok model as-mined*
   (ukuran penuh) dan *Block model GC (konteks)* tidak berubah.
 - Bila blok belum muncul, klik **Hitung semua flitch** dulu (blok berasal dari hasil running as-mined).
+
+## 175. Drillhole 0.24.66 — Sampel yang dipakai (seperti Surpac) & domain wireframe langsung siap estimasi
+
+Dari simulasi wireframe BMGC Zona 3 (11 Nov 2026). Log Surpac BMGC menjalankan *BM FILL OK* dengan data source
+`constrain = N`: blok dibatasi wireframe, tetapi sampel tidak. GC-Ex selama ini selalu memakai sampel di dalam domain saja
+(hard boundary), sehingga kadarnya lebih tinggi walau wireframenya sama.
+
+**Model Estimation › parameter domain › Sampel yang dipakai**
+- *Hanya sampel di dalam domain* (bawaan): interval yang di-flag domain itu.
+- *Semua sampel database (seperti Surpac)*: semua assay ikut menimbang kadar blok; blok tetap hanya di dalam solid / wireframe.
+  Pakai bila hasil harus sebanding dengan block model Surpac yang dibuat dengan data tidak dibatasi constraint.
+- Mengubah pilihan = domain itu diestimasi ulang pada run berikutnya.
+
+**Kunci domain ke wireframe** (Project Tree › Import Wireframe Geologi › wireframe › *Kunci domain … ke wireframe ini*):
+interval bor di dalam wireframe kini di-flag otomatis bila domain belum punya flag, dan domain langsung siap di Model Estimation.
