@@ -58,6 +58,9 @@
   }
 
   function adaFrac() { return !!fracAttr(); }
+  /* 0.24.68 / 0.24.81: cara GC-Ex juga menimbang blok di batas topografi / desain pit / DTM (web-src/rpsfrac.js) */
+  function adaPermukaan() { var o = window.rpO && rpO(); return !!(o && ((o.surf && o.surf !== 'none') || (o.sx && o.sx.length))); }
+  function adaGcex() { return adaFrac() || adaPermukaan(); }
 
   /* Jumlahkan seluruh grup satu baris cut-off. Dihitung di sini, bukan memakai fungsi penjumlah
      milik Reporting: fungsi itu global di GC-Ex Drill Hole tetapi LOKAL di dalam IIFE Reporting
@@ -95,17 +98,18 @@
     var o = rpO(); if (!o) throw new Error('Block model belum ada.');
     /* rpRun() memindahkan tab ke "Hasil" dan menggambar panelnya; simpan lalu pulihkan supaya
        tab ini tetap yang tampil (sama seperti yang dilakukan rppit.js). */
-    var f0 = o.frac, sh0 = o.show, sec0 = RP.sec;
+    var f0 = o.frac, sf0 = o.sfrac, sh0 = o.show, sec0 = RP.sec;
     o.frac = pakaiNama() ? (pakaiFrac ? fracAttr() : '') : !!pakaiFrac;
+    o.sfrac = !!pakaiFrac;
     o.show = false;
-    try { rpRun(); } finally { o.frac = f0; o.show = sh0; RP.sec = sec0; }
+    try { rpRun(); } finally { o.frac = f0; o.sfrac = sf0; o.show = sh0; RP.sec = sec0; }
     var R = RP.res;
     if (!R) throw new Error('Reporting tidak menghasilkan apa pun. Periksa tab Atribut dan Constraint.');
     /* hanya yang diperlukan yang disalin, supaya hasil lama tidak ikut berubah saat dihitung ulang */
     return {
       rows: R.rows.map(function (r) { var T = total(r.G); return { c: r.c, n: T.n, v: T.v, t: T.t, s: T.s }; }),
       cuts: R.cuts.slice(), atts: R.atts.slice(), unit: Object.assign({}, R.unit),
-      nb: R.nb, nPart: R.nPart || 0, lab: R.lab, sg: R.sg, gr: R.gr, frac: R.frac || ''
+      nb: R.nb, nPart: R.nPart || 0, nSf: R.nSf || 0, lab: R.lab, sg: R.sg, gr: R.gr, frac: R.frac || ''
     };
   }
 
@@ -115,9 +119,9 @@
     setTimeout(function () {
       try {
         var surpac = sekali(false);           /* blok utuh menurut titik pusat */
-        var presisi = adaFrac() ? sekali(true) : null;   /* ditimbang proporsi sb_frac */
+        var presisi = adaGcex() ? sekali(true) : null;   /* ditimbang proporsi sb_frac dan / atau proporsi terhadap permukaan */
         RPM.res = {
-          surpac: surpac, presisi: presisi, adaFrac: adaFrac(),
+          surpac: surpac, presisi: presisi, adaFrac: adaFrac(), adaPerm: adaPermukaan(), sfN: (rpO() && +rpO().sfN) || 4,
           attr: fracAttr(), rinci: rincian(),
           date: new Date().toLocaleString('id-ID'),
           bm: (window.BX && BX.m && BX.m.name) || ''
@@ -132,6 +136,10 @@
   /* ---------- tabel perbandingan ---------- */
   function kadar(q) { return q && q.w ? q.tw / q.w : NaN; }
 
+  function caraGcex(X) {
+    return [X.adaFrac ? 'timbang ' + (X.attr || 'sb_frac') : '', X.adaPerm ? 'proporsi permukaan ' + X.sfN + '×' + X.sfN : ''].filter(Boolean).join(' + ');
+  }
+
   function tabel() {
     var X = RPM.res; if (!X) return '';
     var S = X.surpac, P = X.presisi, at = S.atts, u = S.unit;
@@ -144,9 +152,9 @@
         return '<tr><td>' + (tebal ? '&ge; ' + rs.c : '') + '</td><td>' + nama + '</td><td>' + N(r.n) + '</td><td>' + N(r.v) + '</td><td>' + (tebal ? '<b>' + N(r.t) + '</b>' : N(r.t)) + '</td>' +
           at.map(function (a) { return '<td>' + N(kadar(r.s[a]), 3) + '</td>'; }).join('') + '</tr>';
       };
-      h += baris('Seperti Surpac <small>(blok utuh)</small>', rs, true);
+      h += baris('Cara Surpac <small>(blok utuh, bawaan)</small>', rs, true);
       if (rp) {
-          h += baris('Presisi GC-Ex <small>(timbang ' + E(X.attr || 'sb_frac') + ')</small>', rp, false);
+          h += baris('Cara GC-Ex <small>(' + E(caraGcex(X)) + ')</small>', rp, false);
         var dv = rp.v - rs.v, dt = rp.t - rs.t;
         h += '<tr class=tot><td></td><td>Selisih</td><td>' + (rp.n - rs.n) + '</td><td>' + N(dv) +
           ' <small>(' + (rs.v ? (dv / rs.v * 100).toFixed(1) : '0') + '%)</small></td><td><b>' + N(dt) +
@@ -166,10 +174,9 @@
     var L = ['# Reporting BM - perbandingan metode tonase (Surpac vs presisi GC-Ex)',
              '# Block model: ' + X.bm, '# Constraint: ' + [S.lab, S.sg].filter(Boolean).join(' · '),
              '# Tanggal: ' + X.date,
-             '# Seperti Surpac = blok dihitung utuh menurut titik pusatnya',
-             '# Presisi GC-Ex  = blok perbatasan ditimbang proporsi volume di dalam solid (sb_frac)'];
-    if (!X.adaFrac) L.push('# CATATAN: block model ini belum punya atribut sb_frac, jadi kedua metode identik. ' +
-                           'Hitung proporsi volume di GC-Ex Drill Hole (menu Block Model) lebih dulu.');
+             '# Cara Surpac (bawaan, audit) = blok dihitung utuh menurut titik pusatnya',
+             '# Cara GC-Ex = blok perbatasan ditimbang proporsi volume: ' + caraGcex(X)];
+    if (!X.presisi) L.push('# CATATAN: tidak ada sb_frac maupun batas permukaan, jadi kedua metode identik.');
     L.push(['CUTOFF', 'METODE', 'BLOK', 'VOLUME_M3', 'TONASE_T'].concat(
       at.map(function (a) { return a + '_' + String(u[a] || 'g/t').replace('/', '_'); })).join(','));
     var tulis = function (c, nama, r) {
@@ -177,11 +184,11 @@
         at.map(function (a) { var g = kadar(r.s[a]); return isFinite(g) ? g.toFixed(4) : ''; })).join(','));
     };
     S.rows.forEach(function (rs, i) {
-      tulis(rs.c, 'Seperti Surpac', rs);
+      tulis(rs.c, 'Cara Surpac', rs);
       if (P) {
-        tulis(rs.c, 'Presisi GC-Ex', P.rows[i]);
+        tulis(rs.c, 'Cara GC-Ex', P.rows[i]);
         var rp = P.rows[i];
-        L.push([rs.c, '"Selisih (presisi - Surpac)"', rp.n - rs.n, (rp.v - rs.v).toFixed(1),
+        L.push([rs.c, '"Selisih (GC-Ex - Surpac)"', rp.n - rs.n, (rp.v - rs.v).toFixed(1),
                 (rp.t - rs.t).toFixed(1)].concat(at.map(function () { return ''; })).join(','));
       }
     });
@@ -204,12 +211,14 @@
       '<button class=on>Metode tonase</button></div>';
     h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon, permukaan dan SG</b> yang sudah diatur di tab <b>Atribut</b> dan <b>Constraint</b>. ' +
       'Yang dibandingkan di sini hanya <b>aturan blok perbatasan</b>.</div>';
-    h += '<div class="box gmstate"><b>Seperti Surpac</b> &mdash; blok dihitung <b>utuh</b> berdasarkan titik pusatnya (Surpac <i>Keep partial = False</i>).<br>' +
-      '<b>Presisi GC-Ex</b> &mdash; blok perbatasan ditimbang <b>proporsi volumenya</b> yang berada di dalam solid (atribut <code>' +
-      E(fracAttr() || 'sb_frac') + '</code>).</div>';
-    if (!adaFrac()) {
+    h += '<div class="box gmstate"><b>Cara Surpac</b> (bawaan, untuk audit) &mdash; blok dihitung <b>utuh</b> berdasarkan titik pusatnya (Surpac <i>Keep partial = False</i>).<br>' +
+      '<b>Cara GC-Ex</b> &mdash; blok perbatasan ditimbang <b>proporsi volumenya</b>: ' +
+      [adaFrac() ? 'di dalam solid (atribut <code>' + E(fracAttr()) + '</code>)' : '',
+       adaPermukaan() ? 'terhadap topografi / desain pit / batas DTM (kolom ' + ((rpO() && +rpO().sfN) || 4) + '&times;' + ((rpO() && +rpO().sfN) || 4) + ', atur di tab <b>Constraint</b>)' : ''].filter(Boolean).join(' dan ') +
+      (adaGcex() ? '' : 'tidak ada yang bisa ditimbang') + '.</div>';
+    if (!adaGcex()) {
       h += '<div class="box gmstate"><span class=warn>Block model ini belum punya atribut <code>sb_frac</code>.</span> ' +
-        'Tanpa atribut itu kedua metode menghasilkan angka yang <b>sama persis</b>, jadi tidak ada yang bisa dibandingkan. ' +
+        'Tidak ada pula batas permukaan (topografi / pit / DTM) di tab <b>Constraint</b>, jadi kedua metode menghasilkan angka yang <b>sama persis</b>. ' +
         'Hitung proporsi volume lebih dulu di <b>GC-Ex Drill Hole &rsaquo; Block Model &rsaquo; Hitung proporsi volume ore per blok (sb_frac)</b>, ' +
         'simpan block model-nya, lalu kembali ke sini.</div>';
     }
@@ -221,15 +230,17 @@
       var S = X.surpac;
       h += '<h4 style="margin-top:10px">Hasil</h4><div class="box gmstate rpsum"><small>' +
         E([S.lab, S.sg].filter(Boolean).join(' · ')) + '<br>' + E(X.date) + '</small></div>';
+      if (X.presisi && X.adaPerm) h += '<div class="box gmstate"><b>Blok di batas permukaan</b>: ' + N(X.presisi.nSf) + ' blok dihitung sebagian pada cara GC-Ex. ' +
+        'Blok yang titik pusatnya di luar batas tetapi sebagian volumenya di dalam ikut terhitung sebagian, sehingga jumlah blok bisa bertambah.</div>';
       if (X.presisi && X.rinci) {
         var R = X.rinci;
         h += '<div class="box gmstate"><b>Dari mana selisihnya</b><br>Atribut <code>' + E(R.attr) + '</code> di ' +
           N(R.n) + ' blok: <b>' + N(R.penuh) + '</b> seluruhnya di dalam solid (proporsi 1), <b>' + N(R.tepi) +
           '</b> di perbatasan (0&ndash;1), <b>' + N(R.nol) + '</b> seluruhnya di luar (proporsi 0)' +
           (R.lain ? ', ' + N(R.lain) + ' tanpa nilai' : '') + '.' +
-          '<br><span class=warn>Blok berproporsi 0 tidak dilaporkan sama sekali</span> pada metode presisi. ' +
-          'Jadi bila <code>' + E(R.attr) + '</code> hanya mencakup solid vein, baris <b>Presisi GC-Ex</b> ' +
-          'melaporkan material <b>di dalam solid saja</b>, sedangkan baris <b>Seperti Surpac</b> melaporkan ' +
+          '<br><span class=warn>Blok berproporsi 0 tidak dilaporkan sama sekali</span> pada cara GC-Ex. ' +
+          'Jadi bila <code>' + E(R.attr) + '</code> hanya mencakup solid vein, baris <b>Cara GC-Ex</b> ' +
+          'melaporkan material <b>di dalam solid saja</b>, sedangkan baris <b>Cara Surpac</b> melaporkan ' +
           'semua blok yang lolos constraint &mdash; termasuk waste di luar solid. Selisih sebesar itu wajar ' +
           'dan bukan tanda salah hitung; bandingkan keduanya hanya sesudah constraint domainnya disamakan ' +
           '(tab <b>Constraint</b>).</div>';
@@ -237,8 +248,8 @@
       h += tabel();
       h += '<div class="g2 f" style="margin-top:8px"><button class=btn-pri onclick="RPM.csv()">&#8681; Export CSV</button>' +
         '<button onclick="RP.sec=\'2\';rpPanel()">Laporan rinci terakhir</button></div>';
-      h += '<div class=hint style="margin-top:6px">Untuk rekonsiliasi dengan report Surpac: pakai baris <b>Seperti Surpac</b>. ' +
-        'Untuk dig plan dan perhitungan dilusi / ore loss: pakai <b>Presisi GC-Ex</b>, karena di situlah blok perbatasan dihitung seadanya. ' +
+      h += '<div class=hint style="margin-top:6px">Untuk audit dan rekonsiliasi dengan report Surpac: pakai baris <b>Cara Surpac</b>. ' +
+        'Untuk dig plan dan perhitungan dilusi / ore loss: pakai <b>Cara GC-Ex</b>, karena di situlah blok perbatasan dihitung seadanya. ' +
         'Perbandingan yang paling berarti: batasi domain ke solid yang sama di tab <b>Constraint</b>, lalu lihat selisihnya &mdash; ' +
         'yang tersisa barulah pengaruh aturan blok perbatasan.</div>';
     }
@@ -255,7 +266,7 @@
       if (document.getElementById('rpmBody')) return;    /* panel milik tab ini sendiri */
       var b2 = document.createElement('button');
       b2.className = 'rpmtab'; b2.innerHTML = 'Metode tonase';
-      b2.title = 'Bandingkan tonase cara Surpac (blok utuh) dengan cara presisi GC-Ex (timbang sb_frac)';
+      b2.title = 'Bandingkan tonase cara Surpac (blok utuh, bawaan) dengan cara GC-Ex (proporsi volume blok perbatasan)';
       b2.onclick = function () { RPM.open(); };
       bar.appendChild(b2);
     }

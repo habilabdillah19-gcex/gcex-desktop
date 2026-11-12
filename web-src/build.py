@@ -239,7 +239,7 @@ rep1("var pg={W:W,H:H,ops:ops,scale:0},b=lyPdf([pg]);", "var pg={W:W,H:H,ops:ops
 # ---------- 7z. Cek sintaks semua modul JS (bila Node.js tersedia) supaya galat ketahuan saat build ----------
 import shutil as _sh, subprocess as _sp
 # modul tambahan 0.14.0+ (dipasang di akhir lapisan UI, berurutan)
-EXTRA = ['delaunator.min.js', 'tinz.js', 'tinhr.js', 'glskip.js', 'kinerja.js', 'theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js', 'ortho2d_bm.js', 'period_bm.js', 'gcops_bm.js', 'rppit.js', 'rpmetode.js', 'digqt.js', 'amroof.js', 'amnyata.js', 'amkunci.js', 'demox.js', 'svein_bm.js', 'popout.js']
+EXTRA = ['delaunator.min.js', 'tinz.js', 'tinhr.js', 'glskip.js', 'kinerja.js', 'theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js', 'ortho2d_bm.js', 'period_bm.js', 'gcops_bm.js', 'rppit.js', 'rpsfrac.js', 'rpmetode.js', 'digqt.js', 'amroof.js', 'amnyata.js', 'amkunci.js', 'demox.js', 'svein_bm.js', 'popout.js']
 if _sh.which('node'):
     for _m in EXTRA + ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
         _r = _sp.run(['node', '--check', W + _m], capture_output=True, text=True)

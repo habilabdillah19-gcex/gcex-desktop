@@ -423,6 +423,20 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
      'salinan <code>&lt;unsur&gt;_est</code> disimpan; korelasi dihitung pada blok yang diisi semua set (<code>rS</code>), cakupan = blok terisi / maks. Sesudahnya: <code>d.est</code> & <code>ME.sel</code> dipulihkan, '
      '<code>ME.store.runs</code> dipotong ke panjang awal, rekomendasi = rS tertinggi (seri &rarr; run terbaru), jejak jalur.']]))
 
+B.append('<h3>8.6 Reporting BM: cara Surpac sebagai bawaan, proporsi volume terhadap permukaan (BM 0.24.68 / DH 0.24.81)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Aturan', 'Semua pilihan yang punya padanan Surpac memakai cara Surpac sebagai bawaan (angka diaudit terhadap report Surpac); cara GC-Ex tetap tersedia sebagai pilihan. '
+     'Bawaan <code>rpDef</code>: <code>sfrac:false</code>, <code>sfN:4</code>; Block Model <code>frac:false</code> (dulu <code>true</code>).'],
+    ['Jangkauan permukaan', '<code>rpSurf</code> = TIN saja (<code>TINZ.of</code>, sama dengan tampilan); di luar segitiga = <code>null</code>. <code>rpRun</code> memaksa '
+     '<code>tzT = pzT = true</code>: blok di luar jangkauan topografi / pit / DTM masuk <code>nOut.ext</code>, apa pun sumbernya (termasuk <code>RP.ovr</code> dari '
+     '<code>rppit.js</code>). Dulu IDW mengisi &plusmn;30 m di luar selubung TIN dan blok yang lebih jauh lolos tanpa diuji. Padanan Python <code>gcex_backend/laporan.py</code> ikut.'],
+    ['Proporsi permukaan', '<code>web-src/rpsfrac.js</code> (<code>RPSF.make</code>): telapak blok dibagi n&times;n kolom; tiap kolom: selang Z = [maks(pit, DTM <i>di atas</i>), '
+     'min(topografi, DTM <i>di bawah</i>)], kolom di luar jangkauan = 0; proporsi = rata-rata panjang irisan selang dengan [dasar, atap] blok / tinggi blok. Cache per kolom (0,05 m). '
+     'Dikalikan dengan <code>sb_frac</code> bila keduanya aktif. Bila <code>o.sfrac</code>, uji titik pusat permukaan dilewati (blok yang pusatnya di luar tetap bisa terhitung sebagian).'],
+    ['Metode tonase', '<code>rpmetode.js</code>: cara GC-Ex = <code>frac</code> + <code>sfrac</code> sekaligus; tab aktif bila ada <code>sb_frac</code> atau batas permukaan.'],
+    ['Uji', '<code>tools/uji/uji_rp_permukaan.py</code>: bidang miring sebagian, kedua aplikasi; cara Surpac = 750 blok (build lama 1.460), cara GC-Ex = 744.000 m&sup3; analitis.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

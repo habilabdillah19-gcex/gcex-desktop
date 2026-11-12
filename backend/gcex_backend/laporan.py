@@ -355,14 +355,13 @@ def run(payload: Dict[str, Any]) -> Dict[str, Any]:
         alasan = np.zeros(k.size, dtype=np.int64)        # 0 = lolos, 1 = ext, 2 = surf
         if zat is not None:
             kosong = np.isnan(zat)
-            if atas.get("tegas"):
-                alasan = np.where(kosong, 1, alasan)
-            # kalau nilainya kosong dan batasnya tidak tegas, blok diteruskan (sama dengan JS)
+            # 0.24.68 / 0.24.81: di luar jangkauan permukaan atas SELALU dibuang, seperti Surpac dan JS
+            # (dulu hanya bila 'tegas'; blok di luar jangkauan topografi ikut terlapor sebagai sisa).
+            alasan = np.where(kosong, 1, alasan)
             alasan = np.where((alasan == 0) & ~kosong & (zz > zat), 2, alasan)
         if zbw is not None:
             kosong = np.isnan(zbw)
-            tegas = bool(bawah.get("tegas"))
-            alasan = np.where((alasan == 0) & kosong, 1 if tegas else 2, alasan)
+            alasan = np.where((alasan == 0) & kosong, 1, alasan)
             alasan = np.where((alasan == 0) & ~kosong & (zz < zbw), 2, alasan)
         nOut["ext"] += int(np.count_nonzero(alasan == 1))
         nOut["surf"] += int(np.count_nonzero(alasan == 2))

@@ -4519,7 +4519,8 @@ function bsCsv(){var R=BX.bsR;if(!R||!R.rows)return;var A=R.attrs,o=[['RL_atas',
    - Batas DTM       : wireframe / DTM Data Referensi, di atas atau di bawahnya (mis. batas oksidasi, mined-out).
    - Elevasi & area  : RL min / maks; poligon dari string Surpac Data Referensi, string digitasi / dig block, boundary as-mined.
    - Filter atribut  : mis. kelas >= 1.
-   Blok dihitung utuh berdasarkan titik pusat (seperti Surpac). SG mengikuti pengaturan Block Model > Filter & SG
+   Blok dihitung utuh berdasarkan titik pusat (seperti Surpac) -- BAWAAN, karena angka diaudit terhadap Surpac. Cara GC-Ex
+   (pilihan, 0.24.68): proporsi volume blok terhadap permukaan (web-src/rpsfrac.js) dan proporsi sub-blok sb_frac. SG mengikuti pengaturan Block Model > Filter & SG
    (SG tetap atau kolom SG, termasuk SG pengganti). Hasil: tabel per cut-off, ringkasan per RL / bench / kategori,
    kurva grade-tonase, CSV, dan opsi tampilkan hanya blok terlapor. */
 (function(){if(window.RP||typeof BX==='undefined')return;
@@ -4536,11 +4537,13 @@ function rpDef(){var m=BX.m,U=BX.ui||{},nums=Object.keys(m.num),gs=nums.filter(r
   var at=[g];gs.forEach(function(n){if(at.indexOf(n)<0&&at.length<4)at.push(n);});var u={};at.forEach(function(a){u[a]=rpUnitDef(a);});
   var F=rpFl(),bh=F?Math.round((F[0]-F[1])*1000)/1000:5,ref=F?F[0]:0;
   return{gr:g,atts:at,unit:u,dom:'all',cat:{},surf:(window.OV&&OV.topoF&&OV.topoF.x&&OV.topoF.x.length)?'topo':'none',z0:'',z1:'',poly:'',polyOut:false,fA:'',fOp:'ge',fV:'',
-    cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:bh,bref:ref,catAttr:'',show:false,sx:[],frac:true};}
+    cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:bh,bref:ref,catAttr:'',show:false,sx:[],frac:false,sfrac:false,sfN:4};}
 function rpO(){if(!BX.m)return null;if(!RP.o||RP.o._m!==BX.m.name){RP.o=rpDef();RP.o._m=BX.m.name;}return RP.o;}
 /* permukaan dari titik / kontur (koordinat lokal) -> z IDW, dicache per kolom blok */
 /* 0.24.60: TIN (web-src/tinz.js, sama dengan tampilan) lebih dulu; IDW di bawah = cadangan di luar segitiga */
-function rpSurf(o){var _t=(window.TINZ&&TINZ.of)?TINZ.of(o):null,_i=rpSurfIdw(o);if(!_t)return _i;return function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:_i(x,y);};}
+/* 0.24.68: di luar segitiga TIN = DI LUAR permukaan (null), seperti DTM Surpac. Dulu IDW mengisi 30 m di luar selubung dan
+   blok yang lebih jauh lagi ikut terlapor sebagai 'di bawah topografi'. IDW hanya dipakai bila TIN tidak bisa dibuat. */
+function rpSurf(o){var _t=(window.TINZ&&TINZ.of)?TINZ.of(o):null;if(!_t)return rpSurfIdw(o);var f=function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:null;};f._tin=1;return f;}
 function rpSurfIdw(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null||o.x[i]===undefined)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
   return function(x,y){var cx=Math.floor(x/B),cy=Math.floor(y/B);for(var R=1;R<=3;R++){var sw=0,sz=0,np=0,rm=R*B*R*B;for(var a=cx-R;a<=cx+R;a++)for(var b=cy-R;b<=cy+R;b++){var L=cells[(a+50000)*100000+b+50000];if(!L)continue;
       for(var k2=0;k2<L.length;k2++){var q=L[k2],dx=o.x[q]-x,dy=o.y[q]-y,d2=dx*dx+dy*dy;if(d2>rm)continue;if(d2<1e-4)return o.z[q];var w=1/d2;sw+=w;sz+=w*o.z[q];np++;}}if(np>=3)return sz/sw;}return null;};}
@@ -4597,29 +4600,36 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     /* RP.ovr: permukaan atas / bawah ditentukan dari luar (rppit.js -- laporan per desain pit dan
        progres topo-ke-topo). Mesin hitungnya tetap yang ini, jadi angkanya konsisten. */
     if(RP.ovr){tz=RP.ovr.tz||null;pz=RP.ovr.pz||null;tzT=!!RP.ovr.tzT;pzT=!!RP.ovr.pzT;}
+    /* 0.24.68: blok di luar jangkauan permukaan TIDAK dilaporkan (seperti Surpac), apa pun sumber permukaannya */
+    tzT=true;pzT=true;
     var SX=(o.sx||[]).map(function(q){var w=MD.models[+String(q.k).slice(3)],fn=w&&rpTinFn(w);if(!fn)throw new Error('Batas DTM tambahan tidak ditemukan. Hapus barisnya atau import ulang.');return{fn:fn,n:w.name,side:q.side,c:{}};});
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),U=BX.ui||{},SGA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null;
     if(o.poly&&!PL)throw new Error('Poligon area tidak ditemukan.');
+    /* cara GC-Ex: proporsi volume blok terhadap permukaan (bawaan mati = cara Surpac, titik pusat blok) */
+    var SF=(o.sfrac===true&&(tz||pz||SX.length)&&window.RPSF)?RPSF.make({tz:tz,pz:pz,sx:SX,ox:offx,oy:offy,n:+o.sfN||4}):null,nSf=0;
     var grp=o.grp,bh=Math.max(0.1,+o.bh||5),br=+o.bref||0;
     var GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null;
     /* sb_frac = proporsi volume blok yang benar-benar di dalam solid (sub-blocking GC-Ex Drill Hole).
        TANPA pembobotan ini, blok perbatasan dihitung 100% sehingga tonase di Block Model berbeda dari
        laporan Drill Hole untuk block model yang sama -- justru dilusi batas yang sudah diukur jadi hilang. */
-    var FRA=(o.frac!==false&&m.num['sb_frac'])?m.num['sb_frac']:null,FR=[],nPart=0;
+    var FRA=(o.frac===true&&m.num['sb_frac'])?m.num['sb_frac']:null,FR=[],nPart=0;
     var n=m.n,mask=new Uint8Array(n),T=[],I=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0,sg:0},pOut=!!o.polyOut;
     for(var i=0;i<n;i++){var x=m.x[i]-offx,y=m.y[i]-offy,z=m.z[i];
       if(z0===z0&&z<z0||z1===z1&&z>z1){nOut.z++;continue;}
       if(PL&&PL.f(x,y)===pOut){nOut.poly++;continue;}
       if(FA){var fa=FA[i];if(!isFinite(fa)||(o.fOp==='ge'?fa<fv:o.fOp==='le'?fa>fv:o.fOp==='eq'?Math.abs(fa-fv)>1e-9:false)){nOut.f++;continue;}}
+      var fs=1;if(SF){var sfr=SF(x,y,z,m.sx[i],m.sy[i],m.sz[i]);if(!(sfr.f>0)){if(sfr.ext)nOut.ext++;else nOut.surf++;continue;}fs=sfr.f;}else{
       var ck=Math.round(x*2)+'|'+Math.round(y*2);
       if(tz){var c=cache[ck];if(!c)c=cache[ck]=[tz(x,y),pz?pz(x,y):null];
         if(c[0]===null){if(tzT){nOut.ext++;continue;}}else if(z>c[0]){nOut.surf++;continue;}
         if(pz){if(c[1]===null){if(pzT){nOut.ext++;continue;}nOut.surf++;continue;}if(z<c[1]){nOut.surf++;continue;}}}
       if(SX.length){var bad=0;for(var s2=0;s2<SX.length;s2++){var S2=SX[s2],r2=S2.c[ck];if(r2===undefined)r2=S2.c[ck]=S2.fn(m.x[i],m.y[i]);if(r2===null){bad=1;break;}if(S2.side==='above'?z<=r2[0]:z>=r2[1]){bad=2;break;}}if(bad){if(bad===1)nOut.ext++;else nOut.surf++;continue;}}
+      }
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
       var sg=window.bxSGv?bxSGv(SGA?SGA[i]:NaN):(+U.sg||2.6);if(!(sg>0)){nOut.sg++;continue;}
       var fr=1;if(FRA){var fv2=FRA[i];fr=(isFinite(fv2)&&fv2>=0&&fv2<=1)?fv2:1;if(fr<=0){nOut.frac=(nOut.frac||0)+1;continue;}if(fr<0.999)nPart++;}
+      if(fs<1){fr*=fs;nSf++;}
       mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg*fr);I.push(i);FR.push(fr);
       Kg.push(grp==='bench'?Math.floor((z-br)/bh+1e-9):grp==='cat'?(GC&&GC.codes[i]!==65535?GC.dict[GC.codes[i]]:'(kosong)'):'Total');nb++;}
     var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2]*(FR.length?FR[j]:1);
@@ -4629,7 +4639,7 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     var big=m.mdl&&m.mdl.via==='backend';
     RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,br:br,surf:o.surf,
       sxD:SX.map(function(q){return(q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,
-      frac:FRA?('proporsi volume sub-blok (sb_frac): '+rpN(nPart)+' blok sebagian'):(m.num['sb_frac']?'sb_frac ADA tetapi pembobotan dimatikan':''),nPart:nPart,
+      frac:[FRA?('proporsi volume sub-blok (sb_frac): '+rpN(nPart)+' blok sebagian'):(m.num['sb_frac']?'sb_frac tidak dipakai (cara Surpac)':''),SF?('proporsi volume terhadap permukaan, kolom '+(+o.sfN||4)+'×'+(+o.sfN||4)+': '+rpN(nSf)+' blok sebagian'):''].filter(Boolean).join(' · '),nPart:nPart,nSf:nSf,sfrac:!!SF,
       sg:SGA?'SG kolom '+U.sgCol:'SG '+(+U.sg||2.6),date:new Date().toLocaleString('id-ID'),bm:m.name,big:big,nTot:n};
     RP.sec='2';RP.ci=Math.min(RP.ci||0,rows.length-1);if(o.show){BX.rpOnly=true;BX.sc={};updatePlot();}rpPanel();}
   catch(e){console.error(e);if(msg)msg.innerHTML='<span class=warn>'+rpE(e.message)+'</span>';else alert(e.message);}}
@@ -4675,7 +4685,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     h+='<div class="g2 f"><div><label>Atribut untuk cut-off</label>'+sel('',nums.map(function(a){return[a,a];}),o.gr,"rpSet('gr',this.value)")+'</div><div><label>Cut-off (pisah koma)</label><input type=text value="'+rpE(o.cuts)+'" onchange="RP.o.cuts=this.value"></div></div>';
     var U=BX.ui||{};h+='<div class=hint>Densitas: <b>'+(U.sgCol?'kolom '+rpE(U.sgCol):'SG tetap '+rpE(U.sg||2.6))+'</b> — ikut pengaturan <a href="#" onclick="PT&&PT.select(\'bm.flt\');return false">Block Model › Filter &amp; SG</a>.</div>';
     h+='<h4>Ringkasan per RL / pengelompokan</h4><div class="g2 f"><div>'+sel('',[['none','Tanpa grup'],['bench','Per RL (bench / flitch)']].concat(Object.keys(m.cat).length?[['cat','Per atribut kategori']]:[]),o.grp,"rpSet('grp',this.value)")+'</div><div>'+(o.grp==='cat'?sel('',Object.keys(m.cat).map(function(k){return[k,k];}),o.catAttr||Object.keys(m.cat)[0],"RP.o.catAttr=this.value"):'')+'</div></div>';
-    if(m.num['sb_frac'])h+='<label class=sw><input type=checkbox '+(o.frac!==false?'checked':'')+' onchange="RP.o.frac=this.checked"> Timbang volume &amp; tonase dengan proporsi sub-blok (<code>sb_frac</code>)</label><div class=hint style="margin-top:-4px">Block model ini pernah dipecah di batas solid oleh GC-Ex Drill Hole. Dengan pembobotan ini, blok perbatasan dihitung <b>sebagian</b> &mdash; angkanya sama dengan laporan di Drill Hole. Dimatikan = blok perbatasan dihitung utuh (cara Surpac).</div>';
+    if(m.num['sb_frac'])h+='<label class=sw><input type=checkbox '+(o.frac===true?'checked':'')+' onchange="RP.o.frac=this.checked"> Cara GC-Ex: timbang volume &amp; tonase dengan proporsi sub-blok (<code>sb_frac</code>)</label><div class=hint style="margin-top:-4px">Block model ini pernah dipecah di batas solid oleh GC-Ex Drill Hole. Dengan pembobotan ini, blok perbatasan dihitung <b>sebagian</b> &mdash; angkanya sama dengan laporan di Drill Hole. Dimatikan (bawaan) = blok perbatasan dihitung utuh menurut titik pusatnya, cara Surpac &mdash; angka untuk audit.</div>';
     if(o.grp==='bench')h+='<div class="g3 f"><div><label>Tinggi (m)</label><input type=number step=any value="'+rpE(o.bh)+'" onchange="RP.o.bh=+this.value"></div><div><label>RL acuan</label><input type=number step=any value="'+rpE(o.bref)+'" onchange="RP.o.bref=+this.value" title="Batas bench / flitch dihitung dari RL ini, mis. RL atas flitch"></div><div style="align-self:end"><button onclick="rpFlNow()" title="Tinggi & RL acuan = flitch aktif">= flitch aktif</button></div></div><div class=hint>Batas RL = RL acuan ± kelipatan tinggi. Blok masuk RL menurut titik pusatnya.</div>';
     h+='<button class=btn-pri style="width:100%;margin-top:6px" onclick="RP.sec=\'c\';rpPanel()">Lanjut: constraint &rarr;</button>';}
   else if(RP.sec==='c'){
@@ -4684,10 +4694,11 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     if(o.dom.indexOf('cat:')===0){var C=m.cat[o.dom.slice(4)];if(C)h+='<div class=rpcat>'+C.dict.map(function(s,k){return '<label><input type=checkbox '+(o.cat[s]!==false?'checked':'')+' onchange="RP.o.cat[\''+rpE(s)+'\']=this.checked"> '+rpE(s)+(C.cnt?' <small>'+rpN(C.cnt[k])+'</small>':'')+'</label>';}).join('')+'</div>';}
     var hasT=window.OV&&OV.topoF&&OV.topoF.x&&OV.topoF.x.length,hasP=window.OV&&OV.pitF&&OV.pitF.x&&OV.pitF.x.length;
     h+='<h4>Permukaan (sisa / remaining)</h4>'+sel('',[['none','Tanpa batas permukaan'],['topo','Di bawah topografi (sisa / remaining)'],['pit','Di dalam desain pit (antara pit & topografi)']],o.surf,"rpSet('surf',this.value)")+
-      '<div class=hint>Topografi: '+(hasT?'<b>ada</b>':'<span class=warn>belum ada</span>')+' · Desain pit: '+(hasP?'<b>ada</b>':'<i>belum ada</i>')+'. Ganti lewat <b>Data Spasial</b>. Blok dihitung bila titik pusatnya di bawah topografi (dan di atas pit).</div>';
+      '<div class=hint>Topografi: '+(hasT?'<b>ada</b>':'<span class=warn>belum ada</span>')+' · Desain pit: '+(hasP?'<b>ada</b>':'<i>belum ada</i>')+'. Ganti lewat <b>Data Spasial</b>. Blok di luar jangkauan topografi / pit tidak dilaporkan.</div>';
     o.sx=o.sx||[];var SL=rpSurfList();
     h+='<h4>Batas DTM tambahan</h4>'+(o.sx.length?o.sx.map(function(q,i){return '<div class="g3 f"><div style="grid-column:span 2">'+sel('',SL.length?SL:[['','(tidak ada DTM)']],q.k,"rpSx("+i+",'k',this.value)")+'</div><div style="display:flex;gap:4px">'+sel('',[['below','di bawah'],['above','di atas']],q.side,"rpSx("+i+",'side',this.value)")+'<button class=x onclick="rpSx('+i+',\'del\')" title="Hapus">&times;</button></div></div>';}).join(''):'<div class=hint>Mis. di bawah batas oksidasi, di atas mined-out / survey akhir bulan (DTM di Data Referensi).</div>')+
       '<div class="g2 f">'+(SL.length?'<button onclick="rpSx(0,\'add\')">+ Tambah batas DTM</button>':'<span></span>')+'<span class=hint style="align-self:center">DTM diimport di Data Referensi &rsaquo; Permukaan DTM, wireframe di Import Wireframe Geologi.</span></div>';
+    if(window.RPSF&&RPSF.ui&&(o.surf!=='none'||o.sx.length))h+=RPSF.ui(o);
     h+='<h4>Elevasi &amp; area</h4><div class="g2 f"><div><label>RL min</label><input type=number step=any value="'+rpE(o.z0)+'" onchange="RP.o.z0=this.value" placeholder="tanpa batas"></div><div><label>RL maks</label><input type=number step=any value="'+rpE(o.z1)+'" onchange="RP.o.z1=this.value" placeholder="tanpa batas"></div></div>';
     var PLs=rpPolySrc().map(function(p){return[p[0],p[1]];});
     h+='<label>Poligon area</label><div class="g3 f"><div style="grid-column:span 2">'+sel('',[['','Tanpa poligon']].concat(PLs),o.poly,"RP.o.poly=this.value")+'</div><div>'+sel('',[['in','di dalam'],['out','di luar']],o.polyOut?'out':'in',"RP.o.polyOut=this.value==='out'")+'</div></div>'+
@@ -7387,6 +7398,71 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
   };
 })();
 
+/* ================= REPORTING BM: PROPORSI VOLUME BLOK TERHADAP PERMUKAAN (cara GC-Ex) =================
+   Dipakai GC-Ex Block Model dan GC-Ex Drill Hole (rpRun milik masing-masing aplikasi).
+
+   Cara Surpac (BAWAAN, dipakai untuk audit): constraint topografi / desain pit / DTM diuji pada TITIK PUSAT blok,
+   blok masuk 100% atau keluar 100%.
+   Cara GC-Ex (pilihan): telapak blok dibagi n x n kolom kecil. Di tiap kolom dicari selang Z yang lolos SEMUA batas
+   permukaan (di bawah topografi, di atas desain pit, di atas / di bawah tiap DTM tambahan), lalu dihitung panjang
+   bagian kolom [dasar blok, atap blok] yang berada di selang itu. Proporsi blok = rata-rata panjang itu / tinggi blok.
+   Kolom yang berada di luar jangkauan salah satu permukaan dihitung 0 (sama dengan cara Surpac: di luar DTM = tidak
+   lolos). Di dalam satu kolom permukaan dianggap datar (nilai Z di pusat kolom), jadi galatnya mengecil dengan n.
+
+   RPSF.make({tz, pz, sx:[{fn, side}], ox, oy, n}) -> function(xl, yl, z, sx, sy, sz) -> {f: 0..1, ext: bool}
+     tz(xl,yl) / pz(xl,yl) : Z atap (topografi) / lantai (desain pit) di koordinat LOKAL, null = di luar jangkauan
+     sx[j].fn(xw,yw)       : [z min, z maks] DTM di koordinat DUNIA (rpTinFn), side 'above' | 'below'
+     ox, oy                : offset lokal -> dunia
+     ext                   : true bila SEMUA kolom di luar jangkauan permukaan (dilaporkan sebagai "di luar DTM")  */
+(function () {
+  if (window.RPSF) return;
+  window.RPSF = {
+    make: function (S) {
+      var n = Math.max(1, Math.min(10, (S.n | 0) || 4)), C = new Map(), sxl = S.sx || [];
+      function selang(xl, yl) {
+        var k = Math.round(xl * 20) + '|' + Math.round(yl * 20), r = C.get(k);
+        if (r !== undefined) return r;
+        var lo = -Infinity, hi = Infinity, ok = true;
+        if (S.tz) { var t = S.tz(xl, yl); if (t == null || !isFinite(t)) ok = false; else hi = t; }
+        if (ok && S.pz) { var p = S.pz(xl, yl); if (p == null || !isFinite(p)) ok = false; else lo = p; }
+        for (var j = 0; ok && j < sxl.length; j++) {
+          var q = sxl[j], r2 = q.fn(xl + S.ox, yl + S.oy);
+          if (!r2) { ok = false; break; }
+          if (q.side === 'above') lo = Math.max(lo, r2[0]); else hi = Math.min(hi, r2[1]);
+        }
+        r = ok ? [lo, hi] : null; C.set(k, r); return r;
+      }
+      return function (xl, yl, z, bx, by, bz) {
+        var zb = z - bz / 2, zt = z + bz / 2, s = 0, luar = 0;
+        for (var a = 0; a < n; a++) for (var b = 0; b < n; b++) {
+          var r = selang(xl + ((a + 0.5) / n - 0.5) * bx, yl + ((b + 0.5) / n - 0.5) * by);
+          if (!r) { luar++; continue; }
+          var d = Math.min(r[1], zt) - Math.max(r[0], zb);
+          if (d > 0) s += Math.min(d, bz);
+        }
+        var f = s / (n * n * bz);
+        return { f: f > 0.9999 ? 1 : f < 1e-6 ? 0 : f, ext: luar === n * n };
+      };
+    }
+  };
+  /* pilihan di tab Constraint (sama di kedua aplikasi); rpSet global di keduanya */
+  RPSF.ui = function (o) {
+    var on = o.sfrac === true, n = +o.sfN || 4;
+    var h = '<h4>Blok di batas permukaan</h4><div class="g3 f"><div style="grid-column:span 2"><select onchange="rpSet(\'sfrac\',this.value===\'1\')">' +
+      '<option value=0' + (on ? '' : ' selected') + '>Cara Surpac &mdash; titik pusat blok (bawaan)</option>' +
+      '<option value=1' + (on ? ' selected' : '') + '>Cara GC-Ex &mdash; proporsi volume blok</option></select></div><div>' +
+      (on ? '<select title="Telapak blok dibagi n &times; n kolom" onchange="rpSet(\'sfN\',+this.value)">' + [2, 4, 6, 8].map(function (k) {
+        return '<option value=' + k + (k === n ? ' selected' : '') + '>' + k + '&times;' + k + ' kolom</option>'; }).join('') + '</select>' : '') + '</div></div>';
+    h += '<div class=hint style="margin-top:-4px">' + (on
+      ? 'Blok yang terpotong topografi, desain pit atau batas DTM dihitung <b>sebagian</b>: telapaknya dibagi ' + n + '&times;' + n +
+        ' kolom dan tonase ditimbang dengan bagian kolom yang lolos semua batas. <span class=warn>Angka ini tidak sama dengan report Surpac</span>; ' +
+        'untuk audit / rekonsiliasi kembalikan ke cara Surpac. Bandingkan keduanya di tab <b>Metode tonase</b>.'
+      : 'Blok dihitung <b>utuh</b> bila titik pusatnya lolos batas permukaan &mdash; sama dengan report Surpac (angka untuk audit). ' +
+        'Blok di luar jangkauan topografi / pit / DTM tidak dilaporkan.') + '</div>';
+    return h;
+  };
+})();
+
 /* ================= REPORTING BM: BANDINGKAN METODE TONASE (Surpac vs presisi GC-Ex) =================
    Modul bersama GC-Ex Block Model dan GC-Ex Drill Hole (dipasang sesudah modul Reporting BM).
 
@@ -7447,6 +7523,9 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
   }
 
   function adaFrac() { return !!fracAttr(); }
+  /* 0.24.68 / 0.24.81: cara GC-Ex juga menimbang blok di batas topografi / desain pit / DTM (web-src/rpsfrac.js) */
+  function adaPermukaan() { var o = window.rpO && rpO(); return !!(o && ((o.surf && o.surf !== 'none') || (o.sx && o.sx.length))); }
+  function adaGcex() { return adaFrac() || adaPermukaan(); }
 
   /* Jumlahkan seluruh grup satu baris cut-off. Dihitung di sini, bukan memakai fungsi penjumlah
      milik Reporting: fungsi itu global di GC-Ex Drill Hole tetapi LOKAL di dalam IIFE Reporting
@@ -7484,17 +7563,18 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
     var o = rpO(); if (!o) throw new Error('Block model belum ada.');
     /* rpRun() memindahkan tab ke "Hasil" dan menggambar panelnya; simpan lalu pulihkan supaya
        tab ini tetap yang tampil (sama seperti yang dilakukan rppit.js). */
-    var f0 = o.frac, sh0 = o.show, sec0 = RP.sec;
+    var f0 = o.frac, sf0 = o.sfrac, sh0 = o.show, sec0 = RP.sec;
     o.frac = pakaiNama() ? (pakaiFrac ? fracAttr() : '') : !!pakaiFrac;
+    o.sfrac = !!pakaiFrac;
     o.show = false;
-    try { rpRun(); } finally { o.frac = f0; o.show = sh0; RP.sec = sec0; }
+    try { rpRun(); } finally { o.frac = f0; o.sfrac = sf0; o.show = sh0; RP.sec = sec0; }
     var R = RP.res;
     if (!R) throw new Error('Reporting tidak menghasilkan apa pun. Periksa tab Atribut dan Constraint.');
     /* hanya yang diperlukan yang disalin, supaya hasil lama tidak ikut berubah saat dihitung ulang */
     return {
       rows: R.rows.map(function (r) { var T = total(r.G); return { c: r.c, n: T.n, v: T.v, t: T.t, s: T.s }; }),
       cuts: R.cuts.slice(), atts: R.atts.slice(), unit: Object.assign({}, R.unit),
-      nb: R.nb, nPart: R.nPart || 0, lab: R.lab, sg: R.sg, gr: R.gr, frac: R.frac || ''
+      nb: R.nb, nPart: R.nPart || 0, nSf: R.nSf || 0, lab: R.lab, sg: R.sg, gr: R.gr, frac: R.frac || ''
     };
   }
 
@@ -7504,9 +7584,9 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
     setTimeout(function () {
       try {
         var surpac = sekali(false);           /* blok utuh menurut titik pusat */
-        var presisi = adaFrac() ? sekali(true) : null;   /* ditimbang proporsi sb_frac */
+        var presisi = adaGcex() ? sekali(true) : null;   /* ditimbang proporsi sb_frac dan / atau proporsi terhadap permukaan */
         RPM.res = {
-          surpac: surpac, presisi: presisi, adaFrac: adaFrac(),
+          surpac: surpac, presisi: presisi, adaFrac: adaFrac(), adaPerm: adaPermukaan(), sfN: (rpO() && +rpO().sfN) || 4,
           attr: fracAttr(), rinci: rincian(),
           date: new Date().toLocaleString('id-ID'),
           bm: (window.BX && BX.m && BX.m.name) || ''
@@ -7521,6 +7601,10 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
   /* ---------- tabel perbandingan ---------- */
   function kadar(q) { return q && q.w ? q.tw / q.w : NaN; }
 
+  function caraGcex(X) {
+    return [X.adaFrac ? 'timbang ' + (X.attr || 'sb_frac') : '', X.adaPerm ? 'proporsi permukaan ' + X.sfN + '×' + X.sfN : ''].filter(Boolean).join(' + ');
+  }
+
   function tabel() {
     var X = RPM.res; if (!X) return '';
     var S = X.surpac, P = X.presisi, at = S.atts, u = S.unit;
@@ -7533,9 +7617,9 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
         return '<tr><td>' + (tebal ? '&ge; ' + rs.c : '') + '</td><td>' + nama + '</td><td>' + N(r.n) + '</td><td>' + N(r.v) + '</td><td>' + (tebal ? '<b>' + N(r.t) + '</b>' : N(r.t)) + '</td>' +
           at.map(function (a) { return '<td>' + N(kadar(r.s[a]), 3) + '</td>'; }).join('') + '</tr>';
       };
-      h += baris('Seperti Surpac <small>(blok utuh)</small>', rs, true);
+      h += baris('Cara Surpac <small>(blok utuh, bawaan)</small>', rs, true);
       if (rp) {
-          h += baris('Presisi GC-Ex <small>(timbang ' + E(X.attr || 'sb_frac') + ')</small>', rp, false);
+          h += baris('Cara GC-Ex <small>(' + E(caraGcex(X)) + ')</small>', rp, false);
         var dv = rp.v - rs.v, dt = rp.t - rs.t;
         h += '<tr class=tot><td></td><td>Selisih</td><td>' + (rp.n - rs.n) + '</td><td>' + N(dv) +
           ' <small>(' + (rs.v ? (dv / rs.v * 100).toFixed(1) : '0') + '%)</small></td><td><b>' + N(dt) +
@@ -7555,10 +7639,9 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
     var L = ['# Reporting BM - perbandingan metode tonase (Surpac vs presisi GC-Ex)',
              '# Block model: ' + X.bm, '# Constraint: ' + [S.lab, S.sg].filter(Boolean).join(' · '),
              '# Tanggal: ' + X.date,
-             '# Seperti Surpac = blok dihitung utuh menurut titik pusatnya',
-             '# Presisi GC-Ex  = blok perbatasan ditimbang proporsi volume di dalam solid (sb_frac)'];
-    if (!X.adaFrac) L.push('# CATATAN: block model ini belum punya atribut sb_frac, jadi kedua metode identik. ' +
-                           'Hitung proporsi volume di GC-Ex Drill Hole (menu Block Model) lebih dulu.');
+             '# Cara Surpac (bawaan, audit) = blok dihitung utuh menurut titik pusatnya',
+             '# Cara GC-Ex = blok perbatasan ditimbang proporsi volume: ' + caraGcex(X)];
+    if (!X.presisi) L.push('# CATATAN: tidak ada sb_frac maupun batas permukaan, jadi kedua metode identik.');
     L.push(['CUTOFF', 'METODE', 'BLOK', 'VOLUME_M3', 'TONASE_T'].concat(
       at.map(function (a) { return a + '_' + String(u[a] || 'g/t').replace('/', '_'); })).join(','));
     var tulis = function (c, nama, r) {
@@ -7566,11 +7649,11 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
         at.map(function (a) { var g = kadar(r.s[a]); return isFinite(g) ? g.toFixed(4) : ''; })).join(','));
     };
     S.rows.forEach(function (rs, i) {
-      tulis(rs.c, 'Seperti Surpac', rs);
+      tulis(rs.c, 'Cara Surpac', rs);
       if (P) {
-        tulis(rs.c, 'Presisi GC-Ex', P.rows[i]);
+        tulis(rs.c, 'Cara GC-Ex', P.rows[i]);
         var rp = P.rows[i];
-        L.push([rs.c, '"Selisih (presisi - Surpac)"', rp.n - rs.n, (rp.v - rs.v).toFixed(1),
+        L.push([rs.c, '"Selisih (GC-Ex - Surpac)"', rp.n - rs.n, (rp.v - rs.v).toFixed(1),
                 (rp.t - rs.t).toFixed(1)].concat(at.map(function () { return ''; })).join(','));
       }
     });
@@ -7593,12 +7676,14 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       '<button class=on>Metode tonase</button></div>';
     h += '<div class=hint style="margin:4px 0 8px">Memakai <b>atribut, cut-off, pengelompokan, domain, poligon, permukaan dan SG</b> yang sudah diatur di tab <b>Atribut</b> dan <b>Constraint</b>. ' +
       'Yang dibandingkan di sini hanya <b>aturan blok perbatasan</b>.</div>';
-    h += '<div class="box gmstate"><b>Seperti Surpac</b> &mdash; blok dihitung <b>utuh</b> berdasarkan titik pusatnya (Surpac <i>Keep partial = False</i>).<br>' +
-      '<b>Presisi GC-Ex</b> &mdash; blok perbatasan ditimbang <b>proporsi volumenya</b> yang berada di dalam solid (atribut <code>' +
-      E(fracAttr() || 'sb_frac') + '</code>).</div>';
-    if (!adaFrac()) {
+    h += '<div class="box gmstate"><b>Cara Surpac</b> (bawaan, untuk audit) &mdash; blok dihitung <b>utuh</b> berdasarkan titik pusatnya (Surpac <i>Keep partial = False</i>).<br>' +
+      '<b>Cara GC-Ex</b> &mdash; blok perbatasan ditimbang <b>proporsi volumenya</b>: ' +
+      [adaFrac() ? 'di dalam solid (atribut <code>' + E(fracAttr()) + '</code>)' : '',
+       adaPermukaan() ? 'terhadap topografi / desain pit / batas DTM (kolom ' + ((rpO() && +rpO().sfN) || 4) + '&times;' + ((rpO() && +rpO().sfN) || 4) + ', atur di tab <b>Constraint</b>)' : ''].filter(Boolean).join(' dan ') +
+      (adaGcex() ? '' : 'tidak ada yang bisa ditimbang') + '.</div>';
+    if (!adaGcex()) {
       h += '<div class="box gmstate"><span class=warn>Block model ini belum punya atribut <code>sb_frac</code>.</span> ' +
-        'Tanpa atribut itu kedua metode menghasilkan angka yang <b>sama persis</b>, jadi tidak ada yang bisa dibandingkan. ' +
+        'Tidak ada pula batas permukaan (topografi / pit / DTM) di tab <b>Constraint</b>, jadi kedua metode menghasilkan angka yang <b>sama persis</b>. ' +
         'Hitung proporsi volume lebih dulu di <b>GC-Ex Drill Hole &rsaquo; Block Model &rsaquo; Hitung proporsi volume ore per blok (sb_frac)</b>, ' +
         'simpan block model-nya, lalu kembali ke sini.</div>';
     }
@@ -7610,15 +7695,17 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       var S = X.surpac;
       h += '<h4 style="margin-top:10px">Hasil</h4><div class="box gmstate rpsum"><small>' +
         E([S.lab, S.sg].filter(Boolean).join(' · ')) + '<br>' + E(X.date) + '</small></div>';
+      if (X.presisi && X.adaPerm) h += '<div class="box gmstate"><b>Blok di batas permukaan</b>: ' + N(X.presisi.nSf) + ' blok dihitung sebagian pada cara GC-Ex. ' +
+        'Blok yang titik pusatnya di luar batas tetapi sebagian volumenya di dalam ikut terhitung sebagian, sehingga jumlah blok bisa bertambah.</div>';
       if (X.presisi && X.rinci) {
         var R = X.rinci;
         h += '<div class="box gmstate"><b>Dari mana selisihnya</b><br>Atribut <code>' + E(R.attr) + '</code> di ' +
           N(R.n) + ' blok: <b>' + N(R.penuh) + '</b> seluruhnya di dalam solid (proporsi 1), <b>' + N(R.tepi) +
           '</b> di perbatasan (0&ndash;1), <b>' + N(R.nol) + '</b> seluruhnya di luar (proporsi 0)' +
           (R.lain ? ', ' + N(R.lain) + ' tanpa nilai' : '') + '.' +
-          '<br><span class=warn>Blok berproporsi 0 tidak dilaporkan sama sekali</span> pada metode presisi. ' +
-          'Jadi bila <code>' + E(R.attr) + '</code> hanya mencakup solid vein, baris <b>Presisi GC-Ex</b> ' +
-          'melaporkan material <b>di dalam solid saja</b>, sedangkan baris <b>Seperti Surpac</b> melaporkan ' +
+          '<br><span class=warn>Blok berproporsi 0 tidak dilaporkan sama sekali</span> pada cara GC-Ex. ' +
+          'Jadi bila <code>' + E(R.attr) + '</code> hanya mencakup solid vein, baris <b>Cara GC-Ex</b> ' +
+          'melaporkan material <b>di dalam solid saja</b>, sedangkan baris <b>Cara Surpac</b> melaporkan ' +
           'semua blok yang lolos constraint &mdash; termasuk waste di luar solid. Selisih sebesar itu wajar ' +
           'dan bukan tanda salah hitung; bandingkan keduanya hanya sesudah constraint domainnya disamakan ' +
           '(tab <b>Constraint</b>).</div>';
@@ -7626,8 +7713,8 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       h += tabel();
       h += '<div class="g2 f" style="margin-top:8px"><button class=btn-pri onclick="RPM.csv()">&#8681; Export CSV</button>' +
         '<button onclick="RP.sec=\'2\';rpPanel()">Laporan rinci terakhir</button></div>';
-      h += '<div class=hint style="margin-top:6px">Untuk rekonsiliasi dengan report Surpac: pakai baris <b>Seperti Surpac</b>. ' +
-        'Untuk dig plan dan perhitungan dilusi / ore loss: pakai <b>Presisi GC-Ex</b>, karena di situlah blok perbatasan dihitung seadanya. ' +
+      h += '<div class=hint style="margin-top:6px">Untuk audit dan rekonsiliasi dengan report Surpac: pakai baris <b>Cara Surpac</b>. ' +
+        'Untuk dig plan dan perhitungan dilusi / ore loss: pakai <b>Cara GC-Ex</b>, karena di situlah blok perbatasan dihitung seadanya. ' +
         'Perbandingan yang paling berarti: batasi domain ke solid yang sama di tab <b>Constraint</b>, lalu lihat selisihnya &mdash; ' +
         'yang tersisa barulah pengaruh aturan blok perbatasan.</div>';
     }
@@ -7644,7 +7731,7 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       if (document.getElementById('rpmBody')) return;    /* panel milik tab ini sendiri */
       var b2 = document.createElement('button');
       b2.className = 'rpmtab'; b2.innerHTML = 'Metode tonase';
-      b2.title = 'Bandingkan tonase cara Surpac (blok utuh) dengan cara presisi GC-Ex (timbang sb_frac)';
+      b2.title = 'Bandingkan tonase cara Surpac (blok utuh, bawaan) dengan cara GC-Ex (proporsi volume blok perbatasan)';
       b2.onclick = function () { RPM.open(); };
       bar.appendChild(b2);
     }
@@ -11720,7 +11807,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.67';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.68';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

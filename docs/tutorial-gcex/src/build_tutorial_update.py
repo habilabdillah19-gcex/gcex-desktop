@@ -1144,6 +1144,14 @@ B.append('<p><b>Memilih run.</b> Satu log berisi banyak run (percobaan, re-run s
 B.append('<p><b>Tanpa log.</b> Surpac tidak menyimpan parameter di .mdl. Buat parameter dari data bor dengan Autorun Estimasi dari Nol, lalu bandingkan dengan block model '
          'pendahulu pada blok yang sama. Tombol log Surpac tidak tampil di jalur Mulai dari nol.</p>')
 
+B.append('<div class="page"></div><h2>16. Reporting BM: cara Surpac sebagai bawaan</h2>')
+B.append('<p>Angka GC-Ex diaudit terhadap report Surpac, jadi setiap pilihan yang punya padanan Surpac memakai <b>cara Surpac sebagai bawaan</b>. Cara GC-Ex tetap ada sebagai pilihan.</p>')
+B.append('<p><b>Hanya di bawah topografi.</b> Blok di luar jangkauan topografi, desain pit atau batas DTM <b>tidak dilaporkan</b> (seperti Surpac). Sebelum Block Model 0.24.68 / '
+         'Drill Hole 0.24.81, block model yang lebih luas dari pick-up topografi ikut terlapor sebagai sisa di luar jangkauan itu.</p>')
+B.append('<p><b>Blok di batas permukaan</b> (tab Constraint): <i>Cara Surpac &mdash; titik pusat blok</i> (bawaan) atau <i>Cara GC-Ex &mdash; proporsi volume blok</i>. Cara GC-Ex '
+         'membagi telapak blok menjadi 4&times;4 kolom (bisa 2&ndash;8) dan menimbang tonase dengan bagian kolom yang di bawah topografi, di atas pit dan di sisi DTM yang dipilih. '
+         'Tab <b>Metode tonase</b> menampilkan kedua cara berdampingan. Di Block Model, pembobotan <code>sb_frac</code> juga kini mati secara bawaan.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

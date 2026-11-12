@@ -4621,3 +4621,14 @@ Untuk proyek jalur **Lanjutkan** dengan acuan *Parameter estimasi*: Model Estima
 Block model Surpac yang atributnya diberi *Description* (mis. `sg3` berdeskripsi "density") kini terbaca di import
 kedua aplikasi. Sebelumnya muncul galat *Atribut ke-… sesudah "…" tidak terbaca (tipe …)*. Tidak ada langkah tambahan:
 pilih ulang berkas .mdl di layar import. Deskripsi atribut ikut tersimpan apa adanya saat block model diekspor kembali ke .mdl.
+
+## 190. Block Model 0.24.68 + Drillhole 0.24.81 — Reporting BM: cara Surpac sebagai bawaan
+
+(DB-Ex 0.46.5 hanya ikut naik karena mesin laporan Python di backend bersama; tidak ada perubahan yang terlihat di DB-Ex.)
+
+- **Hanya di bawah topografi.** Blok di luar jangkauan topografi, desain pit atau batas DTM tidak lagi dilaporkan, sama seperti
+  Surpac. Bila block model lebih luas dari pick-up topografi, tonase *sisa* bisa turun dibanding versi sebelumnya — angka baru
+  inilah yang setara dengan report Surpac.
+- **Blok di batas permukaan** (Reporting BM › Constraint): *Cara Surpac — titik pusat blok* (bawaan) atau *Cara GC-Ex — proporsi
+  volume blok* (kolom 2×2 sampai 8×8, bawaan 4×4). Tab **Metode tonase** menampilkan keduanya berdampingan.
+- Block Model: centang *timbang dengan proporsi sub-blok (`sb_frac`)* kini **mati** secara bawaan (cara Surpac).

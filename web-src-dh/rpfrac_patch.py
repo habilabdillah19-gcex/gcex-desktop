@@ -12,7 +12,7 @@ def patch(s: str) -> str:
     # 1) bawaan: tanpa pembobotan
     a = "cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:5,show:false,sx:[],polyOut:false};}"
     assert s.count(a) == 1, 'rpDef tidak ditemukan tepat satu kali'
-    s = s.replace(a, "cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:5,show:false,sx:[],polyOut:false,frac:''};}")
+    s = s.replace(a, "cuts:'0, 0.3, 0.5, 1, 2',grp:'bench',bh:5,show:false,sx:[],polyOut:false,frac:'',sfrac:false,sfN:4};}")
 
     # 2) fungsi proporsi per blok, disiapkan sekali di awal rpRun
     a = ("    var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,"
@@ -27,7 +27,7 @@ def patch(s: str) -> str:
     # 3) tonase per blok
     a = "mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);"
     assert s.count(a) == 1, 'baris tonase tidak ditemukan tepat satu kali'
-    s = s.replace(a, ("var fr=FRC(i);if(FRQ&&!(fr>0)){nOutFr++;continue;}"
+    s = s.replace(a, ("var fr=FRC(i);if(FRQ&&!(fr>0)){nOutFr++;continue;}if(fs<1){fr*=fs;nSf++;}"
                       "mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg*fr);I.push(i);FR.push(fr);"))
 
     # 4) volume per blok di agregasi
@@ -59,5 +59,5 @@ def patch(s: str) -> str:
     # 7) sebutkan di ringkasan hasil bahwa laporan berproporsi
     a = "RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,"
     assert s.count(a) == 1, 'RP.res tidak ditemukan tepat satu kali'
-    s = s.replace(a, a + "frac:o.frac||'',nOutFr:nOutFr,")
+    s = s.replace(a, a + "frac:o.frac||'',nOutFr:nOutFr,sfrac:!!SF,sfN:+o.sfN||4,nSf:nSf,")
     return s

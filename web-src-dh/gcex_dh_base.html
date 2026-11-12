@@ -4478,7 +4478,8 @@ function rpDef(){var m=BX.m,nums=Object.keys(m.num),A=meAN(),g=m.num[A.fin]?A.fi
 function rpO(){if(!BX.m)return null;if(!RP.o||!RP.o._m||RP.o._m!==BX.m.name){RP.o=rpDef();RP.o._m=BX.m.name;}return RP.o;}
 /* permukaan: indeks titik generik (topografi aktif / desain pit) -> z interpolasi IDW, cache per kolom blok */
 /* 0.24.60: TIN (web-src/tinz.js, sama dengan tampilan) lebih dulu; IDW di bawah = cadangan di luar segitiga */
-function rpSurf(o){var _t=(window.TINZ&&TINZ.of)?TINZ.of(o):null,_i=rpSurfIdw(o);if(!_t)return _i;return function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:_i(x,y);};}
+/* 0.24.81: di luar segitiga TIN = DI LUAR permukaan (null), seperti DTM Surpac; IDW hanya bila TIN tidak bisa dibuat */
+function rpSurf(o){var _t=(window.TINZ&&TINZ.of)?TINZ.of(o):null;if(!_t)return rpSurfIdw(o);var f=function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:null;};f._tin=1;return f;}
 function rpSurfIdw(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
   return function(x,y){var cx=Math.floor(x/B),cy=Math.floor(y/B);for(var R=1;R<=3;R++){var sw=0,sz=0,np=0,rm=R*B*R*B;for(var a=cx-R;a<=cx+R;a++)for(var b=cy-R;b<=cy+R;b++){var L=cells[(a+50000)*100000+b+50000];if(!L)continue;
       for(var k2=0;k2<L.length;k2++){var q=L[k2],dx=o.x[q]-x,dy=o.y[q]-y,d2=dx*dx+dy*dy;if(d2>rm)continue;if(d2<1e-4)return o.z[q];var w=1/d2;sw+=w;sz+=w*o.z[q];np++;}}if(np>=3)return sz/sw;}return null;};}
@@ -4530,7 +4531,11 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     /* RP.ovr: permukaan atas / bawah ditentukan dari luar (rppit.js -- laporan beberapa desain pit
        sekaligus dan progres penambangan topo-ke-topo). Mesin hitungnya tetap yang ini. */
     if(RP.ovr){tz=RP.ovr.tz||null;pz=RP.ovr.pz||null;tzT=!!RP.ovr.tzT;pzT=!!RP.ovr.pzT;}
+    /* 0.24.81: blok di luar jangkauan permukaan TIDAK dilaporkan (seperti Surpac), apa pun sumber permukaannya */
+    tzT=true;pzT=true;
     var SX=o.sx.map(function(q){var r=rpSurfSrc(q.k);if(!r||!r.fn)throw new Error('Batas DTM tambahan tidak ditemukan / bukan permukaan segitiga ('+q.k+'). Hapus barisnya atau import ulang.');return{fn:r.fn,n:r.n,side:q.side,c:{}};});
+    /* cara GC-Ex: proporsi volume blok terhadap permukaan (bawaan mati = cara Surpac, titik pusat blok) */
+    var SF=(o.sfrac===true&&(tz||pz||SX.length)&&window.RPSF)?RPSF.make({tz:tz,pz:pz,sx:SX,ox:offX,oy:offY,n:+o.sfN||4}):null,nSf=0;
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),SGA=o.sgMode==='a'&&m.num[o.sgAttr]?m.num[o.sgAttr]:null,sg0=+o.sg||2.6;
     var grp=o.grp,bh=Math.max(0.5,+o.bh||5),GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null,dE=m.cat[meAN().dom];
     var n=m.n,mask=new Uint8Array(n),T=[],I=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0},pOut=!!o.polyOut;
@@ -4538,9 +4543,11 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
       if(z0===z0&&z<z0||z1===z1&&z>z1){nOut.z++;continue;}
       if(PL&&PL.f(m.x[i],m.y[i])===pOut){nOut.poly++;continue;}
       if(FA){var fa=FA[i];if(!isFinite(fa)||(o.fOp==='ge'?fa<fv:o.fOp==='le'?fa>fv:o.fOp==='eq'?Math.abs(fa-fv)>1e-9:false)){nOut.f++;continue;}}
+      var fs=1;if(SF){var sfr=SF(x,y,z,m.sx[i],m.sy[i],m.sz[i]);if(!(sfr.f>0)){if(sfr.ext)nOut.ext++;else nOut.surf++;continue;}fs=sfr.f;}else{
       var ck=Math.round(x*2)+'|'+Math.round(y*2);
       if(tz){var c=cache[ck];if(!c){c=cache[ck]=[tz(x,y),pz?pz(x,y):null];}if(c[0]===null){if(tzT){nOut.ext++;continue;}}else if(z>c[0]){nOut.surf++;continue;}if(pz){if(c[1]===null){if(pzT)nOut.ext++;else nOut.surf++;continue;}if(z<c[1]){nOut.surf++;continue;}}}
       if(SX.length){var bad=0;for(var s2=0;s2<SX.length;s2++){var S2=SX[s2],r2=S2.c[ck];if(r2===undefined)r2=S2.c[ck]=S2.fn(m.x[i],m.y[i]);if(r2===null){bad=1;break;}if(S2.side==='above'?z<=r2[0]:z>=r2[1]){bad=2;break;}}if(bad){if(bad===1)nOut.ext++;else nOut.surf++;continue;}}
+      }
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
       var sg=SGA&&isFinite(SGA[i])&&SGA[i]>0?SGA[i]:sg0;mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);
@@ -4577,7 +4584,7 @@ function rpCsv(){var R=RP.res;if(!R)return;var at=R.atts,L=['# Reporting block m
   R.rows.forEach(function(r){var ks=Object.keys(r.G);ks.forEach(function(k){var g=r.G[k];L.push([r.c,'"'+(R.grp==='bench'?'RL '+(k*R.bh)+'-'+((+k+1)*R.bh):k)+'"',g.n,g.v.toFixed(1),g.t.toFixed(1)].concat(at.map(function(a){var q=g.s[a];return q&&q.w?(q.tw/q.w).toFixed(4):'';}),at.map(function(a){var q=g.s[a];return q&&q.w?rpMetal(a,g.t,q.tw/q.w,R.unit[a]).toFixed(2):'';})).join(','));});
     var T=rpTot(r.G);L.push([r.c,'TOTAL',T.n,T.v.toFixed(1),T.t.toFixed(1)].concat(at.map(function(a){var q=T.s[a];return q&&q.w?(q.tw/q.w).toFixed(4):'';}),at.map(function(a){var q=T.s[a];return q&&q.w?rpMetal(a,T.t,q.tw/q.w,R.unit[a]).toFixed(2):'';})).join(','));});
   dgDl(L.join('\r\n')+'\r\n','Reporting_BM_'+String(R.bm).replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+gxDate()+'.csv','text/csv');}
-function rpDesc(){var R=RP.res;if(!R)return '';return [R.lab,R.surf==='topo'?'di bawah topografi '+(R.surfN||'aktif')+' (sisa)':R.surf==='pit'?'di dalam desain pit & di bawah topografi ('+(R.surfN||'')+')':'',(R.sxD||[]).join(', '),(R.z0!==''||R.z1!=='')?'Z '+(R.z0||'…')+' – '+(R.z1||'…'):'',R.poly?'poligon '+R.poly:'',R.f,R.sg].filter(Boolean).join(' · ');}
+function rpDesc(){var R=RP.res;if(!R)return '';return [R.lab,R.surf==='topo'?'di bawah topografi '+(R.surfN||'aktif')+' (sisa)':R.surf==='pit'?'di dalam desain pit & di bawah topografi ('+(R.surfN||'')+')':'',(R.sxD||[]).join(', '),(R.z0!==''||R.z1!=='')?'Z '+(R.z0||'…')+' – '+(R.z1||'…'):'',R.poly?'poligon '+R.poly:'',R.f,R.sg,R.sfrac?'cara GC-Ex: proporsi volume terhadap permukaan, kolom '+R.sfN+'×'+R.sfN+' ('+rpN(R.nSf)+' blok sebagian)':''].filter(Boolean).join(' · ');}
 function rpSet(k,v){var o=rpO();o[k]=v;if(k==='dom'){o.cat={};}rpPanel();}
 function rpAtt(a,on){var o=rpO();var i=o.atts.indexOf(a);if(on&&i<0){o.atts.push(a);o.unit[a]=o.unit[a]||rpUnitDef(a);}if(!on&&i>=0)o.atts.splice(i,1);rpPanel();}
 function rpShow(on){if(on&&BX.rpSrc!=='rep'){var o0=rpO();if(o0){o0.show=true;rpRun();}return;}BX.rpOnly=!!on;var o=rpO();if(o)o.show=!!on;BX.sc={};if(on){var b=$('bxShow');if(b)b.checked=true;}updatePlot();rpPanel();}
@@ -4602,6 +4609,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
       '<div class=hint>File masuk ke menu <b>Data Spasial</b> sebagai versi baru (versi lama tetap tersimpan). Blok dihitung bila <b>centroid</b> di bawah topografi (dan di atas pit), seperti Surpac. Dengan DTM segitiga, blok di luar jangkauan DTM <b>tidak</b> dihitung.</div>';
     var SL=rpSurfList();h+='<h4>Batas DTM tambahan</h4>'+(o.sx.length?o.sx.map(function(q,i){return '<div class="g3 f rpsx"><div style="grid-column:span 2">'+sel('',SL.length?SL:[['','(tidak ada DTM)']],q.k,"rpSx("+i+",'k',this.value)")+'</div><div style="display:flex;gap:4px">'+sel('',[['below','di bawah'],['above','di atas']],q.side,"rpSx("+i+",'side',this.value)")+'<button class=x onclick="rpSx('+i+',\'del\')" title="Hapus batas">&times;</button></div></div>';}).join(''):'<div class=hint>Mis. di bawah batas oksidasi, di atas mined-out / survey akhir bulan.</div>')+
       '<div class=rpimps>'+(SL.length?'<button onclick="rpSx(0,\'add\')">+ Tambah batas DTM</button>':'')+'</div><div class=hint>Sumber: DTM segitiga di <b>Data Spasial</b> (versi topografi / pit mana saja) dan wireframe di node <b>Import Wireframe Geologi</b> (import di sana).</div>';
+    if(window.RPSF&&RPSF.ui&&(o.surf!=='none'||o.sx.length))h+=RPSF.ui(o);
     h+='<h4>Elevasi &amp; area</h4><div class="g2 f"><div><label>Z min (RL)</label><input type=number step=any value="'+rpE(o.z0)+'" onchange="RP.o.z0=this.value" placeholder="tanpa batas"></div><div><label>Z maks (RL)</label><input type=number step=any value="'+rpE(o.z1)+'" onchange="RP.o.z1=this.value" placeholder="tanpa batas"></div></div>';
     var PLs=rpPolyList();
     h+='<label>Poligon area (string Surpac / fitur tertutup Map)</label><div class="g3 f"><div style="grid-column:span 2">'+sel('',[['','Tanpa poligon']].concat(PLs),o.poly,"RP.o.poly=this.value")+'</div><div>'+sel('',[['in','di dalam'],['out','di luar']],o.polyOut?'out':'in',"RP.o.polyOut=this.value==='out'")+'</div></div>'+
