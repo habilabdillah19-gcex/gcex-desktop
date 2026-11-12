@@ -28,6 +28,9 @@ const varian = {
   'karakter tanpa byte ekor': [{ name: 'rock_x', type: 3, body: Buffer.concat([enc('waste'), Buffer.from([0])]) }],
   'tipe tak dikenal (6) 8+1': [{ name: 'dens_x', type: 6, body: Buffer.concat([f64(2.6), Buffer.from([0])]) }],
   'real 13 byte': [{ name: 'cu_x', type: 2, body: Buffer.concat([f64(0), Buffer.alloc(5)]) }],
+  /* 12-11-2026: kolom Description Surpac terisi -> teks deskripsi sesudah nilai bawaan ('Atribut ke-5 sesudah "ensity"') */
+  'real berdeskripsi': [real('ag_x', 0), { name: 'sg_d', type: 2, body: Buffer.concat([f64(0), enc('density'), Buffer.from([0])]) }, real('sxs_x', 0)],
+  'karakter & integer berdeskripsi': [{ name: 'rock_x', type: 3, body: Buffer.concat([enc('BLANK'), Buffer.from([0]), enc('rock type'), Buffer.from([0])]) }, { name: 'n_x', type: 1, body: Buffer.concat([i32(-99), enc('nomor'), Buffer.from([0])]) }],
 };
 let gagal = 0;
 for (const [nm, pre] of Object.entries(varian)) {

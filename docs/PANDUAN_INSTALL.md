@@ -4615,3 +4615,9 @@ Untuk proyek jalur **Lanjutkan** dengan acuan *Parameter estimasi*: Model Estima
   Log tidak mencatat diskretisasi blok: atur di dialog (bawaan 1×1×1).
 - **Tanpa log**: parameter tidak tersimpan di .mdl. Buat dari data bor dengan *Autorun Estimasi dari Nol* (hilangkan centang acuan
   *Parameter estimasi* di Proyek › Jalur), lalu bandingkan dengan block model pendahulu pada blok yang sama.
+
+## 189. Block Model 0.24.67 + Drillhole 0.24.80 — Block model .mdl dengan deskripsi atribut
+
+Block model Surpac yang atributnya diberi *Description* (mis. `sg3` berdeskripsi "density") kini terbaca di import
+kedua aplikasi. Sebelumnya muncul galat *Atribut ke-… sesudah "…" tidak terbaca (tipe …)*. Tidak ada langkah tambahan:
+pilih ulang berkas .mdl di layar import. Deskripsi atribut ikut tersimpan apa adanya saat block model diekspor kembali ke .mdl.
