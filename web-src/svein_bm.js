@@ -292,7 +292,12 @@
     /* 4. pulau = komponen pasangan; validasi (tertutup, orientasi, volume > 0) per pulau */
     var isl = {}, iid = 0; nodes.forEach(function (nd) { if (nd._isl) return; var id = ++iid, st = [nd]; nd._isl = id; while (st.length) { var x = st.pop(); x.kids.concat(x.pars).forEach(function (y) { if (!y._isl) { y._isl = id; st.push(y); } }); } });
     var IS = []; for (var k = 1; k <= iid; k++) { var tri = [], nds = nodes.filter(function (n) { return n._isl === k; }); T.forEach(function (t, i) { if (own[i]._isl === k) tri.push(t); });
-      /* buang segitiga nol */ tri = tri.filter(function (t) { var a = t[0], b = t[1], c = t[2]; if (a === b || b === c || a === c) return false; var ux = V.x[b] - V.x[a], uy = V.y[b] - V.y[a], uz = V.z[b] - V.z[a], vx = V.x[c] - V.x[a], vy = V.y[c] - V.y[a], vz = V.z[c] - V.z[a]; return Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) > 1e-9; });
+      /* buang segitiga nol */ tri = tri.filter(function (t) { return t[0] !== t[1] && t[1] !== t[2] && t[0] !== t[2]; });
+      /* BM 0.24.72 (data nyata Z3, 12 Nov 2026): segitiga berluas nol dengan tiga titik BERBEDA (tiga titik segaris, mis. titik
+         potong gabungan dua pick-up yang jatuh tepat di sisi poligon) ikut menutup permukaan; membuangnya melubangi solid
+         (3 sisi terbuka) dan rekonsiliasi menolak. Dibuang hanya bila solid tetap tertutup tanpanya (pasangan lipatan). */
+      var triNZ = tri.filter(function (t) { var a = t[0], b = t[1], c = t[2], ux = V.x[b] - V.x[a], uy = V.y[b] - V.y[a], uz = V.z[b] - V.z[a], vx = V.x[c] - V.x[a], vy = V.y[c] - V.y[a], vz = V.z[c] - V.z[a]; return Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) > 1e-9; });
+      if (triNZ.length === tri.length || edges(triNZ).open <= edges(tri).open) tri = triNZ;
       var vol = volume(V, tri); if (vol < 0) { tri = tri.map(function (t) { return [t[0], t[2], t[1]]; }); vol = -vol; }
       var ed = edges(tri), tops = nds.map(function (n) { return n.top; }), bots = nds.map(function (n) { return n.bot; });
       IS.push({ n: k, tri: tri, vol: vol, area: areaOf(V, tri), closed: ed.open === 0 && ed.dup === 0, open: ed.open, dup: ed.dup, top: Math.max.apply(null, tops), bot: Math.min.apply(null, bots), nPoly: nds.length, nLv: uniq(tops).length, polys: nds.map(function (n) { return n.poly.id; }) }); }

@@ -4668,3 +4668,11 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   tampil di 3D dan bisa diekspor DTM + STR / CSV.
 - Report block model dalam Solid Vein memakai aturan SG Filter & SG (bawaan cara Surpac).
 - Drillhole & DB-Ex: tidak ada perubahan yang terlihat (pustaka boolean dipindah ke folder bersama; daftar lisensi diperbarui).
+
+## 195. Block Model 0.24.72 — Solid Vein: solid gabungan dua pick-up tidak lagi berlubang
+
+- Dua pick-up atap di flitch yang sama (mis. lantai belum tuntas lalu diambil lagi) digabung jadi satu tubuh. Bila titik potong
+  gabungannya jatuh tepat segaris dengan sisi poligon, solid dulu bisa berlubang kecil: pulau bertanda **tidak tertutup** dan
+  **Hitung rekonsiliasi** menolak dengan pesan "solid bukan mesh tertutup". Sekarang solid itu tertutup; volumenya praktis sama.
+- Periode yang sudah ada: klik **Bangun solid** lagi, lalu **Hitung rekonsiliasi**.
+- Drillhole & DB-Ex: tidak berubah.

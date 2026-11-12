@@ -5,6 +5,7 @@ Pemilik 12 Nov 2026: "Nomor 2" (union + rekonsiliasi).
   U1 dua poligon 20 x 10 bergeser 10 m di dua flitch, penggabungan 2D dimatikan -> dua pulau saling menembus;
      union = 1 tubuh, volume 30 x 10 x 2 flitch (dulu 40 x 10 x 2, ganda); pilihan dimatikan = dua pulau
   U2 pulau yang tidak bertampalan tidak diubah
+  U4 (0.24.72) dua pick-up satu flitch digabung, titik potong segaris: solid tetap tertutup
   U3 Bangun solid menyimpan hasil tersatukan; ekspor DTM satu TRISOLATION
   K  model = kotak X 120-140 (aktual X 100-130), dua flitch: tergali 10x10x2fh, dilusi 20x10x2fh;
      ore loss lebar zona 3 m = (133-130) x 10 x 2fh, lebar 0 = 0; tampil di panel & 3D
@@ -54,6 +55,12 @@ with sync_playwright() as pw:
         b = pg.evaluate("mk('U2',[[0,rect(100,100,20,10)],[1,rect(100,100,20,10)],[1,rect(170,100,10,10)]])"); print("U2", b)
         vols = sorted(round(s["vol"], 6) for s in b["isl"])
         cek(b["n"] == 2 and abs(vols[0] - 100 * fh) < 1e-6 and abs(vols[1] - 400 * fh) < 1e-6, "U2 pulau yang tidak bertampalan tidak diubah (volume tepat sama)")
+        # U4 (0.24.72): dua pick-up satu flitch yang digabung, titik potongnya jatuh TEPAT di sisi poligon pertama (segaris
+        # dengan sudutnya) -> segitiga lantai berluas nol. Dulu dibuang -> solid berlubang (3 sisi terbuka) -> rekonsiliasi
+        # menolak "bukan mesh tertutup". Bentuk kasus lapangan, diputar 180 derajat & diskala 2x (eksak dalam floating point,
+        # jadi pembulatan yang memicu kasus ini tetap sama; geser biasa menghilangkannya). Koordinat fiktif.
+        g = pg.evaluate("mk('U4',[[0,[[-1999.8919999999925, -2439.822000000626], [-1999.7600000000093, -2451.807999998331], [-1992.9220000000205, -2465.8859999999404], [-1988.6620000000112, -2469.9340000003576], [-1979.1340000000782, -2470.140000000596], [-1985.3540000000503, -2455.210000000894], [-1993.8240000000224, -2444.5159999988973], [-1996.8940000000875, -2441.302000001073]]],[0,[[-1999.591999999946, -2439.7459999993443], [-1999.6059999999125, -2451.7439999990165], [-1993.4760000000242, -2464.6140000000596], [-1991.1599999999162, -2469.177999999374], [-1979.2399999999907, -2469.4640000015497], [-1985.8359999998938, -2454.629999998957]]]])"); print("U4", g)
+        cek(g["n"] == 1 and g["isl"][0]["closed"] and g["isl"][0]["open"] == 0, "U4 gabungan dua pick-up dengan titik potong segaris: solid tertutup (sisi terbuka %s)" % (g["isl"][0]["open"] if g["isl"] else "-"))
         # U3 + K: periode nyata (Bangun solid), model kotak, rekonsiliasi
         pg.evaluate("""(function(){var d=SV.D(),p={id:'rek1',name:'REK',from:'',to:'',polys:[],par:{dmax:10,zMode:'flat',rIdw:6,zTol:FH/2,capPts:false,method:'min',sg:2.5,reg:false,gab:false},res:null};d.per.push(p);d.cur=p.id;
           [[0,rect(100,100,20,10)],[0,rect(110,100,20,10)],[1,rect(100,100,20,10)],[1,rect(110,100,20,10)]].forEach(function(q,i){p.polys.push({id:'r'+i,top:T0-q[0]*FH,bot:T0-(q[0]+1)*FH,pts:q[1],key:'q'+i,src:'digit',name:'R'+i,on:true});});
