@@ -477,6 +477,7 @@ F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), (
                          ('zonasi', f_zonasi), ('topcut', f_topcut), ('klas', f_klas),
                          ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys), ('jalur', f_jalur))}
 F['vunion'] = 'vunion.png'   # tangkapan layar aplikasi (data latihan fiktif), bukan matplotlib
+F['svrek'] = 'svrek.png'     # tangkapan layar uji uji_solid_vein_union.py (data sintetis)
 
 # angka ringkas untuk narasi
 Q = HP[np.ones(len(HK), bool)]
@@ -1170,6 +1171,13 @@ B.append('<p>Solid domain induk dan semua cabangnya kini digabung dengan <b>bool
          'Garis luar induk dan cabang menyatu di titik percabangan (bentuk Y) di 3D dan sayatan; ekspor per domain dan ekspor Vein System berisi satu solid per induk; volume gabungan dihitung eksak dari solid hasil union. '
          'Pilihan <i>Satukan induk + cabang (boolean union)</i> ada di kotak <b>Solid gabungan per domain induk</b> (tab Solid), bawaan menyala. Pustaka boolean (manifold-3d) tertanam di aplikasi &mdash; tetap offline. Estimasi tidak berubah.</p>')
 B.append(fig_html('vunion', 'Data latihan SIM_split, sayatan tegak: QVS_Utama + QVS_Cabang sesudah boolean union &mdash; satu solid bergaris luar Y (tangkapan layar uji <code>uji_vein_union_dh.py</code>).'))
+
+B.append('<h3>16d. Solid Vein Aktual: satukan pulau &amp; rekonsiliasi dengan wireframe model (Block Model 0.24.71)</h3>')
+B.append('<p>Potongan Solid Vein yang saling menembus kini disatukan dengan <b>boolean union</b> (pilihan <i>Satukan pulau yang bertampalan</i>, bawaan menyala) &mdash; volume ganda hilang, ekspor satu solid valid. '
+         'Bagian baru <b>Rekonsiliasi dengan wireframe model</b> membandingkan solid aktual dengan wireframe model ore: <b>ore tergali</b> (aktual &cap; model), <b>dilusi</b> (aktual &minus; model) dan <b>ore loss</b> '
+         '(model di zona penilaian &minus; aktual; zona = poligon aktual tiap flitch diperlebar, bawaan 3 m). Volume dari solid hasil boolean (eksak), tonase &times; SG Solid Vein dan tonase / kadar block model (blok utuh). '
+         'Pustaka boolean yang sama dengan vein bercabang Drill Hole, kini dipakai bersama (<code>web-src/manifold.js</code> + <code>web-src/mfbool.js</code>).</p>')
+B.append(fig_html('svrek', 'Data uji sintetis: Solid Vein aktual (dua poligon bertampalan, tersatukan) dibandingkan model kotak &mdash; hijau ore tergali, biru dilusi, merah ore loss (lebar zona 3 m), abu-abu model di luar zona.'))
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

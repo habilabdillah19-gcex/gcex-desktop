@@ -137,7 +137,8 @@ with sync_playwright() as pw:
       return {n0:n0,n1:SV.D().pts.length,am:am,f:SV.files().map(function(f){return f.n;}),tombol:/Ambil as-mined|Ambil dig block/.test(document.getElementById('svBody').textContent),fn:[typeof SV.fromAM,typeof SV.fromDB]};})()"""); print("K", k)
     cek(k["n1"] == k["n0"] + 3 and k["f"][:2] == [15, 12] or sorted(k["f"]) == [5, 12, 15], "K import ulang file bernama sama MENGGANTI titiknya (9 -> 12), file lain utuh")
     cek(k["am"] == 0 and not k["tombol"] and k["fn"] == ["undefined", "undefined"], "K berdiri sendiri: titik tidak masuk As-Mined; tombol Ambil as-mined / dig block tidak ada")
-    o = pg.evaluate("mk('O',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]],{gab:false})"); print("O", o)
+    # 0.24.71: union (svbool_bm.js) bawaan menyatukan dua pulau ini -> dimatikan juga untuk menguji jalur peringatan
+    o = pg.evaluate("mk('O',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]],{gab:false,uni:false})"); print("O", o)
     cek(o["n"] == 2 and any("BERTAMPALAN" in w for w in o["warn"]) and any("100.0 m" in w or "99." in w or "100." in w for w in o["warn"]), "K gabung dimatikan: dua poligon bertampalan diperingatkan dengan luas tampalan (~100 m2)")
     # L (0.24.54): poligon bertampalan DIGABUNG otomatis (atap = permukaan tertinggi)
     o2 = pg.evaluate("mk('O2',[[0,rect(100,100,20,10)],[0,rect(110,100,20,10)]])"); print("O2", o2)

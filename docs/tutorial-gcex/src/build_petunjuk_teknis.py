@@ -455,11 +455,20 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
 
 B.append('<h3>8.9 Boolean union induk + cabang (DH 0.24.84)</h3>')
 B.append(D.tabel(['Bagian', 'Cara kerja'], [
-    ['Pustaka', '<code>web-src-dh/vendor/manifold_dh.js</code> = manifold-3d 3.5.4 (Apache-2.0) + WASM base64, dibuat <code>tools/vendor/buat_manifold.py</code> (modul ES &rarr; skrip biasa). Dimuat asinkron sekali (<code>VU.load</code>, <code>wasmBinary</code>); tanpa jaringan.'],
+    ['Pustaka', '<code>web-src/manifold.js</code> (sejak BM 0.24.71 / DH 0.24.85 dipakai bersama; semula <code>web-src-dh/vendor/manifold_dh.js</code>) = manifold-3d 3.5.4 (Apache-2.0) + WASM base64, dibuat <code>tools/vendor/buat_manifold.py</code> (modul ES &rarr; skrip biasa). Pemuat &amp; operasi <code>web-src/mfbool.js</code> (<code>MFB.load</code> asinkron sekali, <code>wasmBinary</code>); tanpa jaringan.'],
     ['Union', '<code>web-src-dh/vunion_dh.js</code> <code>VU.union(meshes)</code>: koordinat digeser ke pusat (presisi float32), orientasi dibalik bila volume bertanda negatif, <code>Manifold.union</code>; bagian bervolume &le; maks(10<sup>&minus;3</sup> m&sup3;, 10<sup>&minus;7</sup>&middot;V) dibuang (serpihan ujung pinch-out bertebal 0). <code>VU.grup(top)</code> cache per kunci anggota (<code>R.key</code>).'],
     ['Pemakaian', '<code>VU.dengan(fn)</code> mengganti sementara <code>GM.doms</code> / <code>IM.R</code>: cabang disembunyikan, induk membawa solid union. Dipakai <code>imTraces</code>, <code>imTraces2D</code>, <code>imFiles</code> (bila <code>GM.opt.imGrp</code>, bawaan kini nyala), <code>VS.ekspor</code>. <code>imGrpStat</code>: <code>vol</code> = volume union (<code>volGrid</code> = sampling grid lama). Estimasi (<code>ME._grp</code>) tetap memakai solid anggota.'],
     ['Pilihan', '<code>GM.opt.imUni</code> (bawaan nyala); gagal union &rarr; dua kulit + pesan di kotak <i>Solid gabungan per domain induk</i>.'],
     ['Uji', '<code>tools/uji/uji_vein_union_dh.py</code>: SIM_split, satu bagian, setiap sisi dipakai 2 segitiga, volume union 59.750 m&sup3; vs grid 59.695 m&sup3;, satu trace 3D / 2D, ekspor satu STR+DTM closed=yes; build lama gagal.'],
+]))
+
+B.append('<h3>8.10 Solid Vein: union &amp; rekonsiliasi (BM 0.24.71)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Pustaka bersama', '<code>web-src/mfbool.js</code> (<code>MFB</code>): <code>load</code>, <code>union(L)</code> &rarr; tubuh terhubung, <code>ops(A,B,Z)</code> &rarr; A&cap;B, A&minus;B, (B&cap;Z)&minus;A, <code>zona(lapis,d)</code> (CrossSection NonZero &rarr; offset bulat &rarr; extrude). Format datar dunia {v,t,nv,nt} = MD.models. Dipakai juga <code>web-src-dh/vunion_dh.js</code>.'],
+    ['Satukan pulau', '<code>web-src/svbool_bm.js</code> membungkus <code>SV.build</code>: tiap pulau dipecah ke cangkang terhubung (graf simpul), cangkang yang kotak batasnya berpotongan dikelompokkan (union-find) lalu di-union; kelompok tunggal disalin apa adanya. Hasil menggantikan <code>R.IS</code> (pulau asli di <code>R.IS0</code>), ringkasan <code>R.uni</code> disimpan di <code>p.res.uni</code>. <code>SV.run</code> menunggu <code>MFB.load()</code>. Pilihan <code>P(p).uni</code> (bawaan nyala).'],
+    ['Rekonsiliasi', '<code>web-src/svrek_bm.js</code> (<code>SVK</code>): model = <code>MD.models</code> non-permukaan, bukan Solid Vein; zona = <code>SV.levels(p)</code> poligon aktif tiap flitch; hasil di <code>SVK.R[p.id]</code> (memori) + ringkasan <code>p.rekRes</code> (proyek). Blok BM: <code>SV.inSolid</code> titik pusat, SG <code>bxSGv</code>.'],
+    ['SG report', 'Report block model dalam Solid Vein kini memakai <code>bxSGv</code> (SG kosong mengikuti Filter &amp; SG, bawaan cara Surpac); sebelumnya diganti SG tetap.'],
+    ['Uji', '<code>tools/uji/uji_solid_vein_union.py</code>: union 900 m&sup3; (dulu 1.200), tergali 300 / dilusi 600 / loss 90 (zona 3 m) dan 0 (zona 0) m&sup3; analitis; build lama gagal. <code>uji_solid_vein.py</code> bagian K mematikan union untuk menguji peringatan tampalan.'],
 ]))
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')

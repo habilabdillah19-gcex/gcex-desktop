@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""DH 0.24.84: induk + cabang vein MENYATU (boolean union, web-src-dh/vunion_dh.js + vendor/manifold_dh.js).
+"""DH 0.24.84: induk + cabang vein MENYATU (boolean union, web-src-dh/vunion_dh.js; pustaka web-src/manifold.js + web-src/mfbool.js sejak DH 0.24.85).
 
 Pemilik 12 Nov 2026: "Bisakah GCex menyambungkan cabang dengan induk sehingga benar-benar menyatu?" -> Pilihan 1.
 Data latihan vein bercabang SIM_split_* (fiktif), domain QVS_Utama + QVS_Cabang (cabang = run terdalam di lubang

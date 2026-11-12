@@ -1,5 +1,5 @@
 /* manifold-3d 3.5.4 (Apache License 2.0, https://github.com/elalish/manifold) -- boolean mesh untuk menyatukan solid vein
-   induk + cabang (GC-Ex Drill Hole). DIBUAT OTOMATIS oleh tools/vendor/buat_manifold.py; jangan disunting.
+   induk + cabang (Drill Hole) dan Solid Vein Aktual (Block Model). DIBUAT OTOMATIS oleh tools/vendor/buat_manifold.py; jangan disunting.
    Isi pustaka & WASM tidak diubah; hanya pembungkus modul ES diubah menjadi skrip biasa.
 
                                  Apache License

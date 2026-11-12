@@ -47,6 +47,10 @@ instalasi aplikasi (disertakan otomatis oleh electron-builder).
                                                                       desain pit resolusi penuh (tertanam
                                                                       di halaman GC-Ex Block Model &
                                                                       Drillhole; web-src/delaunator.min.js)
+  manifold-3d                 3.5.4     Apache-2.0                    boolean mesh: vein induk + cabang
+                                                                      (Drillhole), Solid Vein union &
+                                                                      rekonsiliasi (Block Model); WASM
+                                                                      tertanam, web-src/manifold.js
   Electron                    33.2.1    MIT                           jendela aplikasi desktop
     (termasuk Chromium & Node.js)       BSD-3-Clause, MIT & lainnya   lihat LISENSI_CHROMIUM.html
   NSIS (installer, via        -         zlib/libpng                   installer & uninstaller Windows
@@ -184,6 +188,19 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 
+
+2c. MANIFOLD-3D 3.5.4 — APACHE LICENSE 2.0
+------------------------------------------
+
+manifold-3d (github.com/elalish/manifold) — pustaka geometri mesh yang dipakai GC-Ex Drillhole (menyatukan solid vein
+induk + cabang) dan GC-Ex Block Model (menyatukan pulau Solid Vein Aktual, rekonsiliasi dengan wireframe model).
+Pustaka dan berkas WebAssembly-nya ditanam tanpa perubahan isi di halaman aplikasi; hanya pembungkus modulnya diubah
+menjadi skrip biasa (tools/vendor/buat_manifold.py). Teks lengkap lisensi: LISENSI_MANIFOLD_APACHE2.txt.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 3. ELECTRON, CHROMIUM & NODE.JS
 -------------------------------

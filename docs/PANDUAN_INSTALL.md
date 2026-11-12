@@ -4657,3 +4657,14 @@ Domain vein yang punya cabang kini tampil dan diekspor sebagai **satu solid tert
 dengan boolean union (seperti *Solid › Boolean › Union* Surpac), garis luarnya menyatu di titik percabangan. Pengaturan di
 Geomodeller Vein › tab Solid › kotak **Solid gabungan per domain induk**: *Satukan induk + cabang (boolean union)* (bawaan nyala).
 Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi tidak berubah.
+
+## 194. Block Model 0.24.71 + Drillhole 0.24.85 + DB-Ex 0.46.7 — Solid Vein: satukan pulau & rekonsiliasi dengan model
+
+- **Satukan pulau yang bertampalan** (Solid Vein Aktual › hasil, bawaan nyala): potongan solid yang saling menembus disatukan
+  dengan boolean union — volume ganda hilang, ekspor DTM + STR berisi satu solid valid. Klik **Bangun solid** lagi pada periode
+  lama untuk memperbarui angkanya.
+- **Rekonsiliasi dengan wireframe model** (bagian paling bawah panel Solid Vein): centang wireframe model ore, isi lebar zona
+  penilaian ore loss (bawaan 3 m), **Hitung rekonsiliasi** → ore tergali, dilusi, ore loss (volume, tonase, kadar block model),
+  tampil di 3D dan bisa diekspor DTM + STR / CSV.
+- Report block model dalam Solid Vein memakai aturan SG Filter & SG (bawaan cara Surpac).
+- Drillhole & DB-Ex: tidak ada perubahan yang terlihat (pustaka boolean dipindah ke folder bersama; daftar lisensi diperbarui).

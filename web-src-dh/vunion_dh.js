@@ -3,7 +3,7 @@
    gambar" (sayatan Leapfrog, vein bercabang bergaris luar Y) -> Pilihan 1: boolean union mesh.
 
    Tiap domain tetap dibangun sendiri (imBuild); untuk domain INDUK yang punya cabang, solid induk + semua cabangnya
-   digabung dengan boolean UNION (pustaka manifold-3d, WASM tertanam: web-src-dh/vendor/manifold_dh.js) menjadi SATU
+   digabung dengan boolean UNION (pustaka manifold-3d, WASM tertanam: web-src/manifold.js, pemuat web-src/mfbool.js) menjadi SATU
    solid tertutup -- seperti Solid > Boolean > Union di Surpac. Dipakai untuk:
      - tampilan 3D & sayatan (2D / slab): satu kulit, garis luar menyatu di titik percabangan;
      - ekspor per domain bila "Export cabang digabung ke file domain induk" (bawaan kini NYALA) dan ekspor Vein System;
@@ -18,18 +18,15 @@
   var VU = window.VU = { mod: null, busy: false, err: '', C: {} };
 
   VU.on = function () { return !(GM.opt && GM.opt.imUni === false); };
+  /* pemuat bersama web-src/mfbool.js (MFB): satu WASM untuk semua pemakai */
   VU.load = function () {
-    if (VU.mod || VU.busy || VU.err || !window.__MF_MODULE || !window.__MF_WASM_B64) return;
+    if (VU.mod || VU.busy || VU.err || !window.MFB) return;
     VU.busy = true;
-    try {
-      var s = atob(window.__MF_WASM_B64), b = new Uint8Array(s.length);
-      for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
-      window.__MF_MODULE({ wasmBinary: b }).then(function (W) {
-        W.setup(); VU.mod = W; VU.busy = false;
-        try { if (window.gmPanel) gmPanel(); } catch (e) {}
-        try { if (window.updatePlot) updatePlot(); } catch (e) {}
-      }, function (e) { VU.busy = false; VU.err = 'pustaka boolean gagal dimuat: ' + (e && e.message || e); console.error(e); });
-    } catch (e) { VU.busy = false; VU.err = 'pustaka boolean gagal dimuat: ' + e.message; console.error(e); }
+    MFB.load().then(function (W) {
+      VU.mod = W; VU.busy = false;
+      try { if (window.gmPanel) gmPanel(); } catch (e) {}
+      try { if (window.updatePlot) updatePlot(); } catch (e) {}
+    }, function () { VU.busy = false; VU.err = MFB.err || 'pustaka boolean gagal dimuat'; });
   };
 
   /* mesh GC-Ex {_x,_y,_z,_i,_j,_k,nv,nt} -> Manifold; koordinat digeser ke pusat c (presisi float32) */
