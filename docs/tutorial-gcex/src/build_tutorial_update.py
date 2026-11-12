@@ -476,6 +476,7 @@ def f_jalur():
 F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), ('kipas', f_kipas),
                          ('zonasi', f_zonasi), ('topcut', f_topcut), ('klas', f_klas),
                          ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys), ('jalur', f_jalur))}
+F['vunion'] = 'vunion.png'   # tangkapan layar aplikasi (data latihan fiktif), bukan matplotlib
 
 # angka ringkas untuk narasi
 Q = HP[np.ones(len(HK), bool)]
@@ -1163,6 +1164,12 @@ B.append('<p><b>Metode tonase Dig block &amp; As-Mined</b> bawaannya kini <i>Sep
 B.append('<p><b>SG kosong.</b> Surpac mengalikan volume blok dengan nilai SG yang <i>tersimpan</i> di blok; blok yang tidak pernah diisi menyimpan <b>nilai bawaan atribut</b> '
          '(pada model GC lapangan, <code>sg3</code> berbawaan 0, jadi tonasenya 0 sementara volumenya tetap tercatat). Itulah bawaan GC-Ex sekarang. SG = 1 tidak dipakai: '
          'itu berat jenis air dan akan menurunkan tonase ±60% tanpa terlihat. Pilihan lain: <i>Anggap 0</i> dan <i>SG pengganti</i> (cara GC-Ex).</p>')
+
+B.append('<h3>16c. Vein bercabang menyatu: boolean union induk + cabang (Drill Hole 0.24.84)</h3>')
+B.append('<p>Solid domain induk dan semua cabangnya kini digabung dengan <b>boolean union</b> menjadi <b>satu solid tertutup</b>, seperti vein system Leapfrog atau <i>Solid &rsaquo; Boolean &rsaquo; Union</i> di Surpac. '
+         'Garis luar induk dan cabang menyatu di titik percabangan (bentuk Y) di 3D dan sayatan; ekspor per domain dan ekspor Vein System berisi satu solid per induk; volume gabungan dihitung eksak dari solid hasil union. '
+         'Pilihan <i>Satukan induk + cabang (boolean union)</i> ada di kotak <b>Solid gabungan per domain induk</b> (tab Solid), bawaan menyala. Pustaka boolean (manifold-3d) tertanam di aplikasi &mdash; tetap offline. Estimasi tidak berubah.</p>')
+B.append(fig_html('vunion', 'Data latihan SIM_split, sayatan tegak: QVS_Utama + QVS_Cabang sesudah boolean union &mdash; satu solid bergaris luar Y (tangkapan layar uji <code>uji_vein_union_dh.py</code>).'))
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

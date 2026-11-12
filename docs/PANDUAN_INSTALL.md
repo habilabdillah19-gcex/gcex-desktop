@@ -4650,3 +4650,10 @@ diganti di **Topo / pit**.
   Pilihan lain: *Anggap 0*, *SG pengganti (cara GC-Ex)*.
 - Reporting Block Model kini tetap mencantumkan blok ber-SG 0 (volume dihitung, tonase 0), sama seperti Surpac.
 - Block model .mdl besar (≥ 150 MB, dibaca lewat backend) yang atributnya berdeskripsi kini terbaca.
+
+## 193. Drillhole 0.24.84 — Vein induk + cabang menyatu (boolean union)
+
+Domain vein yang punya cabang kini tampil dan diekspor sebagai **satu solid tertutup**: solid induk dan cabangnya digabung
+dengan boolean union (seperti *Solid › Boolean › Union* Surpac), garis luarnya menyatu di titik percabangan. Pengaturan di
+Geomodeller Vein › tab Solid › kotak **Solid gabungan per domain induk**: *Satukan induk + cabang (boolean union)* (bawaan nyala).
+Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi tidak berubah.

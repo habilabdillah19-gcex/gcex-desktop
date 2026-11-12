@@ -453,6 +453,15 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Backend .mdl', '<code>mdl_io._parse_head</code>: sesudah nilai bawaan dibaca teks deskripsi berakhiran 0 (<code>a["desc"]</code>); sebelumnya satu byte dilompati.'],
 ]))
 
+B.append('<h3>8.9 Boolean union induk + cabang (DH 0.24.84)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Pustaka', '<code>web-src-dh/vendor/manifold_dh.js</code> = manifold-3d 3.5.4 (Apache-2.0) + WASM base64, dibuat <code>tools/vendor/buat_manifold.py</code> (modul ES &rarr; skrip biasa). Dimuat asinkron sekali (<code>VU.load</code>, <code>wasmBinary</code>); tanpa jaringan.'],
+    ['Union', '<code>web-src-dh/vunion_dh.js</code> <code>VU.union(meshes)</code>: koordinat digeser ke pusat (presisi float32), orientasi dibalik bila volume bertanda negatif, <code>Manifold.union</code>; bagian bervolume &le; maks(10<sup>&minus;3</sup> m&sup3;, 10<sup>&minus;7</sup>&middot;V) dibuang (serpihan ujung pinch-out bertebal 0). <code>VU.grup(top)</code> cache per kunci anggota (<code>R.key</code>).'],
+    ['Pemakaian', '<code>VU.dengan(fn)</code> mengganti sementara <code>GM.doms</code> / <code>IM.R</code>: cabang disembunyikan, induk membawa solid union. Dipakai <code>imTraces</code>, <code>imTraces2D</code>, <code>imFiles</code> (bila <code>GM.opt.imGrp</code>, bawaan kini nyala), <code>VS.ekspor</code>. <code>imGrpStat</code>: <code>vol</code> = volume union (<code>volGrid</code> = sampling grid lama). Estimasi (<code>ME._grp</code>) tetap memakai solid anggota.'],
+    ['Pilihan', '<code>GM.opt.imUni</code> (bawaan nyala); gagal union &rarr; dua kulit + pesan di kotak <i>Solid gabungan per domain induk</i>.'],
+    ['Uji', '<code>tools/uji/uji_vein_union_dh.py</code>: SIM_split, satu bagian, setiap sisi dipakai 2 segitiga, volume union 59.750 m&sup3; vs grid 59.695 m&sup3;, satu trace 3D / 2D, ekspor satu STR+DTM closed=yes; build lama gagal.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))
