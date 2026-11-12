@@ -444,6 +444,15 @@ B.append('<p><code>web-src/tinhr.js</code> <code>TIN.hillshade(t, tin, opt, mode
          'Mode dari <code>#ovShade</code> (<code>TIN.shadeMode</code>), ikut kunci cache <code>ovWk</code>. Permukaan Data Referensi (<code>mdTraces</code>, <code>jenis:\'surf\'</code>) '
          'memakai rumus yang sama dengan cache <code>m._hsK</code> / <code>m._hsF</code>. Uji <code>tools/uji/uji_hillshade.js</code>.</p>')
 
+B.append('<h3>8.8 Cara Surpac sebagai bawaan: Dig block, As-Mined, SG (BM 0.24.70 / DH 0.24.83)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Metode tonase', '<code>lyCalcM()</code> (<code>web-src/sgfix.js</code>): <code>calcM</code> kosong = <code>surpac</code> (<code>lyTonS</code>, titik tengah); <code>clip</code> = presisi. Dipakai Dig block dan As-Mined (<code>am2.js</code>).'],
+    ['SG kosong', '<code>bxSGkos()</code>: <code>mdl</code> (bawaan) / <code>zero</code> / <code>rep</code>; <code>bxSGdef()</code> membaca <code>m.mdl.st[].def</code>; <code>bxSGeff()</code> = SG efektif (0 bila tanpa header .mdl). '
+     'Ringkasan per RL meneruskan <code>sg_zero</code>/<code>sg_rep</code> efektif ke backend. Drill Hole Reporting: <code>o.sgKos</code>, <code>rpSGdef</code>, <code>rpSGkos</code>.'],
+    ['Reporting BM', '<code>rpRun</code> Block Model membuang hanya SG negatif / tidak sah (<code>sg &gt;= 0</code> lolos): blok SG 0 dilaporkan dengan tonase 0. Python <code>laporan.py</code> ikut (<code>sgBawaan</code>).'],
+    ['Backend .mdl', '<code>mdl_io._parse_head</code>: sesudah nilai bawaan dibaca teks deskripsi berakhiran 0 (<code>a["desc"]</code>); sebelumnya satu byte dilompati.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

@@ -160,7 +160,7 @@ JS = r"""
   if (sgCol) {
     jalan('kolom SG (presisi)', kotak(30), S({calcM: 'clip', sgCol: sgCol}));
     jalan('kolom SG, tidak sah -> 0', kotak(30), S({calcM: 'clip', sgCol: sgCol, sgZero: 'zero'}));
-    jalan('kolom SG, pengganti 1,8', kotak(30), S({calcM: 'clip', sgCol: sgCol, sgRep: 1.8}));
+    jalan('kolom SG, pengganti 1,8', kotak(30), S({calcM: 'clip', sgCol: sgCol, sgZero: 'rep', sgRep: 1.8}));
     jalan('kolom SG (surpac)', kotak(30), S({calcM: 'surpac', sgCol: sgCol}));
   }
   jalan('cut-off tampilan (onlyPass)', kotak(30),

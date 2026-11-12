@@ -190,7 +190,7 @@ ch('Ringkasan harian flitch aktif', dta('lanjutan &mdash; flitch RL 241,25 &ndas
 ch('Rekap dig block: multi-unsur & centroid', dta('lanjutan &mdash; memerlukan kolom <code>S_PCT</code>, <code>ZN_PPM</code>, <code>CU_PPM</code>',
      [('Prasyarat', 'centang unsurnya di <b>Elemen laporan</b> (Dig block)'),
       ('Langkah', 'Dig Block &rarr; <b>Rekap semua flitch (CSV)</b>'),
-      ('Hasil yang seharusnya', '<b>120 baris</b> berkolom AU_GC, S_PCT, ZN_PPM, CU_PPM, Metal tiap unsur, Centroid_X, Centroid_Y')]) + """<p>Rekap dig block semua flitch (CSV) dulu hanya memuat <b>satu</b> kolom kadar. Untuk endapan ber-multi unsur, kolom lainnya harus diambil dari tempat lain.</p>
+      ('Hasil yang seharusnya', '<b>103 baris</b> berkolom AU_GC, S_PCT, ZN_PPM, CU_PPM, Metal tiap unsur, Centroid_X, Centroid_Y')]) + """<p>Rekap dig block semua flitch (CSV) dulu hanya memuat <b>satu</b> kolom kadar. Untuk endapan ber-multi unsur, kolom lainnya harus diambil dari tempat lain.</p>
 <p>Sekarang rekap itu memuat <b>semua unsur</b> yang dicentang di <i>Elemen laporan</i>, <b>Metal</b> tiap unsur yang satuannya memungkinkan, serta <b>Centroid_X</b> dan <b>Centroid_Y</b> tiap dig block.</p>""" +
  kv([('Kolom', 'RL_atas, RL_bawah, Nama, Material, Tujuan, Luas_m2, Ton, &lt;tiap unsur&gt;, Metal_&lt;unsur&gt;, Centroid_X, Centroid_Y, Flag'),
      ('Centroid', 'titik berat poligon (bukan titik tengah kotak pembatas), dipakai dispatch / fleet system untuk menandai lokasi blok')]))
@@ -213,8 +213,8 @@ ch('Laporan grade × tonase', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238
 
 ch('Review flitch per flitch di Project Tree', dta('lanjutan &mdash; dua flitch',
      [('Flitch kedua', 'RL atas <b>295</b> &rarr; flitch <b>RL 295 &ndash; 292,5</b>, lalu <b>Buat dig block otomatis</b> lagi'),
-      ('Hasil yang seharusnya', 'RL 295&ndash;292,5: <b>52</b> dig block, 9.100 t @ 1,50 &middot; RL 241,25&ndash;238,75: <b>68</b> dig block, 19.175 t @ 4,58'),
-      ('Rekap semua flitch (CSV)', '<b>120 baris</b> dig block')]) + f"""<p>Setiap menu punya node <b>Per flitch</b> yang dihitung dari poligon tersimpan; flitch aktif tidak berubah saat menghitung. Kerjakan flitch kedua (RL atas {R0[0]}) dengan langkah yang sama, lalu tinjau keduanya.</p>"""
+      ('Hasil yang seharusnya', 'RL 295&ndash;292,5: <b>35</b> dig block, 6.338 t @ 1,77 &middot; RL 241,25&ndash;238,75: <b>68</b> dig block, 19.175 t @ 4,58'),
+      ('Rekap semua flitch (CSV)', '<b>103 baris</b> dig block')]) + f"""<p>Setiap menu punya node <b>Per flitch</b> yang dihitung dari poligon tersimpan; flitch aktif tidak berubah saat menghitung. Kerjakan flitch kedua (RL atas {R0[0]}) dengan langkah yang sama, lalu tinjau keduanya.</p>"""
  + steps('<b>Dig Block &rarr; Per flitch</b> ([[pertree_digblock]]): tiap flitch menampilkan jumlah DB dan ton @ kadar. Buka satu flitch: daftar poligon dengan ton @ kadar dan &#9873; flag ([[pertree_digblock_flitch]]).',
    'Klik poligon: flitch-nya dibuka di Sayatan 2D dan poligon disorot ([[pertree_digblock_2d]]). Menu &hellip;: <b>Edit bentuk</b>, <b>Hapus</b>.',
    '<b>Laporan Grade × Tonnage &rarr; Per flitch</b> ([[pertree_laporan]]): ton @ kadar per flitch dan per material &rarr; tujuan. <b>Rekap semua flitch (CSV)</b>: satu baris per dig block di semua flitch.')
@@ -257,7 +257,7 @@ ch('As-mined: rencana vs aktual', dta('lanjutan &mdash; flitch RL 241,25 &ndash;
      [('Poligon aktual', 'di latihan ini dibuat dari dig block <b>HG</b> dan <b>LG</b> yang digeser <b>+0,6 m</b> ke timur dan <b>&minus;0,4 m</b> ke utara (simulasi penggalian)'),
       ('Jumlah poligon', '<b>68</b>'),
       ('Tanggal &amp; shift', 'isi di <b>Default poligon berikutnya</b> &mdash; mis. tanggal hari ini dan <b>DS &middot; Siang</b>; dipakai <b>Laporan periode</b>'),
-      ('Hasil yang seharusnya', 'rencana <b>19.175 t</b> @ 4,58 vs aktual <b>19.152 t</b> @ 3,99')]) + """<p>Sesudah penambangan, batas aktual dicatat sebagai <b>poligon as-mined</b> (pick-up survey, file STR / DXF / CSV, atau digit manual) lalu dihitung dengan model GC + koreksi sampel. Di latihan ini poligon aktual dibuat dari dig block yang bergeser 0,6 m (simulasi penggalian).</p>"""
+      ('Hasil yang seharusnya', 'rencana <b>19.175 t</b> @ 4,58 vs aktual <b>19.175 t</b> @ 4,58 (metode bawaan <i>Seperti Surpac</i>)')]) + """<p>Sesudah penambangan, batas aktual dicatat sebagai <b>poligon as-mined</b> (pick-up survey, file STR / DXF / CSV, atau digit manual) lalu dihitung dengan model GC + koreksi sampel. Di latihan ini poligon aktual dibuat dari dig block yang bergeser 0,6 m (simulasi penggalian). Dengan metode bawaan <b>Seperti Surpac</b> (blok utuh menurut titik tengah) pergeseran 0,6 m pada blok 5 m tidak memindahkan satu titik tengah pun, jadi rencana dan aktual sama; pilih <b>Presisi GC-Ex</b> di Parameter estimasi As-Mined untuk melihat pengaruh pergeseran sekecil itu.</p>"""
  + steps('Project Tree &rarr; <b>As-Mined &rarr; Flitch, poligon, lantai &amp; atap</b>: import pick-up / boundary atau digit manual ([[asmined_poligon]]).',
    f"<b>As-Mined &rarr; Per flitch</b> ([[pertree_asmined]]): tiap flitch menampilkan selisih <b>&Delta;</b>; di dalamnya <b>Rencana (dig block)</b> dan <b>Aktual (as-mined)</b> beserta poligon. Flitch RL {AV[0]} – {AV[1]}: rencana {fN(AV[2])} t @ {fN(AV[3],2)}, aktual {fN(AV[5])} t @ {fN(AV[6],2)}.",
    'Klik flitch: dibuka di Sayatan 2D dengan dig block (rencana) dan poligon as-mined (aktual) bertumpuk ([[asmined_review_2d]]).')

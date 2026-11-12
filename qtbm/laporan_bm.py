@@ -117,7 +117,7 @@ def payload(bm: BlockModel, P: Pilihan, pakai: Optional[np.ndarray] = None) -> D
         "off": [0.0, 0.0],
         "num": num,
         "cat": cat,
-        "opsi": P.opsi(),
+        "opsi": dict(P.opsi(), sgBawaan=float((getattr(bm, "bawaan", None) or {}).get(P.sg_kolom, 0.0) or 0.0)),
     }
 
 

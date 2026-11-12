@@ -20,7 +20,7 @@ function bsRender(R){var d=$('bsDlg');if(!d)return;var S=bsPar(),m=BX.m,A=bsAttr
     '<div class=bsp><label>Tinggi bench (m)<input type=number step=any value="'+S.bench+'" onchange="BX.bs.bench=+this.value"></label><label>RL acuan (batas bench)<input type=number step=any value="'+S.ref+'" onchange="BX.bs.ref=+this.value"></label>'+
     '<label>Cut-off<select onchange="BX.bs.cutA=this.value">'+A.map(function(a){return '<option'+(a===S.cutA?' selected':'')+'>'+bxE(a)+'</option>';}).join('')+'</select></label><label>&ge;<input type=number step=any placeholder="kosong = semua blok" value="'+bxE(S.cut)+'" onchange="BX.bs.cut=this.value"></label>'+
     '<label class=sw style="flex-direction:row;align-items:center"><input type=checkbox '+(S.hide0!==false?'checked':'')+' onchange="BX.bs.hide0=this.checked;bsRender(BX.bsR)">Sembunyikan bench 0 ton</label><button class=btn-pri onclick="bsRun()">Hitung</button>'+(R&&R.rows?'<button onclick="bsCsv()">&#8681; CSV</button>':'')+'</div>'+
-    '<div class=hint>Elemen: <b>'+A.map(bxE).join(', ')+'</b> (daftar Elemen laporan; atribut kalkulasi IIF tidak ikut). SG: '+(U.sgCol?'kolom '+bxE(U.sgCol)+(U.sgZero==='zero'?', &le;0 dianggap 0 (seperti Surpac)':', &le;0 diganti '+((parseFloat(U.sgRep)>0?U.sgRep:U.sg))):'tetap '+U.sg)+'. Blok masuk bench menurut titik tengahnya (di atas RL bawah, tidak di atas RL atas), sama dengan metode Seperti Surpac.</div>';
+    '<div class=hint>Elemen: <b>'+A.map(bxE).join(', ')+'</b> (daftar Elemen laporan; atribut kalkulasi IIF tidak ikut). SG: '+(U.sgCol?'kolom '+bxE(U.sgCol)+(', &le;0 / kosong = '+bxSGeff()+(bxSGkos()==='rep'?' (SG pengganti, cara GC-Ex)':' (seperti Surpac)')):'tetap '+U.sg)+'. Blok masuk bench menurut titik tengahnya (di atas RL bawah, tidak di atas RL atas), sama dengan metode Seperti Surpac.</div>';
   if(R&&R.err)h+='<div class=warn>&#9888; '+bxE(R.err)+'</div>';
   if(R&&R.busy)h+='<div class=hint>&#8987; Menghitung&hellip;</div>';
   if(R&&R.rows){var f=function(a,v){return v==null?'-':(window.elF?elF(a,v):v.toFixed(3));};
@@ -30,7 +30,7 @@ function bsRender(R){var d=$('bsDlg');if(!d)return;var S=bsPar(),m=BX.m,A=bsAttr
   d.innerHTML=h+'</div>';BX.bsR=R||BX.bsR;}
 async function bsRun(){var S=bsPar(),U=BX.ui,A=bsAttrs(),m=BX.m;bsRender({busy:1});
   if(!bsBack()){setTimeout(function(){try{var R=bsLocal(S,A);R.ver=BX.ver;bsRender(R);}catch(e){bsRender({err:String(e&&e.message||e)});}},20);return;}
-  try{var cut=String(S.cut).trim()===''?null:parseFloat(S.cut);var j=await gcexDesktop.api('/mdl/benches',{path:m.mdl.path,bench:+S.bench,ref:+S.ref,attrs:A,sg_col:U.sgCol||null,sg:+U.sg||2.6,sg_zero:U.sgZero==='zero'?'zero':'rep',sg_rep:parseFloat(U.sgRep)>0?parseFloat(U.sgRep):null,cut_attr:cut==null?null:S.cutA,cut:cut});
+  try{var cut=String(S.cut).trim()===''?null:parseFloat(S.cut);var j=await gcexDesktop.api('/mdl/benches',{path:m.mdl.path,bench:+S.bench,ref:+S.ref,attrs:A,sg_col:U.sgCol||null,sg:+U.sg||2.6,sg_zero:bxSGeff()>0?'rep':'zero',sg_rep:bxSGeff()>0?bxSGeff():null,cut_attr:cut==null?null:S.cutA,cut:cut});
     j.attrs=A;j.par={bench:S.bench,ref:S.ref,cut:cut,cutA:S.cutA};j.ver=BX.ver;bsRender(j);}catch(e){bsRender({err:String(e&&e.message||e)});}}
 /* Mirror persis backend `bench_summary` (backend/gcex_backend/mdl_io.py):
    - bench blok ditentukan titik TENGAHNYA: k = ceil((z-ref)/bench - 1e-9) - 1, jadi (bawah, atas],
@@ -64,7 +64,7 @@ function bsLocal(S,A){var m=BX.m,U=BX.ui,bench=+S.bench,ref=+S.ref;
          par:{bench:bench,ref:ref,cut:cut,cutA:cA},n_model:m.n,file:(m.mdl&&m.mdl.file)||m.name};}
 function bsCsv(){var R=BX.bsR;if(!R||!R.rows)return;var A=R.attrs,o=[['RL_atas','RL_bawah','Blok','Volume_m3','Ton'].concat(A).join(',')];R.rows.forEach(function(r){o.push([r.top,r.bot,r.n,r.vol.toFixed(2),r.ton.toFixed(2)].concat(A.map(function(a){return r.grade[a]==null?'':r.grade[a].toFixed(5);})).join(','));});
   o.push(['TOTAL','',R.total.n,R.total.vol.toFixed(2),R.total.ton.toFixed(2)].concat(A.map(function(a){return R.total.grade[a]==null?'':R.total.grade[a].toFixed(5);})).join(','));
-  o.push('');o.push('Parameter,bench '+R.par.bench+' m,acuan RL '+R.par.ref+(R.par.cut!=null?',cut-off '+R.par.cutA+' >= '+R.par.cut:',tanpa cut-off')+',SG '+(BX.ui.sgCol?BX.ui.sgCol+' ('+(BX.ui.sgZero==='zero'?'<=0 = 0':'<=0 = pengganti')+')':'tetap '+BX.ui.sg));
+  o.push('');o.push('Parameter,bench '+R.par.bench+' m,acuan RL '+R.par.ref+(R.par.cut!=null?',cut-off '+R.par.cutA+' >= '+R.par.cut:',tanpa cut-off')+',SG '+(BX.ui.sgCol?BX.ui.sgCol+' ('+('<=0 = '+bxSGeff())+')':'tetap '+BX.ui.sg));
   dgDl(o.join('\r\n')+'\r\n','Ringkasan_PerRL_'+String(BX.m.name).replace(/[^A-Za-z0-9_-]+/g,'_')+'.csv','text/csv');}
 (function(){var _p=window.bxPanel;if(!_p)return;bxPanel=function(){var r=_p.apply(this,arguments);
   try{var b=$('bxBody');if(b&&bsOn()&&!b.querySelector('.bsbtn')){var st=$('bxStat'),d=document.createElement('div');d.className='bsbtn';

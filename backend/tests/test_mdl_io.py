@@ -179,3 +179,20 @@ def test_fit_window_caps_block_count_from_top(cache_env):
     assert 0 < len(idx) <= 1000
     dz = m["root"][2] * 2.0 ** -m["maxL"]
     assert abs((z0 - m["origin"][2]) / dz - round((z0 - m["origin"][2]) / dz)) < 1e-6
+
+
+def test_header_attribute_description_is_skipped():
+    """Atribut berdeskripsi (kolom Description Surpac, mis. sg3 = "density") tidak boleh menggeser daftar atribut.
+    Header SINTETIS; laporan pemilik 12 Nov 2026: 'Tipe atribut "" (24940) belum didukung'."""
+    i32 = lambda v: struct.pack(">i", v)
+    f64 = lambda v: struct.pack(">d", v)
+    H = b"### Block Model ###\nVersion 4.0\n\x00uji.mdl\x00\x00" + b"\x00" * 12
+    H += b"".join(f64(v) for v in (1000, 2000, 0, 12, 12, 6, 1200, 1200, 300)) + i32(0) + i32(4)
+    H += b"au\x00" + i32(0) + i32(2) + i32(2) + f64(0) + b"\x00"                    # tanpa deskripsi
+    H += b"sg3\x00" + i32(0) + i32(2) + i32(2) + f64(2.5) + b"density\x00"          # real berdeskripsi
+    H += b"rock\x00" + i32(0) + i32(0) + i32(3) + b"BLANK\x00" + b"rock type\x00"   # karakter berdeskripsi
+    H += b"n\x00" + i32(0) + i32(0) + i32(1) + i32(-9) + b"nomor\x00"                # integer berdeskripsi
+    H += i32(0) + b"\x00" * 64
+    h = M._parse_head(H, len(H), "uji.mdl")
+    got = [(a["name"], a["def"], a.get("desc")) for a in h["attrs"]]
+    assert got == [("au", 0.0, ""), ("sg3", 2.5, "density"), ("rock", "BLANK", "rock type"), ("n", -9, "nomor")]

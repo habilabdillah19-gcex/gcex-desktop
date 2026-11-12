@@ -96,6 +96,7 @@ class BlockModel:
     kategori: Dict[str, Tuple[np.ndarray, List[str]]] = field(default_factory=dict)
     nama: str = ""
     asal: str = ""
+    bawaan: Dict[str, Any] = field(default_factory=dict)   # nilai bawaan atribut dari header .mdl (Surpac)
 
     @property
     def n(self) -> int:
@@ -282,6 +283,8 @@ def baca_bm_mdl(p: Path, maks: int = 0, rl: Optional[Tuple[float, float]] = None
             bm.angka[nama] = np.asarray(c.col("f%d" % k, "<i4")[idx], dtype=np.float64)
         else:
             bm.angka[nama] = np.asarray(c.col("f%d" % k, "<f8")[idx], dtype=np.float64).copy()
+        if tipe != 3 and isinstance(a.get("def"), (int, float)):
+            bm.bawaan[nama] = float(a["def"])
     return bm
 
 

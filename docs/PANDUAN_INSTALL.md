@@ -4639,3 +4639,14 @@ Permukaan topografi, desain pit dan DTM kini digambar dengan **hillshade** (caha
 punggungan terlihat jelas dari sudut pandang mana pun. Atur di panel **Overlay › Bayangan (shading) topo & pit**: *Hillshade jelas*
 (bawaan), *Hillshade lembut*, atau *Lampu 3D Plotly (lama)*. Warna bawaan topo hijau zaitun dan pit biru keabuan; keduanya tetap bisa
 diganti di **Topo / pit**.
+
+## 192. Block Model 0.24.70 + Drillhole 0.24.83 + DB-Ex 0.46.6 — Cara Surpac sebagai bawaan (Dig block, As-Mined, SG kosong)
+
+- **Dig block & As-Mined**: metode tonase bawaan kini **Seperti Surpac** — blok dihitung utuh bila titik tengahnya di dalam string /
+  boundary dan RL flitch. *Presisi GC-Ex* (blok dipotong di garis) tetap bisa dipilih. Tonase dig plan bisa berbeda dari versi
+  sebelumnya; angka baru inilah yang setara dengan report Surpac.
+- **Blok dengan SG kosong / ≤ 0** (Block Model › Filter & SG; Reporting Drill Hole bila SG dari atribut): bawaan **nilai bawaan atribut
+  SG di .mdl**, seperti Surpac. Untuk model yang atribut SG-nya berbawaan 0 (mis. `sg3`), blok itu tercatat volumenya dengan tonase 0.
+  Pilihan lain: *Anggap 0*, *SG pengganti (cara GC-Ex)*.
+- Reporting Block Model kini tetap mencantumkan blok ber-SG 0 (volume dihitung, tonase 0), sama seperti Surpac.
+- Block model .mdl besar (≥ 150 MB, dibaca lewat backend) yang atributnya berdeskripsi kini terbaca.

@@ -166,7 +166,8 @@ class Tampilan:
     opasitas: float = 0.85
     sg: float = 2.6
     sg_kolom: str = ""
-    sg_nol: str = ""                     # 'zero' = blok tanpa SG sah bertonase 0 (seperti Surpac)
+    sg_nol: str = ""                     # '' / 'mdl' = nilai bawaan atribut .mdl (bawaan, seperti Surpac); 'zero' = 0; 'rep' = SG pengganti
+    sg_bawaan: float = 0.0               # nilai bawaan atribut SG di header .mdl (diisi sg_larik dari BlockModel.bawaan)
     sg_ganti: str = ""                   # SG pengganti bila kolom SG kosong/nol; kosong = pakai `sg`
 
     # ---------- SG per blok ----------
@@ -190,6 +191,10 @@ class Tampilan:
             return fv
         if self.sg_nol == "zero":
             return 0.0
+        if self.sg_nol != "rep":
+            # 0.24.70: bawaan seperti Surpac -- blok yang tidak pernah diisi menyimpan nilai bawaan atribut
+            d = float(self.sg_bawaan or 0.0)
+            return d if (math.isfinite(d) and d > 0) else 0.0
         try:
             r = float(self.sg_ganti)
         except (TypeError, ValueError):
@@ -202,6 +207,10 @@ class Tampilan:
         if not self.sg_kolom or self.sg_kolom not in bm.angka:
             return np.full(n, float(self.sg), dtype=np.float64)
         v = np.asarray(bm.angka[self.sg_kolom], dtype=np.float64)
+        try:
+            self.sg_bawaan = float((getattr(bm, "bawaan", None) or {}).get(self.sg_kolom, 0.0))
+        except (TypeError, ValueError):
+            self.sg_bawaan = 0.0
         sah = np.isfinite(v) & (v > 0)
         ganti = self.sg_blok(float("nan"))     # satu jalur yang sama dengan versi per blok
         return np.where(sah, v, ganti)

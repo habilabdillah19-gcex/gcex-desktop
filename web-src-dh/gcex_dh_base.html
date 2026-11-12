@@ -4526,6 +4526,11 @@ function rpDomFn(o,m){var v=o.dom;if(!v||v==='all')return{f:null,lab:'semua blok
     if(code>=0)return{f:function(i){return dc.codes[i]===code;},lab:'domain_est = '+d.name};throw new Error('Solid '+d.name+' belum dibangun (Geological Modelling ).');}
   if(v.indexOf('cat:')===0){var C=m.cat[v.slice(4)],on=o.cat||{},sel=C.dict.map(function(s){return on[s]!==false;});return{f:function(i){var c=C.codes[i];return c!==65535&&sel[c];},lab:v.slice(4)+' = '+C.dict.filter(function(s,k){return sel[k];}).join(', ')};}
   if(v.indexOf('wf:')===0){var w=MD.models[+v.slice(3)],W2=RPTIN.get(w)||(function(){var q=wfInside(w);RPTIN.set(w,q);return q;})();return{f:function(i,x,y,z){return W2.f(x,y,z);},lab:'di dalam wireframe '+w.name};}return{f:null,lab:''};}
+/* SG dari atribut yang <= 0 / kosong (0.24.83, keputusan pemilik 12 Nov 2026): bawaan seperti Surpac = nilai bawaan atribut di
+   header .mdl (blok yang tidak pernah diisi menyimpan nilai itu; mis. sg3 bawaan 0 -> tonase 0), tanpa header .mdl -> 0;
+   o.sgKos 'zero' = selalu 0; 'rep' = SG tetap di kotak sebelah (cara GC-Ex, dulu satu-satunya cara). */
+function rpSGdef(o,m){var st=m&&m.mdl&&m.mdl.st;if(!st)return NaN;for(var i=0;i<st.length;i++)if(st[i].name===o.sgAttr){var v=+st[i].def;return isFinite(v)?v:NaN;}return NaN;}
+function rpSGkos(o,m,sg0){var k=o.sgKos||'mdl';if(k==='rep')return sg0;if(k==='zero')return 0;var d=rpSGdef(o,m);return d>0?d:0;}
 function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performance.now(),msg=$('rpMsg');
   try{var cuts=String(o.cuts).split(/[;, ]+/).map(parseFloat).filter(isFinite).sort(function(a,b){return a-b;});if(!cuts.length)cuts=[0];
     var G=m.num[o.gr];if(!G)throw new Error('Pilih atribut kadar untuk cut-off.');var atts=o.atts.filter(function(a){return m.num[a];});if(atts.indexOf(o.gr)<0)atts.unshift(o.gr);
@@ -4541,6 +4546,7 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     /* cara GC-Ex: proporsi volume blok terhadap permukaan (bawaan mati = cara Surpac, titik pusat blok) */
     var SF=(o.sfrac===true&&(tz||pz||SX.length)&&window.RPSF)?RPSF.make({tz:tz,pz:pz,sx:SX,ox:offX,oy:offY,n:+o.sfN||4}):null,nSf=0;
     var z0=parseFloat(o.z0),z1=parseFloat(o.z1),PL=o.poly?rpPoly(o.poly):null,FA=o.fA&&m.num[o.fA]?m.num[o.fA]:null,fv=parseFloat(o.fV),SGA=o.sgMode==='a'&&m.num[o.sgAttr]?m.num[o.sgAttr]:null,sg0=+o.sg||2.6;
+    var sgK=rpSGkos(o,m,sg0);
     var grp=o.grp,bh=Math.max(0.5,+o.bh||5),GC=grp==='cat'&&m.cat[o.catAttr]?m.cat[o.catAttr]:null,dE=m.cat[meAN().dom];
     var n=m.n,mask=new Uint8Array(n),T=[],I=[],Kg=[],nb=0,nOut={dom:0,surf:0,ext:0,z:0,poly:0,f:0,nan:0},pOut=!!o.polyOut;
     for(var i=0;i<n;i++){var x=m.x[i]-offX,y=m.y[i]-offY,z=m.z[i];
@@ -4554,7 +4560,7 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
       }
       if(D.f&&!D.f(i,x,y,z)){nOut.dom++;continue;}
       var g=G[i];if(!isFinite(g)||g<=-90){nOut.nan++;continue;}
-      var sg=SGA&&isFinite(SGA[i])&&SGA[i]>0?SGA[i]:sg0;mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);
+      var sg=SGA?(isFinite(SGA[i])&&SGA[i]>0?SGA[i]:sgK):sg0;mask[i]=1;T.push(m.sx[i]*m.sy[i]*m.sz[i]*sg);I.push(i);
       Kg.push(grp==='bench'?Math.floor(z/bh):grp==='dom'?(dE&&dE.codes[i]!==65535?dE.dict[dE.codes[i]]:'(di luar domain estimasi)'):grp==='cat'?(GC&&GC.codes[i]!==65535?GC.dict[GC.codes[i]]:'(kosong)'):'Total');nb++;}
     /* agregasi: per cut-off x grup */
     var agg=function(filt){var R={};for(var j=0;j<I.length;j++){var i2=I[j];if(!filt(i2))continue;var k=Kg[j],r=R[k]||(R[k]={n:0,v:0,t:0,s:{}});var t=T[j];r.n++;r.t+=t;r.v+=m.sx[i2]*m.sy[i2]*m.sz[i2];
@@ -4600,6 +4606,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     h+='<h4>Atribut yang dilaporkan</h4><div class=hint style="margin-top:-2px">Centang atribut kadar yang ingin dilaporkan; pilih satuannya. Logam: g/t &amp; ppm &rarr; gram; % &rarr; ton logam.</div><div class=rpatt>'+nums.map(function(a){var on=o.atts.indexOf(a)>=0;return '<div class="rpa'+(on?' on':'')+'"><label><input type=checkbox '+(on?'checked':'')+' onchange="rpAtt(\''+rpE(a)+'\',this.checked)"> '+rpE(a)+'</label>'+(on?sel('',[['g/t','g/t'],['ppm','ppm'],['%','%']],o.unit[a]||'g/t',"RP.o.unit['"+rpE(a)+"']=this.value"):'')+'</div>';}).join('')+'</div>';
     h+='<div class="g2 f"><div><label>Atribut untuk cut-off</label>'+sel('',nums.map(function(a){return[a,a];}),o.gr,"rpSet('gr',this.value)")+'</div><div><label>Cut-off (pisah koma)</label><input type=text value="'+rpE(o.cuts)+'" onchange="RP.o.cuts=this.value"></div></div>';
     h+='<h4>Densitas</h4><div class="g2 f"><div>'+sel('',[['c','SG tetap'],['a','Dari atribut']],o.sgMode,"rpSet('sgMode',this.value)")+'</div><div>'+(o.sgMode==='a'?sel('',nums.map(function(a){return[a,a];}),o.sgAttr||nums.filter(function(a){return /^(sg|dens|bd|density)/i.test(a);})[0]||nums[0],"RP.o.sgAttr=this.value"):'<input type=number step=any value="'+o.sg+'" onchange="RP.o.sg=+this.value">')+'</div></div>';
+    if(o.sgMode==='a'){if(!o.sgAttr)o.sgAttr=nums.filter(function(a){return /^(sg|dens|bd|density)/i.test(a);})[0]||nums[0];var sgD=rpSGdef(o,m);h+='<div class="g2 f"><div><label>Blok SG &le; 0 / kosong</label>'+sel('',[['mdl','Nilai bawaan atribut di .mdl'+(isFinite(sgD)?' = '+sgD:'')+' (seperti Surpac, bawaan)'],['zero','Anggap 0'],['rep','SG tetap (cara GC-Ex)']],o.sgKos||'mdl',"rpSet('sgKos',this.value)")+'</div><div>'+((o.sgKos||'mdl')==='rep'?'<label>SG tetap</label><input type=number step=any value="'+o.sg+'" onchange="RP.o.sg=+this.value">':'<div class=hint style="margin-top:14px">SG blok itu = <b>'+rpSGkos(o,m,+o.sg||2.6)+'</b></div>')+'</div></div>';}
     h+='<h4>Pengelompokan</h4><div class="g2 f"><div>'+sel('',[['none','Tanpa grup'],['bench','Per bench (elevasi)'],['dom','Per domain estimasi']].concat(Object.keys(m.cat).length?[['cat','Per atribut kategori']]:[]),o.grp,"rpSet('grp',this.value)")+'</div><div>'+(o.grp==='bench'?'<input type=number step=any value="'+o.bh+'" onchange="RP.o.bh=+this.value" title="Tinggi bench (m)">':o.grp==='cat'?sel('',Object.keys(m.cat).map(function(k){return[k,k];}),o.catAttr||Object.keys(m.cat)[0],"RP.o.catAttr=this.value"):'')+'</div></div>';
     h+='<button class=btn-pri style="width:100%;margin-top:6px" onclick="RP.sec=\'c\';rpPanel()">Lanjut: constraint &rarr;</button>';}
   else if(RP.sec==='c'){

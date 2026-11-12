@@ -45,7 +45,9 @@ with sync_playwright() as pw:
     cek(c["ok"] and c["cls"] == [["MO", 0.3, 0.4], ["LG", 0.4, 1], ["HG", 1, 3], ["SG", 3, ""]] and "material_type" in c["src"], "C kelas dari aturan IIF block model: MO 0,3-0,4 / LG 0,4-1 / HG 1-3 / SG >=3")
     cek(c["sg"] == "sg3" and c["sg0"] == "" and c["sgx"] == "" and c["csv"] == "" and c["lat"] == "", "C kolom SG .mdl dipilih otomatis bila ada & masuk akal (sg3); tanpa kolom / nilai tak masuk akal / model CSV (data latihan) -> SG tetap")
     # D
-    pg.evaluate("lySet('fh',2.5);lyU().bot='';lySet('top',238.75);lyApply()"); pg.wait_for_timeout(3000); pg.evaluate("amR().roof='pickup';amRun(true)"); pg.wait_for_timeout(3500)
+    cek(pg.evaluate("lyCalcM()") == "surpac", "D bawaan metode tonase Dig block / As-Mined = Seperti Surpac (0.24.70)")
+    # pemotongan di atap pick-up adalah perilaku mode Presisi GC-Ex -> dipilih eksplisit (bawaan kini Seperti Surpac, blok utuh)
+    pg.evaluate("lyU().calcM='clip';lySet('fh',2.5);lyU().bot='';lySet('top',238.75);lyApply()"); pg.wait_for_timeout(3000); pg.evaluate("amR().roof='pickup';amRun(true)"); pg.wait_for_timeout(3500)
     pg.evaluate("lyFlOff();if(VIEW2D)toggle2D();"); pg.wait_for_timeout(1500); pg.evaluate("PT.select('reg.3d');am3Toggle(true)"); pg.wait_for_timeout(6000)
     bm = pg.evaluate("""(function(){var gd=document.getElementById('plotDiv'),T=gd.data||[],B=T.filter(function(t){return t.type==='mesh3d'&&/^Block model as-mined/.test(t.name||'');}),S=T.filter(function(t){return /^Solid as-mined/.test(t.name||'');}),
       C=AMN.bmCells(),v=0,ar=function(Q){var a=0;for(var i=0;i<Q.length;i++){var p=Q[i],q=Q[(i+1)%Q.length];a+=p[0]*q[1]-q[0]*p[1];}return Math.abs(a)/2;};C.forEach(function(c){v+=ar(c.Q)*(c.zt-c.zb);});

@@ -100,15 +100,18 @@ def _parse_head(u: bytes, N: int, fname: str) -> dict:
             p += 4
             a["type"] = ty
             need(p, 16)
+            # Sesudah nilai bawaan selalu ada TEKS DESKRIPSI atribut berakhiran 0 (kolom Description Surpac; kosong = satu
+            # byte 0). Dulu dilompati satu byte saja, sehingga atribut berdeskripsi (mis. sg3 = "density") menggeser
+            # pembacaan: 'Tipe atribut "" (24940) belum didukung' (12 Nov 2026; padanan web-src/mdlattr.js 'd8' / 'ds').
             if ty in (2, 4, 5):
                 a["def"] = struct.unpack(">d", u[p:p + 8])[0]
-                p += 9
+                a["desc"], p = cstr(p + 8)
             elif ty == 3:
                 a["def"], p = cstr(p)
-                p += 1
+                a["desc"], p = cstr(p)
             elif ty == 1:
                 a["def"] = struct.unpack(">i", u[p:p + 4])[0]
-                p += 5
+                a["desc"], p = cstr(p + 4)
             else:
                 raise ValueError(f'Tipe atribut "{name}" ({ty}) belum didukung.')
         attrs.append(a)

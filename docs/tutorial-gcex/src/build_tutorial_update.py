@@ -1157,6 +1157,13 @@ B.append('<p>Permukaan topografi, desain pit dan DTM Data Referensi digambar den
          '(azimut 315&deg;, elevasi 45&deg;). Lereng, jenjang pit dan punggungan terlihat jelas dari sudut kamera mana pun. Pilihan di panel <b>Overlay</b> &rsaquo; '
          '<b>Bayangan (shading) topo &amp; pit</b>: Hillshade jelas (bawaan), Hillshade lembut, atau Lampu 3D Plotly (cara lama). Hanya tampilan; tonase Reporting tidak berubah.</p>')
 
+B.append('<h3>16b. Dig block, As-Mined dan SG kosong: cara Surpac sebagai bawaan (Block Model 0.24.70)</h3>')
+B.append('<p><b>Metode tonase Dig block &amp; As-Mined</b> bawaannya kini <i>Seperti Surpac</i>: blok dihitung utuh bila titik tengahnya di dalam string / boundary '
+         'dan RL flitch. <i>Presisi GC-Ex</i> (blok dipotong tepat di garis, ditimbang tebalnya di flitch) tetap bisa dipilih untuk dig plan.</p>')
+B.append('<p><b>SG kosong.</b> Surpac mengalikan volume blok dengan nilai SG yang <i>tersimpan</i> di blok; blok yang tidak pernah diisi menyimpan <b>nilai bawaan atribut</b> '
+         '(pada model GC lapangan, <code>sg3</code> berbawaan 0, jadi tonasenya 0 sementara volumenya tetap tercatat). Itulah bawaan GC-Ex sekarang. SG = 1 tidak dipakai: '
+         'itu berat jenis air dan akan menurunkan tonase ±60% tanpa terlihat. Pilihan lain: <i>Anggap 0</i> dan <i>SG pengganti</i> (cara GC-Ex).</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

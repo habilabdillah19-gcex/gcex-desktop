@@ -425,16 +425,23 @@ def run(payload: Dict[str, Any]) -> Dict[str, Any]:
     if sgCol and sgCol in num:
         v = np.asarray(num[sgCol], dtype=np.float64)[k]
         baik = np.isfinite(v) & (v > 0)
-        if (o.get("sgZero") or "") == "zero":
+        # SG kosong / <= 0 (0.24.70): '' / 'mdl' (bawaan, seperti Surpac) = nilai bawaan atribut di .mdl (sgBawaan,
+        # tanpa header .mdl = 0); 'zero' = 0; 'rep' = SG pengganti (cara GC-Ex) -- padanan bxSGv / bxSGeff di web-src/sgfix.js
+        mode = o.get("sgZero") or "mdl"
+        if mode == "zero":
             ganti = 0.0
-        else:
+        elif mode == "rep":
             r = float(o.get("sgRep") or 0)
             ganti = r if r > 0 else sg_tetap
+        else:
+            d = float(o.get("sgBawaan") or 0)
+            ganti = d if (math.isfinite(d) and d > 0) else 0.0
         SG = np.where(baik, v, ganti)
     else:
         SG = np.full(k.size, sg_tetap)
-    buang("sg", ~(SG > 0))
-    SG = SG[SG > 0]
+    # SG 0 tetap dilaporkan (volume ada, tonase 0) seperti Surpac; yang dibuang hanya SG negatif / tidak sah
+    buang("sg", ~(SG >= 0))
+    SG = SG[SG >= 0]
 
     # 9. proporsi volume sub-blok (sb_frac)
     k = np.flatnonzero(hidup)

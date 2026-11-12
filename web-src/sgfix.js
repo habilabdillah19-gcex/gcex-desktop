@@ -1,7 +1,14 @@
 
 /* ================= SG terpusat, metode tonase "Seperti Surpac", audit blok per poligon ================= */
-/* SG satu blok: kolom SG (> 0) -> nilainya; <= 0 / kosong -> SG pengganti atau 0 (seperti Surpac) */
-function bxSGv(v){var U=BX.ui;if(!U)return 2.6;if(!U.sgCol)return U.sg;if(isFinite(v)&&v>0)return v;if(U.sgZero==='zero')return 0;var r=parseFloat(U.sgRep);return r>0?r:U.sg;}
+/* SG satu blok: kolom SG (> 0) -> nilainya; <= 0 / kosong -> menurut U.sgZero (0.24.70, keputusan pemilik 12 Nov 2026):
+   'mdl' (BAWAAN, seperti Surpac) = nilai bawaan atribut SG di header .mdl -- Surpac mengalikan volume dengan nilai yang
+          TERSIMPAN di blok, dan blok yang tidak pernah diisi menyimpan nilai bawaan atribut (mis. sg3 bawaan 0 -> tonase 0);
+          model tanpa header .mdl (CSV) -> 0;
+   'zero' = selalu 0;  'rep' = SG pengganti (cara GC-Ex, dulu bawaan). */
+function bxSGkos(){var U=BX.ui||{};return U.sgZero==='zero'?'zero':U.sgZero==='rep'?'rep':'mdl';}
+function bxSGdef(){var U=BX.ui,m=BX.m;if(!U||!m||!U.sgCol)return NaN;var st=m.mdl&&m.mdl.st;if(!st)return NaN;for(var i=0;i<st.length;i++)if(st[i].name===U.sgCol){var v=+st[i].def;return isFinite(v)?v:NaN;}return NaN;}
+function bxSGeff(){var k=bxSGkos();if(k==='zero')return 0;if(k==='rep')return bxSGrep();var d=bxSGdef();return d>0?d:0;}
+function bxSGv(v){var U=BX.ui;if(!U)return 2.6;if(!U.sgCol)return U.sg;if(isFinite(v)&&v>0)return v;return bxSGeff();}
 function bxSGrep(){var U=BX.ui,r=parseFloat(U&&U.sgRep);return r>0?r:(U?U.sg:2.6);}
 /* hitung blok SG <= 0 (cache per model & kolom) */
 function bxSGbad(){var U=BX.ui,m=BX.m;if(!U||!m||!U.sgCol||!m.num[U.sgCol])return null;var k=BX.ver+'|'+U.sgCol+'|'+m.n;if(BX._sgb&&BX._sgb.k===k)return BX._sgb;var A=m.num[U.sgCol],n=0;for(var i=0;i<m.n;i++){var v=A[i];if(!(isFinite(v)&&v>0))n++;}BX._sgb={k:k,n:n,N:m.n};return BX._sgb;}
@@ -15,12 +22,13 @@ function bxSGset(k,v){var U=BX.ui;if(!U)return;U[k]=v;LY.ix=null;LY.fc=null;BX.s
     else{var pc=S&&S.N?S.n/S.N*100:0;
       var F=bxSGbadFl();
       d.innerHTML=(S&&S.n?'<div class=sgw>&#9888; Blok dengan '+bxE(U.sgCol)+' &le; 0 / kosong (biasanya blok tidak terestimasi)'+(F?': <b>'+F.n.toLocaleString()+'</b> dari '+F.N.toLocaleString()+' blok ('+(F.N?F.n/F.N*100:0).toFixed(0)+'%) di flitch aktif RL '+lyFmt(F.B[0])+'&ndash;'+lyFmt(F.B[1]):'')+'. Seluruh model: '+S.n.toLocaleString()+' dari '+S.N.toLocaleString()+' ('+pc.toFixed(0)+'%, termasuk blok udara / di luar domain). Pilih cara menghitungnya:</div>':'<div class=hint>Semua blok punya '+bxE(U.sgCol)+' &gt; 0.</div>')+
-        '<div class=g2><div><label>Blok '+bxE(U.sgCol)+' &le; 0</label><select onchange="bxSGset(\'sgZero\',this.value)"><option value=rep'+(U.sgZero!=='zero'?' selected':'')+'>Pakai SG pengganti</option><option value=zero'+(U.sgZero==='zero'?' selected':'')+'>Anggap 0 (seperti Surpac)</option></select></div>'+
-        '<div><label>SG pengganti</label><input type=number step=any value="'+bxE(U.sgRep!==undefined&&U.sgRep!==''?U.sgRep:U.sg)+'"'+(U.sgZero==='zero'?' disabled':'')+' onchange="bxSGset(\'sgRep\',this.value)"></div></div>'+
-        '<div class=hint>'+(U.sgZero==='zero'?'Seperti Surpac: volume blok tetap dihitung, tonasenya 0 &rarr; tonase lebih kecil, kadar lebih tinggi.':'Blok tetap berbobot dengan SG pengganti; kadarnya apa adanya (biasanya 0 = pengencer).')+'</div>';}
+        '<div class=g2><div><label>Blok '+bxE(U.sgCol)+' &le; 0 / kosong</label><select onchange="bxSGset(\'sgZero\',this.value)"><option value=mdl'+(bxSGkos()==='mdl'?' selected':'')+'>Nilai bawaan atribut di .mdl'+(isFinite(bxSGdef())?' = '+bxSGdef():'')+' (seperti Surpac, bawaan)</option><option value=zero'+(bxSGkos()==='zero'?' selected':'')+'>Anggap 0</option><option value=rep'+(bxSGkos()==='rep'?' selected':'')+'>SG pengganti (cara GC-Ex)</option></select></div>'+
+        '<div><label>SG pengganti</label><input type=number step=any value="'+bxE(U.sgRep!==undefined&&U.sgRep!==''?U.sgRep:U.sg)+'"'+(bxSGkos()!=='rep'?' disabled':'')+' onchange="bxSGset(\'sgRep\',this.value)"></div></div>'+
+        '<div class=hint>'+(bxSGkos()==='rep'?'Cara GC-Ex: blok tetap berbobot dengan SG pengganti; kadarnya apa adanya (biasanya 0 = pengencer). Tonase tidak sama dengan report Surpac.':'Seperti Surpac: tonase = volume &times; SG yang tersimpan di blok; blok yang tidak pernah diisi SG memakai nilai bawaan atribut'+(bxSGkos()==='zero'?' (di sini dipaksa 0)':'')+'. SG blok itu = <b>'+bxSGeff()+'</b>'+(bxSGeff()===0?': volumenya dihitung, tonasenya 0 &rarr; tonase lebih kecil, kadar lebih tinggi.':'.'))+'</div>';}
     b.insertBefore(d,g.nextSibling);}catch(e){console.error(e);}return r;};})();
 /* ---------- metode tonase "Seperti Surpac": blok utuh, titik tengah di dalam string & flitch ---------- */
-function lyCalcM(){var L=lyU();return L.calcM==='surpac'?'surpac':'clip';}
+/* 0.24.70: cara Surpac = BAWAAN (keputusan pemilik 12 Nov 2026); presisi GC-Ex bila dipilih (calcM 'clip') */
+function lyCalcM(){var L=lyU();return L.calcM==='clip'?'clip':'surpac';}
 function lyOnEdge(P,x,y){for(var i=0,j=P.length-1;i<P.length;j=i++){var a=P[j],b=P[i],cr=(b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]);if(Math.abs(cr)>1e-6*Math.max(1,Math.hypot(b[0]-a[0],b[1]-a[1])))continue;if(x>=Math.min(a[0],b[0])-1e-6&&x<=Math.max(a[0],b[0])+1e-6&&y>=Math.min(a[1],b[1])-1e-6&&y<=Math.max(a[1],b[1])+1e-6)return true;}return false;}
 function lyInS(P,x,y){return lyOnEdge(P,x,y)||lyIn(P,x,y);}
 function lyCandZ(lo,hi){var m=BX.m;if(m.n>=200000&&window.bxZCand)return bxZCand(lo,hi);var a=[];for(var i=0;i<m.n;i++){if(m.z[i]+m.sz[i]/2>lo&&m.z[i]-m.sz[i]/2<hi)a.push(i);}return a;}
@@ -35,7 +43,7 @@ function lyTonS(P,zs0,excl){var m=BX.m;excl=excl||[];var L=lyU(),B=lyBench(),fh=
 /* pilihan metode di tab Dig block (di bawah pilihan Sayatan BM) */
 (function(){var _d=window.dbPanel;if(!_d)return;dbPanel=function(){var r=_d.apply(this,arguments);try{var b=$('dbBody');if(!b)return r;var s=b.querySelector('select[onchange*=flMode]');if(!s||b.querySelector('.calcm'))return r;var host=s.closest('.g2')||s.parentNode;
     var d=document.createElement('div');d.className='calcm';var sm=lyCalcM()==='surpac';
-    d.innerHTML='<label>Metode tonase</label><select onchange="lyU().calcM=this.value;bxSGset(\'_x\',Date.now())"><option value=clip'+(sm?'':' selected')+'>Presisi GC-Ex (potong di garis string, tebal di flitch)</option><option value=surpac'+(sm?' selected':'')+'>Seperti Surpac (blok utuh, titik tengah di dalam string &amp; flitch)</option></select>'+
+    d.innerHTML='<label>Metode tonase</label><select onchange="lyU().calcM=this.value;bxSGset(\'_x\',Date.now())"><option value=surpac'+(sm?' selected':'')+'>Seperti Surpac (blok utuh, titik tengah di dalam string &amp; flitch) &mdash; bawaan</option><option value=clip'+(sm?'':' selected')+'>Presisi GC-Ex (potong di garis string, tebal di flitch)</option></select>'+
       '<div class=hint>'+(sm?'Sama dengan Surpac <i>Keep partial = False</i>: blok dihitung utuh bila titik tengahnya di dalam string dan RL flitch. Untuk rekonsiliasi dengan report Surpac.':'Blok dipotong tepat di garis string dan ditimbang tebalnya di dalam flitch (disarankan untuk dig plan).')+((window.dbU&&dbU().wOn)?'<div style="margin-top:3px"><span class=warn>Perhatikan saat membandingkan:</span> pilihan <b>Area polygon tanpa blok BM dihitung sebagai waste default</b> sedang <b>menyala</b>. Pilihan itu hanya dipakai metode <b>Presisi GC-Ex</b>; metode <b>Seperti Surpac</b> mengabaikannya. Jadi sebagian selisih antara kedua metode berasal dari waste pengisi itu, bukan dari aturan blok perbatasan &mdash; rinciannya ada di Audit CSV.</div>':'')+'</div>'+
       '<button style="width:100%;margin-top:4px" onclick="lyAuditCsv()" title="Daftar setiap blok per poligon dengan perhitungan kedua metode">&#128269; Audit blok per poligon (CSV)</button>';
     host.parentNode.insertBefore(d,host.nextSibling);}catch(e){console.error(e);}return r;};})();
@@ -67,5 +75,5 @@ function lyAuditCsv(){var m=BX.m;if(!m){alert('Import block model dulu.');return
   out.push('');
   out.push('Waste pengisi = area poligon tanpa blok BM x tebal flitch x SG waste'+sep+(DU2.wOn?('MENYALA; SG '+f(wsg,3)+', kadar '+f(wg,4)):'MATI (tidak dihitung)'));
   out.push('Metode Seperti Surpac TIDAK memuat waste pengisi: kolom Ton Surpac hanya blok yang titik tengahnya masuk.'+sep+'Kolom "Ton presisi + waste" itulah yang cocok dengan tonase di panel Dig block saat metode Presisi GC-Ex dipakai.');
-  out.push('');out.push('Flitch RL '+lyFmt(B[0])+' - '+lyFmt(B[1])+sep+'Kadar '+ga+sep+'SG '+(U.sgCol?'kolom '+U.sgCol+'; blok <=0 = '+(U.sgZero==='zero'?'0 (seperti Surpac)':'pengganti '+bxSGrep()):'tetap '+U.sg)+sep+'Sayatan BM '+(md==='comp'?'komposit tebal flitch':'bidang tengah'));
+  out.push('');out.push('Flitch RL '+lyFmt(B[0])+' - '+lyFmt(B[1])+sep+'Kadar '+ga+sep+'SG '+(U.sgCol?'kolom '+U.sgCol+'; blok <=0 = '+(bxSGeff()+(bxSGkos()==='rep'?' (SG pengganti, cara GC-Ex)':' (seperti Surpac)')):'tetap '+U.sg)+sep+'Sayatan BM '+(md==='comp'?'komposit tebal flitch':'bidang tengah'));
   dgDl('﻿'+out.join('\r\n')+'\r\n','Audit_Blok_'+String(ZONE).replace(/[^A-Za-z0-9_-]+/g,'_')+'_'+lyNum(B[0])+'-'+lyNum(B[1])+'.csv','text/csv');}

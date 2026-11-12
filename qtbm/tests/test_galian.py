@@ -261,9 +261,20 @@ def test_sg_kolom_nilai_sah_dipakai():
 
 
 def test_sg_kolom_tidak_sah_jatuh_ke_sg_tunggal():
-    T = Tampilan(sg=2.6, sg_kolom="SG")
+    """Cara GC-Ex ('rep') tanpa SG pengganti -> SG tunggal."""
+    T = Tampilan(sg=2.6, sg_kolom="SG", sg_nol="rep")
     assert T.sg_blok(0.0) == pytest.approx(2.6)
     assert T.sg_blok(float("nan")) == pytest.approx(2.6)
+
+
+def test_sg_kolom_bawaan_seperti_surpac():
+    """0.24.70: bawaan = nilai bawaan atribut .mdl (blok yang tidak pernah diisi menyimpan nilai itu); tanpa .mdl = 0."""
+    T = Tampilan(sg=2.6, sg_kolom="SG")
+    assert T.sg_blok(0.0) == 0.0
+    bm = BlockModel(x=np.zeros(2), y=np.zeros(2), z=np.zeros(2), sx=np.ones(2), sy=np.ones(2), sz=np.ones(2))
+    bm.angka["SG"] = np.array([0.0, 3.0])
+    bm.bawaan["SG"] = 2.5
+    assert list(T.sg_larik(bm)) == pytest.approx([2.5, 3.0])
 
 
 def test_sg_kolom_mode_zero():
@@ -272,7 +283,7 @@ def test_sg_kolom_mode_zero():
 
 
 def test_sg_kolom_pengganti():
-    T = Tampilan(sg=2.6, sg_kolom="SG", sg_ganti="1.8")
+    T = Tampilan(sg=2.6, sg_kolom="SG", sg_nol="rep", sg_ganti="1.8")
     assert T.sg_blok(0.0) == pytest.approx(1.8)
 
 

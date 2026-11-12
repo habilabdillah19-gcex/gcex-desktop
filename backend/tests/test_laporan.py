@@ -52,17 +52,27 @@ def test_sg_tetap_dipakai_bila_tidak_ada_kolom():
 
 
 def test_sg_tidak_sah_diganti_nilai_pengganti():
-    """Kolom SG berisi 0: dengan sgRep 3,0 blok itu dihitung memakai 3,0, bukan dibuang."""
+    """Kolom SG berisi 0. 0.24.70 (pemilik 12 Nov 2026): bawaan seperti Surpac = nilai bawaan atribut .mdl
+    (sgBawaan; tanpa header .mdl = 0) dan blok SG 0 TETAP dilaporkan (volume ada, tonase 0)."""
     d = model(sg=(0.0, 4.0))
-    o = laporan.run(dict(d, opsi={"gr": "AU", "atts": ["AU"], "cuts": [0], "sgCol": "SGK",
-                                  "sgRep": 3.0, "sg": 2.6, "grp": "none"}))
+    base = {"gr": "AU", "atts": ["AU"], "cuts": [0], "sgCol": "SGK", "sg": 2.6, "grp": "none"}
+    # cara GC-Ex: SG pengganti 3,0
+    o = laporan.run(dict(d, opsi=dict(base, sgZero="rep", sgRep=3.0)))
     assert o["rows"][0]["G"]["Total"]["t"] == pytest.approx(500 * 3.0 + 500 * 4.0)
     assert o["nOut"]["sg"] == 0
-    # sgZero='zero' menjadikan SG 0 -> blok dibuang karena tonasenya nol
-    o2 = laporan.run(dict(d, opsi={"gr": "AU", "atts": ["AU"], "cuts": [0], "sgCol": "SGK",
-                                   "sgZero": "zero", "sg": 2.6, "grp": "none"}))
-    assert o2["nOut"]["sg"] == 1
-    assert o2["rows"][0]["G"]["Total"]["n"] == 1
+    # bawaan (tanpa sgZero), tanpa nilai bawaan .mdl -> 0: volume tetap, tonase 0
+    o1 = laporan.run(dict(d, opsi=dict(base, sgRep=3.0)))
+    r1 = o1["rows"][0]["G"]["Total"]
+    assert r1["n"] == 2 and r1["v"] == pytest.approx(1000) and r1["t"] == pytest.approx(500 * 4.0)
+    assert o1["nOut"]["sg"] == 0
+    # bawaan dengan nilai bawaan atribut .mdl 2,5
+    o3 = laporan.run(dict(d, opsi=dict(base, sgBawaan=2.5)))
+    assert o3["rows"][0]["G"]["Total"]["t"] == pytest.approx(500 * 2.5 + 500 * 4.0)
+    # sgZero='zero' -> SG 0, blok tetap dilaporkan dengan tonase 0
+    o2 = laporan.run(dict(d, opsi=dict(base, sgZero="zero", sgBawaan=2.5)))
+    assert o2["nOut"]["sg"] == 0
+    assert o2["rows"][0]["G"]["Total"]["n"] == 2
+    assert o2["rows"][0]["G"]["Total"]["t"] == pytest.approx(500 * 4.0)
 
 
 def test_sb_frac_menimbang_volume_dan_tonase():
