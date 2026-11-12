@@ -4632,3 +4632,10 @@ pilih ulang berkas .mdl di layar import. Deskripsi atribut ikut tersimpan apa ad
 - **Blok di batas permukaan** (Reporting BM › Constraint): *Cara Surpac — titik pusat blok* (bawaan) atau *Cara GC-Ex — proporsi
   volume blok* (kolom 2×2 sampai 8×8, bawaan 4×4). Tab **Metode tonase** menampilkan keduanya berdampingan.
 - Block Model: centang *timbang dengan proporsi sub-blok (`sb_frac`)* kini **mati** secara bawaan (cara Surpac).
+
+## 191. Block Model 0.24.69 + Drillhole 0.24.82 — Topografi & desain pit ber-hillshade
+
+Permukaan topografi, desain pit dan DTM kini digambar dengan **hillshade** (cahaya dari barat laut, 45°): lereng, jenjang pit dan
+punggungan terlihat jelas dari sudut pandang mana pun. Atur di panel **Overlay › Bayangan (shading) topo & pit**: *Hillshade jelas*
+(bawaan), *Hillshade lembut*, atau *Lampu 3D Plotly (lama)*. Warna bawaan topo hijau zaitun dan pit biru keabuan; keduanya tetap bisa
+diganti di **Topo / pit**.

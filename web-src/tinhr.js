@@ -53,9 +53,55 @@
   T.trace = function (src, opt) {
     var tin = T.build(src); if (!tin) return null; opt = opt || {};
     var t = { type: 'mesh3d', x: tin.x, y: tin.y, z: tin.z, i: tin.i, j: tin.j, k: tin.k, opacity: opt.opacity == null ? 1 : opt.opacity, showscale: false, hoverinfo: 'skip', flatshading: opt.flat !== false, showlegend: false, lighting: opt.lighting || { ambient: 0.7, diffuse: 0.6, specular: 0.05, roughness: 0.9 } };
-    if (opt.grad) { t.intensity = tin.z; t.colorscale = opt.colorscale || 'Earth'; } else t.color = opt.color || '#b9a58c';
+    var hs = opt.shade != null ? opt.shade : T.shadeMode();
+    if (hs !== 'plotly' && T.hillshade(t, tin, opt, hs)) { if (opt.name) t.name = opt.name; if (opt.uid) t.uid = opt.uid; return t; }
+    if (opt.grad) { t.intensity = tin.z; t.colorscale = opt.colorscale || 'Earth'; } else t.color = opt.color || '#a7b58a';
     if (opt.name) t.name = opt.name; if (opt.uid) t.uid = opt.uid;
     return t;
+  };
+  /* ---- HILLSHADE per segitiga (pemilik 12 Nov 2026: "shading yang jelas dan terlihat") ----
+     Warna tiap segitiga = warna dasar x (ambient + (1 - ambient) x max(0, normal . arah cahaya)), cahaya matahari dari
+     azimut 315 (barat laut), elevasi 45 derajat -- konvensi hillshade peta. Warna dipanggang ke facecolor dan lampu Plotly
+     dimatikan (ambient 1, diffuse 0), jadi lereng, jenjang pit dan punggungan tetap tegas dari sudut kamera mana pun.
+     Mode 'kuat' (bawaan) / 'lembut' / 'plotly' (lampu Plotly lama) dari pilihan #ovShade di panel Overlay. */
+  T.shadeMode = function () { var e = document.getElementById('ovShade'); return (e && e.value) || 'kuat'; };
+  var EARTH = [[0, [0, 0, 130]], [0.1, [0, 180, 180]], [0.2, [40, 210, 40]], [0.4, [230, 230, 50]], [0.6, [120, 70, 20]], [1, [255, 255, 255]]];
+  function rgb(c) {
+    if (Array.isArray(c)) return c;
+    c = String(c || '').trim(); var m;
+    if ((m = /^#([0-9a-f]{6})$/i.exec(c))) { var v = parseInt(m[1], 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
+    if ((m = /^#([0-9a-f]{3})$/i.exec(c))) return [0, 1, 2].map(function (k) { return parseInt(m[1][k] + m[1][k], 16); });
+    if ((m = /rgba?\(([^)]+)\)/i.exec(c))) return m[1].split(',').slice(0, 3).map(function (x) { return +x; });
+    return [167, 181, 138];
+  }
+  function skala(cs) { if (!Array.isArray(cs)) return EARTH; return cs.map(function (p) { return [+p[0], rgb(p[1])]; }); }
+  function ambil(S, u) {
+    if (!(u > 0)) return S[0][1]; if (u >= 1) return S[S.length - 1][1];
+    for (var k = 1; k < S.length; k++) if (u <= S[k][0]) { var a = S[k - 1], b = S[k], w = (u - a[0]) / ((b[0] - a[0]) || 1);
+      return [a[1][0] + (b[1][0] - a[1][0]) * w, a[1][1] + (b[1][1] - a[1][1]) * w, a[1][2] + (b[1][2] - a[1][2]) * w]; }
+    return S[S.length - 1][1];
+  }
+  T.hillshade = function (t, tin, opt, mode) {
+    var I = tin.i, J = tin.j, K = tin.k, X = tin.x, Y = tin.y, Z = tin.z, nt = I.length;
+    if (!nt) return false;
+    var amb = mode === 'lembut' ? 0.55 : 0.32, az = (opt.az != null ? opt.az : 315) * Math.PI / 180, al = (opt.alt != null ? opt.alt : 45) * Math.PI / 180;
+    var Lx = Math.cos(al) * Math.sin(az), Ly = Math.cos(al) * Math.cos(az), Lz = Math.sin(al);
+    var base = rgb(opt.color || '#a7b58a'), S = opt.grad ? skala(opt.colorscale) : null, z0 = Infinity, z1 = -Infinity, q;
+    if (S) { for (q = 0; q < Z.length; q++) { if (Z[q] < z0) z0 = Z[q]; if (Z[q] > z1) z1 = Z[q]; } }
+    var FC = new Array(nt);
+    for (q = 0; q < nt; q++) {
+      var a = I[q], b = J[q], c = K[q];
+      var ux = X[b] - X[a], uy = Y[b] - Y[a], uz = Z[b] - Z[a], vx = X[c] - X[a], vy = Y[c] - Y[a], vz = Z[c] - Z[a];
+      var nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+      var d = (nx * Lx + ny * Ly + nz * Lz) / L, f = amb + (1 - amb) * (d > 0 ? d : 0);
+      var col = S ? ambil(S, ((Z[a] + Z[b] + Z[c]) / 3 - z0) / ((z1 - z0) || 1)) : base;
+      FC[q] = 'rgb(' + Math.round(col[0] * f) + ',' + Math.round(col[1] * f) + ',' + Math.round(col[2] * f) + ')';
+    }
+    t.facecolor = FC; t.flatshading = true;
+    t.lighting = { ambient: 1, diffuse: 0, specular: 0, roughness: 1, fresnel: 0 };
+    delete t.color; delete t.intensity;
+    return true;
   };
   T.info = function () { var s = T.stat; return s ? (s.n.toLocaleString('id-ID') + ' titik dari ' + s.dari.toLocaleString('id-ID') + ', ' + s.segitiga.toLocaleString('id-ID') + ' segitiga, ' + s.ms + ' ms') : '-'; };
 })();

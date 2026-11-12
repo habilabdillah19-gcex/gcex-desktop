@@ -1152,6 +1152,11 @@ B.append('<p><b>Blok di batas permukaan</b> (tab Constraint): <i>Cara Surpac &md
          'membagi telapak blok menjadi 4&times;4 kolom (bisa 2&ndash;8) dan menimbang tonase dengan bagian kolom yang di bawah topografi, di atas pit dan di sisi DTM yang dipilih. '
          'Tab <b>Metode tonase</b> menampilkan kedua cara berdampingan. Di Block Model, pembobotan <code>sb_frac</code> juga kini mati secara bawaan.</p>')
 
+B.append('<h3>16a. Topografi &amp; desain pit ber-hillshade (Block Model 0.24.69 / Drill Hole 0.24.82)</h3>')
+B.append('<p>Permukaan topografi, desain pit dan DTM Data Referensi digambar dengan <b>hillshade</b>: setiap segitiga digelapkan menurut arah cahaya matahari dari barat laut '
+         '(azimut 315&deg;, elevasi 45&deg;). Lereng, jenjang pit dan punggungan terlihat jelas dari sudut kamera mana pun. Pilihan di panel <b>Overlay</b> &rsaquo; '
+         '<b>Bayangan (shading) topo &amp; pit</b>: Hillshade jelas (bawaan), Hillshade lembut, atau Lampu 3D Plotly (cara lama). Hanya tampilan; tonase Reporting tidak berubah.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

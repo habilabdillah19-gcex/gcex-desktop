@@ -707,7 +707,7 @@ body.sgdrag #stage{pointer-events:none}
 <label class='sw'><input type='checkbox' id='ovTopoS' onchange='updatePlot()'>Topografi (permukaan)</label>
 <label class='sw'><input type='checkbox' id='ovTopoL' onchange='updatePlot()'>Topografi (kontur / garis)</label>
 <label class='sw'><input type='checkbox' id='ovPit' onchange='updatePlot()'>Desain pit</label><div class='f'><select id='ovPitMode' onchange='updatePlot()'><option value='surf' selected>Surface (seperti topografi)</option><option value='line'>Garis</option><option value='both'>Surface + garis</option></select></div>
-<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Warna permukaan topo &amp; pit</div><select id='ovWarna' onchange='updatePlot()'><option value='seragam' selected>Seragam (satu warna)</option><option value='grad'>Gradasi menurut elevasi</option></select></div><div><div class='lab'>Topo / pit</div><input type='color' id='ovTopoCol' value='#b9a58c' onchange='updatePlot()' style='width:46%'> <input type='color' id='ovPitCol' value='#d08a4e' onchange='updatePlot()' style='width:46%'></div></div>
+<div class='g2 f' style='margin-top:6px'><div><div class='lab'>Warna permukaan topo &amp; pit</div><select id='ovWarna' onchange='updatePlot()'><option value='seragam' selected>Seragam (satu warna)</option><option value='grad'>Gradasi menurut elevasi</option></select></div><div><div class='lab'>Topo / pit</div><input type='color' id='ovTopoCol' value='#a7b58a' onchange='updatePlot()' style='width:46%'> <input type='color' id='ovPitCol' value='#8ea4c8' onchange='updatePlot()' style='width:46%'></div></div><div class='g2 f' style='margin-top:6px'><div><div class='lab'>Bayangan (shading) topo &amp; pit</div><select id='ovShade' onchange='updatePlot()' title='Hillshade: tiap segitiga digelapkan menurut arah cahaya matahari dari barat laut (azimut 315&deg;, elevasi 45&deg;), seperti peta hillshade'><option value='kuat' selected>Hillshade jelas (bawaan)</option><option value='lembut'>Hillshade lembut</option><option value='plotly'>Lampu 3D Plotly (lama)</option></select></div><div></div></div>
 <label class='sw'><input type='checkbox' id='ovCrop' checked onchange='updatePlot()'>Batasi ke area pemboran</label>
 <div class='f' style='margin-top:8px'><label>Opasitas topografi</label><input type='range' id='ovOp' min='0.1' max='1' step='0.05' value='0.5' oninput='dUpdate()'></div>
 <h4>Orthofoto</h4>
@@ -1188,8 +1188,8 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var rx=rng(X),ry=rng(Y),rz=rng(Z);
   var traces=[],op=+$('ovOp').value;
   /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
-  var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#b9a58c'),ovPc=(($('ovPitCol')||{}).value||'#d08a4e'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc;
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
+  var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#a7b58a'),ovPc=(($('ovPitCol')||{}).value||'#8ea4c8'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc+'|'+(($('ovShade')||{}).value||'kuat');
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:((($('ovShade')||{}).value||'kuat')==='plotly'?{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}:{ambient:0.35,diffuse:0.95,specular:0.05,roughness:0.9})};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop+'|'+((window.HR&&HR.ver)||0),function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
   if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.pitC:OV.pitF,{opacity:Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
@@ -2686,8 +2686,12 @@ function mdSection(m,K){var k=K[0],key=m.name+'|'+MD.ver+'|'+JSON.stringify([k.n
     if(P.length<2)continue;var sg=[P[0],P[1]];if(K.length>1){sg=clipSeg(P[0],P[1],K.slice(1));if(!sg)continue;}X.push(sg[0].x,sg[1].x,null);Y.push(sg[0].y,sg[1].y,null);Z.push(sg[0].z,sg[1].z,null);}
   var r={x:X,y:Y,z:Z};MD.sc[key]=r;return r;}
 function mdTraces(T,o){mdStrTraces(T,o);MD.models.forEach(function(m){if(!m.vis)return;mdLocal(m);
-    if(!o.clip||(!VIEW2D&&$('mdSolid')&&$('mdSolid').checked))T.push({type:'mesh3d',name:m.name,x:m._x,y:m._y,z:m._z,i:m._i,j:m._j,k:m._k,color:m.col,opacity:o.clip?Math.min(m.op,0.25):m.op,flatshading:true,
-      lighting:{ambient:0.55,diffuse:0.75,specular:0.15,roughness:0.7},hoverinfo:'name',showlegend:true,showscale:false});
+    if(!o.clip||(!VIEW2D&&$('mdSolid')&&$('mdSolid').checked)){var mt={type:'mesh3d',name:m.name,x:m._x,y:m._y,z:m._z,i:m._i,j:m._j,k:m._k,color:m.col,opacity:o.clip?Math.min(m.op,0.25):m.op,flatshading:true,
+      lighting:{ambient:0.55,diffuse:0.75,specular:0.15,roughness:0.7},hoverinfo:'name',showlegend:true,showscale:false};
+      /* permukaan DTM (topo / pit / survey): hillshade per segitiga seperti topo & pit Data Spasial (web-src/tinhr.js); solid geologi tetap lampu 3D */
+      if(m.jenis==='surf'&&window.TIN&&TIN.hillshade){var hm=TIN.shadeMode();if(hm!=='plotly'){var hk=hm+'|'+m.col+'|'+m.nt;if(m._hsK!==hk){var t0={};if(TIN.hillshade(t0,{x:m._x,y:m._y,z:m._z,i:m._i,j:m._j,k:m._k},{color:m.col},hm)){m._hsF=t0.facecolor;m._hsK=hk;}}
+        if(m._hsK===hk){mt.facecolor=m._hsF;delete mt.color;mt.lighting={ambient:1,diffuse:0,specular:0,roughness:1,fresnel:0};}}}
+      T.push(mt);}
     if(o.clip){var s=mdSection(m,o.K);if(s.x.length)T.push({type:'scatter3d',mode:'lines',x:s.x,y:s.y,z:s.z,name:m.name+' (sayatan)',line:{color:m.col,width:6},hoverinfo:'name',showlegend:true});}});
   MD.pts.forEach(function(p){if(!p.vis)return;var g={};
     for(var i=0;i<p.n;i++){var q={x:p.x[i]-offX,y:p.y[i]-offY,z:p.z[i]};if(o.clip&&!inK(o.K,q))continue;var c=p.by?String(p.cv[p.by][i]||'-'):'';var G2=g[c]||(g[c]={x:[],y:[],z:[],t:[],h:[]});
@@ -5454,9 +5458,55 @@ if(typeof window!=='undefined')window.mdlAttrs=mdlAttrs;
   T.trace = function (src, opt) {
     var tin = T.build(src); if (!tin) return null; opt = opt || {};
     var t = { type: 'mesh3d', x: tin.x, y: tin.y, z: tin.z, i: tin.i, j: tin.j, k: tin.k, opacity: opt.opacity == null ? 1 : opt.opacity, showscale: false, hoverinfo: 'skip', flatshading: opt.flat !== false, showlegend: false, lighting: opt.lighting || { ambient: 0.7, diffuse: 0.6, specular: 0.05, roughness: 0.9 } };
-    if (opt.grad) { t.intensity = tin.z; t.colorscale = opt.colorscale || 'Earth'; } else t.color = opt.color || '#b9a58c';
+    var hs = opt.shade != null ? opt.shade : T.shadeMode();
+    if (hs !== 'plotly' && T.hillshade(t, tin, opt, hs)) { if (opt.name) t.name = opt.name; if (opt.uid) t.uid = opt.uid; return t; }
+    if (opt.grad) { t.intensity = tin.z; t.colorscale = opt.colorscale || 'Earth'; } else t.color = opt.color || '#a7b58a';
     if (opt.name) t.name = opt.name; if (opt.uid) t.uid = opt.uid;
     return t;
+  };
+  /* ---- HILLSHADE per segitiga (pemilik 12 Nov 2026: "shading yang jelas dan terlihat") ----
+     Warna tiap segitiga = warna dasar x (ambient + (1 - ambient) x max(0, normal . arah cahaya)), cahaya matahari dari
+     azimut 315 (barat laut), elevasi 45 derajat -- konvensi hillshade peta. Warna dipanggang ke facecolor dan lampu Plotly
+     dimatikan (ambient 1, diffuse 0), jadi lereng, jenjang pit dan punggungan tetap tegas dari sudut kamera mana pun.
+     Mode 'kuat' (bawaan) / 'lembut' / 'plotly' (lampu Plotly lama) dari pilihan #ovShade di panel Overlay. */
+  T.shadeMode = function () { var e = document.getElementById('ovShade'); return (e && e.value) || 'kuat'; };
+  var EARTH = [[0, [0, 0, 130]], [0.1, [0, 180, 180]], [0.2, [40, 210, 40]], [0.4, [230, 230, 50]], [0.6, [120, 70, 20]], [1, [255, 255, 255]]];
+  function rgb(c) {
+    if (Array.isArray(c)) return c;
+    c = String(c || '').trim(); var m;
+    if ((m = /^#([0-9a-f]{6})$/i.exec(c))) { var v = parseInt(m[1], 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
+    if ((m = /^#([0-9a-f]{3})$/i.exec(c))) return [0, 1, 2].map(function (k) { return parseInt(m[1][k] + m[1][k], 16); });
+    if ((m = /rgba?\(([^)]+)\)/i.exec(c))) return m[1].split(',').slice(0, 3).map(function (x) { return +x; });
+    return [167, 181, 138];
+  }
+  function skala(cs) { if (!Array.isArray(cs)) return EARTH; return cs.map(function (p) { return [+p[0], rgb(p[1])]; }); }
+  function ambil(S, u) {
+    if (!(u > 0)) return S[0][1]; if (u >= 1) return S[S.length - 1][1];
+    for (var k = 1; k < S.length; k++) if (u <= S[k][0]) { var a = S[k - 1], b = S[k], w = (u - a[0]) / ((b[0] - a[0]) || 1);
+      return [a[1][0] + (b[1][0] - a[1][0]) * w, a[1][1] + (b[1][1] - a[1][1]) * w, a[1][2] + (b[1][2] - a[1][2]) * w]; }
+    return S[S.length - 1][1];
+  }
+  T.hillshade = function (t, tin, opt, mode) {
+    var I = tin.i, J = tin.j, K = tin.k, X = tin.x, Y = tin.y, Z = tin.z, nt = I.length;
+    if (!nt) return false;
+    var amb = mode === 'lembut' ? 0.55 : 0.32, az = (opt.az != null ? opt.az : 315) * Math.PI / 180, al = (opt.alt != null ? opt.alt : 45) * Math.PI / 180;
+    var Lx = Math.cos(al) * Math.sin(az), Ly = Math.cos(al) * Math.cos(az), Lz = Math.sin(al);
+    var base = rgb(opt.color || '#a7b58a'), S = opt.grad ? skala(opt.colorscale) : null, z0 = Infinity, z1 = -Infinity, q;
+    if (S) { for (q = 0; q < Z.length; q++) { if (Z[q] < z0) z0 = Z[q]; if (Z[q] > z1) z1 = Z[q]; } }
+    var FC = new Array(nt);
+    for (q = 0; q < nt; q++) {
+      var a = I[q], b = J[q], c = K[q];
+      var ux = X[b] - X[a], uy = Y[b] - Y[a], uz = Z[b] - Z[a], vx = X[c] - X[a], vy = Y[c] - Y[a], vz = Z[c] - Z[a];
+      var nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+      var d = (nx * Lx + ny * Ly + nz * Lz) / L, f = amb + (1 - amb) * (d > 0 ? d : 0);
+      var col = S ? ambil(S, ((Z[a] + Z[b] + Z[c]) / 3 - z0) / ((z1 - z0) || 1)) : base;
+      FC[q] = 'rgb(' + Math.round(col[0] * f) + ',' + Math.round(col[1] * f) + ',' + Math.round(col[2] * f) + ')';
+    }
+    t.facecolor = FC; t.flatshading = true;
+    t.lighting = { ambient: 1, diffuse: 0, specular: 0, roughness: 1, fresnel: 0 };
+    delete t.color; delete t.intensity;
+    return true;
   };
   T.info = function () { var s = T.stat; return s ? (s.n.toLocaleString('id-ID') + ' titik dari ' + s.dari.toLocaleString('id-ID') + ', ' + s.segitiga.toLocaleString('id-ID') + ' segitiga, ' + s.ms + ' ms') : '-'; };
 })();
@@ -18187,7 +18237,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.81';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.82';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

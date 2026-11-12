@@ -437,6 +437,13 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Uji', '<code>tools/uji/uji_rp_permukaan.py</code>: bidang miring sebagian, kedua aplikasi; cara Surpac = 750 blok (build lama 1.460), cara GC-Ex = 744.000 m&sup3; analitis.'],
 ]))
 
+B.append('<h3>8.7 Hillshade topo &amp; pit (BM 0.24.69 / DH 0.24.82)</h3>')
+B.append('<p><code>web-src/tinhr.js</code> <code>TIN.hillshade(t, tin, opt, mode)</code>: normal tiap segitiga (dibalik ke atas), '
+         '<i>f</i> = ambient + (1 &minus; ambient)&middot;max(0, <b>n</b>&middot;<b>L</b>), <b>L</b> dari azimut 315&deg; / elevasi 45&deg;; ambient 0,32 (<i>kuat</i>) atau 0,55 (<i>lembut</i>). '
+         'Warna dasar (atau colorscale elevasi rata-rata segitiga pada mode gradasi) &times; <i>f</i> ditulis ke <code>facecolor</code>; lampu Plotly dimatikan (ambient 1, diffuse 0). '
+         'Mode dari <code>#ovShade</code> (<code>TIN.shadeMode</code>), ikut kunci cache <code>ovWk</code>. Permukaan Data Referensi (<code>mdTraces</code>, <code>jenis:\'surf\'</code>) '
+         'memakai rumus yang sama dengan cache <code>m._hsK</code> / <code>m._hsF</code>. Uji <code>tools/uji/uji_hillshade.js</code>.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))
