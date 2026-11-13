@@ -27,7 +27,12 @@
     /* opt.faktor: buang segitiga yang sisi terpanjangnya > faktor x median (sama dengan tampilan tinhr.js: kipas lebar
        menyeberangi lubang / tepi data kontur) -> di situ tidak ada permukaan, pemanggil memakai cadangan */
     var skip = null; if (opt.faktor > 0) { var mx = new Float64Array(nt); for (var q2 = 0; q2 < nt; q2++) { var p1 = T[3 * q2], p2 = T[3 * q2 + 1], p3 = T[3 * q2 + 2], l1 = Math.hypot(C[2 * p1] - C[2 * p2], C[2 * p1 + 1] - C[2 * p2 + 1]), l2 = Math.hypot(C[2 * p2] - C[2 * p3], C[2 * p2 + 1] - C[2 * p3 + 1]), l3 = Math.hypot(C[2 * p3] - C[2 * p1], C[2 * p3 + 1] - C[2 * p1 + 1]); mx[q2] = Math.max(l1, l2, l3); }
-      var srt = Float64Array.from(mx).sort(), med = srt[srt.length >> 1], lim = opt.faktor * med; skip = new Uint8Array(nt); for (q2 = 0; q2 < nt; q2++) if (mx[q2] > lim) skip[q2] = 1; }
+      var srt = Float64Array.from(mx).sort(), med = srt[srt.length >> 1], lim = opt.faktor * med; skip = new Uint8Array(nt); for (q2 = 0; q2 < nt; q2++) if (mx[q2] > lim) skip[q2] = 1;
+      /* opt.tepi (13 Nov 2026): segitiga panjang hanya dibuang bila tersambung ke tepi luar TIN lewat segitiga panjang lain
+         (sama dengan tampilan tinhr.js 0.24.74). Untuk string yang dirapatkan (median sisi ~2 m) aturan "semua segitiga panjang"
+         melubangi lantai jenjang / dasar pit yang lebar -> blok di bawahnya hilang dari Reporting (Z3: 102 rb -> 46 rb blok). */
+      if (opt.tepi) { var H = d.halfedges, sk2 = new Uint8Array(nt), qq = [], e2, t3; for (e2 = 0; e2 < H.length; e2++) if (H[e2] < 0) { t3 = (e2 / 3) | 0; if (skip[t3] && !sk2[t3]) { sk2[t3] = 1; qq.push(t3); } }
+        while (qq.length) { var t4 = qq.pop(); for (var k3 = 0; k3 < 3; k3++) { var o2 = H[3 * t4 + k3]; if (o2 < 0) continue; t3 = (o2 / 3) | 0; if (skip[t3] && !sk2[t3]) { sk2[t3] = 1; qq.push(t3); } } } skip = sk2; } }
     var tb = new Int32Array(4 * nt), cnt = new Uint32Array(gx * gy + 1), t, a, b, c, ci, cj;
     for (t = 0; t < nt; t++) { if (skip && skip[t]) { tb[4 * t] = 1; tb[4 * t + 1] = 0; continue; } a = T[3 * t]; b = T[3 * t + 1]; c = T[3 * t + 2];
       var i0 = Math.floor((Math.min(C[2 * a], C[2 * b], C[2 * c]) - x0) / cs), i1 = Math.floor((Math.max(C[2 * a], C[2 * b], C[2 * c]) - x0) / cs), j0 = Math.floor((Math.min(C[2 * a + 1], C[2 * b + 1], C[2 * c + 1]) - y0) / cs), j1 = Math.floor((Math.max(C[2 * a + 1], C[2 * b + 1], C[2 * c + 1]) - y0) / cs);
@@ -51,9 +56,10 @@
      tampilan (tinhr.js: faktor sliver TIN.faktor) — interpolasi linear dalam segitiga seperti DTM Surpac. IDW lama tetap
      sebagai cadangan di luar cakupan TIN (tepi data / celah kontur). Berlaku di Block Model dan Drillhole. ---------- */
   var WM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
-  function tinOf(o) { if (!o || !o.x || !o.x.length || !WM) return null; var c = WM.get(o); if (c && c.len === o.x.length) return c.tin;
+  /* tepi = true: sumber string yang sudah dirapatkan (TIN.rapat) -> hanya segitiga panjang di tepi luar yang dibuang */
+  function tinOf(o, tepi) { if (!o || !o.x || !o.x.length || !WM) return null; var c = WM.get(o); if (c && c.len === o.x.length) return c.tin;
     var P = []; for (var i = 0; i < o.x.length; i++) { if (o.x[i] === null || o.x[i] === undefined) continue; P.push({ x: o.x[i], y: o.y[i], z: o.z[i] }); }
-    var t = null; try { t = TINZ(P, { faktor: (window.TIN && TIN.faktor) || 8 }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: t }); return t; }
+    var t = null; try { t = TINZ(P, { faktor: (window.TIN && TIN.faktor) || 8, tepi: !!tepi }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: t }); return t; }
   TINZ.of = tinOf;
   function pasang() {
     if (typeof window.topoZ === 'function' && !window.topoZ._tin) { var _tz = window.topoZ;

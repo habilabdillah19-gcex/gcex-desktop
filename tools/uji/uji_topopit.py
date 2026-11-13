@@ -20,6 +20,7 @@ Permintaan pemilik 13 Nov 2026. Data SINTETIS (tanpa data nyata), koordinat loka
      tampilan DTM sumber dimatikan.
   T9 tampilan: titik string pit dirapatkan 2 m, garis jenjang pit tergambar & di legenda, awan titik topo tanpa garis,
      segitiga panjang di DALAM topografi tidak dibuang (tanpa lubang).
+  T11 (BM 0.24.76) Reporting & Batas permukaan memakai pit string yang dirapatkan (= Topo x Pit, cocok DTM Surpac).
   T10 (0.24.75) node Data Spasial: Topo x Pit sesudah Desain pit + '+ Import topografi/desain pit'; panel properti #pTP;
      gabungan tidak lagi di Data Referensi; survei dari Reporting menjadi node Data Referensi bertanda survei, angka progres
      topo-ke-topo SAMA dengan cara lama (titik sementara), dan bisa dipilih sebagai sumber Topo x Pit.
@@ -104,6 +105,12 @@ JS = r"""async function(){
   var m9=TP.gabung();document.getElementById('ovBuka').checked=false;updatePlot();await new Promise(function(r){setTimeout(r,1200);});
   var gl=gd.data.filter(function(t){return /Garis jenjang pit|Kontur topografi/.test(t.name);}).map(function(t){return [t.name,t.x.filter(function(v){return v!==null;}).length];});
   R.t9={lubang:lubang,titikPit:sx.filter(function(v){return v!==null;}).length,titikRapat:nr,garis:gl,leg:(document.getElementById('tpLeg')||{}).innerText||''};
+  // T11 (13 Nov, audit DTM Surpac pit_z3south_r4): Reporting (rpSurf) & Batas permukaan (TP.zf) memakai pit string yang
+  // DIRAPATKAN 2 m, sama dengan Topo x Pit; triangulasi titik string asli menyeberangi jenjang (beda > 0,5 m).
+  var fR=RP.api.surf(OV.pitF),zR=TINZ.of(TIN.rapat(OV.pitF,2),true),zA=TINZ.of(OV.pitF),tb=TP.zf('ov:pit'),s11=0,b11=0,n11=0;
+  for(var x11=41;x11<=159;x11+=1.7)for(var y11=41;y11<=159;y11+=1.3){var v1=fR(x11,y11),v2=zR.f(x11,y11),v3=zA.f(x11,y11),v4=tb?tb(x11,y11):null;if(v1==null||v2==null)continue;n11++;
+    if(Math.abs(v1-v2)<1e-9&&v4!=null&&Math.abs(v4-v2)<1e-9)s11++;if(v3!=null&&Math.abs(v3-v2)>0.5)b11++;}
+  R.t11={n:n11,sama:s11,bedaAsli:b11,tengah:fR(100,100)};
   // T10 (0.24.75) node Data Spasial + import Reporting -> Data Referensi
   try{PT.render(true);}catch(e){}await new Promise(function(r){setTimeout(r,600);});
   var ids=[].map.call(document.querySelectorAll('#ptree .ptr'),function(r){return r.dataset.id;});
@@ -170,6 +177,8 @@ def main() -> int:
     cek(t10["pTP"] and t10["pOv"] and "topografi" in t10["box"].lower(), "T10 panel properti node Topo x Pit")
     pg_ = t10["prog"]
     cek(pg_["lama"] and pg_["lama"][0] > 0 and pg_["lama"] == pg_["baru"] and pg_["survei"] and pg_["nt"] > 0 and pg_["diTopoPit"], "T10 import survei Reporting -> Data Referensi: angka progres sama, tersimpan sebagai node survei, bisa dipilih Topo x Pit")
+    t11 = r["t11"]; print("T11", t11)
+    cek(t11["n"] > 1000 and t11["sama"] == t11["n"] and t11["bedaAsli"] > 0 and t11["tengah"] is not None and abs(t11["tengah"] - 61) < 1e-6, "T11 Reporting & Batas permukaan = pit dirapatkan (titik asli berbeda > 0,5 m di %s titik); dasar pit lebar tetap ada (hanya tepi luar dikupas)" % t11["bedaAsli"])
     print()
     if galat:
         print("GAGAL (%d):" % len(galat)); [print("  -", g) for g in galat]; return 1

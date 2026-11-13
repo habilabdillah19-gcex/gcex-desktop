@@ -496,6 +496,13 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Hitungan', '<code>zf()</code> di <code>rppit.js</code>: model ber-<code>pts</code> dihitung dengan <code>api(&quot;surf&quot;)(pts)</code> (TIN titik + IDW cadangan) &mdash; identik dengan sumber <code>pt:</code> lama; model tanpa <code>pts</code> tetap lewat mesh.'],
 ]))
 
+B.append('<h3>8.14 Permukaan string di Reporting &amp; DTM Surpac biner (BM 0.24.76 / DH 0.24.88)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['rpSurf', 'sumber string dirapatkan <code>TIN.rapat(o, 2)</code>; bila titik bertambah, <code>TINZ.of(o, true)</code> (opsi <code>tepi</code>): segitiga dengan sisi &gt; faktor &times; median dibuang hanya bila tersambung ke hull lewat segitiga panjang (BFS <code>halfedges</code>), sama dengan <code>TIN.build</code>. Juga <code>TP.zf</code> (Batas permukaan). Awan titik: tanpa perubahan.'],
+    ['DTM biner', '<code>dtmBin</code>: header teks, titik batas 29 byte, <code>END</code> (dicari sesudah daftar titik, didahului 0, diikuti record 01/02), objek 01 (9 byte), trisolasi 02 (teks atribut), segitiga 03 (33 byte bila <i>neighbours=yes</i>: id, p1 p2 p3, n1 n2 n3), big-endian. Indeks = nomor record <code>.str</code> 1-based termasuk pemisah; segitiga di luar jangkauan dibuang bila &le; 0,5 %.'],
+    ['STR biner', '<code>strSeqBin</code>: rekaman 29 byte + deskripsi teks berpanjang bebas (karakter cetak) sampai byte 0 rekaman berikutnya; cadangan = rekaman tetap 29+8k byte.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

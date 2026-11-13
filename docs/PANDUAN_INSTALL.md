@@ -4710,3 +4710,12 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   tersimpan di proyek. Sebaliknya, Reporting bisa langsung memakai topografi yang sudah ada di Data Spasial / Data Referensi.
 - Angka progres topo-ke-topo sama dengan sebelumnya (titik survei asli yang dipakai).
 - DB-Ex: tidak berubah.
+
+## 199. Block Model 0.24.76 + Drillhole 0.24.88 — Reporting mengikuti DTM Surpac; import .dtm Surpac biner
+
+- Desain pit / topografi berupa string (.str / .dxf) kini dihitung Reporting dengan titik string yang dirapatkan tiap 2 m,
+  sama seperti permukaan Topo × Pit. Diuji terhadap DTM Surpac pit Zona 3: jumlah blok, tonase & kadar di dalam pit sama
+  persis dengan memakai DTM Surpac. **Angka Reporting pit / progres dari file string bisa sedikit berubah** dibanding versi
+  sebelumnya (Zona 3: +0,8 % tonase total; cut-off 0,4: +0,06 %). Sumber titik CSV / awan titik tidak berubah.
+- File `.dtm` Surpac biner (bersama `.str`-nya) kini bisa diimport di Block Model (Data Referensi / Reporting) dan Drillhole.
+- DB-Ex: tidak berubah.

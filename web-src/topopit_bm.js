@@ -55,7 +55,7 @@
   /* Z permukaan di (x,y) lokal: null = di luar cakupan. Data Spasial: TIN tinz.js (sama dengan Reporting); DTM: segitiganya
      sendiri (bila bertumpuk di proyeksi, ambil yang terendah). */
   var zf = function (k) {
-    if (k === 'ov:topo' || k === 'ov:pit') { var o = k === 'ov:topo' ? OV.topoF : OV.pitF, t = o && window.TINZ && TINZ.of ? TINZ.of(o) : null; return t ? function (x, y) { var v = t.f(x, y); return v != null && isFinite(v) ? v : null; } : function () { return null; }; }
+    if (k === 'ov:topo' || k === 'ov:pit') { var o0 = k === 'ov:topo' ? OV.topoF : OV.pitF, o = o0 && window.TIN && TIN.rapat ? TIN.rapat(o0, 2) : o0, t = o && window.TINZ && TINZ.of ? TINZ.of(o, o !== o0 && o.x.length > o0.x.length) : null; return t ? function (x, y) { var v = t.f(x, y); return v != null && isFinite(v) ? v : null; } : function () { return null; }; }
     var ms = k && /^md:/.test(k) ? mdSurf(k.slice(3)) : null; if (ms && ms.pts && ms.pts.x && ms.pts.x.length && window.TINZ && TINZ.of) { var tz = TINZ.of(ms.pts); if (tz) return function (x, y) { var v = tz.f(x, y); return v != null && isFinite(v) ? v : null; }; }
     var tin = k ? TP.tin(k) : null; if (!tin) return function () { return null; }; var L = segi(tin), q = indeks(L);
     return function (x, y) { var C = q([x, x, y, y]), p = [x, y], best = null; for (var r = 0; r < C.length; r++) { var t = L[C[r]]; if (!t.z) continue; var H = t.H; if (H[0](p) <= 1e-9 && H[1](p) <= 1e-9 && H[2](p) <= 1e-9) { var z = t.z(p); if (best === null || z < best) best = z; } } return best; }; };

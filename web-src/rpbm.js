@@ -29,7 +29,9 @@ function rpO(){if(!BX.m)return null;if(!RP.o||RP.o._m!==BX.m.name){RP.o=rpDef();
 /* 0.24.60: TIN (web-src/tinz.js, sama dengan tampilan) lebih dulu; IDW di bawah = cadangan di luar segitiga */
 /* 0.24.68: di luar segitiga TIN = DI LUAR permukaan (null), seperti DTM Surpac. Dulu IDW mengisi 30 m di luar selubung dan
    blok yang lebih jauh lagi ikut terlapor sebagai 'di bawah topografi'. IDW hanya dipakai bila TIN tidak bisa dibuat. */
-function rpSurf(o){var _t=(window.TINZ&&TINZ.of)?TINZ.of(o):null;if(!_t)return rpSurfIdw(o);var f=function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:null;};f._tin=1;return f;}
+/* 13 Nov 2026: sumber string (topo / pit .str / .dxf) dirapatkan tiap 2 m (TIN.rapat) sebelum TIN — cocok dengan DTM Surpac
+   (pit_z3south_r4: rata |dz| 0,86 -> 0,05 m); awan titik / CSV tidak berubah. */
+function rpSurf(o){var o2=(window.TIN&&TIN.rapat)?TIN.rapat(o,2):o,rap=o2!==o&&o2.x.length>o.x.length;o=o2;var _t=(window.TINZ&&TINZ.of)?TINZ.of(o,rap):null;if(!_t)return rpSurfIdw(o);var f=function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:null;};f._tin=1;return f;}
 function rpSurfIdw(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null||o.x[i]===undefined)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
   return function(x,y){var cx=Math.floor(x/B),cy=Math.floor(y/B);for(var R=1;R<=3;R++){var sw=0,sz=0,np=0,rm=R*B*R*B;for(var a=cx-R;a<=cx+R;a++)for(var b=cy-R;b<=cy+R;b++){var L=cells[(a+50000)*100000+b+50000];if(!L)continue;
       for(var k2=0;k2<L.length;k2++){var q=L[k2],dx=o.x[q]-x,dy=o.y[q]-y,d2=dx*dx+dy*dy;if(d2>rm)continue;if(d2<1e-4)return o.z[q];var w=1/d2;sw+=w;sz+=w*o.z[q];np++;}}if(np>=3)return sz/sw;}return null;};}

@@ -4558,7 +4558,9 @@ function rpO(){if(!BX.m)return null;if(!RP.o||RP.o._m!==BX.m.name){RP.o=rpDef();
 /* 0.24.60: TIN (web-src/tinz.js, sama dengan tampilan) lebih dulu; IDW di bawah = cadangan di luar segitiga */
 /* 0.24.68: di luar segitiga TIN = DI LUAR permukaan (null), seperti DTM Surpac. Dulu IDW mengisi 30 m di luar selubung dan
    blok yang lebih jauh lagi ikut terlapor sebagai 'di bawah topografi'. IDW hanya dipakai bila TIN tidak bisa dibuat. */
-function rpSurf(o){var _t=(window.TINZ&&TINZ.of)?TINZ.of(o):null;if(!_t)return rpSurfIdw(o);var f=function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:null;};f._tin=1;return f;}
+/* 13 Nov 2026: sumber string (topo / pit .str / .dxf) dirapatkan tiap 2 m (TIN.rapat) sebelum TIN — cocok dengan DTM Surpac
+   (pit_z3south_r4: rata |dz| 0,86 -> 0,05 m); awan titik / CSV tidak berubah. */
+function rpSurf(o){var o2=(window.TIN&&TIN.rapat)?TIN.rapat(o,2):o,rap=o2!==o&&o2.x.length>o.x.length;o=o2;var _t=(window.TINZ&&TINZ.of)?TINZ.of(o,rap):null;if(!_t)return rpSurfIdw(o);var f=function(x,y){var v=_t.f(x,y);return(v!=null&&isFinite(v))?v:null;};f._tin=1;return f;}
 function rpSurfIdw(o){var B=10,cells={};for(var i=0;i<o.x.length;i++){if(o.x[i]===null||o.x[i]===undefined)continue;var k=(Math.floor(o.x[i]/B)+50000)*100000+Math.floor(o.y[i]/B)+50000;(cells[k]||(cells[k]=[])).push(i);}
   return function(x,y){var cx=Math.floor(x/B),cy=Math.floor(y/B);for(var R=1;R<=3;R++){var sw=0,sz=0,np=0,rm=R*B*R*B;for(var a=cx-R;a<=cx+R;a++)for(var b=cy-R;b<=cy+R;b++){var L=cells[(a+50000)*100000+b+50000];if(!L)continue;
       for(var k2=0;k2<L.length;k2++){var q=L[k2],dx=o.x[q]-x,dy=o.y[q]-y,d2=dx*dx+dy*dy;if(d2>rm)continue;if(d2<1e-4)return o.z[q];var w=1/d2;sw+=w;sz+=w*o.z[q];np++;}}if(np>=3)return sz/sw;}return null;};}
@@ -5334,7 +5336,12 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     /* opt.faktor: buang segitiga yang sisi terpanjangnya > faktor x median (sama dengan tampilan tinhr.js: kipas lebar
        menyeberangi lubang / tepi data kontur) -> di situ tidak ada permukaan, pemanggil memakai cadangan */
     var skip = null; if (opt.faktor > 0) { var mx = new Float64Array(nt); for (var q2 = 0; q2 < nt; q2++) { var p1 = T[3 * q2], p2 = T[3 * q2 + 1], p3 = T[3 * q2 + 2], l1 = Math.hypot(C[2 * p1] - C[2 * p2], C[2 * p1 + 1] - C[2 * p2 + 1]), l2 = Math.hypot(C[2 * p2] - C[2 * p3], C[2 * p2 + 1] - C[2 * p3 + 1]), l3 = Math.hypot(C[2 * p3] - C[2 * p1], C[2 * p3 + 1] - C[2 * p1 + 1]); mx[q2] = Math.max(l1, l2, l3); }
-      var srt = Float64Array.from(mx).sort(), med = srt[srt.length >> 1], lim = opt.faktor * med; skip = new Uint8Array(nt); for (q2 = 0; q2 < nt; q2++) if (mx[q2] > lim) skip[q2] = 1; }
+      var srt = Float64Array.from(mx).sort(), med = srt[srt.length >> 1], lim = opt.faktor * med; skip = new Uint8Array(nt); for (q2 = 0; q2 < nt; q2++) if (mx[q2] > lim) skip[q2] = 1;
+      /* opt.tepi (13 Nov 2026): segitiga panjang hanya dibuang bila tersambung ke tepi luar TIN lewat segitiga panjang lain
+         (sama dengan tampilan tinhr.js 0.24.74). Untuk string yang dirapatkan (median sisi ~2 m) aturan "semua segitiga panjang"
+         melubangi lantai jenjang / dasar pit yang lebar -> blok di bawahnya hilang dari Reporting (Z3: 102 rb -> 46 rb blok). */
+      if (opt.tepi) { var H = d.halfedges, sk2 = new Uint8Array(nt), qq = [], e2, t3; for (e2 = 0; e2 < H.length; e2++) if (H[e2] < 0) { t3 = (e2 / 3) | 0; if (skip[t3] && !sk2[t3]) { sk2[t3] = 1; qq.push(t3); } }
+        while (qq.length) { var t4 = qq.pop(); for (var k3 = 0; k3 < 3; k3++) { var o2 = H[3 * t4 + k3]; if (o2 < 0) continue; t3 = (o2 / 3) | 0; if (skip[t3] && !sk2[t3]) { sk2[t3] = 1; qq.push(t3); } } } skip = sk2; } }
     var tb = new Int32Array(4 * nt), cnt = new Uint32Array(gx * gy + 1), t, a, b, c, ci, cj;
     for (t = 0; t < nt; t++) { if (skip && skip[t]) { tb[4 * t] = 1; tb[4 * t + 1] = 0; continue; } a = T[3 * t]; b = T[3 * t + 1]; c = T[3 * t + 2];
       var i0 = Math.floor((Math.min(C[2 * a], C[2 * b], C[2 * c]) - x0) / cs), i1 = Math.floor((Math.max(C[2 * a], C[2 * b], C[2 * c]) - x0) / cs), j0 = Math.floor((Math.min(C[2 * a + 1], C[2 * b + 1], C[2 * c + 1]) - y0) / cs), j1 = Math.floor((Math.max(C[2 * a + 1], C[2 * b + 1], C[2 * c + 1]) - y0) / cs);
@@ -5358,9 +5365,10 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
      tampilan (tinhr.js: faktor sliver TIN.faktor) — interpolasi linear dalam segitiga seperti DTM Surpac. IDW lama tetap
      sebagai cadangan di luar cakupan TIN (tepi data / celah kontur). Berlaku di Block Model dan Drillhole. ---------- */
   var WM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
-  function tinOf(o) { if (!o || !o.x || !o.x.length || !WM) return null; var c = WM.get(o); if (c && c.len === o.x.length) return c.tin;
+  /* tepi = true: sumber string yang sudah dirapatkan (TIN.rapat) -> hanya segitiga panjang di tepi luar yang dibuang */
+  function tinOf(o, tepi) { if (!o || !o.x || !o.x.length || !WM) return null; var c = WM.get(o); if (c && c.len === o.x.length) return c.tin;
     var P = []; for (var i = 0; i < o.x.length; i++) { if (o.x[i] === null || o.x[i] === undefined) continue; P.push({ x: o.x[i], y: o.y[i], z: o.z[i] }); }
-    var t = null; try { t = TINZ(P, { faktor: (window.TIN && TIN.faktor) || 8 }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: t }); return t; }
+    var t = null; try { t = TINZ(P, { faktor: (window.TIN && TIN.faktor) || 8, tepi: !!tepi }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: t }); return t; }
   TINZ.of = tinOf;
   function pasang() {
     if (typeof window.topoZ === 'function' && !window.topoZ._tin) { var _tz = window.topoZ;
@@ -10390,7 +10398,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
   /* Z permukaan di (x,y) lokal: null = di luar cakupan. Data Spasial: TIN tinz.js (sama dengan Reporting); DTM: segitiganya
      sendiri (bila bertumpuk di proyeksi, ambil yang terendah). */
   var zf = function (k) {
-    if (k === 'ov:topo' || k === 'ov:pit') { var o = k === 'ov:topo' ? OV.topoF : OV.pitF, t = o && window.TINZ && TINZ.of ? TINZ.of(o) : null; return t ? function (x, y) { var v = t.f(x, y); return v != null && isFinite(v) ? v : null; } : function () { return null; }; }
+    if (k === 'ov:topo' || k === 'ov:pit') { var o0 = k === 'ov:topo' ? OV.topoF : OV.pitF, o = o0 && window.TIN && TIN.rapat ? TIN.rapat(o0, 2) : o0, t = o && window.TINZ && TINZ.of ? TINZ.of(o, o !== o0 && o.x.length > o0.x.length) : null; return t ? function (x, y) { var v = t.f(x, y); return v != null && isFinite(v) ? v : null; } : function () { return null; }; }
     var ms = k && /^md:/.test(k) ? mdSurf(k.slice(3)) : null; if (ms && ms.pts && ms.pts.x && ms.pts.x.length && window.TINZ && TINZ.of) { var tz = TINZ.of(ms.pts); if (tz) return function (x, y) { var v = tz.f(x, y); return v != null && isFinite(v) ? v : null; }; }
     var tin = k ? TP.tin(k) : null; if (!tin) return function () { return null; }; var L = segi(tin), q = indeks(L);
     return function (x, y) { var C = q([x, x, y, y]), p = [x, y], best = null; for (var r = 0; r < C.length; r++) { var t = L[C[r]]; if (!t.z) continue; var H = t.H; if (H[0](p) <= 1e-9 && H[1](p) <= 1e-9 && H[2](p) <= 1e-9) { var z = t.z(p); if (best === null || z < best) best = z; } } return best; }; };
@@ -11083,6 +11091,17 @@ function dpKeep(P,tol){var n=P.length,keep=new Uint8Array(n);if(n<=2||!(tol>0)){
     if(dm>tol){keep[im]=1;st.push([a,im],[im,b]);}}return keep;}
 function segsOut(segs,out,tol){var n0=0,n1=0;segs.forEach(function(P){if(!P.length)return;var k=dpKeep(P,tol);for(var i=0;i<P.length;i++){n0++;if(k[i]){out.push(P[i]);n1++;}}out.push(null);});return[n0,n1];}
 function beDbl(u,o,le){return new DataView(u.buffer,u.byteOffset+o,8).getFloat64(0,le);}
+/* STR biner Surpac berdeskripsi TEKS berpanjang bebas (",1", ",Lensa A" …) sesudah tiap rekaman 29 byte — cara yang sama dengan
+   bigline.js readStrS (9 Nov 2026). readStr (import Model / DTM) dulu hanya mengenal rekaman tetap 29+8k byte sehingga
+   pit_z3south_r4.str terbaca bergeser (koordinat ~1e-307). null bila bukan pola ini (pembaca rekaman tetap jadi cadangan). */
+function strSeqBin(u,ds,end,yx){var dv=new DataView(u.buffer,u.byteOffset,u.byteLength),ok1=function(v){return isFinite(v)&&Math.abs(v)<1e8;},
+  sane=function(p){if(p+29>end)return false;var y0=dv.getFloat64(p+5,false),x0=dv.getFloat64(p+13,false),z0=dv.getFloat64(p+21,false);return (x0===0&&y0===0&&z0===0)||(ok1(x0)&&ok1(y0)&&Math.abs(z0)<1e6&&(Math.abs(x0)>1e-3||Math.abs(y0)>1e-3));},start=-1;
+  for(var k=0;k<=16;k++){var p=ds+k;if(u[p]!==0||!sane(p))continue;var nx=p+29;while(nx<end&&u[nx]>=32&&u[nx]<=126)nx++;if(nx+29>end||(u[nx]===0&&sane(nx))){start=p;break;}}
+  if(start<0)return null;var segs=[],cur=[],csn=null,pn=-1,o=start,nr=0,nd=0,flush=function(){if(cur.length){cur.sn=csn;segs.push(cur);}cur=[];};
+  while(o+29<=end){if(u[o]!==0||!sane(o)){if(end-o>64)return null;break;}var no=dv.getInt32(o+1,false),Y=dv.getFloat64(o+5,false),X=dv.getFloat64(o+13,false),Z=dv.getFloat64(o+21,false);nr++;
+    if(!yx){var t=X;X=Y;Y=t;}if(X===0&&Y===0&&Z===0){flush();pn=-1;}else{if(pn>=0&&no!==pn)flush();pn=no;csn=no;cur.push([X,Y,Z]);}
+    o+=29;var o1=o;while(o<end&&u[o]>=32&&u[o]<=126)o++;if(o>o1)nd++;}
+  if(!nd)return null;flush();segs.recLen=0;segs.recs=nr;return segs;}
 async function readStr(file,yx){var u=new Uint8Array(await file.arrayBuffer()),nl=0,ds=-1;for(var i=0;i<u.length;i++){if(u[i]===10){nl++;if(nl===2){ds=i+1;break;}}}
   if(ds<0||ds>=u.length)throw new Error('format STR tidak dikenali');var c=u[ds],segs=[],cur=[],prev=null,csn=null,flush=function(){if(cur.length){cur.sn=csn;segs.push(cur);}cur=[];};
   if((c>=48&&c<=57)||c===32||c===45||c===13||c===10||c===9||c===43||c===46){var L=new TextDecoder().decode(u).split(/\r?\n/);
@@ -11093,6 +11112,7 @@ async function readStr(file,yx){var u=new Uint8Array(await file.arrayBuffer()),n
       if(x===0&&y===0&&z===0){flush();prev=null;continue;}if(prev!==null&&sn!==prev)flush();prev=sn;csn=+sn;cur.push([x,y,z]);}
     flush();return segs;}
   var end=u.length;for(var k=u.length-3;k>=ds&&u.length-k<=64;k--){if(u[k]===69&&u[k+1]===78&&u[k+2]===68){end=k;break;}}
+  var sq=strSeqBin(u,ds,end,yx);if(sq)return sq;
   /* panjang record STR biner: 29 byte (tipe + nomor string + Y X Z) ditambah 8 byte per kolom deskripsi (D1, D2, …).
      Dulu selalu 29 -> STR ber-deskripsi terbaca bergeser dan koordinat jadi angka liar (±1e+250…1e+307). */
   var ok1=function(v){return isFinite(v)&&Math.abs(v)<1e8;},R=29,best=-1;
@@ -11334,14 +11354,43 @@ async function readMsh(f){var b=new Uint8Array(await f.arrayBuffer()),hd=new Tex
   if(!V||!Tr)throw new Error(f.name+': data Location / Tri tidak ditemukan');var nv=V.length/3,mn=Infinity,mx=-1;for(var k=0;k<Tr.length;k++){if(Tr[k]<mn)mn=Tr[k];if(Tr[k]>mx)mx=Tr[k];}
   if(mn>=1&&mx===nv)for(k=0;k<Tr.length;k++)Tr[k]--;else if(mx>=nv)throw new Error(f.name+': indeks segitiga di luar jumlah titik');
   return{name:bname(f.name),v:V,t:Tr,nv:nv,nt:Tr.length/3};}
-async function readDtm(f,strs){var L=(await f.text()).split(/\r?\n/),ref=(L[0]||'').split(',')[0].trim(),tri=[],mx=0;
-  for(var i=1;i<L.length;i++){var a=L[i].split(',');if(a.length<4||!/^\s*\d+\s*$/.test(a[0]))continue;var p=+a[1],q=+a[2],r=+a[3];if(!(p>0&&q>0&&r>0))continue;tri.push(p-1,q-1,r-1);mx=Math.max(mx,p,q,r);}
+/* Surpac DTM: teks (id,p1,p2,p3,...) atau biner (record segitiga big-endian). Titik diambil dari file .str pasangannya
+   (nama ada di baris pertama DTM); urutan titik = urutan semua titik di .str (1-based). */
+function dtmBin(u){var hdrEnd=-1;
+  /* "END" penutup daftar titik batas; sesudahnya (lewat nol) record objek 01 / trisolasi 02. Dulu dicari hanya di 4 KB pertama —
+     DTM dengan string batas panjang (pit_z3south_r4.dtm: 2.714 titik, END di byte 78.771) tidak terbaca. */
+  for(var i=1;i<u.length-3;i++){if(u[i]===69&&u[i+1]===78&&u[i+2]===68&&u[i-1]===0){var j=i+3;while(j<u.length&&u[j]===0)j++;if(u[j]===1||u[j]===2){hdrEnd=i+3;break;}}}
+  if(hdrEnd<0)for(i=0;i<Math.min(u.length-3,4096);i++){if(u[i]===69&&u[i+1]===78&&u[i+2]===68){hdrEnd=i+3;break;}}if(hdrEnd<0)return null;
+  var dv=new DataView(u.buffer,u.byteOffset,u.byteLength),I=function(o){return dv.getInt32(o,false);},o=hdrEnd,tri=[],mx=0,mn=1e18,nb=false,rs=0,guard=0;
+  /* cari record pertama: 01 objek / 02 trisolasi / 03 segitiga */
+  while(o<u.length&&u[o]===0)o++;
+  while(o<u.length){var t=u[o];
+    if(t===1){o+=9;while(o<u.length&&u[o]===0)o++;continue;}
+    if(t===2){var j=o+5;while(j<u.length&&u[j]!==0)j++;var txt=new TextDecoder().decode(u.subarray(o+5,j));nb=/neighbours\s*=\s*yes/i.test(txt);o=j;while(o<u.length&&u[o]===0)o++;rs=0;continue;}
+    if(t===3){if(!rs){var id0=I(o+1),cand=[nb?33:21,33,21,29,25,37,41];for(var c=0;c<cand.length;c++){var q=o+cand[c];if(q>=u.length||u[q]===255||((u[q]===3)&&I(q+1)===id0+1)||u[q]===1||u[q]===2){rs=cand[c];break;}}if(!rs)throw new Error('struktur record segitiga DTM biner tidak dikenali');}
+      var a=I(o+5),b=I(o+9),c2=I(o+13);if(a<1||b<1||c2<1)throw new Error('indeks titik DTM biner tidak valid (record di byte '+o+')');tri.push(a-1,b-1,c2-1);if(a>mx)mx=a;if(b>mx)mx=b;if(c2>mx)mx=c2;o+=rs;continue;}
+    if(t===255||t===0)break;throw new Error('record DTM biner tidak dikenali (tipe '+t+' di byte '+o+')');}
+  return{tri:tri,mx:mx};}
+SA._dtmBin=dtmBin;
+async function readDtm(f,strs){var u=new Uint8Array(await f.arrayBuffer()),nl=0;while(nl<u.length&&u[nl]!==10&&nl<2000)nl++;var head=new TextDecoder().decode(u.subarray(0,nl)),ref=(head.split(',')[0]||'').trim(),tri=[],mx=0;
+  var bin=false;for(var i=nl+1;i<Math.min(u.length,nl+400);i++){if(u[i]===0){bin=true;break;}}
+  if(bin){var B=dtmBin(u);if(B){tri=B.tri;mx=B.mx;}}
+  else{var L=new TextDecoder().decode(u).split(/\r?\n/);for(i=1;i<L.length;i++){var a=L[i].split(',');if(a.length<4||!/^\s*\d+\s*$/.test(a[0]))continue;var p=+a[1],q=+a[2],r=+a[3];if(!(p>0&&q>0&&r>0))continue;tri.push(p-1,q-1,r-1);mx=Math.max(mx,p,q,r);}}
   if(!tri.length)throw new Error(f.name+': tidak ada segitiga di file DTM');
-  var low=ref.toLowerCase(),s=strs.filter(function(x){var n=x.name.toLowerCase();return low&&(n===low||n.slice(-low.length-1)==='_'+low||n.slice(-low.length)===low);})[0]||(strs.length===1?strs[0]:null);
-  if(!s)throw new Error(f.name+': file string pasangannya belum dipilih. Import juga "'+(ref||'*.str')+'" bersama file .dtm ini.');
-  var segs=await readStr(s,E('strOrd')?E('strOrd').value==='yx':true),P=[];segs.forEach(function(g){g.forEach(function(p){P.push(p);});});
-  if(mx>P.length)throw new Error(f.name+': DTM merujuk titik ke-'+mx+' tetapi '+s.name+' hanya berisi '+P.length+' titik (file string tidak cocok).');
-  var V=new Float64Array(P.length*3);P.forEach(function(p,i){V[i*3]=p[0];V[i*3+1]=p[1];V[i*3+2]=p[2];});return{name:bname(f.name),v:V,t:new Uint32Array(tri),nv:P.length,nt:tri.length/3};}
+  var low=ref.toLowerCase(),base=function(n){return n.toLowerCase().replace(/^.*[\\\/]/,'');},s=strs.filter(function(x){var n=base(x.name);return low&&(n===low||n.slice(-low.length-1)==='_'+low||n.slice(-low.length-1)==='-'+low||n.slice(-low.length)===low);})[0]||(!low&&strs.length===1?strs[0]:null);
+  if(!s)throw new Error(f.name+': titik DTM ini tersimpan di file string "'+(ref||'*.str')+'"'+(strs.length?' — file yang dipilih ('+strs.map(function(x){return x.name;}).join(', ')+') bukan pasangannya':'')+'. Pilih file "'+(ref||'.str')+'" bersama file .dtm ini (nama file jangan diubah).');
+  var segs=await readStr(s,E('strOrd')?E('strOrd').value==='yx':true),P=[],PS=[];segs.forEach(function(g){g.forEach(function(p){P.push(p);PS.push(p);});PS.push(null);});
+  /* penomoran titik DTM: Surpac menghitung juga record pemisah string (0,0,0). Pilih penomoran yang konsisten:
+     tanpa rujukan ke pemisah / di luar jumlah titik; bila keduanya valid, pilih yang segitiganya paling kecil (median sisi). */
+  /* 13 Nov 2026 (pit_z3south_r4.dtm pemilik): segelintir segitiga Surpac merujuk record di luar .str (4 dari 9.131) —
+     dibuang bila <= 0,5 % segitiga, bukan menolak seluruh DTM. */
+  var nt0=tri.length/3,lim=Math.floor(nt0*0.005),bad=function(A){var b=0;for(var t=0;t<tri.length;t+=3){if(!A[tri[t]]||!A[tri[t+1]]||!A[tri[t+2]])b++;}return b;},bP=bad(P),bS=bad(PS),okP=bP<=lim,okS=bS<=lim,k;
+  var med=function(A){var L=[],st=Math.max(3,Math.floor(tri.length/3/3000)*3);for(var t=0;t<tri.length;t+=st){var p=A[tri[t]],q=A[tri[t+1]];if(p&&q)L.push(Math.hypot(p[0]-q[0],p[1]-q[1]));}L.sort(function(x,y){return x-y;});return L.length?L[L.length>>1]:Infinity;};
+  var useS=okS&&(!okP||segs.length>1&&med(PS)<med(P));
+  if(!okP&&!okS)throw new Error(f.name+': DTM merujuk titik ke-'+mx.toLocaleString('id-ID')+' tetapi '+s.name+' hanya berisi '+P.length.toLocaleString('id-ID')+' titik ('+PS.length.toLocaleString('id-ID')+' record termasuk pemisah string): file string tidak cocok.');
+  var AA=useS?PS:P,drop=0;if(useS?bS:bP){var t2=[];for(k=0;k<tri.length;k+=3){if(AA[tri[k]]&&AA[tri[k+1]]&&AA[tri[k+2]])t2.push(tri[k],tri[k+1],tri[k+2]);else drop++;}tri=t2;}
+  if(useS){var map=new Int32Array(PS.length).fill(-1),n=0;for(k=0;k<PS.length;k++)if(PS[k])map[k]=n++;for(k=0;k<tri.length;k++)tri[k]=map[tri[k]];}
+  var V=new Float64Array(P.length*3);P.forEach(function(p,i){V[i*3]=p[0];V[i*3+1]=p[1];V[i*3+2]=p[2];});return{name:bname(f.name),v:V,t:new Uint32Array(tri),nv:P.length,nt:tri.length/3,bin:bin,drop:drop};}
 async function readObj(f){var L=(await f.text()).split(/\r?\n/),V=[],T=[];
   L.forEach(function(l){var a=l.trim().split(/\s+/);if(a[0]==='v'&&a.length>=4)V.push(+a[1],+a[2],+a[3]);else if(a[0]==='f'&&a.length>=4){var n=V.length/3,ix=a.slice(1).map(function(s){var k=parseInt(s.split('/')[0],10);return k<0?n+k:k-1;});for(var j=1;j+1<ix.length;j++)T.push(ix[0],ix[j],ix[j+1]);}});
   if(!T.length)throw new Error(f.name+': tidak ada face di file OBJ');return{name:bname(f.name),v:new Float64Array(V),t:new Uint32Array(T),nv:V.length/3,nt:T.length/3};}
@@ -12866,7 +12915,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.75';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.76';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

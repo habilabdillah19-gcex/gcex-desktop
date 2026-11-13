@@ -1201,6 +1201,12 @@ B.append('<p>Project Tree &rsaquo; <b>Data Spasial</b> kini berisi node <b>Topog
          'Topografi yang diimport di Reporting (tab &#9315; Pit &amp; progres) otomatis menjadi node Data Referensi bertanda <b>survei</b>, tersimpan di proyek dan langsung bisa dipakai di Topo &times; Pit; sebaliknya Reporting bisa memilih topografi yang sudah ada di Data Spasial / Data Referensi. '
          'Angka progres topo-ke-topo tidak berubah karena titik survei aslinya yang dihitung.</p>')
 
+B.append('<h3>16h. Reporting mengikuti DTM Surpac; import .dtm Surpac biner (Block Model 0.24.76, Drill Hole 0.24.88)</h3>')
+B.append('<p>Desain pit dan topografi berupa <b>string</b> (.str / .dxf) kini dihitung Reporting dengan titik string yang <b>dirapatkan tiap 2 m</b> &mdash; permukaan yang sama dengan Topo &times; Pit &mdash; sehingga segitiga tidak lagi menyeberangi jenjang. '
+         'Dibandingkan dengan DTM Surpac sebuah pit nyata, selisih permukaan turun dari rata-rata 0,86 m menjadi 0,05 m, dan jumlah blok, tonase serta kadar di dalam pit sama persis dengan hasil memakai DTM Surpac. '
+         'Segitiga panjang hanya dikupas dari tepi luar, sehingga dasar pit yang lebar tetap terhitung. Sumber titik CSV / awan titik tidak berubah. '
+         'File <b>.dtm Surpac biner</b> (pilih bersama file .str-nya) kini bisa diimport di Data Referensi dan dipilih sebagai sumber di Reporting.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

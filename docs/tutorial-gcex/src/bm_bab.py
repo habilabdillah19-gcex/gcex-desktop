@@ -260,7 +260,9 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
    'Legenda di pojok kanan bawah grafik merangkum kelas blok yang tampil, permukaan dan wireframe; &minus; mengecilkan, &times; menutup (buka lagi lewat tombol <b>Legenda</b>).')
  + kv([('Ekspor', 'menu &#8943; node Topo &times; Pit &rarr; <b>Ekspor DTM + STR</b> (bisa dicek di Surpac)'),
        ('Bila topo / pit berganti', 'label <b>usang</b> di Project Tree &rarr; <b>Hitung ulang</b>'),
-       ('Reporting', 'permukaan gabungan ikut muncul di daftar permukaan tab &#9315; Pit &amp; progres')]))
+       ('Reporting', 'permukaan gabungan ikut muncul di daftar permukaan tab &#9315; Pit &amp; progres'),
+       ('DTM Surpac', 'file <code>.dtm</code> teks maupun biner (pilih bersama <code>.str</code>-nya) bisa diimport di Data Referensi sebagai pembanding / sumber Reporting'),
+       ('Desain pit string', 'Reporting memakai titik string yang dirapatkan tiap 2 m &mdash; sama dengan permukaan Topo &times; Pit dan DTM Surpac')]))
 
 ch('As-mined: rencana vs aktual', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75',
      [('Poligon aktual', 'di latihan ini dibuat dari dig block <b>HG</b> dan <b>LG</b> yang digeser <b>+0,6 m</b> ke timur dan <b>&minus;0,4 m</b> ke utara (simulasi penggalian)'),
