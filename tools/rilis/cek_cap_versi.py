@@ -32,6 +32,7 @@ APLIKASI = [
     ("GC-Ex Block Model", "app/index.html", ("package.json", ("version",))),
     ("GC-Ex Drillhole", "app-dh/index.html", ("builder-dh.json", ("extraMetadata", "version"))),
     ("DB-Ex", "app-core/index.html", ("builder-core.json", ("extraMetadata", "version"))),
+    ("Ore Works", "app-ow/index.html", ("builder-ow.json", ("extraMetadata", "version"))),
 ]
 
 POLA = re.compile(r"GCEX_VER\s*=\s*'([^']*)'")

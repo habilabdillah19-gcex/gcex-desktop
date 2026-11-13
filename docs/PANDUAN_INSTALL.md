@@ -4726,3 +4726,15 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   sama persis dengan hitungan Reporting. Tampilan topografi di Overlay tidak berubah.
 - Bila Topo × Pit sudah dibuat di proyek lama, klik ⋯ › **Hitung ulang** pada node Topo × Pit.
 - Drillhole & DB-Ex: tidak berubah.
+
+## 201. Ore Works 0.1.0 — aplikasi baru (dahulu Ore Studio)
+
+- Installer baru di Release: **`Ore-Works-Setup-0.1.0.exe`**. Dipasang terpisah, boleh berdampingan dengan GC-Ex & DB-Ex;
+  penyimpanan di `%APPDATA%\Ore Works`. Tidak perlu hak admin, tidak perlu internet.
+- Isi: pemetaan lapangan (impor pick-up survei, digitasi vein / channel sampling / kontak / struktur / poligon / grab),
+  vein 3D berbentuk lembaran urat, simbol struktur gaya USGS, warna channel per kelas kadar, label yang tidak saling menutupi,
+  layout peta siap cetak (PNG / PDF), ekspor STR / CSV untuk Surpac.
+- Lisensi: kunci GC-Ex yang berlaku untuk **Ore Works** (atau "semua aplikasi"). Admin membuatnya di alat pembuat lisensi
+  dengan mencentang **Ore Works**. Kunci lama yang hanya untuk Block Model / Drillhole / DB-Ex tidak membuka Ore Works.
+- Project lama dari Ore Studio (`.gcv.json`) tetap bisa dibuka lewat **File → Buka project**.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.

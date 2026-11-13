@@ -1,0 +1,77 @@
+{
+  "appId": "com.gcex.oreworks",
+  "productName": "Ore Works",
+  "copyright": "Copyright © 2026 Habil Abdillah",
+  "extraMetadata": {
+    "version": "0.1.0",
+    "name": "oreworks",
+    "productName": "Ore Works",
+    "description": "Ore Works - pemetaan lapangan, struktur & visual 3D bijih (offline), keluarga GC-Ex",
+    "gcex": {
+      "page": "app-ow/index.html",
+      "title": "Ore Works",
+      "icon": "build/ow-icon.ico",
+      "theme": "ow"
+    }
+  },
+  "directories": {
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "files": [
+    "electron/**/*",
+    "app-ow/**/*",
+    "package.json",
+    "build/ow-icon.ico"
+  ],
+  "extraResources": [
+    {
+      "from": "legal",
+      "to": "legal",
+      "filter": [
+        "*.txt",
+        "*.html"
+      ]
+    },
+    {
+      "from": "legal-ow",
+      "to": "legal",
+      "filter": [
+        "*.txt"
+      ]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "build/ow-icon.ico",
+    "artifactName": "Ore-Works-Setup-${version}.${ext}",
+    "legalTrademarks": "Ore Works adalah nama produk milik Habil Abdillah (keluarga GC-Ex)"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Ore Works",
+    "uninstallDisplayName": "Ore Works ${version}",
+    "license": "legal/SYARAT_PENGGUNAAN.txt"
+  },
+  "electronFuses": {
+    "runAsNode": false,
+    "enableCookieEncryption": true,
+    "enableNodeOptionsEnvironmentVariable": false,
+    "enableNodeCliInspectArguments": false,
+    "enableEmbeddedAsarIntegrityValidation": true,
+    "onlyLoadAppFromAsar": true
+  },
+  "asar": true,
+  "publish": null
+}

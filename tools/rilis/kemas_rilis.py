@@ -1,7 +1,8 @@
 """Kemas satu rilis GC-Ex lengkap untuk GitHub Release (dipanggil CI setelah ketiga installer dibangun).
 
 Isi folder keluaran (semua diunggah ke Release v<versi>):
-  GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, DB-Ex-Setup-<v>.exe   installer (dipasang terpisah)
+  GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, DB-Ex-Setup-<v>.exe, Ore-Works-Setup-<v>.exe
+                                     installer (dipasang terpisah, masing-masing pada versinya sendiri)
   DB-Ex-Qt-Setup-<v>.exe             installer DB-Ex versi Qt (semua ruang kerja: Core box, Singkapan & Model 3D,
                                      Borang, QAQC), bila CI berhasil membangunnya (dist-qt/)
   GC-Ex-<v>_1_Dokumen.zip            README, panduan teknis, tutorial PDF (GC-Ex, DB-Ex, aktivasi lisensi)
@@ -26,7 +27,8 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-APPS = [("GC-Ex-Setup", "GC-Ex Block Model"), ("GC-Ex-Drillhole-Setup", "GC-Ex Drillhole"), ("DB-Ex-Setup", "DB-Ex")]
+APPS = [("GC-Ex-Setup", "GC-Ex Block Model"), ("GC-Ex-Drillhole-Setup", "GC-Ex Drillhole"), ("DB-Ex-Setup", "DB-Ex"),
+        ("Ore-Works-Setup", "Ore Works")]
 KUNCI_PRIVAT = ("KUNCI_PRIVAT", "private", ".pem", ".key")
 
 
@@ -73,6 +75,7 @@ VERSI_APP = {
     "GC-Ex Block Model": ("package.json", ("version",)),
     "GC-Ex Drillhole": ("builder-dh.json", ("extraMetadata", "version")),
     "DB-Ex": ("builder-core.json", ("extraMetadata", "version")),
+    "Ore Works": ("builder-ow.json", ("extraMetadata", "version")),
 }
 MILIK = {
     "GC-Ex Block Model": ["app/", "web-src/", "electron/", "backend/", "build/", "legal/", "package-lock.json",
@@ -83,6 +86,8 @@ MILIK = {
                         "docs/tutorial-gcex/"],
     "DB-Ex": ["app-core/", "app_core_qt/", "electron/", "backend/", "build/", "legal/", "docs/tutorial-core/", "docs/referensi/",
               "docs/PANDUAN_CORE", "docs/DB-Ex_", "builder-core.json"],
+    # Ore Works: satu berkas HTML (three.js), tanpa backend Python
+    "Ore Works": ["app-ow/", "web-src-ow/", "electron/", "legal/", "legal-ow/", "build/ow-icon"],
 }
 # berkas Block Model di docs/tutorial-gcex/ tidak dihitung milik Drillhole
 BUKAN_DH = ("docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py", "docs/tutorial-gcex/src/bm_bab.py",
@@ -218,7 +223,7 @@ def main():
     pk = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     tentang.write_text(
         f"GC-Ex (Grade Control Excellence) {ver}\r\n"
-        f"Aplikasi: GC-Ex Block Model, GC-Ex Drillhole, DB-Ex (dipasang terpisah)\r\n"
+        f"Aplikasi: GC-Ex Block Model, GC-Ex Drillhole, DB-Ex, Ore Works (dipasang terpisah)\r\n"
         f"Commit sumber: {sha}\r\nBuild GitHub Actions run: {run}\r\nTanggal build: {now}\r\n"
         f"Electron {pk.get('devDependencies', {}).get('electron', '?')}\r\n"
         f"Offline: aplikasi tidak memeriksa / memasang pembaruan lewat internet. Versi baru diminta ke admin.\r\n"

@@ -254,6 +254,41 @@ jobs:
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
 
+      # ---------- Ore Works (satu berkas HTML three.js, tanpa backend Python) ----------
+      - name: Bangun installer Ore Works
+        shell: pwsh
+        # unduhan electron-builder (winCodeSign / NSIS dari GitHub) kadang 504 sesaat: coba sampai 3 kali
+        run: |
+          for ($i = 1; $i -le 3; $i++) { npx electron-builder --config builder-ow.json --win nsis --x64 --publish never; if ($LASTEXITCODE -eq 0) { exit 0 }; Write-Host "::warning::installer Ore Works gagal (percobaan $i), ulang 60 detik lagi"; Start-Sleep 60 }
+          exit 1
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Uji jalan Ore Works (fuses, asar, gerbang lisensi)
+        shell: pwsh
+        run: |
+          $exe = "dist/win-unpacked/Ore Works.exe"; if (-not (Test-Path $exe)) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Where-Object { $_.Name -notlike 'Uninstall*' } | Select-Object -First 1).FullName }
+          $log = Join-Path $env:APPDATA "Ore Works/logs"; Remove-Item -Recurse -Force $log -ErrorAction SilentlyContinue
+          $sd = Join-Path $env:APPDATA "Ore Works"; New-Item -ItemType Directory -Force -Path $sd | Out-Null
+          $tv = (Select-String -Path electron/main.js -Pattern "const TERMS_VERSION = '([^']+)'").Matches[0].Groups[1].Value
+          Set-Content -Path (Join-Path $sd "settings.json") -Value ('{"termsAccepted":"' + $tv + '"}') -Encoding utf8
+          $p = Start-Process -FilePath $exe -PassThru
+          $ok = $false; for ($i=0; $i -lt 40; $i++) { Start-Sleep -Milliseconds 500; $t = Get-ChildItem $log -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw -ErrorAction SilentlyContinue; if ($t -match 'lisensi\] belum aktif') { $ok = $true; break } }
+          $alive = -not $p.HasExited
+          Get-Process | Where-Object { $_.Path -like "*win-unpacked*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          Write-Host ($t)
+          if (-not $ok -or -not $alive) { Write-Host "::error::Ore Works: aplikasi tidak sampai ke jendela aktivasi (alive=$alive)"; exit 1 }
+          Write-Host "Ore Works: jendela aktivasi lisensi tampil, aplikasi berjalan"
+      - name: Cek isi Ore Works
+        shell: pwsh
+        run: |
+          $d = "dist/win-unpacked"
+          foreach ($f in @("resources/app.asar","resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_THREEJS.txt","LICENSE.electron.txt")) {
+            if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
+          }
+          if (Test-Path "$d/resources/backend") { throw "Ore Works tidak memakai backend Python, tetapi folder backend ikut terkemas" }
+          $ins = Get-ChildItem dist/Ore-Works-Setup-*.exe | Select-Object -First 1
+          if (-not $ins) { throw "installer Ore-Works-Setup-*.exe tidak ada" } else { Write-Host ("installer " + $ins.Name + " " + [math]::Round($ins.Length/1MB,1) + " MB") }
+
       # SETIAP build di main menerbitkan GitHub Release v<versi> (privat, tidak memakan kuota artifact Actions) berisi:
       # 3 installer terpisah, dokumen (panduan teknis & tutorial), data latihan dummy, lisensi & tentang, catatan rilis
       # (daftar commit sejak rilis sebelumnya) dan SHA256SUMS; kode sumber zip/tar.gz otomatis dari tag.
@@ -674,7 +709,7 @@ jobs:
         run: |
           # versi per aplikasi: package.json (Block Model), builder-dh.json / builder-core.json extraMetadata.version (bila ada)
           $vs = @((Get-Content package.json -Raw | ConvertFrom-Json).version)
-          foreach ($b in @('builder-dh.json','builder-core.json')) { $x = (Get-Content $b -Raw | ConvertFrom-Json).extraMetadata.version; if ($x) { $vs += $x } }
+          foreach ($b in @('builder-dh.json','builder-core.json','builder-ow.json')) { $x = (Get-Content $b -Raw | ConvertFrom-Json).extraMetadata.version; if ($x) { $vs += $x } }
           $v = ($vs | Sort-Object { [version]$_ } -Descending | Select-Object -First 1)
           Write-Host ("versi aplikasi: " + ($vs -join ', ') + " -> rilis v" + $v)
           $tag = "v$v"
@@ -761,6 +796,12 @@ jobs:
         with:
           name: DB-Ex-Setup-Windows
           path: dist/DB-Ex-Setup-*.exe
+          retention-days: 2
+      - uses: actions/upload-artifact@v6
+        continue-on-error: true
+        with:
+          name: Ore-Works-Setup-Windows
+          path: dist/Ore-Works-Setup-*.exe
           retention-days: 2
 
       # audit keamanan (informasi, tidak menggagalkan build): environment Python terpisah supaya tidak ikut ke daftar lisensi
