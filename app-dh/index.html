@@ -15571,7 +15571,7 @@ Object.assign(OGS_PG, { peta: ogsPgPeta }); Object.assign(OGS_DR, { peta: ogsDrP
       if (window.OV && OV.pitF && OV.pitF.x && OV.pitF.x.length) L.push(['ov:pit', 'Desain pit aktif']);
       (RPX.surf || []).forEach(function (q, i) { L.push(['pt:' + i, 'File: ' + q.name + ' (' + q.x.length.toLocaleString('id-ID') + ' titik)']); });
     }
-    (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, (w.jenis === 'surf' ? 'Permukaan DTM: ' : 'Wireframe: ') + w.name]); });
+    (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, (w.survei ? 'Survei (Data Referensi): ' : w.gab ? 'Data Spasial: ' : w.jenis === 'surf' ? 'Permukaan DTM: ' : 'Wireframe: ') + w.name]); });
     return L;
   }
   function labOf(k) { var r = srcs('topo').filter(function (p) { return p[0] === k; })[0]; return r ? r[1] : k; }
@@ -15582,7 +15582,10 @@ Object.assign(OGS_PG, { peta: ogsPgPeta }); Object.assign(OGS_DR, { peta: ogsDrP
     if (!k) return null;
     var ox = window.offX || 0, oy = window.offY || 0, j = which === 'lo' ? 0 : 1;
     if (k.indexOf('wf:') === 0) {
-      var w = (window.MD && MD.models || [])[+k.slice(3)], tf = w && api('tin') ? api('tin')(w) : null;
+      /* 0.24.75: survei yang diimport dari panel ini disimpan sebagai node Data Referensi BESERTA titik aslinya; hitungan
+         tetap memakai titik itu (TIN titik + cadangan IDW, sama persis dengan sumber 'pt:' sebelumnya) */
+      var mw = (window.MD && MD.models || [])[+k.slice(3)]; if (mw && mw.pts && mw.pts.x && mw.pts.x.length && api('surf')) return { n: 'survei ' + mw.name, tin: false, f: api('surf')(mw.pts) };
+      var w = mw, tf = w && api('tin') ? api('tin')(w) : null;
       if (!tf) return null;
       return { n: (w.jenis === 'surf' ? 'Permukaan DTM ' : 'Wireframe ') + w.name, tin: true, f: function (x, y) { var r = tf(x + ox, y + oy); return r ? r[j] : null; } };
     }
@@ -15597,6 +15600,7 @@ Object.assign(OGS_PG, { peta: ogsPgPeta }); Object.assign(OGS_DR, { peta: ogsDrP
       if (!(q && q.x && q.x.length) || !api('surf')) return null;
       return { n: 'file ' + q.name, tin: false, f: api('surf')(q) };
     }
+    /* 0.24.75: survei yang diimport dari panel ini disimpan sebagai node Data Referensi BESERTA titik aslinya; hitungan
     var a = k.split(':'), v = null;
     try { spL(a[1]).forEach(function (x) { if (x.id === a[2]) v = x; }); } catch (e) {}
     if (!v) return null;
@@ -15740,7 +15744,8 @@ Object.assign(OGS_PG, { peta: ogsPgPeta }); Object.assign(OGS_DR, { peta: ogsDrP
           else { var kind = ex === 'str' ? 'str' : ex === 'dxf' ? 'dxf' : 'xyz', out = [], R = await SA.readLinesInto({ f: f, k: kind }, out, 0, null, null);
             out.forEach(function (p) { if (p && isFinite(p[2])) { X.push(p[0] - ox); Y.push(p[1] - oy); Z.push(p[2]); } }); }
           if (X.length < 3) throw new Error('tidak ada titik berkoordinat lengkap (E, N, RL) di file ini');
-          RPX.surf.push({ name: f.name, x: X, y: Y, z: Z }); var kid = 'pt:' + (RPX.surf.length - 1); if (slot === 'pit') { if (RPX.pits.indexOf(kid) < 0) RPX.pits.push(kid); } else RPX[slot] = kid; RPX.msg = '';
+          var kid = RPX.keRef ? RPX.keRef(f.name, { x: X, y: Y, z: Z }) : null;
+          if (!kid) { RPX.surf.push({ name: f.name, x: X, y: Y, z: Z }); kid = 'pt:' + (RPX.surf.length - 1); } if (slot === 'pit') { if (RPX.pits.indexOf(kid) < 0) RPX.pits.push(kid); } else RPX[slot] = kid; RPX.msg = '';
         } catch (e) { RPX.msg = '<span class=warn>' + E(f.name) + ': ' + E(e.message) + '</span>'; console.error(e); }
         RPX.panel();
       })();
@@ -18751,7 +18756,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.85';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.87';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

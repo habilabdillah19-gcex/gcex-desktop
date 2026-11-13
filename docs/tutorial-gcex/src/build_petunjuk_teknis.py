@@ -489,6 +489,13 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Tema', '<code>skin_bm.js</code> (khusus BM): <code>body.skin-bm</code>, variabel <code>--sk-*</code> (terang &amp; gelap), mengungguli aturan <code>!important</code> tema lama dengan selektor ber-<code>#side</code>. Tanpa perubahan DOM / fungsi.'],
 ]))
 
+B.append('<h3>8.13 Node Data Spasial &amp; sumber topografi Reporting (BM 0.24.75 / DH 0.24.87)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Node', '<code>TP.spKids</code> (<code>topopit_bm.js</code>) menyisipkan <code>sp.tp</code> (tab <code>TP</code>: panel <code>pTP</code> / <code>tpBox</code>, pOverlay disembunyikan) sesudah <code>sp.pit</code>, plus baris <code>sp.+topo</code> / <code>sp.+pit</code> (<code>addRow</code>). Model gabungan (<code>m.gab</code>) tidak lagi tampil di Data Referensi.'],
+    ['Reporting &rarr; Project', '<code>RPX.keRef(nama, {x,y,z})</code>: file topografi Reporting menjadi model MD <code>jenis:surf, survei:true, pts</code> (Float64Array, disimpan lewat encTA) + TIN untuk tampilan; nama sama diganti; sumber Reporting = <code>wf:&lt;indeks&gt;</code>.'],
+    ['Hitungan', '<code>zf()</code> di <code>rppit.js</code>: model ber-<code>pts</code> dihitung dengan <code>api(&quot;surf&quot;)(pts)</code> (TIN titik + IDW cadangan) &mdash; identik dengan sumber <code>pt:</code> lama; model tanpa <code>pts</code> tetap lewat mesh.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

@@ -20,6 +20,9 @@ Permintaan pemilik 13 Nov 2026. Data SINTETIS (tanpa data nyata), koordinat loka
      tampilan DTM sumber dimatikan.
   T9 tampilan: titik string pit dirapatkan 2 m, garis jenjang pit tergambar & di legenda, awan titik topo tanpa garis,
      segitiga panjang di DALAM topografi tidak dibuang (tanpa lubang).
+  T10 (0.24.75) node Data Spasial: Topo x Pit sesudah Desain pit + '+ Import topografi/desain pit'; panel properti #pTP;
+     gabungan tidak lagi di Data Referensi; survei dari Reporting menjadi node Data Referensi bertanda survei, angka progres
+     topo-ke-topo SAMA dengan cara lama (titik sementara), dan bisa dipilih sebagai sumber Topo x Pit.
   T8 langkah Demo 'Topografi terpotong desain pit' ada, menampilkan blok di dalam pit, lalu mengembalikan pilihan.
 Pemakaian: python tools/uji/uji_topopit.py [app/index.html]   (build lama harus GAGAL)
 """
@@ -101,6 +104,19 @@ JS = r"""async function(){
   var m9=TP.gabung();document.getElementById('ovBuka').checked=false;updatePlot();await new Promise(function(r){setTimeout(r,1200);});
   var gl=gd.data.filter(function(t){return /Garis jenjang pit|Kontur topografi/.test(t.name);}).map(function(t){return [t.name,t.x.filter(function(v){return v!==null;}).length];});
   R.t9={lubang:lubang,titikPit:sx.filter(function(v){return v!==null;}).length,titikRapat:nr,garis:gl,leg:(document.getElementById('tpLeg')||{}).innerText||''};
+  // T10 (0.24.75) node Data Spasial + import Reporting -> Data Referensi
+  try{PT.render(true);}catch(e){}await new Promise(function(r){setTimeout(r,600);});
+  var ids=[].map.call(document.querySelectorAll('#ptree .ptr'),function(r){return r.dataset.id;});
+  try{PT.select('sp');}catch(e){}try{PT.render(true);}catch(e){}await new Promise(function(r){setTimeout(r,400);});
+  ids=[].map.call(document.querySelectorAll('#ptree .ptr'),function(r){return r.dataset.id;});
+  try{PT.select('sp.tp');}catch(e){}await new Promise(function(r){setTimeout(r,500);});
+  R.t10={ids:ids.filter(function(i){return /^sp\./.test(i);}),refGab:ids.some(function(i){return /^ref\.models\..*gabungan/.test(i);}),pTP:!document.getElementById('pTP').hidden,pOv:document.getElementById('pOverlay').hidden,box:(document.getElementById('tpBox')||{}).innerText||''};
+  var qx=[],qy=[],qz=[];for(var xa2=0;xa2<=200;xa2+=5)for(var ya2=0;ya2<=200;ya2+=5){qx.push(xa2);qy.push(ya2);qz.push(xa2<100?80:100);}
+  var q1={x:qx.slice(),y:qy.slice(),z:qz.slice()};RPX.mode='tt';RPX.ta='ov:topo';RPX.surf.push(q1);RPX.tb='pt:'+(RPX.surf.length-1);RPX.run();
+  var tot=function(){var G=RPX.res.rows[0].res.rows[0].G,n=0,t=0;Object.keys(G).forEach(function(k){n+=G[k].n;t+=G[k].t;});return [n,Math.round(t)];};var lama=RPX.res?tot():null;
+  var kid=RPX.keRef('survei_juni.str',{x:qx.slice(),y:qy.slice(),z:qz.slice()});RPX.tb=kid;RPX.run();var baru=RPX.res?tot():null;
+  try{PT.render(true);}catch(e){}var mw=MD.models[+kid.slice(3)];
+  R.t10.prog={lama:lama,baru:baru,kid:kid,survei:!!(mw&&mw.survei),nt:mw?mw.nt:0,diTopoPit:TP.daftar().some(function(x){return x[0]==='md:survei_juni.str';}),msg:RPX.msg};
   return R;}"""
 
 
@@ -128,7 +144,7 @@ def main() -> int:
     finally:
         srv.terminate(); shutil.rmtree(d, ignore_errors=True)
     t1, t2, t3, t4 = r["t1"], r["t2"], r["t3"], r["t4"]
-    print("T1", t1); print("T2", t2); print("T3", t3); print("T4", {k: (v[:160] if isinstance(v, str) else v) for k, v in t4.items()}); print("T5", r["t5"]); print("T6", r["t6"]); print("T7", r["t7"]); print("T8", r["t8"]); print("T9", r["t9"])
+    print("T1", t1); print("T2", t2); print("T3", t3); print("T4", {k: (v[:160] if isinstance(v, str) else v) for k, v in t4.items()}); print("T5", r["t5"]); print("T6", r["t6"]); print("T7", r["t7"]); print("T8", r["t8"]); print("T9", r["t9"]); print("T10", r["t10"])
     cek = lambda ok, p: ok or galat.append(p)
     cek(r["t6"]["model"] is False and "desain pit" in r["t6"]["msg"], "T6 tanpa pit seharusnya menolak dengan pesan")
     cek(t1["ada"] and t1["jenis"] == "surf" and t1["nC"] > 20 and t1["nTopo"] > 0 and t1["nPit"] > 0, "T1 permukaan gabungan / garis potong / dua sumber")
@@ -149,6 +165,11 @@ def main() -> int:
     cek(r["t8"]["ada"] and r["t8"]["n"] >= 0 and r["t8"]["tpB"] == "pit" and r["t8"]["balik"] == "", "T8 langkah Demo")
     t9 = r["t9"]
     cek(not t9["lubang"] and t9["titikRapat"] > 5 * t9["titikPit"] and len(t9["garis"]) == 1 and t9["garis"][0][0] == "Garis jenjang pit" and t9["garis"][0][1] > 100 and "Garis jenjang pit" in t9["leg"], "T9 tampilan: lubang topo / perapatan pit / garis jenjang")
+    t10 = r["t10"]; ids = t10["ids"]
+    cek("sp.tp" in ids and "sp.+topo" in ids and "sp.+pit" in ids and ids.index("sp.tp") == ids.index("sp.pit") + 1 and not t10["refGab"], "T10 node Data Spasial (Topo x Pit sesudah Desain pit, baris import) / gabungan keluar dari Data Referensi")
+    cek(t10["pTP"] and t10["pOv"] and "topografi" in t10["box"].lower(), "T10 panel properti node Topo x Pit")
+    pg_ = t10["prog"]
+    cek(pg_["lama"] and pg_["lama"][0] > 0 and pg_["lama"] == pg_["baru"] and pg_["survei"] and pg_["nt"] > 0 and pg_["diTopoPit"], "T10 import survei Reporting -> Data Referensi: angka progres sama, tersimpan sebagai node survei, bisa dipilih Topo x Pit")
     print()
     if galat:
         print("GAGAL (%d):" % len(galat)); [print("  -", g) for g in galat]; return 1

@@ -4699,3 +4699,14 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Block Model: tampilan baru Project Tree & panel Properti (kartu, tombol & tab baru). Bar atas tetap navy. Hanya
   tampilan; letak menu dan fungsi tidak berubah.
 - DB-Ex: tidak berubah.
+
+## 198. Block Model 0.24.75 + Drillhole 0.24.87 — Topografi, Desain pit & Topo × Pit sebagai node Data Spasial
+
+- Project Tree › **Data Spasial**: node Topografi, Desain pit, **Topo × Pit (gabungan)** dan Orthofoto, ditambah baris
+  *+ Import topografi…* dan *+ Import desain pit…*. Topo × Pit punya centang tampil dan menu ⋯ (Hitung ulang, Ekspor DTM +
+  STR, Garis kontur); klik node membuka kotaknya di panel Properti.
+- **Data Referensi** tetap untuk DTM tambahan; semuanya bisa dipilih sebagai sumber Topo × Pit.
+- Import topografi di Reporting (tab ④ Pit & progres) otomatis menjadi node Data Referensi bertanda *survei* dan ikut
+  tersimpan di proyek. Sebaliknya, Reporting bisa langsung memakai topografi yang sudah ada di Data Spasial / Data Referensi.
+- Angka progres topo-ke-topo sama dengan sebelumnya (titik survei asli yang dipakai).
+- DB-Ex: tidak berubah.

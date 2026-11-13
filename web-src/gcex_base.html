@@ -513,7 +513,6 @@ body.sgdrag #stage{pointer-events:none}
 <div class='hint' style='margin:-4px 0 8px'>Semua data referensi diimport lewat baris <b>+ Tambah data referensi&hellip;</b> di Project Tree (paling bawah node <b>Data Referensi</b>).</div>
 <h4>Permukaan pit / topografi (DTM)</h4>
 <div class='hint'>Desain pit dan survei topografi berupa DTM segitiga (Surpac <b>.dtm</b> + <b>.str</b>, DXF 3DFACE), dipakai di Reporting &rsaquo; <b>Pit &amp; progres</b> dan sebagai batas DTM. Wireframe geologi diimport di node <b>Import Wireframe Geologi</b>.</div>
-<div id='tpBox'></div>
 <div id='mdList' class='mdlist'></div>
 <h4>Titik survey pemetaan lapangan</h4>
 <div class='hint'>Kolom X/Easting, Y/Northing, Z/Elevasi (tanpa Z: diambil dari topografi), ID titik dan kolom keterangan / kode untuk pewarnaan.</div>
@@ -2094,7 +2093,7 @@ function mdList(){var a=$('mdList'),b=$('ptList'),wl=$('wfList');if(!a)return;md
   var row=function(m,i){return '<div class=mdrow><input type=checkbox '+(m.vis?'checked':'')+' onchange="mdSet(\'models\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
     '<input type=color value='+m.col+' onchange="mdSet(\'models\','+i+',\'col\',this.value)" title=Warna><div class=nm title="'+mdEsc(m.name)+'">'+mdEsc(m.name)+'<small>'+m.nt.toLocaleString()+' segitiga</small></div>'+
     '<input type=range min=0.1 max=1 step=0.05 value='+m.op+' onchange="mdSet(\'models\','+i+',\'op\',+this.value)" title=Opasitas><button class=x onclick="mdDel(\'models\','+i+')" title=Hapus>&times;</button></div>';};
-  var S=function(want){return MD.models.map(function(m,i){return (m.jenis==='surf')===want?row(m,i):'';}).join('');};
+  var S=function(want){return MD.models.map(function(m,i){return (m.jenis==='surf')===want&&!m.gab?row(m,i):'';}).join('');};
   a.innerHTML=S(true)||'<div class=hint>Belum ada permukaan DTM.</div>';if(wl)wl.innerHTML=S(false)||'<div class=hint>Belum ada wireframe geologi.</div>';
   b.innerHTML=MD.pts.map(function(p,i){return '<div class=mdrow><input type=checkbox '+(p.vis?'checked':'')+' onchange="mdSet(\'pts\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
     '<input type=color value='+p.col+' onchange="mdSet(\'pts\','+i+',\'col\',this.value)" title=Warna><div class=nm title="'+mdEsc(p.name)+'">'+mdEsc(p.name)+'<small>'+p.n+' titik</small></div>'+

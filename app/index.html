@@ -630,7 +630,6 @@ tr.elmet td{font-size:11px;color:var(--mu);font-style:italic}
 <div class='hint' style='margin:-4px 0 8px'>Semua data referensi diimport lewat baris <b>+ Tambah data referensi&hellip;</b> di Project Tree (paling bawah node <b>Data Referensi</b>).</div>
 <h4>Permukaan pit / topografi (DTM)</h4>
 <div class='hint'>Desain pit dan survei topografi berupa DTM segitiga (Surpac <b>.dtm</b> + <b>.str</b>, DXF 3DFACE), dipakai di Reporting &rsaquo; <b>Pit &amp; progres</b> dan sebagai batas DTM. Wireframe geologi diimport di node <b>Import Wireframe Geologi</b>.</div>
-<div id='tpBox'></div>
 <div id='mdList' class='mdlist'></div>
 <h4>Titik survey pemetaan lapangan</h4>
 <div class='hint'>Kolom X/Easting, Y/Northing, Z/Elevasi (tanpa Z: diambil dari topografi), ID titik dan kolom keterangan / kode untuk pewarnaan.</div>
@@ -2555,7 +2554,7 @@ function mdList(){var a=$('mdList'),b=$('ptList'),wl=$('wfList');if(!a)return;md
   var row=function(m,i){return '<div class=mdrow><input type=checkbox '+(m.vis?'checked':'')+' onchange="mdSet(\'models\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
     '<input type=color value='+m.col+' onchange="mdSet(\'models\','+i+',\'col\',this.value)" title=Warna><div class=nm title="'+mdEsc(m.name)+'">'+mdEsc(m.name)+'<small>'+m.nt.toLocaleString()+' segitiga</small></div>'+
     '<input type=range min=0.1 max=1 step=0.05 value='+m.op+' onchange="mdSet(\'models\','+i+',\'op\',+this.value)" title=Opasitas><button class=x onclick="mdDel(\'models\','+i+')" title=Hapus>&times;</button></div>';};
-  var S=function(want){return MD.models.map(function(m,i){return (m.jenis==='surf')===want?row(m,i):'';}).join('');};
+  var S=function(want){return MD.models.map(function(m,i){return (m.jenis==='surf')===want&&!m.gab?row(m,i):'';}).join('');};
   a.innerHTML=S(true)||'<div class=hint>Belum ada permukaan DTM.</div>';if(wl)wl.innerHTML=S(false)||'<div class=hint>Belum ada wireframe geologi.</div>';
   b.innerHTML=MD.pts.map(function(p,i){return '<div class=mdrow><input type=checkbox '+(p.vis?'checked':'')+' onchange="mdSet(\'pts\','+i+',\'vis\',this.checked)" title=Tampilkan>'+
     '<input type=color value='+p.col+' onchange="mdSet(\'pts\','+i+',\'col\',this.value)" title=Warna><div class=nm title="'+mdEsc(p.name)+'">'+mdEsc(p.name)+'<small>'+p.n+' titik</small></div>'+
@@ -5208,13 +5207,14 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
       go:function(){var b=$('pjBtn');if(b)b.click();},
       menu:function(){return[{t:'Simpan sekarang',fn:function(){if(SA.saveNow)SA.saveNow();}},{t:'Simpan sebagai file .prj…',fn:function(){SA.prjSave();}},{t:'Buka file .prj…',fn:function(){PT.pick('.prj',false,function(i){SA.prjOpen(i.files[0]);});}},{t:'Simpan salinan proyek (.dh3d)…',fn:function(){if(SA.downloadProj)SA.downloadProj();}},{t:'Import ulang (data lain dipertahankan)…',fn:function(){if(SA.reopen)SA.reopen();}},{sep:1},{t:'Menu proyek & folder…',fn:function(){var b=$('pjBtn');if(b)b.click();}}];}};},'proj','Proyek');
     add(function(){var T=window.topoData,Pd=window.pitData,O=window.orthoImg;
-      return{id:'sp',step:'2',st:st.sp,t:'Data Spasial',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Topografi, desain pit & orthofoto (opsional)',menu:function(){return[{h:'Import file (langsung)'},{t:'Topografi (STR / DXF / XYZ)…',fn:spAmbil('topo','tambah')},{t:'Desain pit (STR / DXF / XYZ)…',fn:spAmbil('pit','tambah')},{t:'Orthofoto (GeoTIFF / JPG + world file)…',fn:spAmbil('ortho','ganti')},{sep:1},{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
+      var SPN={id:'sp',step:'2',st:st.sp,t:'Data Spasial',ic:'folder',fold:1,card:{kids:1,hint:'Pilih salah satu di bawah. Panel pengaturannya ada di sub-menu masing-masing.'},hint:'Topografi, desain pit & orthofoto (opsional)',menu:function(){return[{h:'Import file (langsung)'},{t:'Topografi (STR / DXF / XYZ)…',fn:spAmbil('topo','tambah')},{t:'Desain pit (STR / DXF / XYZ)…',fn:spAmbil('pit','tambah')},{t:'Orthofoto (GeoTIFF / JPG + world file)…',fn:spAmbil('ortho','ganti')},{sep:1},{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
         kids:[{id:'sp.topo',t:'Topografi',ic:'topo',tab:'Overlay',dim:!has(T),chk:has(T)?!!topoAs():undefined,onChk:function(v){setTopo(v?topoPref():'');},
             b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return spFile('topo',has(T)).concat(has(T)?[{sep:1}].concat(asMenu(topoAs(),setTopo)):[]);}},
           {id:'sp.pit',t:'Desain pit',ic:'pit',tab:'Overlay',dim:!has(Pd),chk:has(Pd)?!!U.cb('ovPit'):undefined,onChk:function(v){U.setCb('ovPit',v);},b:has(Pd)?({surf:'surface',line:'garis',both:'surface+garis'}[U.val('ovPitMode')]||''):'',
             menu:function(){return spFile('pit',has(Pd)).concat(has(Pd)?[{sep:1}].concat(asMenu(U.val('ovPitMode'),function(mm){var S2=$('ovPitMode');if(S2)S2.value=mm;U.setCb('ovPit',true);updatePlot();})):[]);}},
           {id:'sp.ortho',t:'Orthofoto',ic:'ortho',tab:'Overlay',dim:!O,chk:O?!!U.cb('ovOrtho'):undefined,onChk:function(v){U.setCb('ovOrtho',v);},b:O?({base:'latar',drape:'drape',flat:'datar'}[U.val('orMode')]||''):'',
-            menu:function(){var mm=U.val('orMode');if(!O)return orFile(false);return orFile(true).concat([{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:mm==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:mm==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:mm==='flat',fn:function(){U.setVal('orMode','flat');}}]);}}]};},'sp','Data Spasial');
+            menu:function(){var mm=U.val('orMode');if(!O)return orFile(false);return orFile(true).concat([{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:mm==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:mm==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:mm==='flat',fn:function(){U.setVal('orMode','flat');}}]);}}],
+        /* 0.24.75 (pemilik 13 Nov 2026): node Topo × Pit sesudah Desain pit + baris import langsung */ _tp:1};if(window.TP&&TP.spKids)SPN.kids=TP.spKids(SPN.kids,spAmbil);return SPN;},'sp','Data Spasial');
     add(function(){var at=m?Object.keys(m.num||{}).concat(Object.keys(m.cat||{})):[],ca=ok(function(){return BX.ui.attr;},'');
       return{id:'bm',step:'3',st:st.bm,t:'Block Model',ic:'folder',fold:1,tab:'BM',sub:'Block model',b:m?N(m.n)+' blok':'',chk:m?U.cb('bxShow'):undefined,onChk:function(v){U.setCb('bxShow',v);},hint:m?m.name:'Import block model resmi (.mdl Surpac atau CSV)',
         menu:function(){return[{t:'Import block model dari file (.mdl / CSV)…',fn:function(){PT.pick('.mdl,.csv,.txt,.tsv',false,function(i){var f=i.files&&i.files[0];if(!f)return;bxDlg();bxDlgFile(f);});}},{t:'Laporan grade × tonase model (dalam constraint)',dis:!m,fn:function(){PT.select('bm.rep');}},{t:'Ringkasan seluruh model per RL…',fn:A('bsOpen'),dis:!(m&&window.bsOn&&bsOn())},{sep:1},{t:'Hapus block model',danger:1,dis:!m,fn:A('bxClear')}];},
@@ -5227,10 +5227,10 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
           {id:'bm.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:A('bsOpen'),dim:!(window.bsOn&&bsOn()),hint:'Untuk .mdl besar yang dibuka lewat backend (seluruh file, bukan hanya potongan)'}]:[]};},'bm','Block Model');
     /* 4 Data Referensi: permukaan pit / topo (DTM), titik survey, string. Wireframe geologi TIDAK di sini (node 4b). */
     add(function(){var mdK=function(kind,ic,lab,keep){return ok(function(){return MD[kind].map(function(o,i){if(keep&&!keep(o))return null;return{id:'ref.'+kind+'.'+i+'.'+o.name,t:o.name,ic:ic,tab:'Model',sub:lab,chk:!!o.vis,onChk:function(v){mdSet(kind,i,'vis',v);},
-        b:o.gab&&window.TP&&TP.usang(o)?'usang':o.nt?N(o.nt)+' segitiga':'',menu:function(){var L=[];if(kind==='models'&&o.gab&&window.TP)L.push({t:'Hitung ulang dari topografi & desain pit',fn:function(){TP.gabung();}},{t:'Ekspor DTM + STR',fn:function(){TP.ekspor(o);}},{sep:1});if(kind==='models')L.push({t:'Pindahkan ke Import Wireframe Geologi',fn:function(){o.jenis='geo';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1});L.push({t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}});return L;}};}).filter(Boolean);},[]);};
-      var K=[].concat(mdK('models','topo','Permukaan',function(o){return o.jenis==='surf';}),mdK('pts','pts','Titik'),mdK('str','string','String'));
+        b:o.gab&&window.TP&&TP.usang(o)?'usang':o.survei?'survei':o.nt?N(o.nt)+' segitiga':'',hint:o.survei?'Survei topografi (diimport dari Reporting › Pit & progres); dipakai Reporting & Topo × Pit':undefined,menu:function(){var L=[];if(kind==='models'&&o.gab&&window.TP)L.push({t:'Hitung ulang dari topografi & desain pit',fn:function(){TP.gabung();}},{t:'Ekspor DTM + STR',fn:function(){TP.ekspor(o);}},{sep:1});if(kind==='models')L.push({t:'Pindahkan ke Import Wireframe Geologi',fn:function(){o.jenis='geo';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1});L.push({t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}});return L;}};}).filter(Boolean);},[]);};
+      var K=[].concat(mdK('models','topo','Permukaan',function(o){return o.jenis==='surf'&&!o.gab;}),mdK('pts','pts','Titik'),mdK('str','string','String'));
       return{id:'ref',step:'4',st:st.ref,t:'Data Referensi (DTM, titik, string)',ic:'folder',fold:1,tab:'Model',b:K.length||'',hint:'Opsional: permukaan pit / topografi (DTM) untuk Pit & progres, titik survey dan string Surpac sebagai acuan',
-        add:{t:'Tambah data referensi…',items:[{t:'Permukaan pit / topografi (DTM)…',fn:function(){PT.pick('.dtm,.str,.dxf,.msh,.obj',true,function(i){mdImport(i,'surf');});}},{t:'Gabungkan topografi × desain pit (permukaan Topo × Pit)',fn:function(){if(window.TP){TP.gabung();PT.go&&PT.go('ref');}}},{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:K};},'ref','Data Referensi');
+        add:{t:'Tambah data referensi…',items:[{t:'Permukaan pit / topografi (DTM)…',fn:function(){PT.pick('.dtm,.str,.dxf,.msh,.obj',true,function(i){mdImport(i,'surf');});}},{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:K};},'ref','Data Referensi');
     /* 4b Import Wireframe Geologi: SATU-SATUNYA tempat import & melihat wireframe geologi (urutan import) */
     add(function(){var W=ok(function(){return MD.models.map(function(o,i){return o.jenis==='surf'?null:{id:'wf.'+i+'.'+o.name,t:o.name,ic:'ref',tab:'Wf',chk:!!o.vis,onChk:function(v){mdSet('models',i,'vis',v);},
           b:o.nt?N(o.nt)+' segitiga':'',hint:'Import ke-'+(i+1),menu:function(){return[{t:'Pindahkan ke Data Referensi (permukaan pit / topo)',fn:function(){o.jenis='surf';mdBump(true);try{PT.render(true);}catch(e){}}},{sep:1},{t:'Hapus wireframe ini',danger:1,fn:function(){mdDel('models',i);}}];}};}).filter(Boolean);},[]);
@@ -7197,7 +7197,7 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       if (window.OV && OV.pitF && OV.pitF.x && OV.pitF.x.length) L.push(['ov:pit', 'Desain pit aktif']);
       (RPX.surf || []).forEach(function (q, i) { L.push(['pt:' + i, 'File: ' + q.name + ' (' + q.x.length.toLocaleString('id-ID') + ' titik)']); });
     }
-    (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, (w.jenis === 'surf' ? 'Permukaan DTM: ' : 'Wireframe: ') + w.name]); });
+    (window.MD && MD.models || []).forEach(function (w, i) { L.push(['wf:' + i, (w.survei ? 'Survei (Data Referensi): ' : w.gab ? 'Data Spasial: ' : w.jenis === 'surf' ? 'Permukaan DTM: ' : 'Wireframe: ') + w.name]); });
     return L;
   }
   function labOf(k) { var r = srcs('topo').filter(function (p) { return p[0] === k; })[0]; return r ? r[1] : k; }
@@ -7208,7 +7208,10 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
     if (!k) return null;
     var ox = window.offX || 0, oy = window.offY || 0, j = which === 'lo' ? 0 : 1;
     if (k.indexOf('wf:') === 0) {
-      var w = (window.MD && MD.models || [])[+k.slice(3)], tf = w && api('tin') ? api('tin')(w) : null;
+      /* 0.24.75: survei yang diimport dari panel ini disimpan sebagai node Data Referensi BESERTA titik aslinya; hitungan
+         tetap memakai titik itu (TIN titik + cadangan IDW, sama persis dengan sumber 'pt:' sebelumnya) */
+      var mw = (window.MD && MD.models || [])[+k.slice(3)]; if (mw && mw.pts && mw.pts.x && mw.pts.x.length && api('surf')) return { n: 'survei ' + mw.name, tin: false, f: api('surf')(mw.pts) };
+      var w = mw, tf = w && api('tin') ? api('tin')(w) : null;
       if (!tf) return null;
       return { n: (w.jenis === 'surf' ? 'Permukaan DTM ' : 'Wireframe ') + w.name, tin: true, f: function (x, y) { var r = tf(x + ox, y + oy); return r ? r[j] : null; } };
     }
@@ -7223,6 +7226,7 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
       if (!(q && q.x && q.x.length) || !api('surf')) return null;
       return { n: 'file ' + q.name, tin: false, f: api('surf')(q) };
     }
+    /* 0.24.75: survei yang diimport dari panel ini disimpan sebagai node Data Referensi BESERTA titik aslinya; hitungan
     var a = k.split(':'), v = null;
     try { spL(a[1]).forEach(function (x) { if (x.id === a[2]) v = x; }); } catch (e) {}
     if (!v) return null;
@@ -7366,7 +7370,8 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
           else { var kind = ex === 'str' ? 'str' : ex === 'dxf' ? 'dxf' : 'xyz', out = [], R = await SA.readLinesInto({ f: f, k: kind }, out, 0, null, null);
             out.forEach(function (p) { if (p && isFinite(p[2])) { X.push(p[0] - ox); Y.push(p[1] - oy); Z.push(p[2]); } }); }
           if (X.length < 3) throw new Error('tidak ada titik berkoordinat lengkap (E, N, RL) di file ini');
-          RPX.surf.push({ name: f.name, x: X, y: Y, z: Z }); var kid = 'pt:' + (RPX.surf.length - 1); if (slot === 'pit') { if (RPX.pits.indexOf(kid) < 0) RPX.pits.push(kid); } else RPX[slot] = kid; RPX.msg = '';
+          var kid = RPX.keRef ? RPX.keRef(f.name, { x: X, y: Y, z: Z }) : null;
+          if (!kid) { RPX.surf.push({ name: f.name, x: X, y: Y, z: Z }); kid = 'pt:' + (RPX.surf.length - 1); } if (slot === 'pit') { if (RPX.pits.indexOf(kid) < 0) RPX.pits.push(kid); } else RPX[slot] = kid; RPX.msg = '';
         } catch (e) { RPX.msg = '<span class=warn>' + E(f.name) + ': ' + E(e.message) + '</span>'; console.error(e); }
         RPX.panel();
       })();
@@ -10364,7 +10369,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
   TP.cfg = { t: '', p: '' };
   var mdSurf = function (nm) { for (var i = 0; i < MD.models.length; i++) { var m = MD.models[i]; if (m.jenis === 'surf' && !m.gab && m.name === nm) return m; } return null; };
   TP.daftar = function () { var L = []; if (window.OV && ada(OV.topoF)) L.push(['ov:topo', 'Data Spasial: topografi']); if (window.OV && ada(OV.pitF)) L.push(['ov:pit', 'Data Spasial: desain pit']);
-    MD.models.forEach(function (m) { if (m.jenis === 'surf' && !m.gab && m.nt) L.push(['md:' + m.name, 'Permukaan DTM: ' + m.name]); }); return L; };
+    MD.models.forEach(function (m) { if (m.jenis === 'surf' && !m.gab && m.nt) L.push(['md:' + m.name, (m.survei ? 'Survei: ' : 'Permukaan DTM: ') + m.name]); }); return L; };
   var adaKey = function (k) { return TP.daftar().some(function (x) { return x[0] === k; }); };
   TP.kunci = function (peran) { var m = TP.model(), k = TP.cfg[peran] || (m && m.gab && m.gab.src && m.gab.src[peran]) || '';
     if (k && adaKey(k)) return k; var L = TP.daftar(), re = peran === 't' ? /topo|asbuilt|as-built|survey|survei/i : /pit|desain|design/i;
@@ -10386,6 +10391,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
      sendiri (bila bertumpuk di proyeksi, ambil yang terendah). */
   var zf = function (k) {
     if (k === 'ov:topo' || k === 'ov:pit') { var o = k === 'ov:topo' ? OV.topoF : OV.pitF, t = o && window.TINZ && TINZ.of ? TINZ.of(o) : null; return t ? function (x, y) { var v = t.f(x, y); return v != null && isFinite(v) ? v : null; } : function () { return null; }; }
+    var ms = k && /^md:/.test(k) ? mdSurf(k.slice(3)) : null; if (ms && ms.pts && ms.pts.x && ms.pts.x.length && window.TINZ && TINZ.of) { var tz = TINZ.of(ms.pts); if (tz) return function (x, y) { var v = tz.f(x, y); return v != null && isFinite(v) ? v : null; }; }
     var tin = k ? TP.tin(k) : null; if (!tin) return function () { return null; }; var L = segi(tin), q = indeks(L);
     return function (x, y) { var C = q([x, x, y, y]), p = [x, y], best = null; for (var r = 0; r < C.length; r++) { var t = L[C[r]]; if (!t.z) continue; var H = t.H; if (H[0](p) <= 1e-9 && H[1](p) <= 1e-9 && H[2](p) <= 1e-9) { var z = t.z(p); if (best === null || z < best) best = z; } } return best; }; };
 
@@ -10455,7 +10461,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     if (T === 'ov:topo') { var c1 = E('ovTopoS'); if (c1) c1.checked = false; } if (P === 'ov:pit') { var c2 = E('ovPit'); if (c2) c2.checked = false; }
     [T, P].forEach(function (k) { var s2 = /^md:/.test(k) && mdSurf(k.slice(3)); if (s2) s2.vis = false; });
     tulis('&#10003; ' + esc(TP.NAMA) + ': ' + R.nv.toLocaleString('id-ID') + ' titik, ' + R.nt.toLocaleString('id-ID') + ' segitiga, ' + R.nC.toLocaleString('id-ID') + ' titik garis potong (' + m.gab.ms + ' ms). Sumber: ' + esc(nama(T)) + ' &times; ' + esc(nama(P)) + ' (tampilan sumbernya dimatikan; nyalakan lagi bila perlu).');
-    BX && (BX._tpM = null); mdBump(); try { if (window.PT) PT.render(true); } catch (e) { }
+    BX && (BX._tpM = null); mdBump(); try { if (window.PT) PT.render(true); } catch (e) { } TP.box();
     return m;
   };
   /* ekspor DTM + STR (OBJECT / TRISOLATION) seperti ekspor Solid Vein */
@@ -10471,14 +10477,51 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     var sv = window.gxSimpan || function (t, n) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' })); a.download = n; document.body.appendChild(a); a.click(); a.remove(); return Promise.resolve(true); };
     return Promise.resolve(sv(S.join('\r\n') + '\r\n', nm + '.str')).then(function () { return sv(D.join('\r\n') + '\r\n', nm + '.dtm'); });
   };
-  /* kotak di panel Data referensi */
+  /* ---------- 0.24.75 (pemilik 13 Nov 2026): NODE di Data Spasial ----------
+     Data Spasial: Topografi, Desain pit, Topo × Pit (gabungan) [centang tampil, menu ⋯], Orthofoto, + Import topografi…,
+     + Import desain pit…. Panel properti node Topo × Pit = kotak #tpBox (section #pTP). Data Referensi tetap untuk DTM
+     tambahan (fase pit, survei bulan lalu); semuanya bisa dipilih sebagai sumber. */
+  TP.vis = function (v) { var m = TP.model(); if (!m) return; m.vis = !!v; mdBump(); try { PT.render(true); } catch (e) { } };
+  TP.op = function (v) { var m = TP.model(); if (!m) return; m.op = +v; mdBump(); };
+  TP.hapus = function () { var m = TP.model(); if (!m || !confirm('Hapus permukaan ' + m.name + '? (bisa digabungkan lagi kapan saja)')) return; MD.models.splice(MD.models.indexOf(m), 1); mdBump(); try { PT.render(true); } catch (e) { } TP.box(); };
+  TP.spKids = function (K, amb) {
+    var m = TP.model(), L = (K || []).slice(), i = -1;
+    var tp = { id: 'sp.tp', t: 'Topo × Pit (gabungan)', ic: 'pit', tab: 'TP', dim: !m, chk: m ? !!m.vis : undefined, onChk: function (v) { TP.vis(v); },
+      b: m ? (TP.usang(m) ? 'usang' : m.nt.toLocaleString('id-ID') + ' segitiga') : '', hint: 'Topografi dipotong desain pit: permukaan yang lebih rendah di setiap titik (garis potong tepat)',
+      go: function () { TP.box(); },
+      menu: function () { var mm = TP.model(), g = !!(mm && mm.gab.garis !== false); return [{ t: mm ? 'Hitung ulang dari topografi & desain pit' : 'Gabungkan topografi × desain pit', fn: function () { TP.gabung(); } },
+        { t: 'Ekspor DTM + STR', dis: !mm, fn: function () { TP.ekspor(); } }, { t: 'Garis kontur topografi & jenjang pit', on: g, dis: !mm, fn: function () { TP.setGaris(!g); } },
+        { sep: 1 }, { t: 'Hapus permukaan gabungan', danger: 1, dis: !mm, fn: function () { TP.hapus(); } }]; } };
+    for (var q = 0; q < L.length; q++) if (L[q] && L[q].id === 'sp.pit') i = q;
+    L.splice(i >= 0 ? i + 1 : L.length, 0, tp);
+    if (typeof amb === 'function') L.push({ id: 'sp.+topo', t: '+ Import topografi…', ic: 'add', addRow: { fn: amb('topo', 'tambah') }, hint: 'Topografi (STR / DXF / XYZ)' },
+      { id: 'sp.+pit', t: '+ Import desain pit…', ic: 'add', addRow: { fn: amb('pit', 'tambah') }, hint: 'Desain pit (STR / DXF / XYZ)' });
+    return L;
+  };
+  (function () { var side = E('side'); if (side && !E('pTP')) { var sec = document.createElement('section'); sec.id = 'pTP'; sec.hidden = true; sec.innerHTML = '<h3>Topo &times; Pit (gabungan)</h3><div id=tpBox></div>'; side.insertBefore(sec, E('pOverlay') || null); }
+    var _u = window.uiTab; if (typeof _u === 'function') window.uiTab = function (n) { var sec2 = E('pTP');
+      if (n === 'TP') { _u.call(this, 'Overlay'); var ov = E('pOverlay'); if (ov) ov.hidden = true; if (sec2) sec2.hidden = false; TP.box(); return; }
+      var r = _u.apply(this, arguments); if (sec2) sec2.hidden = true; return r; }; })();
+  /* Reporting › Pit & progres: "Pilih file topografi" -> node Data Referensi (bertanda survei) BESERTA titik aslinya, tersimpan di
+     proyek; hitungan Reporting tetap memakai titik itu (rppit.js). Sebaliknya Reporting bisa memilih topografi Data Spasial /
+     Data Referensi yang sudah ada. */
+  if (window.RPX) RPX.keRef = function (nama, q) {
+    if (!window.MD || !window.TIN) return null; var tin = TIN.build(q); var pts = { x: Float64Array.from(q.x), y: Float64Array.from(q.y), z: Float64Array.from(q.z) };
+    var m = { name: nama, jenis: 'surf', survei: true, pts: pts, col: '#b08d57', op: 0.55, vis: false, v: new Float64Array(0), t: new Uint32Array(0), nv: 0, nt: 0 };
+    if (tin) { var v = new Float64Array(3 * tin.n); for (var i = 0; i < tin.n; i++) { v[3 * i] = tin.x[i] + offX; v[3 * i + 1] = tin.y[i] + offY; v[3 * i + 2] = tin.z[i]; } var t = new Uint32Array(3 * tin.i.length);
+      for (var k = 0; k < tin.i.length; k++) { t[3 * k] = tin.i[k]; t[3 * k + 1] = tin.j[k]; t[3 * k + 2] = tin.k[k]; } m.v = v; m.t = t; m.nv = tin.n; m.nt = tin.i.length; }
+    var old = MD.models.filter(function (w) { return w.survei && w.name === nama; })[0]; if (old) MD.models.splice(MD.models.indexOf(old), 1, m); else MD.models.push(m);
+    mdBump(true); try { PT.render(true); } catch (e) { } return 'wf:' + MD.models.indexOf(m);
+  };
+
+  /* kotak di panel properti node Topo × Pit */
   TP.box = function () {
     var b = E('tpBox'); if (!b) return; var m = TP.model(), T = TP.srcT(), P = TP.srcP(), L = TP.daftar();
     var sel = function (peran, k) { return '<select onchange="TP.cfg.' + peran + '=this.value;TP.box()">' + (k ? '' : '<option value="">(belum ada)</option>') + L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === k ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>'; };
     b.innerHTML = '<div class=g2 style="margin:4px 0"><div><label>Topografi</label>' + sel('t', T) + '</div><div><label>Desain pit</label>' + sel('p', P) + '</div></div><div class="g2 f" style="margin:4px 0 6px"><button class=btn-pri onclick="TP.gabung()"' + (T && P ? '' : ' disabled') + '>' + (m ? '&#8635; Hitung ulang' : '&#9650; Gabungkan') + ' topografi × desain pit</button>' +
       (m ? '<button onclick="TP.ekspor()">&#8681; Ekspor DTM + STR</button>' : '<span></span>') + '</div>' +
-      (m ? '<label class=sw><input type=checkbox' + (m.gab.garis !== false ? ' checked' : '') + ' onchange="TP.setGaris(this.checked)">Garis kontur topografi &amp; jenjang pit</label>' : '') +
-      '<div class=hint>Permukaan yang lebih rendah antara topografi dan desain pit; garis potong dihitung tepat. Bawaan Data Spasial (sama dengan Reporting); permukaan DTM Data Referensi juga bisa dipilih.' +
+      (m ? '<label class=sw><input type=checkbox' + (m.vis ? ' checked' : '') + ' onchange="TP.vis(this.checked)">Tampilkan permukaan gabungan</label><label class=sw><input type=checkbox' + (m.gab.garis !== false ? ' checked' : '') + ' onchange="TP.setGaris(this.checked)">Garis kontur topografi &amp; jenjang pit</label><div class=f><label>Opasitas</label><input type=range min=0.1 max=1 step=0.05 value=' + m.op + ' onchange="TP.op(+this.value)"></div>' : '') +
+      '<div class=hint>Permukaan yang lebih rendah antara topografi dan desain pit; garis potong dihitung tepat. Bawaan Data Spasial (sama dengan Reporting); permukaan DTM / survei di Data Referensi juga bisa dipilih.' +
       (!T || !P ? ' <b>Belum ada ' + [!T ? 'topografi' : '', !P ? 'desain pit' : ''].filter(Boolean).join(' & ') + '.</b>' : '') +
       (m && TP.usang(m) ? ' <span class=warn>Topografi / desain pit sudah berganti: klik Hitung ulang.</span>' : '') + '</div><div id=tpMsg class=hint></div>';
   };
@@ -10546,7 +10589,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     var U = BX.ui || {}, T = TP.srcT(), P = TP.srcP(), md = U.tpB || '';
     return '<div class=lab style="margin-top:6px">Batas permukaan</div><select id=bxTpB onchange="bxSet(&#39;tpB&#39;,this.value)"' + (T ? '' : ' disabled title="Belum ada topografi di Data Spasial"') + '>' +
       Object.keys(TP.MODE).map(function (k) { return '<option value="' + k + '"' + (k === md ? ' selected' : '') + (k === 'pit' && !P ? ' disabled' : '') + '>' + TP.MODE[k] + '</option>'; }).join('') + '</select>' +
-      '<div class=hint>Titik pusat blok (cara Surpac, sama dengan Reporting) terhadap ' + esc(nama(T)) + ' &times; ' + esc(nama(P)) + ' (pilihan sumber di Data Referensi &rsaquo; Topo &times; Pit). Bekerja bersama cut-off &amp; kelas di atas' + (T ? '' : '; <b>belum ada topografi</b>') + '.</div>';
+      '<div class=hint>Titik pusat blok (cara Surpac, sama dengan Reporting) terhadap ' + esc(nama(T)) + ' &times; ' + esc(nama(P)) + ' (pilihan sumber di Data Spasial &rsaquo; Topo &times; Pit). Bekerja bersama cut-off &amp; kelas di atas' + (T ? '' : '; <b>belum ada topografi</b>') + '.</div>';
   };
 
   /* ---------- C. buka atap ---------- */
@@ -10642,7 +10685,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
       var st = { s: 'Model & Overlay', t: 'Topografi terpotong desain pit', dur: 10, el: '#tpBox',
         d: 'Topo × Pit (gabungan): topografi dipotong desain pit menjadi satu permukaan (hijau topo, biru pit). Block model difilter cut-off seperti biasa, lalu Batas permukaan "Di antara topo & pit" menampilkan blok yang akan ditambang di dalam pit; legenda di pojok kanan bawah.',
         run: function (A) { var U = BX.ui, sv = { fA: U.fAttr, fO: U.fOp, fV: U.fVal, tp: U.tpB || '' };
-          A(0, function () { try { if (window.PT && PT.mau) PT.mau('ref'); uiTab('Model'); } catch (e) { } TP.box(); });
+          A(0, function () { try { if (window.PT && PT.mau) PT.mau('sp.tp'); uiTab('TP'); } catch (e) { } TP.box(); });
           A(1.5, function () { if (!TP.model()) TP.gabung(); });
           A(3.5, function () { var bs = E('bxShow'); if (bs) bs.checked = true; U.fAttr = U.attr; U.fOp = 'ge'; if (U.fVal === '' || U.fVal == null) U.fVal = String((bxCls(U.attr)[3] || bxCls(U.attr)[1] || {}).lo || ''); bxSet('tpB', 'pit'); });
           A(5, function () { try { setCam(0.42, -0.5, 0.38); } catch (e) { } });
@@ -12823,7 +12866,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.73';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.75';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

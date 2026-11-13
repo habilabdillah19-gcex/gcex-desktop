@@ -1182,7 +1182,7 @@ B.append('<p>Potongan Solid Vein yang saling menembus kini disatukan dengan <b>b
 B.append(fig_html('svrek', 'Data uji sintetis: Solid Vein aktual (dua poligon bertampalan, tersatukan) dibandingkan model kotak &mdash; hijau ore tergali, biru dilusi, merah ore loss (lebar zona 3 m), abu-abu model di luar zona.'))
 
 B.append('<h3>16e. Topografi terpotong desain pit, batas permukaan blok, buka atap &amp; legenda (Block Model 0.24.73)</h3>')
-B.append('<p><b>Topo &times; Pit (gabungan)</b> (Project Tree &rsaquo; Data Referensi &rsaquo; + Tambah &rsaquo; <i>Gabungkan topografi &times; desain pit</i>): satu permukaan yang di setiap titik memakai yang lebih rendah antara topografi dan desain pit. '
+B.append('<p><b>Topo &times; Pit (gabungan)</b> (Project Tree &rsaquo; Data Spasial &rsaquo; <i>Topo &times; Pit (gabungan)</i>; sejak 0.24.75): satu permukaan yang di setiap titik memakai yang lebih rendah antara topografi dan desain pit. '
          'Segitiga kedua TIN ditumpang-susun dengan tepat (tanpa triangulasi ulang), sehingga jenjang pit dan lekuk topografi tidak terpotong; sumber bisa Data Spasial (bawaan, sama dengan Reporting) atau permukaan DTM Data Referensi. '
          'Diwarnai dua nada (hijau topo, biru pit) dengan hillshade, tersimpan di proyek, ada di daftar permukaan Reporting dan bisa diekspor DTM + STR. '
          'Menu Block Model mendapat satu pilihan <b>Batas permukaan</b> (<i>Di antara topo &amp; pit</i> / <i>Di bawah topo &times; pit</i>) yang bekerja bersama cut-off &amp; kelas yang sudah ada &mdash; tidak ada filter kadar baru. '
@@ -1194,6 +1194,12 @@ B.append('<p>Mengacu Pit Studio: titik string desain pit <b>dirapatkan tiap 2 m<
          'permukaan Topo &times; Pit mendapat <b>garis kontur topografi</b> dan <b>garis jenjang pit</b> yang dipotong di bagian tergali. Hanya tampilan &mdash; angka Reporting tetap. '
          'Block Model mendapat tema baru untuk <b>Project Tree</b> dan panel <b>Properti</b>: baris pohon bersudut dengan sorotan biru muda, setiap bagian panel menjadi kartu, tab bagian berupa segmented control, tombol dan isian 32 px; bar atas tetap navy.</p>')
 B.append(fig_html('skin_bm', 'Data latihan: Project Tree dan panel Properti Block Model dengan tema baru (0.24.74).'))
+
+B.append('<h3>16g. Topografi, Desain pit &amp; Topo &times; Pit sebagai node Data Spasial; import Reporting menjadi node (Block Model 0.24.75)</h3>')
+B.append('<p>Project Tree &rsaquo; <b>Data Spasial</b> kini berisi node <b>Topografi</b>, <b>Desain pit</b>, <b>Topo &times; Pit (gabungan)</b> dan Orthofoto, ditambah baris <i>+ Import topografi&hellip;</i> dan <i>+ Import desain pit&hellip;</i>. '
+         'Topo &times; Pit punya centang tampil dan menu &#8943; (Hitung ulang, Ekspor DTM + STR, Garis kontur); klik node membuka kotaknya di panel Properti. <b>Data Referensi</b> tetap untuk DTM tambahan dan bisa dipilih sebagai sumber. '
+         'Topografi yang diimport di Reporting (tab &#9315; Pit &amp; progres) otomatis menjadi node Data Referensi bertanda <b>survei</b>, tersimpan di proyek dan langsung bisa dipakai di Topo &times; Pit; sebaliknya Reporting bisa memilih topografi yang sudah ada di Data Spasial / Data Referensi. '
+         'Angka progres topo-ke-topo tidak berubah karena titik survei aslinya yang dihitung.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
