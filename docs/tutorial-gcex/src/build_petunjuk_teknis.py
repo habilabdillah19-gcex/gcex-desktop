@@ -471,6 +471,16 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Uji', '<code>tools/uji/uji_solid_vein_union.py</code>: union 900 m&sup3; (dulu 1.200), tergali 300 / dilusi 600 / loss 90 (zona 3 m) dan 0 (zona 0) m&sup3; analitis; build lama gagal. <code>uji_solid_vein.py</code> bagian K mematikan union untuk menguji peringatan tampalan.'],
 ]))
 
+B.append('<h3>8.11 Topo &times; Pit, batas permukaan blok, buka atap &amp; legenda (BM 0.24.73)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Permukaan gabungan', '<code>web-src/topopit_bm.js</code> (<code>TP</code>): <code>TP.bangun(kT,kP)</code> menumpang-susun segitiga TIN topografi dan pit (poligon cembung, Sutherland&ndash;Hodgman, indeks grid). Di tiap potongan kedua permukaan bidang datar; garis d = z<sub>topo</sub> &minus; z<sub>pit</sub> = 0 lurus, bagian yang lebih rendah dipakai. Sisa segitiga topo tanpa pit = topo; sisa pit tanpa topo = pit. Titik disatukan bila X, Y, Z sama (mm). Tanpa triangulasi ulang (versi Delaunay ulang menyimpang sampai 10 m di jenjang pit data nyata).'],
+    ['Sumber', '<code>ov:topo</code> / <code>ov:pit</code> = Data Spasial (TIN <code>tinhr.js</code>, sama dengan Reporting) atau <code>md:&lt;nama&gt;</code> = permukaan DTM Data Referensi (segitiganya dipakai apa adanya). Hasil = <code>MD.models</code> jenis <code>surf</code> dengan <code>gab {t,p,src,at,nC}</code> dan <code>fsrc</code> (0 topo / 1 pit, warna dua nada); <code>TP.usang</code> membandingkan tanda sumber.'],
+    ['Batas permukaan', '<code>BX.ui.tpB</code> (<code>bawah</code> / <code>pit</code>): <code>TP.mask</code> per blok (bit 1: z &le; topo &amp; z &lt; pit; bit 2: pit &le; z &le; topo), di luar cakupan topo tidak lolos &mdash; aturan tepi sama dengan <code>rpbm.js</code>. Membungkus <code>bxPass</code> / <code>bxSel</code> (kunci <code>BX._tpk</code>).'],
+    ['Buka atap', '<code>TP.jejak</code>: grid atap blok tampil (z atas blok maks per sel, diperlebar jarak tepi); <code>TP.pasca</code> membuang segitiga permukaan yang titik beratnya di atas atap (topo / pit Overlay &amp; permukaan DTM), salinan trace di-cache.'],
+    ['Legenda', '<code>#tpLeg</code> dari trace akhir (<code>TP.legHtml</code>): Block model (kelas tampil, <code>bxClassInfo</code>), Permukaan, Wireframe &amp; solid, Lapisan lain; <code>layout.showlegend=false</code> selama kartu aktif; status di <code>localStorage gcex_tp_leg</code>.'],
+    ['Uji', '<code>tools/uji/uji_topopit.py</code>: Z gabungan = min(topo, pit) (selisih &lt; 1e-9), jumlah blok &lsquo;di antara topo &amp; pit&rsquo; = Reporting di dalam pit, buka atap tidak membuka lantai pit / area tanpa blok, legenda, ekspor, pit dari DTM; build lama gagal.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

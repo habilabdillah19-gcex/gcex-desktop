@@ -251,7 +251,16 @@ ch('Laporan per desain pit & progres topo-ke-topo', dta('<code>data/SIM_pit_fase
        ('Dipakai untuk', 'rekonsiliasi bulanan: tonase &amp; kadar material yang tergali menurut block model'),
        ('Bukan untuk', 'menggantikan timbangan ROM &mdash; bandingkan keduanya, jangan salah satu dianggap benar'),
        ('Bila hasilnya 0 blok', 'topografi atas dan bawah tertukar')])
- + tip('Untuk pelaporan bulanan rutin, kombinasikan dengan <b>Laporan periode</b>: progres topo-ke-topo memberi angka dari block model, laporan periode memberi angka dari poligon as-mined yang dicatat harian. Selisih keduanya adalah bahan diskusi rekonsiliasi.'))
+ + tip('Untuk pelaporan bulanan rutin, kombinasikan dengan <b>Laporan periode</b>: progres topo-ke-topo memberi angka dari block model, laporan periode memberi angka dari poligon as-mined yang dicatat harian. Selisih keduanya adalah bahan diskusi rekonsiliasi.')
+ + '<h3>3. Topografi terpotong desain pit (Topo &times; Pit) di Display 3D</h3>'
+ + '<p>Untuk melihat block model di dalam pit seperti di Surpac: topografi dipotong (di-<i>patch</i>) dengan desain pit menjadi satu permukaan, lalu blok, pulau As-Mined atau Solid Vein ditampilkan di dalamnya.</p>'
+ + steps('Project Tree &rarr; <b>Data Referensi</b> &rarr; <b>+ Tambah data referensi&hellip;</b> &rarr; <b>Gabungkan topografi &times; desain pit</b>. Di panel yang terbuka pilih <b>Topografi</b> dan <b>Desain pit</b> (bawaan: Data Spasial; permukaan DTM seperti <code>SIM_pit_fase1</code> juga bisa), lalu klik <b>Gabungkan</b>. Hasilnya permukaan <b>Topo &times; Pit (gabungan)</b>: di setiap titik dipakai yang lebih rendah, garis potong dihitung tepat, warna topo hijau dan pit biru.',
+   'Menu <b>Block Model</b> &rarr; <b>Tampilkan bila (cut-off)</b>: atur atribut &amp; nilai seperti biasa (mis. <code>AU_GC</code> &ge; 0,34). Di bawahnya pilih <b>Batas permukaan</b>: <i>Di antara topo &amp; pit</i> (yang akan ditambang) atau <i>Di bawah topo &times; pit</i> (sisa in-situ). Titik pusat blok, sama dengan Reporting.',
+   'Panel <b>Overlay</b>: atur <b>Opasitas topografi</b> / <b>Opasitas desain pit</b>, atau nyalakan <b>Buka atap di atas blok yang ditampilkan</b> supaya permukaan di atas blok disembunyikan.',
+   'Legenda di pojok kanan bawah grafik merangkum kelas blok yang tampil, permukaan dan wireframe; &minus; mengecilkan, &times; menutup (buka lagi lewat tombol <b>Legenda</b>).')
+ + kv([('Ekspor', 'menu &#8943; permukaan gabungan &rarr; <b>Ekspor DTM + STR</b> (bisa dicek di Surpac)'),
+       ('Bila topo / pit berganti', 'label <b>usang</b> di Project Tree &rarr; <b>Hitung ulang</b>'),
+       ('Reporting', 'permukaan gabungan ikut muncul di daftar permukaan tab &#9315; Pit &amp; progres')]))
 
 ch('As-mined: rencana vs aktual', dta('lanjutan &mdash; flitch RL 241,25 &ndash; 238,75',
      [('Poligon aktual', 'di latihan ini dibuat dari dig block <b>HG</b> dan <b>LG</b> yang digeser <b>+0,6 m</b> ke timur dan <b>&minus;0,4 m</b> ke utara (simulasi penggalian)'),

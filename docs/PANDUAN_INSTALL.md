@@ -4676,3 +4676,15 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   **Hitung rekonsiliasi** menolak dengan pesan "solid bukan mesh tertutup". Sekarang solid itu tertutup; volumenya praktis sama.
 - Periode yang sudah ada: klik **Bangun solid** lagi, lalu **Hitung rekonsiliasi**.
 - Drillhole & DB-Ex: tidak berubah.
+
+## 196. Block Model 0.24.73 — Topografi terpotong desain pit, batas permukaan blok, buka atap & legenda
+
+- **Topo × Pit (gabungan)**: Project Tree › Data Referensi › **+ Tambah data referensi…** › *Gabungkan topografi × desain pit*.
+  Pilih sumber topografi & desain pit (bawaan Data Spasial; permukaan DTM Data Referensi juga bisa), klik **Gabungkan**.
+  Hasilnya satu permukaan (hijau topo, biru pit) yang memakai yang lebih rendah di setiap titik. Bila topografi / pit
+  berganti, label **usang** muncul: klik **Hitung ulang**. Menu ⋯ permukaan itu: **Ekspor DTM + STR**.
+- **Batas permukaan** (menu Block Model, di bawah *Tampilkan bila (cut-off)*): *Di antara topo & pit* (yang akan ditambang)
+  atau *Di bawah topo × pit* (sisa in-situ). Filter kadar & kelas tetap memakai menu yang sudah ada.
+- **Overlay**: *Opasitas desain pit* kini terpisah dari topografi; **Buka atap di atas blok yang ditampilkan** + jarak tepi.
+- **Legenda** di pojok kanan bawah grafik 3D: − kecilkan, × tutup (buka lagi lewat tombol *Legenda*).
+- Drillhole & DB-Ex: tidak berubah.

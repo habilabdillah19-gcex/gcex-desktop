@@ -478,6 +478,7 @@ F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), (
                          ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys), ('jalur', f_jalur))}
 F['vunion'] = 'vunion.png'   # tangkapan layar aplikasi (data latihan fiktif), bukan matplotlib
 F['svrek'] = 'svrek.png'     # tangkapan layar uji uji_solid_vein_union.py (data sintetis)
+F['topopit'] = 'topopit.png' # data latihan: topografi Data Spasial x SIM_pit_fase1, AU_GC >= 0,34 di antara topo & pit
 
 # angka ringkas untuk narasi
 Q = HP[np.ones(len(HK), bool)]
@@ -1178,6 +1179,14 @@ B.append('<p>Potongan Solid Vein yang saling menembus kini disatukan dengan <b>b
          '(model di zona penilaian &minus; aktual; zona = poligon aktual tiap flitch diperlebar, bawaan 3 m). Volume dari solid hasil boolean (eksak), tonase &times; SG Solid Vein dan tonase / kadar block model (blok utuh). '
          'Pustaka boolean yang sama dengan vein bercabang Drill Hole, kini dipakai bersama (<code>web-src/manifold.js</code> + <code>web-src/mfbool.js</code>).</p>')
 B.append(fig_html('svrek', 'Data uji sintetis: Solid Vein aktual (dua poligon bertampalan, tersatukan) dibandingkan model kotak &mdash; hijau ore tergali, biru dilusi, merah ore loss (lebar zona 3 m), abu-abu model di luar zona.'))
+
+B.append('<h3>16e. Topografi terpotong desain pit, batas permukaan blok, buka atap &amp; legenda (Block Model 0.24.73)</h3>')
+B.append('<p><b>Topo &times; Pit (gabungan)</b> (Project Tree &rsaquo; Data Referensi &rsaquo; + Tambah &rsaquo; <i>Gabungkan topografi &times; desain pit</i>): satu permukaan yang di setiap titik memakai yang lebih rendah antara topografi dan desain pit. '
+         'Segitiga kedua TIN ditumpang-susun dengan tepat (tanpa triangulasi ulang), sehingga jenjang pit dan lekuk topografi tidak terpotong; sumber bisa Data Spasial (bawaan, sama dengan Reporting) atau permukaan DTM Data Referensi. '
+         'Diwarnai dua nada (hijau topo, biru pit) dengan hillshade, tersimpan di proyek, ada di daftar permukaan Reporting dan bisa diekspor DTM + STR. '
+         'Menu Block Model mendapat satu pilihan <b>Batas permukaan</b> (<i>Di antara topo &amp; pit</i> / <i>Di bawah topo &times; pit</i>) yang bekerja bersama cut-off &amp; kelas yang sudah ada &mdash; tidak ada filter kadar baru. '
+         'Panel Overlay: <b>Opasitas desain pit</b> sendiri dan <b>Buka atap</b> (permukaan di atas blok tampil disembunyikan, lantai pit tetap). Legenda berbentuk kartu di pojok kanan bawah grafik.</p>')
+B.append(fig_html('topopit', 'Data latihan: topografi Data Spasial &times; SIM_pit_fase1 menjadi satu permukaan (hijau topo, biru pit); blok AU_GC &ge; 0,34 di antara topo &amp; pit tampil di dalam pit, legenda di pojok kanan bawah.'))
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
