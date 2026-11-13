@@ -37,17 +37,41 @@
     var c = T._wm && T._wm.get(src); if (c && c.n === src.x.length) return c.tin;
     var t0 = performance.now(), P = kumpul(src, T.cap), m = P.x.length; if (m < 3) return null;
     var co = new Float64Array(m * 2); for (var i = 0; i < m; i++) { co[2 * i] = P.x[i]; co[2 * i + 1] = P.y[i]; }
-    var tri; try { tri = new Delaunator(co).triangles; } catch (e) { console.warn('[TIN] gagal', e); return null; }
+    var dl, tri; try { dl = new Delaunator(co); tri = dl.triangles; } catch (e) { console.warn('[TIN] gagal', e); return null; }
     var nt = tri.length / 3, L = new Float64Array(nt), q, a, b2, c2;
     var ed = function (p, r) { var dx = P.x[p] - P.x[r], dy = P.y[p] - P.y[r]; return dx * dx + dy * dy; };
     for (q = 0; q < nt; q++) { a = tri[3 * q]; b2 = tri[3 * q + 1]; c2 = tri[3 * q + 2]; L[q] = Math.max(ed(a, b2), ed(b2, c2), ed(c2, a)); }
     var srt = Float64Array.from(L).sort(), med = srt[Math.floor(nt / 2)] || 0, lim = med * T.faktor * T.faktor, keep = 0;
-    for (q = 0; q < nt; q++) if (!(L[q] > lim && lim > 0)) keep++;
+    /* 13 Nov 2026 (pemilik: "jelek sekali bentuknya", lubang putih di topografi): segitiga panjang HANYA dikupas dari tepi
+       luar (mulai dari segitiga di tepi hull, merambat lewat tetangga yang juga panjang) — kipas di tepi cekung / celah
+       data tetap hilang, tetapi segitiga panjang di bagian DALAM (lantai pit datar, kontur jarang) tidak lagi berlubang.
+       Seperti Pit Studio (tinFrom tanpa pembuangan). Hanya tampilan; hitungan memakai tinz.js. */
+    var buang = new Uint8Array(nt), H = dl.halfedges, antre = [];
+    if (lim > 0) { for (q = 0; q < nt; q++) if (L[q] > lim && (H[3 * q] < 0 || H[3 * q + 1] < 0 || H[3 * q + 2] < 0)) { buang[q] = 1; antre.push(q); }
+      while (antre.length) { var t = antre.pop(); for (var e2 = 0; e2 < 3; e2++) { var o = H[3 * t + e2]; if (o < 0) continue; var u = (o / 3) | 0; if (!buang[u] && L[u] > lim) { buang[u] = 1; antre.push(u); } } } }
+    for (q = 0; q < nt; q++) if (!buang[q]) keep++;
     var I = new Uint32Array(keep), J = new Uint32Array(keep), K = new Uint32Array(keep), w = 0;
-    for (q = 0; q < nt; q++) { if (L[q] > lim && lim > 0) continue; I[w] = tri[3 * q]; J[w] = tri[3 * q + 1]; K[w] = tri[3 * q + 2]; w++; }
+    for (q = 0; q < nt; q++) { if (buang[q]) continue; I[w] = tri[3 * q]; J[w] = tri[3 * q + 1]; K[w] = tri[3 * q + 2]; w++; }
     var tin = { x: Float64Array.from(P.x), y: Float64Array.from(P.y), z: Float64Array.from(P.z), i: I, j: J, k: K, n: m, dari: P.dari, segitiga: keep, dibuang: nt - keep, ms: Math.round(performance.now() - t0) };
     T.stat = tin; if (T._wm) T._wm.set(src, { n: src.x.length, tin: tin });
     return tin;
+  };
+  /* 13 Nov 2026: titik string DESAIN PIT dirapatkan tiap `step` m sebelum ditriangulasi (cara Pit Studio surfOf ->
+     densify(pts,2)). Tanpa ini segitiga Delaunay menghubungkan titik jauh di crest dan toe yang berbeda sehingga bidang
+     jenjang bergerigi. Sumber {x,y,z} (string dipisah null) -> objek baru yang sama bentuknya (cache per objek sumber). */
+  var RWM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  T.rapat = function (src, step) {
+    if (!src || !src.x || !src.x.length) return src; step = step || 2; var c = RWM && RWM.get(src); if (c && c.n === src.x.length && c.s === step) return c.o;
+    /* hanya sumber STRING (ada pemisah null antar-string, seperti .str / .dxf); awan titik XYZ / CSV tidak dirapatkan —
+       titik berurutan di sana tidak tersambung sebagai garis */
+    var adaPisah = false; for (var q0 = 0; q0 < src.x.length; q0++) if (src.x[q0] === null || src.x[q0] === undefined) { adaPisah = true; break; }
+    if (!adaPisah) { if (RWM) RWM.set(src, { n: src.x.length, s: step, o: src }); return src; }
+    var X = [], Y = [], Z = [], px = null, py = null, pz = null, n = src.x.length;
+    for (var i = 0; i < n; i++) { var x = src.x[i], y = src.y[i], z = src.z[i];
+      if (x === null || x === undefined || !isFinite(x) || !isFinite(y) || !isFinite(z)) { if (px !== null) { X.push(null); Y.push(null); Z.push(null); } px = null; continue; }
+      if (px !== null) { var d = Math.hypot(x - px, y - py), m = Math.ceil(d / step); for (var k = 1; k < m; k++) { var t = k / m; X.push(px + (x - px) * t); Y.push(py + (y - py) * t); Z.push(pz + (z - pz) * t); } }
+      X.push(x); Y.push(y); Z.push(z); px = x; py = y; pz = z; }
+    var o = { x: X, y: Y, z: Z }; if (src.b) o.b = src.b; if (RWM) RWM.set(src, { n: n, s: step, o: o }); return o;
   };
   /* trace mesh3d siap pakai: warna seragam (color) atau gradasi elevasi (intensity+colorscale) */
   T.trace = function (src, opt) {

@@ -4688,3 +4688,14 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - **Overlay**: *Opasitas desain pit* kini terpisah dari topografi; **Buka atap di atas blok yang ditampilkan** + jarak tepi.
 - **Legenda** di pojok kanan bawah grafik 3D: − kecilkan, × tutup (buka lagi lewat tombol *Legenda*).
 - Drillhole & DB-Ex: tidak berubah.
+
+## 197. Block Model 0.24.74 + Drillhole 0.24.86 — permukaan topo & pit lebih rapi; tampilan baru Project Tree & Properti
+
+- Desain pit dari string (.str / .dxf) kini mengikuti jenjang: titik string dirapatkan tiap 2 m sebelum ditriangulasi.
+  Topografi tidak lagi berlubang putih di bagian dalam. Berlaku di Overlay Block Model & Drillhole dan di Topo × Pit.
+- Topo × Pit: garis kontur topografi & garis jenjang pit tampil di atas permukaan (centang *Garis kontur topografi &
+  jenjang pit*). Pilihan *Gradasi menurut elevasi* di Overlay juga mewarnai permukaan gabungan.
+- Angka Reporting tidak berubah.
+- Block Model: tampilan baru Project Tree & panel Properti (kartu, tombol & tab baru). Bar atas tetap navy. Hanya
+  tampilan; letak menu dan fungsi tidak berubah.
+- DB-Ex: tidak berubah.

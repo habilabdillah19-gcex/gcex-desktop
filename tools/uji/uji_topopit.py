@@ -18,6 +18,8 @@ Permintaan pemilik 13 Nov 2026. Data SINTETIS (tanpa data nyata), koordinat loka
   T6 tanpa pit: tombol gabung memberi pesan, tidak membuat model.
   T7 desain pit = permukaan DTM data latihan (Data Referensi): segitiga DTM dipakai apa adanya, Z = min(topo, DTM) tepat,
      tampilan DTM sumber dimatikan.
+  T9 tampilan: titik string pit dirapatkan 2 m, garis jenjang pit tergambar & di legenda, awan titik topo tanpa garis,
+     segitiga panjang di DALAM topografi tidak dibuang (tanpa lubang).
   T8 langkah Demo 'Topografi terpotong desain pit' ada, menampilkan blok di dalam pit, lalu mengembalikan pilihan.
 Pemakaian: python tools/uji/uji_topopit.py [app/index.html]   (build lama harus GAGAL)
 """
@@ -88,6 +90,17 @@ JS = r"""async function(){
   // T8 langkah Demo (BX uji sintetis berada di luar pit latihan -> jumlah blok boleh 0; yang diuji alur & pemulihan)
   bxSet('tpB','',true);  var DS=(typeof dmSteps==='function'?dmSteps():[]),st=DS.filter(function(x){return x.t==='Topografi terpotong desain pit';})[0];R.t8={ada:!!st,n:-1,urut:DS.map(function(x){return x.s;}).slice(-3)};
   if(st){var Q=[];st.run(function(t,fn){Q.push([t,fn]);});Q.sort(function(a,b){return a[0]-b[0];});for(var z8=0;z8<Q.length-1;z8++)Q[z8][1]();R.t8.n=bxSel({clip:false,K:[]}).idx.length;R.t8.tpB=BX.ui.tpB;Q[Q.length-1][1]();R.t8.balik=BX.ui.tpB;}
+  // T9 tampilan (13 Nov, revisi bentuk): pit berupa STRING (cincin jenjang, dipisah null) -> titik dirapatkan 2 m, garis jenjang
+  // tergambar; topografi awan titik berlubang di tengah -> segitiga dalam tidak dibuang (tanpa lubang), tanpa garis kontur.
+  var gx=[],gy=[],gz=[];for(var x9=0;x9<=200;x9+=5)for(var y9=0;y9<=200;y9+=5){if(x9>85&&x9<115&&y9>85&&y9<115)continue;gx.push(x9);gy.push(y9);gz.push(100);}
+  var sx=[],sy=[],sz=[];[20,30,40,50,60].forEach(function(dd){var zz=61+Math.max(0,dd-20);[[100-dd,100-dd],[100+dd,100-dd],[100+dd,100+dd],[100-dd,100+dd],[100-dd,100-dd]].forEach(function(p){sx.push(p[0]);sy.push(p[1]);sz.push(zz);});sx.push(null);sy.push(null);sz.push(null);});
+  OV.topoF={x:gx,y:gy,z:gz};OV.pitF={x:sx,y:sy,z:sz};TP.cfg={t:'ov:topo',p:'ov:pit'};MD.models=MD.models.filter(function(w){return !w.gab;});
+  var tt9=TIN.build(OV.topoF),lubang=true;for(q=0;q<tt9.i.length;q++){var a9=tt9.i[q],b9=tt9.j[q],c9=tt9.k[q],xa=tt9.x[a9],ya=tt9.y[a9],xb=tt9.x[b9],yb=tt9.y[b9],xc=tt9.x[c9],yc=tt9.y[c9],pxx=100,pyy=100;
+    var d1=(pxx-xb)*(ya-yb)-(xa-xb)*(pyy-yb),d2=(pxx-xc)*(yb-yc)-(xb-xc)*(pyy-yc),d3=(pxx-xa)*(yc-ya)-(xc-xa)*(pyy-ya);if(!((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))){lubang=false;break;}}
+  var rp=TIN.rapat(OV.pitF,2),nr=rp.x.filter(function(v){return v!==null;}).length;
+  var m9=TP.gabung();document.getElementById('ovBuka').checked=false;updatePlot();await new Promise(function(r){setTimeout(r,1200);});
+  var gl=gd.data.filter(function(t){return /Garis jenjang pit|Kontur topografi/.test(t.name);}).map(function(t){return [t.name,t.x.filter(function(v){return v!==null;}).length];});
+  R.t9={lubang:lubang,titikPit:sx.filter(function(v){return v!==null;}).length,titikRapat:nr,garis:gl,leg:(document.getElementById('tpLeg')||{}).innerText||''};
   return R;}"""
 
 
@@ -115,7 +128,7 @@ def main() -> int:
     finally:
         srv.terminate(); shutil.rmtree(d, ignore_errors=True)
     t1, t2, t3, t4 = r["t1"], r["t2"], r["t3"], r["t4"]
-    print("T1", t1); print("T2", t2); print("T3", t3); print("T4", {k: (v[:160] if isinstance(v, str) else v) for k, v in t4.items()}); print("T5", r["t5"]); print("T6", r["t6"]); print("T7", r["t7"]); print("T8", r["t8"])
+    print("T1", t1); print("T2", t2); print("T3", t3); print("T4", {k: (v[:160] if isinstance(v, str) else v) for k, v in t4.items()}); print("T5", r["t5"]); print("T6", r["t6"]); print("T7", r["t7"]); print("T8", r["t8"]); print("T9", r["t9"])
     cek = lambda ok, p: ok or galat.append(p)
     cek(r["t6"]["model"] is False and "desain pit" in r["t6"]["msg"], "T6 tanpa pit seharusnya menolak dengan pesan")
     cek(t1["ada"] and t1["jenis"] == "surf" and t1["nC"] > 20 and t1["nTopo"] > 0 and t1["nPit"] > 0, "T1 permukaan gabungan / garis potong / dua sumber")
@@ -134,6 +147,8 @@ def main() -> int:
     t7 = r["t7"]
     cek(t7.get("pk") and t7["ns"][0] > 0 and t7["ns"][1] > 0 and t7["n"] > 50 and t7["err"] < 0.01 and t7["pitVis"] is False, "T7 pit dari permukaan DTM")
     cek(r["t8"]["ada"] and r["t8"]["n"] >= 0 and r["t8"]["tpB"] == "pit" and r["t8"]["balik"] == "", "T8 langkah Demo")
+    t9 = r["t9"]
+    cek(not t9["lubang"] and t9["titikRapat"] > 5 * t9["titikPit"] and len(t9["garis"]) == 1 and t9["garis"][0][0] == "Garis jenjang pit" and t9["garis"][0][1] > 100 and "Garis jenjang pit" in t9["leg"], "T9 tampilan: lubang topo / perapatan pit / garis jenjang")
     print()
     if galat:
         print("GAGAL (%d):" % len(galat)); [print("  -", g) for g in galat]; return 1

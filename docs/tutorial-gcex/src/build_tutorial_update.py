@@ -478,6 +478,7 @@ F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), (
                          ('aoi', f_aoi), ('waste', f_waste), ('frac', f_frac), ('vsys', f_vsys), ('jalur', f_jalur))}
 F['vunion'] = 'vunion.png'   # tangkapan layar aplikasi (data latihan fiktif), bukan matplotlib
 F['svrek'] = 'svrek.png'     # tangkapan layar uji uji_solid_vein_union.py (data sintetis)
+F['skin_bm'] = 'skin_bm.png' # data latihan: Project Tree & Properti tema baru (0.24.74)
 F['topopit'] = 'topopit.png' # data latihan: topografi Data Spasial x SIM_pit_fase1, AU_GC >= 0,34 di antara topo & pit
 
 # angka ringkas untuk narasi
@@ -1187,6 +1188,12 @@ B.append('<p><b>Topo &times; Pit (gabungan)</b> (Project Tree &rsaquo; Data Refe
          'Menu Block Model mendapat satu pilihan <b>Batas permukaan</b> (<i>Di antara topo &amp; pit</i> / <i>Di bawah topo &times; pit</i>) yang bekerja bersama cut-off &amp; kelas yang sudah ada &mdash; tidak ada filter kadar baru. '
          'Panel Overlay: <b>Opasitas desain pit</b> sendiri dan <b>Buka atap</b> (permukaan di atas blok tampil disembunyikan, lantai pit tetap). Legenda berbentuk kartu di pojok kanan bawah grafik.</p>')
 B.append(fig_html('topopit', 'Data latihan: topografi Data Spasial &times; SIM_pit_fase1 menjadi satu permukaan (hijau topo, biru pit); blok AU_GC &ge; 0,34 di antara topo &amp; pit tampil di dalam pit, legenda di pojok kanan bawah.'))
+
+B.append('<h3>16f. Permukaan topo &amp; pit seperti Pit Studio, tampilan baru Project Tree &amp; Properti (Block Model 0.24.74, Drill Hole 0.24.86)</h3>')
+B.append('<p>Mengacu Pit Studio: titik string desain pit <b>dirapatkan tiap 2 m</b> sebelum ditriangulasi sehingga bidang jenjang tidak diseberangi segitiga panjang; segitiga panjang hanya dikupas dari <b>tepi luar</b> TIN sehingga topografi tidak berlubang di bagian dalam; '
+         'permukaan Topo &times; Pit mendapat <b>garis kontur topografi</b> dan <b>garis jenjang pit</b> yang dipotong di bagian tergali. Hanya tampilan &mdash; angka Reporting tetap. '
+         'Block Model mendapat tema baru untuk <b>Project Tree</b> dan panel <b>Properti</b>: baris pohon bersudut dengan sorotan biru muda, setiap bagian panel menjadi kartu, tab bagian berupa segmented control, tombol dan isian 32 px; bar atas tetap navy.</p>')
+B.append(fig_html('skin_bm', 'Data latihan: Project Tree dan panel Properti Block Model dengan tema baru (0.24.74).'))
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

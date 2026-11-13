@@ -481,6 +481,14 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Uji', '<code>tools/uji/uji_topopit.py</code>: Z gabungan = min(topo, pit) (selisih &lt; 1e-9), jumlah blok &lsquo;di antara topo &amp; pit&rsquo; = Reporting di dalam pit, buka atap tidak membuka lantai pit / area tanpa blok, legenda, ekspor, pit dari DTM; build lama gagal.'],
 ]))
 
+B.append('<h3>8.12 Bentuk permukaan &amp; tema Block Model (BM 0.24.74 / DH 0.24.86)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Perapatan string', '<code>TIN.rapat(src, 2)</code> (<code>tinhr.js</code>): sumber berpemisah null (string) diberi titik tiap 2 m di setiap segmen (cara Pit Studio <code>densify</code>); awan titik tanpa pemisah dikembalikan apa adanya. Dipakai Overlay desain pit (BM &amp; DH) dan <code>TP.tin(\'ov:pit\')</code>. Cache WeakMap per sumber.'],
+    ['Kupas tepi', '<code>TIN.build</code>: segitiga dengan sisi &gt; faktor &times; median dibuang hanya bila terhubung ke hull lewat segitiga panjang lain (BFS di <code>halfedges</code> Delaunator). Hitungan (<code>tinz.js</code>) tetap memakai aturan lamanya.'],
+    ['Garis', '<code>TP.garis(m)</code>: string topo / pit Data Spasial; segmen tampil bila sumbernya yang lebih rendah di titik tengah (&plusmn;5 cm), diangkat 8 cm; trace <code>_tpGaris</code> ikut legenda &amp; Buka atap; <code>m.gab.garis</code>.'],
+    ['Tema', '<code>skin_bm.js</code> (khusus BM): <code>body.skin-bm</code>, variabel <code>--sk-*</code> (terang &amp; gelap), mengungguli aturan <code>!important</code> tema lama dengan selektor ber-<code>#side</code>. Tanpa perubahan DOM / fungsi.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

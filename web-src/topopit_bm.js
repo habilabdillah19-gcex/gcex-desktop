@@ -48,7 +48,7 @@
   TP.sig = function (k) { if (!k) return ''; if (k === 'ov:topo') return k + sigO(window.OV && OV.topoF); if (k === 'ov:pit') return k + sigO(window.OV && OV.pitF);
     var m = mdSurf(k.slice(3)); return m ? k + ':' + m.nv + ':' + m.nt + ':' + m.v[0] + ':' + m.v[m.v.length - 1] : ''; };
   /* TIN sumber: {x,y,z,i,j,k,n} koordinat lokal */
-  TP.tin = function (k) { if (k === 'ov:topo') return TIN.build(OV.topoF); if (k === 'ov:pit') return TIN.build(OV.pitF); var m = k && mdSurf(k.slice(3)); if (!m) return null; mdLocal(m);
+  TP.tin = function (k) { if (k === 'ov:topo') return TIN.build(OV.topoF); if (k === 'ov:pit') return TIN.build(TIN.rapat ? TIN.rapat(OV.pitF, 2) : OV.pitF); var m = k && mdSurf(k.slice(3)); if (!m) return null; mdLocal(m);
     return { x: m._x, y: m._y, z: m._z, i: m._i, j: m._j, k: m._k, n: m.nv }; };
   TP.model = function () { for (var i = 0; i < MD.models.length; i++) if (MD.models[i].gab) return MD.models[i]; return null; };
   TP.usang = function (m) { m = m || TP.model(); if (!m || !m.gab) return false; var s = m.gab.src || { t: 'ov:topo', p: 'ov:pit' }; return m.gab.t !== TP.sig(s.t) || m.gab.p !== TP.sig(s.p); };
@@ -147,11 +147,36 @@
     var sel = function (peran, k) { return '<select onchange="TP.cfg.' + peran + '=this.value;TP.box()">' + (k ? '' : '<option value="">(belum ada)</option>') + L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === k ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>'; };
     b.innerHTML = '<div class=g2 style="margin:4px 0"><div><label>Topografi</label>' + sel('t', T) + '</div><div><label>Desain pit</label>' + sel('p', P) + '</div></div><div class="g2 f" style="margin:4px 0 6px"><button class=btn-pri onclick="TP.gabung()"' + (T && P ? '' : ' disabled') + '>' + (m ? '&#8635; Hitung ulang' : '&#9650; Gabungkan') + ' topografi × desain pit</button>' +
       (m ? '<button onclick="TP.ekspor()">&#8681; Ekspor DTM + STR</button>' : '<span></span>') + '</div>' +
+      (m ? '<label class=sw><input type=checkbox' + (m.gab.garis !== false ? ' checked' : '') + ' onchange="TP.setGaris(this.checked)">Garis kontur topografi &amp; jenjang pit</label>' : '') +
       '<div class=hint>Permukaan yang lebih rendah antara topografi dan desain pit; garis potong dihitung tepat. Bawaan Data Spasial (sama dengan Reporting); permukaan DTM Data Referensi juga bisa dipilih.' +
       (!T || !P ? ' <b>Belum ada ' + [!T ? 'topografi' : '', !P ? 'desain pit' : ''].filter(Boolean).join(' & ') + '.</b>' : '') +
       (m && TP.usang(m) ? ' <span class=warn>Topografi / desain pit sudah berganti: klik Hitung ulang.</span>' : '') + '</div><div id=tpMsg class=hint></div>';
   };
   if (typeof mdList === 'function') { var _ml = mdList; window.mdList = mdList = function () { var r = _ml.apply(this, arguments); try { TP.box(); } catch (e) { } return r; }; }
+
+  /* palet gradasi (Pit Studio): topo hijau-krem, pit biru muda (atas) ke biru (bawah) */
+  TP.SKT = [[0, '#9eb385'], [0.33, '#b8c794'], [0.67, '#d6d1a8'], [1, '#ede8d6']];
+  TP.SKP = [[0, '#738cc7'], [1, '#ccd9ed']];
+  /* GARIS KONTUR TOPO & JENJANG PIT di atas permukaan gabungan (cara Pit Studio: string asli digambar, dipotong di bagian
+     yang tidak tampil): segmen topo tampil bila topo yang lebih rendah di titik tengahnya, segmen pit bila pit yang lebih
+     rendah; diangkat 8 cm supaya tidak tenggelam. Hanya untuk sumber Data Spasial (permukaan DTM tidak punya string).
+     Cache per model (WeakMap, tidak ikut tersimpan di proyek). */
+  var GWM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  TP.garis = function (m) {
+    if (!GWM || !m.gab || !m.gab.src) return null; var c = GWM.get(m); if (c && c.k === m.gab.at) return c.g;
+    var s = m.gab.src, fT = zf(s.t), fP = zf(s.p), out = [];
+    var berString = function (o) { for (var i = 0; i < o.x.length; i++) if (o.x[i] === null || o.x[i] === undefined) return true; return false; };
+    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
+      for (var i = 1; i < o.x.length; i++) { var x0 = o.x[i - 1], x1 = o.x[i]; if (x0 === null || x1 === null || x0 === undefined || x1 === undefined) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
+        var y0 = o.y[i - 1], y1 = o.y[i], z0 = o.z[i - 1], z1 = o.z[i], mx = (x0 + x1) / 2, my = (y0 + y1) / 2, mz = (z0 + z1) / 2, zo = lain(mx, my), ok = zo === null || (sendiri === 'topo' ? mz <= zo + 0.05 : mz < zo - 0.05);
+        if (!ok) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
+        if (!buka) { X.push(x0); Y.push(y0); Z.push(z0 + 0.08); buka = true; } X.push(x1); Y.push(y1); Z.push(z1 + 0.08); }
+      out.push({ nm: nm, x: X, y: Y, z: Z, c: col, w: w, op: op }); };
+    if (s.t === 'ov:topo') potongStr(OV.topoF, 'topo', fP, 'Kontur topografi', '#5a4630', 1.5, 0.55, false);
+    if (s.p === 'ov:pit') potongStr(OV.pitF, 'pit', fT, 'Garis jenjang pit', '#1b2a4e', 2, 0.75, true);
+    GWM.set(m, { k: m.gab.at, g: out }); return out;
+  };
+  TP.setGaris = function (v) { var m = TP.model(); if (!m) return; m.gab.garis = !!v; mdBump(); };
 
   /* warna dua nada untuk permukaan gabungan + tanda lapisan untuk legenda / buka atap */
   if (typeof mdTraces === 'function') {
@@ -162,12 +187,13 @@
       for (var q = n0; q < T.length; q++) { var t = T[q], m = byName[t.name]; if (!m) continue; t._tpMd = m; if (t.type !== 'mesh3d') continue;
         if (m.jenis === 'surf') t._tpSurf = 1;
         if (m.gab && m.fsrc && m.fsrc.length === m.nt) {
-          var hm = window.TIN ? TIN.shadeMode() : 'plotly', ct = (E('ovTopoCol') || {}).value || '#a7b58a', cp = (E('ovPitCol') || {}).value || '#8ea4c8', k = hm + '|' + ct + '|' + cp + '|' + m.nt;
+          var hm = window.TIN ? TIN.shadeMode() : 'plotly', ct = (E('ovTopoCol') || {}).value || '#a7b58a', cp = (E('ovPitCol') || {}).value || '#8ea4c8', gr = ((E('ovWarna') || {}).value === 'grad'), k = hm + '|' + ct + '|' + cp + '|' + gr + '|' + m.nt;
           if (m._tpK !== k) { var tin = { x: m._x, y: m._y, z: m._z, i: m._i, j: m._j, k: m._k }, F;
-            if (hm !== 'plotly' && TIN.hillshade) { var a = {}, b = {}; TIN.hillshade(a, tin, { color: ct }, hm); TIN.hillshade(b, tin, { color: cp }, hm); F = new Array(m.nt); for (var s = 0; s < m.nt; s++) F[s] = m.fsrc[s] ? b.facecolor[s] : a.facecolor[s]; }
+            if (hm !== 'plotly' && TIN.hillshade) { var a = {}, b = {}; TIN.hillshade(a, tin, { color: ct, grad: gr, colorscale: TP.SKT }, hm); TIN.hillshade(b, tin, { color: cp, grad: gr, colorscale: TP.SKP }, hm); F = new Array(m.nt); for (var s = 0; s < m.nt; s++) F[s] = m.fsrc[s] ? b.facecolor[s] : a.facecolor[s]; }
             else { F = new Array(m.nt); for (var s2 = 0; s2 < m.nt; s2++) F[s2] = m.fsrc[s2] ? cp : ct; }
             m._tpF = F; m._tpK = k; }
-          t.facecolor = m._tpF; delete t.color; if (hm !== 'plotly') t.lighting = { ambient: 1, diffuse: 0, specular: 0, roughness: 1, fresnel: 0 }; } }
+          t.facecolor = m._tpF; delete t.color; if (hm !== 'plotly') t.lighting = { ambient: 1, diffuse: 0, specular: 0, roughness: 1, fresnel: 0 };
+          if (m.gab.garis !== false && !VIEW2D) { var G2 = TP.garis(m); if (G2) G2.forEach(function (g) { if (g.x.length) T.push({ type: 'scatter3d', mode: 'lines', name: g.nm, x: g.x, y: g.y, z: g.z, line: { color: g.c, width: g.w }, opacity: g.op, hoverinfo: 'skip', showlegend: false, _tpGaris: 1 }); }); } } }
       return r; };
   }
   if (typeof bxTraces === 'function') { var _bt = bxTraces; window.bxTraces = bxTraces = function (T) { var n0 = T.length, r = _bt.apply(this, arguments); for (var q = n0; q < T.length; q++) T[q]._tpBx = 1; return r; }; }
@@ -236,6 +262,7 @@
     if (!VIEW2D && E('ovTopoS') && E('ovTopoS').checked && window.OV && ada(OV.topoF)) srf.push(it((E('ovTopoCol') || {}).value, 'Topografi'));
     if (!VIEW2D && E('ovPit') && E('ovPit').checked && window.OV && ada(OV.pitF)) srf.push(it((E('ovPitCol') || {}).value, 'Desain pit', (E('ovPitMode') || {}).value === 'line' ? 'garis' : 'kotak'));
     traces.forEach(function (t) {
+      if (t._tpGaris) { if (!seen['g:' + t.name]) { seen['g:' + t.name] = 1; srf.push(it(t.line.color, esc(t.name), 'garis')); } return; }
       if (t._tpBx || t.showlegend === false || !t.name || /^_/.test(t.name)) return;
       var m = t._tpMd, key = (m ? 'md:' : '') + t.name; if (seen[key]) return; seen[key] = 1;
       if (m && m.gab) { srf.push(it((E('ovTopoCol') || {}).value, 'Topografi <small>(gabungan)</small>'), it((E('ovPitCol') || {}).value, 'Desain pit <small>(gabungan)</small>')); return; }
@@ -269,11 +296,14 @@
   /* ---------- pasca: dipanggil updatePlot tepat sebelum Plotly.react ---------- */
   TP.pasca = function (traces, layout) {
     var J = TP.jejak();
-    if (J) for (var q = 0; q < traces.length; q++) { var t = traces[q]; if (t.type === 'mesh3d' && t.i && t.i.length && (t._tpSurf || t.uid === 'ovTopoS' || t.uid === 'ovPitS')) traces[q] = potong(t, J); }
+    if (J) for (var q = 0; q < traces.length; q++) { var t = traces[q]; if (t.type === 'mesh3d' && t.i && t.i.length && (t._tpSurf || t.uid === 'ovTopoS' || t.uid === 'ovPitS')) traces[q] = potong(t, J);
+      else if (t._tpGaris) { var X = [], Y = [], Z = []; for (var i = 0; i < t.x.length; i++) { var x = t.x[i]; if (x === null) { X.push(null); Y.push(null); Z.push(null); continue; } var u = Math.floor((x - J.x0) / J.cs), w = Math.floor((t.y[i] - J.y0) / J.cs), g = (u >= 0 && w >= 0 && u < J.gx && w < J.gy) ? J.G[w * J.gx + u] : -Infinity;
+          if (g > -Infinity && t.z[i] > g - 0.01) { if (X.length && X[X.length - 1] !== null) { X.push(null); Y.push(null); Z.push(null); } continue; } X.push(x); Y.push(t.y[i]); Z.push(t.z[i]); }
+        traces[q] = Object.assign({}, t, { x: X, y: Y, z: Z }); } }
     if (!VIEW2D && TP.leg.on && layout) layout.showlegend = false;
     try { if (!VIEW2D) TP.legRender(traces); else { var b = E('tpLeg'); if (b) b.style.display = 'none'; } } catch (e) { console.warn('[TP legenda]', e); }
     /* tanda internal dibuang sebelum Plotly (objek model besar tidak ikut dibandingkan / disalin) */
-    traces.forEach(function (t) { delete t._tpMd; delete t._tpSurf; delete t._tpBx; });
+    traces.forEach(function (t) { delete t._tpMd; delete t._tpSurf; delete t._tpBx; delete t._tpGaris; });
   };
 
   /* ---------- Demo: satu langkah sebelum Penutup (data latihan: topografi Data Spasial x SIM_pit_fase1) ---------- */
