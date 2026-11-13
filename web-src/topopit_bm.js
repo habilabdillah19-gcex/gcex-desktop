@@ -48,7 +48,7 @@
   TP.sig = function (k) { if (!k) return ''; if (k === 'ov:topo') return k + sigO(window.OV && OV.topoF); if (k === 'ov:pit') return k + sigO(window.OV && OV.pitF);
     var m = mdSurf(k.slice(3)); return m ? k + ':' + m.nv + ':' + m.nt + ':' + m.v[0] + ':' + m.v[m.v.length - 1] : ''; };
   /* TIN sumber: {x,y,z,i,j,k,n} koordinat lokal */
-  TP.tin = function (k) { if (k === 'ov:topo') return TIN.build(OV.topoF); if (k === 'ov:pit') return TIN.build(TIN.rapat ? TIN.rapat(OV.pitF, 2) : OV.pitF); var m = k && mdSurf(k.slice(3)); if (!m) return null; mdLocal(m);
+  TP.tin = function (k) { if (k === 'ov:topo') return TIN.build(TIN.rapat ? TIN.rapat(OV.topoF, 2) : OV.topoF);   /* 0.24.77: topografi string dirapatkan seperti pit & Reporting (rpSurf) */ if (k === 'ov:pit') return TIN.build(TIN.rapat ? TIN.rapat(OV.pitF, 2) : OV.pitF); var m = k && mdSurf(k.slice(3)); if (!m) return null; mdLocal(m);
     return { x: m._x, y: m._y, z: m._z, i: m._i, j: m._j, k: m._k, n: m.nv }; };
   TP.model = function () { for (var i = 0; i < MD.models.length; i++) if (MD.models[i].gab) return MD.models[i]; return null; };
   TP.usang = function (m) { m = m || TP.model(); if (!m || !m.gab) return false; var s = m.gab.src || { t: 'ov:topo', p: 'ov:pit' }; return m.gab.t !== TP.sig(s.t) || m.gab.p !== TP.sig(s.p); };

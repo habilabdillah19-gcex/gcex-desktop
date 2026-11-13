@@ -111,6 +111,11 @@ JS = r"""async function(){
   for(var x11=41;x11<=159;x11+=1.7)for(var y11=41;y11<=159;y11+=1.3){var v1=fR(x11,y11),v2=zR.f(x11,y11),v3=zA.f(x11,y11),v4=tb?tb(x11,y11):null;if(v1==null||v2==null)continue;n11++;
     if(Math.abs(v1-v2)<1e-9&&v4!=null&&Math.abs(v4-v2)<1e-9)s11++;if(v3!=null&&Math.abs(v3-v2)>0.5)b11++;}
   R.t11={n:n11,sama:s11,bedaAsli:b11,tengah:fR(100,100)};
+  // T11b (0.24.77): topografi STRING ikut dirapatkan di permukaan Topo x Pit -> gabungan = min(Reporting topo, Reporting pit)
+  var keepT=OV.topoF,tx=[],ty=[],tz=[];for(var r11=12;r11<=150;r11+=11){for(var c11=0;c11<=9;c11++){var an=(c11%9)*2*Math.PI/9+r11*0.37;tx.push(95+r11*Math.cos(an));ty.push(105+r11*0.8*Math.sin(an));tz.push(108-0.12*r11);}tx.push(null);ty.push(null);tz.push(null);}   /* kontur bukit elips, 9 titik per kontur (jarang) */
+  OV.topoF={x:tx,y:ty,z:tz};var mg=TP.gabung(),ft=RP.api.surf(OV.topoF),fp=RP.api.surf(OV.pitF),ng=0,bg=0;mdLocal(mg);var tg=RP.api.tin(mg);
+  for(var x12=5;x12<=195;x12+=3.1)for(var y12=5;y12<=195;y12+=2.9){var a12=ft(x12,y12),c12=fp(x12,y12);if(a12==null||c12==null)continue;var q12=tg(x12+(window.offX||0),y12+(window.offY||0));if(!q12||!q12.length)continue;ng++;var m12=Math.min(a12,c12);if(!q12.some(function(v){return Math.abs(v-m12)<0.01;}))bg++;}   /* tepat di tepi pit (tebing topo -> rim) mesh memberi dua nilai */
+  OV.topoF=keepT;MD.models=MD.models.filter(function(w){return !w.gab;});TP.gabung();R.t11.gab=[ng,bg];
   // T10 (0.24.75) node Data Spasial + import Reporting -> Data Referensi
   try{PT.render(true);}catch(e){}await new Promise(function(r){setTimeout(r,600);});
   var ids=[].map.call(document.querySelectorAll('#ptree .ptr'),function(r){return r.dataset.id;});
@@ -178,7 +183,7 @@ def main() -> int:
     pg_ = t10["prog"]
     cek(pg_["lama"] and pg_["lama"][0] > 0 and pg_["lama"] == pg_["baru"] and pg_["survei"] and pg_["nt"] > 0 and pg_["diTopoPit"], "T10 import survei Reporting -> Data Referensi: angka progres sama, tersimpan sebagai node survei, bisa dipilih Topo x Pit")
     t11 = r["t11"]; print("T11", t11)
-    cek(t11["n"] > 1000 and t11["sama"] == t11["n"] and t11["bedaAsli"] > 0 and t11["tengah"] is not None and abs(t11["tengah"] - 61) < 1e-6, "T11 Reporting & Batas permukaan = pit dirapatkan (titik asli berbeda > 0,5 m di %s titik); dasar pit lebar tetap ada (hanya tepi luar dikupas)" % t11["bedaAsli"])
+    cek(t11["n"] > 1000 and t11["sama"] == t11["n"] and t11["bedaAsli"] > 0 and t11["tengah"] is not None and abs(t11["tengah"] - 61) < 1e-6 and t11["gab"][0] > 1000 and t11["gab"][1] == 0, "T11 Reporting & Batas permukaan = pit dirapatkan (titik asli berbeda > 0,5 m di %s titik); dasar pit lebar tetap ada (hanya tepi luar dikupas)" % t11["bedaAsli"])
     print()
     if galat:
         print("GAGAL (%d):" % len(galat)); [print("  -", g) for g in galat]; return 1

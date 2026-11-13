@@ -1207,6 +1207,8 @@ B.append('<p>Desain pit dan topografi berupa <b>string</b> (.str / .dxf) kini di
          'Segitiga panjang hanya dikupas dari tepi luar, sehingga dasar pit yang lebar tetap terhitung. Sumber titik CSV / awan titik tidak berubah. '
          'File <b>.dtm Surpac biner</b> (pilih bersama file .str-nya) kini bisa diimport di Data Referensi dan dipilih sebagai sumber di Reporting.</p>')
 
+B.append('<p><b>Block Model 0.24.77:</b> permukaan Topo &times; Pit kini juga memakai topografi string yang dirapatkan, sehingga sama persis dengan yang dihitung Reporting (pada pit nyata selisih &gt; 5 cm di 1,5 % luas hilang). Tampilan topografi di Overlay sengaja tidak diubah karena tidak memengaruhi hitungan. Proyek lama: node Topo &times; Pit &rsaquo; &#8943; &rsaquo; <b>Hitung ulang</b>.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

@@ -4719,3 +4719,10 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   sebelumnya (Zona 3: +0,8 % tonase total; cut-off 0,4: +0,06 %). Sumber titik CSV / awan titik tidak berubah.
 - File `.dtm` Surpac biner (bersama `.str`-nya) kini bisa diimport di Block Model (Data Referensi / Reporting) dan Drillhole.
 - DB-Ex: tidak berubah.
+
+## 200. Block Model 0.24.77 — Topo × Pit sama dengan hitungan Reporting
+
+- Permukaan Topo × Pit (yang bisa dipilih di Reporting dan diekspor ke Surpac) kini memakai topografi string yang dirapatkan,
+  sama persis dengan hitungan Reporting. Tampilan topografi di Overlay tidak berubah.
+- Bila Topo × Pit sudah dibuat di proyek lama, klik ⋯ › **Hitung ulang** pada node Topo × Pit.
+- Drillhole & DB-Ex: tidak berubah.
