@@ -4929,3 +4929,33 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Bila masih berat saat diputar: profil **Kinerja › Hemat** (lebih sedikit kubus), dan matikan lapisan yang tidak dipakai
   (mis. Topo × Pit) selama bekerja di flitch.
 - Drillhole 0.24.94: ikut naik karena kode bersama, perilaku tidak berubah. DB-Ex, Ore Works: tidak berubah.
+
+## 222. Ore Works 0.7.0 — data besar (400.000 baris assay, topografi ratusan MB), logika geologi, klik kanan & Batal
+
+**Data besar (tetap tanpa backend, cukup pasang installer baru):**
+- **Topografi besar**: menu **Topografi › Impor topografi & desain pit**. File .str / .dxf ≥ 20 MB dibaca bertahap dan
+  otomatis dipotong ke **area data bor + penyangga** (bawaan 100 m), jadi **impor data bor dulu, baru topografi**.
+  Bila titik di area itu masih melebihi **Maks. titik** (bawaan 600.000), titik sepanjang string dijarangkan otomatis;
+  jarak antartitik yang dipakai dilaporkan sesudah impor. Pilihan **File besar**: *Otomatis* · *Selalu potong ke area
+  data bor* · *Seluruh isi file*. Pesan "tidak ada titik di area data bor" berarti sistem koordinat topografi berbeda
+  dengan data bor.
+- **Data bor besar**: Dashboard geokimia dan tab Analisis tetap dipakai seperti biasa untuk ratusan ribu baris assay
+  (uji 400.000 baris: impor ±3 detik, Dashboard ±4 detik). Project tersimpan menjadi besar (puluhan MB), itu wajar.
+- Komputer dengan RAM 8 GB cukup; untuk 400.000 baris + topografi besar disarankan 16 GB.
+
+**Logika geologi:**
+- Nilai assay di bawah batas deteksi (`<0,005`, `-0,005`) dibaca sebagai nilai batas deteksinya; kode ≤ −90 (−99, −999)
+  dianggap tanpa assay. Ringkasannya tampil sesudah impor.
+- **Batas oksidasi per lubang dari SxS**: Dashboard panel 9 (profil + unduh CSV) dan permukaan 3D lewat centang
+  *Dasar oksida* / *Puncak sulfida* di baris Lapisan 3D jendela Analisis.
+- **Kedalaman dari topografi** sebagai sumbu profil: Dashboard panel 4 dan tab Profil vertikal.
+- Korelasi: centang *tanpa pasangan di DL*; tiap sel menampilkan jumlah pasangan.
+
+**Tampilan:**
+- Tab Analisis dikelompokkan: Geokimia · Domain & geometri · Struktur · Target · Peta.
+- Impor data bor: seret beberapa file sekaligus ke kotak impor, jenis tabel dikenali otomatis dan bisa dikoreksi.
+- **Klik kanan** pada objek 3D (lubang, titik struktur, fitur pemetaan, bidang, wireframe) membuka menu ringkas;
+  **Batal (Ctrl+Z)** untuk titik struktur, bidang struktur, dan pemetaan.
+- Pengaturan tampilan ikut tersimpan di project.
+
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
