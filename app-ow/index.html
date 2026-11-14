@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.6.0';</script>
+<script>window.GCEX_VER='0.6.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -295,6 +295,7 @@ body.rp #rpan{display:flex}
 <label><input type="checkbox" data-l="fmp" checked><span class="sw" style="background:#e8590c;border-radius:50%"></span>Titik pick-up</label>
 <label><input type="checkbox" data-l="fm" checked><span class="sw" style="background:linear-gradient(90deg,#c92a2a,#1971c2,#2b8a3e)"></span>Fitur pemetaan</label>
 <div class="fl"><label style="margin:0"><input type="checkbox" id="fmlab" checked>Label fitur</label><label style="margin:0"><input type="checkbox" id="fmsid">Label Sample_ID</label></div>
+<div class="fl"><label style="margin:0" title="Angka kadar unsur aktif di tiap interval channel (warna = kelas kadar)"><input type="checkbox" id="fmgrd" checked>Label kadar channel</label></div>
 <div class="note subh" style="margin-top:6px"><b>Ukuran &amp; perbesar</b></div>
 <div class="fl">Lebar channel bawaan <input id="fmchw" type="number" step="any" value="30" style="width:44px;flex:none"> cm</div>
 <div class="fl">Garis lain <input id="fmlnw" type="number" step="any" value="0.15" style="width:44px;flex:none"> m</div>
@@ -2928,7 +2929,7 @@ function fmPolyCol(f){const c=fmCode(f);if(!c)return FMK.pol.c;const C=[...new S
 function fmGrp(f){return f.k==='pol'?((f.a.tipe?f.a.tipe+': ':'')+(f.a.kode||'(tanpa kode)')):(f.a.grup||'(tanpa layer)');}
 function fmGrpCol(f){const G=[...new Set(FM.F.filter(q=>q.k===f.k).map(fmGrp))],i=G.indexOf(fmGrp(f));return i<=0?FMK[f.k].c:FMPAL[(i*3+f.k.length)%FMPAL.length];}
 function fmCol(f){if(f.k==='vein'||f.k==='kon'||f.k==='sl')return f.col||fmGrpCol(f);return f.k==='pol'?fmPolyCol(f):f.k==='grab'&&fmGK()&&f.a.v&&isFinite(fmN(f.a.v[fmGK()]))?fmGhex(+f.a.v[fmGK()]):(f.col||FMK[f.k].c);}
-function fmDraw(){const G=L.fm;fmClear(G);const lab=fmg('fmlab').checked,sid=fmg('fmsid').checked,auk=fmGK(),rel=q=>[(q[0]-O[0])*10,(q[1]-O[1])*10,(q[2]-O[2])*10];
+function fmDraw(){const G=L.fm;fmClear(G);const lab=fmg('fmlab').checked,sid=fmg('fmsid').checked,grd=!!(fmg('fmgrd')&&fmg('fmgrd').checked),auk=fmGK(),rel=q=>[(q[0]-O[0])*10,(q[1]-O[1])*10,(q[2]-O[2])*10];
  for(const f of FM.F){if(!f.on||!f.pts.length)continue;const K=FMK[f.k],col=new THREE.Color(fmCol(f));
   if(K.g==='pt'){const p=f.pts[0],m=new THREE.Mesh(new THREE.SphereGeometry(f.k==='grab'?0.9:0.7,14,10),new THREE.MeshLambertMaterial({color:col,clippingPlanes:CL}));m.position.copy(fmW(...p));m.userData.fm=f;G.add(m);
    if(f.k==='obs'){const c2=new THREE.Mesh(new THREE.ConeGeometry(0.6,2,8),new THREE.MeshLambertMaterial({color:col,clippingPlanes:CL}));c2.position.copy(fmW(...p)).add(new THREE.Vector3(0,1.6,0));c2.rotation.x=Math.PI;c2.userData.fm=f;G.add(c2);}}
@@ -2939,7 +2940,7 @@ function fmDraw(){const G=L.fm;fmClear(G);const lab=fmg('fmlab').checked,sid=fmg
    if(f.k==='ch'){const m0=new THREE.InstancedMesh(new THREE.SphereGeometry(Math.max(0.03,fmRad(f)*1.15),8,6),new THREE.MeshBasicMaterial({color:0x111111,clippingPlanes:CL}),fmChB(f).length),M4=new THREE.Matrix4();fmChB(f).forEach((p,i)=>{M4.makeTranslation(...fmW(...p).toArray());m0.setMatrixAt(i,M4);});G.add(m0);}
    if(K.g==='poly'&&f.pts.length>=3){try{const c0=f.pts[0],con=f.pts.map(p=>new THREE.Vector2(p[0]-c0[0],p[1]-c0[1])),T=THREE.ShapeUtils.triangulateShape(con,[]),pos=[];f.pts.forEach(p=>{const v=fmW(...p);pos.push(v.x,v.y,v.z);});
      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(T.flat());g.computeVertexNormals();const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6,clippingPlanes:CL}));m.userData.fm=f;G.add(m);}catch(e){}}
-   if(sid&&f.k==='ch'&&f.iv){const c=fmCum(f.pts);f.iv.forEach(v=>{if(!v.sid)return;const q=pathAt(f.pts,c,(v.f+v.t)/2),au=auk&&isFinite(v.v[auk])?' ('+(+v.v[auk]).toFixed(2)+')':'';fmSprite(v.sid+au,'#1f2d6b',0.011,G,fmW(...q).add(new THREE.Vector3(0,0.6,0)));});}}
+   if((sid||grd)&&f.k==='ch'&&f.iv){const c=fmCum(f.pts);f.iv.forEach(v=>{const val=auk&&v.v&&isFinite(fmN(v.v[auk]))?+fmN(v.v[auk]):NaN,hv=grd&&isFinite(val),sd=sid&&v.sid;if(!hv&&!sd)return;const q=pathAt(f.pts,c,(v.f+v.t)/2),vt=hv?(val>=100?Math.round(val):val>=10?val.toFixed(1):val.toFixed(2)).toString().replace('.',','):'';const t=sd?v.sid+(vt?' · '+vt:''):vt;fmSprite(t,hv?(h=>{const n=parseInt(String(h).replace('#','').slice(0,6),16);if(!isFinite(n))return '#1f2d6b';const r=n>>16&255,g=n>>8&255,b=n&255,l=(r*299+g*587+b*114)/1000,k=l>150?0.55:0.85;return 'rgb('+Math.round(r*k)+','+Math.round(g*k)+','+Math.round(b*k)+')';})(fmGhex(val)):'#1f2d6b',hv&&!sd?0.013:0.011,G,fmW(...q).add(new THREE.Vector3(0,0.6,0)));});}}
   if(lab){const p=f.pts[0];fmSprite(f.nm+(f.k==='grab'&&auk&&f.a.v&&isFinite(f.a.v[auk])?' '+(+f.a.v[auk]).toFixed(2):''),fmCol(f),0.014,G,fmW(...p).add(new THREE.Vector3(0.5,1.2,0)));}}
  if(window.__lgOK)lgDraw();}
 function fmRad(f){const g=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return v>0?v:d;},k=g('fmsk',1);if(f.k==='ch')return (f.a.lebar>0?f.a.lebar:g('fmchw',30))/200*k;if(f.k==='vein')return (f.a.tebal>0?f.a.tebal:g('fmvnw',1))/2*k;return g('fmlnw',0.15)/2*k;}
@@ -3163,7 +3164,7 @@ fmg('flpap').onchange=e=>{FLY.paper=e.target.value;FLY.v=null;flDraw();};['flt',
 fmg('flpng').onclick=()=>{flDraw();FLY.last.toBlob(b=>fmDl(b,(fmg('flt').value||'Peta').replace(/[^\w-]+/g,'_')+'_'+fmDate()+'.png','image/png'),'image/png');};
 fmg('flpdf').onclick=()=>{flDraw();fmDl(flPdf(FLY.last),(fmg('flt').value||'Peta').replace(/[^\w-]+/g,'_')+'_'+fmDate()+'.pdf','application/pdf');};
 setTimeout(()=>{flDrag(fmg('fmew'),fmg('fmeh'));flDrag(fmg('fmlw'),fmg('flh'));},0);
-fmg('fmlab').onchange=fmDraw;fmg('fmrp').onclick=()=>rpanSet(true);['fmchw','fmvnw','fmlnw','fmsk','fmvm','fmvdep','fmvdip','fmvamp','fmgel','fmgcl','fmgm'].forEach(i=>fmg(i).addEventListener('change',fmDraw));fmg('fmsid').onchange=fmDraw;
+fmg('fmlab').onchange=fmDraw;fmg('fmrp').onclick=()=>rpanSet(true);['fmchw','fmvnw','fmlnw','fmsk','fmvm','fmvdep','fmvdip','fmvamp','fmgel','fmgcl','fmgm'].forEach(i=>fmg(i).addEventListener('change',fmDraw));fmg('fmsid').onchange=fmDraw;if(fmg('fmgrd'))fmg('fmgrd').onchange=fmDraw;
 function fmSave(){return {pf:FM.pf.map(f=>({id:f.id,nm:f.nm,P:f.P,on:f.on,lab:f.lab,line:f.line})),F:FM.F.map(f=>({id:f.id,k:f.k,nm:f.nm,pts:f.pts,on:f.on,a:f.a,iv:f.iv,ivm:f.ivm,col:f.col})),els:FM.els,id:FM.id,pid:FM.pid,uk:['fmchw','fmvnw','fmlnw','fmsk','fmvm','fmvdep','fmvdip','fmvamp','fmgel','fmgcl','fmgm'].map(i=>fmg(i).value)};}
 function fmRestore(o){if(!o)return;FM.pf=o.pf||[];FM.F=o.F||[];FM.els=o.els||FM.els;FM.id=o.id||FM.F.length+1;FM.pid=o.pid||FM.pf.length+1;FM.F.forEach(f=>{if(f.k==='ch'&&f.ivm==null&&f.iv&&f.iv.length){const c=fmCum(f.pts);f.ivm=f.iv.every(v=>c.some(x=>Math.abs(x-v.t)<1e-3))?0:+(f.iv[0].t-f.iv[0].f).toFixed(3);}});if(o.uk)['fmchw','fmvnw','fmlnw','fmsk','fmvm','fmvdep','fmvdip','fmvamp','fmgel','fmgcl','fmgm'].forEach((i,j)=>{if(o.uk[j]!=null)fmg(i).value=o.uk[j];});fmpDraw();fmpList();fmDraw();fmList();}
 fmpList();fmList();fmDigSet(false);document.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));

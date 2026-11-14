@@ -4854,3 +4854,9 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Atribut kalkulasi Surpac yang memakai teks dengan petik tunggal, mis. `IIF(auok>1 AND alttype = 'PRO',auok*0.80,auok)`,
   kini terbaca saat import .mdl (sebelumnya: "karakter tidak dikenal: '").
 - DB-Ex dan Ore Works: tidak berubah.
+
+## 213. Ore Works 0.6.1 — Angka kadar di channel 3D
+
+- *Pemetaan → Tampilan pemetaan → Lapisan & label → **Label kadar channel*** (aktif bawaan): angka kadar unsur aktif tampil
+  di tengah tiap interval channel di 3D, berwarna sesuai kelas kadar. Bersama *Label Sample_ID* → `CH01-002 · 1,68`.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
