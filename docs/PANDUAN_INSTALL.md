@@ -4803,3 +4803,12 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   *+ rasio sendiri*) dulu gagal di aplikasi terpasang dengan galat `prompt() is not supported`. Kini membuka jendela
   isian kecil milik aplikasi, sama seperti GC-Ex Block Model.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 207. Ore Works 0.4.2 — Layout peta: kontur, tombol tutup, subjudul
+
+- Kontur topografi di **Layout peta** kini utuh, termasuk dari string as-built yang elevasinya bulat (dulu hanya potongan
+  pendek). Kontur indeks (tiap 5 × interval) lebih tebal dan diberi **Label kontur**.
+- Pilihan baru **String topografi**: garis string survei asli ikut dicetak.
+- Tombol ✕ di kepala Layout peta kini menutup jendela; *Reset filter* (Filter data bor) kembali mereset filter.
+- Isian **Subjudul / lokasi** kini tercetak di kotak judul peta.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
