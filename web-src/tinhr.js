@@ -32,8 +32,31 @@
     }
     return { x: X, y: Y, z: Z, dari: nn };
   }
+  /* BM 0.24.83 (pemilik 14 Nov 2026, pit Zona 4 "bentuknya kusut"): file DXF berisi 3DFACE = DTM Surpac yang SUDAH
+     ditriangulasi. Dulu tiap segitiga dibaca sebagai string tertutup, dirapatkan, lalu ditriangulasi ULANG (Delaunay 2D) ->
+     dinding jenjang kusut dan Z hitungan tidak sama dengan DTM Surpac. Kini segitiga asli dipakai apa adanya, untuk
+     tampilan (T.build) maupun hitungan (TINZ.of, SA.surfGrid).
+     T.soup(src) -> { x, y, z, i, j, k, ... } bila >= 80 % string sumber adalah segitiga / segi empat tertutup; selain itu null. */
+  var SWM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  T.soup = function (src) {
+    if (!src || !src.x || src.x.length < 80) return null; var c = SWM && SWM.get(src); if (c && c.n === src.x.length) return c.s;
+    var n = src.x.length, nStr = 0, nF = 0, F = [], s = -1, i, t0 = performance.now();
+    for (i = 0; i <= n; i++) { var nul = i === n || src.x[i] === null || src.x[i] === undefined;
+      if (!nul) { if (s < 0) s = i; continue; } if (s < 0) continue;
+      var len = i - s, e = i - 1; nStr++;
+      if ((len === 4 || len === 5) && src.x[s] === src.x[e] && src.y[s] === src.y[e] && src.z[s] === src.z[e]) { nF++; F.push(s, s + 1, s + 2); if (len === 5) F.push(s, s + 2, s + 3); }
+      s = -1; }
+    var out = null;
+    if (nF >= 20 && nF >= 0.8 * nStr) { var M = new Map(), X = [], Y = [], Z = [], I = [], J = [], K = [];
+      var vid = function (q) { var k = Math.round(src.x[q] * 1000) + ':' + Math.round(src.y[q] * 1000) + ':' + Math.round(src.z[q] * 1000), v = M.get(k); if (v === undefined) { v = X.length; M.set(k, v); X.push(src.x[q]); Y.push(src.y[q]); Z.push(src.z[q]); } return v; };
+      for (i = 0; i < F.length; i += 3) { var a = vid(F[i]), b = vid(F[i + 1]), d = vid(F[i + 2]); if (a === b || b === d || a === d) continue; I.push(a); J.push(b); K.push(d); }
+      if (I.length >= 20) out = { x: Float64Array.from(X), y: Float64Array.from(Y), z: Float64Array.from(Z), i: Uint32Array.from(I), j: Uint32Array.from(J), k: Uint32Array.from(K), n: X.length, dari: X.length, segitiga: I.length, dibuang: 0, soup: 1, ms: Math.round(performance.now() - t0) }; }
+    if (SWM) SWM.set(src, { n: n, s: out }); return out;
+  };
   T.build = function (src) {
-    if (!T.on || !src || !src.x || src.x.length < 3 || typeof Delaunator === 'undefined') return null;
+    if (!T.on || !src || !src.x || src.x.length < 3) return null;
+    var sp = T.soup(src); if (sp) { T.stat = sp; return sp; }
+    if (typeof Delaunator === 'undefined') return null;
     var c = T._wm && T._wm.get(src); if (c && c.n === src.x.length) return c.tin;
     var t0 = performance.now(), P = kumpul(src, T.cap), m = P.x.length; if (m < 3) return null;
     var co = new Float64Array(m * 2); for (var i = 0; i < m; i++) { co[2 * i] = P.x[i]; co[2 * i + 1] = P.y[i]; }
@@ -61,7 +84,7 @@
      jenjang bergerigi. Sumber {x,y,z} (string dipisah null) -> objek baru yang sama bentuknya (cache per objek sumber). */
   var RWM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
   T.rapat = function (src, step) {
-    if (!src || !src.x || !src.x.length) return src; step = step || 2; var c = RWM && RWM.get(src); if (c && c.n === src.x.length && c.s === step) return c.o;
+    if (!src || !src.x || !src.x.length) return src; if (T.soup(src)) return src; /* segitiga DTM asli: tidak dirapatkan */ step = step || 2; var c = RWM && RWM.get(src); if (c && c.n === src.x.length && c.s === step) return c.o;
     /* hanya sumber STRING (ada pemisah null antar-string, seperti .str / .dxf); awan titik XYZ / CSV tidak dirapatkan —
        titik berurutan di sana tidak tersambung sebagai garis */
     var adaPisah = false; for (var q0 = 0; q0 < src.x.length; q0++) if (src.x[q0] === null || src.x[q0] === undefined) { adaPisah = true; break; }

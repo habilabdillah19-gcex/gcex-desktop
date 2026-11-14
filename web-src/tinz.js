@@ -10,15 +10,18 @@
      opt : { luar: function(x,y) -> z | null (bawaan: null), faktor: buang segitiga sisi > faktor x median (bawaan: tidak) } */
 (function () {
   function TINZ(P, opt) {
-    opt = opt || {}; var D = window.Delaunator; if (!D || !P || P.length < 3) return null;
-    var M = {}, X = [], Y = [], Z = [], K = [];
-    for (var i = 0; i < P.length; i++) { var q = P[i]; if (!q || !isFinite(q.x) || !isFinite(q.y) || !isFinite(q.z)) continue; var k = Math.round(q.x * 1000) + ':' + Math.round(q.y * 1000);
+    opt = opt || {}; var D = window.Delaunator, tri = opt.tri || null; /* 0.24.83: tri = segitiga DTM asli (TIN.soup), tanpa triangulasi ulang */
+    if (!tri && (!D || !P || P.length < 3)) return null;
+    var M = {}, X = [], Y = [], Z = [], K = [], i;
+    if (tri) { X = tri.x; Y = tri.y; Z = tri.z; }
+    else for (i = 0; i < P.length; i++) { var q = P[i]; if (!q || !isFinite(q.x) || !isFinite(q.y) || !isFinite(q.z)) continue; var k = Math.round(q.x * 1000) + ':' + Math.round(q.y * 1000);
       if (M[k] !== undefined) { var j = M[k]; Z[j] += q.z; K[j]++; continue; } M[k] = X.length; X.push(+q.x); Y.push(+q.y); Z.push(+q.z); K.push(1); }
-    for (i = 0; i < Z.length; i++) Z[i] /= K[i];
+    if (!tri) for (i = 0; i < Z.length; i++) Z[i] /= K[i];
     var n = X.length; if (n < 3) return null;
     /* koordinat dikurangi titik pertama supaya presisi tidak hilang pada koordinat UTM besar */
     var ox = X[0], oy = Y[0], C = new Float64Array(2 * n); for (i = 0; i < n; i++) { C[2 * i] = X[i] - ox; C[2 * i + 1] = Y[i] - oy; }
-    var d; try { d = new D(C); } catch (e) { return null; } var T = d.triangles, nt = T.length / 3; if (!nt) return null;
+    var d = null, T, nt; if (tri) { nt = tri.i.length; T = new Uint32Array(3 * nt); for (i = 0; i < nt; i++) { T[3 * i] = tri.i[i]; T[3 * i + 1] = tri.j[i]; T[3 * i + 2] = tri.k[i]; } }
+    else { try { d = new D(C); } catch (e) { return null; } T = d.triangles; nt = T.length / 3; } if (!nt) return null;
     /* indeks grid kotak pembatas segitiga */
     var x0 = 1e18, x1 = -1e18, y0 = 1e18, y1 = -1e18; for (i = 0; i < n; i++) { var xx = C[2 * i], yy = C[2 * i + 1]; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
     var cs = Math.max(0.5, Math.sqrt(Math.max(1, (x1 - x0) * (y1 - y0)) / nt) * 1.5), gx, gy;
@@ -26,7 +29,7 @@
     /* indeks CSR (larik bertipe): ratusan ribu segitiga topografi tanpa objek per sel */
     /* opt.faktor: buang segitiga yang sisi terpanjangnya > faktor x median (sama dengan tampilan tinhr.js: kipas lebar
        menyeberangi lubang / tepi data kontur) -> di situ tidak ada permukaan, pemanggil memakai cadangan */
-    var skip = null; if (opt.faktor > 0) { var mx = new Float64Array(nt); for (var q2 = 0; q2 < nt; q2++) { var p1 = T[3 * q2], p2 = T[3 * q2 + 1], p3 = T[3 * q2 + 2], l1 = Math.hypot(C[2 * p1] - C[2 * p2], C[2 * p1 + 1] - C[2 * p2 + 1]), l2 = Math.hypot(C[2 * p2] - C[2 * p3], C[2 * p2 + 1] - C[2 * p3 + 1]), l3 = Math.hypot(C[2 * p3] - C[2 * p1], C[2 * p3 + 1] - C[2 * p1 + 1]); mx[q2] = Math.max(l1, l2, l3); }
+    var skip = null; if (opt.faktor > 0 && !tri) { var mx = new Float64Array(nt); for (var q2 = 0; q2 < nt; q2++) { var p1 = T[3 * q2], p2 = T[3 * q2 + 1], p3 = T[3 * q2 + 2], l1 = Math.hypot(C[2 * p1] - C[2 * p2], C[2 * p1 + 1] - C[2 * p2 + 1]), l2 = Math.hypot(C[2 * p2] - C[2 * p3], C[2 * p2 + 1] - C[2 * p3 + 1]), l3 = Math.hypot(C[2 * p3] - C[2 * p1], C[2 * p3 + 1] - C[2 * p1 + 1]); mx[q2] = Math.max(l1, l2, l3); }
       var srt = Float64Array.from(mx).sort(), med = srt[srt.length >> 1], lim = opt.faktor * med; skip = new Uint8Array(nt); for (q2 = 0; q2 < nt; q2++) if (mx[q2] > lim) skip[q2] = 1;
       /* opt.tepi (13 Nov 2026): segitiga panjang hanya dibuang bila tersambung ke tepi luar TIN lewat segitiga panjang lain
          (sama dengan tampilan tinhr.js 0.24.74). Untuk string yang dirapatkan (median sisi ~2 m) aturan "semua segitiga panjang"
@@ -58,6 +61,7 @@
   var WM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
   /* tepi = true: sumber string yang sudah dirapatkan (TIN.rapat) -> hanya segitiga panjang di tepi luar yang dibuang */
   function tinOf(o, tepi) { if (!o || !o.x || !o.x.length || !WM) return null; var c = WM.get(o); if (c && c.len === o.x.length) return c.tin;
+    var sp = window.TIN && TIN.soup ? TIN.soup(o) : null; if (sp) { var ts = null; try { ts = TINZ(null, { tri: sp }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: ts }); return ts; }
     var P = []; for (var i = 0; i < o.x.length; i++) { if (o.x[i] === null || o.x[i] === undefined) continue; P.push({ x: o.x[i], y: o.y[i], z: o.z[i] }); }
     var t = null; try { t = TINZ(P, { faktor: (window.TIN && TIN.faktor) || 8, tepi: !!tepi }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: t }); return t; }
   TINZ.of = tinOf;

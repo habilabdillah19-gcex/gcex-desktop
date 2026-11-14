@@ -4891,3 +4891,13 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   seluruh file. Pertama kali, cache seluruh model dibangun dulu (progres tampil di dialog); bila disk penuh, dialog menampilkan
   pilihan folder cache.
 - Drillhole 0.24.90, DB-Ex 0.46.8, Ore Works 0.6.4: hanya ikut naik karena backend / Electron bersama; tampilan tidak berubah.
+
+## 218. Block Model 0.24.83 — desain pit DXF (3DFACE) tampil seperti DTM Surpac; .mdl sangat besar tidak lagi kosong
+
+- Desain pit / topografi berformat **DXF berisi 3DFACE** (DTM yang diekspor dari Surpac) kini memakai segitiga aslinya, tanpa
+  triangulasi ulang: bentuk jenjang sama dengan Surpac, dan Z untuk Topo × Pit, Reporting serta filter import ikut sama.
+  **Import ulang** file DXF desain pit di proyek lama (Data Spasial › Desain pit › Ganti dengan file…).
+- Import .mdl besar dengan filter pit / topografi: bila blok yang lolos filter melebihi batas lancar komputer, yang dimuat hanya
+  bagian teratas yang muat, dengan pesan RL untuk rentang berikutnya. Nyalakan juga **Hanya di bawah topografi asbuilt**
+  supaya blok udara tidak ikut.
+- Drillhole 0.24.91: ikut naik karena kode pembaca bersama. DB-Ex, Ore Works: tidak berubah.

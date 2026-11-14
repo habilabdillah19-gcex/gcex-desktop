@@ -5333,15 +5333,18 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
      opt : { luar: function(x,y) -> z | null (bawaan: null), faktor: buang segitiga sisi > faktor x median (bawaan: tidak) } */
 (function () {
   function TINZ(P, opt) {
-    opt = opt || {}; var D = window.Delaunator; if (!D || !P || P.length < 3) return null;
-    var M = {}, X = [], Y = [], Z = [], K = [];
-    for (var i = 0; i < P.length; i++) { var q = P[i]; if (!q || !isFinite(q.x) || !isFinite(q.y) || !isFinite(q.z)) continue; var k = Math.round(q.x * 1000) + ':' + Math.round(q.y * 1000);
+    opt = opt || {}; var D = window.Delaunator, tri = opt.tri || null; /* 0.24.83: tri = segitiga DTM asli (TIN.soup), tanpa triangulasi ulang */
+    if (!tri && (!D || !P || P.length < 3)) return null;
+    var M = {}, X = [], Y = [], Z = [], K = [], i;
+    if (tri) { X = tri.x; Y = tri.y; Z = tri.z; }
+    else for (i = 0; i < P.length; i++) { var q = P[i]; if (!q || !isFinite(q.x) || !isFinite(q.y) || !isFinite(q.z)) continue; var k = Math.round(q.x * 1000) + ':' + Math.round(q.y * 1000);
       if (M[k] !== undefined) { var j = M[k]; Z[j] += q.z; K[j]++; continue; } M[k] = X.length; X.push(+q.x); Y.push(+q.y); Z.push(+q.z); K.push(1); }
-    for (i = 0; i < Z.length; i++) Z[i] /= K[i];
+    if (!tri) for (i = 0; i < Z.length; i++) Z[i] /= K[i];
     var n = X.length; if (n < 3) return null;
     /* koordinat dikurangi titik pertama supaya presisi tidak hilang pada koordinat UTM besar */
     var ox = X[0], oy = Y[0], C = new Float64Array(2 * n); for (i = 0; i < n; i++) { C[2 * i] = X[i] - ox; C[2 * i + 1] = Y[i] - oy; }
-    var d; try { d = new D(C); } catch (e) { return null; } var T = d.triangles, nt = T.length / 3; if (!nt) return null;
+    var d = null, T, nt; if (tri) { nt = tri.i.length; T = new Uint32Array(3 * nt); for (i = 0; i < nt; i++) { T[3 * i] = tri.i[i]; T[3 * i + 1] = tri.j[i]; T[3 * i + 2] = tri.k[i]; } }
+    else { try { d = new D(C); } catch (e) { return null; } T = d.triangles; nt = T.length / 3; } if (!nt) return null;
     /* indeks grid kotak pembatas segitiga */
     var x0 = 1e18, x1 = -1e18, y0 = 1e18, y1 = -1e18; for (i = 0; i < n; i++) { var xx = C[2 * i], yy = C[2 * i + 1]; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
     var cs = Math.max(0.5, Math.sqrt(Math.max(1, (x1 - x0) * (y1 - y0)) / nt) * 1.5), gx, gy;
@@ -5349,7 +5352,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     /* indeks CSR (larik bertipe): ratusan ribu segitiga topografi tanpa objek per sel */
     /* opt.faktor: buang segitiga yang sisi terpanjangnya > faktor x median (sama dengan tampilan tinhr.js: kipas lebar
        menyeberangi lubang / tepi data kontur) -> di situ tidak ada permukaan, pemanggil memakai cadangan */
-    var skip = null; if (opt.faktor > 0) { var mx = new Float64Array(nt); for (var q2 = 0; q2 < nt; q2++) { var p1 = T[3 * q2], p2 = T[3 * q2 + 1], p3 = T[3 * q2 + 2], l1 = Math.hypot(C[2 * p1] - C[2 * p2], C[2 * p1 + 1] - C[2 * p2 + 1]), l2 = Math.hypot(C[2 * p2] - C[2 * p3], C[2 * p2 + 1] - C[2 * p3 + 1]), l3 = Math.hypot(C[2 * p3] - C[2 * p1], C[2 * p3 + 1] - C[2 * p1 + 1]); mx[q2] = Math.max(l1, l2, l3); }
+    var skip = null; if (opt.faktor > 0 && !tri) { var mx = new Float64Array(nt); for (var q2 = 0; q2 < nt; q2++) { var p1 = T[3 * q2], p2 = T[3 * q2 + 1], p3 = T[3 * q2 + 2], l1 = Math.hypot(C[2 * p1] - C[2 * p2], C[2 * p1 + 1] - C[2 * p2 + 1]), l2 = Math.hypot(C[2 * p2] - C[2 * p3], C[2 * p2 + 1] - C[2 * p3 + 1]), l3 = Math.hypot(C[2 * p3] - C[2 * p1], C[2 * p3 + 1] - C[2 * p1 + 1]); mx[q2] = Math.max(l1, l2, l3); }
       var srt = Float64Array.from(mx).sort(), med = srt[srt.length >> 1], lim = opt.faktor * med; skip = new Uint8Array(nt); for (q2 = 0; q2 < nt; q2++) if (mx[q2] > lim) skip[q2] = 1;
       /* opt.tepi (13 Nov 2026): segitiga panjang hanya dibuang bila tersambung ke tepi luar TIN lewat segitiga panjang lain
          (sama dengan tampilan tinhr.js 0.24.74). Untuk string yang dirapatkan (median sisi ~2 m) aturan "semua segitiga panjang"
@@ -5381,6 +5384,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
   var WM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
   /* tepi = true: sumber string yang sudah dirapatkan (TIN.rapat) -> hanya segitiga panjang di tepi luar yang dibuang */
   function tinOf(o, tepi) { if (!o || !o.x || !o.x.length || !WM) return null; var c = WM.get(o); if (c && c.len === o.x.length) return c.tin;
+    var sp = window.TIN && TIN.soup ? TIN.soup(o) : null; if (sp) { var ts = null; try { ts = TINZ(null, { tri: sp }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: ts }); return ts; }
     var P = []; for (var i = 0; i < o.x.length; i++) { if (o.x[i] === null || o.x[i] === undefined) continue; P.push({ x: o.x[i], y: o.y[i], z: o.z[i] }); }
     var t = null; try { t = TINZ(P, { faktor: (window.TIN && TIN.faktor) || 8, tepi: !!tepi }); } catch (e) { console.warn('TINZ', e); } WM.set(o, { len: o.x.length, tin: t }); return t; }
   TINZ.of = tinOf;
@@ -5427,8 +5431,31 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     }
     return { x: X, y: Y, z: Z, dari: nn };
   }
+  /* BM 0.24.83 (pemilik 14 Nov 2026, pit Zona 4 "bentuknya kusut"): file DXF berisi 3DFACE = DTM Surpac yang SUDAH
+     ditriangulasi. Dulu tiap segitiga dibaca sebagai string tertutup, dirapatkan, lalu ditriangulasi ULANG (Delaunay 2D) ->
+     dinding jenjang kusut dan Z hitungan tidak sama dengan DTM Surpac. Kini segitiga asli dipakai apa adanya, untuk
+     tampilan (T.build) maupun hitungan (TINZ.of, SA.surfGrid).
+     T.soup(src) -> { x, y, z, i, j, k, ... } bila >= 80 % string sumber adalah segitiga / segi empat tertutup; selain itu null. */
+  var SWM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  T.soup = function (src) {
+    if (!src || !src.x || src.x.length < 80) return null; var c = SWM && SWM.get(src); if (c && c.n === src.x.length) return c.s;
+    var n = src.x.length, nStr = 0, nF = 0, F = [], s = -1, i, t0 = performance.now();
+    for (i = 0; i <= n; i++) { var nul = i === n || src.x[i] === null || src.x[i] === undefined;
+      if (!nul) { if (s < 0) s = i; continue; } if (s < 0) continue;
+      var len = i - s, e = i - 1; nStr++;
+      if ((len === 4 || len === 5) && src.x[s] === src.x[e] && src.y[s] === src.y[e] && src.z[s] === src.z[e]) { nF++; F.push(s, s + 1, s + 2); if (len === 5) F.push(s, s + 2, s + 3); }
+      s = -1; }
+    var out = null;
+    if (nF >= 20 && nF >= 0.8 * nStr) { var M = new Map(), X = [], Y = [], Z = [], I = [], J = [], K = [];
+      var vid = function (q) { var k = Math.round(src.x[q] * 1000) + ':' + Math.round(src.y[q] * 1000) + ':' + Math.round(src.z[q] * 1000), v = M.get(k); if (v === undefined) { v = X.length; M.set(k, v); X.push(src.x[q]); Y.push(src.y[q]); Z.push(src.z[q]); } return v; };
+      for (i = 0; i < F.length; i += 3) { var a = vid(F[i]), b = vid(F[i + 1]), d = vid(F[i + 2]); if (a === b || b === d || a === d) continue; I.push(a); J.push(b); K.push(d); }
+      if (I.length >= 20) out = { x: Float64Array.from(X), y: Float64Array.from(Y), z: Float64Array.from(Z), i: Uint32Array.from(I), j: Uint32Array.from(J), k: Uint32Array.from(K), n: X.length, dari: X.length, segitiga: I.length, dibuang: 0, soup: 1, ms: Math.round(performance.now() - t0) }; }
+    if (SWM) SWM.set(src, { n: n, s: out }); return out;
+  };
   T.build = function (src) {
-    if (!T.on || !src || !src.x || src.x.length < 3 || typeof Delaunator === 'undefined') return null;
+    if (!T.on || !src || !src.x || src.x.length < 3) return null;
+    var sp = T.soup(src); if (sp) { T.stat = sp; return sp; }
+    if (typeof Delaunator === 'undefined') return null;
     var c = T._wm && T._wm.get(src); if (c && c.n === src.x.length) return c.tin;
     var t0 = performance.now(), P = kumpul(src, T.cap), m = P.x.length; if (m < 3) return null;
     var co = new Float64Array(m * 2); for (var i = 0; i < m; i++) { co[2 * i] = P.x[i]; co[2 * i + 1] = P.y[i]; }
@@ -5456,7 +5483,7 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
      jenjang bergerigi. Sumber {x,y,z} (string dipisah null) -> objek baru yang sama bentuknya (cache per objek sumber). */
   var RWM = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
   T.rapat = function (src, step) {
-    if (!src || !src.x || !src.x.length) return src; step = step || 2; var c = RWM && RWM.get(src); if (c && c.n === src.x.length && c.s === step) return c.o;
+    if (!src || !src.x || !src.x.length) return src; if (T.soup(src)) return src; /* segitiga DTM asli: tidak dirapatkan */ step = step || 2; var c = RWM && RWM.get(src); if (c && c.n === src.x.length && c.s === step) return c.o;
     /* hanya sumber STRING (ada pemisah null antar-string, seperti .str / .dxf); awan titik XYZ / CSV tidak dirapatkan —
        titik berurutan di sana tidak tersambung sebagai garis */
     var adaPisah = false; for (var q0 = 0; q0 < src.x.length; q0++) if (src.x[q0] === null || src.x[q0] === undefined) { adaPisah = true; break; }
@@ -11534,7 +11561,7 @@ SA.readLines=function(s){return readLines(s);};
   /* baca + sederhanakan per segmen (sama dengan segsOut) + batas area; titik ditambahkan ke out hanya bila file terbaca utuh */
   /* titik berkoordinat tidak masuk akal (SA.koordOk) dibuang per titik & dihitung; > separuh rusak -> file ditolak */
   SA.readLinesInto=async function(s,out,tol,ab,prog){var o2=[],n0=0,n1=0,x0=1e18,x1=-1e18,y0=1e18,y1=-1e18,z0=1e18,z1=-1e18,bad=0,tot=0,okF=SA.koordOk||function(){return true;};G.lastRecLen=0;
-    await readLinesS(s,function(P0){var P=[];for(var t=0;t<P0.length;t++){tot++;if(okF(P0[t][0],P0[t][1],P0[t][2]))P.push(P0[t]);else bad++;}if(P0.sn!=null)P.sn=P0.sn;if(P.length){var k=dpKeep(P,tol);for(var i=0;i<P.length;i++){n0++;if(k[i]){o2.push(P[i]);n1++;}}o2.push(null);}
+    await readLinesS(s,function(P0){var P=[];for(var t=0;t<P0.length;t++){tot++;if(okF(P0[t][0],P0[t][1],P0[t][2]))P.push(P0[t]);else bad++;}if(P0.sn!=null)P.sn=P0.sn;if(P.length){/* 0.24.83: segitiga / segi empat DXF 3DFACE (string tertutup 4-5 titik) = DTM, TIDAK disederhanakan */var Pn=P.length,tri=(Pn===4||Pn===5)&&P[0][0]===P[Pn-1][0]&&P[0][1]===P[Pn-1][1]&&P[0][2]===P[Pn-1][2],k=tri?P.map(function(){return 1;}):dpKeep(P,tol);for(var i=0;i<P.length;i++){n0++;if(k[i]){o2.push(P[i]);n1++;}}o2.push(null);}
       for(var j=0;j<P.length;j++){var p=P[j];if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];if(isFinite(p[2])){if(p[2]<z0)z0=p[2];if(p[2]>z1)z1=p[2];}if(ab)ab(p[0],p[1],p[2]);}},prog);
     if(tot&&bad>tot*0.5)throw new Error(bad.toLocaleString()+' dari '+tot.toLocaleString()+' titik berkoordinat tidak masuk akal — file tidak terbaca benar. Bila ini STR biner Surpac, simpan ulang sebagai STR teks (ASCII) atau DXF lalu import lagi.');
     for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,z0:z0<1e17?z0:NaN,z1:z1>-1e17?z1:NaN,buang:bad,recLen:G.lastRecLen};};
@@ -11964,6 +11991,8 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
     ST.forEach(function(a,k){if(!useA[k]){VAL[k]=null;return;}var o=VAL[k],q=a.type===3?new Int32Array(c):new Float32Array(c);if(o)q.set(o.subarray(0,n));VAL[k]=q;});cap=c;};
   alloc(cap);
   var nRead=0,nZ=0,nPit=0,nTopo=0,nTopoOut=0,maxL=0,off=H.data,CH=SA.MDL_CH,done=false,lastY=Date.now();
+  /* 0.24.83: opt.maxN = batas blok yang disimpan; kelebihannya hanya dihitung per RL puncak blok (HB, pias 0,25 m) supaya memori tidak habis */
+  var maxN=opt.maxN>0?opt.maxN:Infinity,nOver=0,HB=isFinite(maxN)?new Float64Array(Math.ceil(H.extent[2]/0.25)+2):null;
   var cnt=ST.length,isC=ST.map(function(a){return a.type===3;}),isI=ST.map(function(a){return a.type===1;});
   while(off<N&&!done){if(opt.cancel&&opt.cancel())throw new Error('Pembacaan dibatalkan.');
     var end=Math.min(N,off+CH),u=new Uint8Array(await f.slice(off,end).arrayBuffer());
@@ -11975,7 +12004,8 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
       if(cz+hz<=zLo||cz-hz>=zHi){keep=false;nZ++;}
       else if(PG){var zp=SA.surfAt(PG,cx,cy);if(!(zp<cz+hz)){keep=false;nPit++;}}
       if(keep&&TG){var zt=SA.surfAt(TG,cx,cy);if(zt===zt){if(!(cz-hz<zt)){keep=false;nTopo++;}}else nTopoOut++;}
-      if(keep&&n>=cap)alloc(Math.ceil(cap*1.6));
+      if(keep&&HB){var hb=Math.ceil((cz+hz-O[2])/0.25-1e-9)-1;/* pias menurut PUNCAK blok: sama dengan syarat RL bawah (puncak > RL) */if(hb<0)hb=0;if(hb<HB.length)HB[hb]++;if(n>=maxN){keep=false;nOver++;}}
+      if(keep&&n>=cap)alloc(Math.min(Math.ceil(cap*1.6),isFinite(maxN)?Math.max(maxN,65536):Infinity));
       for(var k=0;k<cnt;k++){if(isC[k]){if(q+4>L){p=st;break rec;}var c=dv.getInt32(q);q+=4;if(c<0){var e=q;while(e<L&&u[e]!==0)e++;if(e>=L){p=st;break rec;}dict[-c]=td.decode(u.subarray(q,e));q=e+1;c=-c;}if(keep&&VAL[k])VAL[k][n]=c;}
         else if(isI[k]){if(q+4>L){p=st;break rec;}if(keep&&VAL[k])VAL[k][n]=dv.getInt32(q);q+=4;}
         else{if(q+8>L){p=st;break rec;}if(keep&&VAL[k])VAL[k][n]=dv.getFloat64(q);q+=8;}}
@@ -12002,7 +12032,7 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
   var ks2=Object.keys(szs).sort(function(a,b){return szs[b]-szs[a];});m.sizes=ks2.slice(0,3).map(function(v){return LX[v]+'×'+LY[v]+'×'+LZ[v];}).join(', ')+' m (sub-blok, '+ks2.length+' ukuran)';
   var fd=[];if(isFinite(zLo)||isFinite(zHi))fd.push('RL '+(isFinite(zLo)?zLo:'min')+'–'+(isFinite(zHi)?zHi:'max'));if(PG)fd.push('di dalam desain pit');if(TG)fd.push('di bawah topografi');
   m.mdl={expr:(function(){var o={};A.forEach(function(a){if(a.calc&&a.expr)o[a.name]=String(a.expr);});return o;})(),origin:O,root:RT,extent:H.extent,levels:maxL,rot:rot,attrs:A.map(function(a){return a.name+(a.calc?' (kalkulasi)':'');}),notes:notes,ms:Date.now()-t0,
-    nRead:nRead,flt:fd.join(' · '),hraw:H.hraw,nmA:H.nmA,nmB:H.nmB,st:ST.map(function(a){return{name:a.name,type:a.type,def:a.def};}),maxL:maxL,drop:{rl:nZ,pit:nPit,topo:nTopo},topoOut:nTopoOut,file:H.fname,size:N};
+    nRead:nRead,flt:fd.join(' · '),hraw:H.hraw,nmA:H.nmA,nmB:H.nmB,st:ST.map(function(a){return{name:a.name,type:a.type,def:a.def};}),maxL:maxL,drop:{rl:nZ,pit:nPit,topo:nTopo},topoOut:nTopoOut,file:H.fname,size:N,over:nOver,hist:nOver?HB:null};
   if(TG&&nTopoOut)notes.push(nTopoOut.toLocaleString()+' blok di luar cakupan topografi tetap dimuat');
   if(rot)m.warn='Model .mdl ini memakai rotasi; rotasi belum diterapkan.';
   if(!n)throw new Error('Tidak ada blok yang lolos filter ('+(fd.join(', ')||'tanpa filter')+'). Dari '+nRead.toLocaleString()+' blok: '+nZ.toLocaleString()+' di luar RL, '+nPit.toLocaleString()+' di luar pit, '+nTopo.toLocaleString()+' di atas topografi.');
@@ -12070,11 +12100,18 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
        LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
        blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
        teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
-    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
-      try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+    if(opt&&(opt.pit||opt.topo)){var mx=SA.mdlMaxBlk(),lebih='',m0=await _r.call(this,f,prog,Object.assign({},opt,{maxN:mx})),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
+      /* 0.24.83 (pemilik 14 Nov 2026: 39.479.029 blok lolos filter pit -> aplikasi error kehabisan memori). Blok yang lolos
+         filter dibatasi mx; bila lebih, jumlah per RL dari bacaan pertama dipakai memilih bagian TERATAS yang muat, lalu
+         file dibaca sekali lagi hanya untuk rentang itu. */
+      if(m0.mdl.over){var HB=m0.mdl.hist,zB=m0.mdl.origin[2],tot=m0.n+m0.mdl.over,ak=0,b=HB.length-1;for(;b>=0;b--){if(ak+HB[b]>mx&&ak>0)break;ak+=HB[b];if(ak>mx)break;}
+        var zCut=zB+Math.max(0,b+(ak>mx?0:1))*0.25,zTop=isFinite(opt.zMax)?opt.zMax:zB+m0.mdl.extent[2];m0=null;
+        m0=await _r.call(this,f,prog,Object.assign({},opt,{zMin:zCut,maxN:Math.min(Math.max(ak,mx),mx*3)}));
+        lebih='Model sangat besar: '+tot.toLocaleString()+' blok lolos filter, melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok). Yang dimuat hanya bagian teratas, RL '+zCut+' \u2013 '+zTop+' ('+m0.n.toLocaleString()+' blok). Rentang berikutnya: isi RL atas '+zCut+' (RL bawah lebih rendah). '+(opt.topo?'':' Nyalakan juga "Hanya di bawah topografi asbuilt" supaya blok udara di atas topografi tidak ikut dihitung.')+' Angka seluruh model: Ringkasan seluruh model per RL.';}
+      try{var M0=m0.mdl;if(lebih)m0.warn=(m0.warn?m0.warn+' ':'')+lebih;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
         /* 0.24.82: path file disimpan supaya "Ringkasan seluruh model per RL" tetap dihitung backend atas SELURUH file */
         if(pth){M0.path=pth;M0.bigPath=1;SA.mdlPathSave(f,pth);}
-        if(m0.n>mx)m0.warn=(m0.warn?m0.warn+' ':'')+'Blok termuat '+m0.n.toLocaleString()+' melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok); tampilan bisa lambat. Persempit RL bawah / RL atas bila perlu.';}catch(x){}return m0;}
+        }catch(x){}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _r.apply(this,arguments);
     try{return await SA.mdlBig(f,path,prog,opt||{},_r);}
     catch(e){if(e.noFallback||/dibatalkan/.test(e.message)||(opt&&opt.cancel&&opt.cancel()))throw e;console.warn('[GC-Ex] backend .mdl gagal, baca langsung:',e);
@@ -12228,7 +12265,8 @@ SA.surfGrid=function(lines,mode){var segs=[],cur=[];(lines||[]).forEach(function
   var Z=new Float32Array(NN),KN=new Uint8Array(NN);for(var q=0;q<NN;q++){if(K[q]){Z[q]=S[q]/K[q];KN[q]=1;}}S=K=null;
   SA.gridFill(Z,KN,nx,ny);
   /* 0.24.60 (pemilik 10-11-2026): Z sel = TRIANGULASI vertex string (seperti DTM Surpac, web-src/tinz.js); rata-rata per sel + isian piramida di atas hanya cadangan di luar segitiga */
-  if(window.TINZ){var TPv=[];segs.forEach(function(P){P.forEach(function(p){TPv.push({x:p[0],y:p[1],z:p[2]});});});var TN=TINZ(TPv,{faktor:(window.TIN&&TIN.faktor)||8});if(TN){for(var jy=0;jy<ny;jy++)for(var ix2=0;ix2<nx;ix2++){var zv=TN.f(x0+(ix2+0.5)*c,y0+(jy+0.5)*c);if(zv!=null&&isFinite(zv))Z[jy*nx+ix2]=zv;}}}
+  if(window.TINZ){var TPv=[];segs.forEach(function(P){P.forEach(function(p){TPv.push({x:p[0],y:p[1],z:p[2]});});});var SP=null;if(window.TIN&&TIN.soup){var s_x=[],s_y=[],s_z=[];segs.forEach(function(P){P.forEach(function(p){s_x.push(p[0]);s_y.push(p[1]);s_z.push(p[2]);});s_x.push(null);s_y.push(null);s_z.push(null);});SP=TIN.soup({x:s_x,y:s_y,z:s_z});}/* 0.24.83: DXF 3DFACE = segitiga DTM asli */
+    var TN=SP?TINZ(null,{tri:SP}):TINZ(TPv,{faktor:(window.TIN&&TIN.faktor)||8});if(TN){for(var jy=0;jy<ny;jy++)for(var ix2=0;ix2<nx;ix2++){var zv=TN.f(x0+(ix2+0.5)*c,y0+(jy+0.5)*c);if(zv!=null&&isFinite(zv))Z[jy*nx+ix2]=zv;}}}
   /* mask cakupan */
   var M=new Uint8Array(NN),polys=[];
   if(mode==='crest'){segs.forEach(function(P){if(P.length<4)return;var a=P[0],b=P[P.length-1];if(Math.hypot(a[0]-b[0],a[1]-b[1])<=Math.max(2*c,1.5))polys.push(P);});}
@@ -13222,7 +13260,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.82';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.83';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

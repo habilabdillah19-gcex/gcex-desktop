@@ -50,11 +50,18 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
        LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
        blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
        teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
-    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
-      try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+    if(opt&&(opt.pit||opt.topo)){var mx=SA.mdlMaxBlk(),lebih='',m0=await _r.call(this,f,prog,Object.assign({},opt,{maxN:mx})),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
+      /* 0.24.83 (pemilik 14 Nov 2026: 39.479.029 blok lolos filter pit -> aplikasi error kehabisan memori). Blok yang lolos
+         filter dibatasi mx; bila lebih, jumlah per RL dari bacaan pertama dipakai memilih bagian TERATAS yang muat, lalu
+         file dibaca sekali lagi hanya untuk rentang itu. */
+      if(m0.mdl.over){var HB=m0.mdl.hist,zB=m0.mdl.origin[2],tot=m0.n+m0.mdl.over,ak=0,b=HB.length-1;for(;b>=0;b--){if(ak+HB[b]>mx&&ak>0)break;ak+=HB[b];if(ak>mx)break;}
+        var zCut=zB+Math.max(0,b+(ak>mx?0:1))*0.25,zTop=isFinite(opt.zMax)?opt.zMax:zB+m0.mdl.extent[2];m0=null;
+        m0=await _r.call(this,f,prog,Object.assign({},opt,{zMin:zCut,maxN:Math.min(Math.max(ak,mx),mx*3)}));
+        lebih='Model sangat besar: '+tot.toLocaleString()+' blok lolos filter, melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok). Yang dimuat hanya bagian teratas, RL '+zCut+' \u2013 '+zTop+' ('+m0.n.toLocaleString()+' blok). Rentang berikutnya: isi RL atas '+zCut+' (RL bawah lebih rendah). '+(opt.topo?'':' Nyalakan juga "Hanya di bawah topografi asbuilt" supaya blok udara di atas topografi tidak ikut dihitung.')+' Angka seluruh model: Ringkasan seluruh model per RL.';}
+      try{var M0=m0.mdl;if(lebih)m0.warn=(m0.warn?m0.warn+' ':'')+lebih;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
         /* 0.24.82: path file disimpan supaya "Ringkasan seluruh model per RL" tetap dihitung backend atas SELURUH file */
         if(pth){M0.path=pth;M0.bigPath=1;SA.mdlPathSave(f,pth);}
-        if(m0.n>mx)m0.warn=(m0.warn?m0.warn+' ':'')+'Blok termuat '+m0.n.toLocaleString()+' melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok); tampilan bisa lambat. Persempit RL bawah / RL atas bila perlu.';}catch(x){}return m0;}
+        }catch(x){}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _r.apply(this,arguments);
     try{return await SA.mdlBig(f,path,prog,opt||{},_r);}
     catch(e){if(e.noFallback||/dibatalkan/.test(e.message)||(opt&&opt.cancel&&opt.cancel()))throw e;console.warn('[GC-Ex] backend .mdl gagal, baca langsung:',e);
