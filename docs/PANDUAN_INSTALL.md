@@ -4776,3 +4776,15 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Status bar navy: koordinat kursor (E · N · RL) dan VE, ditambah info yang sudah ada.
 - Kompas 3D di kanan atas tampilan 3D (klik = menghadap Utara). Jendela pop-up dan legenda berkepala navy.
 - Hitungan apa pun tidak berubah. Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 205. Ore Works 0.4.0 — Menu bertingkat & satu panel
+
+- Menu **Dataset bor, Plan bor, Topografi, Struktur, Pemetaan** membuka daftar submenu (tanda ▾ di menu).
+  Submenu bertanda ▸ membuka flyout ke samping, mis. *Pemetaan → Tampilan pemetaan ▸ → Ukuran & perbesar*.
+- Submenu dibuka sebagai **satu panel float kecil** berisi bagian itu saja. Membuka submenu lain mengganti panel tersebut
+  di posisi yang sama, sehingga panel tidak bertumpuk.
+- ⇤ = tempel panel ke panel kiri, ⇱ = lepas lagi jadi float, ✕ = tutup. Mode terakhir dipakai untuk panel berikutnya.
+- Menu pendek (File, Tampilan, Data Bor, Filter, Wireframe, Target, Bantuan) tetap langsung membuka panelnya.
+- Pemetaan: *Tebal bawaan* vein kini ada di **Bentuk vein 3D**; lebar channel bawaan, garis lain dan perbesar tampilan ada di
+  **Ukuran & perbesar**.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.

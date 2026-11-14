@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.3.0';</script>
+<script>window.GCEX_VER='0.4.0';</script>
 <style>
 html,body{margin:0;height:100%;font-family:Inter,"Segoe UI",Arial,sans-serif;background:#f6f7f9;color:#1d2433}
 #wrap{display:flex;height:100vh}
@@ -169,6 +169,7 @@ body.rp #rpan{display:flex}
 <button id="flx">Reset filter</button>
 <div id="fls" class="note"></div>
 <h2>Dataset pemboran tambahan</h2>
+<div class="note subh"><b>Impor tabel (Collar, Survey, Assay, Geologi)</b></div>
 <div class="note">Impor tiap tabel terpisah (CSV), lalu klik <b>Proses dataset</b>. Boleh hanya sebagian, mis. hanya Assay atau hanya Geologi untuk lubang yang sudah ada.</div>
 <div class="slot"><div class="fl"><b style="width:56px">Collar</b><span id="dss-collar" class="note" style="flex:1;min-width:0;word-break:break-all"></span><label class="fbtn" style="padding:2px 7px">Pilih<input type="file" id="dsf-collar" accept=".csv,.txt" style="display:none"></label><button id="dsx-collar" style="padding:1px 6px;color:#c62828;display:none" title="Lepas file">&#10005;</button></div></div>
 <div class="slot"><div class="fl"><b style="width:56px">Survey</b><span id="dss-survey" class="note" style="flex:1;min-width:0;word-break:break-all"></span><label class="fbtn" style="padding:2px 7px">Pilih<input type="file" id="dsf-survey" accept=".csv,.txt" style="display:none"></label><button id="dsx-survey" style="padding:1px 6px;color:#c62828;display:none" title="Lepas file">&#10005;</button></div></div>
@@ -179,15 +180,19 @@ body.rp #rpan{display:flex}
 <div class="fl">Jenis lubang <select id="dsk"><option value="auto">Otomatis (PDH/MDH/DDH = eksplorasi)</option><option value="GC">GC</option><option value="EKS">Eksplorasi</option></select></div>
 <button id="dsgo">Proses dataset</button><button id="dsclr">Kosongkan pilihan</button>
 <div id="dsw" class="note"></div>
-<div class="fl" style="margin-top:6px">Warna lubang <select id="hcm"><option value="au">Kadar Au (g/t) · semua lubang</option></select></div>
+<div class="note subh" style="margin-top:8px"><b>Warna lubang</b></div>
+<div class="fl">Warna lubang <select id="hcm"><option value="au">Kadar Au (g/t) · semua lubang</option></select></div>
 <div id="hcl" class="note"></div>
+<div class="note subh" style="margin-top:8px"><b>Daftar dataset</b></div>
 <div id="dsl"></div>
 <h2>Plan bor</h2>
+<div class="note subh"><b>Impor &amp; plan aktif</b></div>
 <div class="note">Impor rencana bor (CSV: Drillhole Name / Hole_ID, Easting, Northing, Elevation, Azimuth, Dip, Target Depth). Bisa beberapa file; tiap plan bisa diedit dan diekspor lagi.</div>
 <label class="fbtn">&#8679; Impor plan bor (.csv)<input type="file" id="plf" multiple accept=".csv,.txt" style="display:none"></label>
 <button id="plnew">+ Plan baru (hari ini)</button>
 <div id="plmsg" class="note"></div>
 <div class="fl" style="margin-top:6px">Plan aktif <select id="plact"></select></div>
+<div class="note subh" style="margin-top:8px"><b>Parameter titik bor</b></div>
 <div class="fl">Bench <input id="plBench" style="width:70px;flex:none"> No. berikut <input id="plSeq" type="number" step="1" style="width:60px;flex:none"></div>
 <div class="fl">Format nama <input id="plFmt" value="{BENCH}_{NO}"></div><div id="plNameEx" class="note"></div>
 <div class="fl">Az <input id="plAz" type="number" step="any"> Dip <input id="plDip" type="number" step="any"> Depth <input id="plTd" type="number" step="any"> m</div>
@@ -196,16 +201,17 @@ body.rp #rpan{display:flex}
 <div class="fl">Distance <input id="plDist" type="number" step="any" value="10"> Extension <input id="plExt" type="number" step="any" value="0"></div>
 <div class="fl">Lift rate <input id="plLift" type="number" step="any" value="0"> Drift rate <input id="plDrift" type="number" step="any" value="0"></div>
 <div class="fl">Comment <input id="plCm"></div><label><input type="checkbox" id="plRound" checked>Bulatkan elevasi ke meter (ekspor)</label></div></details>
-<div style="margin-top:6px"><b>Buat titik langsung di tampilan 3D</b></div>
+<div class="note subh" style="margin-top:8px"><b>Buat titik di 3D</b></div>
 <div class="fl" id="pltools"><button data-t="pt">Titik</button><button data-t="line">Garis</button><button data-t="grid">Grid area</button></div>
 <div class="fl">Spasi <input id="plSu" type="number" step="any" value="10"> m · antar baris <input id="plSv" type="number" step="any" value="10"> m <label style="margin:0;gap:3px"><input type="checkbox" id="plStag" checked>zigzag</label></div>
 <div class="note">Titik: klik untuk menambah, tarik titik untuk memindah, Shift+klik untuk menghapus. Garis: tekan–tarik–lepas, titik tiap spasi. Grid: klik sudut-sudut area, klik ganda / klik titik pertama untuk selesai (baris searah azimuth). Esc = selesai. Paling mudah dari tampilan Plan.</div>
 <div class="fl"><button id="plall" title="Terapkan Az, Dip, Depth dan elevasi di atas ke semua titik plan aktif">Terapkan ke semua</button><button id="plren">Nomori ulang</button><button id="plclr">Hapus semua titik</button></div>
 <div class="fl">Jarak min. ke lubang lama <input id="plMin" type="number" step="any" value="3" style="width:50px;flex:none"> m</div>
 <div id="plSum2" class="note"></div>
-
+<div class="note subh" style="margin-top:8px"><b>Daftar titik plan</b></div>
 <div id="pll"></div>
 <h2>Topografi &amp; desain pit</h2>
+<div class="note subh"><b>Impor topografi &amp; desain pit</b></div>
 <div class="fl">Impor sebagai <select id="sfk"><option value="topo">Topografi</option><option value="pit">Desain pit</option></select></div>
 <label class="fbtn">&#8679; Impor string (.str / .dxf), bisa beberapa file<input type="file" id="sff" multiple accept=".str,.dxf,.txt" style="display:none"></label>
 <div id="sfw" class="note">String Surpac (.str teks atau biner) atau DXF ber-elevasi, koordinat sama dengan data bor. Dibuat DTM (triangulasi) seperti Surpac.</div>
@@ -230,6 +236,7 @@ body.rp #rpan{display:flex}
 <div id="wil"></div>
 <label><input type="checkbox" id="wie">Tampilkan garis segitiga wireframe</label>
 <h2>Struktur</h2>
+<div class="note subh"><b>Tampilan struktur</b></div>
 <div class="note">Dua kelompok: <b>struktur geologi</b> (sesar, kekar, bedding, foliasi …) dan <b>struktur vein</b> (pengukuran singkapan vein, veinlet …). Berlaku untuk titik pengukuran dan bidang terdaftar.</div>
 <label><input type="checkbox" id="stkg" checked><span class="sw" style="background:#d32f2f"></span>Tampilkan struktur geologi</label>
 <label><input type="checkbox" id="stkv" checked><span class="sw" style="background:#f9a825"></span>Tampilkan struktur vein</label>
@@ -265,21 +272,24 @@ body.rp #rpan{display:flex}
 <div class="fl"><button id="stopen">&#9881; Interpretasi struktur (Analisis)</button></div>
 <div class="fl">Ekspor <button id="ststr">.str</button><button id="stdxf">.dxf</button><button id="stcsv">CSV</button></div>
 <h2>Pemetaan lapangan</h2>
-<div class="note">Wall mapping &amp; channel sampling: impor titik pick-up survei, digit di 3D menjadi fitur (vein, channel, kontak, struktur, poligon, grab, observasi), isi atribut, lalu ekspor dan buat layout peta.</div>
+<div class="note subh"><b>Lapisan &amp; label</b></div>
 <label><input type="checkbox" data-l="fmp" checked><span class="sw" style="background:#e8590c;border-radius:50%"></span>Titik pick-up</label>
 <label><input type="checkbox" data-l="fm" checked><span class="sw" style="background:linear-gradient(90deg,#c92a2a,#1971c2,#2b8a3e)"></span>Fitur pemetaan</label>
 <div class="fl"><label style="margin:0"><input type="checkbox" id="fmlab" checked>Label fitur</label><label style="margin:0"><input type="checkbox" id="fmsid">Label Sample_ID</label></div>
-<div class="fl">Ukuran sebenarnya: channel <input id="fmchw" type="number" step="any" value="30" style="width:44px;flex:none"> cm · vein <input id="fmvnw" type="number" step="any" value="1" style="width:40px;flex:none"> m</div>
-<div class="fl">garis lain <input id="fmlnw" type="number" step="any" value="0.15" style="width:44px;flex:none"> m · perbesar tampilan × <input id="fmsk" type="number" step="any" value="1" style="width:40px;flex:none"></div>
+<div class="note subh" style="margin-top:6px"><b>Ukuran &amp; perbesar</b></div>
+<div class="fl">Lebar channel bawaan <input id="fmchw" type="number" step="any" value="30" style="width:44px;flex:none"> cm</div>
+<div class="fl">Garis lain <input id="fmlnw" type="number" step="any" value="0.15" style="width:44px;flex:none"> m</div>
+<div class="fl">Perbesar tampilan × <input id="fmsk" type="number" step="any" value="1" style="width:40px;flex:none"></div>
+<div class="note">Lebar bawaan dipakai bila channel belum punya isian <b>Lebar channel (cm)</b>. Perbesar hanya untuk tampilan (×1 = skala sebenarnya; mis. ×5 agar channel 30 cm terlihat dari jauh), data tidak berubah.</div>
 <div class="note subh" style="margin-top:6px"><b>Bentuk vein 3D</b></div>
 <div class="fl">Bentuk <select id="fmvm"><option value="urat">Lembaran urat (tebal + kedalaman)</option><option value="tube">Tabung (versi lama)</option></select></div>
+<div class="fl">Tebal bawaan <input id="fmvnw" type="number" step="any" value="1" style="width:40px;flex:none"> m <span class="note" style="margin:0">(bila isian Tebal kosong)</span></div>
 <div class="fl">Kedalaman bawaan <input id="fmvdep" type="number" step="any" value="15" style="width:44px;flex:none"> m · dip bawaan <input id="fmvdip" type="number" step="any" value="80" style="width:40px;flex:none">&deg;</div>
 <div class="fl">Variasi tebal (pinch &amp; swell) <input id="fmvamp" type="number" step="any" value="30" style="width:40px;flex:none"> % <label style="margin:0"><input type="checkbox" id="fmvsym" checked>Simbol dip</label></div>
 <div class="note">Vein tampil sebagai lembaran urat: tebal dari isian <b>Tebal (m)</b>, miring menurut <b>Dip</b> &amp; <b>Dip direction</b>, menerus ke bawah sejauh <b>Kedalaman ke bawah (m)</b> di formulir atribut. Bila dip/arah kosong, dipakai dip bawaan dan vein miring ke <b>kanan</b> arah digitasi (tombol <i>Balik arah</i> membaliknya).</div>
 <div class="note subh" style="margin-top:6px"><b>Warna kadar channel &amp; grab</b></div>
 <div class="fl">Unsur <input id="fmgel" list="fmgell" placeholder="otomatis Au" style="width:96px;flex:none"><datalist id="fmgell"></datalist><select id="fmgm"><option value="cls">Kelas kadar</option><option value="grad">Gradasi</option></select></div>
 <div class="fl">Batas kelas <input id="fmgcl" value="0.4; 0.5; 1; 3" title="1 sampai 6 angka, pisahkan dengan titik koma. Dipakai di 3D, legenda dan layout peta."></div>
-<div class="note">Angka di atas dipakai bila fitur belum punya ukuran sendiri. Channel memakai isian <b>Lebar channel (cm)</b>, vein memakai <b>Tebal (m)</b> di formulir atributnya. Perbesar ×1 = skala sebenarnya.</div>
 <div class="note subh" style="margin-top:8px"><b>1 · Titik pick-up</b></div>
 <label class="fbtn">&#8679; Impor pick-up (.csv / .txt / .str)<input type="file" id="fmpf" multiple accept=".csv,.txt,.str" style="display:none"></label>
 <div id="fmpw" class="note">CSV <code>ID, East, North, RL, Code</code> dengan atau tanpa baris judul (pemisah koma / titik koma / tab), atau string Surpac .str.</div>
@@ -3687,6 +3697,78 @@ function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{co
   if(w)w.style.display='none';if(wrap)wrap.style.display='';if(nt)nt.style.display='';return _od.apply(this,arguments);};
  const _hb1=holesBuild;holesBuild=function(){GD.cache=null;return _hb1.apply(this,arguments);};
 }
+
+/* ===================== Ore Works 0.4 · menu bertingkat (cascading) + panel float per submenu =====================
+   Menu atas yang bagiannya punya sub-bagian (.subh) membuka daftar submenu; submenu bergrup membuka flyout ke samping.
+   Memilih submenu membuka panel float kecil berisi sub-bagian itu saja. Panel bisa ditempel ke panel kiri (⇤) dan
+   dilepas lagi (⇱). Beberapa panel boleh terbuka bersamaan. Menu pendek (tanpa sub-bagian) tetap membuka satu panel. */
+(function(){const bar=document.getElementById('mbar'),side=document.getElementById('side'),cv=document.getElementById('cv');if(!bar||!side||!cv)return;
+ const GRP={'Pemetaan lapangan':[{g:'Tampilan pemetaan',it:['Lapisan & label','Ukuran & perbesar','Bentuk vein 3D','Warna kadar channel & grab']}]};
+ const EXTRA={'Pemetaan lapangan':[['Panel Data (kanan)',()=>{if(window.rpanSet)rpanSet(true);}]]};
+ const txt=e=>e.textContent.replace(/[▸▾]/g,'').replace(/\s+/g,' ').trim(),esc2=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const secOf=n=>{const h=[...side.querySelectorAll(':scope > h2')].find(x=>x.firstChild.textContent.trim()===n);return h?{h,b:h.nextElementSibling}:null;};
+ const subsOf=n=>{const S=secOf(n);if(!S)return [];return [...document.querySelectorAll('.subh')].filter(x=>{let p=x;while(p&&p!==document.body){if(p===S.b)return true;if(p.dataset&&p.dataset.sec===n)return true;p=p.parentNode;}return false;}).map(x=>({t:txt(x),h:x}));};
+ /* ---- dok kiri ---- */
+ const dock=document.createElement('div');dock.id='sdock';side.insertBefore(dock,side.firstChild);
+ const P=new Map();let zt=40,LM='float';
+ const nDock=()=>[...P.values()].filter(o=>o.st==='dock').length;
+ const _sa=window.sideAuto;window.sideAuto=()=>{if(nDock())window.sideShow&&sideShow(true);else if(_sa)_sa();};
+ const sync=()=>{bar.querySelectorAll('button[data-n]').forEach(b=>{const n=b.dataset.n,on=(window.accIsPop&&accIsPop(n))||[...P.values()].some(o=>o.n===n);b.classList.toggle('on',on);});};
+ const _ms=window.mbSync;window.mbSync=window.tbarSync=()=>{if(_ms)_ms();sync();};
+ const restore=o=>{const sb=o.sb;sb.classList.toggle('shut',!o.h.classList.contains('open'));o.ph.parentNode.insertBefore(sb,o.ph);o.ph.remove();};
+ const close=k=>{const o=P.get(k);if(!o)return;restore(o);o.w.remove();P.delete(k);sideAuto();sync();window.dispatchEvent(new Event('resize'));};
+ const frame=(o,mode)=>{const w=document.createElement('div');const fl=mode==='float';w.className=fl?'flw popw subw':'sdk';w.dataset.k=o.k;
+  w.innerHTML='<div class="'+(fl?'flh':'sdkh')+'"><b title="'+esc2(o.n+' › '+o.t)+'"><span class="sdp">'+esc2(o.sn)+' ›</span> '+esc2(o.t)+'</b><span style="flex:1"></span>'+(fl?'<button class="sb-dk" title="Tempel ke panel kiri">&#8676;</button>':'<button class="sb-fl" title="Lepas jadi panel float">&#8689;</button>')+'<button class="sb-x" title="Tutup">&#10005;</button></div><div class="'+(fl?'flb':'sdkb')+'"></div>';
+  w.querySelector('.sb-x').onclick=()=>close(o.k);const d=w.querySelector('.sb-dk,.sb-fl');d.onclick=()=>place(o,fl?'dock':'float');
+  w.addEventListener('mousedown',()=>{if(w.classList.contains('flw'))w.style.zIndex=++zt;});return w;};
+ const place=(o,mode,btn)=>{const sb=o.sb;if(o.w)o.w.remove();const w=frame(o,mode);o.w=w;o.st=mode;LM=mode;w.querySelector('.flb,.sdkb').appendChild(sb);sb.classList.remove('shut');
+  if(mode==='float'){cv.appendChild(w);w.style.zIndex=++zt;const r=cv.getBoundingClientRect(),bb=(btn||bar.querySelector('button[data-n="'+CSS.escape(o.n)+'"]')||bar).getBoundingClientRect(),nf=0;
+   w.style.display='block';const W=w.offsetWidth||330;w.style.left=Math.max(4,Math.min(bb.left-r.left+nf*24,r.width-W-8))+'px';w.style.top=(8+nf*26)+'px';w.style.right='auto';setTimeout(()=>{if(window.flDrag)flDrag(w,w.querySelector('.flh'));},0);}
+  else{dock.appendChild(w);if(window.sideShow)sideShow(true);setTimeout(()=>w.scrollIntoView({block:'nearest'}),30);}
+  sideAuto();sync();window.dispatchEvent(new Event('resize'));};
+ const open=(n,s,btn)=>{const k=n+'|'+s.t;if(P.has(k)){const o=P.get(k);if(o.st==='float')o.w.style.zIndex=++zt;else o.w.scrollIntoView({block:'nearest'});o.w.classList.add('sbflash');setTimeout(()=>o.w.classList.remove('sbflash'),600);return;}
+  let mode=LM,pos=null;for(const q of [...P.values()]){mode=q.st;if(q.st==='float')pos=[q.w.style.left,q.w.style.top,q.w.style.width,q.w.style.height];close(q.k);}closeOld();
+  const sb=s.h.nextElementSibling;if(!sb||!sb.classList.contains('subb'))return;const ph=document.createComment('sub:'+k);sb.parentNode.insertBefore(ph,sb);
+  const o={k,n,t:s.t,h:s.h,sb,ph,sn:(btn&&btn.title)||n};o.sn=(bar.querySelector('button[data-n="'+CSS.escape(n)+'"] .lb')||{}).textContent||n;P.set(k,o);place(o,mode,btn);if(pos&&mode==='float'){o.w.style.left=pos[0];o.w.style.top=pos[1];if(pos[2])o.w.style.width=pos[2];}};
+ const closeOld=except=>{bar.querySelectorAll('button[data-n]').forEach(b=>{const m=b.dataset.n;if(m!==except&&window.accIsPop&&accIsPop(m))accClose(m);});};
+ window.subOpen=(n,t)=>{const s=subsOf(n).find(x=>x.t===t||x.t.startsWith(t));if(s)open(n,s);return !!s;};window.subClose=k=>close(k);window.subAll=(n,on)=>{if(on)subsOf(n).forEach(x=>open(n,x));else [...P.values()].filter(o=>o.n===n).forEach(o=>close(o.k));};window.subPanels=P;
+ /* ---- menu bertingkat ---- */
+ const dd=document.createElement('div');dd.id='cmenu';dd.style.display='none';document.body.appendChild(dd);const fo=document.createElement('div');fo.id='cfly';fo.className='cmenu';fo.style.display='none';document.body.appendChild(fo);dd.className='cmenu';
+ let cur=null;const hide=()=>{dd.style.display=fo.style.display='none';if(cur)cur.classList.remove('cmo');cur=null;};
+ const item=(lab,on,fn,arrow)=>{const d=document.createElement('div');d.className='cmi'+(on?' cmon':'');d.innerHTML='<span>'+esc2(lab)+'</span>'+(arrow?'<i>&#9656;</i>':on?'<i class="ck">&#10003;</i>':'');if(fn)d.onclick=e=>{e.stopPropagation();fn(d);};return d;};
+ const showFly=(row,list,n,btn)=>{fo.innerHTML='';list.forEach(s=>fo.appendChild(item(s.t,P.has(n+'|'+s.t),()=>{hide();open(n,s,btn);})));const r=row.getBoundingClientRect();fo.style.display='block';fo.style.left=Math.min(r.right-2,innerWidth-fo.offsetWidth-6)+'px';fo.style.top=Math.min(r.top-5,innerHeight-fo.offsetHeight-6)+'px';};
+ const menu=(btn)=>{const n=btn.dataset.n;if(window.accIsPop&&accIsPop(n)){accClose(n);sync();}const S=subsOf(n);if(cur===btn){hide();return;}hide();cur=btn;btn.classList.add('cmo');dd.innerHTML='';
+  const used=new Set(),G=GRP[n]||[];
+  for(const g of G){const L=g.it.map(t=>S.find(x=>x.t===t)).filter(Boolean);if(!L.length)continue;L.forEach(x=>used.add(x));const row=item(g.g,L.some(x=>P.has(n+'|'+x.t)),null,true);row.onmouseenter=()=>showFly(row,L,n,btn);row.onclick=e=>{e.stopPropagation();showFly(row,L,n,btn);};dd.appendChild(row);}
+  if(G.length){const hr=document.createElement('hr');dd.appendChild(hr);}
+  S.filter(x=>!used.has(x)).forEach(s=>{const r=item(s.t,P.has(n+'|'+s.t),()=>{hide();open(n,s,btn);});r.onmouseenter=()=>{fo.style.display='none';};dd.appendChild(r);});
+  const ex=EXTRA[n];if(ex){dd.appendChild(document.createElement('hr'));ex.forEach(([l,f])=>{const r=item(l,false,()=>{hide();f();});r.onmouseenter=()=>{fo.style.display='none';};dd.appendChild(r);});}
+  const opn=[...P.values()].filter(o=>o.n===n);if(opn.length){dd.appendChild(document.createElement('hr'));const r=item('Tutup panel',false,()=>{hide();opn.forEach(o=>close(o.k));});r.classList.add('cmmut');dd.appendChild(r);}
+  const b=btn.getBoundingClientRect();dd.style.display='block';dd.style.left=Math.min(b.left,innerWidth-dd.offsetWidth-6)+'px';dd.style.top=(b.bottom+2)+'px';};
+ const hook=()=>{bar.querySelectorAll('button[data-n]').forEach(btn=>{if(btn.dataset.cm||btn.dataset.one)return;const n=btn.dataset.n;if(!subsOf(n).length){btn.dataset.one=1;const f=btn.onclick;btn.onclick=e=>{if(!(window.accIsPop&&accIsPop(n))){[...P.values()].forEach(q=>close(q.k));closeOld(n);}hide();return f&&f.call(btn,e);};return;}btn.dataset.cm=1;btn.classList.add('cmb');btn.onclick=e=>{e.stopPropagation();menu(btn);};btn.onmouseenter=()=>{if(cur&&cur!==btn)menu(btn);};});};
+ hook();setTimeout(hook,0);
+ document.addEventListener('mousedown',e=>{if(!cur)return;if(dd.contains(e.target)||fo.contains(e.target)||cur.contains(e.target))return;hide();},true);
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&cur)hide();});window.addEventListener('resize',()=>{if(cur)hide();setTimeout(()=>{const W=cv.clientWidth;for(const o of P.values())if(o.st==='float'){const w=o.w,l=parseFloat(w.style.left)||0;if(l+w.offsetWidth>W-4)w.style.left=Math.max(4,W-w.offsetWidth-8)+'px';}},60);});
+ /* gaya */
+ const css=document.createElement('style');css.textContent=`
+.cmenu{position:fixed;z-index:9999;background:#fff;border:1px solid #8fa1bd;border-radius:4px;box-shadow:0 6px 18px #0f1a3340;padding:3px 0;min-width:210px;font:12.5px "Segoe UI",Inter,Arial,sans-serif;color:#1b2a4e}
+.cmenu .cmi{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:5px 12px 5px 14px;cursor:pointer;white-space:nowrap}
+.cmenu .cmi:hover{background:#dfe9fb}.cmenu .cmi i{font-style:normal;color:#52596a;font-size:11px}.cmenu .cmi i.ck{color:#1f6feb}
+.cmenu .cmi.cmon span{font-weight:600}.cmenu .cmmut{color:#667085}
+.cmenu hr{border:0;border-top:1px solid #e3e7ee;margin:3px 0}
+#mbar .mbb.cmb:after{content:" \\25BE";font-size:9px;opacity:.6}
+#mbar .mbb.cmo{background:#cfe0fb!important;border-color:#9fc0f7!important}
+.subw{width:330px}.subw .flb{max-height:calc(100vh - 160px)}.subw .flh .sdp,.sdk .sdp{color:#8a92a3;font-weight:400}
+.subw .flb .subb,.sdk .subb{display:block!important}
+#sdock:empty{display:none}#sdock{margin:-6px -8px 8px}
+.sdk{border:1px solid #c9d3e1;border-radius:4px;margin-bottom:8px;background:#fbfcfe}
+.sdkh{display:flex;align-items:center;gap:4px;padding:4px 8px;background:#1b2a4e;color:#fff;border-radius:3px 3px 0 0;font-size:12px}
+.sdkh b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sdkh .sdp{color:#b8c4dc!important}
+.sdkh button{padding:0 6px!important;margin:0!important;background:transparent!important;border:1px solid #ffffff55!important;color:#fff!important;min-height:0;line-height:16px}
+.sdkb{padding:6px 10px 8px;font-size:12px}.sdkb label{display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer}
+.sbflash{outline:2px solid #f2b705;outline-offset:1px}`;document.head.appendChild(css);
+ /* sisi kiri: isi lama tetap tersembunyi, hanya dok yang tampil bila ada */
+ sync();})();
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */

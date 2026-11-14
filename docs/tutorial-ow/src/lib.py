@@ -25,6 +25,9 @@ async def shot(pg,name,hl=(),clip=None,pad=4):
         x,y,w,h=clip;im=im.crop((int(x*sc),int(y*sc),int((x+w)*sc),int((y+h)*sc)))
     im.save(p);print('shot',name);return p
 async def menu(pg,n,open_=True):
+    cm=await pg.evaluate("(n)=>{const b=document.querySelector('#mbar .mbb[data-n=\"'+n+'\"]');return !!(b&&b.dataset.cm)}",n)
+    if cm:
+        await pg.evaluate("([n,o])=>subAll(n,o)",[n,open_]);await pg.wait_for_timeout(400);return
     on=await pg.evaluate("(n)=>{const b=document.querySelector('#mbar .mbb[data-n=\"'+n+'\"]');return b&&b.classList.contains('on')}",n)
     if on!=open_: await pg.click(f'#mbar .mbb[data-n="{n}"]')
     await pg.wait_for_timeout(400)
