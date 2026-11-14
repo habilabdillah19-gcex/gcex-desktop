@@ -487,8 +487,12 @@ function buildMenu() {
       { label: 'Buka folder log', click: () => shell.openPath(logDir) },
       { label: 'Panduan AI lokal (Ollama)', visible: G.theme === 'core', click: () => { const f = path.join(legalDir(), '..', 'docs', 'PANDUAN_CORE.html'); shell.openPath(fs.existsSync(f) ? f : legalDir()); } },
       { label: 'Hapus cache block model besar', visible: G.theme !== 'core', click: async () => {
+          // 0.24.82: folder cache bisa dipindah (Import block model > file besar) -> tampilkan folder & ukuran yang sebenarnya
+          let info = { root: path.join(app.getPath('userData'), 'cache', 'mdl'), used: null };
+          try { info = await (await fetch(backend.url + '/mdl/cache')).json(); } catch (e) { /* backend belum siap: pakai folder bawaan */ }
+          const gb = info.used == null ? '' : ' (' + (info.used / 1073741824).toFixed(1).replace('.', ',') + ' GB)';
           const r = await dialog.showMessageBox(mainWin, { type: 'question', buttons: ['Hapus', 'Batal'], defaultId: 1, title: 'Cache block model',
-            message: 'Hapus cache block model .mdl besar?', detail: 'Cache dibuat ulang otomatis saat model dibuka lagi (pembacaan pertama lebih lama). Folder: ' + path.join(app.getPath('userData'), 'cache') });
+            message: 'Hapus cache block model .mdl besar' + gb + '?', detail: 'Cache dibuat ulang otomatis saat model dibuka lagi (pembacaan pertama lebih lama). Folder: ' + info.root });
           if (r.response !== 0) return;
           try { const res = await fetch(backend.url + '/mdl/cache/clear', { method: 'POST' }); const j = await res.json(); dialog.showMessageBox(mainWin, { type: 'info', message: (j.removed || 0) + ' cache dihapus.' }); }
           catch (e) { dialog.showMessageBox(mainWin, { type: 'error', message: 'Gagal menghapus cache: ' + e.message }); }

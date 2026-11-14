@@ -514,6 +514,20 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['Kompas 3D', '<code>cpDraw(rt, us)</code>: vektor dunia diproyeksikan ke sumbu layar kamera (kanan <code>rt</code>, atas <code>us</code>); lingkaran di bidang XY &rarr; elips, jarum U/S, panah Z (titik bila &lt; 7 px).'],
 ]))
 
+B.append('<h3>8.16 Cache .mdl besar & ringkasan per RL (BM 0.24.82)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Folder cache', 'Bawaan <code>GCEX_CACHE/mdl</code> (Electron: <code>userData/cache</code>). Pilihan pengguna disimpan di '
+     '<code>GCEX_CACHE/cache_root.txt</code>; cache ditulis ke <code>&lt;folder&gt;/GC-Ex_cache_mdl</code>. Folder tak tersedia '
+     '(drive dicabut) &rarr; kembali ke bawaan. API: <code>GET /mdl/cache</code> (folder, terpakai, ruang bebas), '
+     '<code>POST /mdl/cache/root {path, hapus_lama}</code> (uji tulis dulu).'],
+    ['Hapus cache', 'Satu pintu: Bantuan &rsaquo; Hapus cache block model besar (<code>POST /mdl/cache/clear</code>). Hanya folder '
+     'ber-<code>meta.json</code> atau berakhiran <code>.tmp</code> yang dihapus, jadi folder lain tak pernah tersentuh.'],
+    ['Ringkasan per RL', 'Model yang dibaca langsung dengan filter pit / topografi menyimpan <code>m.mdl.path</code> + '
+     '<code>bigPath</code>; <code>bsBack()</code> memakai backend. <code>bsRun</code> memanggil <code>/mdl/open</code> sampai '
+     '<i>ready</i> (progres di dialog; cache dibangun sekali) lalu <code>/mdl/benches</code> atas seluruh file. Gagal (disk '
+     'penuh) &rarr; pesan + kotak folder cache. Uji: <code>uji_shell_bm.py</code> S11&ndash;S12.'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

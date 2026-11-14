@@ -18,6 +18,9 @@ Memakai data latihan (fiktif).
   S8 kompas 3D: piringan miring (elips) & panah Z saat pandangan samping; dari atas: elips = lingkaran, Z = titik.
   S9 (0.24.81) .mdl >= 150 MB dengan filter pit/topografi dibaca langsung (tanpa backend); hanya filter RL -> backend.
   S10 (0.24.81) sayatan horizontal di luar RL block model yang baru dimuat dipindah ke tengah rentangnya.
+  S11 (0.24.82) model .mdl besar yang dibaca langsung (filter pit/topografi) -> Ringkasan per RL tetap lewat backend atas
+      seluruh file: cache dibangun dulu dengan progres, lalu /mdl/benches; gagal (disk penuh) -> kotak folder cache tampil.
+  S12 (0.24.82) kotak folder cache: folder, terpakai, ruang bebas, tombol Ganti folder; hapus cache tetap satu pintu (Bantuan).
 Pemakaian: python tools/uji/uji_shell_bm.py [app/index.html]   (build 0.24.78 harus GAGAL di S6)
 """
 from __future__ import annotations
@@ -84,6 +87,17 @@ JS = r"""async function(){
   if($('sMode').value!=='H'){$('sMode').value='H';$('sMode').dispatchEvent(new Event('change',{bubbles:true}));}await w(600);
   var p=$('pos');p.max=Math.max(+p.max,9999);p.value=9000;var e=BX.m.ext;BX.m=Object.assign({},BX.m);SHELL.rlCek();await w(1500);
   R.s10={pos:+p.value,z0:e&&e[4],z1:e&&e[5]};
+  /* S11 */
+  var M0=BX.m.mdl,c11=[],k=0,ms=[];BX.m.mdl=Object.assign({},M0||{},{via:'js',bigPath:1,path:'C:/x/besar.mdl',nRead:88280388,st:[{name:BX.ui.attr,type:1}]});
+  window.gcexDesktop={api:async function(u,b){c11.push(u);if(u==='/mdl/open'){k++;if(k<3){setTimeout(function(){var d=$('bsDlg');ms.push(d?d.textContent:'');},50);return {state:'building',pct:k*40,n:k*1000};}return {state:'ready'};}
+    if(u==='/mdl/benches')return {rows:[],tot:{}};throw new Error('?');}};
+  try{bsOpen();await bsRun();}catch(x){R.e11=String(x);}var okRun=c11.slice();
+  c11.length=0;window.gcexDesktop.api=async function(u){c11.push(u);if(u==='/mdl/cache')return {root:'D:/GC-Ex_cache_mdl',used:0,free:5e11,items:[],custom:true};throw new Error('No space left on device');};
+  await bsRun();await w(300);var dl=$('bsDlg');
+  R.s11={calls:okRun,prog:ms.some(function(t){return /Membangun cache seluruh model/.test(t);}),back:bsBack(),errCard:!!(dl&&dl.querySelector('#mdlCache')),errTxt:dl?/No space/.test(dl.textContent):false};
+  /* S12 */
+  var cc=$('mdlCache');R.s12={txt:cc?cc.textContent:'',btn:cc?[].map.call(cc.querySelectorAll('button'),function(b){return b.textContent;}):[],hapusBtn:document.querySelectorAll('button').length&&[].filter.call(document.querySelectorAll('button'),function(b){return /Hapus cache/i.test(b.textContent);}).length};
+  window.gcexDesktop=D0;BX.m.mdl=M0;if(dl)dl.style.display='none';
   return R;}"""
 
 
@@ -146,6 +160,14 @@ def main() -> int:
     cek(not s9["pit"] and any("/mdl/" in u for u in s9["rl"]), "S9 .mdl besar: filter pit -> baca langsung %s; hanya RL -> backend %s" % (s9["pit"], s9["rl"]))
     s10 = r["s10"]
     cek(s10["z0"] is not None and s10["z0"] - 1e-6 <= s10["pos"] <= s10["z1"] + 1e-6, "S10 sayatan RL 9000 dipindah ke dalam rentang block model %s" % s10)
+    s11 = r["s11"]
+    cek(s11["back"] and s11["calls"][:3] == ["/mdl/open"] * 3 and s11["calls"][-1] == "/mdl/benches" and s11["prog"],
+        "S11 dibaca langsung + filter pit -> Ringkasan per RL lewat backend, cache dibangun dengan progres %s" % s11)
+    cek(s11["errCard"] and s11["errTxt"], "S11 cache gagal (disk penuh) -> pesan + kotak folder cache")
+    s12 = r["s12"]
+    cek("D:/GC-Ex_cache_mdl" in s12["txt"] and "ruang bebas" in s12["txt"] and any("Ganti folder" in b for b in s12["btn"])
+        and any("Kembalikan" in b for b in s12["btn"]) and "Bantuan" in s12["txt"] and not s12["hapusBtn"],
+        "S12 kotak folder cache; hapus cache tetap satu pintu di menu Bantuan %s" % s12)
     cek(not err, "tanpa error halaman %s" % err[:3])
     print("GAGAL (%d)" % len(gagal) if gagal else "LULUS")
     return 1 if gagal else 0

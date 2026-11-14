@@ -4,7 +4,8 @@
    Sekarang ada dua jalur dengan hasil yang sama persis (rumusnya ditiru baris demi baris dari
    backend bench_summary): backend untuk model yang hanya dimuat sepotong, dan JS lokal untuk model
    yang dimuat penuh. Tidak ada lagi syarat ukuran. */
-function bsBack(){var m=BX.m;return !!(m&&m.mdl&&m.mdl.via==='backend'&&m.mdl.path&&window.gcexDesktop&&gcexDesktop.api);}
+/* 0.24.82: juga model .mdl besar yang dibaca LANGSUNG dengan filter pit/topografi (m.mdl.bigPath) -> ringkasan tetap atas seluruh file */
+function bsBack(){var m=BX.m;return !!(m&&m.mdl&&(m.mdl.via==='backend'||m.mdl.bigPath)&&m.mdl.path&&window.gcexDesktop&&gcexDesktop.api);}
 function bsOn(){return !!(BX.m&&(bsBack()||BX.m.n>0));}
 function bsAttrs(){var m=BX.m,st={};
   if(bsBack()&&m.mdl&&m.mdl.st)(m.mdl.st||[]).forEach(function(a){if(a.type!==3)st[a.name]=1;});
@@ -21,8 +22,8 @@ function bsRender(R){var d=$('bsDlg');if(!d)return;var S=bsPar(),m=BX.m,A=bsAttr
     '<label>Cut-off<select onchange="BX.bs.cutA=this.value">'+A.map(function(a){return '<option'+(a===S.cutA?' selected':'')+'>'+bxE(a)+'</option>';}).join('')+'</select></label><label>&ge;<input type=number step=any placeholder="kosong = semua blok" value="'+bxE(S.cut)+'" onchange="BX.bs.cut=this.value"></label>'+
     '<label class=sw style="flex-direction:row;align-items:center"><input type=checkbox '+(S.hide0!==false?'checked':'')+' onchange="BX.bs.hide0=this.checked;bsRender(BX.bsR)">Sembunyikan bench 0 ton</label><button class=btn-pri onclick="bsRun()">Hitung</button>'+(R&&R.rows?'<button onclick="bsCsv()">&#8681; CSV</button>':'')+'</div>'+
     '<div class=hint>Elemen: <b>'+A.map(bxE).join(', ')+'</b> (daftar Elemen laporan; atribut kalkulasi IIF tidak ikut). SG: '+(U.sgCol?'kolom '+bxE(U.sgCol)+(', &le;0 / kosong = '+bxSGeff()+(bxSGkos()==='rep'?' (SG pengganti, cara GC-Ex)':' (seperti Surpac)')):'tetap '+U.sg)+'. Blok masuk bench menurut titik tengahnya (di atas RL bawah, tidak di atas RL atas), sama dengan metode Seperti Surpac.</div>';
-  if(R&&R.err)h+='<div class=warn>&#9888; '+bxE(R.err)+'</div>';
-  if(R&&R.busy)h+='<div class=hint>&#8987; Menghitung&hellip;</div>';
+  if(R&&R.err)h+='<div class=warn>&#9888; '+bxE(R.err)+'</div>'+(R.cache&&SA.mdlCacheHtml?SA.mdlCacheHtml():'');
+  if(R&&R.busy)h+='<div class=hint>&#8987; '+(R.msg?bxE(R.msg):'Menghitung&hellip;')+'</div>';
   if(R&&R.rows){var f=function(a,v){return v==null?'-':(window.elF?elF(a,v):v.toFixed(3));};
     h+='<div class=bstb><table class=pltb><tr><th>RL atas</th><th>RL bawah</th><th>Blok</th><th>Volume (m3)</th><th>Ton</th>'+A.map(function(a){return '<th>'+bxE(a)+'</th>';}).join('')+'</tr>'+
       R.rows.filter(function(r){return S.hide0===false||r.ton>0;}).map(function(r){return '<tr><td>'+lyFmt(r.top)+'</td><td>'+lyFmt(r.bot)+'</td><td>'+r.n.toLocaleString()+'</td><td>'+Math.round(r.vol).toLocaleString()+'</td><td>'+Math.round(r.ton).toLocaleString()+'</td>'+A.map(function(a){return '<td>'+f(a,r.grade[a])+'</td>';}).join('')+'</tr>';}).join('')+
@@ -30,6 +31,10 @@ function bsRender(R){var d=$('bsDlg');if(!d)return;var S=bsPar(),m=BX.m,A=bsAttr
   d.innerHTML=h+'</div>';BX.bsR=R||BX.bsR;}
 async function bsRun(){var S=bsPar(),U=BX.ui,A=bsAttrs(),m=BX.m;bsRender({busy:1});
   if(!bsBack()){setTimeout(function(){try{var R=bsLocal(S,A);R.ver=BX.ver;bsRender(R);}catch(e){bsRender({err:String(e&&e.message||e)});}},20);return;}
+  /* cache seluruh file belum ada (model dibaca langsung): bangun sekali di folder cache, dengan progres */
+  try{for(;;){var st=await gcexDesktop.api('/mdl/open',{path:m.mdl.path});if(st.state==='ready')break;if(st.state==='error')throw new Error(st.error||'cache gagal');
+      bsRender({busy:1,msg:'Membangun cache seluruh model (sekali saja): '+Math.round(st.pct||0)+'% \u00b7 '+(+st.n||0).toLocaleString()+' blok'});await new Promise(function(r){setTimeout(r,800);});}}
+  catch(e){bsRender({err:String(e&&e.message||e),cache:1});return;}
   try{var cut=String(S.cut).trim()===''?null:parseFloat(S.cut);var j=await gcexDesktop.api('/mdl/benches',{path:m.mdl.path,bench:+S.bench,ref:+S.ref,attrs:A,sg_col:U.sgCol||null,sg:+U.sg||2.6,sg_zero:bxSGeff()>0?'rep':'zero',sg_rep:bxSGeff()>0?bxSGeff():null,cut_attr:cut==null?null:S.cutA,cut:cut});
     j.attrs=A;j.par={bench:S.bench,ref:S.ref,cut:cut,cutA:S.cutA};j.ver=BX.ver;bsRender(j);}catch(e){bsRender({err:String(e&&e.message||e)});}}
 /* Mirror persis backend `bench_summary` (backend/gcex_backend/mdl_io.py):

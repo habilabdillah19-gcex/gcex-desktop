@@ -1222,6 +1222,15 @@ B.append('<p>Menu teks di bilah atas dari 0.24.78 dihapus karena isinya sama den
          'Tombol &laquo; di Project Tree hanya menyembunyikan Project Tree; bila Properti di kiri, Properti tetap tampil. Tombol &raquo; di tepi kiri memunculkan Project Tree lagi.</p>')
 B.append(fig_html('prop_kanan', 'Data latihan: Properti ditempel di kanan tampilan 3D (Block Model 0.24.79).'))
 
+B.append('<h3>16k. Folder cache &amp; Ringkasan per RL untuk block model besar (Block Model 0.24.82)</h3>')
+B.append('<p>Block model .mdl yang sangat besar memakai <b>cache</b> di disk (contoh 6,5 GB butuh &plusmn;10,7 GB). Di layar <b>Import block model</b> '
+         'untuk file besar kini tampil folder cache, ukuran terpakai dan ruang bebasnya. Bila drive C: sempit, klik <b>Ganti folder cache&hellip;</b> '
+         'dan pilih folder di drive lain (mis. D:); cache lama boleh dihapus sekaligus. <b>Kembalikan ke folder bawaan</b> membatalkannya. '
+         'Menghapus cache tetap lewat <b>Bantuan &rsaquo; Hapus cache block model besar</b>.</p>')
+B.append('<p>Block model besar yang diimport dengan filter <b>Hanya di dalam desain pit</b> / <b>Hanya di bawah topografi</b> kini tetap bisa memakai '
+         '<b>Ringkasan seluruh model per RL</b>: angkanya dihitung atas seluruh file, bukan hanya blok yang termuat. Pertama kali, cache seluruh model '
+         'dibangun sekali (progresnya tampil di dialog); bila ruang disk tidak cukup, dialog langsung menawarkan pilihan folder cache.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

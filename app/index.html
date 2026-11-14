@@ -4468,7 +4468,8 @@ function elAmPage(R){var L=elAmX();if(!L.length||!R.length)return null;var U=amU
    Sekarang ada dua jalur dengan hasil yang sama persis (rumusnya ditiru baris demi baris dari
    backend bench_summary): backend untuk model yang hanya dimuat sepotong, dan JS lokal untuk model
    yang dimuat penuh. Tidak ada lagi syarat ukuran. */
-function bsBack(){var m=BX.m;return !!(m&&m.mdl&&m.mdl.via==='backend'&&m.mdl.path&&window.gcexDesktop&&gcexDesktop.api);}
+/* 0.24.82: juga model .mdl besar yang dibaca LANGSUNG dengan filter pit/topografi (m.mdl.bigPath) -> ringkasan tetap atas seluruh file */
+function bsBack(){var m=BX.m;return !!(m&&m.mdl&&(m.mdl.via==='backend'||m.mdl.bigPath)&&m.mdl.path&&window.gcexDesktop&&gcexDesktop.api);}
 function bsOn(){return !!(BX.m&&(bsBack()||BX.m.n>0));}
 function bsAttrs(){var m=BX.m,st={};
   if(bsBack()&&m.mdl&&m.mdl.st)(m.mdl.st||[]).forEach(function(a){if(a.type!==3)st[a.name]=1;});
@@ -4485,8 +4486,8 @@ function bsRender(R){var d=$('bsDlg');if(!d)return;var S=bsPar(),m=BX.m,A=bsAttr
     '<label>Cut-off<select onchange="BX.bs.cutA=this.value">'+A.map(function(a){return '<option'+(a===S.cutA?' selected':'')+'>'+bxE(a)+'</option>';}).join('')+'</select></label><label>&ge;<input type=number step=any placeholder="kosong = semua blok" value="'+bxE(S.cut)+'" onchange="BX.bs.cut=this.value"></label>'+
     '<label class=sw style="flex-direction:row;align-items:center"><input type=checkbox '+(S.hide0!==false?'checked':'')+' onchange="BX.bs.hide0=this.checked;bsRender(BX.bsR)">Sembunyikan bench 0 ton</label><button class=btn-pri onclick="bsRun()">Hitung</button>'+(R&&R.rows?'<button onclick="bsCsv()">&#8681; CSV</button>':'')+'</div>'+
     '<div class=hint>Elemen: <b>'+A.map(bxE).join(', ')+'</b> (daftar Elemen laporan; atribut kalkulasi IIF tidak ikut). SG: '+(U.sgCol?'kolom '+bxE(U.sgCol)+(', &le;0 / kosong = '+bxSGeff()+(bxSGkos()==='rep'?' (SG pengganti, cara GC-Ex)':' (seperti Surpac)')):'tetap '+U.sg)+'. Blok masuk bench menurut titik tengahnya (di atas RL bawah, tidak di atas RL atas), sama dengan metode Seperti Surpac.</div>';
-  if(R&&R.err)h+='<div class=warn>&#9888; '+bxE(R.err)+'</div>';
-  if(R&&R.busy)h+='<div class=hint>&#8987; Menghitung&hellip;</div>';
+  if(R&&R.err)h+='<div class=warn>&#9888; '+bxE(R.err)+'</div>'+(R.cache&&SA.mdlCacheHtml?SA.mdlCacheHtml():'');
+  if(R&&R.busy)h+='<div class=hint>&#8987; '+(R.msg?bxE(R.msg):'Menghitung&hellip;')+'</div>';
   if(R&&R.rows){var f=function(a,v){return v==null?'-':(window.elF?elF(a,v):v.toFixed(3));};
     h+='<div class=bstb><table class=pltb><tr><th>RL atas</th><th>RL bawah</th><th>Blok</th><th>Volume (m3)</th><th>Ton</th>'+A.map(function(a){return '<th>'+bxE(a)+'</th>';}).join('')+'</tr>'+
       R.rows.filter(function(r){return S.hide0===false||r.ton>0;}).map(function(r){return '<tr><td>'+lyFmt(r.top)+'</td><td>'+lyFmt(r.bot)+'</td><td>'+r.n.toLocaleString()+'</td><td>'+Math.round(r.vol).toLocaleString()+'</td><td>'+Math.round(r.ton).toLocaleString()+'</td>'+A.map(function(a){return '<td>'+f(a,r.grade[a])+'</td>';}).join('')+'</tr>';}).join('')+
@@ -4494,6 +4495,10 @@ function bsRender(R){var d=$('bsDlg');if(!d)return;var S=bsPar(),m=BX.m,A=bsAttr
   d.innerHTML=h+'</div>';BX.bsR=R||BX.bsR;}
 async function bsRun(){var S=bsPar(),U=BX.ui,A=bsAttrs(),m=BX.m;bsRender({busy:1});
   if(!bsBack()){setTimeout(function(){try{var R=bsLocal(S,A);R.ver=BX.ver;bsRender(R);}catch(e){bsRender({err:String(e&&e.message||e)});}},20);return;}
+  /* cache seluruh file belum ada (model dibaca langsung): bangun sekali di folder cache, dengan progres */
+  try{for(;;){var st=await gcexDesktop.api('/mdl/open',{path:m.mdl.path});if(st.state==='ready')break;if(st.state==='error')throw new Error(st.error||'cache gagal');
+      bsRender({busy:1,msg:'Membangun cache seluruh model (sekali saja): '+Math.round(st.pct||0)+'% \u00b7 '+(+st.n||0).toLocaleString()+' blok'});await new Promise(function(r){setTimeout(r,800);});}}
+  catch(e){bsRender({err:String(e&&e.message||e),cache:1});return;}
   try{var cut=String(S.cut).trim()===''?null:parseFloat(S.cut);var j=await gcexDesktop.api('/mdl/benches',{path:m.mdl.path,bench:+S.bench,ref:+S.ref,attrs:A,sg_col:U.sgCol||null,sg:+U.sg||2.6,sg_zero:bxSGeff()>0?'rep':'zero',sg_rep:bxSGeff()>0?bxSGeff():null,cut_attr:cut==null?null:S.cutA,cut:cut});
     j.attrs=A;j.par={bench:S.bench,ref:S.ref,cut:cut,cutA:S.cutA};j.ver=BX.ver;bsRender(j);}catch(e){bsRender({err:String(e&&e.message||e)});}}
 /* Mirror persis backend `bench_summary` (backend/gcex_backend/mdl_io.py):
@@ -12065,12 +12070,30 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
        LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
        blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
        teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
-    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments);try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
+      try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+        /* 0.24.82: path file disimpan supaya "Ringkasan seluruh model per RL" tetap dihitung backend atas SELURUH file */
+        if(pth){M0.path=pth;M0.bigPath=1;SA.mdlPathSave(f,pth);}
         if(m0.n>mx)m0.warn=(m0.warn?m0.warn+' ':'')+'Blok termuat '+m0.n.toLocaleString()+' melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok); tampilan bisa lambat. Persempit RL bawah / RL atas bila perlu.';}catch(x){}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _r.apply(this,arguments);
     try{return await SA.mdlBig(f,path,prog,opt||{},_r);}
     catch(e){if(e.noFallback||/dibatalkan/.test(e.message)||(opt&&opt.cancel&&opt.cancel()))throw e;console.warn('[GC-Ex] backend .mdl gagal, baca langsung:',e);
       if(prog)prog(0,0,0);var m=await _r.apply(this,arguments);try{m.mdl.notes=(m.mdl.notes||[]).concat(['Backend tidak dipakai: '+e.message]);}catch(x){}return m;}};})();
+/* ================= BM 0.24.82: folder cache .mdl besar bisa dipindah (pemilik 14 Nov 2026) =================
+   Cache Zona 4 butuh ±10,7 GB; C: hanya 7,4 GB bebas. Kotak ini tampil di layar Import block model (file besar) dan di
+   Ringkasan seluruh model per RL. Hapus cache tetap satu pintu: menu Bantuan › Hapus cache block model besar. */
+SA.mdlGB=function(b){return b==null?'?':(b/1073741824).toFixed(1).replace('.',',')+' GB';};
+SA.mdlCacheHtml=function(){if(!(window.gcexDesktop&&gcexDesktop.api))return '';setTimeout(SA.mdlCacheIsi,30);return '<div id="mdlCache" class="hint" style="margin-top:6px">Memeriksa folder cache…</div>';};
+SA.mdlCacheIsi=async function(){var el=document.getElementById('mdlCache');if(!el)return;var j;try{j=await gcexDesktop.api('/mdl/cache');}catch(e){el.textContent='Folder cache tidak terbaca: '+e.message;return;}
+  var e=function(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  el.innerHTML='<b>Cache block model besar</b> (dipakai bila import tanpa filter area dan untuk Ringkasan seluruh model per RL): <code>'+e(j.root)+'</code> &middot; terpakai '+SA.mdlGB(j.used)+' ('+(j.items||[]).length+' model) &middot; ruang bebas '+SA.mdlGB(j.free)+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px"><button type="button" onclick="SA.mdlCacheGanti()">Ganti folder cache&hellip;</button>'+(j.custom?'<button type="button" onclick="SA.mdlCacheGanti(true)">Kembalikan ke folder bawaan</button>':'')+
+    '</div><div style="margin-top:3px">Hapus cache: menu <b>Bantuan &rsaquo; Hapus cache block model besar</b>.</div>';};
+SA.mdlCacheGanti=async function(bawaan){var D=window.gcexDesktop;if(!D||!D.api)return;var j0;try{j0=await D.api('/mdl/cache');}catch(e){alert(e.message);return;}
+  var p=null;if(!bawaan){p=D.openFolder?await D.openFolder({title:'Pilih folder cache block model besar (mis. di drive D:)'}):prompt('Folder cache block model besar:','D:\\GC-Ex-cache');if(!p)return;}
+  var hl=j0.used>0&&confirm('Hapus cache di folder lama ('+SA.mdlGB(j0.used)+')?\n\nYa = ruang di drive lama dikosongkan; cache dibuat ulang di folder baru saat dibutuhkan.\nBatal = cache lama dibiarkan.');
+  try{var r=await D.api('/mdl/cache/root',{path:p,hapus_lama:!!hl});alert('Folder cache sekarang:\n'+r.root+'\nRuang bebas: '+SA.mdlGB(r.free)+(r.removed_old?'\n'+r.removed_old+' cache lama dihapus.':''));}catch(e){alert('Folder cache tidak diganti: '+e.message);}
+  SA.mdlCacheIsi();};
 
 /* ================= GC-Ex: panduan langkah (GC-Ex Block Model & GC-Ex Drillhole) =================
    1) Tombol NONAKTIF yang diklik -> kartu kecil di dekat tombol: kenapa belum aktif + tombol pintas ke langkah
@@ -12244,7 +12267,7 @@ SA.mdlOptHTML=function(H,pre,av,st){st=st||{};var e=function(s){return String(s)
     '<label class="sw'+(av.pit?'':' dis')+'"><input type="checkbox" id="'+pre+'_pit"'+(av.pit?'':' disabled')+((st.pit!=null?st.pit:av.pit&&big)?' checked':'')+'>Hanya di dalam desain pit'+(av.pit?'':' <small>(import desain pit dulu)</small>')+'</label>'+
     '<label class="sw'+(av.topo?'':' dis')+'"><input type="checkbox" id="'+pre+'_topo"'+(av.topo?'':' disabled')+((st.topo!=null?st.topo:av.topo&&big)?' checked':'')+'>Hanya di bawah topografi asbuilt'+(av.topo?'':' <small>(import topografi dulu)</small>')+'</label></div>'+
     '<details'+(big?' open':'')+'><summary>Atribut yang dibaca ('+H.attrs.length+')</summary><div class="els">'+at+'</div><div class="hint">Atribut yang tidak dicentang dilewati saat membaca &rarr; memori lebih kecil.</div></details>'+
-    (big?'<div class="hint warn2">File besar: batasi dengan rentang RL dan/atau desain pit / topografi. Hanya blok yang lolos filter yang disimpan di memori.</div>':'')+'</div>';};
+    (big?'<div class="hint warn2">File besar: batasi dengan rentang RL dan/atau desain pit / topografi. Hanya blok yang lolos filter yang disimpan di memori.</div>'+(SA.mdlCacheHtml?SA.mdlCacheHtml():''):'')+'</div>';};
 SA.mdlOptGet=function(pre){var g=function(id){return document.getElementById(pre+'_'+id);},nv=function(id){var v=g(id)&&g(id).value.trim();return v===''||v==null?null:parseFloat(v);};
   var keep=Array.prototype.map.call(document.querySelectorAll('.'+pre+'_at:checked'),function(e){return e.value;});
   return{lo:nv('lo'),hi:nv('hi'),pit:!!(g('pit')&&g('pit').checked),topo:!!(g('topo')&&g('topo').checked),keep:keep};};
@@ -13199,7 +13222,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.81';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.82';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

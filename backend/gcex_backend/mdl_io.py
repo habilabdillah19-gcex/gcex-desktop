@@ -131,14 +131,99 @@ def _dtype(stored: list[dict], endian: str = ">") -> np.dtype:
 
 
 # ---------------------------------------------------------------- lokasi cache
-def cache_root() -> Path:
+def _cache_base() -> Path:
     r = os.environ.get("GCEX_CACHE")
     if not r:
         base = os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), ".cache")
         r = os.path.join(base, "GC-Ex", "cache")
-    p = Path(r) / "mdl"
-    p.mkdir(parents=True, exist_ok=True)
+    return Path(r)
+
+
+def _cache_cfg() -> Path:
+    """Pilihan folder cache pengguna (GC-Ex 14 Nov 2026: cache 10,7 GB tidak muat di C:). Disimpan di folder bawaan."""
+    return _cache_base() / "cache_root.txt"
+
+
+def cache_root() -> Path:
+    r = _cache_base()
+    try:
+        cf = _cache_cfg()
+        if cf.exists():
+            c = cf.read_text(encoding="utf-8").strip()
+            if c:
+                r = Path(c)
+    except OSError:
+        pass
+    p = Path(r) / ("mdl" if Path(r) == _cache_base() else CUSTOM_SUB)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except OSError:  # drive pilihan tidak tersedia (mis. flashdisk dicabut) -> kembali ke bawaan
+        p = _cache_base() / "mdl"
+        p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+# folder pilihan pengguna (mis. D:\\) memakai subfolder khusus, supaya "Hapus cache" tidak pernah menyentuh folder lain
+CUSTOM_SUB = "GC-Ex_cache_mdl"
+
+
+def _is_cache_dir(d: Path) -> bool:
+    return d.is_dir() and ((d / "meta.json").exists() or d.name.endswith(".tmp"))
+
+
+def _dir_bytes(d: Path) -> int:
+    n = 0
+    for f in d.rglob("*"):
+        try:
+            if f.is_file():
+                n += f.stat().st_size
+        except OSError:
+            pass
+    return n
+
+
+def cache_info() -> dict:
+    root = cache_root()
+    items = cache_list()
+    try:
+        free = shutil.disk_usage(root).free
+    except OSError:
+        free = None
+    return {"root": str(root), "default": str(_cache_base() / "mdl"), "custom": root.name == CUSTOM_SUB,
+            "items": items, "used": _dir_bytes(root), "free": free}
+
+
+def set_cache_root(path: Optional[str], hapus_lama: bool = False) -> dict:
+    """Ganti folder cache (None/'' = kembali ke bawaan). Folder diuji bisa ditulis; cache di folder lama dihapus bila diminta."""
+    old = cache_root()
+    if path:
+        base = Path(path)
+        if base.name == CUSTOM_SUB:
+            base = base.parent
+        tgt = base / CUSTOM_SUB
+        try:
+            tgt.mkdir(parents=True, exist_ok=True)
+            t = tgt / ".uji_tulis"
+            t.write_text("ok")
+            t.unlink()
+        except OSError as e:
+            raise ValueError(f"Folder tidak bisa dipakai untuk cache: {base} ({e})")
+        cf = _cache_cfg()
+        cf.parent.mkdir(parents=True, exist_ok=True)
+        cf.write_text(str(base), encoding="utf-8")
+    else:
+        try:
+            _cache_cfg().unlink()
+        except OSError:
+            pass
+    new = cache_root()
+    removed = 0
+    if hapus_lama and old.resolve() != new.resolve() and old.exists():
+        for d in old.iterdir():
+            if _is_cache_dir(d):
+                shutil.rmtree(d, ignore_errors=True)
+                removed += 1
+    return {**cache_info(), "removed_old": removed}
 
 
 def cache_key(path: str | Path) -> str:
@@ -496,7 +581,7 @@ def cache_list() -> list[dict]:
 def clear_cache() -> int:
     n = 0
     for d in cache_root().iterdir():
-        if d.is_dir():
+        if _is_cache_dir(d):
             shutil.rmtree(d, ignore_errors=True)
             n += 1
     return n

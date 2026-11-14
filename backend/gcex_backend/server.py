@@ -292,7 +292,20 @@ def mdl_benches(body: MdlBench) -> dict:
 
 @app.get("/mdl/cache")
 def mdl_cache() -> dict:
-    return {"ok": True, "root": str(mdl_io.cache_root()), "items": mdl_io.cache_list()}
+    return {"ok": True, **mdl_io.cache_info()}
+
+
+class MdlCacheRoot(BaseModel):
+    path: Optional[str] = None  # None / "" = kembali ke folder bawaan
+    hapus_lama: bool = False
+
+
+@app.post("/mdl/cache/root")
+def mdl_cache_root(body: MdlCacheRoot):
+    try:
+        return {"ok": True, **mdl_io.set_cache_root(body.path, body.hapus_lama)}
+    except ValueError as e:
+        return JSONResponse({"ok": False, "error": str(e)})
 
 
 @app.post("/mdl/cache/clear")

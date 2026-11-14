@@ -50,9 +50,27 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
        LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
        blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
        teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
-    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments);try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
+      try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+        /* 0.24.82: path file disimpan supaya "Ringkasan seluruh model per RL" tetap dihitung backend atas SELURUH file */
+        if(pth){M0.path=pth;M0.bigPath=1;SA.mdlPathSave(f,pth);}
         if(m0.n>mx)m0.warn=(m0.warn?m0.warn+' ':'')+'Blok termuat '+m0.n.toLocaleString()+' melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok); tampilan bisa lambat. Persempit RL bawah / RL atas bila perlu.';}catch(x){}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _r.apply(this,arguments);
     try{return await SA.mdlBig(f,path,prog,opt||{},_r);}
     catch(e){if(e.noFallback||/dibatalkan/.test(e.message)||(opt&&opt.cancel&&opt.cancel()))throw e;console.warn('[GC-Ex] backend .mdl gagal, baca langsung:',e);
       if(prog)prog(0,0,0);var m=await _r.apply(this,arguments);try{m.mdl.notes=(m.mdl.notes||[]).concat(['Backend tidak dipakai: '+e.message]);}catch(x){}return m;}};})();
+/* ================= BM 0.24.82: folder cache .mdl besar bisa dipindah (pemilik 14 Nov 2026) =================
+   Cache Zona 4 butuh ±10,7 GB; C: hanya 7,4 GB bebas. Kotak ini tampil di layar Import block model (file besar) dan di
+   Ringkasan seluruh model per RL. Hapus cache tetap satu pintu: menu Bantuan › Hapus cache block model besar. */
+SA.mdlGB=function(b){return b==null?'?':(b/1073741824).toFixed(1).replace('.',',')+' GB';};
+SA.mdlCacheHtml=function(){if(!(window.gcexDesktop&&gcexDesktop.api))return '';setTimeout(SA.mdlCacheIsi,30);return '<div id="mdlCache" class="hint" style="margin-top:6px">Memeriksa folder cache…</div>';};
+SA.mdlCacheIsi=async function(){var el=document.getElementById('mdlCache');if(!el)return;var j;try{j=await gcexDesktop.api('/mdl/cache');}catch(e){el.textContent='Folder cache tidak terbaca: '+e.message;return;}
+  var e=function(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  el.innerHTML='<b>Cache block model besar</b> (dipakai bila import tanpa filter area dan untuk Ringkasan seluruh model per RL): <code>'+e(j.root)+'</code> &middot; terpakai '+SA.mdlGB(j.used)+' ('+(j.items||[]).length+' model) &middot; ruang bebas '+SA.mdlGB(j.free)+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px"><button type="button" onclick="SA.mdlCacheGanti()">Ganti folder cache&hellip;</button>'+(j.custom?'<button type="button" onclick="SA.mdlCacheGanti(true)">Kembalikan ke folder bawaan</button>':'')+
+    '</div><div style="margin-top:3px">Hapus cache: menu <b>Bantuan &rsaquo; Hapus cache block model besar</b>.</div>';};
+SA.mdlCacheGanti=async function(bawaan){var D=window.gcexDesktop;if(!D||!D.api)return;var j0;try{j0=await D.api('/mdl/cache');}catch(e){alert(e.message);return;}
+  var p=null;if(!bawaan){p=D.openFolder?await D.openFolder({title:'Pilih folder cache block model besar (mis. di drive D:)'}):prompt('Folder cache block model besar:','D:\\GC-Ex-cache');if(!p)return;}
+  var hl=j0.used>0&&confirm('Hapus cache di folder lama ('+SA.mdlGB(j0.used)+')?\n\nYa = ruang di drive lama dikosongkan; cache dibuat ulang di folder baru saat dibutuhkan.\nBatal = cache lama dibiarkan.');
+  try{var r=await D.api('/mdl/cache/root',{path:p,hapus_lama:!!hl});alert('Folder cache sekarang:\n'+r.root+'\nRuang bebas: '+SA.mdlGB(r.free)+(r.removed_old?'\n'+r.removed_old+' cache lama dihapus.':''));}catch(e){alert('Folder cache tidak diganti: '+e.message);}
+  SA.mdlCacheIsi();};

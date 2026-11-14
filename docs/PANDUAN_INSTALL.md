@@ -4880,3 +4880,14 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Angka kontur di Layout peta membesar saat pratinjau di-zoom in dan mengecil saat zoom out; saat diperbesar semua garis
   kontur diberi angka (pada tampilan penuh hanya kontur indeks). Aktif lewat centang **Label kontur**.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 217. Block Model 0.24.82 — folder cache .mdl besar & Ringkasan per RL untuk model terfilter
+
+- Layar **Import block model** untuk file besar menampilkan folder cache, ukuran terpakai dan ruang bebas. **Ganti folder
+  cache…** memindahkannya (mis. ke drive D:); cache di folder lama boleh dihapus sekaligus. **Kembalikan ke folder bawaan**
+  muncul bila folder sudah dipindah. Cache ditulis ke subfolder `GC-Ex_cache_mdl` di folder pilihan.
+- **Bantuan › Hapus cache block model besar** menyebut folder dan ukuran yang sebenarnya; hanya folder cache GC-Ex yang dihapus.
+- Block model besar yang diimport dengan filter pit / topografi tetap bisa memakai **Ringkasan seluruh model per RL** atas
+  seluruh file. Pertama kali, cache seluruh model dibangun dulu (progres tampil di dialog); bila disk penuh, dialog menampilkan
+  pilihan folder cache.
+- Drillhole 0.24.90, DB-Ex 0.46.8, Ore Works 0.6.4: hanya ikut naik karena backend / Electron bersama; tampilan tidak berubah.

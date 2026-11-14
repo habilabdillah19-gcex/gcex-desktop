@@ -4098,7 +4098,7 @@ SA.mdlOptHTML=function(H,pre,av,st){st=st||{};var e=function(s){return String(s)
     '<label class="sw'+(av.pit?'':' dis')+'"><input type="checkbox" id="'+pre+'_pit"'+(av.pit?'':' disabled')+((st.pit!=null?st.pit:av.pit&&big)?' checked':'')+'>Hanya di dalam desain pit'+(av.pit?'':' <small>(import desain pit dulu)</small>')+'</label>'+
     '<label class="sw'+(av.topo?'':' dis')+'"><input type="checkbox" id="'+pre+'_topo"'+(av.topo?'':' disabled')+((st.topo!=null?st.topo:av.topo&&big)?' checked':'')+'>Hanya di bawah topografi asbuilt'+(av.topo?'':' <small>(import topografi dulu)</small>')+'</label></div>'+
     '<details'+(big?' open':'')+'><summary>Atribut yang dibaca ('+H.attrs.length+')</summary><div class="els">'+at+'</div><div class="hint">Atribut yang tidak dicentang dilewati saat membaca &rarr; memori lebih kecil.</div></details>'+
-    (big?'<div class="hint warn2">File besar: batasi dengan rentang RL dan/atau desain pit / topografi. Hanya blok yang lolos filter yang disimpan di memori.</div>':'')+'</div>';};
+    (big?'<div class="hint warn2">File besar: batasi dengan rentang RL dan/atau desain pit / topografi. Hanya blok yang lolos filter yang disimpan di memori.</div>'+(SA.mdlCacheHtml?SA.mdlCacheHtml():''):'')+'</div>';};
 SA.mdlOptGet=function(pre){var g=function(id){return document.getElementById(pre+'_'+id);},nv=function(id){var v=g(id)&&g(id).value.trim();return v===''||v==null?null:parseFloat(v);};
   var keep=Array.prototype.map.call(document.querySelectorAll('.'+pre+'_at:checked'),function(e){return e.value;});
   return{lo:nv('lo'),hi:nv('hi'),pit:!!(g('pit')&&g('pit').checked),topo:!!(g('topo')&&g('topo').checked),keep:keep};};

@@ -196,3 +196,28 @@ def test_header_attribute_description_is_skipped():
     h = M._parse_head(H, len(H), "uji.mdl")
     got = [(a["name"], a["def"], a.get("desc")) for a in h["attrs"]]
     assert got == [("au", 0.0, ""), ("sg3", 2.5, "density"), ("rock", "BLANK", "rock type"), ("n", -9, "nomor")]
+
+
+def test_cache_root_can_be_moved_and_old_cache_removed(cache_env, tmp_path):
+    """14 Nov 2026 (pemilik): cache .mdl 10,7 GB tidak muat di C: -> folder cache bisa dipindah (mis. drive D:)."""
+    f = tmp_path / "a.mdl"
+    make_mdl(f, n=500)
+    M.build_cache(f)
+    old = M.cache_root()
+    info = M.cache_info()
+    assert len(info["items"]) == 1 and info["used"] > 0 and not info["custom"]
+    baru = tmp_path / "D_cache"
+    r = M.set_cache_root(str(baru), hapus_lama=True)
+    sub = baru / M.CUSTOM_SUB
+    assert Path(r["root"]) == sub and r["custom"] and r["removed_old"] == 1
+    assert M.cache_root() == sub and not any(d.is_dir() for d in old.iterdir())
+    m = M.build_cache(f)  # dibangun ulang di folder baru
+    assert m["n"] == 500 and M.cache_dir(f).parent == sub
+    lain = sub / "folder_pengguna"  # folder lain di dalamnya TIDAK boleh ikut terhapus
+    lain.mkdir()
+    (lain / "penting.txt").write_text("x")
+    assert M.clear_cache() == 1 and (lain / "penting.txt").exists()
+    r = M.set_cache_root(None)
+    assert not r["custom"] and M.cache_root() == old
+    with pytest.raises(ValueError):
+        M.set_cache_root(str(f / "bukan_folder"))
