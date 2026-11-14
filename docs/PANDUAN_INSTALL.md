@@ -4796,3 +4796,10 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   atau **lepas** menjadi jendela (geser lewat kepalanya, ubah ukuran di pojok kanan bawah, perkecil dengan –). Posisi diingat.
 - Tombol « di Project Tree hanya menyembunyikan Project Tree; » di tepi kiri memunculkannya lagi.
 - Hitungan tidak berubah. Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 206. Ore Works 0.4.1 — Perbaikan isian (prompt) di aplikasi desktop
+
+- Tombol yang meminta isian angka/teks (edit geometri pemetaan: *Luruskan*, *Sisipkan titik*; Dashboard geokimia:
+  *+ rasio sendiri*) dulu gagal di aplikasi terpasang dengan galat `prompt() is not supported`. Kini membuka jendela
+  isian kecil milik aplikasi, sama seperti GC-Ex Block Model.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.

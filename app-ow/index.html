@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.4.0';</script>
+<script>window.GCEX_VER='0.4.1';</script>
+<script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
+   Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
+(function(){var D=window.gcexDesktop;if(!D)return;
+ if(typeof D.prompt==='function'){try{window.prompt=function(m,d){var r=D.prompt(m==null?'':String(m),d==null?'':String(d));return r==null?null:String(r);};}catch(e){}}
+ if(typeof D.alert==='function'){try{window.alert=function(m){D.alert(m==null?'':String(m));};}catch(e){}}
+ if(typeof D.confirm==='function'){try{window.confirm=function(m){return D.confirm(m==null?'':String(m))===true;};}catch(e){}}
+ var isF=function(e){try{return Array.prototype.indexOf.call((e.dataTransfer&&e.dataTransfer.types)||[],'Files')>=0;}catch(x){return false;}};
+ document.addEventListener('dragover',function(e){if(isF(e))e.preventDefault();});
+ document.addEventListener('drop',function(e){if(isF(e)&&!e.defaultPrevented)e.preventDefault();});})();</script>
 <style>
 html,body{margin:0;height:100%;font-family:Inter,"Segoe UI",Arial,sans-serif;background:#f6f7f9;color:#1d2433}
 #wrap{display:flex;height:100vh}
