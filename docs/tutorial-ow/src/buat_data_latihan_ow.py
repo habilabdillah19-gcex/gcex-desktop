@@ -49,18 +49,23 @@ au=[0.08,0.21,0.62,3.85,7.12,1.48,0.33,0.05];ag=[1.2,2.0,4.5,22.0,41.0,9.5,3.1,0
 lith=['AND','AND','AND','QV','QV','QV','AND','AND'];alt=['PRO','ARG','ARG','SIL','SIL','ARG','ARG','PRO']
 open(f'{D}/LTH_assay_channel.txt','w').write('Sample_ID\tAu_ppm\tAg_ppm\tLith\tAlt\tDeskripsi\n'+''.join(f'CH01-{i+1:03d}\t{au[i]}\t{ag[i]}\t{lith[i]}\t{alt[i]}\t{"Kuarsa berlapis" if lith[i]=="QV" else "Andesit"}\n' for i in range(8)))
 # bor GC fiktif
-col=['Hole_ID,X,Y,Z,Max_Depth'];sv=['Hole_ID,Depth,Dip,Azimuth'];asy=['Hole_ID,From,To,Au_ppm,Ag_ppm'];geo=['Hole_ID,From,To,Lith,Alt']
+col=['Hole_ID,X,Y,Z,Max_Depth,Hole_Purpose'];sv=['Hole_ID,Depth,Dip,Azimuth'];asy=['Hole_ID,From,To,Au_ppm,Ag_ppm,Cu_ppm,Pb_ppm,Zn_ppm,SxS_pct'];geo=['Hole_ID,From,To,Lith,Alt,Vein_Type']
+R2=random.Random(11)  # RNG terpisah: nilai Au/Ag lama tetap sama
 h=1
 for i in range(7):
     for j in range(6):
         e=E0+55+i*14+random.uniform(-1,1);n=N0+55+j*18+random.uniform(-1,1);z=topo(e,n);hid=f'LTH_{h:03d}';h+=1;dep=40
-        col.append(f'{hid},{e:.2f},{n:.2f},{z:.2f},{dep}');sv.append(f'{hid},0,-60,70');sv.append(f'{hid},{dep},-60,70')
+        col.append(f'{hid},{e:.2f},{n:.2f},{z:.2f},{dep},{"Exploration" if i in (0,6) and j%2==0 else "GC"}');sv.append(f'{hid},0,-60,70');sv.append(f'{hid},{dep},-60,70')
         az=math.radians(70);dp=math.radians(60)
         for m in range(dep):
             c=m+0.5;x=e+math.sin(az)*math.cos(dp)*c;y=n+math.cos(az)*math.cos(dp)*c;zz=z-math.sin(dp)*c;d=abs(sd(x,y,zz))
             a=random.uniform(2.5,9) if d<1.2 else random.uniform(0.3,0.9) if d<3 else random.uniform(0.01,0.18)
-            asy.append(f'{hid},{m},{m+1},{a:.3f},{a*6+random.uniform(0,2):.2f}')
-            geo.append(f'{hid},{m},{m+1},{"QV" if d<1.2 else "AND"},{"SIL" if d<1.2 else "ARG" if d<3 else "PRO"}')
+            ag=a*6+random.uniform(0,2);v=d<1.2;dz=z-zz
+            cu=(R2.uniform(150,900) if v else R2.uniform(20,120))*(0.4 if dz<6 else 1);pb=R2.uniform(300,2500) if v else R2.uniform(5,80);zn=pb*R2.uniform(1.2,2.4)
+            sx=R2.uniform(0.1,0.7) if dz<6 else R2.uniform(0.8,1.0) if dz<9 else (R2.uniform(1.5,4.5) if v else R2.uniform(1.05,2.2))
+            pbs='-' if pb<8 else f'{pb:.0f}'
+            asy.append(f'{hid},{m},{m+1},{a:.3f},{ag:.2f},{cu:.0f},{pbs},{zn:.0f},{sx:.2f}')
+            geo.append(f'{hid},{m},{m+1},{"QV" if v else "AND"},{"SIL" if v else "ARG" if d<3 else "PRO"},{("QV-B" if a>5 else "QV-C") if v else "-"}')
         h+=0
 for nm,L in [('collar',col),('survey',sv),('assay',asy),('geologi',geo)]: open(f'{D}/LTH_{nm}.csv','w').write('\r\n'.join(L)+'\r\n')
 # wireframe vein (.obj) tebal 2 m
@@ -69,7 +74,7 @@ sx,sy=math.sin(st),math.cos(st);dx,dy,dz=math.sin(dd)*math.cos(dip),math.cos(dd)
 for a in (-70,70):
     for b in (-10,90):
         for t in (-1,1):
-            V.append((P0[0]+sx*a+dx*b+nrm[0]*t,P0[1]+sy*a+dy*b+nrm[1]*t,P0[2]+dz*b+nrm[2]*t+15))
+            V.append((P0[0]+sx*a+dx*b+nrm[0]*t,P0[1]+sy*a+dy*b+nrm[1]*t,P0[2]+dz*b+nrm[2]*t))
 idx=lambda a,b,t:a*4+b*2+t+1
 for q in [(0,0,0),]: pass
 faces=[(1,3,7,5),(2,6,8,4),(1,5,6,2),(3,4,8,7),(1,2,4,3),(5,7,8,6)]

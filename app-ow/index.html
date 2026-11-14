@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.2.0';</script>
+<script>window.GCEX_VER='0.3.0';</script>
 <style>
 html,body{margin:0;height:100%;font-family:Inter,"Segoe UI",Arial,sans-serif;background:#f6f7f9;color:#1d2433}
 #wrap{display:flex;height:100vh}
@@ -1693,14 +1693,14 @@ function desurvey(c,st,maxD){const s=st.length?st.slice().sort((a,b)=>a.d-b.d):[
 function dsBuild(files,nm,mode,kind){const C={},S={},A={},GE={},AE={},used=[],warn=[];let gcols=[],acols=[];
  for(const f of files){const {hd,hd0,rows,sep}=csvRead(f.txt),k=f.kind||dsKind(hd),iid=ci(hd,RX.id);if(!k||iid<0){warn.push(f.name+': kolom Hole_ID/koordinat/From-To tidak dikenali');continue;}
   const num=s=>{if(s==null)return NaN;s=String(s).trim();if(sep!==',')s=s.replace(',','.');const v=parseFloat(s);return isFinite(v)?v:NaN;};
-  if(k=='collar'){const ix=ci(hd,RX.x),iy=ci(hd,RX.y),iz=ci(hd,RX.z),idp=ci(hd,RX.dep),idi=ci(hd,RX.dip),iaz=ci(hd,RX.az);if(iz<0){warn.push(f.name+': kolom RL/Z tidak ada');continue;}let bad=0;
-   rows.forEach(r=>{const id=r[iid];if(!id)return;const x=num(r[ix]),y=num(r[iy]),z=num(r[iz]);if(!isFinite(x)||!isFinite(y)||!isFinite(z)){bad++;return;}C[id]={x,y,z,d:idp>=0?num(r[idp]):NaN,dip:idi>=0?num(r[idi]):NaN,az:iaz>=0?num(r[iaz]):NaN};});
+  if(k=='collar'){const ix=ci(hd,RX.x),iy=ci(hd,RX.y),iz=ci(hd,RX.z),idp=ci(hd,RX.dep),idi=ci(hd,RX.dip),iaz=ci(hd,RX.az);if(iz<0){warn.push(f.name+': kolom RL/Z tidak ada');continue;}let bad=0;const ipu=[/purpose|tujuan/i,/jenis/i].reduce((r,re)=>r>=0?r:hd.findIndex(h=>re.test(h)),-1);
+   rows.forEach(r=>{const id=r[iid];if(!id)return;const x=num(r[ix]),y=num(r[iy]),z=num(r[iz]);if(!isFinite(x)||!isFinite(y)||!isFinite(z)){bad++;return;}C[id]={x,y,z,d:idp>=0?num(r[idp]):NaN,dip:idi>=0?num(r[idi]):NaN,az:iaz>=0?num(r[iaz]):NaN,pu:ipu>=0?String(r[ipu]||'').trim():''};});
    used.push(f.name+' → collar');if(bad)warn.push(f.name+': '+bad+' baris tanpa koordinat dilewati');}
   else if(k=='survey'){const isd=ci(hd,RX.sd),idi=ci(hd,RX.dip),iaz=ci(hd,RX.az);rows.forEach(r=>{const id=r[iid];if(!id)return;const dip=num(r[idi]),az=num(r[iaz]);if(!isFinite(dip)||!isFinite(az))return;(S[id]=S[id]||[]).push({d:isd>=0&&isFinite(num(r[isd]))?num(r[isd]):0,dip,az});});used.push(f.name+' → survey');}
   else if(k=='geo'){const ifr=ci(hd,RX.fr),ito=ci(hd,RX.to);if(ifr<0||ito<0){warn.push(f.name+': kolom From/To tidak ditemukan');continue;}const cols=hd.map((h,i)=>i).filter(i=>i!==iid&&i!==ifr&&i!==ito&&hd0[i]);gcols=cols.map(i=>hd0[i]);
    rows.forEach(r=>{const id=r[iid];if(!id)return;const a=num(r[ifr]),b=num(r[ito]);if(!isFinite(a)||!isFinite(b)||b<=a)return;const v={};cols.forEach(i=>{if(r[i])v[hd0[i]]=r[i];});(GE[id]=GE[id]||[]).push({f:a,t:b,v});});used.push(f.name+' → geologi ('+Object.keys(GE).length+' lubang, kolom: '+gcols.join(', ')+')');}
   else{const ifr=ci(hd,RX.fr),ito=ci(hd,RX.to),iau=f.au!=null?f.au:ci(hd,RX.au);if(iau<0){warn.push(f.name+': kolom Au tidak ditemukan');continue;}
-   const ec=hd.map((h,i)=>i).filter(i=>i!==iid&&i!==ifr&&i!==ito&&hd0[i]&&(()=>{let n=0,k=0;for(const r of rows.slice(0,400)){const v=r[i];if(v==null||v==='')continue;k++;if(isFinite(num(v)))n++;}return k>0&&n/k>=0.6;})());acols=ec.map(i=>hd0[i]);
+   const ec=hd.map((h,i)=>i).filter(i=>i!==iid&&i!==ifr&&i!==ito&&hd0[i]&&(()=>{let n=0,k=0;for(const r of rows){const v=r[i];if(v==null||/^\s*(-|–|na|n\/a|nd|ns)?\s*$/i.test(v))continue;k++;if(isFinite(num(v)))n++;if(k>=400)break;}return k>0&&n/k>=0.6;})());acols=ec.map(i=>hd0[i]);
    rows.forEach(r=>{const id=r[iid];if(!id)return;const a=num(r[ifr]),b=num(r[ito]);if(!isFinite(a)||!isFinite(b)||b<=a)return;(A[id]=A[id]||[]).push({f:a,t:b,au:num(r[iau])});const v={};for(const i of ec){const x=num(r[i]);if(isFinite(x))v[hd0[i]]=x;}(AE[id]=AE[id]||[]).push({f:a,t:b,v});});used.push(f.name+' → assay (Au: '+hd0[iau]+'; '+acols.length+' kolom elemen)');}}
  OSETF(Object.values(C).map(c=>[c.x,c.y,c.z]));const prev=activeHoles(),ids=new Set([...Object.keys(C),...Object.keys(S),...Object.keys(A)]),holes=[],hi={};let noGeo=0,vert=0,merged=0,skipped=0;
  const rel=q=>[(q[0]-O[0])*10,(q[1]-O[1])*10,(q[2]-O[2])*10];
@@ -1714,7 +1714,7 @@ function dsBuild(files,nm,mode,kind){const C={},S={},A={},GE={},AE={},used=[],wa
    if(v==null&&oldSeg){for(let k=0;k<oldSeg.cu.length-1;k++)if(oldSeg.cu[k]<=mid&&mid<=oldSeg.cu[k+1]){v=oldSeg.au[k];break;}}
    v=isFinite(v)?v:0;au.push(v);if(v>=0.5&&!as.length)hs.push({p:rel(pathAt(pts,cum,mid)),au:v});}
   for(const s of as)if(s.au>=0.5&&s.f<maxD)hs.push({p:rel(pathAt(pts,cum,(s.f+Math.min(s.t,maxD))/2)),au:s.au});
-  const src=kind!=='auto'?kind:old?old.h.src:(/^(PDH|MDH|DDH|EXP|EX)/i.test(id)?'EKS':'GC');holes.push({id,src,p,au});if(hs.length)hi[id]=hs;}
+  const pu=(C[id]&&C[id].pu)||'',src=kind!=='auto'?kind:/^(gc|grade)/i.test(pu)?'GC':/^(ex|eks|res|def|inf)/i.test(pu)?'EKS':old?old.h.src:(/^(PDH|MDH|DDH|EXP|EX)/i.test(id)?'EKS':'GC');holes.push({id,src,p,au});if(hs.length)hi[id]=hs;}
  if(noGeo)warn.push(noGeo+' Hole_ID tanpa collar dan tidak ada di data lama → dilewati');if(vert)warn.push(vert+' lubang tanpa survey → dianggap vertikal');if(skipped)warn.push(skipped+' Hole_ID sudah ada → dilewati (Append)');
  const info=(merged?merged+' lubang lama diperbarui assay-nya · ':'')+Object.keys(A).length+' lubang ber-assay';
  for(const id in GE)GE[id].sort((a,b)=>a.f-b.f);const ng=Object.keys(GE).length;for(const id in AE)AE[id].sort((a,b)=>a.f-b.f);return {nm,mode,on:true,holes,hi,info:info+(ng?' · geologi '+ng+' lubang':''),used,warn,geo:GE,gcols,ael:AE,acols};}
@@ -3466,6 +3466,227 @@ function UESet(el){if(el===UEo().el){UOpts();return;}const pc=document.getElemen
 {const tb=document.getElementById('otb'),ve=document.getElementById('otbve');if(tb&&ve){const l=document.createElement('span');l.className='tl';l.textContent='Unsur';const s=document.createElement('select');s.id='uel';s.title='Unsur aktif untuk warna lubang, penampang, peta level, long section, profil & envelope';ve.after(l,s);s.onchange=()=>UESet(s.value);}
  const oh=document.getElementById('ogsub');if(oh){const s=document.createElement('select');s.id='uel2';s.title='Unsur aktif';s.style.cssText='margin-left:10px;font-size:11.5px;height:20px;color:#1b2a4e';oh.after(s);s.onchange=()=>UESet(s.value);s.addEventListener('mousedown',e=>e.stopPropagation());}
  UOpts();setInterval(UOpts,1500);}
+
+/* ===================== Ore Works 0.3 · Dashboard geokimia (tab pertama di Analisis) =====================
+   Statistik deskriptif, korelasi, distribusi, profil vertikal & rasio, profil per bench, per kelompok,
+   scatter, ringkasan per domain/litologi/alterasi. Data = sampel assay dataset bor (+ channel sampling),
+   bobot panjang sampel, nilai DL dihitung apa adanya. Oksidasi dari SxS: <0,8 % Oksida, 0,8–1 % Transisi, >1 % Sulfida. */
+var GD={src:'all',grp:'',dom:'',bench:'',log:true,w:true,dl:true,stat:'box',dist:'prob',pvE:null,pvR:null,pvB:5,pvS:'mean',bm:'id',bEl:'',xEl:'',kEl:'',kGrp:'',sx:'',sy:'',sc:'',sumBy:'dom',sumEl:'',sumV:'med',cache:null,sig:''};
+var GDC={Au:'#1f6feb',Ag:'#eb6834',Cu:'#1baf7a',Pb:'#e87ba4',Zn:'#6250d6',SxS:'#eda100',As:'#8c564b',S:'#17becf'};
+var GDP=['#1f6feb','#eb6834','#1baf7a','#6250d6','#e87ba4','#eda100','#17becf','#8c564b','#7f7f7f','#bcbd22'];
+function gdCol(e){const k=String(e).replace(/[_\s(].*$/,'');if(GDC[k])return GDC[k];let h=0;for(const c of String(e))h=(h*31+c.charCodeAt(0))>>>0;return GDP[h%GDP.length];}
+function gdF(v,d){if(v==null||!isFinite(v))return '–';const a=Math.abs(v);return (d!=null?+v.toFixed(d):a>=100?Math.round(v):a>=10?+v.toFixed(1):a>=1?+v.toFixed(2):+v.toPrecision(2)).toLocaleString('id-ID');}
+function gdE(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function gdUnit(e){return /^au/i.test(e)?'g/t':/pct|%/i.test(e)?'%':/ppm/i.test(e)?'ppm':/ppb/i.test(e)?'ppb':/^s(x|c)s|^sxs/i.test(e)?'%':'';}
+function gdNm(e){const u=gdUnit(e);return e+(u&&!(/ppm|ppb|pct|%/i.test(e)&&!/^au/i.test(e))?' ('+u+')':'');}
+/* ---- data sampel ---- */
+function gdSig(){let s=D.holes.length+'|';for(const d of DS)s+=(d.on?1:0)+':'+d.holes.length+':'+(d.fm?'f':'')+'|';return s+(document.getElementById('jgcol')||{}).value+(document.getElementById('jgeo')||{}).checked+(document.getElementById('jsrc')||{}).value+WI.map(m=>(m.on?1:0)+(m.dom||m.nm)+(m.useDom!==false)).join()+((OG.X||[]).length);}
+function gdData(){const sg=gdSig();if(GD.cache&&GD.sig===sg)return GD.cache;
+ const M=activeHoles(),AS=asActive(),GA=geoActive(),IC=anIcp(M),els=[],ecnt={},gcols=[],S=[];
+ const dsOf=new Map();for(const ds of DS)if(ds.on)for(const h of ds.holes)dsOf.set(h.id,ds);
+ for(const [id,{h,ds}] of M){const p=h.p,cum=cumP(p);if(cum.length<2)continue;const tot=cum[cum.length-1],d0=dsOf.get(id)||ds;
+  const src=d0&&d0.fm?'CH':h.src==='GC'?'GC':'EXP',bm=/_(\d{3,4})_/.exec(id),bench=bm?+bm[1]:null;
+  let iv=AS.get(id);if(!iv||!iv.length){iv=[];for(let i=0;i+1<cum.length;i++)if(isFinite(h.au[i]))iv.push({f:cum[i],t:cum[i+1],v:{Au:h.au[i]}});}
+  const gv=GA.get(id)||[],ic=IC.get(id)||[];
+  for(const q of iv){if(!(q.t>q.f))continue;const md=(q.f+q.t)/2;if(md>tot+0.01)continue;let k=1;while(k<cum.length-1&&cum[k]<md)k++;const t=Math.min(1,Math.max(0,(md-cum[k-1])/((cum[k]-cum[k-1])||1)));
+   const E=(p[(k-1)*3]+(p[k*3]-p[(k-1)*3])*t)/10+O[0],N=(p[(k-1)*3+1]+(p[k*3+1]-p[(k-1)*3+1])*t)/10+O[1],Z=(p[(k-1)*3+2]+(p[k*3+2]-p[(k-1)*3+2])*t)/10+O[2];
+   const v={};for(const e in q.v){const x=+q.v[e];if(isFinite(x)){v[e]=x;if(!(e in ecnt)){ecnt[e]=0;els.push(e);}ecnt[e]++;}}
+   let g={};for(const r of gv)if(r.f<=md&&md<r.t){g=r.v||{};for(const c in g)if(!gcols.includes(c))gcols.push(c);break;}
+   let dom='';for(const r of ic)if(r.f<=md&&md<r.t){dom=r.d;break;}
+   S.push({id,src,f:q.f,t:q.t,L:q.t-q.f,E,N,Z,v,g,dom,bench});}}
+ const isNum=e=>!/moist|lab|batch|ref|stat|qt_pct|recov/i.test(e);const EL=els.filter(isNum).sort((a,b)=>(/^au/i.test(b)-/^au/i.test(a))||ecnt[b]-ecnt[a]);
+ const fc=re=>gcols.find(c=>re.test(c))||'',SX=EL.find(e=>/^s(x|c)s$|^sxs|^scis/i.test(e))||'';
+ const G={lith:fc(/^lith|^litho|^rock/i),alt:gcols.includes('Alt')?'Alt':fc(/^alt|alter/i),vein:fc(/vein/i)};
+ S.forEach(q=>{const x=SX?q.v[SX]:NaN;q.ox=isFinite(x)?(x<0.8?'Oksida':x<=1?'Transisi':'Sulfida'):'';});
+ const dl={};EL.forEach(e=>{let m=Infinity;for(const q of S){const x=q.v[e];if(x>0&&x<m)m=x;}dl[e]=m;});
+ const benches=[...new Set(S.map(q=>q.bench).filter(b=>b!=null))].sort((a,b)=>b-a);
+ GD.cache={S,EL,G,SX,dl,gcols,benches,doms:[...new Set(S.map(q=>q.dom).filter(Boolean))].sort()};GD.sig=sg;return GD.cache;}
+function gdGrpVal(q,k,C){if(k==='ox')return q.ox||'Tanpa data';if(k==='dom')return q.dom||'Di luar domain';const c=C.G[k]||k;const v=q.g[c];return v==null||v===''||v===0||v==='0'||v==='-'?'(kosong)':String(v);}
+function gdGrpNm(k,C){return {lith:'Litologi'+(C.G.lith?' ('+C.G.lith+')':''),alt:'Alterasi'+(C.G.alt?' ('+C.G.alt+')':''),vein:'Vein type'+(C.G.vein?' ('+C.G.vein+')':''),ox:'Oksidasi (SxS)',dom:'Domain'}[k]||k;}
+function gdFilt(C){return C.S.filter(q=>(GD.src==='all'||(GD.src==='GCEXP'?q.src!=='CH':q.src===GD.src))&&(!GD.dom||q.dom===GD.dom)&&(!GD.bench||String(q.bench)===GD.bench));}
+function gdVals(R,e,C){const out=[];for(const q of R){const x=q.v[e];if(x==null||!isFinite(x))continue;if(!GD.dl&&x<=C.dl[e])continue;out.push([x,GD.w?q.L:1,q]);}return out;}
+function gdStats(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x[0]-y[0]),W=s.reduce((t,r)=>t+r[1],0)||1;let acc=0;const cq=s.map(r=>(acc+=r[1])/W);
+ const Q=p=>{for(let i=0;i<s.length;i++)if(cq[i]>=p)return s[i][0];return s[s.length-1][0];};const mean=s.reduce((t,r)=>t+r[0]*r[1],0)/W,sd=Math.sqrt(s.reduce((t,r)=>t+r[1]*(r[0]-mean)**2,0)/W);
+ return {n:s.length,L:W,min:s[0][0],p025:Q(.025),p25:Q(.25),med:Q(.5),p75:Q(.75),p975:Q(.975),max:s[s.length-1][0],mean,sd,cv:mean?sd/mean:NaN};}
+function gdRank(a){const o=a.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]),r=new Array(a.length);let i=0;while(i<o.length){let j=i;while(j+1<o.length&&o[j+1][0]===o[i][0])j++;const rr=(i+j)/2;for(let k=i;k<=j;k++)r[o[k][1]]=rr;i=j+1;}return r;}
+function gdSpear(R,a,b){const x=[],y=[];for(const q of R){const u=q.v[a],w=q.v[b];if(isFinite(u)&&isFinite(w)){x.push(u);y.push(w);}}if(x.length<8)return NaN;const rx=gdRank(x),ry=gdRank(y),n=x.length,mx=(n-1)/2;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){const dx=rx[i]-mx,dy=ry[i]-mx;sxy+=dx*dy;sxx+=dx*dx;syy+=dy*dy;}return sxy/Math.sqrt(sxx*syy||1);}
+/* ---- SVG mini-chart ---- */
+function gdScale(lo,hi,a,b,log){if(log){lo=Math.max(lo,1e-6);hi=Math.max(hi,lo*1.0001);const L0=Math.log10(lo),L1=Math.log10(hi);return v=>a+(Math.log10(Math.max(v,1e-9))-L0)/((L1-L0)||1)*(b-a);}return v=>a+(v-lo)/((hi-lo)||1)*(b-a);}
+function gdTicks(lo,hi,log,n){if(log){const t=[];for(let k=Math.floor(Math.log10(Math.max(lo,1e-6)));k<=Math.ceil(Math.log10(Math.max(hi,1e-6)));k++){const v=Math.pow(10,k);if(v>=lo*0.999&&v<=hi*1.001)t.push(v);}if(t.length<2)return [lo,hi];return t;}const st=Math.pow(10,Math.floor(Math.log10((hi-lo)/(n||4)||1))),m=[1,2,2.5,5,10].find(f=>(hi-lo)/(st*f)<=(n||4))||10,step=st*m,t=[];for(let v=Math.ceil(lo/step)*step;v<=hi+step*1e-6;v+=step)t.push(+v.toPrecision(10));return t;}
+function gdRange(vs,log){let lo=Infinity,hi=-Infinity;for(const v of vs)if(isFinite(v)&&(!log||v>0)){if(v<lo)lo=v;if(v>hi)hi=v;}if(!isFinite(lo))return [log?0.01:0,1];if(log){return [Math.pow(10,Math.floor(Math.log10(lo)+1e-9)),Math.pow(10,Math.ceil(Math.log10(hi)-1e-9))||lo*10];}const pad=(hi-lo)*0.06||Math.abs(hi)*0.1||1;return [lo>=0&&lo-pad<0?0:lo-pad,hi+pad];}
+function gdAxes(W,H,P,xr,yr,xl,yl,xlab,ylab){const [l,t,r,b]=P,X=gdScale(xr[0],xr[1],l,W-r,xl),Y=gdScale(yr[0],yr[1],H-b,t,yl);let s='';
+ for(const v of gdTicks(yr[0],yr[1],yl,4)){const y=Y(v);s+='<line x1="'+l+'" x2="'+(W-r)+'" y1="'+y+'" y2="'+y+'" stroke="#e9ecf1"/><text x="'+(l-4)+'" y="'+(y+3)+'" text-anchor="end" class="gt">'+gdF(v)+'</text>';}
+ for(const v of gdTicks(xr[0],xr[1],xl,4)){const x=X(v);s+='<line x1="'+x+'" x2="'+x+'" y1="'+t+'" y2="'+(H-b)+'" stroke="#f1f3f7"/><text x="'+x+'" y="'+(H-b+12)+'" text-anchor="middle" class="gt">'+gdF(v)+'</text>';}
+ s+='<rect x="'+l+'" y="'+t+'" width="'+(W-l-r)+'" height="'+(H-t-b)+'" fill="none" stroke="#d6dde8"/>';if(xlab)s+='<text x="'+((l+W-r)/2)+'" y="'+(H-2)+'" text-anchor="middle" class="gl">'+gdE(xlab)+'</text>';if(ylab)s+='<text transform="translate(10,'+((t+H-b)/2)+') rotate(-90)" text-anchor="middle" class="gl">'+gdE(ylab)+'</text>';return {s,X,Y};}
+function gdSvg(W,H,inner,title){return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" class="gds" role="img"><title>'+gdE(title||'')+'</title>'+inner+'</svg>';}
+function gdBox(st,X,cx,w,col,Y){if(!st)return '';return '<line x1="'+cx+'" x2="'+cx+'" y1="'+Y(st.p975)+'" y2="'+Y(st.p025)+'" stroke="#8a92a3"/><rect x="'+(cx-w/2)+'" y="'+Y(st.p75)+'" width="'+w+'" height="'+Math.max(2,Y(st.p25)-Y(st.p75))+'" rx="3" fill="'+col+'33" stroke="'+col+'"/><line x1="'+(cx-w/2)+'" x2="'+(cx+w/2)+'" y1="'+Y(st.med)+'" y2="'+Y(st.med)+'" stroke="'+col+'" stroke-width="2.5"/><circle cx="'+cx+'" cy="'+Y(st.mean)+'" r="3.2" fill="#1b2a4e"><title>rata2 '+gdF(st.mean)+'</title></circle>';}
+/* ---- panel ---- */
+function gdSel(id,opts,cur,cls){return '<select class="gdsel" id="'+id+'">'+opts.map(o=>{const [v,t]=Array.isArray(o)?o:[o,o];return '<option value="'+gdE(v)+'"'+(String(v)===String(cur)?' selected':'')+'>'+gdE(t)+'</option>';}).join('')+'</select>';}
+function gdSeg(id,opts,cur){return '<span class="gdseg" id="'+id+'">'+opts.map(([v,t])=>'<span data-v="'+v+'"'+(v===cur?' class="on"':'')+'>'+t+'</span>').join('')+'</span>';}
+function gdPanel(n,title,ctrl,body,span){return '<div class="gdp'+(span?' gdw2':'')+'"><div class="gdph"><span class="gdn">'+n+'</span><span class="gdt">'+title+'</span>'+(ctrl||'')+'</div>'+body+'</div>';}
+function gdRender(){const host=document.getElementById('gdw');if(!host)return;const C=gdData();
+ if(!C.S.length){host.innerHTML='<div class="gdempty">Belum ada sampel assay. Impor dataset bor (Collar, Survey, Assay, Geologi) lewat menu <b>Dataset bor</b>, atau kirim channel ke dataset dari menu Pemetaan.</div>';return;}
+ const EL=C.EL,AU=EL.find(e=>/^au/i.test(e))||EL[0];['bEl','kEl','sumEl','sx'].forEach(k=>{if(!EL.includes(GD[k]))GD[k]=AU;});if(!EL.includes(GD.sy))GD.sy=EL.find(e=>e!==GD.sx)||AU;if(!EL.includes(GD.xEl))GD.xEl=AU;
+ const GK=['vein','lith','alt','ox','dom'].filter(k=>k==='ox'?!!C.SX:k==='dom'?C.doms.length>0:!!C.G[k]);if(!GK.includes(GD.grp))GD.grp=GK[0]||'ox';if(!GK.includes(GD.kGrp))GD.kGrp=GD.grp;if(!GK.includes(GD.sc))GD.sc=GK.includes('alt')?'alt':GD.grp;
+ if(!GD.pvE)GD.pvE=EL.slice(0,4);GD.pvE=GD.pvE.filter(e=>EL.includes(e));const RT=gdRatios(EL);if(!GD.pvR)GD.pvR=RT.slice(0,2).map(r=>r.k);
+ const R=gdFilt(C),srcN={all:'Semua sumber',GC:'Grade control',EXP:'Exploration',CH:'Channel sampling',GCEXP:'Grade control + Exploration'};
+ const nS=R.length,nL=R.reduce((t,q)=>t+q.L,0),nH=new Set(R.map(q=>q.id)).size,sx=gdStats(gdVals(R,GD.xEl,C)),atDL=R.filter(q=>q.v[GD.xEl]!=null&&q.v[GD.xEl]<=C.dl[GD.xEl]).length/Math.max(1,R.filter(q=>q.v[GD.xEl]!=null).length)*100;
+ let h='<div class="gdfb"><label>Sumber '+gdSel('gd-src',Object.entries(srcN),GD.src)+'</label><label>Kelompok '+gdSel('gd-grp',GK.map(k=>[k,gdGrpNm(k,C)]),GD.grp)+'</label>'+
+  '<label>Domain '+gdSel('gd-dom',[['','Semua']].concat(C.doms.map(d=>[d,d])),GD.dom)+'</label><label>Bench '+gdSel('gd-bench',[['','Semua']].concat(C.benches.map(b=>[String(b),String(b)])),GD.bench)+'</label>'+
+  '<label>Unsur '+gdSel('gd-el',EL,GD.xEl)+'</label><label><input type="checkbox" id="gd-log"'+(GD.log?' checked':'')+'> Log</label><label><input type="checkbox" id="gd-w"'+(GD.w?' checked':'')+'> Bobot panjang</label><label><input type="checkbox" id="gd-dl"'+(GD.dl?' checked':'')+'> DL dihitung</label>'+
+  '<span style="flex:1"></span><button id="gd-csv" title="Ekspor statistik ke CSV">&#8681; CSV</button><button id="gd-prn" title="Cetak / simpan PDF dashboard">&#128438; PDF</button></div>';
+ const kp=[['&#9879;','#e6f1fb','#1557c0','Sampel',nS.toLocaleString('id-ID')],['&#8614;','#e1f5ee','#0f6e56','Panjang',gdF(nL,0)+' m'],['&#9678;','#eeedfe','#534ab7','Lubang / channel',nH.toLocaleString('id-ID')],['&#9670;','#faeeda','#854f0b',GD.xEl+' rata2',sx?gdF(sx.mean)+' '+gdUnit(GD.xEl):'–'],['&#9986;','#faece7','#993c1d','Top-cut P97,5',sx?gdF(sx.p975)+' '+gdUnit(GD.xEl):'–'],['&#9888;','#fcebeb','#a32d2d',GD.xEl+' = DL',gdF(atDL,0)+' %']];
+ h+='<div class="gdk">'+kp.map(k=>'<div><i style="background:'+k[1]+';color:'+k[2]+'">'+k[0]+'</i><p><span>'+k[3]+'</span><b>'+k[4]+'</b></p></div>').join('')+'</div><div class="gdg">';
+ /* 1 statistik */
+ const ST=EL.map(e=>[e,gdStats(gdVals(R,e,C))]).filter(r=>r[1]);GD._st=ST;
+ h+=gdPanel(1,'Statistik deskriptif per unsur',gdSeg('gd-stat',[['box','Box plot'],['bar','Batang'],['his','Histogram'],['tab','Tabel']],GD.stat),'<div>'+gdStatBody(ST,R,C)+'</div>',true);
+ /* 2 korelasi */
+ const CE=EL.slice(0,10);let hm='<div class="gdhm" style="grid-template-columns:44px repeat('+CE.length+',minmax(0,1fr))"><span></span>'+CE.map(e=>'<span class="gdhh" title="'+gdE(e)+'">'+gdE(e.length>7?e.slice(0,6)+'…':e)+'</span>').join('');
+ CE.forEach(a=>{hm+='<span class="gdhh" style="text-align:left;overflow:hidden;white-space:nowrap" title="'+gdE(a)+'">'+gdE(a.length>7?a.slice(0,6)+'…':a)+'</span>'+CE.map(b=>{const r=a===b?1:gdSpear(R,a,b),v=isFinite(r)?r:0,al=Math.abs(v),c=v>=0?'31,111,235':'227,73,72';return '<span title="'+gdE(a)+' – '+gdE(b)+'" style="background:'+(isFinite(r)?'rgba('+c+','+(0.06+al*0.85).toFixed(2)+')':'#f3f5f9')+';color:'+(al>0.5?'#fff':'#1d2433')+'">'+(isFinite(r)?gdF(r,2):'–')+'</span>';}).join('');});
+ h+=gdPanel(2,'Korelasi antarunsur','<span class="gdnote">Spearman · min 8 pasang</span>',hm+'</div>');
+ /* 3 distribusi */
+ h+=gdPanel(3,'Distribusi '+gdE(GD.xEl),gdSeg('gd-dist',[['his','Histogram'],['prob','Probability']],GD.dist),gdDist(gdVals(R,GD.xEl,C),GD.xEl));
+ /* 4 profil vertikal */
+ const chips=EL.map(e=>'<span class="gdchip'+(GD.pvE.includes(e)?' on':'')+'" data-e="'+gdE(e)+'">'+gdE(e)+'</span>').join('')+'<span class="gdnote" style="margin:0 6px">rasio</span>'+RT.map(r=>'<span class="gdchip'+(GD.pvR.includes(r.k)?' on':'')+'" data-r="'+gdE(r.k)+'">'+gdE(r.k)+'</span>').join('')+'<span class="gdchip" id="gd-addr">+ rasio sendiri</span>';
+ h+=gdPanel(4,'Profil vertikal unsur dan rasio','<label class="gdlb">pita RL '+gdSel('gd-pvb',[[2.5,'2,5 m'],[5,'5 m'],[10,'10 m'],[20,'20 m']],GD.pvB)+'</label><label class="gdlb">'+gdSel('gd-pvs',[['mean','rata2 tertimbang'],['med','median']],GD.pvS)+'</label>','<div class="gdchips">'+chips+'</div>'+gdPV(R,C,RT),true);
+ /* 5 bench */
+ h+=gdPanel(5,'Profil per bench','<label class="gdlb">'+gdSel('gd-bel',EL.concat(RT.map(r=>r.k)),GD.bEl)+'</label><label class="gdlb">1 bench '+gdSel('gd-bm',[['id','dari Hole_ID'],['2.5','2,5 m'],['5','5 m'],['10','10 m']],GD.bm)+'</label>',gdBench(R,C,RT));
+ /* 6+7 kelompok & scatter */
+ h+=gdPanel(6,'Per kelompok','<label class="gdlb">'+gdSel('gd-kel',EL,GD.kEl)+'</label><label class="gdlb">'+gdSel('gd-kgrp',GK.map(k=>[k,gdGrpNm(k,C).replace(/ \(.*\)$/,'')]),GD.kGrp)+'</label>',gdGroup(R,C)+
+  '<div class="gdph" style="margin-top:8px"><span class="gdn">7</span><span class="gdt">Scatter</span><label class="gdlb">X '+gdSel('gd-sx',EL,GD.sx)+'</label><label class="gdlb">Y '+gdSel('gd-sy',EL,GD.sy)+'</label><label class="gdlb">warna '+gdSel('gd-sc',GK.map(k=>[k,gdGrpNm(k,C).replace(/ \(.*\)$/,'')]),GD.sc)+'</label></div>'+gdScatter(R,C));
+ /* 8 ringkasan */
+ h+=gdPanel(8,'Ringkasan per '+{dom:'domain',lith:'litologi',alt:'alterasi'}[GD.sumBy],gdSeg('gd-sum',[['dom','Domain'],['lith','Litologi'],['alt','Alterasi']],GD.sumBy)+'<label class="gdlb">'+gdSel('gd-sel',EL,GD.sumEl)+'</label><label class="gdlb">'+gdSel('gd-sv',[['med','Median'],['mean','Rata2 tertimbang']],GD.sumV)+'</label>',gdSum(R,C),true);
+ h+='</div><div class="gdft">Sumber: '+srcN[GD.src]+' · '+(GD.w?'tertimbang panjang sampel':'per sampel')+' · '+(GD.dl?'nilai DL dihitung':'nilai di batas deteksi dikeluarkan')+' · oksidasi dari '+(C.SX||'SxS')+': &lt; 0,8 % Oksida · 0,8–1 % Transisi · &gt; 1 % Sulfida</div>';
+ host.innerHTML=h;gdWire(C,RT);}
+function gdStatBody(ST,R,C){if(!ST.length)return '<div class="gdempty">Tidak ada nilai.</div>';
+ if(GD.stat==='tab')return '<table class="gdtb"><tr><th>Unsur</th><th>n</th><th>Panjang (m)</th><th>Min</th><th>P25</th><th>Median</th><th>Rata2</th><th>P75</th><th>P97,5</th><th>Maks</th><th>SD</th><th>CV</th></tr>'+ST.map(([e,s])=>'<tr><td><i style="background:'+gdCol(e)+'"></i>'+gdE(gdNm(e))+'</td><td>'+s.n.toLocaleString('id-ID')+'</td><td>'+gdF(s.L,0)+'</td>'+['min','p25','med','mean','p75','p975','max','sd'].map(k=>'<td>'+gdF(s[k])+'</td>').join('')+'<td>'+gdF(s.cv,2)+'</td></tr>').join('')+'</table>';
+ const n=Math.min(ST.length,8),W=Math.max(110,Math.floor(880/n)),cells=ST.slice(0,8);
+ if(GD.stat==='box'){let s='';cells.forEach(([e,st],i)=>{const x0=4+i*W,w=W-8,lg=GD.log&&st.min>0,lo=lg?Math.max(st.p025,1e-6):st.min,hi=st.p975>lo?st.p975:st.max,Y=gdScale(lo,hi,120,16,lg),cx=x0+w/2,col=gdCol(e);
+   s+='<rect x="'+x0+'" y="6" width="'+w+'" height="124" rx="6" fill="'+col+'0d" stroke="'+col+'40"/>'+gdBox(st,null,cx,Math.min(32,w*0.3),col,Y)+'<text x="'+(cx+18)+'" y="'+(Y(st.mean)+3)+'" class="gt">'+gdF(st.mean)+'</text><text x="'+(x0+4)+'" y="17" class="gt">'+gdF(hi)+'</text><text x="'+(x0+4)+'" y="126" class="gt">'+gdF(lo)+'</text><text x="'+cx+'" y="146" text-anchor="middle" class="gl">'+gdE(gdNm(e))+' · n '+st.n.toLocaleString('id-ID')+'</text>';});
+  return gdSvg(cells.length*W+8,152,s,'Box plot per unsur')+'<div class="gdnote">box P25–P75 · garis = median · ujung P2,5–P97,5 · titik gelap = rata-rata'+(GD.w?' tertimbang':'')+(ST.length>8?' · '+(ST.length-8)+' unsur lain ada di Tabel':'')+'</div>';}
+ if(GD.stat==='bar'){let s='';cells.forEach(([e,st],i)=>{const x0=4+i*W,w=W-8,col=gdCol(e),v=[st.med,st.mean,st.p975],lg=GD.log&&st.min>0,mx=Math.max(...v),lo=lg?Math.max(Math.min(...v)/3,1e-6):0,Y=gdScale(lo,mx*1.15,120,16,lg),bw=(w-24)/3;
+   s+='<rect x="'+x0+'" y="6" width="'+w+'" height="124" rx="6" fill="'+col+'0d" stroke="'+col+'40"/>';v.forEach((x,j)=>{const xx=x0+12+j*bw,y=Y(x);s+='<rect x="'+(xx+2)+'" y="'+y+'" width="'+(bw-4)+'" height="'+Math.max(1,120-y)+'" rx="3" fill="'+col+'" fill-opacity="'+[0.35,0.65,1][j]+'"><title>'+['median','rata2','P97,5'][j]+' '+gdF(x)+'</title></rect><text x="'+(xx+bw/2)+'" y="'+(y-3)+'" text-anchor="middle" class="gt">'+gdF(x)+'</text>';});
+   s+='<text x="'+(x0+w/2)+'" y="146" text-anchor="middle" class="gl">'+gdE(gdNm(e))+'</text>';});return gdSvg(cells.length*W+8,152,s,'Batang statistik')+'<div class="gdnote">batang: median · rata-rata · P97,5 (terang → gelap)</div>';}
+ let s='';cells.forEach(([e,st],i)=>{const x0=4+i*W,w=W-8,col=gdCol(e),vs=gdVals(R,e,C),lg=GD.log&&st.min>0,lo=lg?st.min:st.min,hi=st.max,nb=12,bins=new Array(nb).fill(0),sc=gdScale(lo,hi,0,nb-1e-9,lg);
+  for(const [x,wt] of vs){const b=Math.max(0,Math.min(nb-1,Math.floor(sc(x))));bins[b]+=wt;}const mx=Math.max(...bins)||1,bw=(w-12)/nb;
+  s+='<rect x="'+x0+'" y="6" width="'+w+'" height="124" rx="6" fill="'+col+'0d" stroke="'+col+'40"/>';bins.forEach((c,j)=>{const hh=c/mx*100;s+='<rect x="'+(x0+6+j*bw+0.5)+'" y="'+(120-hh)+'" width="'+(bw-1)+'" height="'+hh+'" fill="'+col+'" rx="1"/>';});
+  s+='<text x="'+(x0+4)+'" y="140" class="gt">'+gdF(lo)+'</text><text x="'+(x0+w-4)+'" y="140" text-anchor="end" class="gt">'+gdF(hi)+'</text><text x="'+(x0+w/2)+'" y="152" text-anchor="middle" class="gl">'+gdE(e)+(lg?' (log)':'')+'</text>';});
+ return gdSvg(cells.length*W+8,156,s,'Histogram per unsur');}
+function gdDist(vs,e){if(vs.length<3)return '<div class="gdempty">Data terlalu sedikit.</div>';const W=440,H=200,lg=GD.log&&vs.every(v=>v[0]>0);
+ if(GD.dist==='his'){const xs=vs.map(v=>v[0]),[lo,hi]=gdRange(xs,lg),nb=24,b=new Array(nb).fill(0),sc=gdScale(lo,hi,0,nb-1e-9,lg);for(const [x,w] of vs)b[Math.max(0,Math.min(nb-1,Math.floor(sc(x))))]+=w;const tot=b.reduce((a,c)=>a+c,0)||1,mx=Math.max(...b);
+  const A=gdAxes(W,H,[44,8,10,30],[lo,hi],[0,mx*1.08],lg,false,gdNm(e)+(lg?' · log':''),GD.w?'panjang (m)':'n');let s=A.s;const bw=(W-54)/nb;let cum=0,pl='';b.forEach((c,j)=>{const y=A.Y(c);s+='<rect x="'+(44+j*bw+0.5)+'" y="'+y+'" width="'+(bw-1)+'" height="'+(H-30-y)+'" fill="'+gdCol(e)+'" rx="1"/>';cum+=c;pl+=(j?'L':'M')+(44+(j+1)*bw)+','+(H-30-(cum/tot)*(H-38));});
+  return gdSvg(W,H,s+'<path d="'+pl+'" fill="none" stroke="#1b2a4e" stroke-width="1.6"/>','Histogram')+'<div class="gdnote">garis gelap = kumulatif (0–100 %)</div>';}
+ const s2=[...vs].sort((a,b)=>a[0]-b[0]),W2=s2.reduce((t,r)=>t+r[1],0);let acc=0;const pts=[];const step=Math.max(1,Math.floor(s2.length/500));
+ const zq=p=>{p=Math.min(Math.max(p,1e-6),1-1e-6);const a=[-39.6968,220.946,-275.929,138.358,-30.6648,2.50663],b=[-54.4761,161.586,-155.699,66.8013,-13.2806],c=[-.00778489,-.322396,-2.40076,-2.54973,4.37466,2.93816],d=[.00778470,.322467,2.44513,3.75441];const pl=.02425;let q,r;if(p<pl){q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}if(p>1-pl){q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}q=p-.5;r=q*q;return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);};
+ s2.forEach((r,i)=>{acc+=r[1];if(i%step===0||i===s2.length-1)pts.push([zq((acc-r[1]/2)/W2),r[0]]);});
+ const [ylo,yhi]=gdRange(pts.map(p=>p[1]),lg),A=gdAxes(W,H,[44,8,10,30],[-3.5,3.5],[ylo,yhi],false,lg,'z normal (kumulatif)',gdNm(e));let s=A.s;
+ [[-1.96,'2,5%'],[0,'50%'],[1.96,'97,5%']].forEach(([z,t])=>{s+='<line x1="'+A.X(z)+'" x2="'+A.X(z)+'" y1="8" y2="'+(H-30)+'" stroke="#c9d3e1" stroke-dasharray="3 3"/><text x="'+(A.X(z)+3)+'" y="18" class="gt">'+t+'</text>';});
+ s+='<path d="'+pts.map((p,i)=>(i?'L':'M')+A.X(Math.max(-3.5,Math.min(3.5,p[0])))+','+A.Y(p[1])).join('')+'" fill="none" stroke="'+gdCol(e)+'" stroke-width="2"/>';
+ return gdSvg(W,H,s,'Probability plot')+'<div class="gdnote">patahan kemiringan = batas populasi (dasar cut-off / top-cut)</div>';}
+function gdRatios(EL){const f=re=>EL.find(e=>re.test(e)),au=f(/^au/i),ag=f(/^ag/i),cu=f(/^cu/i),pb=f(/^pb/i),zn=f(/^zn/i),as=f(/^as(_|$)/i),out=[];
+ const add=(k,num,den)=>{if(num.every(Boolean)&&den)out.push({k,num,den});};add('Ag/Au',[ag],au);add('Cu/Au',[cu],au);add('Zn/Pb',[zn],pb);add('(Pb+Zn)/Au',[pb,zn],au);add('Cu/Zn',[cu],zn);add('As/Au',[as],au);add('Cu/(Pb+Zn)',[cu],null);
+ for(const r of (GD.cr||[]))out.push(r);return out.filter(r=>r.den||r.dens);}
+function gdRV(q,r){if(r.dens){let a=0,b=0;for(const e of r.num){const x=q.v[e];if(!isFinite(x))return NaN;a+=x;}for(const e of r.dens){const x=q.v[e];if(!isFinite(x))return NaN;b+=x;}return b>0?a/b:NaN;}let a=0;for(const e of r.num){const x=q.v[e];if(!isFinite(x))return NaN;a+=x;}const b=q.v[r.den];return b>0&&isFinite(b)?a/b:NaN;}
+function gdSer(q,k,RT){const r=RT.find(x=>x.k===k);return r?gdRV(q,r):q.v[k];}
+function gdPV(R,C,RT){const bw=+GD.pvB||5,ser=GD.pvE.concat(GD.pvR.filter(k=>RT.some(r=>r.k===k)));if(!ser.length)return '<div class="gdempty">Pilih unsur atau rasio.</div>';
+ const B=new Map();for(const q of R){const b=Math.floor(q.Z/bw)*bw;if(!B.has(b))B.set(b,[]);B.get(b).push(q);}const bands=[...B.keys()].sort((a,b)=>a-b);if(!bands.length)return '';
+ const yr=[bands[0],bands[bands.length-1]+bw],n=ser.length,cols=Math.min(n,6),W=Math.floor(900/cols);let html='<div class="gdpv" style="grid-template-columns:repeat('+cols+',minmax(0,1fr))">';
+ ser.forEach((k,i)=>{const pts=[];for(const b of bands){const vv=[];for(const q of B.get(b)){const x=gdSer(q,k,RT);if(isFinite(x))vv.push([x,GD.w?q.L:1]);}if(vv.length>=2){const st=gdStats(vv);pts.push([GD.pvS==='med'?st.med:st.mean,b+bw/2,vv.length]);}}
+  const col=RT.some(r=>r.k===k)?'#e87ba4':gdCol(k),lg=GD.log&&pts.every(p=>p[0]>0),[lo,hi]=gdRange(pts.map(p=>p[0]),lg),Wc=200,H=230,A=gdAxes(Wc,H,[i%cols?14:36,6,14,26],[lo,hi],yr,lg,false,'',i%cols?'':'RL (m)');
+  let s=A.s.replace(/<text[^>]*text-anchor="end"[^>]*>[^<]*<\/text>/g,i%cols?'':'$&');if(pts.length){s+='<path d="'+pts.map((p,j)=>(j?'L':'M')+A.X(p[0])+','+A.Y(p[1])).join('')+'" fill="none" stroke="'+col+'" stroke-width="2"'+(RT.some(r=>r.k===k)?' stroke-dasharray="5 3"':'')+'/>'+pts.map(p=>'<circle cx="'+A.X(p[0])+'" cy="'+A.Y(p[1])+'" r="2.6" fill="'+col+'"><title>RL '+gdF(p[1],1)+' · '+gdF(p[0])+' · n '+p[2]+'</title></circle>').join('');}
+  html+='<div class="gdpvc" style="background:'+col+'0d"><div class="gdpvt">'+gdE(RT.some(r=>r.k===k)?k:gdNm(k))+'</div>'+gdSvg(Wc,H,s,'Profil vertikal '+k)+'</div>';});
+ return html+'</div>';}
+function gdBench(R,C,RT){const k=GD.bEl,auto=GD.bm==='id'&&!R.some(q=>q.bench!=null),bs=auto?5:GD.bm==='id'?0:+GD.bm,B=new Map();for(const q of R){const b=bs?Math.floor(q.Z/bs)*bs:q.bench;if(b==null)continue;if(!B.has(b))B.set(b,[]);B.get(b).push(q);}
+ const bl=[...B.keys()].sort((a,b)=>b-a);if(!bl.length)return '<div class="gdempty">Bench tidak terbaca dari Hole_ID (pola _RL_). Pilih "1 bench" = interval meter.</div>';
+ const rows=bl.map(b=>{const vv=[];for(const q of B.get(b)){const x=gdSer(q,k,RT);if(isFinite(x))vv.push([x,GD.w?q.L:1]);}const st=gdStats(vv);return [b,st?st.mean:NaN,B.get(b).length];});
+ const W=420,rh=Math.max(14,Math.min(22,300/rows.length)),H=rows.length*rh+52,mx=Math.max(...rows.map(r=>r[1]).filter(isFinite),1e-9),mn=Math.max(...rows.map(r=>r[2])),X=gdScale(0,mx*1.1,52,W-12,false),XN=gdScale(0,mn*1.1,52,W-12,false);let s='';
+ for(const t of gdTicks(0,mx*1.1,false,4))s+='<line x1="'+X(t)+'" x2="'+X(t)+'" y1="24" y2="'+(H-26)+'" stroke="#e9ecf1"/><text x="'+X(t)+'" y="18" text-anchor="middle" class="gt">'+gdF(t)+'</text>';
+ for(const t of gdTicks(0,mn*1.1,false,4))s+='<text x="'+XN(t)+'" y="'+(H-14)+'" text-anchor="middle" class="gt">'+gdF(t,0)+'</text>';
+ let pl='';rows.forEach((r,i)=>{const y=26+i*rh+rh/2;s+='<rect x="52" y="'+(y-rh*0.33)+'" width="'+Math.max(0,XN(r[2])-52)+'" height="'+(rh*0.66)+'" rx="2" fill="#dfe5ee"><title>n '+r[2]+'</title></rect><text x="46" y="'+(y+3)+'" text-anchor="end" class="gt">'+gdF(r[0],bs&&bs%1?1:0)+'</text>';if(isFinite(r[1]))pl+=(pl?'L':'M')+X(r[1])+','+y;});
+ s+='<path d="'+pl+'" fill="none" stroke="'+gdCol(k)+'" stroke-width="2"/>'+rows.map((r,i)=>isFinite(r[1])?'<circle cx="'+X(r[1])+'" cy="'+(26+i*rh+rh/2)+'" r="3" fill="'+gdCol(k)+'"><title>bench '+r[0]+' · '+gdF(r[1])+' · n '+r[2]+'</title></circle>':'').join('');
+ s+='<text x="'+((52+W-12)/2)+'" y="8" text-anchor="middle" class="gl">'+gdE(k)+' rata-rata'+(GD.w?' tertimbang':'')+'</text><text x="'+((52+W-12)/2)+'" y="'+(H-2)+'" text-anchor="middle" class="gl">n sampel (batang abu)</text><text transform="translate(10,'+(H/2)+') rotate(-90)" text-anchor="middle" class="gl">Bench (RL)</text>';
+ return gdSvg(W,H,s,'Profil per bench')+(auto?'<div class="gdnote">Hole_ID tidak memuat RL bench (pola _RL_) → dipakai 1 bench = 5 m dari elevasi sampel.</div>':'');}
+function gdGroup(R,C){const k=GD.kGrp,e=GD.kEl,G=new Map();for(const q of R){const x=q.v[e];if(!isFinite(x)||(!GD.dl&&x<=C.dl[e]))continue;const g=gdGrpVal(q,k,C);if(!G.has(g))G.set(g,[]);G.get(g).push([x,GD.w?q.L:1]);}
+ let gs=[...G.entries()].sort((a,b)=>b[1].length-a[1].length).slice(0,10);if(!gs.length)return '<div class="gdempty">Tidak ada data kelompok.</div>';if(k==='ox'){const o=['Oksida','Transisi','Sulfida','Tanpa data'];gs.sort((a,b)=>o.indexOf(a[0])-o.indexOf(b[0]));}
+ const st=gs.map(([g,v])=>[g,gdStats(v)]),lg=GD.log&&st.every(s=>s[1].min>0),[lo,hi]=gdRange(st.flatMap(s=>[s[1].p025,s[1].p975]),lg),W=440,H=190,A=gdAxes(W,H,[44,8,8,34],[0,gs.length],[lo,hi],false,lg,'',gdNm(e));
+ let s=A.s.replace(/<text[^>]*text-anchor="middle" class="gt">[^<]*<\/text>/g,'').replace(/<line x1="[\d.]+" x2="[\d.]+" y1="8" y2="156" stroke="#f1f3f7"\/>/g,'');
+ st.forEach(([g,t],i)=>{const cx=A.X(i+0.5),col=GDP[i%GDP.length];s+=gdBox(t,null,cx,Math.min(30,(W-60)/gs.length*0.5),col,A.Y)+'<text x="'+cx+'" y="'+(H-20)+'" text-anchor="middle" class="gl">'+gdE(g.length>12?g.slice(0,11)+'…':g)+'</text><text x="'+cx+'" y="'+(H-8)+'" text-anchor="middle" class="gt">n '+t.n+'</text>';});
+ return gdSvg(W,H,s,'Box plot per kelompok');}
+function gdScatter(R,C){const a=GD.sx,b=GD.sy,k=GD.sc,P=[],G=new Map();for(const q of R){const x=q.v[a],y=q.v[b];if(!isFinite(x)||!isFinite(y))continue;const g=gdGrpVal(q,k,C);if(!G.has(g))G.set(g,G.size);P.push([x,y,G.get(g)]);}
+ if(P.length<3)return '<div class="gdempty">Pasangan '+gdE(a)+'–'+gdE(b)+' terlalu sedikit.</div>';const lg=GD.log&&P.every(p=>p[0]>0&&p[1]>0),W=440,H=200,A=gdAxes(W,H,[44,8,10,30],gdRange(P.map(p=>p[0]),lg),gdRange(P.map(p=>p[1]),lg),lg,lg,gdNm(a),gdNm(b));let s=A.s;
+ const st=Math.max(1,Math.floor(P.length/1500)),sh=['c','r','t'];for(let i=0;i<P.length;i+=st){const [x,y,g]=P[i],col=GDP[g%GDP.length],px=A.X(x),py=A.Y(y),f=sh[g%3];s+=f==='c'?'<circle cx="'+px+'" cy="'+py+'" r="2.4" fill="'+col+'" fill-opacity=".75"/>':f==='r'?'<rect x="'+(px-2.2)+'" y="'+(py-2.2)+'" width="4.4" height="4.4" fill="'+col+'" fill-opacity=".75"/>':'<path d="M'+px+','+(py-2.8)+'l2.6,4.6h-5.2z" fill="'+col+'" fill-opacity=".75"/>';}
+ const r=gdSpear(R,a,b),lgd=[...G.entries()].slice(0,8).map(([g,i])=>'<span style="color:'+GDP[i%GDP.length]+'">'+['&#9679;','&#9632;','&#9650;'][i%3]+' '+gdE(g)+'</span>').join('');
+ return '<div class="gdlg">'+lgd+'<span>r Spearman = '+gdF(r,2)+' · n '+P.length.toLocaleString('id-ID')+'</span></div>'+gdSvg(W,H,s,'Scatter');}
+function gdSum(R,C){const by=GD.sumBy,e=GD.sumEl,med=a=>{const s=[...a].filter(isFinite).sort((x,y)=>x-y),m=s.length>>1;return !s.length?NaN:s.length%2?s[m]:(s[m-1]+s[m])/2;};let cats=[],ser=[];
+ if(by==='dom'){const X=(typeof OG!=='undefined'&&OG.X)||[];if(!X.length)return '<div class="gdempty">Belum ada intercept domain. Atur sumber domain di tab <b>Domain</b> (wireframe / kolom geologi), lalu klik ⟳.</div>';const doms=[...new Set(X.map(q=>q.d))];
+  cats=doms;const ag=(d,f)=>{const I=X.filter(q=>q.d===d);return GD.sumV==='med'?med(I.map(f)):I.reduce((t,q)=>t+f(q)*q.L,0)/(I.reduce((t,q)=>t+q.L,0)||1);};
+  ser=[['Tebal sebenarnya (m)','#1f6feb',doms.map(d=>ag(d,q=>q.T))],[UNS()+' intercept','#eb6834',doms.map(d=>ag(d,q=>q.au))],['GT ('+UGTU()+')','#1baf7a',doms.map(d=>ag(d,q=>q.gt))],['Jumlah intercept','#8a92a3',doms.map(d=>X.filter(q=>q.d===d).length)]];}
+ else{const G=new Map();for(const q of R){const g=gdGrpVal(q,by,C);if(!G.has(g))G.set(g,[]);G.get(g).push(q);}cats=[...G.keys()].sort((a,b)=>G.get(b).length-G.get(a).length).slice(0,12);const cut=e===UEL()||(/^au/i.test(e)&&UEL()==='Au')?UCL().cut:(gdStats(gdVals(R,e,C))||{}).p75;
+  ser=[['Panjang sampel (m)','#1f6feb',cats.map(g=>G.get(g).reduce((t,q)=>t+q.L,0))],[e+' '+(GD.sumV==='med'?'median':'rata2'),'#eb6834',cats.map(g=>{const st=gdStats(gdVals(G.get(g),e,C));return st?(GD.sumV==='med'?st.med:st.mean):NaN;})],['% sampel ≥ '+gdF(cut),'#1baf7a',cats.map(g=>{const v=gdVals(G.get(g),e,C);return v.length?v.filter(x=>x[0]>=cut).length/v.length*100:NaN;})],['Jumlah lubang','#8a92a3',cats.map(g=>new Set(G.get(g).map(q=>q.id)).size)]];}
+ const W=210,H=180;return '<div class="gdsum">'+ser.map(([t,col,vals])=>{const mx=Math.max(...vals.filter(isFinite),1e-9),A=gdAxes(W,H,[40,8,6,46],[0,cats.length],[0,mx*1.12],false,false,'','');let s=A.s.replace(/<text[^>]*text-anchor="middle" class="gt">[^<]*<\/text>/g,'');const bw=(W-46)/cats.length;
+  vals.forEach((v,i)=>{if(!isFinite(v))return;const y=A.Y(v);s+='<rect x="'+(A.X(i)+bw*0.15)+'" y="'+y+'" width="'+(bw*0.7)+'" height="'+(H-46-y)+'" rx="3" fill="'+col+'"><title>'+gdE(cats[i])+' · '+gdF(v)+'</title></rect>';if(cats.length<=8)s+='<text x="'+(A.X(i)+bw/2)+'" y="'+(y-3)+'" text-anchor="middle" class="gt">'+gdF(v)+'</text>';
+   s+='<text transform="translate('+(A.X(i)+bw/2)+','+(H-40)+') rotate(-35)" text-anchor="end" class="gt">'+gdE(String(cats[i]).slice(0,12))+'</text>';});
+  return '<div class="gdsc"><div class="gdpvt">'+gdE(t)+'</div>'+gdSvg(W,H,s,t)+'</div>';}).join('')+'</div><div class="gdnote">'+(by==='dom'?'Domain: dari intercept di dalam wireframe / domain (tab Domain). Kadar = unsur aktif Analisis ('+UNS()+').':'Dari kolom geologi: panjang sampel, kadar, % sampel ≥ cut-off ('+(e===UEL()||(/^au/i.test(e)&&UEL()==='Au')?'cut-off unsur aktif':'P75 unsur')+'), jumlah lubang.')+'</div>';}
+/* ---- interaksi ---- */
+function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{const e=g(id);if(e)e.onchange=()=>{GD[k]=num?+e.value:e.value;gdRender();};};
+ on('gd-src','src');on('gd-grp','grp');on('gd-dom','dom');on('gd-bench','bench');on('gd-el','xEl');on('gd-pvb','pvB',1);on('gd-pvs','pvS');on('gd-bel','bEl');on('gd-bm','bm');on('gd-kel','kEl');on('gd-kgrp','kGrp');on('gd-sx','sx');on('gd-sy','sy');on('gd-sc','sc');on('gd-sel','sumEl');on('gd-sv','sumV');
+ const gg=g('gd-grp');if(gg)gg.addEventListener('change',()=>{GD.kGrp=GD.grp;GD.sc=GD.grp;gdRender();});
+ [['gd-log','log'],['gd-w','w'],['gd-dl','dl']].forEach(([id,k])=>{const e=g(id);if(e)e.onchange=()=>{GD[k]=e.checked;gdRender();};});
+ [['gd-stat','stat'],['gd-dist','dist'],['gd-sum','sumBy']].forEach(([id,k])=>{const e=g(id);if(e)e.onclick=ev=>{const v=ev.target.dataset.v;if(v){GD[k]=v;gdRender();}};});
+ document.querySelectorAll('#gdw .gdchip[data-e]').forEach(c=>c.onclick=()=>{const e=c.dataset.e,i=GD.pvE.indexOf(e);if(i>=0)GD.pvE.splice(i,1);else GD.pvE.push(e);gdRender();});
+ document.querySelectorAll('#gdw .gdchip[data-r]').forEach(c=>c.onclick=()=>{const e=c.dataset.r,i=GD.pvR.indexOf(e);if(i>=0)GD.pvR.splice(i,1);else GD.pvR.push(e);gdRender();});
+ const ar=g('gd-addr');if(ar)ar.onclick=()=>{const t=prompt('Rasio sendiri, contoh: Ag/Au  atau  (Pb+Zn)/Cu  atau  (Cu+Pb)/(Zn+Au)\nNama unsur: '+C.EL.join(', '));if(!t)return;const m=/^\s*\(?([^()\/]+)\)?\s*\/\s*\(?([^()\/]+)\)?\s*$/.exec(t);if(!m){alert('Format tidak dikenali.');return;}
+  const pick=x=>x.split('+').map(s=>s.trim()).map(s=>C.EL.find(e=>e.toLowerCase()===s.toLowerCase())||C.EL.find(e=>e.toLowerCase().startsWith(s.toLowerCase())));const nu=pick(m[1]),de=pick(m[2]);if(nu.some(x=>!x)||de.some(x=>!x)){alert('Unsur tidak ditemukan.');return;}
+  const k=(nu.length>1?'('+nu.join('+')+')':nu[0])+'/'+(de.length>1?'('+de.join('+')+')':de[0]);GD.cr=(GD.cr||[]).filter(r=>r.k!==k);GD.cr.push(de.length>1?{k,num:nu,dens:de}:{k,num:nu,den:de[0]});GD.pvR.push(k);gdRender();};
+ const cv=g('gd-csv');if(cv)cv.onclick=()=>{const ST=GD._st||[],L2=['Unsur,n,Panjang_m,Min,P2.5,P25,Median,Rata2,P75,P97.5,Maks,SD,CV'].concat(ST.map(([e,s])=>[e,s.n,s.L.toFixed(2),s.min,s.p025,s.p25,s.med,+s.mean.toPrecision(6),s.p75,s.p975,s.max,+s.sd.toPrecision(6),+s.cv.toFixed(3)].join(',')));
+  const b=new Blob(['﻿'+L2.join('\r\n')+'\r\n'],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='Statistik_geokimia.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);};
+ const pr=g('gd-prn');if(pr)pr.onclick=()=>{const w=window.open('','_blank');if(!w){alert('Izinkan jendela pop-up untuk mencetak.');return;}w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dashboard geokimia</title><style>'+document.getElementById('gd-css').textContent+' body{margin:10mm;font-family:Segoe UI,Arial} .gdfb select,.gdfb button,.gdfb input{display:none}</style></head><body><h3 style="color:#1b2a4e;margin:0 0 6px">Dashboard geokimia · '+gdE((document.getElementById('pjn')||{}).textContent||'')+'</h3><div id="gdw">'+g('gdw').innerHTML+'</div></body></html>');w.document.close();setTimeout(()=>w.print(),400);};}
+/* ---- pasang ke jendela Analisis ---- */
+{const css=document.createElement('style');css.id='gd-css';css.textContent=`
+#gdw{padding:6px 8px 8px;font:12px/1.4 "Segoe UI",Inter,Arial,sans-serif;color:#1d2433;max-height:76vh;overflow:auto}
+#gdw .gdfb{display:flex;flex-wrap:wrap;gap:5px 12px;align-items:center;padding:5px 8px;background:#f3f6fa;border:1px solid #e3e7ee;border-radius:8px;margin-bottom:6px}
+#gdw .gdfb label,#gdw .gdlb{display:inline-flex;gap:4px;align-items:center;color:#52596a;font-size:11.5px;margin:0;font-weight:400}
+#gdw .gdsel{font:11.5px "Segoe UI",Arial;border:1px solid #c9d3e1;background:#fff;color:#1d2433;border-radius:5px;padding:1px 4px;height:21px;max-width:170px}
+#gdw input[type=checkbox]{margin:0;width:12px;height:12px;accent-color:#1f6feb}
+#gdw .gdfb button{font-size:11px;padding:2px 8px;border-radius:5px}
+#gdw .gdk{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:6px}
+#gdw .gdk div{background:#f6f8fb;border:1px solid #e3e7ee;border-radius:8px;padding:5px 7px;display:flex;gap:7px;align-items:center;min-width:0}
+#gdw .gdk i{font-style:normal;font-size:15px;width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+#gdw .gdk p{margin:0;min-width:0}#gdw .gdk span{display:block;font-size:10.5px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#gdw .gdk b{font-weight:600;font-size:13.5px;color:#1b2a4e;white-space:nowrap}
+#gdw .gdg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#gdw .gdp{border:1px solid #e3e7ee;border-radius:8px;padding:6px 8px;background:#fff;min-width:0}
+#gdw .gdw2{grid-column:1/-1}
+#gdw .gdph{display:flex;align-items:center;gap:6px;font-weight:600;font-size:12px;margin-bottom:4px;flex-wrap:wrap;color:#1b2a4e}
+#gdw .gdn{width:18px;height:18px;border-radius:5px;background:#e6f1fb;color:#1557c0;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+#gdw .gdt{flex:1;white-space:nowrap}
+#gdw .gdseg{display:inline-flex;border:1px solid #c9d3e1;border-radius:6px;overflow:hidden;background:#f6f8fb}
+#gdw .gdseg span{font-size:11px;font-weight:400;color:#52596a;padding:1px 9px;cursor:pointer;line-height:17px;user-select:none}
+#gdw .gdseg span.on{background:#1b2a4e;color:#fff}
+#gdw .gdchips{margin-bottom:4px}
+#gdw .gdchip{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid #c9d3e1;color:#52596a;margin:1px;cursor:pointer;user-select:none;font-weight:400}
+#gdw .gdchip.on{background:#1b2a4e;color:#fff;border-color:#1b2a4e}
+#gdw .gdnote{font-size:10.5px;color:#8a92a3;font-weight:400}
+#gdw .gdlg{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:10.5px;color:#52596a;margin-bottom:2px}
+#gdw .gdpv{display:grid;gap:5px}#gdw .gdpvc,#gdw .gdsc{border-radius:6px;padding:2px}#gdw .gdpvt{font-size:10.5px;color:#52596a;text-align:center}
+#gdw .gdsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#gdw .gdhm{display:grid;gap:2px;font-size:10.5px}#gdw .gdhm span{text-align:center;padding:4px 0;border-radius:4px}#gdw .gdhh{color:#52596a;background:none!important}
+#gdw .gdtb{width:100%;border-collapse:collapse;font-size:11px}#gdw .gdtb th{background:#1b2a4e!important;color:#fff!important;font-weight:500;padding:3px 5px;text-align:right;font-size:11px;border:0}#gdw .gdtb td{padding:2px 5px;text-align:right;border-bottom:1px solid #eef0f4;font-variant-numeric:tabular-nums}
+#gdw .gdtb td:first-child,#gdw .gdtb th:first-child{text-align:left}#gdw .gdtb i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+#gdw .gds{display:block}#gdw .gds .gt{font-size:9.5px;fill:#8a92a3}#gdw .gds .gl{font-size:10.5px;fill:#52596a}
+#gdw .gdempty{padding:18px;text-align:center;color:#8a92a3}
+#gdw .gdft{font-size:10.5px;color:#8a92a3;margin-top:6px}`;document.head.appendChild(css);
+ const tabs=document.getElementById('ogtabs'),bd=document.getElementById('ogbd');
+ if(tabs&&bd){const b=document.createElement('button');b.dataset.t='gd';b.textContent='Dashboard geokimia';tabs.insertBefore(b,tabs.firstChild);
+  const sum=tabs.querySelector('button[data-t="sum"]');if(sum)sum.style.display='none';
+  tabs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));OG.tab='gd';
+  b.onclick=()=>{tabs.querySelectorAll('button').forEach(c=>c.classList.toggle('on',c===b));OG.tab='gd';ogDraw();};
+  const w=document.createElement('div');w.id='gdw';w.style.display='none';tabs.after(w);
+  const rf=document.createElement('span');}
+ const _od=ogDraw;ogDraw=function(){const w=document.getElementById('gdw'),cvw=document.getElementById('ogc'),tb=document.getElementById('ogtbl'),wrap=cvw&&cvw.parentNode,nt=wrap&&wrap.nextElementSibling;
+  if(OG.tab==='gd'){osPanels('gd');if(wrap)wrap.style.display='none';if(nt&&nt.classList.contains('note'))nt.style.display='none';if(w){w.style.display='block';try{gdRender();}catch(e){w.innerHTML='<div class="gdempty">Gagal menggambar dashboard: '+gdE(e.message)+'</div>';console.error(e);}}return;}
+  if(w)w.style.display='none';if(wrap)wrap.style.display='';if(nt)nt.style.display='';return _od.apply(this,arguments);};
+ const _hb1=holesBuild;holesBuild=function(){GD.cache=null;return _hb1.apply(this,arguments);};
+}
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */

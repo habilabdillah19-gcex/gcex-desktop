@@ -4748,3 +4748,19 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Cut-off GT di Long section / Envelope diisi dalam satuan unsur aktif × meter.
 - Release kini memuat *Ore Works — Tutorial Penggunaan* dan *Petunjuk Teknis* (PDF) serta data latihan Ore Works.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 203. Ore Works 0.3.0 — Dashboard geokimia
+
+- **Analisis → Dashboard geokimia** (tab pertama; isi tab *Ringkasan* lama ada di panel 8). Semua grafik digambar
+  di aplikasi (offline, tanpa pustaka luar).
+- Filter: **Sumber** (Semua sumber / Grade control / Exploration / Channel sampling / Grade control + Exploration),
+  Kelompok, Domain, Bench, Unsur, Log, Bobot panjang (statistik tertimbang panjang sampel), DL dihitung.
+- Panel: 1 statistik deskriptif (Box plot / Batang / Histogram / Tabel) · 2 korelasi Spearman · 3 distribusi
+  (Histogram / Probability) · 4 profil vertikal unsur + rasio (+ rasio sendiri, mis. `(Pb+Zn)/Cu`) · 5 profil per bench
+  (bench dari Hole_ID pola `_RL_`, atau 2,5 / 5 / 10 m) · 6 box plot per kelompok · 7 scatter · 8 ringkasan per
+  Domain / Litologi / Alterasi. Tombol **CSV** mengekspor statistik, **PDF** mencetak dashboard.
+- Oksidasi dihitung dari kolom SxS: < 0,8 % Oksida, 0,8–1 % Transisi, > 1 % Sulfida.
+- Sumber lubang: kolom Collar `Hole_Purpose` (GC / Exploration) bila ada; jika tidak, awalan Hole_ID (PDH/MDH/DDH/EXP/EX =
+  Exploration). Channel yang dikirim dari Pemetaan tercatat sebagai Channel sampling.
+- Data latihan: `LTH_assay.csv` kini memuat Cu/Pb/Zn/SxS, `LTH_collar.csv` memuat Hole_Purpose, `LTH_geologi.csv` memuat Vein_Type.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
