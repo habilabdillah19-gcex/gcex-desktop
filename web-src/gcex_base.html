@@ -2216,10 +2216,15 @@ function bxTraces(T,o){if(!BX.m||!$('bxShow')||!$('bxShow').checked||VIEW2D)retu
     var bx0=m.ext[0],by0=m.ext[2],bz0=m.ext[4],sxM=0,syM=0,szM=0,stp=Math.max(1,Math.floor(tot/20000));
     for(var q=0;q<tot;q+=stp){var i=S.idx[q];if(m.sx[i]>sxM)sxM=m.sx[i];if(m.sy[i]>syM)syM=m.sy[i];if(m.sz[i]>szM)szM=m.sz[i];}
     if(!(sxM>0))sxM=1;if(!(syM>0))syM=1;if(!(szM>0))szM=1;var f=1,CX2,CY2,CZ2,cells;
-    for(var it=0;it<12;it++){CX2=sxM*f;CY2=syM*f;CZ2=szM*f;cells=new Map();
+    /* 0.24.85 (pemilik 14 Nov 2026, 45 juta blok -> tampilan kosong: "Map maximum size exceeded"): faktor awal dihitung dari
+       volume blok terpilih -- sel ukuran c hanya bisa <= batas bila volume / c^3 <= batas, jadi faktor yang lebih kecil pasti
+       gagal dan tidak perlu dicoba; pencarian juga berhenti begitu jumlah sel melewati batas. */
+    var vTot=0;for(var qv=0;qv<tot;qv+=stp){var iv=S.idx[qv];vTot+=m.sx[iv]*m.sy[iv]*m.sz[iv];}vTot*=tot/Math.ceil(tot/stp);
+    while(f<4096&&vTot/(sxM*syM*szM*f*f*f)>lim)f*=2;
+    for(var it=0;it<14;it++){CX2=sxM*f;CY2=syM*f;CZ2=szM*f;cells=new Map();var lebih=false;
       for(var q2=0;q2<tot;q2++){var i2=S.idx[q2],k2=S.cl[q2],ix=Math.floor((m.x[i2]-bx0)/CX2),iy=Math.floor((m.y[i2]-by0)/CY2),iz=Math.floor((m.z[i2]-bz0)/CZ2),kk=(ix*131071+iy)*131071+iz,c=cells.get(kk);
-        if(!c){c={ix:ix,iy:iy,iz:iz,w:{}};cells.set(kk,c);}c.w[k2]=(c.w[k2]||0)+m.sx[i2]*m.sy[i2]*m.sz[i2];}
-      if(cells.size<=lim)break;f*=2;}
+        if(!c){if(cells.size>=lim){lebih=true;break;}c={ix:ix,iy:iy,iz:iz,w:{}};cells.set(kk,c);}c.w[k2]=(c.w[k2]||0)+m.sx[i2]*m.sy[i2]*m.sz[i2];}
+      if(!lebih)break;f*=2;}
     var nC=cells.size,mm={n:nC,x:new Float64Array(nC),y:new Float64Array(nC),z:new Float64Array(nC),sx:new Float64Array(nC),sy:new Float64Array(nC),sz:new Float64Array(nC),ext:m.ext,s0:CX2},G2={},j2=0;
     cells.forEach(function(c){var best=null,bw=-1;Object.keys(c.w).forEach(function(k){if(c.w[k]>bw){bw=c.w[k];best=+k;}});
       mm.x[j2]=bx0+(c.ix+0.5)*CX2;mm.y[j2]=by0+(c.iy+0.5)*CY2;mm.z[j2]=bz0+(c.iz+0.5)*CZ2;mm.sx[j2]=CX2;mm.sy[j2]=CY2;mm.sz[j2]=CZ2;(G2[best]=G2[best]||[]).push(j2);j2++;});

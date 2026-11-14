@@ -20,6 +20,11 @@ SA.MDL_BIG_MB=150;
    bisa diubah: localStorage gcexMdlMaxBlk). Model > batas: dimuat rentang RL teratas yang muat, sisanya lewat filter RL. */
 SA.mdlMaxBlk=function(){var v=0;try{v=parseInt(localStorage.getItem('gcexMdlMaxBlk'),10);}catch(e){}if(v>=100000)return v;
   var dm=+navigator.deviceMemory||8;return dm<=4?1500000:dm<8?2500000:3500000;};
+/* 0.24.85: batas MEMORI untuk .mdl besar yang dibaca langsung dengan filter pit / topografi (bukan batas "lancar"): semua blok
+   yang lolos filter dimuat sampai batas ini; tampilan 3D di atas batas kubus disederhanakan (LOD), sedangkan flitch / sayatan
+   tetap menggambar blok asli. Bisa diubah: localStorage gcexMdlMaxMem. */
+SA.mdlMaxMem=function(){var v=0;try{v=parseInt(localStorage.getItem('gcexMdlMaxMem'),10);}catch(e){}if(v>=100000)return v;
+  var dm=+navigator.deviceMemory||8;return dm<=4?8000000:dm<8?20000000:60000000;};
 SA.mdlPathMap=function(){try{return JSON.parse(localStorage.getItem('gcexMdlPaths')||'{}');}catch(e){return{};}};
 SA.mdlPathSave=function(f,p){try{var m=SA.mdlPathMap();m[f.name+'|'+f.size]=p;localStorage.setItem('gcexMdlPaths',JSON.stringify(m));}catch(e){}};
 SA.mdlPathOf=async function(f){var D=window.gcexDesktop;if(!D||!D.pathOf||!D.api)return '';var p=D.pathOf(f);if(p)return p;
@@ -50,14 +55,14 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
        LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
        blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
        teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
-    if(opt&&(opt.pit||opt.topo)){var mx=SA.mdlMaxBlk(),lebih='',m0=await _r.call(this,f,prog,Object.assign({},opt,{maxN:mx})),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
+    if(opt&&(opt.pit||opt.topo)){var mx=SA.mdlMaxMem(),lebih='',m0=await _r.call(this,f,prog,Object.assign({},opt,{maxN:mx})),pth='';try{pth=await SA.mdlPathOf(f);}catch(x){}
       /* 0.24.83 (pemilik 14 Nov 2026: 39.479.029 blok lolos filter pit -> aplikasi error kehabisan memori). Blok yang lolos
          filter dibatasi mx; bila lebih, jumlah per RL dari bacaan pertama dipakai memilih bagian TERATAS yang muat, lalu
          file dibaca sekali lagi hanya untuk rentang itu. */
       if(m0.mdl.over){var HB=m0.mdl.hist,zB=m0.mdl.origin[2],tot=m0.n+m0.mdl.over,ak=0,b=HB.length-1;for(;b>=0;b--){if(ak+HB[b]>mx&&ak>0)break;ak+=HB[b];if(ak>mx)break;}
         var zCut=zB+Math.max(0,b+(ak>mx?0:1))*0.25,zTop=isFinite(opt.zMax)?opt.zMax:zB+m0.mdl.extent[2];m0=null;
         m0=await _r.call(this,f,prog,Object.assign({},opt,{zMin:zCut,maxN:Math.min(Math.max(ak,mx),mx*3)}));
-        lebih='Model sangat besar: '+tot.toLocaleString()+' blok lolos filter, melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok). Yang dimuat hanya bagian teratas, RL '+zCut+' \u2013 '+zTop+' ('+m0.n.toLocaleString()+' blok). Rentang berikutnya: isi RL atas '+zCut+' (RL bawah lebih rendah). '+(opt.topo?'':' Nyalakan juga "Hanya di bawah topografi asbuilt" supaya blok udara di atas topografi tidak ikut dihitung.')+' Angka SELURUH pit tanpa memuat semua blok: Ringkasan seluruh model per RL, centang batas desain pit / topografi.';}
+        lebih='Model sangat besar: '+tot.toLocaleString()+' blok lolos filter, melebihi batas memori komputer ini ('+mx.toLocaleString()+' blok). Yang dimuat hanya bagian teratas, RL '+zCut+' \u2013 '+zTop+' ('+m0.n.toLocaleString()+' blok). Rentang berikutnya: isi RL atas '+zCut+' (RL bawah lebih rendah). '+(opt.topo?'':' Nyalakan juga "Hanya di bawah topografi asbuilt" supaya blok udara di atas topografi tidak ikut dihitung.')+' Angka SELURUH pit tanpa memuat semua blok: Ringkasan seluruh model per RL, centang batas desain pit / topografi.';}
       try{var M0=m0.mdl;if(lebih)m0.warn=(m0.warn?m0.warn+' ':'')+lebih;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
         /* 0.24.82: path file disimpan supaya "Ringkasan seluruh model per RL" tetap dihitung backend atas SELURUH file */
         if(pth){M0.path=pth;M0.bigPath=1;SA.mdlPathSave(f,pth);}

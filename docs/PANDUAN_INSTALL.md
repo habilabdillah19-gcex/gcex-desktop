@@ -4912,3 +4912,12 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Bila proyek dibuka ulang, pilih lagi file .mdl-nya di kotak **File .mdl** pada dialog itu.
 - Tampilan 3D tetap memuat potongan (batas lancar komputer); pindah rentang lewat RL bawah / RL atas saat import.
 - Drillhole 0.24.92: ikut naik karena kode bersama. DB-Ex, Ore Works: tidak berubah.
+
+## 220. Block Model 0.24.85 — block model puluhan juta blok tampil di 3D
+
+- Import .mdl besar dengan **Hanya di dalam desain pit** / **Hanya di bawah topografi** kini memuat semua blok yang lolos filter
+  (sampai batas memori komputer), bukan hanya potongan RL teratas.
+- Tampilan 3D keseluruhan disederhanakan otomatis (sel berwarna kelas dominan) supaya tetap ringan. **Flitch aktif dan
+  sayatan menggambar blok asli** — pakai itu untuk membuat dig block.
+- Angka statistik, Ringkasan per RL dan laporan tetap memakai blok asli.
+- Drillhole 0.24.93: ikut naik karena kode bersama. DB-Ex, Ore Works: tidak berubah.

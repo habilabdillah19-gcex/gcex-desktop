@@ -7,6 +7,7 @@
      rentang berikutnya, dan isinya sama dengan bacaan tanpa batas untuk rentang RL itu.
   D6 (0.24.84) Ringkasan per RL atas SELURUH file dengan batas di dalam pit / di bawah topografi dihitung sambil membaca
      (blok tidak disimpan): sama dengan hitungan langsung dari semua blok; tanpa batas = bsLocal.
+  D7 (0.24.85) 17,5 juta blok terpilih: tampilan 3D LOD jadi (dulu Map maximum size exceeded -> kosong).
 Pemakaian: python tools/uji/uji_dxf_dtm.py [app/index.html]   (build 0.24.82 harus GAGAL)
 """
 from __future__ import annotations
@@ -45,12 +46,12 @@ JS = r"""async function(nF){var R={},fs=document.getElementById('__f').files,out
   var g=SA.surfGrid(out,'crest');var ga=5*Math.PI/180,gz=g?SA.surfAt(g,1000+59.09*Math.cos(ga),2000+59.09*Math.sin(ga)):NaN;R.d3.gz=gz;R.d3.grid=Math.abs(gz-97.5)<0.8&&isNaN(SA.surfAt(g,1000+200,2000));
   var ln={x:[],y:[],z:[]};for(var s=0;s<40;s++){for(var k=0;k<12;k++){ln.x.push(k*5);ln.y.push(s*3);ln.z.push(100+k);}ln.x.push(null);ln.y.push(null);ln.z.push(null);}R.d4=TIN.soup(ln)===null;
   /* D5 */
-  var f=fs[1],H=await SA.mdlHead(f),pit={x0:H.origin[0]-10,y0:H.origin[1]-10,c:200,nx:1,ny:1,z:new Float32Array([H.origin[2]-5])},D0=window.gcexDesktop,B0=SA.MDL_BIG_MB,M0=SA.mdlMaxBlk;
+  var f=fs[1],H=await SA.mdlHead(f),pit={x0:H.origin[0]-10,y0:H.origin[1]-10,c:200,nx:1,ny:1,z:new Float32Array([H.origin[2]-5])},D0=window.gcexDesktop,B0=SA.MDL_BIG_MB,M0=SA.mdlMaxMem;
   window.gcexDesktop={api:async function(){throw new Error('stub');},apiBin:async function(){throw new Error('stub');},pathOf:function(){return '';}};SA.MDL_BIG_MB=0.0001;
-  try{SA.mdlMaxBlk=function(){return 1e9;};var A=await SA.readMDL(f,null,{head:H,pit:pit});SA.mdlMaxBlk=function(){return 400;};var B=await SA.readMDL(f,null,{head:H,pit:pit});
+  try{SA.mdlMaxMem=function(){return 1e9;};var A=await SA.readMDL(f,null,{head:H,pit:pit});SA.mdlMaxMem=function(){return 400;};var B=await SA.readMDL(f,null,{head:H,pit:pit});
     var zc=1e9;for(var i=0;i<B.n;i++){var t=B.z[i]+B.sz[i]/2;if(t<zc)zc=t;}var m=/RL ([0-9.]+) /.exec(B.warn||''),cut=m?+m[1]:NaN,nA=0;for(i=0;i<A.n;i++)if(A.z[i]+A.sz[i]/2>cut)nA++;
     R.d5={all:A.n,n:B.n,warn:B.warn||'',cut:cut,minTop:zc,nA:nA,warnA:A.warn||''};}catch(e){R.d5={err:String(e)};}
-  window.gcexDesktop=D0;SA.MDL_BIG_MB=B0;SA.mdlMaxBlk=M0;
+  window.gcexDesktop=D0;SA.MDL_BIG_MB=B0;SA.mdlMaxMem=M0;
   /* D6: ringkasan seluruh file dengan batas pit / topografi (streaming) = hitung langsung dari semua blok */
   try{var Afull=await SA.readMDLraw(f,null,{head:H}),m0=BX.m,u0=BX.ui.sgCol,tz0=TP.zf,fl0=SA.mdlFileLast,S={bench:10,ref:0,cut:'',cutA:'au'};
     var zP=function(x,y){return x+offX>H.origin[0]+70?null:100+0.2*(y+offY-H.origin[1]);},zT=function(x,y){return 150+0.1*(x+offX-H.origin[0]);};
@@ -61,6 +62,13 @@ JS = r"""async function(nF){var R={},fs=document.getElementById('__f').files,out
     R.d6={same0:L0.total.n===S0.total.n&&Math.abs(L0.total.ton-S0.total.ton)<1e-6&&L0.rows.length===S0.rows.length&&Math.abs(L0.total.grade.au-S0.total.grade.au)<1e-9,
       n:[S1.total.n,eN],vol:[S1.total.vol,eV],ton:[S1.total.ton,eT],au:[S1.total.grade.au,eG/eW],cutN:[S2.total.n,eN2],sub:eN>0&&eN<Afull.n,con:S1.con,nModel:S1.n_model};
     BX.m=m0;BX.ui.sgCol=u0;TP.zf=tz0;SA.mdlFileLast=fl0;OV.pitF=pF0;OV.topoF=tF0;}catch(e){R.d6={err:String(e&&e.stack||e)};}
+  /* D7: 17,5 juta blok terpilih -> LOD tampil (dulu "Map maximum size exceeded" -> tampilan kosong) */
+  try{var mA=BX.m,uA=BX.ui,e=mA.ext,s=0.5,nx=260,ny=260,nz=259,n=nx*ny*nz,x=new Float64Array(n),y=new Float64Array(n),z=new Float64Array(n),sx=new Float32Array(n).fill(s),au=new Float32Array(n),q=0;
+    for(var k=0;k<nz;k++)for(var j=0;j<ny;j++)for(i=0;i<nx;i++){x[q]=e[0]+(i+0.5)*s;y[q]=e[2]+(j+0.5)*s;z[q]=e[4]+(k+0.5)*s;au[q]=k/nz*4;q++;}
+    BX.m={name:'besar',n:n,x:x,y:y,z:z,sx:sx,sy:sx,sz:sx,num:{au:au},cat:{},s0:s,ext:[e[0],e[0]+nx*s,e[2],e[2]+ny*s,e[4],e[4]+nz*s],sizes:'0.5',mdl:null};
+    BX.ui=bxDefUI(BX.m);BX.ver++;BX.sc={};BX.scL=[];BX.mc=null;BX.mcL=[];var T=[],t7=performance.now();
+    try{bxTraces(T,{clip:false});R.d7={n:n,nT:T.length,shown:BX.lim3d&&BX.lim3d.shown,lim:BX.lim3d&&BX.lim3d.lim,tot:BX.lim3d&&BX.lim3d.tot,ms:Math.round(performance.now()-t7)};}catch(x7){R.d7={err:String(x7)};}
+    BX.m=mA;BX.ui=uA;BX.ver++;BX.sc={};BX.scL=[];BX.mc=null;BX.mcL=[];BX.lim3d=null;x=y=z=sx=au=null;}catch(e7){R.d7={err:String(e7)};}
   return R;}"""
 
 
@@ -102,6 +110,8 @@ def main() -> int:
     cek("err" not in d6 and d6["sub"] and d6["n"][0] == d6["n"][1] and abs(d6["vol"][0] - d6["vol"][1]) < 1e-6 and abs(d6["ton"][0] - d6["ton"][1]) < 1e-6
         and abs(d6["au"][0] - d6["au"][1]) < 1e-9 and d6["nModel"] == 3000, "D6 di dalam pit + di bawah topografi (titik tengah): blok %s, ton %s, kadar %s" % (d6.get("n"), d6.get("ton"), d6.get("au")))
     cek("err" not in d6 and d6["cutN"][0] == d6["cutN"][1] and "cara Surpac" in d6["con"], "D6 cut-off + di dalam pit: %s blok; keterangan: %s" % (d6.get("cutN"), d6.get("con")))
+    d7 = r["d7"]
+    cek("err" not in d7 and d7["nT"] >= 1 and 0 < d7["shown"] <= d7["lim"] and d7["tot"] > 16800000, "D7 %s blok terpilih -> LOD %s sel (batas %s), %s ms %s" % (d7.get("tot"), d7.get("shown"), d7.get("lim"), d7.get("ms"), d7.get("err", "")))
     cek(not err, "tanpa error halaman %s" % err[:3])
     print("GAGAL (%d)" % len(gagal) if gagal else "LULUS")
     return 1 if gagal else 0
