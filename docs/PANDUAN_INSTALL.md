@@ -4848,3 +4848,9 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   **Wireframe (proyeksi)**.
 - Legenda otomatis tersembunyi bila belum ada data.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 212. Block Model 0.24.80 + Drillhole 0.24.89 — rumus atribut kalkulasi bertanda petik tunggal
+
+- Atribut kalkulasi Surpac yang memakai teks dengan petik tunggal, mis. `IIF(auok>1 AND alttype = 'PRO',auok*0.80,auok)`,
+  kini terbaca saat import .mdl (sebelumnya: "karakter tidak dikenal: '").
+- DB-Ex dan Ore Works: tidak berubah.

@@ -4039,7 +4039,8 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
 /* ekspresi Surpac IIF(...) -> fungsi JS aman (hanya nama atribut, angka, string, operator) */
 SA.mdlExpr=function(ex,A){var names={};A.forEach(function(a){names[a.name.toLowerCase()]=a.name;});var t=[],i=0,s=String(ex),vars={};
   while(i<s.length){var c=s[i];if(/\s/.test(c)){i++;continue;}
-    if(c==='"'){var j=s.indexOf('"',i+1);if(j<0)throw new Error('string tidak tertutup');t.push(JSON.stringify(s.slice(i+1,j)));i=j+1;continue;}
+    /* teks bertanda petik ganda "PRO" maupun TUNGGAL 'PRO' (Surpac: IIF(auok>1 AND alttype = 'PRO',auok*0.80,auok), pemilik 14 Nov 2026) */
+    if(c==='"'||c==="'"){var j=s.indexOf(c,i+1);if(j<0)throw new Error('string tidak tertutup');t.push(JSON.stringify(s.slice(i+1,j)));i=j+1;continue;}
     var m=/^[0-9]*\.?[0-9]+(e[-+]?\d+)?/i.exec(s.slice(i));if(m&&m[0]){t.push(m[0]);i+=m[0].length;continue;}
     m=/^[A-Za-z_][A-Za-z0-9_]*/.exec(s.slice(i));if(m){var w=m[0],lw=w.toLowerCase();i+=w.length;if(lw==='iif')t.push('IIF');else if(lw==='and')t.push('&&');else if(lw==='or')t.push('||');else if(lw==='not')t.push('!');else if(names[lw]){vars[names[lw]]=1;t.push('r['+JSON.stringify(names[lw])+']');}else throw new Error('nama tidak dikenal: '+w);continue;}
     var two=s.substr(i,2);if(two==='>='||two==='<='){t.push(two);i+=2;continue;}if(two==='<>'||two==='!='){t.push('!=');i+=2;continue;}if(two==='=='){t.push('==');i+=2;continue;}
