@@ -2014,6 +2014,11 @@ HR.mapImage = function () {
   var tmr = null, redraw = function () {
     tmr = null;
     try {
+      /* BM 0.24.86 (pemilik 14 Nov 2026: "lagging / jeda ketika display 3D diubah orientasinya"): gambar ulang sesudah kamera
+         berhenti hanya berguna bila ada lapisan yang resolusinya mengikuti zoom (orthofoto). Tanpa itu, cache overlay dulu
+         dikosongkan dan topografi / pit / Topo x Pit (jutaan segitiga) + block model dibangun & dikirim ulang ke GPU tiap
+         kali kamera digerakkan. window.HR_perlu() (Block Model) menjawab apakah gambar ulang itu perlu. */
+      if (typeof window.HR_perlu === 'function' && !window.HR_perlu()) return;
       if (window.MAP && MAP.on && window.mapRefresh) mapRefresh(true);
       else if (window.updatePlot) { if (window.OVC) window.OVC = {}; updatePlot(); }
     } catch (e) { }
@@ -10722,7 +10727,8 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     var S = [], it = function (c, lab, sh) { return '<div class=tplg-i><span class="tplg-s ' + (sh || 'kotak') + '" style="background:' + esc(c || '#9aa5b1') + '"></span><span>' + lab + '</span></div>'; };
     /* block model: kelas yang sedang tampil */
     if (window.BX && BX.m && E('bxShow') && E('bxShow').checked && !VIEW2D && BX.sc && BX.sc.v && typeof bxClassInfo === 'function') {
-      var U = BX.ui, ks = {}; BX.sc.v.cl.forEach(function (k) { ks[k] = (ks[k] || 0) + 1; });
+      /* 0.24.86: jumlah blok per kelas disimpan pada hasil pemilihan (dulu dihitung ulang tiap gambar: 45 juta blok = jeda) */
+      var U = BX.ui, V = BX.sc.v, ks = V._ks; if (!ks) { ks = {}; var CL = V.cl; for (var qk = 0; qk < CL.length; qk++) { var kq = CL[qk]; ks[kq] = (ks[kq] || 0) + 1; } V._ks = ks; }
       var h = Object.keys(ks).map(Number).sort(function (a, b) { return a - b; }).map(function (k) { var ci = bxClassInfo(k); return it(ci.col, esc(ci.lab) + ' <small>' + ks[k].toLocaleString('id-ID') + '</small>'); }).join('');
       var sub = [U.fAttr && U.fVal !== '' ? esc(U.fAttr) + ' ' + (U.fOp === 'lt' ? '&lt;' : '≥') + ' ' + esc(U.fVal) : '', U.tpB ? esc(TP.MODE[U.tpB]) : ''].filter(Boolean).join(' · ');
       if (h) S.push('<div class=tplg-h>Block model · ' + esc(U.attr) + '</div>' + (sub ? '<div class=tplg-n>' + sub + '</div>' : '') + h);
@@ -11130,6 +11136,8 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     } catch (x) {} }, 900);
   }
   function jalan() { try { rlCek(); } catch (e) {} try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
+  /* 0.24.86: gambar ulang sesudah kamera berhenti (hires.js) hanya bila orthofoto tampil */
+  window.HR_perlu=function(){var o=document.getElementById('ovOrtho');return !!(o&&o.checked&&!o.disabled)||!(window.TIN&&TIN.on);};
   window.SHELL = { rlCek: rlCek, semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);
@@ -13316,7 +13324,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.85';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.86';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

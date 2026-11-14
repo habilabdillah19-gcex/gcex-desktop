@@ -259,6 +259,11 @@ HR.mapImage = function () {
   var tmr = null, redraw = function () {
     tmr = null;
     try {
+      /* BM 0.24.86 (pemilik 14 Nov 2026: "lagging / jeda ketika display 3D diubah orientasinya"): gambar ulang sesudah kamera
+         berhenti hanya berguna bila ada lapisan yang resolusinya mengikuti zoom (orthofoto). Tanpa itu, cache overlay dulu
+         dikosongkan dan topografi / pit / Topo x Pit (jutaan segitiga) + block model dibangun & dikirim ulang ke GPU tiap
+         kali kamera digerakkan. window.HR_perlu() (Block Model) menjawab apakah gambar ulang itu perlu. */
+      if (typeof window.HR_perlu === 'function' && !window.HR_perlu()) return;
       if (window.MAP && MAP.on && window.mapRefresh) mapRefresh(true);
       else if (window.updatePlot) { if (window.OVC) window.OVC = {}; updatePlot(); }
     } catch (e) { }

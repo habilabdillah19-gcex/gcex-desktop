@@ -4921,3 +4921,11 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   sayatan menggambar blok asli** — pakai itu untuk membuat dig block.
 - Angka statistik, Ringkasan per RL dan laporan tetap memakai blok asli.
 - Drillhole 0.24.93: ikut naik karena kode bersama. DB-Ex, Ore Works: tidak berubah.
+
+## 221. Block Model 0.24.86 — tampilan 3D tidak tersendat sesudah diputar / di-zoom
+
+- Dulu tiap kali kamera berhenti (dalam keadaan zoom) seluruh lapisan digambar ulang; pada block model besar terasa sebagai jeda.
+  Kini gambar ulang itu hanya terjadi bila **Orthofoto** tampil (resolusinya mengikuti zoom).
+- Bila masih berat saat diputar: profil **Kinerja › Hemat** (lebih sedikit kubus), dan matikan lapisan yang tidak dipakai
+  (mis. Topo × Pit) selama bekerja di flitch.
+- Drillhole 0.24.94: ikut naik karena kode bersama, perilaku tidak berubah. DB-Ex, Ore Works: tidak berubah.

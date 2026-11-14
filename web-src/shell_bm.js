@@ -260,6 +260,8 @@
     } catch (x) {} }, 900);
   }
   function jalan() { try { rlCek(); } catch (e) {} try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
+  /* 0.24.86: gambar ulang sesudah kamera berhenti (hires.js) hanya bila orthofoto tampil */
+  window.HR_perlu=function(){var o=document.getElementById('ovOrtho');return !!(o&&o.checked&&!o.disabled)||!(window.TIN&&TIN.on);};
   window.SHELL = { rlCek: rlCek, semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);

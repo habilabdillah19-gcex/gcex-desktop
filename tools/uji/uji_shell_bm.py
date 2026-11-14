@@ -20,6 +20,7 @@ Memakai data latihan (fiktif).
   S10 (0.24.81) sayatan horizontal di luar RL block model yang baru dimuat dipindah ke tengah rentangnya.
   S11 (0.24.82) model .mdl besar yang dibaca langsung (filter pit/topografi) -> Ringkasan per RL tetap lewat backend atas
       seluruh file: cache dibangun dulu dengan progres, lalu /mdl/benches; gagal (disk penuh) -> kotak folder cache tampil.
+  S13 (0.24.86) kamera 3D digerakkan: gambar ulang penuh hanya bila orthofoto tampil (dulu selalu -> jeda pada model besar).
   S12 (0.24.82) kotak folder cache: folder, terpakai, ruang bebas, tombol Ganti folder; hapus cache tetap satu pintu (Bantuan).
 Pemakaian: python tools/uji/uji_shell_bm.py [app/index.html]   (build 0.24.78 harus GAGAL di S6)
 """
@@ -98,6 +99,12 @@ JS = r"""async function(){
   /* S12 */
   var cc=$('mdlCache');R.s12={txt:cc?cc.textContent:'',btn:cc?[].map.call(cc.querySelectorAll('button'),function(b){return b.textContent;}):[],hapusBtn:document.querySelectorAll('button').length&&[].filter.call(document.querySelectorAll('button'),function(b){return /Hapus cache/i.test(b.textContent);}).length};
   window.gcexDesktop=D0;BX.m.mdl=M0;if(dl)dl.style.display='none';
+  /* S13 (0.24.86): kamera digerakkan (zoom masuk) -> TIDAK ada gambar ulang penuh bila orthofoto tidak tampil */
+  if(typeof VIEW2D!=='undefined'&&VIEW2D&&window.toggle2D){toggle2D();await w(1500);}
+  var gd2=$('plotDiv'),nU=0,u0=window.updatePlot;window.updatePlot=function(){nU++;return u0.apply(this,arguments);};
+  var cam=function(k){return Plotly.relayout(gd2,{'scene.camera':{eye:{x:0.25*k,y:-0.3*k,z:0.2*k},center:{x:0.05*k,y:0,z:0},up:{x:0,y:0,z:1}}});};
+  await cam(1);await w(900);var nOff=nU,hp=window.HR_perlu;window.HR_perlu=function(){return true;};await cam(1.3);await w(900);var nOn=nU-nOff;window.HR_perlu=hp;window.updatePlot=u0;
+  R.s13={ada:typeof hp==='function',off:nOff,on:nOn,perlu:hp?hp():null};
   return R;}"""
 
 
@@ -168,6 +175,8 @@ def main() -> int:
     cek("D:/GC-Ex_cache_mdl" in s12["txt"] and "ruang bebas" in s12["txt"] and any("Ganti folder" in b for b in s12["btn"])
         and any("Kembalikan" in b for b in s12["btn"]) and "Bantuan" in s12["txt"] and not s12["hapusBtn"],
         "S12 kotak folder cache; hapus cache tetap satu pintu di menu Bantuan %s" % s12)
+    s13 = r["s13"]
+    cek(s13["ada"] and s13["off"] == 0 and s13["on"] >= 1 and s13["perlu"] is False, "S13 kamera digerakkan: tanpa orthofoto tidak digambar ulang (%s), dengan orthofoto digambar ulang (%s)" % (s13["off"], s13["on"]))
     cek(not err, "tanpa error halaman %s" % err[:3])
     print("GAGAL (%d)" % len(gagal) if gagal else "LULUS")
     return 1 if gagal else 0

@@ -291,7 +291,8 @@
     var S = [], it = function (c, lab, sh) { return '<div class=tplg-i><span class="tplg-s ' + (sh || 'kotak') + '" style="background:' + esc(c || '#9aa5b1') + '"></span><span>' + lab + '</span></div>'; };
     /* block model: kelas yang sedang tampil */
     if (window.BX && BX.m && E('bxShow') && E('bxShow').checked && !VIEW2D && BX.sc && BX.sc.v && typeof bxClassInfo === 'function') {
-      var U = BX.ui, ks = {}; BX.sc.v.cl.forEach(function (k) { ks[k] = (ks[k] || 0) + 1; });
+      /* 0.24.86: jumlah blok per kelas disimpan pada hasil pemilihan (dulu dihitung ulang tiap gambar: 45 juta blok = jeda) */
+      var U = BX.ui, V = BX.sc.v, ks = V._ks; if (!ks) { ks = {}; var CL = V.cl; for (var qk = 0; qk < CL.length; qk++) { var kq = CL[qk]; ks[kq] = (ks[kq] || 0) + 1; } V._ks = ks; }
       var h = Object.keys(ks).map(Number).sort(function (a, b) { return a - b; }).map(function (k) { var ci = bxClassInfo(k); return it(ci.col, esc(ci.lab) + ' <small>' + ks[k].toLocaleString('id-ID') + '</small>'); }).join('');
       var sub = [U.fAttr && U.fVal !== '' ? esc(U.fAttr) + ' ' + (U.fOp === 'lt' ? '&lt;' : '≥') + ' ' + esc(U.fVal) : '', U.tpB ? esc(TP.MODE[U.tpB]) : ''].filter(Boolean).join(' · ');
       if (h) S.push('<div class=tplg-h>Block model · ' + esc(U.attr) + '</div>' + (sub ? '<div class=tplg-n>' + sub + '</div>' : '') + h);
