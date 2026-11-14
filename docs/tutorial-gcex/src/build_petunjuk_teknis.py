@@ -528,6 +528,14 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
      'penuh) &rarr; pesan + kotak folder cache. Uji: <code>uji_shell_bm.py</code> S11&ndash;S12.'],
 ]))
 
+B.append('<h3>8.17 Pengayaan lembar Layout &amp; Plot PDF (BM 0.24.87, <code>layx_bm.js</code>)</h3>')
+B.append('<p>Modul membungkus <code>lyDef</code>, <code>lyPage</code>, <code>lyPanel</code>, <code>lyShow</code>. <code>lyPage</code> kini mengembalikan '
+         '<code>ctx</code> (bingkai, skala, fungsi gx / gy) dan menandai operasi: <code>g</code> = garis grid, <code>el</code> = elemen yang bisa digeser '
+         '(north, bar, legend, inset, koord, note:i, tip:i), <code>pv</code> = hanya pratinjau (dilewati <code>lyPdf</code>). <code>LX.enrich</code> menambah kop '
+         '(tinggi kop 54 mm lewat <code>LX.kopH</code>), mengganti gaya grid, menyisipkan label / catatan sebelum <code>unclip</code>, tabel koordinat, inset, lalu '
+         'menggeser elemen menurut <code>L.pos</code> (fraksi bingkai). Sakelar induk <code>L.lx=false</code> = keluaran <code>lyPage</code> asli. '
+         'Uji: <code>tools/uji/uji_layx.py</code> L1&ndash;L8.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

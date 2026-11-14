@@ -1231,6 +1231,14 @@ B.append('<p>Block model besar yang diimport dengan filter <b>Hanya di dalam des
          '<b>Ringkasan seluruh model per RL</b>: angkanya dihitung atas seluruh file, bukan hanya blok yang termuat. Pertama kali, cache seluruh model '
          'dibangun sekali (progresnya tampil di dialog); bila ruang disk tidak cukup, dialog langsung menawarkan pilihan folder cache.</p>')
 
+B.append('<h3>16l. Pengayaan lembar dig plan (Block Model 0.24.87)</h3>')
+B.append('<p>Di <b>Layout &amp; Plot PDF</b> ada kotak baru <b>Pengayaan lembar</b>. Isinya: <b>inset lokasi</b> (peta kecil desain pit dengan kotak merah '
+         'area lembar), <b>kop lengkap</b> (Dibuat / Diperiksa / Disetujui, Revisi, sistem koordinat, sumber data), <b>gaya grid</b> (Garis / Tanda + / Tepi saja), '
+         '<b>label di dalam dig block</b> pada halaman gabungan, <b>tabel koordinat patok</b> pada halaman satu dig block, serta <b>catatan &amp; panah</b> bebas.</p>')
+B.append('<p>Di <b>Pratinjau</b>, panah utara, skala batang, legenda, inset, tabel koordinat, catatan dan ujung panahnya bisa <b>diseret</b>; klik dua kali '
+         'mengembalikan ke posisi bawaan. Bila tidak diperlukan, matikan sakelar <b>Pakai pengayaan lembar</b> (lembar kembali seperti sebelumnya) atau '
+         'matikan bagian tertentu saja.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

@@ -4984,3 +4984,19 @@ Buka **Layout peta** (toolbar). Dua kelompok pengaturan baru ada di atas pratinj
 Semua pengaturan Layout peta kini ikut tersimpan saat project disimpan.
 
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 224. Block Model 0.24.87 — pengayaan lembar dig plan (Layout & Plot PDF)
+
+Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, label, catatan)**:
+
+- **Pakai pengayaan lembar** — sakelar induk. Dimatikan = lembar persis seperti versi sebelumnya.
+- **Inset lokasi** — peta kecil desain pit (atau topografi) dengan kotak merah area lembar; skalanya tertulis di judul inset.
+- **Kop lengkap** — isi Dibuat, Diperiksa, Disetujui, Revisi, Sistem koordinat. Sumber data terisi otomatis (nama block model,
+  file topografi / pit) dan boleh diganti.
+- **Gaya grid** — Garis, Tanda +, atau Tepi saja.
+- **Label di dalam dig block** — pada halaman gabungan: material - tujuan dan ton @ kadar di dalam poligon.
+- **Tabel koordinat patok** — pada halaman satu dig block: nomor titik sudut, Easting, Northing.
+- **Catatan & panah** — tombol *+ Catatan*, ketik teksnya, centang *panah* bila perlu.
+- **Geser elemen di pratinjau** — di Pratinjau, seret panah utara, skala batang, legenda, inset, tabel koordinat, catatan dan
+  ujung panahnya. Klik dua kali = posisi bawaan; *Kembalikan semua posisi* ada di panel. Posisi tersimpan di proyek.
+- Drillhole 0.24.95: ikut naik karena kode bersama, tidak berubah. DB-Ex, Ore Works: tidak berubah.
