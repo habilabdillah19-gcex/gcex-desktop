@@ -4738,3 +4738,13 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   dengan mencentang **Ore Works**. Kunci lama yang hanya untuk Block Model / Drillhole / DB-Ex tidak membuka Ore Works.
 - Project lama dari Ore Studio (`.gcv.json`) tetap bisa dibuka lewat **File → Buka project**.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 202. Ore Works 0.2.0 — Unsur aktif & tutorial bergambar
+
+- Kotak **Unsur** baru di toolbar (dan di judul jendela Analisis): pilih **satu** unsur, misalnya `Ag_ppm`.
+  Warna lubang bor + legenda, penampang 2D, Peta level, Long section, Profil strike, Profil vertikal dan Envelope
+  langsung memakai unsur itu. Daftar unsur berasal dari kolom assay dataset bor yang diimpor.
+- Batas kelas tiap unsur disimpan terpisah (kotak *Kelas … (4 batas)* di Peta level); Au tetap seperti sebelumnya.
+- Cut-off GT di Long section / Envelope diisi dalam satuan unsur aktif × meter.
+- Release kini memuat *Ore Works — Tutorial Penggunaan* dan *Petunjuk Teknis* (PDF) serta data latihan Ore Works.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.

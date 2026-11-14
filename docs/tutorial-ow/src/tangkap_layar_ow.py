@@ -1,0 +1,133 @@
+import asyncio
+from playwright.async_api import async_playwright
+from lib import *
+CAM="""([E,N,Z,az,el,d])=>{const t=new THREE.Vector3(E-O[0],(Z-O[2])*W.scale.y,-(N-O[1]));const a=az*Math.PI/180,e=el*Math.PI/180;
+ C.position.set(t.x+Math.sin(a)*Math.cos(e)*d,t.y+Math.sin(e)*d,t.z-Math.cos(a)*Math.cos(e)*d);CT.target.copy(t);C.far=Math.max(C.far,d*20);C.updateProjectionMatrix();CT.update();}"""
+async def cam(pg,*a): await pg.evaluate(CAM,list(a));await pg.wait_for_timeout(900)
+async def layer(pg,l,on):
+    await pg.evaluate("([l,on])=>{const c=document.querySelector('input[data-l=\"'+l+'\"]');if(c&&c.checked!==on){c.checked=on;c.dispatchEvent(new Event('change',{bubbles:true}));}}",[l,on])
+async def closeall(pg):
+    await pg.evaluate("()=>{document.querySelectorAll('#mbar .mbb.on').forEach(b=>{if(b.dataset.n)b.click();});}");await pg.wait_for_timeout(300)
+async def main():
+  async with async_playwright() as p:
+    b=await p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--use-gl=swiftshader','--enable-unsafe-swiftshader'])
+    pg=await b.new_page(viewport={'width':1440,'height':860},device_scale_factor=1.5);errs=[]
+    pg.on('pageerror',lambda e: errs.append(str(e)));pg.on('dialog',lambda d: asyncio.ensure_future(d.accept()))
+    await pg.goto(APP);await pg.wait_for_timeout(3000)
+    await shot(pg,'01_awal',['#mbar','#otb','#ogz','#status'])
+    # nama project
+    await pg.evaluate("()=>{const e=document.getElementById('pjn');e.textContent='Latihan Zona A';e.dispatchEvent(new Event('blur'));if(window.pjNameSet)pjNameSet('Latihan Zona A');}")
+    await shot(pg,'02_toolbar',['#otb button[title^="Buka project"]','#otb button[title^="Zoom ke semua"]','#otb button[title^="Pandangan plan"]','#otbve','#otb button[title^="Label adaptif"]','#otb button[title^="Layout peta"]','#osbg'],clip=(0,0,1440,90))
+    # dataset bor
+    await menu(pg,'Dataset pemboran tambahan')
+    for k,f in [('collar','LTH_collar.csv'),('survey','LTH_survey.csv'),('assay','LTH_assay.csv'),('geo','LTH_geologi.csv')]:
+        await pg.set_input_files('#dsf-'+k,D+f);await pg.wait_for_timeout(300)
+    await shot(pg,'03_dataset',['#dss-collar','#dss-survey','#dss-assay','#dss-geo','#dsgo'])
+    await pg.click('#dsgo');await pg.wait_for_timeout(2500)
+    for l in ['ut','op','jun']: await layer(pg,l,False)
+    await closeall(pg)
+    # topografi
+    await menu(pg,'Topografi & desain pit')
+    await pg.set_input_files('#sff',D+'LTH_topografi.str');await pg.wait_for_timeout(2500)
+    await shot(pg,'05_topo_menu',['#sfk','label.fbtn:has(#sff)'])
+    await closeall(pg)
+    # wireframe
+    await menu(pg,'Wireframe geologi')
+    await pg.set_input_files('#wif',D+'LTH_V2001.obj');await pg.wait_for_timeout(1500)
+    await pg.evaluate("()=>{const i=document.querySelector('#wil input[list=domlist]');if(i){i.value='V2001';i.dispatchEvent(new Event('change',{bubbles:true}));}}")
+    await shot(pg,'06_wire_menu',['label.fbtn:has(#wif)','#wil'])
+    await closeall(pg)
+    await cam(pg,10100,20100,135,215,28,230)
+    await shot(pg,'07_3d_bor_topo_wf',['#ogz','#lgw'])
+    await pg.evaluate("view('plan')");await pg.wait_for_timeout(800);await cam(pg,10100,20100,150,0,89.5,260)
+    await shot(pg,'08_plan')
+    await menu(pg,'Filter data bor');await shot(pg,'09_filter',['#flid'] if await pg.query_selector('#flid') else []);await closeall(pg)
+    await menu(pg,'File kerja project');await shot(pg,'10_file',['#pjs','label.fbtn:has(#pjo)']);await closeall(pg)
+    # pemetaan: pick-up
+    await menu(pg,'Pemetaan lapangan');await sub(pg,'1 ·')
+    await pg.set_input_files('#fmpf',D+'LTH_pickup.csv');await pg.wait_for_timeout(1500)
+    await shot(pg,'11_pickup',['label.fbtn:has(#fmpf)'])
+    await sub(pg,'2 ·')
+    async def mk(kat,grp,rng):
+        await menu(pg,'Pemetaan lapangan');await sub(pg,'2 ·')
+        await pg.select_option('#fmk',kat);await pg.fill('#fmgrp',grp);await pg.fill('#fmrng',rng)
+        await pg.click('#fmrgo');await pg.wait_for_timeout(1200)
+        print('MK',kat,rng,await pg.evaluate("()=>[window.FM&&FM.F.length,document.getElementById('fmew').style.display,(document.getElementById('fmpw')||{}).textContent]"))
+    async def att(d):
+        await pg.evaluate("(d)=>{for(const k in d){const e=document.querySelector('#fmeb .fe-a[data-k=\"'+k+'\"]');if(e){e.value=d[k];e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));}}}",d)
+        await pg.wait_for_timeout(700)
+    await pg.select_option('#fmk','vein');await pg.fill('#fmgrp','V2001');await pg.fill('#fmrng','kode:VN')
+    await shot(pg,'12_digitasi',['#fmk','#fmsnP','#fmgrp','#fmdig','#fmpsel','#fmrng','#fmrgo'])
+    await mk('vein','V2001','kode:VN')
+    await att({'jenis':'Vein','tebal':'1.8','dip':'70','dd':'250','dalam':'25','mineral':'Qz-Adularia','tekstur':'Crustiform'})
+    await closeall(pg)
+    await shot(pg,'13_atribut_vein',['#fmeb .fe-a[data-k="tebal"]','#fmeb .fe-a[data-k="dip"]','#fmeb .fe-a[data-k="dd"]','#fmeb .fe-a[data-k="dalam"]','#fe-rv'])
+    await pg.evaluate("()=>{const w=document.getElementById('fmew');if(w)w.style.display='none';}");await closeall(pg)
+    await pg.evaluate("()=>{L.wfi.visible=false;}");await layer(pg,'gc',False);await layer(pg,'pdh',False)
+    await pg.evaluate("()=>{document.querySelectorAll('#wil input[type=checkbox]').forEach(c=>{if(c.checked){c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));}})}")
+    await cam(pg,10100,20100,140,215,24,95)
+    await shot(pg,'14_vein3d')
+    await menu(pg,'Pemetaan lapangan');await sub(pg,'2 ·')
+    await mk('kon','KT-1','kode:KT');await att({'dari':'Andesit','ke':'Andesit teralterasi','jenis':'Gradasional'});await pg.evaluate("()=>{const w=document.getElementById('fmew');if(w)w.style.display='none';}")
+    await mk('sl','F1','kode:SL');await att({'jenis':'Sesar','dip':'65','dd':'20'});await pg.evaluate("()=>{const w=document.getElementById('fmew');if(w)w.style.display='none';}")
+    await mk('grab','GB','kode:GB');await pg.evaluate("()=>{const w=document.getElementById('fmew');if(w)w.style.display='none';}")
+    await mk('ch','CH01','kode:CH')
+    print(await pg.evaluate("()=>[FM.F.map(f=>f.k+':'+f.nm+':'+f.pts.length).join(' '),document.getElementById('fmew').style.display,document.getElementById('fmdw').textContent.slice(0,200)]"))
+    await att({'tgl':'2026-11-10','geolog':'Geolog A','lebar':'10','lokasi':'Bench 145'})
+    await pg.evaluate("()=>{const d=document.querySelector('#fmeb details');if(d)d.open=true;}")
+    await pg.fill('#fe-paste',open(D+'LTH_assay_channel.txt').read())
+    await closeall(pg)
+    await shot(pg,'15_channel_paste',['#fmeb .fe-a[data-k="lebar"]','#fe-seg','#fe-paste','#fe-pgo'])
+    await pg.click('#fe-pgo');await pg.wait_for_timeout(1000)
+    await shot(pg,'16_channel_tabel',['#fmeb table.fmt'])
+    await pg.evaluate("()=>{const w=document.getElementById('fmew');if(w)w.style.display='none';}");await closeall(pg)
+    await cam(pg,10103,20100,140,200,35,40)
+    await shot(pg,'17_channel3d',['#lgw'])
+    await menu(pg,'Pemetaan lapangan');await sub(pg,'Warna kadar');await sub(pg,'Bentuk vein')
+    await shot(pg,'18_warna_vein_opsi',['#fmvm','#fmvdep','#fmvamp','#fmgel','#fmgm','#fmgcl'])
+    await closeall(pg)
+    # struktur
+    await menu(pg,'Struktur');await pg.set_input_files('#stpf',D+'LTH_titik_struktur.csv');await pg.wait_for_timeout(1500)
+    await shot(pg,'19_struktur_menu',['label.fbtn:has(#stpf)','#stptpl','#stpsz','#stpm'])
+    await closeall(pg)
+    await cam(pg,10100,20100,140,200,40,110)
+    await shot(pg,'20_struktur3d')
+    await pg.evaluate("()=>{document.getElementById('stpm').value='sym';stpDraw();}");await cam(pg,10100,20100,140,180,89,120)
+    await shot(pg,'21_struktur_plan')
+    await pg.evaluate("()=>{document.getElementById('stpm').value='both';stpDraw();}")
+    # panel data
+    await pg.click('#rptg');await pg.wait_for_timeout(800);await cam(pg,10100,20100,140,215,30,120)
+    await shot(pg,'22_panel_data',['#rpan'])
+    await pg.click('#rptg');await pg.wait_for_timeout(500)
+    # ekspor
+    await menu(pg,'Pemetaan lapangan');await sub(pg,'4 ·')
+    await shot(pg,'23_ekspor',['#fmxch','#fmxds','#fmxgb','#fmxft','#fmxstr','#fmlay'])
+    await closeall(pg);await pg.evaluate("()=>document.getElementById('fmlay').click()");await pg.wait_for_timeout(1500)
+    await pg.evaluate("()=>{const t=document.querySelector('#fmlw input');}")
+    await shot(pg,'24_layout_dialog',['#flfit','#flpng','#flpdf'])
+    u=await pg.evaluate("()=>{flDraw();return FLY.last.toDataURL('image/png')}")
+    import base64;open('/home/claude/tut/shots/25_layout_hasil.png','wb').write(base64.b64decode(u.split(',')[1]))
+    await pg.evaluate("()=>{document.getElementById('fmlw').style.display='none'}");await closeall(pg)
+    # slicing
+    await layer(pg,'gc',True);await pg.evaluate("()=>{L.wfi.visible=true;}")
+    await pg.evaluate("()=>{document.getElementById('slw').style.display='block';const v=(id,x)=>{const e=document.getElementById(id);e.value=x;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));};v('sca',70);v('sce',10100);v('scn',20100);v('sct',8);const p=document.getElementById('scpl');if(!p.checked){p.checked=true;p.dispatchEvent(new Event('change',{bubbles:true}));}}")
+    await pg.wait_for_timeout(800);await cam(pg,10100,20100,140,160,25,160)
+    await shot(pg,'26_slicing',['#scm','#sca','#sce','#sct','#scpl','#sc2d'])
+    await pg.click('#sc2d');await pg.wait_for_timeout(1500)
+    await pg.evaluate("()=>{document.getElementById('slw').style.display='none';}");await pg.wait_for_timeout(500)
+    await shot(pg,'27_penampang2d',['#scw'])
+    await pg.evaluate("()=>{document.getElementById('scw').style.display='none';const p=document.getElementById('scpl');if(p.checked){p.checked=false;p.dispatchEvent(new Event('change',{bubbles:true}));}}")
+    # analisis
+    await pg.evaluate("()=>document.getElementById('ogtg').click()");await pg.wait_for_timeout(2500)
+    await shot(pg,'28_analisis',['#ogtabs'])
+    await pg.evaluate("()=>{const b=document.querySelector('#ogtabs button[data-t=pt]');if(b)b.click();}");await pg.wait_for_timeout(2500)
+    await shot(pg,'29_peta_level',['#ptbar'])
+    await pg.evaluate("()=>{const w=document.getElementById('ogw');if(w)w.style.display='none';}");await closeall(pg)
+    # plan bor
+    await menu(pg,'Plan bor');await shot(pg,'31_plan_bor',['label.fbtn:has(#plf)']);await closeall(pg)
+    # status bar & latar navy
+    await cam(pg,10100,20100,140,215,28,180)
+    await shot(pg,'32_statusbar',['#hud','#sbcam','#sbsc','#sbve'],clip=(0,700,1440,160))
+    await pg.evaluate("osBg('gelap')");await pg.wait_for_timeout(800);await shot(pg,'33_latar_navy');await pg.evaluate("osBg('terang')")
+    print(errs);await b.close()
+asyncio.run(main())

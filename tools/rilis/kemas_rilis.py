@@ -87,7 +87,7 @@ MILIK = {
     "DB-Ex": ["app-core/", "app_core_qt/", "electron/", "backend/", "build/", "legal/", "docs/tutorial-core/", "docs/referensi/",
               "docs/PANDUAN_CORE", "docs/DB-Ex_", "builder-core.json"],
     # Ore Works: satu berkas HTML (three.js), tanpa backend Python
-    "Ore Works": ["app-ow/", "web-src-ow/", "electron/", "legal/", "legal-ow/", "build/ow-icon"],
+    "Ore Works": ["app-ow/", "web-src-ow/", "electron/", "legal/", "legal-ow/", "build/ow-icon", "docs/tutorial-ow/"],
 }
 # berkas Block Model di docs/tutorial-gcex/ tidak dihitung milik Drillhole
 BUKAN_DH = ("docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py", "docs/tutorial-gcex/src/bm_bab.py",
@@ -194,6 +194,7 @@ def main():
         qt_inst = (qt[-1].name, "DB-Ex versi Qt", qt[-1].stem[len("DB-Ex-Qt-Setup") + 1:] or "?")
     has_core = any(n.startswith("DB-Ex") for n, _, _ in inst)
     has_gcex = any(n.startswith("GC-Ex") for n, _, _ in inst)
+    has_ow = any(n.startswith("Ore-Works") for n, _, _ in inst)
 
     D = ROOT / "docs"
     # ---- 1 dokumen
@@ -207,7 +208,9 @@ def main():
       + ([(D / "PANDUAN_CORE.md", "Panduan_Teknis/PANDUAN_CORE.md"), (D / "PANDUAN_CORE.html", "Panduan_Teknis/PANDUAN_CORE.html"),
           (D / "DB-Ex_Tutorial_Penggunaan.pdf", "Tutorial/DB-Ex_Tutorial_Penggunaan.pdf"),
           (D / "DB-Ex_Panduan_Teknis.pdf", "Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf"),
-          (D / "tutorial-core" / "README.md", "Tutorial/DB-Ex_tutorial_README.md")] if has_core else []))
+          (D / "tutorial-core" / "README.md", "Tutorial/DB-Ex_tutorial_README.md")] if has_core else [])
+      + ([(D / "tutorial-ow" / "Ore_Works_Tutorial_Penggunaan.pdf", "Tutorial/Ore_Works_Tutorial_Penggunaan.pdf"),
+          (D / "tutorial-ow" / "Ore_Works_Petunjuk_Teknis.pdf", "Panduan_Teknis/Ore_Works_Petunjuk_Teknis.pdf")] if has_ow else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
     items = []
@@ -217,6 +220,8 @@ def main():
         items += [(D / "tutorial-core" / "buat_data_dummy.py", "Generator/buat_data_dummy_core.py"), (D / "referensi", "DB-Ex_Referensi")]
         if core_dummy and core_dummy.exists():
             items.append((core_dummy, "DB-Ex_Data_Dummy"))
+    if has_ow:
+        items += [(D / "tutorial-ow" / "data", "Ore_Works_Latihan"), (D / "tutorial-ow" / "src" / "buat_data_latihan_ow.py", "Generator/buat_data_latihan_ow.py")]
     zip_dir(dat, items)
     # ---- 3 lisensi & tentang
     tentang = outd / "TENTANG.txt"

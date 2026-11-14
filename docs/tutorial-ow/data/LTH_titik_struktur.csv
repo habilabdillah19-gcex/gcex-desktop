@@ -1,0 +1,11 @@
+ID,Kategori,Jenis,X,Y,Z,Dip,DipDirection,Tebal,Keterangan
+S-001,Geologi,Sesar,10106.12,20123.62,,65,20,,data latihan
+S-002,Geologi,Kekar,10085.46,20118.48,,80,115,,data latihan
+S-003,Geologi,Bedding,10112.82,20113.34,,25,300,,data latihan
+S-004,Geologi,Foliasi,10077.76,20108.21,,45,240,,data latihan
+S-005,Geologi,Shear zone,10112.53,20103.08,,72,255,,data latihan
+S-006,Geologi,Kekar,10081.90,20097.95,,85,30,,data latihan
+S-007,Vein,Vein,10111.22,20092.82,,70,250,0.6,data latihan
+S-008,Vein,Veinlet,10097.05,20087.70,,62,245,0.6,data latihan
+S-009,Vein,Stockwork,10119.54,20082.58,,75,260,0.6,data latihan
+S-010,Geologi,Lineasi / striasi,10098.16,20077.46,,35,210,,data latihan
