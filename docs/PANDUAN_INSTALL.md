@@ -4959,3 +4959,28 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Pengaturan tampilan ikut tersimpan di project.
 
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 223. Ore Works 0.8.0 — Layout peta: inset lokasi, inset detail, kop peta, grid
+
+Buka **Layout peta** (toolbar). Dua kelompok pengaturan baru ada di atas pratinjau; klik judulnya untuk membuka.
+
+**Inset, grid & elemen peta**
+- **Inset lokasi**: peta kecil seluruh cakupan data dengan kotak merah penanda area lembar. *Letak*: Kolom legenda
+  (bawaan) atau Di dalam peta. *Cakupan*: Seluruh data atau Topografi saja.
+- **Inset detail**: klik **+ Gambar kotak detail**, lalu seret kotak di peta pada pratinjau. Area itu tampil diperbesar
+  (pilih 2×, 3×, atau 4×; otomatis dikecilkan bila tidak muat). Maksimum 3 kotak; **Hapus kotak terakhir** untuk membuang.
+  Centang **Hole ID di inset detail** dan lapisan **Bor** untuk menampilkan nama lubang di dalam inset.
+- **Grid**: isi interval dalam meter (kosong = otomatis), pilih gaya *Garis*, *Tanda +*, atau *Tepi saja*.
+- **Arah utara** dan **Batang skala** bisa disembunyikan.
+- **Menggeser elemen**: seret inset, arah utara, atau batang skala langsung di pratinjau. Klik dua kali pada elemen =
+  kembali ke posisi bawaan; **Kembalikan posisi** = semua elemen sekaligus. Menyeret di bagian peta yang kosong tetap
+  menggeser peta, gulir tetap zoom.
+
+**Kop peta**
+- Isi Perusahaan / site, Proyek, Diperiksa, Disetujui, No. lembar, Revisi, Sistem koordinat, Sumber data, Tanggal
+  (kosong = hari ini). *Dibuat oleh*, *Judul*, dan *Subjudul* tetap di baris atas.
+- **Logo (.png / .jpg)**: tampil di kiri kop; **Hapus logo** untuk membuang.
+
+Semua pengaturan Layout peta kini ikut tersimpan saat project disimpan.
+
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
