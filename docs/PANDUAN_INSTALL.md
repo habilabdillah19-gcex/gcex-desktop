@@ -4788,3 +4788,11 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Pemetaan: *Tebal bawaan* vein kini ada di **Bentuk vein 3D**; lebar channel bawaan, garis lain dan perbesar tampilan ada di
   **Ukuran & perbesar**.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 205. Block Model 0.24.79 — Properti tempel kiri / kanan / lepas
+
+- Menu teks di bilah atas (0.24.78) dihapus: isinya sama dengan Project Tree.
+- Kepala panel **Properti** punya tiga tombol: tempel di **kiri** (bawah Project Tree, bawaan), tempel di **kanan** tampilan 3D,
+  atau **lepas** menjadi jendela (geser lewat kepalanya, ubah ukuran di pojok kanan bawah, perkecil dengan –). Posisi diingat.
+- Tombol « di Project Tree hanya menyembunyikan Project Tree; » di tepi kiri memunculkannya lagi.
+- Hitungan tidak berubah. Drillhole, DB-Ex, Ore Works: tidak berubah.

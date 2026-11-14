@@ -479,6 +479,7 @@ F = {k: f() for k, f in (('peta', f_peta), ('bidang', f_bidang), ('gt', f_gt), (
 F['vunion'] = 'vunion.png'   # tangkapan layar aplikasi (data latihan fiktif), bukan matplotlib
 F['svrek'] = 'svrek.png'     # tangkapan layar uji uji_solid_vein_union.py (data sintetis)
 F['skin_bm'] = 'skin_bm.png' # data latihan: Project Tree & Properti tema baru (0.24.74)
+F['prop_kanan'] = 'prop_kanan.png' # data latihan: Properti di kanan (0.24.79)
 F['shell_bm'] = 'shell_bm.png' # data latihan: toolbar, menu teks, kompas 3D, status bar (0.24.78)
 F['topopit'] = 'topopit.png' # data latihan: topografi Data Spasial x SIM_pit_fase1, AU_GC >= 0,34 di antara topo & pit
 
@@ -1212,9 +1213,14 @@ B.append('<p><b>Block Model 0.24.77:</b> permukaan Topo &times; Pit kini juga me
 
 B.append('<h3>16i. Toolbar, status bar, menu teks, cari Project Tree &amp; kompas 3D (Block Model 0.24.78)</h3>')
 B.append('<p>Tampilan GC-Ex Block Model mengambil unsur Ore Works tanpa menambah menu kembar. Tombol tampilan (<b>Top / Front / Side / Iso</b>, Tegak lurus, <b>Slicer</b>, Ortho, Lapisan, Gelap, PNG, layar penuh) <b>pindah</b> dari bilah atas ke <b>toolbar</b> di bawahnya, ditambah <b>Semua data</b> (zoom ke seluruh data, arah pandang tetap) dan <b>Latar 3D</b> (Polos bawaan; Gradasi lembut / Gradasi navy hanya untuk area 3D). '
-         'Bilah atas tetap dengan logo dan huruf lama, kini dengan <b>menu teks</b> (Data Spasial, Block Model, Referensi, &hellip;) sebagai jalan pintas ke node Project Tree; yang tidak muat ada di <b>Lainnya</b>. Di atas Project Tree ada kotak <b>Cari</b>. '
+         'Bilah atas tetap dengan logo dan huruf lama. Di atas Project Tree ada kotak <b>Cari</b>. '
          '<b>Status bar</b> navy menampilkan koordinat kursor E &middot; N &middot; RL dan VE. <b>Kompas 3D</b> di kanan atas tampilan ikut miring bersama kamera (klik = menghadap Utara). Jendela pop-up dan legenda berkepala navy bergaris emas.</p>')
-B.append(fig_html('shell_bm', 'Data latihan: toolbar, menu teks, kompas 3D dan status bar baru (Block Model 0.24.78).'))
+B.append(fig_html('shell_bm', 'Data latihan: toolbar, kompas 3D dan status bar baru (Block Model 0.24.78; tanpa menu teks sejak 0.24.79).'))
+
+B.append('<h3>16j. Properti tempel kiri / kanan / lepas (Block Model 0.24.79)</h3>')
+B.append('<p>Menu teks di bilah atas dari 0.24.78 dihapus karena isinya sama dengan Project Tree. Kepala panel <b>Properti</b> kini punya tiga tombol: tempel di <b>kiri</b> (bawah Project Tree, bawaan), tempel di <b>kanan</b> tampilan 3D (lebar bisa digeser), atau <b>lepas</b> menjadi jendela yang bisa digeser, diubah ukurannya dan diperkecil. Posisinya diingat. '
+         'Tombol &laquo; di Project Tree hanya menyembunyikan Project Tree; bila Properti di kiri, Properti tetap tampil. Tombol &raquo; di tepi kiri memunculkan Project Tree lagi.</p>')
+B.append(fig_html('prop_kanan', 'Data latihan: Properti ditempel di kanan tampilan 3D (Block Model 0.24.79).'))
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

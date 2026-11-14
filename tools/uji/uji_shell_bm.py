@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Block Model 0.24.78: shell ala Ore Works tahap 1 + 2 (web-src/shell_bm.js, kompas 3D di gcex_base.html).
+"""Block Model 0.24.78 / 0.24.79: shell ala Ore Works tahap 1 + 2 + tempel Properti (web-src/shell_bm.js, kompas 3D di gcex_base.html).
 
 Keputusan pemilik 14 Nov 2026 (mockup disetujui): tidak boleh ada menu kembar; logo & huruf bilah atas tetap.
 Memakai data latihan (fiktif).
@@ -12,10 +12,11 @@ Memakai data latihan (fiktif).
   S4 status bar: koordinat kursor (E/N + offset proyek) dari plotly_hover, VE; info lama tetap (#secInfo, #rtime, #wmark);
      arah pandang TIDAK diulang (hanya di kompas).
   S5 kepala jendela pop-up & legenda navy.
-  S6 menu teks bilah atas = node teratas Project Tree (tanpa Proyek); memilih item -> node terpilih di Project Tree.
+  S6 (0.24.79) menu teks bilah atas dihapus; Properti tempel kiri / kanan / lepas (jendela), posisi diingat; tombol « hanya
+     menyembunyikan Project Tree (Properti kiri tetap tampil), » memunculkannya.
   S7 cari di Project Tree: hanya baris yang cocok + induknya; dikosongkan -> folder kembali seperti semula.
   S8 kompas 3D: piringan miring (elips) & panah Z saat pandangan samping; dari atas: elips = lingkaran, Z = titik.
-Pemakaian: python tools/uji/uji_shell_bm.py [app/index.html]   (build 0.24.77 harus GAGAL)
+Pemakaian: python tools/uji/uji_shell_bm.py [app/index.html]   (build 0.24.78 harus GAGAL di S6)
 """
 from __future__ import annotations
 import random, shutil, subprocess, sys, tempfile, time, json
@@ -50,12 +51,16 @@ JS = r"""async function(){
   var lg=document.querySelector('.tplg-t'),tmp=document.createElement('div');tmp.style.background='#233a7e';document.body.appendChild(tmp);var pr=getComputedStyle(tmp).backgroundColor;tmp.remove();R.s5={leg:lg?getComputedStyle(lg).backgroundColor:null,navy:pr,pal:[].some.call(document.styleSheets,function(ss){try{return [].some.call(ss.cssRules,function(r){return /\.tplg-t/.test(r.selectorText||'')&&/border-bottom: 2px solid/.test(r.cssText);});}catch(e){return false;}})};
   if(window.GXP&&GXP.buka){try{GXP.buka('ujiShell','Uji','<p>isi</p>');}catch(x){}}
   var pp=document.querySelector('.gxpop .gxph');R.s5.pop=pp?getComputedStyle(pp).backgroundColor:null;
-  /* S6 */
-  var top=PT.nodes.filter(function(n){return !n.addRow&&!/^Proyek/i.test(n.t);}).map(function(n){return n.id;});
-  var mb=[].slice.call(document.querySelectorAll('#bmMenu>button[data-i]'));R.s6={top:top.length,menu:mb.length};
-  var bmB=mb.filter(function(b){return b.textContent==='Block Model';})[0];
-  if(bmB){bmB.click();await w(200);var it=[].filter.call(document.querySelectorAll('#bmMenuDd button[data-id]'),function(b){return b.textContent==='Statistik';})[0];R.s6.item=!!it;if(it){it.click();await w(500);}}
-  R.s6.sel=PT.sel;
+  /* S6 (0.24.79): menu teks bilah atas dihapus; Properti tempel kiri / kanan / lepas; Project Tree disembunyikan sendiri */
+  R.s6={menu:!!$('bmMenu')};var par=function(){var p=$('side').parentNode;return p&&p.id;},vis=function(id){var e=$(id);return !!e&&e.getBoundingClientRect().width>0&&getComputedStyle(e).display!=='none';};
+  R.s6.p0=par();R.s6.btn=document.querySelectorAll('#ptPH .pdk button[data-p]').length;
+  document.querySelector('#ptPH .pdk button[data-p=kanan]').click();await w(700);
+  var sr=$('side').getBoundingClientRect(),gr=$('plotDiv').getBoundingClientRect();R.s6.kanan={p:par(),kanan:sr.left>=gr.right-2,ls:localStorage.getItem('gcex_bm_prop'),tree:vis('ptWrap')};
+  document.querySelector('#ptPH .pdk button[data-p=lepas]').click();await w(700);
+  R.s6.lepas={p:par(),fixed:getComputedStyle($('propF')).position,kanan:vis('propR'),btnOn:!!document.querySelector('#ptPH .pdk button[data-p=lepas].on')};
+  $('ptHide').click();await w(500);R.s6.lepasNoTree={col:vis('ptCol'),prop:vis('side'),ob:vis('ptOpen')};$('ptOpen').click();await w(400);
+  document.querySelector('#ptPH .pdk button[data-p=kiri]').click();await w(700);R.s6.kiri={p:par(),f:vis('propF')};
+  $('ptHide').click();await w(500);R.s6.kiriNoTree={tree:vis('ptWrap'),prop:vis('side'),ob:vis('ptOpen')};$('ptOpen').click();await w(500);R.s6.kembali={tree:vis('ptWrap'),prop:vis('side')};
   /* S7 */
   var open0=JSON.stringify(PT.open);SHELL.cari('statistik');await w(400);
   var vis=[].filter.call(document.querySelectorAll('#ptree .ptr'),function(r){return getComputedStyle(r).display!=='none';}).map(function(r){return r.textContent.trim().slice(0,30);});
@@ -109,8 +114,15 @@ def main() -> int:
     s5 = r["s5"]; NAVY = ("rgb(35, 58, 126)", "rgb(44, 59, 87)")  # #233a7e; palet build (palette_patch.py) memetakannya ke #2c3b57
     cek(s5["leg"] in NAVY and s5["pal"], "S5 kepala legenda navy + garis emas (%s)" % s5["leg"])
     if s5.get("pop") is not None: cek(s5["pop"] in NAVY, "S5 kepala jendela pop-up navy (%s)" % s5["pop"])
-    s6 = r["s6"]; cek(s6["menu"] == s6["top"] and s6["menu"] >= 8, "S6 menu teks = node teratas Project Tree (%s/%s)" % (s6["menu"], s6["top"]))
-    cek(s6.get("item") and s6["sel"] == "bm.stat" or (s6.get("item") and str(s6["sel"]).startswith("bm.")), "S6 memilih 'Statistik' dari menu -> node terpilih %s" % s6["sel"])
+    s6 = r["s6"]
+    cek(not s6["menu"], "S6 menu teks bilah atas sudah dihapus (0.24.79)")
+    cek(s6["p0"] == "ptCol" and s6["btn"] == 4, "S6 Properti bawaan di kiri, 3 tombol posisi + perkecil")
+    cek(s6["kanan"]["p"] == "propR" and s6["kanan"]["kanan"] and s6["kanan"]["ls"] == "kanan" and s6["kanan"]["tree"], "S6 tempel kanan: kolom kanan 3D, posisi diingat, Project Tree tetap %s" % s6["kanan"])
+    cek(s6["lepas"]["p"] == "propF" and s6["lepas"]["fixed"] == "fixed" and not s6["lepas"]["kanan"] and s6["lepas"]["btnOn"], "S6 lepas: jendela mengambang %s" % s6["lepas"])
+    cek(not s6["lepasNoTree"]["col"] and s6["lepasNoTree"]["prop"] and s6["lepasNoTree"]["ob"], "S6 lepas + Project Tree disembunyikan: kolom kiri hilang, Properti tetap %s" % s6["lepasNoTree"])
+    cek(s6["kiri"]["p"] == "ptCol" and not s6["kiri"]["f"], "S6 kembali ke kiri")
+    cek(not s6["kiriNoTree"]["tree"] and s6["kiriNoTree"]["prop"] and s6["kiriNoTree"]["ob"], "S6 kiri + sembunyikan Project Tree: hanya Project Tree yang hilang %s" % s6["kiriNoTree"])
+    cek(s6["kembali"]["tree"] and s6["kembali"]["prop"], "S6 tampilkan Project Tree lagi")
     s7 = r["s7"]; v = s7["vis"]
     cek(len(v) >= 2 and any("Statistik" in x for x in v) and any("Block Model" in x for x in v) and len(v) <= 4, "S7 cari 'statistik' -> hanya hasil + induk: %s" % v)
     cek(s7["restored"] and s7["after"] > len(v), "S7 kosongkan cari -> folder kembali seperti semula")

@@ -7,8 +7,11 @@
    - Status bar navy: info lama tetap + koordinat kursor (E · N · RL) dan VE. Arah pandang & jumlah blok TIDAK diulang di
      status bar: sudah ada di kompas (#cpTxt), legenda dan badge Project Tree.
    - Jendela pop-up (popout.js) & kartu legenda (topopit_bm.js) berkepala navy + garis emas.
-   - Tahap 2: menu teks di bilah atas = jalan pintas ke node Project Tree (navigasi saja, tidak menjalankan perintah);
-     kotak cari di Project Tree; kompas 3D (gcex_base.html cpDraw). */
+   - Tahap 2: kotak cari di Project Tree; kompas 3D (gcex_base.html cpDraw).
+   - 0.24.79 (pemilik 14 Nov 2026, "Opsi A saja. Buatkan untuk Properti saja. Project remain in kiri saja, tapi bisa
+     disembunyikan"): menu teks bilah atas DIHAPUS (kembar dengan Project Tree). Panel Properti (#side) bisa ditempel di
+     kiri (bawah Project Tree, bawaan), di kanan (kolom #propR), atau dilepas jadi jendela (#propF); posisi diingat
+     (gcex_bm_prop). Project Tree tetap di kiri dan bisa disembunyikan sendiri (Properti kiri tetap tampil). */
 (function () {
   var $ = function (i) { return document.getElementById(i); };
   var LS = function (k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
@@ -29,14 +32,7 @@
     '#bmTb .bmts{width:1px;height:22px;background:var(--bs-ln,#c6cfdb);margin:0 4px;flex:none}' +
     '#bmTb .bmtl{font-size:12px;color:var(--mu,#5b6b7c);white-space:nowrap}' +
     /* ---- bilah atas: menu teks (tahap 2) ---- */
-    '#bmMenu{display:flex;align-items:center;gap:0;min-width:0;flex:0 1 auto;overflow:hidden}' +
-    '#bmMenu>button{height:28px;margin:0;padding:0 9px;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--toptx,#e9eef5);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;box-shadow:none}' +
-    '#bmMenu>button:hover,#bmMenu>button.on{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.22)}' +
-    '#bmMenuDd{position:fixed;z-index:60;min-width:220px;max-width:340px;max-height:70vh;overflow:auto;padding:4px;background:var(--sf,#fff);color:var(--tx,#1c2733);border:1px solid var(--bs-pop,#9fb0c6);border-radius:4px;box-shadow:3px 3px 0 var(--bs-hard,#c9d3df);font-size:12.5px;display:none}' +
-    '#bmMenuDd button{display:flex;align-items:center;gap:6px;width:100%;margin:0;padding:5px 10px;background:none;border:0;border-radius:3px;color:inherit;font:inherit;text-align:left;cursor:pointer;box-shadow:none}' +
-    '#bmMenuDd button:hover{background:var(--prs,#e6eefc);color:var(--pr,#233a7e)}#bmMenuDd button.k2{padding-left:24px;color:var(--mu,#5b6b7c)}#bmMenuDd .hd{font-weight:700}' +
-    '#bmMenuDd hr{border:0;border-top:1px solid var(--bd,#d9dee5);margin:3px 0}' +
-    '#top .brand,#top .dmWrap{flex:0 0 auto}#top #ttl{flex:1 1 0;min-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#bmMenu>button.bmx{display:none}' +
+    '#top .brand,#top .dmWrap{flex:0 0 auto}#top #ttl{flex:1 1 0;min-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
     '#cpBox{right:18px!important}#cpTxt{position:absolute;right:0;top:102px;margin:0!important}' +
     /* ---- status bar navy ---- */
     '#status{background:#1b2333!important;color:#c9d2e3!important;border-top:2px solid #b5893e!important;gap:0!important;padding:0!important}' +
@@ -70,7 +66,7 @@
     var bar = $('bmTb'); if (!bar) { bar = document.createElement('div'); bar.id = 'bmTb'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Alat tampilan'); top.parentNode.insertBefore(bar, top.nextSibling); }
     if (tools.parentNode !== bar) bar.appendChild(tools);
     /* tombol yang dipasang modul lain langsung ke bilah atas (mis. layar penuh, wm.js) ikut turun */
-    [].slice.call(top.children).forEach(function (c) { if (c.matches('.brand,.dmWrap,#ttl,#bmMenu')) return; var p = pngBtn(tools); if (c.id === 'fsBtn' && p) tools.insertBefore(c, p.nextSibling); else tools.appendChild(c); });
+    [].slice.call(top.children).forEach(function (c) { if (c.matches('.brand,.dmWrap,#ttl')) return; var p = pngBtn(tools); if (c.id === 'fsBtn' && p) tools.insertBefore(c, p.nextSibling); else tools.appendChild(c); });
     if (!$('tbAll')) {
       var seg = tools.querySelector('.seg'), b = document.createElement('button'); b.type = 'button'; b.className = 'tb'; b.id = 'tbAll';
       b.title = 'Zoom ke seluruh data (arah pandang tetap)';
@@ -130,56 +126,6 @@
     if (ve) { var v = z ? +z.value : 1; ve.textContent = 'VE ' + String(+(isFinite(v) && v > 0 ? v : 1).toFixed(1)).replace('.', ',') + '×'; }
   }
 
-  /* ================= tahap 2: menu teks = jalan pintas ke node Project Tree ================= */
-  var dd = null, ddFor = null;
-  var SINGKAT = { sp: 'Data Spasial', bm: 'Block Model', ref: 'Referensi', wf: 'Wireframe', fl: 'Flitch', dig: 'Dig Block', rep: 'Laporan', out: 'Layout', am: 'As-Mined', reg: 'Register', sv: 'Solid Vein', set: 'Pengaturan' };
-  var pendek = function (n) { return SINGKAT[n.id] || String(n.t || '').replace(/\s*\(.*\)\s*$/, '').replace(/^Import\s+/i, '').trim(); };
-  function topNodes() { var P = window.PT; if (!P || !P.nodes) return []; return P.nodes.filter(function (n) { return n && !n.addRow && !/^(pj|proj)/.test(n.id) && !/^Proyek/i.test(n.t); }); }
-  function ddClose() { if (dd) dd.style.display = 'none'; ddFor = null; [].forEach.call(document.querySelectorAll('#bmMenu>button.on'), function (b) { b.classList.remove('on'); }); }
-  function pilih(id) {
-    var P = window.PT; if (!P) return; ddClose();
-    var par = {}; (function w(L, p) { (L || []).forEach(function (n) { par[n.id] = p; if (n.kids) w(n.kids, n.id); }); })(P.nodes, null);
-    for (var q = par[id]; q; q = par[q]) P.open[q] = 1;
-    try { var side = $('side'); if (side && side.classList.contains('hide') && window.uiSide) uiSide(); } catch (e) {}
-    try { P.render(true); } catch (e) {} P.select(id);
-    setTimeout(function () { var r = document.querySelector('#ptree .ptr[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); if (r && r.scrollIntoView) r.scrollIntoView({ block: 'nearest' }); }, 60);
-  }
-  function buka(btn, n) {
-    if (ddFor === n.id) { ddClose(); return; } ddClose();
-    if (!dd) { dd = document.createElement('div'); dd.id = 'bmMenuDd'; dd.setAttribute('role', 'menu'); document.body.appendChild(dd);
-      dd.addEventListener('click', function (e) { var b = e.target.closest('button[data-id]'); if (b) pilih(b.dataset.id); });
-      document.addEventListener('mousedown', function (e) { if (dd.style.display !== 'none' && !e.target.closest('#bmMenuDd,#bmMenu')) ddClose(); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ddClose(); }); }
-    var h = '<button type="button" role="menuitem" class="hd" data-id="' + esc(n.id) + '">' + esc(n.t) + '</button>', ks = (n.kids || []).filter(function (k) { return !k.addRow && !k.info; });
-    if (ks.length) h += '<hr>';
-    ks.forEach(function (k) { h += '<button type="button" role="menuitem" data-id="' + esc(k.id) + '">' + esc(k.t) + '</button>';
-      (k.kids || []).filter(function (c) { return !c.addRow && !c.info; }).slice(0, 12).forEach(function (c) { h += '<button type="button" role="menuitem" class="k2" data-id="' + esc(c.id) + '">' + esc(c.t) + '</button>'; }); });
-    dd.innerHTML = h; var r = btn.getBoundingClientRect(); dd.style.display = 'block'; dd.style.left = Math.max(4, Math.min(r.left, innerWidth - dd.offsetWidth - 6)) + 'px'; dd.style.top = (r.bottom + 2) + 'px';
-    ddFor = n.id; btn.classList.add('on');
-  }
-  var menuSig = '';
-  function menu() {
-    var top = $('top'), ttl = $('ttl'); if (!top || !window.PT || !PT.nodes || !PT.nodes.length) return;
-    var m = $('bmMenu'); if (!m) { m = document.createElement('nav'); m.id = 'bmMenu'; m.setAttribute('aria-label', 'Menu (jalan pintas Project Tree)'); if (ttl) top.insertBefore(m, ttl); else top.appendChild(m); }
-    var L = topNodes(), sig = L.map(function (n) { return n.id + ':' + n.t; }).join('|'); if (sig === menuSig) return; menuSig = sig;
-    m.innerHTML = L.map(function (n, i) { return '<button type="button" data-i="' + i + '" title="' + esc(n.t) + ' (Project Tree)">' + esc(pendek(n)) + '</button>'; }).join('') +
-      '<button type="button" id="bmMore" title="Menu lainnya">Lainnya &#9662;</button>';
-    m.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; if (b.id === 'bmMore') { lainnya(b); return; } var n = topNodes()[+b.dataset.i]; if (n) buka(b, n); };
-    muat();
-  }
-  /* menu yang tidak muat di bilah atas masuk "Lainnya" (logo & judul tidak terdesak) */
-  function muat() {
-    var m = $('bmMenu'); if (!m) return; var B = [].slice.call(m.querySelectorAll('button[data-i]')), more = $('bmMore');
-    B.forEach(function (b) { b.classList.remove('bmx'); }); more.style.display = 'none';
-    if (m.scrollWidth <= m.clientWidth + 1) return; more.style.display = '';
-    for (var i = B.length - 1; i >= 0 && m.scrollWidth > m.clientWidth + 1; i--) B[i].classList.add('bmx');
-  }
-  function lainnya(btn) {
-    if (!document.querySelector('#bmMenu>button.bmx')) return;
-    var L = topNodes(), h = ''; [].forEach.call(document.querySelectorAll('#bmMenu>button.bmx'), function (b) { var n = L[+b.dataset.i]; if (n) h += '<button type="button" role="menuitem" class="hd" data-id="' + esc(n.id) + '">' + esc(n.t) + '</button>'; });
-    if (ddFor === '__more') { ddClose(); return; } buka(btn, { id: '__more', t: '', kids: [] }); dd.innerHTML = h; ddFor = '__more';
-  }
-  window.addEventListener('resize', function () { try { muat(); } catch (e) {} });
   /* ================= tahap 2: cari di Project Tree ================= */
   var Q = { q: '', open0: null };
   function cariUI() {
@@ -208,8 +154,98 @@
     [].forEach.call(tr.querySelectorAll('.ptr'), function (r) { var id = r.getAttribute('data-id'); r.classList.toggle('ptq-x', !Q.keep[id]); r.classList.toggle('ptq-hit', !!Q.hit[id]); });
   }
 
-  function jalan() { try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { menu(); muat(); } catch (e) {} try { cariUI(); } catch (e) {} }
-  window.SHELL = { semua: semua, latar: latar, pilih: pilih, cari: cari, jalan: jalan };
+  /* ================= 0.24.79: panel Properti tempel kiri / kanan / lepas; Project Tree bisa disembunyikan ================= */
+  var dcss = document.createElement('style'); dcss.id = 'shellDockCss';
+  dcss.textContent =
+    '#ptPH .pdk{display:inline-flex;gap:2px;margin-left:auto;flex:none}#ptPH .pdk+.ptx,#ptPH .ptx{margin-left:2px}' +
+    '#ptPH .pdk button{all:unset;box-sizing:border-box;width:22px;height:19px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--bs-ln,#c6cfdb);border-bottom-color:var(--bs-lnbt,#9eabbc);border-radius:3px;background:var(--sf,#fff);color:var(--tx,#1c2733);cursor:pointer}' +
+    '#ptPH .pdk button:hover{background:var(--bs-facehv,#eef2f8)}#ptPH .pdk button.on{background:var(--prs,#e6eefc);border-color:var(--pr,#233a7e);color:var(--pr,#233a7e)}#ptPH .pdk svg{width:14px!important;height:14px!important;flex:none}' +
+    '#side #ptPH .pdk button,#ptPH .pdk button{width:24px!important;height:20px!important;min-width:0!important;min-height:0!important;padding:0!important;margin:0!important;font-size:12px!important;line-height:1!important;box-shadow:none!important}' +
+    'body.pt-propout #ptWrap{flex:1 1 auto!important;height:auto!important}body.pt-propout #ptSplit{display:none!important}' +
+    'body.pt-treehide #ptWrap,body.pt-treehide #ptSplit{display:none!important}' +
+    '#propR{flex:0 0 auto;display:flex;flex-direction:row;min-height:0;background:var(--sf,#fff);border-left:1px solid var(--bd,#d5dbe3)}' +
+    '#propR>#side,#propF>#side{flex:1 1 auto!important;width:auto!important;min-width:0;min-height:0;overflow-y:auto;border:0!important}' +
+    '#propRg{flex:0 0 5px;cursor:col-resize;background:var(--bg,#f4f6f9)}#propRg:hover,body.pdrag #propRg{background:var(--pr,#233a7e)}' +
+    '#propF{position:fixed;z-index:40;display:flex;flex-direction:column;min-width:260px;min-height:160px;background:var(--sf,#fff);border:1px solid var(--bs-pop,#9fb0c6);border-radius:4px;box-shadow:3px 3px 0 var(--bs-hard,#c9d3df);resize:both;overflow:hidden}' +
+    '#propF.min{height:auto!important;min-height:0;resize:none}#propF.min>#side>*:not(#ptPH){display:none!important}' +
+    '#propF #ptPH{position:static;margin:0!important;cursor:move;background:#233a7e!important;border-bottom:2px solid #b5893e!important;color:#fff}' +
+    '#propF #ptPH .pp,#propF #ptPH b{color:#fff!important}#propF #ptPH .pi2{color:#fff}#propF #ptPH .ptx{color:#fff}' +
+    '#propF #ptPH .pdk button{background:#2e4a8f;color:#fff;border-color:#46619f;border-bottom-color:#0d1a3d}#propF #ptPH .pdk button.on{background:#1b2f66;color:#fff;border-color:#f0c047}';
+  document.head.appendChild(dcss);
+  var IKD = {
+    kiri: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10"/><rect x="2" y="3" width="4" height="10" fill="currentColor"/></svg>',
+    kanan: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3" width="12" height="10"/><rect x="10" y="3" width="4" height="10" fill="currentColor"/></svg>',
+    lepas: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="5" width="9" height="8"/><path d="M6 3h8v7"/></svg>',
+    min: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8h8"/></svg>'
+  };
+  var D = { pos: null };
+  function posV() { var v = LS('gcex_bm_prop'); return v === 'kanan' || v === 'lepas' ? v : 'kiri'; }
+  function lebar() { var w = +LS('gcex_sideW'); return w > 0 ? w : 310; }
+  function rsz() { try { if (window.uiResize) setTimeout(uiResize, 30); } catch (e) {} }
+  function tombol() {
+    var ph = $('ptPH'); if (!ph) return; var k = ph.querySelector('.pdk'), pos = D.pos || posV();
+    if (!k) { k = document.createElement('span'); k.className = 'pdk';
+      k.innerHTML = '<button type="button" data-p="kiri" title="Tempel Properti di kiri (bawah Project Tree)">' + IKD.kiri + '</button>' +
+        '<button type="button" data-p="kanan" title="Tempel Properti di kanan">' + IKD.kanan + '</button>' +
+        '<button type="button" data-p="lepas" title="Lepas Properti menjadi jendela">' + IKD.lepas + '</button>' +
+        '<button type="button" data-p="min" title="Perkecil / perbesar jendela">' + IKD.min + '</button>';
+      k.addEventListener('click', function (e) { var b = e.target.closest('button[data-p]'); if (!b) return; e.stopPropagation();
+        if (b.dataset.p === 'min') { var f = $('propF'); if (f) f.classList.toggle('min'); return; } dock(b.dataset.p); });
+      var x = ph.querySelector('.ptx'); if (x) ph.insertBefore(k, x); else ph.appendChild(k); }
+    [].forEach.call(k.querySelectorAll('button[data-p]'), function (b) { var p = b.dataset.p; b.classList.toggle('on', p === pos); if (p === 'min') b.style.display = pos === 'lepas' ? '' : 'none'; });
+  }
+  function dock(pos) {
+    var side = $('side'), col = $('ptCol'), body = $('body'), st = $('stage') || ($('plotDiv') && $('plotDiv').parentNode); if (!side || !col || !body) return;
+    pos = pos === 'kanan' || pos === 'lepas' ? pos : 'kiri'; LS('gcex_bm_prop', pos); D.pos = pos;
+    var R = $('propR'), F = $('propF');
+    if (pos === 'kiri') { var sp = $('ptSplit'); if (side.parentNode !== col) col.appendChild(side); col.style.width = ''; if (sp && side.previousSibling !== sp) col.insertBefore(side, sp.nextSibling); }
+    else { col.style.width = lebar() + 'px'; }
+    if (pos === 'kanan') {
+      if (!R) { R = document.createElement('div'); R.id = 'propR'; R.innerHTML = '<div id="propRg" title="Geser untuk mengubah lebar Properti"></div>'; body.appendChild(R);
+        var g = R.firstChild; g.addEventListener('mousedown', function (e) { if (e.button !== 0) return; var x0 = e.clientX, w0 = R.getBoundingClientRect().width; document.body.classList.add('pdrag');
+          var mv = function (ev) { var w = Math.max(240, Math.min(innerWidth * 0.55, w0 - (ev.clientX - x0))); R.style.width = w + 'px'; }, up = function () { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); document.body.classList.remove('pdrag'); LS('gcex_bm_propW', String(R.getBoundingClientRect().width | 0)); rsz(); };
+          document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up); e.preventDefault(); }); }
+      R.style.width = (+LS('gcex_bm_propW') || 320) + 'px'; R.style.display = ''; if (side.parentNode !== R) R.appendChild(side);
+    } else if (R) R.style.display = 'none';
+    if (pos === 'lepas') {
+      if (!F) { F = document.createElement('div'); F.id = 'propF'; F.setAttribute('role', 'dialog'); F.setAttribute('aria-label', 'Properti'); document.body.appendChild(F);
+        F.addEventListener('mousedown', function (e) { var h = e.target.closest('#ptPH'); if (!h || e.target.closest('button,select,input')) return; var r = F.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+          var mv = function (ev) { F.style.left = Math.max(0, Math.min(innerWidth - 80, ev.clientX - dx)) + 'px'; F.style.top = Math.max(0, Math.min(innerHeight - 30, ev.clientY - dy)) + 'px'; },
+            up = function () { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); simpanF(); };
+          document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up); e.preventDefault(); });
+        try { new ResizeObserver(function () { clearTimeout(F._t); F._t = setTimeout(simpanF, 300); }).observe(F); } catch (e) {} }
+      var g0 = {}; try { g0 = JSON.parse(LS('gcex_bm_propF') || '{}'); } catch (e) {}
+      var sr = st ? st.getBoundingClientRect() : { left: 320, top: 80 };
+      F.style.left = (g0.x != null ? g0.x : sr.left + 24) + 'px'; F.style.top = (g0.y != null ? g0.y : sr.top + 16) + 'px';
+      F.style.width = (g0.w || 330) + 'px'; F.style.height = (g0.h || Math.round(innerHeight * 0.62)) + 'px'; F.style.display = 'flex'; if (side.parentNode !== F) F.appendChild(side);
+    } else if (F) F.style.display = 'none';
+    document.body.classList.toggle('pt-propout', pos !== 'kiri');
+    pohon(!document.body.classList.contains('pt-treehide')); tombol(); rsz();
+  }
+  function simpanF() { var F = $('propF'); if (!F || F.style.display === 'none' || F.classList.contains('min')) return; var r = F.getBoundingClientRect(); LS('gcex_bm_propF', JSON.stringify({ x: r.left | 0, y: r.top | 0, w: r.width | 0, h: r.height | 0 })); }
+  /* Project Tree tampil / sembunyi (sendiri). Properti di kiri tetap tampil di kolom kiri. */
+  function pohon(v) {
+    var col = $('ptCol'), side = $('side'), ob = $('ptOpen'); if (!col) return;
+    if (side && side.classList.contains('hide')) side.classList.remove('hide');
+    document.body.classList.toggle('pt-treehide', !v); LS('gcex_bm_tree', v ? '1' : '0');
+    var pos = D.pos || posV(); col.classList.toggle('hide', !v && pos !== 'kiri'); col.style.display = (!v && pos !== 'kiri') ? 'none' : '';
+    if (ob) ob.style.display = v ? 'none' : 'block'; rsz();
+  }
+  function dockUI() {
+    var side = $('side'), col = $('ptCol'), ph = $('ptPH'); if (!side || !col || !ph) return;
+    if (!D.pos) { D.pos = posV(); var h = $('ptHide'), ob = $('ptOpen');
+      if (h) h.onclick = function () { pohon(false); }; if (ob) ob.onclick = function () { pohon(true); };
+      new MutationObserver(function () { tombol(); }).observe(ph, { childList: true });
+      /* geser tepi kolom kiri saat Properti tidak di kiri: lebar kolom Project Tree, bukan Properti */
+      var gr = $('sideGrip'); if (gr) gr.addEventListener('mousedown', function (e) { if ((D.pos || 'kiri') === 'kiri' || e.button !== 0) return; e.stopImmediatePropagation(); e.preventDefault();
+        var x0 = e.clientX, w0 = col.getBoundingClientRect().width, mv = function (ev) { var w = Math.max(220, Math.min(innerWidth * 0.5, w0 + ev.clientX - x0)); col.style.width = w + 'px'; },
+          up = function () { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); LS('gcex_sideW', String(col.getBoundingClientRect().width | 0)); rsz(); };
+        document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up); }, true);
+      dock(D.pos); if (LS('gcex_bm_tree') === '0') pohon(false); }
+    tombol();
+  }
+  function jalan() { try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
+  window.SHELL = { semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);
 })();
