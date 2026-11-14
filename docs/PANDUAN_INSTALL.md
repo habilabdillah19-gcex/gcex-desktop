@@ -4901,3 +4901,14 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   bagian teratas yang muat, dengan pesan RL untuk rentang berikutnya. Nyalakan juga **Hanya di bawah topografi asbuilt**
   supaya blok udara tidak ikut.
 - Drillhole 0.24.91: ikut naik karena kode pembaca bersama. DB-Ex, Ore Works: tidak berubah.
+
+## 219. Block Model 0.24.84 — angka seluruh pit dari block model sangat besar, tanpa memuat semua blok
+
+- Block Model › **Ringkasan seluruh model per RL…** kini punya centang **Hanya di dalam desain pit** dan **Hanya di bawah
+  topografi**. Bila dicentang, file .mdl dibaca sekali sambil dihitung dan hasilnya tonase / kadar per bench atas SELURUH
+  file — tidak bergantung pada blok yang sedang tampil di 3D.
+- Aturan sama dengan Reporting cara Surpac: blok masuk menurut titik tengahnya. Cut-off, tinggi bench, RL acuan, SG dan CSV
+  bekerja seperti biasa. Elemen harus atribut angka yang tersimpan di file (atribut kalkulasi belum).
+- Bila proyek dibuka ulang, pilih lagi file .mdl-nya di kotak **File .mdl** pada dialog itu.
+- Tampilan 3D tetap memuat potongan (batas lancar komputer); pindah rentang lewat RL bawah / RL atas saat import.
+- Drillhole 0.24.92: ikut naik karena kode bersama. DB-Ex, Ore Works: tidak berubah.

@@ -17973,11 +17973,11 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
   if(cap){var zt=body.z_max==null?'atas model':body.z_max;M.capped={zMin:zc,zMax:body.z_max,nReq:nReq,max:body.max_n};
     var w='Model sangat besar: rentang RL diminta berisi ±'+nReq.toLocaleString()+' blok, melebihi batas lancar komputer ini ('+body.max_n.toLocaleString()+' blok). '+
       'Yang dimuat hanya RL '+zc+' – '+zt+' (bagian teratas rentang). '+(function(){var a=+zc,b=body.z_max==null?+I.zmax:+body.z_max,t=b-a;if(!(t>0)||body.z_min!=null&&a<=body.z_min)return '';var lo=Math.max(body.z_min==null?+I.zmin:+body.z_min,a-t);
-        return 'Rentang berikutnya: isi RL bawah '+(Math.round(lo*100)/100)+' dan RL atas '+zc+'. ';})()+'Lebih ringkas: nyalakan "Hanya di dalam desain pit" / "Hanya di bawah topografi" (dibaca langsung, tanpa batas rentang).';
+        return 'Rentang berikutnya: isi RL bawah '+(Math.round(lo*100)/100)+' dan RL atas '+zc+'. ';})()+'Lebih ringkas: nyalakan "Hanya di dalam desain pit" / "Hanya di bawah topografi" (dibaca langsung, tanpa cache).';
     m.warn=(m.warn?m.warn+' ':'')+w;try{setTimeout(function(){alert(w);},300);}catch(e){}}
   SA.mdlPathSave(f,path);return m;};
-(function(){var _r=SA.readMDL;if(!_r||SA._mdlBigOn)return;SA._mdlBigOn=1;
-  SA.readMDL=async function(f,prog,opt){var D=window.gcexDesktop;if(!D||!D.apiBin||!f||f.size<SA.MDL_BIG_MB*1048576)return _r.apply(this,arguments);
+(function(){var _r=SA.readMDL;if(!_r||SA._mdlBigOn)return;SA._mdlBigOn=1;SA.readMDLraw=_r;
+  SA.readMDL=async function(f,prog,opt){var D=window.gcexDesktop;if(f&&f.size>=20*1048576)SA.mdlFileLast=f;/* 0.24.84: untuk ringkasan seluruh file dengan batas pit/topografi */if(!D||!D.apiBin||!f||f.size<SA.MDL_BIG_MB*1048576)return _r.apply(this,arguments);
     /* BM 0.24.81 (pemilik 14 Nov 2026, .mdl Zona 4 6,48 GB / 88 juta blok): dengan filter desain pit / topografi file dibaca
        LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
        blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
@@ -17989,7 +17989,7 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
       if(m0.mdl.over){var HB=m0.mdl.hist,zB=m0.mdl.origin[2],tot=m0.n+m0.mdl.over,ak=0,b=HB.length-1;for(;b>=0;b--){if(ak+HB[b]>mx&&ak>0)break;ak+=HB[b];if(ak>mx)break;}
         var zCut=zB+Math.max(0,b+(ak>mx?0:1))*0.25,zTop=isFinite(opt.zMax)?opt.zMax:zB+m0.mdl.extent[2];m0=null;
         m0=await _r.call(this,f,prog,Object.assign({},opt,{zMin:zCut,maxN:Math.min(Math.max(ak,mx),mx*3)}));
-        lebih='Model sangat besar: '+tot.toLocaleString()+' blok lolos filter, melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok). Yang dimuat hanya bagian teratas, RL '+zCut+' \u2013 '+zTop+' ('+m0.n.toLocaleString()+' blok). Rentang berikutnya: isi RL atas '+zCut+' (RL bawah lebih rendah). '+(opt.topo?'':' Nyalakan juga "Hanya di bawah topografi asbuilt" supaya blok udara di atas topografi tidak ikut dihitung.')+' Angka seluruh model: Ringkasan seluruh model per RL.';}
+        lebih='Model sangat besar: '+tot.toLocaleString()+' blok lolos filter, melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok). Yang dimuat hanya bagian teratas, RL '+zCut+' \u2013 '+zTop+' ('+m0.n.toLocaleString()+' blok). Rentang berikutnya: isi RL atas '+zCut+' (RL bawah lebih rendah). '+(opt.topo?'':' Nyalakan juga "Hanya di bawah topografi asbuilt" supaya blok udara di atas topografi tidak ikut dihitung.')+' Angka SELURUH pit tanpa memuat semua blok: Ringkasan seluruh model per RL, centang batas desain pit / topografi.';}
       try{var M0=m0.mdl;if(lebih)m0.warn=(m0.warn?m0.warn+' ':'')+lebih;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
         /* 0.24.82: path file disimpan supaya "Ringkasan seluruh model per RL" tetap dihitung backend atas SELURUH file */
         if(pth){M0.path=pth;M0.bigPath=1;SA.mdlPathSave(f,pth);}
@@ -18843,7 +18843,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.91';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.92';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

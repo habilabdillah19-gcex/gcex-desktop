@@ -3994,6 +3994,9 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
   alloc(cap);
   var nRead=0,nZ=0,nPit=0,nTopo=0,nTopoOut=0,maxL=0,off=H.data,CH=SA.MDL_CH,done=false,lastY=Date.now();
   /* 0.24.83: opt.maxN = batas blok yang disimpan; kelebihannya hanya dihitung per RL puncak blok (HB, pias 0,25 m) supaya memori tidak habis */
+  /* 0.24.84: opt.scan(cx,cy,cz,level,VAL) = pindai saja; blok TIDAK disimpan (nilai atribut blok itu di VAL[k][0]). Dipakai
+     Ringkasan seluruh model per RL dengan batas pit / topografi atas seluruh file (mdlsum.js bsStream). */
+  var SC=typeof opt.scan==='function'?opt.scan:null;
   var maxN=opt.maxN>0?opt.maxN:Infinity,nOver=0,HB=isFinite(maxN)?new Float64Array(Math.ceil(H.extent[2]/0.25)+2):null;
   var cnt=ST.length,isC=ST.map(function(a){return a.type===3;}),isI=ST.map(function(a){return a.type===1;});
   while(off<N&&!done){if(opt.cancel&&opt.cancel())throw new Error('Pembacaan dibatalkan.');
@@ -4012,12 +4015,13 @@ SA.readMDL=async function(f,prog,opt){opt=opt||{};var H=opt.head||await SA.mdlHe
         else if(isI[k]){if(q+4>L){p=st;break rec;}if(keep&&VAL[k])VAL[k][n]=dv.getInt32(q);q+=4;}
         else{if(q+8>L){p=st;break rec;}if(keep&&VAL[k])VAL[k][n]=dv.getFloat64(q);q+=8;}}
       p=q;nRead++;
-      if(keep){X[n]=cx;Y[n]=cy;Z[n]=cz;LV[n]=Lv;if(Lv>maxL)maxL=Lv;n++;}}
+      if(keep){if(SC)SC(cx,cy,cz,Lv,VAL);else{X[n]=cx;Y[n]=cy;Z[n]=cz;LV[n]=Lv;if(Lv>maxL)maxL=Lv;n++;}}}
     if(end>=N&&p<L&&!done){if(L-p>=8)throw new Error('File .mdl terpotong atau rusak di akhir file.');break;}
     if(!p&&!done){CH*=2;continue;}off+=p;u=null;
     if(prog&&Date.now()-lastY>120){prog(Math.round(off/N*100),n,nRead);lastY=Date.now();}
     await new Promise(function(r){setTimeout(r,0);});}
   if(prog)prog(100,n,nRead);
+  if(SC)return{nRead:nRead};
   var m={name:H.name,n:n,x:X.subarray(0,n),y:Y.subarray(0,n),z:Z.subarray(0,n),num:{},cat:{}};
   var SX=new Float32Array(n),SY=new Float32Array(n),SZ=new Float32Array(n);for(var j=0;j<n;j++){var v=LV[j];SX[j]=LX[v];SY[j]=LY[v];SZ[j]=LZ[v];}m.sx=SX;m.sy=SY;m.sz=SZ;X=Y=Z=null;
   ST.forEach(function(a,k){if(VAL[k]&&!isC[k])m.num[a.name]=VAL[k].subarray(0,n);});

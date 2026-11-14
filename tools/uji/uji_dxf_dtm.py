@@ -5,6 +5,8 @@
   D4 string biasa (bukan segitiga) tetap lewat jalur lama (soup = null).
   D5 .mdl besar + filter pit: blok lolos filter > batas -> hanya bagian TERATAS yang dimuat (sedikitnya satu pias RL), ada pesan
      rentang berikutnya, dan isinya sama dengan bacaan tanpa batas untuk rentang RL itu.
+  D6 (0.24.84) Ringkasan per RL atas SELURUH file dengan batas di dalam pit / di bawah topografi dihitung sambil membaca
+     (blok tidak disimpan): sama dengan hitungan langsung dari semua blok; tanpa batas = bsLocal.
 Pemakaian: python tools/uji/uji_dxf_dtm.py [app/index.html]   (build 0.24.82 harus GAGAL)
 """
 from __future__ import annotations
@@ -48,7 +50,18 @@ JS = r"""async function(nF){var R={},fs=document.getElementById('__f').files,out
   try{SA.mdlMaxBlk=function(){return 1e9;};var A=await SA.readMDL(f,null,{head:H,pit:pit});SA.mdlMaxBlk=function(){return 400;};var B=await SA.readMDL(f,null,{head:H,pit:pit});
     var zc=1e9;for(var i=0;i<B.n;i++){var t=B.z[i]+B.sz[i]/2;if(t<zc)zc=t;}var m=/RL ([0-9.]+) /.exec(B.warn||''),cut=m?+m[1]:NaN,nA=0;for(i=0;i<A.n;i++)if(A.z[i]+A.sz[i]/2>cut)nA++;
     R.d5={all:A.n,n:B.n,warn:B.warn||'',cut:cut,minTop:zc,nA:nA,warnA:A.warn||''};}catch(e){R.d5={err:String(e)};}
-  window.gcexDesktop=D0;SA.MDL_BIG_MB=B0;SA.mdlMaxBlk=M0;return R;}"""
+  window.gcexDesktop=D0;SA.MDL_BIG_MB=B0;SA.mdlMaxBlk=M0;
+  /* D6: ringkasan seluruh file dengan batas pit / topografi (streaming) = hitung langsung dari semua blok */
+  try{var Afull=await SA.readMDLraw(f,null,{head:H}),m0=BX.m,u0=BX.ui.sgCol,tz0=TP.zf,fl0=SA.mdlFileLast,S={bench:10,ref:0,cut:'',cutA:'au'};
+    var zP=function(x,y){return x+offX>H.origin[0]+70?null:100+0.2*(y+offY-H.origin[1]);},zT=function(x,y){return 150+0.1*(x+offX-H.origin[0]);};
+    BX.m=Afull;BX.ui.sgCol=null;SA.mdlFileLast=f;TP.zf=function(k){return k==='ov:pit'?zP:zT;};var pF0=OV.pitF,tF0=OV.topoF,dm={x:[0,1,2],y:[0,1,0],z:[0,0,0]};OV.pitF=dm;OV.topoF=dm;
+    var L0=bsLocal(S,['au']),S0=await bsStream(S,['au'],{pit:false,topo:false}),S1=await bsStream(S,['au'],{pit:true,topo:true}),S2=await bsStream({bench:10,ref:0,cut:'1',cutA:'au'},['au'],{pit:true,topo:false});
+    var eN=0,eV=0,eT=0,eG=0,eW=0,eN2=0;for(i=0;i<Afull.n;i++){var x=Afull.x[i]-offX,y=Afull.y[i]-offY,z=Afull.z[i],zp=zP(x,y),v=Afull.sx[i]*Afull.sy[i]*Afull.sz[i],t=v*bxSGv(undefined),au=Afull.num.au[i];
+      if(zp!=null&&z>=zp){if(au>=1)eN2++;if(z<=zT(x,y)){eN++;eV+=v;eT+=t;eG+=au*t;eW+=t;}}}
+    R.d6={same0:L0.total.n===S0.total.n&&Math.abs(L0.total.ton-S0.total.ton)<1e-6&&L0.rows.length===S0.rows.length&&Math.abs(L0.total.grade.au-S0.total.grade.au)<1e-9,
+      n:[S1.total.n,eN],vol:[S1.total.vol,eV],ton:[S1.total.ton,eT],au:[S1.total.grade.au,eG/eW],cutN:[S2.total.n,eN2],sub:eN>0&&eN<Afull.n,con:S1.con,nModel:S1.n_model};
+    BX.m=m0;BX.ui.sgCol=u0;TP.zf=tz0;SA.mdlFileLast=fl0;OV.pitF=pF0;OV.topoF=tF0;}catch(e){R.d6={err:String(e&&e.stack||e)};}
+  return R;}"""
 
 
 def main() -> int:
@@ -84,6 +97,11 @@ def main() -> int:
     cek("err" not in d5 and d5["all"] == 3000 and not d5["warnA"], "D5 tanpa kelebihan: semua blok dimuat, tanpa pesan %s" % {k: v for k, v in d5.items() if k != "warn"})
     cek("err" not in d5 and 0 < d5["n"] == d5["nA"] and d5["minTop"] > d5["cut"] and "Rentang berikutnya" in d5["warn"] and "3,000" in d5["warn"].replace(".", ","),
         "D5 batas 400 blok: dimuat %s blok teratas (RL > %s), sama dengan bacaan penuh; pesan: %s" % (d5.get("n"), d5.get("cut"), d5.get("warn", "")[:160]))
+    d6 = r["d6"]
+    cek("err" not in d6 and d6["same0"], "D6 tanpa batas: hasil streaming = hitungan dari model yang dimuat %s" % d6.get("err", ""))
+    cek("err" not in d6 and d6["sub"] and d6["n"][0] == d6["n"][1] and abs(d6["vol"][0] - d6["vol"][1]) < 1e-6 and abs(d6["ton"][0] - d6["ton"][1]) < 1e-6
+        and abs(d6["au"][0] - d6["au"][1]) < 1e-9 and d6["nModel"] == 3000, "D6 di dalam pit + di bawah topografi (titik tengah): blok %s, ton %s, kadar %s" % (d6.get("n"), d6.get("ton"), d6.get("au")))
+    cek("err" not in d6 and d6["cutN"][0] == d6["cutN"][1] and "cara Surpac" in d6["con"], "D6 cut-off + di dalam pit: %s blok; keterangan: %s" % (d6.get("cutN"), d6.get("con")))
     cek(not err, "tanpa error halaman %s" % err[:3])
     print("GAGAL (%d)" % len(gagal) if gagal else "LULUS")
     return 1 if gagal else 0
