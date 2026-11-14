@@ -4812,3 +4812,13 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Tombol ✕ di kepala Layout peta kini menutup jendela; *Reset filter* (Filter data bor) kembali mereset filter.
 - Isian **Subjudul / lokasi** kini tercetak di kotak judul peta.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 208. Ore Works 0.5.0 — Menu Struktur & bidang 3D titik struktur
+
+- **Struktur → Tampilan struktur → Bentuk 3D**: pilih *Bidang 3D + simbol peta* atau *Bidang 3D saja* agar titik
+  pengukuran digambar sebagai bidang (panjang × tinggi, mengikuti strike & dip). Atur panjang, tinggi, arah tinggi
+  (atas & bawah / ke bawah / ke atas) dan transparansi. Struktur vein memakai isian Tebal sebagai ketebalan bidang.
+- Bagian **Ubah** di daftar titik struktur / bidang struktur tetap terbuka setelah nilai diubah.
+- Submenu Struktur kini: Tampilan struktur · Tambah titik struktur · Impor / ekspor titik struktur · Daftar titik struktur ·
+  Gambar / impor bidang struktur · Daftar bidang struktur.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.

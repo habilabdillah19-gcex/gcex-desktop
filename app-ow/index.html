@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.4.2';</script>
+<script>window.GCEX_VER='0.5.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -246,39 +246,47 @@ body.rp #rpan{display:flex}
 <label><input type="checkbox" id="wie">Tampilkan garis segitiga wireframe</label>
 <h2>Struktur</h2>
 <div class="note subh"><b>Tampilan struktur</b></div>
-<div class="note">Dua kelompok: <b>struktur geologi</b> (sesar, kekar, bedding, foliasi …) dan <b>struktur vein</b> (pengukuran singkapan vein, veinlet …). Berlaku untuk titik pengukuran dan bidang terdaftar.</div>
-<label><input type="checkbox" id="stkg" checked><span class="sw" style="background:#d32f2f"></span>Tampilkan struktur geologi</label>
-<label><input type="checkbox" id="stkv" checked><span class="sw" style="background:#f9a825"></span>Tampilkan struktur vein</label>
-<div class="note subh" style="margin-top:8px"><b>Titik struktur (pengukuran lapangan / singkapan)</b></div>
-<label><input type="checkbox" data-l="stp" checked><span class="sw" style="background:linear-gradient(90deg,#d32f2f 50%,#f9a825 50%)"></span>Simbol titik struktur</label>
-<div class="fl">Ukuran simbol <input id="stpsz" type="number" step="any" value="4" style="width:46px;flex:none"> m <label style="margin:0"><input type="checkbox" id="stplab" checked>Label dip/arah</label></div>
-<div class="fl">Tampilan 3D <select id="stpm"><option value="both">Bidang + simbol peta</option><option value="disk">Bidang saja</option><option value="sym">Simbol peta (gaya USGS) saja</option></select></div>
-<details id="stpform" style="margin:4px 0"><summary style="cursor:pointer;font-weight:600;font-size:12px">+ Tambah titik struktur</summary>
-<div class="fl">Kategori <select id="stpk"><option value="geologi">Struktur geologi</option><option value="vein">Struktur vein</option></select></div>
-<div class="fl">Jenis <select id="stpj"></select> ID <input id="stpid" placeholder="otomatis" style="width:70px;flex:none"></div>
-<div class="fl">E <input id="stpe" type="number" step="any"> N <input id="stpn" type="number" step="any"></div>
-<div class="fl">RL <input id="stpz" type="number" step="any" placeholder="kosong = topografi"><button id="stppick" title="Klik titik di tampilan 3D">&#8982; Ambil dari 3D</button></div>
-<div class="fl"><span id="stpdl">Dip</span> <input id="stpdip" type="number" step="any" min="0" max="90" style="width:46px;flex:none">° <select id="stpcv"></select> <input id="stpaz" type="number" step="any" style="width:52px;flex:none">°</div>
-<div class="fl" id="stptr">Tebal vein <input id="stptb" type="number" step="any" style="width:50px;flex:none"> m</div>
-<div class="fl">Keterangan <input id="stpket"></div>
-<div class="fl"><button id="stpadd">+ Tambah ke 3D</button></div><div id="stpmsg" class="note"></div>
-</details>
+<div class="stbox"><div class="sthd">Kelompok</div>
+<label><input type="checkbox" id="stkg" checked><span class="sw" style="background:#d32f2f"></span>Struktur geologi <span class="note" style="margin:0">(sesar, kekar, bedding …)</span></label>
+<label><input type="checkbox" id="stkv" checked><span class="sw" style="background:#f9a825"></span>Struktur vein <span class="note" style="margin:0">(vein, veinlet, stockwork …)</span></label></div>
+<div class="stbox"><div class="sthd">Titik struktur (pengukuran)</div>
+<label><input type="checkbox" data-l="stp" checked><span class="sw" style="background:linear-gradient(90deg,#d32f2f 50%,#f9a825 50%)"></span>Titik struktur</label>
+<div class="stg"><span>Bentuk 3D</span><select id="stpm" style="grid-column:2/-1"><option value="both">Cakram + simbol peta</option><option value="disk">Cakram saja</option><option value="plsym">Bidang 3D + simbol peta</option><option value="pl">Bidang 3D saja</option><option value="sym">Simbol peta (gaya USGS) saja</option></select>
+</div><div class="fl">Ukuran simbol <input id="stpsz" type="number" step="any" value="4" style="width:56px;flex:none"> m <label style="margin:0 0 0 8px"><input type="checkbox" id="stplab" checked>Label dip/arah</label></div>
+<div id="stpplr"><div class="fl">Bidang: panjang <input id="stppl" type="number" step="any" value="30" style="width:56px;flex:none"> m · tinggi <input id="stpph" type="number" step="any" value="20" style="width:56px;flex:none"> m</div>
+<div class="stg"><span>Arah tinggi</span><select id="stppm" style="grid-column:2/-1"><option value="c">Ke atas &amp; ke bawah (titik di tengah)</option><option value="d">Ke bawah dari titik</option><option value="u">Ke atas dari titik</option></select>
+<span>Transparansi</span><span style="grid-column:2/-1"><input id="stppo" type="range" min="0.15" max="1" step="0.05" value="0.55" style="width:120px;vertical-align:middle"></span></div></div></div>
+<div class="stbox"><div class="sthd">Bidang struktur (terdaftar &amp; usulan)</div>
+<label><input type="checkbox" data-l="str2" checked><span class="sw" style="background:#7e57c2"></span>Bidang struktur terdaftar &amp; usulan</label>
+<label><input type="checkbox" id="stlab" checked>Label nama struktur di 3D</label></div>
+<div class="note subh" style="margin-top:8px"><b>Tambah titik struktur</b></div>
+<div id="stpform" class="stf">
+<span>Kategori</span><div><select id="stpk"><option value="geologi">Struktur geologi</option><option value="vein">Struktur vein</option></select></div>
+<span>Jenis</span><div><select id="stpj"></select><span class="u">ID</span><input id="stpid" placeholder="otomatis" style="flex:0 0 72px"></div>
+<span>E</span><div><input id="stpe" type="number" step="any"><span class="u">N</span><input id="stpn" type="number" step="any"></div>
+<span>RL</span><div><input id="stpz" type="number" step="any" placeholder="kosong = topografi"><button id="stppick" title="Klik titik di tampilan 3D" style="flex:none">&#8982; Ambil dari 3D</button></div>
+<span id="stpdl">Dip</span><div><input id="stpdip" type="number" step="any" min="0" max="90" style="flex:0 0 52px"><span class="u">°</span><select id="stpcv"></select><input id="stpaz" type="number" step="any" style="flex:0 0 56px"><span class="u">°</span></div>
+</div><div class="stf" id="stptr"><span>Tebal vein</span><div><input id="stptb" type="number" step="any" style="flex:0 0 72px"><span class="u">m</span></div></div><div class="stf">
+<span>Keterangan</span><div><input id="stpket"></div>
+</div><button id="stpadd" class="pri" style="width:100%;margin:4px 0 0">+ Tambah ke 3D</button><div id="stpmsg" class="note"></div>
+<div class="note subh" style="margin-top:8px"><b>Impor / ekspor titik struktur</b></div>
 <div class="fl"><label class="fbtn" style="margin:0">&#8679; Impor CSV titik struktur<input type="file" id="stpf" accept=".csv,.txt" style="display:none"></label><select id="stpim" title="Tambah ke daftar atau ganti semua"><option value="add">Tambah</option><option value="rep">Ganti semua</option></select></div>
-<div class="fl">Kategori bila tidak ada kolom Kategori/Jenis <select id="stpkd"><option value="auto">Otomatis dari keterangan (Qz, Cal, vein → vein)</option><option value="geologi">Semua struktur geologi</option><option value="vein">Semua struktur vein</option></select></div>
+<div class="fl">Kategori bila kolom Kategori/Jenis kosong</div><div class="fl"><select id="stpkd"><option value="auto">Otomatis dari keterangan (Qz, Cal, vein → vein)</option><option value="geologi">Semua struktur geologi</option><option value="vein">Semua struktur vein</option></select></div>
 <div class="fl"><button id="stptpl">Template CSV</button><button id="stpcsv">Ekspor CSV</button></div>
 <div id="stpw" class="note">Kolom dikenali otomatis: ID, Kategori (Geologi/Vein), Jenis, X/E/Easting, Y/N/Northing, Z/RL (kosong = dari topografi), Dip, DipDirection / Azimuth / Trend atau Strike, Tebal, Keterangan. Pemisah koma, titik koma atau tab.</div>
+<div class="note subh" style="margin-top:8px"><b>Daftar titik struktur</b></div>
 <div id="stpw2" class="note"></div><div id="stpl"></div>
-<div class="note subh" style="margin-top:10px"><b>Bidang struktur (terdaftar &amp; usulan)</b></div>
-<label><input type="checkbox" data-l="str2" checked><span class="sw" style="background:#7e57c2"></span>Struktur terdaftar &amp; usulan</label>
-<label><input type="checkbox" id="stlab" checked>Label nama struktur di 3D</label>
-
-<div class="fl">Kode log sesar <input id="stcodes" value="BFZ; SZM; FLT; FBX; GOU" title="Pisahkan dengan titik koma; tambahkan kode lain sesuai database"></div>
-<div class="fl">Kolom geologi <select id="stcol"><option value="">(hanya log bawaan)</option></select></div>
-<div class="fl"><button id="stdraw">&#9998; Gambar struktur (tarik jejak di 3D)</button> dip <input id="stdip" type="number" step="any" value="80" style="width:44px;flex:none">° tinggi <input id="sth" type="number" step="any" value="60" style="width:44px;flex:none"> m</div>
-<label class="fbtn">&#8679; Impor struktur (.str / .dxf / .msh / .dtm+.str)<input type="file" id="stimp" multiple accept=".str,.dxf,.msh,.dtm,.obj" style="display:none"></label>
+<div class="note subh" style="margin-top:10px"><b>Gambar / impor bidang struktur</b></div>
+<button id="stdraw" class="pri" style="width:100%;margin:2px 0 4px">&#9998; Gambar struktur (tarik jejak di 3D)</button>
+<div class="stg"><span>Dip bawaan</span><span><input id="stdip" type="number" step="any" value="80" style="width:56px">°</span><span>Tinggi</span><span><input id="sth" type="number" step="any" value="60" style="width:56px"> m</span></div>
+<label class="fbtn" style="margin-top:6px">&#8679; Impor struktur (.str / .dxf / .msh / .dtm+.str)<input type="file" id="stimp" multiple accept=".str,.dxf,.msh,.dtm,.obj" style="display:none"></label>
 <div id="stmsg" class="note"></div>
+<div class="stbox"><div class="sthd">Usulan dari log bor</div>
+<div class="stg"><span>Kode log sesar</span><input id="stcodes" value="BFZ; SZM; FLT; FBX; GOU" title="Pisahkan dengan titik koma; tambahkan kode lain sesuai database" style="grid-column:2/-1">
+<span>Kolom geologi</span><select id="stcol" style="grid-column:2/-1"><option value="">(hanya log bawaan)</option></select></div>
+<button id="stopen" style="margin-top:4px">&#9881; Interpretasi struktur (Analisis)</button></div>
+<div class="note subh" style="margin-top:8px"><b>Daftar bidang struktur</b></div>
 <div id="stsum" class="note" style="margin-top:4px"></div><div id="stl"></div>
-<div class="fl"><button id="stopen">&#9881; Interpretasi struktur (Analisis)</button></div>
 <div class="fl">Ekspor <button id="ststr">.str</button><button id="stdxf">.dxf</button><button id="stcsv">CSV</button></div>
 <h2>Pemetaan lapangan</h2>
 <div class="note subh"><b>Lapisan &amp; label</b></div>
@@ -2639,11 +2647,14 @@ function stpAdd(o){const p=Object.assign({id:STPID++,on:true,kat:'geologi',jenis
 function stpDraw(){const G=L.stp;while(G.children.length){const o=G.children.pop();if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose();}}
  const r=Math.max(0.2,+document.getElementById('stpsz').value||4),lab=document.getElementById('stplab').checked,Y=new THREE.Vector3(0,1,0);
  for(const p of STP){if(!p.on||!stKatOn(p)||!isFinite(p.Z))continue;const col=new THREE.Color(stpCol(p)),c=new THREE.Vector3(p.E-O[0],p.Z-O[2],-(p.N-O[1])),t=p.dd*Math.PI/180,dp=p.dip*Math.PI/180;
-  const SM=stpMode();if(SM!=='disk')stpSym3({jenis:p.jenis,kat:p.kat,dip:p.dip,dd:p.dd,col:stpCol(p),num:!lab},c,r,G,['stp',p]);if(SM==='sym'){}else if(stpLin(p)){const v=new THREE.Vector3(Math.sin(t)*Math.cos(dp),-Math.sin(dp),-Math.cos(t)*Math.cos(dp)).normalize();
+  const SM=stpMode(),PL=SM==='pl'||SM==='plsym';if(SM==='both'||SM==='sym'||SM==='plsym')stpSym3({jenis:p.jenis,kat:p.kat,dip:p.dip,dd:p.dd,col:stpCol(p),num:!lab},c,r,G,['stp',p]);if(SM==='sym'){}else if(stpLin(p)){const v=new THREE.Vector3(Math.sin(t)*Math.cos(dp),-Math.sin(dp),-Math.cos(t)*Math.cos(dp)).normalize();
    const sh=new THREE.Mesh(new THREE.CylinderGeometry(r*0.08,r*0.08,r*1.6,8),new THREE.MeshLambertMaterial({color:col,clippingPlanes:CL}));sh.quaternion.setFromUnitVectors(Y,v);sh.position.copy(c).addScaledVector(v,-0.2*r);sh.userData.stp=p;G.add(sh);
    const hd=new THREE.Mesh(new THREE.ConeGeometry(r*0.25,r*0.6,12),new THREE.MeshLambertMaterial({color:col,clippingPlanes:CL}));hd.quaternion.setFromUnitVectors(Y,v);hd.position.copy(c).addScaledVector(v,0.9*r);hd.userData.stp=p;G.add(hd);}
   else{const s=(p.dd-90)*Math.PI/180,u=new THREE.Vector3(Math.sin(s),0,-Math.cos(s)),d=new THREE.Vector3(Math.sin(t)*Math.cos(dp),-Math.sin(dp),-Math.cos(t)*Math.cos(dp)),n=new THREE.Vector3().crossVectors(u,d).normalize();
-   const dk=new THREE.Mesh(new THREE.CylinderGeometry(r,r,r*0.06,28),new THREE.MeshLambertMaterial({color:col,transparent:true,opacity:.85,side:THREE.DoubleSide,clippingPlanes:CL}));dk.quaternion.setFromUnitVectors(Y,n);dk.position.copy(c);dk.userData.stp=p;G.add(dk);
+   if(PL){const gv=id=>document.getElementById(id),Lp=Math.max(0.5,+gv('stppl').value||30),Hp=Math.max(0.5,+gv('stpph').value||20),pm=gv('stppm').value,op=Math.max(0.1,Math.min(1,+gv('stppo').value||.55)),th=p.kat==='vein'&&+p.tebal>0?+p.tebal:Math.max(0.04,r*0.02),up=d.clone().negate(),zz=new THREE.Vector3().crossVectors(u,up).normalize(),q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(u,up,zz)),off=pm==='d'?-Hp/2:pm==='u'?Hp/2:0,bg=new THREE.BoxGeometry(Lp,Hp,th);
+    const pmh=new THREE.Mesh(bg,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,side:THREE.DoubleSide,depthWrite:op>=1,clippingPlanes:CL}));pmh.quaternion.copy(q);pmh.position.copy(c).addScaledVector(up,off);pmh.userData.stp=p;G.add(pmh);
+    const eg=new THREE.LineSegments(new THREE.EdgesGeometry(bg),new THREE.LineBasicMaterial({color:col.clone().multiplyScalar(0.6),clippingPlanes:CL}));eg.quaternion.copy(q);eg.position.copy(pmh.position);eg.userData.stp=p;G.add(eg);}
+   else{const dk=new THREE.Mesh(new THREE.CylinderGeometry(r,r,r*0.06,28),new THREE.MeshLambertMaterial({color:col,transparent:true,opacity:.85,side:THREE.DoubleSide,clippingPlanes:CL}));dk.quaternion.setFromUnitVectors(Y,n);dk.position.copy(c);dk.userData.stp=p;G.add(dk);}
    const sk=new THREE.Mesh(new THREE.CylinderGeometry(r*0.05,r*0.05,r*2.2,6),new THREE.MeshBasicMaterial({color:0x111111,clippingPlanes:CL}));sk.quaternion.setFromUnitVectors(Y,u);sk.position.copy(c);sk.userData.stp=p;G.add(sk);
    const tk=new THREE.Mesh(new THREE.CylinderGeometry(r*0.06,r*0.06,r*0.8,6),new THREE.MeshBasicMaterial({color:0x111111,clippingPlanes:CL}));tk.quaternion.setFromUnitVectors(Y,d);tk.position.copy(c).addScaledVector(d,0.4*r);tk.userData.stp=p;G.add(tk);}
   if(lab){const tx=p.nm+' '+stpFmt(p),cn=document.createElement('canvas'),x=cn.getContext('2d');x.font='600 24px Inter,Arial';const w=Math.ceil(x.measureText(tx).width)+12;cn.width=w;cn.height=32;x.font='600 24px Inter,Arial';x.fillStyle='rgba(255,255,255,.85)';x.fillRect(0,0,w,32);x.fillStyle=stpCol(p);x.fillText(tx,6,24);
@@ -3277,7 +3288,7 @@ var STPTX=new Map();
 function stpSymTex(o){const key=[o.jenis,o.kat,Math.round(o.dip),Math.round(o.dd),o.col,o.num!==false].join('|');if(STPTX.has(key))return STPTX.get(key);const cn=document.createElement('canvas');cn.width=cn.height=256;const x=cn.getContext('2d');stpGlyph(x,128,128,Object.assign({},o,{k:5.2,fs:0.6}));
  const t=new THREE.CanvasTexture(cn);t.anisotropy=4;if(STPTX.size>400){for(const v of STPTX.values())v.dispose();STPTX.clear();}STPTX.set(key,t);return t;}
 function stpSym3(o,c,r,G,ud){const m=new THREE.Mesh(new THREE.PlaneGeometry(r*3,r*3),new THREE.MeshBasicMaterial({map:stpSymTex(o),transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8,clippingPlanes:CL}));
- m.rotation.x=-Math.PI/2;m.position.copy(c);m.position.y+=stpMode()==='both'&&ud&&ud[0]==='stp'?r*0.9:Math.max(0.05,r*0.04);m.renderOrder=5;if(ud)m.userData[ud[0]]=ud[1];G.add(m);return m;}
+ m.rotation.x=-Math.PI/2;m.position.copy(c);m.position.y+=(stpMode()==='both'||stpMode()==='plsym')&&ud&&ud[0]==='stp'?r*0.9:Math.max(0.05,r*0.04);m.renderOrder=5;if(ud)m.userData[ud[0]]=ud[1];G.add(m);return m;}
 function stpMode(){const e=document.getElementById('stpm');return e?e.value:'both';}
 
 /* ---- vein sebagai lembaran urat 3D ---- */
@@ -3785,6 +3796,29 @@ function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{co
 .sbflash{outline:2px solid #f2b705;outline-offset:1px}`;document.head.appendChild(css);
  /* sisi kiri: isi lama tetap tersembunyi, hanya dok yang tampil bila ada */
  sync();})();
+
+/* ===================== Ore Works 0.5 · menu Struktur: bidang 3D titik struktur, panel ubah tetap terbuka ===================== */
+(function(){const g=id=>document.getElementById(id);
+ const vis=()=>{const m=g('stpm'),r=g('stpplr');if(m&&r)r.style.display=/^pl/.test(m.value)?'':'none';};
+ ['stppl','stpph','stppm','stppo'].forEach(i=>{const e=g(i);if(e)e.addEventListener(i==='stppo'?'input':'change',()=>stpDraw());});
+ const m=g('stpm');if(m)m.addEventListener('change',vis);vis();
+ /* daftar dirender ulang setiap ubah -> simpan <details> yang terbuka & posisi gulir, pulihkan sesudahnya */
+ const keep=(id,fn)=>function(){const el=g(id),key=d=>{const row=d.parentElement;const nm=row&&row.querySelector('input[type=text],input:not([type])');return (nm?nm.value:'')+'|'+d.querySelector('summary').textContent;};
+  const ds0=el?[...el.querySelectorAll('details')]:[],open=ds0.filter(d=>d.open).map(key),idx=ds0.map((d,i)=>d.open?i:-1).filter(i=>i>=0);
+  let sc=null;if(el){let p=el.parentElement;while(p&&p!==document.body){if(p.scrollHeight>p.clientHeight+2&&/auto|scroll/.test(getComputedStyle(p).overflowY)){sc=[p,p.scrollTop];break;}p=p.parentElement;}}
+  const r=fn.apply(this,arguments);
+  if(el&&idx.length){const ds=[...el.querySelectorAll('details')];let hit=0;ds.forEach(d=>{if(open.includes(key(d))){d.open=true;hit++;}});if(!hit)idx.forEach(i=>{if(ds[i])ds[i].open=true;});}
+  if(sc)sc[0].scrollTop=sc[1];return r;};
+ if(typeof stpList==='function')stpList=keep('stpl',stpList);if(typeof stList==='function')stList=keep('stl',stList);
+ const css=document.createElement('style');css.textContent=`
+.stbox{border:1px solid #dfe5ee;border-radius:5px;padding:4px 8px 6px;margin:4px 0 6px;background:#fbfcfe}
+.sthd{font-size:11px;font-weight:600;color:#52596a;margin:0 0 2px}
+.stg{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:4px 6px;align-items:center;margin:3px 0;font-size:12px}
+.stg>input,.stg>select{width:100%;min-width:0;box-sizing:border-box}.stg>span{white-space:nowrap}
+.stg>button{margin:0}#stpform{margin-top:2px}
+.stf{display:grid;grid-template-columns:74px minmax(0,1fr);gap:4px 6px;align-items:center;margin:3px 0;font-size:12px}.stf>div{display:flex;gap:5px;align-items:center;min-width:0}.stf>div>input,.stf>div>select{flex:1 1 0;min-width:0;width:auto;margin:0}.stf>div>button{margin:0}.stf .u{color:#52596a;flex:none}
+#stpl details>summary,#stl details>summary{font-weight:600;color:#1f6feb}`;document.head.appendChild(css);
+ if(typeof stpDraw==='function')stpDraw();})();
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */
