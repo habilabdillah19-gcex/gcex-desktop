@@ -4830,3 +4830,10 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Klik nama atau ✎ untuk membuka formulir ubah: nama, kategori, warna, strike, dip, panjang, tinggi, E, N, RL, catatan.
 - *Struktur → Daftar bidang struktur* kini juga menampilkan usulan otomatis (tidak hanya di Analisis → Interpretasi struktur).
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 210. Ore Works 0.5.2 — Bidang struktur di Layout peta
+
+- Layout peta punya pilihan **Bidang struktur**: tiap bidang terdaftar / usulan digambar sebagai jejaknya di permukaan
+  topografi (garis potong bidang × topografi), lengkap dengan tanda dip, angka dip dan nama. Usulan digambar putus-putus.
+- Bidang yang tidak memotong topografi digambar sebagai proyeksi garis strike (putus-putus, keterangan "proyeksi").
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
