@@ -504,6 +504,15 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
     ['STR biner', '<code>strSeqBin</code>: rekaman 29 byte + deskripsi teks berpanjang bebas (karakter cetak) sampai byte 0 rekaman berikutnya; cadangan = rekaman tetap 29+8k byte.'],
 ]))
 
+B.append('<h3>8.15 Shell ala Ore Works (BM 0.24.78)</h3>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Toolbar', '<code>shell_bm.js</code> memindahkan <code>#top .tools</code> (beserta tombol yang dipasang modul lain langsung ke <code>#top</code>, mis. <code>#fsBtn</code>) ke <code>#bmTb</code>; id & handler tetap. <code>#tbAll</code>: eye kamera dinormalkan ke |eye| bawaan &radic;5,5, center 0. <code>#tbBg</code> &rarr; <code>localStorage gcex_bm_latar</code>; selain Polos, <code>TP.pasca</code> dibungkus agar latar Plotly transparan (gradasi CSS di <code>#stage</code>).'],
+    ['Status bar', '<code>#sbXY</code> dari <code>plotly_hover</code> (+<code>offX</code>/<code>offY</code>), <code>#sbVE</code> dari <code>#zex</code>. Arah pandang hanya di <code>#cpTxt</code>.'],
+    ['Menu teks', '<code>#bmMenu</code> dibangun dari <code>PT.nodes</code> teratas (tanpa Proyek); item memanggil <code>PT.select</code> sesudah membuka induknya. Kelebihan lebar &rarr; <code>#bmMore</code> (Lainnya).'],
+    ['Cari', '<code>SHELL.cari(q)</code>: <code>PT.open</code> disimpan, induk hasil dibuka, baris lain diberi <code>.ptq-x</code> (diterapkan ulang lewat MutationObserver pada <code>#ptree</code>); kosong &rarr; <code>PT.open</code> dipulihkan.'],
+    ['Kompas 3D', '<code>cpDraw(rt, us)</code>: vektor dunia diproyeksikan ke sumbu layar kamera (kanan <code>rt</code>, atas <code>us</code>); lingkaran di bidang XY &rarr; elips, jarum U/S, panah Z (titik bila &lt; 7 px).'],
+]))
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

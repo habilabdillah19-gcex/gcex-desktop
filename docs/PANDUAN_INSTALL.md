@@ -4764,3 +4764,15 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   Exploration). Channel yang dikirim dari Pemetaan tercatat sebagai Channel sampling.
 - Data latihan: `LTH_assay.csv` kini memuat Cu/Pb/Zn/SxS, `LTH_collar.csv` memuat Hole_Purpose, `LTH_geologi.csv` memuat Vein_Type.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 204. Block Model 0.24.78 — Toolbar, status bar, menu teks, cari Project Tree, kompas 3D
+
+- Tombol tampilan (Top/Front/Side/Iso, Tegak lurus, Slicer, Ortho, Lapisan, Gelap, PNG, Layar penuh) **pindah** dari bilah atas
+  ke toolbar di bawahnya. Baru di toolbar: **Semua data** (zoom ke seluruh data) dan **Latar 3D** (Polos bawaan; Gradasi lembut /
+  Gradasi navy hanya untuk area 3D).
+- Bilah atas: logo dan huruf tetap; ditambah menu teks (Data Spasial, Block Model, Referensi, …) sebagai jalan pintas ke node
+  Project Tree. Menu yang tidak muat ada di **Lainnya**.
+- Project Tree: kotak **Cari** di atas pohon.
+- Status bar navy: koordinat kursor (E · N · RL) dan VE, ditambah info yang sudah ada.
+- Kompas 3D di kanan atas tampilan 3D (klik = menghadap Utara). Jendela pop-up dan legenda berkepala navy.
+- Hitungan apa pun tidak berubah. Drillhole, DB-Ex, Ore Works: tidak berubah.

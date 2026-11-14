@@ -173,10 +173,10 @@ body.dm-on #statsCard{display:none}
 .pltb button.x{height:20px;width:18px;padding:0;line-height:1;color:var(--dn)}
 .pltb small{color:var(--mu)}
 .warn{color:var(--dn)}
-#cpBox{position:absolute;right:14px;bottom:14px;z-index:3;width:92px;text-align:center;cursor:pointer;user-select:none}
+#cpBox{position:absolute;right:14px;top:12px;z-index:3;width:100px;text-align:center;cursor:pointer;user-select:none}
 #cpBox svg{display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
-#cpBox .cpo{fill:var(--sf);fill-opacity:.88;stroke:var(--bd);stroke-width:1.5}#cpBox .cpi{fill:none;stroke:var(--bd);stroke-width:1;stroke-dasharray:2 3}
-#cpBox .cpn{fill:#c92a2a}#cpBox .cps{fill:#adb5bd}#cpBox .cpt{fill:var(--mu);opacity:.55}#cpBox .cpc{fill:var(--tx)}
+#cpBox .cpo{fill:var(--sf);fill-opacity:.88;stroke:var(--bd);stroke-width:1.5}#cpBox .cpi{fill:var(--sf2);fill-opacity:.9;stroke:var(--pr);stroke-width:1.4}
+#cpBox .cpn{fill:#c92a2a;stroke:#8f1d1d;stroke-width:.6;stroke-linejoin:round}#cpBox .cps{fill:#f4f6f9;stroke:#5b6b7c;stroke-width:.6;stroke-linejoin:round}#cpBox .cpt{fill:none;stroke:var(--mu);stroke-width:1.2}#cpBox .cpc{fill:var(--tx)}#cpBox .cpz{fill:none;stroke:#b5893e;stroke-width:1.8}#cpBox .cpzh{fill:#b5893e}#cpBox text.cpZt{fill:#b5893e;font-size:9px}
 #cpBox text{font:700 10px Segoe UI,Arial,sans-serif;text-anchor:middle;fill:var(--mu)}#cpBox text.cpN{fill:#c92a2a;font-size:12px}
 #cpBox:hover .cpo{stroke:var(--ac)}#cpTxt{font-size:10.5px;color:var(--mu);background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:1px 6px;margin-top:2px;white-space:nowrap;display:inline-block}
 .cpSec{display:none;position:absolute;top:44px;z-index:3;font:600 12px Segoe UI,Arial,sans-serif;color:var(--pr);background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:3px 10px;box-shadow:var(--sh)}
@@ -1902,21 +1902,30 @@ function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.lengt
   dgLoad();dgList();dgState();})();
 var CP={cam:null};
 function cpInit(){var st=$('plotDiv').parentNode;if($('cpBox'))return;var d=document.createElement('div');d.id='cpBox';d.title='Kompas dinamis - klik: putar tampilan menghadap Utara';
-  d.innerHTML='<svg viewBox=-50,-50,100,100 width=92 height=92><circle r=44 class=cpo></circle><circle r=36 class=cpi></circle>'+
-    '<g id=cpRose><path d=M0,-40L7,0L0,-6L-7,0z class=cpn></path><path d=M0,40L7,0L0,6L-7,0z class=cps></path><path d=M-40,0L0,-5L0,5z class=cpt></path><path d=M40,0L0,-5L0,5z class=cpt></path>'+
-    '<text x=0 y=-25 class=cpN>U</text><text x=0 y=31 class=cpL>S</text><text x=27 y=3 class=cpL>T</text><text x=-27 y=3 class=cpL>B</text></g><circle r=3 class=cpc></circle></svg><div id=cpTxt></div>';
+  /* 0.24.78: kompas 3D (pemilik 14 Nov 2026: "ganti jadi kompas 3D, jangan mirip Ore Works") -- piringan kompas di bidang
+     horizontal ikut miring bersama kamera, jarum Utara merah, panah Z ke atas. Digambar cpDraw(). */
+  d.innerHTML='<svg viewBox=-50,-50,100,100 width=100 height=100><circle r=47 class=cpo></circle><path id=cpEll class=cpi></path><path id=cpTk class=cpt></path>'+
+    '<polygon id=cpSn class=cps></polygon><polygon id=cpNn class=cpn></polygon><path id=cpZ class=cpz></path><polygon id=cpZh class=cpzh></polygon>'+
+    '<text id=cpLU class=cpN>U</text><text id=cpLT class=cpL>T</text><text id=cpLS class=cpL>S</text><text id=cpLB class=cpL>B</text><text id=cpLZ class=cpZt>Z</text><circle r=2.6 class=cpc></circle></svg><div id=cpTxt></div>';
   d.onclick=cpNorth;st.appendChild(d);
   var s1=document.createElement('div');s1.id='cpSecL';s1.className='cpSec';st.appendChild(s1);var s2=document.createElement('div');s2.id='cpSecR';s2.className='cpSec';st.appendChild(s2);}
 function cpCam(){var gd=$('plotDiv');try{var c=gd._fullLayout.scene.camera;return{eye:c.eye,up:c.up||{x:0,y:0,z:1},center:c.center||{x:0,y:0,z:0}};}catch(e){return null;}}
 function cpDir(a){var n=['U','TL','T','TG','S','BD','B','BL'];return n[Math.round(((a%360)+360)%360/45)%8];}
-function cpUpdate(c){var box=$('cpBox');if(!box)return;var r=$('cpRose'),t=$('cpTxt'),L=$('cpSecL'),R=$('cpSecR');
-  if(VIEW2D){var g=secGeom();if(g.m==='H'){r.setAttribute('transform','rotate(0)');t.textContent='Plan';L.style.display=R.style.display='none';box.style.display='block';return;}
+function cpDraw(rt,us){var K=32,P=function(v){return [K*(v[0]*rt[0]+v[1]*rt[1]+v[2]*rt[2]),-K*(v[0]*us[0]+v[1]*us[1]+v[2]*us[2])];},f=function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);},S=function(id,a,v){var e=$(id);if(e)e.setAttribute(a,v);};
+  var e='',i;for(i=0;i<=48;i++){var a=i/48*2*Math.PI;e+=(i?'L':'M')+f(P([Math.sin(a),Math.cos(a),0]));}S('cpEll','d',e+'Z');
+  var tk='';for(i=0;i<8;i++){var b=i/8*2*Math.PI,sn=Math.sin(b),cs=Math.cos(b),q=i%2?0.86:0.78;tk+='M'+f(P([sn*q,cs*q,0]))+'L'+f(P([sn,cs,0]));}S('cpTk','d',tk);
+  S('cpNn','points',[P([0,0.98,0]),P([0.16,0,0]),P([0,0,0.03]),P([-0.16,0,0])].map(f).join(' '));S('cpSn','points',[P([0,-0.98,0]),P([0.16,0,0]),P([-0.16,0,0])].map(f).join(' '));
+  var L=function(id,v){var p=P(v);S(id,'x',p[0].toFixed(1));S(id,'y',(p[1]+3.5).toFixed(1));};L('cpLU',[0,1.3,0]);L('cpLT',[1.3,0,0]);L('cpLS',[0,-1.3,0]);L('cpLB',[-1.3,0,0]);
+  var z=P([0,0,1.05]),zl=Math.sqrt(z[0]*z[0]+z[1]*z[1]);if(zl>7){var ux=z[0]/zl,uy=z[1]/zl;S('cpZ','d','M0,0L'+f([z[0]-ux*5,z[1]-uy*5]));S('cpZh','points',[z,[z[0]-ux*7-uy*3.5,z[1]-uy*7+ux*3.5],[z[0]-ux*7+uy*3.5,z[1]-uy*7-ux*3.5]].map(f).join(' '));S('cpLZ','x',(z[0]+ux*7).toFixed(1));S('cpLZ','y',(z[1]+uy*7+3).toFixed(1));}
+  else{S('cpZ','d','M-4,0a4,4 0 1,0 8,0a4,4 0 1,0 -8,0');S('cpZh','points','0,0 0,0 0,0');S('cpLZ','x','7');S('cpLZ','y','-6');}}
+function cpUpdate(c){var box=$('cpBox');if(!box)return;var t=$('cpTxt'),L=$('cpSecL'),R=$('cpSecR');
+  if(VIEW2D){var g=secGeom();if(g.m==='H'){cpDraw([1,0,0],[0,1,0]);t.textContent='Plan';L.style.display=R.style.display='none';box.style.display='block';return;}
     box.style.display='none';var a1=normAz(g.az+180),a2=normAz(g.az);L.textContent='\u25c0 '+cpDir(a1)+' '+Math.round(a1)+'\u00b0';R.textContent=cpDir(a2)+' '+Math.round(a2)+'\u00b0 \u25b6';L.style.display=R.style.display='block';return;}
   L.style.display=R.style.display='none';box.style.display='block';c=c||CP.cam||cpCam();if(!c||!c.eye)return;CP.cam=c;
   var ex=c.eye.x-c.center.x,ey=c.eye.y-c.center.y,ez=c.eye.z-c.center.z,n=Math.sqrt(ex*ex+ey*ey+ez*ez)||1,d=[-ex/n,-ey/n,-ez/n],u=[c.up.x,c.up.y,c.up.z];
   var rt=[d[1]*u[2]-d[2]*u[1],d[2]*u[0]-d[0]*u[2],d[0]*u[1]-d[1]*u[0]],rn=Math.sqrt(rt[0]*rt[0]+rt[1]*rt[1]+rt[2]*rt[2]);
   if(rn<1e-9){rt=[1,0,0];rn=1;}rt=[rt[0]/rn,rt[1]/rn,rt[2]/rn];var us=[rt[1]*d[2]-rt[2]*d[1],rt[2]*d[0]-rt[0]*d[2],rt[0]*d[1]-rt[1]*d[0]];
-  var ang=Math.atan2(rt[1],us[1])*180/Math.PI;r.setAttribute('transform','rotate('+ang.toFixed(1)+')');
+  cpDraw(rt,us);
   var hz=Math.sqrt(d[0]*d[0]+d[1]*d[1]),az=normAz(Math.atan2(d[0],d[1])*180/Math.PI),el=Math.round(Math.asin(Math.max(-1,Math.min(1,-d[2])))*180/Math.PI);
   t.textContent=hz<0.05?'Dari atas':'Pandang '+cpDir(az)+' '+Math.round(az)+'\u00b0 \u00b7 '+el+'\u00b0';}
 function cpNorth(){if(VIEW2D)return;var c=CP.cam||cpCam(),e=c&&c.eye?c.eye:{x:1.5,y:-1.5,z:1},h=Math.sqrt(e.x*e.x+e.y*e.y),z=e.z;if(h<0.05){h=0.01;}
