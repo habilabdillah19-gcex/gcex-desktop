@@ -19,7 +19,7 @@ async def main():
     await pg.evaluate("()=>{const e=document.getElementById('pjn');e.textContent='Latihan Zona A';e.dispatchEvent(new Event('blur'));if(window.pjNameSet)pjNameSet('Latihan Zona A');}")
     await shot(pg,'02_toolbar',['#otb button[title^="Buka project"]','#otb button[title^="Zoom ke semua"]','#otb button[title^="Pandangan plan"]','#otbve','#otb button[title^="Label adaptif"]','#otb button[title^="Layout peta"]','#osbg'],clip=(0,0,1440,90))
     # dataset bor
-    await menu(pg,'Dataset pemboran tambahan')
+    await menu(pg,'Data bor')
     for k,f in [('collar','LTH_collar.csv'),('survey','LTH_survey.csv'),('assay','LTH_assay.csv'),('geo','LTH_geologi.csv')]:
         await pg.set_input_files('#dsf-'+k,D+f);await pg.wait_for_timeout(300)
     await shot(pg,'03_dataset',['#dss-collar','#dss-survey','#dss-assay','#dss-geo','#dsgo'])
@@ -41,7 +41,7 @@ async def main():
     await shot(pg,'07_3d_bor_topo_wf',['#ogz','#lgw'])
     await pg.evaluate("view('plan')");await pg.wait_for_timeout(800);await cam(pg,10100,20100,150,0,89.5,260)
     await shot(pg,'08_plan')
-    await menu(pg,'Filter data bor');await shot(pg,'09_filter',['#flid'] if await pg.query_selector('#flid') else []);await closeall(pg)
+    await menu(pg,'Data bor');await shot(pg,'09_filter',['#flid'] if await pg.query_selector('#flid') else []);await closeall(pg)
     await menu(pg,'File kerja project');await shot(pg,'10_file',['#pjs','label.fbtn:has(#pjo)']);await closeall(pg)
     # pemetaan: pick-up
     await menu(pg,'Pemetaan lapangan');await sub(pg,'1 ·')

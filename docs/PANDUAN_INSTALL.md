@@ -4837,3 +4837,14 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   topografi (garis potong bidang × topografi), lengkap dengan tanda dip, angka dip dan nama. Usulan digambar putus-putus.
 - Bidang yang tidak memotong topografi digambar sebagai proyeksi garis strike (putus-putus, keterangan "proyeksi").
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 211. Ore Works 0.6.0 — Menu dirapikan & panel Data sebagai repositori
+
+- Menu **Data bor** kini berisi Impor tabel · Tampilan lubang · Warna lubang · Filter (dulu tiga menu: Data Bor, Filter,
+  Dataset bor). Menu **Target** pindah ke *Plan bor → Usulan dari potensi terbuka*.
+- Semua daftar data ada di panel **Data** (tombol ☷ Data): Bor · Permukaan · Wireframe · Pemetaan · Titik struktur ·
+  Bidang struktur. Dari menu, pilih item "☷ Daftar … (panel Data)".
+- Layout peta menyesuaikan ukuran layar dan menampilkan satu halaman utuh; pilihan baru **Wireframe (jejak)** dan
+  **Wireframe (proyeksi)**.
+- Legenda otomatis tersembunyi bila belum ada data.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
