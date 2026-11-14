@@ -16,6 +16,8 @@ Memakai data latihan (fiktif).
      menyembunyikan Project Tree (Properti kiri tetap tampil), » memunculkannya.
   S7 cari di Project Tree: hanya baris yang cocok + induknya; dikosongkan -> folder kembali seperti semula.
   S8 kompas 3D: piringan miring (elips) & panah Z saat pandangan samping; dari atas: elips = lingkaran, Z = titik.
+  S9 (0.24.81) .mdl >= 150 MB dengan filter pit/topografi dibaca langsung (tanpa backend); hanya filter RL -> backend.
+  S10 (0.24.81) sayatan horizontal di luar RL block model yang baru dimuat dipindah ke tengah rentangnya.
 Pemakaian: python tools/uji/uji_shell_bm.py [app/index.html]   (build 0.24.78 harus GAGAL di S6)
 """
 from __future__ import annotations
@@ -71,6 +73,17 @@ JS = r"""async function(){
     xs=P.map(function(p){return p[0];}),ys=P.map(function(p){return p[1];});return [Math.max.apply(0,xs)-Math.min.apply(0,xs),Math.max.apply(0,ys)-Math.min.apply(0,ys)];};
   setCam(2.4,0.3,0.2);await w(900);R.s8={side:ell(),zSide:$('cpZ').getAttribute('d'),zh:$('cpZh').getAttribute('points'),txt:$('cpTxt').textContent};
   setCam(0,-0.01,2.5);await w(900);R.s8.top=ell();R.s8.zTop=$('cpZ').getAttribute('d');
+  /* S9 (0.24.81): .mdl besar + filter pit/topografi -> dibaca langsung (tanpa backend); tanpa filter area -> backend */
+  var calls=[],D0=window.gcexDesktop;window.gcexDesktop={api:async function(u){calls.push(u);throw new Error('stub');},apiBin:async function(u){calls.push(u);throw new Error('stub');},pathOf:function(){return 'C:/x/besar.mdl';}};
+  var fake={name:'besar.mdl',size:200*1048576,lastModified:0,slice:function(){return new Blob([new Uint8Array(64)]);}};
+  try{await SA.readMDL(fake,null,{pit:{x0:0,y0:0,c:1,nx:1,ny:1,z:new Float32Array(1)}});}catch(x){}var cPit=calls.slice();calls.length=0;
+  try{await SA.readMDL(fake,null,{zMin:210,zMax:270});}catch(x){}var cRl=calls.slice();window.gcexDesktop=D0;
+  R.s9={pit:cPit,rl:cRl};
+  /* S10 (0.24.81): sayatan di luar RL block model baru -> dipindah ke tengah rentang */
+  var cb=$('showPlane');if(cb&&!cb.checked){cb.checked=true;cb.dispatchEvent(new Event('change',{bubbles:true}));}if(typeof VIEW2D!=='undefined'&&VIEW2D&&window.toggle2D)toggle2D();
+  if($('sMode').value!=='H'){$('sMode').value='H';$('sMode').dispatchEvent(new Event('change',{bubbles:true}));}await w(600);
+  var p=$('pos');p.max=Math.max(+p.max,9999);p.value=9000;var e=BX.m.ext;BX.m=Object.assign({},BX.m);SHELL.rlCek();await w(1500);
+  R.s10={pos:+p.value,z0:e&&e[4],z1:e&&e[5]};
   return R;}"""
 
 
@@ -129,6 +142,10 @@ def main() -> int:
     s8 = r["s8"]
     cek(s8["side"][0] > 3 * s8["side"][1] and "a4" not in (s8["zSide"] or ""), "S8 pandangan samping: piringan pipih %s, panah Z %s" % (s8["side"], s8["zSide"]))
     cek(abs(s8["top"][0] - s8["top"][1]) < 1.5 and "a4" in (s8["zTop"] or ""), "S8 dari atas: lingkaran %s, Z = titik" % s8["top"])
+    s9 = r["s9"]
+    cek(not s9["pit"] and any("/mdl/" in u for u in s9["rl"]), "S9 .mdl besar: filter pit -> baca langsung %s; hanya RL -> backend %s" % (s9["pit"], s9["rl"]))
+    s10 = r["s10"]
+    cek(s10["z0"] is not None and s10["z0"] - 1e-6 <= s10["pos"] <= s10["z1"] + 1e-6, "S10 sayatan RL 9000 dipindah ke dalam rentang block model %s" % s10)
     cek(not err, "tanpa error halaman %s" % err[:3])
     print("GAGAL (%d)" % len(gagal) if gagal else "LULUS")
     return 1 if gagal else 0

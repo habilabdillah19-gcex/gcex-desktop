@@ -244,8 +244,23 @@
       dock(D.pos); if (LS('gcex_bm_tree') === '0') pohon(false); }
     tombol();
   }
-  function jalan() { try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
-  window.SHELL = { semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
+  /* ================= 0.24.81: sayatan di luar RL block model yang baru dimuat -> pindah ke tengah rentangnya ================= */
+  var mLast = null;
+  function rlCek() {
+    var m = window.BX && BX.m; if (!m || m === mLast) return; mLast = m;
+    setTimeout(function () { try {
+      if (typeof secGeom !== 'function' || secGeom().m !== 'H') return;
+      var on = (typeof VIEW2D !== 'undefined' && VIEW2D) || ($('sliceClip') && $('sliceClip').checked) || ($('showPlane') && $('showPlane').checked); if (!on) return;
+      var z0 = Infinity, z1 = -Infinity, e = m.ext;
+      if (e && isFinite(e[4]) && isFinite(e[5])) { z0 = e[4]; z1 = e[5]; } else if (m.z) { for (var i = 0; i < m.n; i++) { var z = m.z[i]; if (z < z0) z0 = z; if (z > z1) z1 = z; } }
+      var p = $('pos'), v = p ? +p.value : NaN; if (!p || !isFinite(z0) || (v >= z0 - 1e-6 && v <= z1 + 1e-6)) return;
+      var mid = Math.round((z0 + z1) / 2 * 10) / 10; if (+p.min > mid) p.min = mid; if (+p.max < mid) p.max = mid; p.value = mid;
+      if (typeof updatePlot === 'function') updatePlot();
+      var si = $('sbXY'); if (si) { var t0 = si.textContent; si.textContent = 'Sayatan dipindah ke RL ' + String(mid).replace('.', ',') + ' (dalam rentang block model)'; setTimeout(function () { if (si.textContent.indexOf('Sayatan dipindah') === 0) si.textContent = t0; }, 6000); }
+    } catch (x) {} }, 900);
+  }
+  function jalan() { try { rlCek(); } catch (e) {} try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
+  window.SHELL = { rlCek: rlCek, semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);
 })();

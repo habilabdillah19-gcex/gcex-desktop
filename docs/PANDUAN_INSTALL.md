@@ -4866,3 +4866,11 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Pilihan Layout **Wireframe (garis tengah)** menggambar satu garis di tengah singkapan wireframe pada topografi
   (bukan dua garis kontak), lengkap dengan nama domain. *Wireframe (proyeksi)* tetap berupa arsir tipis.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+## 215. Block Model 0.24.81 — import .mdl sangat besar dengan filter pit / topografi
+
+- File .mdl besar (≥ 150 MB) dengan **Hanya di dalam desain pit** / **Hanya di bawah topografi** kini dibaca langsung: filter
+  diterapkan sambil membaca (contoh 6,48 GB ±30 detik) dan tidak butuh ruang cache disk.
+- Tanpa filter area, file besar tetap lewat backend; bila jumlah blok melebihi batas, pesannya menyebut rentang RL yang termuat
+  dan isian RL untuk rentang berikutnya.
+- Sesudah import, sayatan horizontal yang berada di luar RL block model otomatis dipindah ke tengah rentangnya.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

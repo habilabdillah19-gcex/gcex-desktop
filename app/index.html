@@ -11035,8 +11035,23 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
       dock(D.pos); if (LS('gcex_bm_tree') === '0') pohon(false); }
     tombol();
   }
-  function jalan() { try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
-  window.SHELL = { semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
+  /* ================= 0.24.81: sayatan di luar RL block model yang baru dimuat -> pindah ke tengah rentangnya ================= */
+  var mLast = null;
+  function rlCek() {
+    var m = window.BX && BX.m; if (!m || m === mLast) return; mLast = m;
+    setTimeout(function () { try {
+      if (typeof secGeom !== 'function' || secGeom().m !== 'H') return;
+      var on = (typeof VIEW2D !== 'undefined' && VIEW2D) || ($('sliceClip') && $('sliceClip').checked) || ($('showPlane') && $('showPlane').checked); if (!on) return;
+      var z0 = Infinity, z1 = -Infinity, e = m.ext;
+      if (e && isFinite(e[4]) && isFinite(e[5])) { z0 = e[4]; z1 = e[5]; } else if (m.z) { for (var i = 0; i < m.n; i++) { var z = m.z[i]; if (z < z0) z0 = z; if (z > z1) z1 = z; } }
+      var p = $('pos'), v = p ? +p.value : NaN; if (!p || !isFinite(z0) || (v >= z0 - 1e-6 && v <= z1 + 1e-6)) return;
+      var mid = Math.round((z0 + z1) / 2 * 10) / 10; if (+p.min > mid) p.min = mid; if (+p.max < mid) p.max = mid; p.value = mid;
+      if (typeof updatePlot === 'function') updatePlot();
+      var si = $('sbXY'); if (si) { var t0 = si.textContent; si.textContent = 'Sayatan dipindah ke RL ' + String(mid).replace('.', ',') + ' (dalam rentang block model)'; setTimeout(function () { if (si.textContent.indexOf('Sayatan dipindah') === 0) si.textContent = t0; }, 6000); }
+    } catch (x) {} }, 900);
+  }
+  function jalan() { try { rlCek(); } catch (e) {} try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
+  window.SHELL = { rlCek: rlCek, semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);
 })();
@@ -12040,11 +12055,18 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
   M.flt=(M.flt?M.flt+' · ':'')+'dibaca lewat backend (cache disk, '+nSub.toLocaleString()+' blok dikirim)';
   if(cap){var zt=body.z_max==null?'atas model':body.z_max;M.capped={zMin:zc,zMax:body.z_max,nReq:nReq,max:body.max_n};
     var w='Model sangat besar: rentang RL diminta berisi ±'+nReq.toLocaleString()+' blok, melebihi batas lancar komputer ini ('+body.max_n.toLocaleString()+' blok). '+
-      'Yang dimuat: RL '+zc+' – '+zt+'. Untuk bench lain, import ulang dengan isian RL bawah / RL atas (atau batasi dengan desain pit).';
+      'Yang dimuat hanya RL '+zc+' – '+zt+' (bagian teratas rentang). '+(function(){var a=+zc,b=body.z_max==null?+I.zmax:+body.z_max,t=b-a;if(!(t>0)||body.z_min!=null&&a<=body.z_min)return '';var lo=Math.max(body.z_min==null?+I.zmin:+body.z_min,a-t);
+        return 'Rentang berikutnya: isi RL bawah '+(Math.round(lo*100)/100)+' dan RL atas '+zc+'. ';})()+'Lebih ringkas: nyalakan "Hanya di dalam desain pit" / "Hanya di bawah topografi" (dibaca langsung, tanpa batas rentang).';
     m.warn=(m.warn?m.warn+' ':'')+w;try{setTimeout(function(){alert(w);},300);}catch(e){}}
   SA.mdlPathSave(f,path);return m;};
 (function(){var _r=SA.readMDL;if(!_r||SA._mdlBigOn)return;SA._mdlBigOn=1;
   SA.readMDL=async function(f,prog,opt){var D=window.gcexDesktop;if(!D||!D.apiBin||!f||f.size<SA.MDL_BIG_MB*1048576)return _r.apply(this,arguments);
+    /* BM 0.24.81 (pemilik 14 Nov 2026, .mdl Zona 4 6,48 GB / 88 juta blok): dengan filter desain pit / topografi file dibaca
+       LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
+       blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
+       teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
+    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments);try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+        if(m0.n>mx)m0.warn=(m0.warn?m0.warn+' ':'')+'Blok termuat '+m0.n.toLocaleString()+' melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok); tampilan bisa lambat. Persempit RL bawah / RL atas bila perlu.';}catch(x){}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _r.apply(this,arguments);
     try{return await SA.mdlBig(f,path,prog,opt||{},_r);}
     catch(e){if(e.noFallback||/dibatalkan/.test(e.message)||(opt&&opt.cancel&&opt.cancel()))throw e;console.warn('[GC-Ex] backend .mdl gagal, baca langsung:',e);
@@ -13177,7 +13199,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.80';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.81';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

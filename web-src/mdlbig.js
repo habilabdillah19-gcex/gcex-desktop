@@ -40,11 +40,18 @@ SA.mdlBig=async function(f,path,prog,opt,orig){var D=window.gcexDesktop,t0=Date.
   M.flt=(M.flt?M.flt+' · ':'')+'dibaca lewat backend (cache disk, '+nSub.toLocaleString()+' blok dikirim)';
   if(cap){var zt=body.z_max==null?'atas model':body.z_max;M.capped={zMin:zc,zMax:body.z_max,nReq:nReq,max:body.max_n};
     var w='Model sangat besar: rentang RL diminta berisi ±'+nReq.toLocaleString()+' blok, melebihi batas lancar komputer ini ('+body.max_n.toLocaleString()+' blok). '+
-      'Yang dimuat: RL '+zc+' – '+zt+'. Untuk bench lain, import ulang dengan isian RL bawah / RL atas (atau batasi dengan desain pit).';
+      'Yang dimuat hanya RL '+zc+' – '+zt+' (bagian teratas rentang). '+(function(){var a=+zc,b=body.z_max==null?+I.zmax:+body.z_max,t=b-a;if(!(t>0)||body.z_min!=null&&a<=body.z_min)return '';var lo=Math.max(body.z_min==null?+I.zmin:+body.z_min,a-t);
+        return 'Rentang berikutnya: isi RL bawah '+(Math.round(lo*100)/100)+' dan RL atas '+zc+'. ';})()+'Lebih ringkas: nyalakan "Hanya di dalam desain pit" / "Hanya di bawah topografi" (dibaca langsung, tanpa batas rentang).';
     m.warn=(m.warn?m.warn+' ':'')+w;try{setTimeout(function(){alert(w);},300);}catch(e){}}
   SA.mdlPathSave(f,path);return m;};
 (function(){var _r=SA.readMDL;if(!_r||SA._mdlBigOn)return;SA._mdlBigOn=1;
   SA.readMDL=async function(f,prog,opt){var D=window.gcexDesktop;if(!D||!D.apiBin||!f||f.size<SA.MDL_BIG_MB*1048576)return _r.apply(this,arguments);
+    /* BM 0.24.81 (pemilik 14 Nov 2026, .mdl Zona 4 6,48 GB / 88 juta blok): dengan filter desain pit / topografi file dibaca
+       LANGSUNG -- filter diterapkan sambil membaca (6,48 GB ±30 detik, tanpa cache disk 10 GB). Lewat backend, batas jumlah
+       blok dulu dihitung dari SELURUH kotak model sebelum filter pit/topografi, sehingga yang tersisa hanya potongan RL
+       teratas (47 blok di RL 349; 349 blok untuk RL 210-270). */
+    if(opt&&(opt.pit||opt.topo)){var m0=await _r.apply(this,arguments);try{var mx=SA.mdlMaxBlk(),M0=m0.mdl;M0.flt=(M0.flt?M0.flt+' · ':'')+'dibaca langsung (filter pit / topografi sambil membaca)';
+        if(m0.n>mx)m0.warn=(m0.warn?m0.warn+' ':'')+'Blok termuat '+m0.n.toLocaleString()+' melebihi batas lancar komputer ini ('+mx.toLocaleString()+' blok); tampilan bisa lambat. Persempit RL bawah / RL atas bila perlu.';}catch(x){}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _r.apply(this,arguments);
     try{return await SA.mdlBig(f,path,prog,opt||{},_r);}
     catch(e){if(e.noFallback||/dibatalkan/.test(e.message)||(opt&&opt.cancel&&opt.cancel()))throw e;console.warn('[GC-Ex] backend .mdl gagal, baca langsung:',e);
