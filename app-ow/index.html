@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.5.0';</script>
+<script>window.GCEX_VER='0.5.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -3819,6 +3819,46 @@ function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{co
 .stf{display:grid;grid-template-columns:74px minmax(0,1fr);gap:4px 6px;align-items:center;margin:3px 0;font-size:12px}.stf>div{display:flex;gap:5px;align-items:center;min-width:0}.stf>div>input,.stf>div>select{flex:1 1 0;min-width:0;width:auto;margin:0}.stf>div>button{margin:0}.stf .u{color:#52596a;flex:none}
 #stpl details>summary,#stl details>summary{font-weight:600;color:#1f6feb}`;document.head.appendChild(css);
  if(typeof stpDraw==='function')stpDraw();})();
+
+/* ===================== Ore Works 0.5.1 · daftar bidang struktur lengkap (terdaftar + usulan) & tab Data "Bidang struktur" ===================== */
+(function(){const g=id=>document.getElementById(id),f1=v=>(+v).toFixed(1);
+ const zoomS=s=>{try{const P=s.mesh?(()=>{const o=[];for(let i=0;i<s.mesh.v.length;i+=3)o.push([s.mesh.v[i],s.mesh.v[i+1],s.mesh.v[i+2]]);return o;})():stQuad(s);fmZoom(P);}catch(e){}};
+ const accept=s=>{s.st='diterima';s.warn=false;stDraw();stList();if(OG.tab==='si')ogDraw();};
+ const reject=s=>{if(s.key)STRJ.add(s.key);STR.splice(STR.indexOf(s),1);stDraw();stList();if(OG.tab==='si')ogDraw();};
+ const del=s=>{if(!confirm('Hapus struktur "'+s.nm+'"?'))return;STR.splice(STR.indexOf(s),1);if(String(s.src).startsWith('usul')&&s.key)STRJ.add(s.key);stDraw();stList();};
+ const edForm=s=>{const d=document.createElement('div');d.className='rped';const fld=(k,lb,w)=>'<label><span>'+lb+'</span><input class="e-f" data-k="'+k+'" type="number" step="any" value="'+f1(s[k])+'"'+(w?' style="width:'+w+'px"':'')+'></label>';
+  d.innerHTML='<div class="rpg"><label style="grid-column:1/-1"><span>Nama</span><input class="e-nm" value="'+esc(s.nm)+'"></label><label><span>Kategori</span><select class="e-k"><option value="geologi">Geologi</option><option value="vein">Vein</option></select></label><label><span>Warna</span><input type="color" class="e-c" value="'+s.col+'" style="height:24px;padding:0"></label>'+
+   (s.mesh?'<div class="note" style="grid-column:1/-1;margin:0">Bidang dari mesh impor: geometri mengikuti file.</div>':fld('strike','Strike °')+fld('dip','Dip °')+fld('L','Panjang (L) m')+fld('H','Tinggi (H) m')+fld('E','E')+fld('N','N')+fld('Z','RL'))+
+   '<label style="grid-column:1/-1"><span>Catatan</span><input class="e-note" value="'+esc(s.note||'')+'"></label></div><div class="note" style="margin:2px 0 0">'+esc(SRCN[s.src]||s.src)+' · dip direction '+f1((s.strike+90)%360)+'° ('+dirN((s.strike+90)%360)+')'+(s.ev?' · '+esc(s.ev):'')+'</div>';
+  const q=c=>d.querySelector(c),upd=()=>{stDraw();stList();};q('.e-k').value=stKat(s);
+  q('.e-nm').onchange=e=>{s.nm=e.target.value.trim()||s.nm;upd();};q('.e-k').onchange=e=>{s.kat=e.target.value;upd();};q('.e-c').oninput=e=>{s.col=e.target.value;stDraw();};q('.e-c').onchange=upd;q('.e-note').onchange=e=>{s.note=e.target.value;stList();};
+  d.querySelectorAll('.e-f').forEach(i=>i.onchange=()=>{const v=parseFloat(i.value);if(!isFinite(v))return;const k=i.dataset.k;s[k]=k==='strike'?((v%360)+360)%360:k==='dip'?Math.max(1,Math.min(90,v)):(k==='L'||k==='H')?Math.max(0.5,v):v;upd();});return d;};
+ const info=s=>'strike '+f1(s.strike)+'° · dip '+f1(s.dip)+'° ke '+dirN((s.strike+90)%360);
+ if(typeof stList==='function'){const _sl=stList;stList=function(){const r=_sl.apply(this,arguments),el=g('stl');
+  if(el){const U=STR.filter(s=>s.st==='usulan');if(U.length){const h=document.createElement('div');h.className='sthd';h.style.margin='8px 0 3px';h.textContent='Usulan otomatis (belum diterima) · '+U.length;el.appendChild(h);
+    U.forEach(s=>{const d=document.createElement('div');d.className='dsr stu';d.innerHTML='<input type="checkbox" class="u-on"'+(s.on?' checked':'')+'><span class="sw" style="background:'+s.col+'"></span><span class="u-t" title="'+esc((SRCN[s.src]||s.src)+' · '+info(s)+(s.ev?' · '+s.ev:''))+'"><b>? '+esc(s.nm)+'</b><br><span class="note" style="margin:0">'+info(s)+'</span></span><button class="u-z" title="Arahkan kamera">&#8982;</button><button class="u-a" title="Terima → jadi struktur terdaftar" style="color:#2e7d32">&#10003;</button><button class="u-r" title="Tolak (tidak diusulkan lagi)" style="color:#c62828">&#10007;</button>';
+     d.querySelector('.u-on').onchange=e=>{s.on=e.target.checked;stDraw();};d.querySelector('.u-z').onclick=()=>zoomS(s);d.querySelector('.u-a').onclick=()=>accept(s);d.querySelector('.u-r').onclick=()=>reject(s);el.appendChild(d);});}
+   const n=g('stsum');if(n){const t=STR.filter(s=>s.st!=='usulan').length,u=STR.length-t;n.textContent=t+' struktur terdaftar'+(u?' · '+u+' usulan (di bawah)':'');}}
+  if(window.RP&&RP.tab==='str'&&window.rpDraw)setTimeout(rpDraw,0);return r;};}
+ /* tab Data: Bidang struktur */
+ const addTab=()=>{const tb=g('rptab');if(!tb||tb.querySelector('[data-t="str"]'))return !!tb;const b=document.createElement('button');b.dataset.t='str';b.textContent='Bidang struktur';tb.appendChild(b);b.onclick=()=>{RP.tab='str';rpDraw();};return true;};
+ if(!addTab()){const iv=setInterval(()=>{if(addTab())clearInterval(iv);},500);setTimeout(()=>clearInterval(iv),20000);}
+ if(typeof rpDraw==='function'){const _rd=rpDraw;rpDraw=function(){addTab();if(!window.RP||RP.tab!=='str')return _rd.apply(this,arguments);const el=g('rpl');if(!el||!document.body.classList.contains('rp'))return;el.innerHTML='';
+  document.querySelectorAll('#rptab button').forEach(b=>b.classList.toggle('on',b.dataset.t===RP.tab));const q=(RP.q||'').toLowerCase();
+  const grp=[['Terdaftar',STR.filter(s=>s.st!=='usulan')],['Usulan otomatis',STR.filter(s=>s.st==='usulan')]];let any=false;
+  for(const [nm,all] of grp){const F=q?all.filter(s=>(s.nm+' '+(s.note||'')+' '+(SRCN[s.src]||s.src)).toLowerCase().includes(q)):all;if(!F.length)continue;any=true;const kk='str:'+nm,ko=RP.open[kk]!==undefined?RP.open[kk]:true,on=F.some(s=>s.on);
+   const r=rpRow(0,'<span class="tw">'+(ko?'&#9662;':'&#9656;')+'</span><input type="checkbox" class="v"'+(on?' checked':'')+'><span class="sw" style="background:#7e57c2"></span><b class="t">'+nm+'</b><span class="cnt">'+F.length+'</span>');
+   r.querySelector('.tw').onclick=r.querySelector('.t').onclick=()=>{RP.open[kk]=!ko;rpDraw();};r.querySelector('.v').onchange=e=>{F.forEach(s=>s.on=e.target.checked);stDraw();stList();};el.appendChild(r);if(!ko)continue;
+   for(const s of F){const us=s.st==='usulan',r3=rpRow(1,'<input type="checkbox" class="v"'+(s.on?' checked':'')+'><span class="sw" style="background:'+s.col+'"></span><span class="t" title="'+esc((SRCN[s.src]||s.src)+' · '+info(s))+'">'+(us?'? ':'')+esc(s.nm)+'</span><span class="cnt">'+Math.round(s.dip)+'/'+Math.round((s.strike+90)%360)+'</span><button class="ib e'+(RP.edS===s.id?' on':'')+'" title="Ubah atribut & geometri">&#9998;</button><button class="ib z" title="Arahkan kamera">&#8982;</button>'+(us?'<button class="ib a" title="Terima" style="color:#2e7d32">&#10003;</button><button class="ib r" title="Tolak" style="color:#c62828">&#10007;</button>':'<button class="ib x" title="Hapus">&#10005;</button>'));
+    r3.querySelector('.v').onchange=e=>{s.on=e.target.checked;stDraw();stList();};r3.querySelector('.z').onclick=()=>zoomS(s);
+    r3.querySelector('.t').onclick=r3.querySelector('.e').onclick=()=>{RP.edS=RP.edS===s.id?null:s.id;rpDraw();};
+    if(us){r3.querySelector('.a').onclick=()=>accept(s);r3.querySelector('.r').onclick=()=>reject(s);}else r3.querySelector('.x').onclick=()=>del(s);el.appendChild(r3);
+    if(RP.edS===s.id)el.appendChild(edForm(s));}}
+  if(!any)el.innerHTML='<div class="note" style="padding:10px">'+(q?'Tidak ada yang cocok.':'Belum ada bidang struktur. Gambar / impor di menu Struktur, atau terima usulan di Analisis → Interpretasi struktur.')+'</div>';
+  const ft=g('rpfoot');if(ft)ft.textContent='Dip/dip direction · ⌖ arahkan kamera · ✓ terima usulan · ✗ tolak';};}
+ const css=document.createElement('style');css.textContent=`.stu{display:flex;align-items:center;gap:5px;padding:3px 4px!important}.stu .u-t{flex:1;min-width:0;font-size:12px;line-height:1.25}.stu button{padding:0 6px;margin:0}
+.rped{margin:2px 6px 8px 30px;padding:6px 8px;border:1px solid #c9d3e1;border-radius:5px;background:#fff}.rpg{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}.rpg label{display:flex;flex-direction:column;margin:0;font-size:11px;color:#52596a}.rpg input,.rpg select{width:100%;box-sizing:border-box;margin:1px 0 0;font-size:12px}`;document.head.appendChild(css);
+ if(typeof stList==='function')stList();})();
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */

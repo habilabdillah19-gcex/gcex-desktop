@@ -4822,3 +4822,11 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - Submenu Struktur kini: Tampilan struktur · Tambah titik struktur · Impor / ekspor titik struktur · Daftar titik struktur ·
   Gambar / impor bidang struktur · Daftar bidang struktur.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 209. Ore Works 0.5.1 — Repositori bidang struktur (panel Data)
+
+- Panel **Data** (tombol ☷ Data) punya tab baru **Bidang struktur**: semua bidang terdaftar dan usulan otomatis, dengan
+  centang tampil, pencarian, ⌖ arahkan kamera, ✓ terima / ✗ tolak usulan dan ✕ hapus.
+- Klik nama atau ✎ untuk membuka formulir ubah: nama, kategori, warna, strike, dip, panjang, tinggi, E, N, RL, catatan.
+- *Struktur → Daftar bidang struktur* kini juga menampilkan usulan otomatis (tidak hanya di Analisis → Interpretasi struktur).
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
