@@ -4860,3 +4860,9 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
 - *Pemetaan → Tampilan pemetaan → Lapisan & label → **Label kadar channel*** (aktif bawaan): angka kadar unsur aktif tampil
   di tengah tiap interval channel di 3D, berwarna sesuai kelas kadar. Bersama *Label Sample_ID* → `CH01-002 · 1,68`.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 214. Ore Works 0.6.2 — Wireframe di Layout sebagai garis tengah
+
+- Pilihan Layout **Wireframe (garis tengah)** menggambar satu garis di tengah singkapan wireframe pada topografi
+  (bukan dua garis kontak), lengkap dengan nama domain. *Wireframe (proyeksi)* tetap berupa arsir tipis.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
