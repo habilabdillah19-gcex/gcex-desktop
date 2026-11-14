@@ -4874,3 +4874,9 @@ Tidak perlu internet; pustaka boolean sudah tertanam di aplikasi. Hasil estimasi
   dan isian RL untuk rentang berikutnya.
 - Sesudah import, sayatan horizontal yang berada di luar RL block model otomatis dipindah ke tengah rentangnya.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 216. Ore Works 0.6.3 — Angka kontur adaptif di Layout peta
+
+- Angka kontur di Layout peta membesar saat pratinjau di-zoom in dan mengecil saat zoom out; saat diperbesar semua garis
+  kontur diberi angka (pada tampilan penuh hanya kontur indeks). Aktif lewat centang **Label kontur**.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
