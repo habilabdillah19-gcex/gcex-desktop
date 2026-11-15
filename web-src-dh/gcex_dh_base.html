@@ -5223,7 +5223,7 @@ async function readDtm(f,strs){var u=new Uint8Array(await f.arrayBuffer()),nl=0;
   if(bin){var B=dtmBin(u);if(B){tri=B.tri;mx=B.mx;}}
   else{var L=new TextDecoder().decode(u).split(/\r?\n/);for(i=1;i<L.length;i++){var a=L[i].split(',');if(a.length<4||!/^\s*\d+\s*$/.test(a[0]))continue;var p=+a[1],q=+a[2],r=+a[3];if(!(p>0&&q>0&&r>0))continue;tri.push(p-1,q-1,r-1);mx=Math.max(mx,p,q,r);}}
   if(!tri.length)throw new Error(f.name+': tidak ada segitiga di file DTM');
-  var low=ref.toLowerCase(),base=function(n){return n.toLowerCase().replace(/^.*[\\\/]/,'');},s=strs.filter(function(x){var n=base(x.name);return low&&(n===low||n.slice(-low.length-1)==='_'+low||n.slice(-low.length-1)==='-'+low||n.slice(-low.length)===low);})[0]||(!low&&strs.length===1?strs[0]:null);
+  var low=ref.toLowerCase().replace(/\.str$/,'')/* 0.24.88: nama di header boleh tanpa .str (DTM ekspor Solid Vein) */,base=function(n){return n.toLowerCase().replace(/^.*[\\\/]/,'').replace(/\.str$/,'');},s=strs.filter(function(x){var n=base(x.name);return low&&(n===low||n.slice(-low.length-1)==='_'+low||n.slice(-low.length-1)==='-'+low||n.slice(-low.length)===low);})[0]||(!low&&strs.length===1?strs[0]:null);
   if(!s)throw new Error(f.name+': titik DTM ini tersimpan di file string "'+(ref||'*.str')+'"'+(strs.length?' — file yang dipilih ('+strs.map(function(x){return x.name;}).join(', ')+') bukan pasangannya':'')+'. Pilih file "'+(ref||'.str')+'" bersama file .dtm ini (nama file jangan diubah).');
   var segs=await readStr(s,E('strOrd')?E('strOrd').value==='yx':true),P=[],PS=[];segs.forEach(function(g){g.forEach(function(p){P.push(p);PS.push(p);});PS.push(null);});
   /* penomoran titik DTM: Surpac menghitung juga record pemisah string (0,0,0). Pilih penomoran yang konsisten:

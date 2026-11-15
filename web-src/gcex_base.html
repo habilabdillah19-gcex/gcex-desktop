@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><title>GC-Ex · Block Model</title><meta name="viewport" content="width=device-width,initial-scale=1">
-<script>window.onerror=function(m,s,l){if(/^Script error/i.test(String(m))&&!l){console.warn('Galat dari skrip eksternal (Plotly CDN) diabaikan:',m);return;}var b=document.createElement('div');b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#b42318;color:#fff;font:13px Segoe UI,Arial,sans-serif;padding:8px 14px';b.textContent='Galat JavaScript: '+m+' (baris '+l+'). Kirim tangkapan layar ini.';(document.body||document.documentElement).appendChild(b);};</script>
+<script>window.onerror=function(m,s,l,c,er){if(/^Script error/i.test(String(m))&&!l){console.warn('Galat dari skrip eksternal (Plotly CDN) diabaikan:',m);return;}
+/* 0.24.88: sertakan kolom + jejak pemanggil (galat di dalam pustaka grafik hanya menyebut "baris 11") dan hanya SATU pita (klik = tutup) */
+var jj='';try{jj=String(er&&er.stack||'').split('\n').slice(1,7).map(function(t){var k=/at\s+(?:async\s+)?([^\s(]+)?\s*\(?[^)]*?:(\d+):(\d+)\)?/.exec(t);return k?(k[1]||'?')+'@'+k[2]+':'+k[3]:'';}).filter(Boolean).join(' < ');}catch(e){}
+var b0=document.getElementById('gcexErr');if(b0)b0.remove();var b=document.createElement('div');b.id='gcexErr';b.title='Klik untuk menutup';b.onclick=function(){b.remove();};b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#b42318;color:#fff;font:13px Segoe UI,Arial,sans-serif;padding:8px 14px';b.textContent='Galat JavaScript: '+m+' (baris '+l+(c?':'+c:'')+')'+(jj?' · jejak: '+jj:'')+'. Kirim tangkapan layar ini.';(document.body||document.documentElement).appendChild(b);};</script>
 <script id="plotlyInline"></script>
 <style>
 :root{--bg:#eef1f5;--sf:#ffffff;--sf2:#f5f7fa;--bd:#d9dee5;--tx:#1c2733;--mu:#5b6b7c;--pr:#1f3a5f;--pr2:#2c5282;--prs:#e6edf6;--ac:#b7862c;--acs:#f6eedd;--dn:#b42318;--top:#1f3a5f;--toptx:#e9eef5;--sh:0 1px 3px rgba(16,24,40,.12)}
@@ -3729,7 +3732,7 @@ async function readDtm(f,strs){var u=new Uint8Array(await f.arrayBuffer()),nl=0;
   if(bin){var B=dtmBin(u);if(B){tri=B.tri;mx=B.mx;}}
   else{var L=new TextDecoder().decode(u).split(/\r?\n/);for(i=1;i<L.length;i++){var a=L[i].split(',');if(a.length<4||!/^\s*\d+\s*$/.test(a[0]))continue;var p=+a[1],q=+a[2],r=+a[3];if(!(p>0&&q>0&&r>0))continue;tri.push(p-1,q-1,r-1);mx=Math.max(mx,p,q,r);}}
   if(!tri.length)throw new Error(f.name+': tidak ada segitiga di file DTM');
-  var low=ref.toLowerCase(),base=function(n){return n.toLowerCase().replace(/^.*[\\\/]/,'');},s=strs.filter(function(x){var n=base(x.name);return low&&(n===low||n.slice(-low.length-1)==='_'+low||n.slice(-low.length-1)==='-'+low||n.slice(-low.length)===low);})[0]||(!low&&strs.length===1?strs[0]:null);
+  var low=ref.toLowerCase().replace(/\.str$/,'')/* 0.24.88: nama di header boleh tanpa .str (DTM ekspor Solid Vein) */,base=function(n){return n.toLowerCase().replace(/^.*[\\\/]/,'').replace(/\.str$/,'');},s=strs.filter(function(x){var n=base(x.name);return low&&(n===low||n.slice(-low.length-1)==='_'+low||n.slice(-low.length-1)==='-'+low||n.slice(-low.length)===low);})[0]||(!low&&strs.length===1?strs[0]:null);
   if(!s)throw new Error(f.name+': titik DTM ini tersimpan di file string "'+(ref||'*.str')+'"'+(strs.length?' — file yang dipilih ('+strs.map(function(x){return x.name;}).join(', ')+') bukan pasangannya':'')+'. Pilih file "'+(ref||'.str')+'" bersama file .dtm ini (nama file jangan diubah).');
   var segs=await readStr(s,E('strOrd')?E('strOrd').value==='yx':true),P=[],PS=[];segs.forEach(function(g){g.forEach(function(p){P.push(p);PS.push(p);});PS.push(null);});
   /* penomoran titik DTM: Surpac menghitung juga record pemisah string (0,0,0). Pilih penomoran yang konsisten:

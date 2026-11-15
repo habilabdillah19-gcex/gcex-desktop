@@ -5000,3 +5000,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Geser elemen di pratinjau** — di Pratinjau, seret panah utara, skala batang, legenda, inset, tabel koordinat, catatan dan
   ujung panahnya. Klik dua kali = posisi bawaan; *Kembalikan semua posisi* ada di panel. Posisi tersimpan di proyek.
 - Drillhole 0.24.95: ikut naik karena kode bersama, tidak berubah. DB-Ex, Ore Works: tidak berubah.
+
+## 225. Block Model 0.24.88 — Solid Vein: CSV titik atap bernomor titik besar
+
+- CSV tanpa judul `ID,X,Y,Z,kode` yang nomor titiknya sudah 1000 ke atas kini terbaca benar (dulu nomor titik dikira Easting
+  dan titik atap tampil sangat jauh dari proyek). File yang sudah telanjur diimport: import ulang (nama file sama = diganti).
+- DTM hasil ekspor Solid Vein bisa diimport kembali (nama string di header tanpa `.str` kini dikenali) — Block Model & Drillhole.
+- Pita merah **Galat JavaScript** kini memuat kolom dan jejak pemanggil; klik pita untuk menutupnya. Bila muncul, kirim tangkapan
+  layarnya supaya penyebabnya bisa dilacak.
+- Drillhole 0.24.96: pembaca DTM ikut diperbaiki. DB-Ex, Ore Works: tidak berubah.
