@@ -5009,3 +5009,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Pita merah **Galat JavaScript** kini memuat kolom dan jejak pemanggil; klik pita untuk menutupnya. Bila muncul, kirim tangkapan
   layarnya supaya penyebabnya bisa dilacak.
 - Drillhole 0.24.96: pembaca DTM ikut diperbaiki. DB-Ex, Ore Works: tidak berubah.
+
+## 226. Ore Works 0.8.1 — ukuran huruf jendela Layout peta diseragamkan
+
+- Semua label, kotak isian, pilihan, dan tombol di jendela **Layout peta** kini berukuran huruf sama.
+  Hanya tampilan jendela; lembar peta hasil cetak (PNG / PDF) tidak berubah.
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
