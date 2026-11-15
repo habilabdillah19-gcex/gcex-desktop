@@ -5065,3 +5065,5 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   hanya blok yang dimuat.
 - Pita merah *Galat JavaScript* berjejak sudah ada di Drillhole sejak sebelumnya.
 - Block Model 0.24.90: hanya penyesuaian kode bersama (tanpa perubahan perilaku). DB-Ex, Ore Works: tidak berubah.
+- **3D tidak tersendat saat diputar** (sama seperti Block Model 0.24.86): sesudah kamera digerakkan, Drillhole tidak lagi
+  menggambar ulang semua lapisan, kecuali orthofoto sedang tampil (resolusinya mengikuti zoom).

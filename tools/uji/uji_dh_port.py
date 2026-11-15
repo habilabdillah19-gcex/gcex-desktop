@@ -9,6 +9,7 @@
   P5 tampilan 3D 17,5 juta blok: LOD jadi (dulu "Map maximum size exceeded" -> kosong).
   P6 dialog Block model besar: pilihan desain pit / topografi + kotak folder cache.
   P7 Topo × Pit (gabungan) di Drillhole: node Data Spasial, permukaan gabungan dibuat & tampil, kartu legenda.
+  P8 kamera 3D digerakkan 4x tanpa orthofoto: tidak ada gambar ulang penuh (DH 0.24.97: 4x -> jeda pada model besar).
 Pemakaian: python tools/uji/uji_dh_port.py [app-dh/index.html]   (build DH 0.24.97 harus GAGAL)
 """
 from __future__ import annotations
@@ -67,6 +68,11 @@ JS = r"""async function(){var R={},w=function(t){return new Promise(function(r){
     R.p7={node:!!document.querySelector('#ptree [data-id="sp.tp"]'),nt:tm&&tm.nt,tr:/Topografi\s*\(gabungan\)/.test((document.querySelector('#tpLeg,.tplg')||document.body).textContent),leg:!!document.querySelector('.tplg-h'),bor:[].some.call(document.querySelectorAll('.tplg-h'),function(h){return /^Data bor/.test(h.textContent);}),
 };}
   catch(e){R.p7={err:String(e&&e.stack||e).slice(0,400)};}
+  /* P8: kamera digerakkan -> tanpa gambar ulang penuh bila orthofoto tidak tampil (hires.js + HR_perlu) */
+  try{await new Promise(function(r){setTimeout(r,4000);});var gd8=document.getElementById('plotDiv'),n8=0,u8=window.updatePlot;window.updatePlot=function(){n8++;return u8.apply(this,arguments);};
+    for(var k8=1;k8<=4;k8++){await Plotly.relayout(gd8,{'scene.camera':{eye:{x:0.3*k8,y:-0.35*k8,z:0.25*k8},center:{x:0.05,y:0,z:0},up:{x:0,y:0,z:1}}});await new Promise(function(r){setTimeout(r,800);});}
+    window.updatePlot=u8;R.p8={n:n8,hp:typeof window.HR_perlu==='function'};}
+  catch(e){R.p8={err:String(e&&e.stack||e).slice(0,400)};}
   return R;}"""
 
 
@@ -111,6 +117,8 @@ def main() -> int:
     cek("err" not in p5 and p5["nT"] >= 1 and 0 < p5["shown"] <= p5["lim"] and p5["tot"] > 16800000, "P5 %s blok terpilih -> LOD %s sel (batas %s), %s ms %s" % (p5.get("tot"), p5.get("shown"), p5.get("lim"), p5.get("ms"), p5.get("err", "")))
     p6 = r["p6"]
     cek(p6["pit"] and p6["topo"] and p6["cache"] and "D:/GC-Ex_cache_mdl" in p6["cacheTxt"] and "batas memori" in p6["mem"], "P6 dialog Block model besar: pilihan pit / topografi + folder cache %s" % p6)
+    p8 = r["p8"]
+    cek("err" not in p8 and p8["hp"] and p8["n"] == 0, "P8 kamera 3D digerakkan 4x tanpa orthofoto: gambar ulang penuh %s kali (harap 0) %s" % (p8.get("n"), p8.get("err", "")))
     p7 = r["p7"]
     cek("err" not in p7 and p7["node"] and p7["nt"] > 0 and p7["tr"] and p7["leg"] and p7["bor"], "P7 Topo × Pit: node, permukaan gabungan %s segitiga, tampil di 3D, kartu legenda (bagian Data bor) %s" % (p7.get("nt"), p7.get("err", "")))
     cek(not err, "tanpa error halaman %s" % err[:3])
