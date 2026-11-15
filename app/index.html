@@ -2360,7 +2360,7 @@ function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.lengt
   r.push('0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES');
   L.forEach(function(s){var ly=((s.d||'STRING')+'_'+s.no).replace(/[^A-Za-z0-9_-]+/g,'_');r.push('0','POLYLINE','8',ly,'66','1','70',s.closed?'9':'8','10','0.0','20','0.0','30','0.0');
     s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',f3(q[0]+offX),'20',f3(q[1]+offY),'30',f3(q[2]),'70','32');});r.push('0','SEQEND','8',ly);});
-  r.push('0','ENDSEC','0','EOF');dgDl(r.join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
+  r.push('0','ENDSEC','0','EOF');dgDl(dxfLengkap(r).join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
 (function(){var gd=$('plotDiv');if(!gd)return;
   gd.addEventListener('mousedown',function(e){dgMouse(e,'down');},true);window.addEventListener('mouseup',function(e){dgMouse(e,'up');},true);gd.addEventListener('mousemove',function(e){dgMouse(e,'move');},true);
   gd.addEventListener('mouseleave',function(){DG.hov=null;dgDraw();});gd.addEventListener('wheel',function(){setTimeout(dgDraw,60);},{passive:true});
@@ -2368,6 +2368,10 @@ function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.lengt
   document.addEventListener('keydown',function(e){if(!DG.on)return;var tg=(e.target&&e.target.tagName)||'';if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA')return;
     if(e.key==='Enter'){dgFinish(!!DG.dbm);e.preventDefault();}else if(e.key==='Backspace'){dgUndo();e.preventDefault();}else if(e.key==='Escape'){dgCancel();e.preventDefault();}});
   var hook=function(){if(gd.on&&!gd._dgHook){gd._dgHook=1;gd.on('plotly_relayout',function(){setTimeout(dgDraw,0);});gd.on('plotly_afterplot',function(){dgDraw();});}};setInterval(function(){hook();if(DG.on)dgState();},1000);
+  /* 0.24.89 (pemilik 15 Nov 2026: "garis poligon yang sedang didigit tertinggal dari peta saat digeser / di-zoom"): garis oranye
+     digambar di kanvas terpisah dan dulu baru disegarkan SESUDAH geser / zoom selesai. Kini diikutkan tiap frame selama
+     rentang sumbu berubah (hanya saat mendigit di 2D; satu perbandingan teks per frame). */
+  var dgK='';(function ikut(){try{if(DG.on&&VIEW2D){var A=dgAx();if(A){var k=A.x.range[0]+','+A.x.range[1]+','+A.y.range[0]+','+A.y.range[1]+','+A.x._offset+','+A.x._length+','+A.y._offset+','+A.y._length;if(k!==dgK){dgK=k;dgDraw();}}}}catch(e){}requestAnimationFrame(ikut);})();
   dgLoad();dgList();dgState();})();
 var CP={cam:null};
 function cpInit(){var st=$('plotDiv').parentNode;if($('cpBox'))return;var d=document.createElement('div');d.id='cpBox';d.title='Kompas dinamis - klik: putar tampilan menghadap Utara';
@@ -2923,7 +2927,7 @@ function lyPage(items,opt){var L=lyU(),ps=PAPER[L.paper]||PAPER.A4,W=L.orient===
   if(L.holes&&window.collars)collars.forEach(function(c){if(c[1]<X0||c[1]>X1||c[2]<Y0||c[2]>Y1)return;ops.push({t:'circ',x:gx(c[1]),y:gy(c[2]),r:0.6,fill:'#333333'});ops.push({t:'text',x:gx(c[1])+1,y:gy(c[2])+0.8,s:1.8,txt:c[0],col:'#333333'});});
   if(L.others)DG.S.forEach(function(s){if(!s.vis||items.some(function(o){return o.s===s||(s.inner&&s.parent===o.s.id);}))return;var p=s.pts.map(function(q){return[gx(q[0]+offX),gy(q[1]+offY)];});if(s.closed)p.push(p[0]);ops.push({t:'line',pts:p,col:'#9aa3ad',lw:0.25});});
   items.forEach(function(o,ki){var p=o.r.map(function(q){return[gx(q[0]),gy(q[1])];}),PC=L.colMode==='str'&&o.s.col?o.s.col:L.col,TC=lyTxtCol(PC);ops.push({t:'line',pts:p.concat([p[0]]),col:PC,lw:L.lw});
-    DG.S.forEach(function(sI){if(sI.inner&&sI.parent&&sI.parent===o.s.id){var pi=sI.pts.map(function(q){return[gx(q[0]+offX),gy(q[1]+offY)];});ops.push({t:'line',pts:pi.concat([pi[0]]),col:PC,lw:L.lw*0.8,dash:[1.2,0.8]});}});
+    DG.S.forEach(function(sI){if(sI.inner&&sI.parent&&sI.parent===o.s.id){var pi=sI.pts.map(function(q){return[gx(q[0]+offX),gy(q[1]+offY)];});ops.push({t:'line',pts:pi.concat([pi[0]]),col:sI.fcol||PC,lw:L.lw*0.8,dash:[1.2,0.8]});}});
     var el=[];for(var e2=0;e2<p.length;e2++){var a2=p[e2],b2=p[(e2+1)%p.length];el.push(Math.hypot(a2[0]-b2[0],a2[1]-b2[1]));}el.sort(function(a,b){return a-b;});var ns=Math.max(1.8,Math.min(3.6,el[el.length>>1]*0.55)),cr=Math.min(1.2,ns*0.35);
     if(L.num)p.forEach(function(q,j){ops.push({t:'line',pts:[[q[0]-cr,q[1]],[q[0]+cr,q[1]]],col:PC,lw:0.3});ops.push({t:'line',pts:[[q[0],q[1]-cr],[q[0],q[1]+cr]],col:PC,lw:0.3});if(!grp)ops.push({t:'text',x:q[0]+cr+0.2,y:q[1]+0.4,s:ns,txt:String(j+1),col:TC,font:'T',halo:1});});
     if(grp){var lp=lyLabelPt(o.r),X=gx(lp[0]),Y=gy(lp[1]);ops.push({t:'circ',x:X,y:Y,r:2.4,fill:'#ffffff'});ops.push({t:'circ',x:X,y:Y,r:2.0,fill:o.s.col||'#222222'});ops.push({t:'text',x:X,y:Y-1.05,s:3,txt:String(o.no||ki+1),col:'#ffffff',font:'B',anchor:'m'});return;}
@@ -3129,7 +3133,7 @@ function dbRule(v){var R=dbU().rules||[],best=null;R.forEach(function(q){var lo=
 function dbRAttr(){var U=dbU(),m=BX.m;return U.rAttr&&m&&m.num[U.rAttr]?U.rAttr:lyGradeAttr();}
 function dbSN(mat){var U=dbU(),T=U.sn||{},k=String(mat||'').toUpperCase(),rr=(U.rules||[]).filter(function(q){return String(q.m).toUpperCase()===k;})[0];if(rr)return{n:rr.n,c:rr.c};if(T[k])return T[k];if(/HG|HIGH/.test(k))return T.HG||{n:17,c:'#ff1a1a'};if(/LG|LOW/.test(k))return T.LG||{n:14,c:'#7ee04a'};return T[k]||{n:1,c:'#ffd400'};}
 function dbSNset(mat,f,v){var U=dbU(),k=String(mat).toUpperCase(),o=U.sn[k]||{n:dbSN(k).n,c:dbSN(k).c};o[f]=f==='n'?Math.max(1,parseInt(v)||1):v;U.sn[k]=o;if(window.SA&&SA.dirty)SA.dirty();}
-function dbApplySN(){lyPolys().forEach(function(o){var t=dbSN(o.s.d);o.s.no=t.n;o.s.col=t.c;if(!o.s.id)o.s.id=dbId();});DG.S.forEach(function(s){if(s.inner){var p=DG.S.filter(function(q){return q.id===s.parent;})[0];if(p){s.no=p.no;s.col=p.col;}}});dgSave();dgList();updatePlot();}
+function dbApplySN(){lyPolys().forEach(function(o){var t=dbSN(o.s.d);o.s.no=t.n;o.s.col=t.c;if(!o.s.id)o.s.id=dbId();});DG.S.forEach(function(s){if(s.inner){var p=DG.S.filter(function(q){return q.id===s.parent;})[0];if(p){s.no=p.no;if(!s.fcol)s.col=p.col;}}});dgSave();dgList();updatePlot();}
 /* ---------- haluskan undakan (anak tangga) ---------- */
 function dbDP(pts,tol){if(pts.length<3)return pts;var keep=new Uint8Array(pts.length);keep[0]=keep[pts.length-1]=1;var st=[[0,pts.length-1]];
   while(st.length){var r=st.pop(),a=pts[r[0]],b=pts[r[1]],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy),bi=-1,bd=tol;for(var i=r[0]+1;i<r[1];i++){var p=pts[i],d=L?Math.abs((p[0]-a[0])*dy-(p[1]-a[1])*dx)/L:Math.hypot(p[0]-a[0],p[1]-a[1]);if(d>bd){bd=d;bi=i;}}
@@ -3157,7 +3161,7 @@ function dbOffset(P,d){var Q=[];P.forEach(function(p){var l=Q[Q.length-1];if(!l|
   for(i=0;i<out.length;i++)for(var j=i+2;j<out.length;j++){if(i===0&&j===out.length-1)continue;if(dbSegX(out[i],out[(i+1)%out.length],out[j],out[(j+1)%out.length]))return null;}return out;}
 function dbInner(quiet){var U=dbU(),B=lyBench(),e=1e-6;DG.S=DG.S.filter(function(s){return!(s.inner&&s.db&&Math.abs(s.db.top-B[0])<e&&Math.abs(s.db.bot-B[1])<e);});if(!U.sfOn){dgSave();return{n:0,f:0};}
   var made=0,fail=0;lyItems(true).forEach(function(o){if(!o.ton||!o.ton.sulf)return;if(!o.s.id)o.s.id=dbId();var q=dbOffset(o.r,+U.sfOff||0.5);if(!q){fail++;return;}
-    DG.S.push(dbTag({no:o.s.no,d:o.s.d,id:dbId(),inner:true,parent:o.s.id,auto:!!o.s.auto,closed:true,pts:q.map(function(p){return[p[0]-offX,p[1]-offY,B[1]];}),pl:o.s.pl,col:o.s.col,vis:true}));made++;});
+    var sI=dbTag({no:o.s.no,d:o.s.d,id:dbId(),inner:true,parent:o.s.id,auto:!!o.s.auto,closed:true,pts:q.map(function(p){return[p[0]-offX,p[1]-offY,B[1]];}),pl:o.s.pl,col:o.s.col,vis:true});if(window.afWarna)afWarna(sI,o.ton);/* 0.24.89: warna garis ganda = warna flag */DG.S.push(sI);made++;});
   dgSave();if(!quiet){dgList();updatePlot();}return{n:made,f:fail};}
 
 function dbFlOn(){var U=BX.ui,zs=lyZs();return !!(U&&U.fl&&Math.abs(U.zs-zs)<1e-6&&secGeom().m==='H'&&Math.abs(secK().pos-(lyBench()[0]+lyBench()[1])/2)<1e-6);}
@@ -3300,7 +3304,7 @@ function dbWhy(zs){var d=dbDiag(zs),m=BX.m,U=BX.ui;
 
 /* ---------- edit string satu per satu (klik di Sayatan 2D) ---------- */
 function dbStrSet(i,f,v){var s=DG.S[i];if(!s)return;if(f==='no')v=Math.max(1,parseInt(v)||1);if(f==='d')v=String(v).trim()||s.d;s[f]=v;if(!s.id)s.id=dbId();
-  DG.S.forEach(function(q){if(q.inner&&q.parent===s.id){if(f==='col'||f==='no')q[f]=v;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
+  DG.S.forEach(function(q){if(q.inner&&q.parent===s.id){if(f==='no'||(f==='col'&&!q.fcol))q[f]=v;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
 function dbPick(e){if(DB.ed||DG.on||!VIEW2D||secGeom().m!=='H')return -1;var A=dgAx();if(!A)return -1;var px=e.clientX-A.r.left,py=e.clientY-A.r.top,best=9,bi=-1;
   var _FB=null,_fe=1e-6;try{if(window.lyBench)_FB=lyBench();}catch(_){}
   var _diFl=function(s){if(!_FB||!isFinite(_FB[0])||!isFinite(_FB[1]))return true;
@@ -3333,7 +3337,7 @@ function dbExport(fmt){var S=dbStrings();if(!S.length){alert('Belum ada dig bloc
     hdr=base+','+('0'+d.getDate()).slice(-2)+'-'+mo+'-'+String(d.getFullYear()).slice(-2)+',,SSI_STYLES:styles.ssi\r\n0,           0.000,           0.000,           0.000,           0.000,           0.000,           0.000\r\n',R=[];
   var DM0={};lyItems(true).forEach(function(o){if(o.s.id)DM0[o.s.id]=o.dest||'';});S.forEach(function(s){var ds=DM0[s.id]||(s.parent?DM0[s.parent]:'')||'',p=s.pts.slice();if(s.closed)p.push(p[0]);p.forEach(function(q){R.push([s.no,q[1]+offY,q[0]+offX,q[2],s.d||'',ds]);});R.push(null);});R.push(null);
   if(fmt==='dxf'){var r=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES'];S.forEach(function(s){var ly=String(s.no);r.push('0','POLYLINE','8',ly,'62',String(dbAci(s.col)),'66','1','70',s.closed?'9':'8','10','0.0','20','0.0','30','0.0');
-      s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',(q[0]+offX).toFixed(3),'20',(q[1]+offY).toFixed(3),'30',(+q[2]).toFixed(3),'70','32');});r.push('0','SEQEND','8',ly);});r.push('0','ENDSEC','0','EOF');dgDl(r.join('\r\n')+'\r\n',base+'.dxf','application/dxf');return;}
+      s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',(q[0]+offX).toFixed(3),'20',(q[1]+offY).toFixed(3),'30',(+q[2]).toFixed(3),'70','32');});r.push('0','SEQEND','8',ly);});r.push('0','ENDSEC','0','EOF');dgDl(dxfLengkap(r).join('\r\n')+'\r\n',base+'.dxf','application/dxf');return;}
   if(fmt==='strt'){var f3=function(v){return(+v).toFixed(3);},t=[];R.forEach(function(x){t.push(x?x[0]+', '+f3(x[1])+', '+f3(x[2])+', '+f3(x[3])+(U.strD?', '+String(x[4]||'').replace(/,/g,' ')+', '+String(x[5]||'').replace(/,/g,' '):''):'0, 0.000, 0.000, 0.000,');});t[t.length-1]='0, 0.000, 0.000, 0.000, END';dgDl(hdr+t.join('\r\n')+'\r\n',base+'.str');return;}
   var n=R.length,buf=new Uint8Array(hdr.length+4+n*29+4),dv=new DataView(buf.buffer),o=0;for(var i=0;i<hdr.length;i++)buf[o++]=hdr.charCodeAt(i)&255;o+=4;
   R.forEach(function(x){if(x){buf[o]=0;dv.setInt32(o+1,x[0]|0,false);dv.setFloat64(o+5,x[1],false);dv.setFloat64(o+13,x[2],false);dv.setFloat64(o+21,x[3],false);}o+=29;});buf[o]=69;buf[o+1]=78;buf[o+2]=68;buf[o+3]=0;
@@ -6360,7 +6364,15 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
     R.forEach(function(q){var v=r.afv[q.n];if(!isFinite(v))return;var hit=q.k==='cat'?v>=50:(q.op==='>='?v>=+q.c:v>+q.c);if(hit)r.af.push(q.n);});}
   var _lt=lyTon;lyTon=function(P,zs0,excl){var r=_lt.apply(this,arguments);try{afEval(r,P,excl);var U=dbU();r.sulf=!!(U.sfOn!==false&&r.af&&r.af.length);}catch(e){console.error(e);}return r;};
   window.afTxt=function(t){return t&&t.af&&t.af.length?'  ('+t.af.join(', ')+')':'';};
-  window.afSet=function(k,f,v){var R=afRules();if(!R[k])return;R[k][f]=v;afDirty();};
+  /* BM 0.24.89 (pemilik 15 Nov 2026: "garis kembarnya diwarnain lain sebagai flagging; garis aslinya tetap sesuai kadarnya"):
+     tiap aturan flag punya warna (q.col, bawaan hitam). Garis ganda (string inner) menyimpan nama flag (s.fl) dan warna flag
+     (s.fcol = s.col); garis asli tidak disentuh. U.sfCol='kadar' = cara lama (garis ganda sewarna kadar). */
+  window.afWarna=function(s,t){var U=dbU(),nm=t&&t.af&&t.af[0];if(nm)s.fl=nm;if(U.sfCol==='kadar'||!nm){delete s.fcol;return s;}
+    var r=afRules().filter(function(q){return q.n===nm;})[0];s.fcol=s.col=(r&&r.col)||'#000000';return s;};
+  window.afWarnaSemua=function(){(window.DG?DG.S:[]).forEach(function(s){if(!s.inner)return;var p=DG.S.filter(function(q){return q.id===s.parent;})[0];
+      if(dbU().sfCol==='kadar'||!s.fl){if(s.fcol){delete s.fcol;if(p)s.col=p.col;}return;}var r=afRules().filter(function(q){return q.n===s.fl;})[0];s.fcol=s.col=(r&&r.col)||'#000000';});
+    try{BX.mc=null;dgSave();dgList();updatePlot();}catch(e){}};
+  window.afSet=function(k,f,v){var R=afRules();if(!R[k])return;var lama=R[k].n;R[k][f]=v;if(f==='n')(window.DG?DG.S:[]).forEach(function(s){if(s.inner&&s.fl===lama)s.fl=v;});afDirty();if(f==='col'||f==='n')afWarnaSemua();};
   window.afAdd=function(){var m=BX.m,nums=m?Object.keys(m.num):[];afRules().push({n:'Flag '+(afRules().length+1),k:'num',a:nums.filter(function(a){return /^(zn|cu|s|sxs|stot|as|pb)/i.test(a);})[0]||nums[0]||'',op:'>',c:0,on:true});afDirty();};
   window.afDel=function(k){afRules().splice(k,1);afDirty();};
   function afDirty(){try{if(window.LY)LY.cache=null;}catch(e){}try{if(window.dgSave)dgSave();}catch(e){}FLC={};try{dbPanel();}catch(e){}try{if(window.SA&&SA.dirty)SA.dirty();}catch(e){}}
@@ -6369,16 +6381,18 @@ function am3Box(){var F=am3Flitches(),ks=Object.keys(AM.res).sort(function(a,b){
     return '<summary>Additional flagging (garis ganda)</summary>'+
       '<label class=sw style="margin-top:6px"><input type=checkbox '+(U.sfOn!==false?'checked':'')+' onchange="dbSet(\'sfOn\',this.checked);afDirty2()">Poligon ber-flag dibuat garis ganda</label>'+
       '<div class=hint>Flag diberikan ke <b>seluruh poligon</b> bila <b>komposit</b> unsur di dalam poligon (rata-rata tertimbang tonase) melewati COG. Contoh: Ore Sulfide = S &gt; 0,8 %; Zn tinggi = Zn &gt; 500 ppm. Satuan mengikuti kolom block model.</div>'+
-      '<table class="pltb aftb"><tr><th></th><th>Nama flag</th><th>Unsur</th><th></th><th>COG</th><th></th></tr>'+
+      '<div style="margin-top:6px"><label>Warna garis ganda</label><select id=afColMode onchange="dbSet(\'sfCol\',this.value);afDirty2();afWarnaSemua()"><option value="flag"'+(U.sfCol!=='kadar'?' selected':'')+'>Warna flag (diatur per aturan)</option><option value="kadar"'+(U.sfCol==='kadar'?' selected':'')+'>Sama dengan garis asli (kadar)</option></select></div>'+
+      '<table class="pltb aftb"><tr><th></th><th>Nama flag</th><th>Unsur</th><th></th><th>COG</th><th title="Warna garis ganda">Warna</th><th></th></tr>'+
       R.map(function(q,k){return '<tr><td><input type=checkbox '+(q.on!==false?'checked':'')+' onchange="afSet('+k+',\'on\',this.checked)" title="Aktif"></td>'+
         '<td><input type=text value="'+esc(q.n)+'" onchange="afSet('+k+',\'n\',this.value.trim()||\'Flag\')"></td>'+
         (q.k==='cat'?'<td><select onchange="afSet('+k+',\'a\',this.value)">'+opt(cats,q.a)+'</select></td><td>kode</td><td><input type=text value="'+esc(q.codes)+'" title="Kode dipisah koma; flag bila &ge; 50 % tonase berkode ini" onchange="afSet('+k+',\'codes\',this.value)"></td>'
           :'<td><select onchange="afSet('+k+',\'a\',this.value)">'+opt(nums,q.a)+'</select></td><td><select onchange="afSet('+k+',\'op\',this.value)"><option'+(q.op!=='>='?' selected':'')+'>&gt;</option><option value="&gt;="'+(q.op==='>='?' selected':'')+'>&ge;</option></select></td><td><input type=number step=any value="'+esc(q.c)+'" onchange="afSet('+k+',\'c\',+this.value)"></td>')+
+        '<td><input type=color class=afc value="'+esc(q.col||'#000000')+'" title="Warna garis ganda untuk flag ini"'+(U.sfCol==='kadar'?' disabled':'')+' onchange="afSet('+k+',\'col\',this.value)"></td>'+
         '<td><button class=x onclick="afDel('+k+')" title="Hapus aturan">&times;</button></td></tr>';}).join('')+'</table>'+
       '<div class=g2 style="margin-top:4px"><button onclick="afAdd()">+ Aturan flag</button><button onclick="var r=dbInner();DB.msg=r.n+\' garis ganda dibuat\'+(r.f?\', \'+r.f+\' poligon terlalu sempit\':\'\');dbPanel()">Perbarui garis ganda</button></div>';}
   window.afDirty2=function(){afDirty();};
   var _dp=window.dbPanel;if(_dp){dbPanel=function(){var r=_dp.apply(this,arguments);try{var b=$('dbBody');if(b&&BX.m){Array.prototype.forEach.call(b.querySelectorAll('details.mini'),function(d){var s=d.querySelector('summary');if(s&&/sulfida/i.test(s.textContent)){var o=d.open;d.innerHTML=afHtml();d.open=o;}});}}catch(e){console.error(e);}return r;};}
-  var st=document.createElement('style');st.textContent='.aftb input,.aftb select{width:100%;min-width:0;height:24px!important;padding:1px 4px!important;font-size:12px!important}.aftb td{padding:2px 3px}.aftb td:nth-child(2){width:32%}.aftb td:nth-child(5){width:18%}';document.head.appendChild(st);
+  var st=document.createElement('style');st.textContent='.aftb input,.aftb select{width:100%;min-width:0;height:24px!important;padding:1px 4px!important;font-size:12px!important}.aftb td{padding:2px 3px}.aftb td:nth-child(2){width:28%}.aftb td:nth-child(5){width:16%}.aftb input.afc{width:30px!important;padding:0!important}';document.head.appendChild(st);
   /* ---------- hitung per flitch (tanpa mengubah flitch aktif) ---------- */
   var FLC={};
   window.flGroups=function(){var G={},ord=[],grp=function(top,bot){var k=f3(top)+'|'+f3(bot);if(!G[k]){G[k]={k:k,top:+top,bot:+bot,db:[],am:[]};ord.push(k);}return G[k];};
@@ -10079,7 +10093,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     gxSimpan(T.join('\r\n') + '\r\n', base + '.dtm').then(function (ok) { if (ok !== null) gxSimpan(S.join('\r\n') + '\r\n', base + '.str'); }); };
   SV.expDxf = function () { var p = per(), r = R(p); if (!r) { alert('Bangun solid dulu.'); return; } var V = r.V, f3 = function (v) { return (+v).toFixed(3); }, L = ['0', 'SECTION', '2', 'HEADER', '9', '$ACADVER', '1', 'AC1009', '0', 'ENDSEC', '0', 'SECTION', '2', 'ENTITIES'];
     r.IS.forEach(function (s) { var ly = ('VEIN_' + (p.name || '') + '_' + s.n).replace(/[^A-Za-z0-9_-]+/g, '_'); s.tri.forEach(function (t) { L.push('0', '3DFACE', '8', ly); [0, 1, 2, 2].forEach(function (q, k) { var ix = t[q]; L.push(String(10 + k), f3(V.x[ix] + offX), String(20 + k), f3(V.y[ix] + offY), String(30 + k), f3(V.z[ix])); }); }); });
-    L.push('0', 'ENDSEC', '0', 'EOF'); gxSimpan(L.join('\r\n') + '\r\n', fnm(p, 'dxf'), 'application/dxf'); };
+    L.push('0', 'ENDSEC', '0', 'EOF'); gxSimpan((window.dxfLengkap ? dxfLengkap(L) : L).join('\r\n') + '\r\n', fnm(p, 'dxf'), 'application/dxf'); };
   SV.expCsv = function () { var p = per(); if (!p || !p.res) { alert('Bangun solid dulu.'); return; } var sg = +P(p).sg || 0, o = ['Periode,Pulau,RL atas,RL bawah,Jumlah flitch,Jumlah poligon,Segitiga,Tertutup,Luas permukaan (m2),Volume (m3),SG,Tonase (t)'];
     p.res.IS.forEach(function (s) { o.push([p.name, s.n, s.top.toFixed(3), s.bot.toFixed(3), s.nLv, s.nPoly, s.nt, s.closed ? 'ya' : 'TIDAK (' + s.open + ' sisi terbuka)', s.area.toFixed(2), s.vol.toFixed(3), sg, (s.vol * sg).toFixed(1)].map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',')); });
     gxSimpan(o.join('\r\n') + '\r\n', fnm(p, 'csv'), 'text/csv'); };
@@ -11829,6 +11843,30 @@ SA.readLines=function(s){return readLines(s);};
     for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,z0:z0<1e17?z0:NaN,z1:z1>-1e17?z1:NaN,buang:bad,recLen:G.lastRecLen};};
   G.eachLine=eachLine;G.readLinesS=readLinesS;G.str0=str0;window.GCBL=G;
 })();
+/* ================= BM 0.24.89 / DH: DXF ekspor LENGKAP (pemilik 15 Nov 2026: "dxf-nya tidak bisa dibuka di Surpac") =================
+   Dulu DXF ekspor hanya berisi HEADER ($ACADVER) + ENTITIES ("DXF minimal"). AutoCAD menerimanya, tetapi pengimpor yang
+   lebih ketat membutuhkan tabel LAYER / LTYPE. dxfLengkap(r) menerima baris DXF minimal itu dan mengembalikan DXF R12 utuh:
+   HEADER ($ACADVER, $INSBASE, $EXTMIN, $EXTMAX), TABLES (LTYPE CONTINUOUS, LAYER tiap layer + warnanya, STYLE STANDARD),
+   BLOCKS kosong, ENTITIES (apa adanya, ditambah linetype BYLAYER implisit), EOF. */
+function dxfLengkap(r){try{var i0=-1,i;for(i=0;i+1<r.length;i+=2){if(String(r[i]).trim()==='2'&&r[i+1]==='ENTITIES'){i0=i+2;break;}}if(i0<0)return r;
+    var i1=r.length;for(i=i0;i+1<r.length;i+=2){if(String(r[i]).trim()==='0'&&r[i+1]==='ENDSEC'){i1=i;break;}}
+    var E=r.slice(i0,i1),lay={},ord=[],ent='',cur='',x0=1e300,x1=-1e300,y0=1e300,y1=-1e300,z0=1e300,z1=-1e300;
+    for(i=0;i+1<E.length;i+=2){var c=+E[i],v=E[i+1];if(c===0){ent=v;cur='';continue;}
+      if(c===8){cur=String(v);if(!(cur in lay)){lay[cur]=null;ord.push(cur);}continue;}
+      if(c===62&&cur&&lay[cur]===null){lay[cur]=String(v);continue;}
+      if(ent==='POLYLINE'||ent==='SEQEND')continue;var t=+v;if(!isFinite(t))continue;
+      if(c>=10&&c<=13){if(t<x0)x0=t;if(t>x1)x1=t;}else if(c>=20&&c<=23){if(t<y0)y0=t;if(t>y1)y1=t;}else if(c>=30&&c<=33){if(t<z0)z0=t;if(t>z1)z1=t;}}
+    if(!(x1>=x0)){x0=y0=z0=0;x1=y1=z1=0;}if(!(z1>=z0)){z0=z1=0;}
+    var f=function(t){return (+t).toFixed(3);},o=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','9','$INSBASE','10','0.0','20','0.0','30','0.0',
+      '9','$EXTMIN','10',f(x0),'20',f(y0),'30',f(z0),'9','$EXTMAX','10',f(x1),'20',f(y1),'30',f(z1),'0','ENDSEC',
+      '0','SECTION','2','TABLES','0','TABLE','2','LTYPE','70','1','0','LTYPE','2','CONTINUOUS','70','64','3','Solid line','72','65','73','0','40','0.0','0','ENDTAB',
+      '0','TABLE','2','LAYER','70',String(ord.length+1),'0','LAYER','2','0','70','0','62','7','6','CONTINUOUS'];
+    ord.forEach(function(n){if(n==='0')return;o.push('0','LAYER','2',n,'70','0','62',lay[n]||'7','6','CONTINUOUS');});
+    o.push('0','ENDTAB','0','TABLE','2','STYLE','70','1','0','STYLE','2','STANDARD','70','0','40','0.0','41','1.0','50','0.0','71','0','42','0.2','3','txt','4','','0','ENDTAB','0','ENDSEC',
+      '0','SECTION','2','BLOCKS','0','ENDSEC','0','SECTION','2','ENTITIES');
+    return o.concat(E,['0','ENDSEC','0','EOF']);}catch(e){console.warn('dxfLengkap',e);return r;}}
+window.dxfLengkap=dxfLengkap;
+
 
 
 async function readLines(s){var x=s.k;if(x==='str')return readStr(s.f,E('strOrd').value==='yx');if(x==='dxf')return readDxf(s.f);return readXyz(s.f);}
@@ -13531,7 +13569,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.88';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.89';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

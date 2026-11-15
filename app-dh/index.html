@@ -2474,7 +2474,7 @@ function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.lengt
   r.push('0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES');
   L.forEach(function(s){var ly=((s.d||'STRING')+'_'+s.no).replace(/[^A-Za-z0-9_-]+/g,'_');r.push('0','POLYLINE','8',ly,'66','1','70',s.closed?'9':'8','10','0.0','20','0.0','30','0.0');
     s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',f3(q[0]+offX),'20',f3(q[1]+offY),'30',f3(q[2]),'70','32');});r.push('0','SEQEND','8',ly);});
-  r.push('0','ENDSEC','0','EOF');dgDl(r.join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
+  r.push('0','ENDSEC','0','EOF');dgDl((window.dxfLengkap?dxfLengkap(r):r).join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
 (function(){var gd=$('plotDiv');if(!gd)return;
   gd.addEventListener('mousedown',function(e){dgMouse(e,'down');},true);window.addEventListener('mouseup',function(e){dgMouse(e,'up');},true);gd.addEventListener('mousemove',function(e){dgMouse(e,'move');},true);
   gd.addEventListener('mouseleave',function(){DG.hov=null;dgDraw();});gd.addEventListener('wheel',function(){setTimeout(dgDraw,60);},{passive:true});
@@ -3025,7 +3025,7 @@ function gmStrExport(fmt){var L=GM.str.filter(function(s){var d=gmDom(s.dom);ret
     r.push('0, 0.000, 0.000, 0.000, END');dgDl(r.join('\r\n')+'\r\n',base+'.str');return;}
   r.push('0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES');
   L.forEach(function(s){var ly=s.name.replace(/[^A-Za-z0-9_-]+/g,'_');r.push('0','POLYLINE','8',ly,'66','1','70','8','10','0.0','20','0.0','30','0.0');s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',f3(q[0]+offX),'20',f3(q[1]+offY),'30',f3(q[2]),'70','32');});r.push('0','SEQEND','8',ly);});
-  r.push('0','ENDSEC','0','EOF');dgDl(r.join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
+  r.push('0','ENDSEC','0','EOF');dgDl((window.dxfLengkap?dxfLengkap(r):r).join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
 
 /* ---------- mode interaksi (Sayatan 2D) ---------- */
 function gmStart(mode,i){if(mode!=='edit'&&!GM.act){alert('Buat / pilih domain aktif dulu.');return;}if(window.DG&&DG.on)dgCancel();GM.mode=mode;GM.cur=[];GM.c2=[];GM.sel=null;GM.edit=mode==='edit'?i:-1;
@@ -3732,7 +3732,7 @@ function imFiles(fmt,surf){var L=GM.doms.filter(function(d){var R=IM.R[d.id];ret
       if(fmt==='obj'){var r=['# GC-Ex Geomodeller Vein - '+nm+' (RBF vein, '+sd+')','o '+nm];vs.forEach(function(v){var p=W(v);r.push('v '+f3(p[0])+' '+f3(p[1])+' '+f3(p[2]));});tri.forEach(function(a){r.push('f '+(a[0]+1)+' '+(a[1]+1)+' '+(a[2]+1));});out.push({name:nm+'.obj',data:r.join('\r\n')+'\r\n'});}
       else if(fmt==='dxf'){r=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES'];var ly=nm.replace(/[^A-Za-z0-9_-]+/g,'_');
         tri.forEach(function(a){var p=W(vs[a[0]]),q=W(vs[a[1]]),s=W(vs[a[2]]);r.push('0','3DFACE','8',ly,'10',f3(p[0]),'20',f3(p[1]),'30',f3(p[2]),'11',f3(q[0]),'21',f3(q[1]),'31',f3(q[2]),'12',f3(s[0]),'22',f3(s[1]),'32',f3(s[2]),'13',f3(s[0]),'23',f3(s[1]),'33',f3(s[2]));});
-        r.push('0','ENDSEC','0','EOF');out.push({name:nm+'.dxf',data:r.join('\r\n')+'\r\n'});}
+        r.push('0','ENDSEC','0','EOF');out.push({name:nm+'.dxf',data:(window.dxfLengkap?dxfLengkap(r):r).join('\r\n')+'\r\n'});}
       else{var sn=nm.toLowerCase(),S=[sn+','+sd+',,ssi_styles:styles.ssi','0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000'];vs.forEach(function(v){var p=W(v);S.push('1, '+f3(p[1])+', '+f3(p[0])+', '+f3(p[2])+',');});S.push('0, 0.000, 0.000, 0.000,','0, 0.000, 0.000, 0.000, END');
         /* tetangga tiap sisi (neighbours=yes) */
         var E={},key=function(a,b){return a<b?a+'_'+b:b+'_'+a;};tri.forEach(function(a,ti){[[a[0],a[1]],[a[1],a[2]],[a[2],a[0]]].forEach(function(e){(E[key(e[0],e[1])]=E[key(e[0],e[1])]||[]).push(ti);});});
@@ -17058,6 +17058,30 @@ SA.readLines=function(s){return readLines(s);};
     for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,z0:z0<1e17?z0:NaN,z1:z1>-1e17?z1:NaN,buang:bad,recLen:G.lastRecLen};};
   G.eachLine=eachLine;G.readLinesS=readLinesS;G.str0=str0;window.GCBL=G;
 })();
+/* ================= BM 0.24.89 / DH: DXF ekspor LENGKAP (pemilik 15 Nov 2026: "dxf-nya tidak bisa dibuka di Surpac") =================
+   Dulu DXF ekspor hanya berisi HEADER ($ACADVER) + ENTITIES ("DXF minimal"). AutoCAD menerimanya, tetapi pengimpor yang
+   lebih ketat membutuhkan tabel LAYER / LTYPE. dxfLengkap(r) menerima baris DXF minimal itu dan mengembalikan DXF R12 utuh:
+   HEADER ($ACADVER, $INSBASE, $EXTMIN, $EXTMAX), TABLES (LTYPE CONTINUOUS, LAYER tiap layer + warnanya, STYLE STANDARD),
+   BLOCKS kosong, ENTITIES (apa adanya, ditambah linetype BYLAYER implisit), EOF. */
+function dxfLengkap(r){try{var i0=-1,i;for(i=0;i+1<r.length;i+=2){if(String(r[i]).trim()==='2'&&r[i+1]==='ENTITIES'){i0=i+2;break;}}if(i0<0)return r;
+    var i1=r.length;for(i=i0;i+1<r.length;i+=2){if(String(r[i]).trim()==='0'&&r[i+1]==='ENDSEC'){i1=i;break;}}
+    var E=r.slice(i0,i1),lay={},ord=[],ent='',cur='',x0=1e300,x1=-1e300,y0=1e300,y1=-1e300,z0=1e300,z1=-1e300;
+    for(i=0;i+1<E.length;i+=2){var c=+E[i],v=E[i+1];if(c===0){ent=v;cur='';continue;}
+      if(c===8){cur=String(v);if(!(cur in lay)){lay[cur]=null;ord.push(cur);}continue;}
+      if(c===62&&cur&&lay[cur]===null){lay[cur]=String(v);continue;}
+      if(ent==='POLYLINE'||ent==='SEQEND')continue;var t=+v;if(!isFinite(t))continue;
+      if(c>=10&&c<=13){if(t<x0)x0=t;if(t>x1)x1=t;}else if(c>=20&&c<=23){if(t<y0)y0=t;if(t>y1)y1=t;}else if(c>=30&&c<=33){if(t<z0)z0=t;if(t>z1)z1=t;}}
+    if(!(x1>=x0)){x0=y0=z0=0;x1=y1=z1=0;}if(!(z1>=z0)){z0=z1=0;}
+    var f=function(t){return (+t).toFixed(3);},o=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','9','$INSBASE','10','0.0','20','0.0','30','0.0',
+      '9','$EXTMIN','10',f(x0),'20',f(y0),'30',f(z0),'9','$EXTMAX','10',f(x1),'20',f(y1),'30',f(z1),'0','ENDSEC',
+      '0','SECTION','2','TABLES','0','TABLE','2','LTYPE','70','1','0','LTYPE','2','CONTINUOUS','70','64','3','Solid line','72','65','73','0','40','0.0','0','ENDTAB',
+      '0','TABLE','2','LAYER','70',String(ord.length+1),'0','LAYER','2','0','70','0','62','7','6','CONTINUOUS'];
+    ord.forEach(function(n){if(n==='0')return;o.push('0','LAYER','2',n,'70','0','62',lay[n]||'7','6','CONTINUOUS');});
+    o.push('0','ENDTAB','0','TABLE','2','STYLE','70','1','0','STYLE','2','STANDARD','70','0','40','0.0','41','1.0','50','0.0','71','0','42','0.2','3','txt','4','','0','ENDTAB','0','ENDSEC',
+      '0','SECTION','2','BLOCKS','0','ENDSEC','0','SECTION','2','ENTITIES');
+    return o.concat(E,['0','ENDSEC','0','EOF']);}catch(e){console.warn('dxfLengkap',e);return r;}}
+window.dxfLengkap=dxfLengkap;
+
 
 
 async function readLines(s){var x=s.k;if(x==='str')return readStr(s.f,E('strOrd').value==='yx');if(x==='dxf')return readDxf(s.f);return readXyz(s.f);}
@@ -18853,7 +18877,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.96';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.97';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

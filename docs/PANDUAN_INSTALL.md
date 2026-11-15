@@ -5042,3 +5042,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   ekspor); ekspor ulang file itu.
 
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 228. Block Model 0.24.89 — garis digit ikut peta, warna garis ganda flag, DXF lengkap
+
+- **Digit manual**: garis oranye yang sedang didigit kini ikut bergerak saat plan digeser atau di-zoom.
+- **Additional flagging**: tiap aturan punya kolom **Warna** untuk garis ganda (bawaan hitam). Garis asli poligon tetap berwarna
+  kelas kadarnya. *Warna garis ganda › Sama dengan garis asli (kadar)* = cara lama. Poligon lama: klik **Perbarui garis ganda**.
+- **Export DXF** (dig block, string digit, Solid Vein) kini berisi tabel layer dan batas gambar, bukan hanya daftar garis —
+  untuk pengimpor yang ketat seperti Surpac. Di Surpac: File › Import › AutoCAD (DXF / DWG).
+- Drillhole 0.24.97: ekspor DXF ikut dilengkapi. DB-Ex, Ore Works: tidak berubah.

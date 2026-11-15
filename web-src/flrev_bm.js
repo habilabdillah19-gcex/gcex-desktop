@@ -32,7 +32,15 @@
     R.forEach(function(q){var v=r.afv[q.n];if(!isFinite(v))return;var hit=q.k==='cat'?v>=50:(q.op==='>='?v>=+q.c:v>+q.c);if(hit)r.af.push(q.n);});}
   var _lt=lyTon;lyTon=function(P,zs0,excl){var r=_lt.apply(this,arguments);try{afEval(r,P,excl);var U=dbU();r.sulf=!!(U.sfOn!==false&&r.af&&r.af.length);}catch(e){console.error(e);}return r;};
   window.afTxt=function(t){return t&&t.af&&t.af.length?'  ('+t.af.join(', ')+')':'';};
-  window.afSet=function(k,f,v){var R=afRules();if(!R[k])return;R[k][f]=v;afDirty();};
+  /* BM 0.24.89 (pemilik 15 Nov 2026: "garis kembarnya diwarnain lain sebagai flagging; garis aslinya tetap sesuai kadarnya"):
+     tiap aturan flag punya warna (q.col, bawaan hitam). Garis ganda (string inner) menyimpan nama flag (s.fl) dan warna flag
+     (s.fcol = s.col); garis asli tidak disentuh. U.sfCol='kadar' = cara lama (garis ganda sewarna kadar). */
+  window.afWarna=function(s,t){var U=dbU(),nm=t&&t.af&&t.af[0];if(nm)s.fl=nm;if(U.sfCol==='kadar'||!nm){delete s.fcol;return s;}
+    var r=afRules().filter(function(q){return q.n===nm;})[0];s.fcol=s.col=(r&&r.col)||'#000000';return s;};
+  window.afWarnaSemua=function(){(window.DG?DG.S:[]).forEach(function(s){if(!s.inner)return;var p=DG.S.filter(function(q){return q.id===s.parent;})[0];
+      if(dbU().sfCol==='kadar'||!s.fl){if(s.fcol){delete s.fcol;if(p)s.col=p.col;}return;}var r=afRules().filter(function(q){return q.n===s.fl;})[0];s.fcol=s.col=(r&&r.col)||'#000000';});
+    try{BX.mc=null;dgSave();dgList();updatePlot();}catch(e){}};
+  window.afSet=function(k,f,v){var R=afRules();if(!R[k])return;var lama=R[k].n;R[k][f]=v;if(f==='n')(window.DG?DG.S:[]).forEach(function(s){if(s.inner&&s.fl===lama)s.fl=v;});afDirty();if(f==='col'||f==='n')afWarnaSemua();};
   window.afAdd=function(){var m=BX.m,nums=m?Object.keys(m.num):[];afRules().push({n:'Flag '+(afRules().length+1),k:'num',a:nums.filter(function(a){return /^(zn|cu|s|sxs|stot|as|pb)/i.test(a);})[0]||nums[0]||'',op:'>',c:0,on:true});afDirty();};
   window.afDel=function(k){afRules().splice(k,1);afDirty();};
   function afDirty(){try{if(window.LY)LY.cache=null;}catch(e){}try{if(window.dgSave)dgSave();}catch(e){}FLC={};try{dbPanel();}catch(e){}try{if(window.SA&&SA.dirty)SA.dirty();}catch(e){}}
@@ -41,16 +49,18 @@
     return '<summary>Additional flagging (garis ganda)</summary>'+
       '<label class=sw style="margin-top:6px"><input type=checkbox '+(U.sfOn!==false?'checked':'')+' onchange="dbSet(\'sfOn\',this.checked);afDirty2()">Poligon ber-flag dibuat garis ganda</label>'+
       '<div class=hint>Flag diberikan ke <b>seluruh poligon</b> bila <b>komposit</b> unsur di dalam poligon (rata-rata tertimbang tonase) melewati COG. Contoh: Ore Sulfide = S &gt; 0,8 %; Zn tinggi = Zn &gt; 500 ppm. Satuan mengikuti kolom block model.</div>'+
-      '<table class="pltb aftb"><tr><th></th><th>Nama flag</th><th>Unsur</th><th></th><th>COG</th><th></th></tr>'+
+      '<div style="margin-top:6px"><label>Warna garis ganda</label><select id=afColMode onchange="dbSet(\'sfCol\',this.value);afDirty2();afWarnaSemua()"><option value="flag"'+(U.sfCol!=='kadar'?' selected':'')+'>Warna flag (diatur per aturan)</option><option value="kadar"'+(U.sfCol==='kadar'?' selected':'')+'>Sama dengan garis asli (kadar)</option></select></div>'+
+      '<table class="pltb aftb"><tr><th></th><th>Nama flag</th><th>Unsur</th><th></th><th>COG</th><th title="Warna garis ganda">Warna</th><th></th></tr>'+
       R.map(function(q,k){return '<tr><td><input type=checkbox '+(q.on!==false?'checked':'')+' onchange="afSet('+k+',\'on\',this.checked)" title="Aktif"></td>'+
         '<td><input type=text value="'+esc(q.n)+'" onchange="afSet('+k+',\'n\',this.value.trim()||\'Flag\')"></td>'+
         (q.k==='cat'?'<td><select onchange="afSet('+k+',\'a\',this.value)">'+opt(cats,q.a)+'</select></td><td>kode</td><td><input type=text value="'+esc(q.codes)+'" title="Kode dipisah koma; flag bila &ge; 50 % tonase berkode ini" onchange="afSet('+k+',\'codes\',this.value)"></td>'
           :'<td><select onchange="afSet('+k+',\'a\',this.value)">'+opt(nums,q.a)+'</select></td><td><select onchange="afSet('+k+',\'op\',this.value)"><option'+(q.op!=='>='?' selected':'')+'>&gt;</option><option value="&gt;="'+(q.op==='>='?' selected':'')+'>&ge;</option></select></td><td><input type=number step=any value="'+esc(q.c)+'" onchange="afSet('+k+',\'c\',+this.value)"></td>')+
+        '<td><input type=color class=afc value="'+esc(q.col||'#000000')+'" title="Warna garis ganda untuk flag ini"'+(U.sfCol==='kadar'?' disabled':'')+' onchange="afSet('+k+',\'col\',this.value)"></td>'+
         '<td><button class=x onclick="afDel('+k+')" title="Hapus aturan">&times;</button></td></tr>';}).join('')+'</table>'+
       '<div class=g2 style="margin-top:4px"><button onclick="afAdd()">+ Aturan flag</button><button onclick="var r=dbInner();DB.msg=r.n+\' garis ganda dibuat\'+(r.f?\', \'+r.f+\' poligon terlalu sempit\':\'\');dbPanel()">Perbarui garis ganda</button></div>';}
   window.afDirty2=function(){afDirty();};
   var _dp=window.dbPanel;if(_dp){dbPanel=function(){var r=_dp.apply(this,arguments);try{var b=$('dbBody');if(b&&BX.m){Array.prototype.forEach.call(b.querySelectorAll('details.mini'),function(d){var s=d.querySelector('summary');if(s&&/sulfida/i.test(s.textContent)){var o=d.open;d.innerHTML=afHtml();d.open=o;}});}}catch(e){console.error(e);}return r;};}
-  var st=document.createElement('style');st.textContent='.aftb input,.aftb select{width:100%;min-width:0;height:24px!important;padding:1px 4px!important;font-size:12px!important}.aftb td{padding:2px 3px}.aftb td:nth-child(2){width:32%}.aftb td:nth-child(5){width:18%}';document.head.appendChild(st);
+  var st=document.createElement('style');st.textContent='.aftb input,.aftb select{width:100%;min-width:0;height:24px!important;padding:1px 4px!important;font-size:12px!important}.aftb td{padding:2px 3px}.aftb td:nth-child(2){width:28%}.aftb td:nth-child(5){width:16%}.aftb input.afc{width:30px!important;padding:0!important}';document.head.appendChild(st);
   /* ---------- hitung per flitch (tanpa mengubah flitch aktif) ---------- */
   var FLC={};
   window.flGroups=function(){var G={},ord=[],grp=function(top,bot){var k=f3(top)+'|'+f3(bot);if(!G[k]){G[k]={k:k,top:+top,bot:+bot,db:[],am:[]};ord.push(k);}return G[k];};

@@ -463,7 +463,7 @@
     gxSimpan(T.join('\r\n') + '\r\n', base + '.dtm').then(function (ok) { if (ok !== null) gxSimpan(S.join('\r\n') + '\r\n', base + '.str'); }); };
   SV.expDxf = function () { var p = per(), r = R(p); if (!r) { alert('Bangun solid dulu.'); return; } var V = r.V, f3 = function (v) { return (+v).toFixed(3); }, L = ['0', 'SECTION', '2', 'HEADER', '9', '$ACADVER', '1', 'AC1009', '0', 'ENDSEC', '0', 'SECTION', '2', 'ENTITIES'];
     r.IS.forEach(function (s) { var ly = ('VEIN_' + (p.name || '') + '_' + s.n).replace(/[^A-Za-z0-9_-]+/g, '_'); s.tri.forEach(function (t) { L.push('0', '3DFACE', '8', ly); [0, 1, 2, 2].forEach(function (q, k) { var ix = t[q]; L.push(String(10 + k), f3(V.x[ix] + offX), String(20 + k), f3(V.y[ix] + offY), String(30 + k), f3(V.z[ix])); }); }); });
-    L.push('0', 'ENDSEC', '0', 'EOF'); gxSimpan(L.join('\r\n') + '\r\n', fnm(p, 'dxf'), 'application/dxf'); };
+    L.push('0', 'ENDSEC', '0', 'EOF'); gxSimpan((window.dxfLengkap ? dxfLengkap(L) : L).join('\r\n') + '\r\n', fnm(p, 'dxf'), 'application/dxf'); };
   SV.expCsv = function () { var p = per(); if (!p || !p.res) { alert('Bangun solid dulu.'); return; } var sg = +P(p).sg || 0, o = ['Periode,Pulau,RL atas,RL bawah,Jumlah flitch,Jumlah poligon,Segitiga,Tertutup,Luas permukaan (m2),Volume (m3),SG,Tonase (t)'];
     p.res.IS.forEach(function (s) { o.push([p.name, s.n, s.top.toFixed(3), s.bot.toFixed(3), s.nLv, s.nPoly, s.nt, s.closed ? 'ya' : 'TIDAK (' + s.open + ' sisi terbuka)', s.area.toFixed(2), s.vol.toFixed(3), sg, (s.vol * sg).toFixed(1)].map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',')); });
     gxSimpan(o.join('\r\n') + '\r\n', fnm(p, 'csv'), 'text/csv'); };

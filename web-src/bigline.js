@@ -116,3 +116,27 @@
     for(var m=0;m<o2.length;m++)out.push(o2[m]);return{nn:[n0,n1],x0:x0,x1:x1,y0:y0,y1:y1,z0:z0<1e17?z0:NaN,z1:z1>-1e17?z1:NaN,buang:bad,recLen:G.lastRecLen};};
   G.eachLine=eachLine;G.readLinesS=readLinesS;G.str0=str0;window.GCBL=G;
 })();
+/* ================= BM 0.24.89 / DH: DXF ekspor LENGKAP (pemilik 15 Nov 2026: "dxf-nya tidak bisa dibuka di Surpac") =================
+   Dulu DXF ekspor hanya berisi HEADER ($ACADVER) + ENTITIES ("DXF minimal"). AutoCAD menerimanya, tetapi pengimpor yang
+   lebih ketat membutuhkan tabel LAYER / LTYPE. dxfLengkap(r) menerima baris DXF minimal itu dan mengembalikan DXF R12 utuh:
+   HEADER ($ACADVER, $INSBASE, $EXTMIN, $EXTMAX), TABLES (LTYPE CONTINUOUS, LAYER tiap layer + warnanya, STYLE STANDARD),
+   BLOCKS kosong, ENTITIES (apa adanya, ditambah linetype BYLAYER implisit), EOF. */
+function dxfLengkap(r){try{var i0=-1,i;for(i=0;i+1<r.length;i+=2){if(String(r[i]).trim()==='2'&&r[i+1]==='ENTITIES'){i0=i+2;break;}}if(i0<0)return r;
+    var i1=r.length;for(i=i0;i+1<r.length;i+=2){if(String(r[i]).trim()==='0'&&r[i+1]==='ENDSEC'){i1=i;break;}}
+    var E=r.slice(i0,i1),lay={},ord=[],ent='',cur='',x0=1e300,x1=-1e300,y0=1e300,y1=-1e300,z0=1e300,z1=-1e300;
+    for(i=0;i+1<E.length;i+=2){var c=+E[i],v=E[i+1];if(c===0){ent=v;cur='';continue;}
+      if(c===8){cur=String(v);if(!(cur in lay)){lay[cur]=null;ord.push(cur);}continue;}
+      if(c===62&&cur&&lay[cur]===null){lay[cur]=String(v);continue;}
+      if(ent==='POLYLINE'||ent==='SEQEND')continue;var t=+v;if(!isFinite(t))continue;
+      if(c>=10&&c<=13){if(t<x0)x0=t;if(t>x1)x1=t;}else if(c>=20&&c<=23){if(t<y0)y0=t;if(t>y1)y1=t;}else if(c>=30&&c<=33){if(t<z0)z0=t;if(t>z1)z1=t;}}
+    if(!(x1>=x0)){x0=y0=z0=0;x1=y1=z1=0;}if(!(z1>=z0)){z0=z1=0;}
+    var f=function(t){return (+t).toFixed(3);},o=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','9','$INSBASE','10','0.0','20','0.0','30','0.0',
+      '9','$EXTMIN','10',f(x0),'20',f(y0),'30',f(z0),'9','$EXTMAX','10',f(x1),'20',f(y1),'30',f(z1),'0','ENDSEC',
+      '0','SECTION','2','TABLES','0','TABLE','2','LTYPE','70','1','0','LTYPE','2','CONTINUOUS','70','64','3','Solid line','72','65','73','0','40','0.0','0','ENDTAB',
+      '0','TABLE','2','LAYER','70',String(ord.length+1),'0','LAYER','2','0','70','0','62','7','6','CONTINUOUS'];
+    ord.forEach(function(n){if(n==='0')return;o.push('0','LAYER','2',n,'70','0','62',lay[n]||'7','6','CONTINUOUS');});
+    o.push('0','ENDTAB','0','TABLE','2','STYLE','70','1','0','STYLE','2','STANDARD','70','0','40','0.0','41','1.0','50','0.0','71','0','42','0.2','3','txt','4','','0','ENDTAB','0','ENDSEC',
+      '0','SECTION','2','BLOCKS','0','ENDSEC','0','SECTION','2','ENTITIES');
+    return o.concat(E,['0','ENDSEC','0','EOF']);}catch(e){console.warn('dxfLengkap',e);return r;}}
+window.dxfLengkap=dxfLengkap;
+

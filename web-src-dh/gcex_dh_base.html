@@ -2109,7 +2109,7 @@ function dgExport(fmt){var L=DG.S.filter(function(s){return s.vis;});if(!L.lengt
   r.push('0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES');
   L.forEach(function(s){var ly=((s.d||'STRING')+'_'+s.no).replace(/[^A-Za-z0-9_-]+/g,'_');r.push('0','POLYLINE','8',ly,'66','1','70',s.closed?'9':'8','10','0.0','20','0.0','30','0.0');
     s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',f3(q[0]+offX),'20',f3(q[1]+offY),'30',f3(q[2]),'70','32');});r.push('0','SEQEND','8',ly);});
-  r.push('0','ENDSEC','0','EOF');dgDl(r.join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
+  r.push('0','ENDSEC','0','EOF');dgDl((window.dxfLengkap?dxfLengkap(r):r).join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
 (function(){var gd=$('plotDiv');if(!gd)return;
   gd.addEventListener('mousedown',function(e){dgMouse(e,'down');},true);window.addEventListener('mouseup',function(e){dgMouse(e,'up');},true);gd.addEventListener('mousemove',function(e){dgMouse(e,'move');},true);
   gd.addEventListener('mouseleave',function(){DG.hov=null;dgDraw();});gd.addEventListener('wheel',function(){setTimeout(dgDraw,60);},{passive:true});
@@ -2659,7 +2659,7 @@ function gmStrExport(fmt){var L=GM.str.filter(function(s){var d=gmDom(s.dom);ret
     r.push('0, 0.000, 0.000, 0.000, END');dgDl(r.join('\r\n')+'\r\n',base+'.str');return;}
   r.push('0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES');
   L.forEach(function(s){var ly=s.name.replace(/[^A-Za-z0-9_-]+/g,'_');r.push('0','POLYLINE','8',ly,'66','1','70','8','10','0.0','20','0.0','30','0.0');s.pts.forEach(function(q){r.push('0','VERTEX','8',ly,'10',f3(q[0]+offX),'20',f3(q[1]+offY),'30',f3(q[2]),'70','32');});r.push('0','SEQEND','8',ly);});
-  r.push('0','ENDSEC','0','EOF');dgDl(r.join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
+  r.push('0','ENDSEC','0','EOF');dgDl((window.dxfLengkap?dxfLengkap(r):r).join('\r\n')+'\r\n',base+'.dxf','application/dxf');}
 
 /* ---------- mode interaksi (Penampang 2D) ---------- */
 function gmStart(mode,i){if(mode!=='edit'&&!GM.act){alert('Buat / pilih domain aktif dulu.');return;}if(window.DG&&DG.on)dgCancel();GM.mode=mode;GM.cur=[];GM.c2=[];GM.sel=null;GM.edit=mode==='edit'?i:-1;
@@ -3266,7 +3266,7 @@ function imFiles(fmt,surf){var L=GM.doms.filter(function(d){var R=IM.R[d.id];ret
       if(fmt==='obj'){var r=['# GC-Ex Geological Modelling - '+nm+' (RBF vein, '+sd+')','o '+nm];vs.forEach(function(v){var p=W(v);r.push('v '+f3(p[0])+' '+f3(p[1])+' '+f3(p[2]));});tri.forEach(function(a){r.push('f '+(a[0]+1)+' '+(a[1]+1)+' '+(a[2]+1));});out.push({name:nm+'.obj',data:r.join('\r\n')+'\r\n'});}
       else if(fmt==='dxf'){r=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES'];var ly=nm.replace(/[^A-Za-z0-9_-]+/g,'_');
         tri.forEach(function(a){var p=W(vs[a[0]]),q=W(vs[a[1]]),s=W(vs[a[2]]);r.push('0','3DFACE','8',ly,'10',f3(p[0]),'20',f3(p[1]),'30',f3(p[2]),'11',f3(q[0]),'21',f3(q[1]),'31',f3(q[2]),'12',f3(s[0]),'22',f3(s[1]),'32',f3(s[2]),'13',f3(s[0]),'23',f3(s[1]),'33',f3(s[2]));});
-        r.push('0','ENDSEC','0','EOF');out.push({name:nm+'.dxf',data:r.join('\r\n')+'\r\n'});}
+        r.push('0','ENDSEC','0','EOF');out.push({name:nm+'.dxf',data:(window.dxfLengkap?dxfLengkap(r):r).join('\r\n')+'\r\n'});}
       else{var sn=nm.toLowerCase(),S=[sn+','+sd+',,ssi_styles:styles.ssi','0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000'];vs.forEach(function(v){var p=W(v);S.push('1, '+f3(p[1])+', '+f3(p[0])+', '+f3(p[2])+',');});S.push('0, 0.000, 0.000, 0.000,','0, 0.000, 0.000, 0.000, END');
         /* tetangga tiap sisi (neighbours=yes) */
         var E={},key=function(a,b){return a<b?a+'_'+b:b+'_'+a;};tri.forEach(function(a,ti){[[a[0],a[1]],[a[1],a[2]],[a[2],a[0]]].forEach(function(e){(E[key(e[0],e[1])]=E[key(e[0],e[1])]||[]).push(ti);});});
