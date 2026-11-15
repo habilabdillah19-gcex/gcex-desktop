@@ -61,7 +61,7 @@
   function fSpatial(){var mdK=function(kind,ic,lab){return ok(function(){return MD[kind].map(function(m,i){return{id:'ref.'+kind+'.'+i+'.'+m.name,t:m.name,ic:ic,tab:'Model',sub:lab,chk:!!m.vis,onChk:function(v){mdSet(kind,i,'vis',v);},
       b:m.nt?N(m.nt)+' segitiga':(m.pts&&m.pts.length?N(m.pts.length)+' titik':''),menu:function(){return[{t:'Hapus',danger:1,fn:function(){mdDel(kind,i);}}];}};});},[]);};
     var refK=[].concat(mdK('pts','pts','Titik'),mdK('str','string','String'));
-    return{id:'sp',step:'2',t:'Data Spasial',ic:'folder',fold:1,tab:'SP',hint:'Topografi, desain pit, orthofoto (dengan versi) dan data referensi Surpac',
+    var SPN={id:'sp',step:'2',t:'Data Spasial',ic:'folder',fold:1,tab:'SP',hint:'Topografi, desain pit, orthofoto (dengan versi) dan data referensi Surpac',
       menu:function(){return[{h:'Import file (versi baru, langsung)'},addV('topo'),addV('pit'),addV('ortho'),{sep:1},{t:'Pengaturan overlay…',fn:tab('Overlay')}];},
       kids:[{id:'sp.topo',t:'Topografi',ic:'topo',tab:'SP',sub:'Topografi',chk:!!topoAs(),onChk:function(v){setTopo(v?topoPref():'');},
           b:topoAs()==='line'?'garis':topoAs()==='both'?'surface+garis':topoAs()?'surface':'',menu:function(){return[addV('topo'),{sep:1}].concat(asMenu(topoAs(),setTopo));},kids:versions('topo')},
@@ -70,7 +70,9 @@
         {id:'sp.ortho',t:'Orthofoto',ic:'ortho',tab:'SP',sub:'Ortho',chk:!!U.cb('ovOrtho'),onChk:function(v){U.setCb('ovOrtho',v);},
           menu:function(){var m=U.val('orMode');return[addV('ortho'),{sep:1},{h:'Posisi orthofoto'},{t:'Latar paling bawah (lepas elevasi)',on:m==='base',fn:function(){U.setVal('orMode','base');}},{t:'Drape ke topografi',on:m==='drape',fn:function(){U.setVal('orMode','drape');}},{t:'Bidang datar (di atas data)',on:m==='flat',fn:function(){U.setVal('orMode','flat');}}];},kids:versions('ortho')},
         {id:'sp.ref',t:'Data referensi (titik survey, string)',ic:'ref',tab:'Model',sub:'Titik survey',b:refK.length||'',dim:!refK.length,
-          add:{t:'Tambah titik survey / string…',items:[{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:refK}]};}
+          add:{t:'Tambah titik survey / string…',items:[{t:'Titik survey (CSV)…',fn:function(){PT.pick('.csv,.txt',true,function(i){mdPts(i);});}},{t:'String (.str / .dxf)…',fn:function(){PT.pick('.str,.dxf',true,function(i){mdStr(i);});}}]},kids:refK}]};
+    /* DH 0.24.98: node Topo × Pit (gabungan) sesudah Desain pit, sama dengan Block Model (web-src/topopit_bm.js) */
+    if(window.TP&&TP.spKids)SPN.kids=TP.spKids(SPN.kids,null);return SPN;}
   function fDb(){var C=window.collars||[],Sv=window.surveys||[],As=window.assays||[],G=window.geoRows||[],E=window.elements||[],cur=U.val('elementFilter'),ga=U.val('geoAttr');
     /* sub-node unsur = baris informasi saja (pemilik 9 Nov 2026): unsur yang ditampilkan dipilih di panel Assay (tab Warna), bukan dengan mengklik node */
     var els=E.map(function(e){return{id:'db.el.'+e,t:e,ic:'el',info:1,mark:e===cur?'warna':'',hint:(e===cur?'Unsur yang sedang ditampilkan. ':'')+'Ganti unsur di panel Assay'};});
@@ -151,7 +153,9 @@
       kids:[].concat(V.map(function(v){var on=ok(function(){return bxvKey(v.src)===cur;},false);return{id:'bm.v.'+v.id,t:v.name,ic:'ver',tab:'SP',sub:'Block',mark:on?'aktif':'',b:v.info||'',hint:v.src&&v.src.name,
           rename:function(nm){bmSet(v.id,'name',nm);},menu:function(){return[{t:'Jadikan versi aktif',dis:on,fn:function(){bmActivate(v.id);}},{sep:1},{t:'Hapus dari daftar versi',danger:1,fn:function(){bmDel(v.id);}}];}};}),
         m?[{id:'bm.attr',t:'Atribut',ic:'attr',tab:'BM',b:at.length,kids:at.map(function(k){return{id:'bm.a.'+k,t:k,ic:m.cat&&m.cat[k]?'geo':'el',tab:'BM',mark:k===ca?'warna':'',go:function(){bxSet('attr',k);}};})},
-          {id:'bm.cls',t:'Warna & kelas',ic:'color',tab:'BM',sub:'Warna'},{id:'bm.flt',t:'Filter & SG',ic:'attr',tab:'BM',sub:'Filter'},{id:'bm.stat',t:'Statistik',ic:'chart',tab:'BM',sub:'Statistik'}]:[])};}
+          {id:'bm.cls',t:'Warna & kelas',ic:'color',tab:'BM',sub:'Warna'},{id:'bm.flt',t:'Filter & SG',ic:'attr',tab:'BM',sub:'Filter'},{id:'bm.stat',t:'Statistik',ic:'chart',tab:'BM',sub:'Statistik'},
+          /* DH 0.24.98: Ringkasan seluruh model per RL (web-src/mdlsum.js), juga dengan batas desain pit / topografi atas seluruh file */
+          {id:'bm.rl',t:'Ringkasan seluruh model per RL',ic:'report',go:function(){if(window.bsOpen)bsOpen();},dim:!(window.bsOn&&bsOn()),hint:'Tonase & kadar per bench; dengan centang batas pit / topografi dihitung atas SELURUH file .mdl'}]:[])};}
   var sub=function(id,t,ic,tb,re){return{id:id,t:t,ic:ic,tab:tb,sub:re};};
   function nodes(){var L=[],add=function(f,id,t){try{L.push(f());}catch(e){console.warn('tree',id,e);L.push({id:id,t:t,ic:'folder',fold:1});}};
     add(fProj,'proj','Proyek');add(fSpatial,'sp','Data Spasial');if(window.wfxNode)add(wfxNode,'wf','Import Wireframe Geologi');add(fDb,'db','Database Bor');add(fMapping,'mp','Peta (Mapping)');add(fStruct,'st','Struktur Geologi');

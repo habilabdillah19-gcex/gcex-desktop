@@ -5051,3 +5051,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Export DXF** (dig block, string digit, Solid Vein) kini berisi tabel layer dan batas gambar, bukan hanya daftar garis —
   untuk pengimpor yang ketat seperti Surpac. Di Surpac: File › Import › AutoCAD (DXF / DWG).
 - Drillhole 0.24.97: ekspor DXF ikut dilengkapi. DB-Ex, Ore Works: tidak berubah.
+
+## 229. Drillhole 0.24.98 — fitur Block Model yang kini ikut di Drillhole
+
+- **Tampilan ala Ore Works**: bilah alat di atas, status bar (koordinat kursor, eksagerasi vertikal), kotak **Cari** di Project
+  Tree, panel **Properti** bisa ditempel kiri / kanan atau dilepas, kompas 3D di pojok kanan atas.
+- **Topo × Pit**: di Data Spasial, node permukaan gabungan topografi + desain pit (sama seperti Block Model); legenda 3D
+  memakai kartu di kanan bawah (bagian "Data bor").
+- **Block model .mdl sangat besar**: dialog *Block model besar* punya pilihan **di dalam desain pit** / **di bawah topografi**
+  (filter dikerjakan sambil membaca file) dan kotak folder cache. Bila hasil filter masih melebihi memori komputer, yang dimuat
+  bagian teratas dan pesan menyebut RL batasnya. Muat topografi / desain pit DULU, lalu import lewat **Block Model › Import BM**.
+- **Ringkasan seluruh model per RL** (node baru di Block Model): tonase & kadar per RL dihitung atas SELURUH file .mdl, bukan
+  hanya blok yang dimuat.
+- Pita merah *Galat JavaScript* berjejak sudah ada di Drillhole sejak sebelumnya.
+- Block Model 0.24.90: hanya penyesuaian kode bersama (tanpa perubahan perilaku). DB-Ex, Ore Works: tidak berubah.

@@ -7,6 +7,9 @@
   var nz=function(v){return v==null||v===''||!isFinite(+v)?null:+v;};
   SA.mdlRun=async function(f,H,st,topo,pit,say,stop){var D=window.gcexDesktop,self=this,args=arguments;
     if(!D||!D.apiBin||!f||f.size<SA.MDL_BIG_MB*1048576)return _run.apply(self,args);
+    /* DH 0.24.98: batas desain pit / topografi, atau pindai seluruh file (Ringkasan per RL) -> baca LANGSUNG sambil menyaring
+       (cache backend seluruh file bisa > 10 GB; area pit biasanya jauh lebih kecil). Path dicatat untuk Ringkasan per RL. */
+    if(st&&(st.pit||st.topo||st.scan)){var m0=await _run.apply(self,args);if(!st.scan){try{var p0=await SA.mdlPathOf(f);if(p0&&m0&&m0.mdl){m0.mdl.path=p0;m0.mdl.bigPath=1;m0.mdl.size=f.size;SA.mdlPathSave(f,p0);}}catch(e){}}return m0;}
     var path=await SA.mdlPathOf(f);if(!path)return _run.apply(self,args);
     st=st||{};say=say||function(){};var t0=Date.now(),I,s;
     try{for(;;){if(stop&&stop()){try{await D.api('/mdl/cancel',{path:path});}catch(e){}throw new Error('Pembacaan block model dibatalkan.');}

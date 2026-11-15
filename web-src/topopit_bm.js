@@ -311,7 +311,7 @@
     });
     if (srf.length) S.push('<div class=tplg-h>Permukaan</div>' + srf.join(''));
     if (wf.length) S.push('<div class=tplg-h>Wireframe &amp; solid</div>' + wf.join(''));
-    if (lain.length) S.push('<div class=tplg-h>Lapisan lain</div>' + lain.join(''));
+    if (lain.length) S.push('<div class=tplg-h>' + (window.SHELL_APP === 'dh' && TP._el ? 'Data bor · ' + esc(TP._el) : 'Lapisan lain') + '</div>' + lain.join(''));
     return S.join('');
   };
   TP.legRender = function (traces) {
@@ -339,6 +339,8 @@
       else if (t._tpGaris) { var X = [], Y = [], Z = []; for (var i = 0; i < t.x.length; i++) { var x = t.x[i]; if (x === null) { X.push(null); Y.push(null); Z.push(null); continue; } var u = Math.floor((x - J.x0) / J.cs), w = Math.floor((t.y[i] - J.y0) / J.cs), g = (u >= 0 && w >= 0 && u < J.gx && w < J.gy) ? J.G[w * J.gx + u] : -Infinity;
           if (g > -Infinity && t.z[i] > g - 0.01) { if (X.length && X[X.length - 1] !== null) { X.push(null); Y.push(null); Z.push(null); } continue; } X.push(x); Y.push(t.y[i]); Z.push(t.z[i]); }
         traces[q] = Object.assign({}, t, { x: X, y: Y, z: Z }); } }
+    /* DH 0.24.98: lapisan lain di Drillhole = interval bor berwarna menurut unsur -> judul bagian 'Data bor · <unsur>' */
+    try { TP._el = layout && layout.legend && layout.legend.title ? String(layout.legend.title.text || '') : ''; } catch (e) { TP._el = ''; }
     if (!VIEW2D && TP.leg.on && layout) layout.showlegend = false;
     try { if (!VIEW2D) TP.legRender(traces); else { var b = E('tpLeg'); if (b) b.style.display = 'none'; } } catch (e) { console.warn('[TP legenda]', e); }
     /* tanda internal dibuang sebelum Plotly (objek model besar tidak ikut dibandingkan / disalin) */

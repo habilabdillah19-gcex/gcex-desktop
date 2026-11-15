@@ -89,10 +89,9 @@
       /* label sumbu WebGL baru berganti warna pada gambar ulang berikutnya: picu satu relayout kamera yang sama */
       setTimeout(function () { try { var gd = $('plotDiv'), c = gd._fullLayout.scene.camera; Plotly.relayout(gd, { 'scene.camera': { eye: c.eye, up: c.up, center: c.center } }); } catch (e) {} }, 60); } catch (e) {}
   }
-  function pasang() {
-    if (!window.TP || !TP.pasca || TP.pasca._shell) return !!(window.TP && TP.pasca && TP.pasca._shell);
-    var asli = TP.pasca, f = function (traces, layout) {
-      var r = asli.apply(this, arguments), v = latarV();
+  /* layout.* untuk latar 3D (dipakai TP.pasca di Block Model; di Drillhole lewat Plotly.react / newPlot area 3D) */
+  function warnai(layout) {
+      var v = latarV();
       if (v !== 'polos' && layout) {
         layout.paper_bgcolor = 'rgba(0,0,0,0)'; layout.plot_bgcolor = 'rgba(0,0,0,0)'; layout.scene = layout.scene || {}; layout.scene.bgcolor = 'rgba(0,0,0,0)';
         if (v === 'navy') {
@@ -100,9 +99,18 @@
           ['xaxis', 'yaxis', 'zaxis'].forEach(function (a) { var o = layout.scene[a] = Object.assign({}, layout.scene[a] || {}); o.color = '#c9d2e3'; o.gridcolor = '#4a5d86'; o.tickfont = Object.assign({}, o.tickfont || {}, { color: '#c9d2e3' }); if (o.title != null) { var tt = typeof o.title === 'string' ? { text: o.title } : Object.assign({}, o.title); tt.font = Object.assign({}, tt.font || {}, { color: '#dbe3ec' }); o.title = tt; } o.zerolinecolor = '#6a7da6'; o.linecolor = '#6a7da6'; if (o.backgroundcolor) o.backgroundcolor = 'rgba(0,0,0,0)'; });
         }
       }
-      return r;
-    };
-    f._shell = 1; TP.pasca = f; return true;
+  }
+  function pasang() {
+    if (window.TP && TP.pasca) {
+      if (TP.pasca._shell) return true;
+      var asli = TP.pasca, f = function (traces, layout) { var r = asli.apply(this, arguments); warnai(layout); return r; };
+      f._shell = 1; TP.pasca = f; return true;
+    }
+    /* Drillhole (DH 0.24.98): tidak ada TP -> bungkus Plotly.react / newPlot untuk #plotDiv (area 3D saja) */
+    if (window.SHELL_APP !== 'dh' || !window.Plotly || Plotly._shellLatar) return !!(window.Plotly && Plotly._shellLatar);
+    ['react', 'newPlot'].forEach(function (k) { var o = Plotly[k]; if (typeof o !== 'function') return;
+      Plotly[k] = function (gd, data, layout) { try { var g = typeof gd === 'string' ? $(gd) : gd; if (g && g.id === 'plotDiv' && layout && layout.scene) warnai(layout); } catch (e) {} return o.apply(this, arguments); }; });
+    Plotly._shellLatar = 1; return true;
   }
   /* ================= status bar ================= */
   function status() {
