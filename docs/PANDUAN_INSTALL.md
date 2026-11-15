@@ -5015,3 +5015,30 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Semua label, kotak isian, pilihan, dan tombol di jendela **Layout peta** kini berukuran huruf sama.
   Hanya tampilan jendela; lembar peta hasil cetak (PNG / PDF) tidak berubah.
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 227. Ore Works 0.9.0 — channel / trench dari CSV bor, impor DXF pemetaan
+
+**Channel sampling dari tabel Collar / Survey / Assay / Geologi**
+- Menu **Data bor**: seret keempat CSV ke kotak impor, lalu **Proses dataset**. Biarkan *Jenis lubang* = Otomatis, atau pilih
+  **Channel / trench (masuk ke Pemetaan)**. Otomatis mengenali channel bila kolom Type / Hole_Purpose menyebut channel /
+  trench, atau semua pembacaan survey hampir datar (|dip| ≤ 15°). Untuk lubang bor datar yang bukan channel, pilih *GC*.
+- Channel masuk ke **Pemetaan** sebagai *Channel sampling* (panel Data › Pemetaan): bisa diedit, tampil di 3D sebagai
+  silinder berwarna kadar (centang *Label kadar channel* untuk angkanya) dan di Layout peta dengan Sample_ID + Au.
+- Sekaligus terbentuk dataset **Channel sampling (pemetaan)**; di Dashboard pilih *Sumber: Channel sampling*.
+  Channel tidak ikut hitungan "Zona belum teruji GC" dan "Potensi terbuka".
+- Pesan impor menyebut Hole_ID yang ada di Assay / Survey tetapi tidak ada di Collar. Samakan penulisan Hole_ID di semua
+  tabel, lalu impor ulang (Upsert memperbarui channel yang sama, tidak menggandakan).
+
+**Impor DXF pemetaan** (menu **Pemetaan › Impor DXF pemetaan**)
+- Pilih satu atau beberapa .dxf (mis. ekspor Global Mapper). Ore Works menampilkan daftar: tiap **layer garis** dengan
+  pilihan *Vein / Kontak geologi / Jejak struktur / Poligon / Abaikan*; jumlah **titik sampel berkadar** (label
+  `Au: … ppm`, juga Ag / Cu / Pb / Zn; persen diubah ke ppm) → Grab sample; jumlah **titik strike / dip** (atribut DIP +
+  DIP_AZI atau STRIKE_AZI) → Titik struktur. Klik **Impor ke Pemetaan**.
+- **Muat topografi dulu** bila garis / titik tidak punya elevasi; tanpa topografi dipakai elevasi titik terdekat (≤ 50 m),
+  dan objek yang tetap tanpa elevasi dilewati.
+- Titik sampel yang lokasinya dan kadar Au-nya sama dengan interval channel dilewati (centang bawaan), supaya satu
+  sampel tidak terhitung dua kali. Karena itu impor channel CSV dulu, baru DXF titik sampel.
+- Pesan merah "koordinat tidak wajar" berarti Easting / Northing di file tidak sepasang (biasanya kolom tertukar saat
+  ekspor); ekspor ulang file itu.
+
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
