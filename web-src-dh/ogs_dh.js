@@ -261,7 +261,7 @@ function ogsPgKadar() {
 function ogsGeoCols() { return (window.CAT || []).map(function (c, i) { return { ci: i, c: c }; }).filter(function (o) { return o.c && o.c.src === 'g'; }); }
 function ogsGeoKartu(F, vin, vout) {
   var G = ogsGeoCols(); if (!G.length) return '<div class=card><h4>Geologi di dalam vein</h4><p class=hint>Tidak ada kolom geologi.</p></div>';
-  var P = OGS.p; if (!P.geoCols.length) P.geoCols = G.slice(0, 2).map(function (o) { return o.ci; });
+  var P = OGS.p; if (!P.geoCols.length) { var kk = window.gkCi ? ['lith', 'alt'].map(gkCi).filter(function (i) { return i >= 0; }) : []; P.geoCols = kk.length ? kk : G.slice(0, 2).map(function (o) { return o.ci; }); }
   var au = ogsEi(ogsAu()), h = '<div class=card><h4>Geologi di dalam vein</h4><div class=hint>Kolom: ' + G.map(function (o) { return '<label class=sw style="display:inline-flex;margin-right:8px"><input type=checkbox ' + (P.geoCols.indexOf(o.ci) >= 0 ? 'checked' : '') + ' onchange="ogsGeoTog(' + o.ci + ',this.checked)">' + ogsE(o.c.name) + '</label>'; }).join('') + '</div>';
   P.geoCols.forEach(function (ci) { if (!CAT[ci]) return; var pct = function (idx) { var s = {}, t = 0; idx.forEach(function (i) { var a = F.A[i], c = catAssay(ci, a[0], a), l = a[2] - a[1]; if (c < 0) return; s[c] = (s[c] || 0) + l; t += l; }); return { s: s, t: t }; };
     var A = pct(vin), B = pct(vout), K = Object.keys(A.s).sort(function (x, y) { return A.s[y] - A.s[x]; }).slice(0, 6);
@@ -355,7 +355,7 @@ function ogsDrZon() {
 
 /* ---------- halaman 7: profil per domain (format "Analisis Geostatistik Sayatan") ---------- */
 function ogsPfDef() { var S = [{ t: 'el', a: ogsAu() }]; if (ogsAg()) S.push({ t: 'rat', a: ogsAg(), b: ogsAu() }); var pb = ogsFind(/^pb/i), zn = ogsFind(/^zn/i); if (pb && zn) S.push({ t: 'sum', a: pb, b: zn }); var cu = ogsFind(/^cu/i); if (cu) S.push({ t: 'el', a: cu });
-  var G = ogsGeoCols(); if (G.length) { var o = G[0], cc = []; (o.c.d || []).forEach(function (nm, k) { if (/^(q|mv|rv|v)[a-z]*n$|vein|vbx|qvn|qcx/i.test(nm)) cc.push(k); }); S.push({ t: 'cat', ci: o.ci, c: cc }); } return S; }
+  var G = ogsGeoCols(); if (G.length) { var kv = window.gkCi ? (gkCi('vein') >= 0 ? gkCi('vein') : gkCi('lith')) : -1, o = G.filter(function (q) { return q.ci === kv; })[0] || G[0], cc = []; (o.c.d || []).forEach(function (nm, k) { if (/^(q|mv|rv|v)[a-z]*n$|vein|vbx|qvn|qcx/i.test(nm)) cc.push(k); }); S.push({ t: 'cat', ci: o.ci, c: cc }); } return S; }
 function ogsPfLbl(s) { if (s.t === 'el') return s.a; if (s.t === 'rat') return s.a + '/' + s.b; if (s.t === 'sum') return s.a + '+' + s.b + ' '; var C = CAT[s.ci]; return '% ' + (s.c && s.c.length ? s.c.map(function (k) { return geoName(s.ci, k); }).join('+') : '?') + (C ? ' (' + C.name + ')' : ''); }
 function ogsPf(i, k, v) { var S = OGS.p.pf; if (k === 'del') S.splice(i, 1); else if (k === 'add') S.push({ t: 'el', a: ogsAu() }); else { S[i][k] = v; if (k === 't') { if (v === 'cat') { var G = ogsGeoCols(); S[i].ci = G.length ? G[0].ci : -1; S[i].c = []; } else { S[i].a = S[i].a || ogsAu(); if (v !== 'el') S[i].b = S[i].b || ogsAu(); } } } ogsRender(); }
 function ogsPfCode(i, c, on) { var s = OGS.p.pf[i]; s.c = (s.c || []).filter(function (x) { return x !== c; }); if (on) s.c.push(c); ogsRender(); }
@@ -387,7 +387,7 @@ function ogsDrProf() {
 function ogsSecDef() { var F = OGS.F, P = OGS.p; if (P.sec.length || !F) return; var L = F.I.filter(function (c) { return c.d === F.ref; }).map(function (c) { return c.ls; }); if (L.length < 3) L = F.I.map(function (c) { return c.ls; });
   [0.2, 0.5, 0.8].forEach(function (q, i) { P.sec.push({ nm: 'ABC'[i], ls: Math.round(ogsQ(L, q) / 10) * 10, az: null, win: 6 }); }); P.secI = 0; }
 function ogsSecEls() { var P = OGS.p; if (!P.secEls.length) { P.secEls = [ogsAu()]; if (ogsAg()) P.secEls.push(ogsAg(), 'Ag/Au'); [ogsFind(/^cu/i), ogsFind(/^zn/i)].forEach(function (e) { if (e) P.secEls.push(e); }); }
-  if (P.secGeo === -1) { var G = ogsGeoCols(), a = G.filter(function (o) { return /alt/i.test(o.c.name); })[0] || G[0]; P.secGeo = a ? a.ci : -2; } return P.secEls.slice(0, 6); }
+  if (P.secGeo === -1) { var G = ogsGeoCols(), ka = window.gkCi ? gkCi('alt') : -1, a = G.filter(function (o) { return o.ci === ka; })[0] || G.filter(function (o) { return /alt/i.test(o.c.name); })[0] || G[0]; P.secGeo = a ? a.ci : -2; } return P.secEls.slice(0, 6); }
 function ogsSecGeom(s) { var F = OGS.F, az = s.az == null || s.az === '' ? F.fr.ddir : +s.az, r = az * Math.PI / 180, d = [Math.sin(r), Math.cos(r), 0], nn = [Math.cos(r), -Math.sin(r), 0], c = [F.fr.c[0] + s.ls * F.fr.sv[0], F.fr.c[1] + s.ls * F.fr.sv[1], F.fr.c[2]];
   if (ogsDot(nn, F.fr.sv) < 0) nn = nn.map(function (v) { return -v; }); return { az: az, d: d, nn: nn, c: c }; }
 function ogsSecSet(k, v) { var s = OGS.p.sec[OGS.p.secI]; if (!s) return; s[k] = v; ogsRender(); }

@@ -83,6 +83,7 @@
       menu:function(){return[{h:'Import file (langsung)'},upsFile('collar'),upsFile('survey'),upsFile('assay'),upsFile('geo'),{sep:1},{t:'Tambah / perbarui beberapa tabel sekaligus (upsert)…',fn:ups},{t:'Export database (CSV)',fn:A('gxDbExport')},undoM,{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length},{t:'Hapus seluruh database bor…',danger:1,dis:!C.length,fn:function(){PTD.drop('all');}}];},
       kids:[tb('db.collar','Collar','collar',C.length,null,{tab:'Data',chk:U.cb('showCollar'),onChk:function(v){U.setCb('showCollar',v);},menu:function(){return[upsFile('collar'),{sep:1},{t:'Hapus hole tertentu…',fn:delHoles,dis:!C.length}];}}),
         {id:'db.hole',t:'Data per lubang (pop-up)',ic:'table',tab:'Data',dim:!C.length,hint:'Collar, survey, assay & geologi satu lubang dalam jendela pop-up; ikut klik lubang di 3D',go:function(){if(window.HD)HD.buka();}},
+        {id:'db.vg',t:'Validasi & edit tabel',ic:'table',tab:'Data',dim:!C.length,hint:'Tabel collar / survey / assay / geologi proyek gaya MS Access: sel bermasalah disorot, edit langsung, ekspor CSV, bangun ulang dataset',go:function(){if(window.VG)VG.openDs();}},
         tb('db.survey','Survey','table',Sv.length,'survey',{tab:'Data'}),
         tb('db.assay','Assay','table',As.length,'assay',{tab:'Warna',hint:'Tampilan kadar: unsur, cutoff, kelas diskrit / gradasi warna',kids:els}),
         tb('db.geo','Geologi','geo',G.length,'geo',{tab:'Geo',kids:gat}),

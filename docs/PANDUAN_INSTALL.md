@@ -5107,3 +5107,23 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Ekspor**: *CSV tabel ini*, *Semua tabel* (header dan pemisah sama dengan file asli), *Laporan masalah*.
 - Setelah diproses, dataset yang diimpor punya tombol ▦ di daftar dataset untuk membuka tabel aslinya lagi;
   *Bangun ulang dataset* menerapkan editan ke 3D. Tabel asli ikut tersimpan di file project.
+
+## 233. Drillhole 0.24.99 — kategori kolom diingat, pemeriksaan tambahan, Validasi & edit tabel
+
+- **Pemetaan kolom diingat**: pilihan di panel *Pemetaan kolom & unsur* (layar import) disimpan per nama kolom. File
+  berikutnya dengan nama kolom sama langsung terpetakan. Untuk mulai dari tebakan otomatis lagi: *Lupakan pilihan yang diingat*.
+- Nama kolom Indonesia ikut dikenali (Timur, Utara, Elevasi, Dari, Sampai, Kemiringan, Arah, Jarak, Kedalaman_Total …).
+  Bila nama tidak dikenali, Hole_ID dan From/To ditebak dari isi kolom.
+- **Kategori geologi**: tiap kolom geologi memilih Litologi, Alterasi, Oksidasi, Mineralisasi, Vein/domain, Struktur,
+  Deskripsi, Kode lain, atau Abaikan. Kategori tersimpan di proyek dan dipakai Stratified & Ore Geometry Studio.
+- **Pemeriksaan tambahan** di laporan validasi: Hole ID beda huruf besar/kecil, koordinat collar jauh dari lubang lain,
+  nilai unsur bukan angka, Au/Emas > 500, Sample ID kosong, litologi kosong, azimuth di luar 0–360.
+- **Validasi & edit tabel** (tampilan seperti MS Access):
+  - sebelum diproses: tombol di bawah laporan validasi, atau tautan *Periksa* di tiap slot; *Terapkan & tutup* lalu
+    *Tampilkan viewer*;
+  - sesudah diproses: *Database Bor › Validasi & edit tabel*; *Bangun ulang dataset* menyimpan ke proyek (backup dulu,
+    bisa dibatalkan lewat *Batalkan perubahan database terakhir*).
+  - Sel merah = galat, kuning = peringatan (arahkan kursor untuk keterangan); ketik / F2 / klik dua kali untuk edit,
+    Ctrl+V dari Excel, Ctrl+Z, tambah / hapus baris, urutkan, cari, hanya baris bermasalah. Ekspor CSV memakai header
+    dan pemisah file asli, plus laporan masalah.
+- Block Model, DB-Ex, Ore Works: tidak berubah.

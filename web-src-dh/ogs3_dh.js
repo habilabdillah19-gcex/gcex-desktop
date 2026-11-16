@@ -20,7 +20,7 @@ var OGS_LAY = [['kadar', 'Kadar'], ['alt', 'Arsir alterasi'], ['wf', 'Wireframe'
 function ogsLy(k) { var L = OGS.p.pt.lay || (OGS.p.pt.lay = {}); if (k === 'lub') return OGS.p.pt.lub !== false && L.lub !== false; if (k === 'lubLab') return OGS.p.pt.lubLab !== false && L.lubLab !== false; return L[k] !== false; }
 function ogsPt() { var P = OGS.p.pt; if (!P.kstr && OGS._kstr) P.kstr = OGS._kstr; return P; }
 function ogsPtRL() { var F = OGS.F, P = ogsPt(); if (P.rl == null || !isFinite(P.rl)) { var z = ogsIn(F).map(function (i) { return F.Z[i]; }); P.rl = Math.round(ogsMed(z) / 5) * 5; } return +P.rl; }
-function ogsAltCi() { var P = ogsPt(), G = ogsGeoCols(); if (P.altCi >= 0 && CAT[P.altCi]) return P.altCi; var a = G.filter(function (o) { return /alt/i.test(o.c.name); })[0]; P.altCi = a ? a.ci : -2; return P.altCi; }
+function ogsAltCi() { var P = ogsPt(), G = ogsGeoCols(); if (P.altCi >= 0 && CAT[P.altCi]) return P.altCi; var ka = window.gkCi ? gkCi('alt') : -1, a = G.filter(function (o) { return o.ci === ka; })[0] || G.filter(function (o) { return /alt/i.test(o.c.name); })[0]; P.altCi = a ? a.ci : -2; return P.altCi; }
 
 /* ---------- hitung peta ---------- */
 function ogsPeta() {

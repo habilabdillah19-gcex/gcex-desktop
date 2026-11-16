@@ -34,6 +34,7 @@ Modul desktop yang disisipkan (sebelum FP.startUI, setelah semua fungsi proyek &
 - ogs3_dh.js           : Ore Geometry Studio 15 · Peta level: sayatan horizontal jadi peta (kadar anomali/di domain, arsir alterasi, wireframe garis tengah, kontur string, label geser, legenda di dalam peta)
 - vsys_dh.js           : vein system: flag dari kolom kode (satu domain per kode), opsi semua vein + prioritas, volume & ekspor gabungan, solid usang
 - nyata_dh.js          : perbaikan uji data nyata Zona 3: export .mdl kerangka AOI, sayatan di bidang domain, status alur pemodelan
+- vgrid_dh.js          : kategori kolom impor diingat + Validasi & edit tabel (grid gaya MS Access) -- disisipkan di lingkup skrip layar import
 - prof_dh.js           : profil kadar per pita RL/E/N (tab Profil), kurva pemusatan logam (Statistik), kipas variogram GT & tebal (Ore Geometry)
 Di browser biasa (tanpa GC-Ex Desktop) modul ini tidak mengubah apa pun.
 """
@@ -56,6 +57,13 @@ if shutil.which('node'):
 A = "setTimeout(function(){try{FP.startUI();}catch(e){}},50);\n"
 assert s.count(A) == 1, 'titik sisip FP.startUI tidak ditemukan tepat satu kali'
 # pembungkus SA.readMDL milik Block Model (format opsi berbeda) dimatikan; Drillhole memakai mdlbig_dh.js
+# 0.24.99: kategori kolom impor + Validasi & edit tabel -- harus di lingkup skrip layar import (normH, feat, findCol, numV, selV ...)
+VGA = "SA.sp={topo:[],pit:[],ortho:[]};"
+assert s.count(VGA) == 1, 'titik sisip vgrid_dh.js tidak ditemukan tepat satu kali'
+if shutil.which('node'):
+    r = subprocess.run(['node', '--check', W + 'vgrid_dh.js'], capture_output=True, text=True)
+    assert r.returncode == 0, 'Galat sintaks di vgrid_dh.js:\n' + r.stderr[:800]
+s = s.replace(VGA, open(W + 'vgrid_dh.js', encoding='utf-8').read() + '\n' + VGA)
 ins = 'SA._mdlBigOn=1;\n' + '\n'.join(open(m, encoding='utf-8').read() for m in mods)
 s = s.replace(A, ins + '\n' + A)
 # topografi / desain pit jumbo: baca per potongan & sederhanakan per segmen (hasil identik)

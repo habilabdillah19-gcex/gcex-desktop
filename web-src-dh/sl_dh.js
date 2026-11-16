@@ -182,7 +182,7 @@ function slAdd(){SL.L.push(slNewL({},SL.L.length));slDirty();}
 function slDel(i){if(!confirm('Hapus lapisan '+SL.L[i].name+'?'))return;SL.L.splice(i,1);slDirty();}
 function slMove(i,d){var j=i+d;if(j<0||j>=SL.L.length)return;var t=SL.L[i];SL.L[i]=SL.L[j];SL.L[j]=t;slDirty();}
 function slElT(e,on){var L=slEls().slice();L=L.filter(function(x){return x!==e;});if(on)L.push(e);SL.o.el=L;slDirty(true);}
-function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.L,E=window.elements||[];if(SL.ci<0&&cats.length){var pf=-1;cats.forEach(function(i){if(pf<0&&/LITH|LAPIS|LAYER|HORIZ|ZONE/i.test(CAT[i].name))pf=i;});SL.ci=pf>=0?pf:cats[0];}
+function slPanel(){var b=$('slBody');if(!b)return;var cats=slCats(),o=SL.o,L=SL.L,E=window.elements||[];if(SL.ci<0&&cats.length){var pf=window.gkCi&&cats.indexOf(gkCi('lith'))>=0?gkCi('lith'):-1;cats.forEach(function(i){if(pf<0&&/LITH|LAPIS|LAYER|HORIZ|ZONE/i.test(CAT[i].name))pf=i;});SL.ci=pf>=0?pf:cats[0];}
   var h='<div class=hint style="margin:-4px 0 8px">Pemodelan endapan <b>berlapis</b>: laterit nikel &amp; bauksit (mengikuti permukaan), stratiform / sedex. Lapisan dari kode log geologi &rarr; permukaan atap / lantai (grid) &rarr; estimasi per lapisan di koordinat <b>unfold</b> &rarr; laporan WMT / DMT. Sesar 3D (menu Sesar) ikut diperhitungkan.</div>';
   /* Lapisan */
   h+='<h4>Lapisan</h4><div class="g2 f"><div><label>Kolom geologi</label><select onchange="SL.ci=+this.value;slDirty()">'+cats.map(function(i){return '<option value='+i+(i===SL.ci?' selected':'')+'>'+slE(CAT[i].name)+'</option>';}).join('')+'</select></div>'+

@@ -1336,7 +1336,8 @@ function drawApply(a,b){$('p1e').value=(a.x+offX).toFixed(2);$('p1n').value=(a.y
 var CAT=[],GEOH={},GSTY={},DOM={on:false,ci:-1,set:{}},TRAJ='grade';
 var GPAL=['#4e79a7','#f28e2b','#59a14f','#e15759','#76b7b2','#edc948','#b07aa1','#ff9da7','#9c755f','#8cd17d','#499894','#d37295'],GPAT=['','/','\\','x','.','-','|','+'];
 var GDASH={'':'solid','/':'dash','\\':'longdash','x':'dashdot','.':'dot','-':'longdashdot','|':'dash','+':'dashdot'};
-(function(){geoCat.forEach(function(c,k){CAT.push({name:c.n,src:'g',k:k,d:c.d});});
+(function(){geoCat.forEach(function(c,k){CAT.push({name:c.n,src:'g',k:k,d:c.d,kat:c.kat||''});});/* 0.24.99: kat = kategori kolom geologi pilihan user (lith/alt/ox/min/vein/str/desc/code) */
+window.gkCi=function(k){for(var i=0;i<CAT.length;i++)if(CAT[i].src==='g'&&CAT[i].kat===k)return i;return -1;};
   asCat.forEach(function(c,k){CAT.push({name:c.n+' (assay)',src:'a',k:k,d:c.d});});
   geoRows.forEach(function(r){(GEOH[r[0]]=GEOH[r[0]]||[]).push(r);});
   for(var h in GEOH)GEOH[h].sort(function(a,b){return a[1]-b[1];});
@@ -4840,13 +4841,13 @@ SA.src0='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
 var CDN='https://cdn.plot.ly/plotly-2.27.0.min.js';
 
 /* ================= helpers (port dari modul VBA) ================= */
-var H={HOLE:'HOLE_ID|HOLEID|BHID|DHID|HOLE|HOLE_NAME|HOLE_NO|HOLENUMBER|DRILLHOLE|DRILLHOLE_ID|DRILLHOLE_NAME|NAMA_LUBANG|LUBANG|ID',
- FROM:'FROM|DEPTH_FROM|FROM_M|M_FROM|SAMP_FROM|MFROM|DARI|START|DEPTHFROM',TO:'TO|DEPTH_TO|TO_M|M_TO|SAMP_TO|MTO|SAMPAI|KE|END|DEPTHTO',
- SAMP:'SAMPLE_ID|SAMPLE|SAMP_ID|SAMPLE_NO|SAMPLE_NUMBER|SAMPID|NO_SAMPEL|SAMPEL',
- EAST:'EASTING|EAST|X|X_COLLAR|E|EAST_M|TIMUR|XCOLLAR',NORTH:'NORTHING|NORTH|Y|Y_COLLAR|N|NORTH_M|UTARA|YCOLLAR',
- RL:'RL|ELEVATION|ELEV|Z|Z_COLLAR|RL_COLLAR|COLLAR_RL|ELEVASI|ZCOLLAR',TD:'TOTAL_DEPTH|EOH|MAX_DEPTH|HOLE_DEPTH|TD|DEPTH|LENGTH|FINAL_DEPTH|KEDALAMAN|TOTALDEPTH',
- SDEP:'DEPTH|SURVEY_DEPTH|AT|DISTANCE|DEPTH_M|KEDALAMAN',DIP:'DIP|INCLINATION|INCL|INC|KEMIRINGAN',AZI:'AZIMUTH|AZI|AZ|AZM|BEARING|BRG',
- GRP:'BENCH|LEVEL|AREA|PIT|BLOCK|ZONE|ZONA|PHASE|PROSPECT|LOKASI'};
+var H={HOLE:'HOLE_ID|HOLEID|BHID|DHID|HOLE|HOLE_NAME|HOLE_NO|HOLENUMBER|DRILLHOLE|DRILLHOLE_ID|DRILLHOLE_NAME|NAMA_LUBANG|LUBANG|KODE_LUBANG|NO_LUBANG|ID',
+ FROM:'FROM|DEPTH_FROM|FROM_M|M_FROM|SAMP_FROM|MFROM|DARI|DARI_M|MULAI|START|DEPTHFROM',TO:'TO|DEPTH_TO|TO_M|M_TO|SAMP_TO|MTO|SAMPAI|SAMPAI_M|HINGGA|KE|END|DEPTHTO',
+ SAMP:'SAMPLE_ID|SAMPLE|SAMP_ID|SAMPLE_NO|SAMPLE_NUMBER|SAMPID|NO_SAMPEL|KODE_SAMPEL|ID_SAMPEL|SAMPEL',
+ EAST:'EASTING|EAST|X|X_COLLAR|E|EAST_M|EASTING_M|X_M|TIMUR|XCOLLAR',NORTH:'NORTHING|NORTH|Y|Y_COLLAR|N|NORTH_M|NORTHING_M|Y_M|UTARA|YCOLLAR',
+ RL:'RL|ELEVATION|ELEV|Z|Z_COLLAR|RL_COLLAR|COLLAR_RL|ELEVASI|ELEVASI_M|Z_M|ZCOLLAR',TD:'TOTAL_DEPTH|EOH|MAX_DEPTH|HOLE_DEPTH|TD|DEPTH|LENGTH|FINAL_DEPTH|KEDALAMAN|KEDALAMAN_TOTAL|KEDALAMAN_AKHIR|TOTALDEPTH',
+ SDEP:'DEPTH|SURVEY_DEPTH|AT|DISTANCE|DEPTH_M|KEDALAMAN|KEDALAMAN_SURVEY|JARAK',DIP:'DIP|INCLINATION|INCL|INC|KEMIRINGAN|INKLINASI',AZI:'AZIMUTH|AZI|AZ|AZM|BEARING|BRG|AZIMUT|ARAH',
+ GRP:'BENCH|LEVEL|AREA|PIT|BLOCK|ZONE|ZONA|PHASE|PROSPECT|LOKASI|JENIS_LUBANG|HOLE_TYPE|HOLE_PURPOSE|PURPOSE|TUJUAN|JENIS'};
 var META='|BATCH_ID|BATCH|LAB_REF|LAB_STAT|LAB|MOISTURE|COMMENT|COMMENTS|REMARK|REMARKS|QAQC|QC|DATE|SAMPLE_TYPE|STATUS|LENGTH|LEN|INTERVAL|SAMPLE_LENGTH|WEIGHT|WT|RECOVERY|REC|CORE_REC|';
 var CEXCL='|BATCH_ID|BATCH|LAB_REF|LAB|COMMENT|COMMENTS|REMARK|REMARKS|DATE|SAMPLE_ID|SAMPLE ID|SAMPLE|SAMP_ID|HOLE_ID|FROM|TO|';
 var CATMAX=60;
@@ -4908,7 +4909,7 @@ function mkTable(name,src,rows){var hi=-1;for(var i=0;i<Math.min(rows.length,30)
   for(var k2=hi+1;k2<rows.length;k2++){var r2=rows[k2];if(!r2)continue;var any=false;for(var c2=0;c2<r2.length;c2++)if(r2[c2]!=null&&String(r2[c2]).trim()!==''){any=true;break;}if(any)data.push(r2);}
   return{name:name,src:src,h:hdr,r:data};}
 function parseDelim(text){text=text.replace(/^﻿/,'');var first=text.slice(0,4000).split(/\r?\n/)[0],best=',',bn=-1;
-  [',',';','\t','|'].forEach(function(d){var n=first.split(d).length;if(n>bn){bn=n;best=d;}});
+  [',',';','\t','|'].forEach(function(d){var n=first.split(d).length;if(n>bn){bn=n;best=d;}});SA.lastSep=best;/* 0.24.99: pemisah asli untuk ekspor CSV dari editor tabel */
   var rows=[],row=[],cur='',q=false,i=0,L=text.length;
   for(;i<L;i++){var ch=text.charAt(i);if(q){if(ch==='"'){if(text.charAt(i+1)==='"'){cur+='"';i++;}else q=false;}else cur+=ch;continue;}
     if(ch==='"'){q=true;continue;}if(ch===best){row.push(cur);cur='';continue;}if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text.charAt(i+1)==='\n')i++;row.push(cur);rows.push(row);row=[];cur='';continue;}cur+=ch;}
@@ -4929,7 +4930,7 @@ var SID={collar:'rCollar',survey:'rSurvey',assay:'rAssay',geo:'rGeo'};
 function tLabel(i){var T=SA.T[i];return T.name+' ('+(T.empty?'kosong':T.r.length+' baris')+')';}
 async function parseFile(f){var key=f.name+'|'+f.size+'|'+f.lastModified;if(SA.cache[key])return SA.cache[key];var x=f.name.toLowerCase().split('.').pop(),tb;
   if(x==='xlsx'||x==='xlsm')tb=await readXlsx(f);else if(x==='xls')throw new Error('Format .xls (Excel 97-2003) belum didukung. Simpan ulang sebagai .xlsx atau CSV.');
-  else tb=[mkTable(f.name.replace(/\.[^.]+$/,''),f.name,parseDelim(await SA.textAuto(f)))];
+  else{tb=[mkTable(f.name.replace(/\.[^.]+$/,''),f.name,parseDelim(await SA.textAuto(f)))];tb[0].sep=SA.lastSep;}
   var ix=tb.map(function(t){t.src=f.name;SA.T.push(t);return SA.T.length-1;});SA.cache[key]=ix;return ix;}
 /* 0.24.65 (uji data nyata Zona 3): CSV bukan UTF-8 (mis. Excel Windows-1252: 'chl±ilt') dulu terbaca 'chl\ufffdilt' tanpa
    peringatan dan menjadi kode kategori baru. Coba UTF-8 ketat; gagal -> Windows-1252, dan catat di validasi. */
@@ -5668,7 +5669,7 @@ UP.merge=function(D,D2){var R={cNew:0,cUpd:0,cSame:0,sv:0,as:0,asN:0,ge:0,geN:0,
   D2.collars.forEach(function(c){if(c[0] in ci){var i=ci[c[0]];if(J(D.collars[i])===J(c))R.cSame++;else{D.collars[i]=c;R.cUpd++;}}else{ci[c[0]]=D.collars.length;D.collars.push(c);R.cNew++;}});
   var perHole=function(old,neu){var hs={};neu.forEach(function(r){hs[r[0]]=1;});var keep=old.filter(function(r){return !hs[r[0]];});var out=keep.concat(neu);old.length=0;Array.prototype.push.apply(old,out);return Object.keys(hs).length;};
   /* kategori (asCat / geoCat): gabung per nama, kembalikan fungsi pemetaan kode lama-file-baru -> kode gabungan */
-  var catMerge=function(C,C2){return C2.map(function(c){var k=-1;C.forEach(function(x,i){if(x.n===c.n)k=i;});if(k<0){C.push({n:c.n,d:[]});k=C.length-1;}var d=C[k].d,map=c.d.map(function(v){var j=d.indexOf(v);if(j<0){d.push(v);j=d.length-1;}return j;});return{k:k,map:map};});};
+  var catMerge=function(C,C2){return C2.map(function(c){var k=-1;C.forEach(function(x,i){if(x.n===c.n)k=i;});if(k<0){C.push({n:c.n,d:[]});k=C.length-1;}if(c.kat)C[k].kat=c.kat;/* 0.24.99 */var d=C[k].d,map=c.d.map(function(v){var j=d.indexOf(v);if(j<0){d.push(v);j=d.length-1;}return j;});return{k:k,map:map};});};
   D.surveys=D.surveys||[];R.sv=D2.surveys.length?perHole(D.surveys,D2.surveys):0;
   if(D2.assays.length){D.elements=D.elements||[];D.asCat=D.asCat||[];var ne=D.elements.length,em=D2.elements.map(function(n){var k=D.elements.indexOf(n);if(k<0){D.elements.push(n);k=D.elements.length-1;R.el.push(n);}return k;}),cm=catMerge(D.asCat,D2.asCat||[]),NE=D.elements.length,NC=D.asCat.length;
     D.assays.forEach(function(a){if(a[4].length<NE)for(var i=a[4].length;i<NE;i++)a[4].push(null);if(a[5]&&a[5].length<NC)for(var j=a[5].length;j<NC;j++)a[5].push(-1);});
