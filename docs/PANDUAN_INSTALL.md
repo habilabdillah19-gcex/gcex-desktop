@@ -5150,3 +5150,11 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
     tepat di 3D, nyalakan **Ortho**.
   - Layout & Plot PDF: rasio skala di kop dan skala batang di lembar (bawaan menyala).
 - DB-Ex, Ore Works: tidak berubah.
+
+## 236. Ore Works 0.10.2 — skala di layar 3D & jendela Penampang
+
+- Layar 3D: kotak skala di kiri bawah (rasio ≈ 1 : N dan skala batang dalam meter), berlaku di pusat pandangan;
+  bila VE bukan 1×, ditulis "horizontal · VE n×". Status bar "Skala layar ≈ 1:N" tetap ada.
+- Jendela Penampang: rasio "Skala 1 : N" di atas skala batang (kanan bawah).
+- Layout peta (flitch) dan Peta level sudah memuat skala; tidak berubah.
+- GC-Ex Block Model, Drillhole, DB-Ex: tidak berubah.

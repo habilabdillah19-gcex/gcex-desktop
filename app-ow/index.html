@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.10.1';</script>
+<script>window.GCEX_VER='0.10.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -1981,7 +1981,7 @@ function scDraw(){const cv2=gid('scc'),q=scPar(),R2=cv2.getBoundingClientRect(),
  for(const d of G.dots){x.fillStyle=scRgb(d[1]);x.strokeStyle='#222';x.lineWidth=0.8;x.beginPath();x.arc(X(d[0]),Y(d[0]),3.6,0,7);x.fill();x.stroke();}
  if(gid('scid').checked){x.font='10px Inter,Arial';x.fillStyle='#1f2d6b';const used=[];for(const [id,p] of G.labs){const px=X(p)+3,py=Y(p)-4,tw=x.measureText(id).width;if(used.some(r=>px<r[0]+r[2]&&px+tw>r[0]&&py-9<r[1]&&py>r[1]-9))continue;used.push([px,py,tw]);x.fillText(id,px,py);}}
  x.font='600 11px Inter,Arial';x.fillStyle='#1f2d6b';if(q.m==='v'){x.fillText('← '+dirN(q.azd+180),8,14);const t=dirN(q.azd)+' →';x.fillText(t,w-x.measureText(t).width-8,14);}else{x.fillText('N ↑',w-30,16);}
- const sb=(()=>{const t=90/V.s,p=Math.pow(10,Math.floor(Math.log10(t)));return [5,2,1].map(m=>m*p).find(v=>v<=t)||p;})();x.fillStyle='#222';x.fillRect(w-20-sb*V.s,h-22,sb*V.s,3);x.font='10px Inter,Arial';x.fillText(sb+' m'+(ve>1?' · VE '+ve+'×':''),w-20-sb*V.s,h-26);
+ const sb=(()=>{const t=90/V.s,p=Math.pow(10,Math.floor(Math.log10(t)));return [5,2,1].map(m=>m*p).find(v=>v<=t)||p;})();x.fillStyle='#222';x.fillRect(w-20-sb*V.s,h-22,sb*V.s,3);x.font='10px Inter,Arial';x.fillText(sb+' m'+(ve>1?' · VE '+ve+'×':''),w-20-sb*V.s,h-26);{const r0=1000/V.s/(25.4/96),p=Math.pow(10,Math.floor(Math.log10(r0))-1),N=Math.max(1,Math.round(Math.round(r0/p)*p));x.font='600 10px Inter,Arial';x.textAlign='right';x.fillText('Skala 1 : '+N.toLocaleString('id-ID')+(ve>1?' (horizontal)':''),w-20,h-38);x.textAlign='left';}/* OW 0.10.2: rasio skala layar */
  const kk=new Map();G.cuts.forEach(c=>kk.set(c[2].nm,c[2]));let ly=30;x.font='10px Inter,Arial';if(kk.size){let mw=0;for(const nm of kk.keys())mw=Math.max(mw,x.measureText(nm.length>34?nm.slice(0,33)+'…':nm).width);x.fillStyle='rgba(255,255,255,.9)';x.fillRect(4,22,mw+32,kk.size*13+6);}for(const [nm,st] of kk){x.strokeStyle=st.c;x.lineWidth=st.w;x.setLineDash(st.dash||[]);x.beginPath();x.moveTo(8,ly);x.lineTo(26,ly);x.stroke();x.setLineDash([]);x.fillStyle='#333';x.fillText(nm.length>34?nm.slice(0,33)+'…':nm,30,ly+3);ly+=13;}
  gid('scft').textContent=G.segs.length+' segmen bor · '+G.dots.length+' sampel '+UNS()+' ≥ '+UFMT(UCL().cut)+' · '+G.labs.size+' lubang dalam slab';}
 function scOpen(on){setTimeout(()=>window.lgDraw&&lgDraw(),0);SC.open=on;gid('scw').style.display=on?'flex':'none';if(on){SC.v=null;scUpd();}}
@@ -3503,6 +3503,17 @@ function sbUpd(){const t=CT.target,d=t.clone().sub(C.position),L2=d.length()||1;
  const nf=(window.FM&&FM.F)?FM.F.length:0,ns=(typeof STP!=='undefined')?STP.length:0,nh=(typeof D!=='undefined'&&D.holes)?D.holes.length:0;$('sbobj').textContent=(nh?nh+' lubang bor · ':'')+nf+' fitur pemetaan · '+ns+' titik struktur';
  $('sbpj').textContent=(((($('pjn')||{}).textContent)||'').trim()||'Project')+' · Ore Works '+(window.GCEX_VER||'');}
 setInterval(sbUpd,300);sbUpd();
+/* Ore Works 0.10.2 (pemilik 16 Nov 2026: "Setiap jendela 2D dan 3D serta layout map harus menyertakan skala"): kotak skala
+   di kiri bawah layar 3D, sama dengan GC-Ex (skala.js). m/px = tinggi pandang di jarak target / tinggi kanvas (perspektif:
+   tepat di pusat pandangan). Rasio 1:N memakai 96 dpi layar. */
+(function(){const st=document.createElement('style');st.textContent='#owSkala{position:absolute;left:118px;bottom:10px;z-index:5;pointer-events:none;font:11px/1.25 Inter,Segoe UI,Arial,sans-serif;color:#1d2433;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.18);border-radius:4px;padding:3px 7px 4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}#owSkala .bar{display:flex;height:6px;margin:3px 0 1px;border:1px solid #1d2433}#owSkala .bar i{flex:1;background:#1d2433}#owSkala .bar i:nth-child(2n){background:#fff}#owSkala .lb{display:flex;justify-content:space-between;font-size:10px}#owSkala .rt{font-weight:600}#owSkala .nt{font-size:9.5px;color:#556}';document.head.appendChild(st);
+ const cv=$('cv');if(!cv)return;const b=document.createElement('div');b.id='owSkala';cv.appendChild(b);
+ const NI=[0.1,0.2,0.5,1,2,2.5,5,10,20,25,50,100,200,250,500,1000,2000,2500,5000,10000],nice=v=>{let r=NI[0];for(const n of NI)if(n<=v)r=n;return r;},f=n=>Number(n).toLocaleString('id-ID',{maximumFractionDigits:n<1?2:0});
+ let last='';function up(){try{const L2=CT.target.clone().sub(C.position).length()||1,h=R.domElement.clientHeight||1,w=R.domElement.clientWidth||1,mpp=2*L2*Math.tan(C.fov*Math.PI/360)/h;if(!(mpp>0)||!isFinite(mpp))return;
+   const m=nice(Math.max(40,Math.min(160,w*0.18))*mpp),px=Math.round(m/mpp),r0=mpp*1000/(25.4/96),p=Math.pow(10,Math.floor(Math.log10(r0))-1),N=Math.max(1,Math.round(Math.round(r0/p)*p)),ve=+(W.scale.y||1);
+   const t='<div class=rt title="Rasio layar (96 dpi)">Skala ≈ 1 : '+f(N)+'</div><div class=bar style="width:'+px+'px"><i></i><i></i><i></i><i></i></div><div class=lb style="width:'+px+'px"><span>0</span><span>'+f(m)+' m</span></div><div class=nt>di pusat pandangan (perspektif)'+(Math.abs(ve-1)>1e-6?' · horizontal · VE '+f(+ve.toFixed(2))+'×':'')+'</div>';
+   if(t!==last){b.innerHTML=t;last=t;}}catch(e){}}
+ window.owSkala=up;try{CT.addEventListener('change',up);}catch(e){}addEventListener('resize',up);setInterval(up,400);up();})();
 
 /* ---- gizmo orientasi (klik = plan) ---- */
 const gz=document.createElement('canvas');gz.id='ogz';gz.width=184;gz.height=184;gz.title='Orientasi · klik untuk pandangan plan';$('cv').appendChild(gz);gz.onclick=()=>view('plan');
