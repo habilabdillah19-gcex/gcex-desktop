@@ -5220,3 +5220,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Berkas STR menunjuk .ssi pasangannya (`SSI_STYLES:<nama>.ssi`): simpan .str dan .ssi di folder yang sama.
 - Tips: isi nomor string flag (mis. *String garis ganda* = 16) di Dig Block › Otomatis agar peringatan tidak muncul.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 243. Block Model 0.24.98 — pilih warna, nomor string mengikuti
+
+- Di tabel **kelas kadar dig block**, **warna material**, **flag (garis ganda)** dan **kelas As-Mined**: cukup pilih warna.
+  Nomor string terisi sendiri dengan nomor Surpac yang warnanya sama (hijau 14, oranye 16, merah 17, biru 11, kuning 15,
+  pink 18). Warna dibulatkan ke warna Surpac terdekat, jadi tampilan di GC-Ex = tampilan di Surpac.
+- Pemilih warna menampilkan **palet Surpac** sebagai pilihan cepat.
+- Bila nomor itu sudah dipakai baris lain dengan warna berbeda, dipakai seri berikutnya (26, 27, …).
+- Standar perusahaan tetap bisa: **ketik nomornya** (mis. HG = 17), warnanya ikut warna nomor itu di Surpac.
+- Bila .ssi situs diimpor, nomor dan warna mengikuti gaya situs tersebut.
+- Proyek lama: nomor dan warna yang sudah ada tidak diubah sampai diedit.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

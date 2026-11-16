@@ -264,4 +264,70 @@
       return r;
     };
   }
+
+  /* ================= BM 0.24.98: PILIH WARNA -> NOMOR STRING MENGIKUTI =================
+     Pemilik 17 Nov 2026: "Langsung ke warna aja otomatis nomor string mengikuti."
+     Di tabel kelas kadar dig block, warna material, flag (garis ganda) dan kelas As-Mined:
+     - pilih WARNA  -> warna dibulatkan ke warna terdekat di gaya Surpac (situs bila diimpor, selain itu legend bawaan),
+                       NOMOR diisi nomor Surpac warna itu (seri >= 10 diutamakan: hijau 14, oranye 16, merah 17). Nomor yang
+                       dipakai baris lain dengan warna BERBEDA dilewati (mis. 16 terpakai -> 26).
+     - ketik NOMOR  -> warna ikut warna nomor itu di gaya Surpac (standar perusahaan, mis. HG = 17, tetap bisa).
+     Pemilih warna menampilkan palet Surpac (datalist) sebagai pilihan cepat. Proyek lama: tidak diubah sampai diedit. */
+  SWN.pal = function () { var S = gaya(), L = [], seen = {}; for (var n = 10; n <= 99; n++) { var w = colorOf(S, n); if (w && !seen[w]) { seen[w] = 1; L.push(w); } } for (n = 1; n <= 9; n++) { w = colorOf(S, n); if (w && !seen[w]) { seen[w] = 1; L.push(w); } } return L; };
+  /* lain = [{n, c}] baris lain di lingkup yang sama */
+  SWN.nomorWarna = function (c, lain) {
+    var S = gaya(), best = null, bd = 1e9; c = String(c || '').toLowerCase();
+    for (var n = 1; n <= 99; n++) {
+      var w = colorOf(S, n); if (!w) continue; var bentrok = (lain || []).some(function (o) { return parseInt(o.n) === n && String(o.c || '').toLowerCase() !== w; }); if (bentrok) continue;
+      var d = jarak(c, w) + (n >= 10 ? 0 : 0.5) + n * 0.001; if (d < bd) { bd = d; best = { n: n, c: w }; }
+    }
+    return best;
+  };
+  SWN.warnaNomor = function (n) { return colorOf(gaya(), n); };
+  var lainDig = function (skip) {
+    var U = dbU(), L = []; (U.rules || []).forEach(function (q, k) { if (skip.r !== k) L.push({ n: q.n, c: q.c }); });
+    Object.keys(U.sn || {}).forEach(function (k) { if (skip.sn !== k) L.push({ n: U.sn[k].n, c: U.sn[k].c }); });
+    try { afRules().forEach(function (q, k) { if (skip.af !== k && parseInt(q.sn) > 0) L.push({ n: q.sn, c: q.col }); }); } catch (e) { } return L;
+  };
+  var lainAm = function (skip) { var R = amR(), L = []; (R.cls || []).forEach(function (q, k) { if (skip !== k) L.push({ n: q.n, c: q.c }); }); if (R.ws && skip !== 'ws') L.push({ n: R.ws.n, c: R.ws.c }); return L; };
+  if (window.dbRSet) {
+    var _rs = dbRSet; window.dbRSet = dbRSet = function (k, f, v) {
+      var q = (dbU().rules || [])[k];
+      if (q && f === 'c') { var b = SWN.nomorWarna(v, lainDig({ r: k })); if (b) { q.n = b.n; v = b.c; } }
+      else if (q && f === 'n') { var w = SWN.warnaNomor(Math.max(1, parseInt(v) || 1)); if (w) q.c = w; }
+      return _rs.call(this, k, f, v);
+    };
+  }
+  if (window.dbSNset) {
+    var _sn = dbSNset; window.dbSNset = dbSNset = function (mat, f, v) {
+      var K = String(mat).toUpperCase();
+      if (f === 'c') { var b = SWN.nomorWarna(v, lainDig({ sn: K })); if (b) { _sn.call(this, mat, 'n', b.n); v = b.c; } }
+      else if (f === 'n') { var w = SWN.warnaNomor(Math.max(1, parseInt(v) || 1)); if (w) _sn.call(this, mat, 'c', w); }
+      return _sn.call(this, mat, f, v);
+    };
+  }
+  if (window.afSet) {
+    var _af = afSet; window.afSet = afSet = function (k, f, v) {
+      var q = afRules()[k];
+      if (q && f === 'col') { var b = SWN.nomorWarna(v, lainDig({ af: k })); if (b) { q.sn = b.n; v = b.c; } }
+      else if (q && f === 'sn' && parseInt(v) > 0 && dbU().sfCol !== 'kadar') { var w = SWN.warnaNomor(parseInt(v)); if (w) q.col = w; }
+      return _af.call(this, k, f, v);
+    };
+  }
+  if (window.amClsSet) {
+    var _ac = amClsSet; window.amClsSet = amClsSet = function (i, f, v) {
+      var R = amR(), q = i === 'ws' ? R.ws : (R.cls || [])[i];
+      if (q && f === 'c') { var b = SWN.nomorWarna(v, lainAm(i)); if (b) { q.n = b.n; v = b.c; } }
+      else if (q && f === 'n') { var w = SWN.warnaNomor(parseInt(v) || 1); if (w) q.c = w; }
+      return _ac.call(this, i, f, v);
+    };
+  }
+  /* palet Surpac sebagai pilihan cepat di pemilih warna tabel-tabel tersebut */
+  var palPasang = function (e) {
+    var t = e.target; if (!t || t.tagName !== 'INPUT' || t.type !== 'color') return; var oc = t.getAttribute('onchange') || ''; if (!/dbRSet|dbSNset|afSet|amClsSet/.test(oc)) return;
+    var d = document.getElementById('swPal'); if (!d) { d = document.createElement('datalist'); d.id = 'swPal'; document.body.appendChild(d); }
+    d.innerHTML = SWN.pal().map(function (c) { return '<option value="' + c + '">'; }).join(''); t.setAttribute('list', 'swPal');
+    if (!t.title || !/Surpac/.test(t.title)) t.title = (t.title ? t.title + '. ' : '') + 'Nomor string mengikuti warna (palet Surpac)';
+  };
+  document.addEventListener('pointerdown', palPasang, true); document.addEventListener('focusin', palPasang, true);
 })();

@@ -600,6 +600,12 @@ B.append('<p><code>SWN.BAWAAN</code>: teks .ssi legend Surpac situs (1&ndash;9 +
          'terkecil &lt; 60, seri &rarr; terdekat ke nomor asal; dipakai <code>SWN.perbaiki</code> sebelum &ldquo;nomor kosong berikutnya&rdquo;. '
          '<code>tulis</code> selalu memakai <code>gaya()</code> dan menambah TRIOBJECTS bila tidak ada. <code>denganSsi</code> mengganti/mengisi kolom ke-4 '
          'header STR menjadi <code>SSI_STYLES:&lt;nama&gt;.ssi</code>. Uji: <code>uji_ssi.py</code> S8&ndash;S9.</p>')
+B.append('<h3>8.24 Warna &rarr; nomor string (BM 0.24.98)</h3>')
+B.append('<p>Pembungkus <code>dbRSet</code>, <code>dbSNset</code>, <code>afSet</code>, <code>amClsSet</code> di strwarna_bm.js. Warna: '
+         '<code>SWN.nomorWarna(c, lain)</code> mencari nomor 1&ndash;99 dengan warna <code>gaya()</code> terdekat (jarak tertimbang + 0,5 untuk nomor 1&ndash;9 '
+         'agar seri &ge; 10 diutamakan), melewati nomor yang dipakai baris lain dengan warna berbeda; baris diberi nomor itu dan warna Surpac-nya. Nomor: '
+         '<code>SWN.warnaNomor(n)</code> &rarr; warna baris. <code>SWN.pal()</code> mengisi <code>&lt;datalist id=swPal&gt;</code> yang dipasang (pointerdown/focusin) '
+         'ke input warna tabel tersebut. Uji: <code>tools/uji/uji_warna_otomatis.py</code>.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BM 0.24.93: aturan flag (Additional flagging) boleh punya string number sendiri untuk garis ganda.
   F1 kolom String di tabel aturan flag.
-  F2 sn = 19 -> garis ganda ber-flag memakai string 19 (warna flag tetap), garis asli tetap 14.
+  F2 sn = 19 -> garis ganda ber-flag memakai string 19 (BM 0.24.98: warna flag ikut warna 19 di legend Surpac = kuning), garis asli tetap 14.
   F3 ganti nomor / tombol kelas garis asli (17) -> garis ganda tetap 19.
   F4 kosongkan sn -> garis ganda kembali ikut nomor garis asli (cara lama).
   F5 ekspor STR teks: baris garis ganda memakai string 19.
@@ -28,7 +28,7 @@ with sync_playwright() as pw:
     cek(pg.evaluate("!!document.querySelector('input.afsn')"), "F1 kolom String di tabel aturan flag")
     pg.evaluate("afSet(0,'sn',19)"); pg.wait_for_timeout(500)
     f2 = pg.evaluate("[DG.S[__pi].no, DG.S[__pi+1].no, DG.S[__pi+1].col]")
-    cek(f2 == [14, 19, "#ff8c00"], "F2 sn 19: garis asli %s, garis ganda %s warna %s" % tuple(f2))
+    cek(f2 == [14, 19, "#ffff00"], "F2 sn 19: garis asli %s, garis ganda %s warna %s" % tuple(f2))
     pg.evaluate("dbStrSet(__pi,'no',17);dbStrKelas(__pi,dbKelas().map(function(q){return q.n;}).indexOf(17))"); pg.wait_for_timeout(500)
     f3 = pg.evaluate("[DG.S[__pi].no, DG.S[__pi+1].no]")
     cek(f3 == [17, 19], "F3 garis asli diganti -> %s, garis ganda tetap %s" % tuple(f3))

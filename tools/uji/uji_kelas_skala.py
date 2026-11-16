@@ -46,7 +46,7 @@ with sync_playwright() as pw:
     pg.evaluate("dbKelasBuka()"); pg.wait_for_timeout(1200)
     cek(pg.evaluate("!!document.querySelector('#dbBody .dbrt') && document.querySelector('#dbBody .dbrt').offsetParent!==null && document.getElementById('dbPop').style.display==='none'"), "K3 ＋ Kelas… membuka tabel kelas kadar")
     # ---------- K4 ----------
-    pg.evaluate("dbRAdd();var R=dbU().rules,k=R.length-1;dbRSet(k,'m','SG');dbRSet(k,'n','18');dbRSet(k,'c','#c2185b');dbPop(__ki,300,300)")
+    pg.evaluate("dbRAdd();var R=dbU().rules,k=R.length-1;dbRSet(k,'m','SG');dbRSet(k,'c','#c2185b');dbRSet(k,'n','18');dbPop(__ki,300,300)")
     b4 = pg.evaluate(POP)
     pg.evaluate("dbRDel(0);dbPop(__ki,300,300)"); b4b = pg.evaluate(POP)
     cek("SG · 18" in b4 and "LG · 14" not in b4b and "SG · 18" in b4b and "WS · 1" in b4b, "K4 tambah SG·18 %s; hapus LG -> %s" % (b4, b4b))
