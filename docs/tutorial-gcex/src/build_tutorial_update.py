@@ -1239,6 +1239,44 @@ B.append('<p>Di <b>Pratinjau</b>, panah utara, skala batang, legenda, inset, tab
          'mengembalikan ke posisi bawaan. Bila tidak diperlukan, matikan sakelar <b>Pakai pengayaan lembar</b> (lembar kembali seperti sebelumnya) atau '
          'matikan bagian tertentu saja.</p>')
 
+B.append('<h3>16m. Fitur Block Model kini di Drill Hole (Drill Hole 0.24.98)</h3>')
+B.append('<p>GC-Ex Drill Hole memakai tampilan yang sama dengan Block Model: <b>bilah alat</b> di atas jendela 3D, <b>status bar</b> (koordinat kursor, '
+         'eksagerasi vertikal), kotak <b>Cari</b> di Project Tree, panel <b>Properti</b> yang bisa ditempel kiri / kanan atau dilepas, dan <b>kompas 3D</b> '
+         'di pojok kanan atas. Di Data Spasial ada node <b>Topo &times; Pit</b>; legenda 3D berupa kartu di kanan bawah (bagian <i>Data bor</i>).</p>')
+B.append('<p>Block model <b>.mdl sangat besar</b>: muat topografi dan desain pit lebih dulu, lalu import lewat <b>Block Model &rsaquo; Import BM</b>. Dialog '
+         '<i>Block model besar</i> menawarkan <b>Hanya di dalam desain pit</b> dan <b>Hanya di bawah topografi</b> (disaring sambil membaca file) serta folder cache. '
+         'Bila blok yang lolos masih melebihi memori komputer, yang dimuat bagian teratas dan pesannya menyebut RL batasnya. Angka seluruh pit: node '
+         '<b>Ringkasan seluruh model per RL</b>. Memutar 3D tidak lagi menggambar ulang semua lapisan, kecuali saat orthofoto tampil.</p>')
+
+B.append('<h3>16n. Kategori kolom diingat, pemeriksaan tambahan, Validasi &amp; edit tabel (Drill Hole 0.24.99)</h3>')
+B.append('<p><b>Pemetaan kolom diingat.</b> Di layar import, pilihan pada panel <i>Pemetaan kolom &amp; unsur</i> disimpan per nama kolom; file berikutnya '
+         'dengan nama kolom sama langsung terpetakan (tautan <i>Lupakan pilihan yang diingat</i> mengembalikan tebakan otomatis). Nama Indonesia ikut dikenali '
+         '(Timur, Utara, Elevasi, Kedalaman_Total, Jarak, Kemiringan, Arah, Dari, Sampai &hellip;). Bila nama kolom tidak dikenali, Hole_ID dan From/To ditebak '
+         'dari isi kolom.</p>')
+B.append('<p><b>Kategori geologi.</b> Di bagian <i>Atribut geologi / domain</i>, tiap kolom memilih kategori: Litologi, Alterasi, Oksidasi, Mineralisasi, '
+         'Vein / domain, Struktur, Deskripsi, Kode lain, atau Abaikan. Kategori tersimpan di proyek dan dipakai lebih dulu oleh Stratified (litologi) dan '
+         'Ore Geometry Studio (vein, alterasi, Peta level), jadi tidak lagi bergantung pada nama kolom.</p>')
+B.append(D.tabel(['Pemeriksaan baru di laporan validasi', 'Contoh'], [
+    ['Hole ID beda huruf besar/kecil dengan Collar', '<code>dh-02</code> di assay, <code>DH-02</code> di collar'],
+    ['Koordinat collar jauh dari lubang lain', 'Easting 5.500.180 di tengah lubang ber-Easting 500.xxx (salah ketik digit)'],
+    ['Nilai unsur bukan angka', '<code>abc</code>, <code>#VALUE!</code> (dulu diam-diam dianggap kosong)'],
+    ['Au / Emas &gt; 500', 'cek satuan (ppb vs ppm) atau salah ketik'],
+    ['Sample ID kosong, litologi kosong', 'hanya bila kolomnya dipetakan'],
+    ['Azimuth di luar 0&ndash;360', 'dipakai apa adanya, tetapi ditandai'],
+]))
+B.append('<p><b>Validasi &amp; edit tabel</b> (tampilan seperti MS Access). <i>Sebelum diproses:</i> tombol di bawah laporan validasi atau tautan <b>Periksa</b> di '
+         'tiap slot; selesai mengedit klik <b>Terapkan &amp; tutup</b>, lalu <b>Tampilkan viewer</b>. <i>Sesudah diproses:</i> <b>Database Bor &rsaquo; Validasi &amp; '
+         'edit tabel</b>, lalu <b>Bangun ulang dataset</b> (folder proyek di-backup dulu; bisa dibatalkan lewat <i>Batalkan perubahan database terakhir</i>).</p>')
+B.append('<ol><li>Sel <b>merah</b> = galat, <b>kuning</b> = peringatan; arahkan kursor ke sel untuk keterangannya.</li>'
+         '<li>Panel kanan: <b>Ringkasan</b> per jenis masalah (klik untuk menyaring) dan <b>Daftar masalah</b> (klik untuk lompat ke selnya).</li>'
+         '<li>Edit: ketik langsung, F2 atau klik dua kali; Enter = simpan, Esc = batal; Ctrl+V dari Excel; Ctrl+Z; tambah / hapus baris; klik judul kolom '
+         'untuk mengurutkan; kotak Cari; <i>Hanya baris bermasalah</i>.</li>'
+         '<li>Ekspor: <b>CSV tabel ini</b> / <b>Semua tabel</b> (header &amp; pemisah file asli) dan <b>Laporan masalah</b>.</li></ol>')
+B.append('<p class="note">Saat data diproses, aplikasi hanya menyimpan kolom yang dipakai: Hole_ID, koordinat, kedalaman, dip/azimuth, From/To, Sample ID, '
+         'unsur yang dicentang dan kolom geologi yang tidak diabaikan. Kolom lain di file asli (mis. Batch, Tanggal, Keterangan, atau unsur yang tidak '
+         'dicentang) tidak ikut masuk proyek, jadi tidak muncul di editor sesudah diproses. Untuk memperbaiki kolom seperti itu, buka file aslinya di '
+         'layar import dan pakai editor sebelum diproses (tombol <b>Periksa</b>), lalu ekspor CSV-nya.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

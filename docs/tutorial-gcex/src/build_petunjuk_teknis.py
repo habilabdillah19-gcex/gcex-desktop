@@ -536,6 +536,36 @@ B.append('<p>Modul membungkus <code>lyDef</code>, <code>lyPage</code>, <code>lyP
          'menggeser elemen menurut <code>L.pos</code> (fraksi bingkai). Sakelar induk <code>L.lx=false</code> = keluaran <code>lyPage</code> asli. '
          'Uji: <code>tools/uji/uji_layx.py</code> L1&ndash;L8.</p>')
 
+B.append('<h3>8.18 Fitur Block Model di Drill Hole (DH 0.24.98)</h3>')
+B.append('<p>Drill Hole memuat <code>shell_bm.js</code> (dengan <code>window.SHELL_APP=&#39;dh&#39;</code>), <code>topopit_bm.js</code>, <code>mdlsum.js</code> + '
+         '<code>mdlsum_dh.js</code> (shim <code>lyFmt</code>, <code>lyBench</code>, SG tetap) dan <code>surfgrid_dh.js</code> (salinan <code>SA.surfGrid</code> / '
+         '<code>surfAt</code>; jaga tetap sama dengan Block Model). <code>SA.mdlRun</code> menerima <code>st.pit</code> / <code>st.topo</code> (aturan BM: pit = '
+         'permukaan crest di atas atap blok; topografi = dasar blok di bawah topografi; di luar topografi dipertahankan), <code>st.scan</code>, '
+         '<code>st.maxN</code> + histogram atap blok 0,25 m, <code>st.topMin</code>. <code>SA.readMDL</code> dua lintasan: bila lolos filter &gt; '
+         '<code>SA.mdlMaxMem()</code>, RL potong dihitung dari histogram dan yang dimuat bagian teratas. Gambar ulang sesudah kamera berhenti '
+         '(<code>hires.js</code>) dibatasi <code>HR_perlu()</code> (hanya bila orthofoto tampil). Uji: <code>tools/uji/uji_dh_port.py</code> P1&ndash;P8.</p>')
+
+B.append('<h3>8.19 Kategori kolom impor &amp; Validasi / edit tabel (DH 0.24.99, <code>vgrid_dh.js</code>)</h3>')
+B.append('<p>Modul disisipkan di lingkup skrip layar import (sebelum <code>SA.sp=</code>) agar <code>normH</code>, <code>feat</code>, <code>findCol</code>, '
+         '<code>numV</code>, <code>selV</code> terlihat. Ia membungkus <code>SA.buildMap</code>, <code>SA.elDefaults</code>, <code>SA.geoDefaults</code>, '
+         '<code>SA.mapChanged</code>, <code>SA.tog</code>, <code>SA.chkBoxes</code>, <code>SA.build</code>, <code>SA.validate</code>, <code>SA.valHtml</code>, '
+         '<code>SA.preview</code>.</p>')
+B.append(D.tabel(['Bagian', 'Cara kerja'], [
+    ['Templat kolom', '<code>localStorage[&#39;gcex_dh_colmap&#39;]</code> = {peran: {nama kolom ternormalisasi: kunci}}; kunci = hole/e/n/rl/td/dip/azi, '
+     'hole/dep/dip/azi, hole/fr/to/samp + el/cat/ign, hole/fr/to + kategori geologi. Urutan: templat &gt; nama (alias <code>H</code>) &gt; isi kolom.'],
+    ['Tebakan dari isi', 'From/To = dua kolom angka berurutan dengan To &gt; From &ge; 0 di &ge; 90 % dari 300 baris pertama; Hole_ID = kolom 1/2 yang &ge; 90 % teks.'],
+    ['Kategori geologi', '<code>SA.map.geo.kat[kolom]</code> &rarr; <code>geoCat[i].kat</code> (tersimpan di proyek, ikut <code>catMerge</code> upsert) &rarr; '
+     '<code>CAT[i].kat</code>; <code>gkCi(kat)</code> dipakai <code>sl_dh.js</code>, <code>ogs_dh.js</code>, <code>ogs3_dh.js</code> sebelum tebakan nama.'],
+    ['Pemeriksaan tambahan', 'koordinat jauh: |v &minus; median| &gt; 8&middot;1,4826&middot;MAD + 150 m (RL: + 40 m), minimal 8 collar; Au = unsur pertama '
+     '<code>/^(au|gold|emas)/i</code> &gt; 500; nilai bukan angka dihitung dari tabel mentah (kecuali kosong, NA, &lt;x, &gt;x).'],
+    ['Editor (sebelum diproses)', 'tabel = <code>SA.T[selV(peran)]</code> diedit di tempat (cache <code>T._f</code> dibuang); <i>Terapkan</i> = <code>SA.preview()</code>.'],
+    ['Editor (sesudah diproses)', 'tabel disusun dari <code>SA.D</code> (collar + Grup bila ada, survey, assay + unsur + kategori, geologi); <i>Bangun ulang</i> '
+     '= aturan <code>SA.build</code> (baris tak valid dilewati, kamus kategori diperluas) lalu <code>PTD.apply</code> (backup, upsPrev, muat ulang).'],
+    ['Grid', 'baris virtual (hanya baris terlihat digambar), sel bermasalah <code>row&middot;1024+kolom</code>; jumlah galat per slot dihitung otomatis bila '
+     'total &le; 300.000 baris.'],
+]))
+B.append('<p>Uji: <code>tools/uji/uji_dh_vgrid.py</code> V1&ndash;V9.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))
