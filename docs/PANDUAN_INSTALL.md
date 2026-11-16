@@ -5173,3 +5173,18 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Setelah mengisi, klik **Perbarui garis ganda** bila garis ganda belum ada. Mengganti nomor / kelas garis asli tidak
   mengubah nomor garis ganda ber-flag.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 239. Block Model 0.24.94 — satu nomor string = satu warna (STR & DXF)
+
+- Surpac mewarnai string menurut **nomornya**. Mulai versi ini GC-Ex memperlakukan warna sebagai milik nomor string:
+  - **Ganti warna** sebuah string (popup dig block, atau *Warna poligon* As-Mined) = ganti warna **nomor** itu: semua string
+    bernomor sama dan baris kelas yang memakai nomor itu ikut berubah.
+  - **Ganti nomor** (String number / String ID) = warnanya ikut warna nomor tersebut.
+- **Ekspor STR & DXF** (dig block, string digitasi, As-Mined) diperiksa dulu. Bila satu nomor dipakai lebih dari satu warna
+  (mis. warna manual di proyek lama), muncul tawaran: **OK** = warna yang berbeda diberi nomor baru (nomor yang sudah
+  terdaftar untuk warna itu, atau nomor kosong berikutnya), **Batal** = ekspor apa adanya.
+- **DXF**: layer = nomor string, warna = warna AutoCAD terdekat (palet lengkap 255 warna). As-Mined kini juga punya
+  tombol **String poligon (.dxf)**.
+- Pengaturan dan warna proyek lama terbaca apa adanya; perubahan hanya terjadi saat diedit atau saat Anda menyetujui
+  nomor baru ketika ekspor.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

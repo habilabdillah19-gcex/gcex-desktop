@@ -578,6 +578,14 @@ B.append('<p><code>skala.js</code> membungkus <code>Plotly.newPlot</code> / <cod
          '<code>plotly_relayout(ing)</code>, ukuran jendela. Plot yang menggambar skala sendiri memberi <code>gd.dataset.skala=&#39;off&#39;</code> (peta level OGS). '
          'Uji: <code>tools/uji/uji_kelas_skala.py</code> K1&ndash;K6, S1&ndash;S5.</p>')
 
+B.append('<h3>8.21 Satu nomor string = satu warna (BM 0.24.94, <code>strwarna_bm.js</code>)</h3>')
+B.append('<p><code>SWN.dig()</code> / <code>SWN.am()</code> = daftar nomor &rarr; warna (dig: <code>dbKelas</code>, <code>afRules</code> sn/col, <code>dbU().snc</code>; '
+         'As-Mined: <code>cls</code>, <code>ws</code>, <code>amR().snc</code>). Pembungkus: <code>dbStrSet</code> (col &rarr; <code>SWN.setDig</code> + string bernomor sama; '
+         'no &rarr; warna terdaftar), <code>amPSet</code> (col &rarr; <code>SWN.setAm</code>, <code>x.col</code> dihapus; sid &rarr; <code>x.col</code> dihapus), '
+         '<code>amInfo</code> (warna = warna String ID bila tanpa <code>x.col</code>), <code>dbExport</code> / <code>dgExport</code> / <code>amStr</code> / <code>amDxf</code> '
+         '(<code>SWN.tanya</code>: nomor &gt; 1 warna &rarr; <code>SWN.perbaiki</code>: warna terdaftar dipertahankan, lainnya ke nomor terdaftar untuk warna itu atau '
+         'nomor kosong berikutnya). <code>dbAci</code> = <code>SWN.aci</code> (palet ACI 1&ndash;255, jarak berbobot luminans). Uji: <code>tools/uji/uji_warna_nomor.py</code>.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

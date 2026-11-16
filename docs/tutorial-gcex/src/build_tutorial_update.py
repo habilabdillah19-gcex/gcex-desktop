@@ -1294,6 +1294,14 @@ B.append('<p>Di <b>Dig Block &rsaquo; Otomatis &rsaquo; Additional flagging</b>,
          'dengan warna string 19, bukan warna garis aslinya. Kosongkan isian = garis ganda ikut nomor garis asli. Mengganti nomor atau kelas '
          'garis asli tidak mengubah nomor garis ganda ber-flag.</p>')
 
+B.append('<h3>16q. Satu nomor string = satu warna di STR &amp; DXF (Block Model 0.24.94)</h3>')
+B.append('<p>Surpac mewarnai string menurut nomornya, jadi GC-Ex kini memperlakukan warna sebagai milik <b>nomor string</b>. Mengganti warna sebuah '
+         'string (popup dig block, atau <i>Warna poligon</i> As-Mined) mengganti warna nomor itu: semua string bernomor sama dan baris kelasnya ikut. '
+         'Mengganti nomor (String number / String ID) membuat warnanya ikut warna nomor tersebut.</p>')
+B.append('<p>Saat ekspor STR atau DXF (dig block, string digitasi, As-Mined), GC-Ex memeriksa apakah ada nomor yang dipakai lebih dari satu warna. '
+         'Bila ada, klik <b>OK</b> agar warna yang berbeda diberi nomor baru, sehingga tampilan di Surpac sama dengan di GC-Ex. Di DXF, layer = nomor '
+         'string dan warna = warna AutoCAD terdekat. As-Mined kini juga punya tombol <b>String poligon (.dxf)</b>.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
