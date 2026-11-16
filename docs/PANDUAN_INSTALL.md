@@ -5095,3 +5095,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   dan tidak bisa diklik; arahkan kursor untuk melihat alasannya.
 - **Interval channel**: di panel edit channel pilih *tiap … m → Bagi* atau *jadi N interval → Bagi rata*. Pembagian N
   menyesuaikan otomatis bila titik channel digeser. Sample_ID / kadar yang sudah diisi dipertahankan berdasarkan urutan.
+
+## 232. Ore Works 0.10.0 — kategori kolom impor & Validasi / edit tabel
+
+- **Kategori kolom**: setelah memilih file di Data bor, klik *Kolom* di bawah nama file. Tentukan kategori tiap kolom
+  (mis. `LUBANG` → Hole_ID, `Timur` → Easting, `Batuan` → Litologi, `Ubahan` → Alterasi). Pilihan diingat: file
+  berikutnya dengan nama kolom sama langsung terpetakan.
+- **Validasi & edit tabel** (tombol di bawah *Proses dataset*, atau *Periksa* di tiap file): tabel tampil seperti
+  MS Access. Sel merah = galat, kuning = peringatan; arahkan kursor untuk keterangan. Klik masalah di panel kanan untuk
+  melompat ke selnya. Edit: ketik langsung / F2 / klik dua kali, Enter simpan, Esc batal, Ctrl+V dari Excel, Ctrl+Z.
+- **Ekspor**: *CSV tabel ini*, *Semua tabel* (header dan pemisah sama dengan file asli), *Laporan masalah*.
+- Setelah diproses, dataset yang diimpor punya tombol ▦ di daftar dataset untuk membuka tabel aslinya lagi;
+  *Bangun ulang dataset* menerapkan editan ke 3D. Tabel asli ikut tersimpan di file project.

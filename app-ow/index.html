@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.9.2';</script>
+<script>window.GCEX_VER='0.10.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -1776,15 +1776,15 @@ for(const k in SLOT){document.getElementById('dsf-'+k).onchange=e=>{const f=e.ta
   const miss=SLREQ[k].filter(q=>ci(c.hd,RX[q[0]])<0).map(q=>q[1]);let au=null;if(k==='assay'){au=ci(c.hd,RX.au);if(au<0)au=c.hd.findIndex((h,i)=>i>2&&/au|gold|ppm|g\/?t/i.test(h));if(au<0)miss.push('kolom Au (pilih manual)');}
   SLOT[k]={name:f.name,txt,n:c.rows.length,hd0:c.hd0,au:au<0?null:au,err:miss.length&&!(k==='assay'&&miss.length===1&&au===null&&c.hd0.length>3)?'Kolom tidak ditemukan: '+miss.join(', '):''};
   if(k==='assay'&&SLOT[k].au===null&&!SLOT[k].err){SLOT[k].au=Math.min(3,c.hd0.length-1);}
-  slotUI();e.target.value='';};r.readAsText(f);};
+  if(window.vgSlotLoaded)vgSlotLoaded(k);slotUI();e.target.value='';};r.readAsText(f);};
  document.getElementById('dsx-'+k).onclick=()=>{SLOT[k]=null;slotUI();};}
 document.getElementById('dsau').onchange=e=>{if(SLOT.assay)SLOT.assay.au=+e.target.value;};
 document.getElementById('dsclr').onclick=()=>{for(const k in SLOT)SLOT[k]=null;slotUI();document.getElementById('dsw').textContent='';};
 document.getElementById('dsgo').onclick=()=>{const w=document.getElementById('dsw'),ks=Object.keys(SLOT).filter(k=>SLOT[k]);if(!ks.length){w.textContent='Pilih minimal satu file.';return;}
  const bad=ks.filter(k=>SLOT[k].err);if(bad.length){w.innerHTML='<span style="color:#c62828">Perbaiki dulu: '+bad.join(', ')+'</span>';return;}
- const files=ks.map(k=>({name:SLOT[k].name,txt:SLOT[k].txt,kind:k,au:SLOT[k].au}));
+ const files=ks.map(k=>window.vgFile&&SLOT[k].tb?vgFile(k):({name:SLOT[k].name,txt:SLOT[k].txt,kind:k,au:SLOT[k].au}));
  const nm=document.getElementById('dsn').value.trim()||(SLOT.collar||SLOT.assay||SLOT.survey||SLOT.geo).name.replace(/\.[^.]+$/,'').replace(/[_ -]*(collar|survey|assay|geolog[iy]|geology)[_ -]*/ig,' ').trim()||('Dataset '+(DS.length+1));
- const d=dsBuild(files,nm,document.getElementById('dsm').value,document.getElementById('dsk').value);
+ const d=dsBuild(files,nm,document.getElementById('dsm').value,document.getElementById('dsk').value);if(window.vgAttach)vgAttach(d,ks,document.getElementById('dsk').value);
  const chR=dsChToFm(d);delete d._sid;delete d._vert;
  w.innerHTML=d.used.map(esc).join('<br>')+(d.warn.length?'<br><span style="color:#c62828">'+d.warn.map(esc).join('<br>')+'</span>':'');if(chR.msg)w.innerHTML+='<br>'+chR.msg;if(chR.n&&!d.holes.length){document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();if(window.dsDropClear)dsDropClear();dsList();return;}
   if(!d.holes.length&&!Object.keys(d.geo).length){w.innerHTML+='<br><b>Tidak ada lubang atau geologi yang bisa ditampilkan.</b>';return;}
@@ -1794,7 +1794,7 @@ slotUI();
 const GPAL=['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe','#008080','#e6beff','#9a6324','#800000','#aaffc3','#808000'].map(h=>[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]);
 function geoActive(){const G=new Map();for(const ds of DS){if(!ds.on||!ds.geo)continue;for(const id in ds.geo){if(ds.mode==='append'&&G.has(id))continue;G.set(id,ds.geo[id]);}}return G;}
 document.getElementById('hcm').onchange=()=>holesBuild();
-function hcmOpts(){{const sel=document.getElementById('jgcol'),cur=sel.value,gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);sel.innerHTML=gs.length?gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join(''):'<option value="">(impor Geologi dulu)</option>';const pick=gs.includes(cur)?cur:(gs.find(c=>/domain|dom|vein|orebody|ore_?zone/i.test(c))||gs[0]||'');sel.value=pick;}const sel=document.getElementById('hcm'),cur=sel.value,gs=[],as=[];for(const d of DS)if(d.on){for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);for(const c of d.acols||[])if(!as.includes(c))as.push(c);}
+function hcmOpts(){{const sel=document.getElementById('jgcol'),cur=sel.value,gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);sel.innerHTML=gs.length?gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join(''):'<option value="">(impor Geologi dulu)</option>';const pick=gs.includes(cur)?cur:((window.gcatCol&&gcatCol('vein',gs))||gs.find(c=>/domain|dom|vein|orebody|ore_?zone/i.test(c))||gs[0]||'');sel.value=pick;}const sel=document.getElementById('hcm'),cur=sel.value,gs=[],as=[];for(const d of DS)if(d.on){for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);for(const c of d.acols||[])if(!as.includes(c))as.push(c);}
  const o=['<option value="au">Unsur aktif: '+esc(typeof UNM==='function'?UNM():'Au (g/t)')+' · semua lubang</option>'].concat(as.map(c=>'<option value="a:'+esc(c)+'">Assay: '+esc(c)+'</option>'),gs.map(c=>'<option value="g:'+esc(c)+'">Geologi: '+esc(c)+'</option>'));
  sel.innerHTML=o.join('');sel.value=[...sel.options].some(x=>x.value===cur)?cur:'au';}
 const HRNG={};
@@ -2337,7 +2337,7 @@ for(const i of ['plBench','plSeq','plFmt'])pv(i).oninput=plNameEx;pv('plMin').on
 
 plInitDef();plSum2();
 /* ---------- Analisis: panel tab, Envelope, Belum teruji, Peta level ---------- */
-function osPanels(t){if(t==='pt'){const sel=document.getElementById('ptalt'),cur=sel.value,gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);sel.innerHTML='<option value="">(tanpa)</option>'+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');sel.value=gs.includes(cur)?cur:(gs.find(c=>/^alt|alter/i.test(c))||'');}const sh=(id,v)=>{const e=document.getElementById(id);if(e)e.style.display=v?'':'none';};sh('ogbar',['sum','ls','pr','jn'].includes(t));sh('ogp-dom',t==='dom');sh('ogp-env',t==='env');sh('ogp-ut',t==='ut');sh('ogp-pt',t==='pt');sh('ogp-pv',t==='pv');sh('ogp-op',t==='op');sh('ogp-si',t==='si');}
+function osPanels(t){if(t==='pt'){const sel=document.getElementById('ptalt'),cur=sel.value,gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);sel.innerHTML='<option value="">(tanpa)</option>'+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');sel.value=gs.includes(cur)?cur:((window.gcatCol&&gcatCol('alt',gs))||gs.find(c=>/^alt|alter/i.test(c))||'');}const sh=(id,v)=>{const e=document.getElementById(id);if(e)e.style.display=v?'':'none';};sh('ogbar',['sum','ls','pr','jn'].includes(t));sh('ogp-dom',t==='dom');sh('ogp-env',t==='env');sh('ogp-ut',t==='ut');sh('ogp-pt',t==='pt');sh('ogp-pv',t==='pv');sh('ogp-op',t==='op');sh('ogp-si',t==='si');}
 function osTable(t){const tb=document.getElementById('ogtbl');
  if(t==='dom'){const M=activeHoles(),IC=anIcp(M),by=new Map();for(const [id,l] of IC)for(const x of l){if(!by.has(x.d))by.set(x.d,{n:0,h:new Set(),L:0});const b=by.get(x.d);b.n++;b.h.add(id);b.L+=x.t-x.f;}
   const rows=[...by.entries()].sort((a,b)=>b[1].n-a[1].n);tb.innerHTML='<div class="note" style="margin-bottom:6px">'+esc(document.getElementById('anw').textContent)+'</div><table><tr><th>Domain</th><th>Intercept</th><th>Lubang</th><th>Total panjang (m)</th></tr>'+rows.map(([d,b])=>'<tr><td>'+esc(d)+'</td><td>'+b.n+'</td><td>'+b.h.size+'</td><td>'+ogf(b.L,1)+'</td></tr>').join('')+'</table>'+(rows.length?'':'<div class="note">Belum ada intercept: pilih sumber domain di atas (wireframe impor perlu kolom Domain, atau aktifkan kolom geologi).</div>');return;}
@@ -2631,7 +2631,7 @@ function stExport(kind){const R2=STR.filter(s=>s.st!=='usulan'),dl=(txt,nm,t)=>{
 document.getElementById('stcsv').onclick=()=>stExport('csv');document.getElementById('ststr').onclick=()=>stExport('str');document.getElementById('stdxf').onclick=()=>stExport('dxf');
 document.getElementById('stlab').onchange=stDraw;document.getElementById('sirun').onclick=()=>{ogCalc();siRun();};for(const i of ['sicut','sidrop','sioff','sirad','simin','stcodes','stcol'])document.getElementById(i).onchange=()=>siRun();document.getElementById('sidn').onchange=()=>{if(OG.tab==='si')ogDraw();};
 document.getElementById('stopen').onclick=()=>{ogOpen();document.querySelector('#ogtabs button[data-t="si"]').click();};
-function stColOpts(){const sel=document.getElementById('stcol'),cur=sel.value,gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);sel.innerHTML='<option value="">(hanya log bawaan)</option>'+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');sel.value=gs.includes(cur)?cur:(gs.find(c=>/^lith|^litho|struct|fault|sesar/i.test(c))||'');}
+function stColOpts(){const sel=document.getElementById('stcol'),cur=sel.value,gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);sel.innerHTML='<option value="">(hanya log bawaan)</option>'+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');sel.value=gs.includes(cur)?cur:((window.gcatCol&&(gcatCol('str',gs)||gcatCol('lith',gs)))||gs.find(c=>/^lith|^litho|struct|fault|sesar/i.test(c))||'');}
 stInitDeck();stDraw();stList();
 
 /* ---------- File kerja project (.gcv.json) ---------- */
@@ -2642,7 +2642,7 @@ document.getElementById('pjs').onclick=()=>{const st={app:'GC-Ex viewer 3D',prod
   struktur:{list:STR.filter(s=>s.st!=='usulan').map(s=>{const o=Object.assign({},s);delete o._ix;return o;}),tolak:[...STRJ],codes:document.getElementById('stcodes').value},
   plan:PLAN.map(p=>({nm:p.nm,on:p.on,col:p.col,hd:p.hd,rows:p.rows,edited:p.edited})),
   wireframe:WI.map(m=>({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,v:Array.from(m.v,x=>+x.toFixed(3)),t:Array.from(m.t)})),
-  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols})),ui:(typeof uiSave==='function'?uiSave():undefined)};
+  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),ui:(typeof uiSave==='function'?uiSave():undefined)};
  const b=new Blob([JSON.stringify(st)],{type:'application/json'}),a=document.createElement('a'),t=new Date(),pad=x=>String(x).padStart(2,'0');
  a.href=URL.createObjectURL(b);a.download='Project_'+(window.pjName?pjName():document.title.split('·')[0].trim()).replace(/[^\w\-]+/g,'_')+'_'+t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+'_'+pad(t.getHours())+pad(t.getMinutes())+'.gcv.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
  document.getElementById('pjw').textContent='Tersimpan: '+a.download+' ('+(b.size/1e6).toFixed(1).replace('.',',')+' MB) di folder unduhan browser.';};
@@ -2825,7 +2825,7 @@ function pvFind(re){return pvEls().find(e=>re.test(e));}
 function pvGeoCols(){const gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);return gs;}
 function pvCodes(col){const C=new Map();for(const [,iv] of geoActive())for(const q of iv){const v=String(q.v[col]==null?'':q.v[col]).trim();if(v)C.set(v,(C.get(v)||0)+(q.t-q.f));}return [...C.entries()].sort((a,b)=>b[1]-a[1]).slice(0,40).map(e=>e[0]);}
 function pvDef(){const S=[{t:'el',a:'Au'}],ag=pvFind(/^ag/i),pb=pvFind(/^pb/i),zn=pvFind(/^zn/i),cu=pvFind(/^cu/i);if(ag)S.push({t:'rat',a:ag,b:'Au'});if(pb&&zn)S.push({t:'sum',a:pb,b:zn});if(cu)S.push({t:'el',a:cu});
- const G=pvGeoCols();if(G.length){const col=G.find(c=>/lith|litho|geol/i.test(c))||G[0];S.push({t:'cat',col,c:pvCodes(col).filter(k=>/^(q|mv|rv|v)[a-z]*n$|vein|vbx|qvn|qcx/i.test(k)).slice(0,6)});}return S.slice(0,6);}
+ const G=pvGeoCols();if(G.length){const col=(window.gcatCol&&gcatCol('lith',G))||G.find(c=>/lith|litho|geol/i.test(c))||G[0];S.push({t:'cat',col,c:pvCodes(col).filter(k=>/^(q|mv|rv|v)[a-z]*n$|vein|vbx|qvn|qcx/i.test(k)).slice(0,6)});}return S.slice(0,6);}
 function pvLbl(s){if(s.t==='el')return s.a;if(s.t==='rat')return s.a+' / '+s.b;if(s.t==='sum')return s.a+' + '+s.b;return '% '+((s.c||[]).join('+')||'?')+' ('+s.col+')';}
 function pvCfg(){const el=document.getElementById('pvcfg');if(!el)return;if(!PVC)PVC=pvDef();const E=pvEls(),G=pvGeoCols(),o=cur=>E.concat(E.includes(cur)||!cur?[]:[cur]).map(e=>'<option'+(e===cur?' selected':'')+'>'+esc(e)+'</option>').join('');
  el.innerHTML='<table style="width:100%"><tr><th style="width:24px">#</th><th style="width:130px">Jenis</th><th>Isi</th><th style="width:30px"></th></tr>'+PVC.map((s,i)=>{const isi=s.t==='cat'?'<select class="pv-col" data-i="'+i+'">'+G.map(c=>'<option'+(c===s.col?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select> '+pvCodes(s.col).map(k=>'<label style="display:inline-flex;align-items:center;gap:3px;margin:0 8px 0 0"><input type="checkbox" class="pv-code" data-i="'+i+'" data-k="'+esc(k)+'"'+((s.c||[]).includes(k)?' checked':'')+'>'+esc(k)+'</label>').join('')
@@ -3583,7 +3583,7 @@ function gdData(){const sg=gdSig();if(GD.cache&&GD.sig===sg)return GD.cache;
    S.push({id,src,f:q.f,t:q.t,L:q.t-q.f,E,N,Z,dt:gdSurf(E,N,cz)-Z,v,g,dom,bench});}}
  const isNum=e=>!/moist|lab|batch|ref|stat|qt_pct|recov/i.test(e);const EL=els.filter(isNum).sort((a,b)=>(/^au/i.test(b)-/^au/i.test(a))||ecnt[b]-ecnt[a]);
  const fc=re=>gcols.find(c=>re.test(c))||'',SX=EL.find(e=>/^s(x|c)s$|^sxs|^scis/i.test(e))||'';
- const G={lith:fc(/^lith|^litho|^rock/i),alt:gcols.includes('Alt')?'Alt':fc(/^alt|alter/i),vein:fc(/vein/i)};
+ const gk=c=>(window.gcatCol&&gcatCol(c,gcols))||'',G={lith:gk('lith')||fc(/^lith|^litho|^rock/i),alt:gk('alt')||(gcols.includes('Alt')?'Alt':fc(/^alt|alter/i)),vein:gk('vein')||fc(/vein/i)};
  S.forEach(q=>{const x=SX?q.v[SX]:NaN;q.ox=isFinite(x)?(x<0.8?'Oksida':x<=1?'Transisi':'Sulfida'):'';});
  const OX=SX?gdOxHoles(S,HM):[];if(GD.oxFill)gdOxFill(S,OX);
  const dl={},dlc={};EL.forEach(e=>{let m=Infinity,k=0,n=0,ex=0;for(const d of DS)if(d.on&&d.dlx&&d.dlx[e]>ex)ex=d.dlx[e];for(const q of S){const x=q.v[e];if(x>0&&x<m)m=x;}for(const q of S){const x=q.v[e];if(x==null)continue;n++;if(x<=m)k++;}dl[e]=ex>0?Math.max(ex,isFinite(m)?m:0):m;dlc[e]=ex>0||(n&&k>=Math.max(3,0.01*n))?dl[e]:-Infinity;});
@@ -4024,7 +4024,7 @@ function oxSurf(){const on=k=>{const e=document.querySelector('#oglay [data-l="'
   let DROP=[];const KN=[['collar','Collar'],['survey','Survey'],['assay','Assay'],['geo','Geologi'],['','(abaikan)']];
   const detect=txt=>{const c=csvRead(txt),hd=c.hd,h0=c.hd0;let k='';if(ci(hd,RX.fr)>=0&&ci(hd,RX.to)>=0){const key=new Set([ci(hd,RX.id),ci(hd,RX.fr),ci(hd,RX.to)]),hasA=ci(hd,RX.au)>=0||h0.some(h=>/^(au|ag|cu|pb|zn|as|sb|mo|hg|fe|s|sxs|scis)([_\s(]|$)/i.test(h)),hasG=h0.some(h=>/lith|alt|rock|batuan|oks|^ox|vein|miner|struct|weather|logg/i.test(h));
      if(hasA&&!hasG)k='assay';else if(hasG&&!hasA)k='geo';else{let n=0,m=0;for(const r of c.rows.slice(0,60))r.forEach((v,i)=>{if(key.has(i)||v==null||String(v).trim()==='')return;m++;if(isFinite(parseFloat(String(v).replace(',','.').replace(/^[<>]/,''))))n++;});k=m&&n/m>=0.6?'assay':'geo';}}
-    else k=dsKind(hd)==='assay'?'':dsKind(hd);return {k,hd0:h0,n:c.rows.length};};
+    else k=dsKind(hd)==='assay'?'':dsKind(hd);if(!k&&window.vgTplKind)k=vgTplKind(h0);return {k,hd0:h0,n:c.rows.length};};
   const put=(k,file)=>{const inp=g('dsf-'+k),dt=new DataTransfer();dt.items.add(file);inp.files=dt.files;inp.dispatchEvent(new Event('change'));};
   const list=()=>{const el=g('dsdropl'),seen={};DROP.forEach(d=>{if(d.k)seen[d.k]=(seen[d.k]||0)+1;});el.innerHTML=DROP.map((d,i)=>'<div class="dzr"><b title="'+esc(d.file.name)+'">'+esc(d.file.name)+'</b><select data-i="'+i+'">'+KN.map(([v,t])=>'<option value="'+v+'"'+(v===d.k?' selected':'')+'>'+t+'</option>').join('')+'</select><span class="note">'+(d.n<0?d.mb.toFixed(1).replace('.',',')+' MB':d.n.toLocaleString('id-ID')+' baris')+' · '+esc(d.hd0.slice(0,9).join(' · '))+(d.hd0.length>9?' …':'')+(d.k&&seen[d.k]>1?' <span style="color:#c62828">· jenis ganda: dipakai file terakhir</span>':'')+(d.k?'':' <span style="color:#c62828">· jenis tidak dikenali, pilih manual</span>')+'</span></div>').join('');
    el.querySelectorAll('select').forEach(s=>s.onchange=()=>{DROP[+s.dataset.i].k=s.value;apply();});};
@@ -4249,7 +4249,7 @@ function fmElUse(k){const x=FM.els.find(e=>e.toLowerCase()===String(k).toLowerCa
 function fmNextNm(k){const pre=FMK[k].pre+'-',used=new Set(FM.F.map(f=>f.nm));let n=FM.F.filter(f=>f.k===k).length+1,nm;do{nm=pre+String(n++).padStart(3,'0');}while(used.has(nm));return nm;}
 /* lubang berjenis channel pada dataset hasil dsBuild → fitur Channel sampling di Pemetaan (+ dataset "Channel sampling (pemetaan)") */
 function dsChToFm(d){const ch=(d.holes||[]).filter(h=>h.src==='CH');if(!ch.length)return {n:0};const SID=d._sid||{},em={};(d.acols||[]).forEach(e=>{em[e]=fmElUse(fmElKey(e));});
- const gc=d.gcols||[],kL=gc.find(c=>/^(lith|litho|litologi|rock)/i.test(c)),kA=gc.find(c=>/^(alt|alter)/i.test(c)),kD=gc.find(c=>/^(desc|desk|ket|remark|catatan)/i.test(c)),tx=(g,k)=>k&&g[k]!=null?String(g[k]).trim():'';
+ const gc=d.gcols||[],kL=(window.gcatOf&&gcatOf(d,'lith'))||gc.find(c=>/^(lith|litho|litologi|rock)/i.test(c)),kA=(window.gcatOf&&gcatOf(d,'alt'))||gc.find(c=>/^(alt|alter)/i.test(c)),kD=(window.gcatOf&&gcatOf(d,'desc'))||gc.find(c=>/^(desc|desk|ket|remark|catatan)/i.test(c)),tx=(g,k)=>k&&g[k]!=null?String(g[k]).trim():'';
  let nNew=0,nUpd=0,nIv=0;const ZP=[];
  for(const h of ch){const P=[];for(let i=0;i+2<h.p.length;i+=3)P.push([h.p[i]/10+O[0],h.p[i+1]/10+O[1],h.p[i+2]/10+O[2]]);if(P.length<2)continue;const pts=[P[0]];
   for(let i=1;i<P.length-1;i++){const a=pts[pts.length-1],b=P[i],c=P[i+1],u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-b[0],c[1]-b[1],c[2]-b[2]],lu=Math.hypot(u[0],u[1],u[2]),lv=Math.hypot(v[0],v[1],v[2]);if(lu<1e-6||lv<1e-6)continue;if(Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])/(lu*lv)>0.0035)pts.push(b);}
@@ -4406,6 +4406,274 @@ function fmDxfApply(){const P=FMDX;if(!P)return;const ck=id=>{const e=fmg(id);re
  const st=document.createElement('style');st.textContent='button:disabled,button[disabled]{opacity:.45;cursor:not-allowed}';document.head.appendChild(st);
  const upd=()=>{for(const [ids,ok,msg] of NEED){let v=false;try{v=!!ok();}catch(e){v=true;}for(const id of ids.split(',')){const b=g(id);if(!b)continue;if(b.dataset.t0===undefined)b.dataset.t0=b.title||'';if(b.disabled===v){b.disabled=!v;b.title=v?b.dataset.t0:msg+(b.dataset.t0?' · '+b.dataset.t0:'');}}}};
  upd();setInterval(upd,700);window.btnNeedUpd=upd;})();
+
+/* ================= Ore Works 0.10.0: pemetaan kolom impor + validasi & editor tabel (gaya MS Access) =================
+   Pemilik 16 Nov 2026: "ketika memasukan dataset pemboran, untuk pembacaan header kolom data geologi, selain dynamic header,
+   user dapat memilih sendiri kategori kolomnya" + "fitur yang memvalidasi dataset bor geologi (channel maupun pemboran) yang
+   diimport ... panel popup berpenampilan grid cell seperti MS Access. Lokasi cell bermasalah di-highlight, dapat diedit
+   manual langsung oleh user, dan dapat diexport kembali". */
+{
+const g=id=>document.getElementById(id);
+const KS=['collar','survey','assay','geo'],KN={collar:'Collar',survey:'Survey',assay:'Assay',geo:'Geologi'};
+const ROLES={
+ collar:[['id','Hole_ID'],['x','Easting / X'],['y','Northing / Y'],['z','RL / Z'],['dep','Kedalaman total'],['dip','Dip'],['az','Azimuth'],['pu','Jenis / tujuan lubang'],['oth','Lainnya (tidak dipakai)'],['ign','Abaikan']],
+ survey:[['id','Hole_ID'],['sd','Kedalaman survey'],['dip','Dip'],['az','Azimuth'],['oth','Lainnya (tidak dipakai)'],['ign','Abaikan']],
+ assay:[['id','Hole_ID'],['fr','From'],['to','To'],['au','Au (unsur utama)'],['el','Unsur / angka'],['sid','Sample_ID'],['oth','Teks lain (tidak dipakai)'],['ign','Abaikan']],
+ geo:[['id','Hole_ID'],['fr','From'],['to','To'],['lith','Litologi'],['alt','Alterasi'],['ox','Oksidasi / pelapukan'],['min','Mineralisasi'],['vein','Vein / domain'],['str','Struktur'],['desc','Deskripsi'],['code','Kode lain'],['ign','Abaikan']]};
+const RN={};for(const k in ROLES)for(const [r,t] of ROLES[k])RN[r]=t;
+const REQ={collar:['id','x','y','z'],survey:['id','dip','az'],assay:['id','fr','to','au'],geo:['id','fr','to']};
+const UNIQ=new Set(['id','x','y','z','dep','dip','az','pu','sd','fr','to','au','sid']);
+const CAN={id:'Hole_ID',x:'X',y:'Y',z:'Z',dep:'Total_Depth',dip:'Dip',az:'Azimuth',pu:'Hole_Purpose',sd:'Depth',fr:'From',to:'To',sid:'Sample_ID'};
+const NOTV=/^\s*(-|–|na|n\/a|nd|ns|is|lnr|nr|x|null)?\s*$/i;
+const hn=h=>String(h||'').trim().toLowerCase().replace(/[\s.]+/g,'_');
+/* ---- templat pemetaan kolom (nama kolom -> kategori), disimpan lokal ---- */
+const TPK='ow.colmap';
+const tplAll=()=>{try{return JSON.parse(localStorage.getItem(TPK)||'{}')||{};}catch(e){return {};}};
+const tplGet=k=>tplAll()[k]||{};
+const tplPut=(k,hd0,map)=>{try{const A=tplAll(),T=A[k]=A[k]||{};hd0.forEach((h,i)=>{const n=hn(h);if(n&&map[i])T[n]=map[i];});localStorage.setItem(TPK,JSON.stringify(A));}catch(e){}};
+function vgNum(s,sep){if(s==null)return NaN;s=String(s).trim();if(!s)return NaN;if(sep&&sep!==',')s=s.replace(',','.');return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)?+s:NaN;}
+function vgGuess(k,tb,noTpl){const hd=tb.hd0.map(hn),T=noTpl?{}:tplGet(k),ok=new Set(ROLES[k].map(r=>r[0])),m=hd.map(()=>'');
+ hd.forEach((h,i)=>{if(!h){m[i]='ign';return;}const r=T[h];if(r&&ok.has(r)&&!(UNIQ.has(r)&&m.includes(r)))m[i]=r;});
+ const set=(re,role,pre)=>{if(UNIQ.has(role)&&m.includes(role))return;const i=hd.findIndex((h,i)=>!m[i]&&re.test(h)&&(!pre||pre(i)));if(i>=0)m[i]=role;};
+ set(RX.id,'id');
+ if(k==='collar'){set(RX.x,'x');set(RX.y,'y');set(RX.z,'z');set(RX.dep,'dep');set(RX.dip,'dip');set(RX.az,'az');set(/purpose|tujuan|^jenis|^(hole_?)?(type|tipe)$/,'pu');set(/^(timur|easting_?m?|x_?m|east_?m)$/,'x');set(/^(utara|northing_?m?|y_?m|north_?m)$/,'y');set(/^(elev(asi)?(_?m)?|rl_?m|z_?m|tinggi)$/,'z');set(/^(kedalaman|panjang|kedalaman_?akhir|eoh_?m)$/,'dep');set(/^(kemiringan|inklinasi)$/,'dip');set(/^(arah|azimut)$/,'az');}
+ else if(k==='survey'){set(RX.sd,'sd');set(RX.dip,'dip');set(RX.az,'az');set(/^(jarak|kedalaman|depth_?m|at_?m)$/,'sd');set(/^(kemiringan|inklinasi|dip_?deg)$/,'dip');set(/^(arah|azimut|azi_?deg)$/,'az');}
+ else{set(RX.fr,'fr');set(RX.to,'to');set(/^(dari|mulai)(_?m)?$/,'fr');set(/^(sampai|hingga|ke)(_?m)?$/,'to');}
+ /* tebakan dari isi bila nama kolom tidak dikenali: From/To = dua kolom angka berurutan dengan To > From; Hole_ID = kolom teks pertama */
+ const smp=tb.rows.slice(0,200),nv=i=>smp.map(r=>vgNum(r[i],tb.sep));
+ if((k==='assay'||k==='geo')&&!m.includes('fr')&&!m.includes('to'))for(let i=0;i+1<hd.length;i++){if(m[i]||m[i+1])continue;const A=nv(i),B=nv(i+1);let ok=0,n=0;for(let j=0;j<A.length;j++){if(!isFinite(A[j])||!isFinite(B[j]))continue;n++;if(B[j]>A[j]&&A[j]>=0)ok++;}if(n>=3&&ok/n>=0.95){m[i]='fr';m[i+1]='to';break;}}
+ if(!m.includes('id')){const i=hd.findIndex((h,i)=>!m[i]&&smp.length&&smp.filter(r=>r[i]!=null&&String(r[i]).trim()!==''&&!isFinite(vgNum(r[i],tb.sep))).length>=smp.length*0.9);if(i>=0&&i<=1)m[i]='id';}
+ if(k==='assay'){set(RX.au,'au');set(/au|gold|emas/,'au',i=>i>2);set(/^(sample_?id|sample|sampel|sid|no_?sampel|kode_?sampel|sample_?no)$/,'sid');
+  const numr=i=>{let n=0,c=0;for(const r of tb.rows){const v=r[i];if(v==null||NOTV.test(v))continue;c++;const s=String(v).trim().replace(/^[<>]\s*/,'');if(isFinite(vgNum(s,tb.sep)))n++;if(c>=300)break;}return c>0&&n/c>=0.6;};
+  hd.forEach((h,i)=>{if(!m[i])m[i]=numr(i)?'el':'oth';});}
+ if(k==='geo'){const G=[['lith',/^(lith|litho|litologi|lithology|rock|batuan)/],['alt',/^alt|alter|ubahan/],['ox',/oks|^ox|weather|lapuk/],['min',/miner|sulf|sulph/],['vein',/vein|urat|^qv|domain|orebody|ore_?zone/],['str',/struct|struk|fault|sesar|joint|kekar/],['desc',/desc|desk|^ket|remark|catatan|comment|note/]];
+  hd.forEach((h,i)=>{if(m[i])return;const q=G.find(x=>x[1].test(h));m[i]=q?q[0]:'code';});}
+ hd.forEach((h,i)=>{if(!m[i])m[i]='oth';});return m;}
+function vgErr(k,map){const miss=REQ[k].filter(r=>!map.includes(r)).map(r=>RN[r]),dup=[...UNIQ].filter(r=>map.filter(x=>x===r).length>1).map(r=>RN[r]);
+ return (miss.length?'Kolom belum dipetakan: '+miss.join(', '):'')+(dup.length?(miss.length?'; ':'')+'dipetakan ke >1 kolom: '+dup.join(', '):'');}
+const SAN=[RX.id,RX.fr,RX.to,RX.x,RX.y,RX.z,RX.dep,RX.sd,RX.dip,RX.az];
+function vgMapped(k,t){const hd0=t.tb.hd0.map((h,i)=>{const r=t.map[i];if(CAN[r])return CAN[r];if(r==='ign'||(r==='oth'&&k!=='geo'))return '';if(r==='au')return h;const l=hn(h);return SAN.some(re=>re.test(l)||re.test(String(h).trim().toLowerCase()))?h+'_':h;});
+ return {hd0,rows:t.tb.rows,sep:t.tb.sep};}
+function vgGcat(t){const o={};if(!t)return o;const mh=vgMapped('geo',t).hd0;t.map.forEach((r,i)=>{if(mh[i]&&!['id','fr','to','ign'].includes(r))o[mh[i]]=r;});return o;}
+/* csvRead menerima tabel yang sudah diurai (hasil editor) */
+{const _cr=csvRead;csvRead=function(txt){if(txt&&typeof txt==='object'&&txt.rows)return {sep:txt.sep||',',hd0:txt.hd0,hd:txt.hd0.map(h=>String(h).toLowerCase()),rows:txt.rows};return _cr.apply(this,arguments);};}
+window.vgFile=k=>{const s=SLOT[k],t={name:s.name,tb:s.tb,map:s.map},ia=s.map.indexOf('au');return {name:s.name,txt:vgMapped(k,t),kind:k,au:ia>=0?ia:s.au};};
+window.vgAttach=(d,ks,kind)=>{const t={};ks.forEach(k=>{const s=SLOT[k];if(s&&s.tb)t[k]={name:s.name,tb:s.tb,map:s.map};});d.raw={kind,t};d.gcat=vgGcat(t.geo);};
+window.vgRawSave=d=>{if(!d.raw)return undefined;let n=0;for(const k in d.raw.t){const tb=d.raw.t[k].tb;n+=tb.rows.length*tb.hd0.length;}return n<=3e6?d.raw:undefined;};
+window.vgTplKind=h0=>{const A=tplAll();let best='',bn=0;for(const k of KS){const T=A[k]||{},m=h0.map(h=>T[hn(h)]||'');if(!REQ[k].every(r=>m.includes(r)))continue;const n=m.filter(Boolean).length;if(n>bn){bn=n;best=k;}}return best;};
+window.gcatCol=(cat,list)=>{for(const d of DS)if(d.on&&d.gcat)for(const c in d.gcat)if(d.gcat[c]===cat&&(!list||list.includes(c)))return c;return '';};
+window.gcatOf=(d,cat)=>{if(!d||!d.gcat)return '';for(const c in d.gcat)if(d.gcat[c]===cat)return c;return '';};
+/* ---- validasi ---- */
+function vgCheck(T){const R={};KS.forEach(k=>{if(T[k])R[k]={iss:[],cell:new Map(),rows:new Map(),rule:new Map()};});
+ const add=(k,r,c,lv,rule,msg)=>{const o=R[k];o.iss.push({r,c,lv,rule,msg});const key=r*1024+c,p=o.cell.get(key);if(!p)o.cell.set(key,{lv,m:[msg]});else{if(lv==='E')p.lv='E';p.m.push(msg);}
+  if(lv==='E'||!o.rows.has(r))o.rows.set(r,lv==='E'?'E':(o.rows.get(r)||'W'));const q=o.rule.get(rule)||{lv,n:0};q.n++;if(lv==='E')q.lv='E';o.rule.set(rule,q);};
+ const ix=(t,r)=>t.map.indexOf(r),ids=new Map(),idl=new Map(),dep=new Map();let haveC=false;const prev=(()=>{try{return activeHoles();}catch(e){return new Map();}})();
+ const C=T.collar;
+ if(C){haveC=true;const tb=C.tb,sp=tb.sep,iid=ix(C,'id'),I={x:ix(C,'x'),y:ix(C,'y'),z:ix(C,'z')},idp=ix(C,'dep'),idi=ix(C,'dip'),iaz=ix(C,'az'),V={x:[],y:[],z:[]};
+  tb.rows.forEach((r,i)=>{const id=iid>=0?String(r[iid]||'').trim():'';if(iid>=0){if(!id)add('collar',i,iid,'E','Hole_ID kosong','Hole_ID kosong');else if(ids.has(id))add('collar',i,iid,'E','Hole_ID ganda','Hole_ID ganda (juga di baris '+(ids.get(id)+2)+')');else{ids.set(id,i);idl.set(id.toLowerCase(),id);}}
+   for(const a of ['x','y','z']){const c=I[a];if(c<0)continue;const v=vgNum(r[c],sp);if(!isFinite(v))add('collar',i,c,'E','Koordinat bukan angka',(a==='z'?'RL':a.toUpperCase())+' kosong / bukan angka');else V[a].push([v,i]);}
+   if(idp>=0){const s=r[idp];if(s==null||String(s).trim()==='')add('collar',i,idp,'W','Kedalaman kosong','Kedalaman total kosong');else{const v=vgNum(s,sp);if(!isFinite(v))add('collar',i,idp,'E','Bukan angka','Kedalaman bukan angka');else if(v<=0)add('collar',i,idp,'E','Kedalaman ≤ 0','Kedalaman ≤ 0');else if(id)dep.set(id,v);}}
+   if(idi>=0&&String(r[idi]||'').trim()!==''){const v=vgNum(r[idi],sp);if(!isFinite(v))add('collar',i,idi,'E','Bukan angka','Dip bukan angka');else if(Math.abs(v)>90)add('collar',i,idi,'E','Dip di luar −90…90','Dip di luar −90…90');}
+   if(iaz>=0&&String(r[iaz]||'').trim()!==''){const v=vgNum(r[iaz],sp);if(!isFinite(v))add('collar',i,iaz,'E','Bukan angka','Azimuth bukan angka');else if(v<0||v>360)add('collar',i,iaz,'E','Azimuth di luar 0…360','Azimuth di luar 0…360');}});
+  for(const a of ['x','y','z']){const A=V[a];if(A.length<8)continue;const s=A.map(q=>q[0]).sort((p,q)=>p-q),med=s[s.length>>1],dv=s.map(v=>Math.abs(v-med)).sort((p,q)=>p-q),mad=dv[dv.length>>1]*1.4826,th=8*mad+(a==='z'?40:150);
+   for(const [v,i] of A)if(Math.abs(v-med)>th)add('collar',i,I[a],'W','Koordinat jauh dari lubang lain',(a==='z'?'RL':a.toUpperCase())+' '+v+' jauh dari lubang lain (median '+Math.round(med)+'): salah ketik?');}}
+ const chkId=(k,i,c,id)=>{if(!id){add(k,i,c,'E','Hole_ID kosong','Hole_ID kosong');return false;}
+  if(haveC&&ids.size){if(ids.has(id))return true;const o=idl.get(id.toLowerCase());if(o)add(k,i,c,'E','Beda huruf besar/kecil dengan Collar','Beda huruf besar/kecil dengan Collar "'+o+'"');else if(!prev.has(id))add(k,i,c,'W','Hole_ID tidak ada di Collar','Hole_ID tidak ada di Collar');return true;}
+  if(!prev.has(id)&&!T.collar)add(k,i,c,'W','Hole_ID belum ada di data','Hole_ID belum ada di Collar maupun data yang sudah dimuat');return true;};
+ const S=T.survey;
+ if(S){const tb=S.tb,sp=tb.sep,iid=ix(S,'id'),isd=ix(S,'sd'),idi=ix(S,'dip'),iaz=ix(S,'az'),seen=new Map();
+  tb.rows.forEach((r,i)=>{const id=iid>=0?String(r[iid]||'').trim():'';if(iid>=0)chkId('survey',i,iid,id);
+   if(isd>=0){const v=vgNum(r[isd],sp);if(!isFinite(v))add('survey',i,isd,'E','Bukan angka','Kedalaman survey kosong / bukan angka');else if(v<0)add('survey',i,isd,'E','Kedalaman negatif','Kedalaman negatif');else{const key=id+'|'+v;if(seen.has(key))add('survey',i,isd,'E','Kedalaman survey ganda','Kedalaman survey ganda (baris '+(seen.get(key)+2)+')');else seen.set(key,i);if(dep.has(id)&&v>dep.get(id)+0.5)add('survey',i,isd,'W','Melebihi kedalaman Collar','Melebihi kedalaman Collar ('+dep.get(id)+' m)');}}
+   if(idi>=0){const v=vgNum(r[idi],sp);if(!isFinite(v))add('survey',i,idi,'E','Bukan angka','Dip kosong / bukan angka');else if(Math.abs(v)>90)add('survey',i,idi,'E','Dip di luar −90…90','Dip di luar −90…90');}
+   if(iaz>=0){const v=vgNum(r[iaz],sp);if(!isFinite(v))add('survey',i,iaz,'E','Bukan angka','Azimuth kosong / bukan angka');else if(v<0||v>360)add('survey',i,iaz,'E','Azimuth di luar 0…360','Azimuth di luar 0…360');}});}
+ for(const k of ['assay','geo']){const t=T[k];if(!t)continue;const tb=t.tb,sp=tb.sep,iid=ix(t,'id'),ifr=ix(t,'fr'),ito=ix(t,'to'),H=new Map();
+  tb.rows.forEach((r,i)=>{const id=iid>=0?String(r[iid]||'').trim():'';if(iid>=0)chkId(k,i,iid,id);if(ifr<0||ito<0)return;
+   const a=vgNum(r[ifr],sp),b=vgNum(r[ito],sp);let ok=true;if(!isFinite(a)){add(k,i,ifr,'E','Bukan angka','From kosong / bukan angka');ok=false;}else if(a<0){add(k,i,ifr,'E','From negatif','From negatif');ok=false;}
+   if(!isFinite(b)){add(k,i,ito,'E','Bukan angka','To kosong / bukan angka');ok=false;}
+   if(ok&&b<=a){add(k,i,ito,'E','To ≤ From','To ('+b+') ≤ From ('+a+')');ok=false;}
+   if(ok&&id){(H.get(id)||H.set(id,[]).get(id)).push([a,b,i]);if(dep.has(id)&&b>dep.get(id)+0.05)add(k,i,ito,'W','Melebihi kedalaman Collar','To melebihi kedalaman Collar ('+dep.get(id)+' m)');}});
+  for(const [,L] of H){L.sort((p,q)=>p[0]-q[0]||p[1]-q[1]);for(let j=1;j<L.length;j++){const p=L[j-1],q=L[j];
+   if(Math.abs(q[0]-p[0])<1e-6&&Math.abs(q[1]-p[1])<1e-6)add(k,q[2],ifr,'E','Interval ganda','Interval ganda dengan baris '+(p[2]+2));
+   else if(q[0]<p[1]-1e-6)add(k,q[2],ifr,'E','Interval tumpang tindih','Tumpang tindih dengan baris '+(p[2]+2)+' ('+p[0]+'–'+p[1]+')');
+   else if(q[0]>p[1]+1e-6)add(k,q[2],ifr,'W','Celah interval','Celah '+(+(q[0]-p[1]).toFixed(3))+' m setelah baris '+(p[2]+2));}}
+  if(k==='assay'){const iau=ix(t,'au'),isid=ix(t,'sid'),EL=t.map.map((r,i)=>r==='el'||r==='au'?i:-1).filter(i=>i>=0),sids=new Map();
+   tb.rows.forEach((r,i)=>{for(const c of EL){const s=r[c];if(s==null||NOTV.test(s))continue;const x=String(s).trim();if(/^[<>]\s*[\d.,]+$/.test(x))continue;const v=vgNum(x,sp);
+     if(!isFinite(v))add(k,i,c,'W','Nilai bukan angka','"'+x+'" bukan angka');else if(c===iau&&v>500)add(k,i,c,'W','Au sangat tinggi','Au '+v+' sangat tinggi: cek satuan / salah ketik');}
+    if(isid>=0){const s=String(r[isid]||'').trim();if(!s)add(k,i,isid,'W','Sample_ID kosong','Sample_ID kosong');else if(sids.has(s))add(k,i,isid,'E','Sample_ID ganda','Sample_ID ganda (baris '+(sids.get(s)+2)+')');else sids.set(s,i);}});}
+  if(k==='geo'){const il=ix(t,'lith');if(il>=0)tb.rows.forEach((r,i)=>{if(!String(r[il]||'').trim())add(k,i,il,'W','Litologi kosong','Litologi kosong');});}}
+ for(const k in R)R[k].iss.sort((p,q)=>p.r-q.r||p.c-q.c);return R;}
+window.vgCheck=vgCheck;
+/* ---- status validasi di slot impor ---- */
+const slotT=()=>{const T={};KS.forEach(k=>{const s=SLOT[k];if(s&&s.tb)T[k]={name:s.name,tb:s.tb,map:s.map};});return T;};
+let svT=0;const slotCheck=()=>{clearTimeout(svT);svT=setTimeout(()=>{const T=slotT(),R=vgCheck(T);KS.forEach(k=>{const s=SLOT[k];if(!s||!R[k])return;let E=0,W=0;for(const q of R[k].iss)q.lv==='E'?E++:W++;s.vs={E,W};});slotUI();},60);};
+window.vgSlotLoaded=k=>{const s=SLOT[k];if(!s||s.txt==null)return;const c=csvRead(s.txt);s.tb={hd0:c.hd0.slice(),rows:c.rows,sep:c.sep};s.txt=null;s.map=vgGuess(k,s.tb);s.err=vgErr(k,s.map);const ia=s.map.indexOf('au');s.au=ia>=0?ia:null;s.n=s.tb.rows.length;slotCheck();};
+{const _su=slotUI;slotUI=function(){_su.apply(this,arguments);KS.forEach(k=>{const s=SLOT[k],el=g('dss-'+k);if(!s||!s.tb||!el)return;
+  const v=s.err?null:s.vs,st=v?(v.E||v.W?(v.E?'<span style="color:#c62828">'+v.E.toLocaleString('id-ID')+' galat</span>':'')+(v.E&&v.W?' · ':'')+(v.W?'<span style="color:#b26a00">'+v.W.toLocaleString('id-ID')+' peringatan</span>':''):'<span style="color:#2e7d32">&#10003; tanpa masalah</span>'):'';
+  el.insertAdjacentHTML('beforeend','<br><a href="#" class="vgk" data-k="'+k+'" title="Atur kategori tiap kolom">Kolom</a> · <a href="#" class="vgv" data-k="'+k+'" title="Buka tabel, sel bermasalah disorot">Periksa</a>'+(st?' · '+st:''));});
+ document.querySelectorAll('.slot .vgk').forEach(a=>a.onclick=e=>{e.preventDefault();mapOpen({type:'slot'},a.dataset.k);});
+ document.querySelectorAll('.slot .vgv').forEach(a=>a.onclick=e=>{e.preventDefault();vgOpen({type:'slot'},a.dataset.k);});};}
+{const sel=g('dsau');if(sel)sel.addEventListener('change',()=>{const s=SLOT.assay;if(!s||!s.map)return;const i=+sel.value;s.map=s.map.map((r,j)=>r==='au'&&j!==i?'el':r);s.map[i]='au';s.err=vgErr('assay',s.map);slotCheck();});}
+/* ---- CSS ---- */
+const css=document.createElement('style');css.textContent=`
+#vgw,#vgmw{position:fixed;z-index:60;background:#fff;border:1px solid #c9ced8;border-radius:8px;box-shadow:0 10px 40px #0004;font-size:12px;display:none;flex-direction:column}
+#vgw{left:3vw;top:4vh;width:94vw;height:88vh;resize:both;overflow:hidden;min-width:640px;min-height:320px}
+#vgmw{left:calc(50% - 330px);top:8vh;width:660px;max-height:84vh;z-index:70}
+#vgw.on,#vgmw.on{display:flex}
+#vgw .flh,#vgmw .flh{flex:none}
+#vgbar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:5px 8px;border-bottom:1px solid #e3e6ec;flex:none}
+#vgbar button{margin:0;padding:2px 8px}#vgbar input[type=search]{width:130px;padding:2px 5px}
+#vgtabs{display:flex;gap:2px;margin-right:6px}#vgtabs button.on{background:#1f2d6b;color:#fff;border-color:#1f2d6b}
+#vgtabs i{font-style:normal;font-size:10px;border-radius:8px;padding:0 5px;margin-left:4px;color:#fff;background:#c62828}#vgtabs i.w{background:#e09a00}#vgtabs i.ok{background:#2e7d32}
+#vgmain{flex:1;display:flex;gap:8px;padding:6px 8px;min-height:0}
+#vggw{flex:1;display:flex;flex-direction:column;min-width:0;border:1px solid #b9c0cc}
+#vghd{overflow:hidden;flex:none;background:#eef1f6}#vggrid{flex:1;overflow:auto;position:relative;outline:none;background:#fff}
+#vggw table{border-collapse:collapse;table-layout:fixed;font:12px Segoe UI,Arial,sans-serif}
+#vggrid table{position:absolute;left:0;top:0}
+#vggw td,#vggw th{border:1px solid #d6dae1;height:22px;box-sizing:border-box;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:20px}
+#vghd th{font-weight:600;color:#1f2d6b;text-align:left;cursor:pointer;line-height:15px;height:36px;vertical-align:top;padding-top:2px}#vghd th small{display:block;font-weight:400;color:#667085;font-size:10px}
+#vghd th.srt::after{content:' ▲';font-size:9px}#vghd th.srt.dn::after{content:' ▼'}
+#vggw .rn{background:#eef1f6;color:#667085;text-align:right;position:sticky;left:0;z-index:1;cursor:pointer;font-size:11px}
+#vggrid td.E{background:#ffd6d6}#vggrid td.W{background:#fff0b8}#vggrid td.ed{color:#1849a9;font-weight:600}
+#vggrid td.sel{outline:2px solid #1f6feb;outline-offset:-2px}#vggrid tr.rs td:not(.rn){box-shadow:inset 0 0 0 999px #1f6feb1c}
+#vggrid td.rn.E{background:#c62828;color:#fff}#vggrid td.rn.W{background:#e09a00;color:#fff}
+#vggrid td input{width:100%;height:20px;border:0;outline:none;padding:0;font:inherit;background:#fff}
+#vgside{width:300px;flex:none;display:flex;flex-direction:column;min-height:0;gap:4px}
+#vgrules{max-height:38%;overflow:auto;border:1px solid #e3e6ec;border-radius:4px}#vgiss{flex:1;overflow:auto;border:1px solid #e3e6ec;border-radius:4px}
+#vgrules div,#vgiss div{padding:2px 6px;cursor:pointer;border-bottom:1px solid #f0f2f5}#vgrules div:hover,#vgiss div:hover{background:#eef3ff}#vgrules div.on{background:#dfe8ff}
+#vgrules b,#vgiss b{display:inline-block;min-width:10px;border-radius:3px;padding:0 4px;color:#fff;font-size:10px;margin-right:4px}.vgE{background:#c62828}.vgW{background:#e09a00}
+#vgft{flex:none;padding:3px 8px;border-top:1px solid #e3e6ec;color:#555;display:flex;gap:10px;align-items:center}#vgft .note{flex:1}
+#vgmb{padding:6px 10px;overflow:auto}#vgmb table{border-collapse:collapse;width:100%}#vgmb td,#vgmb th{border-bottom:1px solid #eceff3;padding:3px 4px;text-align:left;vertical-align:middle}
+#vgmb td.ex{color:#667085;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#vgmb select{width:100%}#vgmb tr.req td:first-child{font-weight:600}
+`;document.head.appendChild(css);
+/* ---- jendela ---- */
+const W=document.createElement('div');W.id='vgw';W.innerHTML='<div class="flh" id="vgh"><b>Validasi &amp; edit tabel</b><span id="vgsrc" class="note" style="margin-left:8px"></span><span style="flex:1"></span><button id="vgx" title="Tutup">&#10005;</button></div>'+
+ '<div id="vgbar"><span id="vgtabs"></span><input type="search" id="vgq" placeholder="Cari Hole_ID / nilai"><label style="margin:0;display:flex;gap:4px;align-items:center"><input type="checkbox" id="vgonly">Hanya baris bermasalah</label>'+
+ '<button id="vgmap" title="Atur kategori tiap kolom">Kolom…</button><button id="vgadd" title="Sisipkan baris di bawah sel terpilih">+ Baris</button><button id="vgdel" title="Hapus baris terpilih (klik nomor baris; Shift+klik = rentang)">Hapus baris</button><button id="vgun" title="Batalkan edit terakhir (Ctrl+Z)">&#8630; Batal</button>'+
+ '<span style="flex:1"></span><button id="vgexp" title="Ekspor tabel ini ke CSV (header & pemisah asli)">&#8681; CSV tabel ini</button><button id="vgexa" title="Ekspor semua tabel">&#8681; Semua tabel</button><button id="vgexi" title="Ekspor daftar masalah">&#8681; Laporan masalah</button><button id="vggo" class="pri"></button></div>'+
+ '<div id="vgmain"><div id="vggw"><div id="vghd"><table id="vght"></table></div><div id="vggrid" tabindex="0"><div id="vgsp"></div><table id="vgbt"></table></div></div>'+
+ '<div id="vgside"><div class="note"><b>Ringkasan</b> (klik = saring)</div><div id="vgrules"></div><div class="note"><b>Daftar masalah</b> (klik = ke sel)</div><div id="vgiss"></div></div></div>'+
+ '<div id="vgft"><span class="note" id="vgst"></span><span class="note" style="flex:none">Klik dua kali / ketik = edit · Enter = simpan · Esc = batal · Ctrl+V dari Excel · Ctrl+Z = batal</span></div>';
+document.body.appendChild(W);
+const MW=document.createElement('div');MW.id='vgmw';MW.innerHTML='<div class="flh" id="vgmh"><b id="vgmt">Kategori kolom</b><span style="flex:1"></span><button id="vgmx" title="Tutup">&#10005;</button></div><div id="vgmb"></div>';document.body.appendChild(MW);
+setTimeout(()=>{if(window.flDrag){flDrag(W,g('vgh'));flDrag(MW,g('vgmh'));}},0);
+W.addEventListener('mousedown',()=>{W.style.zIndex=60;MW.style.zIndex=70;});
+/* ---- state editor ---- */
+const V={src:null,k:null,T:null,R:null,view:[],sel:{r:0,c:0},rs:new Set(),anchor:null,sort:null,rule:null,U:[],ed:new WeakMap(),dirty:false,rowH:22,widths:[],editing:null};
+const srcT=src=>{if(src.type==='slot')return slotT();const d=DS[src.i];return d&&d.raw?d.raw.t:{};};
+const curT=()=>V.T&&V.T[V.k];
+function revalidate(now){clearTimeout(V.rvT);const run=()=>{V.R=vgCheck(V.T);if(V.src.type==='slot'){KS.forEach(k=>{const s=SLOT[k];if(s&&V.R[k]){let E=0,W2=0;for(const q of V.R[k].iss)q.lv==='E'?E++:W2++;s.vs={E,W:W2};}});slotUI();}buildView();tabs();side();draw();};if(now)run();else V.rvT=setTimeout(run,180);}
+function tabs(){g('vgtabs').innerHTML=KS.filter(k=>V.T[k]).map(k=>{const R=V.R[k];let E=0,W2=0;if(R)for(const q of R.iss)q.lv==='E'?E++:W2++;return '<button data-k="'+k+'" class="'+(k===V.k?'on':'')+'">'+KN[k]+(E?'<i>'+E.toLocaleString('id-ID')+'</i>':'')+(W2?'<i class="w">'+W2.toLocaleString('id-ID')+'</i>':'')+(!E&&!W2?'<i class="ok">&#10003;</i>':'')+'</button>';}).join('');
+ g('vgtabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{commit();V.k=b.dataset.k;V.sel={r:0,c:0};V.rs.clear();V.sort=null;V.rule=null;layout();buildView();tabs();side();draw();});}
+function buildView(){const t=curT();if(!t){V.view=[];return;}const R=V.R[V.k],n=t.tb.rows.length,q=g('vgq').value.trim().toLowerCase(),only=g('vgonly').checked;let v=[];
+ const ruleRows=V.rule?new Set(R.iss.filter(x=>x.rule===V.rule).map(x=>x.r)):null;
+ for(let i=0;i<n;i++){if(only&&!R.rows.has(i))continue;if(ruleRows&&!ruleRows.has(i))continue;if(q){const r=t.tb.rows[i];if(!r.some(x=>x!=null&&String(x).toLowerCase().includes(q)))continue;}v.push(i);}
+ if(V.sort){const {c,dn}=V.sort,rows=t.tb.rows,sp=t.tb.sep,num=v.every(i=>{const x=rows[i][c];return x==null||String(x).trim()===''||isFinite(vgNum(x,sp));});
+  v.sort((a,b)=>{const x=rows[a][c],y=rows[b][c];let r;if(num){const p=vgNum(x,sp),q2=vgNum(y,sp);r=(isFinite(p)?p:-Infinity)-(isFinite(q2)?q2:-Infinity);}else r=String(x||'').localeCompare(String(y||''),'id',{numeric:true});return (dn?-r:r)||a-b;});}
+ V.view=v;if(V.sel.r>=v.length)V.sel.r=Math.max(0,v.length-1);g('vgsp').style.height=(v.length*V.rowH+2)+'px';}
+function layout(){const t=curT();if(!t)return;const tb=t.tb,nc=tb.hd0.length,smp=tb.rows.slice(0,300);V.widths=tb.hd0.map((h,c)=>{let m=Math.max(String(h).length,(RN[t.map[c]]||'').length*0.8);for(const r of smp){const L=String(r[c]==null?'':r[c]).length;if(L>m)m=L;}return Math.round(Math.min(260,Math.max(58,m*7+14)));});
+ const rnw=Math.max(46,String(tb.rows.length+1).length*8+14),cg='<colgroup><col style="width:'+rnw+'px">'+V.widths.map(w=>'<col style="width:'+w+'px">').join('')+'</colgroup>',tw=rnw+V.widths.reduce((a,b)=>a+b,0);
+ V.cg=cg;V.tw=tw;g('vght').style.width=tw+'px';g('vgbt').style.width=tw+'px';
+ g('vght').innerHTML=cg+'<tr><th class="rn">#</th>'+tb.hd0.map((h,c)=>{const r=t.map[c],s=V.sort&&V.sort.c===c;return '<th data-c="'+c+'" class="'+(s?'srt'+(V.sort.dn?' dn':''):'')+'" title="'+esc(h)+' — kategori: '+esc(RN[r]||r)+' (klik = urutkan)">'+esc(h||'(tanpa nama)')+'<small>'+esc(RN[r]||r)+'</small></th>';}).join('')+'</tr>';
+ g('vght').querySelectorAll('th[data-c]').forEach(th=>th.onclick=()=>{commit();const c=+th.dataset.c;V.sort=V.sort&&V.sort.c===c?(V.sort.dn?null:{c,dn:true}):{c,dn:false};layout();buildView();draw();});}
+function draw(){const t=curT(),bt=g('vgbt'),gr=g('vggrid');if(!t){bt.innerHTML='';return;}const tb=t.tb,R=V.R[V.k],H=V.rowH,top=gr.scrollTop,n0=Math.max(0,Math.floor(top/H)-5),n1=Math.min(V.view.length,Math.ceil((top+gr.clientHeight)/H)+5);
+ let h=V.cg;for(let vi=n0;vi<n1;vi++){const i=V.view[vi],row=tb.rows[i],ed=V.ed.get(row),rl=R.rows.get(i);h+='<tr data-v="'+vi+'"'+(V.rs.has(i)?' class="rs"':'')+'><td class="rn'+(rl?' '+rl:'')+'" data-v="'+vi+'">'+(i+2)+'</td>';
+  for(let c=0;c<tb.hd0.length;c++){const q=R.cell.get(i*1024+c),cls=(q?q.lv:'')+(ed&&ed.has(c)?' ed':'')+(vi===V.sel.r&&c===V.sel.c?' sel':''),v=row[c]==null?'':String(row[c]);
+   h+='<td data-c="'+c+'"'+(cls.trim()?' class="'+cls.trim()+'"':'')+(q?' title="'+esc(q.m.join('\n'))+'"':(v.length>12?' title="'+esc(v)+'"':''))+'>'+esc(v)+'</td>';}h+='</tr>';}
+ bt.innerHTML=h;bt.style.top=(n0*H)+'px';const tr=bt.querySelector('tr');if(tr&&Math.abs(tr.offsetHeight-H)>0.5&&tr.offsetHeight>10){V.rowH=tr.offsetHeight;g('vgsp').style.height=(V.view.length*V.rowH+2)+'px';}
+ status();}
+function status(){const t=curT();if(!t){g('vgst').textContent='';return;}const R=V.R[V.k];let E=0,W2=0;for(const q of R.iss)q.lv==='E'?E++:W2++;const i=V.view[V.sel.r];
+ g('vgst').innerHTML=t.tb.rows.length.toLocaleString('id-ID')+' baris'+(V.view.length!==t.tb.rows.length?' (tampil '+V.view.length.toLocaleString('id-ID')+')':'')+' · <span style="color:#c62828">'+E.toLocaleString('id-ID')+' galat</span> · <span style="color:#b26a00">'+W2.toLocaleString('id-ID')+' peringatan</span>'+(i!=null?' · baris '+(i+2)+', kolom '+esc(t.tb.hd0[V.sel.c]||''):'')+(V.rs.size?' · '+V.rs.size+' baris dipilih':'')+(V.dirty&&V.src.type==='ds'?' · <b style="color:#1849a9">ada perubahan, klik Bangun ulang dataset</b>':'');}
+function side(){const t=curT();if(!t){g('vgrules').innerHTML='';g('vgiss').innerHTML='';return;}const R=V.R[V.k],rl=[...R.rule.entries()].sort((a,b)=>(a[1].lv==='E'?0:1)-(b[1].lv==='E'?0:1)||b[1].n-a[1].n);
+ g('vgrules').innerHTML=rl.length?rl.map(([k,q])=>'<div data-r="'+esc(k)+'" class="'+(V.rule===k?'on':'')+'"><b class="vg'+q.lv+'">'+q.n.toLocaleString('id-ID')+'</b>'+esc(k)+'</div>').join('')+(V.rule?'<div data-r="" style="color:#1f6feb">&#10005; hapus saringan</div>':''):'<div style="color:#2e7d32;cursor:default">&#10003; Tidak ada masalah di tabel ini.</div>';
+ g('vgrules').querySelectorAll('div[data-r]').forEach(d=>d.onclick=()=>{V.rule=d.dataset.r||null;V.sel.r=0;buildView();side();g('vggrid').scrollTop=0;draw();});
+ const L=(V.rule?R.iss.filter(x=>x.rule===V.rule):R.iss),M=1500;g('vgiss').innerHTML=L.slice(0,M).map((q,j)=>'<div data-j="'+j+'"><b class="vg'+q.lv+'">'+(q.lv==='E'?'G':'P')+'</b>Baris '+(q.r+2)+' · '+esc(t.tb.hd0[q.c]||'')+': '+esc(q.msg)+'</div>').join('')+(L.length>M?'<div class="note" style="cursor:default">… '+(L.length-M).toLocaleString('id-ID')+' lainnya (pakai saringan / Ekspor laporan)</div>':'');
+ g('vgiss').querySelectorAll('div[data-j]').forEach(d=>d.onclick=()=>{const q=L[+d.dataset.j];goCell(q.r,q.c);});}
+function goCell(r,c){let vi=V.view.indexOf(r);if(vi<0){g('vgonly').checked=false;V.rule=null;g('vgq').value='';buildView();side();vi=V.view.indexOf(r);}if(vi<0)return;V.sel={r:vi,c};scrollSel();draw();g('vggrid').focus();}
+function scrollSel(){const gr=g('vggrid'),H=V.rowH,y=V.sel.r*H;if(y<gr.scrollTop)gr.scrollTop=y;else if(y+H>gr.scrollTop+gr.clientHeight-2)gr.scrollTop=y+H-gr.clientHeight+2;
+ let x=V.tw-V.widths.reduce((a,b)=>a+b,0);for(let c=0;c<V.sel.c;c++)x+=V.widths[c];const w=V.widths[V.sel.c]||60,rnw=V.tw-V.widths.reduce((a,b)=>a+b,0);if(x-rnw<gr.scrollLeft)gr.scrollLeft=Math.max(0,x-rnw);else if(x+w>gr.scrollLeft+gr.clientWidth)gr.scrollLeft=x+w-gr.clientWidth;}
+/* ---- edit sel ---- */
+function setCell(i,c,val,batch){const row=curT().tb.rows[i];while(row.length<=c)row.push('');const old=row[c]==null?'':String(row[c]);if(old===val)return false;row[c]=val;let s=V.ed.get(row);if(!s)V.ed.set(row,s=new Set());s.add(c);(batch||V.U).push({k:V.k,row,c,old});return true;}
+function markDirty(){V.dirty=true;revalidate();}
+function startEdit(init){const t=curT();if(!t||!V.view.length)return;const i=V.view[V.sel.r],td=g('vgbt').querySelector('tr[data-v="'+V.sel.r+'"] td[data-c="'+V.sel.c+'"]');if(!td)return;
+ const inp=document.createElement('input');inp.value=init!=null?init:(t.tb.rows[i][V.sel.c]==null?'':t.tb.rows[i][V.sel.c]);td.textContent='';td.appendChild(inp);inp.focus();if(init==null)inp.select();V.editing={inp,i,c:V.sel.c};
+ inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();commit();mv(e.shiftKey?-1:1,0);}else if(e.key==='Tab'){e.preventDefault();commit();mv(0,e.shiftKey?-1:1);}else if(e.key==='Escape'){e.preventDefault();V.editing=null;draw();g('vggrid').focus();}});
+ inp.addEventListener('blur',()=>{setTimeout(()=>{if(V.editing&&V.editing.inp===inp){commit();}},0);});}
+function commit(){const E=V.editing;if(!E)return;V.editing=null;const b=[];if(setCell(E.i,E.c,E.inp.value,b)){V.U.push({batch:b});markDirty();}draw();g('vggrid').focus({preventScroll:true});}
+function mv(dr,dc){const t=curT();if(!t)return;V.sel.r=Math.max(0,Math.min(V.view.length-1,V.sel.r+dr));V.sel.c=Math.max(0,Math.min(t.tb.hd0.length-1,V.sel.c+dc));scrollSel();draw();}
+function undo(){const u=V.U.pop();if(!u){if(window.sbToast)sbToast('Tidak ada edit untuk dibatalkan.');return;}const T=V.T;
+ if(u.batch){for(let j=u.batch.length-1;j>=0;j--){const o=u.batch[j];o.row[o.c]=o.old;}V.k=u.batch[0]?u.batch[0].k:V.k;}
+ else if(u.del){const rows=T[u.k].tb.rows;u.del.slice().sort((a,b)=>a[0]-b[0]).forEach(([i,r])=>rows.splice(i,0,r));V.k=u.k;}
+ else if(u.ins!=null){T[u.k].tb.rows.splice(u.ins,1);V.k=u.k;}
+ layout();markDirty();revalidate(true);}
+const gr=g('vggrid');
+gr.addEventListener('scroll',()=>{g('vghd').scrollLeft=gr.scrollLeft;if(V.editing)commit();else draw();});
+gr.addEventListener('mousedown',e=>{const td=e.target.closest('td');if(!td||td.querySelector('input'))return;const tr=td.parentNode,vi=+tr.dataset.v;if(V.editing)commit();
+ if(td.classList.contains('rn')){const i=V.view[vi];if(e.shiftKey&&V.anchor!=null){const a=Math.min(V.anchor,vi),b=Math.max(V.anchor,vi);if(!e.ctrlKey)V.rs.clear();for(let k=a;k<=b;k++)V.rs.add(V.view[k]);}else if(e.ctrlKey){V.rs.has(i)?V.rs.delete(i):V.rs.add(i);V.anchor=vi;}else{V.rs.clear();V.rs.add(i);V.anchor=vi;}V.sel.r=vi;draw();return;}
+ V.rs.clear();V.sel={r:vi,c:+td.dataset.c};draw();});
+gr.addEventListener('dblclick',e=>{const td=e.target.closest('td[data-c]');if(td)startEdit();});
+gr.addEventListener('keydown',e=>{if(V.editing)return;const t=curT();if(!t)return;const k=e.key;e.stopPropagation();
+ if((e.ctrlKey||e.metaKey)&&(k==='z'||k==='Z')){e.preventDefault();undo();return;}
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(k==='ArrowDown'){e.preventDefault();mv(1,0);}else if(k==='ArrowUp'){e.preventDefault();mv(-1,0);}else if(k==='ArrowRight'||k==='Tab'&&!e.shiftKey){e.preventDefault();mv(0,1);}else if(k==='ArrowLeft'||k==='Tab'&&e.shiftKey){e.preventDefault();mv(0,-1);}
+ else if(k==='PageDown'){e.preventDefault();mv(Math.floor(gr.clientHeight/V.rowH)-1,0);}else if(k==='PageUp'){e.preventDefault();mv(-Math.floor(gr.clientHeight/V.rowH)+1,0);}
+ else if(k==='Home'){e.preventDefault();V.sel.c=0;mv(0,0);}else if(k==='End'){e.preventDefault();V.sel.c=t.tb.hd0.length-1;mv(0,0);}
+ else if(k==='Enter'||k==='F2'){e.preventDefault();startEdit();}
+ else if(k==='Delete'){e.preventDefault();if(V.rs.size){delRows();return;}const b=[];if(setCell(V.view[V.sel.r],V.sel.c,'',b)){V.U.push({batch:b});markDirty();}draw();}
+ else if(k==='Backspace'){e.preventDefault();startEdit('');}
+ else if(k.length===1){e.preventDefault();startEdit(k);}});
+gr.addEventListener('copy',e=>{if(V.editing)return;const t=curT();if(!t)return;let txt;if(V.rs.size){const rs=[...V.rs].sort((a,b)=>a-b);txt=rs.map(i=>t.tb.rows[i].join('\t')).join('\n');}else{const v=t.tb.rows[V.view[V.sel.r]];txt=v?String(v[V.sel.c]==null?'':v[V.sel.c]):'';}e.clipboardData.setData('text/plain',txt);e.preventDefault();});
+gr.addEventListener('paste',e=>{if(V.editing)return;const t=curT();if(!t||!V.view.length)return;const txt=(e.clipboardData.getData('text/plain')||'').replace(/\r/g,'').replace(/\n$/,'');if(!txt)return;e.preventDefault();
+ const L=txt.split('\n').map(l=>l.split('\t')),b=[];L.forEach((cells,dr)=>{const vi=V.sel.r+dr;if(vi>=V.view.length)return;cells.forEach((v,dc)=>{const c=V.sel.c+dc;if(c<t.tb.hd0.length)setCell(V.view[vi],c,v.trim(),b);});});
+ if(b.length){V.U.push({batch:b});markDirty();if(window.sbToast)sbToast(b.length+' sel ditempel.');}draw();});
+function delRows(){const t=curT();if(!t)return;let rs=[...V.rs];if(!rs.length&&V.view.length)rs=[V.view[V.sel.r]];if(!rs.length)return;if(rs.length>1&&!confirm('Hapus '+rs.length+' baris dari tabel '+KN[V.k]+'?'))return;
+ rs.sort((a,b)=>b-a);const del=rs.map(i=>[i,t.tb.rows[i]]);rs.forEach(i=>t.tb.rows.splice(i,1));V.U.push({k:V.k,del});V.rs.clear();markDirty();revalidate(true);if(window.sbToast)sbToast(del.length+' baris dihapus · Ctrl+Z untuk membatalkan');}
+g('vgdel').onclick=delRows;
+g('vgadd').onclick=()=>{const t=curT();if(!t)return;commit();const cur=V.view.length?V.view[V.sel.r]:t.tb.rows.length-1,at=cur+1,row=t.tb.hd0.map(()=>''),iid=t.map.indexOf('id'),src=t.tb.rows[cur];if(iid>=0&&src)row[iid]=src[iid];
+ const ifr=t.map.indexOf('fr'),ito=t.map.indexOf('to');if(ifr>=0&&ito>=0&&src&&src[ito]!=null)row[ifr]=src[ito];
+ t.tb.rows.splice(at,0,row);V.ed.set(row,new Set(t.tb.hd0.map((h,c)=>c)));V.U.push({k:V.k,ins:at});V.sort=null;V.rule=null;g('vgonly').checked=false;markDirty();revalidate(true);goCell(at,ifr>=0?ito:0);};
+g('vgun').onclick=undo;
+g('vgq').addEventListener('input',()=>{clearTimeout(V.qT);V.qT=setTimeout(()=>{V.sel.r=0;buildView();gr.scrollTop=0;draw();},200);});
+g('vgonly').onchange=()=>{V.sel.r=0;buildView();gr.scrollTop=0;draw();};
+g('vgx').onclick=()=>{commit();W.classList.remove('on');if(V.src&&V.src.type==='slot')slotCheck();};
+g('vgmap').onclick=()=>{commit();mapOpen(V.src,V.k);};
+/* ---- ekspor ---- */
+const base=n=>String(n||'tabel').replace(/\.[^.]+$/,'');
+const toCsv=tb=>{const sp=tb.sep||',',q=v=>{v=v==null?'':String(v);return (v.includes(sp)||/["\n\r]/.test(v))?'"'+v.replace(/"/g,'""')+'"':v;};return [tb.hd0.map(q).join(sp)].concat(tb.rows.map(r=>r.map(q).join(sp))).join('\r\n');};
+g('vgexp').onclick=()=>{commit();const t=curT();if(t)fmDl(toCsv(t.tb),base(t.name)+'_valid.csv','text/csv');};
+g('vgexa').onclick=()=>{commit();let j=0;KS.forEach(k=>{const t=V.T[k];if(t)setTimeout(()=>fmDl(toCsv(t.tb),base(t.name)+'_valid.csv','text/csv'),400*j++);});};
+g('vgexi').onclick=()=>{commit();const L=[['Tabel','File','Baris','Hole_ID','Kolom','Nilai','Tingkat','Aturan','Pesan']];KS.forEach(k=>{const t=V.T[k],R=V.R[k];if(!t||!R)return;const iid=t.map.indexOf('id');for(const q of R.iss){const r=t.tb.rows[q.r]||[];L.push([KN[k],t.name,q.r+2,iid>=0?r[iid]:'',t.tb.hd0[q.c],r[q.c],q.lv==='E'?'Galat':'Peringatan',q.rule,q.msg]);}});
+ fmDl(L.map(r=>r.map(fmQ).join(',')).join('\r\n'),'Laporan_validasi_'+(V.src.type==='ds'?base(DS[V.src.i].nm).replace(/[^\w-]+/g,'_'):'impor')+'.csv','text/csv');};
+g('vggo').onclick=()=>{commit();if(V.src.type==='slot'){W.classList.remove('on');slotCheck();setTimeout(()=>g('dsgo').click(),80);return;}
+ const i=V.src.i,d=DS[i];if(!d||!d.raw)return;const ks=KS.filter(k=>d.raw.t[k]),bad=ks.filter(k=>vgErr(k,d.raw.t[k].map));if(bad.length){alert('Perbaiki pemetaan kolom dulu: '+bad.map(k=>KN[k]).join(', '));return;}
+ const files=ks.map(k=>{const t=d.raw.t[k],ia=t.map.indexOf('au');return {name:t.name,txt:vgMapped(k,t),kind:k,au:ia>=0?ia:null};}),on=d.on;d.on=false;let d2;try{d2=dsBuild(files,d.nm,d.mode,d.raw.kind||'auto');}finally{d.on=on;}
+ if(!d2.holes.length&&!Object.keys(d2.geo).length){alert('Tidak ada lubang atau geologi yang bisa dibangun dari tabel ini.');return;}
+ delete d2._sid;delete d2._vert;d2.on=on;d2.raw=d.raw;d2.gcat=vgGcat(d.raw.t.geo);if(d.fm)d2.fm=d.fm;DS[i]=d2;V.dirty=false;dsList();holesBuild();status();if(window.sbToast)sbToast('Dataset "'+d.nm+'" dibangun ulang: '+d2.holes.length+' lubang.');};
+/* ---- buka ---- */
+function vgOpen(src,k){V.src=src;V.T=srcT(src);const ks=KS.filter(x=>V.T[x]);if(!ks.length){if(window.sbToast)sbToast('Belum ada tabel untuk diperiksa.');return;}
+ V.k=k&&V.T[k]?k:(ks.find(x=>{const R=vgCheck(V.T)[x];return R&&R.iss.some(q=>q.lv==='E');})||ks[0]);V.sel={r:0,c:0};V.rs.clear();V.sort=null;V.rule=null;V.U=[];V.dirty=false;g('vgq').value='';g('vgonly').checked=false;
+ g('vgsrc').textContent=src.type==='slot'?'· tabel yang dipilih untuk diimpor (belum diproses)':'· dataset "'+DS[src.i].nm+'"';g('vggo').textContent=src.type==='slot'?'Proses dataset':'Bangun ulang dataset';
+ g('vggo').title=src.type==='slot'?'Tutup dan proses dataset dengan tabel yang sudah diedit':'Bangun ulang lubang bor dataset ini dari tabel yang sudah diedit';
+ W.classList.add('on');layout();revalidate(true);gr.scrollTop=0;gr.scrollLeft=0;gr.focus();}
+window.vgOpen=vgOpen;
+/* ---- jendela kategori kolom ---- */
+function mapOpen(src,k){const T=srcT(src),t=T[k];if(!t)return;const sm=t.map.slice();const tb=t.tb,ex=c=>{const a=[];for(const r of tb.rows){const v=r[c];if(v!=null&&String(v).trim()!==''&&!a.includes(String(v)))a.push(String(v));if(a.length>=3)break;}return a.join(' · ');};
+ g('vgmt').textContent='Kategori kolom — '+KN[k]+' · '+t.name;
+ const render=m=>{const er=vgErr(k,m);g('vgmb').innerHTML='<div class="note" style="margin-bottom:6px">Pilih kategori tiap kolom bila nama header berbeda dari biasanya. Wajib: <b>'+REQ[k].map(r=>RN[r]).join(', ')+'</b>. Pilihan disimpan sebagai templat: kolom bernama sama di file berikutnya otomatis memakai kategori ini.</div>'+
+  '<table><tr><th>Kolom di file</th><th>Contoh isi</th><th style="width:190px">Kategori</th></tr>'+tb.hd0.map((h,c)=>'<tr class="'+(REQ[k].includes(m[c])?'req':'')+'"><td>'+esc(h||'(tanpa nama)')+'</td><td class="ex" title="'+esc(ex(c))+'">'+esc(ex(c))+'</td><td><select data-c="'+c+'">'+ROLES[k].map(([r,n])=>'<option value="'+r+'"'+(m[c]===r?' selected':'')+'>'+n+'</option>').join('')+'</select></td></tr>').join('')+'</table>'+
+  '<div id="vgmer" style="color:#c62828;margin:6px 0;min-height:16px">'+esc(er)+'</div><div class="fl"><button id="vgmok" class="pri">Simpan</button><button id="vgmau" title="Tebak ulang dari nama kolom tanpa templat">Deteksi otomatis</button><button id="vgmcl">Batal</button></div>';
+  g('vgmb').querySelectorAll('select').forEach(s=>s.onchange=()=>{const c=+s.dataset.c,r=s.value;if(UNIQ.has(r))m.forEach((x,j)=>{if(x===r&&j!==c)m[j]=k==='assay'&&r==='au'?'el':(k==='geo'?'code':'oth');});m[c]=r;render(m);});
+  g('vgmau').onclick=()=>render(vgGuess(k,tb,true));g('vgmcl').onclick=()=>MW.classList.remove('on');
+  g('vgmok').onclick=()=>{const e=vgErr(k,m);if(e&&!confirm(e+'\n\nTetap simpan? Tabel ini belum bisa diproses sampai kolom wajib dipetakan.'))return;for(let c=0;c<m.length;c++)t.map[c]=m[c];tplPut(k,tb.hd0,m);
+   if(src.type==='slot'){const s=SLOT[k];s.err=vgErr(k,s.map);const ia=s.map.indexOf('au');s.au=ia>=0?ia:null;slotCheck();}else{const d=DS[src.i];if(d){V.dirty=true;if(k==='geo')d.gcat=vgGcat(t);}}
+   MW.classList.remove('on');if(W.classList.contains('on')&&V.src===src){layout();revalidate(true);}if(window.sbToast)sbToast('Kategori kolom '+KN[k]+' disimpan.');};};
+ render(sm);MW.classList.add('on');MW.style.zIndex=70;}
+g('vgmx').onclick=()=>MW.classList.remove('on');
+window.vgMapOpen=mapOpen;
+/* ---- tombol di panel impor & daftar dataset ---- */
+{const go=g('dsgo'),cl=g('dsclr');if(go&&cl){const b=document.createElement('button');b.id='vgopen';b.textContent='Validasi & edit tabel';b.title='Periksa tabel yang dipilih: sel bermasalah disorot, bisa diedit lalu diekspor';cl.after(b);b.onclick=()=>vgOpen({type:'slot'});
+  setInterval(()=>{const on=KS.some(k=>SLOT[k]&&SLOT[k].tb);if(b.disabled===on){b.disabled=!on;b.title=on?'Periksa tabel yang dipilih: sel bermasalah disorot, bisa diedit lalu diekspor':'Pilih file Collar / Survey / Assay / Geologi dulu';}},700);}}
+{const _dl=dsList;dsList=function(){const r=_dl.apply(this,arguments);document.querySelectorAll('#dsl .dsr').forEach((el,i)=>{const d=DS[i];if(!d||!d.raw||el.querySelector('.vgds'))return;const b=document.createElement('button');b.className='vgds';b.innerHTML='&#9638;';b.title='Validasi & edit tabel asli dataset ini';b.onclick=()=>vgOpen({type:'ds',i});const x=el.querySelector('button');el.insertBefore(b,x);});return r;};}
+}
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */
