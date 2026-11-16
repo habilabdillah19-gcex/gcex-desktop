@@ -1277,6 +1277,17 @@ B.append('<p class="note">Saat data diproses, aplikasi hanya menyimpan kolom yan
          'dicentang) tidak ikut masuk proyek, jadi tidak muncul di editor sesudah diproses. Untuk memperbaiki kolom seperti itu, buka file aslinya di '
          'layar import dan pakai editor sebelum diproses (tombol <b>Periksa</b>), lalu ekspor CSV-nya.</p>')
 
+B.append('<h3>16o. Tombol material dari tabel kelas kadar; skala di setiap jendela 2D &amp; 3D (Block Model 0.24.91, Drill Hole 0.24.100)</h3>')
+B.append('<p><b>Tombol material di popup string.</b> Klik sebuah string dig block: deretan tombol (mis. <b>LG &middot; 14</b>, <b>HG &middot; 17</b>, '
+         '<b>WS &middot; 1</b>) kini dibuat dari tabel kelas kadar di <b>Dig Block &rsaquo; Otomatis</b>, sehingga mengikuti standar perusahaan masing-masing. '
+         'Satu klik mengisi <i>string number</i>, <i>warna</i> dan <i>material</i>. Tombol <b>&#65291; Kelas&hellip;</b> membuka tabel kelas untuk menambah, '
+         'mengubah atau menghapus kelas. Kosongkan kolom <b>Dari</b> untuk kelas manual (hanya tombol, tidak dipakai dig block otomatis). '
+         '<b>Simpan sebagai standar</b> / <b>Pakai standar</b> memindahkan tabel ini ke proyek lain. Pengaturan proyek lama terbaca apa adanya.</p>')
+B.append('<p><b>Skala di setiap jendela.</b> Kotak di kiri bawah tampilan 2D dan 3D menunjukkan rasio skala layar (<b>1 : N</b>) dan skala batang '
+         'dalam meter. Penampang dengan eksagerasi vertikal menulis <b>VE n&times;</b> (skala berlaku horizontal). Di 3D perspektif skala ditulis '
+         '<b>&asymp;</b> dan berlaku di pusat pandangan; nyalakan <b>Ortho</b> untuk skala yang sama di seluruh layar. Layout &amp; Plot PDF tetap memuat '
+         'rasio di kop dan skala batang di lembar.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

@@ -166,6 +166,7 @@ function ogsDrPeta() {
   OGS._ptFix = fix;
   Lay = ogsLay(Object.assign(Lay, { showlegend: ogsLy('legenda'), legend: { x: pL.x, y: pL.y, xanchor: pL.x > 0.5 ? 'right' : 'left', yanchor: pL.y > 0.5 ? 'top' : 'bottom', bgcolor: 'rgba(255,255,255,.95)', bordercolor: '#888', borderwidth: 1, font: { size: 10 }, tracegroupgap: 4, groupclick: 'toggleitem' }, plot_bgcolor: '#f1f3f5', margin: { l: 70, r: 70, t: 46, b: 46 }, dragmode: OGS.ig && OGS.ig.key === 'peta' ? false : 'pan', separators: ',.' }));
   var asp = H / W, w0 = gd.offsetWidth || 900; gd.style.height = Math.max(520, Math.min(1500, Math.round((w0 - 140) * asp + 92))) + 'px';
+  gd.dataset.skala = 'off'; /* peta level menggambar skala sendiri (skala.js tidak dipasang) */
   Plotly.newPlot(gd, T, Lay, Object.assign({}, OGS_CFG, { edits: { annotationTail: true, annotationPosition: true, legendPosition: true } }));
   ogsIgBind('ogsPT', 'peta');
   if (!gd._lab) { gd._lab = 1; gd.on('plotly_relayout', function (e) { var K = OGS._ptKey || [], FX = OGS._ptFix || {}, ch = false, ulang = false, ps = ogsPt().pos;

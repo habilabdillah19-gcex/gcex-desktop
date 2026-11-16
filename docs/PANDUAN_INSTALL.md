@@ -5114,7 +5114,7 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   dikenali sebagai Collar / Survey / Assay / Geologi. Bila masih "(abaikan)", pilih jenisnya di daftar file.
 - Tautan *Kolom · Periksa* dan jumlah galat di panel impor tidak lagi terpotong di tengah kata.
 
-## 233. Drillhole 0.24.99 — kategori kolom diingat, pemeriksaan tambahan, Validasi & edit tabel
+## 234. Drillhole 0.24.99 — kategori kolom diingat, pemeriksaan tambahan, Validasi & edit tabel
 
 - **Pemetaan kolom diingat**: pilihan di panel *Pemetaan kolom & unsur* (layar import) disimpan per nama kolom. File
   berikutnya dengan nama kolom sama langsung terpetakan. Untuk mulai dari tebakan otomatis lagi: *Lupakan pilihan yang diingat*.
@@ -5133,3 +5133,20 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
     Ctrl+V dari Excel, Ctrl+Z, tambah / hapus baris, urutkan, cari, hanya baris bermasalah. Ekspor CSV memakai header
     dan pemisah file asli, plus laporan masalah.
 - Block Model, DB-Ex, Ore Works: tidak berubah.
+
+## 235. Block Model 0.24.91 + Drillhole 0.24.100 — tombol material dari tabel kelas, skala di setiap jendela
+
+- **Tombol material di popup string** (klik string dig block) tidak lagi tetap HG·17 / LG·14. Tombolnya dibuat dari tabel
+  kelas kadar di **Dig Block › Otomatis** (Dari / s.d / String / Warna / Material). Tambah, ubah, atau hapus kelas di
+  tabel itu; tombol **＋ Kelas…** di popup langsung membukanya.
+  - Satu klik mengisi string number, warna, dan material (Tujuan ikut aturan tujuan).
+  - Kosongkan **Dari** untuk kelas manual (mis. WS · 1): hanya jadi tombol, tidak dipakai dig block otomatis.
+  - **Simpan sebagai standar** menyimpan tabel ini di komputer; di proyek lain klik **Pakai standar**.
+  - Pengaturan proyek lama (tabel kelas kadar, warna kelas digit manual) langsung terbaca setelah update.
+- **Skala di setiap jendela**: kotak skala (rasio 1 : N di layar + skala batang) tampil otomatis di kiri bawah setiap
+  tampilan 2D (denah, penampang, peta) dan 3D, di Block Model maupun Drillhole.
+  - Penampang dengan eksagerasi vertikal: skala berlaku untuk arah horizontal, ditulis "VE n×".
+  - 3D perspektif: skala berlaku di pusat pandangan (benda lebih dekat tampak lebih besar), ditulis "≈". Untuk skala
+    tepat di 3D, nyalakan **Ortho**.
+  - Layout & Plot PDF: rasio skala di kop dan skala batang di lembar (bawaan menyala).
+- DB-Ex, Ore Works: tidak berubah.

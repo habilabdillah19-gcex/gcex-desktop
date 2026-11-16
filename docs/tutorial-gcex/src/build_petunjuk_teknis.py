@@ -566,6 +566,18 @@ B.append(D.tabel(['Bagian', 'Cara kerja'], [
 ]))
 B.append('<p>Uji: <code>tools/uji/uji_dh_vgrid.py</code> V1&ndash;V9.</p>')
 
+B.append('<h3>8.20 Kelas material popup &amp; skala layar (BM 0.24.91, DH 0.24.100, <code>skala.js</code>)</h3>')
+B.append('<p><code>dbKelas()</code> = baris <code>U.rules</code> bermaterial (urut tabel) + entri <code>U.sn</code> yang namanya belum ada; popup <code>dbPop</code> '
+         'membuat tombol <code>dbStrKelas(i,k)</code> (no, col, d; string dalam ikut no &amp; col bila tanpa <code>fcol</code>). <code>dbRDel</code> ikut menghapus '
+         '<code>U.sn</code> bernama sama. Standar: <code>localStorage[&#39;gcex_bm_kelas_std&#39;]</code> = {rules, sn, t}. Impor string: <code>dbKelasN(no)</code> '
+         'sebelum aturan lama 17 &rarr; HG, 14 &rarr; LG.</p>')
+B.append('<p><code>skala.js</code> membungkus <code>Plotly.newPlot</code> / <code>Plotly.react</code> dan memasang <code>.gxSkala</code> pada plot dengan '
+         '<code>yaxis.scaleanchor=&#39;x&#39;</code> (2D; m/px = rentang x / <code>xaxis._length</code>; VE = <code>scaleratio</code>) atau scene gl3d (3D: titik pusat '
+         'kamera diproyeksikan lewat <code>cameraParams</code> model&middot;view&middot;projection dan <code>dataScale</code>; vektor data horizontal yang menjadi '
+         '1 px arah kanan layar memberi px/m). Rasio = m/px &times; 1000 / 0,2646 mm (96 dpi). Diperbarui pada <code>plotly_afterplot</code>, '
+         '<code>plotly_relayout(ing)</code>, ukuran jendela. Plot yang menggambar skala sendiri memberi <code>gd.dataset.skala=&#39;off&#39;</code> (peta level OGS). '
+         'Uji: <code>tools/uji/uji_kelas_skala.py</code> K1&ndash;K6, S1&ndash;S5.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))
