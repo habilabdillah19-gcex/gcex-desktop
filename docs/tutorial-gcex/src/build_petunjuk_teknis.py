@@ -586,6 +586,15 @@ B.append('<p><code>SWN.dig()</code> / <code>SWN.am()</code> = daftar nomor &rarr
          '(<code>SWN.tanya</code>: nomor &gt; 1 warna &rarr; <code>SWN.perbaiki</code>: warna terdaftar dipertahankan, lainnya ke nomor terdaftar untuk warna itu atau '
          'nomor kosong berikutnya). <code>dbAci</code> = <code>SWN.aci</code> (palet ACI 1&ndash;255, jarak berbobot luminans). Uji: <code>tools/uji/uji_warna_nomor.py</code>.</p>')
 
+B.append('<h3>8.22 Gaya Surpac .ssi (BM 0.24.96, <code>SWN.ssi</code> di strwarna_bm.js)</h3>')
+B.append('<p>Format teks: <code>STRINGS:</code> / <code>TRIOBJECTS:</code>; baris <code>kunci=...HGS_color=lines=text=edges=markers=WARNA,...</code>, kunci '
+         '<code>default</code>, nomor, atau <code>awal, akhir, langkah</code>. Warna <code>r=.. g=.. b=..</code> (0&ndash;1) atau nama (tabel <code>NM</code>). '
+         '<code>colorOf</code>: nomor tunggal &rarr; rentang pertama yang cocok &rarr; default. Skema rentang: <code>a;b;..~range</code> + <code>warna~a -&gt; b</code>. '
+         'Ekspor: <code>denganSsi</code> menangkap nama .str dari <code>dgDl</code>, lalu menulis <code>&lt;nama&gt;.ssi</code>: baris nomor yang dipakai '
+         '(r g b dari warna GC-Ex) disisipkan sesudah <code>default</code>; bila gaya situs diimpor (<code>dbU().ssiTxt</code>) seluruh barisnya dipertahankan '
+         'kecuali nomor tunggal yang sama. <code>SWN.dig/am</code> memakai nomor tunggal gaya situs untuk nomor yang tidak ada di tabel GC-Ex. Uji: '
+         '<code>tools/uji/uji_ssi.py</code>.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

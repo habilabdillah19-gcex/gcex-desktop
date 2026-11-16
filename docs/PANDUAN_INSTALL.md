@@ -5197,3 +5197,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Data Spasial. Bila sudah berupa DTM, tampil tanda centang. Peringatan yang sama ikut di hasil Reporting.
 - Angka Reporting tidak berubah.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 241. Block Model 0.24.96 — gaya Surpac (.ssi)
+
+- **Dig Block › Otomatis › Warna Surpac (.ssi) › Import .ssi Surpac**: pilih berkas .ssi dari Surpac (gaya situs, atau
+  .ssi milik sebuah string). Warna kelas kadar dig block, material, nomor flag, kelas As-Mined dan string yang sudah ada
+  disamakan dengan warna nomornya di .ssi (mis. 14 hijau, 17 merah). Gaya ini tersimpan di proyek.
+- **Ekspor STR** (dig block, string digitasi, As-Mined) kini juga menulis **<nama>.ssi** di samping **<nama>.str**. Simpan
+  keduanya di folder yang sama: Surpac membuka string dengan warna yang sama seperti di GC-Ex. Matikan lewat sakelar
+  *Sertakan berkas .ssi saat ekspor STR* bila tidak diperlukan.
+- **Block Model › Warna & kelas kadar › Import .ssi Surpac (skema warna kadar)**: skema warna rentang kadar Surpac
+  (mis. *grade_ore.ssi*: 0–0,4 abu-abu, 0,4–1 hijau, 1–3 merah, ≥ 3 magenta) menjadi kelas warna block model.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

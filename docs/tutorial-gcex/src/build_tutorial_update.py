@@ -1308,6 +1308,14 @@ B.append('<p>Di Reporting BM &rsaquo; Constraint &rsaquo; <b>Permukaan</b>, GC-E
          'sedikit berbeda dari report Surpac. Untuk rekonsiliasi, import <b>DTM Surpac (.dtm)</b> yang sama lewat Data Spasial; bila permukaan sudah '
          'berupa DTM, tampil tanda centang.</p>')
 
+B.append('<h3>16s. Gaya Surpac (.ssi): warna di GC-Ex = warna di Surpac (Block Model 0.24.96)</h3>')
+B.append('<p>Surpac menyimpan warna string dalam berkas <b>.ssi</b> bernama sama dengan berkas <b>.str</b>-nya. Di <b>Dig Block &rsaquo; Otomatis &rsaquo; '
+         'Warna Surpac (.ssi)</b>, klik <b>Import .ssi Surpac</b> dan pilih .ssi situs: warna kelas dig block, material, flag, kelas As-Mined dan string '
+         'disamakan dengan warna nomornya di Surpac. Setiap ekspor STR kini juga menghasilkan <b>&lt;nama&gt;.ssi</b>; simpan keduanya di folder yang sama '
+         'agar Surpac menampilkan warna yang sama dengan GC-Ex.</p>')
+B.append('<p>Skema warna rentang kadar Surpac (mis. <i>grade_ore.ssi</i>) diimpor lewat <b>Block Model &rsaquo; Warna &amp; kelas kadar &rsaquo; '
+         'Import .ssi Surpac (skema warna kadar)</b> dan langsung menjadi kelas warna block model.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),
