@@ -1302,6 +1302,12 @@ B.append('<p>Saat ekspor STR atau DXF (dig block, string digitasi, As-Mined), GC
          'Bila ada, klik <b>OK</b> agar warna yang berbeda diberi nomor baru, sehingga tampilan di Surpac sama dengan di GC-Ex. Di DXF, layer = nomor '
          'string dan warna = warna AutoCAD terdekat. As-Mined kini juga punya tombol <b>String poligon (.dxf)</b>.</p>')
 
+B.append('<h3>16r. Peringatan Reporting bila topografi / pit bukan DTM (Block Model 0.24.95)</h3>')
+B.append('<p>Di Reporting BM &rsaquo; Constraint &rsaquo; <b>Permukaan</b>, GC-Ex kini memberi tahu dari mana topografi dan desain pit berasal. Bila dari '
+         '<b>string / titik</b>, muncul kotak <i>Perhatian rekonsiliasi</i>: segitiganya dibuat GC-Ex, sehingga di tepi pit dan breakline angkanya bisa '
+         'sedikit berbeda dari report Surpac. Untuk rekonsiliasi, import <b>DTM Surpac (.dtm)</b> yang sama lewat Data Spasial; bila permukaan sudah '
+         'berupa DTM, tampil tanda centang.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

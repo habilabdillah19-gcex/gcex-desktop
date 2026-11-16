@@ -78,6 +78,14 @@ function rpDomList(){var L=[['all','Semua blok (tanpa batas domain)']],m=BX.m;Ob
 function rpDomFn(o,m){var v=o.dom;if(!v||v==='all')return{f:null,lab:'semua blok'};
   if(v.indexOf('cat:')===0){var C=m.cat[v.slice(4)];if(!C)return{f:null,lab:''};var on=o.cat||{},sel=C.dict.map(function(s){return on[s]!==false;});return{f:function(i){var c=C.codes[i];return c!==65535&&sel[c];},lab:v.slice(4)+' = '+C.dict.filter(function(s,k){return sel[k];}).join(', ')};}
   if(v.indexOf('wf:')===0){var w=MD.models[+v.slice(3)];if(!w)throw new Error('Wireframe tidak ditemukan.');var W=rpInside(w);return{f:function(i,x,y,z){return W.f(x,y,z);},lab:'di dalam wireframe '+w.name};}return{f:null,lab:''};}
+/* BM 0.24.95 (pemilik 16 Nov 2026): peringatan bila Reporting memakai topografi / pit dari STRING atau TITIK, bukan segitiga DTM
+   Surpac (.dtm / DXF 3DFACE). GC-Ex lalu membuat segitiga sendiri (string dirapatkan 2 m); di tepi pit & breakline hasilnya bisa
+   sedikit berbeda dari DTM yang dipakai Surpac. TIN.soup(src) != null = segitiga DTM asli. */
+function rpDtmJenis(src){if(!src||!src.x||!src.x.length)return '';try{return(window.TIN&&TIN.soup&&TIN.soup(src))?'dtm':'str';}catch(e){return 'str';}}
+function rpDtmCek(o){o=o||(RP&&RP.o)||{};if(o.surf!=='topo'&&o.surf!=='pit')return '';var L=[];if(rpDtmJenis(window.OV&&OV.topoF)==='str')L.push('topografi');if(o.surf==='pit'&&rpDtmJenis(window.OV&&OV.pitF)==='str')L.push('desain pit');
+  if(!L.length)return '<div class=hint style="color:#2e7d32">&#10003; Topografi'+(o.surf==='pit'?' &amp; desain pit':'')+' berupa segitiga DTM: sama dengan yang dipakai Surpac.</div>';
+  return '<div class="box gmstate" style="border-left:3px solid #e09a00;background:#fff8e6;margin-top:4px"><b>Perhatian rekonsiliasi:</b> '+L.join(' &amp; ')+' berasal dari <b>string / titik</b>, bukan DTM. GC-Ex membuat segitiganya sendiri (string dirapatkan 2 m), sehingga di tepi pit &amp; breakline hasilnya bisa sedikit berbeda dari report Surpac. Untuk angka yang sama persis, import <b>DTM Surpac (.dtm)</b> yang sama dengan yang dipakai Surpac lewat <b>Data Spasial</b>.</div>';}
+window.rpDtmCek=rpDtmCek;window.rpDtmJenis=rpDtmJenis;
 function rpSurfList(){return(window.MD&&MD.models||[]).map(function(w,i){return['wf:'+i,w.name];});}
 function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performance.now(),msg=$('rpMsg');
   try{var cuts=String(o.cuts).split(/[;, ]+/).map(function(s){return parseFloat(String(s).replace(',','.'));}).filter(isFinite).sort(function(a,b){return a-b;});if(!cuts.length)cuts=[0];
@@ -125,7 +133,7 @@ function rpRun(){var m=BX.m,o=rpO();if(!m||!o)return;RP.note='';var t0=performan
     var rows=cuts.map(function(c){return{c:c,G:agg(function(i2){return G[i2]>=c;})};});
     BX.rpMask=mask;BX.rpVer=(BX.rpVer||0)+1;
     var big=m.mdl&&m.mdl.via==='backend';
-    RP.res={rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,br:br,surf:o.surf,
+    RP.res={dtmW:(function(){var w=rpDtmCek(o);return /Perhatian/.test(w)?w:'';})(),rows:rows,cuts:cuts,atts:atts,unit:Object.assign({},o.unit),nb:nb,nOut:nOut,lab:D.lab,ms:Math.round(performance.now()-t0),grp:grp,bh:bh,br:br,surf:o.surf,
       sxD:SX.map(function(q){return(q.side==='above'?'di atas ':'di bawah ')+q.n;}),poly:PL&&((pOut?'di luar ':'di dalam ')+PL.name),z0:o.z0,z1:o.z1,f:FA?o.fA+' '+{ge:'≥',le:'≤',eq:'='}[o.fOp]+' '+o.fV:'',gr:o.gr,
       frac:[FRA?('proporsi volume sub-blok (sb_frac): '+rpN(nPart)+' blok sebagian'):(m.num['sb_frac']?'sb_frac tidak dipakai (cara Surpac)':''),SF?('proporsi volume terhadap permukaan, kolom '+(+o.sfN||4)+'×'+(+o.sfN||4)+': '+rpN(nSf)+' blok sebagian'):''].filter(Boolean).join(' · '),nPart:nPart,nSf:nSf,sfrac:!!SF,
       sg:SGA?'SG kolom '+U.sgCol:'SG '+(+U.sg||2.6),date:new Date().toLocaleString('id-ID'),bm:m.name,big:big,nTot:n};
@@ -183,6 +191,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     var hasT=window.OV&&OV.topoF&&OV.topoF.x&&OV.topoF.x.length,hasP=window.OV&&OV.pitF&&OV.pitF.x&&OV.pitF.x.length;
     h+='<h4>Permukaan (sisa / remaining)</h4>'+sel('',[['none','Tanpa batas permukaan'],['topo','Di bawah topografi (sisa / remaining)'],['pit','Di dalam desain pit (antara pit & topografi)']],o.surf,"rpSet('surf',this.value)")+
       '<div class=hint>Topografi: '+(hasT?'<b>ada</b>':'<span class=warn>belum ada</span>')+' · Desain pit: '+(hasP?'<b>ada</b>':'<i>belum ada</i>')+'. Ganti lewat <b>Data Spasial</b>. Blok di luar jangkauan topografi / pit tidak dilaporkan.</div>';
+    h+=rpDtmCek(o);
     o.sx=o.sx||[];var SL=rpSurfList();
     h+='<h4>Batas DTM tambahan</h4>'+(o.sx.length?o.sx.map(function(q,i){return '<div class="g3 f"><div style="grid-column:span 2">'+sel('',SL.length?SL:[['','(tidak ada DTM)']],q.k,"rpSx("+i+",'k',this.value)")+'</div><div style="display:flex;gap:4px">'+sel('',[['below','di bawah'],['above','di atas']],q.side,"rpSx("+i+",'side',this.value)")+'<button class=x onclick="rpSx('+i+',\'del\')" title="Hapus">&times;</button></div></div>';}).join(''):'<div class=hint>Mis. di bawah batas oksidasi, di atas mined-out / survey akhir bulan (DTM di Data Referensi).</div>')+
       '<div class="g2 f">'+(SL.length?'<button onclick="rpSx(0,\'add\')">+ Tambah batas DTM</button>':'<span></span>')+'<span class=hint style="align-self:center">DTM diimport di Data Referensi &rsaquo; Permukaan DTM, wireframe di Import Wireframe Geologi.</span></div>';
@@ -195,7 +204,7 @@ function rpPanel(){var b=$('rpBody');if(!b)return;var m=window.BX&&BX.m;if(!m){b
     h+='<label class=sw style="margin-top:6px"><input type=checkbox '+(o.show?'checked':'')+' onchange="RP.o.show=this.checked"> Tampilkan hanya blok terlapor</label>';
     h+='<button class=btn-pri id=rpGo style="width:100%;height:32px;margin-top:8px" onclick="rpRun()">&#9654; Hitung reporting</button><div id=rpMsg class=hint></div>';}
   else{var R=RP.res;if(!R){h+='<div class="box gmstate">Belum ada hasil. Atur atribut &amp; constraint lalu klik <b>Hitung reporting</b>.</div><button class=btn-pri style="width:100%" onclick="RP.sec=\'c\';rpPanel()">Ke constraint</button>';}
-    else{h+='<div class="box gmstate rpsum"><b>'+rpN(R.nb)+' dari '+rpN(R.nTot)+' blok</b> memenuhi constraint ('+R.ms+' ms)<br><small>'+rpE(rpDesc())+'</small><br><small>Dikeluarkan: '+([['dom','domain'],['surf','permukaan'],['ext','di luar DTM'],['z','elevasi'],['poly','poligon'],['f','filter'],['nan','kadar kosong'],['sg','SG 0']].filter(function(p){return R.nOut[p[0]];}).map(function(p){return p[1]+' '+rpN(R.nOut[p[0]]);}).join(' · ')||'—')+'</small></div>';
+    else{h+='<div class="box gmstate rpsum"><b>'+rpN(R.nb)+' dari '+rpN(R.nTot)+' blok</b> memenuhi constraint ('+R.ms+' ms)<br><small>'+rpE(rpDesc())+'</small><br><small>Dikeluarkan: '+([['dom','domain'],['surf','permukaan'],['ext','di luar DTM'],['z','elevasi'],['poly','poligon'],['f','filter'],['nan','kadar kosong'],['sg','SG 0']].filter(function(p){return R.nOut[p[0]];}).map(function(p){return p[1]+' '+rpN(R.nOut[p[0]]);}).join(' · ')||'—')+'</small></div>';if(R.dtmW)h+=R.dtmW;
       h+='<h4>Grade × tonase per cut-off</h4>'+rpTable()+'<div id=rpGT class=rpchart></div>';
       if(R.grp!=='none')h+='<h4>'+(R.grp==='bench'?'Ringkasan per RL':'Per kategori')+'</h4><div class="g2 f"><label style="align-self:center">Cut-off</label>'+sel('rpCi',R.rows.map(function(r,i){return[i,'≥ '+r.c];}),RP.ci||0,"RP.ci=+this.value;rpPanel()")+'</div>'+rpGroupTable(RP.ci||0);
       h+='<div class="g2 f" style="margin-top:8px"><button class=btn-pri onclick="rpCsv()">&#8681; Export CSV</button><button onclick="rpShow('+(BX.rpOnly?0:1)+')">'+(BX.rpOnly?'Tampilkan semua blok':'&#128065; Hanya blok terlapor')+'</button></div>';}}

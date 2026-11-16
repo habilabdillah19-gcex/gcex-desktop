@@ -5188,3 +5188,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Pengaturan dan warna proyek lama terbaca apa adanya; perubahan hanya terjadi saat diedit atau saat Anda menyetujui
   nomor baru ketika ekspor.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 240. Block Model 0.24.95 — peringatan Reporting bila topografi / pit bukan DTM
+
+- Reporting BM › Constraint › **Permukaan**: bila topografi atau desain pit berasal dari **string / titik** (.str, .dxf garis,
+  CSV), muncul kotak *Perhatian rekonsiliasi*. GC-Ex membuat segitiganya sendiri, jadi di tepi pit dan breakline angkanya bisa
+  sedikit berbeda dari report Surpac. Untuk angka yang sama persis, import **DTM Surpac (.dtm)** yang dipakai Surpac lewat
+  Data Spasial. Bila sudah berupa DTM, tampil tanda centang. Peringatan yang sama ikut di hasil Reporting.
+- Angka Reporting tidak berubah.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.
