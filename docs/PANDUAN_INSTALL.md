@@ -5085,3 +5085,13 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   `LTH_channel_assay.csv`, `LTH_channel_geologi.csv` (seret keempatnya ke *Data bor › Impor tabel*) dan `LTH_pemetaan.dxf`
   (*Pemetaan › Impor DXF pemetaan*; muat `LTH_topografi.str` dulu agar ruas vein tanpa elevasi mendapat elevasi).
 - GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.
+
+## 231. Ore Works 0.9.2 — lapisan analisis bawaan mati, tombol nonaktif, channel dibagi N interval
+
+- **Lapisan analisis 3D** (Envelope, Potensi terbuka, Zona belum teruji, Pertemuan, usulan bidang struktur) tidak lagi
+  langsung tampil setelah impor. Nyalakan dari jendela **Analisis → Lapisan 3D**; usulan bidang struktur juga dari
+  sakelar *Usulan* di panel Struktur. Status sakelar tersimpan di project.
+- **Tombol tanpa data** (ekspor struktur / pemetaan, Channel → Data bor, ekspor plan level, CSV Analisis, …) tampil redup
+  dan tidak bisa diklik; arahkan kursor untuk melihat alasannya.
+- **Interval channel**: di panel edit channel pilih *tiap … m → Bagi* atau *jadi N interval → Bagi rata*. Pembagian N
+  menyesuaikan otomatis bila titik channel digeser. Sample_ID / kadar yang sudah diisi dipertahankan berdasarkan urutan.
