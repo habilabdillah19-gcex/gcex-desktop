@@ -5067,3 +5067,21 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Block Model 0.24.90: hanya penyesuaian kode bersama (tanpa perubahan perilaku). DB-Ex, Ore Works: tidak berubah.
 - **3D tidak tersendat saat diputar** (sama seperti Block Model 0.24.86): sesudah kamera digerakkan, Drillhole tidak lagi
   menggambar ulang semua lapisan, kecuali orthofoto sedang tampil (resolusinya mengikuti zoom).
+
+## 230. Ore Works 0.9.1 — perbaikan hasil review simulasi, data latihan channel & DXF
+
+- **Legenda 3D**: kelompok *Lubang bor* hanya tampil bila ada lubang bor; channel memakai legenda *Channel / grab*.
+- **Channel di Pemetaan ↔ analisis**: menghapus / mengubah channel di Pemetaan langsung memperbarui dataset
+  *Channel sampling (pemetaan)* (Dashboard, Peta level, penampang). Tombol *Channel → Data bor* tidak perlu diklik ulang.
+- **Usulan bidang struktur** langsung diperbarui setelah impor titik struktur atau wireframe.
+- **Impor Data bor**: boleh langsung klik *Proses dataset* setelah menyeret file; Ore Works menunggu file selesai dibaca.
+  Daftar file dikosongkan setelah diproses.
+- **Ctrl+Z** membatalkan penghapusan dan juga penambahan lewat tombol (mis. *Impor ke Pemetaan* dari DXF, digitasi).
+- **Klik kanan** pada objek 3D: titik (grab sample, titik struktur) didahulukan dari garis; objek lain di titik yang sama
+  tercantum di bawah *Objek lain di titik ini*.
+- Pesan seperti "Belum ada channel" kini tampil di status bar bawah, tidak perlu ditutup.
+- **Layout peta**: kotak putih label pas dengan teksnya; teks legenda panjang dilipat ke baris berikutnya.
+- **Data latihan baru** (ZIP *Data latihan* › `Ore_Works_Latihan`): `LTH_channel_collar.csv`, `LTH_channel_survey.csv`,
+  `LTH_channel_assay.csv`, `LTH_channel_geologi.csv` (seret keempatnya ke *Data bor › Impor tabel*) dan `LTH_pemetaan.dxf`
+  (*Pemetaan › Impor DXF pemetaan*; muat `LTH_topografi.str` dulu agar ruas vein tanpa elevasi mendapat elevasi).
+- GC-Ex Block Model, Drillhole & DB-Ex: tidak berubah.

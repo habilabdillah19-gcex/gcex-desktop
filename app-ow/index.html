@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.9.0';</script>
+<script>window.GCEX_VER='0.9.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -349,11 +349,12 @@ body.rp #rpan{display:flex}
 <div class="note">1. <b>Data bor → Impor tabel</b>: pilih file Collar, Survey, Assay dan Geologi (CSV), lalu <b>Proses dataset</b>. Titik acuan koordinat diambil dari data pertama yang diimpor.<br>
 2. <b>Topografi</b>: pilih jenisnya (topografi / desain pit), lalu impor .str atau .dxf. <b>Wireframe</b>: impor .msh / .dtm+.str / .obj / .dxf dan isi nama Domain.<br>
 3. <b>Unsur</b> di toolbar menentukan unsur yang dipakai warna lubang, penampang, Peta level, Long section, Profil dan Envelope.<br>
-4. <b>Struktur</b> dan <b>Pemetaan</b>: titik struktur, bidang struktur, pick-up, digitasi channel / vein, lalu <b>Layout peta</b>.<br>
+4. <b>Struktur</b> dan <b>Pemetaan</b>: titik struktur, bidang struktur, pick-up, digitasi channel / vein, <b>Impor DXF pemetaan</b> (garis vein, titik sampel, strike-dip), lalu <b>Layout peta</b>.<br>
+4a. <b>Channel / trench</b> dalam tabel Collar / Survey / Assay / Geologi diimpor lewat <b>Data bor</b> seperti lubang bor; channel dikenali otomatis (kolom Type, atau survey hampir datar) dan masuk ke Pemetaan sebagai Channel sampling. Perubahan channel di Pemetaan langsung ikut ke analisis.<br>
 5. Semua daftar data ada di panel <b>&#9783; Data</b> (kanan): Bor, Permukaan, Wireframe, Pemetaan, Titik struktur, Bidang struktur.<br>
 6. <b>Analisis</b>: Dashboard geokimia, domain, long section, profil, envelope, interpretasi struktur, potensi terbuka, peta level.<br>
 7. <b>File → Simpan project</b> agar semua impor dan pengaturan tampilan bisa dibuka lagi (.gcv.json).</div>
-<div class="note" style="margin-top:8px">Sumber lubang dibaca dari kolom Collar <b>Hole_Purpose</b> (GC / Exploration); bila tidak ada, awalan PDH/MDH/DDH/EXP dianggap eksplorasi. Gerak 3D: seret kiri = putar, seret kanan = geser, roda = zoom.</div>
+<div class="note" style="margin-top:8px">Sumber lubang dibaca dari kolom Collar <b>Hole_Purpose</b> / <b>Type</b> (GC / Exploration / Channel); bila tidak ada, awalan PDH/MDH/DDH/EXP dianggap eksplorasi dan survey hampir datar dianggap channel. Gerak 3D: seret kiri = putar, seret kanan = geser, roda = zoom, klik kanan = menu objek. <b>Ctrl+Z</b> membatalkan hapus maupun tambah (impor DXF, digitasi).</div>
 </div>
 </div>
 <div id="split" title="Seret untuk mengubah lebar panel · klik ganda untuk menyembunyikan"><b></b></div>
@@ -1784,9 +1785,9 @@ document.getElementById('dsgo').onclick=()=>{const w=document.getElementById('ds
  const nm=document.getElementById('dsn').value.trim()||(SLOT.collar||SLOT.assay||SLOT.survey||SLOT.geo).name.replace(/\.[^.]+$/,'').replace(/[_ -]*(collar|survey|assay|geolog[iy]|geology)[_ -]*/ig,' ').trim()||('Dataset '+(DS.length+1));
  const d=dsBuild(files,nm,document.getElementById('dsm').value,document.getElementById('dsk').value);
  const chR=dsChToFm(d);delete d._sid;delete d._vert;
- w.innerHTML=d.used.map(esc).join('<br>')+(d.warn.length?'<br><span style="color:#c62828">'+d.warn.map(esc).join('<br>')+'</span>':'');if(chR.msg)w.innerHTML+='<br>'+chR.msg;if(chR.n&&!d.holes.length){document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();dsList();return;}
+ w.innerHTML=d.used.map(esc).join('<br>')+(d.warn.length?'<br><span style="color:#c62828">'+d.warn.map(esc).join('<br>')+'</span>':'');if(chR.msg)w.innerHTML+='<br>'+chR.msg;if(chR.n&&!d.holes.length){document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();if(window.dsDropClear)dsDropClear();dsList();return;}
   if(!d.holes.length&&!Object.keys(d.geo).length){w.innerHTML+='<br><b>Tidak ada lubang atau geologi yang bisa ditampilkan.</b>';return;}
- DS.push(d);document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();dsList();holesBuild();if(D.kosong)fitView();};
+ DS.push(d);document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();if(window.dsDropClear)dsDropClear();dsList();holesBuild();if(D.kosong)fitView();};
 slotUI();
 /* warna lubang menurut kolom geologi */
 const GPAL=['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe','#008080','#e6beff','#9a6324','#800000','#aaffc3','#808000'].map(h=>[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]);
@@ -3150,7 +3151,7 @@ function flRender(sub){const P=FLPAP[FLY.paper]||FLPAP.A4L,Wp=sub?sub.w:P[0],Hp=
    x.font='bold '+Math.round(12*u)+'px Arial';x.textBaseline='bottom';const L0=ml.reduce((a,b)=>b.length>a.length?b:a),q=L0[Math.floor(L0.length/2)],t=m.dom||m.nm;x.lineWidth=3*u;x.strokeStyle='#fff';x.strokeText(t,X(q[0])+5*u,Y(q[1])-3*u);x.fillStyle=m.col;x.fillText(t,X(q[0])+5*u,Y(q[1])-3*u);x.restore();}}
   for(const m of W){const nm=m.dom||m.nm;leg.push(['l','Wireframe '+nm+(flOn('wft')&&flWfTrace(m).length?' (garis tengah di topografi)':flOn('wfp')?' (proyeksi)':''),m.col,2]);}}
  if(fmg('flau').checked&&(FM.F.some(f=>f.k==='ch'||f.k==='grab'))&&auk){leg.push(['h',auk]);fmGlab().forEach((t,i)=>leg.push(['c',t,fmGhex(i===0?cls[0]/2:cls[i-1])]));}
- x.font=Math.round(11*u)+'px Inter,Arial';x.textBaseline='alphabetic';const used=[];for(const [t,px,py,col,bold] of labs){x.font=(bold?'600 ':'')+Math.round((bold?13:10.5)*u)+'px Inter,Arial';const tw=x.measureText(t).width,h=12*u;if(used.some(r=>px<r[0]+r[2]&&px+tw>r[0]&&py-h<r[1]&&py>r[1]-h))continue;used.push([px,py,tw]);x.fillStyle='rgba(255,255,255,.75)';x.fillRect(px-1,py-h+2*u,tw+2,h);x.fillStyle=col;x.fillText(t,px,py);}
+ x.font=Math.round(11*u)+'px Inter,Arial';x.textBaseline='alphabetic';x.textAlign='left';const used=[];for(const [t,px,py,col,bold] of labs){x.font=(bold?'600 ':'')+Math.round((bold?13:10.5)*u)+'px Inter,Arial';const tw=x.measureText(t).width,h=12*u;if(used.some(r=>px<r[0]+r[2]&&px+tw>r[0]&&py-h<r[1]&&py>r[1]-h))continue;used.push([px,py,tw]);x.fillStyle='rgba(255,255,255,.75)';x.fillRect(px-1,py-h+2*u,tw+2,h);x.fillStyle=col;x.fillText(t,px,py);}
  x.restore();if(sub)return cv;
  /* grid koordinat pada bingkai */
  if(flOn('grid'))flxGrid(x,{m,mw,mh,u,V,X,Y});
@@ -3168,7 +3169,7 @@ function flRender(sub){const P=FLPAP[FLY.paper]||FLPAP.A4L,Wp=sub?sub.w:P[0],Hp=
    if(t==='l'){x.strokeStyle=c;x.lineWidth=(w||1.5)*u;x.beginPath();x.moveTo(lx+14*u,yy-6*u);x.lineTo(lx+46*u,yy-6*u);x.stroke();}else if(t==='p'||t==='c'){x.fillStyle=t==='p'?c+'59':c;x.fillRect(lx+16*u,yy-14*u,28*u,16*u);x.strokeStyle=c;x.lineWidth=1.5*u;x.strokeRect(lx+16*u,yy-14*u,28*u,16*u);}
    else if(t==='o'){x.fillStyle=c;x.beginPath();x.arc(lx+30*u,yy-6*u,5*u,0,7);x.fill();x.strokeStyle='#111';x.lineWidth=1*u;x.stroke();}else if(t==='t'){x.fillStyle=c;x.beginPath();x.moveTo(lx+30*u,yy-13*u);x.lineTo(lx+36*u,yy-2*u);x.lineTo(lx+24*u,yy-2*u);x.closePath();x.fill();x.strokeStyle='#111';x.stroke();}
    else if(t==='g'){stpGlyph(x,lx+30*u,yy-6*u,{jenis:String(s).replace(/^Struktur: /,''),kat:w,dip:60,dd:90,col:c,k:u*1.1,num:false});}else if(t==='img'){const g=x.createLinearGradient(lx+16*u,0,lx+44*u,0);g.addColorStop(0,'#7cb342');g.addColorStop(1,'#a1887f');x.fillStyle=g;x.fillRect(lx+16*u,yy-14*u,28*u,16*u);}
-   x.fillStyle='#111';let ss=String(s);if(ss.length>32)ss=ss.slice(0,31)+'…';x.fillText(ss,lx+56*u,yy);yy+=26*u;}}
+   x.fillStyle='#111';{const mw2=lw-68*u,ws=String(s).split(/(?<=[\s·(\/,])/),ln=[];let cur='';for(const wd of ws){if(cur&&x.measureText(cur+wd).width>mw2){ln.push(cur);cur=wd.trimStart();}else cur+=wd;}if(cur)ln.push(cur);if(ln.length>3){ln.length=3;ln[2]=ln[2].replace(/\s*$/,'')+'…';}ln.forEach((t2,i)=>{let tt=t2.trim();while(tt.length>3&&x.measureText(tt).width>mw2)tt=tt.slice(0,-2)+'…';x.fillText(tt,lx+56*u,yy+i*17*u);});yy+=26*u+(ln.length-1)*17*u;}}}
  /* kop peta */
  flxKop(x,{m,mh,u,tb,Wp,den,P});
  return cv;}
@@ -3612,7 +3613,7 @@ function gdRender(){const host=document.getElementById('gdw');if(!host)return;co
  const EL=C.EL,AU=EL.find(e=>/^au/i.test(e))||EL[0];['bEl','kEl','sumEl','sx'].forEach(k=>{if(!EL.includes(GD[k]))GD[k]=AU;});if(!EL.includes(GD.sy))GD.sy=EL.find(e=>e!==GD.sx)||AU;if(!EL.includes(GD.xEl))GD.xEl=AU;
  const GK=['vein','lith','alt','ox','dom'].filter(k=>k==='ox'?!!C.SX:k==='dom'?C.doms.length>0:!!C.G[k]);if(!GK.includes(GD.grp))GD.grp=GK[0]||'ox';if(!GK.includes(GD.kGrp))GD.kGrp=GD.grp;if(!GK.includes(GD.sc))GD.sc=GK.includes('alt')?'alt':GD.grp;
  if(!GD.pvE)GD.pvE=EL.slice(0,4);GD.pvE=GD.pvE.filter(e=>EL.includes(e));const RT=gdRatios(EL);if(!GD.pvR)GD.pvR=RT.slice(0,2).map(r=>r.k);
- const R=gdFilt(C),srcN={all:'Semua sumber',GC:'Grade control',EXP:'Exploration',CH:'Channel sampling',GCEXP:'Grade control + Exploration'};
+ const R=gdFilt(C),srcN={all:'Semua sumber',GC:'Grade control',EXP:'Eksplorasi',CH:'Channel sampling',GCEXP:'Grade control + eksplorasi'};
  const nS=R.length,nL=R.reduce((t,q)=>t+q.L,0),nH=new Set(R.map(q=>q.id)).size,sx=gdStats(gdVals(R,GD.xEl,C)),atDL=R.filter(q=>q.v[GD.xEl]!=null&&q.v[GD.xEl]<=C.dl[GD.xEl]).length/Math.max(1,R.filter(q=>q.v[GD.xEl]!=null).length)*100;
  let h='<div class="gdfb"><label>Sumber '+gdSel('gd-src',Object.entries(srcN),GD.src)+'</label><label>Kelompok '+gdSel('gd-grp',GK.map(k=>[k,gdGrpNm(k,C)]),GD.grp)+'</label>'+
   '<label>Domain '+gdSel('gd-dom',[['','Semua']].concat(C.doms.map(d=>[d,d])),GD.dom)+'</label><label>Bench '+gdSel('gd-bench',[['','Semua']].concat(C.benches.map(b=>[String(b),String(b)])),GD.bench)+'</label>'+
@@ -4024,9 +4025,10 @@ function oxSurf(){const on=k=>{const e=document.querySelector('#oglay [data-l="'
   const list=()=>{const el=g('dsdropl'),seen={};DROP.forEach(d=>{if(d.k)seen[d.k]=(seen[d.k]||0)+1;});el.innerHTML=DROP.map((d,i)=>'<div class="dzr"><b title="'+esc(d.file.name)+'">'+esc(d.file.name)+'</b><select data-i="'+i+'">'+KN.map(([v,t])=>'<option value="'+v+'"'+(v===d.k?' selected':'')+'>'+t+'</option>').join('')+'</select><span class="note">'+(d.n<0?d.mb.toFixed(1).replace('.',',')+' MB':d.n.toLocaleString('id-ID')+' baris')+' · '+esc(d.hd0.slice(0,9).join(' · '))+(d.hd0.length>9?' …':'')+(d.k&&seen[d.k]>1?' <span style="color:#c62828">· jenis ganda: dipakai file terakhir</span>':'')+(d.k?'':' <span style="color:#c62828">· jenis tidak dikenali, pilih manual</span>')+'</span></div>').join('');
    el.querySelectorAll('select').forEach(s=>s.onchange=()=>{DROP[+s.dataset.i].k=s.value;apply();});};
   const apply=()=>{for(const [k] of KN)if(k){const x=g('dsx-'+k);if(x)x.click();}DROP.forEach(d=>{if(d.k)put(d.k,d.file);});list();};
-  const take=async files=>{const add=[];for(const f of files){try{const big=f.size>3e6,txt=await (big?f.slice(0,300000):f).text(),d=detect(big?txt.slice(0,txt.lastIndexOf('\n')):txt);add.push({file:f,k:d.k,hd0:d.hd0,n:big?-1:d.n,mb:f.size/1e6});}catch(e){}}if(!add.length)return;DROP=DROP.filter(d=>!add.some(a=>a.file.name===d.file.name)).concat(add);apply();};
+  let TAKING=0;const take=async files=>{TAKING++;try{await take0(files);}finally{TAKING--;}},take0=async files=>{const add=[];for(const f of files){try{const big=f.size>3e6,txt=await (big?f.slice(0,300000):f).text(),d=detect(big?txt.slice(0,txt.lastIndexOf('\n')):txt);add.push({file:f,k:d.k,hd0:d.hd0,n:big?-1:d.n,mb:f.size/1e6});}catch(e){}}if(!add.length)return;DROP=DROP.filter(d=>!add.some(a=>a.file.name===d.file.name)).concat(add);apply();};
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('ov');});dz.addEventListener('dragleave',()=>dz.classList.remove('ov'));dz.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();dz.classList.remove('ov');take([...(e.dataTransfer.files||[])]);});
-  g('dsdropf').onchange=e=>{take([...(e.target.files||[])]);e.target.value='';};const cl=g('dsclr');if(cl)cl.addEventListener('click',()=>{DROP=[];list();});window.dsDropTake=take;}
+  g('dsdropf').onchange=e=>{take([...(e.target.files||[])]);e.target.value='';};const cl=g('dsclr');if(cl)cl.addEventListener('click',()=>{DROP=[];list();});window.dsDropTake=take;window.dsDropClear=()=>{DROP=[];list();};
+  {const go=g('dsgo');let t0=0;if(go)go.addEventListener('click',e=>{const last={};DROP.forEach(d=>{if(d.k)last[d.k]=d.file.name;});const pend=TAKING>0||Object.keys(last).some(k=>!SLOT[k]||SLOT[k].name!==last[k]);if(!pend){t0=0;return;}if(!t0)t0=Date.now();if(Date.now()-t0>60000){t0=0;return;}e.stopImmediatePropagation();e.preventDefault();g('dsw').textContent='Masih membaca file… proses dimulai otomatis.';setTimeout(()=>go.click(),300);},true);}}
  /* ---- pesan status bar + Batal (Ctrl+Z) untuk hapus titik / bidang struktur, fitur & pick-up pemetaan ---- */
  const sbo=g('sbobj');let sbm=null,sbt=0;if(sbo){sbm=document.createElement('span');sbm.id='sbmsg';sbm.style.display='none';sbo.parentNode.insertBefore(sbm,sbo);}
  const UNDO=[];const toast=(msg,undo)=>{if(!sbm)return;sbm.innerHTML='<i>'+esc(msg)+'</i>'+(undo?'<button id="sbundo" title="Batalkan (Ctrl+Z)">Batal (Ctrl+Z)</button>':'');sbm.style.display='flex';sbm.className=undo?'del':'';const b=g('sbundo');if(b)b.onclick=doUndo;clearTimeout(sbt);sbt=setTimeout(()=>{sbm.style.display='none';},12000);};window.sbToast=toast;
@@ -4043,10 +4045,10 @@ function oxSurf(){const on=k=>{const e=document.querySelector('#oglay [data-l="'
  const copy=t=>{const fb=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}a.remove();};try{navigator.clipboard.writeText(t).catch(fb);}catch(e){fb();}toast('Disalin: '+t);};
  const item=(t,fn,cls)=>{const d=document.createElement('div');d.className='cmi'+(cls?' '+cls:'');d.innerHTML='<span>'+esc(t)+'</span>';d.onclick=ev=>{ev.stopPropagation();hide();try{fn();}catch(x){console.error(x);}};menu.appendChild(d);};
  const head=t=>{const d=document.createElement('div');d.className='cmh';d.textContent=t;menu.appendChild(d);},sep=()=>menu.appendChild(document.createElement('hr'));
- const open=ev=>{const r=dom.getBoundingClientRect(),m=new THREE.Vector2((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1),rc2=new THREE.Raycaster();rc2.params.Points.threshold=2.2;rc2.params.Line.threshold=1.2;rc2.setFromCamera(m,C);
+ const open=(ev,force)=>{const r=dom.getBoundingClientRect(),m=new THREE.Vector2((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1),rc2=new THREE.Raycaster();rc2.params.Points.threshold=2.2;rc2.params.Line.threshold=1.2;rc2.setFromCamera(m,C);
   const objs=[],vis=k=>L[k]&&L[k].visible;if(vis('stp'))for(const o of L.stp.children)if(o.userData.stp)objs.push(o);if(vis('fm'))for(const o of L.fm.children)if(o.userData.fm)objs.push(o);if(vis('str2'))for(const o of L.str2.children)if(o.userData.str)objs.push(o);
   for(const k of ['pdh','gc'])if(vis(k))for(const o of L[k].children)if(o.visible&&o.userData.hv)objs.push(o);const wm=[];for(const w of WI)if(w.on&&w.mesh){objs.push(w.mesh);wm.push(w);}
-  const surf=[];for(const s of SF)if(s.on&&s.mesh)surf.push(s.mesh);const hits=rc2.intersectObjects(objs,false),hit=hits.find(h=>{const u=h.object.userData||{};return u.stp||u.fm||u.hv;})||hits[0],hs=rc2.intersectObjects(surf,false)[0],hp=(hit&&(!hs||hit.distance<=hs.distance+2))?hit:null,p=(hp||hs||{}).point;
+  const surf=[];for(const s of SF)if(s.on&&s.mesh)surf.push(s.mesh);const hits=rc2.intersectObjects(objs,false),hit=force||hits.find(h=>{const u=h.object.userData||{};return u.stp||(u.fm&&u.fm.pts&&u.fm.pts.length===1);})||hits.find(h=>{const u=h.object.userData||{};return u.stp||u.fm||u.hv;})||hits[0],hs=rc2.intersectObjects(surf,false)[0],hp=force||((hit&&(!hs||hit.distance<=hs.distance+2))?hit:null),p=(hp||hs||{}).point;
   const pt=p?[p.x+O[0],-p.z+O[1],p.y/W.scale.y+O[2]]:null;menu.innerHTML='';
   if(hp){const u=hp.object.userData||{};
    if(u.stp){const q=u.stp;head('Titik struktur '+q.nm+' · '+q.jenis);item('Ubah atribut…',()=>{rpOpenTab('stp');setTimeout(()=>{const row=[...document.querySelectorAll('#stpl .dsr')].find(x=>{const i=x.querySelector('input:not([type=checkbox]):not([type=color])');return i&&i.value===q.nm;});if(row){const d=row.querySelector('details');if(d)d.open=true;row.scrollIntoView({block:'center'});}},120);});
@@ -4057,6 +4059,8 @@ function oxSurf(){const on=k=>{const e=document.querySelector('#oglay [data-l="'
    else if(u.hv){let id='';try{const o2=hp.object;if(u.hv==='seg'){const ix=o2.isInstancedMesh?hp.instanceId:Math.floor(hp.index/2);id=SEGS[u.seg[ix]][3];}else{const c=u.ids[o2.isInstancedMesh?hp.instanceId:hp.index];id=Array.isArray(c)?c[0]:(c&&c.id)||c;}}catch(e){}if(id&&typeof id==='object')id='';
     head('Lubang bor '+(id||''));const H=id&&activeHoles().get(id);if(H)item('Arahkan kamera',()=>{const q=H.h.p,P=[];for(let i=0;i<q.length;i+=3)P.push([q[i]/10+O[0],q[i+1]/10+O[1],q[i+2]/10+O[2]]);fmZoom(P);});if(id){item('Salin Hole_ID',()=>copy(String(id)));item('Filter: hanya lubang ini',()=>{const e=g('flid');e.value=String(id);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));toast('Filter Hole_ID = '+id+' (reset di Data bor → Filter)');});}}
    else{const w=wm.find(x=>x.mesh===hp.object);if(w){head('Wireframe '+(w.dom||w.nm));item('Buka di panel Data',()=>rpOpenTab('wf'));item('Arahkan kamera',()=>{const P=[];for(let i=0;i<w.v.length;i+=3*Math.max(1,Math.floor(w.v.length/600)))P.push([w.v[i],w.v[i+1],w.v[i+2]]);fmZoom(P);});item('Sembunyikan',()=>{w.on=false;w.g.visible=false;wiList();if(window.SCR)window.SCR();});}}}
+  if(hp){const key=h=>{const u=h.object.userData||{};return u.stp||u.fm||u.str||null;},k0=key(hp),seen=new Set(k0?[k0]:[]),oth=[];for(const h of hits){const k=key(h);if(!k||seen.has(k))continue;if(hs&&h.distance>hs.distance+2)continue;seen.add(k);oth.push(h);if(oth.length>=4)break;}
+   if(oth.length){sep();head('Objek lain di titik ini');for(const h of oth){const u=h.object.userData,nm=u.stp?'Titik struktur '+u.stp.nm:u.fm?FMK[u.fm.k].nm+' · '+u.fm.nm:(u.str.st==='usulan'?'Usulan struktur ':'Bidang struktur ')+u.str.nm;item('▸ '+nm,()=>setTimeout(()=>open(ev,h),0));}}}
   if(pt){if(menu.children.length)sep();else head('Titik di '+(hs&&!hp?'topografi':'objek'));item('Salin koordinat (E, N, RL)',()=>copy(pt[0].toFixed(2)+', '+pt[1].toFixed(2)+', '+pt[2].toFixed(2)));
    item('Tambah titik struktur di sini',()=>{if(window.subOpen)subOpen('Struktur','Tambah titik struktur');g('stpe').value=pt[0].toFixed(2);g('stpn').value=pt[1].toFixed(2);g('stpz').value=pt[2].toFixed(2);});}
   if(!menu.children.length)return;menu.style.display='block';menu.style.left=Math.min(ev.clientX,innerWidth-menu.offsetWidth-6)+'px';menu.style.top=Math.min(ev.clientY,innerHeight-menu.offsetHeight-30)+'px';};
@@ -4344,6 +4348,32 @@ function fmDxfApply(){const P=FMDX;if(!P)return;const ck=id=>{const e=fmg(id);re
 (function(){const inp=fmg('fmdxf');if(!inp)return;inp.onchange=async e=>{const fs=[...(e.target.files||[])],w=fmg('fmdxw'),out=[],err=[];e.target.value='';if(!fs.length)return;w.textContent='Membaca '+fs.length+' file…';
   for(const f of fs){try{if(f.size>60e6)throw new Error('file terlalu besar untuk impor pemetaan ('+Math.round(f.size/1e6)+' MB); DXF topografi dimuat lewat menu Topografi');const ents=dxfRead(await f.text());if(!ents.length)throw new Error('tidak ada garis / titik');out.push({name:f.name,ents});}catch(x){err.push(esc(f.name)+': '+esc(x.message));}}
   w.innerHTML=err.length?'<span style="color:#c62828">'+err.join('<br>')+'</span>':'Periksa daftar di bawah, lalu klik <b>Impor ke Pemetaan</b>.';FMDX=out.length?fmDxfPlan(out):null;fmDxfShow();};})();
+
+/* ===================== Ore Works 0.9.1 · review 16 Nov: sinkronisasi channel, legenda, Batal untuk impor, pesan tidak menghalangi ===================== */
+/* pesan "Belum ada …" / "… dulu" tampil di status bar, bukan jendela yang harus ditutup */
+(function(){const al=window.alert;window.alert=function(m){const t=m==null?'':String(m);if(window.sbToast&&t.length<140&&(/^Belum ada\b/.test(t)||/\bdulu\.?$/.test(t)||/^Tidak ada .*(tercentang|terpilih)/.test(t))){sbToast(t);return;}return al.call(window,t);};})();
+/* dataset "Channel sampling (pemetaan)" mengikuti perubahan channel di Pemetaan (hapus, edit interval, Batal) */
+{let tm=null,sig0=null;const sig=()=>FM.F.filter(f=>f.k==='ch'&&f.iv&&f.iv.length).map(f=>f.nm+':'+f.pts.length+':'+f.iv.length+':'+f.iv.reduce((t,v)=>t+(+v.t||0)+Object.values(v.v||{}).reduce((a,b)=>a+(+b||0),0),0).toFixed(3)).join('|');
+ const sync=()=>{tm=null;const ds=DS.find(d=>d.fm);if(!ds)return;const s=sig();if(s===sig0)return;sig0=s;if(!s){DS.splice(DS.indexOf(ds),1);dsList();holesBuild();if(window.sbToast)sbToast('Dataset Channel sampling (pemetaan) dihapus: tidak ada channel lagi');return;}fmChDs(true);};
+ const _fl=fmList;fmList=function(){const r=_fl.apply(this,arguments);if(DS.some(d=>d.fm)){clearTimeout(tm);tm=setTimeout(sync,500);}return r;};
+ const _cd=fmChDs;fmChDs=function(){const r=_cd.apply(this,arguments);sig0=sig();return r;};}
+/* usulan bidang struktur ikut diperbarui saat wireframe / data berubah walau jendela Analisis tertutup */
+{const _ar=anRun;anRun=function(){const r=_ar.apply(this,arguments);if(window.__siOn&&document.getElementById('ogw').style.display!=='block'&&!(window.OP&&OP.res))setTimeout(()=>{try{ogCalc();}catch(e){}},0);return r;};}
+/* Batal (Ctrl+Z) juga untuk penambahan lewat tombol (impor DXF, digitasi …); urutan dengan Batal-hapus bawaan dijaga */
+(function(){if(!window.undoWrap)return;const arrs=()=>({stp:STP,str:STR,F:FM.F,pf:FM.pf}),UA=[],DEL=[];let mine=false,seq=0;
+ const sbm=document.getElementById('sbmsg');if(sbm)new MutationObserver(()=>{if(mine)return;const t=sbm.textContent||'';if(sbm.className==='del'&&sbm.style.display!=='none'&&!/ditambahkan/.test(t)){if(sbm.__last!==t+'|'+DEL.length){DEL.push(++seq);sbm.__last=t+'|'+DEL.length;}}else if(/^(Dikembalikan|\d+ objek dikembalikan)/.test(t))DEL.pop();}).observe(sbm,{childList:true,subtree:true,characterData:true,attributes:true});
+ const toastMine=(m,u)=>{mine=true;try{sbToast(m,u);}finally{mine=false;}};
+ document.addEventListener('click',e=>{if(e.target&&e.target.id==='sbundo')return;const a=arrs(),b={};for(const k in a)b[k]=new Set(a[k]);setTimeout(()=>{const n=arrs(),add=[];for(const k in n)n[k].forEach(it=>{if(!b[k].has(it))add.push({k,it});});
+   const real=add.filter(q=>!(q.k==='str'&&q.it.st==='usulan'));if(!real.length)return;real.__s=++seq;UA.push(real);if(UA.length>30)UA.shift();if(real.length>1&&window.sbToast)toastMine(real.length+' objek ditambahkan · Ctrl+Z untuk membatalkan');},0);},true);
+ const redraw=()=>{try{stpDraw();stpList();stDraw();stList();fmDraw();fmList();if(typeof fmpDraw==='function'){fmpDraw();fmpList();}}catch(e){console.warn(e);}};
+ window.addEventListener('keydown',e=>{if(!((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z'))||/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;if(!UA.length)return;
+  const last=UA[UA.length-1];if(DEL.length&&DEL[DEL.length-1]>last.__s)return;e.preventDefault();e.stopImmediatePropagation();UA.pop();const a=arrs();let n=0;last.forEach(({k,it})=>{const i=a[k].indexOf(it);if(i>=0){a[k].splice(i,1);n++;}});redraw();if(window.sbToast)toastMine(n===1?'Dibatalkan: '+(last[0].it.nm||'1 objek')+' dihapus lagi':n+' objek yang tadi ditambahkan dihapus lagi');},true);})();
+/* usulan bidang struktur ikut diperbarui setelah titik struktur / wireframe berubah */
+{let t=null;const k=()=>{if(!window.__siOn)return;clearTimeout(t);t=setTimeout(()=>{try{siRun();}catch(e){console.warn(e);}},600);};for(const n of ['stpList','wiList']){const f=window[n];if(typeof f!=='function')continue;window[n]=function(){const r=f.apply(this,arguments);k();return r;};}}
+/* legenda 3D: kelompok "Lubang bor" hanya bila ada lubang bor (channel sudah punya legendanya sendiri), baris GC / eksplorasi hanya yang ada */
+{const _lg=lgDraw;lgDraw=function(){const M=activeHoles();let gc=0,ex=0;for(const [,e] of M){if(e.ds&&e.ds.fm)continue;if(e.h.src==='GC')gc++;else if(e.h.src!=='CH')ex++;}
+  const pv=L.pdh.visible,gv=L.gc.visible;if(!gc&&!ex){L.pdh.visible=false;L.gc.visible=false;}let r;try{r=_lg.apply(this,arguments);}finally{L.pdh.visible=pv;L.gc.visible=gv;}
+  const b=document.getElementById('lgb');if(b&&(gc||ex)){b.querySelectorAll('.lr').forEach(d=>{const t=d.textContent;if((!gc&&/^(GC <|Collar GC)/.test(t))||(!ex&&/^(Eksplorasi <|Collar eksplorasi)/.test(t)))d.remove();});}return r;};}
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */
