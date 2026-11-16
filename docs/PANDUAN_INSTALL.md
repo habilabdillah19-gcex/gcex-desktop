@@ -5108,6 +5108,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Setelah diproses, dataset yang diimpor punya tombol ▦ di daftar dataset untuk membuka tabel aslinya lagi;
   *Bangun ulang dataset* menerapkan editan ke 3D. Tabel asli ikut tersimpan di file project.
 
+## 233. Ore Works 0.10.1 — jenis tabel dikenali dari isi kolom
+
+- File CSV yang diseret dengan header tak standar (mis. `KODE_LUBANG`, `KOORD_E`, `DARI_M`, `KEMIRINGAN`) kini langsung
+  dikenali sebagai Collar / Survey / Assay / Geologi. Bila masih "(abaikan)", pilih jenisnya di daftar file.
+- Tautan *Kolom · Periksa* dan jumlah galat di panel impor tidak lagi terpotong di tengah kata.
+
 ## 233. Drillhole 0.24.99 — kategori kolom diingat, pemeriksaan tambahan, Validasi & edit tabel
 
 - **Pemetaan kolom diingat**: pilihan di panel *Pemetaan kolom & unsur* (layar import) disimpan per nama kolom. File
