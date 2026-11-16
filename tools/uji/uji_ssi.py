@@ -54,6 +54,14 @@ with sync_playwright() as pw:
     cek(n5 == 4 and s5 == [[None, 0.4, "#808080"], [0.4, 1, "#00ff00"], [1, 3, "#ff0000"], [3, None, "#ff00ff"]], "S5 skema rentang -> kelas %s" % s5)
     pg.evaluate("dbU().ssiOut=false;__f=[];dgExport('str')"); pg.wait_for_timeout(600)
     cek(pg.evaluate("__f.length") == 1, "S6 sakelar mati -> %s berkas" % pg.evaluate("__f.length"))
+    # S8 (17 Nov 2026): tanpa .ssi situs -> gaya bawaan Surpac (legend pemilik); header STR menunjuk .ssi pasangannya
+    pg.evaluate("SWN.lupaSitus();dbU().ssiOut=true;__f=[];dgExport('str')"); pg.wait_for_timeout(1500)
+    f8 = pg.evaluate("__f.map(function(x){return [x[0],x[1]];})")
+    h8 = f8[0][1].split("\r\n")[0] if f8 else ""
+    b8 = pg.evaluate("(t)=>{var S=SWN.ssi.parse(t);return [16,24,18,7,1,19].map(function(n){return SWN.ssi.colorOf(S,n);});}", f8[1][1]) if len(f8) == 2 else None
+    cek(len(f8) == 2 and h8.endswith("SSI_STYLES:" + f8[1][0]) and b8 == ["#ff9933", "#59ff59", "#ff66ff", "#ff9933", "#ffffff", "#ffff00"] and "TRIOBJECTS:" in f8[1][1], "S8 header %r; warna bawaan 16/24/18/7/1/19 %s" % (h8[-40:], b8))
+    d8 = pg.evaluate("[SWN.dekat('#e2b922',17,{}),SWN.dekat('#ff8c00',19,{16:1}),SWN.dekat('#ff1a1a',14,{8:1})]")
+    cek(d8 == [16, 26, 17], "S9 nomor baru ikut warna Surpac terdekat (kuning-oranye->16, oranye bila 16 terpakai->26, merah->17): %s" % d8)
     pg.evaluate("dbU().ssiOut=true;PT&&PT.select&&PT.select('dig.auto')"); pg.wait_for_timeout(800); u1 = pg.evaluate("!!document.getElementById('swSsi')")
     if len(sys.argv) > 1:
         pg.evaluate("document.getElementById('swSsi').scrollIntoView({block:'center'})"); pg.wait_for_timeout(400); bb = pg.evaluate("(function(){var r=document.getElementById('swSsi').getBoundingClientRect();return [r.x,r.y,r.width,r.height];})()")

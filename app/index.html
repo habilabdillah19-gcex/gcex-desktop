@@ -11684,7 +11684,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     var next = function () { var n = 1; Object.keys(used).forEach(function (k) { if (+k >= n) n = +k + 1; }); used[n] = 1; return n; }, baru = {};
     Object.keys(K).forEach(function (n) {
       var cs = Object.keys(K[n]), keep = reg[n] && cs.indexOf(reg[n]) >= 0 ? reg[n] : cs.sort(function (a, b) { return K[n][b] - K[n][a]; })[0];
-      cs.forEach(function (c) { if (c === keep) return; var t = rev[c] && !K[rev[c]] ? rev[c] : (baru[c] || (baru[c] = next())); if (!(t in reg)) { regSet(t, c); reg[t] = c; } L.forEach(function (o) { if (parseInt(o.no) === +n && nc(o.col) === c && !o.keep) { o.set(t); ubah++; } }); });
+      cs.forEach(function (c) { if (c === keep) return; var t = rev[c] && !K[rev[c]] ? rev[c] : (baru[c] || (baru[c] = (SWN.dekat && SWN.dekat(c, +n, used)) || next())); if (!(t in reg)) { regSet(t, c); reg[t] = c; } L.forEach(function (o) { if (parseInt(o.no) === +n && nc(o.col) === c && !o.keep) { o.set(t); ubah++; } }); });
     });
     return ubah;
   };
@@ -11692,7 +11692,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     var K = SWN.cek(L); if (!Object.keys(K).length) return true;
     var t = Object.keys(K).map(function (n) { return 'String ' + n + ': ' + Object.keys(K[n]).map(function (c) { return c + ' (' + K[n][c] + ')'; }).join(', '); }).join('\n');
     if (!confirm(judul + ': satu nomor string dipakai lebih dari satu warna. Surpac mewarnai string menurut nomornya, jadi warnanya akan sama di sana.\n\n' + t +
-      '\n\nOK = beri nomor baru untuk warna yang berbeda (nomor yang sudah terdaftar untuk warna itu, atau nomor kosong berikutnya), lalu ekspor.\nBatal = ekspor apa adanya.')) return true;
+      '\n\nOK = beri nomor baru untuk warna yang berbeda (nomor yang sudah terdaftar untuk warna itu; bila belum ada, nomor yang warnanya paling mirip di gaya Surpac situs, mis. oranye -> 16), lalu ekspor.\nBatal = ekspor apa adanya.')) return true;
     var n = SWN.perbaiki(L, reg, regSet); SWN.msg = n + ' string diberi nomor baru agar warna = nomor string.'; return true;
   };
   /* ---- daftar string per ekspor ---- */
@@ -11789,11 +11789,28 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     return Object.keys(S.ex).length || S.rg.length || S.def ? S : null;
   };
   var colorOf = function (S, n) { n = parseInt(n); if (!S || !(n > 0)) return null; if (S.ex[n]) return S.ex[n]; for (var i = 0; i < S.rg.length; i++) { var r = S.rg[i]; if (n >= r.a && n <= r.b && (n - r.a) % r.s === 0) return r.c; } return S.def; };
-  /* tulis .ssi: nomor yang dipakai ditulis satu per satu paling atas di STRINGS (sesudah default); sisa gaya situs (bila diimpor) dipertahankan */
   var TAIL = ',HGS_line_pattern=|--->,HGS_color=faces=(diffuse=%C,specular=white,gloss=5,transmission=black),HGS_edge_pattern=---,HGS_face_pattern=solid,HGS_line_weight=1,HGS_edge_weight=1,HGS_marker_symbol=+,HGS_marker_size=0.5,HGS_text_font=name=Default|size=0.02 sru|slant=0,HGS_text_path=1 0 0';
+  /* ---- gaya string BAWAAN Surpac situs (legend Surpac pemilik, 17 Nov 2026): 1-9 lalu berulang tiap 10 sampai 99
+     (14, 24, ... hijau; 16, 26, ... oranye; 17, 27, ... merah; 18, 28, ... ungu). Dipakai bila belum ada .ssi situs yang diimpor:
+     memilih nomor baru yang warnanya cocok, dan mengisi .ssi yang ikut diekspor (nomor lain tetap tampil seperti biasa di Surpac). */
+  var BW = ['white', 'blue', 'r=0.0 g=0.6 b=0.8', 'r=0.478 g=0.819 b=0.478', 'r=0.349 g=1.0 b=0.349', 'yellow', 'r=1.0 g=0.6 b=0.2', 'red', 'r=1.0 g=0.4 b=1.0'];
+  var BW_LAB = ['white line', 'blue line', 'blue green line', 'light green line', 'green line', 'yellow line', 'orange line', 'red line', 'pink line'];
+  SWN.BAWAAN = ['STRINGS:', 'default=ssi_label=yellow line,HGS_color=lines=text=edges=markers=yellow' + TAIL.replace('%C', 'yellow')].concat(
+    BW.map(function (c, i) { return (i + 1) + '=ssi_label=' + BW_LAB[i] + ',HGS_color=lines=text=edges=markers=' + c + TAIL.replace('%C', c); }),
+    ['white'].concat(BW.slice(1, 8)).concat([BW[8]]).map(function (c, i) { return (10 + i) + ', 99, 10=ssi_label=,HGS_color=lines=text=edges=markers=' + c + TAIL.replace('%C', c); })).join('\r\n');
+  var bawaanS = null, gaya = function () { var t = dbU().ssiTxt; var S = t ? parse(t) : null; if (S && S.kind === 'styles') return S; return bawaanS || (bawaanS = parse(SWN.BAWAAN)); };
+  var jarak = function (a, b) { var p = function (h) { var n = parseInt(String(h).replace('#', '').slice(0, 6), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }, x = p(a), y = p(b); return Math.sqrt((x[0] - y[0]) * (x[0] - y[0]) * 0.3 + (x[1] - y[1]) * (x[1] - y[1]) * 0.59 + (x[2] - y[2]) * (x[2] - y[2]) * 0.11); };
+  /* nomor kosong (1-99) yang warnanya di Surpac paling mirip warna c; seri sama -> yang paling dekat dengan nomor asal */
+  SWN.dekat = function (c, asal, used) {
+    var S = gaya(), best = 0, bd = 60; for (var n = 1; n <= 99; n++) { if (used[n]) continue; var w = colorOf(S, n); if (!w) continue; var d = jarak(c, w) + Math.abs(n - asal) * 0.01; if (d < bd) { bd = d; best = n; } }
+    if (best) used[best] = 1; return best;
+  };
+  SWN.gaya = gaya;
+  /* tulis .ssi: nomor yang dipakai ditulis satu per satu paling atas di STRINGS (sesudah default); sisa gaya situs (bila diimpor) dipertahankan */
+  var TRI = 'default=ssi_label=,HGS_color=lines=text=edges=markers=blue,HGS_line_pattern=|-->,HGS_color=faces=(diffuse=light green,specular=white,gloss=5),HGS_edge_pattern=---,HGS_face_pattern=solid,HGS_line_weight=1,HGS_edge_weight=1,HGS_marker_symbol=+,HGS_marker_size=0.5';
   var baris = function (k, hex, lab) { var c = keSsi(hex); return k + '=ssi_label=' + (lab || '').replace(/[,=]/g, ' ') + ',HGS_color=lines=text=edges=markers=' + c + TAIL.replace('%C', c); };
   var tulis = function (M, lab) {
-    var site = dbU().ssiTxt ? parse(dbU().ssiTxt) : null, ns = Object.keys(M).map(Number).sort(function (a, b) { return a - b; }), mine = ns.map(function (n) { return baris(n, M[n], lab && lab[n]); });
+    var site = gaya(), ns = Object.keys(M).map(Number).sort(function (a, b) { return a - b; }), mine = ns.map(function (n) { return baris(n, M[n], lab && lab[n]); });
     if (site && site.kind === 'styles') {
       var out = [], sec = '', done = false; site.lines.forEach(function (l) {
         if (/^[A-Z]+:\s*$/.test(l)) { sec = l.trim(); out.push(l); return; }
@@ -11802,9 +11819,10 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
         out.push(l); if (sec === 'STRINGS:' && k === 'default' && !done) { out.push.apply(out, mine); done = true; }
       });
       if (!done) { var j = out.indexOf('STRINGS:'); if (j >= 0) out.splice.apply(out, [j + 1, 0].concat(mine)); }
+      if (out.indexOf('TRIOBJECTS:') < 0) out.push('TRIOBJECTS:', TRI);
       return out.join('\r\n').replace(/(\r\n)+$/, '') + '\r\n';
     }
-    return ['STRINGS:', baris('default', '#ffff00', 'yellow line')].concat(mine, ['TRIOBJECTS:', 'default=ssi_label=,HGS_color=lines=text=edges=markers=blue,HGS_line_pattern=|-->,HGS_color=faces=(diffuse=light green,specular=white,gloss=5),HGS_edge_pattern=---,HGS_face_pattern=solid,HGS_line_weight=1,HGS_edge_weight=1,HGS_marker_symbol=+,HGS_marker_size=0.5']).join('\r\n') + '\r\n';
+    return ['STRINGS:', baris('default', '#ffff00', 'yellow line')].concat(mine, ['TRIOBJECTS:', TRI]).join('\r\n') + '\r\n';
   };
   SWN.ssi = { parse: parse, colorOf: colorOf, write: tulis, warna: warna };
   /* ---- daftar nomor -> warna ikut gaya situs (nomor yang tak ada di tabel GC-Ex) ---- */
@@ -11839,7 +11857,8 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
   /* ---- ekspor: tulis <nama>.ssi di samping <nama>.str ---- */
   var denganSsi = function (fn, L) {
     var U = dbU(); if (U.ssiOut === false) return fn();
-    var nm = null, o = window.dgDl, r; window.dgDl = function (t, f) { if (/\.str$/i.test(f)) nm = f; return o.apply(this, arguments); };
+    /* header STR menunjuk .ssi pasangannya (bukan styles.ssi umum) agar Surpac memakai warna yang sama */
+    var nm = null, o = window.dgDl, r; window.dgDl = function (t, f) { if (/\.str$/i.test(f)) { nm = f; var sn = String(f).split(/[\\\/]/).pop().replace(/\.str$/i, '.ssi'); if (typeof t === 'string') { var e = t.search(/\r?\n/), h = e < 0 ? t : t.slice(0, e); h = /ssi_styles:/i.test(h) ? h.replace(/ssi_styles:[^,]*/i, 'SSI_STYLES:' + sn) : (h.split(',').length === 4 && !h.split(',')[3].trim() ? h.replace(/,\s*$/, ',SSI_STYLES:' + sn) : h); arguments[0] = h + (e < 0 ? '' : t.slice(e)); } } return o.apply(this, arguments); };
     try { r = fn(); } finally { window.dgDl = o; }
     if (nm) { var M = {}; L().forEach(function (q) { var n = parseInt(q.no); if (n > 0 && q.col && !(n in M)) M[n] = String(q.col).toLowerCase(); }); if (Object.keys(M).length) setTimeout(function () { dgDl(tulis(M), nm.replace(/\.str$/i, '.ssi'), 'text/plain'); }, 300); }
     return r;
@@ -11853,7 +11872,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     var _dp = dbPanel; window.dbPanel = dbPanel = function () {
       var r = _dp.apply(this, arguments), el = document.getElementById('dbBody'); if (!el) return r; var t = el.querySelector('.dbrt'); if (!t || el.querySelector('#swSsi')) return r;
       var U = dbU(), d = document.createElement('div'); d.id = 'swSsi'; d.style.cssText = 'margin-top:8px;padding:6px;border:1px solid var(--bd,#d0d5dd);border-radius:6px';
-      d.innerHTML = '<b>Warna Surpac (.ssi)</b><div class=hint style="margin:2px 0 4px">Surpac mewarnai string menurut nomornya lewat berkas .ssi bernama sama dengan .str. ' + (U.ssiTxt ? 'Gaya situs terpasang: <b>' + String(U.ssiNama || 'styles.ssi').replace(/[<>&]/g, '') + '</b>.' : 'Impor .ssi situs agar warna kelas GC-Ex = warna nomornya di Surpac.') + '</div>' +
+      d.innerHTML = '<b>Warna Surpac (.ssi)</b><div class=hint style="margin:2px 0 4px">Surpac mewarnai string menurut nomornya lewat berkas .ssi bernama sama dengan .str. ' + (U.ssiTxt ? 'Gaya situs terpasang: <b>' + String(U.ssiNama || 'styles.ssi').replace(/[<>&]/g, '') + '</b>.' : 'Belum ada .ssi situs: dipakai gaya bawaan Surpac (1–9, lalu berulang tiap 10: 14 hijau, 16 oranye, 17 merah, 18 ungu). Impor .ssi situs bila standar situs berbeda.') + '</div>' +
         '<div class=g2><button onclick="SWN.imporSitusUI()" title="Pilih berkas .ssi dari Surpac (mis. styles situs atau .ssi sebuah string)">Import .ssi Surpac</button>' + (U.ssiTxt ? '<button onclick="SWN.lupaSitus()">Lepas gaya situs</button>' : '<span></span>') + '</div>' +
         '<label class=sw style="margin-top:4px"><input type=checkbox ' + (U.ssiOut === false ? '' : 'checked') + ' onchange="dbU().ssiOut=this.checked"> Sertakan berkas .ssi saat ekspor STR</label>';
       var hs = Array.prototype.slice.call(el.querySelectorAll('.hint')).filter(function (h) { return /Tiap baris = satu tombol/.test(h.textContent); })[0];
@@ -13959,7 +13978,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.96';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.97';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

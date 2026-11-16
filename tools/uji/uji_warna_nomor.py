@@ -33,8 +33,8 @@ with sync_playwright() as pw:
       window.__i=DG.S.length-3;dgExport('str');dgExport('dxf');}""")
     f1 = pg.evaluate("__f"); st = f1[0][1]; nos = sorted(set(int(l.split(",")[0]) for l in st.split("\r\n")[2:] if re.match(r"^[1-9]\d*,", l)))
     lay = dxf_layers(f1[-1][1])
-    cek(nos == [14, 18] and pg.evaluate("DG.S[__i+1].no") == 18 and pg.evaluate("SWN.dig()[18]") == "#ff8c00" and len(DLG) >= 1, "W1 STR nomor %s (oranye -> 18 = nomor kosong setelah 17, terdaftar)" % nos)
-    cek(set(lay) == {("14", str(pg.evaluate("SWN.aci('#7ee04a')"))), ("18", str(pg.evaluate("SWN.aci('#ff8c00')")))}, "W1 DXF layer & warna %s" % sorted(set(lay)))
+    cek(nos == [14, 16] and pg.evaluate("DG.S[__i+1].no") == 16 and pg.evaluate("SWN.dig()[16]") == "#ff8c00" and len(DLG) >= 1, "W1 STR nomor %s (oranye -> 16 = nomor oranye di gaya Surpac situs, terdaftar)" % nos)
+    cek(set(lay) == {("14", str(pg.evaluate("SWN.aci('#7ee04a')"))), ("16", str(pg.evaluate("SWN.aci('#ff8c00')")))}, "W1 DXF layer & warna %s" % sorted(set(lay)))
     pg.evaluate("dbStrSet(__i,'col','#00aa55')")
     w2 = pg.evaluate("[DG.S[__i].col,DG.S[__i+2].col,dbU().rules[0].c,DG.S[__i+1].col]")
     cek(w2 == ["#00aa55", "#00aa55", "#00aa55", "#ff8c00"], "W2 warna string 14 -> semua string 14 + kelas LG ikut: %s" % w2)
@@ -51,7 +51,7 @@ with sync_playwright() as pw:
     f5 = pg.evaluate("__f"); ok5 = len(f5) == 2
     if ok5:
         n5 = sorted(set(int(l.split(",")[0]) for l in f5[0][1].split("\r\n")[2:] if re.match(r"^[1-9]\d*,", l))); l5 = sorted(set(dxf_layers(f5[1][1])))
-    cek(ok5 and len(n5) == 2 and 14 in n5 and len(l5) == 2 and pg.evaluate("amInfo(__b).col") == "#0000ff", "W5 As-Mined lama warna manual -> STR nomor %s, DXF %s" % (n5 if ok5 else None, l5 if ok5 else None))
+    cek(ok5 and len(n5) == 2 and 14 in n5 and len(l5) == 2 and pg.evaluate("amInfo(__b).col") == "#0000ff" and f5[0][1].split("\r\n")[0].endswith(",SSI_STYLES:" + f5[0][0][:-4] + ".ssi"), "W5 As-Mined lama warna manual -> STR nomor %s, DXF %s, header %r" % (n5 if ok5 else None, l5 if ok5 else None, f5[0][1].split("\r\n")[0] if ok5 else None))
     w6 = pg.evaluate("[SWN.aci('#ff0000'),SWN.aci('#ffff00'),SWN.aci('#00ff00'),SWN.aci('#ff8c00'),SWN.aci('#808080')]")
     cek(w6[0] == 1 and w6[1] == 2 and w6[2] == 3 and 20 <= w6[3] <= 40 and w6[4] in (8, 252, 253), "W6 ACI %s" % w6)
     cek(not E, "tanpa galat halaman %s" % E[:2])

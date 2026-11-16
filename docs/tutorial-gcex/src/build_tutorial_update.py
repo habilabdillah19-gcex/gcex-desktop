@@ -1315,6 +1315,12 @@ B.append('<p>Surpac menyimpan warna string dalam berkas <b>.ssi</b> bernama sama
          'agar Surpac menampilkan warna yang sama dengan GC-Ex.</p>')
 B.append('<p>Skema warna rentang kadar Surpac (mis. <i>grade_ore.ssi</i>) diimpor lewat <b>Block Model &rsaquo; Warna &amp; kelas kadar &rsaquo; '
          'Import .ssi Surpac (skema warna kadar)</b> dan langsung menjadi kelas warna block model.</p>')
+B.append('<h3>16t. Nomor string ikut legend Surpac (Block Model 0.24.97)</h3>')
+B.append('<p>Surpac mewarnai string menurut nomornya. Tanpa .ssi situs, GC-Ex kini memakai gaya bawaan Surpac: 1 putih, 2 biru, 3 biru-hijau, '
+         '4 hijau muda, 5 hijau, 6 kuning, 7 oranye, 8 merah, 9 pink, lalu berulang tiap 10 (14 hijau, 16 oranye, 17 merah, 18 ungu). Bila saat ekspor '
+         'muncul peringatan <i>satu nomor string dipakai lebih dari satu warna</i>, klik <b>OK</b>: warna yang berbeda diberi nomor yang warnanya sama di '
+         'Surpac (mis. garis ganda oranye &rarr; 16). Simpan berkas .str dan .ssi di folder yang sama; berkas .str kini menunjuk .ssi pasangannya. '
+         'Agar peringatan tidak muncul, isi nomor string flag (mis. 16) di <b>Dig Block &rsaquo; Otomatis</b>.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

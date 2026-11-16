@@ -5209,3 +5209,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Block Model › Warna & kelas kadar › Import .ssi Surpac (skema warna kadar)**: skema warna rentang kadar Surpac
   (mis. *grade_ore.ssi*: 0–0,4 abu-abu, 0,4–1 hijau, 1–3 merah, ≥ 3 magenta) menjadi kelas warna block model.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 242. Block Model 0.24.97 — nomor string ikut legend Surpac
+
+- Bila belum ada .ssi situs yang diimpor, GC-Ex memakai **gaya bawaan Surpac**: 1 putih, 2 biru, 3 biru-hijau, 4 hijau muda,
+  5 hijau, 6 kuning, 7 oranye, 8 merah, 9 pink, lalu berulang tiap 10 (14, 24 … hijau; 16, 26 … oranye; 17, 27 … merah;
+  18, 28 … ungu/pink).
+- Peringatan ekspor *"satu nomor string dipakai lebih dari satu warna"* → **OK** kini memberi nomor yang **warnanya sama di
+  Surpac** (mis. garis ganda oranye → 16, bukan 18 yang ungu di Surpac).
+- Berkas STR menunjuk .ssi pasangannya (`SSI_STYLES:<nama>.ssi`): simpan .str dan .ssi di folder yang sama.
+- Tips: isi nomor string flag (mis. *String garis ganda* = 16) di Dig Block › Otomatis agar peringatan tidak muncul.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

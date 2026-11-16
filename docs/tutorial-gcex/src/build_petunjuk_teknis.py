@@ -594,6 +594,12 @@ B.append('<p>Format teks: <code>STRINGS:</code> / <code>TRIOBJECTS:</code>; bari
          '(r g b dari warna GC-Ex) disisipkan sesudah <code>default</code>; bila gaya situs diimpor (<code>dbU().ssiTxt</code>) seluruh barisnya dipertahankan '
          'kecuali nomor tunggal yang sama. <code>SWN.dig/am</code> memakai nomor tunggal gaya situs untuk nomor yang tidak ada di tabel GC-Ex. Uji: '
          '<code>tools/uji/uji_ssi.py</code>.</p>')
+B.append('<h3>8.23 Gaya bawaan Surpac &amp; pemilihan nomor (BM 0.24.97)</h3>')
+B.append('<p><code>SWN.BAWAAN</code>: teks .ssi legend Surpac situs (1&ndash;9 + <code>10..18, 99, 10</code>, default kuning). <code>SWN.gaya()</code> = .ssi situs '
+         'yang diimpor, atau BAWAAN. <code>SWN.dekat(c, asal, used)</code>: nomor 1&ndash;99 yang belum dipakai dengan jarak warna tertimbang (0,3R 0,59G 0,11B) '
+         'terkecil &lt; 60, seri &rarr; terdekat ke nomor asal; dipakai <code>SWN.perbaiki</code> sebelum &ldquo;nomor kosong berikutnya&rdquo;. '
+         '<code>tulis</code> selalu memakai <code>gaya()</code> dan menambah TRIOBJECTS bila tidak ada. <code>denganSsi</code> mengganti/mengisi kolom ke-4 '
+         'header STR menjadi <code>SSI_STYLES:&lt;nama&gt;.ssi</code>. Uji: <code>uji_ssi.py</code> S8&ndash;S9.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
