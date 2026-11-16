@@ -2656,7 +2656,7 @@ function bxCatOn(a,code){var o=BX.ui.catOn[a];return !o||o[code]!==false;}
 function bxLab(c){return c.lo===null?'< '+c.hi:c.hi===null?'≥ '+c.lo:c.lo+' – '+c.hi;}
 function bxClassOf(i){var U=BX.ui,a=U.attr,m=BX.m;if(m.cat[a]){var C=m.cat[a],c=C.codes[i];return c===65535?-1:c;}
   var v=m.num[a][i];if(!isFinite(v))return -1;var L=bxCls(a);for(var k=0;k<L.length;k++){var c2=L[k];if((c2.lo===null||v>=c2.lo)&&(c2.hi===null||v<c2.hi))return k;}return -1;}
-function bxClassInfo(k){var a=BX.ui.attr,m=BX.m;if(m.cat[a]){var d=m.cat[a].dict[k];return{lab:d,col:bxCatCol(a,d,k)};}var c=bxCls(a)[k];return{lab:bxLab(c),col:c.col};}
+function bxClassInfo(k){var a=BX.ui.attr,m=BX.m;if(m.cat[a]){var d=m.cat[a].dict[k];return{lab:d,col:bxCatCol(a,d,k)};}var c=bxCls(a)[k];if(!c)return{lab:'(kelas '+(k+1)+' sudah dihapus)',col:'#cccccc'};return{lab:bxLab(c),col:c.col};}
 function bxPass(i){var U=BX.ui,m=BX.m;if(U.fAttr&&m.num[U.fAttr]&&U.fVal!==''&&U.fOp!=='none'){var v=m.num[U.fAttr][i],t=+U.fVal;if(!isFinite(v))return false;if(U.fOp==='ge'&&!(v>=t))return false;if(U.fOp==='lt'&&!(v<t))return false;}
   var a=U.attr;if(m.cat[a]){var c=m.cat[a].codes[i];if(c===65535||!bxCatOn(a,m.cat[a].dict[c]))return false;}return true;}
 /* indeks Z (counting sort per 0.25 m) supaya sayatan tidak memindai semua blok */
@@ -2738,7 +2738,7 @@ function bxTraces2D(o,F){if(!BX.m||!$('bxShow')||!$('bxShow').checked)return[];i
     bxMergeRects(R).forEach(function(r){X.push(r[0],r[1],r[1],r[0],r[0],null);Y.push(r[2],r[2],r[3],r[3],r[2],null);});
     out.push(bx2dGl({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+L.length+')',hoverinfo:'name',showlegend:true},X.length/6));});
   return out;}
-function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&LY.fst){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,a=U.attr,cat=!!m.cat[a],sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},tv=0,tt=0,sw=0,sv=0,gA=cat?(m.num[U.fAttr]||m.num[Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]]||null):m.num[a];
+function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&window.lyFstOk&&lyFstOk()){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,a=U.attr,cat=!!m.cat[a],sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},tv=0,tt=0,sw=0,sv=0,gA=cat?(m.num[U.fAttr]||m.num[Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]]||null):m.num[a];
   idx.forEach(function(i,j){var v=m.sx[i]*m.sy[i]*m.sz[i],sg=bxSGv(sgA?sgA[i]:NaN),t=v*sg,k=cl[j],r=C[k]||(C[k]={n:0,v:0,t:0,g:0,gt:0});r.n++;r.v+=v;r.t+=t;tv+=v;tt+=t;
     if(gA&&isFinite(gA[i])){r.g+=gA[i]*t;r.gt+=t;sw+=gA[i]*t;sv+=t;}});
   var gl=gA?(cat?(m.num[U.fAttr]?U.fAttr:Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]):a):'';el.innerHTML='<table class=pltb><tr><th>Kelas</th><th>Blok</th><th>Vol (m3)</th><th>Ton</th>'+(gl?'<th>'+bxE(gl)+'</th>':'')+'</tr>'+
@@ -3109,7 +3109,11 @@ function lyFcRects(X0,X1,Y0,Y1){var fc=lyComp(),g={},n={},st={};if(!fc)return{g:
       var key=k+':'+cc+':'+e,p=act[key];if(p){p[3]+=s;nx[key]=p;}else{var o=[fc.x0+cc*s,fc.y0+rr*s,(e-cc+1)*s,s];(g[k]=g[k]||[]).push(o);nx[key]=o;}n[k]=(n[k]||0)+(e-cc+1);cc=e+1;}act=nx;}
   return{g:g,n:n,st:st,s:s};}
 function lyFcOn(){return !!(BX.m&&BX.ui&&BX.ui.fl&&VIEW2D&&secGeom().m==='H');}
-function lyFc2D(){var R=lyFcRects(),out=[];LY.fst=R.st;Object.keys(R.g).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var ci=bxClassInfo(k),X=[],Y=[];
+/* BM 0.24.92: statistik komposit flitch (LY.fst) memakai nomor kelas; bila daftar kelas berubah (hapus / tambah / kuantil / cut-off)
+   statistik lama dibuang sampai flitch digambar ulang. Dulu: hapus kelas -> Galat 'Cannot read properties of undefined (reading lo)'. */
+function lyFstSig(){var U=BX.ui,a=U&&U.attr,m=BX.m;if(!a||!m)return '';return a+'|'+(m.cat[a]?'cat':JSON.stringify(bxCls(a).map(function(c){return [c.lo,c.hi];})));}
+function lyFstOk(){return !!(LY.fst&&LY.fstSig===lyFstSig());}
+function lyFc2D(){var R=lyFcRects(),out=[];LY.fst=R.st;LY.fstSig=lyFstSig();Object.keys(R.g).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var ci=bxClassInfo(k),X=[],Y=[];
     R.g[k].forEach(function(o){var x0=o[0],x1=o[0]+o[2],y0=o[1],y1=o[1]+o[3];X.push(x0,x1,x1,x0,x0,null);Y.push(y0,y0,y1,y1,y0,null);});
     out.push(bx2dGl({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+R.n[k]+')',hoverinfo:'name',showlegend:true},X.length/6));});
   try{bxStatsFc(R.st,R.s);}catch(e){}return out;}
@@ -4431,7 +4435,7 @@ function elStTbl(C,cnt,hint){var L=elList(bxStatPrim()),T=elAgg(),keys=Object.ke
   return '<div class=elsc><table class=pltb>'+hd+rows+'<tr class=tot><td>Total</td><td>'+tn.toLocaleString()+'</td><td>'+Math.round(tv).toLocaleString()+'</td><td>'+Math.round(T.t).toLocaleString()+'</td>'+L.map(function(a){return '<td>'+elF(a,T.g(a))+'</td>';}).join('')+'</tr>'+
     (L.length?'<tr class=elmet><td colspan=4>Metal</td>'+L.map(function(a){return '<td>'+elMetF(a,T.met(a))+(elMetU(a)?' '+elMetU(a):'')+'</td>';}).join('')+'</tr>':'')+'</table></div>'+hint;}
 function bxStatPrim(){var U=BX.ui,m=BX.m,a=U.attr;if(!m.cat[a])return a;return m.num[U.fAttr]?U.fAttr:(Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]||'');}
-function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&LY.fst){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},pr=bxStatPrim();
+function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&window.lyFstOk&&lyFstOk()){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},pr=bxStatPrim();
   idx.forEach(function(i,j){var v=m.sx[i]*m.sy[i]*m.sz[i],t=v*bxSGv(sgA?sgA[i]:NaN),k=cl[j],r=C[k]||(C[k]={n:0,v:0,t:0,E:elInit(pr)});r.n++;r.v+=v;r.t+=t;elAdd(r,i,t);});
   el.innerHTML=elStTbl(C,'Blok','<div class=hint>'+($('sliceClip').checked||VIEW2D?'Hanya blok di dalam slab aktif.':'Seluruh model (aktifkan Potong data di menu Sayatan untuk per slab).')+' Tonase = volume &times; '+(sgA?'kolom '+bxE(U.sgCol):'SG '+U.sg)+'; kadar tiap elemen = rata-rata tertimbang ton.</div>');}
 function bxStatsFc(C,s){var el=$('bxStat');if(!el)return;var U=BX.ui,sgA=U.sgCol&&BX.m.num[U.sgCol],B=lyBench();
@@ -13689,7 +13693,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.91';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.92';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

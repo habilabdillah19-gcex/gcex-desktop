@@ -5158,3 +5158,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Jendela Penampang: rasio "Skala 1 : N" di atas skala batang (kanan bawah).
 - Layout peta (flitch) dan Peta level sudah memuat skala; tidak berubah.
 - GC-Ex Block Model, Drillhole, DB-Ex: tidak berubah.
+
+## 237. Block Model 0.24.92 — perbaikan galat saat menghapus kelas warna
+
+- Menghapus kelas di **Warna & kelas kadar** (tombol ×) ketika flitch aktif di tampilan 2D tidak lagi memunculkan pita
+  merah *Galat JavaScript ... reading 'lo'*. Ringkasan per kelas dan legenda langsung mengikuti daftar kelas yang baru.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

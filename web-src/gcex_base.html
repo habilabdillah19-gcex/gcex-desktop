@@ -2190,7 +2190,7 @@ function bxCatOn(a,code){var o=BX.ui.catOn[a];return !o||o[code]!==false;}
 function bxLab(c){return c.lo===null?'< '+c.hi:c.hi===null?'≥ '+c.lo:c.lo+' – '+c.hi;}
 function bxClassOf(i){var U=BX.ui,a=U.attr,m=BX.m;if(m.cat[a]){var C=m.cat[a],c=C.codes[i];return c===65535?-1:c;}
   var v=m.num[a][i];if(!isFinite(v))return -1;var L=bxCls(a);for(var k=0;k<L.length;k++){var c2=L[k];if((c2.lo===null||v>=c2.lo)&&(c2.hi===null||v<c2.hi))return k;}return -1;}
-function bxClassInfo(k){var a=BX.ui.attr,m=BX.m;if(m.cat[a]){var d=m.cat[a].dict[k];return{lab:d,col:bxCatCol(a,d,k)};}var c=bxCls(a)[k];return{lab:bxLab(c),col:c.col};}
+function bxClassInfo(k){var a=BX.ui.attr,m=BX.m;if(m.cat[a]){var d=m.cat[a].dict[k];return{lab:d,col:bxCatCol(a,d,k)};}var c=bxCls(a)[k];if(!c)return{lab:'(kelas '+(k+1)+' sudah dihapus)',col:'#cccccc'};return{lab:bxLab(c),col:c.col};}
 function bxPass(i){var U=BX.ui,m=BX.m;if(U.fAttr&&m.num[U.fAttr]&&U.fVal!==''&&U.fOp!=='none'){var v=m.num[U.fAttr][i],t=+U.fVal;if(!isFinite(v))return false;if(U.fOp==='ge'&&!(v>=t))return false;if(U.fOp==='lt'&&!(v<t))return false;}
   var a=U.attr;if(m.cat[a]){var c=m.cat[a].codes[i];if(c===65535||!bxCatOn(a,m.cat[a].dict[c]))return false;}return true;}
 /* indeks Z (counting sort per 0.25 m) supaya sayatan tidak memindai semua blok */
@@ -2271,7 +2271,7 @@ function bxTraces2D(o,F){if(!BX.m||!$('bxShow')||!$('bxShow').checked)return[];i
       X.push(x0,x1,x1,x0,x0,null);Y.push(y0,y0,y1,y1,y0,null);});
     out.push({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+L.length+')',hoverinfo:'name',showlegend:true});});
   return out;}
-function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&LY.fst){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,a=U.attr,cat=!!m.cat[a],sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},tv=0,tt=0,sw=0,sv=0,gA=cat?(m.num[U.fAttr]||m.num[Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]]||null):m.num[a];
+function bxStats(idx,cl){var el=$('bxStat');if(!el)return;if(window.lyFcOn&&lyFcOn()&&window.lyFstOk&&lyFstOk()){bxStatsFc(LY.fst,LY.fc?LY.fc.s:1);return;}var U=BX.ui,m=BX.m,a=U.attr,cat=!!m.cat[a],sgA=U.sgCol&&m.num[U.sgCol]?m.num[U.sgCol]:null,C={},tv=0,tt=0,sw=0,sv=0,gA=cat?(m.num[U.fAttr]||m.num[Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]]||null):m.num[a];
   idx.forEach(function(i,j){var v=m.sx[i]*m.sy[i]*m.sz[i],sg=sgA&&isFinite(sgA[i])&&sgA[i]>0?sgA[i]:U.sg,t=v*sg,k=cl[j],r=C[k]||(C[k]={n:0,v:0,t:0,g:0,gt:0});r.n++;r.v+=v;r.t+=t;tv+=v;tt+=t;
     if(gA&&isFinite(gA[i])){r.g+=gA[i]*t;r.gt+=t;sw+=gA[i]*t;sv+=t;}});
   var gl=gA?(cat?(m.num[U.fAttr]?U.fAttr:Object.keys(m.num).filter(function(n){return /^AU/i.test(n);})[0]):a):'';el.innerHTML='<table class=pltb><tr><th>Kelas</th><th>Blok</th><th>Vol (m3)</th><th>Ton</th>'+(gl?'<th>'+bxE(gl)+'</th>':'')+'</tr>'+
@@ -2642,7 +2642,11 @@ function lyFcRects(X0,X1,Y0,Y1){var fc=lyComp(),g={},n={},st={};if(!fc)return{g:
       var key=k+':'+cc+':'+e,p=act[key];if(p){p[3]+=s;nx[key]=p;}else{var o=[fc.x0+cc*s,fc.y0+rr*s,(e-cc+1)*s,s];(g[k]=g[k]||[]).push(o);nx[key]=o;}n[k]=(n[k]||0)+(e-cc+1);cc=e+1;}act=nx;}
   return{g:g,n:n,st:st,s:s};}
 function lyFcOn(){return !!(BX.m&&BX.ui&&BX.ui.fl&&VIEW2D&&secGeom().m==='H');}
-function lyFc2D(){var R=lyFcRects(),out=[];LY.fst=R.st;Object.keys(R.g).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var ci=bxClassInfo(k),X=[],Y=[];
+/* BM 0.24.92: statistik komposit flitch (LY.fst) memakai nomor kelas; bila daftar kelas berubah (hapus / tambah / kuantil / cut-off)
+   statistik lama dibuang sampai flitch digambar ulang. Dulu: hapus kelas -> Galat 'Cannot read properties of undefined (reading lo)'. */
+function lyFstSig(){var U=BX.ui,a=U&&U.attr,m=BX.m;if(!a||!m)return '';return a+'|'+(m.cat[a]?'cat':JSON.stringify(bxCls(a).map(function(c){return [c.lo,c.hi];})));}
+function lyFstOk(){return !!(LY.fst&&LY.fstSig===lyFstSig());}
+function lyFc2D(){var R=lyFcRects(),out=[];LY.fst=R.st;LY.fstSig=lyFstSig();Object.keys(R.g).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var ci=bxClassInfo(k),X=[],Y=[];
     R.g[k].forEach(function(o){var x0=o[0],x1=o[0]+o[2],y0=o[1],y1=o[1]+o[3];X.push(x0,x1,x1,x0,x0,null);Y.push(y0,y0,y1,y1,y0,null);});
     out.push({type:'scatter',mode:'lines',x:X,y:Y,fill:'toself',fillcolor:ci.col,opacity:Math.max(0.35,BX.ui.op),line:{width:0.4,color:ci.col},name:BX.ui.attr+' '+ci.lab+' ('+R.n[k]+')',hoverinfo:'name',showlegend:true});});
   try{bxStatsFc(R.st,R.s);}catch(e){}return out;}
