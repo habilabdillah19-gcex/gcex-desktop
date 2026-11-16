@@ -1288,6 +1288,12 @@ B.append('<p><b>Skala di setiap jendela.</b> Kotak di kiri bawah tampilan 2D dan
          '<b>&asymp;</b> dan berlaku di pusat pandangan; nyalakan <b>Ortho</b> untuk skala yang sama di seluruh layar. Layout &amp; Plot PDF tetap memuat '
          'rasio di kop dan skala batang di lembar.</p>')
 
+B.append('<h3>16p. String number garis ganda untuk flag (Block Model 0.24.93)</h3>')
+B.append('<p>Di <b>Dig Block &rsaquo; Otomatis &rsaquo; Additional flagging</b>, tiap aturan flag kini punya isian <b>String garis ganda</b>. Contoh: '
+         '<i>Ore Sulfide</i> = string 19. Garis ganda poligon ber-flag lalu disimpan sebagai string 19 di STR / DXF, sehingga Surpac menampilkannya '
+         'dengan warna string 19, bukan warna garis aslinya. Kosongkan isian = garis ganda ikut nomor garis asli. Mengganti nomor atau kelas '
+         'garis asli tidak mengubah nomor garis ganda ber-flag.</p>')
+
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

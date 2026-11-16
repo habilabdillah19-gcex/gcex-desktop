@@ -2678,13 +2678,13 @@ function dbKelas(){var U=dbU(),L=[],seen={};(U.rules||[]).forEach(function(q){va
   Object.keys(U.sn||{}).forEach(function(k){var K=k.toUpperCase(),o=U.sn[k];if(!o||seen[K])return;seen[K]=1;L.push({m:k,n:Math.max(1,parseInt(o.n)||1),c:o.c||'#ffd400'});});return L;}
 function dbKelasN(n){var L=dbKelas();for(var i=0;i<L.length;i++)if(L[i].n===n)return L[i];return null;}
 function dbStrKelas(i,k){var s=DG.S[i],q=dbKelas()[k];if(!s||!q)return;s.no=q.n;s.col=q.c;s.d=q.m;if(!s.id)s.id=dbId();
-  DG.S.forEach(function(x){if(x.inner&&x.parent===s.id){x.no=q.n;if(!x.fcol)x.col=q.c;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
+  DG.S.forEach(function(x){if(x.inner&&x.parent===s.id){if(!x.fsn)x.no=q.n;if(!x.fcol)x.col=q.c;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
 function dbKelasBuka(){dbPopClose();try{if(window.PT&&PT.select)PT.select('dig.auto');}catch(e){}setTimeout(function(){var t=document.querySelector('#dbBody .dbrt');if(t){t.scrollIntoView({block:'center',behavior:'smooth'});t.classList.add('dbFlash');setTimeout(function(){t.classList.remove('dbFlash');},1600);}},350);}
 function dbStdGet(){try{return JSON.parse(localStorage.getItem('gcex_bm_kelas_std')||'null');}catch(e){return null;}}
 function dbStdSave(){var U=dbU();try{localStorage.setItem('gcex_bm_kelas_std',JSON.stringify({rules:U.rules,sn:U.sn,t:new Date().toISOString().slice(0,10)}));}catch(e){alert('Gagal menyimpan standar: '+e);return;}dbPanel();alert('Kelas material proyek ini disimpan sebagai standar komputer ini ('+dbKelas().length+' kelas). Di proyek lain: Dig Block › Otomatis › Pakai standar.');}
 function dbStdUse(){var S=dbStdGet();if(!S||!S.rules||!S.rules.length){alert('Belum ada standar tersimpan di komputer ini.');return;}if(!confirm('Ganti tabel kelas kadar & warna material proyek ini dengan standar ('+S.rules.length+' kelas, disimpan '+(S.t||'-')+')?'))return;var U=dbU();U.rules=JSON.parse(JSON.stringify(S.rules));U.sn=JSON.parse(JSON.stringify(S.sn||{}));dbPanel();if(window.SA&&SA.dirty)SA.dirty();}
 function dbSNset(mat,f,v){var U=dbU(),k=String(mat).toUpperCase(),o=U.sn[k]||{n:dbSN(k).n,c:dbSN(k).c};o[f]=f==='n'?Math.max(1,parseInt(v)||1):v;U.sn[k]=o;if(window.SA&&SA.dirty)SA.dirty();}
-function dbApplySN(){lyPolys().forEach(function(o){var t=dbSN(o.s.d);o.s.no=t.n;o.s.col=t.c;if(!o.s.id)o.s.id=dbId();});DG.S.forEach(function(s){if(s.inner){var p=DG.S.filter(function(q){return q.id===s.parent;})[0];if(p){s.no=p.no;if(!s.fcol)s.col=p.col;}}});dgSave();dgList();updatePlot();}
+function dbApplySN(){lyPolys().forEach(function(o){var t=dbSN(o.s.d);o.s.no=t.n;o.s.col=t.c;if(!o.s.id)o.s.id=dbId();});DG.S.forEach(function(s){if(s.inner){var p=DG.S.filter(function(q){return q.id===s.parent;})[0];if(p){if(!s.fsn)s.no=p.no;if(!s.fcol)s.col=p.col;}}});dgSave();dgList();updatePlot();}
 /* ---------- haluskan undakan (anak tangga) ---------- */
 function dbDP(pts,tol){if(pts.length<3)return pts;var keep=new Uint8Array(pts.length);keep[0]=keep[pts.length-1]=1;var st=[[0,pts.length-1]];
   while(st.length){var r=st.pop(),a=pts[r[0]],b=pts[r[1]],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy),bi=-1,bd=tol;for(var i=r[0]+1;i<r[1];i++){var p=pts[i],d=L?Math.abs((p[0]-a[0])*dy-(p[1]-a[1])*dx)/L:Math.hypot(p[0]-a[0],p[1]-a[1]);if(d>bd){bd=d;bi=i;}}
@@ -2854,7 +2854,7 @@ function dbWhy(zs){var d=dbDiag(zs),m=BX.m,U=BX.ui;
 
 /* ---------- edit string satu per satu (klik di Penampang 2D) ---------- */
 function dbStrSet(i,f,v){var s=DG.S[i];if(!s)return;if(f==='no')v=Math.max(1,parseInt(v)||1);if(f==='d')v=String(v).trim()||s.d;s[f]=v;if(!s.id)s.id=dbId();
-  DG.S.forEach(function(q){if(q.inner&&q.parent===s.id){if(f==='no'||(f==='col'&&!q.fcol))q[f]=v;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
+  DG.S.forEach(function(q){if(q.inner&&q.parent===s.id){if((f==='no'&&!q.fsn)||(f==='col'&&!q.fcol))q[f]=v;}});BX.mc=null;dgSave();dgList();updatePlot();if($('dbPop')&&$('dbPop').style.display!=='none')dbPop(i);}
 function dbPick(e){if(DB.ed||DG.on||!VIEW2D||secGeom().m!=='H')return -1;var A=dgAx();if(!A)return -1;var px=e.clientX-A.r.left,py=e.clientY-A.r.top,best=9,bi=-1;
   var _FB=null,_fe=1e-6;try{if(window.lyBench)_FB=lyBench();}catch(_){}
   var _diFl=function(s){if(!_FB||!isFinite(_FB[0])||!isFinite(_FB[1]))return true;

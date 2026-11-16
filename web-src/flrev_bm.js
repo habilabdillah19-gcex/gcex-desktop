@@ -35,12 +35,18 @@
   /* BM 0.24.89 (pemilik 15 Nov 2026: "garis kembarnya diwarnain lain sebagai flagging; garis aslinya tetap sesuai kadarnya"):
      tiap aturan flag punya warna (q.col, bawaan hitam). Garis ganda (string inner) menyimpan nama flag (s.fl) dan warna flag
      (s.fcol = s.col); garis asli tidak disentuh. U.sfCol='kadar' = cara lama (garis ganda sewarna kadar). */
-  window.afWarna=function(s,t){var U=dbU(),nm=t&&t.af&&t.af[0];if(nm)s.fl=nm;if(U.sfCol==='kadar'||!nm){delete s.fcol;return s;}
+  /* BM 0.24.93 (pemilik 16 Nov 2026: "String ganda ini tidak punya String ID ... dibuka di Surpac berwarna hijau lagi"):
+     aturan flag boleh punya string number sendiri (q.sn). Garis ganda ber-flag memakai nomor itu (s.fsn = s.no) sehingga
+     Surpac mewarnainya sesuai flag; kosong = ikut nomor garis asli (cara lama). */
+  var afSN=function(nm){var r=nm?afRules().filter(function(q){return q.n===nm;})[0]:null,v=r?parseInt(r.sn):NaN;return v>0?v:0;};
+  var afNo=function(s){var sn=afSN(s.fl);if(sn){s.fsn=sn;s.no=sn;return;}if(s.fsn){delete s.fsn;var p=(window.DG?DG.S:[]).filter(function(q){return q.id===s.parent;})[0];if(p)s.no=p.no;}};
+  window.afNo=afNo;
+  window.afWarna=function(s,t){var U=dbU(),nm=t&&t.af&&t.af[0];if(nm)s.fl=nm;afNo(s);if(U.sfCol==='kadar'||!nm){delete s.fcol;return s;}
     var r=afRules().filter(function(q){return q.n===nm;})[0];s.fcol=s.col=(r&&r.col)||'#000000';return s;};
-  window.afWarnaSemua=function(){(window.DG?DG.S:[]).forEach(function(s){if(!s.inner)return;var p=DG.S.filter(function(q){return q.id===s.parent;})[0];
+  window.afWarnaSemua=function(){(window.DG?DG.S:[]).forEach(function(s){if(!s.inner)return;var p=DG.S.filter(function(q){return q.id===s.parent;})[0];afNo(s);
       if(dbU().sfCol==='kadar'||!s.fl){if(s.fcol){delete s.fcol;if(p)s.col=p.col;}return;}var r=afRules().filter(function(q){return q.n===s.fl;})[0];s.fcol=s.col=(r&&r.col)||'#000000';});
     try{BX.mc=null;dgSave();dgList();updatePlot();}catch(e){}};
-  window.afSet=function(k,f,v){var R=afRules();if(!R[k])return;var lama=R[k].n;R[k][f]=v;if(f==='n')(window.DG?DG.S:[]).forEach(function(s){if(s.inner&&s.fl===lama)s.fl=v;});afDirty();if(f==='col'||f==='n')afWarnaSemua();};
+  window.afSet=function(k,f,v){var R=afRules();if(!R[k])return;var lama=R[k].n;R[k][f]=v;if(f==='n')(window.DG?DG.S:[]).forEach(function(s){if(s.inner&&s.fl===lama)s.fl=v;});afDirty();if(f==='col'||f==='n'||f==='sn')afWarnaSemua();};
   window.afAdd=function(){var m=BX.m,nums=m?Object.keys(m.num):[];afRules().push({n:'Flag '+(afRules().length+1),k:'num',a:nums.filter(function(a){return /^(zn|cu|s|sxs|stot|as|pb)/i.test(a);})[0]||nums[0]||'',op:'>',c:0,on:true});afDirty();};
   window.afDel=function(k){afRules().splice(k,1);afDirty();};
   function afDirty(){try{if(window.LY)LY.cache=null;}catch(e){}try{if(window.dgSave)dgSave();}catch(e){}FLC={};try{dbPanel();}catch(e){}try{if(window.SA&&SA.dirty)SA.dirty();}catch(e){}}
@@ -56,7 +62,8 @@
         (q.k==='cat'?'<td><select onchange="afSet('+k+',\'a\',this.value)">'+opt(cats,q.a)+'</select></td><td>kode</td><td><input type=text value="'+esc(q.codes)+'" title="Kode dipisah koma; flag bila &ge; 50 % tonase berkode ini" onchange="afSet('+k+',\'codes\',this.value)"></td>'
           :'<td><select onchange="afSet('+k+',\'a\',this.value)">'+opt(nums,q.a)+'</select></td><td><select onchange="afSet('+k+',\'op\',this.value)"><option'+(q.op!=='>='?' selected':'')+'>&gt;</option><option value="&gt;="'+(q.op==='>='?' selected':'')+'>&ge;</option></select></td><td><input type=number step=any value="'+esc(q.c)+'" onchange="afSet('+k+',\'c\',+this.value)"></td>')+
         '<td><input type=color class=afc value="'+esc(q.col||'#000000')+'" title="Warna garis ganda untuk flag ini"'+(U.sfCol==='kadar'?' disabled':'')+' onchange="afSet('+k+',\'col\',this.value)"></td>'+
-        '<td><button class=x onclick="afDel('+k+')" title="Hapus aturan">&times;</button></td></tr>';}).join('')+'</table>'+
+        '<td><button class=x onclick="afDel('+k+')" title="Hapus aturan">&times;</button></td></tr>'+
+        '<tr class=afsub><td></td><td colspan=6 style="padding-top:0"><label style="display:flex;align-items:center;gap:6px;font-weight:400;margin:0">String garis ganda <input type=number min=1 step=1 class=afsn style="width:64px;height:24px" value="'+esc(q.sn||'')+'" placeholder="= asli" title="String number garis ganda untuk flag ini (Surpac mewarnai string menurut nomornya); kosong = sama dengan garis asli" onchange="afSet('+k+',\'sn\',this.value===\'\'?\'\':Math.max(1,parseInt(this.value)||1))"><small style="color:var(--mu)">kosong = ikut garis asli</small></label></td></tr>';}).join('')+'</table>'+
       '<div class=g2 style="margin-top:4px"><button onclick="afAdd()">+ Aturan flag</button><button onclick="var r=dbInner();DB.msg=r.n+\' garis ganda dibuat\'+(r.f?\', \'+r.f+\' poligon terlalu sempit\':\'\');dbPanel()">Perbarui garis ganda</button></div>';}
   window.afDirty2=function(){afDirty();};
   var _dp=window.dbPanel;if(_dp){dbPanel=function(){var r=_dp.apply(this,arguments);try{var b=$('dbBody');if(b&&BX.m){Array.prototype.forEach.call(b.querySelectorAll('details.mini'),function(d){var s=d.querySelector('summary');if(s&&/sulfida/i.test(s.textContent)){var o=d.open;d.innerHTML=afHtml();d.open=o;}});}}catch(e){console.error(e);}return r;};}

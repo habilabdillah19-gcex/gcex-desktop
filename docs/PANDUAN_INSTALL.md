@@ -5164,3 +5164,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Menghapus kelas di **Warna & kelas kadar** (tombol ×) ketika flitch aktif di tampilan 2D tidak lagi memunculkan pita
   merah *Galat JavaScript ... reading 'lo'*. Ringkasan per kelas dan legenda langsung mengikuti daftar kelas yang baru.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 238. Block Model 0.24.93 — string number untuk garis ganda (flag)
+
+- **Dig Block › Otomatis › Additional flagging**: tiap aturan flag punya isian **String garis ganda** (baris kedua di bawah
+  aturan). Isi mis. 19 untuk *Ore Sulfide*: garis ganda poligon ber-flag disimpan sebagai string 19, sehingga di Surpac
+  tampil dengan warna string 19, bukan hijau garis aslinya. Kosongkan = garis ganda ikut nomor garis asli (seperti sebelumnya).
+- Setelah mengisi, klik **Perbarui garis ganda** bila garis ganda belum ada. Mengganti nomor / kelas garis asli tidak
+  mengubah nomor garis ganda ber-flag.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.
