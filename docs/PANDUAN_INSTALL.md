@@ -5473,3 +5473,23 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Ringkasan, kompas, skala & Ukur. Yang ditutup tetap tertutup saat aplikasi dibuka lagi; klik **Panel tersembunyi (n)**
   di bilah atas untuk menampilkannya kembali. Legenda tetap memakai tombol − / × miliknya.
 - DB-Ex, Ore Works: tidak berubah.
+
+## 266. Ore Works 0.17.0 — file proyek .owproj (SQLite)
+
+- **Simpan project** kini menghasilkan **.owproj** (SQLite). **Buka project** menerima .owproj dan .gcv.json lama.
+  Format lama masih bisa dibuat dengan tombol **Simpan .gcv.json** (bagian *File kerja project*).
+- Isi .owproj bisa dibuka di luar Ore Works (mis. DB Browser for SQLite, Python `sqlite3` / pandas, Access lewat ODBC):
+  tabel `ds1_collar`, `ds1_survey`, `ds1_assay`, `ds1_geo` … berisi data bor asli (kolom angka bertipe REAL).
+  Tabel `info`, `bagian`, `biner` adalah isi proyek lainnya (terkompresi) — jangan disunting manual.
+- Hasil uji simulasi (data fiktif 2.000 lubang, 300 ribu baris assay + 300 ribu baris geologi):
+
+  | | .gcv.json (lama) | .owproj (baru) |
+  |---|---|---|
+  | Ukuran file | 70,9 MB (tanpa tabel bor asli) | 35,0 MB (dengan tabel bor asli) |
+  | Simpan | 1,0 dtk | 3,9 dtk |
+  | Buka | 1,3 dtk | 1,5 dtk |
+  | Isi setelah dibuka | — | identik |
+
+  Simpan lebih lama karena menulis tabel bor dan mengompres; tahap berikutnya memindahkannya ke latar (Web Worker)
+  agar layar tidak tertahan.
+- Bayangan string penampang tetangga (Studio / Penampang 2D) kini lebih pudar dan semi-transparan.
