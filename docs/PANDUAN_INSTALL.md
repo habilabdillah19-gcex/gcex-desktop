@@ -5412,3 +5412,23 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   performa*). Orthofoto sekitar 1 juta piksel kini tampil di resolusi asli tanpa mengatur Resolusi.
 - Bila komputer terasa berat, pilih profil **Hemat** atau nyalakan **Mode ringan**.
 - DB-Ex, Ore Works: tidak berubah.
+
+## 263. Ore Works 0.15.0 — georeferensi gambar geofisika
+
+- **Permukaan → Georeferensi gambar (geofisika) → Buka jendela georeferensi** → *Pilih gambar* (PNG / JPG).
+  1. Pilih **Jenis**: *Peta (plan)* (RTP, magnetik, gravitasi, radiometri …) atau *Penampang vertikal* (resistivity, IP,
+     CSAMT …).
+  2. Klik titik kontrol di gambar — sebaiknya perpotongan grid berlabel koordinat di 3 sudut berbeda — lalu isi E / N
+     (penampang: jarak sepanjang garis & RL). 📍 = ambil E / N dengan klik di tampilan 3D. Titik bisa diseret.
+     2 titik = tanpa rotasi; 3 titik atau lebih = affine, residu dan RMS tampil per titik.
+  3. **✂ Kotak potong**: seret kotak di dalam bingkai peta agar judul, label sumbu dan legenda tidak ikut.
+  4. **Putih jadi transparan** untuk peta berlatar putih; atur opasitas.
+  5. Penampang: isi garis lapangan E1 N1 → E2 N2 (titik jarak 0 = E1 N1) atau *Ambil 2 titik dari 3D*.
+  6. **Tampilkan di 3D**. Peta masuk daftar Ortofoto (drape / datar, opasitas, Layout peta). Penampang tampil tegak.
+     **World file** menyimpan .pgw / .jgw agar gambar bisa langsung diimpor lagi di Ortofoto atau GIS lain.
+- **⌃ Sembunyikan bar** (ujung kanan bar menu, atau Ctrl+Shift+M): bar menu & toolbar hilang, tampilan 3D penuh;
+  **☰ Menu** di kiri atas untuk memunculkan lagi.
+- Kotak skala tanpa latar; panel Data bisa diperkecil jadi strip (–) juga saat menempel.
+- Data latihan fiktif: ZIP Data-Latihan → `Ore_Works_Latihan/Geofisika`.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+

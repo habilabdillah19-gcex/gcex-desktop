@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.14.1';</script>
+<script>window.GCEX_VER='0.15.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -2998,7 +2998,7 @@ document.getElementById('pjs').onclick=()=>{const st={app:'GC-Ex viewer 3D',prod
   struktur:{list:STR.filter(s=>s.st!=='usulan').map(s=>{const o=Object.assign({},s);delete o._ix;return o;}),tolak:[...STRJ],codes:document.getElementById('stcodes').value},
   plan:PLAN.map(p=>({nm:p.nm,on:p.on,col:p.col,hd:p.hd,rows:p.rows,edited:p.edited})),
   wireframe:WI.map(m=>({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,ms:m.ms,v:Array.from(m.v,x=>+x.toFixed(3)),t:Array.from(m.t)})),
-  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),pemodelan:window.msSave?msSave():undefined,filter2:window.f2Save?f2Save():undefined,gis:window.gisSave?gisSave():undefined,ui:(typeof uiSave==='function'?uiSave():undefined)};
+  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),pemodelan:window.msSave?msSave():undefined,filter2:window.f2Save?f2Save():undefined,gis:window.gisSave?gisSave():undefined,geov:window.gvSave?gvSave():undefined,ui:(typeof uiSave==='function'?uiSave():undefined)};
  const b=new Blob([JSON.stringify(st)],{type:'application/json'}),a=document.createElement('a'),t=new Date(),pad=x=>String(x).padStart(2,'0');
  a.href=URL.createObjectURL(b);a.download='Project_'+(window.pjName?pjName():document.title.split('·')[0].trim()).replace(/[^\w\-]+/g,'_')+'_'+t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+'_'+pad(t.getHours())+pad(t.getMinutes())+'.gcv.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
  document.getElementById('pjw').textContent='Tersimpan: '+a.download+' ('+(b.size/1e6).toFixed(1).replace('.',',')+' MB) di folder unduhan browser.';};
@@ -3007,7 +3007,7 @@ document.getElementById('pjo').onchange=e=>{const f=e.target.files&&e.target.fil
   if(!st.__boot&&(SF.length||DS.length||WI.length||PLAN.length)&&!confirm('Ganti topografi, desain pit, wireframe dan dataset yang sedang tampil dengan isi project?'))return;
   if(st.origin)OSETF([st.origin]);SF.forEach(sfDispose);SF.length=0;DS.length=0;WI.forEach(wiDispose);WI.length=0;PLAN.length=0;for(const p of st.plan||[])PLAN.push(p);if(st.struktur){STR.length=0;(st.struktur.list||[]).forEach(s=>STR.push(s));STRID=Math.max(1,...STR.map(s=>(s.id||0)+1));STRJ=new Set(st.struktur.tolak||[]);if(st.struktur.codes)document.getElementById('stcodes').value=st.struktur.codes;stDraw();stList();}if(st.titikStruktur){STP.length=0;st.titikStruktur.forEach(p=>STP.push(p));STPID=Math.max(1,...STP.map(p=>(p.id||0)+1));stpDraw();stpList();}for(const m of st.wireframe||[])wiAdd({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,ms:m.ms,v:new Float64Array(m.v),t:new Uint32Array(m.t)});for(const p of st.permukaan||[])sfAdd(p);for(const d of st.dataset||[]){if(d.fm)(d.holes||[]).forEach(h=>{h.src='CH';});DS.push(d);}
   const F=st.filter||{};for(const i of ['flid','flbe','flr0','flr1'])document.getElementById(i).value=F[i]||'';document.getElementById('fltp').checked=!!F.fltp;
-  sfList();dsList();wiList();plList();plDraw();flRead();orRestore(st.orto||[]);fmRestore(st.pemetaan);if(window.msRestore)msRestore(st.pemodelan);if(window.f2Restore)f2Restore(st.filter2);if(window.gisRestore)gisRestore(st.gis);if(typeof uiRestore==='function')uiRestore(st.ui);if(!st.__boot||D.kosong)fitView();w.textContent='Dibuka: '+f.name+' · '+SF.length+' permukaan, '+WI.length+' wireframe, '+DS.length+' dataset.';}catch(err){w.textContent='Gagal membuka project: '+err.message;}e.target.value='';};r.readAsText(f);};
+  sfList();dsList();wiList();plList();plDraw();flRead();orRestore(st.orto||[]);fmRestore(st.pemetaan);if(window.msRestore)msRestore(st.pemodelan);if(window.f2Restore)f2Restore(st.filter2);if(window.gisRestore)gisRestore(st.gis);if(window.gvRestore)gvRestore(st.geov);if(typeof uiRestore==='function')uiRestore(st.ui);if(!st.__boot||D.kosong)fitView();w.textContent='Dibuka: '+f.name+' · '+SF.length+' permukaan, '+WI.length+' wireframe, '+DS.length+' dataset.';}catch(err){w.textContent='Gagal membuka project: '+err.message;}e.target.value='';};r.readAsText(f);};
 
 /* ---------- Titik struktur (pengukuran lapangan / singkapan) + kategori struktur ---------- */
 var STP=window.STP||[],STPID=1;grp('stp');
@@ -3120,7 +3120,7 @@ function orBuild(o){orDispose(o);if(!o.img)return;const tex=orTex(o),inv=orInv(o
   const I=[];for(let t=0;t<ix.length;t+=3)if(inn[ix[t]]&&inn[ix[t+1]]&&inn[ix[t+2]])I.push(ix[t],ix[t+1],ix[t+2]);if(!I.length){o.info='tidak bertampalan dengan '+sf.nm;return;}
   g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P0),3));g.setAttribute('uv',new THREE.BufferAttribute(U,2));g.setIndex(I.length>65535?new THREE.Uint32BufferAttribute(I,1):new THREE.Uint16BufferAttribute(I,1));g.computeVertexNormals();o.info='drape di '+sf.nm+' · '+Math.round(I.length/3).toLocaleString('id-ID')+' segitiga';o._m=sf.mesh;}
  else{const K=orCorners(o),z=(+o.rl||0)-O[2],pos=[];for(const q of K)pos.push(q[0]-O[0],z,-(q[1]-O[1]));g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute([0,1,1,1,1,0,0,0],2));g.setIndex([0,2,1,0,3,2]);g.computeVertexNormals();o.info='datar di RL '+(+o.rl||0);o._m=null;}
- const M=o.shade?THREE.MeshLambertMaterial:THREE.MeshBasicMaterial;o.mesh=new THREE.Mesh(g,new M({map:tex,transparent:o.op<1,opacity:o.op,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4,clippingPlanes:CL}));o.mesh.visible=o.on;o.mesh.renderOrder=1;o.mesh.userData.orto=o;L.orto.add(o.mesh);}
+ const M=o.shade?THREE.MeshLambertMaterial:THREE.MeshBasicMaterial;o.mesh=new THREE.Mesh(g,new M({map:tex,transparent:o.op<1||!!o.alpha,alphaTest:o.alpha?0.03:0,opacity:o.op,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4,clippingPlanes:CL}));o.mesh.visible=o.on;o.mesh.renderOrder=1;o.mesh.userData.orto=o;L.orto.add(o.mesh);}
 function orSync(){for(const o of ORT){if(o.tg!=='flat'){const sf=SF.find(s=>s.nm===o.tg);if(!sf){o.tg='flat';o.rl=o.rl||Math.round(O[2]);orBuild(o);}else if(sf.mesh&&sf.mesh!==o._m)orBuild(o);}}orList();}
 window.ortoSync=orSync;
 function orList(){const el=document.getElementById('orl');if(!el)return;el.innerHTML=ORT.length?'':'<div class="note">Belum ada ortofoto.</div>';
@@ -3173,7 +3173,7 @@ document.getElementById('orxok').onclick=()=>{if(!ORPEND)return;const v=['orx0',
 /* peta level: ortofoto sebagai latar */
 function ortoPeta(x,X,Y){for(const o of ORT){if(!o.on||!o.img)continue;const [A,D2,B,E2,C2,F]=o.aff,sx=X(1)-X(0),sy=Y(1)-Y(0);x.save();x.globalAlpha=o.op;x.transform(sx*A,sy*D2,sx*B,sy*E2,X(C2-A/2-B/2),Y(F-D2/2-E2/2));x.drawImage(o.img,0,0,o.w,o.h);x.restore();}}
 /* project */
-function orSave(){return ORT.map(o=>({nm:o.nm,src:o.src,w:o.w,h:o.h,aff:o.aff,tg:o.tg,rl:o.rl,op:o.op,on:o.on,shade:o.shade}));}
+function orSave(){return ORT.map(o=>({nm:o.nm,src:o.src,w:o.w,h:o.h,aff:o.aff,tg:o.tg,rl:o.rl,op:o.op,on:o.on,shade:o.shade,alpha:o.alpha||undefined}));}
 async function orRestore(list){ORT.forEach(orDispose);ORT.length=0;for(const q of list||[]){try{const im=await orLoadImg(q.src);orAdd(Object.assign({},q,{img:im}));}catch(e){}}orList();}
 orList();
 
@@ -6078,6 +6078,154 @@ G.MITAB={bacaTAB,bacaDAT,bacaMAP,bacaTabel,bacaWOR};
    if(ada||(on&&!on.checked)||!GIS.some(T=>T.on))return r;let e=[r[0],r[1],r[2],r[3]],any=false;const hb=[...activeHoles()].length;if(!hb)e=[1e18,-1e18,1e18,-1e18];
    for(const T of GIS){if(!T.on||!T.bbox)continue;any=true;e=[Math.min(e[0],T.bbox[0]),Math.max(e[1],T.bbox[2]),Math.min(e[2],T.bbox[1]),Math.max(e[3],T.bbox[3])];}if(!any)return r;const pe=(e[1]-e[0])*0.04,pn=(e[3]-e[2])*0.04;return [e[0]-pe,e[1]+pe,e[2]-pn,e[3]+pn];}catch(err){return r;}};}
  window.__gis={GIS,bangun,daftar,tambah,lab};
+})();
+
+/* Ore Works 0.15.0 (pemilik 17 Nov 2026): "agar dapat mengakomodir pembacaan file png data geofisika (biasanya rtp,
+   geomagnetic, resistivity, dll) bisa di georeferensi juga file .png atau jpg tersebut".
+   Permukaan → Georeferensi gambar (geofisika): jendela georeferensi — klik titik kontrol di gambar (mis. perpotongan grid
+   berlabel koordinat), isi E / N (ketik atau 📍 ambil dari 3D). 2 titik = sejajar sumbu (skala X & Y), ≥ 3 titik = affine
+   (kuadrat terkecil, residu & RMS per titik). Mode Peta (plan) → masuk daftar Ortofoto (drape ke topografi / datar di RL,
+   opasitas, Layout peta & peta level ikut). Mode Penampang vertikal (resistivity / IP / CSAMT) → titik kontrol berisi
+   jarak sepanjang garis & RL; garis penampang dari 2 titik E/N; ditampilkan sebagai bidang tegak di 3D. "Putih jadi
+   transparan" untuk peta berlatar putih. World file (.pgw / .jgw) bisa disimpan. Tersimpan di project. */
+(function(){const g=id=>document.getElementById(id),anc=g('orl');if(!anc||g('grw'))return;
+ const sb=anc.closest('.subb');const host=sb?sb.parentNode:anc.parentNode;
+ const st=document.createElement('style');st.textContent=`#grw{position:fixed;z-index:55;display:none;flex-direction:column;background:#fff;border:1px solid #8fa1bd;border-radius:6px;box-shadow:0 10px 32px #0005;left:60px;top:70px;width:min(1180px,calc(100vw - 80px));height:min(700px,calc(100vh - 90px));resize:both;overflow:hidden;min-width:640px;min-height:380px;font-size:12px}
+#grw .h{display:flex;align-items:center;gap:8px;padding:5px 9px;background:linear-gradient(#2a3f6c,#1b2a4e);color:#fff;cursor:move}#grw .h b{flex:1}#grw .h button{background:transparent;color:#fff;border:1px solid #ffffff40;padding:0 7px;margin:0}
+#grw .bd{flex:1;display:flex;min-height:0}#grw .cv{flex:1;position:relative;background:#e9edf3;min-width:0}#grw canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+#grw .rp{width:350px;flex:none;overflow:auto;padding:6px 9px;border-left:1px solid #d6dde8}#grw table{width:100%;border-collapse:collapse;margin:4px 0}#grw th{background:#1b2a4e!important;color:#fff!important;font-weight:600;padding:2px 3px;font-size:11px}
+#grw td{border-bottom:1px solid #eef1f5;padding:1px 2px;text-align:center}#grw td input{width:86px;padding:1px 3px;font-size:11.5px}#grw td button{padding:0 4px;margin:0;min-width:20px}#grw .tip{position:absolute;left:8px;top:8px;background:#ffffffe6;border:1px solid #c9d3e1;border-radius:4px;padding:3px 7px;pointer-events:none}
+#grw tr.pk td{background:#fff3cd}#grw .bad{color:#c62828;font-weight:600}`;document.head.appendChild(st);
+ /* sub-panel di menu Permukaan */
+ const h=document.createElement('div');h.className='note subh';h.innerHTML='<b>Georeferensi gambar (geofisika)</b>';
+ const b=document.createElement('div');b.className='subb';b.id='grsb';b.innerHTML='<div class="note">Peta / penampang geofisika (RTP, magnetik, resistivity, IP, CSAMT …) berupa PNG / JPG tanpa world file: tentukan titik kontrol lalu tampilkan di 3D. Gambar yang sudah punya world file cukup diimpor di Ortofoto.</div><div class="fl"><button id="gropen" class="pri">&#8982; Buka jendela georeferensi</button></div><div id="grvl"></div>';
+ host.appendChild(h);host.appendChild(b);
+ /* jendela */
+ const w=document.createElement('div');w.id='grw';w.innerHTML='<div class="h"><b>Georeferensi gambar</b><span id="grnm" style="opacity:.8"></span><button id="grx" title="Tutup">&#10005;</button></div><div class="bd"><div class="cv"><canvas id="grc"></canvas><div class="tip" id="grtip">Pilih gambar PNG / JPG di panel kanan.</div></div><div class="rp">'+
+  '<label class="fbtn">&#8679; Pilih gambar (PNG / JPG)<input type="file" id="grf" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif" style="display:none"></label>'+
+  '<div class="fl">Jenis <select id="grm" style="flex:1"><option value="plan">Peta (plan) — E / N</option><option value="vert">Penampang vertikal — jarak / RL</option></select></div>'+
+  '<div id="grln" style="display:none"><div class="note" style="margin:2px 0">Garis penampang di lapangan (titik awal = jarak 0):</div><div class="fl">E1 <input id="gre1" type="number" step="any" style="width:90px"> N1 <input id="grn1" type="number" step="any" style="width:100px"></div>'+
+  '<div class="fl">E2 <input id="gre2" type="number" step="any" style="width:90px"> N2 <input id="grn2" type="number" step="any" style="width:100px"></div><div class="fl"><button id="grlp">&#128205; Ambil 2 titik dari 3D</button><span id="grlinf" class="note"></span></div></div>'+
+  '<div class="note" style="margin-top:6px"><b>Titik kontrol</b> · klik di gambar = tambah · seret = geser · roda = zoom · seret kanan = geser gambar</div><table><thead><tr><th>#</th><th id="grhx">E</th><th id="grhy">N</th><th>Residu</th><th></th></tr></thead><tbody id="grtb"></tbody></table>'+
+  '<div id="grinf" class="note"></div><div class="fl"><button id="grcrop" title="Seret kotak di gambar: hanya isi kotak yang ditampilkan (buang bingkai, judul, label sumbu)">&#9986; Kotak potong</button><button id="grcrx" title="Hapus kotak potong">&#10005;</button><span id="grcri" class="note"></span></div><label><input type="checkbox" id="grwt">Putih jadi transparan</label><div class="fl" id="grwtr" style="display:none">ambang <input id="grthr" type="range" min="200" max="254" value="242" style="flex:1"> <b id="grthv">242</b></div>'+
+  '<div class="fl">Opasitas <input id="grop" type="range" min="0.2" max="1" step="0.05" value="0.85" style="flex:1"></div>'+
+  '<div class="fl"><button id="grgo" class="pri">&#10003; Tampilkan di 3D</button><button id="grwf" title="Simpan world file untuk gambar ini (bisa diimpor ulang di Ortofoto / GIS lain)">&#8681; World file</button></div><div id="grst" class="note"></div></div></div>';
+ document.body.appendChild(w);
+ {const hd=w.querySelector('.h');hd.addEventListener('mousedown',e=>{if(e.target.closest('button'))return;const r=w.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;const mv=ev=>{w.style.left=Math.max(0,ev.clientX-dx)+'px';w.style.top=Math.max(0,ev.clientY-dy)+'px';},up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);};addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();});}
+ const GR={img:null,nm:'',w:0,h:0,p:[],v:null,pick:null,ln:null,mode:'plan',crop:null,cm:false};const cv=g('grc'),x=cv.getContext('2d');
+ g('gropen').onclick=()=>{w.style.display='flex';setTimeout(gbr,30);};g('grx').onclick=()=>{w.style.display='none';GR.pick=null;hint('');};
+ const hint=t=>{if(window.plHint)plHint(t);};
+ g('grm').onchange=e=>{GR.mode=e.target.value;g('grln').style.display=GR.mode==='vert'?'':'none';g('grhx').textContent=GR.mode==='vert'?'Jarak (m)':'E';g('grhy').textContent=GR.mode==='vert'?'RL':'N';tabel();};
+ g('grwt').onchange=e=>{g('grwtr').style.display=e.target.checked?'':'none';};g('grthr').oninput=e=>{g('grthv').textContent=e.target.value;};
+ g('grf').onchange=async e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;const url=URL.createObjectURL(f);try{const im=await orLoadImg(url);GR.img=im;GR.nm=f.name.replace(/\.[^.]+$/,'');GR.ext=(f.name.split('.').pop()||'png').toLowerCase();GR.w=im.naturalWidth||im.width;GR.h=im.naturalHeight||im.height;GR.p=[];GR.v=null;GR.crop=null;GR.cm=false;cropInfo();
+   g('grnm').textContent=f.name+' · '+GR.w+'×'+GR.h+' px';if(/rtp|mag|res|ip|csamt|geofis|resistiv|chargeab/i.test(f.name)){g('grwt').checked=true;g('grwtr').style.display='';}if(/resist|ip_|pseudo|section|penampang|csamt|\bert\b/i.test(f.name)){g('grm').value='vert';g('grm').onchange({target:g('grm')});}
+   tabel();gbr();}catch(err){g('grst').innerHTML='<span class="bad">'+esc(err.message)+'</span>';}};
+ /* gambar & interaksi */
+ const fitV=()=>{const r=cv.getBoundingClientRect();const s=Math.min((r.width-20)/GR.w,(r.height-20)/GR.h);GR.v={s,ox:(r.width-GR.w*s)/2,oy:(r.height-GR.h*s)/2};};
+ const toS=(c,r0)=>[GR.v.ox+c*GR.v.s,GR.v.oy+r0*GR.v.s],toI=(px,py)=>[(px-GR.v.ox)/GR.v.s,(py-GR.v.oy)/GR.v.s];
+ function gbr(){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;cv.width=Math.max(1,r.width*d);cv.height=Math.max(1,r.height*d);x.setTransform(d,0,0,d,0,0);x.fillStyle='#e9edf3';x.fillRect(0,0,r.width,r.height);
+  g('grtip').style.display=GR.img?'none':'block';if(!GR.img)return;if(!GR.v)fitV();x.imageSmoothingQuality='high';x.drawImage(GR.img,GR.v.ox,GR.v.oy,GR.w*GR.v.s,GR.h*GR.v.s);
+  const cq=GR.crop||GR.cdr;if(cq){const a=toS(Math.min(cq[0],cq[2]),Math.min(cq[1],cq[3])),b2=toS(Math.max(cq[0],cq[2]),Math.max(cq[1],cq[3]));x.save();x.fillStyle='rgba(20,30,50,.35)';x.beginPath();x.rect(0,0,r.width,r.height);x.rect(a[0],a[1],b2[0]-a[0],b2[1]-a[1]);x.fill('evenodd');x.setLineDash([6,4]);x.strokeStyle='#f59f00';x.lineWidth=2;x.strokeRect(a[0],a[1],b2[0]-a[0],b2[1]-a[1]);x.restore();}
+  GR.p.forEach((q,i)=>{const [sx,sy]=toS(q.c,q.r),pk=GR.pick&&GR.pick.i===i;x.strokeStyle=pk?'#f59f00':'#e53935';x.lineWidth=2;x.beginPath();x.moveTo(sx-9,sy);x.lineTo(sx+9,sy);x.moveTo(sx,sy-9);x.lineTo(sx,sy+9);x.stroke();x.beginPath();x.arc(sx,sy,5,0,7);x.stroke();
+   x.font='700 12px Arial';const t=String(i+1);x.lineWidth=3;x.strokeStyle='#fff';x.strokeText(t,sx+7,sy-7);x.fillStyle=pk?'#b26a00':'#c62828';x.fillText(t,sx+7,sy-7);});}
+ let dr=null;cv.addEventListener('contextmenu',e=>e.preventDefault());
+ cv.addEventListener('mousedown',e=>{if(!GR.img)return;const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+  if(e.button===2||e.button===1){dr={pan:1,x:px,y:py,ox:GR.v.ox,oy:GR.v.oy};return;}if(GR.cm){const [c,r0]=toI(px,py);dr={crop:1};GR.cdr=[c,r0,c,r0];return;}const hit=GR.p.findIndex(q=>{const s=toS(q.c,q.r);return Math.hypot(s[0]-px,s[1]-py)<9;});dr={i:hit,x:px,y:py,mv:false};});
+ addEventListener('mousemove',e=>{if(!dr)return;const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;if(dr.pan){GR.v.ox=dr.ox+px-dr.x;GR.v.oy=dr.oy+py-dr.y;gbr();return;}if(dr.crop){const [c,r0]=toI(px,py);GR.cdr[2]=Math.max(0,Math.min(GR.w,c));GR.cdr[3]=Math.max(0,Math.min(GR.h,r0));gbr();return;}
+  if(Math.hypot(px-dr.x,py-dr.y)>3)dr.mv=true;if(dr.i>=0&&dr.mv){const [c,r0]=toI(px,py);GR.p[dr.i].c=c;GR.p[dr.i].r=r0;gbr();hitung();}});
+ addEventListener('mouseup',e=>{if(!dr)return;const d0=dr;dr=null;if(d0.pan)return;if(d0.crop){const q=GR.cdr;GR.cdr=null;GR.cm=false;g('grcrop').classList.remove('on');cv.style.cursor='crosshair';
+   if(q&&Math.abs(q[2]-q[0])>10&&Math.abs(q[3]-q[1])>10)GR.crop=[Math.max(0,Math.min(q[0],q[2])),Math.max(0,Math.min(q[1],q[3])),Math.min(GR.w,Math.max(q[0],q[2])),Math.min(GR.h,Math.max(q[1],q[3]))];cropInfo();gbr();return;}const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+  if(d0.i<0&&!d0.mv){const [c,r0]=toI(px,py);if(c<0||r0<0||c>GR.w||r0>GR.h)return;GR.p.push({c,r:r0,x:'',y:''});tabel();gbr();setTimeout(()=>{const ins=g('grtb').querySelectorAll('tr:last-child input');if(ins[0])ins[0].focus();},30);}else tabel();});
+ cv.addEventListener('wheel',e=>{if(!GR.img)return;e.preventDefault();const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,k=e.deltaY<0?1.2:1/1.2;GR.v.ox=px-(px-GR.v.ox)*k;GR.v.oy=py-(py-GR.v.oy)*k;GR.v.s*=k;gbr();},{passive:false});
+ cv.addEventListener('dblclick',e=>{e.preventDefault();});
+ try{new ResizeObserver(()=>gbr()).observe(cv);}catch(e){}
+ function cropInfo(){const e=g('grcri');if(e)e.textContent=GR.crop?Math.round(GR.crop[2]-GR.crop[0])+'×'+Math.round(GR.crop[3]-GR.crop[1])+' px dipakai':'seluruh gambar dipakai';}
+ g('grcrop').onclick=()=>{if(!GR.img)return;GR.cm=!GR.cm;g('grcrop').classList.toggle('on',GR.cm);cv.style.cursor=GR.cm?'cell':'crosshair';if(GR.cm)g('grst').textContent='Seret kotak di gambar mengelilingi isi peta (di dalam bingkai).';};
+ g('grcrx').onclick=()=>{GR.crop=null;cropInfo();gbr();};
+ /* titik kontrol: tabel */
+ const num=v=>{const s=String(v).trim().replace(/\s/g,'');if(s==='')return NaN;return parseFloat(s.replace(/,(?=\d{1,3}$)/,'.').replace(/,/g,''));};
+ function tabel(){const tb=g('grtb');tb.innerHTML='';GR.p.forEach((q,i)=>{const tr=document.createElement('tr');if(GR.pick&&GR.pick.i===i)tr.className='pk';tr.innerHTML='<td>'+(i+1)+'</td><td><input class="ix" value="'+esc(q.x)+'"></td><td><input class="iy" value="'+esc(q.y)+'"></td><td class="rs"></td><td>'+(GR.mode==='plan'?'<button class="p" title="Ambil E / N dari klik di 3D">&#128205;</button>':'')+'<button class="d" title="Hapus titik">&#10005;</button></td>';
+   tr.querySelector('.ix').oninput=e=>{q.x=e.target.value;hitung();};tr.querySelector('.iy').oninput=e=>{q.y=e.target.value;hitung();};tr.querySelector('.d').onclick=()=>{GR.p.splice(i,1);tabel();gbr();};
+   const pb=tr.querySelector('.p');if(pb)pb.onclick=()=>{GR.pick={i};hint('Georeferensi: klik lokasi titik '+(i+1)+' di tampilan 3D (Esc = batal).');tabel();gbr();};tb.appendChild(tr);});hitung();}
+ /* transformasi: 2 titik = sejajar sumbu, ≥ 3 = affine kuadrat terkecil. Piksel: pusat piksel 0 (konvensi world file). */
+ function fit(P){if(P.length<2)return null;const C=P.map(q=>q.c-0.5),Rr=P.map(q=>q.r-0.5);let A,B,Cc,D,E,F;
+  if(P.length===2){const dc=C[1]-C[0],drr=Rr[1]-Rr[0];if(Math.abs(dc)<1||Math.abs(drr)<1)return {err:'2 titik harus berbeda kolom DAN baris (letakkan diagonal)'};A=(P[1].X-P[0].X)/dc;E=(P[1].Y-P[0].Y)/drr;B=0;D=0;Cc=P[0].X-A*C[0];F=P[0].Y-E*Rr[0];}
+  else{let mx=0,ex=1;for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){ex=Math.max(ex,Math.hypot(C[i]-C[j],Rr[i]-Rr[j]));for(let k=j+1;k<P.length;k++)mx=Math.max(mx,Math.abs((C[j]-C[i])*(Rr[k]-Rr[i])-(C[k]-C[i])*(Rr[j]-Rr[i]))/2);}
+   if(mx<0.02*ex*ex)return {err:'titik kontrol hampir segaris — sebar titik di tiga sudut gambar (bukan satu garis lurus)'};
+   const S=[[0,0,0],[0,0,0],[0,0,0]],bx=[0,0,0],by=[0,0,0];P.forEach((q,i)=>{const v=[C[i],Rr[i],1];for(let a=0;a<3;a++){for(let k=0;k<3;k++)S[a][k]+=v[a]*v[k];bx[a]+=v[a]*q.X;by[a]+=v[a]*q.Y;}});
+   const sol=(M,y)=>{const m=M.map((r,i)=>r.concat([y[i]]));for(let i=0;i<3;i++){let p=i;for(let k=i+1;k<3;k++)if(Math.abs(m[k][i])>Math.abs(m[p][i]))p=k;[m[i],m[p]]=[m[p],m[i]];if(Math.abs(m[i][i])<1e-12)return null;for(let k=0;k<3;k++)if(k!==i){const f=m[k][i]/m[i][i];for(let j=i;j<4;j++)m[k][j]-=f*m[i][j];}}return m.map((r,i)=>r[3]/r[i]);};
+   const sx=sol(S,bx),sy=sol(S,by);if(!sx||!sy)return {err:'titik kontrol segaris — sebar titik di tiga sudut gambar'};[A,B,Cc]=sx;[D,E,F]=sy;}
+  const res=P.map((q,i)=>Math.hypot(A*C[i]+B*Rr[i]+Cc-q.X,D*C[i]+E*Rr[i]+F-q.Y));return {aff:[A,D,B,E,Cc,F],res,rms:Math.sqrt(res.reduce((a,v)=>a+v*v,0)/res.length),n:P.length};}
+ function hitung(){const P=GR.p.map(q=>Object.assign({X:num(q.x),Y:num(q.y)},q)).filter(q=>isFinite(q.X)&&isFinite(q.Y));const T=fit(P);GR.T=T&&!T.err?T:null;const rs=g('grtb').querySelectorAll('.rs');
+  let k=0;GR.p.forEach((q,i)=>{const ok=isFinite(num(q.x))&&isFinite(num(q.y));if(rs[i])rs[i].textContent=ok&&GR.T?(GR.T.n>2?GR.T.res[k].toFixed(2):'–'):'';if(ok)k++;});
+  const inf=g('grinf');if(!GR.img){inf.textContent='';return;}if(T&&T.err){inf.innerHTML='<span class="bad">'+T.err+'</span>';return;}if(!GR.T){inf.textContent='Butuh minimal 2 titik kontrol dengan koordinat ('+P.length+' terisi).';return;}
+  const [A,D,B,E]=GR.T.aff,px=Math.sqrt(Math.abs(A*E-B*D)),rot=Math.atan2(D,A)*180/Math.PI;
+  inf.innerHTML=(GR.T.n===2?'2 titik: sejajar sumbu (tanpa rotasi)':GR.T.n+' titik: affine')+' · piksel ≈ '+px.toFixed(px<1?3:2)+' m'+(Math.abs(rot)>0.05&&GR.T.n>2?' · rotasi '+rot.toFixed(2)+'°':'')+(GR.T.n>2?' · RMS <b'+(GR.T.rms>px*3?' class="bad"':'')+'>'+GR.T.rms.toFixed(2)+' m</b>':'')+(GR.T.n===2?'<br>Tambah titik ke-3 untuk memeriksa ketelitian (residu).':'');}
+ /* ambil koordinat dari 3D */
+ const pick3=ev=>{const r=R.domElement.getBoundingClientRect(),m=new THREE.Vector2((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1),rc=new THREE.Raycaster();rc.setFromCamera(m,C);const objs=[];
+  for(const k of ['surf','orto','wfi','wf','gis'])if(L[k]&&L[k].visible)L[k].traverse(o=>{if(o.isMesh&&o.visible!==false)objs.push(o);});const hh=rc.intersectObjects(objs,false)[0];let p=hh&&hh.point;
+  if(!p){const pl=new THREE.Plane(new THREE.Vector3(0,1,0),-CT.target.y),v=new THREE.Vector3();if(!rc.ray.intersectPlane(pl,v))return null;p=v;}return [p.x+O[0],-p.z+O[1],p.y/W.scale.y+O[2]];};
+ R.domElement.addEventListener('pointerdown',e=>{if(e.button!==0)return;if(GR.pick){const q=pick3(e);if(!q)return;e.stopImmediatePropagation();e.preventDefault();
+   if(GR.pick.ln!=null){const k=GR.pick.ln;g(k?'gre2':'gre1').value=q[0].toFixed(2);g(k?'grn2':'grn1').value=q[1].toFixed(2);if(k===0){GR.pick={ln:1};hint('Georeferensi: klik ujung AKHIR garis penampang.');}else{GR.pick=null;hint('');garisInfo();}return;}
+   const P=GR.p[GR.pick.i];if(P){P.x=q[0].toFixed(2);P.y=q[1].toFixed(2);}GR.pick=null;hint('');tabel();gbr();}},true);
+ addEventListener('keydown',e=>{if(e.key==='Escape'&&GR.pick){GR.pick=null;hint('');tabel();gbr();}});
+ g('grlp').onclick=()=>{GR.pick={ln:0};hint('Georeferensi: klik ujung AWAL garis penampang (jarak 0) di 3D.');};
+ const garis=()=>{const v=['gre1','grn1','gre2','grn2'].map(i=>num(g(i).value));return v.every(isFinite)&&Math.hypot(v[2]-v[0],v[3]-v[1])>1?v:null;};
+ const garisInfo=()=>{const L2=garis();g('grlinf').textContent=L2?'panjang '+Math.hypot(L2[2]-L2[0],L2[3]-L2[1]).toFixed(1)+' m · azimut '+((Math.atan2(L2[2]-L2[0],L2[3]-L2[1])*180/Math.PI+360)%360).toFixed(1)+'°':'';};
+ ['gre1','grn1','gre2','grn2'].forEach(i=>g(i).addEventListener('input',garisInfo));
+ /* hasil: kanvas olahan (putih → transparan), diperkecil ≤ 4096 px, afin disesuaikan */
+ function olah(){const cr=GR.crop||[0,0,GR.w,GR.h],c0=Math.floor(cr[0]),r0=Math.floor(cr[1]),cw=Math.max(1,Math.ceil(cr[2])-c0),ch=Math.max(1,Math.ceil(cr[3])-r0),lim=Math.min(4096,typeof orMaxTex==='function'?orMaxTex():4096),k=Math.min(1,lim/Math.max(cw,ch)),cn=document.createElement('canvas');cn.width=Math.max(1,Math.round(cw*k));cn.height=Math.max(1,Math.round(ch*k));
+  const c2=cn.getContext('2d');c2.drawImage(GR.img,c0,r0,cw,ch,0,0,cn.width,cn.height);const wt=g('grwt').checked;if(wt){const thr=+g('grthr').value,id=c2.getImageData(0,0,cn.width,cn.height),d=id.data;for(let i=0;i<d.length;i+=4){const m=Math.min(d[i],d[i+1],d[i+2]);if(m>=thr)d[i+3]=0;else if(m>thr-12)d[i+3]=Math.round(255*(thr-m)/12);}c2.putImageData(id,0,0);}
+  const [A,D,B,E,Cc,F]=GR.T.aff,kx=cw/cn.width,ky=ch/cn.height,oc=c0+kx/2-0.5,orr=r0+ky/2-0.5;return {cn,k:[kx,ky],wt,aff:[A*kx,D*kx,B*ky,E*ky,Cc+A*oc+B*orr,F+D*oc+E*orr]};}
+ g('grgo').onclick=()=>{const s=g('grst');if(!GR.img){s.innerHTML='<span class="bad">Pilih gambar dulu.</span>';return;}if(!GR.T){s.innerHTML='<span class="bad">Lengkapi titik kontrol (minimal 2).</span>';return;}
+  const o=olah(),op=+g('grop').value,src=o.cn.toDataURL(o.wt?'image/png':'image/jpeg',0.9);
+  if(GR.mode==='plan'){const [A,D,B,E,Cc,F]=o.aff;if(typeof OSETF==='function')OSETF([[Cc,F,0]]);const r=orAdd({nm:GR.nm+' (georef)',img:o.cn,src,w:o.cn.width,h:o.cn.height,aff:o.aff,op,alpha:o.wt});
+   s.innerHTML='Ditambahkan ke daftar <b>Ortofoto</b> (Permukaan → Ortofoto &amp; drape): '+esc(r.info||'')+'. Atur drape / opasitas di sana.';const K=orCorners(r);if(typeof fmZoom==='function')fmZoom(K.map(q=>[q[0],q[1],isFinite(topoZ(q[0],q[1]))?topoZ(q[0],q[1]):O[2]]));return;}
+  const L2=garis();if(!L2){s.innerHTML='<span class="bad">Isi garis penampang (E1, N1 → E2, N2) atau ambil dari 3D.</span>';return;}
+  const v=tambahV({nm:GR.nm,src,img:o.cn,w:o.cn.width,h:o.cn.height,aff:o.aff,line:L2,op,on:true});s.innerHTML='Penampang <b>'+esc(v.nm)+'</b> ditampilkan tegak di 3D sepanjang garis ('+Math.hypot(L2[2]-L2[0],L2[3]-L2[1]).toFixed(0)+' m).';};
+ g('grwf').onclick=()=>{if(!GR.T){g('grst').innerHTML='<span class="bad">Lengkapi titik kontrol dulu.</span>';return;}if(GR.mode!=='plan'){g('grst').innerHTML='<span class="bad">World file hanya untuk peta (plan).</span>';return;}
+  const ext=/jpe?g/.test(GR.ext)?'jgw':GR.ext==='png'?'pgw':'wld';fmDl(GR.T.aff.map(v=>v.toFixed(10)).join('\r\n')+'\r\n',GR.nm+'.'+ext,'text/plain');};
+ /* penampang vertikal di 3D */
+ const GL=grp('geov'),GV=window.GEOV=[];
+ function bangunV(v){if(v.mesh){GL.remove(v.mesh);v.mesh.geometry.dispose();v.mesh.material.dispose();if(v.tex)v.tex.dispose();v.mesh=null;}if(!v.on||!v.img)return;const [A,D,B,E,Cc,F]=v.aff,pt=(c,r)=>[A*c+B*r+Cc,D*c+E*r+F],K=[pt(-0.5,-0.5),pt(v.w-0.5,-0.5),pt(v.w-0.5,v.h-0.5),pt(-0.5,v.h-0.5)];
+  const [e1,n1,e2,n2]=v.line,Lx=Math.hypot(e2-e1,n2-n1),ux=(e2-e1)/Lx,uy=(n2-n1)/Lx,pos=[];for(const q of K){const E2=e1+ux*q[0],N2=n1+uy*q[0];pos.push(E2-O[0],q[1]-O[2],-(N2-O[1]));}
+  const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));gg.setAttribute('uv',new THREE.Float32BufferAttribute([0,1,1,1,1,0,0,0],2));gg.setIndex([0,2,1,0,3,2]);
+  v.tex=new THREE.CanvasTexture(v.img);v.tex.minFilter=THREE.LinearMipmapLinearFilter;v.mesh=new THREE.Mesh(gg,new THREE.MeshBasicMaterial({map:v.tex,transparent:true,opacity:v.op,alphaTest:0.02,side:THREE.DoubleSide,depthWrite:v.op>=0.99,clippingPlanes:CL}));v.mesh.renderOrder=2;GL.add(v.mesh);}
+ function tambahV(v){v.id=v.id||Date.now()+Math.random();GV.push(v);bangunV(v);daftarV();if(typeof OSETF==='function')OSETF([[v.line[0],v.line[1],v.aff[5]]]);return v;}
+ function daftarV(){const el=g('grvl');if(!el)return;el.innerHTML=GV.length?'<div class="note subh" style="margin-top:6px"><b>Penampang geofisika di 3D</b></div>':'';
+  GV.forEach(v=>{const d=document.createElement('div');d.className='dsr';d.style.flexDirection='column';d.style.alignItems='stretch';
+   d.innerHTML='<div style="display:flex;gap:5px;align-items:center"><input type="checkbox" class="on"'+(v.on?' checked':'')+'><span style="flex:1;font-size:12px">'+esc(v.nm)+'</span><button class="z" title="Arahkan kamera">&#8982;</button><button class="x" title="Hapus">&#10005;</button></div><div class="fl">Opasitas <input type="range" class="op" min="0.2" max="1" step="0.05" value="'+v.op+'" style="flex:1"></div>';
+   d.querySelector('.on').onchange=e=>{v.on=e.target.checked;bangunV(v);};d.querySelector('.op').oninput=e=>{v.op=+e.target.value;if(v.mesh){v.mesh.material.opacity=v.op;v.mesh.material.depthWrite=v.op>=0.99;}};
+   d.querySelector('.x').onclick=()=>{if(!confirm('Hapus penampang "'+v.nm+'"?'))return;v.on=false;bangunV(v);GV.splice(GV.indexOf(v),1);daftarV();};
+   d.querySelector('.z').onclick=()=>{const [A,D,B,E,Cc,F]=v.aff,z0=F,z1=D*(v.w-1)+E*(v.h-1)+F;if(typeof fmZoom==='function')fmZoom([[v.line[0],v.line[1],z0],[v.line[2],v.line[3],z1]]);};el.appendChild(d);});}
+ window.gvSave=()=>GV.length?GV.map(v=>({nm:v.nm,src:v.src,w:v.w,h:v.h,aff:v.aff,line:v.line,op:v.op,on:v.on})):undefined;
+ window.gvRestore=async list=>{for(const v of GV.splice(0)){v.on=false;bangunV(v);}for(const q of list||[]){try{const im=await orLoadImg(q.src);tambahV(Object.assign({},q,{img:im}));}catch(e){}}daftarV();};
+ window.__geo={GR,fit,GV,tambahV};
+})();
+
+/* Ore Works 0.15.0 (pemilik 17 Nov 2026): "Panel ini [bar menu + toolbar] harus bisa di hide"; "Scale bar harus dibuat
+   background transparent"; "Panel Data … di minimize" (juga saat menempel). */
+(function(){const g=id=>document.getElementById(id),mb=g('mbar'),tb=g('otb');if(!mb||g('barhd'))return;
+ const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}};
+ const st=document.createElement('style');st.textContent=`#owSkala{background:transparent!important;border-color:transparent!important;box-shadow:none!important;text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
+#owSkala .bar{box-shadow:0 0 0 1px #ffffffcc}
+body.barhide #mbar,body.barhide #otb{display:none!important}body.barhide #wrap{height:calc(100vh - 24px)!important}
+#barhd{margin-left:auto;padding:0 8px;height:22px;border:1px solid #c5cfdd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;flex:none}
+#barsh{position:fixed;left:6px;top:6px;z-index:70;display:none;padding:3px 9px;font:600 12px Segoe UI,Arial;background:#1b2a4ee6;color:#fff;border:0;border-radius:5px;cursor:pointer;box-shadow:0 2px 8px #0003}
+body.barhide #barsh{display:block}
+body.rp-mini:not(.rp-lepas) #rpan{width:34px!important;min-width:0!important}body.rp-mini:not(.rp-lepas) #rpan>*:not(.rph){display:none!important}
+body.rp-mini:not(.rp-lepas) #rpan .rph{writing-mode:vertical-rl;height:100%;padding:8px 4px!important;justify-content:flex-start;gap:6px}body.rp-mini:not(.rp-lepas) #rpan .rph #rpdk button:not([data-p="min"]){display:none}
+body.rp-mini:not(.rp-lepas) #rpan .rph span[style*="flex:1"]{display:none}`;document.head.appendChild(st);
+ const b=document.createElement('button');b.id='barhd';b.title='Sembunyikan bar menu & toolbar (layar 3D lebih luas) · Ctrl+Shift+M';b.innerHTML='&#8963; Sembunyikan bar';mb.appendChild(b);
+ const s=document.createElement('button');s.id='barsh';s.title='Tampilkan bar menu & toolbar · Ctrl+Shift+M';s.innerHTML='&#9776; Menu';document.body.appendChild(s);
+ const set=v=>{document.body.classList.toggle('barhide',v);LS('ow.barhide',v?'1':'0');setTimeout(()=>dispatchEvent(new Event('resize')),30);};
+ b.onclick=()=>set(true);s.onclick=()=>set(false);addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&(e.key==='M'||e.key==='m')){e.preventDefault();set(!document.body.classList.contains('barhide'));}});
+ if(LS('ow.barhide')==='1')set(true);
+ /* panel Data: tombol – juga saat menempel (jadi strip tipis) */
+ const dk=g('rpdk');if(dk){const mn=dk.querySelector('[data-p="min"]');const sync=()=>{if(mn)mn.style.display='';};
+  dk.addEventListener('click',e=>{const q=e.target.closest('button[data-p]');if(!q)return;if(q.dataset.p==='min'&&!document.body.classList.contains('rp-lepas')){e.stopImmediatePropagation();const v=!document.body.classList.contains('rp-mini');document.body.classList.toggle('rp-mini',v);LS('ow.rpmini',v?'1':'0');setTimeout(()=>dispatchEvent(new Event('resize')),30);}
+   else if(q.dataset.p!=='min'){document.body.classList.remove('rp-mini');LS('ow.rpmini','0');}setTimeout(sync,0);},true);
+  if(mn)mn.title='Perkecil / perbesar panel Data';sync();setInterval(sync,1000);if(LS('ow.rpmini')==='1')document.body.classList.add('rp-mini');}
 })();
 
 </script>
