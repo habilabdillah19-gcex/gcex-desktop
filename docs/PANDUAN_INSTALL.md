@@ -5255,3 +5255,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   filter, termasuk "Hanya bagian di bawah topografi".
 - Penampang 2D: tombol **Lapisan** di judul jendela untuk memilih lapisan yang tampil di 2D (envelope, dasar oksida,
   puncak sulfida, zona belum teruji, dll.) tanpa mengubah tampilan 3D.
+
+## 246. Ore Works 0.13.0 — boolean solid, titik ikat, Project Tree
+
+- **Cabang**: di *Wireframe → Pemodelan string*, pilih solid cabang lalu isi *Cabang dari* dengan solid induknya. Keduanya
+  disatukan (boolean union) menjadi satu solid dan satu domain; volume tampil di induk.
+- **Potong**: centang *Potong di bawah topografi* untuk membuang bagian solid di atas permukaan, atau pilih *Potong bidang*
+  (bidang struktur) lalu sisi yang disimpan (bawah / FW atau atas / HW).
+- **Titik ikat**: bila sambungan antar-penampang terlihat terpuntir, Shift+klik satu titik pada string di tiap penampang
+  (berwarna jingga) agar sambungan dimulai dari titik-titik itu. Biasanya tidak perlu: ujung atas & bawah string diikat otomatis.
+- **Project Tree**: tombol *Pohon* di toolbar menampilkan / menyembunyikan pohon isi project. Centang untuk tampil /
+  sembunyi, klik nama untuk zoom, klik string untuk membuka penampangnya.
