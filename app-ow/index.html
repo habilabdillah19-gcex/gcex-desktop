@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.16.0';</script>
+<script>window.GCEX_VER='0.16.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -6243,7 +6243,7 @@ body.rp-mini:not(.rp-lepas) #rpan .rph span[style*="flex:1"]{display:none}`;docu
 (function(){
 const g=id=>document.getElementById(id),X=()=>window.__ms2,MSx=()=>window.MS;
 if(!g('scw')||!window.__ms2)return;
-const ST=window.__st={on:false,fs:false,tool:'digit',big3:false,mz:[],mouse:null,R:[],redo:false,lastDir:1};
+const ST=window.__st={exp:new Set(),here:false,on:false,fs:false,tool:'digit',big3:false,mz:[],mouse:null,R:[],redo:false,lastDir:1};
 let SN={bor:true,titik:true,grid:false,ortho:false,gs:1};try{Object.assign(SN,JSON.parse(localStorage.getItem('ow.stsnap')||'{}'));}catch(e){}
 const simpanSN=()=>{try{localStorage.setItem('ow.stsnap',JSON.stringify({bor:SN.bor,titik:SN.titik,grid:SN.grid,ortho:SN.ortho,gs:SN.gs}));}catch(e){}};
 const T_=(m)=>{if(window.sbToast)sbToast(m);};
@@ -6279,13 +6279,23 @@ body.studio-on::before{content:"";position:fixed;inset:0;background:#0f172480;z-
 #stdoCv #scc{position:absolute;inset:0;width:100%!important;height:100%!important}
 #stdoOv{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 #stdoHint{position:absolute;left:10px;top:10px;padding:5px 10px;border-radius:6px;background:#1b2a4ee0;color:#e6edf8;font-size:12px;pointer-events:none;max-width:70%}
-#stdoRt{width:300px;flex-shrink:0;display:flex;flex-direction:column;background:#f7f9fc;border-left:1px solid #cfd8e6;overflow:auto;font-size:12px}
-#stdoRt .hd{padding:8px 12px;background:#1b2a4e;color:#fff;font-weight:600;display:flex;align-items:center}
+#stdoRt{width:300px;flex-shrink:0;display:flex;flex-direction:column;background:#f7f9fc;border-left:1px solid #cfd8e6;overflow:hidden;font-size:12px}
+#stdoFl{display:flex;gap:6px;padding:6px 8px;border-bottom:1px solid #e1e7f0;flex:none}
+#stdoFl input{flex:1;min-width:0;height:26px;border:1px solid #b9c6da;border-radius:6px;padding:0 8px;font:inherit}
+#stdoFl button{height:26px;margin:0;padding:0 10px;border:1px solid #b9c6da;border-radius:13px;background:#fff;color:#4a5a78;font-size:11.5px}#stdoFl button.on{border-color:#1f6feb;background:#dbe8ff;color:#0b3d91;font-weight:600}
+#stdoSl{flex:none;max-height:34vh;overflow:auto;background:#fff;border-bottom:1px solid #cfd8e6}
+#stdoSl .it{display:flex;align-items:center;gap:6px;height:30px;padding-right:10px;border-bottom:1px solid #eef1f6;cursor:pointer;white-space:nowrap}
+#stdoSl .it:hover{background:#f3f6fb}#stdoSl .it.on{background:#e3ecff;box-shadow:inset 3px 0 #1f6feb}
+#stdoSl .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}#stdoSl .nm i{color:#6b7a96;font-style:normal;font-size:11px}
+#stdoSl .vl{color:#4a5a78;font-variant-numeric:tabular-nums;font-size:11.5px}
+#stdoSl .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}#stdoSl .dt{width:9px;height:9px;border-radius:5px;flex-shrink:0}#stdoSl .dt.stok{background:#2b8a3e}#stdoSl .dt.stno{background:#e8590c}#stdoSl .dt.stnil{background:#adb5bd}
+#stdoSl .hr{color:#1f6feb;font-size:10px}#stdoSl .tg{width:20px;height:22px;border:0;background:transparent;padding:0;margin:0;color:#33415e;font-size:11px;flex-shrink:0}#stdoSl .tg0{width:20px;flex-shrink:0}
+#stdoSl .kos{padding:10px 12px;color:#4a5a78;white-space:normal}
+#stdoSet{flex:1;min-height:0;overflow:auto}
+#stdoRt #mspnl>.subh,#stdoRt #mspnl>.note,#stdoRt #mspnl>.fl:has(#mssel){display:none!important}
+#stdoRt #msstr{max-height:170px;overflow:auto}
+#stdoRt .hd{flex:none;padding:8px 12px;background:#1b2a4e;color:#fff;font-weight:600;display:flex;align-items:center}
 #stdoRt .hd button{height:24px;padding:0 8px;border:1px solid #3d5488;border-radius:6px;background:#24386a;color:#fff;margin:0;font-size:11.5px}
-#stdoSl .it{padding:7px 12px;border-bottom:1px solid #e1e7f0;cursor:pointer}#stdoSl .it.on{background:#eef3ff}
-#stdoSl .it .r1{display:flex;align-items:center;gap:7px}#stdoSl .sw{width:12px;height:12px;border-radius:3px;flex-shrink:0}
-#stdoSl .bd{font-size:10.5px;padding:1px 7px;border-radius:9px;font-weight:600}.stok{background:#d3f9d8;color:#1b5e2a}.stno{background:#ffe8cc;color:#8a4500}.stnil{background:#e7ecf4;color:#33415e}
-#stdoSl .r2{color:#4a5a78;margin-top:3px}
 #stdoRt #mspnl{padding:0 10px 10px}#stdoRt #mspnl #msgo,#stdoRt #mspnl #stdoOpen2{display:none}
 #stdoStat{height:26px;flex-shrink:0;align-items:center;gap:16px;padding:0 12px;background:#1b2a4e;color:#dfe7f5;font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
 #stdoStat .sn{color:#ffd43b}
@@ -6313,7 +6323,9 @@ const mid=document.createElement('div');mid.id='stdoMid';
 mid.innerHTML='<div id="stdoTools">'+TOOLS.map(t=>'<button data-t="'+t[0]+'" title="'+t[1]+' ('+t[2]+')" aria-label="'+t[1]+' ('+t[2]+')">'+svg(IC[t[0]])+'<span>'+t[2]+'</span></button>').join('')+
  '<div class="gap"></div><button id="stdoUn" title="Urungkan (Ctrl+Z)" aria-label="Urungkan">'+svg(IC.undo)+'</button><button id="stdoRe" title="Ulangi (Ctrl+Y)" aria-label="Ulangi">'+svg(IC.redo)+'</button></div>'+
  '<div id="stdoCv"><canvas id="stdoOv"></canvas><div id="stdoHint"></div></div>'+
- '<div id="stdoRt"><div class="hd"><span style="flex:1">Solid</span><button id="stdoNew2">+ Baru</button></div><div id="stdoSl"></div><div class="hd" style="margin-top:4px"><span style="flex:1">Setelan solid aktif</span></div></div>';
+ '<div id="stdoRt"><div class="hd"><span style="flex:1">Solid <span id="stdoN" style="font-weight:400;color:#c5d3ea"></span></span><button id="stdoNew2">+ Baru</button></div>'+
+ '<div id="stdoFl"><input id="stdoQ" placeholder="Cari solid / domain…" aria-label="Cari solid"><button id="stdoHere" class="chip" title="Hanya solid yang punya string di penampang ini">Di sini</button></div><div id="stdoSl"></div>'+
+ '<div class="hd"><span style="flex:1">Setelan solid aktif</span><button id="stdoDel" title="Hapus solid aktif beserta stringnya">Hapus</button></div><div id="stdoSet"></div></div>';
 const stat=document.createElement('div');stat.id='stdoStat';
 wn.appendChild(mid);wn.appendChild(stat);
 const pip=document.createElement('div');pip.id='stdoPip';pip.innerHTML='<b>Intip 3D</b><span style="color:#c5d3ea">Tab = besar</span><button id="stdoP0" title="Lihat tegak lurus penampang">&#8634;</button><button id="stdoPm" title="Kecilkan / tampilkan">&minus;</button>';document.body.appendChild(pip);
@@ -6339,7 +6351,7 @@ function cabangBaru(){const MS=MSx(),x=X(),P=x.mCur();if(!P){return null;}const 
 /* ---- buka / tutup ---- */
 let home=null,pnlHome=null,cvs3=null,c3css='';
 function buka(){if(ST.on)return;if(!SC.open)scOpen(true);ST.on=true;home=cv.nextSibling;g('stdoCv').insertBefore(cv,g('stdoOv'));
- const p=g('mspnl');if(p){pnlHome=[p.parentNode,p.nextSibling];g('stdoRt').appendChild(p);}
+ const p=g('mspnl');if(p){pnlHome=[p.parentNode,p.nextSibling];g('stdoSet').appendChild(p);}
  g('stdoHd').style.display='flex';wn.classList.add('studio');document.body.classList.add('studio-on');wn.classList.toggle('stfs',ST.fs);
  if(g('mssnap'))g('mssnap').checked=true;window.__stSnap=SN;pickTool(ST.tool==='salin'?'digit':ST.tool);
  cvs3=R.domElement;c3css=cvs3.style.cssText;cvs3.classList.add('stdo3d');pip.style.display='flex';
@@ -6372,7 +6384,7 @@ g('stdoZi').onclick=()=>zoom(1.25);g('stdoZo').onclick=()=>zoom(0.8);g('stdoFit'
 function zoom(k){if(!SC.v)return;SC.v.s*=k;scDraw();ovDraw();}
 g('stdoTop').querySelectorAll('[data-sn]').forEach(b=>b.onclick=()=>{SN[b.dataset.sn]=!SN[b.dataset.sn];simpanSN();refresh();});
 g('stdoGs').onchange=e=>{SN.gs=Math.max(0.01,+e.target.value||1);simpanSN();};
-g('stdoFs').onclick=()=>layarPenuh(!ST.fs);g('stdoX').onclick=tutup;
+g('stdoFs').onclick=()=>layarPenuh(!ST.fs);g('stdoQ').oninput=()=>refresh();g('stdoHere').onclick=()=>{ST.here=!ST.here;refresh();};g('stdoDel').onclick=()=>{const b=g('msdel');if(b)b.click();setTimeout(refresh,30);};g('stdoX').onclick=tutup;
 g('stdoTools').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>pickTool(b.dataset.t));
 g('stdoUn').onclick=()=>{const MS=MSx();if(MS.drw){MS.drw.pop();if(!MS.drw.length)MS.drw=null;X().repaint();}else X().undo();refresh();};g('stdoRe').onclick=redo;
 /* ---- panel kanan & status ---- */
@@ -6386,16 +6398,24 @@ function refresh(){if(!ST.on)return;const MS=MSx(),x=X(),qq=q(),M=x.mCur();
  const vv=String(+g('vx').value);if(g('stdoVe').value!==vv)g('stdoVe').value=vv;
  g('stdoSec').textContent=qq.m==='h'?('RL '+(+qq.rl.toFixed(2))):('Az '+qq.azd+'° · geser '+(qq.off>=0?'+':'')+(+qq.off.toFixed(2))+' m');
  g('stdoSub').textContent=(g('sctt')?g('sctt').textContent:'')+(M?' · solid aktif: '+M.nm:'');
- /* daftar solid */
- const s2=MS.L.map(m=>[m.id,m.nm,m.col,m.par,m.res?[Math.round(m.res.vol),m.res.open,m.res.nm,m.res.ns]:0,m.bst||'',m.id===MS.cur,m.S.length,x.sameFrame(m,qq)?x.strHere(m,qq):-2].join('|')).join(';');
- if(s2!==sig){sig=s2;const par=id=>{const p=MS.L.find(m=>m.id===id);return p?p.nm:'?';};
-  g('stdoSl').innerHTML=MS.L.length?MS.L.map(m=>{const r=m.res,ok=r&&!r.open&&!r.nm,si=x.sameFrame(m,qq)?x.strHere(m,qq):-2,kids=MS.L.filter(k=>k.par===m.id);
-   const bd=!r?'<span class="bd stnil">kosong</span>':ok?'<span class="bd stok">tertutup</span>':'<span class="bd stno">'+r.open+' sisi terbuka</span>';
-   return '<div class="it'+(m.id===MS.cur?' on':'')+'" data-id="'+m.id+'"><div class="r1"><span class="sw" style="background:'+m.col+'"></span><b style="flex:1">'+esc(m.nm)+'</b>'+bd+'</div>'+
-    '<div class="r2">'+m.S.length+' string'+(r?' · '+Math.round(r.vol).toLocaleString('id-ID')+' m³':'')+(si>=0?' · ada di sini':si===-2&&m.S.length?' · arah lain':'')+
-    (m.par?'<br>cabang dari '+esc(par(m.par))+' → union':'')+(kids.length?'<br>induk dari '+kids.map(k=>esc(k.nm)).join(', ')+(m.bst?' · '+esc(m.bst):''):'')+'</div></div>';}).join('')
-   :'<div class="it" style="cursor:default;color:#4a5a78">Belum ada solid. Pilih alat D lalu klik titik-titik batas vein.</div>';
-  g('stdoSl').querySelectorAll('.it[data-id]').forEach(e=>e.onclick=()=>{MS.cur=+e.dataset.id;MS.drw=null;x.panel();x.repaint();refresh();});}
+ /* daftar solid: ringkas satu baris, cabang di bawah induk (bisa dilipat), cari & saring "di sini" */
+ const fq=(g('stdoQ').value||'').trim().toLowerCase(),here=m=>x.sameFrame(m,qq)&&x.strHere(m,qq)>=0;
+ const s2=fq+'#'+(ST.here?1:0)+'#'+[...ST.exp].join(',')+'#'+MS.L.map(m=>[m.id,m.nm,m.col,m.par,m.res?[Math.round(m.res.vol),m.res.open,m.res.nm]:0,m.id===MS.cur,here(m)?1:0].join('|')).join(';');
+ if(s2!==sig){sig=s2;const cocok=m=>(!fq||m.nm.toLowerCase().includes(fq))&&(!ST.here||here(m)||m.id===MS.cur);
+  const roots=MS.L.filter(m=>!m.par||!MS.L.some(p=>p.id===m.par));
+  const row=(m,lv,nk,op)=>{const r=m.res,ok=r&&!r.open&&!r.nm,st=!r?'stnil':ok?'stok':'stno',tt=!r?'kosong':ok?'tertutup':r.open+' sisi terbuka';
+   return '<div class="it'+(m.id===MS.cur?' on':'')+'" data-id="'+m.id+'" style="padding-left:'+(4+lv*18)+'px" title="'+esc(m.nm)+' · '+m.S.length+' string · '+tt+(m.par?' · cabang (union ke induk)':'')+(m.bst?' · '+esc(m.bst):'')+'">'+
+    (nk?'<button class="tg" data-tg="'+m.id+'" aria-label="Buka / tutup cabang '+esc(m.nm)+'">'+(op?'&#9662;':'&#9656;')+'</button>':'<span class="tg0"></span>')+
+    '<span class="sw" style="background:'+m.col+'"></span><span class="nm">'+esc(m.nm)+(nk?' <i>+'+nk+' cabang</i>':'')+'</span>'+(here(m)?'<span class="hr" title="Ada string di penampang ini">&#9679;</span>':'')+
+    '<span class="vl">'+(r?Math.round(r.vol).toLocaleString('id-ID')+' m³':'–')+'</span><span class="dt '+st+'" title="'+tt+'"></span></div>';};
+  let h='';for(const m of roots){const kids=MS.L.filter(k=>k.par===m.id),kc=kids.filter(cocok);if(!cocok(m)&&!kc.length)continue;
+   const op=ST.exp.has(m.id)||((fq||ST.here)&&kc.length>0)||kids.some(k=>k.id===MS.cur);h+=row(m,0,kids.length,op);if(op)for(const k of (fq||ST.here?kc:kids))h+=row(k,1,0,false);}
+  const sl=g('stdoSl');sl.innerHTML=h||'<div class="kos">'+(MS.L.length?'Tidak ada solid yang cocok.':'Belum ada solid. Pilih alat D lalu klik titik-titik batas vein.')+'</div>';
+  g('stdoN').textContent=MS.L.length?'('+MS.L.length+')':'';
+  sl.querySelectorAll('.it[data-id]').forEach(e=>e.onclick=ev=>{if(ev.target.closest('.tg'))return;MS.cur=+e.dataset.id;MS.drw=null;x.panel();x.repaint();refresh();});
+  sl.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{const id=+b.dataset.tg;ST.exp.has(id)?ST.exp.delete(id):ST.exp.add(id);refresh();});
+  const on=sl.querySelector('.it.on');if(on){const a2=on.offsetTop,b2=a2+on.offsetHeight;if(a2<sl.scrollTop||b2>sl.scrollTop+sl.clientHeight)sl.scrollTop=a2-sl.clientHeight/2;}}
+ g('stdoHere').classList.toggle('on',ST.here);
  hint();}
 function hint(){const MS=MSx(),x=X(),M=x.mCur(),qq=q();let t='';const nm=TOOLS.find(t2=>t2[0]===ST.tool);
  if(ST.tool==='digit'||ST.tool==='cabang'){t=MS.drw?(MS.drw.length+' titik · Enter / klik titik awal = tutup · Backspace = mundur · Esc = batal'):(ST.tool==='cabang'?'Cabang: klik titik pertama → solid cabang baru dibuat otomatis':'Klik kiri = titik · Enter = tutup · Shift = ortho · Alt = tanpa snap');

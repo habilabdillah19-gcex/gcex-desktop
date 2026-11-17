@@ -5452,3 +5452,13 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Panel kanan: daftar solid (tertutup / terbuka, volume, induk / cabang) dan setelan solid aktif (ujung, densitas,
   cabang dari, potong topografi / bidang, ekspor). Status bar: jarak / RL / E / N di bawah kursor.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
+
+## 265. Ore Works 0.16.1 — daftar solid ringkas di Studio
+
+- Panel kanan Studio Pemodelan: **daftar solid** (atas) dan **setelan solid aktif** (bawah) menggulung sendiri-sendiri,
+  jadi setelan tetap terlihat walau domain banyak.
+- Satu baris per solid: warna, nama, volume, titik status (hijau = tertutup, oranye = terbuka, abu = kosong),
+  **●** = solid punya string di penampang ini. Arahkan kursor ke baris untuk rincian.
+- Cabang terlipat di bawah induknya (**▸ +n cabang**, klik ▸ untuk membuka).
+- **Cari solid / domain**: ketik sebagian nama. **Di sini**: hanya solid yang punya string di penampang aktif.
+- **Hapus** di judul Setelan menghapus solid aktif (dengan konfirmasi).
