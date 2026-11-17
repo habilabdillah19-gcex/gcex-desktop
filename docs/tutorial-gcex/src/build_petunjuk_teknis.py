@@ -606,6 +606,10 @@ B.append('<p>Pembungkus <code>dbRSet</code>, <code>dbSNset</code>, <code>afSet</
          'agar seri &ge; 10 diutamakan), melewati nomor yang dipakai baris lain dengan warna berbeda; baris diberi nomor itu dan warna Surpac-nya. Nomor: '
          '<code>SWN.warnaNomor(n)</code> &rarr; warna baris. <code>SWN.pal()</code> mengisi <code>&lt;datalist id=swPal&gt;</code> yang dipasang (pointerdown/focusin) '
          'ke input warna tabel tersebut. Uji: <code>tools/uji/uji_warna_otomatis.py</code>.</p>')
+B.append('<h3>8.25 Daftar lubang 3D (DH 0.24.101)</h3>')
+B.append('<p><code>updatePlot</code> memakai <code>visHoles()</code> (dibungkus <code>kp_dh.js</code>: hanya anggota dataset / kampanye yang dicentang) '
+         'untuk <code>buildDH</code>; tanda tangan daftar (<code>visSig</code>, panjang + hash Hole ID) masuk kunci cache <code>DHC</code>. Analisis memakai '
+         '<code>visHolesK()</code> (dataset aktif, juga saat disembunyikan). Uji: <code>tools/uji/uji_bor_sembunyi_dh.py</code>.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

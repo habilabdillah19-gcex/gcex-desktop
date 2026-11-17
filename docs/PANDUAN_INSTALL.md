@@ -5278,3 +5278,11 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 
 - **Analisis → Geokimia → PDF**: hasil cetak / simpan PDF kini memuat seluruh dashboard (tidak terpotong) dengan warna
   lengkap. Di dialog cetak pilih *Save as PDF*; centang *Background graphics* bila pilihan itu muncul.
+
+## 249. Drillhole 0.24.101 — sembunyikan bor dari 3D
+
+- Hilangkan centang dataset (mis. **AKTIF · set kerja**) di **Database Bor**: seluruh bor dataset itu (interval kadar,
+  collar, trajectory, label) hilang dari 3D. Sebelumnya interval kadar tetap digambar.
+- Dataset aktif yang disembunyikan tetap menjadi sumber analisis (geostatistik, estimasi, statistik).
+- Untuk hanya menyembunyikan sebagian: Collar, Trajectory dan Label hole tetap punya centang sendiri.
+- Block Model, DB-Ex, Ore Works: tidak berubah.

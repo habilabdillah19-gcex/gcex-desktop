@@ -1130,9 +1130,11 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var classOf=function(v){var i=0;while(i<th.length&&v>=th[i])i++;return i;};
   var cname=function(i){if(!th.length)return 'Semua';if(i===0)return '< '+th[0];if(i===th.length)return '>= '+th[th.length-1];return th[i-1]+' - '+th[i];};
   var LB=lblCfg(th,clip);if(draft)LB.on=false;
-  var vis=[];collars.forEach(function(c){if(bench!=='ALL'&&getBench(c[0])!==bench)return;if(hs!=='ALL'&&c[0]!==hs)return;vis.push(c[0]);});
+  /* DH 0.24.101: daftar lubang 3D = visHoles() (ikut centang dataset / kampanye di Project Tree; dulu langsung dari semua collar,
+     sehingga bor tetap tampil walau semua dataset tidak dicentang — laporan pemilik 17 Nov 2026) */
+  var vis=visHoles(),visSig=vis.length+':'+(function(){var h=0,t=vis.join('|');for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return h;})();
   var gsty=(TRAJ==='geo'&&CAT.length)?[+$('geoAttr').value,JSON.stringify(GSTY[(CAT[+$('geoAttr').value]||{}).name]||{})]:0;
-  var key=JSON.stringify([bench,hs,el,cut,clip?K.map(function(k){return[k.lo,k.hi,k.n,k.c];}):0,useCls,th,LB,TRAJ,gsty,DOM.on?[DOM.ci,DOM.set]:0,lw,dark,wantHover,
+  var key=JSON.stringify([bench,hs,visSig,el,cut,clip?K.map(function(k){return[k.lo,k.hi,k.n,k.c];}):0,useCls,th,LB,TRAJ,gsty,DOM.on?[DOM.ci,DOM.set]:0,lw,dark,wantHover,
     $('showTraj').checked,$('showNoData').checked,$('showCollar').checked,$('showLabel').checked,$('cmin').value,$('cmax').value,$('cscale').value,$('rev').checked]);
   var dh;if(DHC&&DHC.key===key){dh=DHC.dh;}else{
     /* Simpan 4 hasil buildDH terakhir: kembali ke atribut/elemen sebelumnya tidak membangun ulang semua segmen + teks hover

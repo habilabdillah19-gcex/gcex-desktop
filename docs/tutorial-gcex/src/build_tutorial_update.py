@@ -1326,6 +1326,10 @@ B.append('<p>Di tabel kelas kadar dig block, warna material, flag (garis ganda) 
          'sendiri dengan nomor Surpac yang warnanya sama (hijau 14, oranye 16, merah 17, biru 11). Pemilih warna menampilkan palet Surpac sebagai pilihan '
          'cepat, dan warna dibulatkan ke warna Surpac terdekat sehingga tampilan di Surpac sama dengan di GC-Ex. Bila perusahaan memakai nomor sendiri, '
          'ketik saja nomornya (mis. HG = 17): warnanya ikut warna nomor itu di Surpac.</p>')
+B.append('<h3>16v. Sembunyikan bor dari 3D (Drillhole 0.24.101)</h3>')
+B.append('<p>Hilangkan centang dataset di <b>Project Tree &rsaquo; Database Bor</b> (mis. <b>AKTIF &middot; set kerja</b>): seluruh bor dataset itu '
+         'hilang dari 3D, termasuk interval kadar. Dataset aktif yang disembunyikan tetap dipakai untuk analisis. Collar, Trajectory dan Label hole '
+         'tetap bisa diatur sendiri-sendiri.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
