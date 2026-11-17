@@ -5432,3 +5432,23 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Data latihan fiktif: ZIP Data-Latihan → `Ore_Works_Latihan/Geofisika`.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+
+## 264. Ore Works 0.16.0 — Studio Pemodelan (digitasi gaya CAD)
+
+- Buka **Penampang 2D** lalu klik **⛶ Studio** (atau **F9**; juga tombol *Studio Pemodelan* di panel Pemodelan string).
+  Studio memakai penampang yang sedang dibuka; **Layar penuh** / **F11**, **Tutup** / **F9** kembali ke tampilan biasa.
+- **Alat** (toolbar kiri, satu huruf seperti CAD):
+  - **V** Pilih / geser titik · **D** Digit string (klik kiri = titik, Enter / klik titik awal = tutup, Backspace = mundur, Esc = batal)
+  - **I** Sisip titik pada ruas · **X** Hapus titik · **T** Titik ikat (awal sambungan ke penampang tetangga)
+  - **B** Cabang baru: klik pertama membuat solid cabang (nama induk-A, -B …) yang otomatis disatukan (union) ke induk.
+    Mulai string cabang dari dalam / menempel string induk di penampang percabangan agar hasil union satu badan.
+  - **C** Salin string dari penampang sebelumnya, lalu sesuaikan titiknya dengan **V**
+  - **M** Ukur: dua klik = jarak, Δmendatar, Δtegak, kemiringan; klik ketiga = sudut
+  - Ctrl+Z urungkan, Ctrl+Y ulangi; PgUp / PgDn pindah penampang; F = pas ke layar
+- **Snap**: Kontak bor, Titik string, Grid (isi ukuran), Ortho (tahan Shift = ortho sementara, tahan Alt = tanpa snap).
+- **Mode Vertikal / Level (RL)** di bar atas; satu solid tetap harus satu jenis (semua vertikal searah, atau semua level).
+- **Intip 3D** di pojok kiri bawah: tampilan 3D yang sama (bisa diputar). **Tab** = besar / kembali, tahan Tab = sementara;
+  ↺ = pandang tegak lurus penampang; – = sembunyikan.
+- Panel kanan: daftar solid (tertutup / terbuka, volume, induk / cabang) dan setelan solid aktif (ujung, densitas,
+  cabang dari, potong topografi / bidang, ekspor). Status bar: jarak / RL / E / N di bawah kursor.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
