@@ -56,6 +56,8 @@ with sync_playwright() as pw:
     pg.evaluate("dmGo(3)"); pg.wait_for_timeout(500)
     cap = pg.evaluate("[$('dmSec').textContent,$('dmT').textContent,$('dmD').textContent]")
     cek(all(cap) and cap[2].count(". ") == 0, "H5 bilah keterangan: %s" % cap)
+    pg.evaluate("$('plotDiv').style.width='420px';dmPos();"); w7 = pg.evaluate("$('dmBar').getBoundingClientRect().width"); pg.evaluate("$('plotDiv').style.width='';dmPos();")
+    cek(w7 >= 600, "H7 bilah keterangan tetap lebar %d px saat area 3D sempit (420 px)" % w7)
     pg.evaluate("DM.pause=false;DM.spd=0.25;"); pg.wait_for_timeout(20000)
     i = pg.evaluate("DM.i"); pg.evaluate("dmStop()"); pg.wait_for_timeout(2000)
     cek(i >= 5 and not E and not pg.evaluate("DM.on"), "H6 DH demo jalan sampai langkah %d tanpa galat %s; Stop" % (i, E[:2]))

@@ -131,6 +131,17 @@
     setTimeout(function () { if (bar) bar.classList.remove('dmGanti'); }, 60);
     return r;
   };
+  /* bilah keterangan tidak ikut menyempit saat panel lebar (Geostatistik, Model Estimation) mempersempit area 3D:
+     lebar minimal 620 px, tetap di dalam jendela (BM 0.24.106 / DH 0.24.109) */
+  if (typeof window.dmPos === 'function') {
+    var _pos = window.dmPos;
+    window.dmPos = dmPos = function () {
+      var r = _pos.apply(this, arguments), b = $('dmBar'), gd = $('plotDiv'); if (!b || !gd) return r;
+      var g = gd.getBoundingClientRect(), vw = window.innerWidth, w = Math.min(920, Math.max(620, g.width - 24), vw - 24);
+      var cx = g.left + g.width / 2; cx = Math.max(w / 2 + 12, Math.min(vw - w / 2 - 12, cx));
+      b.style.width = w + 'px'; b.style.left = cx + 'px'; return r;
+    };
+  }
   /* berhenti: batalkan aksi yang masih menunggu kursor */
   var _stop = window.dmStop;
   window.dmStop = dmStop = function () { antre.forEach(clearTimeout); antre = []; return _stop.apply(this, arguments); };

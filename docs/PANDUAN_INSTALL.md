@@ -5559,3 +5559,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Panel *Cara pakai* diperbarui (Studio, ortofoto Tajam, georeferensi, Arsip GIS, .owproj).
 - Block Model 0.24.105, Drillhole 0.24.108, DB-Ex 0.46.9: hanya ikut naik versi karena berkas menu aplikasi desktop
   bersama berubah (perubahan menu hanya aktif di Ore Works).
+
+## 273. Block Model 0.24.106 / Drillhole 0.24.109 — bilah keterangan demo
+
+- Bilah keterangan Demo tidak lagi menyempit (teks bertumpuk) saat panel lebar seperti Geostatistik atau Model Estimation
+  terbuka.
+- DB-Ex, Ore Works: tidak berubah.
