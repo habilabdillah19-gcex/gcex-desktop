@@ -625,6 +625,12 @@ B.append('<p>Profil CPU saat zoom: kode aplikasi 10&ndash;170 ms, sisanya render
          '<code>body:not(.gxHintOn) .hint:not([id]):not(:has(button,input,select,...))</code>, tombol <code>#hintBtn</code>; tombol <code>.gxX</code> pada '
          '<code>#slabBar</code> (sesi), <code>#statsCard</code>, <code>#cpBox</code>, <code>.gxSkala</code> (+ <code>.gxUkurB</code>), localStorage <code>gcex_tutup</code>, '
          'tombol <code>#tutupBtn</code>. Uji: <code>uji_zoom_dh.py</code>, <code>uji_kerapian.py</code>.</p>')
+B.append('<h3>8.28 Demo halus (BM 0.24.104 / DH 0.24.107)</h3>')
+B.append('<p><code>web-src/demohalus.js</code> (<code>DMH</code>, sesudah <code>demox.js</code>) membungkus <code>dmPoint</code>, <code>dmHide</code>, <code>dmSet</code>, '
+         '<code>dmClick</code>, <code>dgDraw</code>, <code>setCam</code>, <code>dmGo</code>, <code>dmStop</code> hanya saat <code>DM.on</code>: kursor meluncur '
+         '(<code>DMH.tempuh</code> 650 ms) lalu aksi dijalankan (antrean dibatalkan saat Stop); ketik <code>DMH.ketik</code> 55 ms/huruf; titik digit baru '
+         'dianimasikan lewat <code>DG.hov</code> (<code>DMH.garis</code> 520 ms); kamera diinterpolasi dalam koordinat bola (<code>DMH.kamera</code> 900 ms) lalu '
+         '<code>__camNext</code> diisi target. Uji: <code>uji_demo_halus.py</code>.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

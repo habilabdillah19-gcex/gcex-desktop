@@ -1341,6 +1341,11 @@ B.append('<p>Teks penjelas di panel kini tersembunyi; klik tombol <b>&#9432;</b>
          'kompas serta skala &amp; Ukur punya tombol <b>&times;</b>; yang ditutup dikembalikan lewat tombol <b>Panel tersembunyi (n)</b> (bilah Sayatan '
          'muncul lagi saat tombol <b>Slicer</b> dibuka). Bila orthofoto di-drape dengan opasitas penuh, topografi di bawahnya tidak digambar lagi sehingga '
          'zoom dan putar 3D lebih ringan.</p>')
+B.append('<h3>16y. Demo sehalus video, skala transparan (Block Model 0.24.104 / Drillhole 0.24.107)</h3>')
+B.append('<p>Tombol <b>Demo</b> kini berjalan seperti video tangkapan layar: kursor meluncur ke tombol lalu mengklik, angka diketik huruf demi huruf, '
+         'poligon dig block dan string urat digambar perlahan, kamera berpindah mulus, dan bilah bawah menampilkan bab, judul langkah dan satu kalimat '
+         'penjelasan. Kotak skala berlatar transparan. Bila area 3D terasa tersendat saat membuka Ore Geometry, Geostatistik atau Validasi BM, lepas panel '
+         'Properti menjadi jendela supaya ukuran area 3D tetap.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

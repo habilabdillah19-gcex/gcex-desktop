@@ -5502,3 +5502,13 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Panel kecil Siluet: centang *Tampilkan siluet*, pilih wireframe mana yang tampil, atur opasitas, *Snap ke tepi siluet*.
 - **Klik kanan di dalam siluet → Jadikan string**: irisan disalin menjadi string di solid aktif atau solid baru bernama
   wireframe itu (titik disederhanakan), lalu rapikan dengan **V**. Ctrl+Z membatalkan.
+
+## 268. Block Model 0.24.104 / Drillhole 0.24.107 — demo sehalus video, skala transparan
+
+- **Demo** (tombol Demo) kini seperti video tangkapan layar: kursor bergerak halus ke tombol lalu mengklik, angka diketik
+  huruf demi huruf, poligon dig block dan string urat digambar perlahan, kamera berpindah mulus, dan bilah bawah
+  menampilkan bab, judul langkah dan satu kalimat penjelasan.
+- **Skala** di tampilan 2D / 3D berlatar transparan (teks diberi halo agar tetap terbaca); tombol × pada skala bisa diklik.
+- Panel **Ore Geometry**, **Geostatistik** dan **Validasi BM** memperlebar kolom kiri sehingga tampilan 3D digambar ulang
+  sekali. Agar area 3D tidak berubah ukuran, pakai tombol **Lepas Properti menjadi jendela** di kepala panel Properti.
+- DB-Ex, Ore Works: tidak berubah.

@@ -19,10 +19,11 @@
   var fmt = function (n) { return Number(n).toLocaleString('id-ID', { maximumFractionDigits: n < 1 ? 2 : 0 }); };
   var rasio = function (mpp) { var r = mpp * 1000 / MMPX, p = Math.pow(10, Math.floor(Math.log10(r)) - 1), q = Math.round(r / p) * p; return Math.max(1, Math.round(q)); };
   var css = document.createElement('style');
-  css.textContent = '.gxSkala{position:absolute;left:10px;bottom:10px;z-index:6;pointer-events:none;font:11px/1.25 Segoe UI,Arial,sans-serif;color:#1d2433;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.18);border-radius:4px;padding:3px 7px 4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}' +
+  css.textContent = '.gxSkala{position:absolute;left:10px;bottom:10px;z-index:6;pointer-events:none;font:11px/1.25 Segoe UI,Arial,sans-serif;color:#1d2433;background:transparent;border:0;border-radius:4px;padding:3px 7px 4px;box-shadow:none;text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}' + /* BM 0.24.104 / DH 0.24.107: latar transparan (pemilik 17 Nov 2026), teks diberi halo agar tetap terbaca */
+    '.gxSkala .bar{box-shadow:0 0 0 1px rgba(255,255,255,.85)}.gxSkala .gxX{pointer-events:auto}' +
     '.gxSkala .bar{display:flex;height:6px;margin:3px 0 1px;border:1px solid #1d2433}.gxSkala .bar i{flex:1;background:#1d2433}.gxSkala .bar i:nth-child(2n){background:#fff}' +
     '.gxSkala .lb{display:flex;justify-content:space-between;font-size:10px}.gxSkala .rt{font-weight:600}.gxSkala .nt{font-size:9.5px;color:#556}' +
-    'body.dark .gxSkala,.dark .gxSkala{background:rgba(26,32,44,.85);color:#e6e9ef;border-color:rgba(255,255,255,.2)}body.dark .gxSkala .bar,.dark .gxSkala .bar{border-color:#e6e9ef}body.dark .gxSkala .bar i,.dark .gxSkala .bar i{background:#e6e9ef}body.dark .gxSkala .bar i:nth-child(2n),.dark .gxSkala .bar i:nth-child(2n){background:#1a202c}body.dark .gxSkala .nt{color:#aab}';
+    'body.dark .gxSkala,.dark .gxSkala{background:transparent;color:#e6e9ef;text-shadow:0 0 2px #000,0 0 3px #000,0 0 4px #000}body.dark .gxSkala .bar,.dark .gxSkala .bar{box-shadow:0 0 0 1px rgba(0,0,0,.7)}body.dark .gxSkala .bar,.dark .gxSkala .bar{border-color:#e6e9ef}body.dark .gxSkala .bar i,.dark .gxSkala .bar i{background:#e6e9ef}body.dark .gxSkala .bar i:nth-child(2n),.dark .gxSkala .bar i:nth-child(2n){background:#1a202c}body.dark .gxSkala .nt{color:#aab}';
   document.head.appendChild(css);
 
   /* ---- 2D: meter per piksel sumbu x ---- */
