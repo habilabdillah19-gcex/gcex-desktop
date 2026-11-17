@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.2';</script>
+<script>window.GCEX_VER='0.13.3';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5494,7 +5494,7 @@ function plOf(sid){const s=STR.find(x=>String(x.id)===String(sid));if(!s)return 
 const RUN=new Map();
 window.msBoolPost=M=>{const tok=(RUN.get(M.id)||0)+1;RUN.set(M.id,tok);M.bst='menghitung boolean…';X.panel();
  (window.MFB?MFB.load():Promise.reject(new Error('pustaka boolean tidak tertanam'))).then(()=>{if(RUN.get(M.id)!==tok)return;try{run(M);}catch(e){M.bst='Boolean gagal: '+e.message;X.T_('Boolean "'+M.nm+'" gagal: '+e.message+' — solid dasar tetap dipakai.');}X.panel();if(window.SCR)SCR();},e=>{M.bst='Boolean tidak tersedia: '+(e&&e.message||e);X.panel();});};
-function run(M){const W=MFB.mod,L=[M].concat(kids(M)).map(m=>{const f=flat(X.solid(m));if(f)f.name=m.nm;return f;}).filter(Boolean);if(!L.length)return;const c=MFB._pusat(L),fr=[];
+function run(M){kids(M).forEach(k=>{const w=X.wiOf(k);if(w){wiDispose(w);WI.splice(WI.indexOf(w),1);wiList();}});const W=MFB.mod,L=[M].concat(kids(M)).map(m=>{const f=flat(X.solid(m));if(f)f.name=m.nm;return f;}).filter(Boolean);if(!L.length)return;const c=MFB._pusat(L),fr=[];
  let U=null;try{const ms=L.map(f=>MFB._keMf(W,f,c));fr.push(...ms);U=ms.length>1?W.Manifold.union(ms):ms[0];if(ms.length>1)fr.push(U);const info=[];if(L.length>1)info.push('union '+L.length+' solid');
   let bb=[1e18,-1e18,1e18,-1e18,1e18];L.forEach(f=>{for(let i=0;i<f.v.length;i+=3){bb[0]=Math.min(bb[0],f.v[i]);bb[1]=Math.max(bb[1],f.v[i]);bb[2]=Math.min(bb[2],f.v[i+1]);bb[3]=Math.max(bb[3],f.v[i+1]);bb[4]=Math.min(bb[4],f.v[i+2]);}});
   if(M.clipTopo){const tf=topoFlat(bb);if(!tf)info.push('topografi aktif tidak ada / tidak menutupi solid');else{const T=MFB._keMf(W,tf,c);fr.push(T);U=U.intersect(T);fr.push(U);info.push('dipotong topografi');}}

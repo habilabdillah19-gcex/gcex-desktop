@@ -5306,3 +5306,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Kotak skala (dan tombol Ukur) di kiri bawah plot kini otomatis bergeser ke kanan kartu **Ringkasan**, sehingga kartu
   itu tidak tertutup lagi di tampilan 3D.
 - DB-Ex, Ore Works: tidak berubah.
+
+## 249. Ore Works 0.13.3 — vein bercabang
+
+- Untuk vein yang bercabang, digit tiap cabang sebagai solid sendiri (mis. V1A, V1B, V1C) dan biarkan string cabang sedikit
+  menumpang ke solid induk di titik percabangan. Lalu di *Pemodelan string* pilih tiap cabang → *Cabang dari* = induk.
+  Hasilnya satu solid tertutup (union) dan satu domain; wireframe cabang tidak lagi tampil terpisah.
