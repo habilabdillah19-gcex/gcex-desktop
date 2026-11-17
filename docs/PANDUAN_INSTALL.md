@@ -5266,3 +5266,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   (berwarna jingga) agar sambungan dimulai dari titik-titik itu. Biasanya tidak perlu: ujung atas & bawah string diikat otomatis.
 - **Project Tree**: tombol *Pohon* di toolbar menampilkan / menyembunyikan pohon isi project. Centang untuk tampil /
   sembunyi, klik nama untuk zoom, klik string untuk membuka penampangnya.
+
+## 247. Ore Works 0.13.1 — ortofoto GeoTIFF
+
+- **Topografi → Ortofoto & drape → Impor ortofoto**: pilih file **.tif / .tiff** (GeoTIFF) langsung; tidak perlu lagi
+  mengekspor ke JPG. Posisi diambil dari georeferensi GeoTIFF; bila GeoTIFF tidak membawa georeferensi, pilih juga file
+  .tfw-nya. Ortofoto sangat besar ditampilkan dengan resolusi maksimal 4096 px.
+- Tooltip RL topografi saat kursor di 3D kini bawaan mati (RL & koordinat tetap ada di bilah status bawah).
