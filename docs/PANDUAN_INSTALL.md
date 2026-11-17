@@ -5573,3 +5573,16 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Latar 3D bawaan **Gradasi hangat**; pilihan lain *Gradasi navy dof* dan *Polos* ada di **Tampilan → Latar 3D**
   (pilihan Latar di toolbar dihapus).
 - Ini tahap 1 dari tampilan desktop yang disetujui; menu tarik, panel Project / Properti, tab dan Tabel atribut menyusul.
+
+## 275. Ore Works 0.19.1 — bar menu tunggal (menu tarik)
+
+- Semua menu di bar atas Ore Works kini **menu tarik**: **Berkas, Edit, Tampilan, Data bor, Plan bor, Permukaan, Wireframe,
+  Struktur, Pemetaan, Analisis, Bantuan**. Setiap menu berisi ikon, pintasan keyboard di kanan, dan centang untuk yang aktif.
+  Setelah satu menu terbuka, arahkan kursor ke menu lain untuk berpindah.
+- **Tampilan → Latar 3D ▸**, **Legenda di 3D**, **Panel Data (kanan)**, **Layar penuh**, **Sembunyikan bar menu & toolbar**
+  (sebelumnya tombol terpisah di bar menu). Slicing pindah ke **Analisis**.
+- **Bantuan → Pintasan keyboard** dan **Tentang Ore Works**.
+- Pintasan baru: **Ctrl+S** simpan project, **Ctrl+O** buka project.
+- Aplikasi desktop: menu bawaan (File / Tampilan / Bantuan Electron) disembunyikan agar tidak ada dua bar menu;
+  tekan **Alt** untuk memunculkannya (mis. lisensi pihak ketiga, ukuran tampilan).
+- Block Model 0.24.107, Drillhole 0.24.110, DB-Ex 0.46.10: hanya naik versi karena berkas jendela desktop bersama berubah.

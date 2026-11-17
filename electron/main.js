@@ -309,11 +309,13 @@ ipcMain.handle('gcex:ollamaStart', (e, host) => {
 function createWindow() {
   mainWin = new BrowserWindow({
     width: 1600, height: 950, minWidth: 1100, minHeight: 700, show: false,
-    title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : G.theme === 'core' ? '#ecebe6' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
+    title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : G.theme === 'core' ? '#ecebe6' : G.theme === 'ow' ? '#1c2733' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, devTools: DEVTOOLS,
       // simpan otomatis & sinyal kunci proyek tetap berjalan normal walau jendela diminimalkan
       backgroundThrottling: false }
   });
+  // Ore Works 0.19.1: bar menu aplikasi di dalam halaman (menu tarik) -> menu bawaan disembunyikan agar tidak dobel; tombol Alt memunculkannya
+  if (G.theme === 'ow') { try { mainWin.setAutoHideMenuBar(true); mainWin.setMenuBarVisibility(false); } catch (e) {} }
   mainWin.once('ready-to-show', () => { mainWin.maximize(); mainWin.show(); });
   mainWin.webContents.on('did-finish-load', () => { try { mainWin.webContents.setZoomFactor(zoomNow()); } catch (e) {} PRJ.ready = true; markWindow(mainWin.webContents); });
   mainWin.webContents.on('dom-ready', () => markWindow(mainWin.webContents));

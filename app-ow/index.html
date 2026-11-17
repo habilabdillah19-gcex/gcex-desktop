@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.19.0';</script>
+<script>window.GCEX_VER='0.19.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -7131,6 +7131,103 @@ table th{background:linear-gradient(#F6F4EF,#ECE9E2)!important;border-bottom-col
 /* Latar: cukup di bagian Tampilan (Latar 3D), pilihan di toolbar dihapus */
 const sel=document.getElementById('osbg');if(sel){const lab=sel.previousElementSibling;if(lab&&lab.classList.contains('tl'))lab.remove();sel.remove();}
 const s2=document.getElementById('osbg2');if(s2){const nm={terang:'Gradasi hangat',gelap:'Gradasi navy dof',polos:'Polos'};[...s2.options].forEach(o=>{if(nm[o.value])o.textContent=nm[o.value];});}
+})();
+
+
+/* ================= Ore Works 0.19.1: bar menu tunggal — semua menu tarik (tahap 2 tampilan desktop) =================
+   Mockup disetujui pemilik 17 Nov 2026: "Satu bar menu, semuanya menu tarik (ikon, pintasan, centang)"; Latar ke Tampilan;
+   Legenda & Panel Data jadi centang di Tampilan; menu bawaan Electron disembunyikan (Alt memunculkannya). Menu yang sudah
+   punya sub-menu (Data bor, Plan bor, Permukaan, Struktur, Pemetaan) tetap seperti sebelumnya; yang tadinya tombol sakelar
+   (File, Tampilan, Wireframe, Analisis, Slicing, Legenda, Data, Bantuan) kini membuka menu tarik. */
+(function(){
+const g=id=>document.getElementById(id),bar=g('mbar');if(!bar)return;
+const IC={baru:'M4 2.5h6l3 3v8H4zM10 2.5v3h3',buka:'M1.5 4.5h5l1.5 1.5h6.5v7h-13z',simpan:'M2.5 2.5h9l2 2v9h-11zM5 2.5v4h5v-4M5 13.5v-4h6v4',
+ png:'M2 3h12v10H2zM2 11l3.5-3.5 3 3 2-2L14 12',peta:'M1.5 3.5l4-1.5 5 2 4-1.5v10l-4 1.5-5-2-4 1.5z',undo:'M6 9L2.5 5.5 6 2M2.5 5.5H10a3.5 3.5 0 010 7H7',
+ studio:'M2.5 2.5h11v11h-11zM4.5 11l2-4.5 2.5 2.5 2.5-5',panel:'M2 2.5h12v11H2zM6 2.5v11',plan:'M2.5 2.5h11v11h-11zM8 4v8M4 8h8',sec:'M2 12l4-6 3 3 5-6',
+ obl:'M8 1.5l5.5 3v7L8 14.5l-5.5-3v-7zM8 7.5l5.5-3M8 7.5v7M8 7.5l-5.5-3',latar:'M2 2.5h12v11H2zM2 9.5l4-3 3 2 5-4',label:'M2 5h9l3 3-3 3H2z',
+ leg:'M2 3h3v3H2zM2 9.5h3v3H2zM7 4.5h7M7 11h7',data:'M2 3h12M2 6.5h12M2 10h12M2 13.5h8',full:'M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4',
+ hide:'M2 4h12M2 7h12M5 11l3 3 3-3',wf:'M8 1.5l6 3.5v6L8 14.5 2 11V5zM2 5l6 3.5L14 5M8 8.5v6',impor:'M8 2v8M5 7l3 3 3-3M2.5 11v2.5h11V11',
+ ana:'M2 14V9M6 14V4M10 14V7M14 14V2',slice:'M2 13L14 3M4 6l6 6',help:'M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM6 6a2 2 0 113 1.7c-.7.4-1 .8-1 1.6M8 11.5v.2',
+ info:'M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 7v4.5M8 4.6v.2',keys:'M1.5 4h13v8h-13zM4 7h1M7 7h1M10 7h1M4.5 9.5h7',log:'M3 2.5h10v11H3zM5.5 5.5h5M5.5 8h5M5.5 10.5h3'};
+const svg=d=>'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+d+'"></path></svg>';
+const css=document.createElement('style');css.textContent=`
+#owdd,#owdd2{position:fixed;z-index:9999;display:none;min-width:250px;background:#FFFFFF;border:1px solid #9AA19B;border-radius:2px;box-shadow:0 6px 16px #1C273340;padding:3px 0;font:12.5px "Segoe UI",Inter,Arial,sans-serif;color:#1C2733}
+#owdd .it,#owdd2 .it{display:flex;align-items:center;gap:8px;height:25px;padding:0 12px 0 6px;cursor:pointer;white-space:nowrap}
+#owdd .it:hover,#owdd2 .it:hover,#owdd .it.sub.open{background:#E0EEE8}
+#owdd .ck,#owdd2 .ck{width:14px;text-align:center;color:#17806B;font-weight:700}
+#owdd .ic,#owdd2 .ic{width:16px;display:flex;color:#3A4658}
+#owdd .lb,#owdd2 .lb{flex:1}#owdd .ky,#owdd2 .ky{color:#6B7280;margin-left:22px}#owdd .ar{color:#5C6672}
+#owdd hr,#owdd2 hr{border:0;border-top:1px solid #E2DED5;margin:3px 0}
+#owdd .it.mati{color:#9AA0A6;cursor:default}#owdd .it.mati:hover{background:none}
+#mbar .mbb.owm:after{content:" \\25BE";font-size:9px;opacity:.6}
+#mbar .mbb.owo{background:#2C3B57!important;border-color:#17806B!important;color:#fff!important}
+#owdlg{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:#1C273355}
+#owdlg .bx{width:min(560px,92vw);max-height:80vh;display:flex;flex-direction:column;background:#FBFAF7;border:1px solid #9AA19B;box-shadow:0 12px 32px #0006;font:12.5px "Segoe UI",Arial,sans-serif;color:#1C2733}
+#owdlg .hd{display:flex;align-items:center;padding:7px 10px;background:#1C2733;color:#fff;font-weight:600;border-bottom:2px solid #17806B}
+#owdlg .hd button{margin-left:auto;background:transparent!important;border:0;color:#fff;font-size:14px;cursor:pointer}
+#owdlg .bd{padding:12px 16px;overflow:auto;line-height:1.55;white-space:pre-line}
+#owdlg .ft{display:flex;justify-content:flex-end;gap:6px;padding:8px 12px;border-top:1px solid #E2DED5}
+`;document.head.appendChild(css);
+const dd=document.createElement('div');dd.id='owdd';document.body.appendChild(dd);const d2=document.createElement('div');d2.id='owdd2';document.body.appendChild(d2);
+const dlg=document.createElement('div');dlg.id='owdlg';dlg.innerHTML='<div class="bx" role="dialog" aria-modal="true"><div class="hd"><span id="owdlgt"></span><button type="button" aria-label="Tutup">&#10005;</button></div><div class="bd" id="owdlgb"></div><div class="ft"><button type="button" class="pri">OK</button></div></div>';document.body.appendChild(dlg);
+const tutupDlg=()=>{dlg.style.display='none';};dlg.querySelectorAll('button').forEach(b=>b.onclick=tutupDlg);dlg.addEventListener('mousedown',e=>{if(e.target===dlg)tutupDlg();});
+function dialog(t,isi){g('owdlgt').textContent=t;g('owdlgb').textContent=isi;dlg.style.display='flex';}
+const KEYS='Tampilan 3D: seret kiri = putar, seret kanan = geser, roda = zoom, klik kanan = menu objek.\nCtrl+S simpan project · Ctrl+O buka project · Ctrl+Z batalkan (hapus, impor, digitasi)\nCtrl+Shift+M sembunyikan / tampilkan bar menu & toolbar · F11 layar penuh · Alt menu aplikasi desktop\n\nStudio Pemodelan (F9 buka / tutup):\n  V pilih / geser titik · D digit string · I sisip titik · X hapus titik · T titik ikat\n  B cabang baru (union ke induk) · C salin string penampang sebelumnya · M ukur · W siluet wireframe\n  Enter tutup string · Esc batal · Backspace mundur satu titik · Ctrl+Z / Ctrl+Y urungkan / ulangi\n  PgUp / PgDn penampang sebelumnya / berikutnya · F pas ke layar · Tab Intip 3D besar (tahan = sementara)\n  Shift tahan = ortho · Alt tahan = tanpa snap';
+/* ---- perintah ---- */
+const klik=id=>{const e=g(id);if(e)e.click();};
+const tbBtn=re=>[...document.querySelectorAll('#otb button.tb')].find(b=>re.test(b.title||''));
+const studio=()=>{if(window.__st&&__st.on){stdoTutup();return;}if(typeof SC!=='undefined'&&!SC.open&&typeof scOpen==='function')scOpen(true);if(window.stdoBuka)stdoBuka();};
+const lgOn=()=>{const w=g('lgw');return !!w&&getComputedStyle(w).display!=='none';};
+const undo=()=>{const b=g('sbundo');if(b&&b.offsetParent){b.click();return;}window.dispatchEvent(new KeyboardEvent('keydown',{key:'z',ctrlKey:true,bubbles:true}));};
+async function tentang(){let v=window.GCEX_VER||(document.title.match(/\d+\.\d+\.\d+/)||[''])[0];try{if(window.gcexDesktop&&gcexDesktop.info){const i=await gcexDesktop.info();if(i&&i.version)v=i.version;}}catch(e){}
+ const cap=document.querySelector('[data-owver]');if(!v&&cap)v=cap.dataset.owver;
+ dialog('Tentang Ore Works','Ore Works '+(v||'')+' — pemetaan lapangan, struktur & pemodelan bijih 3D (keluarga GC-Ex)\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.\n\nFitur: data bor & channel, Studio Pemodelan (digitasi wireframe gaya CAD, cabang + boolean union, siluet wireframe), pemetaan lapangan & Layout peta, struktur, analisis geokimia, ortofoto (GeoTIFF mode Tajam), georeferensi gambar, Arsip GIS (MapInfo), proyek .owproj (SQLite). Berjalan offline.\n\nKomponen open source: three.js (MIT), manifold-3d (Apache-2.0), sql.js / SQLite (MIT / domain publik), geotiff.js (MIT), Electron / Chromium (MIT, BSD). Teks lisensi lengkap: aplikasi desktop → tombol Alt → Bantuan.\nLeapfrog, Surpac, GEOVIA, Micromine, MapInfo, AutoCAD dan nama produk lain adalah merek dagang milik pemiliknya; Ore Works tidak berafiliasi dengan mereka.');}
+const btnOf=n=>bar.querySelector('.mbb[data-n="'+n+'"]');
+const ORIG={};
+const MENU={
+ 'File kerja project':()=>[['baru','Project baru','',()=>klik('pjnew')],['buka','Buka project…','Ctrl+O',()=>klik('pjo')],['simpan','Simpan project','Ctrl+S',()=>klik('pjs')],['','Simpan sebagai .gcv.json (format lama)','',()=>klik('pjsj')],'-',
+  ['panel','Panel File kerja project…','',ORIG['File kerja project']],'-',['png','Simpan gambar 3D (PNG)','',()=>{const b=tbBtn(/viewport 3D/);if(b)b.click();}],['peta','Layout peta…','',()=>klik('fmlay')]],
+ '@edit':()=>[['undo','Urungkan','Ctrl+Z',undo],'-',['studio','Studio Pemodelan','F9',studio]],
+ 'Tampilan':()=>{const bg=document.body.dataset.bg||'terang',lb=g('lbad');return [['panel','Panel Tampilan (pandangan, VE, label, potong RL)…','',ORIG['Tampilan']],'-',
+  ['plan','Plan (dari atas)','',()=>view('plan')],['sec','Penampang dari WSW','',()=>view('wsw')],['sec','Penampang dari ENE','',()=>view('ene')],['sec','Sepanjang strike (NNW)','',()=>view('nnw')],['obl','Oblik dari SSE','',()=>view('sse')],'-',
+  ['latar','Latar 3D','',null,[['Gradasi hangat',bg==='terang',()=>osBg('terang')],['Gradasi navy dof',bg==='gelap',()=>osBg('gelap')],['Polos',bg==='polos',()=>osBg('polos')]]],
+  ['label','Label adaptif','',()=>{if(lb){lb.checked=!lb.checked;lb.dispatchEvent(new Event('input'));lb.dispatchEvent(new Event('change'));}},null,!lb||lb.checked],
+  ['leg','Legenda di 3D','',()=>klik('lgtg'),null,lgOn()],['data','Panel Data (kanan)','',()=>klik('rptg'),null,document.body.classList.contains('rp')],'-',
+  ['full','Layar penuh','F11',()=>klik('otbfs')],['hide','Sembunyikan bar menu & toolbar','Ctrl+Shift+M',()=>klik('barhd')]];},
+ 'Wireframe geologi':()=>[['panel','Panel Wireframe…','',ORIG['Wireframe geologi']],['impor','Impor wireframe (.msh / .dtm+.str / .obj / .dxf)…','',()=>klik('wif')],'-',['studio','Studio Pemodelan','F9',studio]],
+ '@ana':()=>[['ana','Jendela Analisis…','',ORIG['@ana']],['slice','Slicing (penampang / level)…','',ORIG['@slice']],['sec','Penampang 2D','',()=>{if(typeof scOpen==='function')scOpen(true);}],['studio','Studio Pemodelan','F9',studio],'-',['peta','Layout peta…','',()=>klik('fmlay')]],
+ 'Cara pakai':()=>[['help','Cara pakai…','',ORIG['Cara pakai']],['keys','Pintasan keyboard','',()=>dialog('Pintasan keyboard Ore Works',KEYS)],'-',
+  ...(window.gcexDesktop&&gcexDesktop.openLogs?[['log','Buka folder log','',()=>gcexDesktop.openLogs()]]:[]),['info','Tentang Ore Works','',tentang]]};
+let cur=null;
+function tutup(){dd.style.display=d2.style.display='none';if(cur)cur.classList.remove('owo');cur=null;}
+function render(el,list,x,y){el.innerHTML='';list.forEach(it=>{if(it==='-'){el.appendChild(document.createElement('hr'));return;}const [ic,lab,ky,fn,sub,ck]=it;const d=document.createElement('div');d.className='it'+(sub?' sub':'')+(!fn&&!sub?' mati':'');d.setAttribute('role','menuitem');
+  d.innerHTML='<span class="ck">'+(ck?'&#10003;':'')+'</span><span class="ic">'+(ic&&IC[ic]?svg(IC[ic]):'')+'</span><span class="lb">'+lab+'</span>'+(ky?'<span class="ky">'+ky+'</span>':'')+(sub?'<span class="ar">&#9656;</span>':'');
+  if(sub){d.onmouseenter=()=>{const r=d.getBoundingClientRect();d2.innerHTML='';sub.forEach(([l,c,f])=>{const s=document.createElement('div');s.className='it';s.innerHTML='<span class="ck">'+(c?'&#10003;':'')+'</span><span class="lb">'+l+'</span>';s.onclick=e=>{e.stopPropagation();tutup();f();};d2.appendChild(s);});d2.style.display='block';d2.style.left=Math.min(r.right,innerWidth-d2.offsetWidth-4)+'px';d2.style.top=r.top-4+'px';d.classList.add('open');};}
+  else d.onmouseenter=()=>{d2.style.display='none';el.querySelectorAll('.it.open').forEach(o=>o.classList.remove('open'));};
+  if(fn)d.onclick=e=>{e.stopPropagation();tutup();setTimeout(()=>{try{fn();}catch(err){console.warn(err);}},0);};el.appendChild(d);});
+ el.style.display='block';el.style.left=Math.max(2,Math.min(x,innerWidth-el.offsetWidth-4))+'px';el.style.top=y+'px';}
+function buka(b,k){const lama=g('cmenu');if(lama&&lama.style.display!=='none')document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
+ tutup();cur=b;b.classList.add('owo');const r=b.getBoundingClientRect();render(dd,MENU[k](),r.left,r.bottom+1);}
+function pasang(b,k){if(!b)return;ORIG[k]=b.onclick?b.onclick.bind(b):null;b.classList.add('owm');b.onclick=e=>{e.stopPropagation();if(cur===b){tutup();return;}buka(b,k);};
+ b.addEventListener('mouseenter',()=>{const lama=g('cmenu');if(cur&&cur!==b)buka(b,k);else if(!cur&&lama&&lama.style.display!=='none'){buka(b,k);}});}
+function pasangSemua(){
+ pasang(btnOf('File kerja project'),'File kerja project');pasang(btnOf('Tampilan'),'Tampilan');pasang(btnOf('Wireframe geologi'),'Wireframe geologi');pasang(btnOf('Cara pakai'),'Cara pakai');
+ /* nama menu */const nm=(b,t)=>{if(!b)return;const lb=b.querySelector('.lb');if(lb)lb.textContent=t;else b.textContent=t;b.title=t;};nm(btnOf('File kerja project'),'Berkas');nm(btnOf('Cara pakai'),'Bantuan');
+ /* Edit sesudah Berkas */const f=btnOf('File kerja project');if(f&&!g('owedit')){const e=document.createElement('button');e.className='mbb';e.id='owedit';e.innerHTML='<span class="lb">Edit</span>';f.after(e);pasang(e,'@edit');}
+ /* Analisis menyatukan Analisis & Slicing; Legenda & Data pindah ke Tampilan */
+ const an=g('ogtg'),sl=g('sltg');ORIG['@slice']=sl&&sl.onclick?sl.onclick.bind(sl):()=>{if(sl)sl.click();};
+ if(an){const o=an.onclick;ORIG['@ana']=o?o.bind(an):null;pasang(an,'@ana');if(!ORIG['@ana'])ORIG['@ana']=null;}
+ for(const id of ['sltg','lgtg','rptg','barhd'])if(g(id)){g(id).style.setProperty('display','none','important');}
+ /* sub-menu lama (Data bor, Plan bor, …): tutup menu kita saat dibuka */
+ bar.querySelectorAll('.mbb.cmb').forEach(b=>b.addEventListener('mouseenter',()=>{if(cur){tutup();b.click();}}));
+ bar.querySelectorAll('.mbb').forEach(b=>{b.querySelectorAll('i.ic').forEach(i=>i.remove());});}
+setTimeout(pasangSemua,30);
+document.addEventListener('mousedown',e=>{if(!cur)return;if(dd.contains(e.target)||d2.contains(e.target)||cur.contains(e.target))return;tutup();},true);
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(cur)tutup();if(dlg.style.display==='flex')tutupDlg();}
+ const tg=e.target;if(tg&&(/INPUT|TEXTAREA|SELECT/.test(tg.tagName)||tg.isContentEditable))return;if(window.__st&&__st.on)return;
+ if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&(e.key==='s'||e.key==='S')){e.preventDefault();klik('pjs');}
+ if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&(e.key==='o'||e.key==='O')){e.preventDefault();klik('pjo');}});
+window.addEventListener('resize',tutup);
 })();
 
 </script>
