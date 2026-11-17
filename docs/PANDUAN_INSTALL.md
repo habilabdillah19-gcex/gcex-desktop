@@ -5232,3 +5232,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Bila .ssi situs diimpor, nomor dan warna mengikuti gaya situs tersebut.
 - Proyek lama: nomor dan warna yang sudah ada tidak diubah sampai diedit.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 244. Ore Works 0.11.0 — pemodelan string penampang & log geologi 2D
+
+- Buka **Slicing → Buka penampang 2D**, klik **✎ Digit string** (atau tekan D). Klik titik-titik batas vein; klik titik
+  awal, Enter, atau klik ganda untuk menutup. Titik menempel ke kontak interval bor (Snap); tahan **Alt** untuk bebas.
+- PageDown / PageUp pindah ke penampang berikut; string penampang sebelumnya tampil putus-putus sebagai acuan.
+  Seret titik untuk memindah, Ctrl+klik sisi untuk menyisip, klik kanan untuk menghapus, Ctrl+Z untuk membatalkan.
+- Solid langsung dibangun dari string-string itu (ujung runcing atau datar) dan tampil di daftar Wireframe.
+  Volume, tonase dan status tertutup ada di **Wireframe → Pemodelan string**, beserta ekspor OBJ / DXF / Surpac STR+DTM.
+- Baris **Log geologi** di penampang 2D menampilkan dua pita di samping lubang (bawaan Litologi kiri, Alterasi kanan)
+  lengkap dengan kode; arahkan kursor ke lubang untuk melihat interval, kode geologi dan kadarnya.

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.10.2';</script>
+<script>window.GCEX_VER='0.11.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -2641,17 +2641,17 @@ document.getElementById('pjs').onclick=()=>{const st={app:'GC-Ex viewer 3D',prod
   titikStruktur:STP.map(p=>Object.assign({},p)),orto:orSave(),pemetaan:fmSave(),
   struktur:{list:STR.filter(s=>s.st!=='usulan').map(s=>{const o=Object.assign({},s);delete o._ix;return o;}),tolak:[...STRJ],codes:document.getElementById('stcodes').value},
   plan:PLAN.map(p=>({nm:p.nm,on:p.on,col:p.col,hd:p.hd,rows:p.rows,edited:p.edited})),
-  wireframe:WI.map(m=>({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,v:Array.from(m.v,x=>+x.toFixed(3)),t:Array.from(m.t)})),
-  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),ui:(typeof uiSave==='function'?uiSave():undefined)};
+  wireframe:WI.map(m=>({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,ms:m.ms,v:Array.from(m.v,x=>+x.toFixed(3)),t:Array.from(m.t)})),
+  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),pemodelan:window.msSave?msSave():undefined,ui:(typeof uiSave==='function'?uiSave():undefined)};
  const b=new Blob([JSON.stringify(st)],{type:'application/json'}),a=document.createElement('a'),t=new Date(),pad=x=>String(x).padStart(2,'0');
  a.href=URL.createObjectURL(b);a.download='Project_'+(window.pjName?pjName():document.title.split('·')[0].trim()).replace(/[^\w\-]+/g,'_')+'_'+t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+'_'+pad(t.getHours())+pad(t.getMinutes())+'.gcv.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
  document.getElementById('pjw').textContent='Tersimpan: '+a.download+' ('+(b.size/1e6).toFixed(1).replace('.',',')+' MB) di folder unduhan browser.';};
 document.getElementById('pjo').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const w=document.getElementById('pjw');try{const st=JSON.parse(String(r.result));if(!st||st.app!=='GC-Ex viewer 3D')throw new Error('bukan file project viewer 3D GC-Ex');if(st.bawaan){if(!confirm('Buka paket "'+(st.nama||st.bawaan.ui&&st.bawaan.ui.nama||'data zona')+'"? Semua yang sedang tampil diganti dan halaman dimuat ulang.'))return;w.textContent='Membuka paket…';oreBoot(String(r.result));return;}if(st.nama&&window.pjNameSet)pjNameSet(st.nama);
   if(!st.__boot&&(!D.kosong||OSET)&&st.origin&&Math.hypot(st.origin[0]-O[0],st.origin[1]-O[1])>5000&&!confirm('Project ini dibuat untuk "'+st.judul+'" (lokasi berbeda). Tetap buka?'))return;
   if(!st.__boot&&(SF.length||DS.length||WI.length||PLAN.length)&&!confirm('Ganti topografi, desain pit, wireframe dan dataset yang sedang tampil dengan isi project?'))return;
-  if(st.origin)OSETF([st.origin]);SF.forEach(sfDispose);SF.length=0;DS.length=0;WI.forEach(wiDispose);WI.length=0;PLAN.length=0;for(const p of st.plan||[])PLAN.push(p);if(st.struktur){STR.length=0;(st.struktur.list||[]).forEach(s=>STR.push(s));STRID=Math.max(1,...STR.map(s=>(s.id||0)+1));STRJ=new Set(st.struktur.tolak||[]);if(st.struktur.codes)document.getElementById('stcodes').value=st.struktur.codes;stDraw();stList();}if(st.titikStruktur){STP.length=0;st.titikStruktur.forEach(p=>STP.push(p));STPID=Math.max(1,...STP.map(p=>(p.id||0)+1));stpDraw();stpList();}for(const m of st.wireframe||[])wiAdd({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,v:new Float64Array(m.v),t:new Uint32Array(m.t)});for(const p of st.permukaan||[])sfAdd(p);for(const d of st.dataset||[]){if(d.fm)(d.holes||[]).forEach(h=>{h.src='CH';});DS.push(d);}
+  if(st.origin)OSETF([st.origin]);SF.forEach(sfDispose);SF.length=0;DS.length=0;WI.forEach(wiDispose);WI.length=0;PLAN.length=0;for(const p of st.plan||[])PLAN.push(p);if(st.struktur){STR.length=0;(st.struktur.list||[]).forEach(s=>STR.push(s));STRID=Math.max(1,...STR.map(s=>(s.id||0)+1));STRJ=new Set(st.struktur.tolak||[]);if(st.struktur.codes)document.getElementById('stcodes').value=st.struktur.codes;stDraw();stList();}if(st.titikStruktur){STP.length=0;st.titikStruktur.forEach(p=>STP.push(p));STPID=Math.max(1,...STP.map(p=>(p.id||0)+1));stpDraw();stpList();}for(const m of st.wireframe||[])wiAdd({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,ms:m.ms,v:new Float64Array(m.v),t:new Uint32Array(m.t)});for(const p of st.permukaan||[])sfAdd(p);for(const d of st.dataset||[]){if(d.fm)(d.holes||[]).forEach(h=>{h.src='CH';});DS.push(d);}
   const F=st.filter||{};for(const i of ['flid','flbe','flr0','flr1'])document.getElementById(i).value=F[i]||'';document.getElementById('fltp').checked=!!F.fltp;
-  sfList();dsList();wiList();plList();plDraw();flRead();orRestore(st.orto||[]);fmRestore(st.pemetaan);if(typeof uiRestore==='function')uiRestore(st.ui);if(!st.__boot||D.kosong)fitView();w.textContent='Dibuka: '+f.name+' · '+SF.length+' permukaan, '+WI.length+' wireframe, '+DS.length+' dataset.';}catch(err){w.textContent='Gagal membuka project: '+err.message;}e.target.value='';};r.readAsText(f);};
+  sfList();dsList();wiList();plList();plDraw();flRead();orRestore(st.orto||[]);fmRestore(st.pemetaan);if(window.msRestore)msRestore(st.pemodelan);if(typeof uiRestore==='function')uiRestore(st.ui);if(!st.__boot||D.kosong)fitView();w.textContent='Dibuka: '+f.name+' · '+SF.length+' permukaan, '+WI.length+' wireframe, '+DS.length+' dataset.';}catch(err){w.textContent='Gagal membuka project: '+err.message;}e.target.value='';};r.readAsText(f);};
 
 /* ---------- Titik struktur (pengukuran lapangan / singkapan) + kategori struktur ---------- */
 var STP=window.STP||[],STPID=1;grp('stp');
@@ -4686,6 +4686,238 @@ window.vgMapOpen=mapOpen;
 {const go=g('dsgo'),cl=g('dsclr');if(go&&cl){const b=document.createElement('button');b.id='vgopen';b.textContent='Validasi & edit tabel';b.title='Periksa tabel yang dipilih: sel bermasalah disorot, bisa diedit lalu diekspor';cl.after(b);b.onclick=()=>vgOpen({type:'slot'});
   setInterval(()=>{const on=KS.some(k=>SLOT[k]&&SLOT[k].tb);if(b.disabled===on){b.disabled=!on;b.title=on?'Periksa tabel yang dipilih: sel bermasalah disorot, bisa diedit lalu diekspor':'Pilih file Collar / Survey / Assay / Geologi dulu';}},700);}}
 {const _dl=dsList;dsList=function(){const r=_dl.apply(this,arguments);document.querySelectorAll('#dsl .dsr').forEach((el,i)=>{const d=DS[i];if(!d||!d.raw||el.querySelector('.vgds'))return;const b=document.createElement('button');b.className='vgds';b.innerHTML='&#9638;';b.title='Validasi & edit tabel asli dataset ini';b.onclick=()=>vgOpen({type:'ds',i});const x=el.querySelector('button');el.insertBefore(b,x);});return r;};}
+}
+
+/* ================= Ore Works 0.11.0: pemodelan string penampang (gaya Micromine) =================
+   Pemilik 17 Nov 2026: "bagaimana jika pemodelan di Ore Works menggunakan cara seperti Micromine? ... digitasi string
+   wireframe lalu dibangun solid wireframe. Untuk percabangan bisa pakai boolean" + "snap nyala by default, dan bisa dimatikan".
+   Tahap 1: digit poligon tertutup di Penampang 2D (snap ke kontak interval bor / sampel / string lain; Alt = bebas),
+   satu string per penampang per solid, sambung antar-penampang (pecahan keliling), ujung runcing / datar,
+   cek tertutup, volume & tonase, ekspor OBJ / DXF / Surpac STR+DTM, string DXF. Boolean = tahap 2. */
+{
+const g=id=>document.getElementById(id);
+const MS=window.MS={L:[],cur:null,dig:false,drw:null,U:[],hov:null,drag:null,down:null,mouse:null,base:null};
+let MSID=1;
+const mCur=()=>MS.L.find(m=>m.id===MS.cur)||null;
+const T_=(m,u)=>{if(window.sbToast)sbToast(m,u);};
+const PAL=['#d81b60','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c41','#3949ab'];
+/* ---- kerangka: string disimpan dalam kerangka model (o = geser / RL, p = [jarak, RL] atau [E, N]) ---- */
+const azV=az=>{const r=az*Math.PI/180;return {u:[Math.sin(r),Math.cos(r)],nr:[Math.cos(r),-Math.sin(r)]};};
+function sameFrame(M,q){if(!M.S.length)return true;if(M.m!==q.m)return false;if(q.m==='h')return true;return Math.abs((((M.az-q.azd)%360)+540)%360-180)<0.01;}
+function curO(M,q){if(q.m==='h')return q.rl;const {nr}=azV(M.az),cx=q.E+q.nr[0]*q.off,cy=q.N+q.nr[1]*q.off;return (cx-M.E)*nr[0]+(cy-M.N)*nr[1];}
+function aSh(M,q){if(q.m==='h')return 0;const {u}=azV(M.az);return (q.E-M.E)*u[0]+(q.N-M.N)*u[1];}
+function w3(M,o,p){if(M.m==='h')return [p[0],p[1],o];const {u,nr}=azV(M.az);return [M.E+nr[0]*o+u[0]*p[0],M.N+nr[1]*o+u[1]*p[0],p[1]];}
+const tolO=q=>Math.max(0.05,(q.t||1)*0.5);
+function strHere(M,q){if(!sameFrame(M,q)||!M.S.length)return -1;const oc=curO(M,q);let bi=-1,bd=1e18;M.S.forEach((s,i)=>{const d=Math.abs(s.o-oc);if(d<bd){bd=d;bi=i;}});return bd<=tolO(q)?bi:-1;}
+function ghosts(M,q){if(!sameFrame(M,q))return [];const oc=curO(M,q),t=tolO(q);let lo=null,hi=null;for(const s of M.S){if(s.o<oc-t&&(!lo||s.o>lo.o))lo=s;if(s.o>oc+t&&(!hi||s.o<hi.o))hi=s;}return [lo,hi].filter(Boolean);}
+/* ---- geometri 2D ---- */
+const area=P=>{let a=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];a+=p[0]*q[1]-q[0]*p[1];}return a/2;};
+const cent=P=>{let a=0,x=0,y=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length],c=p[0]*q[1]-q[0]*p[1];a+=c;x+=(p[0]+q[0])*c;y+=(p[1]+q[1])*c;}if(Math.abs(a)<1e-12){let sx=0,sy=0;P.forEach(p=>{sx+=p[0];sy+=p[1];});return [sx/P.length,sy/P.length];}return [x/(3*a),y/(3*a)];};
+function selfX(P){const n=P.length,X=(a,b,c,d)=>{const o=(p,q,r)=>(q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]);return o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0;};
+ for(let i=0;i<n;i++)for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;if(X(P[i],P[(i+1)%n],P[j],P[(j+1)%n]))return true;}return false;}
+/* ---- sambung dua string (pecahan keliling) ---- */
+function link(A,B,IA,IB,T){const n=A.length,m=B.length,ca=cent(A),cb=cent(B);let best=1e18,i0=0,j0=0;
+ for(let i=0;i<n;i++)for(let j=0;j<m;j++){const dx=(A[i][0]-ca[0])-(B[j][0]-cb[0]),dy=(A[i][1]-ca[1])-(B[j][1]-cb[1]),d=dx*dx+dy*dy;if(d<best){best=d;i0=i;j0=j;}}
+ const a=k=>A[(i0+k)%n],b=k=>B[(j0+k)%m],ia=k=>IA[(i0+k)%n],ib=k=>IB[(j0+k)%m],per=(f,N)=>{const t=[0];for(let k=0;k<N;k++){const p=f(k),q=f(k+1);t.push(t[k]+Math.hypot(q[0]-p[0],q[1]-p[1]));}const L=t[N]||1;return t.map(v=>v/L);},tA=per(a,n),tB=per(b,m);
+ let i=0,j=0;while(i<n||j<m){const adA=i<n&&(j>=m||tA[i+1]<=tB[j+1]);if(adA){T.push([ia(i),ia(i+1),ib(j)]);i++;}else{T.push([ia(i),ib(j+1),ib(j)]);j++;}}}
+function orient(T,V){const E=new Map(),key=(a,b)=>a<b?a+'_'+b:b+'_'+a;T.forEach((t,k)=>{for(let e=0;e<3;e++){const kk=key(t[e],t[(e+1)%3]);(E.get(kk)||E.set(kk,[]).get(kk)).push(k);}});
+ const seen=new Uint8Array(T.length),has=(t,u,v)=>{for(let e=0;e<3;e++)if(t[e]===u&&t[(e+1)%3]===v)return true;return false;};
+ for(let s=0;s<T.length;s++){if(seen[s])continue;seen[s]=1;const st=[s];while(st.length){const k=st.pop(),t=T[k];for(let e=0;e<3;e++){const u=t[e],v=t[(e+1)%3];for(const n2 of E.get(key(u,v))){if(seen[n2])continue;seen[n2]=1;if(has(T[n2],u,v))T[n2]=[T[n2][0],T[n2][2],T[n2][1]];st.push(n2);}}}}
+ let open=0,nm=0;for(const L of E.values()){if(L.length===1)open++;else if(L.length>2)nm++;}
+ let vol=0;const c0=V[0]||[0,0,0];for(const t of T){const p=V[t[0]],q=V[t[1]],r=V[t[2]],a=[p[0]-c0[0],p[1]-c0[1],p[2]-c0[2]],b=[q[0]-c0[0],q[1]-c0[1],q[2]-c0[2]],c=[r[0]-c0[0],r[1]-c0[1],r[2]-c0[2]];vol+=(a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6;}
+ if(vol<0){for(let k=0;k<T.length;k++)T[k]=[T[k][0],T[k][2],T[k][1]];vol=-vol;}return {vol,open,nm};}
+function solid(M){const S=M.S.filter(s=>s.pts.length>=3).slice().sort((a,b)=>a.o-b.o);if(!S.length)return null;const V=[],T=[],I=[];
+ S.forEach(s=>{let P=s.pts.map(p=>p.slice());if(area(P)<0)P.reverse();s._P=P;I.push(P.map(p=>{V.push(w3(M,s.o,p));return V.length-1;}));});
+ for(let k=0;k+1<S.length;k++)link(S[k]._P,S[k+1]._P,I[k],I[k+1],T);
+ const gap=k=>S.length>1?Math.abs(S[k+1].o-S[k].o)/2:5,d0=M.capd>0?M.capd:gap(0),d1=M.capd>0?M.capd:gap(S.length-2);
+ const cap=(s,ix,dir,d)=>{if(M.cap==='datar'){const tri=THREE.ShapeUtils.triangulateShape(s._P.map(p=>new THREE.Vector2(p[0],p[1])),[]);tri.forEach(t=>T.push([ix[t[0]],ix[t[1]],ix[t[2]]]));return;}
+  const c=cent(s._P);V.push(w3(M,s.o+dir*d,c));const ap=V.length-1;for(let k=0;k<ix.length;k++)T.push([ap,ix[k],ix[(k+1)%ix.length]]);};
+ cap(S[0],I[0],-1,d0);cap(S[S.length-1],I[S.length-1],1,d1);S.forEach(s=>delete s._P);
+ const r=orient(T,V);return {v:Float64Array.from(V.flat()),t:Uint32Array.from(T.flat()),vol:r.vol,open:r.open,nm:r.nm,nt:T.length,ns:S.length};}
+/* ---- bangun & tampil ---- */
+function wiOf(M){return WI.find(w=>w.ms===M.id);}
+function build(M,quiet){const R=solid(M),w=wiOf(M);M.res=R?{vol:R.vol,open:R.open,nm:R.nm,nt:R.nt,ns:R.ns}:null;
+ if(!R){if(w){wiDispose(w);WI.splice(WI.indexOf(w),1);wiList();}}
+ else if(w){w.v=R.v;w.t=R.t;w.nm=M.nm;w.col=M.col;wiBuild(w);wiList();}
+ else{wiAdd({nm:M.nm,v:R.v,t:R.t,col:M.col,op:0.55,dom:M.nm,ms:M.id});wiList();}
+ draw3D();panel();if(window.SCR)window.SCR();if(!quiet&&R&&(R.open||R.nm))T_('Solid "'+M.nm+'" belum tertutup sempurna ('+R.open+' sisi terbuka, '+R.nm+' sisi ganda): cek string yang saling silang.');}
+window.msBuild=build;
+grp('mstr');
+function draw3D(){const G=L.mstr;while(G.children.length){const o=G.children.pop();o.geometry.dispose();o.material.dispose();}
+ for(const M of MS.L){if(M.on===false)continue;for(const s of M.S){if(s.pts.length<2)continue;const P=[];s.pts.forEach(p=>{const w=w3(M,s.o,p);P.push(w[0]-O[0],w[2]-O[2],-(w[1]-O[1]));});const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
+  G.add(new THREE.LineLoop(gg,new THREE.LineBasicMaterial({color:new THREE.Color(M.col),clippingPlanes:CL})));}}}
+/* ---- undo ---- */
+const snapU=M=>{MS.U.push({id:M.id,S:JSON.stringify(M.S)});if(MS.U.length>200)MS.U.shift();};
+function undo(){const u=MS.U.pop();if(!u){T_('Tidak ada perubahan string untuk dibatalkan.');return;}const M=MS.L.find(m=>m.id===u.id);if(!M)return;M.S=JSON.parse(u.S);if(!M.S.length)delete M.az;build(M,true);T_('Perubahan string dibatalkan.');}
+/* ---- model ---- */
+function newModel(nm){const M={id:MSID++,nm:nm||('Solid '+(MS.L.length+1)),col:PAL[MS.L.length%PAL.length],cap:'titik',capd:0,den:2.6,on:true,S:[]};MS.L.push(M);MS.cur=M.id;panel();return M;}
+function setFrame(M,q){M.m=q.m;if(q.m==='v'){M.az=q.azd;M.E=q.E;M.N=q.N;}}
+/* ---- kanvas penampang: lapisan string ---- */
+const cvs=()=>g('scc');
+function xf(){const cv=cvs(),R=cv.getBoundingClientRect(),w=Math.max(50,R.width),h=Math.max(50,R.height),V=SC.v,ve=SC.ve||1;if(!V)return null;return {w,h,X:p=>w/2+20+(p[0]-V.cx)*V.s,Y:p=>h/2-12-(p[1]-V.cy)*V.s*ve};}
+{const _sc=scCollect;scCollect=function(q){const r=_sc.apply(this,arguments);SC.lastG=r;return r;};}
+{const _sd=scDraw;scDraw=function(){_sd.apply(this,arguments);try{if(window.lgDraw2)lgDraw2();}catch(e){}try{const cv=cvs(),x=cv.getContext('2d');MS.base=x.getImageData(0,0,cv.width,cv.height);overlay();}catch(e){}};}
+function snapPts(q){const out=[],G=SC.lastG;if(G){for(const s of G.segs){out.push(s[0],s[1]);}for(const d of G.dots)out.push(d[0]);}
+ for(const M of MS.L){if(!sameFrame(M,q)||!M.S.length)continue;const sh=aSh(M,q),si=strHere(M,q),L2=(si>=0?[M.S[si]]:[]).concat(ghosts(M,q));for(const s of L2)for(const p of s.pts)out.push([p[0]-sh,p[1]]);}
+ if(MS.drw)for(const p of MS.drw)out.push(p);return out;}
+function snapAt(px,py,alt,q){const T2=xf();if(!T2||alt||!g('mssnap').checked)return null;let best=null,bd=12*12;for(const p of snapPts(q)){const dx=T2.X(p)-px,dy=T2.Y(p)-py,d=dx*dx+dy*dy;if(d<bd){bd=d;best=p;}}return best;}
+function overlay(){const cv=cvs(),x=cv.getContext('2d'),T2=xf(),q=SC.q;if(!T2||!q)return;const dpr=window.devicePixelRatio||1;x.setTransform(dpr,0,0,dpr,0,0);const {X,Y}=T2;
+ const poly=(P,sh,close)=>{x.beginPath();P.forEach((p,i)=>{const a=[p[0]-sh,p[1]];i?x.lineTo(X(a),Y(a)):x.moveTo(X(a),Y(a));});if(close)x.closePath();};
+ for(const M of MS.L){if(M.on===false||!M.S.length||!sameFrame(M,q))continue;const sh=aSh(M,q),cur=M.id===MS.cur;
+  for(const s of ghosts(M,q)){x.save();x.globalAlpha=.55;x.setLineDash([5,4]);x.lineWidth=1.2;x.strokeStyle=M.col;poly(s.pts,sh,true);x.stroke();x.restore();}
+  const si=strHere(M,q);if(si>=0){const s=M.S[si];x.save();x.fillStyle=M.col;x.globalAlpha=.16;poly(s.pts,sh,true);x.fill();x.globalAlpha=1;x.lineWidth=cur?2.4:1.6;x.strokeStyle=M.col;poly(s.pts,sh,true);x.stroke();
+   if(cur&&MS.dig){s.pts.forEach((p,k)=>{const a=[p[0]-sh,p[1]],h2=MS.hov&&MS.hov.k===k;x.fillStyle=h2?'#ffeb3b':'#fff';x.strokeStyle=M.col;x.lineWidth=1.5;x.fillRect(X(a)-3.5,Y(a)-3.5,7,7);x.strokeRect(X(a)-3.5,Y(a)-3.5,7,7);});}
+   x.fillStyle=M.col;x.font='600 11px Inter,Arial';const c=cent(s.pts);x.fillText(M.nm,X([c[0]-sh,c[1]])-x.measureText(M.nm).width/2,Y([c[0]-sh,c[1]])+4);x.restore();}}
+ if(MS.drw){const M=mCur();x.save();x.strokeStyle=M?M.col:'#d81b60';x.lineWidth=2;poly(MS.drw,0,false);if(MS.mouse)x.lineTo(MS.mouse.sx,MS.mouse.sy);x.stroke();x.setLineDash([4,4]);if(MS.drw.length>1&&MS.mouse){x.beginPath();x.moveTo(MS.mouse.sx,MS.mouse.sy);x.lineTo(X(MS.drw[0]),Y(MS.drw[0]));x.stroke();}
+  x.setLineDash([]);MS.drw.forEach(p=>{x.fillStyle='#fff';x.fillRect(X(p)-3,Y(p)-3,6,6);x.strokeRect(X(p)-3,Y(p)-3,6,6);});x.restore();}
+ if(MS.dig&&MS.mouse&&MS.mouse.snap){const p=MS.mouse.snap;x.save();x.strokeStyle='#ff6d00';x.lineWidth=2;x.beginPath();x.arc(X(p),Y(p),7,0,7);x.stroke();x.restore();}
+ if(MS.dig){x.save();x.fillStyle='rgba(216,27,96,.92)';x.font='600 11px Inter,Arial';const M=mCur(),t='DIGIT · '+(M?M.nm:'solid baru')+(MS.drw?' · '+MS.drw.length+' titik, Enter / klik ganda = tutup':'')+(g('mssnap').checked?' · snap (Alt = bebas)':' · snap mati');const tw=x.measureText(t).width;x.fillRect(T2.w/2-tw/2-8,4,tw+16,18);x.fillStyle='#fff';x.fillText(t,T2.w/2-tw/2,17);x.restore();}}
+function repaint(){const cv=cvs(),x=cv.getContext('2d');if(MS.base){x.setTransform(1,0,0,1,0,0);x.putImageData(MS.base,0,0);}overlay();}
+/* ---- interaksi ---- */
+const pxy=e=>{const r=cvs().getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
+function hitV(px,py){const M=mCur(),q=SC.q,T2=xf();if(!M||!q||!T2)return null;const si=strHere(M,q);if(si<0)return null;const sh=aSh(M,q),s=M.S[si];let best=null,bd=9*9;s.pts.forEach((p,k)=>{const a=[p[0]-sh,p[1]],dx=T2.X(a)-px,dy=T2.Y(a)-py,d=dx*dx+dy*dy;if(d<bd){bd=d;best={si,k};}});return best;}
+function hitE(px,py){const M=mCur(),q=SC.q,T2=xf();if(!M||!q||!T2)return null;const si=strHere(M,q);if(si<0)return null;const sh=aSh(M,q),s=M.S[si],n=s.pts.length;let best=null,bd=8;
+ for(let k=0;k<n;k++){const a=[s.pts[k][0]-sh,s.pts[k][1]],b=[s.pts[(k+1)%n][0]-sh,s.pts[(k+1)%n][1]],ax=T2.X(a),ay=T2.Y(a),bx=T2.X(b),by=T2.Y(b),L2=(bx-ax)**2+(by-ay)**2;if(L2<1)continue;let t=((px-ax)*(bx-ax)+(py-ay)*(by-ay))/L2;t=Math.max(0,Math.min(1,t));const d=Math.hypot(ax+(bx-ax)*t-px,ay+(by-ay)*t-py);if(d<bd){bd=d;best={si,k,t};}}return best;}
+function toModel(M,q,p){return [p[0]+aSh(M,q),p[1]];}
+function finish(){const q=SC.q;let P=MS.drw;MS.drw=null;if(!P||P.length<3){T_('String butuh minimal 3 titik.');repaint();return;}
+ let M=mCur();if(!M)M=newModel();if(!sameFrame(M,q)){T_('Penampang ini tidak sejajar dengan "'+M.nm+'" ('+(M.m==='h'?'level':'az '+M.az+'°')+'). Kembalikan arah sayatan, atau buat solid baru.');repaint();return;}
+ if(!M.S.length)setFrame(M,q);snapU(M);const oc=+curO(M,q).toFixed(3),si=strHere(M,q),pts=P.map(p=>toModel(M,q,p).map(v=>+v.toFixed(3)));
+ if(si>=0)M.S[si]={o:M.S[si].o,pts};else M.S.push({o:oc,pts});build(M);if(selfX(pts))T_('String ini memotong dirinya sendiri: geser titiknya agar solid tidak terpuntir.');else if(si>=0)T_('String di penampang ini diganti · Ctrl+Z untuk membatalkan');}
+function setDig(on){MS.dig=on;MS.drw=null;MS.hov=null;g('msdig').classList.toggle('on',on);g('msdig').textContent=on?'■ Selesai digit':'✎ Digit string';if(on&&!SC.open)scOpen(true);cvs().style.cursor=on?'crosshair':'grab';repaint();bar();}
+window.msSetDig=setDig;
+{const wn=g('scw');
+ wn.addEventListener('mousedown',e=>{if(!MS.dig||e.target!==cvs()||e.button!==0)return;const [px,py]=pxy(e),hv=hitV(px,py);
+  if(hv&&!MS.drw){const M=mCur();snapU(M);MS.drag=hv;e.stopPropagation();e.preventDefault();return;}
+  if(e.ctrlKey&&!MS.drw){const he=hitE(px,py);if(he){const M=mCur(),q=SC.q,s=M.S[he.si],a=s.pts[he.k],b=s.pts[(he.k+1)%s.pts.length];snapU(M);s.pts.splice(he.k+1,0,[+(a[0]+(b[0]-a[0])*he.t).toFixed(3),+(a[1]+(b[1]-a[1])*he.t).toFixed(3)]);build(M,true);e.stopPropagation();e.preventDefault();return;}}
+  MS.down=[px,py];},true);
+ wn.addEventListener('dblclick',e=>{if(!MS.dig||e.target!==cvs())return;e.stopPropagation();e.preventDefault();if(MS.drw){const T2=xf(),n=MS.drw.length;if(n>1&&T2&&Math.hypot(T2.X(MS.drw[n-1])-T2.X(MS.drw[n-2]),T2.Y(MS.drw[n-1])-T2.Y(MS.drw[n-2]))<4)MS.drw.pop();finish();}},true);
+ wn.addEventListener('contextmenu',e=>{if(!MS.dig||e.target!==cvs())return;e.preventDefault();e.stopPropagation();const [px,py]=pxy(e);if(MS.drw){MS.drw.pop();if(!MS.drw.length)MS.drw=null;repaint();return;}
+  const hv=hitV(px,py);if(hv){const M=mCur(),s=M.S[hv.si];snapU(M);if(s.pts.length<=3){if(!confirm('String tinggal 3 titik. Hapus seluruh string di penampang ini?')){MS.U.pop();return;}M.S.splice(hv.si,1);}else s.pts.splice(hv.k,1);build(M,true);}},true);}
+window.addEventListener('mousemove',e=>{if(!SC.open||!MS.dig)return;const cv=cvs(),q=SC.q;if(!q||!SC.inv)return;const [px,py]=pxy(e),inside=px>=0&&py>=0&&px<=cv.clientWidth&&py<=cv.clientHeight;
+ if(MS.drag){const M=mCur(),s=M.S[MS.drag.si],sn=snapAt(px,py,e.altKey,q),p=sn||SC.inv(px,py),pm=toModel(M,q,p);s.pts[MS.drag.k]=pm.map(v=>+v.toFixed(3));draw3D();MS.mouse={sx:px,sy:py,snap:sn};repaint();return;}
+ if(!inside){if(MS.mouse){MS.mouse=null;repaint();}return;}
+ const sn=snapAt(px,py,e.altKey,q),T2=xf();MS.mouse={sx:sn&&T2?T2.X(sn):px,sy:sn&&T2?T2.Y(sn):py,snap:sn};MS.hov=MS.drw?null:hitV(px,py);if(MS.drw||MS.hov||sn||e.buttons===0)repaint();});
+window.addEventListener('mouseup',e=>{if(!MS.dig)return;if(MS.drag){const M=mCur();MS.drag=null;build(M,true);return;}const d=MS.down;MS.down=null;if(!d||e.button!==0||e.target!==cvs())return;const [px,py]=pxy(e);if(Math.hypot(px-d[0],py-d[1])>4)return;
+ const q=SC.q,sn=snapAt(px,py,e.altKey,q),p=(sn||SC.inv(px,py)).slice();if(!MS.drw){const M=mCur();if(M&&!sameFrame(M,q)){T_('Penampang ini tidak sejajar dengan "'+M.nm+'" ('+(M.m==='h'?'level':'az '+M.az+'°')+'). Kembalikan arah sayatan, atau buat solid baru.');return;}MS.drw=[];}
+ const T2=xf();if(MS.drw.length>=3&&T2&&Math.hypot(T2.X(MS.drw[0])-px,T2.Y(MS.drw[0])-py)<8){finish();return;}MS.drw.push(p);repaint();});
+window.addEventListener('keydown',e=>{if(!SC.open||!MS.dig)return;const tg=e.target;if(tg&&/INPUT|TEXTAREA|SELECT/.test(tg.tagName)||tg&&tg.isContentEditable)return;const k=e.key;
+ if((e.ctrlKey||e.metaKey)&&(k==='z'||k==='Z')){e.preventDefault();e.stopPropagation();if(MS.drw){MS.drw.pop();if(!MS.drw.length)MS.drw=null;repaint();}else undo();return;}
+ if(k==='Enter'&&MS.drw){e.preventDefault();e.stopPropagation();finish();}
+ else if(k==='Escape'){e.preventDefault();e.stopPropagation();if(MS.drw){MS.drw=null;repaint();}else setDig(false);}
+ else if(k==='Backspace'&&MS.drw){e.preventDefault();e.stopPropagation();MS.drw.pop();if(!MS.drw.length)MS.drw=null;repaint();}
+ else if((k==='Delete'||k==='Backspace')&&MS.hov){e.preventDefault();e.stopPropagation();const M=mCur(),s=M.S[MS.hov.si];snapU(M);if(s.pts.length<=3)M.S.splice(MS.hov.si,1);else s.pts.splice(MS.hov.k,1);MS.hov=null;build(M,true);}
+ else if(k==='PageDown'||k==='PageUp'){e.preventDefault();e.stopPropagation();if(MS.drw){T_('Selesaikan atau batalkan string dulu (Enter / Esc).');return;}scStep(k==='PageDown'?1:-1);}},true);
+/* ---- bilah di jendela penampang ---- */
+const css=document.createElement('style');css.textContent=`#msbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:3px 6px;border-bottom:1px solid #e3e6ec;font-size:12px;background:#fbf5f8}
+#msbar button{margin:0;padding:2px 8px}#msbar select{max-width:150px}#msbar .on{background:#d81b60;color:#fff;border-color:#d81b60}#msbar label{display:flex;align-items:center;gap:3px;margin:0}
+#msstr .dsr{align-items:center}#msstr .dsr b{font-weight:600}#mspnl .fl input[type=number]{width:70px}`;document.head.appendChild(css);
+{const b=document.createElement('div');b.id='msbar';b.innerHTML='<button id="msdig" title="Digit poligon batas vein di penampang ini (D)">&#9998; Digit string</button><select id="msbsel" title="Solid aktif"></select><button id="msbnew" title="Solid baru">+ Solid</button>'+
+ '<label title="Titik menempel ke kontak interval bor, sampel dan string lain. Tahan Alt untuk bebas."><input type="checkbox" id="mssnap" checked>Snap</label><button id="msbdel" title="Hapus string solid aktif di penampang ini">Hapus string ini</button><button id="msbund" title="Batalkan perubahan string (Ctrl+Z)">&#8630;</button><span id="msbinf" class="note" style="flex:1;min-width:120px"></span>';
+ g('sch').after(b);}
+function bar(){const s=g('msbsel');s.innerHTML=MS.L.length?MS.L.map(M=>'<option value="'+M.id+'"'+(M.id===MS.cur?' selected':'')+'>'+esc(M.nm)+'</option>').join(''):'<option value="">(solid baru)</option>';
+ const M=mCur(),q=SC.q;let t='';if(M&&q){const si=strHere(M,q);t=M.S.length?(M.S.length+' string'+(M.res?' · '+Math.round(M.res.vol).toLocaleString('id-ID')+' m³':'')+(si>=0?' · ada di penampang ini':'')+(sameFrame(M,q)?'':' · arah sayatan berbeda'))
+  :'belum ada string';}else t='Klik ✎ lalu klik titik-titik batas vein; klik titik awal / Enter = tutup.';g('msbinf').textContent=t;}
+g('msdig').onclick=()=>setDig(!MS.dig);
+g('msbsel').onchange=e=>{MS.cur=+e.target.value||null;MS.drw=null;panel();repaint();};
+g('msbnew').onclick=()=>{const nm=prompt('Nama solid baru (mis. domain vein):','Solid '+(MS.L.length+1));if(nm===null)return;newModel(nm.trim()||undefined);if(!MS.dig)setDig(true);repaint();};
+g('msbdel').onclick=()=>{const M=mCur(),q=SC.q;if(!M||!q)return;const si=strHere(M,q);if(si<0){T_('Tidak ada string "'+M.nm+'" di penampang ini.');return;}snapU(M);M.S.splice(si,1);build(M,true);T_('String dihapus · Ctrl+Z untuk membatalkan');};
+g('msbund').onclick=undo;g('mssnap').onchange=()=>repaint();
+window.addEventListener('keydown',e=>{if(!SC.open)return;const tg=e.target;if(tg&&(/INPUT|TEXTAREA|SELECT/.test(tg.tagName)||tg.isContentEditable))return;if((e.key==='d'||e.key==='D')&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();setDig(!MS.dig);}});
+{const _su=scUpd;scUpd=function(){const r=_su.apply(this,arguments);bar();return r;};}
+/* ---- panel di bagian Wireframe ---- */
+{const anchor=g('wie')&&g('wie').closest('label');const p=document.createElement('div');p.id='mspnl';p.innerHTML='<div class="note subh" style="margin-top:8px"><b>Pemodelan string (penampang)</b></div>'+
+ '<div class="note">Gaya Micromine: digit poligon batas vein di tiap Penampang 2D, lalu string disambung menjadi solid. Snap ke kontak interval bor nyala (tahan Alt untuk bebas).</div>'+
+ '<div class="fl"><select id="mssel" style="flex:1"></select><button id="msnew">+ Solid</button><button id="msdel" title="Hapus solid & stringnya">&#10005;</button></div>'+
+ '<div id="msed"><div class="fl">Nama <input id="msnm" style="flex:1"><input type="color" id="mscol" style="flex:none;width:28px;padding:0;height:22px"><label style="margin:0;gap:3px"><input type="checkbox" id="mson">tampil</label></div>'+
+ '<div class="fl">Ujung <select id="mscap"><option value="titik">Runcing ke titik</option><option value="datar">Datar di string</option></select> jarak <input id="mscapd" type="number" step="any" min="0" placeholder="½ spasi"> m</div>'+
+ '<div class="fl">Densitas <input id="msden" type="number" step="any" value="2.6"> t/m³</div><div id="msinfo" class="note"></div><div id="msstr"></div>'+
+ '<div class="fl"><button id="msgo" class="pri">&#9998; Digit di penampang</button><button id="msbuild" title="Bangun ulang solid dari string">Bangun solid</button></div>'+
+ '<div class="fl"><span class="note">Ekspor solid</span><button id="msxobj">OBJ</button><button id="msxdxf">DXF</button><button id="msxstr" title="Surpac .str + .dtm">STR+DTM</button><button id="msxs" title="String penampang sebagai polyline 3D (DXF)">String DXF</button></div></div>';
+ if(anchor)anchor.after(p);else g('wil').after(p);}
+function panel(){const s=g('mssel');s.innerHTML=MS.L.length?MS.L.map(M=>'<option value="'+M.id+'"'+(M.id===MS.cur?' selected':'')+'>'+esc(M.nm)+'</option>').join(''):'<option value="">Belum ada solid</option>';
+ const M=mCur();g('msed').style.display=M?'':'none';if(!M){g('msinfo').textContent='';bar();return;}
+ g('msnm').value=M.nm;g('mscol').value=M.col;g('mson').checked=M.on!==false;g('mscap').value=M.cap;g('mscapd').value=M.capd||'';g('msden').value=M.den;
+ const r=M.res;g('msinfo').innerHTML=r?('<b>'+Math.round(r.vol).toLocaleString('id-ID')+' m³</b> · '+(Math.round(r.vol*M.den)).toLocaleString('id-ID')+' t · '+r.ns+' string · '+r.nt.toLocaleString('id-ID')+' segitiga · '+(r.open||r.nm?'<span style="color:#c62828">belum tertutup ('+r.open+' sisi terbuka)</span>':'<span style="color:#2e7d32">tertutup</span>')+(M.m?'<br>'+(M.m==='h'?'Level horizontal':'Penampang az '+M.az+'°, pusat E '+Math.round(M.E)+' N '+Math.round(M.N)):'')):'Belum ada string. Buka Penampang 2D lalu klik ✎ Digit.';
+ const S=M.S.map((s,i)=>[s,i]).sort((a,b)=>a[0].o-b[0].o);g('msstr').innerHTML=S.map(([s,i])=>'<div class="dsr" data-i="'+i+'"><span style="flex:1">'+(M.m==='h'?'RL ':'Geser ')+(s.o>=0&&M.m!=='h'?'+':'')+(+s.o.toFixed(2))+' m · '+s.pts.length+' titik'+(selfX(s.pts)?' <span style="color:#c62828">silang</span>':'')+'</span><button class="ms-go" title="Buka penampang ini">&#8599;</button><button class="ms-x" title="Hapus string">&#10005;</button></div>').join('');
+ g('msstr').querySelectorAll('.dsr').forEach(r=>{const i=+r.dataset.i;r.querySelector('.ms-go').onclick=()=>goSec(M,M.S[i]);r.querySelector('.ms-x').onclick=()=>{snapU(M);M.S.splice(i,1);build(M,true);};});bar();}
+function goSec(M,s){g('scm').value=M.m||'v';if(M.m==='h'){g('scr').value=s.o;}else{g('sca').value=M.az;g('sce').value=Math.round(M.E*1000)/1000;g('scn').value=Math.round(M.N*1000)/1000;g('sco').value=s.o;}SC.v=null;if(!SC.open)scOpen(true);else scUpd();}
+g('mssel').onchange=e=>{MS.cur=+e.target.value||null;panel();repaint();};
+g('msnew').onclick=()=>{newModel();panel();};
+g('msdel').onclick=()=>{const M=mCur();if(!M||!confirm('Hapus solid "'+M.nm+'" beserta '+M.S.length+' string-nya?'))return;const w=wiOf(M);if(w){wiDispose(w);WI.splice(WI.indexOf(w),1);wiList();}MS.L.splice(MS.L.indexOf(M),1);MS.cur=MS.L.length?MS.L[0].id:null;draw3D();panel();if(window.SCR)window.SCR();};
+g('msnm').onchange=e=>{const M=mCur();if(!M)return;M.nm=e.target.value.trim()||M.nm;const w=wiOf(M);if(w){w.nm=M.nm;w.dom=M.nm;wiList();}panel();repaint();};
+g('mscol').oninput=e=>{const M=mCur();if(!M)return;M.col=e.target.value;const w=wiOf(M);if(w){w.col=M.col;w.mesh.material.color.set(M.col);wiList();}draw3D();repaint();};
+g('mson').onchange=e=>{const M=mCur();if(!M)return;M.on=e.target.checked;draw3D();repaint();};
+g('mscap').onchange=e=>{const M=mCur();if(!M)return;M.cap=e.target.value;build(M,true);};
+g('mscapd').onchange=e=>{const M=mCur();if(!M)return;M.capd=Math.max(0,+e.target.value||0);build(M,true);};
+g('msden').onchange=e=>{const M=mCur();if(!M)return;M.den=+e.target.value||2.6;panel();};
+g('msgo').onclick=()=>{if(!SC.open)scOpen(true);setDig(true);const M=mCur();if(M&&M.S.length&&!sameFrame(M,SC.q||scPar()))goSec(M,M.S[0]);};
+g('msbuild').onclick=()=>{const M=mCur();if(M)build(M);};
+/* ---- ekspor ---- */
+const slug=s=>String(s||'solid').replace(/[^A-Za-z0-9_-]+/g,'_');const f3=v=>(+v).toFixed(3);
+const sdate=()=>{const d=new Date();return ('0'+d.getDate()).slice(-2)+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2);};
+function geo(M){const R=solid(M);if(!R){T_('Solid "'+(M?M.nm:'')+'" belum punya string.');return null;}return R;}
+g('msxobj').onclick=()=>{const M=mCur(),R=M&&geo(M);if(!R)return;const r=['# Ore Works - '+M.nm+' (string penampang)','o '+slug(M.nm)];for(let i=0;i<R.v.length;i+=3)r.push('v '+f3(R.v[i])+' '+f3(R.v[i+1])+' '+f3(R.v[i+2]));for(let i=0;i<R.t.length;i+=3)r.push('f '+(R.t[i]+1)+' '+(R.t[i+1]+1)+' '+(R.t[i+2]+1));fmDl(r.join('\r\n')+'\r\n',slug(M.nm)+'.obj','text/plain');};
+const dxfHead=()=>['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES'];
+g('msxdxf').onclick=()=>{const M=mCur(),R=M&&geo(M);if(!R)return;const r=dxfHead(),ly=slug(M.nm),P=k=>[R.v[k*3],R.v[k*3+1],R.v[k*3+2]];for(let i=0;i<R.t.length;i+=3){const a=P(R.t[i]),b=P(R.t[i+1]),c=P(R.t[i+2]);r.push('0','3DFACE','8',ly,'10',f3(a[0]),'20',f3(a[1]),'30',f3(a[2]),'11',f3(b[0]),'21',f3(b[1]),'31',f3(b[2]),'12',f3(c[0]),'22',f3(c[1]),'32',f3(c[2]),'13',f3(c[0]),'23',f3(c[1]),'33',f3(c[2]));}r.push('0','ENDSEC','0','EOF');fmDl(r.join('\r\n')+'\r\n',slug(M.nm)+'.dxf','application/dxf');};
+g('msxs').onclick=()=>{const M=mCur();if(!M||!M.S.length){T_('Belum ada string.');return;}const r=dxfHead(),ly=slug(M.nm)+'_STRING';for(const s of M.S.slice().sort((a,b)=>a.o-b.o)){r.push('0','POLYLINE','8',ly,'66','1','10','0','20','0','30','0','70','9');for(const p of s.pts){const w=w3(M,s.o,p);r.push('0','VERTEX','8',ly,'10',f3(w[0]),'20',f3(w[1]),'30',f3(w[2]),'70','32');}r.push('0','SEQEND','8',ly);}r.push('0','ENDSEC','0','EOF');fmDl(r.join('\r\n')+'\r\n',slug(M.nm)+'_string.dxf','application/dxf');};
+g('msxstr').onclick=()=>{const M=mCur(),R=M&&geo(M);if(!R)return;const sn=slug(M.nm).toLowerCase(),sd=sdate(),S=[sn+','+sd+',,','0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000'];for(let i=0;i<R.v.length;i+=3)S.push('1, '+f3(R.v[i+1])+', '+f3(R.v[i])+', '+f3(R.v[i+2])+',');S.push('0, 0.000, 0.000, 0.000,','0, 0.000, 0.000, 0.000, END');
+ const tri=[];for(let i=0;i<R.t.length;i+=3)tri.push([R.t[i],R.t[i+1],R.t[i+2]]);const E=new Map(),key=(a,b)=>a<b?a+'_'+b:b+'_'+a;tri.forEach((a,ti)=>{[[a[0],a[1]],[a[1],a[2]],[a[2],a[0]]].forEach(e=>{const k=key(e[0],e[1]);(E.get(k)||E.set(k,[]).get(k)).push(ti);});});
+ const Dt=[sn+'.str,'+sd+',,','0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000','OBJECT, 1,','TRISOLATION, 1, neighbours=yes,validated=true,closed='+(R.open||R.nm?'no':'yes')];tri.forEach((a,ti)=>{const nb=[[a[0],a[1]],[a[1],a[2]],[a[2],a[0]]].map(e=>{const L2=E.get(key(e[0],e[1]));for(const q of L2)if(q!==ti)return q+1;return 0;});Dt.push((ti+1)+', '+(a[0]+1)+', '+(a[1]+1)+', '+(a[2]+1)+', '+nb.join(', ')+',');});Dt.push('END');
+ fmDl(S.join('\r\n')+'\r\n',sn+'.str','text/plain');setTimeout(()=>fmDl(Dt.join('\r\n')+'\r\n',sn+'.dtm','text/plain'),500);};
+/* ---- simpan / buka project ---- */
+window.msSave=()=>MS.L.length?{L:MS.L.map(M=>({id:M.id,nm:M.nm,col:M.col,cap:M.cap,capd:M.capd,den:M.den,on:M.on,m:M.m,az:M.az,E:M.E,N:M.N,S:M.S})),cur:MS.cur}:undefined;
+window.msRestore=st=>{MS.L.length=0;MS.U.length=0;MS.drw=null;if(st&&st.L){st.L.forEach(M=>MS.L.push(Object.assign({cap:'titik',capd:0,den:2.6,on:true,S:[]},M)));MSID=Math.max(1,...MS.L.map(M=>M.id+1));MS.cur=st.cur&&MS.L.some(M=>M.id===st.cur)?st.cur:(MS.L[0]?MS.L[0].id:null);
+ MS.L.forEach(M=>{const R=solid(M);M.res=R?{vol:R.vol,open:R.open,nm:R.nm,nt:R.nt,ns:R.ns}:null;});}else MS.cur=null;draw3D();panel();};
+panel();
+}
+
+/* ================= Ore Works 0.11.0: log geologi di penampang 2D =================
+   Pemilik 17 Nov 2026: "kalau mau modeling, harus bisa lihat alterasi dan litologi setiap lubang bor, sedangkan sekarang
+   masih hanya menampilkan Assay saja". Di Penampang 2D: dua pita di samping jejak lubang (kiri / kanan, bawaan Litologi &
+   Alterasi dari kategori kolom), label kode di tiap pergantian, legenda kode, dan info interval saat kursor di atas lubang. */
+{
+const g=id=>document.getElementById(id);
+const LG=window.__lg={segs:[],pal:{}};
+{const r=document.createElement('div');r.id='lgbar';r.innerHTML='<b style="font-weight:600">Log geologi</b> kiri <select id="lgl"></select> kanan <select id="lgr"></select><label title="Tulis kode di tiap pergantian interval"><input type="checkbox" id="lgk" checked>kode</label><span class="note" id="lgn" style="flex:1"></span>';
+ g('msbar').after(r);}
+{const c=document.createElement('style');c.textContent='#lgbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:3px 6px;border-bottom:1px solid #e3e6ec;font-size:12px;background:#f6f8fb}#lgbar select{max-width:140px}#lgbar label{display:flex;align-items:center;gap:3px;margin:0}';document.head.appendChild(c);}
+function cols(){const gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);return gs;}
+let auto=true;
+function opts(){const gs=cols(),fill=(id,cat,re)=>{const s=g(id),cur=s.value;s.innerHTML='<option value="">(tidak ada)</option>'+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+  let v=gs.includes(cur)?cur:'';if(auto&&!v)v=(window.gcatCol&&gcatCol(cat,gs))||gs.find(c=>re.test(c))||'';s.value=v;};
+ fill('lgl','lith',/^(lith|litho|litologi|batuan|rock)/i);fill('lgr','alt',/^(alt|alter|ubahan)/i);g('lgbar').style.display=gs.length?'':'none';}
+for(const id of ['lgl','lgr'])g(id).addEventListener('change',()=>{auto=false;if(window.SCR)SCR();});g('lgk').onchange=()=>{if(window.SCR)SCR();};
+function pal(GA,c,off){off=off||0;const cnt=new Map();for(const iv of GA.values())for(const q of iv){const v=String(q.v[c]||'').trim();if(v)cnt.set(v,(cnt.get(v)||0)+(q.t-q.f));}
+ const C=new Map();[...cnt.entries()].sort((a,b)=>b[1]-a[1]).forEach(([v],i)=>C.set(v,i<GPAL.length?GPAL[(i+off)%GPAL.length]:[.55,.55,.55]));return C;}
+const rgb=c=>'rgb('+c.map(x=>Math.round(x*255)).join(',')+')';
+function code(GA,id,d,c){const iv=GA.get(id);if(!iv)return '';for(const q of iv)if(q.f<=d&&d<q.t)return String(q.v[c]||'').trim();return '';}
+function ivAt(GA,id,d){const iv=GA.get(id);if(!iv)return null;for(const q of iv)if(q.f<=d&&d<q.t)return q;return null;}
+function draw(){LG.segs=[];const q=SC.q,V=SC.v;if(!q||!V||!SC.open)return;const cl=g('lgl').value,cr=g('lgr').value;if(!cl&&!cr){g('lgn').textContent='';return;}
+ const cv=g('scc'),R=cv.getBoundingClientRect(),w=R.width,h=R.height,ve=SC.ve||1,X=p=>w/2+20+(p[0]-V.cx)*V.s,Y=p=>h/2-12-(p[1]-V.cy)*V.s*ve,x=cv.getContext('2d'),dpr=window.devicePixelRatio||1;x.setTransform(dpr,0,0,dpr,0,0);
+ const GA=geoActive(),PL=cl?pal(GA,cl):null,PR=cr?pal(GA,cr,cr===cl?0:5):null,LH=q.m==='v'&&q.len>0?q.len/2:Infinity,used=[],seen={l:new Map(),r:new Map()},last=new Map();let n=0;
+ const W2=Math.max(3,Math.min(7,V.s*0.9)),GAP=2.5;
+ for(const s of SEGS){if(!L[s[4]].visible)continue;const A=[s[0][0]/10+O[0],s[0][1]/10+O[1],s[0][2]/10+O[2]],B=[s[1][0]/10+O[0],s[1][1]/10+O[1],s[1][2]/10+O[2]],da=scDist(q,...A),db=scDist(q,...B);
+  let t0=0,t1=1;if(da===db){if(Math.abs(da)>q.t)continue;}else{let ta=(-q.t-da)/(db-da),tb=(q.t-da)/(db-da);if(ta>tb)[ta,tb]=[tb,ta];t0=Math.max(0,ta);t1=Math.min(1,tb);if(t0>=t1)continue;}
+  const P=t=>scProj(q,A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t);let p0=P(t0),p1=P(t1);if(LH<Infinity&&((p0[0]<-LH&&p1[0]<-LH)||(p0[0]>LH&&p1[0]>LH)))continue;
+  const d0=s[6]+(s[7]-s[6])*t0,d1=s[6]+(s[7]-s[6])*t1,dm=(d0+d1)/2;let a=[X(p0),Y(p0)],b=[X(p1),Y(p1)];if(a[1]>b[1]){const t=a;a=b;b=t;}
+  const L2=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L2<0.3)continue;const nx=-(b[1]-a[1])/L2,ny=(b[0]-a[0])/L2;n++;LG.segs.push([a,b,s[3],d0,d1]);
+  for(const [col,Pp,sg,k] of [[cl,PL,-1,'l'],[cr,PR,1,'r']]){if(!col)continue;const v=code(GA,s[3],dm,col),c=v?(Pp.get(v)||[.55,.55,.55]):[.88,.88,.88],o=sg*(GAP+W2/2+1.2);
+   x.strokeStyle=rgb(c);x.lineWidth=W2;x.lineCap='butt';x.beginPath();x.moveTo(a[0]+nx*o,a[1]+ny*o);x.lineTo(b[0]+nx*o,b[1]+ny*o);x.stroke();if(v)seen[k].set(v,c);
+   if(g('lgk').checked&&v){const key=s[3]+'|'+k,pv=last.get(key);if(pv!==v){last.set(key,v);const tx=v.length>10?v.slice(0,9)+'…':v;x.font='10px Inter,Arial';const tw=x.measureText(tx).width,lx=sg<0?a[0]+nx*o-W2-tw-2:a[0]+nx*o+W2+2,ly=a[1]+4;
+     if(!used.some(r=>lx<r[0]+r[2]&&lx+tw>r[0]&&ly-9<r[1]&&ly>r[1]-9)){used.push([lx,ly,tw]);x.fillStyle='rgba(255,255,255,.8)';x.fillRect(lx-1,ly-9,tw+2,11);x.fillStyle='#333';x.fillText(tx,lx,ly);}}}}}
+ /* legenda kode */
+ const rows=[];if(cl)rows.push([cl,seen.l]);if(cr)rows.push([cr,seen.r]);x.font='10px Inter,Arial';let y=h-60-rows.length*14;
+ for(const [nm,S] of rows){const it=[...S.entries()].slice(0,10);if(!it.length)continue;let xx=8;x.fillStyle='rgba(255,255,255,.9)';let tw=x.measureText(nm+':').width+10;for(const [v] of it)tw+=x.measureText(v).width+18;x.fillRect(4,y-10,Math.min(tw,w*0.7),14);
+  x.fillStyle='#1f2d6b';x.fillText(nm+':',xx,y);xx+=x.measureText(nm+':').width+6;for(const [v,c] of it){if(xx>w*0.7-20)break;x.fillStyle=rgb(c);x.fillRect(xx,y-8,9,9);xx+=11;x.fillStyle='#333';x.fillText(v,xx,y);xx+=x.measureText(v).width+7;}y+=14;}
+ g('lgn').textContent=n?'':(GA.size?'tidak ada lubang ber-geologi di slab ini':'');}
+window.lgDraw2=draw;
+{const c=g('scc');c.addEventListener('mousemove',e=>{if(!LG.segs.length)return;const r=c.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=7;
+  for(const s of LG.segs){const [a,b]=s,L2=(b[0]-a[0])**2+(b[1]-a[1])**2;let t=((px-a[0])*(b[0]-a[0])+(py-a[1])*(b[1]-a[1]))/L2;t=Math.max(0,Math.min(1,t));const d=Math.hypot(a[0]+(b[0]-a[0])*t-px,a[1]+(b[1]-a[1])*t-py);if(d<bd){bd=d;best=[s,t];}}
+  if(!best)return;const [s,t]=best,dep=s[3]+(s[4]-s[3])*t,GA=geoActive(),iv=ivAt(GA,s[2],dep),ga=(typeof asActive==='function'?asActive():new Map()).get(s[2]);let au='';
+  if(ga)for(const q of ga)if(q.f<=dep&&dep<q.t){const el=typeof UNS==='function'?UNS():'Au',v=q.v[el]!=null?q.v[el]:q.v[Object.keys(q.v)[0]];if(v!=null)au=' · '+el+' '+(+v).toLocaleString('id-ID');break;}
+  g('scft').textContent=s[2]+' · '+dep.toFixed(1)+' m'+(iv?' · '+iv.f+'–'+iv.t+' m · '+Object.entries(iv.v).filter(([k,v])=>String(v).trim()).map(([k,v])=>k+' '+v).join(' · '):' · tanpa geologi')+au;});}
+{const _o=hcmOpts;hcmOpts=function(){const r=_o.apply(this,arguments);try{opts();}catch(e){}return r;};}
+opts();
 }
 
 </script>
