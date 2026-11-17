@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.7';</script>
+<script>window.GCEX_VER='0.13.8';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -407,7 +407,7 @@ body.rp #rpan{display:flex}
 <label>RL (m)<span style="display:flex;gap:2px"><button id="ptdn" style="padding:0 6px;margin:0">&#9660;</button><input id="ptrl" type="number" step="any"><button id="ptup" style="padding:0 6px;margin:0">&#9650;</button></span></label>
 <label>Tebal irisan ± (m)<input id="ptt" type="number" step="any" value="5"></label><label>Langkah ▲▼ (m)<input id="ptst" type="number" step="any" value="5"></label>
 <label>Mode kadar<select id="ptmode"><option value="anom">Anomali (interpolasi)</option><option value="dom">Di dalam domain saja</option></select></label>
-<label>Kelas Au (4 batas)<input id="ptcls" value="0.4; 0.5; 1; 3"></label><label>Anisotropi strike : tegak lurus<input id="ptrat" type="number" step="any" value="4"></label>
+<label>Kelas Au (4 batas)<input id="ptcls" value="0.4; 0.5; 1; 3"></label><label>Anisotropi strike : tegak lurus<input id="ptrat" type="number" step="any" value="4"></label><label title="Azimut arah memanjang anomali (trend). Kosong = ikut Strike di Zona belum teruji GC.">Arah anisotropi / trend (azimut °)<input id="ptaz" type="number" step="any" min="0" max="360" placeholder="otomatis"></label>
 <label>Jangkauan searah strike (m)<input id="ptrng" type="number" step="any" value="40"></label><label>Batas warna dari data (m)<input id="ptmask" type="number" step="any" value="25"></label>
 <label>Alterasi (arsir)<select id="ptalt"><option value="">(tanpa)</option></select></label><label>Dominan min (%)<input id="ptamin" type="number" step="any" value="50"></label>
 <label>Kontur topografi tiap (m)<input id="ptki" type="number" step="any" value="5"></label><label>Resolusi sel (m)<input id="ptres" type="number" step="any" value="1.5"></label><label>Wireframe<select id="ptwm"><option value="mid">Garis tengah</option><option value="out">Outline (potongan)</option></select></label><label>Tebal garis wireframe (px)<input id="ptlw" type="number" step="0.5" value="2.5"></label></div><div id="ptdom" style="display:flex;flex-wrap:wrap;gap:2px 10px;padding:4px 12px;font-size:11.5px;border-bottom:1px solid #eef0f4"></div>
@@ -2716,8 +2716,10 @@ function utDraw(){const [x,W2,H2]=ogCv(),B=[60,16,W2-90,H2-58],az=(+document.get
 const PM={c:null,v:null};const PTC=['#5c6bc0','#ffd54f','#ff9800','#e53935','#c2185b'];
 const ptv=id=>document.getElementById(id),ptOn=k=>{const e=document.querySelector('.ptl[data-k="'+k+'"]');return !e||e.checked;};
 function ptCls(){const c=ptv('ptcls').value.split(/[;,\s]+/).map(parseFloat).filter(isFinite).sort((a,b)=>a-b);return c.length===4?c:[0.4,0.5,1,3];}
+/* 0.13.8 (pemilik 17 Nov 2026: "Arah anisotropi interpolasi harusnya bisa diatur azimut atau trendnya"): isian #ptaz; kosong = Strike #ustk. */
+function ptAzD(){const e=document.getElementById('ptaz'),v=e&&e.value.trim()!==''?parseFloat(e.value.replace(',','.')):NaN;return ((isFinite(v)?v:(+document.getElementById('ustk').value||0))%360+360)%360;}
 function ptCompute(){const rl=+ptv('ptrl').value,t=Math.max(0.1,+ptv('ptt').value||5),mode=ptv('ptmode').value,rat=Math.max(1,+ptv('ptrat').value||1),rng=Math.max(2,+ptv('ptrng').value||40),mask=Math.max(1,+ptv('ptmask').value||25),altc=ptv('ptalt').value,amin=(+ptv('ptamin').value||50)/100;
- const M=activeHoles(),IC=mode==='dom'?anIcp(M):null,GA=altc?geoActive():null,az=(+document.getElementById('ustk').value||0)*Math.PI/180,u=[Math.sin(az),Math.cos(az)],w=[Math.cos(az),-Math.sin(az)],S=[],H=[];
+ const M=activeHoles(),IC=mode==='dom'?anIcp(M):null,GA=altc?geoActive():null,azd=ptAzD(),az=azd*Math.PI/180,u=[Math.sin(az),Math.cos(az)],w=[Math.cos(az),-Math.sin(az)],S=[],H=[];
  for(const [id,{h}] of M){const p=h.p,n=p.length/3,cum=cumP(p),ic=IC?IC.get(id):null,iv=GA?GA.get(id):null;let pr=false;
   for(let i=0;i<n-1;i++){const za=p[i*3+2]/10+O[2],zb=p[i*3+5]/10+O[2];if(za!==zb&&(za-rl)*(zb-rl)<=0&&!pr){const f=(rl-za)/(zb-za);H.push({id,src:h.src,E:(p[i*3]+(p[i*3+3]-p[i*3])*f)/10+O[0],N:(p[i*3+1]+(p[i*3+4]-p[i*3+1])*f)/10+O[1],k:'x'});pr=true;}
    const zm=(za+zb)/2;if(Math.abs(zm-rl)>t)continue;const md=(cum[i]+cum[i+1])/2;let dom=null;if(ic)for(const q of ic)if(q.f<=md&&md<q.t){dom=q.d;break;}
@@ -2744,7 +2746,7 @@ function ptCompute(){const rl=+ptv('ptrl').value,t=Math.max(0.1,+ptv('ptt').valu
  const kont=[],ki=+ptv('ptki').value||0;if(ki>0)for(const sf of SF){if(!sf.on||sf.kind!=='topo'||!sf.tin)continue;const {X,Y,Z,T:TT}=sf.tin,P3=new Float64Array(X.length*3);for(let i=0;i<X.length;i++){P3[i*3]=X[i];P3[i*3+1]=Y[i];P3[i*3+2]=Z[i];}
   for(let z=Math.ceil(sf.tin.z0/ki)*ki;z<=sf.tin.z1;z+=ki){const o=[];scCut({m:'h',rl:z,t:0},P3,TT,false,o,{z});for(const s2 of o)if((s2[0][0]>x0&&s2[0][0]<x1&&s2[0][1]>y0&&s2[0][1]<y1)||(s2[1][0]>x0&&s2[1][0]<x1&&s2[1][1]>y0&&s2[1][1]<y1))kont.push([s2[0],s2[1],z]);}}
  const plan=[];for(const p of (window.PLAN||[]))if(p.on)for(const r of p.rows){const e=plEnd(r);if((r.Z-rl)*(e[2]-rl)<=0&&r.Z!==e[2]){const f=(rl-r.Z)/(e[2]-r.Z);plan.push({id:r.id,E:r.E+(e[0]-r.E)*f,N:r.N+(e[1]-r.N)*f,col:p.col});}else if(Math.abs(r.Z-rl)<=t)plan.push({id:r.id,E:r.E,N:r.N,col:p.col,c:1});}
- return {rl,t,mode,rat,az:+document.getElementById('ustk').value||0,x0,y0,x1,y1,res,nx,ny,V,A,cats,S,H,cuts,kont,plan,n:G.length};}
+ return {rl,t,mode,rat,az:+azd.toFixed(1),x0,y0,x1,y1,res,nx,ny,V,A,cats,S,H,cuts,kont,plan,n:G.length};}
 function ptMid(cuts){const by=new Map();for(const s of cuts){const k=s[2].nm;if(!by.has(k))by.set(k,{c:s[2].c,k:s[2].k,seg:[]});by.get(k).seg.push(s);}const out=[],key=p=>Math.round(p[0]*200)+'_'+Math.round(p[1]*200);
  for(const [nm,g] of by){const adj=new Map();g.seg.forEach((s,i)=>{for(const p of [s[0],s[1]]){const k=key(p);if(!adj.has(k))adj.set(k,[]);adj.get(k).push(i);}});const seen=new Uint8Array(g.seg.length);
   for(let i=0;i<g.seg.length;i++){if(seen[i])continue;const comp=[],st=[i];seen[i]=1;while(st.length){const j=st.pop();comp.push(j);for(const p of [g.seg[j][0],g.seg[j][1]])for(const n of adj.get(key(p)))if(!seen[n]){seen[n]=1;st.push(n);}}
@@ -2776,7 +2778,7 @@ function ptDraw(){if(!PM.c){if(ptv('ptrl').value===''){const t=CT.target;ptv('pt
  if(ptOn('plan'))for(const p of c.plan){const px=X(p.E),py=Y(p.N);x.strokeStyle=p.col;x.lineWidth=2;x.beginPath();x.moveTo(px-5,py);x.lineTo(px+5,py);x.moveTo(px,py-5);x.lineTo(px,py+5);x.stroke();OG.pts.push([px,py,6,{plan:p}]);lab(p.id,px+6,py+10,false);}
  const box=(bx,by,bw2,bh)=>{x.fillStyle='rgba(255,255,255,.93)';x.fillRect(bx,by,bw2,bh);x.strokeStyle='#1f2d6b';x.lineWidth=1;x.strokeRect(bx,by,bw2,bh);};
  const stpL=ptOn('stp')&&window.stpPeta?stpPeta(x,X,Y):[];
- if(ptOn('judul')){const t1='Peta level RL '+c.rl+' · irisan ±'+c.t+' m',t2=c.n+' sampel · '+(c.mode==='dom'?'di dalam domain':'interpolasi anomali')+', anisotropi '+c.rat+':1 searah strike '+c.az+'°';x.font='600 15px Inter,Arial';const tw=Math.max(x.measureText(t1).width,(x.font='10px Inter,Arial',x.measureText(t2).width))+20;box(W2-tw-12,10,tw,42);x.fillStyle='#1f2d6b';x.font='600 15px Inter,Arial';x.fillText(t1,W2-tw-2,29);x.font='10px Inter,Arial';x.fillStyle='#5b6478';x.fillText(t2,W2-tw-2,45);}
+ if(ptOn('judul')){const t1='Peta level RL '+c.rl+' · irisan ±'+c.t+' m',t2=c.n+' sampel · '+(c.mode==='dom'?'di dalam domain':'interpolasi anomali')+', anisotropi '+c.rat+':1 searah azimut '+c.az+'°';x.font='600 15px Inter,Arial';const tw=Math.max(x.measureText(t1).width,(x.font='10px Inter,Arial',x.measureText(t2).width))+20;box(W2-tw-12,10,tw,42);x.fillStyle='#1f2d6b';x.font='600 15px Inter,Arial';x.fillText(t1,W2-tw-2,29);x.font='10px Inter,Arial';x.fillStyle='#5b6478';x.fillText(t2,W2-tw-2,45);}
  if(ptOn('utara')){const sb=(()=>{const t3=110/V2.s,p=Math.pow(10,Math.floor(Math.log10(t3)));return [5,2,1].map(m=>m*p).find(v=>v<=t3)||p;})(),bl=sb*V2.s;box(12,H2-92,Math.max(130,bl+30),80);x.fillStyle='#111';x.beginPath();x.moveTo(36,H2-84);x.lineTo(28,H2-62);x.lineTo(36,H2-67);x.lineTo(44,H2-62);x.closePath();x.fill();x.font='600 12px Inter,Arial';x.fillText('N',32,H2-50);
   for(let i=0;i<4;i++){x.fillStyle=i%2?'#fff':'#111';x.fillRect(22+i*bl/4,H2-36,bl/4,5);}x.strokeStyle='#111';x.strokeRect(22,H2-36,bl,5);x.font='10px Inter,Arial';x.fillStyle='#111';x.fillText('0',20,H2-22);x.fillText(sb+' m',22+bl-12,H2-22);}
  if(ptOn('leg')){const items=[];const fm=v=>(+v).toLocaleString('id-ID');items.push(['h',UNM()]);[['< '+fm(cls[0])],[fm(cls[0])+' – '+fm(cls[1])],[fm(cls[1])+' – '+fm(cls[2])],[fm(cls[2])+' – '+fm(cls[3])],['≥ '+fm(cls[3])]].forEach((t3,i)=>items.push(['c',t3[0],PTC[i]]));
@@ -2790,7 +2792,7 @@ function ptDraw(){if(!PM.c){if(ptv('ptrl').value===''){const t=CT.target;ptv('pt
     if(it[0]==='p'){x.strokeStyle='#d6249f';x.lineWidth=2;x.beginPath();x.moveTo(bx+2,yy+3);x.lineTo(bx+12,yy+3);x.moveTo(bx+7,yy-2);x.lineTo(bx+7,yy+8);x.stroke();}x.fillStyle='#111';x.fillText(it[1],bx+20,yy+6);}yy+=13;}}}
 function ptReset(){PM.c=null;if(OG.tab==='pt')ogDraw();}
 {const _og=ogCalc;ogCalc=function(){PM.c=null;const r=_og.apply(this,arguments);if(window.OP&&OP.res&&!OP._busy){OP._busy=1;setTimeout(()=>{opRun();OP._busy=0;},0);}if(window.__siOn&&!window.__siBusy){window.__siBusy=1;setTimeout(()=>{siRun();window.__siBusy=0;},0);}return r;};}
-document.getElementById('ptgo').onclick=ptReset;for(const i of ['ptrl','ptt','ptmode','ptcls','ptrat','ptrng','ptmask','ptalt','ptamin','ptki','ptres'])document.getElementById(i).onchange=ptReset;
+document.getElementById('ptgo').onclick=ptReset;for(const i of ['ptrl','ptt','ptmode','ptcls','ptrat','ptaz','ptrng','ptmask','ptalt','ptamin','ptki','ptres'])document.getElementById(i).onchange=ptReset;
 document.querySelectorAll('.ptl').forEach(c=>c.onchange=()=>{if(OG.tab==='pt')ogDraw();});for(const i of ['ptwm','ptlw'])document.getElementById(i).oninput=()=>{if(OG.tab==='pt')ogDraw();};
 document.getElementById('ptup').onclick=()=>{ptv('ptrl').value=(+ptv('ptrl').value||0)+(+ptv('ptst').value||5);ptReset();};document.getElementById('ptdn').onclick=()=>{ptv('ptrl').value=(+ptv('ptrl').value||0)-(+ptv('ptst').value||5);ptReset();};
 document.getElementById('utrun').onclick=()=>{anRun();if(OG.tab==='ut')ogDraw();};for(const i of ['ustk','udip','urlt','ubin','umin'])document.getElementById(i).addEventListener('change',()=>{if(OG.tab==='ut')ogDraw();});document.getElementById('ustat').onchange=()=>{anRun();if(OG.tab==='ut')ogDraw();};for(const i of ['utgc','utpdh','utcol','utid'])document.getElementById(i).onchange=()=>{if(OG.tab==='ut')ogDraw();};
@@ -5716,12 +5718,13 @@ body.rp-lepas #rpan .rph{cursor:move}body.rp-lepas #rpgr{display:none}body.rp-le
        kolom geologi: Lith, Alt, …) — keduanya selalu sama.
    (2) "Label kadar interval": nilai unsur aktif (toolbar Unsur) ditulis di samping tiap interval di 3D. Kanvas 2D di atas
        tampilan 3D, diproyeksikan ulang tiap kamera bergerak; interval berurutan bernilai sama digabung; label yang bertumpuk
-       disembunyikan, kadar tertinggi didahulukan (maks 800 label). Ambang ≥ dan jumlah desimal bisa diatur. */
+       disembunyikan, kadar tertinggi didahulukan (maks 800 label). Ambang ≥ dan jumlah desimal bisa diatur.
+   0.13.8 (pemilik: "label interval gak usah kayak segede gini. harus bisa diatur"): ukuran 6–16 px (bawaan 9) + gaya kotak / teks saja. */
 (function(){const g=id=>document.getElementById(id),cv=g('cv'),cs=g('cshp');if(!cv||!cs||g('hgl'))return;
  const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}};
  const box=document.createElement('div');box.innerHTML='<div class="fl">Tampil sebagai <select id="hcm2" style="flex:1" title="Sama dengan Data bor → Warna lubang"></select></div>'+
   '<label><input type="checkbox" id="hgl">Label kadar interval di 3D (unsur aktif)</label>'+
-  '<div class="fl" id="hglo" style="display:none">≥ <input id="hglmin" type="number" step="any" min="0" placeholder="semua" style="width:64px;flex:none"> desimal <select id="hgldp"><option value="-1">otomatis</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div><div id="hgln" class="note"></div>';
+  '<div class="fl" id="hglo" style="display:none">≥ <input id="hglmin" type="number" step="any" min="0" placeholder="semua" style="width:64px;flex:none"> desimal <select id="hgldp"><option value="-1">otomatis</option><option>0</option><option>1</option><option>2</option><option>3</option></select></div><div class="fl" id="hglo2" style="display:none">Ukuran <input id="hglsz" type="range" min="6" max="16" step="0.5" style="flex:1"> <b id="hglszv" style="width:38px;flex:none"></b> gaya <select id="hglst"><option value="k">kotak</option><option value="t">teks saja</option></select></div><div id="hgln" class="note"></div>';
  const row=cs.closest('.fl')||cs.parentNode;row.after(box);
  /* (1) cermin Warna lubang */
  const h1=g('hcm'),h2=g('hcm2');let hk='';
@@ -5729,7 +5732,7 @@ body.rp-lepas #rpan .rph{cursor:move}body.rp-lepas #rpgr{display:none}body.rp-le
  h2.onchange=()=>{h1.value=h2.value;h1.dispatchEvent(new Event('change',{bubbles:true}));sync();};h1.addEventListener('change',sync);setInterval(sync,700);sync();
  /* (2) label kadar */
  const c=document.createElement('canvas');c.id='hglc';Object.assign(c.style,{position:'absolute',left:0,top:0,pointerEvents:'none',zIndex:2});cv.appendChild(c);const x=c.getContext('2d');
- const S={on:LS('ow.hgl')==='1',min:LS('ow.hglmin')||'',dp:LS('ow.hgldp')||'-1',items:null,key:''};g('hgl').checked=S.on;g('hglmin').value=S.min;g('hgldp').value=S.dp;g('hglo').style.display=S.on?'':'none';
+ const S={on:LS('ow.hgl')==='1',min:LS('ow.hglmin')||'',dp:LS('ow.hgldp')||'-1',sz:+(LS('ow.hglsz')||9),st:LS('ow.hglst')||'k',items:null,key:''};g('hgl').checked=S.on;g('hglmin').value=S.min;g('hgldp').value=S.dp;g('hglsz').value=S.sz;g('hglszv').textContent=S.sz+' px';g('hglst').value=S.st;g('hglo').style.display=g('hglo2').style.display=S.on?'':'none';
  function build(){const out=[],M=activeHoles(),min=parseFloat(S.min),ids=new Set((typeof SEGS!=='undefined'?SEGS:[]).map(s=>s[3]));for(const [id,{h,ds}] of M){if(!ids.has(id)||(ds&&ds.fm))continue;const k=h.src=='GC'||h.src=='CH'?'gc':'pdh';
    const p=h.p,m=p.length/3,cum=cumP(p);let run=null;const flush=()=>{if(run&&isFinite(run.v)&&run.v>0&&!(run.v<min)){const d=(run.a+run.b)/2;for(let i=0;i+1<m;i++)if(d<=cum[i+1]||i+2===m){const f=cum[i+1]>cum[i]?Math.min(1,Math.max(0,(d-cum[i])/(cum[i+1]-cum[i]))):0;
      out.push({k,v:run.v,E:(p[i*3]+(p[i*3+3]-p[i*3])*f)/10+O[0],N:(p[i*3+1]+(p[i*3+4]-p[i*3+1])*f)/10+O[1],Z:(p[i*3+2]+(p[i*3+5]-p[i*3+2])*f)/10+O[2]});break;}}run=null;};
@@ -5741,15 +5744,17 @@ body.rp-lepas #rpan .rph{cursor:move}body.rp-lepas #rpgr{display:none}body.rp-le
   if(c.width!==Math.round(r.width*dpr)||c.height!==Math.round(r.height*dpr)){c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);c.style.width=r.width+'px';c.style.height=r.height+'px';}
   c.style.left=(r.left-cr.left)+'px';c.style.top=(r.top-cr.top)+'px';x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,r.width,r.height);
   if(!S.on){g('hgln').textContent='';return;}const key=UEL()+'|'+S.min+'|'+(typeof SEGS!=='undefined'?SEGS.length:0)+'|'+DS.filter(d=>d.on).length;if(!S.items||S.key!==key){S.items=build();S.key=key;}
-  W.updateMatrixWorld(true);const v=new THREE.Vector3(),occ=[],font='600 11px Segoe UI,Arial,sans-serif';x.font=font;x.textBaseline='middle';let n=0,vis=0;
+  W.updateMatrixWorld(true);const v=new THREE.Vector3(),occ=[],fz=S.sz,hh=Math.round(fz+4),bx0=S.st==='k',font='600 '+fz+'px Segoe UI,Arial,sans-serif';x.font=font;x.textBaseline='middle';let n=0,vis=0;
   for(const it of S.items){if(!L[it.k]||!L[it.k].visible)continue;v.set(it.E-O[0],it.Z-O[2],-(it.N-O[1]));W.localToWorld(v);v.project(C);if(v.z>1||v.z<-1||Math.abs(v.x)>1.02||Math.abs(v.y)>1.02)continue;vis++;
-   if(n>=800)continue;const X=(v.x+1)/2*r.width+7,Y=(1-v.y)/2*r.height,t=fmt(it.v),w=x.measureText(t).width+8,bx=[X,Y-8,X+w,Y+8];
+   if(n>=800)continue;const X=(v.x+1)/2*r.width+Math.round(fz*0.5)+2,Y=(1-v.y)/2*r.height,t=fmt(it.v),w=x.measureText(t).width+(bx0?fz*0.5+3:2),bx=[X,Y-hh/2,X+w,Y+hh/2];
    if(occ.some(o=>bx[0]<o[2]&&bx[2]>o[0]&&bx[1]<o[3]&&bx[3]>o[1]))continue;occ.push(bx);n++;
-   const col=UCOL(it.v);x.fillStyle='rgba(255,255,255,.86)';x.fillRect(bx[0],bx[1],w,16);x.fillStyle='rgb('+col.map(a=>Math.round(a*255)).join(',')+')';x.fillRect(bx[0],bx[1],3,16);
-   x.strokeStyle='rgba(29,36,51,.35)';x.lineWidth=1;x.strokeRect(bx[0]+.5,bx[1]+.5,w-1,15);x.fillStyle='#1d2433';x.fillText(t,bx[0]+5,Y+.5);
-   x.beginPath();x.moveTo(X-7,Y);x.lineTo(X,Y);x.strokeStyle='rgba(29,36,51,.55)';x.stroke();}
+   const col='rgb('+UCOL(it.v).map(a=>Math.round(a*255)).join(',')+')',lx=Math.round(fz*0.5)+2;
+   if(bx0){x.fillStyle='rgba(255,255,255,.86)';x.fillRect(bx[0],bx[1],w,hh);x.fillStyle=col;x.fillRect(bx[0],bx[1],Math.max(2,fz/4),hh);x.strokeStyle='rgba(29,36,51,.3)';x.lineWidth=1;x.strokeRect(bx[0]+.5,bx[1]+.5,w-1,hh-1);x.fillStyle='#1d2433';x.fillText(t,bx[0]+Math.max(2,fz/4)+2,Y+.5);}
+   else{x.lineWidth=3;x.strokeStyle='rgba(255,255,255,.9)';x.lineJoin='round';x.strokeText(t,bx[0]+1,Y+.5);x.fillStyle='#1d2433';x.fillText(t,bx[0]+1,Y+.5);}
+   x.beginPath();x.moveTo(X-lx,Y);x.lineTo(X-1,Y);x.strokeStyle=bx0?'rgba(29,36,51,.55)':col;x.lineWidth=bx0?1:2;x.stroke();}
   g('hgln').textContent=S.items.length?n+' dari '+vis+' label '+UNS()+' terlihat'+(n<vis?' · zoom in untuk melihat lebih banyak':''):'Tidak ada interval '+UNS()+(S.min?' ≥ '+S.min:'')+'.';}
- g('hgl').onchange=e=>{S.on=e.target.checked;LS('ow.hgl',S.on?'1':'0');g('hglo').style.display=S.on?'':'none';S.items=null;sched();};
+ g('hgl').onchange=e=>{S.on=e.target.checked;LS('ow.hgl',S.on?'1':'0');g('hglo').style.display=g('hglo2').style.display=S.on?'':'none';S.items=null;sched();};
+ g('hglsz').oninput=e=>{S.sz=+e.target.value;g('hglszv').textContent=S.sz+' px';LS('ow.hglsz',String(S.sz));sched();};g('hglst').onchange=e=>{S.st=e.target.value;LS('ow.hglst',S.st);sched();};
  g('hglmin').onchange=e=>{S.min=e.target.value.trim();LS('ow.hglmin',S.min);S.items=null;sched();};g('hgldp').onchange=e=>{S.dp=e.target.value;LS('ow.hgldp',S.dp);sched();};
  try{CT.addEventListener('change',sched);}catch(e){}addEventListener('resize',sched);
  const _hb=holesBuild;holesBuild=function(){const r=_hb.apply(this,arguments);S.items=null;sched();return r;};

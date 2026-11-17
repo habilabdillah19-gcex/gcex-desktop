@@ -5352,3 +5352,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   seukuran kertas itu (tidak lagi mengikuti bentuk jendela yang lebar), seperti Layout peta.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 256. Ore Works 0.13.8 — ukuran label kadar, arah anisotropi peta
+
+- Data bor → Tampilan lubang → Label kadar interval: geser **Ukuran** (6–16 px) dan pilih gaya **kotak** atau **teks saja**.
+- Analisis → Peta → **Arah anisotropi / trend (azimut °)**: isi arah memanjang anomali (mis. 45 untuk NE–SW). Kosong =
+  memakai Strike di Zona belum teruji GC.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
