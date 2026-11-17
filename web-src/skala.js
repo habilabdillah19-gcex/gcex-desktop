@@ -69,6 +69,12 @@
     if (Math.abs(I.ve - 1) > 1e-6) h += '<div class=nt>horizontal · VE ' + fmt(+I.ve.toFixed(2)) + '×</div>';
     if (b._h !== h) { b.innerHTML = h; b._h = h; }
     var ml = (I.off && I.off.l) || 0, mb = (I.off && I.off.b) || 0; b.style.left = Math.round(ml + 10) + 'px'; b.style.bottom = Math.round(mb + 10) + 'px';
+    /* BM 0.24.100 / DH 0.24.103 (pemilik 17 Nov 2026: "Skala menghalangi pandangan Ringkasan di kiri bawah"): bila kotak skala
+       menimpa kartu yang melayang di atas plot (kartu Ringkasan #statsCard, dsb.), geser ke kanan kartu itu. */
+    try { var gr = gd.getBoundingClientRect(), br = b.getBoundingClientRect();
+      ['statsCard'].forEach(function (id) { var c = document.getElementById(id); if (!c || !c.offsetParent || gd.contains(c)) return; var cr = c.getBoundingClientRect();
+        if (cr.width && cr.left < br.right && cr.right > br.left && cr.top < br.bottom && cr.bottom > br.top) { b.style.left = Math.round(cr.right - gr.left + 10) + 'px'; br = b.getBoundingClientRect(); } });
+    } catch (e) { }
     try { if (window.UKUR) UKUR.pasang(gd, I, b); } catch (e) { }
   }
   SKL.upd = upd;

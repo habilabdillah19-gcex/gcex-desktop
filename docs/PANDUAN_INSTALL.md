@@ -5300,3 +5300,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Topo × Pit**: desain pit hasil import segitiga (DTM / DXF 3DFACE) tidak lagi tampil sebagai jaring rusuk segitiga.
   Garis jenjang hanya digambar bila desain pit berupa string.
 - DB-Ex, Ore Works: tidak berubah.
+
+## 251. Block Model 0.24.100 / Drillhole 0.24.103 — skala tidak menutupi Ringkasan
+
+- Kotak skala (dan tombol Ukur) di kiri bawah plot kini otomatis bergeser ke kanan kartu **Ringkasan**, sehingga kartu
+  itu tidak tertutup lagi di tampilan 3D.
+- DB-Ex, Ore Works: tidak berubah.

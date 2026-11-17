@@ -25,6 +25,8 @@ with sync_playwright() as pw:
     pg.goto("http://127.0.0.1:%d/index.html" % P); pg.wait_for_function("window.DLAT && DLAT.siap", timeout=60000); pg.evaluate("document.getElementById('dlatBtn').click()")
     pg.wait_for_function("window.collars && collars.length > 0", timeout=600000); pg.wait_for_function("!DLAT.busy", timeout=600000); pg.wait_for_timeout(5000)
     cek(pg.evaluate("(function(){var b=document.querySelector('#plotDiv > .gxUkurB');return !!b&&b.style.display!=='none';})()"), "U1 tombol Ukur di 3D DH")
+    ov = pg.evaluate("""(function(){var c=$('statsCard').getBoundingClientRect(),r=[];document.querySelectorAll('#plotDiv > .gxSkala, #plotDiv > .gxUkurB').forEach(function(e){var b=e.getBoundingClientRect();r.push(c.left<b.right&&c.right>b.left&&c.top<b.bottom&&c.bottom>b.top);});return r;})()""")
+    cek(ov and not any(ov), "U0 kotak skala & tombol Ukur tidak menimpa kartu Ringkasan: %s" % ov)
     # dua collar yang tampak di layar, berjauhan
     T = pg.evaluate("""()=>{var gd=$('plotDiv'),pr=SKL.proj3d(gd),r=gd.getBoundingClientRect(),c=[];
       gd.data.forEach(function(t){if(t.type!=='scatter3d'||t.visible===false||!t.x)return;for(var i=0;i<t.x.length;i+=1){if(t.x[i]==null)continue;var s=pr(+t.x[i],+t.y[i],+t.z[i]);if(s[0]>60&&s[0]<r.width-60&&s[1]>60&&s[1]<r.height-120)c.push([+t.x[i],+t.y[i],+t.z[i],s[0],s[1]]);}});
