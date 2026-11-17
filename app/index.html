@@ -1957,14 +1957,40 @@ HR.zGrid = function () {
 };
 
 /* elevasi cepat untuk TAMPILAN; null bila di luar jangkauan data (pemanggil boleh jatuh ke topoZ asli) */
-HR.zFast = function (x, y) {
+HR.zFast = function (x, y, res) {
   var R = HR.zGrid(); if (!R) return null;
+  /* BM 0.24.101 / DH 0.24.104: grid 384 sel terlalu kasar untuk topo luas (mis. 5 km -> sel 13 m) sehingga drape ortho
+     kehilangan relief. Bila sel grid lebih kasar dari resolusi mesh, pakai topoZ asli (TIN: ±1 mikrodetik per titik). */
+  if (res && (R.dx > res * 1.05 || R.dy > res * 1.05) && window.topoZ && window.topoZ._tin) return null;
   var fx = (x - R.b.x0) / R.dx, fy = (y - R.b.y0) / R.dy;
   if (!(fx >= 0 && fy >= 0 && fx <= R.nx - 1 && fy <= R.ny - 1)) return null;
   var i0 = Math.min(R.nx - 2, Math.floor(fx)), j0 = Math.min(R.ny - 2, Math.floor(fy)), tx = fx - i0, ty = fy - j0;
   var k = j0 * R.nx + i0, k2 = k + R.nx;
   if (!(R.have[k] && R.have[k + 1] && R.have[k2] && R.have[k2 + 1])) return null;
   return (R.z[k] * (1 - tx) + R.z[k + 1] * tx) * (1 - ty) + (R.z[k2] * (1 - tx) + R.z[k2 + 1] * tx) * ty;
+};
+
+/* ===== bayangan matahari pada drape ortho (BM 0.24.101 / DH 0.24.104) =====
+   Ore Works menempel ortho sebagai tekstur di mesh topo dengan lampu Lambert, jadi lereng & jalan terlihat timbul.
+   Di Plotly (tanpa tekstur) warna per-titik dikali faktor hillshade dari normal grid: f = amb + (1-amb)*max(0, n.L),
+   matahari azimut 315 / elevasi 45 (konvensi hillshade, sama dengan topo). Dinormalkan agar tanah datar = warna asli foto
+   (hanya lereng yang lebih terang / gelap). Mode dari #ovShade: 'kuat' amb 0,55,
+   'lembut' amb 0,75, 'plotly' = tanpa (warna asli + lampu Plotly lama). Lampu Plotly dimatikan agar warna = hasil panggang. */
+HR.orShade = function (Z, C, nx, ny, id, res, setLit) {
+  var e = document.getElementById('ovShade'), md = (e && e.value) || 'kuat', str = function (c, f) { var q = function (v) { v = Math.round(v * f); return v > 255 ? 255 : v; }; return 'rgb(' + q(c[0]) + ',' + q(c[1]) + ',' + q(c[2]) + ')'; };
+  if (md === 'plotly') return C.map(function (c) { return str(c, 1); });
+  var amb = md === 'lembut' ? 0.75 : 0.55, az = 315 * Math.PI / 180, al = 45 * Math.PI / 180, Lx = Math.cos(al) * Math.sin(az), Ly = Math.cos(al) * Math.cos(az), Lz = Math.sin(al), out = new Array(C.length);
+  var f0 = amb + (1 - amb) * Lz, zAt = function (i, j) { if (i < 0 || j < 0 || i >= nx || j >= ny) return null; var v = id[j * nx + i]; return v >= 0 ? Z[v] : null; };
+  for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+    var v = id[j * nx + i]; if (v < 0) continue; var z = Z[v];
+    var zl = zAt(i - 1, j), zr = zAt(i + 1, j), zd = zAt(i, j - 1), zu = zAt(i, j + 1);
+    var gx = ((zr !== null ? zr : z) - (zl !== null ? zl : z)) / (((zr !== null) + (zl !== null)) * res || 1), gy = ((zu !== null ? zu : z) - (zd !== null ? zd : z)) / (((zu !== null) + (zd !== null)) * res || 1);
+    var L = Math.sqrt(gx * gx + gy * gy + 1), d = (-gx * Lx - gy * Ly + Lz) / L;
+    out[v] = str(C[v], (amb + (1 - amb) * (d > 0 ? d : 0)) / f0); /* f0: tanah datar = warna asli foto */
+  }
+  for (var k = 0; k < out.length; k++) if (!out[k]) out[k] = str(C[k], 1);
+  if (setLit) setLit({ ambient: 1, diffuse: 0, specular: 0, fresnel: 0, roughness: 1 });
+  return out;
 };
 
 /* ============================ 5. gambar ortho resolusi penuh untuk Peta 2D ============================ */
@@ -2098,23 +2124,24 @@ function topoZ(x,y){var T=topoIndex(),B=T.B,o=T.o,cx=Math.floor(x/B),cy=Math.flo
     if(np>=3)return sz/sw;}
   return null;}
 function orthoImg2D(){if(!window.ORT)return null;var m=ORT.m;if(!ORT.url){var cv=document.createElement('canvas');cv.width=m.w;cv.height=m.h;var ctx=cv.getContext('2d'),im=ctx.createImageData(m.w,m.h),p=ORT.px,d=im.data;for(var i=0,j=0;i<p.length;i+=3,j+=4){d[j]=p[i];d[j+1]=p[i+1];d[j+2]=p[i+2];d[j+3]=255;}ctx.putImageData(im,0,0);ORT.url=cv.toDataURL('image/jpeg',0.88);}return{source:ORT.url,xref:'x',yref:'y',x:m.e0-m.dx/2,y:m.n0+m.dy/2,sizex:m.w*m.dx,sizey:m.h*m.dy,xanchor:'left',yanchor:'top',sizing:'stretch',layer:'below',opacity:+(($('orOp')||{}).value||1)};}
-function HRZ(x,y){if(window.HR&&HR.on){var q=HR.zFast(x,y);if(q!==null)return q;}return topoZ(x,y);}
+function HRZ(x,y,res){if(window.HR&&HR.on){var q=HR.zFast(x,y,res);if(q!==null)return q;}return topoZ(x,y);}
 function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
   var res=+$('orRes').value;if(light)res=Math.max(res,4);if(window.HR&&HR.on&&HR.ext){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
-  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0);if(ORT.cache[key])return ORT.cache[key];
+  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');if(ORT.cache[key])return ORT.cache[key];
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
   if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
   if(x1<=x0||y1<=y0)return null;
   if(!res){res=(window.HR&&HR.resFor)?HR.resFor(x0,x1,y0,y1,(HR.anggaran?HR.anggaran():HR.budget)):1;}/* Otomatis: sehalus anggaran titik profil Kinerja, tidak lebih halus dari piksel ortho (pemilik 10 Nov 2026: ortho harus tajam) */
   var _bud=(window.HR&&HR.anggaran)?HR.anggaran():300000;if(light)_bud=Math.min(_bud,300000);var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>_bud){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}/* batas titik ortho ikut profil Kinerja (HR.anggaran) */
   var flatZ=Math.ceil(G.z1)+5,X=[],Y=[],Z=[],C=[],id=new Int32Array(nx*ny),n=0,zmin=1e18,zmax=-1e18,i,j;
-  for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:(mode==='base')?0:HRZ(x,y),c=(z===null)?null:orthoRGB(x,y,res);
-    if(!c){id[j*nx+i]=-1;continue;}id[j*nx+i]=n++;z+=0.3;X.push(x);Y.push(y);Z.push(z);C.push('rgb('+c[0]+','+c[1]+','+c[2]+')');if(z<zmin)zmin=z;if(z>zmax)zmax=z;}
+  for(j=0;j<ny;j++)for(i=0;i<nx;i++){var x=x0+i*res,y=y0+j*res,z=(mode==='flat')?flatZ:(mode==='base')?0:HRZ(x,y,res),c=(z===null)?null:orthoRGB(x,y,res);
+    if(!c){id[j*nx+i]=-1;continue;}id[j*nx+i]=n++;z+=0.3;X.push(x);Y.push(y);Z.push(z);C.push(c);if(z<zmin)zmin=z;if(z>zmax)zmax=z;}
   var I=[],J=[],K=[];
   for(j=0;j<ny-1;j++)for(i=0;i<nx-1;i++){var a=id[j*nx+i],b=id[j*nx+i+1],c2=id[(j+1)*nx+i],d=id[(j+1)*nx+i+1];
     if(a>=0&&b>=0&&d>=0){I.push(a);J.push(b);K.push(d);}if(a>=0&&d>=0&&c2>=0){I.push(a);J.push(d);K.push(c2);}}
   if(!I.length)return null;
-  var o={tr:{type:'mesh3d',name:'Orthofoto',x:X,y:Y,z:Z,i:I,j:J,k:K,vertexcolor:C,flatshading:false,lighting:{ambient:0.85,diffuse:0.25,specular:0,fresnel:0,roughness:1},hoverinfo:'skip',showlegend:false},
+  var _lit=null;C=(window.HR&&HR.orShade)?HR.orShade(Z,C,nx,ny,id,res,function(L){_lit=L;}):C.map(function(c){return 'rgb('+c[0]+','+c[1]+','+c[2]+')';});
+  var o={tr:{type:'mesh3d',name:'Orthofoto',x:X,y:Y,z:Z,i:I,j:J,k:K,vertexcolor:C,flatshading:false,lighting:_lit||{ambient:0.85,diffuse:0.25,specular:0,fresnel:0,roughness:1},hoverinfo:'skip',showlegend:false},
     b:{x0:x0,x1:x1,y0:y0,y1:y1,z0:zmin,z1:zmax},res:res,n:n,base:mode==='base'};
   ORT.cache={};ORT.cache[key]=o;
   $('orInfo').textContent=ORT.m.src+' | '+(mode==='base'?'latar paling bawah (lepas elevasi)':mode==='flat'?'bidang datar':'drape ke topografi')+' @ '+(Math.round(res*10)/10)+' m, '+n+' titik';
@@ -14224,7 +14251,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.100';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.101';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

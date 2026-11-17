@@ -52,12 +52,12 @@ def patch(s: str) -> str:
 
     # 3. drape & warna di dalam orthoTrace (baris sesudah ortho_patch; cadangan: sebelum ortho_patch)
     if not R("z=(mode==='flat')?flatZ:(mode==='base')?0:topoZ(x,y),c=(z===null)?null:orthoRGB(x,y);",
-             "z=(mode==='flat')?flatZ:(mode==='base')?0:HRZ(x,y),c=(z===null)?null:orthoRGB(x,y,res);", False):
+             "z=(mode==='flat')?flatZ:(mode==='base')?0:HRZ(x,y,res),c=(z===null)?null:orthoRGB(x,y,res);", False):
         R("z=(mode==='flat')?flatZ:topoZ(x,y),c=(z===null)?null:orthoRGB(x,y);",
-          "z=(mode==='flat')?flatZ:HRZ(x,y),c=(z===null)?null:orthoRGB(x,y,res);")
+          "z=(mode==='flat')?flatZ:HRZ(x,y,res),c=(z===null)?null:orthoRGB(x,y,res);")
     # HRZ: grid tampilan bila ada, kalau tidak topoZ asli
     R("function orthoTrace(crop,light){",
-      "function HRZ(x,y){if(window.HR&&HR.on){var q=HR.zFast(x,y);if(q!==null)return q;}return topoZ(x,y);}\n"
+      "function HRZ(x,y,res){if(window.HR&&HR.on){var q=HR.zFast(x,y,res);if(q!==null)return q;}return topoZ(x,y);}\n"
       "function orthoTrace(crop,light){")
 
     # 4. topografi 3D: desimasi per sel dari seluruh data di dalam tampilan
@@ -77,6 +77,17 @@ def patch(s: str) -> str:
     # kode modul disisipkan sebelum orthoInit supaya HR sudah ada saat ortho dimuat
     js = open(W + 'hires.js', encoding='utf-8').read()
     R("function orthoInit(){", js + "\nfunction orthoInit(){")
+    # 7. (BM 0.24.101 / DH 0.24.104, pemilik 17 Nov 2026: "Di Ore Works, ortho hasil drape topo kelihatan lebih bagus tanpa
+    #    saya atur resolusinya") — seperti Ore Works: drape di elevasi TIN asli (bukan grid 384 sel yang kasar pada topo
+    #    luas) dan relief diberi bayangan matahari (Lambert, mengikuti pilihan Bayangan topo & pit).
+    R("C.push('rgb('+c[0]+','+c[1]+','+c[2]+')');", "C.push(c);")
+    R("  if(!I.length)return null;\n  var o={tr:{type:'mesh3d',name:'Orthofoto'",
+      "  if(!I.length)return null;\n  var _lit=null;C=(window.HR&&HR.orShade)?HR.orShade(Z,C,nx,ny,id,res,function(L){_lit=L;}):C.map(function(c){return 'rgb('+c[0]+','+c[1]+','+c[2]+')';});\n"
+      "  var o={tr:{type:'mesh3d',name:'Orthofoto'")
+    R("vertexcolor:C,flatshading:false,lighting:{ambient:0.85,diffuse:0.25,specular:0,fresnel:0,roughness:1},hoverinfo:'skip',showlegend:false}",
+      "vertexcolor:C,flatshading:false,lighting:_lit||{ambient:0.85,diffuse:0.25,specular:0,fresnel:0,roughness:1},hoverinfo:'skip',showlegend:false}")
+    R("var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0);",
+      "var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');")
     # info resolusi di panel overlay ikut menyebut LOD
     R("$('orInfo').textContent=orthoImg.src+' | '+orthoImg.w+' x '+orthoImg.h+' px @ '+orthoImg.dx+' m';",
       "$('orInfo').textContent=orthoImg.src+' | '+orthoImg.w+' x '+orthoImg.h+' px @ '+orthoImg.dx+' m"

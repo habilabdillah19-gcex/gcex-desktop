@@ -5398,3 +5398,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   per tabel mengikuti *Warna menurut*. Atur kategori yang tampil lewat kolom warna agar legenda tidak terlalu panjang.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 261. Block Model 0.24.101 / Drillhole 0.24.104 — drape orthofoto lebih tajam
+
+- Orthofoto yang di-drape ke topografi kini menempel tepat di permukaan topo asli (TIN), bukan di grid elevasi kasar —
+  jalan, lereng dan punggungan tampil timbul seperti di Ore Works, tanpa mengatur Resolusi (biarkan **Otomatis**).
+- Relief diberi bayangan matahari dari barat laut. Kuat / lembut mengikuti pilihan **Bayangan (shading) topo & pit** di
+  panel Overlay; pilih *Lampu 3D Plotly (lama)* untuk warna foto tanpa bayangan (cara lama).
+- DB-Ex, Ore Works: tidak berubah.

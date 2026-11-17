@@ -197,14 +197,40 @@ HR.zGrid = function () {
 };
 
 /* elevasi cepat untuk TAMPILAN; null bila di luar jangkauan data (pemanggil boleh jatuh ke topoZ asli) */
-HR.zFast = function (x, y) {
+HR.zFast = function (x, y, res) {
   var R = HR.zGrid(); if (!R) return null;
+  /* BM 0.24.101 / DH 0.24.104: grid 384 sel terlalu kasar untuk topo luas (mis. 5 km -> sel 13 m) sehingga drape ortho
+     kehilangan relief. Bila sel grid lebih kasar dari resolusi mesh, pakai topoZ asli (TIN: ±1 mikrodetik per titik). */
+  if (res && (R.dx > res * 1.05 || R.dy > res * 1.05) && window.topoZ && window.topoZ._tin) return null;
   var fx = (x - R.b.x0) / R.dx, fy = (y - R.b.y0) / R.dy;
   if (!(fx >= 0 && fy >= 0 && fx <= R.nx - 1 && fy <= R.ny - 1)) return null;
   var i0 = Math.min(R.nx - 2, Math.floor(fx)), j0 = Math.min(R.ny - 2, Math.floor(fy)), tx = fx - i0, ty = fy - j0;
   var k = j0 * R.nx + i0, k2 = k + R.nx;
   if (!(R.have[k] && R.have[k + 1] && R.have[k2] && R.have[k2 + 1])) return null;
   return (R.z[k] * (1 - tx) + R.z[k + 1] * tx) * (1 - ty) + (R.z[k2] * (1 - tx) + R.z[k2 + 1] * tx) * ty;
+};
+
+/* ===== bayangan matahari pada drape ortho (BM 0.24.101 / DH 0.24.104) =====
+   Ore Works menempel ortho sebagai tekstur di mesh topo dengan lampu Lambert, jadi lereng & jalan terlihat timbul.
+   Di Plotly (tanpa tekstur) warna per-titik dikali faktor hillshade dari normal grid: f = amb + (1-amb)*max(0, n.L),
+   matahari azimut 315 / elevasi 45 (konvensi hillshade, sama dengan topo). Dinormalkan agar tanah datar = warna asli foto
+   (hanya lereng yang lebih terang / gelap). Mode dari #ovShade: 'kuat' amb 0,55,
+   'lembut' amb 0,75, 'plotly' = tanpa (warna asli + lampu Plotly lama). Lampu Plotly dimatikan agar warna = hasil panggang. */
+HR.orShade = function (Z, C, nx, ny, id, res, setLit) {
+  var e = document.getElementById('ovShade'), md = (e && e.value) || 'kuat', str = function (c, f) { var q = function (v) { v = Math.round(v * f); return v > 255 ? 255 : v; }; return 'rgb(' + q(c[0]) + ',' + q(c[1]) + ',' + q(c[2]) + ')'; };
+  if (md === 'plotly') return C.map(function (c) { return str(c, 1); });
+  var amb = md === 'lembut' ? 0.75 : 0.55, az = 315 * Math.PI / 180, al = 45 * Math.PI / 180, Lx = Math.cos(al) * Math.sin(az), Ly = Math.cos(al) * Math.cos(az), Lz = Math.sin(al), out = new Array(C.length);
+  var f0 = amb + (1 - amb) * Lz, zAt = function (i, j) { if (i < 0 || j < 0 || i >= nx || j >= ny) return null; var v = id[j * nx + i]; return v >= 0 ? Z[v] : null; };
+  for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+    var v = id[j * nx + i]; if (v < 0) continue; var z = Z[v];
+    var zl = zAt(i - 1, j), zr = zAt(i + 1, j), zd = zAt(i, j - 1), zu = zAt(i, j + 1);
+    var gx = ((zr !== null ? zr : z) - (zl !== null ? zl : z)) / (((zr !== null) + (zl !== null)) * res || 1), gy = ((zu !== null ? zu : z) - (zd !== null ? zd : z)) / (((zu !== null) + (zd !== null)) * res || 1);
+    var L = Math.sqrt(gx * gx + gy * gy + 1), d = (-gx * Lx - gy * Ly + Lz) / L;
+    out[v] = str(C[v], (amb + (1 - amb) * (d > 0 ? d : 0)) / f0); /* f0: tanah datar = warna asli foto */
+  }
+  for (var k = 0; k < out.length; k++) if (!out[k]) out[k] = str(C[k], 1);
+  if (setLit) setLit({ ambient: 1, diffuse: 0, specular: 0, fresnel: 0, roughness: 1 });
+  return out;
 };
 
 /* ============================ 5. gambar ortho resolusi penuh untuk Peta 2D ============================ */
