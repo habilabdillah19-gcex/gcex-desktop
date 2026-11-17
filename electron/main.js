@@ -468,10 +468,34 @@ function setZoom(z) {
 }
 function stepZoom(d) { const L = ZOOMS, z = zoomNow(); let i = L.findIndex(v => Math.abs(v - z) < 0.001); if (i < 0) i = L.findIndex(v => v > z) - (d > 0 ? 1 : 0); setZoom(L[Math.max(0, Math.min(L.length - 1, i + d))]); }
 
+// ---------- Ore Works: Tentang & pintasan (theme 'ow') ----------
+function owJs(js) { if (mainWin) mainWin.webContents.executeJavaScript(js).catch(() => {}); }
+const OW_KEYS = 'Tampilan 3D: seret kiri = putar, seret kanan = geser, roda = zoom, klik kanan = menu objek.\n' +
+  'Ctrl+Shift+M  sembunyikan / tampilkan bar menu & toolbar\nCtrl+Z  batalkan (hapus, impor, digitasi)\nF11  layar penuh\n\n' +
+  'Studio Pemodelan (F9 buka / tutup):\n  V pilih / geser titik · D digit string · I sisip titik · X hapus titik · T titik ikat\n' +
+  '  B cabang baru (union ke induk) · C salin string penampang sebelumnya · M ukur · W siluet wireframe\n' +
+  '  Enter tutup string · Esc batal · Backspace mundur satu titik · Ctrl+Z / Ctrl+Y urungkan / ulangi\n' +
+  '  PgUp / PgDn penampang sebelumnya / berikutnya · F pas ke layar · Tab Intip 3D besar (tahan = sementara)\n' +
+  '  Shift tahan = ortho · Alt tahan = tanpa snap';
+async function tentangOW() {
+  const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
+  const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang Ore Works', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan', 'Pintasan keyboard'], defaultId: 0, noLink: true,
+    message: 'Ore Works - pemetaan lapangan, struktur & pemodelan bijih 3D (keluarga GC-Ex)',
+    detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +
+      (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') +
+      '\n\nFitur: data bor & channel, penampang 2D & Studio Pemodelan (digitasi wireframe gaya CAD, cabang + boolean union, siluet wireframe), ' +
+      'pemetaan lapangan & Layout peta, struktur, analisis geokimia, ortofoto (GeoTIFF mode Tajam), georeferensi gambar geofisika, arsip MapInfo, proyek .owproj (SQLite). Berjalan offline.' +
+      '\n\nMemakai komponen open source: three.js (MIT), manifold-3d (Apache-2.0), sql.js / SQLite (MIT / domain publik), geotiff.js (MIT), Electron / Chromium (MIT, BSD).' +
+      '\nLeapfrog, Surpac, GEOVIA, Micromine, MapInfo, AutoCAD, Microsoft Excel / Access dan nama produk lain adalah merek dagang milik pemiliknya; Ore Works tidak berafiliasi dengan mereka.' });
+  if (r.response === 1) openLegal();
+  if (r.response === 2) openLegal('SYARAT_PENGGUNAAN.txt');
+  if (r.response === 3) dialog.showMessageBox(mainWin, { type: 'info', title: 'Pintasan keyboard', message: 'Pintasan keyboard Ore Works', detail: OW_KEYS });
+}
+
 function buildMenu() {
   const tpl = [
     { label: 'File', submenu: [
-      { label: 'Muat ulang GC-Ex', accelerator: 'F5', click: () => reloadSafe() },
+      { label: G.theme === 'ow' ? 'Muat ulang Ore Works' : 'Muat ulang GC-Ex', accelerator: 'F5', click: () => reloadSafe() },
       { type: 'separator' },
       { label: 'Keluar', role: 'quit' }
     ] },
@@ -481,12 +505,19 @@ function buildMenu() {
       { label: 'Perbesar', accelerator: 'CmdOrCtrl+Plus', visible: false, click: () => stepZoom(+1) },
       { label: 'Perkecil', accelerator: 'CmdOrCtrl+-', click: () => stepZoom(-1) },
       { label: 'Ukuran bawaan (' + Math.round(ZOOM_DEF * 100) + '%)', accelerator: 'CmdOrCtrl+0', click: () => setZoom(ZOOM_DEF) },
-      { type: 'separator' }, { label: 'Layar penuh', accelerator: 'F11', type: 'checkbox', checked: !!(mainWin && mainWin.isFullScreen()), click: () => { if (mainWin) mainWin.setFullScreen(!mainWin.isFullScreen()); } }
+      { type: 'separator' }, { label: 'Layar penuh', accelerator: 'F11', type: 'checkbox', checked: !!(mainWin && mainWin.isFullScreen()), click: () => { if (mainWin) mainWin.setFullScreen(!mainWin.isFullScreen()); } },
+      // Ore Works 0.18.1: perintah tampilan di dalam halaman (tanpa akselerator agar tombol F9 / Ctrl+Shift+M tetap ditangani halaman)
+      { type: 'separator', visible: G.theme === 'ow' },
+      { label: 'Sembunyikan / tampilkan bar menu Ore Works   (Ctrl+Shift+M)', visible: G.theme === 'ow', click: () => owJs("(document.getElementById(document.body.classList.contains('barhide')?'barsh':'barhd')||{click(){}}).click()") },
+      { label: 'Studio Pemodelan   (F9)', visible: G.theme === 'ow', click: () => owJs('window.__st&&__st.on?stdoTutup():(window.stdoBuka&&stdoBuka())') },
+      { label: 'Panel Data (kanan)', visible: G.theme === 'ow', click: () => owJs("(document.getElementById('rptg')||{click(){}}).click()") }
     ] },
     { label: 'Bantuan', submenu: [
       { label: 'Buka folder log', click: () => shell.openPath(logDir) },
       { label: 'Panduan AI lokal (Ollama)', visible: G.theme === 'core', click: () => { const f = path.join(legalDir(), '..', 'docs', 'PANDUAN_CORE.html'); shell.openPath(fs.existsSync(f) ? f : legalDir()); } },
-      { label: 'Hapus cache block model besar', visible: G.theme !== 'core', click: async () => {
+      { label: 'Cara pakai Ore Works', visible: G.theme === 'ow', click: () => owJs("(()=>{const b=[...document.querySelectorAll('#mbar .mbb')].find(x=>/Bantuan/.test(x.textContent));if(b)b.click();})()") },
+      { label: 'Pintasan keyboard Ore Works', visible: G.theme === 'ow', click: () => dialog.showMessageBox(mainWin, { type: 'info', title: 'Pintasan keyboard', message: 'Pintasan keyboard Ore Works', detail: OW_KEYS }) },
+      { label: 'Hapus cache block model besar', visible: G.theme !== 'core' && G.theme !== 'ow', click: async () => {
           // 0.24.82: folder cache bisa dipindah (Import block model > file besar) -> tampilkan folder & ukuran yang sebenarnya
           let info = { root: path.join(app.getPath('userData'), 'cache', 'mdl'), used: null };
           try { info = await (await fetch(backend.url + '/mdl/cache')).json(); } catch (e) { /* backend belum siap: pakai folder bawaan */ }
@@ -500,8 +531,9 @@ function buildMenu() {
       { type: 'separator' },
       { label: 'Syarat penggunaan & penafian', click: () => openLegal('SYARAT_PENGGUNAAN.txt') },
       { label: 'Lisensi pihak ketiga (open source) & merek dagang', click: () => openLegal() },
-      { label: 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
-      { label: 'Tentang GC-Ex', click: async () => {
+      { label: G.theme === 'ow' ? 'Lisensi Ore Works…' : 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
+      { label: G.theme === 'ow' ? 'Tentang Ore Works' : 'Tentang GC-Ex', click: async () => {
+          if (G.theme === 'ow') return tentangOW();
           const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
           const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true, message: APP_NAME + (G.theme === 'core' ? ' - Database Excellence (keluarga GC-Ex)' : ' - Grade Control Excellence'),
             detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +

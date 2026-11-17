@@ -5513,7 +5513,7 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   sekali. Agar area 3D tidak berubah ukuran, pakai tombol **Lepas Properti menjadi jendela** di kepala panel Properti.
 - DB-Ex, Ore Works: tidak berubah.
 
-## 268. Ore Works 0.17.2 — simpan / buka .owproj di latar, lapisan Intip 3D
+## 269. Ore Works 0.17.2 — simpan / buka .owproj di latar, lapisan Intip 3D
 
 - Menyusun dan membongkar .owproj kini berjalan di **Web Worker** (latar): selama menyimpan / membuka proyek besar,
   tampilan tetap bisa digeser dan diputar. Uji simulasi (data fiktif 2.000 lubang, 300 ribu baris assay):
@@ -5527,14 +5527,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Intip 3D → ☰**: centang lapisan yang tampil di Intip 3D saja (mis. *Tanpa lubang bor*, hanya wireframe).
   Penampang Studio dan tampilan 3D utama tidak berubah; pilihan diingat.
 
-## 269. Ore Works 0.17.3 — pita Assay di log geologi penampang
+## 270. Ore Works 0.17.3 — pita Assay di log geologi penampang
 
 - Bilah **Log geologi** (Penampang 2D / Studio): pilihan **kiri** dan **kanan** kini memuat **Assay: <unsur aktif>** —
   pita diwarnai skala kadar yang sama dengan tampilan 3D, centang *kode* menulis nilai kadarnya, legenda menampilkan
   skala rendah–tinggi. Unsur mengikuti pilihan unsur aktif di toolbar.
 - Bawaan saat data dibuka: kiri **Litologi**, kanan **Assay**. Alterasi tetap bisa dipilih di salah satu sisi.
 
-## 270. Ore Works 0.18.0 — ortofoto GeoTIFF mode Tajam (ber-tile)
+## 271. Ore Works 0.18.0 — ortofoto GeoTIFF mode Tajam (ber-tile)
 
 - GeoTIFF dibaca turun-resolusi ke 4.096 px sebagai tekstur dasar (mis. ortofoto 10 cm seluas 2 km tampil ± 50 cm).
 - Di daftar **Ortofoto**, tiap GeoTIFF punya pilihan **Kualitas**:
@@ -5545,3 +5545,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Berkas GeoTIFF asli tidak ikut disimpan di proyek (terlalu besar). Setelah proyek dibuka ulang, klik
   **Sambungkan GeoTIFF asli** pada ortofoto bermode Tajam.
 - JPG / PNG + world file tetap seperti sebelumnya (maks 8.192 px).
+
+## 272. Ore Works 0.18.1 — menu Tampilan / Bantuan / Tentang, tombol layar penuh
+
+- Menu aplikasi desktop (kiri atas) untuk Ore Works:
+  - **File → Muat ulang Ore Works**.
+  - **Tampilan**: ukuran tampilan, **Layar penuh (F11)**, *Sembunyikan / tampilkan bar menu Ore Works*, *Studio Pemodelan*,
+    *Panel Data (kanan)*.
+  - **Bantuan**: *Cara pakai Ore Works*, *Pintasan keyboard Ore Works*, folder log, syarat penggunaan, lisensi pihak ketiga,
+    **Tentang Ore Works** (versi, fitur, komponen open source: three.js, manifold-3d, sql.js / SQLite, geotiff.js, Electron).
+    Butir khusus Block Model (cache .mdl) tidak lagi tampil di Ore Works.
+- Toolbar Ore Works: tombol **Layar penuh** dan **Studio Pemodelan** (di sebelah tombol gambar 3D).
+- Panel *Cara pakai* diperbarui (Studio, ortofoto Tajam, georeferensi, Arsip GIS, .owproj).
+- Block Model 0.24.105, Drillhole 0.24.108, DB-Ex 0.46.9: hanya ikut naik versi karena berkas menu aplikasi desktop
+  bersama berubah (perubahan menu hanya aktif di Ore Works).

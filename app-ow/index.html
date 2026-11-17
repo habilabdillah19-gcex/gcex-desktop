@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.18.0';</script>
+<script>window.GCEX_VER='0.18.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -354,8 +354,10 @@ body.rp #rpan{display:flex}
 4a. <b>Channel / trench</b> dalam tabel Collar / Survey / Assay / Geologi diimpor lewat <b>Data bor</b> seperti lubang bor; channel dikenali otomatis (kolom Type, atau survey hampir datar) dan masuk ke Pemetaan sebagai Channel sampling. Perubahan channel di Pemetaan langsung ikut ke analisis.<br>
 5. Semua daftar data ada di panel <b>&#9783; Data</b> (kanan): Bor, Permukaan, Wireframe, Pemetaan, Titik struktur, Bidang struktur.<br>
 6. <b>Analisis</b>: Dashboard geokimia, domain, long section, profil, envelope, interpretasi struktur, potensi terbuka, peta level.<br>
-7. <b>File → Simpan project</b> agar semua impor dan pengaturan tampilan bisa dibuka lagi (.gcv.json).</div>
-<div class="note" style="margin-top:8px">Sumber lubang dibaca dari kolom Collar <b>Hole_Purpose</b> / <b>Type</b> (GC / Exploration / Channel); bila tidak ada, awalan PDH/MDH/DDH/EXP dianggap eksplorasi dan survey hampir datar dianggap channel. Gerak 3D: seret kiri = putar, seret kanan = geser, roda = zoom, klik kanan = menu objek. <b>Ctrl+Z</b> membatalkan hapus maupun tambah (impor DXF, digitasi).</div>
+7. <b>Studio Pemodelan</b> (tombol di toolbar, &#9974; Studio di Penampang 2D, atau <b>F9</b>): digitasi string wireframe gaya CAD, layar penuh, alat V / D / I / X / T / B (cabang + union) / C (salin penampang sebelumnya) / M (ukur), snap kontak bor / titik / grid / ortho, siluet wireframe impor (W), Intip 3D (Tab), mode vertikal atau level. Log geologi penampang: kiri / kanan bisa Litologi, Alterasi atau Assay unsur aktif.<br>
+8. <b>Ortofoto</b>: JPG / PNG + world file atau GeoTIFF. GeoTIFF besar: pilih Kualitas <b>Tajam (ber-tile)</b> agar zoom dekat setajam berkas aslinya. <b>Georeferensi gambar</b> (Permukaan) untuk peta / penampang geofisika PNG / JPG. <b>Arsip GIS</b> (Pemetaan) membaca MapInfo .TAB.<br>
+9. <b>File → Simpan project</b> menyimpan semua impor dan pengaturan sebagai <b>.owproj</b> (SQLite; tabel bor bisa dibuka DB Browser / Python / Access). File lama .gcv.json tetap bisa dibuka; tombol <b>Simpan .gcv.json</b> untuk format lama.</div>
+<div class="note" style="margin-top:8px">Sumber lubang dibaca dari kolom Collar <b>Hole_Purpose</b> / <b>Type</b> (GC / Exploration / Channel); bila tidak ada, awalan PDH/MDH/DDH/EXP dianggap eksplorasi dan survey hampir datar dianggap channel. Gerak 3D: seret kiri = putar, seret kanan = geser, roda = zoom, klik kanan = menu objek. <b>Ctrl+Z</b> membatalkan hapus maupun tambah (impor DXF, digitasi). <b>Ctrl+Shift+M</b> menyembunyikan bar menu & toolbar; tombol layar penuh ada di toolbar (F11 di aplikasi desktop).</div>
 </div>
 </div>
 <div id="split" title="Seret untuk mengubah lebar panel · klik ganda untuk menyembunyikan"><b></b></div>
@@ -7056,6 +7058,24 @@ function tambah(){const el=document.getElementById('orl');if(!el)return;const ro
    if(o.mode==='tajam'){if(!o.gt)t+=' · berkas GeoTIFF asli belum tersambung (perlu setelah proyek dibuka ulang)';else if(o.tl&&o.tl.Lmax<0)t+=' · sudah resolusi penuh, tile tidak diperlukan';else{let n=0;if(o.tl&&o.tl.tiles)for(const T of o.tl.tiles.values())if(T.me.visible)n++;t+=' · zoom dekat hingga '+cm(asli)+' · '+n+' tile aktif';}}
    else if(isTif&&asli<tamp*0.7)t+=' · pilih Tajam agar zoom dekat setajam aslinya';q.textContent=t;};d._info=info;info();});}
 window.__ortInfo=()=>{const el=document.getElementById('orl');if(!el)return;el.querySelectorAll('.fl').forEach(d=>{if(d._info)d._info();});};
+})();
+
+
+/* ================= Ore Works 0.18.1: tombol Layar penuh & Studio di toolbar =================
+   Pemilik 17 Nov 2026: "kita sudah pasang tombol model fullscreen kan?" — sebelumnya hanya di Studio (F11) dan menu Tampilan
+   aplikasi desktop. Kini juga tombol di toolbar utama (aplikasi desktop: layar penuh jendela; browser: Fullscreen API) dan
+   tombol Studio Pemodelan (F9). */
+(function(){
+const cam=[...document.querySelectorAll('#otb button.tb')].find(b=>/viewport 3D/.test(b.title||''));if(!cam)return;
+const mk=(id,tip,svg)=>{const b=document.createElement('button');b.className='tb';b.id=id;b.title=tip;b.setAttribute('aria-label',tip);b.innerHTML='<svg viewBox="0 0 18 18">'+svg+'</svg>';return b;};
+const fs=mk('otbfs','Layar penuh (F11)','<path d="M2.5 6.5v-4h4M15.5 6.5v-4h-4M2.5 11.5v4h4M15.5 11.5v4h-4" stroke="currentColor" stroke-width="1.6" fill="none"/>');
+const st=mk('otbst','Studio Pemodelan (F9): digitasi wireframe gaya CAD','<rect x="2.5" y="2.5" width="13" height="13" rx="1.5" fill="#eef4ff" stroke="currentColor"/><path d="M5 13l2-5 3 3 3-6" stroke="#d81b60" stroke-width="1.6" fill="none"/><circle cx="5" cy="13" r="1.2" fill="#fff" stroke="#d81b60"/><circle cx="13" cy="5" r="1.2" fill="#fff" stroke="#d81b60"/>');
+cam.after(fs);fs.after(st);
+const desk=()=>window.gcexDesktop&&typeof gcexDesktop.fullscreen==='function';
+fs.onclick=async()=>{try{if(desk()){await gcexDesktop.fullscreen(null);}else if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(e){if(window.sbToast)sbToast('Layar penuh tidak tersedia di peramban ini.');}setTimeout(tanda,300);};
+function tanda(){const on=!!document.fullscreenElement||(desk()&&Math.abs(innerHeight-screen.height)<3&&Math.abs(innerWidth-screen.width)<3);fs.classList.toggle('on',on);fs.title=on?'Keluar layar penuh (F11)':'Layar penuh (F11)';}
+window.addEventListener('resize',()=>setTimeout(tanda,100));document.addEventListener('fullscreenchange',tanda);tanda();
+st.onclick=()=>{if(window.__st&&__st.on){stdoTutup();return;}if(typeof SC!=='undefined'&&!SC.open&&typeof scOpen==='function')scOpen(true);if(window.stdoBuka)stdoBuka();};
 })();
 
 </script>
