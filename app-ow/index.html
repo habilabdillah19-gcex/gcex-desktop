@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.17.2';</script>
+<script>window.GCEX_VER='0.17.3';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5531,9 +5531,11 @@ const LG=window.__lg={segs:[],pal:{}};
 {const c=document.createElement('style');c.textContent='#lgbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:3px 6px;border-bottom:1px solid #e3e6ec;font-size:12px;background:#f6f8fb}#lgbar select{max-width:140px}#lgbar label{display:flex;align-items:center;gap:3px;margin:0}';document.head.appendChild(c);}
 function cols(){const gs=[];for(const d of DS)if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);return gs;}
 let auto=true;
-function opts(){const gs=cols(),fill=(id,cat,re)=>{const s=g(id),cur=s.value;s.innerHTML='<option value="">(tidak ada)</option>'+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
-  let v=gs.includes(cur)?cur:'';if(auto&&!v)v=(window.gcatCol&&gcatCol(cat,gs))||gs.find(c=>re.test(c))||'';s.value=v;};
- fill('lgl','lith',/^(lith|litho|litologi|batuan|rock)/i);fill('lgr','alt',/^(alt|alter|ubahan)/i);g('lgbar').style.display=gs.length?'':'none';}
+const ADA_AS=()=>{try{return asActive().size>0;}catch(e){return false;}},NM_AS=()=>{try{return typeof UNS==='function'?UNS():'Au';}catch(e){return 'Au';}};
+function opts(){const gs=cols(),as=ADA_AS(),fill=(id,cat,re,defAs)=>{const s=g(id),cur=s.value;s.innerHTML='<option value="">(tidak ada)</option>'+(as?'<option value="@as">Assay: '+esc(NM_AS())+' (unsur aktif)</option>':'')+gs.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+  let v=gs.includes(cur)||(cur==='@as'&&as)?cur:'';if(auto&&!v)v=defAs&&as?'@as':((window.gcatCol&&gcatCol(cat,gs))||gs.find(c=>re.test(c))||'');s.value=v;};
+ fill('lgl','lith',/^(lith|litho|litologi|batuan|rock)/i,false);fill('lgr','alt',/^(alt|alter|ubahan)/i,true);g('lgbar').style.display=gs.length||as?'':'none';}
+function nilaiAs(AS,id,d){const iv=AS.get(id);if(!iv)return NaN;const el=NM_AS();for(const q of iv)if(q.f<=d&&d<q.t){if(!q.v)return NaN;let k=el;if(!(k in q.v)){k=Object.keys(q.v).find(c=>el==='Au'?/^au([_\s(]|$)/i.test(c):c===el);}const x=k?parseFloat(String(q.v[k]).replace(',','.')):NaN;return isFinite(x)?x:NaN;}return NaN;}
 for(const id of ['lgl','lgr'])g(id).addEventListener('change',()=>{auto=false;if(window.SCR)SCR();});g('lgk').onchange=()=>{if(window.SCR)SCR();};
 function pal(GA,c,off){off=off||0;const cnt=new Map();for(const iv of GA.values())for(const q of iv){const v=String(q.v[c]||'').trim();if(v)cnt.set(v,(cnt.get(v)||0)+(q.t-q.f));}
  const C=new Map();[...cnt.entries()].sort((a,b)=>b[1]-a[1]).forEach(([v],i)=>C.set(v,i<GPAL.length?GPAL[(i+off)%GPAL.length]:[.55,.55,.55]));return C;}
@@ -5542,19 +5544,19 @@ function code(GA,id,d,c){const iv=GA.get(id);if(!iv)return '';for(const q of iv)
 function ivAt(GA,id,d){const iv=GA.get(id);if(!iv)return null;for(const q of iv)if(q.f<=d&&d<q.t)return q;return null;}
 function draw(){LG.segs=[];const q=SC.q,V=SC.v;if(!q||!V||!SC.open)return;const cl=g('lgl').value,cr=g('lgr').value;if(!cl&&!cr){g('lgn').textContent='';return;}
  const cv=g('scc'),R=cv.getBoundingClientRect(),w=R.width,h=R.height,ve=SC.ve||1,X=p=>w/2+20+(p[0]-V.cx)*V.s,Y=p=>h/2-12-(p[1]-V.cy)*V.s*ve,x=cv.getContext('2d'),dpr=window.devicePixelRatio||1;x.setTransform(dpr,0,0,dpr,0,0);
- const GA=geoActive(),PL=cl?pal(GA,cl):null,PR=cr?pal(GA,cr,cr===cl?0:5):null,LH=q.m==='v'&&q.len>0?q.len/2:Infinity,used=[],seen={l:new Map(),r:new Map()},last=new Map();let n=0;
+ const GA=geoActive(),AS=(cl==='@as'||cr==='@as')?asActive():null,PL=cl&&cl!=='@as'?pal(GA,cl):null,PR=cr&&cr!=='@as'?pal(GA,cr,cr===cl?0:5):null,LH=q.m==='v'&&q.len>0?q.len/2:Infinity,used=[],seen={l:new Map(),r:new Map()},last=new Map();let n=0;
  const W2=Math.max(3,Math.min(7,V.s*0.9)),GAP=2.5;
  for(const s of SEGS){if(!L[s[4]].visible)continue;const A=[s[0][0]/10+O[0],s[0][1]/10+O[1],s[0][2]/10+O[2]],B=[s[1][0]/10+O[0],s[1][1]/10+O[1],s[1][2]/10+O[2]],da=scDist(q,...A),db=scDist(q,...B);
   let t0=0,t1=1;if(da===db){if(Math.abs(da)>q.t)continue;}else{let ta=(-q.t-da)/(db-da),tb=(q.t-da)/(db-da);if(ta>tb)[ta,tb]=[tb,ta];t0=Math.max(0,ta);t1=Math.min(1,tb);if(t0>=t1)continue;}
   const P=t=>scProj(q,A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t);let p0=P(t0),p1=P(t1);if(LH<Infinity&&((p0[0]<-LH&&p1[0]<-LH)||(p0[0]>LH&&p1[0]>LH)))continue;
   const d0=s[6]+(s[7]-s[6])*t0,d1=s[6]+(s[7]-s[6])*t1,dm=(d0+d1)/2;let a=[X(p0),Y(p0)],b=[X(p1),Y(p1)];if(a[1]>b[1]){const t=a;a=b;b=t;}
   const L2=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L2<0.3)continue;const nx=-(b[1]-a[1])/L2,ny=(b[0]-a[0])/L2;n++;LG.segs.push([a,b,s[3],d0,d1]);
-  for(const [col,Pp,sg,k] of [[cl,PL,-1,'l'],[cr,PR,1,'r']]){if(!col)continue;const v=code(GA,s[3],dm,col),c=v?(Pp.get(v)||[.55,.55,.55]):[.88,.88,.88],o=sg*(GAP+W2/2+1.2);
-   x.strokeStyle=rgb(c);x.lineWidth=W2;x.lineCap='butt';x.beginPath();x.moveTo(a[0]+nx*o,a[1]+ny*o);x.lineTo(b[0]+nx*o,b[1]+ny*o);x.stroke();if(v)seen[k].set(v,c);
+  for(const [col,Pp,sg,k] of [[cl,PL,-1,'l'],[cr,PR,1,'r']]){if(!col)continue;let v,c;if(col==='@as'){const a2=nilaiAs(AS,s[3],dm);v=isFinite(a2)?UFMT(a2):'';c=isFinite(a2)?UCOL(a2):[.88,.88,.88];}else{v=code(GA,s[3],dm,col);c=v?(Pp.get(v)||[.55,.55,.55]):[.88,.88,.88];}const o=sg*(GAP+W2/2+1.2);
+   x.strokeStyle=rgb(c);x.lineWidth=W2;x.lineCap='butt';x.beginPath();x.moveTo(a[0]+nx*o,a[1]+ny*o);x.lineTo(b[0]+nx*o,b[1]+ny*o);x.stroke();if(v&&col!=='@as')seen[k].set(v,c);
    if(g('lgk').checked&&v){const key=s[3]+'|'+k,pv=last.get(key);if(pv!==v){last.set(key,v);const tx=v.length>10?v.slice(0,9)+'…':v;x.font='10px Inter,Arial';const tw=x.measureText(tx).width,lx=sg<0?a[0]+nx*o-W2-tw-2:a[0]+nx*o+W2+2,ly=a[1]+4;
      if(!used.some(r=>lx<r[0]+r[2]&&lx+tw>r[0]&&ly-9<r[1]&&ly>r[1]-9)){used.push([lx,ly,tw]);x.fillStyle='rgba(255,255,255,.8)';x.fillRect(lx-1,ly-9,tw+2,11);x.fillStyle='#333';x.fillText(tx,lx,ly);}}}}}
  /* legenda kode */
- const rows=[];if(cl)rows.push([cl,seen.l]);if(cr)rows.push([cr,seen.r]);x.font='10px Inter,Arial';let y=h-60-rows.length*14;
+ const rows=[],skala=()=>{const S=new Map();try{const c=UCL();[c.lo,Math.sqrt(c.lo*c.hi),c.hi].forEach((v,i)=>S.set((i===0?'≤ ':i===2?'≥ ':'')+UFMT(v),UCOL(v)));}catch(e){}return S;};if(cl)rows.push([cl==='@as'?NM_AS():cl,cl==='@as'?skala():seen.l]);if(cr)rows.push([cr==='@as'?NM_AS():cr,cr==='@as'?skala():seen.r]);x.font='10px Inter,Arial';let y=h-60-rows.length*14;
  for(const [nm,S] of rows){const it=[...S.entries()].slice(0,10);if(!it.length)continue;let xx=8;x.fillStyle='rgba(255,255,255,.9)';let tw=x.measureText(nm+':').width+10;for(const [v] of it)tw+=x.measureText(v).width+18;x.fillRect(4,y-10,Math.min(tw,w*0.7),14);
   x.fillStyle='#1f2d6b';x.fillText(nm+':',xx,y);xx+=x.measureText(nm+':').width+6;for(const [v,c] of it){if(xx>w*0.7-20)break;x.fillStyle=rgb(c);x.fillRect(xx,y-8,9,9);xx+=11;x.fillStyle='#333';x.fillText(v,xx,y);xx+=x.measureText(v).width+7;}y+=14;}
  g('lgn').textContent=n?'':(GA.size?'tidak ada lubang ber-geologi di slab ini':'');}

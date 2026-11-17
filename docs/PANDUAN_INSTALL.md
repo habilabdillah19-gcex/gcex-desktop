@@ -5526,3 +5526,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Total waktu simpan .owproj lebih panjang (± 4 dtk, menulis tabel bor + kompresi) tetapi berjalan di latar.
 - **Intip 3D → ☰**: centang lapisan yang tampil di Intip 3D saja (mis. *Tanpa lubang bor*, hanya wireframe).
   Penampang Studio dan tampilan 3D utama tidak berubah; pilihan diingat.
+
+## 269. Ore Works 0.17.3 — pita Assay di log geologi penampang
+
+- Bilah **Log geologi** (Penampang 2D / Studio): pilihan **kiri** dan **kanan** kini memuat **Assay: <unsur aktif>** —
+  pita diwarnai skala kadar yang sama dengan tampilan 3D, centang *kode* menulis nilai kadarnya, legenda menampilkan
+  skala rendah–tinggi. Unsur mengikuti pilihan unsur aktif di toolbar.
+- Bawaan saat data dibuka: kiri **Litologi**, kanan **Assay**. Alterasi tetap bisa dipilih di salah satu sisi.
