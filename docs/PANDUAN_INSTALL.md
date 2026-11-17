@@ -5366,3 +5366,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Ukuran, gaya, ambang ≥ dan desimal mengikuti Data bor → Tampilan lubang → Label kadar interval.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 258. Ore Works 0.13.10 — zoom & skala peta level
+
+- Analisis → Peta: **gulir mouse** = zoom di posisi kursor, **seret** = geser, **klik ganda** = pas ke data; atau tombol
+  **+ / − / ⤢** di pojok kiri atas peta.
+- Pilihan **Skala** (otomatis, 1:500 … 1:25.000) di samping kertas: PNG/PDF digambar tepat pada skala itu.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+

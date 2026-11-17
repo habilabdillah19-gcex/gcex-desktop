@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.9';</script>
+<script>window.GCEX_VER='0.13.10';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5774,11 +5774,19 @@ body.rp-lepas #rpan .rph{cursor:move}body.rp-lepas #rpgr{display:none}body.rp-le
  const KRT={a4l:[1123,794],a4p:[794,1123],a3l:[1587,1123],a3p:[1123,1587]};
  const ambil=K=>{const kr=KRT[g('ptkrt').value]||KRT.a4l,cv=g('ogc'),r=cv.getBoundingClientRect(),pz=PM.v?Object.assign({},PM.v):null,h0=window.__ogH,w0=cv.style.width;
   let fit=true;if(pz&&PM.c&&!PM.c.empty){const c=PM.c,s0=Math.min((r.width-20)/(c.x1-c.x0),(r.height-20)/(c.y1-c.y0));fit=Math.abs(pz.s-s0)<1e-9*Math.max(1,s0)&&Math.abs(pz.cx-(c.x0+c.x1)/2)<1e-6&&Math.abs(pz.cy-(c.y0+c.y1)/2)<1e-6;}
-  window.__ogK=K;window.__ogH=kr[1];cv.style.width=kr[0]+'px';cv.style.maxWidth='none';PM.v=fit||!pz?null:{cx:pz.cx,cy:pz.cy,s:pz.s*Math.min(kr[0]/r.width,kr[1]/r.height)};let url='';
+  window.__ogK=K;window.__ogH=kr[1];cv.style.width=kr[0]+'px';cv.style.maxWidth='none';PM.v=fit||!pz?null:{cx:pz.cx,cy:pz.cy,s:pz.s*Math.min(kr[0]/r.width,kr[1]/r.height)};
+  const NS=+g('ptskl').value;if(NS>0&&PM.c&&!PM.c.empty){const c=PM.c;PM.v={cx:pz&&!fit?pz.cx:(c.x0+c.x1)/2,cy:pz&&!fit?pz.cy:(c.y0+c.y1)/2,s:96/(0.0254*NS)};}let url='';
   try{ogDraw();url=cv.toDataURL('image/png');}finally{window.__ogK=1;window.__ogH=h0;cv.style.width=w0;cv.style.maxWidth='';PM.v=pz;ogDraw();}return url;};
  const b1=document.createElement('button');b1.id='ptpng';b1.textContent='⭳ PNG';b1.title='Simpan peta sebagai gambar PNG seukuran kertas terpilih';b1.style.margin='0 0 0 4px';
  const b2=document.createElement('button');b2.id='ptpdf';b2.textContent='⎙ PDF';b2.title='Cetak / simpan peta sebagai PDF (kertas terpilih)';b2.style.margin='0 0 0 4px';
- const sk=document.createElement('select');sk.id='ptkrt';sk.title='Ukuran & orientasi kertas peta yang disimpan';sk.style.margin='0 0 0 6px';sk.innerHTML='<option value="a4l">A4 lanskap</option><option value="a4p">A4 potret</option><option value="a3l">A3 lanskap</option><option value="a3p">A3 potret</option>';try{sk.value=localStorage.getItem('ow.ptkrt')||'a4l';}catch(e){}sk.onchange=()=>{try{localStorage.setItem('ow.ptkrt',sk.value);}catch(e){}};go.after(sk,b1,b2);
+ const sk=document.createElement('select');sk.id='ptkrt';sk.title='Ukuran & orientasi kertas peta yang disimpan';sk.style.margin='0 0 0 6px';sk.innerHTML='<option value="a4l">A4 lanskap</option><option value="a4p">A4 potret</option><option value="a3l">A3 lanskap</option><option value="a3p">A3 potret</option>';try{sk.value=localStorage.getItem('ow.ptkrt')||'a4l';}catch(e){}sk.onchange=()=>{try{localStorage.setItem('ow.ptkrt',sk.value);}catch(e){}};const sl=document.createElement('select');sl.id='ptskl';sl.title='Skala peta di kertas (PNG/PDF). Otomatis = pas ke data / tampilan.';sl.style.margin='0 0 0 4px';sl.innerHTML='<option value="0">Skala otomatis</option>'+[500,1000,2000,2500,5000,10000,25000].map(n=>'<option value="'+n+'">1 : '+n.toLocaleString('id-ID')+'</option>').join('');try{sl.value=localStorage.getItem('ow.ptskl')||'0';}catch(e){}sl.onchange=()=>{try{localStorage.setItem('ow.ptskl',sl.value);}catch(e){}};go.after(sk,sl,b1,b2);
+ /* 0.13.10 (pemilik: "pengaturan zoomingnya gimana?"): tombol zoom di pojok peta + petunjuk. Gulir = zoom di kursor,
+    seret = geser, klik ganda = pas (sudah ada sejak 0.4) — kini juga + / − / ⤢ dan teks petunjuk. */
+ {const cv=g('ogc'),box=cv.parentNode,z=document.createElement('div');z.id='ptzm';z.style.cssText='position:absolute;left:8px;top:8px;display:none;flex-direction:column;gap:3px;z-index:3';
+  z.innerHTML='<button title="Perbesar (atau gulir mouse ke atas)" style="width:28px;height:28px;padding:0;font:700 16px Arial">+</button><button title="Perkecil (atau gulir mouse ke bawah)" style="width:28px;height:28px;padding:0;font:700 16px Arial">&minus;</button><button title="Pas ke data (atau klik ganda peta)" style="width:28px;height:28px;padding:0;font:14px Arial">&#10530;</button>';
+  const h=document.createElement('div');h.id='ptzh';h.style.cssText='position:absolute;left:44px;top:10px;display:none;z-index:3;font:11px Inter,Arial;color:#3d4b5c;background:#ffffffd9;border:1px solid #c9d3e1;border-radius:4px;padding:2px 6px;pointer-events:none';h.textContent='Gulir = zoom · seret = geser · klik ganda = pas';
+  box.appendChild(z);box.appendChild(h);const zb=z.querySelectorAll('button'),zm=k=>{if(!PM.v)return;PM.v.s*=k;ptDraw();};zb[0].onclick=()=>zm(1.25);zb[1].onclick=()=>zm(1/1.25);zb[2].onclick=()=>{PM.v=null;ptDraw();};
+  const _od=ogDraw;ogDraw=function(){const r=_od.apply(this,arguments);const v=OG.tab==='pt'&&g('ogc').style.display!=='none';z.style.display=v?'flex':'none';h.style.display=v?'block':'none';return r;};}
  const siap=()=>{if(!(OG.tab==='pt'&&PM.c&&!PM.c.empty)){(window.sbToast||alert)('Klik ▶ Buat peta dulu.');return false;}return true;};
  b1.onclick=()=>{if(!siap())return;const a=document.createElement('a');a.href=ambil(3);a.download=nama()+'.png';document.body.appendChild(a);a.click();a.remove();};
  b2.onclick=()=>{if(!siap())return;const url=ambil(3),f=document.createElement('iframe');Object.assign(f.style,{position:'fixed',right:0,bottom:0,width:0,height:0,border:0});document.body.appendChild(f);
