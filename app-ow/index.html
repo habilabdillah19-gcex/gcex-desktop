@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.6';</script>
+<script>window.GCEX_VER='0.13.7';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5763,14 +5763,21 @@ body.rp-lepas #rpan .rph{cursor:move}body.rp-lepas #rpgr{display:none}body.rp-le
 (function(){const g=id=>document.getElementById(id),go=g('ptgo');if(!go||g('ptpng'))return;
  const _cv=ogCv;ogCv=function(){const K=window.__ogK||1;if(K===1)return _cv.apply(this,arguments);const c=g('ogc'),r=c.getBoundingClientRect(),d=(window.devicePixelRatio||1)*K;c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.fillStyle='#fff';x.fillRect(0,0,r.width,r.height);return [x,r.width,r.height];};
  const nama=()=>{let rl='';try{rl='_RL'+g('ptrl').value;}catch(e){}let u='';try{u='_'+UNS();}catch(e){}return ('Peta'+rl+u).replace(/[^\w.-]+/g,'_');};
- const ambil=K=>{const pz=PM.v?Object.assign({},PM.v):null;window.__ogK=K;let url='';try{ogDraw();url=g('ogc').toDataURL('image/png');}finally{window.__ogK=1;if(pz)PM.v=pz;ogDraw();}return url;};
- const b1=document.createElement('button');b1.id='ptpng';b1.textContent='⭳ PNG';b1.title='Simpan peta sebagai gambar PNG (resolusi 3× layar)';b1.style.margin='0 0 0 4px';
- const b2=document.createElement('button');b2.id='ptpdf';b2.textContent='⎙ PDF';b2.title='Cetak / simpan peta sebagai PDF (A4 lanskap)';b2.style.margin='0 0 0 4px';
- go.after(b1,b2);
+ /* 0.13.7 (pemilik 17 Nov 2026: "peta yang dihasilkan gepeng, harusnya normal landscape atau potret, sama seperti fitur
+    pemetaan"): peta digambar ulang di kanvas berukuran kertas (A4/A3 lanskap/potret, 96 dpi CSS × K), bukan ukuran jendela.
+    Belum di-zoom/geser = pas ke data; sudah di-zoom = pusat sama, cakupan jendela termuat utuh. */
+ const KRT={a4l:[1123,794],a4p:[794,1123],a3l:[1587,1123],a3p:[1123,1587]};
+ const ambil=K=>{const kr=KRT[g('ptkrt').value]||KRT.a4l,cv=g('ogc'),r=cv.getBoundingClientRect(),pz=PM.v?Object.assign({},PM.v):null,h0=window.__ogH,w0=cv.style.width;
+  let fit=true;if(pz&&PM.c&&!PM.c.empty){const c=PM.c,s0=Math.min((r.width-20)/(c.x1-c.x0),(r.height-20)/(c.y1-c.y0));fit=Math.abs(pz.s-s0)<1e-9*Math.max(1,s0)&&Math.abs(pz.cx-(c.x0+c.x1)/2)<1e-6&&Math.abs(pz.cy-(c.y0+c.y1)/2)<1e-6;}
+  window.__ogK=K;window.__ogH=kr[1];cv.style.width=kr[0]+'px';cv.style.maxWidth='none';PM.v=fit||!pz?null:{cx:pz.cx,cy:pz.cy,s:pz.s*Math.min(kr[0]/r.width,kr[1]/r.height)};let url='';
+  try{ogDraw();url=cv.toDataURL('image/png');}finally{window.__ogK=1;window.__ogH=h0;cv.style.width=w0;cv.style.maxWidth='';PM.v=pz;ogDraw();}return url;};
+ const b1=document.createElement('button');b1.id='ptpng';b1.textContent='⭳ PNG';b1.title='Simpan peta sebagai gambar PNG seukuran kertas terpilih';b1.style.margin='0 0 0 4px';
+ const b2=document.createElement('button');b2.id='ptpdf';b2.textContent='⎙ PDF';b2.title='Cetak / simpan peta sebagai PDF (kertas terpilih)';b2.style.margin='0 0 0 4px';
+ const sk=document.createElement('select');sk.id='ptkrt';sk.title='Ukuran & orientasi kertas peta yang disimpan';sk.style.margin='0 0 0 6px';sk.innerHTML='<option value="a4l">A4 lanskap</option><option value="a4p">A4 potret</option><option value="a3l">A3 lanskap</option><option value="a3p">A3 potret</option>';try{sk.value=localStorage.getItem('ow.ptkrt')||'a4l';}catch(e){}sk.onchange=()=>{try{localStorage.setItem('ow.ptkrt',sk.value);}catch(e){}};go.after(sk,b1,b2);
  const siap=()=>{if(!(OG.tab==='pt'&&PM.c&&!PM.c.empty)){(window.sbToast||alert)('Klik ▶ Buat peta dulu.');return false;}return true;};
  b1.onclick=()=>{if(!siap())return;const a=document.createElement('a');a.href=ambil(3);a.download=nama()+'.png';document.body.appendChild(a);a.click();a.remove();};
  b2.onclick=()=>{if(!siap())return;const url=ambil(3),f=document.createElement('iframe');Object.assign(f.style,{position:'fixed',right:0,bottom:0,width:0,height:0,border:0});document.body.appendChild(f);
-  const d=f.contentDocument;d.open();d.write('<!DOCTYPE html><html><head><title>'+nama()+'</title><style>@page{size:A4 landscape;margin:8mm}html,body{margin:0}img{display:block;max-width:100%;max-height:194mm;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><img src="'+url+'"></body></html>');d.close();
+  const d=f.contentDocument;d.open();d.write('<!DOCTYPE html><html><head><title>'+nama()+'</title><style>@page{size:'+({a4l:'A4 landscape',a4p:'A4 portrait',a3l:'A3 landscape',a3p:'A3 portrait'}[g('ptkrt').value]||'A4 landscape')+';margin:8mm}html,body{margin:0}img{display:block;max-width:100%;max-height:'+({a4l:194,a4p:281,a3l:281,a3p:404}[g('ptkrt').value]||194)+'mm;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><img src="'+url+'"></body></html>');d.close();
   const im=d.querySelector('img'),cetak=()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(()=>f.remove(),60000);};if(im.complete)setTimeout(cetak,50);else im.onload=cetak;};
 })();
 

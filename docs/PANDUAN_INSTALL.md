@@ -5346,3 +5346,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Untuk peta tampilan 3D (plan) dengan kop dan grid tetap memakai toolbar **Layout peta**.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 255. Ore Works 0.13.7 — kertas peta level
+
+- Analisis → Peta: pilih **A4 lanskap / A4 potret / A3 lanskap / A3 potret** di samping ⭳ PNG. PNG dan PDF digambar
+  seukuran kertas itu (tidak lagi mengikuti bentuk jendela yang lebar), seperti Layout peta.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
