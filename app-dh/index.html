@@ -1206,11 +1206,20 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var traces=[],op=+$('ovOp').value;
   /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
   var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#a7b58a'),ovPc=(($('ovPitCol')||{}).value||'#8ea4c8'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc+'|'+(($('ovShade')||{}).value||'kuat');
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:((($('ovShade')||{}).value||'kuat')==='plotly'?{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}:{ambient:0.35,diffuse:0.95,specular:0.05,roughness:0.9})};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&(light||!(window.TIN&&TIN.on))&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:((($('ovShade')||{}).value||'kuat')==='plotly'?{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}:{ambient:0.35,diffuse:0.95,specular:0.05,roughness:0.9})};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop+'|'+((window.HR&&HR.ver)||0),function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
   if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(TIN.rapat?TIN.rapat(crop?OV.pitC:OV.pitF,2):(crop?OV.pitC:OV.pitF),{opacity:Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
+  /* BM 0.24.103 / DH 0.24.106 (pemilik 17 Nov 2026: jeda saat zoom / putar 3D): ortho yang di-drape (tidak tembus pandang)
+     menutup permukaan topografi di bawahnya, tetapi topo resolusi penuh (jutaan segitiga) tetap digambar GPU setiap frame.
+     Segitiga topo yang tertutup ortho dibuang dari adegan (di-cache per pasangan trace topo + mesh ortho). */
+  if(od&&$('orMode').value!=='flat'&&(+$('orOp').value)>=0.99)for(var _q=0;_q<traces.length;_q++){var _t=traces[_q];if(!_t||_t.uid!=='ovTopoS'||!_t.i)continue;
+    window.__orCut=window.__orCut||new WeakMap();var _c=__orCut.get(_t);if(!_c||_c.od!==od){var b=od.b,I=[],J=[],K2=[],FC=Array.isArray(_t.facecolor)&&_t.facecolor.length===_t.i.length?[]:null;
+      for(var f=0;f<_t.i.length;f++){var a1=_t.i[f],b1=_t.j[f],c1=_t.k[f],cx=(_t.x[a1]+_t.x[b1]+_t.x[c1])/3,cy=(_t.y[a1]+_t.y[b1]+_t.y[c1])/3;
+        if(cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1&&orthoRGB(cx,cy))continue;I.push(a1);J.push(b1);K2.push(c1);if(FC)FC.push(_t.facecolor[f]);}
+      var nt=Object.assign({},_t,{i:I,j:J,k:K2});if(FC)nt.facecolor=FC;_c={od:od,t:nt};__orCut.set(_t,_c);}
+    traces[_q]=_c.t;}
   var pcs=[[0,'#888888'],[1,'#888888']];
   if($('showPlane').checked&&!VIEW2D){
     if(g.m==='H')traces.push({type:'surface',x:[rx[0],rx[1]],y:[ry[0],ry[1]],z:[[pos,pos],[pos,pos]],opacity:0.25,showscale:false,colorscale:pcs,hoverinfo:'skip',showlegend:false});
@@ -2056,6 +2065,18 @@ HR.resFor = function (x0, x1, y0, y1, budget) {
   return Math.max(mn, r);
 };
 
+/* ortho seluruhnya muat di anggaran pada resolusi piksel asli -> LOD tidak berguna: mesh penuh dibangun sekali saja,
+   tidak dibangun ulang tiap zoom (BM 0.24.103 / DH 0.24.106). */
+HR.orPenuh = function () { var O = window.ORT; if (!O || !O.m) return false; return O.m.w * O.m.h <= HR.anggaran(); };
+/* gambar ulang sesudah zoom hanya perlu bila ada lapisan yang resolusinya mengikuti tampilan */
+HR.perlu = function () {
+  var o = document.getElementById('ovOrtho'), lm = document.getElementById('lightMode');
+  if (o && o.checked && !o.disabled && window.ORT && ORT.m && !HR.orPenuh()) return true;
+  if (!(window.TIN && TIN.on)) return true;
+  if (lm && lm.checked) return true;
+  return false;
+};
+
 /* ============================ 2. tampilan yang sedang terlihat ============================ */
 HR.setExt = function (x0, x1, y0, y1, world) {
   if (!isFinite(x0) || !isFinite(x1) || !isFinite(y0) || !isFinite(y1) || x1 <= x0 || y1 <= y0) return;
@@ -2241,9 +2262,14 @@ HR.mapImage = function () {
          berhenti hanya berguna bila ada lapisan yang resolusinya mengikuti zoom (orthofoto). Tanpa itu, cache overlay dulu
          dikosongkan dan topografi / pit / Topo x Pit (jutaan segitiga) + block model dibangun & dikirim ulang ke GPU tiap
          kali kamera digerakkan. window.HR_perlu() (Block Model) menjawab apakah gambar ulang itu perlu. */
-      if (typeof window.HR_perlu === 'function' && !window.HR_perlu()) return;
+      /* BM 0.24.103 / DH 0.24.106 (pemilik 17 Nov 2026: "berganti tampilan 3D (zoom in zoom out) terasa ada jeda ... terutama di
+         GCEx DH"): DH tidak punya HR_perlu, jadi SETIAP zoom membangun ulang & mengirim ulang seluruh adegan (topografi TIN
+         resolusi penuh + hillshade, ortho, bor, wireframe). Kini memakai HR.perlu() bersama, dan cache overlay tidak lagi
+         dikosongkan: kunci cache yang bergantung pada tampilan sudah memuat HR.ver. */
+      var perlu = typeof window.HR_perlu === 'function' ? window.HR_perlu : HR.perlu;
       if (window.MAP && MAP.on && window.mapRefresh) mapRefresh(true);
-      else if (window.updatePlot) { if (window.OVC) window.OVC = {}; updatePlot(); }
+      else if (!perlu()) return;
+      else if (window.updatePlot) updatePlot();
     } catch (e) { }
   };
   var bump = function () { if (tmr) clearTimeout(tmr); tmr = setTimeout(redraw, 260); };
@@ -2318,10 +2344,10 @@ function topoZ(x,y){var T=topoIndex(),B=T.B,o=T.o,cx=Math.floor(x/B),cy=Math.flo
 function orthoImg2D(){if(!window.ORT)return null;var m=ORT.m;if(!ORT.url){var cv=document.createElement('canvas');cv.width=m.w;cv.height=m.h;var ctx=cv.getContext('2d'),im=ctx.createImageData(m.w,m.h),p=ORT.px,d=im.data;for(var i=0,j=0;i<p.length;i+=3,j+=4){d[j]=p[i];d[j+1]=p[i+1];d[j+2]=p[i+2];d[j+3]=255;}ctx.putImageData(im,0,0);ORT.url=cv.toDataURL('image/jpeg',0.88);}return{source:ORT.url,xref:'x',yref:'y',x:m.e0-m.dx/2,y:m.n0+m.dy/2,sizex:m.w*m.dx,sizey:m.h*m.dy,xanchor:'left',yanchor:'top',sizing:'stretch',layer:'below',opacity:+(($('orOp')||{}).value||1)};}
 function HRZ(x,y,res){if(window.HR&&HR.on){var q=HR.zFast(x,y,res);if(q!==null)return q;}return topoZ(x,y);}
 function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
-  var res=+$('orRes').value;if(light)res=Math.max(res,4);if(window.HR&&HR.on&&HR.ext){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
-  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');if(ORT.cache[key])return ORT.cache[key];
+  var res=+$('orRes').value;if(light)res=Math.max(res,4);if(window.HR&&HR.on&&HR.ext&&!HR.orPenuh()){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
+  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&!HR.orPenuh()&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');if(ORT.cache[key])return ORT.cache[key];
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
-  if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
+  if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext&&!HR.orPenuh()){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
   if(x1<=x0||y1<=y0)return null;
   if(!res){res=(window.HR&&HR.resFor)?HR.resFor(x0,x1,y0,y1,(HR.anggaran?HR.anggaran():HR.budget)):1;}/* Otomatis: sehalus anggaran titik profil Kinerja, tidak lebih halus dari piksel ortho (pemilik 10 Nov 2026: ortho harus tajam) */
   var _bud=(window.HR&&HR.anggaran)?HR.anggaran():300000;if(light)_bud=Math.min(_bud,300000);var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>_bud){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}/* batas titik ortho ikut profil Kinerja (HR.anggaran) */
@@ -7687,7 +7713,7 @@ window.SHELL_APP='dh';
   }
   function jalan() { try { rlCek(); } catch (e) {} try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
   /* 0.24.86: gambar ulang sesudah kamera berhenti (hires.js) hanya bila orthofoto tampil */
-  window.HR_perlu=function(){var o=document.getElementById('ovOrtho');return !!(o&&o.checked&&!o.disabled)||!(window.TIN&&TIN.on);};
+  window.HR_perlu=function(){return HR.perlu();};/* BM 0.24.103: aturan bersama hires.js (ortho yang muat di anggaran tidak perlu LOD) */
   window.SHELL = { rlCek: rlCek, semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);
@@ -7962,6 +7988,81 @@ window.SHELL_APP='dh';
     if ((e.key !== 'u' && e.key !== 'U') || e.ctrlKey || e.altKey || e.metaKey) return; var t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || (e.target && e.target.isContentEditable)) return;
     var g = hover; if (!g) return; var b = g.querySelector(':scope > .gxUkurB'); if (!b || b.style.display === 'none') return; e.preventDefault(); if (U.aktif && U.aktif.gd === g) U.selesai(); else U.mulai(g);
   });
+})();
+
+/* ================= GC-Ex (BM 0.24.103 / DH 0.24.106): KOTAK MELAYANG BISA DITUTUP + TEKS PENJELAS DIRINGKAS =================
+   Pemilik 17 Nov 2026: "Beberapa panel atau bar yang muncul tidak bisa diminimizing atau dihide padahal sedang tidak digunakan
+   (misal bar slicing di panel 3D) ... Harusnya bisa ditutup. Begitu pula bar yang lain."
+   Setiap kotak di atas tampilan (bilah Sayatan, Ringkasan, kompas, skala) diberi tombol x kecil. Yang ditutup disimpan
+   (localStorage 'gcex_tutup') dan tetap tertutup saat aplikasi dibuka lagi; tombol "Panel tersembunyi (n)" di bilah atas
+   menampilkannya kembali. Bilah Sayatan tertutup hanya untuk sesi ini dan muncul lagi saat tombol Slicer dibuka
+   (alat yang sama tersedia di menu Slicer). Legenda sudah punya tombol tutup sendiri. */
+(function () {
+  if (window.TUTUP) return;
+  var DAFTAR = [
+    { k: 'slab', sel: '#slabBar', nm: 'Bilah Sayatan', sesi: true },
+    { k: 'ring', sel: '#statsCard', nm: 'Ringkasan' },
+    { k: 'komp', sel: '#cpBox', nm: 'Kompas' },
+    { k: 'skala', sel: '.gxSkala, .gxUkurB', nm: 'Skala & Ukur', btn: '.gxSkala' }
+  ];
+  var LS = 'gcex_tutup', sesi = {}, simpan = {};
+  try { simpan = JSON.parse(localStorage.getItem(LS) || '{}') || {}; } catch (e) { simpan = {}; }
+  var T = window.TUTUP = { daftar: DAFTAR };
+  var tertutup = function (d) { return d.sesi ? !!sesi[d.k] : !!simpan[d.k]; };
+  var tulis = function () { try { localStorage.setItem(LS, JSON.stringify(simpan)); } catch (e) { } };
+  var css = document.createElement('style');
+  css.textContent = '.gxTutup{display:none!important}.gxX{position:absolute;top:2px;right:2px;z-index:9;width:16px;height:16px;line-height:14px;padding:0;border:0;border-radius:3px;' +
+    'background:transparent;color:var(--mu,#6b7785);font:600 13px Arial,sans-serif;cursor:pointer;opacity:.55}.gxX:hover{opacity:1;background:rgba(0,0,0,.08)}' +
+    '#slabBar .gxX{position:static;margin-left:2px}#statsCard .gxX{top:6px;right:24px}#tutupBtn{display:none}#tutupBtn.ada{display:inline-flex}';
+  document.head.appendChild(css);
+
+  /* ---- teks penjelas (pemilik 17 Nov 2026: "terlalu banyak tulisan penjelas sehingga menjadi kumuh") ----
+     Teks penjelas statis (.hint tanpa id) disembunyikan secara bawaan; tombol (i) di bilah atas menampilkannya lagi
+     (tersimpan di localStorage 'gcex_hint'). Tetap tampil: pesan status / hasil (.hint ber-id, mis. info ortho, pesan galat),
+     teks yang berisi tombol / isian / tautan, dan teks bergaya warna (peringatan). */
+  var css2 = document.createElement('style');
+  css2.textContent = 'body:not(.gxHintOn) .hint:not([id]):not([style*="color"]):not(:has(button,input,select,textarea,a,.warn,.err,.bad,.gxWarn)){display:none!important}' +
+    '#hintBtn{min-width:28px;justify-content:center;font-weight:700}#hintBtn.on{background:var(--mj,#c49a4c);color:var(--mjtx,#1d2b5e)}';
+  document.head.appendChild(css2);
+  var hintOn = false; try { hintOn = localStorage.getItem('gcex_hint') === '1'; } catch (e) { }
+  T.penjelas = function (v) { hintOn = v == null ? !hintOn : !!v; try { localStorage.setItem('gcex_hint', hintOn ? '1' : '0'); } catch (e) { } T.terap(); };
+
+  T.tutup = function (k) { var d = DAFTAR.filter(function (x) { return x.k === k; })[0]; if (!d) return; if (d.sesi) sesi[k] = 1; else { simpan[k] = 1; tulis(); } T.terap(); };
+  T.buka = function (k) { if (k) { delete sesi[k]; delete simpan[k]; } else { sesi = {}; simpan = {}; } tulis(); T.terap(); };
+  T.terap = function () {
+    var n = 0;
+    DAFTAR.forEach(function (d) {
+      var t = tertutup(d); if (t) n++;
+      document.querySelectorAll(d.sel).forEach(function (e) { e.classList.toggle('gxTutup', t); });
+      document.querySelectorAll(d.btn || d.sel).forEach(function (e) {
+        if (e.querySelector(':scope > .gxX')) return;
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'gxX'; b.innerHTML = '&times;';
+        b.title = 'Tutup ' + d.nm + (d.sesi ? ' (muncul lagi saat tombol Slicer dibuka)' : ' (tampilkan lagi: tombol "Panel tersembunyi" di bilah atas)');
+        b.onclick = function (ev) { ev.stopPropagation(); ev.preventDefault(); T.tutup(d.k); };
+        if (getComputedStyle(e).position === 'static') e.style.position = 'relative';
+        e.appendChild(b);
+      });
+    });
+    document.body.classList.toggle('gxHintOn', hintOn);
+    var hb = document.getElementById('hintBtn'), ref0 = document.getElementById('btnSecM');
+    if (!hb && ref0 && ref0.parentNode) { hb = document.createElement('button'); hb.className = 'tb'; hb.id = 'hintBtn'; hb.type = 'button'; hb.innerHTML = '&#9432;'; hb.onclick = function () { T.penjelas(); }; ref0.parentNode.insertBefore(hb, ref0.nextSibling); }
+    if (hb) { hb.classList.toggle('on', hintOn); hb.title = hintOn ? 'Sembunyikan teks penjelas di panel' : 'Tampilkan teks penjelas di panel'; }
+    var tb = document.getElementById('tutupBtn');
+    if (!tb) {
+      var ref = document.getElementById('btnSecM'); if (!ref || !ref.parentNode) return;
+      tb = document.createElement('button'); tb.className = 'tb'; tb.id = 'tutupBtn'; tb.type = 'button';
+      tb.onclick = function () { T.buka(); };
+      ref.parentNode.insertBefore(tb, (document.getElementById('hintBtn') || ref).nextSibling);
+    }
+    var nm = DAFTAR.filter(tertutup).map(function (d) { return d.nm; });
+    tb.textContent = 'Panel tersembunyi (' + n + ')'; tb.title = 'Tampilkan lagi: ' + nm.join(', '); tb.classList.toggle('ada', n > 0); tb.style.display = n > 0 ? '' : 'none';
+  };
+  /* bilah Sayatan muncul lagi saat Slicer dibuka / tampilan 2D-3D diganti */
+  document.addEventListener('click', function (e) { var t = e.target && e.target.closest ? e.target.closest('#btnSecM, #sb2d, #btn2D, #btn3D') : null; if (t && sesi.slab) { delete sesi.slab; setTimeout(T.terap, 0); } }, true);
+  /* kotak dibuat ulang / ditambah oleh modul lain (skala tiap gambar ulang, bilah sayatan saat dibangun) */
+  var jadwal = null, mo = new MutationObserver(function () { if (jadwal) return; jadwal = setTimeout(function () { jadwal = null; T.terap(); }, 120); });
+  var mulai = function () { T.terap(); mo.observe(document.body, { childList: true, subtree: true }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulai); else setTimeout(mulai, 0);
 })();
 
 /* ================= Drillhole 0.24.98: Ringkasan seluruh model per RL (web-src/mdlsum.js) di Drillhole =================
@@ -20550,7 +20651,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.105';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.106';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

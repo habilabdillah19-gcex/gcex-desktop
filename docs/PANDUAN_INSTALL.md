@@ -5462,3 +5462,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Cabang terlipat di bawah induknya (**▸ +n cabang**, klik ▸ untuk membuka).
 - **Cari solid / domain**: ketik sebagian nama. **Di sini**: hanya solid yang punya string di penampang aktif.
 - **Hapus** di judul Setelan menghapus solid aktif (dengan konfirmasi).
+
+## 266. Block Model 0.24.103 / Drillhole 0.24.106 — 3D lebih ringan, panel lebih rapi
+
+- **Lebih ringan saat zoom / putar 3D**: bila orthofoto di-drape (opasitas penuh), topografi di bawahnya tidak digambar
+  lagi (tertutup ortho). Zoom tidak membangun ulang adegan kecuali ortho lebih besar dari anggaran titik profil kinerja.
+- **Teks penjelas disembunyikan**: panel kini hanya menampilkan kontrol dan pesan status. Klik tombol **ⓘ** di bilah atas
+  untuk menampilkan / menyembunyikan teks penjelas.
+- **Kotak di atas tampilan bisa ditutup** (tombol ×): bilah Sayatan (muncul lagi saat tombol **Slicer** dibuka),
+  Ringkasan, kompas, skala & Ukur. Yang ditutup tetap tertutup saat aplikasi dibuka lagi; klik **Panel tersembunyi (n)**
+  di bilah atas untuk menampilkannya kembali. Legenda tetap memakai tombol − / × miliknya.
+- DB-Ex, Ore Works: tidak berubah.

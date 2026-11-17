@@ -1336,6 +1336,11 @@ B.append('<p>Klik tombol <b>Ukur</b> di samping kotak skala (atau tekan <b>U</b>
          'diukur di bidang plot dalam meter. Klik kanan menghapus titik terakhir, Esc selesai, Salin menyalin hasil. Di Drillhole, sayatan 3D '
          '(Potong data) kini ikut memotong topografi, desain pit dan Topo &times; Pit, lengkap dengan garis potongnya; desain pit berbentuk '
          'segitiga tidak lagi tampil sebagai jaring segitiga di Topo &times; Pit.</p>')
+B.append('<h3>16x. 3D lebih ringan, teks penjelas, kotak bisa ditutup (Block Model 0.24.103 / Drillhole 0.24.106)</h3>')
+B.append('<p>Teks penjelas di panel kini tersembunyi; klik tombol <b>&#9432;</b> di bilah atas untuk menampilkannya. Bilah Sayatan, Ringkasan, '
+         'kompas serta skala &amp; Ukur punya tombol <b>&times;</b>; yang ditutup dikembalikan lewat tombol <b>Panel tersembunyi (n)</b> (bilah Sayatan '
+         'muncul lagi saat tombol <b>Slicer</b> dibuka). Bila orthofoto di-drape dengan opasitas penuh, topografi di bawahnya tidak digambar lagi sehingga '
+         'zoom dan putar 3D lebih ringan.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

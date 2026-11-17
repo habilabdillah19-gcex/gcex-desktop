@@ -1173,6 +1173,15 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(TIN.rapat?TIN.rapat(crop?OV.pitC:OV.pitF,2):(crop?OV.pitC:OV.pitF),{opacity:Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
+  /* BM 0.24.103 / DH 0.24.106 (pemilik 17 Nov 2026: jeda saat zoom / putar 3D): ortho yang di-drape (tidak tembus pandang)
+     menutup permukaan topografi di bawahnya, tetapi topo resolusi penuh (jutaan segitiga) tetap digambar GPU setiap frame.
+     Segitiga topo yang tertutup ortho dibuang dari adegan (di-cache per pasangan trace topo + mesh ortho). */
+  if(od&&$('orMode').value!=='flat'&&(+$('orOp').value)>=0.99)for(var _q=0;_q<traces.length;_q++){var _t=traces[_q];if(!_t||_t.uid!=='ovTopoS'||!_t.i)continue;
+    window.__orCut=window.__orCut||new WeakMap();var _c=__orCut.get(_t);if(!_c||_c.od!==od){var b=od.b,I=[],J=[],K2=[],FC=Array.isArray(_t.facecolor)&&_t.facecolor.length===_t.i.length?[]:null;
+      for(var f=0;f<_t.i.length;f++){var a1=_t.i[f],b1=_t.j[f],c1=_t.k[f],cx=(_t.x[a1]+_t.x[b1]+_t.x[c1])/3,cy=(_t.y[a1]+_t.y[b1]+_t.y[c1])/3;
+        if(cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1&&orthoRGB(cx,cy))continue;I.push(a1);J.push(b1);K2.push(c1);if(FC)FC.push(_t.facecolor[f]);}
+      var nt=Object.assign({},_t,{i:I,j:J,k:K2});if(FC)nt.facecolor=FC;_c={od:od,t:nt};__orCut.set(_t,_c);}
+    traces[_q]=_c.t;}
   var pcs=[[0,'#888888'],[1,'#888888']];
   if($('showPlane').checked&&!VIEW2D){
     if(g.m==='H')traces.push({type:'surface',x:[rx[0],rx[1]],y:[ry[0],ry[1]],z:[[pos,pos],[pos,pos]],opacity:0.25,showscale:false,colorscale:pcs,hoverinfo:'skip',showlegend:false});

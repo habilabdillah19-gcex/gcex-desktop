@@ -38,17 +38,17 @@ def patch(s: str) -> str:
     # 2. resolusi mesh ortho mengikuti luas tampilan (kotak "Resolusi (m)" jadi batas paling halus)
     R("var res=+$('orRes').value;if(light)res=Math.max(res,4);",
       "var res=+$('orRes').value;if(light)res=Math.max(res,4);"
-      "if(window.HR&&HR.on&&HR.ext){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),"
+      "if(window.HR&&HR.on&&HR.ext&&!HR.orPenuh()){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),"
       "_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}")
 
     # 2b. LUAS mesh ortho juga dipotong sesuai tampilan. Tanpa ini resolusi halus tidak ada gunanya:
     #     pembatas "nx*ny > 300000" akan menaikkan kembali res karena mesh masih menutupi seluruh area.
     R("if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}",
       "if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}"
-      "if(window.HR&&HR.on&&HR.ext){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}")
+      "if(window.HR&&HR.on&&HR.ext&&!HR.orPenuh()){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}")
 
     # 2c. cache mesh ortho ikut berganti saat tampilan berubah
-    R("var key=res+'|'+crop+'|'+mode;", "var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0);")
+    R("var key=res+'|'+crop+'|'+mode;", "var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&!HR.orPenuh()&&HR.ver)||0);")
 
     # 3. drape & warna di dalam orthoTrace (baris sesudah ortho_patch; cadangan: sebelum ortho_patch)
     if not R("z=(mode==='flat')?flatZ:(mode==='base')?0:topoZ(x,y),c=(z===null)?null:orthoRGB(x,y);",
@@ -66,7 +66,7 @@ def patch(s: str) -> str:
       "if(window.HR&&HR.on&&HR.ext){try{ms=HR.topoMesh(crop?OV.topoC:OV.topoF,light?4900:15000);tp=HR.topoLines(tp);}catch(_e){}}")
 
     # 5. kunci cache trace topografi ikut tampilan
-    R("ovCache('ts|'+crop+'|'+light+'|'+op", "ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)")
+    R("ovCache('ts|'+crop+'|'+light+'|'+op", "ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&(light||!(window.TIN&&TIN.on))&&HR.ver)||0)")
     R("ovCache('tl|'+crop", "ovCache('tl|'+crop+'|'+((window.HR&&HR.ver)||0)")
 
     # 6. Peta 2D (hanya GC-Ex Drill Hole): gambar ortho sesuai tampilan, sampai 4096 px
@@ -86,8 +86,8 @@ def patch(s: str) -> str:
       "  var o={tr:{type:'mesh3d',name:'Orthofoto'")
     R("vertexcolor:C,flatshading:false,lighting:{ambient:0.85,diffuse:0.25,specular:0,fresnel:0,roughness:1},hoverinfo:'skip',showlegend:false}",
       "vertexcolor:C,flatshading:false,lighting:_lit||{ambient:0.85,diffuse:0.25,specular:0,fresnel:0,roughness:1},hoverinfo:'skip',showlegend:false}")
-    R("var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0);",
-      "var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');")
+    R("var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&!HR.orPenuh()&&HR.ver)||0);",
+      "var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&!HR.orPenuh()&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');")
     # info resolusi di panel overlay ikut menyebut LOD
     R("$('orInfo').textContent=orthoImg.src+' | '+orthoImg.w+' x '+orthoImg.h+' px @ '+orthoImg.dx+' m';",
       "$('orInfo').textContent=orthoImg.src+' | '+orthoImg.w+' x '+orthoImg.h+' px @ '+orthoImg.dx+' m"

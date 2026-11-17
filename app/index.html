@@ -1110,11 +1110,20 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   var traces=[],op=+$('ovOp').value;
   /* warna permukaan: seragam (bawaan, permintaan pemilik 9 Nov 2026) atau gradasi elevasi */
   var ovW=(($('ovWarna')||{}).value||'seragam'),ovTc=(($('ovTopoCol')||{}).value||'#a7b58a'),ovPc=(($('ovPitCol')||{}).value||'#8ea4c8'),ovWk='|'+ovW+'|'+ovTc+'|'+ovPc+'|'+(($('ovShade')||{}).value||'kuat');
-  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:((($('ovShade')||{}).value||'kuat')==='plotly'?{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}:{ambient:0.35,diffuse:0.95,specular:0.05,roughness:0.9})};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
+  if(wTS)traces.push(ovCache('ts|'+crop+'|'+light+'+'+op+'|'+((window.HR&&(light||!(window.TIN&&TIN.on))&&HR.ver)||0)+ovWk,function(){/* TIN resolusi penuh (tinhr.js); cadangan: mesh Delaunay Plotly dari titik terdesimasi */var tt=(window.TIN&&TIN.on&&!light)?TIN.trace(crop?OV.topoC:OV.topoF,{opacity:op,grad:ovW==='grad',color:ovTc,uid:'ovTopoS'}):null;if(tt)return tt;var t={type:'mesh3d',x:ms.x,y:ms.y,z:ms.z,delaunayaxis:'z',opacity:op,showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:((($('ovShade')||{}).value||'kuat')==='plotly'?{ambient:0.7,diffuse:0.6,specular:0.05,roughness:0.9}:{ambient:0.35,diffuse:0.95,specular:0.05,roughness:0.9})};if(ovW==='grad'){t.intensity=ms.z;t.colorscale='Earth';}else t.color=ovTc;return t;}));
   if(wTL)traces.push(ovCache('tl|'+crop+'|'+((window.HR&&HR.ver)||0),function(){return{x:tp.x,y:tp.y,z:tp.z,mode:'lines',type:'scatter3d',line:{color:'#8d6e63',width:2},hoverinfo:'none',showlegend:false};}));
   if(wPS)traces.push(ovCache('ps|'+crop+'|'+light+'|'+op+'|'+(window.TP?TP.opPit(op):'')+ovWk,function(){var tp2=(window.TIN&&TIN.on&&!light)?TIN.trace(TIN.rapat?TIN.rapat(crop?OV.pitC:OV.pitF,2):(crop?OV.pitC:OV.pitF),{opacity:window.TP?TP.opPit(op):Math.min(1,op+0.25),grad:ovW==='grad',colorscale:[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']],color:ovPc,uid:'ovPitS',lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}}):null;if(tp2)return tp2;var t={type:'mesh3d',x:pm.x,y:pm.y,z:pm.z,delaunayaxis:'z',opacity:window.TP?TP.opPit(op):Math.min(1,op+0.25),showscale:false,hoverinfo:'skip',flatshading:true,showlegend:false,lighting:{ambient:0.6,diffuse:0.75,specular:0.1,roughness:0.8}};if(ovW==='grad'){t.intensity=pm.z;t.colorscale=[[0,'#6b4f33'],[0.5,'#b8936a'],[1,'#ecd9b8']];}else t.color=ovPc;return t;}));
   if(wP)traces.push(ovCache('pl|'+crop,function(){return{x:pt.x,y:pt.y,z:pt.z,mode:'lines',type:'scatter3d',line:{color:'#ff7f0e',width:4},hoverinfo:'none',showlegend:false};}));
   if(od){od.tr.opacity=+$('orOp').value;traces.push(od.tr);}
+  /* BM 0.24.103 / DH 0.24.106 (pemilik 17 Nov 2026: jeda saat zoom / putar 3D): ortho yang di-drape (tidak tembus pandang)
+     menutup permukaan topografi di bawahnya, tetapi topo resolusi penuh (jutaan segitiga) tetap digambar GPU setiap frame.
+     Segitiga topo yang tertutup ortho dibuang dari adegan (di-cache per pasangan trace topo + mesh ortho). */
+  if(od&&$('orMode').value!=='flat'&&(+$('orOp').value)>=0.99)for(var _q=0;_q<traces.length;_q++){var _t=traces[_q];if(!_t||_t.uid!=='ovTopoS'||!_t.i)continue;
+    window.__orCut=window.__orCut||new WeakMap();var _c=__orCut.get(_t);if(!_c||_c.od!==od){var b=od.b,I=[],J=[],K2=[],FC=Array.isArray(_t.facecolor)&&_t.facecolor.length===_t.i.length?[]:null;
+      for(var f=0;f<_t.i.length;f++){var a1=_t.i[f],b1=_t.j[f],c1=_t.k[f],cx=(_t.x[a1]+_t.x[b1]+_t.x[c1])/3,cy=(_t.y[a1]+_t.y[b1]+_t.y[c1])/3;
+        if(cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1&&orthoRGB(cx,cy))continue;I.push(a1);J.push(b1);K2.push(c1);if(FC)FC.push(_t.facecolor[f]);}
+      var nt=Object.assign({},_t,{i:I,j:J,k:K2});if(FC)nt.facecolor=FC;_c={od:od,t:nt};__orCut.set(_t,_c);}
+    traces[_q]=_c.t;}
   var pcs=[[0,'#888888'],[1,'#888888']];
   if($('showPlane').checked&&!VIEW2D){
     if(g.m==='H')traces.push({type:'surface',x:[rx[0],rx[1]],y:[ry[0],ry[1]],z:[[pos,pos],[pos,pos]],opacity:0.25,showscale:false,colorscale:pcs,hoverinfo:'skip',showlegend:false});
@@ -1867,6 +1876,18 @@ HR.resFor = function (x0, x1, y0, y1, budget) {
   return Math.max(mn, r);
 };
 
+/* ortho seluruhnya muat di anggaran pada resolusi piksel asli -> LOD tidak berguna: mesh penuh dibangun sekali saja,
+   tidak dibangun ulang tiap zoom (BM 0.24.103 / DH 0.24.106). */
+HR.orPenuh = function () { var O = window.ORT; if (!O || !O.m) return false; return O.m.w * O.m.h <= HR.anggaran(); };
+/* gambar ulang sesudah zoom hanya perlu bila ada lapisan yang resolusinya mengikuti tampilan */
+HR.perlu = function () {
+  var o = document.getElementById('ovOrtho'), lm = document.getElementById('lightMode');
+  if (o && o.checked && !o.disabled && window.ORT && ORT.m && !HR.orPenuh()) return true;
+  if (!(window.TIN && TIN.on)) return true;
+  if (lm && lm.checked) return true;
+  return false;
+};
+
 /* ============================ 2. tampilan yang sedang terlihat ============================ */
 HR.setExt = function (x0, x1, y0, y1, world) {
   if (!isFinite(x0) || !isFinite(x1) || !isFinite(y0) || !isFinite(y1) || x1 <= x0 || y1 <= y0) return;
@@ -2052,9 +2073,14 @@ HR.mapImage = function () {
          berhenti hanya berguna bila ada lapisan yang resolusinya mengikuti zoom (orthofoto). Tanpa itu, cache overlay dulu
          dikosongkan dan topografi / pit / Topo x Pit (jutaan segitiga) + block model dibangun & dikirim ulang ke GPU tiap
          kali kamera digerakkan. window.HR_perlu() (Block Model) menjawab apakah gambar ulang itu perlu. */
-      if (typeof window.HR_perlu === 'function' && !window.HR_perlu()) return;
+      /* BM 0.24.103 / DH 0.24.106 (pemilik 17 Nov 2026: "berganti tampilan 3D (zoom in zoom out) terasa ada jeda ... terutama di
+         GCEx DH"): DH tidak punya HR_perlu, jadi SETIAP zoom membangun ulang & mengirim ulang seluruh adegan (topografi TIN
+         resolusi penuh + hillshade, ortho, bor, wireframe). Kini memakai HR.perlu() bersama, dan cache overlay tidak lagi
+         dikosongkan: kunci cache yang bergantung pada tampilan sudah memuat HR.ver. */
+      var perlu = typeof window.HR_perlu === 'function' ? window.HR_perlu : HR.perlu;
       if (window.MAP && MAP.on && window.mapRefresh) mapRefresh(true);
-      else if (window.updatePlot) { if (window.OVC) window.OVC = {}; updatePlot(); }
+      else if (!perlu()) return;
+      else if (window.updatePlot) updatePlot();
     } catch (e) { }
   };
   var bump = function () { if (tmr) clearTimeout(tmr); tmr = setTimeout(redraw, 260); };
@@ -2129,10 +2155,10 @@ function topoZ(x,y){var T=topoIndex(),B=T.B,o=T.o,cx=Math.floor(x/B),cy=Math.flo
 function orthoImg2D(){if(!window.ORT)return null;var m=ORT.m;if(!ORT.url){var cv=document.createElement('canvas');cv.width=m.w;cv.height=m.h;var ctx=cv.getContext('2d'),im=ctx.createImageData(m.w,m.h),p=ORT.px,d=im.data;for(var i=0,j=0;i<p.length;i+=3,j+=4){d[j]=p[i];d[j+1]=p[i+1];d[j+2]=p[i+2];d[j+3]=255;}ctx.putImageData(im,0,0);ORT.url=cv.toDataURL('image/jpeg',0.88);}return{source:ORT.url,xref:'x',yref:'y',x:m.e0-m.dx/2,y:m.n0+m.dy/2,sizex:m.w*m.dx,sizey:m.h*m.dy,xanchor:'left',yanchor:'top',sizing:'stretch',layer:'below',opacity:+(($('orOp')||{}).value||1)};}
 function HRZ(x,y,res){if(window.HR&&HR.on){var q=HR.zFast(x,y,res);if(q!==null)return q;}return topoZ(x,y);}
 function orthoTrace(crop,light){if(!ORT||!$('ovOrtho').checked)return null;
-  var res=+$('orRes').value;if(light)res=Math.max(res,4);if(window.HR&&HR.on&&HR.ext){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
-  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');if(ORT.cache[key])return ORT.cache[key];
+  var res=+$('orRes').value;if(light)res=Math.max(res,4);if(window.HR&&HR.on&&HR.ext&&!HR.orPenuh()){var _b=HR.box({x0:HR.ext.x0,x1:HR.ext.x1,y0:HR.ext.y0,y1:HR.ext.y1}),_r=HR.resFor(_b.x0,_b.x1,_b.y0,_b.y1,light?60000:HR.budget);res=Math.max(Math.min(res,_r),_r*0.5);}var mode=$('orMode').value||'base',hasT=OV.topoF.x.length>0;if(!hasT&&mode==='drape')mode='flat';
+  var key=res+'|'+crop+'|'+mode+'|'+((window.HR&&!HR.orPenuh()&&HR.ver)||0)+'|'+(($('ovShade')||{}).value||'kuat');if(ORT.cache[key])return ORT.cache[key];
   var m=ORT.m,x0=m.e0-offX,x1=x0+(m.w-1)*m.dx,y1=m.n0-offY,y0=y1-(m.h-1)*m.dy,mg=150;
-  if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
+  if(crop){x0=Math.max(x0,G.x0-mg);x1=Math.min(x1,G.x1+mg);y0=Math.max(y0,G.y0-mg);y1=Math.min(y1,G.y1+mg);}if(window.HR&&HR.on&&HR.ext&&!HR.orPenuh()){var _q=HR.box({x0:x0,x1:x1,y0:y0,y1:y1});x0=_q.x0;x1=_q.x1;y0=_q.y0;y1=_q.y1;}
   if(x1<=x0||y1<=y0)return null;
   if(!res){res=(window.HR&&HR.resFor)?HR.resFor(x0,x1,y0,y1,(HR.anggaran?HR.anggaran():HR.budget)):1;}/* Otomatis: sehalus anggaran titik profil Kinerja, tidak lebih halus dari piksel ortho (pemilik 10 Nov 2026: ortho harus tajam) */
   var _bud=(window.HR&&HR.anggaran)?HR.anggaran():300000;if(light)_bud=Math.min(_bud,300000);var nx=Math.floor((x1-x0)/res)+1,ny=Math.floor((y1-y0)/res)+1;while(nx*ny>_bud){res*=1.25;nx=Math.floor((x1-x0)/res)+1;ny=Math.floor((y1-y0)/res)+1;}/* batas titik ortho ikut profil Kinerja (HR.anggaran) */
@@ -5708,6 +5734,81 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     if ((e.key !== 'u' && e.key !== 'U') || e.ctrlKey || e.altKey || e.metaKey) return; var t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || (e.target && e.target.isContentEditable)) return;
     var g = hover; if (!g) return; var b = g.querySelector(':scope > .gxUkurB'); if (!b || b.style.display === 'none') return; e.preventDefault(); if (U.aktif && U.aktif.gd === g) U.selesai(); else U.mulai(g);
   });
+})();
+
+/* ================= GC-Ex (BM 0.24.103 / DH 0.24.106): KOTAK MELAYANG BISA DITUTUP + TEKS PENJELAS DIRINGKAS =================
+   Pemilik 17 Nov 2026: "Beberapa panel atau bar yang muncul tidak bisa diminimizing atau dihide padahal sedang tidak digunakan
+   (misal bar slicing di panel 3D) ... Harusnya bisa ditutup. Begitu pula bar yang lain."
+   Setiap kotak di atas tampilan (bilah Sayatan, Ringkasan, kompas, skala) diberi tombol x kecil. Yang ditutup disimpan
+   (localStorage 'gcex_tutup') dan tetap tertutup saat aplikasi dibuka lagi; tombol "Panel tersembunyi (n)" di bilah atas
+   menampilkannya kembali. Bilah Sayatan tertutup hanya untuk sesi ini dan muncul lagi saat tombol Slicer dibuka
+   (alat yang sama tersedia di menu Slicer). Legenda sudah punya tombol tutup sendiri. */
+(function () {
+  if (window.TUTUP) return;
+  var DAFTAR = [
+    { k: 'slab', sel: '#slabBar', nm: 'Bilah Sayatan', sesi: true },
+    { k: 'ring', sel: '#statsCard', nm: 'Ringkasan' },
+    { k: 'komp', sel: '#cpBox', nm: 'Kompas' },
+    { k: 'skala', sel: '.gxSkala, .gxUkurB', nm: 'Skala & Ukur', btn: '.gxSkala' }
+  ];
+  var LS = 'gcex_tutup', sesi = {}, simpan = {};
+  try { simpan = JSON.parse(localStorage.getItem(LS) || '{}') || {}; } catch (e) { simpan = {}; }
+  var T = window.TUTUP = { daftar: DAFTAR };
+  var tertutup = function (d) { return d.sesi ? !!sesi[d.k] : !!simpan[d.k]; };
+  var tulis = function () { try { localStorage.setItem(LS, JSON.stringify(simpan)); } catch (e) { } };
+  var css = document.createElement('style');
+  css.textContent = '.gxTutup{display:none!important}.gxX{position:absolute;top:2px;right:2px;z-index:9;width:16px;height:16px;line-height:14px;padding:0;border:0;border-radius:3px;' +
+    'background:transparent;color:var(--mu,#6b7785);font:600 13px Arial,sans-serif;cursor:pointer;opacity:.55}.gxX:hover{opacity:1;background:rgba(0,0,0,.08)}' +
+    '#slabBar .gxX{position:static;margin-left:2px}#statsCard .gxX{top:6px;right:24px}#tutupBtn{display:none}#tutupBtn.ada{display:inline-flex}';
+  document.head.appendChild(css);
+
+  /* ---- teks penjelas (pemilik 17 Nov 2026: "terlalu banyak tulisan penjelas sehingga menjadi kumuh") ----
+     Teks penjelas statis (.hint tanpa id) disembunyikan secara bawaan; tombol (i) di bilah atas menampilkannya lagi
+     (tersimpan di localStorage 'gcex_hint'). Tetap tampil: pesan status / hasil (.hint ber-id, mis. info ortho, pesan galat),
+     teks yang berisi tombol / isian / tautan, dan teks bergaya warna (peringatan). */
+  var css2 = document.createElement('style');
+  css2.textContent = 'body:not(.gxHintOn) .hint:not([id]):not([style*="color"]):not(:has(button,input,select,textarea,a,.warn,.err,.bad,.gxWarn)){display:none!important}' +
+    '#hintBtn{min-width:28px;justify-content:center;font-weight:700}#hintBtn.on{background:var(--mj,#c49a4c);color:var(--mjtx,#1d2b5e)}';
+  document.head.appendChild(css2);
+  var hintOn = false; try { hintOn = localStorage.getItem('gcex_hint') === '1'; } catch (e) { }
+  T.penjelas = function (v) { hintOn = v == null ? !hintOn : !!v; try { localStorage.setItem('gcex_hint', hintOn ? '1' : '0'); } catch (e) { } T.terap(); };
+
+  T.tutup = function (k) { var d = DAFTAR.filter(function (x) { return x.k === k; })[0]; if (!d) return; if (d.sesi) sesi[k] = 1; else { simpan[k] = 1; tulis(); } T.terap(); };
+  T.buka = function (k) { if (k) { delete sesi[k]; delete simpan[k]; } else { sesi = {}; simpan = {}; } tulis(); T.terap(); };
+  T.terap = function () {
+    var n = 0;
+    DAFTAR.forEach(function (d) {
+      var t = tertutup(d); if (t) n++;
+      document.querySelectorAll(d.sel).forEach(function (e) { e.classList.toggle('gxTutup', t); });
+      document.querySelectorAll(d.btn || d.sel).forEach(function (e) {
+        if (e.querySelector(':scope > .gxX')) return;
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'gxX'; b.innerHTML = '&times;';
+        b.title = 'Tutup ' + d.nm + (d.sesi ? ' (muncul lagi saat tombol Slicer dibuka)' : ' (tampilkan lagi: tombol "Panel tersembunyi" di bilah atas)');
+        b.onclick = function (ev) { ev.stopPropagation(); ev.preventDefault(); T.tutup(d.k); };
+        if (getComputedStyle(e).position === 'static') e.style.position = 'relative';
+        e.appendChild(b);
+      });
+    });
+    document.body.classList.toggle('gxHintOn', hintOn);
+    var hb = document.getElementById('hintBtn'), ref0 = document.getElementById('btnSecM');
+    if (!hb && ref0 && ref0.parentNode) { hb = document.createElement('button'); hb.className = 'tb'; hb.id = 'hintBtn'; hb.type = 'button'; hb.innerHTML = '&#9432;'; hb.onclick = function () { T.penjelas(); }; ref0.parentNode.insertBefore(hb, ref0.nextSibling); }
+    if (hb) { hb.classList.toggle('on', hintOn); hb.title = hintOn ? 'Sembunyikan teks penjelas di panel' : 'Tampilkan teks penjelas di panel'; }
+    var tb = document.getElementById('tutupBtn');
+    if (!tb) {
+      var ref = document.getElementById('btnSecM'); if (!ref || !ref.parentNode) return;
+      tb = document.createElement('button'); tb.className = 'tb'; tb.id = 'tutupBtn'; tb.type = 'button';
+      tb.onclick = function () { T.buka(); };
+      ref.parentNode.insertBefore(tb, (document.getElementById('hintBtn') || ref).nextSibling);
+    }
+    var nm = DAFTAR.filter(tertutup).map(function (d) { return d.nm; });
+    tb.textContent = 'Panel tersembunyi (' + n + ')'; tb.title = 'Tampilkan lagi: ' + nm.join(', '); tb.classList.toggle('ada', n > 0); tb.style.display = n > 0 ? '' : 'none';
+  };
+  /* bilah Sayatan muncul lagi saat Slicer dibuka / tampilan 2D-3D diganti */
+  document.addEventListener('click', function (e) { var t = e.target && e.target.closest ? e.target.closest('#btnSecM, #sb2d, #btn2D, #btn3D') : null; if (t && sesi.slab) { delete sesi.slab; setTimeout(T.terap, 0); } }, true);
+  /* kotak dibuat ulang / ditambah oleh modul lain (skala tiap gambar ulang, bilah sayatan saat dibangun) */
+  var jadwal = null, mo = new MutationObserver(function () { if (jadwal) return; jadwal = setTimeout(function () { jadwal = null; T.terap(); }, 120); });
+  var mulai = function () { T.terap(); mo.observe(document.body, { childList: true, subtree: true }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulai); else setTimeout(mulai, 0);
 })();
 
 !function(t,s){"object"==typeof exports&&"undefined"!=typeof module?module.exports=s():"function"==typeof define&&define.amd?define(s):(t="undefined"!=typeof globalThis?globalThis:t||self).Delaunator=s()}(this,function(){"use strict";const t=11102230246251565e-32,s=134217729,i=(3+8*t)*t;function e(t,s,i,e,n){let h,r,l,o,a=s[0],f=e[0],c=0,u=0;f>a==f>-a?(h=a,a=s[++c]):(h=f,f=e[++u]);let _=0;if(c<t&&u<i)for(f>a==f>-a?(r=a+h,l=h-(r-a),a=s[++c]):(r=f+h,l=h-(r-f),f=e[++u]),h=r,0!==l&&(n[_++]=l);c<t&&u<i;)f>a==f>-a?(r=h+a,o=r-h,l=h-(r-o)+(a-o),a=s[++c]):(r=h+f,o=r-h,l=h-(r-o)+(f-o),f=e[++u]),h=r,0!==l&&(n[_++]=l);for(;c<t;)r=h+a,o=r-h,l=h-(r-o)+(a-o),a=s[++c],h=r,0!==l&&(n[_++]=l);for(;u<i;)r=h+f,o=r-h,l=h-(r-o)+(f-o),f=e[++u],h=r,0!==l&&(n[_++]=l);return 0===h&&0!==_||(n[_++]=h),_}function n(t){return new Float64Array(t)}const h=n(4),r=n(8),l=n(12),o=n(16),a=n(4);function f(t,n,f,c,u,_){const d=(n-_)*(f-u),g=(t-u)*(c-_),y=d-g,w=Math.abs(d+g);return Math.abs(y)>=33306690738754716e-32*w?y:-function(t,n,f,c,u,_,d){let g,y,w,b,A,k,x,M,S,p,T,z,U,m,K,L,v,F;const I=t-u,P=f-u,E=n-_,H=c-_;m=I*H,k=s*I,x=k-(k-I),M=I-x,k=s*H,S=k-(k-H),p=H-S,K=M*p-(m-x*S-M*S-x*p),L=E*P,k=s*E,x=k-(k-E),M=E-x,k=s*P,S=k-(k-P),p=P-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,h[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,h[1]=U-(T+A)+(A-L),F=z+T,A=F-z,h[2]=z-(F-A)+(T-A),h[3]=F;let N=function(t,s){let i=s[0];for(let e=1;e<t;e++)i+=s[e];return i}(4,h),j=22204460492503146e-32*d;if(N>=j||-N>=j)return N;if(A=t-I,g=t-(I+A)+(A-u),A=f-P,w=f-(P+A)+(A-u),A=n-E,y=n-(E+A)+(A-_),A=c-H,b=c-(H+A)+(A-_),0===g&&0===y&&0===w&&0===b)return N;if(j=11093356479670487e-47*d+i*Math.abs(N),N+=I*b+H*g-(E*w+P*y),N>=j||-N>=j)return N;m=g*H,k=s*g,x=k-(k-g),M=g-x,k=s*H,S=k-(k-H),p=H-S,K=M*p-(m-x*S-M*S-x*p),L=y*P,k=s*y,x=k-(k-y),M=y-x,k=s*P,S=k-(k-P),p=P-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const q=e(4,h,4,a,r);m=I*b,k=s*I,x=k-(k-I),M=I-x,k=s*b,S=k-(k-b),p=b-S,K=M*p-(m-x*S-M*S-x*p),L=E*w,k=s*E,x=k-(k-E),M=E-x,k=s*w,S=k-(k-w),p=w-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const D=e(q,r,4,a,l);m=g*b,k=s*g,x=k-(k-g),M=g-x,k=s*b,S=k-(k-b),p=b-S,K=M*p-(m-x*S-M*S-x*p),L=y*w,k=s*y,x=k-(k-y),M=y-x,k=s*w,S=k-(k-w),p=w-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const B=e(D,l,4,a,o);return o[B-1]}(t,n,f,c,u,_,w)}const c=Math.pow(2,-52),u=new Uint32Array(512);class _{static from(t,s=A,i=k){const e=t.length,n=new Float64Array(2*e);for(let h=0;h<e;h++){const e=t[h];n[2*h]=s(e),n[2*h+1]=i(e)}return new _(n)}constructor(t){const s=t.length>>1;if(s>0&&"number"!=typeof t[0])throw new Error("Expected coords to contain numbers.");this.coords=t;const i=Math.max(2*s-5,0);this._triangles=new Uint32Array(3*i),this._halfedges=new Int32Array(3*i),this._hashSize=Math.ceil(Math.sqrt(s)),this._hullPrev=new Uint32Array(s),this._hullNext=new Uint32Array(s),this._hullTri=new Uint32Array(s),this._hullHash=new Int32Array(this._hashSize),this._ids=new Uint32Array(s),this._dists=new Float64Array(s),this.trianglesLen=0,this._cx=0,this._cy=0,this._hullStart=0,this.hull=this._triangles,this.triangles=this._triangles,this.halfedges=this._halfedges,this.update()}update(){const{coords:t,_hullPrev:s,_hullNext:i,_hullTri:e,_hullHash:n}=this,h=t.length>>1;let r=1/0,l=1/0,o=-1/0,a=-1/0;for(let s=0;s<h;s++){const i=t[2*s],e=t[2*s+1];i<r&&(r=i),e<l&&(l=e),i>o&&(o=i),e>a&&(a=e),this._ids[s]=s}const u=(r+o)/2,_=(l+a)/2;let g=0,b=0,A=0;for(let s=0,i=1/0;s<h;s++){const e=d(u,_,t[2*s],t[2*s+1]);e<i&&(g=s,i=e)}const k=t[2*g],x=t[2*g+1];for(let s=0,i=1/0;s<h;s++){if(s===g)continue;const e=d(k,x,t[2*s],t[2*s+1]);e<i&&e>0&&(b=s,i=e)}let M=t[2*b],S=t[2*b+1],p=1/0;for(let s=0;s<h;s++){if(s===g||s===b)continue;const i=y(k,x,M,S,t[2*s],t[2*s+1]);i<p&&(A=s,p=i)}let T=t[2*A],z=t[2*A+1];if(p===1/0){for(let s=0;s<h;s++)this._dists[s]=t[2*s]-t[0]||t[2*s+1]-t[1];w(this._ids,this._dists,0,h-1);const s=new Uint32Array(h);let i=0;for(let t=0,e=-1/0;t<h;t++){const n=this._ids[t],h=this._dists[n];h>e&&(s[i++]=n,e=h)}return this.hull=s.subarray(0,i),this.triangles=new Uint32Array(0),void(this.halfedges=new Int32Array(0))}if(f(k,x,M,S,T,z)<0){const t=b,s=M,i=S;b=A,M=T,S=z,A=t,T=s,z=i}const U=function(t,s,i,e,n,h){const r=i-t,l=e-s,o=n-t,a=h-s,f=r*r+l*l,c=o*o+a*a,u=.5/(r*a-l*o);return{x:t+(a*f-l*c)*u,y:s+(r*c-o*f)*u}}(k,x,M,S,T,z);this._cx=U.x,this._cy=U.y;for(let s=0;s<h;s++)this._dists[s]=d(t[2*s],t[2*s+1],U.x,U.y);w(this._ids,this._dists,0,h-1),this._hullStart=g;let m=3;i[g]=s[A]=b,i[b]=s[g]=A,i[A]=s[b]=g,e[g]=0,e[b]=1,e[A]=2,n.fill(-1),n[this._hashKey(k,x)]=g,n[this._hashKey(M,S)]=b,n[this._hashKey(T,z)]=A,this.trianglesLen=0,this._addTriangle(g,b,A,-1,-1,-1);for(let h=0,r=0,l=0;h<this._ids.length;h++){const o=this._ids[h],a=t[2*o],u=t[2*o+1];if(h>0&&Math.abs(a-r)<=c&&Math.abs(u-l)<=c)continue;if(r=a,l=u,o===g||o===b||o===A)continue;let _=0;for(let t=0,s=this._hashKey(a,u);t<this._hashSize&&(_=n[(s+t)%this._hashSize],-1===_||_===i[_]);t++);_=s[_];let d,y=_;for(;d=i[y],f(a,u,t[2*y],t[2*y+1],t[2*d],t[2*d+1])>=0;)if(y=d,y===_){y=-1;break}if(-1===y)continue;let w=this._addTriangle(y,o,i[y],-1,-1,e[y]);e[o]=this._legalize(w+2),e[y]=w,m++;let k=i[y];for(;d=i[k],f(a,u,t[2*k],t[2*k+1],t[2*d],t[2*d+1])<0;)w=this._addTriangle(k,o,d,e[o],-1,e[k]),e[o]=this._legalize(w+2),i[k]=k,m--,k=d;if(y===_)for(;d=s[y],f(a,u,t[2*d],t[2*d+1],t[2*y],t[2*y+1])<0;)w=this._addTriangle(d,o,y,-1,e[y],e[d]),this._legalize(w+2),e[d]=w,i[y]=y,m--,y=d;this._hullStart=s[o]=y,i[y]=s[k]=o,i[o]=k,n[this._hashKey(a,u)]=o,n[this._hashKey(t[2*y],t[2*y+1])]=y}this.hull=new Uint32Array(m);for(let t=0,s=this._hullStart;t<m;t++)this.hull[t]=s,s=i[s];this.triangles=this._triangles.subarray(0,this.trianglesLen),this.halfedges=this._halfedges.subarray(0,this.trianglesLen)}_hashKey(t,s){return Math.floor(function(t,s){const i=t/(Math.abs(t)+Math.abs(s));return(s>0?3-i:1+i)/4}(t-this._cx,s-this._cy)*this._hashSize)%this._hashSize}_legalize(t){const{_triangles:s,_halfedges:i,coords:e}=this;let n=0,h=0;for(;;){const r=i[t],l=t-t%3;if(h=l+(t+2)%3,-1===r){if(0===n)break;t=u[--n];continue}const o=r-r%3,a=l+(t+1)%3,f=o+(r+2)%3,c=s[h],_=s[t],d=s[a],y=s[f];if(g(e[2*c],e[2*c+1],e[2*_],e[2*_+1],e[2*d],e[2*d+1],e[2*y],e[2*y+1])){s[t]=y,s[r]=c;const e=i[f];if(-1===e){let s=this._hullStart;do{if(this._hullTri[s]===f){this._hullTri[s]=t;break}s=this._hullPrev[s]}while(s!==this._hullStart)}this._link(t,e),this._link(r,i[h]),this._link(h,f);const l=o+(r+1)%3;n<u.length&&(u[n++]=l)}else{if(0===n)break;t=u[--n]}}return h}_link(t,s){this._halfedges[t]=s,-1!==s&&(this._halfedges[s]=t)}_addTriangle(t,s,i,e,n,h){const r=this.trianglesLen;return this._triangles[r]=t,this._triangles[r+1]=s,this._triangles[r+2]=i,this._link(r,e),this._link(r+1,n),this._link(r+2,h),this.trianglesLen+=3,r}}function d(t,s,i,e){const n=t-i,h=s-e;return n*n+h*h}function g(t,s,i,e,n,h,r,l){const o=t-r,a=s-l,f=i-r,c=e-l,u=n-r,_=h-l,d=f*f+c*c,g=u*u+_*_;return o*(c*g-d*_)-a*(f*g-d*u)+(o*o+a*a)*(f*_-c*u)<0}function y(t,s,i,e,n,h){const r=i-t,l=e-s,o=n-t,a=h-s,f=r*r+l*l,c=o*o+a*a,u=.5/(r*a-l*o),_=(a*f-l*c)*u,d=(r*c-o*f)*u;return _*_+d*d}function w(t,s,i,e){if(e-i<=20)for(let n=i+1;n<=e;n++){const e=t[n],h=s[e];let r=n-1;for(;r>=i&&s[t[r]]>h;)t[r+1]=t[r--];t[r+1]=e}else{let n=i+1,h=e;b(t,i+e>>1,n),s[t[i]]>s[t[e]]&&b(t,i,e),s[t[n]]>s[t[e]]&&b(t,n,e),s[t[i]]>s[t[n]]&&b(t,i,n);const r=t[n],l=s[r];for(;;){do{n++}while(s[t[n]]<l);do{h--}while(s[t[h]]>l);if(h<n)break;b(t,n,h)}t[i+1]=t[h],t[h]=r,e-n+1>=h-i?(w(t,s,n,e),w(t,s,i,h-1)):(w(t,s,i,h-1),w(t,s,n,e))}}function b(t,s,i){const e=t[s];t[s]=t[i],t[i]=e}function A(t){return t[0]}function k(t){return t[1]}return _});
@@ -11511,7 +11612,7 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
   }
   function jalan() { try { rlCek(); } catch (e) {} try { toolbar(); } catch (e) {} try { status(); } catch (e) {} try { latar(false); } catch (e) {} try { pasang(); } catch (e) {} try { hover(); } catch (e) {} try { tick(); } catch (e) {} try { dockUI(); } catch (e) {} try { cariUI(); } catch (e) {} }
   /* 0.24.86: gambar ulang sesudah kamera berhenti (hires.js) hanya bila orthofoto tampil */
-  window.HR_perlu=function(){var o=document.getElementById('ovOrtho');return !!(o&&o.checked&&!o.disabled)||!(window.TIN&&TIN.on);};
+  window.HR_perlu=function(){return HR.perlu();};/* BM 0.24.103: aturan bersama hires.js (ortho yang muat di anggaran tidak perlu LOD) */
   window.SHELL = { rlCek: rlCek, semua: semua, latar: latar, cari: cari, dock: dock, pohon: pohon, jalan: jalan };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', jalan); else jalan();
   setTimeout(jalan, 1600); setTimeout(jalan, 5200); setInterval(jalan, 1000);
@@ -14254,7 +14355,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.102';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.103';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

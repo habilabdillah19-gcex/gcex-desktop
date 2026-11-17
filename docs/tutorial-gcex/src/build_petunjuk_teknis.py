@@ -617,6 +617,14 @@ B.append('<p><code>web-src/ukur.js</code> (<code>UKUR</code>): tombol dipasang <
          'DH <code>slabSurf(traces,K,pos)</code> sesudah <code>TP.pasca</code>: segitiga <code>ovTopoS</code> / <code>ovPitS</code> / <code>_tpSurf</code> dengan '
          'titik berat di slab + garis potong di bidang tengah. <code>TP.garis</code> melewati sumber yang &gt; 60 % potongannya segitiga (3 titik / 4 titik tertutup, '
          '&ge; 50 potongan). Uji: <code>uji_ukur.py</code>, <code>uji_sayat_permukaan_dh.py</code>.</p>')
+B.append('<h3>8.27 Kinerja 3D &amp; kerapian panel (BM 0.24.103 / DH 0.24.106)</h3>')
+B.append('<p>Profil CPU saat zoom: kode aplikasi 10&ndash;170 ms, sisanya render GPU &mdash; jumlah segitiga yang menentukan. Sesudah <code>traces.push(od.tr)</code>, '
+         'segitiga <code>ovTopoS</code> dengan titik berat di dalam mesh ortho drape (opasitas &ge; 0,99) dibuang (WeakMap <code>__orCut</code>). '
+         '<code>HR.orPenuh()</code>: piksel ortho &le; <code>HR.anggaran()</code> &rarr; tanpa LOD (kunci cache tanpa <code>HR.ver</code>). <code>HR.perlu()</code> '
+         'menggantikan gambar ulang sesudah zoom di DH; <code>OVC</code> tidak dikosongkan. <code>web-src/tutup.js</code> (<code>TUTUP</code>): CSS '
+         '<code>body:not(.gxHintOn) .hint:not([id]):not(:has(button,input,select,...))</code>, tombol <code>#hintBtn</code>; tombol <code>.gxX</code> pada '
+         '<code>#slabBar</code> (sesi), <code>#statsCard</code>, <code>#cpBox</code>, <code>.gxSkala</code> (+ <code>.gxUkurB</code>), localStorage <code>gcex_tutup</code>, '
+         'tombol <code>#tutupBtn</code>. Uji: <code>uji_zoom_dh.py</code>, <code>uji_kerapian.py</code>.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

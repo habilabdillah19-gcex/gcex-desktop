@@ -107,6 +107,18 @@ HR.resFor = function (x0, x1, y0, y1, budget) {
   return Math.max(mn, r);
 };
 
+/* ortho seluruhnya muat di anggaran pada resolusi piksel asli -> LOD tidak berguna: mesh penuh dibangun sekali saja,
+   tidak dibangun ulang tiap zoom (BM 0.24.103 / DH 0.24.106). */
+HR.orPenuh = function () { var O = window.ORT; if (!O || !O.m) return false; return O.m.w * O.m.h <= HR.anggaran(); };
+/* gambar ulang sesudah zoom hanya perlu bila ada lapisan yang resolusinya mengikuti tampilan */
+HR.perlu = function () {
+  var o = document.getElementById('ovOrtho'), lm = document.getElementById('lightMode');
+  if (o && o.checked && !o.disabled && window.ORT && ORT.m && !HR.orPenuh()) return true;
+  if (!(window.TIN && TIN.on)) return true;
+  if (lm && lm.checked) return true;
+  return false;
+};
+
 /* ============================ 2. tampilan yang sedang terlihat ============================ */
 HR.setExt = function (x0, x1, y0, y1, world) {
   if (!isFinite(x0) || !isFinite(x1) || !isFinite(y0) || !isFinite(y1) || x1 <= x0 || y1 <= y0) return;
@@ -292,9 +304,14 @@ HR.mapImage = function () {
          berhenti hanya berguna bila ada lapisan yang resolusinya mengikuti zoom (orthofoto). Tanpa itu, cache overlay dulu
          dikosongkan dan topografi / pit / Topo x Pit (jutaan segitiga) + block model dibangun & dikirim ulang ke GPU tiap
          kali kamera digerakkan. window.HR_perlu() (Block Model) menjawab apakah gambar ulang itu perlu. */
-      if (typeof window.HR_perlu === 'function' && !window.HR_perlu()) return;
+      /* BM 0.24.103 / DH 0.24.106 (pemilik 17 Nov 2026: "berganti tampilan 3D (zoom in zoom out) terasa ada jeda ... terutama di
+         GCEx DH"): DH tidak punya HR_perlu, jadi SETIAP zoom membangun ulang & mengirim ulang seluruh adegan (topografi TIN
+         resolusi penuh + hillshade, ortho, bor, wireframe). Kini memakai HR.perlu() bersama, dan cache overlay tidak lagi
+         dikosongkan: kunci cache yang bergantung pada tampilan sudah memuat HR.ver. */
+      var perlu = typeof window.HR_perlu === 'function' ? window.HR_perlu : HR.perlu;
       if (window.MAP && MAP.on && window.mapRefresh) mapRefresh(true);
-      else if (window.updatePlot) { if (window.OVC) window.OVC = {}; updatePlot(); }
+      else if (!perlu()) return;
+      else if (window.updatePlot) updatePlot();
     } catch (e) { }
   };
   var bump = function () { if (tmr) clearTimeout(tmr); tmr = setTimeout(redraw, 260); };
