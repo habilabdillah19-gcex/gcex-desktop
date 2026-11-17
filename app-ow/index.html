@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.10';</script>
+<script>window.GCEX_VER='0.14.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -2998,7 +2998,7 @@ document.getElementById('pjs').onclick=()=>{const st={app:'GC-Ex viewer 3D',prod
   struktur:{list:STR.filter(s=>s.st!=='usulan').map(s=>{const o=Object.assign({},s);delete o._ix;return o;}),tolak:[...STRJ],codes:document.getElementById('stcodes').value},
   plan:PLAN.map(p=>({nm:p.nm,on:p.on,col:p.col,hd:p.hd,rows:p.rows,edited:p.edited})),
   wireframe:WI.map(m=>({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,ms:m.ms,v:Array.from(m.v,x=>+x.toFixed(3)),t:Array.from(m.t)})),
-  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),pemodelan:window.msSave?msSave():undefined,filter2:window.f2Save?f2Save():undefined,ui:(typeof uiSave==='function'?uiSave():undefined)};
+  dataset:DS.map(d=>({nm:d.nm,mode:d.mode,on:d.on,fm:d.fm||undefined,dlx:d.dlx,holes:d.holes,hi:d.hi,info:d.info,geo:d.geo,gcols:d.gcols,ael:d.ael,acols:d.acols,gcat:d.gcat,raw:window.vgRawSave?vgRawSave(d):undefined})),pemodelan:window.msSave?msSave():undefined,filter2:window.f2Save?f2Save():undefined,gis:window.gisSave?gisSave():undefined,ui:(typeof uiSave==='function'?uiSave():undefined)};
  const b=new Blob([JSON.stringify(st)],{type:'application/json'}),a=document.createElement('a'),t=new Date(),pad=x=>String(x).padStart(2,'0');
  a.href=URL.createObjectURL(b);a.download='Project_'+(window.pjName?pjName():document.title.split('·')[0].trim()).replace(/[^\w\-]+/g,'_')+'_'+t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+'_'+pad(t.getHours())+pad(t.getMinutes())+'.gcv.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
  document.getElementById('pjw').textContent='Tersimpan: '+a.download+' ('+(b.size/1e6).toFixed(1).replace('.',',')+' MB) di folder unduhan browser.';};
@@ -3007,7 +3007,7 @@ document.getElementById('pjo').onchange=e=>{const f=e.target.files&&e.target.fil
   if(!st.__boot&&(SF.length||DS.length||WI.length||PLAN.length)&&!confirm('Ganti topografi, desain pit, wireframe dan dataset yang sedang tampil dengan isi project?'))return;
   if(st.origin)OSETF([st.origin]);SF.forEach(sfDispose);SF.length=0;DS.length=0;WI.forEach(wiDispose);WI.length=0;PLAN.length=0;for(const p of st.plan||[])PLAN.push(p);if(st.struktur){STR.length=0;(st.struktur.list||[]).forEach(s=>STR.push(s));STRID=Math.max(1,...STR.map(s=>(s.id||0)+1));STRJ=new Set(st.struktur.tolak||[]);if(st.struktur.codes)document.getElementById('stcodes').value=st.struktur.codes;stDraw();stList();}if(st.titikStruktur){STP.length=0;st.titikStruktur.forEach(p=>STP.push(p));STPID=Math.max(1,...STP.map(p=>(p.id||0)+1));stpDraw();stpList();}for(const m of st.wireframe||[])wiAdd({nm:m.nm,dom:m.dom,useDom:m.useDom,on:m.on,col:m.col,op:m.op,ms:m.ms,v:new Float64Array(m.v),t:new Uint32Array(m.t)});for(const p of st.permukaan||[])sfAdd(p);for(const d of st.dataset||[]){if(d.fm)(d.holes||[]).forEach(h=>{h.src='CH';});DS.push(d);}
   const F=st.filter||{};for(const i of ['flid','flbe','flr0','flr1'])document.getElementById(i).value=F[i]||'';document.getElementById('fltp').checked=!!F.fltp;
-  sfList();dsList();wiList();plList();plDraw();flRead();orRestore(st.orto||[]);fmRestore(st.pemetaan);if(window.msRestore)msRestore(st.pemodelan);if(window.f2Restore)f2Restore(st.filter2);if(typeof uiRestore==='function')uiRestore(st.ui);if(!st.__boot||D.kosong)fitView();w.textContent='Dibuka: '+f.name+' · '+SF.length+' permukaan, '+WI.length+' wireframe, '+DS.length+' dataset.';}catch(err){w.textContent='Gagal membuka project: '+err.message;}e.target.value='';};r.readAsText(f);};
+  sfList();dsList();wiList();plList();plDraw();flRead();orRestore(st.orto||[]);fmRestore(st.pemetaan);if(window.msRestore)msRestore(st.pemodelan);if(window.f2Restore)f2Restore(st.filter2);if(window.gisRestore)gisRestore(st.gis);if(typeof uiRestore==='function')uiRestore(st.ui);if(!st.__boot||D.kosong)fitView();w.textContent='Dibuka: '+f.name+' · '+SF.length+' permukaan, '+WI.length+' wireframe, '+DS.length+' dataset.';}catch(err){w.textContent='Gagal membuka project: '+err.message;}e.target.value='';};r.readAsText(f);};
 
 /* ---------- Titik struktur (pengukuran lapangan / singkapan) + kategori struktur ---------- */
 var STP=window.STP||[],STPID=1;grp('stp');
@@ -5823,6 +5823,214 @@ body.rp-lepas #rpan .rph{cursor:move}body.rp-lepas #rpgr{display:none}body.rp-le
  const pasang=()=>{const f=window.lgDraw2;if(!f){setTimeout(pasang,300);return;}if(f.__kd)return;const w2=function(){const r=f.apply(this,arguments);try{lab();}catch(e){}return r;};w2.__kd=1;window.lgDraw2=w2;};pasang();
  /* pengaturan label 3D berubah → penampang ikut digambar ulang */
  ['hglmin','hgldp','hglsz','hglst'].forEach(i=>{const e=g(i);if(e)e.addEventListener(i==='hglsz'?'input':'change',()=>{if(SC.open)try{scDraw();}catch(_){}});});
+})();
+
+/* Pembaca tabel MapInfo native (.TAB + .DAT + .MAP + .ID) — offline, tanpa pustaka luar. Ore Works 0.14.0.
+   Mengikuti tata letak berkas MapInfo seperti didokumentasikan GDAL/MITAB (mitab_mapheaderblock / mapobjectblock /
+   mapcoordblock / datfile). Hasil: {nama, kolom:[{nm,tp,w,d}], baris:[{...}], geom:[{t:'pt'|'ln'|'pg', c:[[[x,y],...],...]}|null],
+   bbox, proj:{id,datum,par[],utm}, cat:[]}. Objek teks dilewati (dicatat di cat). */
+(function(G){
+const DEC={WindowsLatin1:'windows-1252',WindowsLatin2:'windows-1250',WindowsCyrillic:'windows-1251',Neutral:'windows-1252',ISO8859_1:'iso-8859-1',UTF8:'utf-8','UTF-8':'utf-8'};
+function bacaTAB(teks){const o={kolom:[],cs:'WindowsLatin1',jenis:'NATIVE'};const m=/!charset\s+(\S+)/i.exec(teks);if(m)o.cs=m[1];const t=/Type\s+(\w+)/i.exec(teks);if(t)o.jenis=t[1].toUpperCase();
+ const f=/Fields\s+(\d+)\s*\r?\n([\s\S]*)/i.exec(teks);if(f){const L=f[2].split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,+f[1]);
+  for(const s of L){const q=/^("?)(.+?)\1\s+(Char|Integer|SmallInt|LargeInt|Decimal|Float|Date|Time|DateTime|Logical)\s*(?:\((\d+)(?:\s*,\s*(\d+))?\))?/i.exec(s);if(q)o.kolom.push({nm:q[2],tp:q[3].toLowerCase(),w:+(q[4]||0),d:+(q[5]||0)});}}
+ return o;}
+function bacaDAT(buf,tab){const v=new DataView(buf),n=v.getInt32(4,true),hl=v.getUint16(8,true),rl=v.getUint16(10,true),F=[];
+ for(let p=32;p+32<=hl&&v.getUint8(p)!==0x0d;p+=32)F.push({len:v.getUint8(p+16)});
+ const td=new TextDecoder(DEC[tab.cs]||'windows-1252'),K=tab.kolom,B=new Uint8Array(buf),out=[],del=[];
+ for(let i=0;i<n;i++){const s=hl+i*rl;if(s+rl>buf.byteLength)break;del.push(B[s]===0x2a);let p=s+1;const r={};
+  for(let j=0;j<F.length;j++){const k=K[j]||{nm:'F'+(j+1),tp:'char'},L=F[j].len;let x=null;
+   try{switch(k.tp){case 'integer':x=v.getInt32(p,true);break;case 'smallint':x=v.getInt16(p,true);break;case 'largeint':x=Number(v.getBigInt64(p,true));break;
+    case 'float':x=v.getFloat64(p,true);break;case 'decimal':{const s2=td.decode(B.subarray(p,p+L)).trim();x=s2===''?null:+s2;break;}
+    case 'date':{const y=v.getInt16(p,true),mo=v.getUint8(p+2),d=v.getUint8(p+3);x=y>0?y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'):null;break;}
+    case 'datetime':{const y=v.getInt16(p,true),mo=v.getUint8(p+2),d=v.getUint8(p+3);x=y>0?y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'):null;break;}
+    case 'logical':x=String.fromCharCode(B[p])==='T';break;
+    default:x=td.decode(B.subarray(p,p+L)).replace(/\0.*$/s,'').trim();}}catch(e){x=null;}
+   r[k.nm]=x;p+=L;}out.push(r);}
+ return {baris:out,hapus:del};}
+function bacaMAP(buf,idbuf,nbaris){const v=new DataView(buf),N=buf.byteLength,u8=new Uint8Array(buf);if(v.getInt32(0x100,true)!==42424242)throw new Error('bukan berkas .MAP MapInfo');
+ const bs=v.getUint16(0x106,true)||512,quad=v.getUint8(0x161),XS=v.getFloat64(0x170,true),YS=v.getFloat64(0x178,true),XD=v.getFloat64(0x180,true),YD=v.getFloat64(0x188,true);
+ const proj={id:v.getUint8(0x16d),datum:v.getInt16(0x16a,true),ell:v.getUint8(0x16e),unit:v.getUint8(0x16f),par:[0,1,2,3,4,5].map(i=>v.getFloat64(0x190+i*8,true))};
+ if(proj.id===8&&Math.abs(proj.par[2]-0.9996)<1e-6&&Math.abs(proj.par[3]-500000)<1e-3){const z=Math.round((proj.par[0]+183)/6);proj.utm=z+(proj.par[4]>1?'S':'N');}
+ const cx=x=>(quad===2||quad===3||quad===0)?-(x+XD)/XS:(x-XD)/XS,cy=y=>(quad===3||quad===4||quad===0)?-(y+YD)/YS:(y-YD)/YS;
+ const iv=new DataView(idbuf),nid=Math.min(nbaris==null?1e12:nbaris,Math.floor(idbuf.byteLength/4)),geom=[],cat={};
+ /* pembaca koordinat lintas blok koordinat (tipe 3: int16 tipe, int16 terpakai, int32 blok berikut) */
+ function cr(p){let blk=Math.floor(p/bs)*bs,end=blk+8+v.getInt16(blk+2,true),pos=p,hop=0;const tb=new DataView(new ArrayBuffer(4));
+  const by=()=>{if(pos>=end){const nx=v.getInt32(blk+4,true);if(!(nx>0&&nx+8<N)||++hop>1e6)throw new Error('blok koordinat putus');blk=nx;end=blk+8+v.getInt16(blk+2,true);pos=blk+8;}return u8[pos++];};
+  return {i16(){if(pos+2<=end){const a=v.getInt16(pos,true);pos+=2;return a;}tb.setUint8(0,by());tb.setUint8(1,by());return tb.getInt16(0,true);},
+   i32(){if(pos+4<=end){const a=v.getInt32(pos,true);pos+=4;return a;}for(let k=0;k<4;k++)tb.setUint8(k,by());return tb.getInt32(0,true);}};}
+ const ellip=(x0,y0,x1,y1,a0,a1,tutup)=>{const cxx=(x0+x1)/2,cyy=(y0+y1)/2,rx=Math.abs(x1-x0)/2,ry=Math.abs(y1-y0)/2,P=[],n=180;
+  if(a0==null){for(let i=0;i<=n;i++){const t=i/n*2*Math.PI;P.push([cxx+rx*Math.cos(t),cyy+ry*Math.sin(t)]);}return P;}
+  let b=a1;if(b<=a0)b+=360;for(let i=0;i<=n;i++){const t=(a0+(b-a0)*i/n)*Math.PI/180;P.push([cxx+rx*Math.cos(t),cyy+ry*Math.sin(t)]);}return P;};
+ for(let i=0;i<nid;i++){const off=iv.getInt32(i*4,true);if(off<=0||off>=N){geom.push(null);continue;}
+  const t=u8[off],blk=Math.floor(off/bs)*bs,ox=v.getInt32(blk+4,true),oy=v.getInt32(blk+8,true);let p=off+5,g=null;cat[t]=(cat[t]||0)+1;
+  const I16=()=>{const a=v.getInt16(p,true);p+=2;return a;},I32=()=>{const a=v.getInt32(p,true);p+=4;return a;},U8=()=>u8[p++];
+  const komp=[1,4,7,10,13,16,19,22,25,28,37,40,43,46,49,52,55].includes(t)||(t>=0x3a&&t%3===1);
+  const XY=()=>komp?[cx(ox+I16()),cy(oy+I16())]:[cx(I32()),cy(I32())];
+  try{
+   if(t===1||t===2){g={t:'pt',c:[[XY()]]};}
+   else if(t===40||t===41){p+=12;g={t:'pt',c:[[XY()]]};}                                       /* font symbol */
+   else if(t===43||t===44){p+=2;g={t:'pt',c:[[XY()]]};}                                        /* custom symbol */
+   else if(t===4||t===5){const a=XY(),b=XY();g={t:'ln',c:[[a,b]]};}
+   else if(t===19||t===20||t===22||t===23||t===25||t===26){if(t===22||t===23){komp?(p+=4):(p+=8);}const a=XY(),b=XY();
+    g={t:'pg',c:[t===25||t===26?ellip(a[0],a[1],b[0],b[1]):[[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]],[a[0],a[1]]]]};}
+   else if(t===10||t===11){const a0=I16()/10,a1=I16()/10;const e0=XY(),e1=XY();g={t:'ln',c:[ellip(e0[0],e0[1],e1[0],e1[1],a0,a1)]};}
+   else if([7,8,13,14,37,38,46,47,49,50].includes(t)||(t>=0x3a&&t<0x55)){
+    const cbp=I32(),cds=I32()&0x7fffffff,v800=t>=0x3a,v450=t>=46&&t<=50||v800,pl1=t===7||t===8;let ns=1;
+    if(!pl1)ns=v450?I32():I16();if(v800){p+=4;}
+    let lx,ly,orx=0,ory=0;if(komp){lx=I16();ly=I16();orx=I32();ory=I32();p+=8;}else{lx=I32();ly=I32();p+=16;}
+    const reg=[13,14,46,47].includes(t),ring=[],c=cr(cbp),rc=()=>komp?[cx(orx+c.i16()),cy(ory+c.i16())]:[cx(c.i32()),cy(c.i32())];
+    if(pl1){const n=cds/(komp?4:8);const P=[];for(let k=0;k<n;k++)P.push(rc());ring.push(P);}
+    else{const H=[],th=ns*(v800?28:v450?26:24);let tot=0;for(let s=0;s<ns;s++){const nv=v450?c.i32():c.i16();v800?c.i32():c.i16();if(komp){c.i16();c.i16();c.i16();c.i16();}else{c.i32();c.i32();c.i32();c.i32();}const off=c.i32();H.push([nv,Math.round((off-th)/8)]);tot+=nv;}
+     const A=[];for(let k=0;k<tot;k++)A.push(rc());for(const [nv,vo] of H){const o2=vo>=0&&vo+nv<=tot?vo:0;ring.push(A.slice(o2,o2+nv));}}
+    g={t:reg?'pg':'ln',c:ring.filter(r=>r.length>1)};}
+   else if(t===52||t===53){const n=I32();p+=komp?28:40;const P=[];for(let k=0;k<n;k++)P.push(XY());g={t:'pt',c:P.map(q=>[q])};}
+  }catch(e){g=null;}
+  if(g&&!g.c.length)g=null;geom.push(g);}
+ return {geom,proj,cat};}
+function bbox(geom){let a=[1e300,1e300,-1e300,-1e300];for(const g of geom)if(g)for(const r of g.c)for(const q of r){if(q[0]<a[0])a[0]=q[0];if(q[1]<a[1])a[1]=q[1];if(q[0]>a[2])a[2]=q[0];if(q[1]>a[3])a[3]=q[1];}return a[0]>a[2]?null:a;}
+/* files: {tab:text, dat:ArrayBuffer, map:ArrayBuffer|null, id:ArrayBuffer|null}; tanpa .MAP/.ID → geometri dari kolom koordinat bila ada */
+/* tanpa .TAB: jenis kolom ditebak dari isi .DAT (native MapInfo menyimpan Float/Integer/Date biner di kolom bertipe 'C') */
+function tebakTAB(buf){const v=new DataView(buf),u=new Uint8Array(buf),n=v.getInt32(4,true),hl=v.getUint16(8,true),rl=v.getUint16(10,true),K=[];let off=1;
+ for(let p=32;p+32<=hl&&u[p]!==0x0d;p+=32){let nm='';for(let k=0;k<11&&u[p+k];k++)nm+=String.fromCharCode(u[p+k]);const L=u[p+16];let cetak=true,tgl=true;
+  for(let i=0;i<Math.min(n,60);i++){const s0=hl+i*rl+off;for(let k=0;k<L;k++){const c=u[s0+k];if(c!==0&&(c<32||c===127)){cetak=false;}}if(L===4){const y=v.getInt16(s0,true),m=u[s0+2],d=u[s0+3];if(!(y===0||(y>1800&&y<2200&&m>=1&&m<=12&&d>=1&&d<=31)))tgl=false;}}
+  K.push({nm,tp:cetak?'char':L===8?'float':L===4?(tgl?'date':'integer'):L===2?'smallint':'char',w:L,d:0});off+=L;}
+ return {kolom:K,cs:'WindowsLatin1',jenis:'NATIVE',tebak:true};}
+function bacaTabel(nama,f){const tab=f.tab?bacaTAB(f.tab):f.dat?tebakTAB(f.dat):{kolom:[],cs:'WindowsLatin1',jenis:'NATIVE'};if(tab.jenis!=='NATIVE'&&tab.jenis!=='DBF')throw new Error(nama+': tabel jenis '+tab.jenis+' (bukan tabel data native) belum didukung');
+ let D;if(f.dat)D=bacaDAT(f.dat,tab);else if(f.map&&f.id){const n=Math.floor(f.id.byteLength/4);D={baris:Array.from({length:n},()=>({})),hapus:new Array(n).fill(false)};}else throw new Error(nama+': berkas .DAT tidak ada');let geom=D.baris.map(()=>null),proj=null,cat={},sumber='tidak ada';
+ if(f.map&&f.id){const M=bacaMAP(f.map,f.id,D.baris.length);for(let i=0;i<D.baris.length;i++)geom[i]=M.geom[i]||null;proj=M.proj;cat=M.cat;sumber='.MAP';}
+ if(!geom.some(Boolean)){const k=tab.kolom.map(c=>c.nm),ke=k.find(c=>/^(utm_?m?e|easting|east|x|e)$/i.test(c)),kn=k.find(c=>/^(utm_?m?n|northing|north|y|n)$/i.test(c));
+  if(ke&&kn){geom=D.baris.map(r=>{const x=+r[ke],y=+r[kn];return isFinite(x)&&isFinite(y)&&x!==0&&y!==0?{t:'pt',c:[[[x,y]]]}:null;});sumber='kolom '+ke+'/'+kn;}}
+ for(let i=0;i<geom.length;i++)if(D.hapus[i])geom[i]=null;
+ return {nama,nm:nama,tebak:!!tab.tebak,tanpaDat:!f.dat,kolom:tab.kolom,baris:D.baris,hapus:D.hapus,geom,proj,cat,sumber,bbox:bbox(geom)};}
+/* .WOR: tema "shade N with Kolom ... ranges" → [{tabel?,kolom,kelas:[[lo,hi,warna]]}] */
+function bacaWOR(teks){const out=[];const re=/shade\s+(\d+)\s+with\s+(\S+)[^\n]*ranges[^\n]*\n([\s\S]*?)\n\s*default/gi;let m;
+ while((m=re.exec(teks))){const kl=[];for(const L of m[3].split(/\r?\n/)){const q=/^\s*(-?[\d.]+)\s*:\s*(-?[\d.]+)\s+Symbol\s*\((\d+),\s*(\d+)/i.exec(L);if(q){const c=+q[4];kl.push([+q[1],+q[2],'#'+c.toString(16).padStart(6,'0')]);}}if(kl.length)out.push({lapis:+m[1],kolom:m[2],kelas:kl});}
+ return out;}
+G.MITAB={bacaTAB,bacaDAT,bacaMAP,bacaTabel,bacaWOR};
+})(typeof window!=='undefined'?window:globalThis);
+
+/* Ore Works 0.14.0 (pemilik 17 Nov 2026: "bagaimana Ore Works dapat membaca data seperti ini [MapInfo .TAB/.DAT/.MAP/.ID/.WOR]
+   … perlukah kita buat dalam menu khusus … karena ini data lampau" → disetujui: menu ringan "Arsip GIS (MapInfo)").
+   Pemetaan → Arsip GIS (MapInfo): impor tabel MapInfo native (pilih semua berkas sekaligus: .TAB .DAT .MAP .ID, .IND
+   diabaikan; .WOR dibaca untuk kelas tematik). Titik, garis dan poligon ditampilkan di 3D: titik memakai kolom Elev bila > 0,
+   selain itu ditempel ke topografi; garis & poligon ditempel ke topografi (diperhalus tiap ±5 m). Warna satu / menurut
+   kolom (angka: kelas .WOR bila nama kolom sama, selain itu kuantil; teks: kategori). Gaya arsip (pudar) bawaan nyala.
+   Arahkan kursor ke titik = atribut ringkas; klik ganda dekat objek = semua atribut. Ekspor CSV (atribut + X/Y) & DXF.
+   Tersimpan di project (.gcv.json). Pembaca: MITAB (mi_tab.js, divalidasi terhadap GDAL: koordinat ≤ 1 cm). */
+(function(){const g=id=>document.getElementById(id);if(!window.MITAB||g('gisw'))return;
+ const anc=g('fmk')&&g('fmk').closest('.subb');if(!anc)return;const host=anc.parentNode;
+ const css=document.createElement('style');css.textContent=`#gisl .gt{border:1px solid #d6dde8;border-radius:5px;padding:5px 7px;margin:5px 0;background:#fbfcfe}
+#gisl .gt .hd{display:flex;align-items:center;gap:5px}#gisl .gt .hd b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+#gisl .gt .hd button{padding:0 5px;margin:0;min-width:22px}#gisl .gt .fl{margin:3px 0}#gisl .lg{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:10.5px;color:#3d4b5c;margin-top:2px}
+#gisl .lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;vertical-align:-1px;border:1px solid #0003}
+#gistip{position:fixed;z-index:60;display:none;pointer-events:none;background:#1b2a4ef0;color:#fff;font:11.5px/1.35 Segoe UI,Arial;padding:5px 8px;border-radius:5px;max-width:320px}
+#gisat{position:fixed;z-index:61;display:none;background:#fff;border:1px solid #8fa1bd;border-radius:6px;box-shadow:0 8px 28px #0004;width:360px;max-height:70vh;flex-direction:column;font-size:12px}
+#gisat .h{display:flex;align-items:center;padding:5px 9px;background:linear-gradient(#2a3f6c,#1b2a4e);color:#fff;border-radius:6px 6px 0 0;cursor:move}#gisat .h b{flex:1}
+#gisat .h button{background:transparent;color:#fff;border:1px solid #ffffff40;padding:0 6px;margin:0}#gisat .b{overflow:auto;padding:4px 8px}#gisat table{width:100%;border-collapse:collapse}
+#gisat td{border-bottom:1px solid #eef1f5;padding:2px 4px;vertical-align:top}#gisat td:first-child{color:#667085;white-space:nowrap;width:40%}`;document.head.appendChild(css);
+ const h=document.createElement('div');h.className='note subh';h.innerHTML='<b>Arsip GIS (MapInfo)</b>';
+ const b=document.createElement('div');b.className='subb';b.id='gisw';
+ b.innerHTML='<div class="note">Data GIS lama dari MapInfo: pilih <b>semua berkas</b> satu tabel sekaligus (.TAB, .DAT, .MAP, .ID; .WOR opsional untuk kelas warna). Bisa beberapa tabel sekaligus. Koordinat dibaca apa adanya (mis. UTM).</div>'+
+  '<label class="fbtn">&#8679; Impor tabel MapInfo<input type="file" id="gisf" multiple accept=".tab,.dat,.map,.id,.ind,.wor,.TAB,.DAT,.MAP,.ID,.IND,.WOR"></label><div id="gisst" class="note"></div>'+
+  '<label><input type="checkbox" id="gispd" checked>Gaya arsip (pudar)</label><label><input type="checkbox" id="gishv" checked>Arahkan kursor = atribut titik · klik ganda = semua atribut</label><div id="gisl"></div>';
+ host.appendChild(h);host.appendChild(b);
+ const tip=document.createElement('div');tip.id='gistip';document.body.appendChild(tip);const at=document.createElement('div');at.id='gisat';at.innerHTML='<div class="h"><b></b><button title="Tutup">&#10005;</button></div><div class="b"></div>';document.body.appendChild(at);
+ at.querySelector('button').onclick=()=>at.style.display='none';
+ {const hd=at.querySelector('.h');hd.addEventListener('mousedown',e=>{if(e.target.closest('button'))return;const r=at.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;const mv=ev=>{at.style.left=Math.max(0,ev.clientX-dx)+'px';at.style.top=Math.max(0,ev.clientY-dy)+'px';},up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);};addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();});}
+ const GL=grp('gis');const GIS=window.GIS=[];let GID=1,WOR=[];
+ const PAL=['#1e88e5','#e53935','#43a047','#fb8c00','#8e24aa','#00acc1','#fdd835','#6d4c41','#d81b60','#7cb342','#3949ab','#546e7a'],KL=['#5c6bc0','#ffd54f','#ff9800','#e53935','#c2185b'];
+ const tex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.beginPath();x.arc(32,32,27,0,7);x.fillStyle='#fff';x.fill();x.lineWidth=6;x.strokeStyle='#222';x.stroke();return new THREE.CanvasTexture(c);})();
+ const num=v=>{if(v==null||v==='')return NaN;const x=typeof v==='number'?v:parseFloat(String(v).replace(',','.'));return isFinite(x)?x:NaN;};
+ const kolZ=T=>T.kolom.map(k=>k.nm).find(c=>/^(elev|elevation|rl|z|elev_m|height)$/i.test(c));
+ function kelas(T){const c=T.ck;if(!c){T.kelas=null;return;}const vals=T.baris.map(r=>r[c]);const nn=vals.map(num).filter(isFinite);
+  if(nn.length>=Math.max(3,vals.filter(v=>v!=null&&String(v).trim()!=='').length*0.8)){const w=WOR.find(q=>q.kolom.toLowerCase()===c.toLowerCase());
+   if(w)T.kelas={m:'n',k:w.kelas.map(q=>[q[0],q[1],q[2]])};else{const s=nn.filter(v=>v>0).sort((a,b)=>a-b),Q=p=>s.length?s[Math.min(s.length-1,Math.floor(p*(s.length-1)))]:0,r=v=>+v.toPrecision(2);
+    const br=[Q(.5),Q(.75),Q(.9),Q(.975)].map(r);for(let i=1;i<4;i++)if(br[i]<=br[i-1])br[i]=r(br[i-1]*1.5);T.kelas={m:'n',k:[[-1e300,br[0],KL[0]],[br[0],br[1],KL[1]],[br[1],br[2],KL[2]],[br[2],br[3],KL[3]],[br[3],1e300,KL[4]]]};}}
+  else{const cnt=new Map();for(const v of vals){const k=v==null?'':String(v).trim();cnt.set(k,(cnt.get(k)||0)+1);}const ks=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);const M=new Map();ks.forEach((k,i)=>M.set(k,i<PAL.length?PAL[i]:'#9e9e9e'));T.kelas={m:'k',M,ks};}}
+ const warnaRow=(T,i)=>{if(!T.kelas)return T.col;const v=T.baris[i][T.ck];if(T.kelas.m==='n'){const x=num(v);if(!isFinite(x))return '#bdbdbd';for(const q of T.kelas.k)if(x>=q[0]&&x<q[1])return q[2];return T.kelas.k[T.kelas.k.length-1][2];}return T.kelas.M.get(v==null?'':String(v).trim())||'#9e9e9e';};
+ function zOf(T,E,N,i){const kz=T.kz;if(kz&&i!=null){const z=num(T.baris[i][kz]);if(isFinite(z)&&z>0)return z;}const t=topoZ(E,N);if(isFinite(t))return t+0.5;return T.z0;}
+ const L3=(E,N,Z)=>[E-O[0],Z-O[2],-(N-O[1])];
+ function bangun(T){if(T.obj){GL.remove(T.obj);T.obj.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});T.obj=null;}if(!T.on)return;
+  const grpT=new THREE.Group();const pd=g('gispd').checked,op=pd?0.62:1;const pp=[],pc=[],lp=[],lc=[],fp=[],fc=[];T.pick=[];const C=new THREE.Color();
+  for(let i=0;i<T.geom.length;i++){const G=T.geom[i];if(!G)continue;if(T.flt&&!T.flt(i))continue;C.set(warnaRow(T,i));
+   if(G.t==='pt'){for(const r of G.c){const q=r[0],z=zOf(T,q[0],q[1],i);pp.push(...L3(q[0],q[1],z));pc.push(C.r,C.g,C.b);T.pick.push([q[0],q[1],z,i]);}continue;}
+   const ringsZ=G.c.map(r=>{const P=[];for(let k=0;k<r.length;k++){const a=r[k];if(k>0){const p0=r[k-1],d=Math.hypot(a[0]-p0[0],a[1]-p0[1]),n=Math.min(200,Math.floor(d/5));for(let s=1;s<n;s++){const t=s/n,E=p0[0]+(a[0]-p0[0])*t,N=p0[1]+(a[1]-p0[1])*t;P.push([E,N,zOf(T,E,N)]);}}P.push([a[0],a[1],zOf(T,a[0],a[1])]);}return P;});
+   for(const P of ringsZ){for(let k=1;k<P.length;k++){lp.push(...L3(...P[k-1]),...L3(...P[k]));lc.push(C.r,C.g,C.b,C.r,C.g,C.b);}if(P.length)T.pick.push([P[0][0],P[0][1],P[0][2],i,P]);}
+   if(G.t==='pg'&&T.isi){const R=G.c.map(r=>r.map(q=>new THREE.Vector2(q[0],q[1])));const inn=(pt,ring)=>{let c=false;for(let a=0,b2=ring.length-1;a<ring.length;b2=a++){const A=ring[a],B=ring[b2];if((A.y>pt.y)!==(B.y>pt.y)&&pt.x<(B.x-A.x)*(pt.y-A.y)/(B.y-A.y)+A.x)c=!c;}return c;};
+    const dep=R.map((r,k)=>R.filter((o,j)=>j!==k&&r.length&&inn(r[0],o)).length);
+    R.forEach((r,k)=>{if(dep[k]%2||r.length<3)return;const holes=R.filter((o,j)=>dep[j]===dep[k]+1&&o.length>2&&inn(o[0],r));let tri;try{tri=THREE.ShapeUtils.triangulateShape(r,holes);}catch(e){return;}const all=r.concat(...holes);
+     for(const t3 of tri)for(const ix of t3){const q=all[ix];fp.push(...L3(q.x,q.y,zOf(T,q.x,q.y)+0.3));fc.push(C.r,C.g,C.b);}});}}
+  if(pp.length){const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(pp,3));gg.setAttribute('color',new THREE.Float32BufferAttribute(pc,3));
+   grpT.add(new THREE.Points(gg,new THREE.PointsMaterial({size:T.sz,sizeAttenuation:false,vertexColors:true,map:tex,alphaTest:0.4,transparent:true,opacity:op,depthWrite:false,clippingPlanes:CL})));}
+  if(lp.length){const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));gg.setAttribute('color',new THREE.Float32BufferAttribute(lc,3));
+   grpT.add(new THREE.LineSegments(gg,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:op,clippingPlanes:CL})));}
+  if(fp.length){const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(fp,3));gg.setAttribute('color',new THREE.Float32BufferAttribute(fc,3));
+   grpT.add(new THREE.Mesh(gg,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:pd?0.22:0.35,side:THREE.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4,clippingPlanes:CL})));}
+  T.obj=grpT;GL.add(grpT);}
+ const tipe=T=>{const c={pt:0,ln:0,pg:0};for(const g2 of T.geom)if(g2)c[g2.t]++;return c;};
+ function daftar(){const el=g('gisl');el.innerHTML='';for(const T of GIS){const c=tipe(T),d=document.createElement('div');d.className='gt';
+   const opts='<option value="">(satu warna)</option>'+T.kolom.map(k=>'<option'+(k.nm===T.ck?' selected':'')+'>'+esc(k.nm)+'</option>').join('');
+   d.innerHTML='<div class="hd"><input type="checkbox" class="on"'+(T.on?' checked':'')+'><input type="color" class="cl" value="'+T.col+'" style="width:22px;height:18px;padding:0;flex:none"><b title="'+esc(T.nm)+'">'+esc(T.nm)+'</b><button class="z" title="Arahkan kamera">&#8982;</button><button class="x" title="Hapus dari project">&#10005;</button></div>'+
+    '<div class="note" style="margin:1px 0">'+T.baris.length+' baris · '+(c.pt?c.pt+' titik ':'')+(c.ln?c.ln+' garis ':'')+(c.pg?c.pg+' poligon ':'')+'· geometri '+esc(T.sumber)+(T.proj&&T.proj.utm?' · UTM '+T.proj.utm:'')+(T.kz?' · RL dari '+esc(T.kz):' · RL dari topografi')+'</div>'+
+    '<div class="fl">Warna menurut <select class="ck" style="flex:1">'+opts+'</select></div>'+(c.pt?'<div class="fl">Ukuran titik <input type="range" class="sz" min="2" max="16" step="1" value="'+T.sz+'" style="flex:1"></div>':'')+
+    (c.pg?'<label><input type="checkbox" class="isi"'+(T.isi?' checked':'')+'>Isi poligon (transparan)</label>':'')+
+    '<div class="fl"><button class="csv">&#8681; CSV</button><button class="dxf">&#8681; DXF</button></div><div class="lg"></div>';
+   const q=s=>d.querySelector(s);q('.on').onchange=e=>{T.on=e.target.checked;bangun(T);};q('.cl').oninput=e=>{T.col=e.target.value;bangun(T);};q('.ck').onchange=e=>{T.ck=e.target.value;kelas(T);bangun(T);daftar();};
+   if(q('.sz'))q('.sz').oninput=e=>{T.sz=+e.target.value;if(T.obj)T.obj.children.forEach(o=>{if(o.isPoints)o.material.size=T.sz;});};if(q('.isi'))q('.isi').onchange=e=>{T.isi=e.target.checked;bangun(T);};
+   q('.z').onclick=()=>{const P=T.pick.length?T.pick.filter((_,k)=>k%Math.max(1,Math.floor(T.pick.length/500))===0).map(p=>[p[0],p[1],p[2]]):[];if(P.length&&typeof fmZoom==='function')fmZoom(P);};
+   q('.x').onclick=()=>{if(!confirm('Hapus tabel "'+T.nm+'" dari project?'))return;T.on=false;bangun(T);GIS.splice(GIS.indexOf(T),1);daftar();};
+   q('.csv').onclick=()=>ekspCSV(T);q('.dxf').onclick=()=>ekspDXF(T);
+   const lg=q('.lg');if(T.kelas){if(T.kelas.m==='n')lg.innerHTML=T.kelas.k.map(k=>'<span><i style="background:'+k[2]+'"></i>'+(k[0]<=-1e299?'&lt; '+UFMT(k[1]):k[1]>=1e299?'≥ '+UFMT(k[0]):UFMT(k[0])+'–'+UFMT(k[1]))+'</span>').join('');
+    else lg.innerHTML=T.kelas.ks.slice(0,14).map(k=>'<span><i style="background:'+T.kelas.M.get(k)+'"></i>'+esc(k||'(kosong)')+'</span>').join('')+(T.kelas.ks.length>14?'<span>+'+(T.kelas.ks.length-14)+' lain</span>':'');}
+   el.appendChild(d);}}
+ const csvq=v=>{const s=v==null?'':String(v);return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+ function ekspCSV(T){const K=T.kolom.map(k=>k.nm),L=[['MI_X','MI_Y','MI_GEOM'].concat(K).map(csvq).join(',')];T.baris.forEach((r,i)=>{if(T.hapus&&T.hapus[i])return;const G=T.geom[i];let x='',y='';if(G){const a=G.c.flat();x=(a.reduce((s,q)=>s+q[0],0)/a.length).toFixed(2);y=(a.reduce((s,q)=>s+q[1],0)/a.length).toFixed(2);}
+   L.push([x,y,G?G.t:''].concat(K.map(k=>r[k])).map(csvq).join(','));});fmDl(L.join('\r\n'),T.nm+'.csv','text/csv');}
+ function ekspDXF(T){const o=['0','SECTION','2','ENTITIES'],ly=s=>String(s||T.nm).replace(/[^\w-]+/g,'_').slice(0,60)||'GIS';
+  T.geom.forEach((G,i)=>{if(!G)return;const lay=ly(T.ck?T.baris[i][T.ck]:T.nm);if(G.t==='pt'){for(const r of G.c){const q=r[0],z=zOf(T,q[0],q[1],i);o.push('0','POINT','8',lay,'10',q[0].toFixed(3),'20',q[1].toFixed(3),'30',(+z||0).toFixed(3));}return;}
+   for(const r of G.c){o.push('0','POLYLINE','8',lay,'66','1','70',G.t==='pg'?'9':'8');for(const q of r)o.push('0','VERTEX','8',lay,'10',q[0].toFixed(3),'20',q[1].toFixed(3),'30',(+zOf(T,q[0],q[1])||0).toFixed(3),'70','32');o.push('0','SEQEND');}});
+  o.push('0','ENDSEC','0','EOF');fmDl(o.join('\r\n'),T.nm+'.dxf','application/dxf');}
+ function tambah(R,opt){const T=Object.assign({id:GID++,on:true,col:PAL[(GID-2)%PAL.length],ck:'',sz:6,isi:true,obj:null,pick:[]},R,opt||{});T.kz=kolZ(T);
+  const zs=[];if(T.kz)for(const r of T.baris){const z=num(r[T.kz]);if(isFinite(z)&&z>0)zs.push(z);}zs.sort((a,b)=>a-b);T.z0=zs.length?zs[zs.length>>1]:(isFinite(O[2])?O[2]:0);
+  if(!opt||opt.ck==null){const w=WOR.find(q=>T.kolom.some(k=>k.nm.toLowerCase()===q.kolom.toLowerCase()));if(w)T.ck=T.kolom.find(k=>k.nm.toLowerCase()===w.kolom.toLowerCase()).nm;}
+  kelas(T);GIS.push(T);return T;}
+ g('gisf').onchange=async e=>{const fs=[...(e.target.files||[])];e.target.value='';if(!fs.length)return;const st=g('gisst');st.textContent='Membaca…';const by=new Map(),wor=[];
+  for(const f of fs){const m=/^(.*)\.([^.]+)$/.exec(f.name);if(!m)continue;const ext=m[2].toLowerCase();if(ext==='wor'){wor.push(f);continue;}const k=m[1].toLowerCase();if(!by.has(k))by.set(k,{nm:m[1]});by.get(k)[ext]=f;}
+  for(const f of wor)try{WOR=WOR.concat(MITAB.bacaWOR(await f.text()));}catch(err){}
+  const msg=[],baru=[];for(const [k,s] of by){if(!s.tab&&!s.dat&&!s.map)continue;
+   try{const tab=s.tab?new TextDecoder('windows-1252').decode(await s.tab.arrayBuffer()):null;const R=MITAB.bacaTabel(s.nm,{tab,dat:s.dat?await s.dat.arrayBuffer():null,map:s.map?await s.map.arrayBuffer():null,id:s.id?await s.id.arrayBuffer():null});
+    const kurang=['tab','dat','map','id'].filter(x=>!s[x]);const ng=R.geom.filter(Boolean).length;if(!ng){msg.push('<span style="color:#c62828">'+esc(s.nm)+': '+R.baris.length+' baris tanpa geometri'+(kurang.length?' (kurang .'+kurang.join(', .').toUpperCase()+')':'')+'</span>');continue;}
+    baru.push(tambah(R));msg.push(esc(s.nm)+': '+R.baris.length+' baris, '+ng+' objek'+(R.proj&&R.proj.utm?', UTM '+R.proj.utm:'')+(kurang.length?' <span style="color:#b26a00">(tanpa .'+kurang.join(', .').toUpperCase()+' — geometri dari '+esc(R.sumber)+')</span>':'')+(R.tebak?' · jenis kolom ditebak (tanpa .TAB)':'')+(R.tanpaDat?' · tanpa atribut (.DAT tidak ada)':'')+(R.cat&&(R.cat[16]||R.cat[17])?' · objek teks dilewati':''));}
+   catch(err){msg.push('<span style="color:#c62828">'+esc(s.nm)+': '+esc(err.message||String(err))+'</span>');}}
+  if(wor.length)msg.push(wor.length+' workspace .WOR: '+WOR.length+' tema kelas warna');
+  const P=[];for(const T of baru)for(const g2 of T.geom)if(g2)for(const r of g2.c)for(const q of r)if(P.length<5000)P.push([q[0],q[1],T.z0]);if(typeof OSETF==='function')OSETF(P);
+  for(const T of baru){bangun(T);}for(const T of GIS)if(!baru.includes(T)&&WOR.length){kelas(T);bangun(T);}daftar();st.innerHTML=msg.join('<br>');
+  if(baru.length){const Z=[];for(const T of baru)for(const p of T.pick)if(Z.length<3000)Z.push([p[0],p[1],p[2]]);if(Z.length&&typeof fmZoom==='function'){try{view('plan');}catch(_){}setTimeout(()=>fmZoom(Z),300);}}};
+ g('gispd').onchange=()=>GIS.forEach(bangun);
+ /* topografi berubah → tempel ulang */
+ let sk='';setInterval(()=>{const k=SF.filter(s=>s.on&&s.kind==='topo').map(s=>s.nm).join('|');if(k!==sk){sk=k;if(GIS.length)GIS.forEach(bangun);}},1500);
+ /* hover & klik ganda */
+ const proj=(E,N,Z,r)=>{const v=new THREE.Vector3(E-O[0],Z-O[2],-(N-O[1]));W.localToWorld(v);v.project(C);if(v.z>1)return null;return [r.left+(v.x+1)/2*r.width,r.top+(1-v.y)/2*r.height];};
+ const ringkas=(T,i)=>{const r=T.baris[i],K=T.kolom.map(k=>k.nm),pri=K.filter(k=>/sample|_id$|^id$|nama|name|lith|alt|type|tipe/i.test(k)).slice(0,4);const ck=T.ck&&!pri.includes(T.ck)?[T.ck]:[];
+  return '<b>'+esc(T.nm)+'</b>'+pri.concat(ck).map(k=>r[k]!=null&&String(r[k]).trim()!==''?'<br>'+esc(k)+': <b>'+esc(String(r[k]))+'</b>':'').join('')+'<br><span style="opacity:.7">klik ganda = semua atribut</span>';};
+ let hv=0;R.domElement.addEventListener('mousemove',e=>{if(hv||!g('gishv').checked||!GIS.some(T=>T.on&&T.obj)){tip.style.display='none';return;}hv=requestAnimationFrame(()=>{hv=0;W.updateMatrixWorld(true);const r=R.domElement.getBoundingClientRect();let best=null,bd=9;
+  for(const T of GIS){if(!T.on||!T.obj)continue;for(const p of T.pick){if(p[4])continue;const s=proj(p[0],p[1],p[2],r);if(!s)continue;const d=Math.hypot(s[0]-e.clientX,s[1]-e.clientY);if(d<bd){bd=d;best=[T,p[3]];}}}
+  if(!best){tip.style.display='none';return;}tip.innerHTML=ringkas(best[0],best[1]);tip.style.display='block';tip.style.left=Math.min(innerWidth-330,e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';});});
+ R.domElement.addEventListener('mouseleave',()=>tip.style.display='none');
+ R.domElement.addEventListener('dblclick',e=>{if(!GIS.some(T=>T.on&&T.obj))return;W.updateMatrixWorld(true);const r=R.domElement.getBoundingClientRect();let best=null,bd=10;
+  for(const T of GIS){if(!T.on||!T.obj)continue;for(const p of T.pick){if(p[4])continue;const s=proj(p[0],p[1],p[2],r);if(s){const d=Math.hypot(s[0]-e.clientX,s[1]-e.clientY);if(d<bd){bd=d;best=[T,p[3]];}}}}
+  if(!best)for(const T of GIS){if(!T.on||!T.obj)continue;for(const p of T.pick){if(!p[4])continue;
+    const P=p[4];let a=null;for(let k=0;k<P.length;k+=Math.max(1,Math.floor(P.length/400))){const s=proj(P[k][0],P[k][1],P[k][2],r);if(s&&a){const vx=s[0]-a[0],vy=s[1]-a[1],L2=vx*vx+vy*vy||1,t=Math.max(0,Math.min(1,((e.clientX-a[0])*vx+(e.clientY-a[1])*vy)/L2)),d=Math.hypot(a[0]+vx*t-e.clientX,a[1]+vy*t-e.clientY);if(d<bd){bd=d;best=[T,p[3]];}}a=s;}}}
+  if(!best)return;const [T,i]=best,row=T.baris[i];at.querySelector('.h b').textContent=T.nm+' · baris '+(i+1);
+  at.querySelector('.b').innerHTML='<table>'+T.kolom.filter(k=>row[k.nm]!=null&&String(row[k.nm]).trim()!=='').map(k=>'<tr><td>'+esc(k.nm)+'</td><td>'+esc(String(row[k.nm]))+'</td></tr>').join('')+'</table>';
+  at.style.display='flex';at.style.left=Math.min(innerWidth-370,e.clientX+12)+'px';at.style.top=Math.max(8,Math.min(innerHeight-300,e.clientY-40))+'px';});
+ /* simpan / buka project */
+ window.gisSave=()=>GIS.length?{wor:WOR,t:GIS.map(T=>({nm:T.nm,kolom:T.kolom,bb:T.baris.map(r=>T.kolom.map(k=>{const v=r[k.nm];return v===''||v==null?null:v;})),hapus:T.hapus,geom:T.geom.map(G=>G?{t:G.t,c:G.c.map(r=>r.map(q=>[+q[0].toFixed(3),+q[1].toFixed(3)]))}:null),proj:T.proj,sumber:T.sumber,on:T.on,col:T.col,ck:T.ck,sz:T.sz,isi:T.isi}))}:undefined;
+ window.gisRestore=s=>{for(const T of GIS.splice(0)){T.on=false;bangun(T);}if(!s){daftar();return;}WOR=s.wor||[];for(const t of s.t||[]){const bar=t.baris||(t.bb||[]).map(a=>{const r={};t.kolom.forEach((k,j)=>{r[k.nm]=a[j]==null?(k.tp==='char'?'':null):a[j];});return r;});const T=tambah({nm:t.nm,kolom:t.kolom,baris:bar,hapus:t.hapus,geom:t.geom,proj:t.proj,sumber:t.sumber},{on:t.on!==false,col:t.col,ck:t.ck||'',sz:t.sz||6,isi:t.isi!==false});bangun(T);}daftar();};
+ /* data arsip regional bisa belasan km: jarak pandang (far) kamera ikut diperpanjang agar tidak terpotong */
+ setInterval(()=>{try{const d=C.position.distanceTo(CT.target);if(d*4>C.far){C.far=d*6;C.updateProjectionMatrix();}}catch(e){}},400);
+ window.__gis={GIS,bangun,daftar,tambah};
 })();
 
 </script>

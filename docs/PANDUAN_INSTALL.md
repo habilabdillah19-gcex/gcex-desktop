@@ -5373,3 +5373,19 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Pilihan **Skala** (otomatis, 1:500 … 1:25.000) di samping kertas: PNG/PDF digambar tepat pada skala itu.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 259. Ore Works 0.14.0 — Arsip GIS (MapInfo)
+
+- Menu **Pemetaan → Arsip GIS (MapInfo)** → *Impor tabel MapInfo*: pilih **semua berkas** satu atau beberapa tabel
+  sekaligus — `.TAB`, `.DAT`, `.MAP`, `.ID` (`.IND` boleh ikut, diabaikan). Sertakan `.WOR` bila ingin kelas warna dari
+  workspace (mis. Au 0,2 / 0,5 / 1 / 2 / 5).
+- Satu tabel MapInfo utuh = 4 berkas (.TAB .DAT .MAP .ID). Bila ada yang kurang:
+  - tanpa .TAB → jenis kolom ditebak dari isi .DAT;
+  - tanpa .DAT → hanya geometri (tanpa atribut);
+  - tanpa .MAP/.ID → titik diambil dari kolom koordinat (UTM_mE / UTM_mn / X / Y) bila ada.
+- Tampilan: titik memakai kolom **Elev** bila > 0, selain itu menempel ke topografi; garis & poligon menempel ke topografi.
+  Atur **Warna menurut** kolom, ukuran titik, isi poligon. *Gaya arsip (pudar)* membedakan data lama dari pemetaan baru.
+- Arahkan kursor ke titik = atribut ringkas; **klik ganda** dekat titik / garis / poligon = semua atribut.
+- Ekspor per tabel: **CSV** (atribut + X/Y) dan **DXF** (titik / polyline, layer = nilai kolom warna).
+- Tersimpan di project (.gcv.json). Objek teks MapInfo belum ditampilkan.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
