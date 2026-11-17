@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.21.0';</script>
+<script>window.GCEX_VER='0.22.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5851,9 +5851,9 @@ function tree(){const T=[];
  {const kids=[{id:'bor:gc',nm:'Lubang GC',ic:'dt',chk:()=>!!(lay('gc')&&lay('gc').checked),tg:on=>setCb(lay('gc'),on),kind:'lapis'},
   {id:'bor:pdh',nm:'Lubang eksplorasi',ic:'dt',chk:()=>!!(lay('pdh')&&lay('pdh').checked),tg:on=>setCb(lay('pdh'),on),kind:'lapis'}];
   DS.forEach((d,i)=>{const c=cnt(d);kids.push({id:'ds:'+d.nm,nm:d.nm,ic:'drill',col:'#1e5bd8',ct:fmt(c.n)+' lubang',chk:()=>!!d.on,tg:on=>{if(!!d.on!==on)klikCb(nth('#dsl .dsr input[type=checkbox]',i));},kind:'ds',obj:d,def:false,
-   zoom:()=>zPts(d.holes.map(h=>[h.p[0]+O[0],h.p[1]+O[1],h.p[2]+O[2]])),tab:'bor',
+   zoom:()=>zPts(d.holes.map(h=>[h.p[0]/10+O[0],h.p[1]/10+O[1],h.p[2]/10+O[2]])),tab:'bor',ta:'ds:'+i+':collar',
    del:()=>{if(!tanya('Hapus dataset "'+d.nm+'" dari project?'))return;const k=DS.indexOf(d);if(k<0)return;DS.splice(k,1);dsList();holesBuild();},
-   kids:[{id:'ds:'+d.nm+':c',nm:'Collar',ic:'dt',ct:fmt(c.n),kind:'tabel',obj:d,t:'collar',tab:'bor'},{id:'ds:'+d.nm+':a',nm:'Assay',ic:'dt',ct:fmt(c.a),kind:'tabel',obj:d,t:'assay',tab:'bor'},{id:'ds:'+d.nm+':g',nm:'Geologi',ic:'dt',ct:fmt(c.ge),kind:'tabel',obj:d,t:'geo',tab:'bor'}]});});
+   kids:[{id:'ds:'+d.nm+':c',nm:'Collar',ic:'dt',ct:fmt(c.n),kind:'tabel',obj:d,t:'collar',tab:'bor',ta:'ds:'+i+':collar'},{id:'ds:'+d.nm+':s',nm:'Survey',ic:'dt',kind:'tabel',obj:d,t:'survey',tab:'bor',ta:'ds:'+i+':survey'},{id:'ds:'+d.nm+':a',nm:'Assay',ic:'dt',ct:fmt(c.a),kind:'tabel',obj:d,t:'assay',tab:'bor',ta:'ds:'+i+':assay'},{id:'ds:'+d.nm+':g',nm:'Geologi',ic:'dt',ct:fmt(c.ge),kind:'tabel',obj:d,t:'geo',tab:'bor',ta:'ds:'+i+':geo'}]});});
   T.push({id:'bor',nm:'Data bor',ic:'drill',col:'#1e5bd8',kids,tab:'bor',empty:'Data bor → Impor tabel'});}
  /* Permukaan */
  T.push({id:'sf',nm:'Permukaan',ic:'surf',col:'#7f8f63',tab:'sf',empty:'Permukaan → impor',kids:SF.map((s,i)=>({id:'sf:'+s.nm,nm:s.nm,ic:'surf',col:s.col||(s.kind==='pit'?'#5d79b3':'#7f8f63'),ct:s.kind==='pit'?'desain pit':'topografi',chk:()=>!!s.on,tg:on=>{if(!!s.on!==on)klikCb(nth('#sfl .s-on',i));},kind:'sf',obj:s,zoom:()=>zoomObj(s.g),tab:'sf',
@@ -5874,24 +5874,24 @@ function tree(){const T=[];
    return {id:'ms:'+M.id,nm:M.nm,ic:'solid',col:M.col||'#f2a33a',ct:M.par?'cabang':(M.res?fmt(Math.round(M.res.vol))+' m³':(M.S.length?'terbuka':'kosong')),chk:()=>M.on!==false,
     tg:on=>{if((M.on!==false)===on)return;M.on=on;if(X.draw3D)X.draw3D();const w2=WI.find(x=>x.ms===M.id);if(w2&&!!w2.on!==on){klikCb(nth('#wil .w-on',WI.indexOf(w2)));}},kind:'solid',obj:M,def:!!ch.length,
     zoom:()=>{const w2=WI.find(x=>x.ms===(M.par||M.id));if(w2)zoomObj(w2.g);},studio:()=>{MS.cur=M.id;if(X.panel)X.panel();if(window.stdoBuka){if(typeof SC!=='undefined'&&!SC.open&&typeof scOpen==='function')scOpen(true);stdoBuka();}},kids};};
-  T.push({id:'ms',nm:'Solid Studio',ic:'solid',col:'#d9480f',empty:'Studio Pemodelan (F9)',kids:MS.L.filter(M=>!M.par||!MS.L.some(x=>x.id===M.par)).map(solidNode)});}
+  T.push({id:'ms',nm:'Solid Studio',ic:'solid',col:'#d9480f',ta:'ms',empty:'Studio Pemodelan (F9)',kids:MS.L.filter(M=>!M.par||!MS.L.some(x=>x.id===M.par)).map(solidNode)});}
  /* Struktur */
- T.push({id:'st',nm:'Struktur',ic:'str',col:'#c92a2a',kids:[{id:'st:b',nm:'Bidang struktur',ic:'str',col:'#c92a2a',ct:fmt(STR.filter(s=>s.st!=='usulan').length),chk:()=>!!(lay('str2')&&lay('str2').checked),tg:on=>setCb(lay('str2'),on),kind:'lapis',tab:'str',def:false,
+ T.push({id:'st',nm:'Struktur',ic:'str',col:'#c92a2a',kids:[{id:'st:b',nm:'Bidang struktur',ic:'str',col:'#c92a2a',ct:fmt(STR.filter(s=>s.st!=='usulan').length),chk:()=>!!(lay('str2')&&lay('str2').checked),tg:on=>setCb(lay('str2'),on),kind:'lapis',tab:'str',def:false,ta:'str',
    kids:STR.filter(s=>s.st!=='usulan').map(s=>({id:'stb:'+s.id,nm:s.nm,ic:'str',col:s.col||'#c92a2a',ct:(+s.dip).toFixed(0)+'/'+((+s.strike+90)%360).toFixed(0).padStart(3,'0'),kind:'bidang',obj:s,tab:'str',chk:()=>s.on!==false,tg:on=>{s.on=on;stDraw();stList();},
     zoom:()=>zPts([[s.E,s.N,s.Z]])}))},
-  {id:'st:t',nm:'Titik struktur',ic:'pin',col:'#c92a2a',ct:fmt(STPs().length),chk:()=>!!(lay('stp')&&lay('stp').checked),tg:on=>setCb(lay('stp'),on),kind:'lapis',tab:'stp',def:false,
+  {id:'st:t',nm:'Titik struktur',ic:'pin',col:'#c92a2a',ct:fmt(STPs().length),chk:()=>!!(lay('stp')&&lay('stp').checked),tg:on=>setCb(lay('stp'),on),kind:'lapis',tab:'stp',def:false,ta:'stp',
    kids:STPs().map((p,i)=>({id:'stt:'+i+':'+p.nm,nm:p.nm,ic:'pin',col:p.kat==='vein'?'#f9a825':'#d32f2f',ct:(+p.dip).toFixed(0)+'/'+String((+p.dd).toFixed(0)).padStart(3,'0'),kind:'titik',obj:p,tab:'stp',chk:()=>p.on!==false,tg:on=>{p.on=on;stpDraw();stpList();},
     zoom:()=>zPts([[+p.E,+p.N,+p.Z]])}))}]});
  /* Pemetaan */
  {const kids=[];if(window.FM&&FM.F&&typeof FMK!=='undefined')for(const k in FMK){const F=FM.F.filter(f=>f.k===k);if(!F.length)continue;kids.push({id:'fm:'+k,nm:FMK[k].nm,ic:'dt',col:FMK[k].c,sw:FMK[k].c,ct:fmt(F.length),chk:()=>F.some(f=>f.on),tg:on=>{F.forEach(f=>f.on=on);if(typeof fmDraw==='function')fmDraw();if(window.rpDraw)rpDraw();},kind:'fm',obj:F,tab:'fm',
    zoom:()=>zPts(F.flatMap(f=>f.pts||[]))});}
   if(window.FM&&FM.pf&&FM.pf.length)kids.push({id:'fm:pf',nm:'Titik pick-up',ic:'pin',col:'#e8590c',ct:(window.FM&&FM.pf?FM.pf.length:0)+' file',chk:()=>!!(lay('fmp')&&lay('fmp').checked),tg:on=>setCb(lay('fmp'),on),kind:'lapis',tab:'fm'});
-  T.push({id:'fm',nm:'Pemetaan',ic:'map',col:'#2b8a3e',kids,tab:'fm',empty:'Pemetaan → pick-up / DXF',chk:()=>!!(lay('fm')&&lay('fm').checked),tg:on=>{setCb(lay('fm'),on);setCb(lay('fmp'),on);}});}
+  T.push({id:'fm',nm:'Pemetaan',ic:'map',col:'#2b8a3e',kids,tab:'fm',ta:'fm',empty:'Pemetaan → pick-up / DXF',chk:()=>!!(lay('fm')&&lay('fm').checked),tg:on=>{setCb(lay('fm'),on);setCb(lay('fmp'),on);}});}
  /* Plan bor & poligon */
  if(PLANs().length)T.push({id:'pl',nm:'Plan bor',ic:'pin',col:'#7048e8',kids:PLANs().map((p,i)=>({id:'pl:'+p.nm+':'+i,nm:p.nm,ic:'pin',col:p.col||'#7048e8',ct:fmt(p.rows.length)+' titik',chk:()=>!!p.on,tg:on=>{if(!!p.on!==on)klikCb(nth('.p-on',i));},kind:'plan',obj:p}))});
  if(window.F2&&F2.poly.length)T.push({id:'poly',nm:'Poligon area (filter)',ic:'poly',col:'#5c7cfa',kids:F2.poly.map((p,i)=>({id:'poly:'+p.nm+':'+i,nm:p.nm,ic:'poly',col:p.col,ct:p.pts.length+' titik',chk:()=>!!p.on,tg:on=>{if(!!p.on!==on)klikCb(nth('#f2pl .pp-on',i));},kind:'poly',obj:p}))});
  /* Arsip GIS: tabel MapInfo + gambar georeferensi */
- {const G=window.GIS||[],gi=window.__gis||{},kids=G.map(Tb=>({id:'gis:'+Tb.nm,nm:Tb.nm,ic:'gis',col:Tb.col||'#0b7285',ct:fmt((Tb.baris||[]).length)+' objek',chk:()=>!!Tb.on,tg:on=>{Tb.on=on;if(gi.bangun)gi.bangun(Tb);if(gi.daftar)gi.daftar();},kind:'gis',obj:Tb,
+ {const G=window.GIS||[],gi=window.__gis||{},kids=G.map(Tb=>({id:'gis:'+Tb.nm,nm:Tb.nm,ic:'gis',col:Tb.col||'#0b7285',ct:fmt((Tb.baris||[]).length)+' objek',ta:'gis:'+Tb.nm,chk:()=>!!Tb.on,tg:on=>{Tb.on=on;if(gi.bangun)gi.bangun(Tb);if(gi.daftar)gi.daftar();},kind:'gis',obj:Tb,
    zoom:()=>{const a=Tb.bbox;if(a)zPts([[a[0],a[1],zz(a[0],a[1])],[a[2],a[3],zz(a[2],a[3])]]);},del:()=>{if(!tanya('Hapus tabel "'+Tb.nm+'" dari project?'))return;Tb.on=false;if(gi.bangun)gi.bangun(Tb);const k=G.indexOf(Tb);if(k>=0)G.splice(k,1);if(gi.daftar)gi.daftar();}}));
   ORTs().forEach((o,i)=>{if(isGr(o))kids.push(orNode(o,i,true));});
   GV().forEach((v,i)=>kids.push({id:'gv:'+v.nm+':'+i,nm:v.nm,ic:'geo',col:'#862e9c',ct:'penampang',chk:()=>!!v.on,tg:on=>{if(!!v.on!==on)klikCb(nth('#grvl .on',i));},kind:'georef-v',obj:v,
@@ -5923,7 +5923,7 @@ const rowOf=e=>{const r=e.target.closest('.ptr');return r?ROWS[+r.dataset.i]:nul
 function pilih(r){if(!r||r.em)return;PT.sel=r.n.id;window.__ptSel={id:r.n.id,kind:r.n.kind||'kelompok',obj:r.n.obj||null,nm:r.n.nm,t:r.n.t};
  try{window.dispatchEvent(new CustomEvent('ow:pilih',{detail:window.__ptSel}));}catch(e){}render(true);}
 function lipat(r,open){if(!r||!r.kids)return;PT.col[r.n.id]=!open;save();render(true);}
-function aktif(r){const n=r.n;if(n.go)n.go();else if(n.zoom)n.zoom();else if(r.kids)lipat(r,!r.open);}
+function aktif(r){const n=r.n;if(n.ta&&n.kind==='tabel'&&window.taBuka){taBuka(n.ta);return;}if(n.go)n.go();else if(n.zoom)n.zoom();else if(r.kids)lipat(r,!r.open);}
 const B=g('ptb');
 B.addEventListener('click',e=>{const r=rowOf(e);if(!r)return;if(e.target.closest('.tw')){lipat(r,!r.open);return;}if(e.target.tagName==='INPUT'){setOn(r.n,e.target.checked);later();return;}pilih(r);});
 B.addEventListener('dblclick',e=>{const r=rowOf(e);if(!r||e.target.closest('.tw,input'))return;aktif(r);});
@@ -5941,7 +5941,7 @@ B.addEventListener('contextmenu',e=>{const r=rowOf(e);if(!r)return;e.preventDefa
   const sib=r.par?(r.par.kids||[]).filter(k=>k!==n&&hasChk(k)):[];if(sib.length)A.push(['Tampilkan saja ini',()=>{sib.forEach(k=>setOn(k,false));setOn(n,true);later();}]);
   if(r.kids&&(n.kids||[]).some(hasChk))A.push(['Tampilkan semua isinya',()=>{(n.kids||[]).forEach(k=>setOn(k,true));setOn(n,true);later();}]);}
  if(r.kids){A.push(['-']);A.push([r.open?'Tutup kelompok':'Buka kelompok',()=>lipat(r,!r.open)]);}
- const tab=n.tab||(r.par&&r.par.tab);if(tab&&window.rpOpenTab){A.push(['-']);A.push(['Lihat di panel Data',()=>rpOpenTab(tab)]);}
+ const tab=n.tab||(r.par&&r.par.tab),ta=n.ta||(n.kind==='bidang'?'str':n.kind==='titik'?'stp':n.kind==='fm'?'fm':n.kind==='solid'?'ms':null);if(ta&&window.taBuka||tab&&window.rpOpenTab)A.push(['-']);if(ta&&window.taBuka)A.push(['Buka tabel atribut',()=>taBuka(ta)]);if(tab&&window.rpOpenTab)A.push(['Lihat di panel Data',()=>rpOpenTab(tab)]);
  if(n.del){A.push(['-']);A.push(['Hapus…',()=>{n.del();later();},'bh']);}
  if(!A.length)return;cm.innerHTML='<div class="hd">'+esc(n.nm)+'</div>';A.forEach(a=>{if(a[0]==='-'){if(cm.lastChild&&cm.lastChild.tagName!=='HR')cm.appendChild(document.createElement('hr'));return;}const d=document.createElement('div');d.className='it'+(a[2]?' '+a[2]:'');d.setAttribute('role','menuitem');d.textContent=a[0];d.onclick=()=>{tutupCm();setTimeout(()=>{try{a[1]();}catch(err){console.warn(err);}},0);};cm.appendChild(d);});
  if(cm.lastChild&&cm.lastChild.tagName==='HR')cm.lastChild.remove();cm.style.display='block';cm.style.left=Math.min(e.clientX,innerWidth-cm.offsetWidth-4)+'px';cm.style.top=Math.min(e.clientY,innerHeight-cm.offsetHeight-4)+'px';});
@@ -7421,18 +7421,18 @@ const triN=o=>{let n=0;if(o)o.traverse(x=>{if(x.isMesh&&x.geometry){const gm=x.g
 function hole(id){for(const d of DS){const h=d.holes.find(x=>x.id===id);if(h)return {d,h};}return null;}
 function isi(S){const o=S&&S.obj,k=S&&S.kind;
  if(k==='ds'||k==='tabel'){const d=o;if(!DS.includes(d))return null;let a=0;const gt=Object.keys(d.geo||{}).reduce((s,q)=>s+(d.geo[q]||[]).length,0);for(const h of d.holes)a+=(h.au||[]).length;
-  const col=d.holes.map(h=>[h.p[0]+O[0],h.p[1]+O[1],h.p[2]+O[2]]),i=DS.indexOf(d);
+  const col=d.holes.map(h=>[h.p[0]/10+O[0],h.p[1]/10+O[1],h.p[2]/10+O[2]]),i=DS.indexOf(d);
   return {t:'Dataset bor',nm:d.nm,sw:'#1e5bd8',G:[['Umum',[['Nama',d.nm],['Jenis','Dataset bor'],['Mode impor',d.mode==='upsert'?'Upsert':'Append'],['Tampil',mir(nth('#dsl .dsr input[type=checkbox]',i),'cb')]]],
    ['Isi',[['Lubang (collar)',f(d.holes.length)],['Interval assay',f(a)],['Interval geologi',f(gt)],['Kolom assay',(d.acols||[]).join(', ')||'—'],['Kolom geologi',(d.gcols||[]).join(', ')||'—']]],
    ['Rentang collar',rentang(bbox(col))],['Catatan',[['Info',d.info||'—']].concat((d.warn||[]).length?[['Peringatan','<span class="bad">'+esc(d.warn.length+' baris')+'</span>']]:[])]],
-   note:k==='tabel'?'Isi tabel per baris akan tampil di tab dokumen Tabel atribut (tahap berikutnya).':''};}
- if(k==='hole'){const r=hole(S.nm);if(!r)return null;const {d,h}=r,p=h.p,n=p.length/3;let len=0;for(let j=3;j<p.length;j+=3)len+=Math.hypot(p[j]-p[j-3],p[j+1]-p[j-2],p[j+2]-p[j-1]);
+   act:[['Buka tabel atribut',()=>{if(window.taBuka)taBuka('ds:'+i+':'+(k==='tabel'&&S.t?S.t:'collar'));}],['Arahkan kamera',()=>{if(typeof fmZoom==='function'&&col.length)fmZoom(col);}]]};}
+ if(k==='hole'){const r=hole(S.nm);if(!r)return null;const {d,h}=r,p=h.p,n=p.length/3;let len=0;for(let j=3;j<p.length;j+=3)len+=Math.hypot(p[j]-p[j-3],p[j+1]-p[j-2],p[j+2]-p[j-1])/10;
   const dx=n>1?p[3]-p[0]:0,dy=n>1?p[4]-p[1]:0,dz=n>1?p[5]-p[2]:-1,az=((Math.atan2(dx,dy)*180/Math.PI)+360)%360,dip=Math.atan2(-dz,Math.hypot(dx,dy))*180/Math.PI;
   const au=(h.au||[]).filter(v=>v!=null&&isFinite(+v)).map(Number),mx=au.length?Math.max(...au):null,avg=au.length?au.reduce((s,v)=>s+v,0)/au.length:null,ge=(d.geo&&d.geo[h.id])||[];
-  return {t:'Lubang bor',nm:h.id,sw:h.src==='gc'?'#1565c0':'#222',G:[['Umum',[['Hole ID',h.id],['Jenis',h.src==='gc'?'Grade control':h.src==='CH'?'Channel':'Eksplorasi'],['Dataset',d.nm]]],
-   ['Collar',[['E',f(p[0]+O[0],2)],['N',f(p[1]+O[1],2)],['RL',f(p[2]+O[2],2)],['Azimuth awal',f(az,1)+'°'],['Dip awal',f(dip,1)+'°'],['Panjang lintasan',f(len,1)+' m']]],
+  return {t:'Lubang bor',nm:h.id,sw:/^gc$/i.test(h.src||'')?'#1565c0':'#222',G:[['Umum',[['Hole ID',h.id],['Jenis',/^gc$/i.test(h.src||'')?'Grade control':/^ch$/i.test(h.src||'')?'Channel':'Eksplorasi'],['Dataset',d.nm]]],
+   ['Collar',[['E',f(p[0]/10+O[0],2)],['N',f(p[1]/10+O[1],2)],['RL',f(p[2]/10+O[2],2)],['Azimuth awal',f(az,1)+'°'],['Dip awal',f(dip,1)+'°'],['Panjang lintasan',f(len,1)+' m']]],
    ['Assay · '+(typeof UNM==='function'?UNM():'Au'),[['Interval',f((h.au||[]).length)],['Maksimum',f(mx,3)],['Rata-rata (aritmetik)',f(avg,3)]]],['Geologi',[['Interval',f(ge.length)]]]],
-   act:[['Arahkan kamera',()=>{if(typeof fmZoom==='function')fmZoom([[p[0]+O[0],p[1]+O[1],p[2]+O[2]],[p[p.length-3]+O[0],p[p.length-2]+O[1],p[p.length-1]+O[2]]]);}]]};}
+   act:[['Arahkan kamera',()=>{if(typeof fmZoom==='function')fmZoom([[p[0]/10+O[0],p[1]/10+O[1],p[2]/10+O[2]],[p[p.length-3]/10+O[0],p[p.length-2]/10+O[1],p[p.length-1]/10+O[2]]]);}]]};}
  if(k==='sf'){const s=o,i=SF.indexOf(s);if(i<0)return null;const r=nth('#sfl .dsr',i),q=c=>r&&r.querySelector(c);
   return {t:s.kind==='pit'?'Desain pit':'Topografi',nm:s.nm,sw:s.col,G:[['Umum',[['Nama',s.nm],['Jenis',mir(q('.s-k'),'sel')],['Tampil',mir(q('.s-on'),'cb')]]],
    ['Gaya',[['Pewarnaan',mir(q('.s-cm'),'sel')],['Warna',mir(q('.s-c'),'col')],['Transparansi',mir(q('.s-op'),'rng')]]],
@@ -7467,7 +7467,7 @@ function isi(S){const o=S&&S.obj,k=S&&S.kind;
  if(k==='fm'){const F=o||[];let ln=0,ar=0;F.forEach(q=>{try{ln+=typeof fmLen==='function'?fmLen(q):0;ar+=typeof fmArea==='function'?fmArea(q):0;}catch(e){}});const kk=F[0]&&F[0].k,K=kk&&FMK[kk];
   return {t:'Pemetaan',nm:K?K.nm:S.nm,sw:K&&K.c,G:[['Umum',[['Jenis fitur',K?K.nm:'—'],['Jumlah fitur',f(F.length)],['Tampil',{t:'cb',v:F.some(q=>q.on),set:v=>{F.forEach(q=>q.on=v);fmDraw();if(window.rpDraw)rpDraw();}}]]],
    ['Ukuran',K&&K.g==='poly'?[['Luas total',f(ar,0)+' m²']]:K&&K.g==='pt'?[['Titik',f(F.length)]]:[['Panjang total',f(ln,1)+' m']]],['Kelompok',[['Layer',[...new Set(F.map(q=>typeof fmGrp==='function'?fmGrp(q):''))].length+' layer']]]],
-   act:[['Lihat daftar fitur (tab Data)',()=>{if(window.rpOpenTab)rpOpenTab('fm');}]]};}
+   act:[['Buka tabel atribut',()=>{if(window.taBuka)taBuka('fm');}],['Lihat daftar fitur (tab Data)',()=>{if(window.rpOpenTab)rpOpenTab('fm');}]]};}
  if(k==='gis'){const T=o;if(!(window.GIS||[]).includes(T))return null;const gi=window.__gis||{},a=T.bbox;const n=(T.baris||[]).length,ng=(T.geom||[]).filter(Boolean).length;
   return {t:'Arsip GIS · tabel MapInfo',nm:T.nm,sw:T.col,G:[['Umum',[['Nama',T.nm],['Tampil',{t:'cb',v:!!T.on,set:v=>{T.on=v;if(gi.bangun)gi.bangun(T);if(gi.daftar)gi.daftar();}}],['Warna',{t:'col',v:T.col,set:v=>{T.col=v;if(gi.bangun)gi.bangun(T);if(gi.daftar)gi.daftar();}}]]],
    ['Isi',[['Baris',f(n)],['Bergeometri',f(ng)],['Kolom',f((T.kolom||[]).length)],['Nama kolom',esc((T.kolom||[]).map(c=>c.nm).slice(0,12).join(', ')+((T.kolom||[]).length>12?' …':''))]]],
@@ -7511,6 +7511,229 @@ window.addEventListener('ow:pilih',e=>pilih(e.detail));
 /* bawaan */
 lebar();show(!!PR.open);setInterval(()=>render(false),1500);
 window.prShow=show;window.prOpen=()=>!!PR.open;window.__pr={PR,render,show,tab,mini,isi,pilih};
+}
+
+/* ================= Ore Works 0.22.0: tab dokumen + Tabel atribut (tahap 5 tata letak desktop) =================
+   Mockup disetujui pemilik 17 Nov 2026: "Tengah bertab: 3D, Penampang, Peta level, Studio, Tabel atribut (perlu — tabel per
+   lapisan, urut/saring, klik baris = sorot di 3D, edit kolom tertentu, ekspor CSV/Excel)".
+   - Bar tab di atas area tengah. Penampang / Peta level = jendela penampang (vertikal / horizontal RL) dibuka memenuhi area
+     tengah; Studio = Studio Pemodelan; 3D = kembali ke 3D.
+   - Tabel atribut: Collar / Survey / Assay / Geologi per dataset (tabel asli impor bila ada), Bidang & Titik struktur,
+     Pemetaan, Plan bor, Solid Studio, tabel Arsip GIS. Klik judul kolom = urut; baris saring per kolom (teks, >1, <=0.5,
+     =AND); kotak Saring semua kolom; gulir virtual (ratusan ribu baris). Klik baris = sorot di 3D + Properti; klik ganda =
+     arahkan kamera (beralih ke 3D bila tabel penuh); "Belah dengan 3D" = tabel di bawah, 3D tetap terlihat.
+     Sunting (klik ganda sel bergaris titik): Bidang struktur, Titik struktur, nama & keterangan Pemetaan, atribut tabel GIS.
+     Ekspor CSV (UTF-8) & Excel (.xlsx) dari baris yang tersaring & terurut. */
+{
+const g=id=>document.getElementById(id);
+const wrap=g('wrap'),cv=g('cv');
+const css=document.createElement('style');css.textContent=`#wrap{position:relative}#cv{margin-top:28px}
+#dtb{position:absolute;top:0;height:28px;display:flex;align-items:stretch;background:#EDEBE6;border-bottom:1px solid #D3CDC1;z-index:7;font:12px "Segoe UI",Inter,Arial,sans-serif;user-select:none;overflow:hidden;box-sizing:border-box}
+#dtb .dt{display:flex;align-items:center;gap:6px;padding:0 14px;border:0;border-right:1px solid #D3CDC1;background:transparent;color:#4A5568;font:inherit;cursor:pointer;margin:0;border-radius:0;white-space:nowrap}
+#dtb .dt:hover{background:#E4E0D7}#dtb .dt.on{background:#fff;color:#1C2733;font-weight:600;box-shadow:inset 0 2px #17806B;margin-bottom:-1px}#dtb .dt.st.on{box-shadow:inset 0 2px #B5893E}#dtb .sp{flex:1}
+#scw.penuh{left:0!important;top:0!important;right:0!important;bottom:0!important;width:auto!important;height:auto!important;border-radius:0!important;resize:none!important;box-shadow:none!important;border:0!important;min-width:0!important}#scw.penuh #sch{cursor:default}
+#tav{position:absolute;display:none;flex-direction:column;background:#fff;z-index:6;font:12px "Segoe UI",Inter,Arial,sans-serif;color:#1C2733;border-top:1px solid #D3CDC1;box-sizing:border-box}#tav.on{display:flex}
+#tav.bawah{box-shadow:0 -2px 6px #1C273322;border-top:2px solid #17806B}
+#tatb{height:32px;flex:none;display:flex;align-items:center;gap:6px;padding:0 8px;background:#F7F5F0;border-bottom:1px solid #D3CDC1;white-space:nowrap;overflow:hidden}
+#tatb select,#tatb input{height:22px;box-sizing:border-box;font:inherit;border:1px solid #CFC8BA;border-radius:2px;background:#fff;color:#1C2733;margin:0;padding:0 5px}#tatb select{max-width:300px}#taq{width:180px}
+#tatb button{height:22px;margin:0;padding:0 9px;font:inherit;border:1px solid #B9B2A4;border-radius:2px;background:#fff;color:#1C2733;cursor:pointer}#tatb button:hover{background:#E0EEE8;border-color:#17806B}#tatb button.on{background:#D5ECE4;border-color:#17806B}
+#tatb .n{color:#6B7486;font-size:11px;margin-left:4px}#tatb .sp{flex:1}
+#tabd{flex:1;overflow:auto;position:relative;min-height:0}#tabd table{border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}
+#tabd thead th{position:sticky;top:0;z-index:2;background:#EDEBE6;border-right:1px solid #D3CDC1;border-bottom:1px solid #D3CDC1;height:24px;padding:0 6px;text-align:left;font-weight:600;color:#3A4658;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+#tabd thead th:hover{background:#E2DED4}#tabd thead th .so{color:#17806B;margin-left:3px}#tabd thead tr.fi th{top:24px;height:24px;padding:1px 2px;background:#F7F5F0;cursor:default}
+#tabd thead tr.fi input{width:100%;height:20px;box-sizing:border-box;font:inherit;font-size:11px;border:1px solid #DDD7CB;border-radius:2px;padding:0 4px;margin:0;background:#fff}#tabd thead tr.fi input:focus{outline:1px solid #17806B;border-color:#17806B}
+#tabd thead th.rn,#tabd td.rn{width:52px;text-align:right;color:#8A8F99;background:#F7F5F0;position:sticky;left:0;z-index:1}#tabd thead th.rn{z-index:3}
+#tabd td{user-select:none;height:22px;padding:0 6px;border-right:1px solid #EFEBE3;border-bottom:1px solid #EFEBE3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
+#tabd td.nu{text-align:right}#tabd td.ed{text-decoration:underline dotted #9AA19B;text-underline-offset:3px;cursor:text}#tabd tr.sel td{background:#D5ECE4}#tabd tr.sel td.rn{background:#BFE0D4;color:#1C2733}#tabd tbody tr:hover td{background:#F2EFE8}#tabd tbody tr.sel:hover td{background:#CBE6DC}
+#tabd td input.ce{width:100%;height:20px;box-sizing:border-box;font:inherit;border:1px solid #17806B;margin:0;padding:0 4px}
+#taem{padding:30px;color:#6B7486;text-align:center;line-height:1.6}`;document.head.appendChild(css);
+/* ---- bar tab ---- */
+const TB=document.createElement('div');TB.id='dtb';TB.setAttribute('role','tablist');
+const TABS=[['3d','3D'],['pen','Penampang'],['lvl','Peta level'],['st','Studio'],['tab','Tabel atribut']];
+TB.innerHTML=TABS.map(([k,n])=>'<button class="dt'+(k==='st'?' st':'')+'" data-k="'+k+'" role="tab">'+n+'</button>').join('')+'<span class="sp"></span>';
+wrap.appendChild(TB);
+const TV=document.createElement('div');TV.id='tav';
+TV.innerHTML='<div id="tatb"><select id="tasl" title="Pilih tabel"></select><input id="taq" type="search" placeholder="Saring semua kolom…"><span class="n" id="tan"></span><span class="sp"></span>'+
+ '<button id="tabl" title="Tabel di bawah, 3D tetap terlihat di atas">Belah dengan 3D</button><button id="tacsv" title="Ekspor baris tersaring ke CSV">Ekspor CSV</button><button id="taxl" title="Ekspor baris tersaring ke Excel (.xlsx)">Ekspor Excel</button></div><div id="tabd" tabindex="0"></div>';
+wrap.appendChild(TV);
+const TA={on:false,bawah:false,key:null,sort:null,dir:1,fil:{},q:'',sel:-1,h:0.42};try{Object.assign(TA,JSON.parse(localStorage.getItem('ow.tabel')||'{}'),{on:false,sel:-1});}catch(e){}
+const sv=()=>{try{localStorage.setItem('ow.tabel',JSON.stringify({bawah:TA.bawah,key:TA.key,h:TA.h}));}catch(e){}};
+function tata(){const c=cv.getBoundingClientRect(),w=wrap.getBoundingClientRect(),x=c.left-w.left,y=c.top-w.top;TB.style.left=x+'px';TB.style.width=c.width+'px';TB.style.top=(y-28)+'px';
+ const hh=TA.bawah?Math.round(c.height*TA.h):c.height;TV.style.left=x+'px';TV.style.width=c.width+'px';TV.style.top=(y+c.height-hh)+'px';TV.style.height=hh+'px';}
+try{new ResizeObserver(()=>{tata();}).observe(cv);}catch(e){}addEventListener('resize',()=>setTimeout(tata,0));setTimeout(()=>{window.dispatchEvent(new Event('resize'));tata();},0);
+const scw=g('scw');
+function aktif(){if(TA.on&&!TA.bawah)return 'tab';if(window.__st&&__st.on)return 'st';if(typeof SC!=='undefined'&&SC.open&&scw.classList.contains('penuh'))return g('scm').value==='h'?'lvl':'pen';return '3d';}
+function tandai(){const a=aktif();TB.querySelectorAll('.dt').forEach(b=>{const on=b.dataset.k===a||(b.dataset.k==='tab'&&TA.on);b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});}
+function tutupPen(){if(scw.classList.contains('penuh')){scw.classList.remove('penuh');if(SC.open)scOpen(false);}}
+function buka(k){if(k!=='st'&&window.__st&&__st.on&&window.stdoTutup)stdoTutup();
+ if(k==='3d'){tutupTabel();tutupPen();}
+ else if(k==='pen'||k==='lvl'){tutupTabel();const m=g('scm'),v=k==='lvl'?'h':'v';if(m.value!==v){m.value=v;m.dispatchEvent(new Event('change'));}scw.classList.add('penuh');if(!SC.open)scOpen(true);else scUpd();setTimeout(()=>{try{scUpd();}catch(e){}},30);}
+ else if(k==='st'){tutupTabel();if(!SC.open)scOpen(true);if(window.stdoBuka)stdoBuka();}
+ else if(k==='tab'){tutupPen();bukaTabel();}
+ tandai();}
+TB.addEventListener('click',e=>{const b=e.target.closest('.dt');if(b)buka(b.dataset.k);});
+setInterval(()=>{if(scw.classList.contains('penuh')&&!SC.open)scw.classList.remove('penuh');tandai();},400);
+/* ---- sorotan 3D ---- */
+const HG=new THREE.Group();HG.renderOrder=999;W.add(HG);
+const MAT=new THREE.MeshBasicMaterial({color:0xff2d95,transparent:true,opacity:.92,depthTest:false});const MAT2=new THREE.MeshBasicMaterial({color:0xffd43b,transparent:true,opacity:.95,depthTest:false});
+const loc=(e,n,z)=>new THREE.Vector3(e-O[0],z-O[2],-(n-O[1]));
+function sorotHapus(){while(HG.children.length){const c=HG.children.pop();c.geometry&&c.geometry.dispose();}if(window.reqR)reqR();}
+function radius(){const d=C.position.distanceTo(CT.target);return Math.max(0.15,Math.min(6,d*0.0035));}
+function sorot(W3){sorotHapus();if(!W3||!W3.pts||!W3.pts.length)return;const hr=g('hrad')?+g('hrad').value||0.5:0.5,r=Math.max(radius(),hr*1.5),P=W3.pts.map(p=>loc(p[0],p[1],p[2]));
+ if(P.length>1){const path=new THREE.CurvePath();for(let i=1;i<P.length;i++)if(P[i].distanceTo(P[i-1])>1e-6)path.add(new THREE.LineCurve3(P[i-1],P[i]));
+  if(path.curves.length){const m=new THREE.Mesh(new THREE.TubeGeometry(path,Math.min(400,path.curves.length*2),r,8,false),MAT);m.renderOrder=999;HG.add(m);}}
+ const s=new THREE.Mesh(new THREE.SphereGeometry(r*(P.length>1?1.5:2.2),16,12),P.length>1?MAT2:MAT);s.position.copy(P[0]);s.renderOrder=1000;HG.add(s);if(window.reqR)reqR();}
+const zoomW=W3=>{if(W3&&W3.pts&&W3.pts.length&&typeof fmZoom==='function'){const p=W3.pts;let a=[1e99,1e99,1e99,-1e99,-1e99,-1e99];for(const q of p)for(let k=0;k<3;k++){a[k]=Math.min(a[k],q[k]);a[k+3]=Math.max(a[k+3],q[k]);}
+ const c=[0,1,2].map(k=>(a[k]+a[k+3])/2),h=Math.max(20,(a[3]-a[0])/2,(a[4]-a[1])/2,(a[5]-a[2])/2);fmZoom([[c[0]-h,c[1]-h,c[2]-h],[c[0]+h,c[1]+h,c[2]+h]]);setTimeout(()=>sorot(W3),60);}};
+/* jalur lubang (h.p disimpan dalam desimeter relatif O) */
+const holeIdx=new Map();
+function hole(id){let r=holeIdx.get(id);if(r&&r.d.holes.includes(r.h))return r;for(const d of DS){const h=d.holes.find(x=>x.id===id);if(h){r={d,h};holeIdx.set(id,r);return r;}}return null;}
+function jalur(h,fr,to){const p=h.p,P=[];for(let i=0;i<p.length;i+=3)P.push([p[i]/10+O[0],p[i+1]/10+O[1],p[i+2]/10+O[2]]);if(fr==null)return P;
+ const cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1],P[i][2]-P[i-1][2]));
+ const at=d=>{for(let i=0;i+1<P.length;i++)if(d<=cum[i+1]||i+2===P.length){const t=cum[i+1]>cum[i]?Math.min(1,Math.max(0,(d-cum[i])/(cum[i+1]-cum[i]))):0;return P[i].map((v,k)=>v+(P[i+1][k]-v)*t);}return P[0];};
+ if(P.length<2)return P;const a=+fr,b=to==null||!isFinite(+to)?a:+to,o=[at(a)];for(let i=1;i<P.length-1;i++)if(cum[i]>a&&cum[i]<b)o.push(P[i]);if(b>a)o.push(at(b));return o;}
+const zz=(e,n)=>{const z=typeof topoZ==='function'?topoZ(e,n):NaN;return isFinite(z)?z:O[2];};
+/* ---- sumber tabel ---- */
+const ROLE={collar:'Collar',survey:'Survey',assay:'Assay',geo:'Geologi'};
+function daftar(){const L2=[];DS.forEach((d,i)=>{for(const k of ['collar','survey','assay','geo'])L2.push({key:'ds:'+i+':'+k,grp:'Data bor · '+d.nm,nm:ROLE[k]+' — '+d.nm,mk:()=>tbBor(d,k)});});
+ if(STR.some(s=>s.st!=='usulan'))L2.push({key:'str',grp:'Struktur',nm:'Bidang struktur',mk:tbStr});
+ if(typeof STP!=='undefined'&&STP.length)L2.push({key:'stp',grp:'Struktur',nm:'Titik struktur',mk:tbStp});
+ if(window.FM&&FM.F&&FM.F.length)L2.push({key:'fm',grp:'Pemetaan',nm:'Fitur pemetaan',mk:tbFm});
+ if(typeof PLAN!=='undefined'&&PLAN.length)PLAN.forEach((p,i)=>L2.push({key:'pl:'+i,grp:'Plan bor',nm:p.nm,mk:()=>tbPlan(p)}));
+ if(window.MS&&MS.L.length)L2.push({key:'ms',grp:'Studio',nm:'Solid Studio',mk:tbMs});
+ (window.GIS||[]).forEach((T,i)=>L2.push({key:'gis:'+T.nm,grp:'Arsip GIS',nm:T.nm,mk:()=>tbGis(T)}));
+ return L2;}
+const num=v=>v!==''&&v!=null&&isFinite(+v);
+function tbBor(d,k){const raw=d.raw&&d.raw.t&&d.raw.t[k],tb=raw&&raw.tb;let rows=null;try{rows=tb&&tb.rows;}catch(e){}
+ if(rows&&rows.length){const hd=tb.hd0||[],mp=raw.map||[],ix=r=>mp.indexOf(r);const iid=ix('id'),ifr=ix('fr'),ito=ix('to'),isd=ix('sd');
+  return {nm:ROLE[k]+' — '+d.nm+(raw.name?' ('+raw.name+')':''),cols:hd.map((h,c)=>({nm:String(h||('Kolom '+(c+1)))})),n:rows.length,get:(i,c)=>rows[i][c],
+   pilih:i=>{const id=rows[i][iid];return id!=null?{kind:'hole',nm:String(id),id:'hole:'+id}:null;},
+   w3:i=>{const r=hole(String(rows[i][iid]));if(!r)return null;if(k==='collar'||(ifr<0&&isd<0))return {pts:jalur(r.h)};if(isd>=0)return {pts:jalur(r.h,+rows[i][isd],+rows[i][isd])};return {pts:jalur(r.h,+rows[i][ifr],+rows[i][ito])};}};}
+ /* tabel asli tak tersimpan → susun dari data terstruktur */
+ if(k==='collar'){const H=d.holes;return {nm:'Collar — '+d.nm+' (disusun)',cols:['Hole ID','Jenis','E','N','RL','Lubang (m)'].map(nm=>({nm})),n:H.length,
+   get:(i,c)=>{const h=H[i],p=h.p;if(c===0)return h.id;if(c===1)return h.src;if(c<5)return +(p[c-2]/10+O[c-2]).toFixed(3);let L=0;for(let j=3;j<p.length;j+=3)L+=Math.hypot(p[j]-p[j-3],p[j+1]-p[j-2],p[j+2]-p[j-1])/10;return +L.toFixed(2);},
+   pilih:i=>({kind:'hole',nm:H[i].id,id:'hole:'+H[i].id}),w3:i=>({pts:jalur(H[i])})};}
+ const src=k==='assay'?d.ael:k==='geo'?d.geo:null;if(!src)return {nm:ROLE[k]+' — '+d.nm,cols:[],n:0,kosong:'Tabel '+ROLE[k]+' asli tidak tersimpan di project ini (impor ulang tabel untuk melihat semua kolom).'};
+ const R2=[];let vk=[];for(const id in src)for(const q of src[id]||[]){R2.push([id,q]);for(const c in q.v||{})if(!vk.includes(c))vk.push(c);}
+ return {nm:ROLE[k]+' — '+d.nm+' (disusun)',cols:['Hole ID','Dari','Sampai'].concat(vk).map(nm=>({nm})),n:R2.length,get:(i,c)=>{const [id,q]=R2[i];return c===0?id:c===1?q.f:c===2?q.t:(q.v||{})[vk[c-3]];},
+  pilih:i=>({kind:'hole',nm:R2[i][0],id:'hole:'+R2[i][0]}),w3:i=>{const r=hole(R2[i][0]);return r?{pts:jalur(r.h,R2[i][1].f,R2[i][1].t)}:null;}};}
+function tbStr(){const A=STR.filter(s=>s.st!=='usulan'),up=()=>{stDraw();stList();};const F=[['nm','Nama',1],['E','E',1],['N','N',1],['Z','RL',1],['strike','Strike',1],['dip','Dip',1],['L','Panjang',1],['H','Tinggi',1],['st','Status',0]];
+ return {nm:'Bidang struktur',cols:F.map(f=>({nm:f[1],ed:!!f[2]})),n:A.length,get:(i,c)=>{const v=A[i][F[c][0]];return c>0&&c<8&&num(v)?+(+v).toFixed(c<4?2:1):v;},
+  set:(i,c,v)=>{const s=A[i],k=F[c][0];if(k==='nm'){if(v)s.nm=v;}else if(num(v)){let x=+v;if(k==='strike')x=((x%360)+360)%360;if(k==='dip')x=Math.max(0,Math.min(90,x));if((k==='L'||k==='H')&&x<=0)return;s[k]=x;}up();},
+  pilih:i=>({kind:'bidang',obj:A[i],nm:A[i].nm,id:'stb:'+A[i].id}),w3:i=>({pts:[[+A[i].E,+A[i].N,+A[i].Z]]})};}
+function tbStp(){const A=STP,up=()=>{stpDraw();stpList();};const F=[['nm','Nama',1],['kat','Kategori',0],['jenis','Jenis',1],['dip','Dip',1],['dd','Dip dir',1],['E','E',0],['N','N',0],['Z','RL',0],['ket','Keterangan',1]];
+ return {nm:'Titik struktur',cols:F.map(f=>({nm:f[1],ed:!!f[2]})),n:A.length,get:(i,c)=>{const v=A[i][F[c][0]];return num(v)&&c>2&&c<8?+(+v).toFixed(c>4?2:0):v;},
+  set:(i,c,v)=>{const p=A[i],k=F[c][0];if(k==='dip'||k==='dd'){if(!num(v))return;let x=+v;p[k]=k==='dip'?Math.max(0,Math.min(90,x)):((x%360)+360)%360;}else if(k!=='nm'||v)p[k]=v;up();},
+  pilih:i=>({kind:'titik',obj:A[i],nm:A[i].nm,id:'stt:'+i+':'+A[i].nm}),w3:i=>({pts:[[+A[i].E,+A[i].N,+A[i].Z]]})};}
+function tbFm(){const A=FM.F,ak=[];A.forEach(f=>{for(const k in f.a||{})if(!ak.includes(k)&&typeof f.a[k]!=='object')ak.push(k);});
+ const panj=f=>{let L=0;const p=f.pts||[];for(let i=1;i<p.length;i++)L+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);return L;};
+ const cols=[{nm:'ID'},{nm:'Jenis'},{nm:'Nama',ed:1},{nm:'Titik'},{nm:'Panjang (m)'},{nm:'Tampil'}].concat(ak.map(k=>({nm:k,ed:1})));
+ return {nm:'Fitur pemetaan',cols,n:A.length,get:(i,c)=>{const f=A[i];if(c===0)return f.id;if(c===1)return (typeof FMK!=='undefined'&&FMK[f.k]?FMK[f.k].nm:f.k);if(c===2)return f.nm;if(c===3)return (f.pts||[]).length;if(c===4)return +panj(f).toFixed(2);if(c===5)return f.on?'ya':'tidak';return (f.a||{})[ak[c-6]];},
+  set:(i,c,v)=>{const f=A[i];if(c===2){if(v)f.nm=v;}else if(c>=6){f.a=f.a||{};f.a[ak[c-6]]=v;}if(typeof fmDraw==='function')fmDraw();if(typeof fmList==='function')fmList();if(window.rpDraw)rpDraw();},
+  pilih:i=>({kind:'fm',obj:[A[i]],nm:A[i].nm,id:'fmf:'+A[i].id}),w3:i=>({pts:(A[i].pts||[]).map(p=>[p[0],p[1],isFinite(p[2])?p[2]:zz(p[0],p[1])])})};}
+function tbPlan(P){const A=P.rows||[],ks=[];A.forEach(r=>{for(const k in r)if(!ks.includes(k)&&typeof r[k]!=='object')ks.push(k);});
+ const xe=r=>+(r.x??r.E??r.e),yn=r=>+(r.y??r.N??r.n),zl=r=>+(r.z??r.RL??r.rl);
+ return {nm:'Plan bor — '+P.nm,cols:ks.map(nm=>({nm})),n:A.length,get:(i,c)=>A[i][ks[c]],w3:i=>{const r=A[i],e=xe(r),n=yn(r);return isFinite(e)&&isFinite(n)?{pts:[[e,n,isFinite(zl(r))?zl(r):zz(e,n)]]}:null;}};}
+function tbMs(){const A=MS.L;return {nm:'Solid Studio',cols:['Nama','Jenis','Penampang','String','Segitiga','Status','Volume (m³)','Densitas','Tonase (t)'].map((nm,c)=>({nm,ed:c===0||c===7})),n:A.length,
+  get:(i,c)=>{const M=A[i],R=M.res,par=M.par&&A.find(x=>x.id===M.par);return [M.nm,par?'cabang dari '+par.nm:'induk',M.m==='h'?'horizontal':'vertikal',M.S.length,R?R.nt:'',R?(R.open?R.open+' sisi terbuka':'tertutup'):'',R?Math.round(R.vol):'',M.den,R?Math.round(R.vol*(+M.den||0)):''][c];},
+  set:(i,c,v)=>{const M=A[i],X=window.__ms||{};if(c===0&&v){M.nm=v;const w=WI.find(x=>x.ms===M.id);if(w){w.nm=v;wiList();}}if(c===7&&num(v)&&+v>0)M.den=+v;if(X.panel)X.panel();},
+  pilih:i=>({kind:'solid',obj:A[i],nm:A[i].nm,id:'ms:'+A[i].id}),w3:i=>{const w=WI.find(x=>x.ms===(A[i].par||A[i].id));if(!w||!w.g)return null;const b=new THREE.Box3().setFromObject(w.g);if(b.isEmpty())return null;const c=b.getCenter(new THREE.Vector3());return {pts:[[c.x+O[0],-c.z+O[1],c.y/(W.scale.y||1)+O[2]]]};}};}
+function tbGis(T){const K=(T.kolom||[]).map(c=>c.nm),A=T.baris||[],G=T.geom||[],gi=window.__gis||{};
+ return {nm:'Arsip GIS — '+T.nm,cols:K.map(nm=>({nm,ed:1})),n:A.length,get:(i,c)=>(A[i]||{})[K[c]],
+  set:(i,c,v)=>{if(!A[i])return;const o=A[i][K[c]];A[i][K[c]]=typeof o==='number'&&num(v)?+v:v;if(gi.bangun)gi.bangun(T);if(gi.daftar)gi.daftar();},
+  hapus:i=>T.hapus&&T.hapus[i],pilih:()=>({kind:'gis',obj:T,nm:T.nm,id:'gis:'+T.nm}),
+  w3:i=>{const q=G[i];if(!q||!q.c)return null;const P=[];(function walk(a){if(typeof a[0]==='number'){P.push(a);return;}a.forEach(walk);})(q.c);const s=P.length>400?P.filter((_,k)=>k%Math.ceil(P.length/400)===0):P;
+   return s.length?{pts:s.map(p=>[p[0],p[1],isFinite(p[2])?p[2]:zz(p[0],p[1])])}:null;}};}
+/* ---- tampilan tabel ---- */
+let TBL=null,IDX=null,CW=[];const RH=22,BD=g('tabd');
+function pilihTabel(key){const L2=daftar();let s=L2.find(x=>x.key===key)||L2[0];TA.key=s?s.key:null;sv();TA.sort=null;TA.dir=1;TA.fil={};TA.sel=-1;g('taq').value='';TA.q='';
+ try{TBL=s?s.mk():null;}catch(e){console.warn('Tabel atribut',e);TBL=null;}lebarKol();saring();BD.scrollTop=0;BD.scrollLeft=0;bangunKepala();gambar(true);}
+function isiPilihan(){const L2=daftar(),sl=g('tasl');let h='',gp='';for(const s of L2){if(s.grp!==gp){if(gp)h+='</optgroup>';h+='<optgroup label="'+esc(s.grp)+'">';gp=s.grp;}h+='<option value="'+esc(s.key)+'">'+esc(s.nm)+'</option>';}if(gp)h+='</optgroup>';
+ const sig=L2.map(s=>s.key+s.nm).join('|');if(sl.dataset.sig!==sig){sl.innerHTML=h||'<option value="">(belum ada data)</option>';sl.dataset.sig=sig;}if(TA.key&&L2.some(s=>s.key===TA.key))sl.value=TA.key;return L2;}
+function lebarKol(){CW=[];if(!TBL)return;const cx=document.createElement('canvas').getContext('2d');cx.font='12px Segoe UI, Inter, Arial';const n=Math.min(TBL.n,300);
+ TBL.cols.forEach((c,j)=>{let w=cx.measureText(c.nm).width+30;for(let i=0;i<n;i++){const v=TBL.get(i,j);if(v!=null){const t=cx.measureText(String(v)).width+16;if(t>w)w=t;}}CW.push(Math.round(Math.max(56,Math.min(280,w))));});
+ TBL.isNum=TBL.cols.map((c,j)=>{let k=0,m=0;for(let i=0;i<n;i++){const v=TBL.get(i,j);if(v==null||v==='')continue;m++;if(num(v))k++;}return m>0&&k/m>0.95;});}
+function uji(f){f=f.trim();if(!f)return null;const m=f.match(/^(>=|<=|>|<|=|!=)\s*(.*)$/);if(m){const op=m[1],x=m[2].trim(),xn=+x,isn=x!==''&&isFinite(xn);
+  return v=>{if(op==='='||op==='!='){const eq=isn&&num(v)?+v===xn:String(v??'').toLowerCase()===x.toLowerCase();return op==='='?eq:!eq;}if(!num(v)||!isn)return false;v=+v;return op==='>'?v>xn:op==='<'?v<xn:op==='>='?v>=xn:v<=xn;};}
+ const q=f.toLowerCase();return v=>String(v??'').toLowerCase().includes(q);}
+function saring(){if(!TBL){IDX=new Uint32Array(0);return;}const n=TBL.n,F=[];for(const j in TA.fil){const t=uji(TA.fil[j]);if(t)F.push([+j,t]);}const q=TA.q.trim().toLowerCase(),nc=TBL.cols.length;
+ const out=new Uint32Array(n);let k=0;for(let i=0;i<n;i++){if(TBL.hapus&&TBL.hapus(i))continue;let ok=true;for(const [j,t] of F)if(!t(TBL.get(i,j))){ok=false;break;}
+  if(ok&&q){ok=false;for(let j=0;j<nc;j++){const v=TBL.get(i,j);if(v!=null&&String(v).toLowerCase().includes(q)){ok=true;break;}}}if(ok)out[k++]=i;}
+ IDX=out.slice(0,k);if(TA.sort!=null){const j=TA.sort,d=TA.dir;if(TBL.isNum[j]){const key=new Float64Array(TBL.n);for(const i of IDX){const v=TBL.get(i,j);key[i]=num(v)?+v:(d>0?Infinity:-Infinity);}IDX.sort((a,b)=>(key[a]-key[b])*d||a-b);}
+  else{const key=new Array(TBL.n);for(const i of IDX)key[i]=String(TBL.get(i,j)??'');const co=new Intl.Collator('id',{numeric:true,sensitivity:'base'});IDX.sort((a,b)=>co.compare(key[a],key[b])*d||a-b);}}
+ g('tan').textContent=TBL.n?(IDX.length===TBL.n?TBL.n.toLocaleString('id-ID')+' baris':IDX.length.toLocaleString('id-ID')+' dari '+TBL.n.toLocaleString('id-ID')+' baris'):'';}
+let THEAD='';
+function bangunKepala(){if(!TBL||!TBL.cols.length){THEAD='';return;}const cg='<colgroup><col style="width:52px">'+CW.map(w=>'<col style="width:'+w+'px">').join('')+'</colgroup>';
+ THEAD=cg+'<thead><tr><th class="rn" title="Nomor baris asli">#</th>'+TBL.cols.map((c,j)=>'<th data-j="'+j+'" title="'+esc(c.nm)+(c.ed?' (bisa disunting: klik ganda sel)':'')+' — klik untuk urut">'+esc(c.nm)+(TA.sort===j?'<span class="so">'+(TA.dir>0?'▲':'▼')+'</span>':'')+'</th>').join('')+'</tr>'+
+  '<tr class="fi"><th class="rn"></th>'+TBL.cols.map((c,j)=>'<th><input data-j="'+j+'" value="'+esc(TA.fil[j]||'')+'" placeholder="saring" title="Teks, atau >1, <0.5, >=, <=, =nilai, !=nilai" aria-label="Saring '+esc(c.nm)+'"></th>').join('')+'</tr></thead>';}
+let lastDraw='';
+function gambar(force){if(!TA.on)return;if(!TBL){BD.innerHTML='<div id="taem">Belum ada tabel. Impor Data bor, struktur, pemetaan, plan bor, atau tabel MapInfo — lalu pilih di kotak kiri atas.</div>';return;}
+ if(TBL.kosong){BD.innerHTML='<div id="taem">'+esc(TBL.kosong)+'</div>';return;}
+ const n=IDX.length,top=BD.scrollTop,vh=BD.clientHeight||400,a=Math.max(0,Math.floor((top)/RH)-10),b=Math.min(n,a+Math.ceil(vh/RH)+24),sig=a+':'+b+':'+n+':'+TA.sel;
+ if(!force&&sig===lastDraw)return;lastDraw=sig;
+ const ae=document.activeElement,fj=ae&&ae.closest&&ae.closest('#tabd tr.fi')?ae.dataset.j:null,pos=fj!=null?ae.selectionStart:0;
+ let h='<table style="width:'+(52+CW.reduce((s,w)=>s+w,0))+'px">'+THEAD+'<tbody>';if(a>0)h+='<tr style="height:'+(a*RH)+'px"><td colspan="'+(TBL.cols.length+1)+'" style="border:0;padding:0"></td></tr>';
+ for(let r=a;r<b;r++){const i=IDX[r];h+='<tr data-i="'+i+'"'+(i===TA.sel?' class="sel"':'')+'><td class="rn">'+(i+1)+'</td>';
+  for(let j=0;j<TBL.cols.length;j++){let v=TBL.get(i,j);if(v==null)v='';const nu=TBL.isNum[j]&&v!=='',t=nu&&typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:6,useGrouping:false}):String(v);
+   h+='<td class="'+(nu?'nu':'')+(TBL.cols[j].ed?' ed':'')+'" data-j="'+j+'">'+esc(t)+'</td>';}h+='</tr>';}
+ if(b<n)h+='<tr style="height:'+((n-b)*RH)+'px"><td colspan="'+(TBL.cols.length+1)+'" style="border:0;padding:0"></td></tr>';
+ h+='</tbody></table>';const sl=BD.scrollLeft;BD.innerHTML=h;BD.scrollTop=top;BD.scrollLeft=sl;
+ if(fj!=null){const e=BD.querySelector('tr.fi input[data-j="'+fj+'"]');if(e){e.focus();try{e.setSelectionRange(pos,pos);}catch(x){}}}}
+BD.addEventListener('scroll',()=>gambar(false),{passive:true});
+let tf=0;BD.addEventListener('input',e=>{const t=e.target;if(!t.matches('tr.fi input'))return;TA.fil[t.dataset.j]=t.value;clearTimeout(tf);tf=setTimeout(()=>{saring();BD.scrollTop=0;gambar(true);},220);});
+g('taq').addEventListener('input',()=>{TA.q=g('taq').value;clearTimeout(tf);tf=setTimeout(()=>{saring();BD.scrollTop=0;gambar(true);},220);});
+g('taq').addEventListener('keydown',e=>e.stopPropagation());BD.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')e.stopPropagation();});
+g('tasl').onchange=()=>pilihTabel(g('tasl').value);
+function pilihBaris(i,zoom){TA.sel=i;let ada=false;BD.querySelectorAll('tbody tr[data-i]').forEach(r=>{const on=+r.dataset.i===i;r.classList.toggle('sel',on);if(on)ada=true;});if(!ada)gambar(true);if(!TBL)return;let W3=null;try{W3=TBL.w3?TBL.w3(i):null;}catch(e){}sorot(W3);
+ const S=TBL.pilih?TBL.pilih(i):null;if(S){window.__ptSel=S;try{window.dispatchEvent(new CustomEvent('ow:pilih',{detail:S}));}catch(e){}}
+ if(zoom&&W3){if(!TA.bawah)buka('3d');setTimeout(()=>zoomW(W3),30);}}
+BD.addEventListener('click',e=>{const th=e.target.closest('thead tr:first-child th[data-j]');if(th){const j=+th.dataset.j;if(TA.sort===j){if(TA.dir>0)TA.dir=-1;else{TA.sort=null;TA.dir=1;}}else{TA.sort=j;TA.dir=1;}saring();bangunKepala();gambar(true);return;}
+ const tr=e.target.closest('tbody tr[data-i]');if(tr)pilihBaris(+tr.dataset.i,false);});
+BD.addEventListener('dblclick',e=>{const td=e.target.closest('tbody td[data-j]'),tr=e.target.closest('tbody tr[data-i]');if(!tr)return;const i=+tr.dataset.i;
+ if(td&&TBL.set&&TBL.cols[+td.dataset.j].ed){sunting(td,i,+td.dataset.j);return;}pilihBaris(i,true);});
+function sunting(td,i,j){const v0=TBL.get(i,j),inp=document.createElement('input');inp.className='ce';inp.value=v0==null?'':v0;td.textContent='';td.appendChild(inp);inp.focus();inp.select();let done=false;
+ const ok=simpan=>{if(done)return;done=true;if(simpan&&String(inp.value)!==String(v0??'')){try{TBL.set(i,j,inp.value.trim());}catch(e){console.warn(e);}if(window.sbToast)sbToast('Tersimpan: '+TBL.cols[j].nm);}if(TBL.isNum)lebarKol();saring();bangunKepala();gambar(true);if(window.ptRender)ptRender();};
+ inp.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')ok(true);else if(e.key==='Escape')ok(false);};inp.onblur=()=>ok(true);}
+BD.addEventListener('keydown',e=>{if(e.target!==BD||!IDX||!IDX.length)return;let r=Array.prototype.indexOf.call(IDX,TA.sel);
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){r=Math.max(0,Math.min(IDX.length-1,r+(e.key==='ArrowDown'?1:-1)));pilihBaris(IDX[r],false);const y=r*RH+48;if(y<BD.scrollTop+48)BD.scrollTop=y-48;else if(y+RH>BD.scrollTop+BD.clientHeight)BD.scrollTop=y+RH-BD.clientHeight;e.preventDefault();}
+ else if(e.key==='Enter'&&TA.sel>=0){pilihBaris(TA.sel,true);e.preventDefault();}});
+/* ---- ekspor ---- */
+const nmFile=()=>(TBL?TBL.nm:'tabel').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim().slice(0,80);
+function unduh(blob,nm){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);}
+g('tacsv').onclick=()=>{if(!TBL||!IDX)return;const q=v=>{v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const L2=[TBL.cols.map(c=>q(c.nm)).join(',')];
+ for(const i of IDX){const r=[];for(let j=0;j<TBL.cols.length;j++)r.push(q(TBL.get(i,j)));L2.push(r.join(','));}unduh(new Blob(['﻿'+L2.join('\r\n')],{type:'text/csv'}),nmFile()+'.csv');if(window.sbToast)sbToast('CSV: '+IDX.length.toLocaleString('id-ID')+' baris');};
+/* xlsx minimal: zip tanpa kompresi (store) */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+function zip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;for(const [nm,txt] of files){const d=enc.encode(txt),n=enc.encode(nm),c=crc32(d),h=new DataView(new ArrayBuffer(30));
+  h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);
+  parts.push(new Uint8Array(h.buffer),n,d);const e=new DataView(new ArrayBuffer(46));e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint32(16,c,true);e.setUint32(20,d.length,true);e.setUint32(24,d.length,true);e.setUint16(28,n.length,true);e.setUint32(42,off,true);
+  cd.push(new Uint8Array(e.buffer),n);off+=30+n.length+d.length;}
+ const cs=cd.reduce((s,a)=>s+a.length,0),z=new DataView(new ArrayBuffer(22));z.setUint32(0,0x06054b50,true);z.setUint16(8,files.length,true);z.setUint16(10,files.length,true);z.setUint32(12,cs,true);z.setUint32(16,off,true);
+ return new Blob([...parts,...cd,new Uint8Array(z.buffer)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});}
+const xe=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+const colNm=j=>{let s='';j++;while(j>0){const m=(j-1)%26;s=String.fromCharCode(65+m)+s;j=Math.floor((j-1)/26);}return s;};
+g('taxl').onclick=()=>{if(!TBL||!IDX)return;if(IDX.length>1048575){alert('Baris terlalu banyak untuk satu lembar Excel (maks 1.048.575). Saring dulu atau pakai CSV.');return;}
+ const rows=[];const cell=(r,j,v,hd)=>{const ref=colNm(j)+r;if(v==null||v==='')return '';if(!hd&&TBL.isNum[j]&&num(v))return '<c r="'+ref+'"><v>'+(+v)+'</v></c>';return '<c r="'+ref+'" t="inlineStr"'+(hd?' s="1"':'')+'><is><t xml:space="preserve">'+xe(v)+'</t></is></c>';};
+ rows.push('<row r="1">'+TBL.cols.map((c,j)=>cell(1,j,c.nm,1)).join('')+'</row>');let r=2;for(const i of IDX){let s='<row r="'+r+'">';for(let j=0;j<TBL.cols.length;j++)s+=cell(r,j,TBL.get(i,j));rows.push(s+'</row>');r++;}
+ const sn=xe(nmFile().replace(/[\[\]:*?\/\\]/g,'_').slice(0,31)||'Tabel');
+ const sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'+CW.map((w,j)=>'<col min="'+(j+1)+'" max="'+(j+1)+'" width="'+Math.max(8,Math.round(w/7))+'" customWidth="1"/>').join('')+'</cols><sheetData>'+rows.join('')+'</sheetData><autoFilter ref="A1:'+colNm(Math.max(0,TBL.cols.length-1))+(IDX.length+1)+'"/></worksheet>';
+ const b=zip([['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+  ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+  ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+sn+'" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\''+sn.replace(/'/g,"''")+'\'!$A$1:$'+colNm(Math.max(0,TBL.cols.length-1))+'$'+(IDX.length+1)+'</definedName></definedNames></workbook>'],
+  ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+  ['xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDEBE6"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'],
+  ['xl/worksheets/sheet1.xml',sheet]]);
+ unduh(b,nmFile()+'.xlsx');if(window.sbToast)sbToast('Excel: '+IDX.length.toLocaleString('id-ID')+' baris');};
+/* ---- buka / tutup ---- */
+function bukaTabel(key){TA.on=true;TV.classList.add('on');TV.classList.toggle('bawah',!!TA.bawah);g('tabl').classList.toggle('on',!!TA.bawah);tata();const L2=isiPilihan();
+ if(key||!TBL||!L2.some(s=>s.key===TA.key))pilihTabel(key||TA.key);else gambar(true);tandai();}
+function tutupTabel(){if(!TA.on)return;TA.on=false;TV.classList.remove('on');sorotHapus();tandai();}
+g('tabl').onclick=()=>{TA.bawah=!TA.bawah;sv();TV.classList.toggle('bawah',TA.bawah);g('tabl').classList.toggle('on',TA.bawah);tata();gambar(true);tandai();};
+setInterval(()=>{if(TA.on){isiPilihan();}},1500);
+/* klik kanan dok Project → "Buka tabel atribut" (Data bor, struktur, pemetaan, GIS) */
+window.taBuka=(key)=>{buka('tab');if(key)pilihTabel(key);g('tasl').value=TA.key||'';};
+window.__ta={TA,buka,bukaTabel,tutupTabel,pilihTabel,daftar,sorot,get tbl(){return TBL;},get idx(){return IDX;}};
 }
 
 </script>

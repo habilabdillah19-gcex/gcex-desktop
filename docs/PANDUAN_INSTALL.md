@@ -5619,3 +5619,18 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Tepi kiri dok bisa diseret untuk mengubah lebar; tombol **–** memperkecil jadi strip; buka / tutup lewat
   **Tampilan → Panel Properti (kanan)**.
 
+## 279. Ore Works 0.22.0 — tab dokumen dan Tabel atribut
+
+- Di atas area tengah ada tab **3D · Penampang · Peta level · Studio · Tabel atribut**. Penampang (vertikal) dan Peta level
+  (horizontal RL) membuka jendela penampang memenuhi area tengah; Studio membuka Studio Pemodelan; 3D kembali ke tampilan 3D.
+- **Tabel atribut**: pilih tabel di kotak kiri atas (Collar / Survey / Assay / Geologi tiap dataset, Bidang & Titik struktur,
+  Pemetaan, Plan bor, Solid Studio, tabel MapInfo di Arsip GIS).
+  - Klik judul kolom untuk mengurutkan (klik lagi = terbalik, sekali lagi = batal).
+  - Baris "saring" di bawah judul: ketik teks, atau `>1`, `<0.5`, `>=`, `<=`, `=AND`, `!=AND`. Kotak **Saring semua kolom**
+    mencari di semua kolom.
+  - Klik baris = disorot (magenta) di 3D dan tampil di Properti. Klik ganda = kamera diarahkan ke objek. Tombol
+    **Belah dengan 3D** menaruh tabel di bawah agar 3D tetap terlihat.
+  - Sel bergaris titik bisa disunting dengan klik ganda (Enter = simpan, Esc = batal).
+  - **Ekspor CSV** / **Ekspor Excel** menyimpan baris yang sedang tersaring & terurut.
+- Dari dok Project: klik kanan objek → **Buka tabel atribut**; klik ganda Collar / Survey / Assay / Geologi membuka tabelnya.
+
