@@ -1034,6 +1034,21 @@ function secGeom(){var m=$('sMode').value,zc=(G.z0+G.z1)/2;
     if(!isNaN(e1+n1+e2+n2)&&(e1!==e2||n1!==n2)){az=Math.atan2(e2-e1,n2-n1)*180/Math.PI;cx=e1;cy=n1;seg=Math.sqrt((e2-e1)*(e2-e1)+(n2-n1)*(n2-n1));}}
   var a=az*Math.PI/180,d=dip*Math.PI/180,sa=Math.sin(a),ca=Math.cos(a),sp=Math.sin(d),cp=Math.cos(d);
   return{m:m,az:az,dip:dip,u:[sa,ca,0],w:[ca*cp,-sa*cp,-sp],n:[ca*sp,-sa*sp,cp],c:[cx,cy,cz],seg:seg};}
+/* DH 0.24.102 (pemilik 17 Nov 2026: "kenapa sayatan 3D tidak menyayat topografi dan desain pit?"): saat Potong data (slab) aktif,
+   permukaan topografi, desain pit dan Topo × Pit di 3D ikut dipotong — hanya segitiga yang titik beratnya di dalam slab — dan
+   garis potong permukaan dengan bidang tengah sayatan digambar tebal (profil topo / pit di 3D). */
+function slabSurf(T,K,pos){var K0=K[0],KR=K.slice(1),out=[];
+  for(var q=0;q<T.length;q++){var t=T[q];if(!t||t.type!=='mesh3d'||!t.i||!t.i.length||!(t.uid==='ovTopoS'||t.uid==='ovPitS'||t._tpSurf))continue;
+    var X=t.x,Y=t.y,Z=t.z,I=[],J=[],L=[],FC=Array.isArray(t.facecolor)&&t.facecolor.length===t.i.length?[]:null,lx=[],ly=[],lz=[],dv=new Float64Array(X.length);
+    for(var v=0;v<X.length;v++)dv[v]=K0.n[0]*(X[v]-K0.c[0])+K0.n[1]*(Y[v]-K0.c[1])+K0.n[2]*(Z[v]-K0.c[2]);
+    for(var f=0;f<t.i.length;f++){var a=t.i[f],b=t.j[f],c=t.k[f],m=(dv[a]+dv[b]+dv[c])/3,P={x:(X[a]+X[b]+X[c])/3,y:(Y[a]+Y[b]+Y[c])/3,z:(Z[a]+Z[b]+Z[c])/3};
+      if(KR.length&&!inK(KR,P))continue;
+      if(m>=K0.lo&&m<=K0.hi){I.push(a);J.push(b);L.push(c);if(FC)FC.push(t.facecolor[f]);}
+      var e=[[a,b],[b,c],[c,a]],pp=[];for(var r=0;r<3;r++){var u=e[r][0],w=e[r][1],du=dv[u]-pos,dw=dv[w]-pos;if((du<0)!==(dw<0)){var s2=du/(du-dw);pp.push([X[u]+(X[w]-X[u])*s2,Y[u]+(Y[w]-Y[u])*s2,Z[u]+(Z[w]-Z[u])*s2]);}}
+      if(pp.length===2){lx.push(pp[0][0],pp[1][0],null);ly.push(pp[0][1],pp[1][1],null);lz.push(pp[0][2]+0.3,pp[1][2]+0.3,null);}}
+    var nt=Object.assign({},t,{i:I,j:J,k:L});if(FC)nt.facecolor=FC;T[q]=nt;
+    if(lx.length){var isPit=t.uid==='ovPitS';out.push({type:'scatter3d',mode:'lines',name:'Sayatan '+(t.name||(isPit?'desain pit':'topografi')),x:lx,y:ly,z:lz,line:{color:isPit?'#1b2a4e':'#5a3d1e',width:5},hoverinfo:'skip',showlegend:false,_slabSurf:1});}}
+  out.forEach(function(o){T.push(o);});}
 function sd(n,c,p){return n[0]*(p.x-c[0])+n[1]*(p.y-c[1])+n[2]*(p.z-c[2]);}
 function updRange(reset){var g=secGeom(),e=$('pos'),lo,hi;
   if(g.m==='H'){lo=zMin;hi=zMax;}
@@ -1228,7 +1243,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   $('ttl').textContent=(ZONE?ZONE+' \u00b7 ':'')+ttl;var layout={font:{color:fg,family:'Segoe UI,Roboto,Arial,sans-serif'},paper_bgcolor:bg,uirevision:'keep',legend:{font:{color:fg},title:{text:el},x:0.99,xanchor:'right',y:0.98,bgcolor:dark?'rgba(22,32,44,.85)':'rgba(255,255,255,.85)',bordercolor:gr,borderwidth:1},
     scene:{xaxis:Object.assign(ax('Easting (+'+offX+')'),AXF.x),yaxis:Object.assign(ax('Northing (+'+offY+')'),AXF.y),zaxis:Object.assign(ax('Elevation'),AXF.z),aspectmode:'manual',aspectratio:{x:xr/base,y:yr/base,z:(zr/base)*zex}},
     margin:{l:0,r:0,b:0,t:6}};camKeep(layout);
-  if(window.TP&&TP.pasca)TP.pasca(traces,layout);/* DH 0.24.98: Topo × Pit, buka atap & legenda (web-src/topopit_bm.js, sama dengan Block Model) */
+  if(window.TP&&TP.pasca)TP.pasca(traces,layout);if(clip&&!VIEW2D)slabSurf(traces,K,pos);/* DH 0.24.98: Topo × Pit, buka atap & legenda (web-src/topopit_bm.js, sama dengan Block Model) */
   if(VIEW2D)sec2dRender(traces,{vis:vis,g:g,pos:pos,K:K,dark:dark,fg:fg,bg:bg,gr:gr,el:el,lw:lw,zex:zex,clip:clip,cut:cut,useCls:useCls,th:th,pal:pal,classOf:classOf});
   /* uid tetap per lapisan (nama + urutan ke-n di antara nama yang sama). Tanpa uid, Plotly mencocokkan lapisan lama-baru
      menurut POSISI dalam daftar: menyisipkan satu overlay di depan menggeser semua lapisan di belakangnya sehingga semuanya
@@ -6987,7 +7002,7 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
     var w = window.POP && POP.win ? POP.win('hdPop', 'Data per lubang — ' + id, h) : null; if (w && !w._pos) { w._pos = 1; w.style.left = Math.max(380, innerWidth - 820) + 'px'; w.style.top = '80px'; w.style.width = 'min(760px,calc(100vw - 420px))'; } };
   /* ikuti filter Hole ID & klik di 3D */
   function cari(t) { if (!t) return null; var L = ids(); if (!L.length) return null; var s = String(t).replace(/<[^>]+>/g, ' '), best = null; L.forEach(function (x) { if (x && s.indexOf(x) >= 0) { var i = s.indexOf(x), ok = (i === 0 || !/[A-Za-z0-9_-]/.test(s[i - 1])) && !/[A-Za-z0-9_-]/.test(s[i + x.length] || ''); if (ok && (!best || x.length > best.length)) best = x; } }); return best; }
-  function pasang() { var gd = document.getElementById('plotDiv'); if (gd && gd.on && !gd._hd) { gd._hd = 1; gd.on('plotly_click', function (ev) { try { var w = document.getElementById('hdPop'); if (!HD.ikut || !w || w.style.display === 'none') return; var p = ev.points && ev.points[0]; if (!p) return;
+  function pasang() { var gd = document.getElementById('plotDiv'); if (gd && gd.on && !gd._hd) { gd._hd = 1; gd.on('plotly_click', function (ev) { try { if (window.UKUR && UKUR.aktif) return; var w = document.getElementById('hdPop'); if (!HD.ikut || !w || w.style.display === 'none') return; var p = ev.points && ev.points[0]; if (!p) return;
         var id = cari((p.data && p.data.name) || '') || cari(p.hovertext || p.text || '') || cari(Array.isArray(p.customdata) ? p.customdata.join(' ') : p.customdata); if (id && id !== HD.id) { HD.id = id; HD.render(); } } catch (e) {} }); }
     var hf = document.getElementById('holeFilter'); if (hf && !hf._hd) { hf._hd = 1; hf.addEventListener('change', function () { if (HD.ikut && hf.value !== 'ALL') { HD.id = hf.value; HD.render(); } }); }
     var ef = document.getElementById('elementFilter'); if (ef && !ef._hd) { ef._hd = 1; ef.addEventListener('change', function () { HD.render(); }); }
@@ -7206,7 +7221,11 @@ function mapStHtml(){if(!window.STR)return '';var sd=STR.sd,on=MAP.mode==='stpt'
     if (!GWM || !m.gab || !m.gab.src) return null; var c = GWM.get(m); if (c && c.k === m.gab.at) return c.g;
     var s = m.gab.src, fT = zf(s.t), fP = zf(s.p), out = [];
     var berString = function (o) { for (var i = 0; i < o.x.length; i++) if (o.x[i] === null || o.x[i] === undefined) return true; return false; };
-    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
+    /* BM 0.24.99 / DH 0.24.102 (pemilik 17 Nov 2026: "Topo × Pit malah berbentuk jaring-jaring triangulasi"): desain pit / topografi
+       yang diimport sebagai SEGITIGA (DTM, DXF 3DFACE) tersimpan sebagai potongan 3–4 titik per segitiga. Itu bukan garis jenjang /
+       kontur: menggambarnya sebagai garis memunculkan seluruh rusuk segitiga. Lewati bila sebagian besar potongan adalah segitiga. */
+    var segitiga = function (o) { var n = 0, tri = 0, k = 0, a0 = -1; for (var i = 0; i <= o.x.length; i++) { var x = i < o.x.length ? o.x[i] : null; if (x === null || x === undefined) { if (k) { n++; var tutup = a0 >= 0 && o.x[a0] === o.x[i - 1] && o.y[a0] === o.y[i - 1]; if (k === 3 || (k === 4 && tutup)) tri++; } k = 0; a0 = -1; continue; } if (!k) a0 = i; k++; } return n >= 50 && tri / n > 0.6; };
+    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o) || segitiga(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
       for (var i = 1; i < o.x.length; i++) { var x0 = o.x[i - 1], x1 = o.x[i]; if (x0 === null || x1 === null || x0 === undefined || x1 === undefined) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
         var y0 = o.y[i - 1], y1 = o.y[i], z0 = o.z[i - 1], z1 = o.z[i], mx = (x0 + x1) / 2, my = (y0 + y1) / 2, mz = (z0 + z1) / 2, zo = lain(mx, my), ok = zo === null || (sendiri === 'topo' ? mz <= zo + 0.05 : mz < zo - 0.05);
         if (!ok) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
@@ -7705,9 +7724,9 @@ window.SHELL_APP='dh';
   function box(gd) { var b = gd.querySelector(':scope > .gxSkala'); if (!b) { b = document.createElement('div'); b.className = 'gxSkala'; if (getComputedStyle(gd).position === 'static') gd.style.position = 'relative'; gd.appendChild(b); } return b; }
   function upd(gd) {
     if (!gd || !gd._fullLayout) return; var b = gd.querySelector(':scope > .gxSkala');
-    if (!SKL.on || gd.dataset.skala === 'off') { if (b) b.style.display = 'none'; return; }
+    if (!SKL.on || gd.dataset.skala === 'off') { if (b) b.style.display = 'none'; try { if (window.UKUR) UKUR.pasang(gd, null); } catch (e) { } return; }
     var I = null; try { I = gd._fullLayout.scene && gd._fullLayout.scene._scene ? info3d(gd) : info2d(gd); } catch (e) { I = null; }
-    if (!I) { if (b) b.style.display = 'none'; return; }
+    if (!I) { if (b) b.style.display = 'none'; try { if (window.UKUR) UKUR.pasang(gd, null); } catch (e) { } return; }
     b = box(gd); b.style.display = '';
     var tgt = Math.max(40, Math.min(160, I.w * 0.18)), m = nice(tgt * I.mpp), px = m / I.mpp, R = rasio(I.mpp);
     var h = '<div class=rt title="Rasio layar (96 dpi)">Skala ' + (I.d3 && !I.orto ? '≈ ' : '') + '1 : ' + fmt(R) + '</div><div class=bar style="width:' + Math.round(px) + 'px"><i></i><i></i><i></i><i></i></div><div class=lb style="width:' + Math.round(px) + 'px"><span>0</span><span>' + fmt(m) + ' m</span></div>';
@@ -7715,8 +7734,16 @@ window.SHELL_APP='dh';
     if (Math.abs(I.ve - 1) > 1e-6) h += '<div class=nt>horizontal · VE ' + fmt(+I.ve.toFixed(2)) + '×</div>';
     if (b._h !== h) { b.innerHTML = h; b._h = h; }
     var ml = (I.off && I.off.l) || 0, mb = (I.off && I.off.b) || 0; b.style.left = Math.round(ml + 10) + 'px'; b.style.bottom = Math.round(mb + 10) + 'px';
+    try { if (window.UKUR) UKUR.pasang(gd, I, b); } catch (e) { }
   }
   SKL.upd = upd;
+  /* proyeksi 3D titik data -> piksel relatif terhadap gd (dipakai alat Ukur jarak, ukur.js) */
+  SKL.proj3d = function (gd) {
+    var fl = gd._fullLayout; if (!fl || !fl.scene || !fl.scene._scene) return null; var sc = fl.scene._scene, gp = sc.glplot; if (!gp || !gp.cameraParams) return null;
+    var cp = gp.cameraParams, ds = sc.dataScale || [1, 1, 1], dom = fl.scene.domain, W = fl.width * (dom.x[1] - dom.x[0]), H = fl.height * (dom.y[1] - dom.y[0]), L0 = fl.width * dom.x[0], T0 = fl.height * (1 - dom.y[1]);
+    var M = cp.model, V = cp.view, Pm = cp.projection;
+    return function (x, y, z) { var v = [x * ds[0], y * ds[1], z * ds[2], 1]; v = mul(M, v); v = mul(V, v); v = mul(Pm, v); return [L0 + (v[0] / v[3] + 1) / 2 * W, T0 + (1 - v[1] / v[3]) / 2 * H, v[3]]; };
+  };
   SKL.info = function (gd) { gd = typeof gd === 'string' ? document.getElementById(gd) : gd; try { return gd._fullLayout.scene && gd._fullLayout.scene._scene ? info3d(gd) : info2d(gd); } catch (e) { return null; } };
   SKL.set = function (on) { SKL.on = !!on; try { localStorage.setItem('gcex_skala', on ? '1' : '0'); } catch (e) { } document.querySelectorAll('.js-plotly-plot').forEach(upd); };
   var raf = function (gd) { if (gd._sklR) return; gd._sklR = requestAnimationFrame(function () { gd._sklR = 0; upd(gd); }); };
@@ -7737,6 +7764,168 @@ window.SHELL_APP='dh';
     return true;
   }
   if (!wrap()) { var t = setInterval(function () { if (wrap()) clearInterval(t); }, 200); setTimeout(function () { clearInterval(t); }, 30000); }
+})();
+
+/* ================= GC-Ex (Block Model 0.24.99 / Drillhole 0.24.102): UKUR JARAK DI 3D & PENAMPANG / PETA 2D =================
+   Pemilik 17 Nov 2026: "tambahkan fitur ukur jarak baik dalam penampang 3d maupun penampang 2d".
+   Modul bersama (BM: EXTRA sesudah skala.js; DH: daftar viewer sesudah skala.js). Tombol "Ukur" dipasang oleh skala.js di
+   samping kotak skala pada setiap plot SPASIAL (peta / penampang 2D bersumbu meter, dan tampilan 3D).
+   - Klik tombol (atau tekan U saat kursor di atas plot) -> mode ukur. Setiap klik menambah titik; jarak per ruas + total.
+     Geser (drag) tetap memutar / menggeser tampilan seperti biasa; hanya klik tanpa geser yang menjadi titik.
+   - 3D: titik MENEMPEL ke data terdekat di layar (bor, collar, permukaan, solid, titik; radius 14 px), karena satu klik di
+     layar 3D tidak punya kedalaman. Hasil: jarak miring, horizontal, beda Z, azimuth & plunge, koordinat E N Z.
+   - 2D: titik di posisi klik (koordinat sumbu). Jarak = jarak sebenarnya di bidang plot (meter), juga bila penampang
+     memakai eksagerasi vertikal (VE hanya mengubah tampilan). Hasil: jarak, beda sumbu x & y, arah.
+   - Klik kanan / Backspace = hapus titik terakhir; Esc atau tombol lagi = selesai; "Salin" = teks ke clipboard.
+   Tidak mengubah data apa pun. */
+(function () {
+  if (window.UKUR) return;
+  var U = window.UKUR = { aktif: null };
+  var fx = function (v, d) { return (+v).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  var css = document.createElement('style');
+  css.textContent = '.gxUkurB{position:absolute;z-index:7;font:600 11px Segoe UI,Arial,sans-serif;padding:3px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.25);background:rgba(255,255,255,.9);color:#1d2433;cursor:pointer}' +
+    '.gxUkurB.on{background:#fcc419;border-color:#b08900}.gxUkurP{position:absolute;z-index:7;max-width:340px;font:11.5px/1.35 Segoe UI,Arial,sans-serif;background:rgba(17,24,39,.9);color:#fff;border-radius:6px;padding:6px 9px;pointer-events:auto}' +
+    '.gxUkurP b{color:#fcc419}.gxUkurP .r{display:flex;gap:6px;margin-top:5px}.gxUkurP button{font:11px Segoe UI,Arial;padding:2px 7px;border-radius:3px;border:1px solid #888;background:#2b3445;color:#fff;cursor:pointer}' +
+    '.gxUkurC{position:absolute;left:0;top:0;pointer-events:none;z-index:6}body.dark .gxUkurB,.dark .gxUkurB{background:rgba(26,32,44,.9);color:#e6e9ef;border-color:rgba(255,255,255,.3)}body.dark .gxUkurB.on{background:#fcc419;color:#111}';
+  document.head.appendChild(css);
+  var off = function () { return [+(window.offX || 0) || 0, +(window.offY || 0) || 0]; };
+  var is3d = function (gd) { var fl = gd._fullLayout; return !!(fl && fl.scene && fl.scene._scene); };
+
+  /* ---- tombol per plot (dipanggil skala.js setiap plot digambar ulang) ---- */
+  U.pasang = function (gd, I, skBox) {
+    var b = gd.querySelector(':scope > .gxUkurB');
+    if (!I) { if (b) b.style.display = 'none'; if (U.aktif && U.aktif.gd === gd) U.selesai(); return; }
+    if (!b) {
+      b = document.createElement('button'); b.className = 'gxUkurB'; b.type = 'button'; b.innerHTML = '&#128207; Ukur';
+      b.title = 'Ukur jarak (U): klik titik-titik di plot. ' + 'Klik kanan / Backspace = hapus titik terakhir, Esc = selesai.';
+      b.onclick = function (e) { e.stopPropagation(); if (U.aktif && U.aktif.gd === gd) U.selesai(); else U.mulai(gd); };
+      gd.appendChild(b);
+    }
+    b.style.display = '';
+    var l = 10, bt = 10; if (skBox && skBox.style.display !== 'none') { l = skBox.offsetLeft + skBox.offsetWidth + 6; bt = parseFloat(skBox.style.bottom) || 10; }
+    b.style.left = Math.round(l) + 'px'; b.style.bottom = Math.round(bt) + 'px'; b.classList.toggle('on', !!(U.aktif && U.aktif.gd === gd));
+    if (U.aktif && U.aktif.gd === gd) gambar();
+  };
+
+  /* ---- mulai / selesai ---- */
+  U.mulai = function (gd) {
+    if (U.aktif) U.selesai(); gd = typeof gd === 'string' ? document.getElementById(gd) : gd; if (!gd || !gd._fullLayout) return;
+    var A = U.aktif = { gd: gd, d3: is3d(gd), P: [], down: null, sig: '' };
+    var c = document.createElement('canvas'); c.className = 'gxUkurC'; gd.appendChild(c); A.cv = c;
+    var p = document.createElement('div'); p.className = 'gxUkurP'; gd.appendChild(p); A.pn = p;
+    A.onDown = function (e) { if (e.button !== 0 || !inPlot(e)) return; A.down = [e.clientX, e.clientY]; };
+    A.onUp = function (e) {
+      if (e.button !== 0 || !A.down) return; var d = Math.hypot(e.clientX - A.down[0], e.clientY - A.down[1]); A.down = null; if (d > 4) return; /* target pointerup bisa 'dragcover' Plotly (di luar gd): cukup pointerdown di dalam plot */
+      var r = gd.getBoundingClientRect(); U.tambahPx(e.clientX - r.left, e.clientY - r.top);
+    };
+    A.onCtx = function (e) { if (!inPlot(e)) return; e.preventDefault(); e.stopPropagation(); A.P.pop(); A.pesan = ''; gambar(); };
+    A.onKey = function (e) {
+      if (U.aktif !== A) return; var t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+      if (e.key === 'Escape') { U.selesai(); e.preventDefault(); } else if (e.key === 'Backspace') { A.P.pop(); A.pesan = ''; gambar(); e.preventDefault(); }
+    };
+    window.addEventListener('pointerdown', A.onDown, true); window.addEventListener('pointerup', A.onUp, true);
+    gd.addEventListener('contextmenu', A.onCtx, true); window.addEventListener('keydown', A.onKey, true);
+    /* 3D: kamera bisa diputar kapan saja -> gambar ulang bila matriks berubah */
+    var loop = function () { if (U.aktif !== A) return; if (A.d3) { var s = kameraSig(gd); if (s !== A.sig) { A.sig = s; gambar(); } } A.raf = requestAnimationFrame(loop); };
+    A.raf = requestAnimationFrame(loop);
+    gd.classList.add('gxUkurOn'); gambar();
+    var b = gd.querySelector(':scope > .gxUkurB'); if (b) b.classList.add('on');
+  };
+  U.selesai = function () {
+    var A = U.aktif; if (!A) return; U.aktif = null; cancelAnimationFrame(A.raf);
+    window.removeEventListener('pointerdown', A.onDown, true); window.removeEventListener('pointerup', A.onUp, true);
+    A.gd.removeEventListener('contextmenu', A.onCtx, true); window.removeEventListener('keydown', A.onKey, true);
+    if (A.cv) A.cv.remove(); if (A.pn) A.pn.remove(); A.gd.classList.remove('gxUkurOn');
+    var b = A.gd.querySelector(':scope > .gxUkurB'); if (b) b.classList.remove('on');
+  };
+  function inPlot(e) { var A = U.aktif; if (!A) return false; var t = e.target; if (!A.gd.contains(t)) return false; if (t.closest && (t.closest('.modebar') || t.closest('.gxUkurP') || t.closest('.gxUkurB') || t.closest('.legend'))) return false; return true; }
+  function kameraSig(gd) { try { var cp = gd._fullLayout.scene._scene.glplot.cameraParams; return cp.view.join(',') + cp.projection.join(',') + gd.clientWidth; } catch (e) { return ''; } }
+
+  /* ---- piksel -> titik data ---- */
+  U.tambahPx = function (px, py) {
+    var A = U.aktif; if (!A) return null; var q = A.d3 ? snap3d(A.gd, px, py) : px2d(A.gd, px, py);
+    if (!q) { A.pesan = A.d3 ? 'Klik tepat pada data (bor, collar, permukaan, solid) — titik 3D menempel ke data terdekat di layar.' : 'Klik di dalam area plot.'; gambar(); return null; }
+    A.pesan = ''; A.P.push(q); gambar(); return q;
+  };
+  function px2d(gd, px, py) {
+    var fl = gd._fullLayout, xa = fl.xaxis, ya = fl.yaxis; if (!xa || !ya) return null;
+    var x = xa.p2l(px - xa._offset), y = ya.p2l(py - ya._offset); if (!isFinite(x) || !isFinite(y)) return null;
+    if (px < xa._offset || px > xa._offset + xa._length || py < ya._offset || py > ya._offset + ya._length) return null; return [x, y];
+  }
+  function snap3d(gd, px, py) {
+    var pr = window.SKL && SKL.proj3d ? SKL.proj3d(gd) : null; if (!pr) return null; var best = null, bd = 14 * 14;
+    (gd.data || []).forEach(function (t) {
+      if (t.visible === false || t.visible === 'legendonly' || (t.type !== 'scatter3d' && t.type !== 'mesh3d' && t.type !== 'cone')) return;
+      var X = t.x, Y = t.y, Z = t.z; if (!X || !Y || !Z) return; var n = Math.min(X.length, Y.length, Z.length);
+      for (var i = 0; i < n; i++) { var x = X[i], y = Y[i], z = Z[i]; if (x == null || y == null || z == null) continue; var s = pr(+x, +y, +z); if (!(s[2] > 0)) continue; var dx = s[0] - px, dy = s[1] - py, d = dx * dx + dy * dy; if (d < bd || (d === bd && best && s[2] < best.w)) { bd = d; best = { p: [+x, +y, +z], w: s[2] }; } }
+    });
+    return best ? best.p : null;
+  }
+
+  /* ---- hitung ---- */
+  var az = function (dx, dy) { var a = Math.atan2(dx, dy) * 180 / Math.PI; return (a + 360) % 360; };
+  U.hasil = function () {
+    var A = U.aktif; if (!A) return null; var P = A.P, S = [], tot = 0, totH = 0;
+    for (var i = 1; i < P.length; i++) {
+      var a = P[i - 1], b = P[i];
+      if (A.d3) { var dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], h = Math.hypot(dx, dy), m = Math.hypot(h, dz); S.push({ d: m, h: h, dz: dz, az: az(dx, dy), pl: Math.atan2(dz, h) * 180 / Math.PI }); tot += m; totH += h; }
+      else { var ex = b[0] - a[0], ey = b[1] - a[1], m2 = Math.hypot(ex, ey); S.push({ d: m2, dx: ex, dy: ey, ar: Math.atan2(ey, ex) * 180 / Math.PI }); tot += m2; }
+    }
+    return { d3: A.d3, P: P.slice(), ruas: S, total: tot, totalH: totH };
+  };
+  function judulSumbu(gd, a) { try { var t = gd._fullLayout[a].title; t = (t && (t.text || t)) || ''; t = String(t).replace(/<[^>]+>/g, '').trim(); return t.length > 18 ? t.slice(0, 18) + '…' : t; } catch (e) { return ''; } }
+  function teks() {
+    var A = U.aktif, R = U.hasil(), o = off(), L = [];
+    if (!R.P.length) return A.d3 ? 'Klik data di 3D (bor, collar, permukaan) untuk titik pertama.' : 'Klik titik pertama di plot.';
+    if (A.d3) {
+      var p0 = R.P[R.P.length - 1]; L.push('Titik ' + R.P.length + ': E ' + fx(p0[0] + o[0], 2) + ' · N ' + fx(p0[1] + o[1], 2) + ' · Z ' + fx(p0[2], 2));
+      R.ruas.forEach(function (s, i) { L.push((R.ruas.length > 1 ? 'Ruas ' + (i + 1) + ': ' : '') + '<b>' + fx(s.d, 2) + ' m</b> miring · horizontal ' + fx(s.h, 2) + ' m · ΔZ ' + (s.dz >= 0 ? '+' : '') + fx(s.dz, 2) + ' m · azimuth ' + fx(s.az, 1) + '° · plunge ' + fx(s.pl, 1) + '°'); });
+      if (R.ruas.length > 1) L.push('<b>Total ' + fx(R.total, 2) + ' m</b> (horizontal ' + fx(R.totalH, 2) + ' m)');
+    } else {
+      var tx = judulSumbu(A.gd, 'xaxis') || 'x', ty = judulSumbu(A.gd, 'yaxis') || 'y';
+      R.ruas.forEach(function (s, i) { L.push((R.ruas.length > 1 ? 'Ruas ' + (i + 1) + ': ' : '') + '<b>' + fx(s.d, 2) + ' m</b> · Δ' + tx + ' ' + fx(s.dx, 2) + ' · Δ' + ty + ' ' + fx(s.dy, 2)); });
+      if (R.ruas.length > 1) L.push('<b>Total ' + fx(R.total, 2) + ' m</b>');
+      if (!R.ruas.length) L.push('Klik titik berikutnya.');
+    }
+    return L.join('<br>');
+  }
+  U.salin = function () {
+    var R = U.hasil(); if (!R) return ''; var o = off(), L = [];
+    R.P.forEach(function (p, i) { L.push('P' + (i + 1) + '\t' + (R.d3 ? [p[0] + o[0], p[1] + o[1], p[2]] : p).map(function (v) { return (+v).toFixed(3); }).join('\t')); });
+    R.ruas.forEach(function (s, i) { L.push('Ruas ' + (i + 1) + '\t' + s.d.toFixed(3) + ' m' + (R.d3 ? '\th ' + s.h.toFixed(3) + '\tdZ ' + s.dz.toFixed(3) + '\taz ' + s.az.toFixed(1) + '\tplunge ' + s.pl.toFixed(1) : '\tdx ' + s.dx.toFixed(3) + '\tdy ' + s.dy.toFixed(3))); });
+    if (R.ruas.length > 1) L.push('Total\t' + R.total.toFixed(3) + ' m');
+    var t = L.join('\n'); try { navigator.clipboard.writeText(t); } catch (e) { } return t;
+  };
+
+  /* ---- gambar garis, titik & panel ---- */
+  function gambar() {
+    var A = U.aktif; if (!A) return; var gd = A.gd, c = A.cv, W = gd.clientWidth, H = gd.clientHeight, dp = window.devicePixelRatio || 1;
+    c.style.width = W + 'px'; c.style.height = H + 'px'; if (c.width !== Math.round(W * dp)) c.width = Math.round(W * dp); if (c.height !== Math.round(H * dp)) c.height = Math.round(H * dp);
+    var x = c.getContext('2d'); x.setTransform(dp, 0, 0, dp, 0, 0); x.clearRect(0, 0, W, H);
+    var S = [];
+    if (A.d3) { var pr = window.SKL && SKL.proj3d ? SKL.proj3d(gd) : null; if (pr) S = A.P.map(function (p) { return pr(p[0], p[1], p[2]); }); }
+    else { var fl = gd._fullLayout, xa = fl.xaxis, ya = fl.yaxis; if (xa && ya) S = A.P.map(function (p) { return [xa._offset + xa.l2p(p[0]), ya._offset + ya.l2p(p[1]), 1]; }); }
+    if (S.length > 1) {
+      x.lineWidth = 5; x.strokeStyle = 'rgba(17,17,17,.55)'; x.beginPath(); S.forEach(function (s, i) { if (i) x.lineTo(s[0], s[1]); else x.moveTo(s[0], s[1]); }); x.stroke();
+      x.lineWidth = 2.5; x.strokeStyle = '#fcc419'; x.beginPath(); S.forEach(function (s, i) { if (i) x.lineTo(s[0], s[1]); else x.moveTo(s[0], s[1]); }); x.stroke();
+      var R = U.hasil(); x.font = '600 11px Arial';
+      for (var i = 1; i < S.length; i++) { var t = fx(R.ruas[i - 1].d, 1) + ' m', w = x.measureText(t).width + 8, mx = (S[i - 1][0] + S[i][0]) / 2, my = (S[i - 1][1] + S[i][1]) / 2; x.fillStyle = 'rgba(17,17,17,.82)'; x.fillRect(mx - w / 2, my - 18, w, 16); x.fillStyle = '#fff'; x.fillText(t, mx - w / 2 + 4, my - 6); }
+    }
+    S.forEach(function (s, i) { x.beginPath(); x.arc(s[0], s[1], 5, 0, 7); x.fillStyle = '#fcc419'; x.fill(); x.lineWidth = 1.5; x.strokeStyle = '#111'; x.stroke(); });
+    var b = gd.querySelector(':scope > .gxUkurB'), pn = A.pn;
+    pn.innerHTML = '<div><b>Ukur jarak</b> ' + (A.d3 ? '(3D, menempel ke data)' : '(2D)') + '</div><div>' + teks() + '</div>' + (A.pesan ? '<div style="color:#ffb4a2;margin-top:3px">' + A.pesan + '</div>' : '') +
+      '<div class=r><button data-a=s>Salin</button><button data-a=h>Hapus</button><button data-a=x>Selesai (Esc)</button></div>';
+    pn.querySelector('[data-a=s]').onclick = function (e) { e.stopPropagation(); U.salin(); };
+    pn.querySelector('[data-a=h]').onclick = function (e) { e.stopPropagation(); A.P = []; A.pesan = ''; gambar(); };
+    pn.querySelector('[data-a=x]').onclick = function (e) { e.stopPropagation(); U.selesai(); };
+    var bl = b ? b.offsetLeft : 10, bb = b ? (parseFloat(b.style.bottom) || 10) + b.offsetHeight + 6 : 40; pn.style.left = bl + 'px'; pn.style.bottom = bb + 'px';
+  }
+  /* pintasan U saat kursor di atas plot spasial */
+  var hover = null; document.addEventListener('pointermove', function (e) { var g = e.target && e.target.closest ? e.target.closest('.js-plotly-plot') : null; hover = g; }, true);
+  window.addEventListener('keydown', function (e) {
+    if ((e.key !== 'u' && e.key !== 'U') || e.ctrlKey || e.altKey || e.metaKey) return; var t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+    var g = hover; if (!g) return; var b = g.querySelector(':scope > .gxUkurB'); if (!b || b.style.display === 'none') return; e.preventDefault(); if (U.aktif && U.aktif.gd === g) U.selesai(); else U.mulai(g);
+  });
 })();
 
 /* ================= Drillhole 0.24.98: Ringkasan seluruh model per RL (web-src/mdlsum.js) di Drillhole =================
@@ -20325,7 +20514,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='dh';window.GCEX_VER='0.24.101';
+window.GCEX_APP='dh';window.GCEX_VER='0.24.102';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

@@ -204,7 +204,11 @@
     if (!GWM || !m.gab || !m.gab.src) return null; var c = GWM.get(m); if (c && c.k === m.gab.at) return c.g;
     var s = m.gab.src, fT = zf(s.t), fP = zf(s.p), out = [];
     var berString = function (o) { for (var i = 0; i < o.x.length; i++) if (o.x[i] === null || o.x[i] === undefined) return true; return false; };
-    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
+    /* BM 0.24.99 / DH 0.24.102 (pemilik 17 Nov 2026: "Topo × Pit malah berbentuk jaring-jaring triangulasi"): desain pit / topografi
+       yang diimport sebagai SEGITIGA (DTM, DXF 3DFACE) tersimpan sebagai potongan 3–4 titik per segitiga. Itu bukan garis jenjang /
+       kontur: menggambarnya sebagai garis memunculkan seluruh rusuk segitiga. Lewati bila sebagian besar potongan adalah segitiga. */
+    var segitiga = function (o) { var n = 0, tri = 0, k = 0, a0 = -1; for (var i = 0; i <= o.x.length; i++) { var x = i < o.x.length ? o.x[i] : null; if (x === null || x === undefined) { if (k) { n++; var tutup = a0 >= 0 && o.x[a0] === o.x[i - 1] && o.y[a0] === o.y[i - 1]; if (k === 3 || (k === 4 && tutup)) tri++; } k = 0; a0 = -1; continue; } if (!k) a0 = i; k++; } return n >= 50 && tri / n > 0.6; };
+    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o) || segitiga(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
       for (var i = 1; i < o.x.length; i++) { var x0 = o.x[i - 1], x1 = o.x[i]; if (x0 === null || x1 === null || x0 === undefined || x1 === undefined) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
         var y0 = o.y[i - 1], y1 = o.y[i], z0 = o.z[i - 1], z1 = o.z[i], mx = (x0 + x1) / 2, my = (y0 + y1) / 2, mz = (z0 + z1) / 2, zo = lain(mx, my), ok = zo === null || (sendiri === 'topo' ? mz <= zo + 0.05 : mz < zo - 0.05);
         if (!ok) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }

@@ -996,6 +996,21 @@ function secGeom(){var m=$('sMode').value,zc=(G.z0+G.z1)/2;
     if(!isNaN(e1+n1+e2+n2)&&(e1!==e2||n1!==n2)){az=Math.atan2(e2-e1,n2-n1)*180/Math.PI;cx=e1;cy=n1;seg=Math.sqrt((e2-e1)*(e2-e1)+(n2-n1)*(n2-n1));}}
   var a=az*Math.PI/180,d=dip*Math.PI/180,sa=Math.sin(a),ca=Math.cos(a),sp=Math.sin(d),cp=Math.cos(d);
   return{m:m,az:az,dip:dip,u:[sa,ca,0],w:[ca*cp,-sa*cp,-sp],n:[ca*sp,-sa*sp,cp],c:[cx,cy,cz],seg:seg};}
+/* DH 0.24.102 (pemilik 17 Nov 2026: "kenapa sayatan 3D tidak menyayat topografi dan desain pit?"): saat Potong data (slab) aktif,
+   permukaan topografi, desain pit dan Topo × Pit di 3D ikut dipotong — hanya segitiga yang titik beratnya di dalam slab — dan
+   garis potong permukaan dengan bidang tengah sayatan digambar tebal (profil topo / pit di 3D). */
+function slabSurf(T,K,pos){var K0=K[0],KR=K.slice(1),out=[];
+  for(var q=0;q<T.length;q++){var t=T[q];if(!t||t.type!=='mesh3d'||!t.i||!t.i.length||!(t.uid==='ovTopoS'||t.uid==='ovPitS'||t._tpSurf))continue;
+    var X=t.x,Y=t.y,Z=t.z,I=[],J=[],L=[],FC=Array.isArray(t.facecolor)&&t.facecolor.length===t.i.length?[]:null,lx=[],ly=[],lz=[],dv=new Float64Array(X.length);
+    for(var v=0;v<X.length;v++)dv[v]=K0.n[0]*(X[v]-K0.c[0])+K0.n[1]*(Y[v]-K0.c[1])+K0.n[2]*(Z[v]-K0.c[2]);
+    for(var f=0;f<t.i.length;f++){var a=t.i[f],b=t.j[f],c=t.k[f],m=(dv[a]+dv[b]+dv[c])/3,P={x:(X[a]+X[b]+X[c])/3,y:(Y[a]+Y[b]+Y[c])/3,z:(Z[a]+Z[b]+Z[c])/3};
+      if(KR.length&&!inK(KR,P))continue;
+      if(m>=K0.lo&&m<=K0.hi){I.push(a);J.push(b);L.push(c);if(FC)FC.push(t.facecolor[f]);}
+      var e=[[a,b],[b,c],[c,a]],pp=[];for(var r=0;r<3;r++){var u=e[r][0],w=e[r][1],du=dv[u]-pos,dw=dv[w]-pos;if((du<0)!==(dw<0)){var s2=du/(du-dw);pp.push([X[u]+(X[w]-X[u])*s2,Y[u]+(Y[w]-Y[u])*s2,Z[u]+(Z[w]-Z[u])*s2]);}}
+      if(pp.length===2){lx.push(pp[0][0],pp[1][0],null);ly.push(pp[0][1],pp[1][1],null);lz.push(pp[0][2]+0.3,pp[1][2]+0.3,null);}}
+    var nt=Object.assign({},t,{i:I,j:J,k:L});if(FC)nt.facecolor=FC;T[q]=nt;
+    if(lx.length){var isPit=t.uid==='ovPitS';out.push({type:'scatter3d',mode:'lines',name:'Sayatan '+(t.name||(isPit?'desain pit':'topografi')),x:lx,y:ly,z:lz,line:{color:isPit?'#1b2a4e':'#5a3d1e',width:5},hoverinfo:'skip',showlegend:false,_slabSurf:1});}}
+  out.forEach(function(o){T.push(o);});}
 function sd(n,c,p){return n[0]*(p.x-c[0])+n[1]*(p.y-c[1])+n[2]*(p.z-c[2]);}
 function updRange(reset){var g=secGeom(),e=$('pos'),lo,hi;
   if(g.m==='H'){lo=zMin;hi=zMax;}
@@ -1189,7 +1204,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
   $('ttl').textContent=(ZONE?ZONE+' \u00b7 ':'')+ttl;var layout={font:{color:fg,family:'Segoe UI,Roboto,Arial,sans-serif'},paper_bgcolor:bg,uirevision:'keep',legend:{font:{color:fg},title:{text:el},x:0.99,xanchor:'right',y:0.98,bgcolor:dark?'rgba(22,32,44,.85)':'rgba(255,255,255,.85)',bordercolor:gr,borderwidth:1},
     scene:{xaxis:Object.assign(ax('Easting (+'+offX+')'),AXF.x),yaxis:Object.assign(ax('Northing (+'+offY+')'),AXF.y),zaxis:Object.assign(ax('Elevation'),AXF.z),aspectmode:'manual',aspectratio:{x:xr/base,y:yr/base,z:(zr/base)*zex}},
     margin:{l:0,r:0,b:0,t:6}};camKeep(layout);
-  if(window.TP&&TP.pasca)TP.pasca(traces,layout);/* DH 0.24.98: Topo × Pit, buka atap & legenda (web-src/topopit_bm.js, sama dengan Block Model) */
+  if(window.TP&&TP.pasca)TP.pasca(traces,layout);if(clip&&!VIEW2D)slabSurf(traces,K,pos);/* DH 0.24.98: Topo × Pit, buka atap & legenda (web-src/topopit_bm.js, sama dengan Block Model) */
   if(VIEW2D)sec2dRender(traces,{vis:vis,g:g,pos:pos,K:K,dark:dark,fg:fg,bg:bg,gr:gr,el:el,lw:lw,zex:zex,clip:clip,cut:cut,useCls:useCls,th:th,pal:pal,classOf:classOf});
   /* uid tetap per lapisan (nama + urutan ke-n di antara nama yang sama). Tanpa uid, Plotly mencocokkan lapisan lama-baru
      menurut POSISI dalam daftar: menyisipkan satu overlay di depan menggeser semua lapisan di belakangnya sehingga semuanya

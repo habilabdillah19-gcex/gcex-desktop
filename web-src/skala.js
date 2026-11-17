@@ -59,9 +59,9 @@
   function box(gd) { var b = gd.querySelector(':scope > .gxSkala'); if (!b) { b = document.createElement('div'); b.className = 'gxSkala'; if (getComputedStyle(gd).position === 'static') gd.style.position = 'relative'; gd.appendChild(b); } return b; }
   function upd(gd) {
     if (!gd || !gd._fullLayout) return; var b = gd.querySelector(':scope > .gxSkala');
-    if (!SKL.on || gd.dataset.skala === 'off') { if (b) b.style.display = 'none'; return; }
+    if (!SKL.on || gd.dataset.skala === 'off') { if (b) b.style.display = 'none'; try { if (window.UKUR) UKUR.pasang(gd, null); } catch (e) { } return; }
     var I = null; try { I = gd._fullLayout.scene && gd._fullLayout.scene._scene ? info3d(gd) : info2d(gd); } catch (e) { I = null; }
-    if (!I) { if (b) b.style.display = 'none'; return; }
+    if (!I) { if (b) b.style.display = 'none'; try { if (window.UKUR) UKUR.pasang(gd, null); } catch (e) { } return; }
     b = box(gd); b.style.display = '';
     var tgt = Math.max(40, Math.min(160, I.w * 0.18)), m = nice(tgt * I.mpp), px = m / I.mpp, R = rasio(I.mpp);
     var h = '<div class=rt title="Rasio layar (96 dpi)">Skala ' + (I.d3 && !I.orto ? '≈ ' : '') + '1 : ' + fmt(R) + '</div><div class=bar style="width:' + Math.round(px) + 'px"><i></i><i></i><i></i><i></i></div><div class=lb style="width:' + Math.round(px) + 'px"><span>0</span><span>' + fmt(m) + ' m</span></div>';
@@ -69,8 +69,16 @@
     if (Math.abs(I.ve - 1) > 1e-6) h += '<div class=nt>horizontal · VE ' + fmt(+I.ve.toFixed(2)) + '×</div>';
     if (b._h !== h) { b.innerHTML = h; b._h = h; }
     var ml = (I.off && I.off.l) || 0, mb = (I.off && I.off.b) || 0; b.style.left = Math.round(ml + 10) + 'px'; b.style.bottom = Math.round(mb + 10) + 'px';
+    try { if (window.UKUR) UKUR.pasang(gd, I, b); } catch (e) { }
   }
   SKL.upd = upd;
+  /* proyeksi 3D titik data -> piksel relatif terhadap gd (dipakai alat Ukur jarak, ukur.js) */
+  SKL.proj3d = function (gd) {
+    var fl = gd._fullLayout; if (!fl || !fl.scene || !fl.scene._scene) return null; var sc = fl.scene._scene, gp = sc.glplot; if (!gp || !gp.cameraParams) return null;
+    var cp = gp.cameraParams, ds = sc.dataScale || [1, 1, 1], dom = fl.scene.domain, W = fl.width * (dom.x[1] - dom.x[0]), H = fl.height * (dom.y[1] - dom.y[0]), L0 = fl.width * dom.x[0], T0 = fl.height * (1 - dom.y[1]);
+    var M = cp.model, V = cp.view, Pm = cp.projection;
+    return function (x, y, z) { var v = [x * ds[0], y * ds[1], z * ds[2], 1]; v = mul(M, v); v = mul(V, v); v = mul(Pm, v); return [L0 + (v[0] / v[3] + 1) / 2 * W, T0 + (1 - v[1] / v[3]) / 2 * H, v[3]]; };
+  };
   SKL.info = function (gd) { gd = typeof gd === 'string' ? document.getElementById(gd) : gd; try { return gd._fullLayout.scene && gd._fullLayout.scene._scene ? info3d(gd) : info2d(gd); } catch (e) { return null; } };
   SKL.set = function (on) { SKL.on = !!on; try { localStorage.setItem('gcex_skala', on ? '1' : '0'); } catch (e) { } document.querySelectorAll('.js-plotly-plot').forEach(upd); };
   var raf = function (gd) { if (gd._sklR) return; gd._sklR = requestAnimationFrame(function () { gd._sklR = 0; upd(gd); }); };

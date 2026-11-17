@@ -5286,3 +5286,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Dataset aktif yang disembunyikan tetap menjadi sumber analisis (geostatistik, estimasi, statistik).
 - Untuk hanya menyembunyikan sebagian: Collar, Trajectory dan Label hole tetap punya centang sendiri.
 - Block Model, DB-Ex, Ore Works: tidak berubah.
+
+## 250. Block Model 0.24.99 / Drillhole 0.24.102 — Ukur jarak, sayatan 3D memotong topografi & pit
+
+- **Ukur jarak**: tombol **📏 Ukur** di samping kotak skala pada tampilan 3D, penampang 2D dan peta (atau tekan **U** saat kursor
+  di atas plot). Klik titik demi titik; geser mouse tetap memutar / menggeser tampilan.
+  - 3D: titik menempel ke data terdekat (bor, collar, permukaan, solid). Hasil: jarak miring, horizontal, beda Z, azimuth,
+    plunge, koordinat E N Z.
+  - 2D: jarak sebenarnya di bidang penampang / peta (meter), juga bila memakai eksagerasi vertikal.
+  - Klik kanan / Backspace = hapus titik terakhir, **Esc** = selesai, **Salin** = hasil ke clipboard.
+- **Drillhole**: saat sayatan 3D memotong data (slab), topografi, desain pit dan Topo × Pit ikut terpotong, dan garis potong
+  permukaan pada bidang sayatan digambar tebal.
+- **Topo × Pit**: desain pit hasil import segitiga (DTM / DXF 3DFACE) tidak lagi tampil sebagai jaring rusuk segitiga.
+  Garis jenjang hanya digambar bila desain pit berupa string.
+- DB-Ex, Ore Works: tidak berubah.

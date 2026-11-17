@@ -610,6 +610,13 @@ B.append('<h3>8.25 Daftar lubang 3D (DH 0.24.101)</h3>')
 B.append('<p><code>updatePlot</code> memakai <code>visHoles()</code> (dibungkus <code>kp_dh.js</code>: hanya anggota dataset / kampanye yang dicentang) '
          'untuk <code>buildDH</code>; tanda tangan daftar (<code>visSig</code>, panjang + hash Hole ID) masuk kunci cache <code>DHC</code>. Analisis memakai '
          '<code>visHolesK()</code> (dataset aktif, juga saat disembunyikan). Uji: <code>tools/uji/uji_bor_sembunyi_dh.py</code>.</p>')
+B.append('<h3>8.26 Ukur jarak, slabSurf, TP.garis (BM 0.24.99 / DH 0.24.102)</h3>')
+B.append('<p><code>web-src/ukur.js</code> (<code>UKUR</code>): tombol dipasang <code>skala.js</code> lewat <code>UKUR.pasang(gd, info, kotakSkala)</code> pada plot spasial; '
+         'klik = pointerdown di plot + pointerup &le; 4 px (target pointerup bisa <i>dragcover</i> Plotly). 3D: <code>SKL.proj3d(gd)</code> (matriks kamera) '
+         'memproyeksikan semua titik scatter3d / mesh3d tampil, titik terdekat &le; 14 px dipakai. 2D: <code>xaxis.p2l</code> / <code>yaxis.p2l</code>. '
+         'DH <code>slabSurf(traces,K,pos)</code> sesudah <code>TP.pasca</code>: segitiga <code>ovTopoS</code> / <code>ovPitS</code> / <code>_tpSurf</code> dengan '
+         'titik berat di slab + garis potong di bidang tengah. <code>TP.garis</code> melewati sumber yang &gt; 60 % potongannya segitiga (3 titik / 4 titik tertutup, '
+         '&ge; 50 potongan). Uji: <code>uji_ukur.py</code>, <code>uji_sayat_permukaan_dh.py</code>.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

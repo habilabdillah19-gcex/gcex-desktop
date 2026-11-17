@@ -1330,6 +1330,12 @@ B.append('<h3>16v. Sembunyikan bor dari 3D (Drillhole 0.24.101)</h3>')
 B.append('<p>Hilangkan centang dataset di <b>Project Tree &rsaquo; Database Bor</b> (mis. <b>AKTIF &middot; set kerja</b>): seluruh bor dataset itu '
          'hilang dari 3D, termasuk interval kadar. Dataset aktif yang disembunyikan tetap dipakai untuk analisis. Collar, Trajectory dan Label hole '
          'tetap bisa diatur sendiri-sendiri.</p>')
+B.append('<h3>16w. Ukur jarak di 3D &amp; 2D, sayatan 3D memotong topografi &amp; pit (Block Model 0.24.99 / Drillhole 0.24.102)</h3>')
+B.append('<p>Klik tombol <b>Ukur</b> di samping kotak skala (atau tekan <b>U</b>), lalu klik titik-titik di plot. Di 3D titik menempel ke data terdekat '
+         '(bor, collar, permukaan, solid) dan hasilnya memuat jarak miring, horizontal, beda Z, azimuth dan plunge; di penampang / peta 2D jarak '
+         'diukur di bidang plot dalam meter. Klik kanan menghapus titik terakhir, Esc selesai, Salin menyalin hasil. Di Drillhole, sayatan 3D '
+         '(Potong data) kini ikut memotong topografi, desain pit dan Topo &times; Pit, lengkap dengan garis potongnya; desain pit berbentuk '
+         'segitiga tidak lagi tampil sebagai jaring segitiga di Topo &times; Pit.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

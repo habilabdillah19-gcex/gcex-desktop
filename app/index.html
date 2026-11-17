@@ -5470,9 +5470,9 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
   function box(gd) { var b = gd.querySelector(':scope > .gxSkala'); if (!b) { b = document.createElement('div'); b.className = 'gxSkala'; if (getComputedStyle(gd).position === 'static') gd.style.position = 'relative'; gd.appendChild(b); } return b; }
   function upd(gd) {
     if (!gd || !gd._fullLayout) return; var b = gd.querySelector(':scope > .gxSkala');
-    if (!SKL.on || gd.dataset.skala === 'off') { if (b) b.style.display = 'none'; return; }
+    if (!SKL.on || gd.dataset.skala === 'off') { if (b) b.style.display = 'none'; try { if (window.UKUR) UKUR.pasang(gd, null); } catch (e) { } return; }
     var I = null; try { I = gd._fullLayout.scene && gd._fullLayout.scene._scene ? info3d(gd) : info2d(gd); } catch (e) { I = null; }
-    if (!I) { if (b) b.style.display = 'none'; return; }
+    if (!I) { if (b) b.style.display = 'none'; try { if (window.UKUR) UKUR.pasang(gd, null); } catch (e) { } return; }
     b = box(gd); b.style.display = '';
     var tgt = Math.max(40, Math.min(160, I.w * 0.18)), m = nice(tgt * I.mpp), px = m / I.mpp, R = rasio(I.mpp);
     var h = '<div class=rt title="Rasio layar (96 dpi)">Skala ' + (I.d3 && !I.orto ? '≈ ' : '') + '1 : ' + fmt(R) + '</div><div class=bar style="width:' + Math.round(px) + 'px"><i></i><i></i><i></i><i></i></div><div class=lb style="width:' + Math.round(px) + 'px"><span>0</span><span>' + fmt(m) + ' m</span></div>';
@@ -5480,8 +5480,16 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     if (Math.abs(I.ve - 1) > 1e-6) h += '<div class=nt>horizontal · VE ' + fmt(+I.ve.toFixed(2)) + '×</div>';
     if (b._h !== h) { b.innerHTML = h; b._h = h; }
     var ml = (I.off && I.off.l) || 0, mb = (I.off && I.off.b) || 0; b.style.left = Math.round(ml + 10) + 'px'; b.style.bottom = Math.round(mb + 10) + 'px';
+    try { if (window.UKUR) UKUR.pasang(gd, I, b); } catch (e) { }
   }
   SKL.upd = upd;
+  /* proyeksi 3D titik data -> piksel relatif terhadap gd (dipakai alat Ukur jarak, ukur.js) */
+  SKL.proj3d = function (gd) {
+    var fl = gd._fullLayout; if (!fl || !fl.scene || !fl.scene._scene) return null; var sc = fl.scene._scene, gp = sc.glplot; if (!gp || !gp.cameraParams) return null;
+    var cp = gp.cameraParams, ds = sc.dataScale || [1, 1, 1], dom = fl.scene.domain, W = fl.width * (dom.x[1] - dom.x[0]), H = fl.height * (dom.y[1] - dom.y[0]), L0 = fl.width * dom.x[0], T0 = fl.height * (1 - dom.y[1]);
+    var M = cp.model, V = cp.view, Pm = cp.projection;
+    return function (x, y, z) { var v = [x * ds[0], y * ds[1], z * ds[2], 1]; v = mul(M, v); v = mul(V, v); v = mul(Pm, v); return [L0 + (v[0] / v[3] + 1) / 2 * W, T0 + (1 - v[1] / v[3]) / 2 * H, v[3]]; };
+  };
   SKL.info = function (gd) { gd = typeof gd === 'string' ? document.getElementById(gd) : gd; try { return gd._fullLayout.scene && gd._fullLayout.scene._scene ? info3d(gd) : info2d(gd); } catch (e) { return null; } };
   SKL.set = function (on) { SKL.on = !!on; try { localStorage.setItem('gcex_skala', on ? '1' : '0'); } catch (e) { } document.querySelectorAll('.js-plotly-plot').forEach(upd); };
   var raf = function (gd) { if (gd._sklR) return; gd._sklR = requestAnimationFrame(function () { gd._sklR = 0; upd(gd); }); };
@@ -5502,6 +5510,168 @@ function lyrMini(){var m=$('lyrMenu');if(!m)return;var L=lyrDef(),on=0,ok=0;L.fo
     return true;
   }
   if (!wrap()) { var t = setInterval(function () { if (wrap()) clearInterval(t); }, 200); setTimeout(function () { clearInterval(t); }, 30000); }
+})();
+
+/* ================= GC-Ex (Block Model 0.24.99 / Drillhole 0.24.102): UKUR JARAK DI 3D & PENAMPANG / PETA 2D =================
+   Pemilik 17 Nov 2026: "tambahkan fitur ukur jarak baik dalam penampang 3d maupun penampang 2d".
+   Modul bersama (BM: EXTRA sesudah skala.js; DH: daftar viewer sesudah skala.js). Tombol "Ukur" dipasang oleh skala.js di
+   samping kotak skala pada setiap plot SPASIAL (peta / penampang 2D bersumbu meter, dan tampilan 3D).
+   - Klik tombol (atau tekan U saat kursor di atas plot) -> mode ukur. Setiap klik menambah titik; jarak per ruas + total.
+     Geser (drag) tetap memutar / menggeser tampilan seperti biasa; hanya klik tanpa geser yang menjadi titik.
+   - 3D: titik MENEMPEL ke data terdekat di layar (bor, collar, permukaan, solid, titik; radius 14 px), karena satu klik di
+     layar 3D tidak punya kedalaman. Hasil: jarak miring, horizontal, beda Z, azimuth & plunge, koordinat E N Z.
+   - 2D: titik di posisi klik (koordinat sumbu). Jarak = jarak sebenarnya di bidang plot (meter), juga bila penampang
+     memakai eksagerasi vertikal (VE hanya mengubah tampilan). Hasil: jarak, beda sumbu x & y, arah.
+   - Klik kanan / Backspace = hapus titik terakhir; Esc atau tombol lagi = selesai; "Salin" = teks ke clipboard.
+   Tidak mengubah data apa pun. */
+(function () {
+  if (window.UKUR) return;
+  var U = window.UKUR = { aktif: null };
+  var fx = function (v, d) { return (+v).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  var css = document.createElement('style');
+  css.textContent = '.gxUkurB{position:absolute;z-index:7;font:600 11px Segoe UI,Arial,sans-serif;padding:3px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.25);background:rgba(255,255,255,.9);color:#1d2433;cursor:pointer}' +
+    '.gxUkurB.on{background:#fcc419;border-color:#b08900}.gxUkurP{position:absolute;z-index:7;max-width:340px;font:11.5px/1.35 Segoe UI,Arial,sans-serif;background:rgba(17,24,39,.9);color:#fff;border-radius:6px;padding:6px 9px;pointer-events:auto}' +
+    '.gxUkurP b{color:#fcc419}.gxUkurP .r{display:flex;gap:6px;margin-top:5px}.gxUkurP button{font:11px Segoe UI,Arial;padding:2px 7px;border-radius:3px;border:1px solid #888;background:#2b3445;color:#fff;cursor:pointer}' +
+    '.gxUkurC{position:absolute;left:0;top:0;pointer-events:none;z-index:6}body.dark .gxUkurB,.dark .gxUkurB{background:rgba(26,32,44,.9);color:#e6e9ef;border-color:rgba(255,255,255,.3)}body.dark .gxUkurB.on{background:#fcc419;color:#111}';
+  document.head.appendChild(css);
+  var off = function () { return [+(window.offX || 0) || 0, +(window.offY || 0) || 0]; };
+  var is3d = function (gd) { var fl = gd._fullLayout; return !!(fl && fl.scene && fl.scene._scene); };
+
+  /* ---- tombol per plot (dipanggil skala.js setiap plot digambar ulang) ---- */
+  U.pasang = function (gd, I, skBox) {
+    var b = gd.querySelector(':scope > .gxUkurB');
+    if (!I) { if (b) b.style.display = 'none'; if (U.aktif && U.aktif.gd === gd) U.selesai(); return; }
+    if (!b) {
+      b = document.createElement('button'); b.className = 'gxUkurB'; b.type = 'button'; b.innerHTML = '&#128207; Ukur';
+      b.title = 'Ukur jarak (U): klik titik-titik di plot. ' + 'Klik kanan / Backspace = hapus titik terakhir, Esc = selesai.';
+      b.onclick = function (e) { e.stopPropagation(); if (U.aktif && U.aktif.gd === gd) U.selesai(); else U.mulai(gd); };
+      gd.appendChild(b);
+    }
+    b.style.display = '';
+    var l = 10, bt = 10; if (skBox && skBox.style.display !== 'none') { l = skBox.offsetLeft + skBox.offsetWidth + 6; bt = parseFloat(skBox.style.bottom) || 10; }
+    b.style.left = Math.round(l) + 'px'; b.style.bottom = Math.round(bt) + 'px'; b.classList.toggle('on', !!(U.aktif && U.aktif.gd === gd));
+    if (U.aktif && U.aktif.gd === gd) gambar();
+  };
+
+  /* ---- mulai / selesai ---- */
+  U.mulai = function (gd) {
+    if (U.aktif) U.selesai(); gd = typeof gd === 'string' ? document.getElementById(gd) : gd; if (!gd || !gd._fullLayout) return;
+    var A = U.aktif = { gd: gd, d3: is3d(gd), P: [], down: null, sig: '' };
+    var c = document.createElement('canvas'); c.className = 'gxUkurC'; gd.appendChild(c); A.cv = c;
+    var p = document.createElement('div'); p.className = 'gxUkurP'; gd.appendChild(p); A.pn = p;
+    A.onDown = function (e) { if (e.button !== 0 || !inPlot(e)) return; A.down = [e.clientX, e.clientY]; };
+    A.onUp = function (e) {
+      if (e.button !== 0 || !A.down) return; var d = Math.hypot(e.clientX - A.down[0], e.clientY - A.down[1]); A.down = null; if (d > 4) return; /* target pointerup bisa 'dragcover' Plotly (di luar gd): cukup pointerdown di dalam plot */
+      var r = gd.getBoundingClientRect(); U.tambahPx(e.clientX - r.left, e.clientY - r.top);
+    };
+    A.onCtx = function (e) { if (!inPlot(e)) return; e.preventDefault(); e.stopPropagation(); A.P.pop(); A.pesan = ''; gambar(); };
+    A.onKey = function (e) {
+      if (U.aktif !== A) return; var t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+      if (e.key === 'Escape') { U.selesai(); e.preventDefault(); } else if (e.key === 'Backspace') { A.P.pop(); A.pesan = ''; gambar(); e.preventDefault(); }
+    };
+    window.addEventListener('pointerdown', A.onDown, true); window.addEventListener('pointerup', A.onUp, true);
+    gd.addEventListener('contextmenu', A.onCtx, true); window.addEventListener('keydown', A.onKey, true);
+    /* 3D: kamera bisa diputar kapan saja -> gambar ulang bila matriks berubah */
+    var loop = function () { if (U.aktif !== A) return; if (A.d3) { var s = kameraSig(gd); if (s !== A.sig) { A.sig = s; gambar(); } } A.raf = requestAnimationFrame(loop); };
+    A.raf = requestAnimationFrame(loop);
+    gd.classList.add('gxUkurOn'); gambar();
+    var b = gd.querySelector(':scope > .gxUkurB'); if (b) b.classList.add('on');
+  };
+  U.selesai = function () {
+    var A = U.aktif; if (!A) return; U.aktif = null; cancelAnimationFrame(A.raf);
+    window.removeEventListener('pointerdown', A.onDown, true); window.removeEventListener('pointerup', A.onUp, true);
+    A.gd.removeEventListener('contextmenu', A.onCtx, true); window.removeEventListener('keydown', A.onKey, true);
+    if (A.cv) A.cv.remove(); if (A.pn) A.pn.remove(); A.gd.classList.remove('gxUkurOn');
+    var b = A.gd.querySelector(':scope > .gxUkurB'); if (b) b.classList.remove('on');
+  };
+  function inPlot(e) { var A = U.aktif; if (!A) return false; var t = e.target; if (!A.gd.contains(t)) return false; if (t.closest && (t.closest('.modebar') || t.closest('.gxUkurP') || t.closest('.gxUkurB') || t.closest('.legend'))) return false; return true; }
+  function kameraSig(gd) { try { var cp = gd._fullLayout.scene._scene.glplot.cameraParams; return cp.view.join(',') + cp.projection.join(',') + gd.clientWidth; } catch (e) { return ''; } }
+
+  /* ---- piksel -> titik data ---- */
+  U.tambahPx = function (px, py) {
+    var A = U.aktif; if (!A) return null; var q = A.d3 ? snap3d(A.gd, px, py) : px2d(A.gd, px, py);
+    if (!q) { A.pesan = A.d3 ? 'Klik tepat pada data (bor, collar, permukaan, solid) — titik 3D menempel ke data terdekat di layar.' : 'Klik di dalam area plot.'; gambar(); return null; }
+    A.pesan = ''; A.P.push(q); gambar(); return q;
+  };
+  function px2d(gd, px, py) {
+    var fl = gd._fullLayout, xa = fl.xaxis, ya = fl.yaxis; if (!xa || !ya) return null;
+    var x = xa.p2l(px - xa._offset), y = ya.p2l(py - ya._offset); if (!isFinite(x) || !isFinite(y)) return null;
+    if (px < xa._offset || px > xa._offset + xa._length || py < ya._offset || py > ya._offset + ya._length) return null; return [x, y];
+  }
+  function snap3d(gd, px, py) {
+    var pr = window.SKL && SKL.proj3d ? SKL.proj3d(gd) : null; if (!pr) return null; var best = null, bd = 14 * 14;
+    (gd.data || []).forEach(function (t) {
+      if (t.visible === false || t.visible === 'legendonly' || (t.type !== 'scatter3d' && t.type !== 'mesh3d' && t.type !== 'cone')) return;
+      var X = t.x, Y = t.y, Z = t.z; if (!X || !Y || !Z) return; var n = Math.min(X.length, Y.length, Z.length);
+      for (var i = 0; i < n; i++) { var x = X[i], y = Y[i], z = Z[i]; if (x == null || y == null || z == null) continue; var s = pr(+x, +y, +z); if (!(s[2] > 0)) continue; var dx = s[0] - px, dy = s[1] - py, d = dx * dx + dy * dy; if (d < bd || (d === bd && best && s[2] < best.w)) { bd = d; best = { p: [+x, +y, +z], w: s[2] }; } }
+    });
+    return best ? best.p : null;
+  }
+
+  /* ---- hitung ---- */
+  var az = function (dx, dy) { var a = Math.atan2(dx, dy) * 180 / Math.PI; return (a + 360) % 360; };
+  U.hasil = function () {
+    var A = U.aktif; if (!A) return null; var P = A.P, S = [], tot = 0, totH = 0;
+    for (var i = 1; i < P.length; i++) {
+      var a = P[i - 1], b = P[i];
+      if (A.d3) { var dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], h = Math.hypot(dx, dy), m = Math.hypot(h, dz); S.push({ d: m, h: h, dz: dz, az: az(dx, dy), pl: Math.atan2(dz, h) * 180 / Math.PI }); tot += m; totH += h; }
+      else { var ex = b[0] - a[0], ey = b[1] - a[1], m2 = Math.hypot(ex, ey); S.push({ d: m2, dx: ex, dy: ey, ar: Math.atan2(ey, ex) * 180 / Math.PI }); tot += m2; }
+    }
+    return { d3: A.d3, P: P.slice(), ruas: S, total: tot, totalH: totH };
+  };
+  function judulSumbu(gd, a) { try { var t = gd._fullLayout[a].title; t = (t && (t.text || t)) || ''; t = String(t).replace(/<[^>]+>/g, '').trim(); return t.length > 18 ? t.slice(0, 18) + '…' : t; } catch (e) { return ''; } }
+  function teks() {
+    var A = U.aktif, R = U.hasil(), o = off(), L = [];
+    if (!R.P.length) return A.d3 ? 'Klik data di 3D (bor, collar, permukaan) untuk titik pertama.' : 'Klik titik pertama di plot.';
+    if (A.d3) {
+      var p0 = R.P[R.P.length - 1]; L.push('Titik ' + R.P.length + ': E ' + fx(p0[0] + o[0], 2) + ' · N ' + fx(p0[1] + o[1], 2) + ' · Z ' + fx(p0[2], 2));
+      R.ruas.forEach(function (s, i) { L.push((R.ruas.length > 1 ? 'Ruas ' + (i + 1) + ': ' : '') + '<b>' + fx(s.d, 2) + ' m</b> miring · horizontal ' + fx(s.h, 2) + ' m · ΔZ ' + (s.dz >= 0 ? '+' : '') + fx(s.dz, 2) + ' m · azimuth ' + fx(s.az, 1) + '° · plunge ' + fx(s.pl, 1) + '°'); });
+      if (R.ruas.length > 1) L.push('<b>Total ' + fx(R.total, 2) + ' m</b> (horizontal ' + fx(R.totalH, 2) + ' m)');
+    } else {
+      var tx = judulSumbu(A.gd, 'xaxis') || 'x', ty = judulSumbu(A.gd, 'yaxis') || 'y';
+      R.ruas.forEach(function (s, i) { L.push((R.ruas.length > 1 ? 'Ruas ' + (i + 1) + ': ' : '') + '<b>' + fx(s.d, 2) + ' m</b> · Δ' + tx + ' ' + fx(s.dx, 2) + ' · Δ' + ty + ' ' + fx(s.dy, 2)); });
+      if (R.ruas.length > 1) L.push('<b>Total ' + fx(R.total, 2) + ' m</b>');
+      if (!R.ruas.length) L.push('Klik titik berikutnya.');
+    }
+    return L.join('<br>');
+  }
+  U.salin = function () {
+    var R = U.hasil(); if (!R) return ''; var o = off(), L = [];
+    R.P.forEach(function (p, i) { L.push('P' + (i + 1) + '\t' + (R.d3 ? [p[0] + o[0], p[1] + o[1], p[2]] : p).map(function (v) { return (+v).toFixed(3); }).join('\t')); });
+    R.ruas.forEach(function (s, i) { L.push('Ruas ' + (i + 1) + '\t' + s.d.toFixed(3) + ' m' + (R.d3 ? '\th ' + s.h.toFixed(3) + '\tdZ ' + s.dz.toFixed(3) + '\taz ' + s.az.toFixed(1) + '\tplunge ' + s.pl.toFixed(1) : '\tdx ' + s.dx.toFixed(3) + '\tdy ' + s.dy.toFixed(3))); });
+    if (R.ruas.length > 1) L.push('Total\t' + R.total.toFixed(3) + ' m');
+    var t = L.join('\n'); try { navigator.clipboard.writeText(t); } catch (e) { } return t;
+  };
+
+  /* ---- gambar garis, titik & panel ---- */
+  function gambar() {
+    var A = U.aktif; if (!A) return; var gd = A.gd, c = A.cv, W = gd.clientWidth, H = gd.clientHeight, dp = window.devicePixelRatio || 1;
+    c.style.width = W + 'px'; c.style.height = H + 'px'; if (c.width !== Math.round(W * dp)) c.width = Math.round(W * dp); if (c.height !== Math.round(H * dp)) c.height = Math.round(H * dp);
+    var x = c.getContext('2d'); x.setTransform(dp, 0, 0, dp, 0, 0); x.clearRect(0, 0, W, H);
+    var S = [];
+    if (A.d3) { var pr = window.SKL && SKL.proj3d ? SKL.proj3d(gd) : null; if (pr) S = A.P.map(function (p) { return pr(p[0], p[1], p[2]); }); }
+    else { var fl = gd._fullLayout, xa = fl.xaxis, ya = fl.yaxis; if (xa && ya) S = A.P.map(function (p) { return [xa._offset + xa.l2p(p[0]), ya._offset + ya.l2p(p[1]), 1]; }); }
+    if (S.length > 1) {
+      x.lineWidth = 5; x.strokeStyle = 'rgba(17,17,17,.55)'; x.beginPath(); S.forEach(function (s, i) { if (i) x.lineTo(s[0], s[1]); else x.moveTo(s[0], s[1]); }); x.stroke();
+      x.lineWidth = 2.5; x.strokeStyle = '#fcc419'; x.beginPath(); S.forEach(function (s, i) { if (i) x.lineTo(s[0], s[1]); else x.moveTo(s[0], s[1]); }); x.stroke();
+      var R = U.hasil(); x.font = '600 11px Arial';
+      for (var i = 1; i < S.length; i++) { var t = fx(R.ruas[i - 1].d, 1) + ' m', w = x.measureText(t).width + 8, mx = (S[i - 1][0] + S[i][0]) / 2, my = (S[i - 1][1] + S[i][1]) / 2; x.fillStyle = 'rgba(17,17,17,.82)'; x.fillRect(mx - w / 2, my - 18, w, 16); x.fillStyle = '#fff'; x.fillText(t, mx - w / 2 + 4, my - 6); }
+    }
+    S.forEach(function (s, i) { x.beginPath(); x.arc(s[0], s[1], 5, 0, 7); x.fillStyle = '#fcc419'; x.fill(); x.lineWidth = 1.5; x.strokeStyle = '#111'; x.stroke(); });
+    var b = gd.querySelector(':scope > .gxUkurB'), pn = A.pn;
+    pn.innerHTML = '<div><b>Ukur jarak</b> ' + (A.d3 ? '(3D, menempel ke data)' : '(2D)') + '</div><div>' + teks() + '</div>' + (A.pesan ? '<div style="color:#ffb4a2;margin-top:3px">' + A.pesan + '</div>' : '') +
+      '<div class=r><button data-a=s>Salin</button><button data-a=h>Hapus</button><button data-a=x>Selesai (Esc)</button></div>';
+    pn.querySelector('[data-a=s]').onclick = function (e) { e.stopPropagation(); U.salin(); };
+    pn.querySelector('[data-a=h]').onclick = function (e) { e.stopPropagation(); A.P = []; A.pesan = ''; gambar(); };
+    pn.querySelector('[data-a=x]').onclick = function (e) { e.stopPropagation(); U.selesai(); };
+    var bl = b ? b.offsetLeft : 10, bb = b ? (parseFloat(b.style.bottom) || 10) + b.offsetHeight + 6 : 40; pn.style.left = bl + 'px'; pn.style.bottom = bb + 'px';
+  }
+  /* pintasan U saat kursor di atas plot spasial */
+  var hover = null; document.addEventListener('pointermove', function (e) { var g = e.target && e.target.closest ? e.target.closest('.js-plotly-plot') : null; hover = g; }, true);
+  window.addEventListener('keydown', function (e) {
+    if ((e.key !== 'u' && e.key !== 'U') || e.ctrlKey || e.altKey || e.metaKey) return; var t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+    var g = hover; if (!g) return; var b = g.querySelector(':scope > .gxUkurB'); if (!b || b.style.display === 'none') return; e.preventDefault(); if (U.aktif && U.aktif.gd === g) U.selesai(); else U.mulai(g);
+  });
 })();
 
 !function(t,s){"object"==typeof exports&&"undefined"!=typeof module?module.exports=s():"function"==typeof define&&define.amd?define(s):(t="undefined"!=typeof globalThis?globalThis:t||self).Delaunator=s()}(this,function(){"use strict";const t=11102230246251565e-32,s=134217729,i=(3+8*t)*t;function e(t,s,i,e,n){let h,r,l,o,a=s[0],f=e[0],c=0,u=0;f>a==f>-a?(h=a,a=s[++c]):(h=f,f=e[++u]);let _=0;if(c<t&&u<i)for(f>a==f>-a?(r=a+h,l=h-(r-a),a=s[++c]):(r=f+h,l=h-(r-f),f=e[++u]),h=r,0!==l&&(n[_++]=l);c<t&&u<i;)f>a==f>-a?(r=h+a,o=r-h,l=h-(r-o)+(a-o),a=s[++c]):(r=h+f,o=r-h,l=h-(r-o)+(f-o),f=e[++u]),h=r,0!==l&&(n[_++]=l);for(;c<t;)r=h+a,o=r-h,l=h-(r-o)+(a-o),a=s[++c],h=r,0!==l&&(n[_++]=l);for(;u<i;)r=h+f,o=r-h,l=h-(r-o)+(f-o),f=e[++u],h=r,0!==l&&(n[_++]=l);return 0===h&&0!==_||(n[_++]=h),_}function n(t){return new Float64Array(t)}const h=n(4),r=n(8),l=n(12),o=n(16),a=n(4);function f(t,n,f,c,u,_){const d=(n-_)*(f-u),g=(t-u)*(c-_),y=d-g,w=Math.abs(d+g);return Math.abs(y)>=33306690738754716e-32*w?y:-function(t,n,f,c,u,_,d){let g,y,w,b,A,k,x,M,S,p,T,z,U,m,K,L,v,F;const I=t-u,P=f-u,E=n-_,H=c-_;m=I*H,k=s*I,x=k-(k-I),M=I-x,k=s*H,S=k-(k-H),p=H-S,K=M*p-(m-x*S-M*S-x*p),L=E*P,k=s*E,x=k-(k-E),M=E-x,k=s*P,S=k-(k-P),p=P-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,h[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,h[1]=U-(T+A)+(A-L),F=z+T,A=F-z,h[2]=z-(F-A)+(T-A),h[3]=F;let N=function(t,s){let i=s[0];for(let e=1;e<t;e++)i+=s[e];return i}(4,h),j=22204460492503146e-32*d;if(N>=j||-N>=j)return N;if(A=t-I,g=t-(I+A)+(A-u),A=f-P,w=f-(P+A)+(A-u),A=n-E,y=n-(E+A)+(A-_),A=c-H,b=c-(H+A)+(A-_),0===g&&0===y&&0===w&&0===b)return N;if(j=11093356479670487e-47*d+i*Math.abs(N),N+=I*b+H*g-(E*w+P*y),N>=j||-N>=j)return N;m=g*H,k=s*g,x=k-(k-g),M=g-x,k=s*H,S=k-(k-H),p=H-S,K=M*p-(m-x*S-M*S-x*p),L=y*P,k=s*y,x=k-(k-y),M=y-x,k=s*P,S=k-(k-P),p=P-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const q=e(4,h,4,a,r);m=I*b,k=s*I,x=k-(k-I),M=I-x,k=s*b,S=k-(k-b),p=b-S,K=M*p-(m-x*S-M*S-x*p),L=E*w,k=s*E,x=k-(k-E),M=E-x,k=s*w,S=k-(k-w),p=w-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const D=e(q,r,4,a,l);m=g*b,k=s*g,x=k-(k-g),M=g-x,k=s*b,S=k-(k-b),p=b-S,K=M*p-(m-x*S-M*S-x*p),L=y*w,k=s*y,x=k-(k-y),M=y-x,k=s*w,S=k-(k-w),p=w-S,v=M*p-(L-x*S-M*S-x*p),T=K-v,A=K-T,a[0]=K-(T+A)+(A-v),z=m+T,A=z-m,U=m-(z-A)+(T-A),T=U-L,A=U-T,a[1]=U-(T+A)+(A-L),F=z+T,A=F-z,a[2]=z-(F-A)+(T-A),a[3]=F;const B=e(D,l,4,a,o);return o[B-1]}(t,n,f,c,u,_,w)}const c=Math.pow(2,-52),u=new Uint32Array(512);class _{static from(t,s=A,i=k){const e=t.length,n=new Float64Array(2*e);for(let h=0;h<e;h++){const e=t[h];n[2*h]=s(e),n[2*h+1]=i(e)}return new _(n)}constructor(t){const s=t.length>>1;if(s>0&&"number"!=typeof t[0])throw new Error("Expected coords to contain numbers.");this.coords=t;const i=Math.max(2*s-5,0);this._triangles=new Uint32Array(3*i),this._halfedges=new Int32Array(3*i),this._hashSize=Math.ceil(Math.sqrt(s)),this._hullPrev=new Uint32Array(s),this._hullNext=new Uint32Array(s),this._hullTri=new Uint32Array(s),this._hullHash=new Int32Array(this._hashSize),this._ids=new Uint32Array(s),this._dists=new Float64Array(s),this.trianglesLen=0,this._cx=0,this._cy=0,this._hullStart=0,this.hull=this._triangles,this.triangles=this._triangles,this.halfedges=this._halfedges,this.update()}update(){const{coords:t,_hullPrev:s,_hullNext:i,_hullTri:e,_hullHash:n}=this,h=t.length>>1;let r=1/0,l=1/0,o=-1/0,a=-1/0;for(let s=0;s<h;s++){const i=t[2*s],e=t[2*s+1];i<r&&(r=i),e<l&&(l=e),i>o&&(o=i),e>a&&(a=e),this._ids[s]=s}const u=(r+o)/2,_=(l+a)/2;let g=0,b=0,A=0;for(let s=0,i=1/0;s<h;s++){const e=d(u,_,t[2*s],t[2*s+1]);e<i&&(g=s,i=e)}const k=t[2*g],x=t[2*g+1];for(let s=0,i=1/0;s<h;s++){if(s===g)continue;const e=d(k,x,t[2*s],t[2*s+1]);e<i&&e>0&&(b=s,i=e)}let M=t[2*b],S=t[2*b+1],p=1/0;for(let s=0;s<h;s++){if(s===g||s===b)continue;const i=y(k,x,M,S,t[2*s],t[2*s+1]);i<p&&(A=s,p=i)}let T=t[2*A],z=t[2*A+1];if(p===1/0){for(let s=0;s<h;s++)this._dists[s]=t[2*s]-t[0]||t[2*s+1]-t[1];w(this._ids,this._dists,0,h-1);const s=new Uint32Array(h);let i=0;for(let t=0,e=-1/0;t<h;t++){const n=this._ids[t],h=this._dists[n];h>e&&(s[i++]=n,e=h)}return this.hull=s.subarray(0,i),this.triangles=new Uint32Array(0),void(this.halfedges=new Int32Array(0))}if(f(k,x,M,S,T,z)<0){const t=b,s=M,i=S;b=A,M=T,S=z,A=t,T=s,z=i}const U=function(t,s,i,e,n,h){const r=i-t,l=e-s,o=n-t,a=h-s,f=r*r+l*l,c=o*o+a*a,u=.5/(r*a-l*o);return{x:t+(a*f-l*c)*u,y:s+(r*c-o*f)*u}}(k,x,M,S,T,z);this._cx=U.x,this._cy=U.y;for(let s=0;s<h;s++)this._dists[s]=d(t[2*s],t[2*s+1],U.x,U.y);w(this._ids,this._dists,0,h-1),this._hullStart=g;let m=3;i[g]=s[A]=b,i[b]=s[g]=A,i[A]=s[b]=g,e[g]=0,e[b]=1,e[A]=2,n.fill(-1),n[this._hashKey(k,x)]=g,n[this._hashKey(M,S)]=b,n[this._hashKey(T,z)]=A,this.trianglesLen=0,this._addTriangle(g,b,A,-1,-1,-1);for(let h=0,r=0,l=0;h<this._ids.length;h++){const o=this._ids[h],a=t[2*o],u=t[2*o+1];if(h>0&&Math.abs(a-r)<=c&&Math.abs(u-l)<=c)continue;if(r=a,l=u,o===g||o===b||o===A)continue;let _=0;for(let t=0,s=this._hashKey(a,u);t<this._hashSize&&(_=n[(s+t)%this._hashSize],-1===_||_===i[_]);t++);_=s[_];let d,y=_;for(;d=i[y],f(a,u,t[2*y],t[2*y+1],t[2*d],t[2*d+1])>=0;)if(y=d,y===_){y=-1;break}if(-1===y)continue;let w=this._addTriangle(y,o,i[y],-1,-1,e[y]);e[o]=this._legalize(w+2),e[y]=w,m++;let k=i[y];for(;d=i[k],f(a,u,t[2*k],t[2*k+1],t[2*d],t[2*d+1])<0;)w=this._addTriangle(k,o,d,e[o],-1,e[k]),e[o]=this._legalize(w+2),i[k]=k,m--,k=d;if(y===_)for(;d=s[y],f(a,u,t[2*d],t[2*d+1],t[2*y],t[2*y+1])<0;)w=this._addTriangle(d,o,y,-1,e[y],e[d]),this._legalize(w+2),e[d]=w,i[y]=y,m--,y=d;this._hullStart=s[o]=y,i[y]=s[k]=o,i[o]=k,n[this._hashKey(a,u)]=o,n[this._hashKey(t[2*y],t[2*y+1])]=y}this.hull=new Uint32Array(m);for(let t=0,s=this._hullStart;t<m;t++)this.hull[t]=s,s=i[s];this.triangles=this._triangles.subarray(0,this.trianglesLen),this.halfedges=this._halfedges.subarray(0,this.trianglesLen)}_hashKey(t,s){return Math.floor(function(t,s){const i=t/(Math.abs(t)+Math.abs(s));return(s>0?3-i:1+i)/4}(t-this._cx,s-this._cy)*this._hashSize)%this._hashSize}_legalize(t){const{_triangles:s,_halfedges:i,coords:e}=this;let n=0,h=0;for(;;){const r=i[t],l=t-t%3;if(h=l+(t+2)%3,-1===r){if(0===n)break;t=u[--n];continue}const o=r-r%3,a=l+(t+1)%3,f=o+(r+2)%3,c=s[h],_=s[t],d=s[a],y=s[f];if(g(e[2*c],e[2*c+1],e[2*_],e[2*_+1],e[2*d],e[2*d+1],e[2*y],e[2*y+1])){s[t]=y,s[r]=c;const e=i[f];if(-1===e){let s=this._hullStart;do{if(this._hullTri[s]===f){this._hullTri[s]=t;break}s=this._hullPrev[s]}while(s!==this._hullStart)}this._link(t,e),this._link(r,i[h]),this._link(h,f);const l=o+(r+1)%3;n<u.length&&(u[n++]=l)}else{if(0===n)break;t=u[--n]}}return h}_link(t,s){this._halfedges[t]=s,-1!==s&&(this._halfedges[s]=t)}_addTriangle(t,s,i,e,n,h){const r=this.trianglesLen;return this._triangles[r]=t,this._triangles[r+1]=s,this._triangles[r+2]=i,this._link(r,e),this._link(r+1,n),this._link(r+2,h),this.trianglesLen+=3,r}}function d(t,s,i,e){const n=t-i,h=s-e;return n*n+h*h}function g(t,s,i,e,n,h,r,l){const o=t-r,a=s-l,f=i-r,c=e-l,u=n-r,_=h-l,d=f*f+c*c,g=u*u+_*_;return o*(c*g-d*_)-a*(f*g-d*u)+(o*o+a*a)*(f*_-c*u)<0}function y(t,s,i,e,n,h){const r=i-t,l=e-s,o=n-t,a=h-s,f=r*r+l*l,c=o*o+a*a,u=.5/(r*a-l*o),_=(a*f-l*c)*u,d=(r*c-o*f)*u;return _*_+d*d}function w(t,s,i,e){if(e-i<=20)for(let n=i+1;n<=e;n++){const e=t[n],h=s[e];let r=n-1;for(;r>=i&&s[t[r]]>h;)t[r+1]=t[r--];t[r+1]=e}else{let n=i+1,h=e;b(t,i+e>>1,n),s[t[i]]>s[t[e]]&&b(t,i,e),s[t[n]]>s[t[e]]&&b(t,n,e),s[t[i]]>s[t[n]]&&b(t,i,n);const r=t[n],l=s[r];for(;;){do{n++}while(s[t[n]]<l);do{h--}while(s[t[h]]>l);if(h<n)break;b(t,n,h)}t[i+1]=t[h],t[h]=r,e-n+1>=h-i?(w(t,s,n,e),w(t,s,i,h-1)):(w(t,s,i,h-1),w(t,s,n,e))}}function b(t,s,i){const e=t[s];t[s]=t[i],t[i]=e}function A(t){return t[0]}function k(t){return t[1]}return _});
@@ -10794,7 +10964,11 @@ async function Module(moduleArg={}){var moduleRtn;var Module=moduleArg;var ENVIR
     if (!GWM || !m.gab || !m.gab.src) return null; var c = GWM.get(m); if (c && c.k === m.gab.at) return c.g;
     var s = m.gab.src, fT = zf(s.t), fP = zf(s.p), out = [];
     var berString = function (o) { for (var i = 0; i < o.x.length; i++) if (o.x[i] === null || o.x[i] === undefined) return true; return false; };
-    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
+    /* BM 0.24.99 / DH 0.24.102 (pemilik 17 Nov 2026: "Topo × Pit malah berbentuk jaring-jaring triangulasi"): desain pit / topografi
+       yang diimport sebagai SEGITIGA (DTM, DXF 3DFACE) tersimpan sebagai potongan 3–4 titik per segitiga. Itu bukan garis jenjang /
+       kontur: menggambarnya sebagai garis memunculkan seluruh rusuk segitiga. Lewati bila sebagian besar potongan adalah segitiga. */
+    var segitiga = function (o) { var n = 0, tri = 0, k = 0, a0 = -1; for (var i = 0; i <= o.x.length; i++) { var x = i < o.x.length ? o.x[i] : null; if (x === null || x === undefined) { if (k) { n++; var tutup = a0 >= 0 && o.x[a0] === o.x[i - 1] && o.y[a0] === o.y[i - 1]; if (k === 3 || (k === 4 && tutup)) tri++; } k = 0; a0 = -1; continue; } if (!k) a0 = i; k++; } return n >= 50 && tri / n > 0.6; };
+    var potongStr = function (o, sendiri, lain, nm, col, w, op, rapat) { if (!o || !o.x || !o.x.length || !berString(o) || segitiga(o)) return; /* awan titik XYZ: tidak ada garis */ if (rapat && TIN.rapat) o = TIN.rapat(o, 2); var X = [], Y = [], Z = [], buka = false;
       for (var i = 1; i < o.x.length; i++) { var x0 = o.x[i - 1], x1 = o.x[i]; if (x0 === null || x1 === null || x0 === undefined || x1 === undefined) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
         var y0 = o.y[i - 1], y1 = o.y[i], z0 = o.z[i - 1], z1 = o.z[i], mx = (x0 + x1) / 2, my = (y0 + y1) / 2, mz = (z0 + z1) / 2, zo = lain(mx, my), ok = zo === null || (sendiri === 'topo' ? mz <= zo + 0.05 : mz < zo - 0.05);
         if (!ok) { if (buka) { X.push(null); Y.push(null); Z.push(null); buka = false; } continue; }
@@ -14044,7 +14218,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.98';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.99';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan
