@@ -5634,3 +5634,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   - **Ekspor CSV** / **Ekspor Excel** menyimpan baris yang sedang tersaring & terurut.
 - Dari dok Project: klik kanan objek → **Buka tabel atribut**; klik ganda Collar / Survey / Assay / Geologi membuka tabelnya.
 
+## 280. Ore Works 0.23.0 — mengatur tata letak panel
+
+- **Lepas panel**: klik tombol ⧉ di judul dok Project / Properti, atau seret judulnya ke tengah layar. Panel jadi jendela
+  mengambang yang bisa digeser (seret judul) dan diubah ukurannya (pojok kanan bawah).
+- **Tempel panel**: seret judul panel ke tepi kiri atau kanan jendela (muncul zona hijau), lalu lepaskan. Klik ganda judul
+  juga mengembalikan panel ke tepi terakhirnya.
+- Bila dua panel ditempel di sisi yang sama, keduanya **bertumpuk sebagai tab** (PROJECT | PROPERTI) di atas dok.
+- **Belah 3D | Penampang**: tombol di ujung kanan bar tab dokumen (atau Tampilan → Belah 3D | Penampang). Pembatas di tengah
+  bisa diseret. Menutup penampang (✕) mengakhiri mode belah.
+- Tata letak diingat saat aplikasi dibuka lagi. **Tampilan → Kembalikan tata letak** = kembali ke bawaan (Project kiri,
+  Properti kanan, tanpa belah).
+

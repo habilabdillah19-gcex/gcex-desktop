@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.22.0';</script>
+<script>window.GCEX_VER='0.23.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -3889,7 +3889,7 @@ R.domElement.addEventListener('pointermove',ev=>{const tnow=performance.now();if
  if(hit){const p=hit.point;const E=(p.x+O[0]).toFixed(0),N=(-p.z+O[1]).toFixed(0),Z=(p.y/W.scale.y+O[2]).toFixed(0);hud.textContent='E '+E+' · N '+N+' · RL '+Z;
   if(hit.object.userData&&hit.object.userData.fm){const f2=hit.object.userData.fm;let h2='<b>'+esc(f2.nm)+'</b> · '+FMK[f2.k].nm+'<br>'+fmInfo(f2);if(hit.object.userData.ivs&&hit.instanceId!=null&&f2.iv&&f2.iv[hit.instanceId]){const v=f2.iv[hit.instanceId];h2+='<br>'+v.f.toFixed(2)+'–'+v.t.toFixed(2)+' m · '+esc(v.sid||'(tanpa Sample_ID)')+FM.els.filter(e=>v.v[e]!=null&&isFinite(v.v[e])).map(e=>' · '+esc(e)+' '+v.v[e]).join('')+(v.lith?' · '+esc(v.lith):'');}tip.innerHTML=h2+'<br>RL '+Z;tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}
   if(hit.object.userData&&hit.object.userData.stp){const p2=hit.object.userData.stp;tip.innerHTML='<b>'+esc(p2.nm)+'</b> · '+(p2.kat==='vein'?'Struktur vein':'Struktur geologi')+' · '+esc(p2.jenis)+'<br>'+(stpLin(p2)?'Plunge '+(+p2.dip).toFixed(0)+'° → trend '+(+p2.dd).toFixed(0)+'°':'Dip '+(+p2.dip).toFixed(0)+'° → '+(+p2.dd).toFixed(0)+'° ('+dirN(p2.dd)+') · strike '+((p2.dd+270)%360).toFixed(0)+'°')+(p2.tebal!=null&&p2.tebal!==''?' · tebal '+p2.tebal+' m':'')+(p2.pol===-1?' · polaritas −1 (terbalik)':p2.pol===1?' · polaritas +1':'')+'<br>E '+(+p2.E).toFixed(1)+' · N '+(+p2.N).toFixed(1)+' · RL '+(+p2.Z).toFixed(1)+(p2.ket?'<br>'+esc(p2.ket):'');tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}
-  if(hit.object.userData&&hit.object.userData.str){const st2=hit.object.userData.str;tip.innerHTML='<b>'+(st2.st==='usulan'?'Usulan: ':'')+esc(st2.nm)+'</b>'+(st2.warn?' ⚠':'')+'<br>'+esc(SRCN[st2.src]||st2.src)+' · strike '+(+st2.strike).toFixed(0)+'° · dip '+(+st2.dip).toFixed(0)+'°'+(st2.ev?'<br>'+esc(st2.ev):'')+'<br>RL '+Z;tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}
+  if(hit.object.userData&&hit.object.userData.str){const st2=hit.object.userData.str;tip.innerHTML='<b>'+(st2.st==='usulan'?'Usulan: ':'')+esc(st2.nm)+'</b>'+(st2.warn?' ⚠':'')+'<br>'+esc(SRCN[st2.src]||st2.src||'Bidang struktur')+' · strike '+(+st2.strike).toFixed(0)+'° · dip '+(+st2.dip).toFixed(0)+'°'+(st2.ev?'<br>'+esc(st2.ev):'')+'<br>RL '+Z;tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}
   if(hit.object.userData&&hit.object.userData.op){const t=opTip(hit);if(t){tip.innerHTML=t;tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}}
   if(hit.object.userData&&hit.object.userData.plan){const u=hit.object.userData.plan,p=PLAN[u.pi],ix=u.k==='seg'?Math.floor(hit.index/2):hit.index,rr=p&&p.rows[ix];if(rr){tip.innerHTML='<b>'+esc(rr.id)+'</b> · plan '+esc(p.nm)+'<br>Collar E '+rr.E.toFixed(1)+' · N '+rr.N.toFixed(1)+' · RL '+rr.Z.toFixed(1)+'<br>Az '+rr.az+'° · dip '+rr.dip+'° · '+rr.dep+' m';tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}}
   if(hit.object.userData&&hit.object.userData.jun&&AN.jun){const i=hit.index;tip.innerHTML='<b>Pertemuan vein</b> · '+esc(AN.jun.ids[i])+'<br>'+esc(AN.jun.info[i])+'<br>GT '+AN.jun.gt[i].toFixed(2).replace('.',',')+' g/t·m (sepanjang lubang)';tip.style.display='block';tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top+12)+'px';return;}
@@ -7307,7 +7307,7 @@ const MENU={
   ['plan','Plan (dari atas)','',()=>view('plan')],['sec','Penampang dari WSW','',()=>view('wsw')],['sec','Penampang dari ENE','',()=>view('ene')],['sec','Sepanjang strike (NNW)','',()=>view('nnw')],['obl','Oblik dari SSE','',()=>view('sse')],'-',
   ['latar','Latar 3D','',null,[['Gradasi hangat',bg==='terang',()=>osBg('terang')],['Gradasi navy dof',bg==='gelap',()=>osBg('gelap')],['Polos',bg==='polos',()=>osBg('polos')]]],
   ['label','Label adaptif','',()=>{if(lb){lb.checked=!lb.checked;lb.dispatchEvent(new Event('input'));lb.dispatchEvent(new Event('change'));}},null,!lb||lb.checked],
-  ['leg','Legenda di 3D','',()=>klik('lgtg'),null,lgOn()],['tree','Panel Project (kiri)','',()=>{if(window.ptShow)ptShow(!ptOpen());},null,!!(window.ptOpen&&ptOpen())],['prop','Panel Properti (kanan)','',()=>{if(window.prShow)prShow(!prOpen());},null,!!(window.prOpen&&prOpen())],['data','Panel Data (kanan)','',()=>klik('rptg'),null,document.body.classList.contains('rp')],'-',
+  ['leg','Legenda di 3D','',()=>klik('lgtg'),null,lgOn()],['tree','Panel Project (kiri)','',()=>{if(window.ptShow)ptShow(!ptOpen());},null,!!(window.ptOpen&&ptOpen())],['prop','Panel Properti (kanan)','',()=>{if(window.prShow)prShow(!prOpen());},null,!!(window.prOpen&&prOpen())],['belah','Belah 3D | Penampang','',()=>{if(window.__belah)__belah.toggle();},null,!!(window.__belah&&__belah.on)],['reset','Kembalikan tata letak','',()=>{if(window.__tata)__tata.kembalikan();}],['data','Panel Data (kanan)','',()=>klik('rptg'),null,document.body.classList.contains('rp')],'-',
   ['full','Layar penuh','F11',()=>klik('otbfs')],['hide','Sembunyikan bar menu & toolbar','Ctrl+Shift+M',()=>klik('barhd')]];},
  'Wireframe geologi':()=>[['panel','Panel Wireframe…','',ORIG['Wireframe geologi']],['impor','Impor wireframe (.msh / .dtm+.str / .obj / .dxf)…','',()=>klik('wif')],'-',['studio','Studio Pemodelan','F9',studio]],
  '@ana':()=>[['ana','Jendela Analisis…','',ORIG['@ana']],['slice','Slicing (penampang / level)…','',ORIG['@slice']],['sec','Penampang 2D','',()=>{if(typeof scOpen==='function')scOpen(true);}],['studio','Studio Pemodelan','F9',studio],'-',['peta','Layout peta…','',()=>klik('fmlay')]],
@@ -7558,16 +7558,16 @@ TV.innerHTML='<div id="tatb"><select id="tasl" title="Pilih tabel"></select><inp
 wrap.appendChild(TV);
 const TA={on:false,bawah:false,key:null,sort:null,dir:1,fil:{},q:'',sel:-1,h:0.42};try{Object.assign(TA,JSON.parse(localStorage.getItem('ow.tabel')||'{}'),{on:false,sel:-1});}catch(e){}
 const sv=()=>{try{localStorage.setItem('ow.tabel',JSON.stringify({bawah:TA.bawah,key:TA.key,h:TA.h}));}catch(e){}};
-function tata(){const c=cv.getBoundingClientRect(),w=wrap.getBoundingClientRect(),x=c.left-w.left,y=c.top-w.top;TB.style.left=x+'px';TB.style.width=c.width+'px';TB.style.top=(y-28)+'px';
+function tata(){const c=cv.getBoundingClientRect(),w=wrap.getBoundingClientRect(),x=c.left-w.left,y=c.top-w.top;TB.style.left=x+'px';TB.style.width=(c.width+(window.__belah&&__belah.on?__belah.w():0))+'px';TB.style.top=(y-28)+'px';
  const hh=TA.bawah?Math.round(c.height*TA.h):c.height;TV.style.left=x+'px';TV.style.width=c.width+'px';TV.style.top=(y+c.height-hh)+'px';TV.style.height=hh+'px';}
 try{new ResizeObserver(()=>{tata();}).observe(cv);}catch(e){}addEventListener('resize',()=>setTimeout(tata,0));setTimeout(()=>{window.dispatchEvent(new Event('resize'));tata();},0);
 const scw=g('scw');
 function aktif(){if(TA.on&&!TA.bawah)return 'tab';if(window.__st&&__st.on)return 'st';if(typeof SC!=='undefined'&&SC.open&&scw.classList.contains('penuh'))return g('scm').value==='h'?'lvl':'pen';return '3d';}
-function tandai(){const a=aktif();TB.querySelectorAll('.dt').forEach(b=>{const on=b.dataset.k===a||(b.dataset.k==='tab'&&TA.on);b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});}
+function tandai(){const a=aktif();TB.querySelectorAll('.dt').forEach(b=>{const on=b.dataset.k===a||(b.dataset.k==='tab'&&TA.on)||(!!(window.__belah&&__belah.on)&&b.dataset.k===(g('scm').value==='h'?'lvl':'pen'));b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});}
 function tutupPen(){if(scw.classList.contains('penuh')){scw.classList.remove('penuh');if(SC.open)scOpen(false);}}
 function buka(k){if(k!=='st'&&window.__st&&__st.on&&window.stdoTutup)stdoTutup();
  if(k==='3d'){tutupTabel();tutupPen();}
- else if(k==='pen'||k==='lvl'){tutupTabel();const m=g('scm'),v=k==='lvl'?'h':'v';if(m.value!==v){m.value=v;m.dispatchEvent(new Event('change'));}scw.classList.add('penuh');if(!SC.open)scOpen(true);else scUpd();setTimeout(()=>{try{scUpd();}catch(e){}},30);}
+ else if(k==='pen'||k==='lvl'){tutupTabel();const m=g('scm'),v=k==='lvl'?'h':'v';if(m.value!==v){m.value=v;m.dispatchEvent(new Event('change'));}if(!(window.__belah&&__belah.on))scw.classList.add('penuh');if(!SC.open)scOpen(true);else scUpd();setTimeout(()=>{try{scUpd();}catch(e){}},30);}
  else if(k==='st'){tutupTabel();if(!SC.open)scOpen(true);if(window.stdoBuka)stdoBuka();}
  else if(k==='tab'){tutupPen();bukaTabel();}
  tandai();}
@@ -7734,6 +7734,116 @@ setInterval(()=>{if(TA.on){isiPilihan();}},1500);
 /* klik kanan dok Project → "Buka tabel atribut" (Data bor, struktur, pemetaan, GIS) */
 window.taBuka=(key)=>{buka('tab');if(key)pilihTabel(key);g('tasl').value=TA.key||'';};
 window.__ta={TA,buka,bukaTabel,tutupTabel,pilihTabel,daftar,sorot,get tbl(){return TBL;},get idx(){return IDX;}};
+}
+
+/* ================= Ore Works 0.23.0: panel lepas-tempel + simpan tata letak (tahap 6 tata letak desktop) =================
+   Mockup disetujui pemilik 17 Nov 2026: "Panel lepas-tempel: lepas (⧉) jadi mengambang, seret ke tepi = tempel, klik ganda
+   judul = kembali, perkecil jadi strip tepi, bertumpuk sebagai tab, tab dokumen bisa dibelah dua (3D | Penampang).
+   Tata letak diingat; Kembalikan tata letak".
+   - Dok Project & Properti bisa ditempel di kiri ATAU kanan; dua panel di sisi yang sama bertumpuk sebagai tab.
+   - ⧉ = lepas jadi jendela mengambang (bisa digeser & diubah ukurannya); seret judul panel ke tepi kiri/kanan = tempel;
+     seret judul panel yang menempel = lepas; klik ganda judul = kembali menempel / lepas.
+   - Belah 3D | Penampang (tab dokumen dibelah dua, pembatas bisa diseret).
+   - Tata letak diingat per komputer (ow.tata); Tampilan → Kembalikan tata letak. */
+{
+const g=id=>document.getElementById(id);
+const wrap=g('wrap'),cv=g('cv'),scw=g('scw');
+const css=document.createElement('style');css.textContent=`.dkc{flex:none;display:flex;flex-direction:column;position:relative;min-height:0;min-width:0}.dkc>#ptw,.dkc>#prw{flex:1;min-height:0}
+#dkL>#ptw,#dkL>#prw{border-right:1px solid #D3CDC1;border-left:0}#dkR>#ptw,#dkR>#prw{border-left:1px solid #D3CDC1;border-right:0}
+.dkc>.dk-off{display:none!important}#ptgr,#prgr{display:none!important}
+.dkt{display:none;height:24px;flex:none;background:#E4E0D7;border-bottom:1px solid #D3CDC1;user-select:none}.dkc.tumpuk>.dkt{display:flex}
+.dkt button{border:0;border-right:1px solid #D3CDC1;border-radius:0;margin:0;padding:0 12px;background:transparent;font:600 10.5px "Segoe UI",Inter,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#5C6672;cursor:pointer}
+.dkt button.on{background:#EDEBE6;color:#1C2733;box-shadow:inset 0 2px #17806B}
+.dkg{position:absolute;top:0;bottom:0;width:6px;z-index:4;cursor:ew-resize}#dkL>.dkg{right:-3px}#dkR>.dkg{left:-3px}.dkg:hover,body.dkdrag .dkg{background:#17806B44}body.dkdrag{user-select:none;cursor:ew-resize}
+#ptw.apung,#prw.apung{position:fixed!important;z-index:60;display:none;border:1px solid #8D958F!important;box-shadow:0 10px 28px #1C273355;resize:both;overflow:hidden;min-width:200px;min-height:160px}
+body.pt #ptw.apung,body.prd #prw.apung{display:flex}#ptw.apung #ptmin,#prw.apung #prmin{display:none}
+#pth,#prh{cursor:grab}#pth button,#prh button{cursor:pointer}body.dkpindah,body.dkpindah *{cursor:grabbing!important;user-select:none!important}
+.dkz{position:fixed;z-index:59;display:none;background:#17806B22;border:2px dashed #17806B;box-sizing:border-box;pointer-events:none}.dkz.hot{background:#17806B44;border-style:solid}body.dkpindah .dkz{display:block}
+#scw.belah{position:absolute!important;border-radius:0!important;resize:none!important;box-shadow:none!important;border:0!important;border-left:1px solid #D3CDC1!important;min-width:0!important;min-height:0!important;z-index:5}#scw.belah #sch{cursor:default}
+#blgr{position:absolute;width:7px;z-index:8;cursor:ew-resize;display:none}#blgr:hover,body.bldrag #blgr{background:#17806B55}body.bldrag{cursor:ew-resize;user-select:none}
+#dtb #dtbl{margin-left:auto;border-left:1px solid #D3CDC1;border-right:0;font-size:11.5px}#dtb #dtbl.on{background:#fff;color:#17806B;font-weight:600}`;document.head.appendChild(css);
+const svg=d=>'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+d+'"/></svg>';
+const IC_LEPAS='M6 2.5h7.5V10M13.5 2.5L7 9M11 13.5H2.5V5',IC_TEMPEL='M2.5 2.5h11v11h-11zM6 2.5v11';
+/* ---- panel ---- */
+const PN={pt:{nm:'Project',el:g('ptw'),hd:g('pth'),buka:()=>document.body.classList.contains('pt'),st:()=>window.__pt&&__pt.PT,re:()=>window.__pt&&__pt.show(true),w0:262},
+ pr:{nm:'Properti',el:g('prw'),hd:g('prh'),buka:()=>document.body.classList.contains('prd'),st:()=>window.__pr&&__pr.PR,re:()=>window.__pr&&__pr.show(true),w0:290}};
+if(!PN.pt.el||!PN.pr.el){console.warn('Tata letak: dok belum ada');}
+const DEF=()=>({pt:{side:'L',x:90,y:110,w:262,h:520},pr:{side:'R',x:900,y:110,w:290,h:560},act:{L:'pt',R:'pr'},belah:{on:false,r:0.5}});
+let LT=DEF();try{const s=JSON.parse(localStorage.getItem('ow.tata')||'null');if(s&&s.pt&&s.pr)LT=Object.assign(DEF(),s);}catch(e){}
+const simpan=()=>{try{localStorage.setItem('ow.tata',JSON.stringify(LT));}catch(e){}};
+const rsz=()=>window.dispatchEvent(new Event('resize'));
+const dk={L:document.createElement('div'),R:document.createElement('div')};dk.L.id='dkL';dk.R.id='dkR';
+for(const s of ['L','R']){const c=dk[s];c.className='dkc';c.innerHTML='<div class="dkt" role="tablist"></div><div class="dkg" title="Seret untuk mengubah lebar"></div>';}
+wrap.insertBefore(dk.L,wrap.firstChild);wrap.insertBefore(dk.R,cv.nextSibling);
+/* tombol lepas di judul panel */
+for(const k in PN){const p=PN[k];if(!p.el)continue;const b=document.createElement('button');b.className=k==='pr'?'ib2':'';b.id=k+'fl';b.title='Lepas jadi jendela mengambang (seret judul ke tepi kiri/kanan untuk menempel lagi)';b.innerHTML=svg(IC_LEPAS);
+ const ref=k==='pt'?g('ptmin'):g('prmin');if(ref)ref.parentNode.insertBefore(b,ref);else p.hd.appendChild(b);b.onclick=e=>{e.stopPropagation();lepasTempel(k);};}
+function lepasTempel(k){const p=LT[k];if(p.side==='F'){p.side=p.last||(k==='pt'?'L':'R');}else{p.last=p.side;const r=PN[k].el.getBoundingClientRect();p.x=Math.max(0,Math.round(r.left+30));p.y=Math.max(40,Math.round(r.top+30));p.w=Math.round(r.width)||PN[k].w0;p.h=Math.min(innerHeight-80,Math.max(260,Math.round(r.height*0.75)));p.side='F';}
+ if(p.side!=='F')LT.act[p.side]=k;simpan();terapkan();}
+function terapkan(){for(const k of ['pt','pr']){const p=PN[k],s=LT[k];if(!p.el)continue;const e=p.el,st=p.st();
+  if(s.side==='F'){e.classList.add('apung');e.classList.remove('dk-off');if(e.parentNode!==document.body)document.body.appendChild(e);if(st&&st.mini){st.mini=false;}
+   const w=Math.max(200,Math.min(innerWidth-20,s.w||p.w0)),h=Math.max(160,Math.min(innerHeight-40,s.h||480));e.style.left=Math.max(0,Math.min(innerWidth-120,s.x))+'px';e.style.top=Math.max(30,Math.min(innerHeight-60,s.y))+'px';e.style.width=w+'px';e.style.height=h+'px';if(st)st.w=w;
+   const b=g(k+'fl');if(b){b.innerHTML=svg(IC_TEMPEL);b.title='Tempel kembali ke tepi '+((s.last||(k==='pt'?'L':'R'))==='L'?'kiri':'kanan');}}
+  else{e.classList.remove('apung');e.style.left=e.style.top=e.style.height='';const c=dk[s.side];if(e.parentNode!==c)c.appendChild(e);
+   const b=g(k+'fl');if(b){b.innerHTML=svg(IC_LEPAS);b.title='Lepas jadi jendela mengambang (seret judul ke tepi kiri/kanan untuk menempel lagi)';}}}
+ /* urutan dalam kontainer: Project dulu */
+ for(const s of ['L','R'])if(PN.pt.el.parentNode===dk[s]&&PN.pr.el.parentNode===dk[s]&&PN.pr.el.compareDocumentPosition(PN.pt.el)&Node.DOCUMENT_POSITION_FOLLOWING)dk[s].insertBefore(PN.pt.el,PN.pr.el);
+ tabSisi();for(const k in PN)if(PN[k].buka())PN[k].re();tabSisi();rsz();}
+function tabSisi(){for(const s of ['L','R']){const c=dk[s],ks=['pt','pr'].filter(k=>PN[k].el&&PN[k].el.parentNode===c&&PN[k].buka());
+  if(ks.length>1&&!ks.includes(LT.act[s]))LT.act[s]=ks[0];const tump=ks.length>1;c.classList.toggle('tumpuk',tump);
+  for(const k of ['pt','pr'])if(PN[k].el&&PN[k].el.parentNode===c)PN[k].el.classList.toggle('dk-off',tump&&LT.act[s]!==k);
+  const t=c.querySelector('.dkt'),sig=ks.join(',')+'|'+LT.act[s];if(t.dataset.sig!==sig){t.dataset.sig=sig;t.innerHTML=ks.map(k=>'<button data-k="'+k+'" role="tab" class="'+(LT.act[s]===k?'on':'')+'" title="Seret untuk melepas">'+PN[k].nm+'</button>').join('');}
+  c.querySelector('.dkg').style.display=ks.length?'':'none';}}
+for(const s of ['L','R'])dk[s].querySelector('.dkt').addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(!b)return;LT.act[s]=b.dataset.k;simpan();tabSisi();const k=b.dataset.k;if(PN[k].buka())PN[k].re();rsz();});
+setInterval(tabSisi,500);
+/* lebar kontainer */
+for(const s of ['L','R'])dk[s].querySelector('.dkg').addEventListener('mousedown',e=>{if(e.button!==0)return;const c=dk[s],k=['pt','pr'].find(k=>PN[k].el.parentNode===c&&PN[k].buka()&&!PN[k].el.classList.contains('dk-off'));if(!k)return;
+ const st=PN[k].st();if(st&&st.mini)return;const x0=e.clientX,w0=PN[k].el.getBoundingClientRect().width;document.body.classList.add('dkdrag');
+ const mv=ev=>{const w=Math.max(180,Math.min(620,w0+(s==='L'?1:-1)*(ev.clientX-x0)));PN[k].el.style.width=w+'px';if(st)st.w=w;rsz();},
+  up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);document.body.classList.remove('dkdrag');LT[k].w=st?st.w:LT[k].w;simpan();PN[k].re();rsz();};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();});
+/* ukuran jendela mengambang diingat */
+try{const ro=new ResizeObserver(en=>{for(const x of en){const k=x.target===PN.pt.el?'pt':'pr';if(LT[k].side!=='F'||!x.target.classList.contains('apung'))continue;const r=x.target.getBoundingClientRect();if(r.width<10)continue;LT[k].w=Math.round(r.width);LT[k].h=Math.round(r.height);const st=PN[k].st();if(st)st.w=LT[k].w;}clearTimeout(ro.t);ro.t=setTimeout(simpan,300);});
+ for(const k in PN)if(PN[k].el)ro.observe(PN[k].el);}catch(e){}
+/* ---- seret judul: lepas / pindah / tempel ---- */
+const zona={L:document.createElement('div'),R:document.createElement('div')};for(const s of ['L','R']){zona[s].className='dkz';document.body.appendChild(zona[s]);}
+function aturZona(){const w=wrap.getBoundingClientRect(),c=cv.getBoundingClientRect();const t=c.top-28,h=c.bottom-t;
+ zona.L.style.left=w.left+'px';zona.L.style.top=t+'px';zona.L.style.width='60px';zona.L.style.height=h+'px';zona.R.style.left=(w.right-60)+'px';zona.R.style.top=t+'px';zona.R.style.width='60px';zona.R.style.height=h+'px';}
+function sisiDi(x){const w=wrap.getBoundingClientRect();return x<w.left+70?'L':x>w.right-70?'R':null;}
+function seret(k,e,tab){if(e.button!==0)return;if(!tab&&e.target.closest('button,input,select'))return;const p=PN[k],s=LT[k],x0=e.clientX,y0=e.clientY;let mulai=false,dx=0,dy=0;
+ const mv=ev=>{if(!mulai){if(Math.hypot(ev.clientX-x0,ev.clientY-y0)<8)return;mulai=true;document.body.classList.add('dkpindah');aturZona();
+   if(s.side!=='F'){const r=p.el.getBoundingClientRect();s.last=s.side;s.w=Math.round(r.width)||p.w0;s.h=Math.min(innerHeight-80,Math.max(300,Math.round(r.height*0.7)));s.side='F';s.x=ev.clientX-60;s.y=ev.clientY-12;terapkan();}
+   const r=p.el.getBoundingClientRect();dx=ev.clientX-r.left;dy=ev.clientY-r.top;}
+  s.x=ev.clientX-dx;s.y=ev.clientY-dy;p.el.style.left=Math.max(0,s.x)+'px';p.el.style.top=Math.max(30,s.y)+'px';const z=sisiDi(ev.clientX);zona.L.classList.toggle('hot',z==='L');zona.R.classList.toggle('hot',z==='R');};
+ const up=ev=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(!mulai)return;document.body.classList.remove('dkpindah');zona.L.classList.remove('hot');zona.R.classList.remove('hot');
+  const z=sisiDi(ev.clientX);if(z){s.side=z;s.last=z;LT.act[z]=k;}simpan();terapkan();};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up);}
+for(const k in PN){const p=PN[k];if(!p.hd)continue;p.hd.addEventListener('mousedown',e=>seret(k,e));p.hd.addEventListener('dblclick',e=>{if(e.target.closest('button,input,select'))return;lepasTempel(k);});}
+for(const s of ['L','R'])dk[s].querySelector('.dkt').addEventListener('mousedown',e=>{const b=e.target.closest('button[data-k]');if(b)seret(b.dataset.k,e,true);});
+/* ---- belah 3D | Penampang ---- */
+const BL={on:false,asal:null,css:''};const gr=document.createElement('div');gr.id='blgr';gr.title='Seret untuk membagi 3D | Penampang';wrap.appendChild(gr);
+const lebarB=()=>{if(!BL.on)return 0;return parseFloat(cv.style.marginRight)||0;};
+function tataB(){if(!BL.on)return;const w=wrap.getBoundingClientRect(),tot=cv.getBoundingClientRect().width+lebarB(),w2=Math.round(Math.max(240,Math.min(tot-240,tot*(1-LT.belah.r))));
+ if(Math.abs(lebarB()-w2)>1){cv.style.marginRight=w2+'px';}const c=cv.getBoundingClientRect();
+ scw.style.left=(c.right-w.left)+'px';scw.style.top=(c.top-w.top)+'px';scw.style.width=w2+'px';scw.style.height=c.height+'px';scw.style.right='auto';scw.style.bottom='auto';
+ gr.style.display='block';gr.style.left=(c.right-w.left-3)+'px';gr.style.top=(c.top-w.top)+'px';gr.style.height=c.height+'px';
+ const t=g('dtb');if(t)t.style.width=(c.width+w2)+'px';clearTimeout(BL.t);BL.t=setTimeout(()=>{try{if(SC.open)scUpd();}catch(e){}},60);}
+function belah(on){if(on===BL.on)return;if(on){if(window.__st&&__st.on&&window.stdoTutup)stdoTutup();if(window.__ta)__ta.tutupTabel();scw.classList.remove('penuh');BL.css=scw.style.cssText;BL.asal=[scw.parentNode,scw.nextSibling];BL.on=true;wrap.appendChild(scw);scw.classList.add('belah');
+  if(!SC.open)scOpen(true);cv.style.marginRight='1px';rsz();tataB();rsz();}
+ else{BL.on=false;cv.style.marginRight='';scw.classList.remove('belah');scw.style.cssText=BL.css;const [pa,nx]=BL.asal||[cv,null];try{pa.insertBefore(scw,nx&&nx.parentNode===pa?nx:null);}catch(e){cv.appendChild(scw);}gr.style.display='none';if(SC.open)scOpen(false);rsz();}
+ LT.belah.on=on;simpan();const b=g('dtbl');if(b)b.classList.toggle('on',on);}
+try{new ResizeObserver(()=>{if(BL.on)tataB();}).observe(cv);}catch(e){}addEventListener('resize',()=>{if(BL.on)setTimeout(tataB,0);});
+gr.addEventListener('mousedown',e=>{if(e.button!==0)return;document.body.classList.add('bldrag');const c0=cv.getBoundingClientRect(),tot=c0.width+lebarB(),x0=c0.left;
+ const mv=ev=>{LT.belah.r=Math.max(0.2,Math.min(0.8,(ev.clientX-x0)/tot));tataB();rsz();},up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);document.body.classList.remove('bldrag');simpan();rsz();};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();});
+setInterval(()=>{if(BL.on&&!SC.open)belah(false);if(BL.on&&window.__st&&__st.on)belah(false);},400);
+{const t=g('dtb');if(t){const b=document.createElement('button');b.className='dt';b.id='dtbl';b.title='Belah area tengah: 3D di kiri, Penampang di kanan';b.innerHTML=svg('M2.5 2.5h11v11h-11zM8 2.5v11')+' Belah 3D | Penampang';t.appendChild(b);b.onclick=()=>belah(!BL.on);}}
+/* ---- kembalikan tata letak ---- */
+function kembalikan(){if(BL.on)belah(false);LT=DEF();simpan();for(const k of ['ow.ptree2','ow.prop'])try{const o=JSON.parse(localStorage.getItem(k)||'{}');o.w=k==='ow.prop'?290:262;o.mini=false;o.open=true;localStorage.setItem(k,JSON.stringify(o));}catch(e){}
+ const a=PN.pt.st(),b=PN.pr.st();if(a){a.w=262;a.mini=false;}if(b){b.w=290;b.mini=false;}terapkan();if(window.__pt)__pt.show(true);if(window.__pr)__pr.show(true);if(window.__ta){__ta.TA.bawah=false;__ta.tutupTabel();}
+ if(window.sbToast)sbToast('Tata letak dikembalikan ke bawaan');}
+terapkan();if(LT.belah.on)setTimeout(()=>{LT.belah.on=false;belah(true);},300);
+window.__tata={LT:()=>LT,terapkan,lepasTempel,belah,kembalikan,get belahOn(){return BL.on;}};window.__belah={get on(){return BL.on;},w:lebarB,toggle:()=>belah(!BL.on)};
 }
 
 </script>
