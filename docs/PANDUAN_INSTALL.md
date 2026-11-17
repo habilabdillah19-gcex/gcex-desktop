@@ -5607,3 +5607,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Bila sebelumnya sudah memilih latar sendiri, pilihan itu tetap dipakai.
 - Warna data (kelas kadar, warna blok, domain, litologi) tidak berubah.
 - Drillhole, DB-Ex, Ore Works: tidak berubah.
+
+## 278. Ore Works 0.21.0 — dok Properti (kanan)
+
+- Di kanan jendela kini ada dok bertab **PROPERTI | DATA**.
+- **Properti** menampilkan keterangan objek yang dipilih: klik objek di dok Project (kiri), atau **klik lubang bor di 3D**.
+  Tanpa pilihan, tampil ringkasan isi proyek. Beberapa kolom bisa langsung diubah (mis. jenis / warna / transparansi
+  permukaan, opasitas ortofoto, warna wireframe, nama / warna / densitas solid, strike / dip / posisi bidang struktur).
+- **Data** berisi panel Data yang lama (Bor, Permukaan, Wireframe, Pemetaan, Titik & Bidang struktur). Tombol **Data** di
+  toolbar dan menu klik kanan **Lihat di panel Data** membuka tab ini.
+- Tepi kiri dok bisa diseret untuk mengubah lebar; tombol **–** memperkecil jadi strip; buka / tutup lewat
+  **Tampilan → Panel Properti (kanan)**.
+
