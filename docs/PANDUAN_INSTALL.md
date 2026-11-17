@@ -5512,3 +5512,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Panel **Ore Geometry**, **Geostatistik** dan **Validasi BM** memperlebar kolom kiri sehingga tampilan 3D digambar ulang
   sekali. Agar area 3D tidak berubah ukuran, pakai tombol **Lepas Properti menjadi jendela** di kepala panel Properti.
 - DB-Ex, Ore Works: tidak berubah.
+
+## 268. Ore Works 0.17.2 — simpan / buka .owproj di latar, lapisan Intip 3D
+
+- Menyusun dan membongkar .owproj kini berjalan di **Web Worker** (latar): selama menyimpan / membuka proyek besar,
+  tampilan tetap bisa digeser dan diputar. Uji simulasi (data fiktif 2.000 lubang, 300 ribu baris assay):
+
+  | Layar tertahan | .gcv.json | .owproj |
+  |---|---|---|
+  | Simpan | 1,10 dtk | 0,64 dtk |
+  | Buka | 1,28 dtk | 0,97 dtk |
+
+  Total waktu simpan .owproj lebih panjang (± 4 dtk, menulis tabel bor + kompresi) tetapi berjalan di latar.
+- **Intip 3D → ☰**: centang lapisan yang tampil di Intip 3D saja (mis. *Tanpa lubang bor*, hanya wireframe).
+  Penampang Studio dan tampilan 3D utama tidak berubah; pilihan diingat.

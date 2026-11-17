@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.17.1';</script>
+<script>window.GCEX_VER='0.17.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -6721,29 +6721,19 @@ g('stdoVe').onchange=()=>{const v=g('vx');v.value=g('stdoVe').value;v.dispatchEv
 })();
 
 
-/* ================= Ore Works 0.17.0: file proyek .owproj (SQLite) =================
-   Pemilik 17 Nov 2026 (menyetujui usulan "titik lemah"): proyek tidak lagi satu JSON besar. Uji beban data fiktif
-   2.000 lubang / 300 ribu baris assay: .gcv.json 70 MB, simpan 1,2 dtk, parse 0,8 dtk.
-   Format .owproj = basis data SQLite (sql.js tertanam, offline):
-     info(k,v)                     -> format, versi, nama, dibuat, origin
-     bagian(k,z,v)                 -> tiap bagian proyek (permukaan, dataset, wireframe, ...) JSON + deflate
-     biner(id,y,n,z,v)             -> larik angka besar (koordinat lubang, wireframe, permukaan) biner + deflate
-     <dataset>_<collar|survey|assay|geo...>  -> tabel bor asli, kolom angka REAL / teks TEXT: bisa dibuka DB Browser
-                                      for SQLite, Python (sqlite3 / pandas), Access lewat ODBC, QGIS.
-   Larik objek seragam (mis. interval kadar per lubang) disimpan per kolom. Isi yang dibuka kembali sama dengan JSON lama
-   (NaN menjadi null seperti JSON). Format lama .gcv.json tetap bisa disimpan & dibuka. */
-(function(){
-const g=id=>document.getElementById(id);
-let SQLP=null;
-function sqlSiap(){if(!SQLP){if(typeof initSqlJs!=='function'||!window.__SQ_WASM_B64)return Promise.reject(new Error('pustaka SQLite tidak tertanam'));
- const s=atob(window.__SQ_WASM_B64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);SQLP=initSqlJs({wasmBinary:u.buffer}).catch(e=>{SQLP=null;throw e;});}return SQLP;}
-window.owprSql=sqlSiap;
+/* ================= Ore Works 0.17.2: .owproj di Web Worker (layar tidak tertahan) =================
+   Pemilik 17 Nov 2026: "Lanjutkan web worker" + "Setelah kamu memasang script ulang untuk menghilangkan kelemahan, kamu harus uji
+   simulasi lagi". Menyusun & mengompres .owproj (tabel bor SQL, sandi biner, deflate) dan membongkarnya kini di Web Worker
+   (sql.js ikut dimuat di worker dari blok SQ-OW yang tertanam, tetap offline). Utas utama hanya mengumpulkan isi proyek
+   (prjState) dan menerapkan hasil; selama itu tampilan tetap bisa digeser / diputar. Bila Worker tidak tersedia, kode yang sama
+   jalan di utas utama (cadangan). Menggantikan blok 0.17.0. */
+function owprInti(){
+const MINB=256,MINT=24,MINS=65536;
 async function alir(u8,ts){const s=new ts('deflate-raw'),w=s.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(s.readable).arrayBuffer());}
 const kempis=u=>alir(u,CompressionStream),kembang=u=>alir(u,DecompressionStream);
 const TE=new TextEncoder(),TD=new TextDecoder();
 const TIPE={Float64Array,Float32Array,Int32Array,Uint32Array,Int16Array,Uint16Array,Int8Array,Uint8Array,Uint8ClampedArray};
 /* ---- penyandian ---- */
-const MINB=256,MINT=24,MINS=65536;
 function sandi(BL){
  const angka=a=>{for(let i=0;i<a.length;i++){const v=a[i];if(typeof v!=='number')return false;}return true;};
  const bin=(a,asal)=>{let y;if(asal){y=asal;}else{let int=true;for(let i=0;i<a.length;i++){const v=a[i];if(!Number.isInteger(v)||v<-2147483648||v>2147483647){int=false;break;}}y=int?'Int32Array':'Float64Array';}
@@ -6786,15 +6776,12 @@ function tabelBor(db,nama,tb){const hd=tb.hd0||[],rows=tb.rows||[],nc=Math.max(h
  return {$sql:nama,nc,real:real.map(x=>x?1:0),pj:rows.map(r=>r.length).every(l=>l===nc)?0:rows.map(r=>r.length)};}
 function bacaBor(db,m){const res=db.exec('SELECT * FROM "'+m.$sql+'"'),V=res.length?res[0].values:[];
  return V.map((r,i)=>{const L=m.pj?m.pj[i]:m.nc,o=new Array(L);for(let j=0;j<L;j++){const v=r[j];o[j]=m.real[j]?(v==null?'':String(v)):(v==null?null:v);}return o;});}
-/* ---- simpan ---- */
-function unduh(blob,nama){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nama;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);}
-async function simpan(){const w=g('pjw'),t0=performance.now();w.textContent='Menyimpan project .owproj…';await new Promise(r=>setTimeout(r,20));
- const SQL=await sqlSiap(),TM={},tk=k=>{TM[k]=Math.round(performance.now()-t0);window.__owprTM=TM;};window.__owprRaw=true;let st;try{st=prjState();}finally{window.__owprRaw=false;}const db=new SQL.Database();tk('state');
+
+async function tulis(SQL,st,meta){const t0=performance.now(),TM={},tk=k=>{TM[k]=Math.round(performance.now()-t0);};const db=new SQL.Database();
  try{db.run('PRAGMA page_size=8192');db.run('BEGIN');db.run('CREATE TABLE info(k TEXT PRIMARY KEY, v TEXT)');db.run('CREATE TABLE bagian(k TEXT PRIMARY KEY, z INTEGER, v BLOB)');db.run('CREATE TABLE biner(id INTEGER PRIMARY KEY, y TEXT, n INTEGER, z INTEGER, v BLOB)');
   const ins=(k,v)=>db.run('INSERT INTO info VALUES (?,?)',[k,typeof v==='string'?v:JSON.stringify(v)]);
-  ins('format','owproj');ins('format_versi','1');ins('aplikasi','Ore Works '+(document.title.match(/\d+\.\d+\.\d+/)||[''])[0]);ins('nama',st.nama||'');ins('dibuat',st.dibuat||new Date().toISOString());ins('origin',st.origin||null);
+  ins('format','owproj');ins('format_versi','1');ins('aplikasi',meta.aplikasi||'Ore Works');ins('nama',st.nama||'');ins('dibuat',st.dibuat||new Date().toISOString());ins('origin',st.origin||null);
   ins('catatan','Bagian proyek: tabel bagian (JSON deflate-raw) + biner (larik angka deflate-raw). Tabel bor asli: ds<N>_<jenis>.');
-  /* tabel bor asli keluar dari JSON, menjadi tabel SQL */
   const nmT=[];
   if(Array.isArray(st.dataset))st.dataset=st.dataset.map((d,i)=>{if(!d||!d.raw||!d.raw.t||typeof d.raw.t!=='object')return d;const t2={};
    for(const k in d.raw.t){const x=d.raw.t[k];if(x&&x.tb&&Array.isArray(x.tb.rows)){const nama='ds'+(i+1)+'_'+sqlNm(k).toLowerCase();const m=tabelBor(db,nama,x.tb);nmT.push(nama);t2[k]=Object.assign({},x,{tb:Object.assign({},x.tb,{rows:m})});}else t2[k]=x;}
@@ -6803,30 +6790,59 @@ async function simpan(){const w=g('pjw'),t0=performance.now();w.textContent='Men
   const BL=[],enc=sandi(BL),stB=db.prepare('INSERT INTO bagian VALUES (?,?,?)');let mentah=0;
   const BG=[];for(const k in st){if(st[k]===undefined)continue;BG.push([k,TE.encode(JSON.stringify(enc(st[k])))]);}tk('sandi');const KB=await Promise.all(BG.map(([k,u])=>u.length>=2048?kempis(u):null));
   BG.forEach(([k,u],i)=>{mentah+=u.length;stB.run([k,KB[i]?1:0,KB[i]||u]);});stB.free();tk('bagian');
-  /* kolam: semua larik angka per tipe digabung lalu dipotong 8 MB, dikempis sekali per potongan */
   for(const y in (BL.kolam||{})){const k=BL.kolam[y],T=TIPE[y],all=new T(k.n);let o=0;for(const a of k.L){all.set(a,o);o+=a.length;}const u=new Uint8Array(all.buffer),CH=8<<20;let j=0;for(let s=0;s<u.length;s+=CH)BL.push({y:'kolam:'+y,n:j++,u:u.subarray(s,s+CH)});}
   const stN=db.prepare('INSERT INTO biner VALUES (?,?,?,?,?)'),KZ=await Promise.all(BL.map(b=>b.u.length>=2048?kempis(b.u):null));for(let i=0;i<BL.length;i++){const b=BL[i];mentah+=b.u.length;stN.run([i+1,b.y,b.n,KZ[i]?1:0,KZ[i]||b.u]);}stN.free();tk('biner');
-  db.run('COMMIT');const out=db.export();tk('export');const blob=new Blob([out],{type:'application/vnd.sqlite3'}),t=new Date(),pad=x=>String(x).padStart(2,'0');
-  const nama='Project_'+(window.pjName?pjName():document.title.split('·')[0].trim()).replace(/[^\w\-]+/g,'_')+'_'+t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+'_'+pad(t.getHours())+pad(t.getMinutes())+'.owproj';
-  unduh(blob,nama);window.__owprLast={byte:out.length,mentah,ms:performance.now()-t0,nb:BL.length,nt:nmT.length,TM};
-  w.textContent='Tersimpan: '+nama+' ('+(out.length/1e6).toFixed(1).replace('.',',')+' MB, SQLite) di folder unduhan. Tabel bor: '+(nmT.length?nmT.join(', '):'—')+'.';}
- catch(e){try{db.run('ROLLBACK');}catch(_){}w.textContent='Gagal menyimpan .owproj: '+e.message+' — coba "Simpan .gcv.json".';throw e;}
- finally{db.close();}}
-window.owprSimpan=()=>{simpan().catch(e=>console.error(e));};
-/* ---- buka ---- */
-async function buka(f){const SQL=await sqlSiap(),db=new SQL.Database(new Uint8Array(await f.arrayBuffer()));let tutup=true;
+  db.run('COMMIT');const out=db.export();tk('export');return {out,nt:nmT,TM,nb:BL.length,mentah};}
+ catch(e){try{db.run('ROLLBACK');}catch(_){}throw e;}finally{db.close();}}
+async function baca(SQL,u8){const db=new SQL.Database(u8);
  try{const info={};(db.exec('SELECT k,v FROM info')[0]||{values:[]}).values.forEach(([k,v])=>{info[k]=v;});if(info.format!=='owproj')throw new Error('bukan file proyek Ore Works (.owproj)');
   if(+info.format_versi>1)throw new Error('file dibuat Ore Works yang lebih baru (format '+info.format_versi+'); perbarui aplikasi');
   const B=[];const rb=db.exec('SELECT id,y,n,z,v FROM biner')[0];if(rb){const U=await Promise.all(rb.values.map(r=>r[3]?kembang(r[4]):r[4]));rb.values.forEach((r,i)=>{B[r[0]]={y:r[1],n:r[2],n2:r[2],u:U[i]};});}
   const dec=urai(B),st={};const rg=db.exec('SELECT k,z,v FROM bagian')[0];if(rg)for(const [k,z,v] of rg.values){const u=z?await kembang(v):v;st[k]=dec(JSON.parse(TD.decode(u)));}
-  /* tabel bor asli dibaca saat pertama kali diperlukan (basis data tetap terbuka di memori) */
-  let lazy=0;if(Array.isArray(st.dataset))for(const d of st.dataset){const t=d&&d.raw&&d.raw.t;if(!t||typeof t!=='object')continue;for(const k in t){const x=t[k];if(x&&x.tb&&x.tb.rows&&x.tb.rows.$sql){const m=x.tb.rows,tb=x.tb;lazy++;
-   Object.defineProperty(tb,'rows',{configurable:true,enumerable:true,get(){const r=bacaBor(db,m);Object.defineProperty(tb,'rows',{value:r,writable:true,configurable:true,enumerable:true});return r;},set(v){Object.defineProperty(tb,'rows',{value:v,writable:true,configurable:true,enumerable:true});}});}}}
-  if(lazy){(window.__owprDbs||(window.__owprDbs=[])).push(db);tutup=false;}
-  return st;}finally{if(tutup)db.close();}}
+  return st;}finally{db.close();}}
+return {tulis,baca,bacaBor};}
+(function(){
+const g=id=>document.getElementById(id),INTI=owprInti();
+let SQLP=null;
+function sqlSiap(){if(!SQLP){if(typeof initSqlJs!=='function'||!window.__SQ_WASM_B64)return Promise.reject(new Error('pustaka SQLite tidak tertanam'));
+ const s=atob(window.__SQ_WASM_B64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);SQLP=initSqlJs({wasmBinary:u.buffer}).catch(e=>{SQLP=null;throw e;});}return SQLP;}
+window.owprSql=sqlSiap;
+/* ---- pekerja latar ---- */
+let PK=null,PKgagal=false,PKid=0;const TUNGGU=new Map();
+function pekerja(){if(PK||PKgagal)return PK;try{const sq=[...document.scripts].find(s=>s.textContent.startsWith('/*SQ-OW-BEGIN*/'));if(!sq||typeof Worker==='undefined')throw new Error('tidak ada');
+  const src='self.window=self;\n'+sq.textContent+'\nconst INTI=('+owprInti.toString()+')();let SQLP=null;\n'+
+   'function sql(){if(!SQLP){const s=atob(self.__SQ_WASM_B64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);SQLP=initSqlJs({wasmBinary:u.buffer});}return SQLP;}\n'+
+   'self.onmessage=async e=>{const {id,op,a}=e.data;try{const SQL=await sql();if(op==="tulis"){const r=await INTI.tulis(SQL,a.st,a.meta);self.postMessage({id,ok:1,r},[r.out.buffer]);}else if(op==="baca"){const st=await INTI.baca(SQL,a.u8);self.postMessage({id,ok:1,r:st});}else self.postMessage({id,ok:1,r:1});}catch(err){self.postMessage({id,ok:0,err:String(err&&err.message||err)});}};';
+  const url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));PK=new Worker(url);
+  PK.onmessage=e=>{const m=e.data,w=TUNGGU.get(m.id);if(!w)return;TUNGGU.delete(m.id);m.ok?w[0](m.r):w[1](new Error(m.err));};
+  PK.onerror=e=>{PKgagal=true;for(const [,w] of TUNGGU)w[1](new Error('worker: '+(e.message||'galat')));TUNGGU.clear();try{PK.terminate();}catch(_){}PK=null;};}
+ catch(e){PKgagal=true;PK=null;}return PK;}
+function suruh(op,a,tr){const W=pekerja();if(!W)return Promise.reject(new Error('tanpa worker'));const id=++PKid;return new Promise((ok,no)=>{TUNGGU.set(id,[ok,no]);try{W.postMessage({id,op,a},tr||[]);}catch(e){TUNGGU.delete(id);no(e);}});}
+window.owprPekerja=()=>suruh('ping',{}).then(()=>true,()=>false);
+/* ---- simpan ---- */
+function unduh(blob,nama){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nama;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);}
+let sibuk=false;
+async function simpan(){if(sibuk){if(window.sbToast)sbToast('Penyimpanan sebelumnya masih berjalan.');return;}sibuk=true;const w=g('pjw'),t0=performance.now();w.textContent='Menyimpan project .owproj di latar…';
+ try{await new Promise(r=>setTimeout(r,0));window.__owprRaw=true;let st;try{st=prjState();}finally{window.__owprRaw=false;}const tS=performance.now()-t0;
+  const meta={aplikasi:'Ore Works '+((document.title.match(/\d+\.\d+\.\d+/)||[''])[0])};let r,cara='latar';
+  try{r=await suruh('tulis',{st,meta});}catch(e){if(!/tanpa worker|DataClone|clone/i.test(String(e&&(e.name+e.message))))console.warn('owproj worker:',e);cara='utas utama';r=await INTI.tulis(await sqlSiap(),st,meta);}
+  const out=r.out,blob=new Blob([out],{type:'application/vnd.sqlite3'}),t=new Date(),pad=x=>String(x).padStart(2,'0');
+  const nama='Project_'+(window.pjName?pjName():document.title.split('·')[0].trim()).replace(/[^\w\-]+/g,'_')+'_'+t.getFullYear()+pad(t.getMonth()+1)+pad(t.getDate())+'_'+pad(t.getHours())+pad(t.getMinutes())+'.owproj';
+  unduh(blob,nama);window.__owprLast={byte:out.length,mentah:r.mentah,ms:performance.now()-t0,state:tS,cara,nb:r.nb,nt:r.nt.length,TM:r.TM};
+  w.textContent='Tersimpan: '+nama+' ('+(out.length/1e6).toFixed(1).replace('.',',')+' MB, SQLite) di folder unduhan. Tabel bor: '+(r.nt.length?r.nt.join(', '):'—')+'.';}
+ catch(e){w.textContent='Gagal menyimpan .owproj: '+(e&&e.message||e)+' — coba "Simpan .gcv.json".';throw e;}finally{sibuk=false;}}
+window.owprSimpan=()=>{simpan().catch(e=>console.error(e));};
+/* ---- buka ---- */
+async function buka(f){const t0=performance.now();let st,cara='latar';
+ try{st=await suruh('baca',{u8:new Uint8Array(await f.arrayBuffer())});}catch(e){if(/bukan file|lebih baru/.test(e.message))throw e;cara='utas utama';st=await INTI.baca(await sqlSiap(),new Uint8Array(await f.arrayBuffer()));}
+ /* tabel bor asli dibaca saat pertama kali diperlukan: basis data dibuka di utas utama (salinan berkas di memori) */
+ const M=[];if(Array.isArray(st.dataset))for(const d of st.dataset){const t=d&&d.raw&&d.raw.t;if(!t||typeof t!=='object')continue;for(const k in t){const x=t[k];if(x&&x.tb&&x.tb.rows&&x.tb.rows.$sql)M.push(x.tb);}}
+ if(M.length){const SQL=await sqlSiap(),db=new SQL.Database(new Uint8Array(await f.arrayBuffer()));(window.__owprDbs||(window.__owprDbs=[])).push(db);
+  for(const tb of M){const m=tb.rows;Object.defineProperty(tb,'rows',{configurable:true,enumerable:true,get(){const r=INTI.bacaBor(db,m);Object.defineProperty(tb,'rows',{value:r,writable:true,configurable:true,enumerable:true});return r;},set(v){Object.defineProperty(tb,'rows',{value:v,writable:true,configurable:true,enumerable:true});}});}}
+ window.__owprBukaInfo={ms:performance.now()-t0,cara};return st;}
 window.owprBuka=buka;
-/* tombol format lama */
 {const b=g('pjsj');if(b)b.onclick=()=>{window.__pjJson=true;g('pjs').click();};}
+setTimeout(()=>{try{pekerja();}catch(e){}},3000);
 })();
 
 
@@ -6915,6 +6931,36 @@ window.addEventListener('keydown',e=>{if(!ST.on)return;const tg=e.target;if(tg&&
  if(e.key==='Escape')tutupMenu();},true);
 /* snap: titik tepi siluet ikut daftar snap Studio */
 setInterval(()=>{if(ST.on&&window.__stSnap)window.__stSnap.sil=SIL.on&&SIL.snap;},500);tandai();
+})();
+
+
+/* ================= Ore Works 0.17.2: Intip 3D — pilih lapisan =================
+   Pemilik 17 Nov 2026: "Apa yang tampil di jendela ini bisa user atur gak? Misalnya gak mau nampilin drill hole, atau cuma mau
+   nampilin layer tertentu". Tombol ☰ di kepala Intip 3D: centang lapisan yang tampil HANYA di Intip 3D (penampang Studio &
+   tampilan 3D utama tidak berubah; disimpan di localStorage ow.st3dl). */
+(function(){
+const g=id=>document.getElementById(id),ST=window.__st,pip=g('stdoPip');if(!ST||!pip)return;
+let PL={};try{PL=JSON.parse(localStorage.getItem('ow.st3dl')||'{}');}catch(e){}
+const simpan=()=>{try{localStorage.setItem('ow.st3dl',JSON.stringify(PL));}catch(e){}};
+const NM={pdh:'Lubang eksplorasi',gc:'Lubang GC',hi:'Titik kadar',lab:'Label',surf:'Permukaan (topo / pit)',orto:'Ortofoto',wfi:'Wireframe',wf:'Wireframe bawaan',env:'Envelope',
+ mstr:'String Studio',str2:'Bidang struktur',stp:'Titik struktur',fm:'Fitur pemetaan',fmp:'Titik pick-up',plan:'Plan bor',gis:'Arsip GIS',geov:'Gambar geofisika',sec:'Bidang penampang',
+ fb:'Bidang sesar',jun:'Pertemuan vein',ut:'Zona belum teruji',op:'Potensi terbuka',tgt:'Target',st:'Struktur',f2poly:'Poligon filter',oxb:'Dasar oksida',oxs:'Puncak sulfida',plpk:'Pick plan',fmtmp:'Sementara'};
+const css=document.createElement('style');css.textContent=`#stdoPipL{position:fixed;z-index:962;display:none;flex-direction:column;width:220px;max-height:320px;overflow:auto;background:#fff;border:1px solid #b9c6da;border-radius:0 0 8px 8px;box-shadow:0 8px 24px #0003;font-size:12px;padding:4px 0}
+#stdoPipL label{display:flex;align-items:center;gap:6px;margin:0;padding:4px 10px}#stdoPipL .nt{color:#4a5a78;padding:4px 10px 6px;line-height:1.35}#stdoPipL .ak{display:flex;gap:6px;padding:4px 10px 6px}#stdoPipL .ak button{margin:0;height:24px;padding:0 8px;font-size:11.5px}`;document.head.appendChild(css);
+const bt=document.createElement('button');bt.id='stdoPl';bt.title='Pilih lapisan yang tampil di Intip 3D';bt.innerHTML='&#9776;';pip.insertBefore(bt,g('stdoP0'));
+const P=document.createElement('div');P.id='stdoPipL';document.body.appendChild(P);
+function isi(){const ks=Object.keys(L).filter(k=>L[k]&&L[k].children&&L[k].children.length&&k!=='fmtmp');
+ P.innerHTML='<div class="nt">Lapisan di Intip 3D saja (penampang &amp; 3D utama tidak berubah).</div>'+(ks.length?ks.map(k=>'<label><input type="checkbox" data-k="'+k+'"'+(PL[k]===false?'':' checked')+(L[k].visible?'':' disabled title="Dimatikan di tampilan utama"')+'>'+esc(NM[k]||k)+'</label>').join(''):'<div class="nt">Belum ada data 3D.</div>')+
+  '<div class="ak"><button data-a="semua">Semua</button><button data-a="bor">Tanpa lubang bor</button></div>';
+ P.querySelectorAll('input[data-k]').forEach(c=>c.onchange=()=>{if(c.checked)delete PL[c.dataset.k];else PL[c.dataset.k]=false;simpan();});
+ P.querySelector('[data-a=semua]').onclick=()=>{PL={};simpan();isi();};P.querySelector('[data-a=bor]').onclick=()=>{PL.pdh=false;PL.gc=false;PL.hi=false;simpan();isi();};}
+function tata(){const r=pip.getBoundingClientRect();P.style.left=(r.right+226<innerWidth?r.right+6:Math.max(4,r.right-220))+'px';P.style.top=Math.max(4,Math.min(r.top,innerHeight-P.offsetHeight-8))+'px';P.style.borderRadius='8px';}
+bt.onclick=e=>{e.stopPropagation();const on=P.style.display!=='flex';P.style.display=on?'flex':'none';if(on){isi();tata();}};
+window.addEventListener('mousedown',e=>{if(P.style.display==='flex'&&!P.contains(e.target)&&e.target!==bt)P.style.display='none';},true);
+window.addEventListener('resize',()=>{if(P.style.display==='flex')tata();});
+/* lapisan disembunyikan hanya saat kanvas 3D dipinjam Studio */
+const _r=R.render.bind(R);R.render=function(s,c){if(!ST.on)return _r(s,c);const ch=[];for(const k in PL){if(PL[k]===false&&L[k]&&L[k].visible){L[k].visible=false;ch.push(k);}}try{return _r(s,c);}finally{for(const k of ch)L[k].visible=true;}};
+setInterval(()=>{if(!ST.on&&P.style.display==='flex')P.style.display='none';},800);
 })();
 
 </script>
