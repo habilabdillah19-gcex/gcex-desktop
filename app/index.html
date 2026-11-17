@@ -1855,7 +1855,10 @@ HR.rgb = function (xl, yl, res) {
 /* resolusi mesh ortho dari luas tampilan + anggaran titik */
 /* anggaran titik ortho menurut profil Kinerja: Hemat 300 rb, Seimbang 800 rb, Penuh 1,5 jt (permintaan pemilik 10 Nov 2026:
    ortho harus tajam). Titik dibangun sekali per tampilan (cache), GPU modern menangani 1,5 jt vertex dengan mudah. */
-HR.anggaran = function () { var p = document.getElementById('perfPreset'); p = p ? p.value : 'bal'; return p === 'full' ? 1500000 : p === 'eco' ? 300000 : 800000; };
+/* BM 0.24.102 / DH 0.24.105 (pemilik 17 Nov 2026: "Langsung saja naikan batas jumlah titik foto"): Hemat 500 rb, Seimbang 1,5 jt,
+   Penuh 3 jt. Ortho 1054 x 864 px (±0,9 jt piksel) kini tampil di resolusi piksel asli pada profil Seimbang (bawaan).
+   Mesh tetap tidak lebih halus dari piksel asli (HR.resFor); Mode ringan tetap dibatasi 300 rb. */
+HR.anggaran = function () { var p = document.getElementById('perfPreset'); p = p ? p.value : 'bal'; return p === 'full' ? 3000000 : p === 'eco' ? 500000 : 1500000; };
 HR.resFor = function (x0, x1, y0, y1, budget) {
   if (budget === HR.budget) budget = HR.anggaran();
   var w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), n = Math.max(1000, budget || HR.budget);
@@ -14251,7 +14254,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.101';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.102';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

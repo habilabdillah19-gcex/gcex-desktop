@@ -35,6 +35,12 @@ with sync_playwright() as pw:
     cek(R4[0] == ["rgb(128,128,128)"] and R4[1] == 0.85, "O4 Bayangan plotly: warna asli %s, ambient %s" % (R4[0][:3], R4[1]))
     pg.evaluate("$('ovShade').value='kuat';$('orRes').value='0';ORT.cache={};$('btnHome')&&0;updatePlot()"); pg.wait_for_timeout(5000)
     pg.screenshot(path=str(Path(tempfile.gettempdir()) / "uji_ortho_drape.png"))
+    # O5 (BM 0.24.102 / DH 0.24.105): anggaran titik ortho Seimbang 1,5 jt -> ortho 1 m (±1 jt piksel) tampil di resolusi piksel asli
+    pg.evaluate("""()=>{var b=OV.topoF.b,dx=1,w=Math.floor((b.x1-b.x0)/dx),h=Math.floor((b.y1-b.y0)/dx),px=new Uint8Array(w*h*3);for(var i=0;i<px.length;i++)px[i]=(i*7)%251;
+      window.orthoImg={src:'uji_ortho_1m.tif',w:w,h:h,dx:dx,dy:dx,e0:b.x0+offX+dx/2,n0:b.y1+offY-dx/2,px:px};orthoInit();$('ovOrtho').checked=true;$('perfPreset').value='bal';$('orRes').value='0';ORT.cache={};}""")
+    pg.evaluate("$('plotDiv').layout.scene.camera={eye:{x:0,y:0,z:1.6},up:{x:0,y:1,z:0}};HR.setExt&&HR.setExt(OV.topoF.b.x0,OV.topoF.b.x1,OV.topoF.b.y0,OV.topoF.b.y1);")
+    t5 = pg.evaluate("(function(){var t=performance.now();var o=orthoTrace(true,false);return o?{ms:Math.round(performance.now()-t),n:o.n,res:o.res,px:ORT.m.w*ORT.m.h,bud:HR.anggaran()}:null;})()")
+    cek(t5 and t5["bud"] == 1500000 and t5["res"] <= 1.3, "O5 Seimbang: anggaran %s, mesh %s m, %s titik dari %s piksel, %s ms" % (t5 and t5["bud"], t5 and round(t5["res"], 2), t5 and t5["n"], t5 and t5["px"], t5 and t5["ms"]))
     cek(not E, "tanpa galat halaman %s" % E[:2])
     b.close()
 srv.terminate()

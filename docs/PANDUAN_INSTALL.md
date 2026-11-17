@@ -5405,3 +5405,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Relief diberi bayangan matahari dari barat laut. Kuat / lembut mengikuti pilihan **Bayangan (shading) topo & pit** di
   panel Overlay; pilih *Lampu 3D Plotly (lama)* untuk warna foto tanpa bayangan (cara lama).
 - DB-Ex, Ore Works: tidak berubah.
+
+## 262. Block Model 0.24.102 / Drillhole 0.24.105 — orthofoto lebih detail
+
+- Batas titik orthofoto di 3D dinaikkan: **Hemat 500 rb, Seimbang (bawaan) 1,5 jt, Penuh 3 jt** (profil di *Tampilan &
+  performa*). Orthofoto sekitar 1 juta piksel kini tampil di resolusi asli tanpa mengatur Resolusi.
+- Bila komputer terasa berat, pilih profil **Hemat** atau nyalakan **Mode ringan**.
+- DB-Ex, Ore Works: tidak berubah.
