@@ -5243,3 +5243,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Volume, tonase dan status tertutup ada di **Wireframe → Pemodelan string**, beserta ekspor OBJ / DXF / Surpac STR+DTM.
 - Baris **Log geologi** di penampang 2D menampilkan dua pita di samping lubang (bawaan Litologi kiri, Alterasi kanan)
   lengkap dengan kode; arahkan kursor ke lubang untuk melihat interval, kode geologi dan kadarnya.
+
+## 245. Ore Works 0.12.0 — filter dinamis, poligon area, desain pit, lapisan 2D
+
+- **Data bor → Filter**: *Filter kadar* untuk unsur apa pun (Au, Ag, …); *Filter geologi*: pilih kolom (Litologi,
+  Alterasi, …) lalu centang kode yang ingin ditampilkan; *Hanya di dalam desain pit*; *Area poligon*. Semua filter
+  berlaku bersamaan. Pilih apakah bagian di luar filter disembunyikan atau abu-abu.
+- **Poligon area**: klik *Gambar poligon*, klik titik-titik di 3D (lebih mudah di tampilan Plan), klik ganda atau Enter
+  untuk selesai. *Ekspor* menyimpan DXF + CSV; *Impor* membuka lagi DXF / CSV / Surpac STR.
+- **Ekspor data bor terfilter** menyimpan Collar, Survey, Assay dan Geologi (CSV) hanya untuk lubang dan interval yang lolos
+  filter, termasuk "Hanya bagian di bawah topografi".
+- Penampang 2D: tombol **Lapisan** di judul jendela untuk memilih lapisan yang tampil di 2D (envelope, dasar oksida,
+  puncak sulfida, zona belum teruji, dll.) tanpa mengubah tampilan 3D.
