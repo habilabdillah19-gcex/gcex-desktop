@@ -5359,3 +5359,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   memakai Strike di Zona belum teruji GC.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 257. Ore Works 0.13.9 — kadar di penampang 2D
+
+- Jendela penampang punya centang **Kadar** (di samping Hole ID, bawaan nyala): nilai unsur aktif (toolbar Unsur) tertulis
+  di samping tiap interval dalam slab, juga ketika lubang diwarnai litologi / alterasi.
+- Ukuran, gaya, ambang ≥ dan desimal mengikuti Data bor → Tampilan lubang → Label kadar interval.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
