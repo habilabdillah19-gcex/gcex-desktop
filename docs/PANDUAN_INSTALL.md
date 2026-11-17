@@ -5389,3 +5389,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Tersimpan di project (.gcv.json). Objek teks MapInfo belum ditampilkan.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 260. Ore Works 0.14.1 — teks & label Arsip GIS, Layout peta
+
+- Pemetaan → Arsip GIS (MapInfo), per tabel:
+  - **Label**: pilih kolom (mis. Str_Type, Sample_ID) — nilainya ditulis di samping objek di 3D dan di Layout peta.
+  - **Teks MapInfo**: objek teks dari tabel MapInfo ditampilkan dengan sudut, tinggi (meter) dan warna aslinya.
+- **Layout peta**: centang lapisan **Arsip GIS (MapInfo)**. Titik, garis, poligon, teks dan label ikut digambar; legenda
+  per tabel mengikuti *Warna menurut*. Atur kategori yang tampil lewat kolom warna agar legenda tidak terlalu panjang.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
