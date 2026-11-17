@@ -5326,3 +5326,16 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Menu **Topografi** berganti nama menjadi **Permukaan** (isinya topografi, desain pit, ortofoto).
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 253. Ore Works 0.13.5 — geser struktur, panel Data lepas/tempel, label kadar 3D
+
+- **Menggeser bidang struktur**: Data → Bidang struktur → ✎ pada struktur. Di 3D muncul tiga pegangan bulat di jejak atas
+  bidang. Seret **tengah** = pindahkan; seret **ujung** = putar strike dan ubah panjang (ujung lain tetap). Ctrl+Z = batal.
+  Bidang dari mesh impor tidak bisa digeser (geometri mengikuti file).
+- **Panel Data**: tombol di judul — tempel kiri, tempel kanan, lepas (jendela mengambang; seret judul, ubah ukuran di pojok
+  kanan bawah, – atau klik ganda judul = perkecil). Saat menempel, lebar diseret di tepi panel.
+- **Data bor → Tampilan lubang → Tampil sebagai**: kadar unsur / kolom assay / Lith / Alt / kolom geologi lain
+  (sama dengan Warna lubang).
+- **Label kadar interval di 3D**: centang di Tampilan lubang. Nilai unsur aktif (toolbar Unsur) ditulis di samping interval;
+  isi ≥ untuk hanya menampilkan kadar di atas ambang. Label bertumpuk disembunyikan — zoom in untuk melihat lebih banyak.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
