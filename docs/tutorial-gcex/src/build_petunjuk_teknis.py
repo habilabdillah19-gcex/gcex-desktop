@@ -631,6 +631,11 @@ B.append('<p><code>web-src/demohalus.js</code> (<code>DMH</code>, sesudah <code>
          '(<code>DMH.tempuh</code> 650 ms) lalu aksi dijalankan (antrean dibatalkan saat Stop); ketik <code>DMH.ketik</code> 55 ms/huruf; titik digit baru '
          'dianimasikan lewat <code>DG.hov</code> (<code>DMH.garis</code> 520 ms); kamera diinterpolasi dalam koordinat bola (<code>DMH.kamera</code> 900 ms) lalu '
          '<code>__camNext</code> diisi target. Uji: <code>uji_demo_halus.py</code>.</p>')
+B.append('<h3>8.29 Palet Keluarga GC-Ex di Block Model (BM 0.24.108)</h3>')
+B.append('<p><code>web-src/keluarga_bm.css</code> dipasang <code>web-src/build.py</code> sebagai &lt;style id=keluargaBm&gt; terakhir (sesudah <code>brand_build</code>), '
+         'hanya di Block Model. Variabel di <code>html:root</code>: <code>--pr</code> #9C5522, <code>--prh</code> #A85D27, <code>--pr2</code>/<code>--ac</code> #B8692E, '
+         '<code>--prs</code> #F3E3D3, <code>--top</code> #1C2733, panel <code>--sf</code> #F7F5F0, <code>--sk-*</code> (skin_bm.js) dan <code>--ptsel</code> (ptree.js). '
+         'Skrip kecil di &lt;head&gt; mengisi <code>gcex_bm_latar</code>=lembut bila belum ada; <code>#stage.bglat-lembut</code> = gradasi #D9D6CC&rarr;#F8F6F1.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

@@ -291,6 +291,12 @@ s = _pal.layout(s)
 print('Palet kuning baru:', _np, 'tempat')
 import brand_build as _brand
 s = _brand.apply(s, 'bm', OUT)
+# ---------- BM 0.24.108: palet "Keluarga GC-Ex" (aksen tembaga), lapisan PALING AKHIR, hanya Block Model ----------
+_k = s.rindex('</body>')
+s = s[:_k] + '<style id="keluargaBm">\n' + open(W + 'keluarga_bm.css', encoding='utf-8').read() + '\n</style>\n' + s[_k:]
+# latar 3D bawaan Block Model = gradasi hangat (pengguna yang sudah memilih latar tetap memakai pilihannya)
+s = s.replace('<head>', "<head><script>try{if(!localStorage.getItem('gcex_bm_latar'))localStorage.setItem('gcex_bm_latar','lembut');}catch(e){}</script>", 1)
+print('Palet Keluarga GC-Ex (tembaga): OK')
 print('Identitas GC-Ex 0.19: OK')
 open(OUT, 'w', encoding='utf-8').write(s)
 print('OK', len(s))

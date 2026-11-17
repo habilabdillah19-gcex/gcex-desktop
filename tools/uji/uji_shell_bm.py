@@ -137,15 +137,16 @@ def main() -> int:
     cek("Arial Black" in s1["logo"], "S1 huruf logo GC-Ex tetap Arial Black (%s)" % s1["logo"])
     s2 = r["s2"]; cek(abs(s2["d1"] - (1.5 * 1.5 * 2 + 1) ** 0.5) < 0.05 and s2["dir"] > 0.999 and abs(s2["d0"] - s2["d1"]) > 0.5, "S2 Semua data: jarak kamera bawaan, arah tetap %s" % s2)
     s3 = r["s3"]
-    cek(s3["def"] == "polos" and "0, 0, 0, 0" not in s3["bg0"].replace("rgba(0,0,0,0)", "rgba(0, 0, 0, 0)"), "S3 bawaan Polos (latar tidak transparan: %s)" % s3["bg0"])
+    # BM 0.24.108 (palet Keluarga GC-Ex): latar 3D bawaan = gradasi hangat ('lembut', #D9D6CC -> #F8F6F1)
+    cek(s3["def"] == "lembut", "S3 bawaan gradasi hangat (%s, latar %s)" % (s3["def"], s3["bg0"]))
     cek("0, 0, 0, 0" in s3["bgN"] and s3["cls"] and s3["tick"] == "#c9d2e3", "S3 Gradasi navy: latar transparan, kelas stage, label terang")
     cek("0, 0, 0, 0" not in s3["bgP"] and not s3["cls2"], "S3 kembali Polos")
     s4 = r["s4"]
     e_exp = "E " + format(10 + s4["offX"], ",.1f").replace(",", "X").replace(".", ",").replace("X", ".")
     cek(s4["xy"].startswith(e_exp) and "RL 250,0" in s4["xy"], "S4 koordinat kursor + offset proyek: %s (harap %s…)" % (s4["xy"], e_exp))
     cek(s4["ve"].startswith("VE ") and s4["old"] and not s4["pandang"], "S4 VE, info lama tetap, arah pandang tidak diulang")
-    cek(s4["bg"] == "rgb(27, 35, 51)", "S4 status bar navy (%s)" % s4["bg"])
-    s5 = r["s5"]; NAVY = ("rgb(35, 58, 126)", "rgb(44, 59, 87)")  # #233a7e; palet build (palette_patch.py) memetakannya ke #2c3b57
+    cek(s4["bg"] in ("rgb(27, 35, 51)", "rgb(28, 39, 51)"), "S4 status bar navy (%s)" % s4["bg"])  # BM 0.24.108: navy dof #1C2733
+    s5 = r["s5"]; NAVY = ("rgb(35, 58, 126)", "rgb(44, 59, 87)", "rgb(28, 39, 51)")  # #233a7e; palet build (palette_patch.py) memetakannya ke #2c3b57
     cek(s5["leg"] in NAVY and s5["pal"], "S5 kepala legenda navy + garis emas (%s)" % s5["leg"])
     if s5.get("pop") is not None: cek(s5["pop"] in NAVY, "S5 kepala jendela pop-up navy (%s)" % s5["pop"])
     s6 = r["s6"]

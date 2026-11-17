@@ -1346,6 +1346,10 @@ B.append('<p>Tombol <b>Demo</b> kini berjalan seperti video tangkapan layar: kur
          'poligon dig block dan string urat digambar perlahan, kamera berpindah mulus, dan bilah bawah menampilkan bab, judul langkah dan satu kalimat '
          'penjelasan. Kotak skala berlatar transparan. Bila area 3D terasa tersendat saat membuka Ore Geometry, Geostatistik atau Validasi BM, lepas panel '
          'Properti menjadi jendela supaya ukuran area 3D tetap.</p>')
+B.append('<h3>16z. Warna Keluarga GC-Ex: aksen tembaga (Block Model 0.24.108)</h3>')
+B.append('<p>Block Model kini berwarna aksen <b>tembaga</b> di atas bingkai navy dof dan panel abu hangat yang sama dengan aplikasi GC-Ex lain '
+         '(Drillhole emas tua, Ore Works malakit). Latar 3D bawaan menjadi gradasi hangat; pilihan Polos dan Gradasi navy tetap ada di <b>Latar 3D</b>. '
+         'Warna data (kelas kadar, blok, domain) tidak berubah.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

@@ -5598,3 +5598,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Kotak **Cari objek…** menyaring pohon. Tombol **–** memperkecil dok jadi strip tepi (klik strip untuk membuka), tepi kanan dok
   bisa diseret untuk mengubah lebar. Buka / tutup dok: **Tampilan → Panel Project (kiri)** atau tombol **Project** di toolbar.
 
+## 277. Block Model 0.24.108 — warna Keluarga GC-Ex (aksen tembaga)
+
+- Semua aplikasi GC-Ex kini memakai bingkai dan panel yang sama (bar atas & status bar navy dof, panel abu hangat);
+  tiap aplikasi dibedakan oleh warna aksennya: **Block Model = tembaga**, Drillhole = emas tua, Ore Works = malakit.
+- Di Block Model: tombol utama, tab aktif, centang, sakelar, baris terpilih dan garis bawah bar atas berwarna tembaga.
+- Latar 3D bawaan menjadi gradasi hangat (abu krem). Pilihan lain tetap di **Latar 3D**: Polos atau Gradasi navy.
+  Bila sebelumnya sudah memilih latar sendiri, pilihan itu tetap dipakai.
+- Warna data (kelas kadar, warna blok, domain, litologi) tidak berubah.
+- Drillhole, DB-Ex, Ore Works: tidak berubah.

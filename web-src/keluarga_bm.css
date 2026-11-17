@@ -1,0 +1,59 @@
+/* ================= GC-Ex Block Model 0.24.108: palet "Keluarga GC-Ex" (disetujui pemilik 17 Nov 2026) =================
+   Semua aplikasi GC-Ex memakai bingkai & panel yang sama; tiap aplikasi dibedakan oleh WARNA AKSEN saja:
+   Drillhole = emas tua #B5893E, Ore Works = malakit #17806B, Block Model = TEMBAGA #B8692E.
+   Lapisan PALING AKHIR, hanya di build Block Model (web-src/build.py). Warna DATA (skala kadar, blok, domain, litologi)
+   tidak diubah. Acuan: claude/KEPUTUSAN_ORE_WORKS_TAMPILAN_DESKTOP.md, mockup artboard D. */
+html:root,html:root.app-bm{
+  /* panel & toolbar: abu hangat */
+  --bg:#edebe6;--sf:#f7f5f0;--sf2:#edebe6;--bd:#d3cdc1;--tx:#1c2733;--mu:#5c6672;
+  /* aksen tembaga: --pr tembaga gelap untuk tombol / teks (kontras putih 5,6:1), --prh hover (4,9:1), --pr2 tembaga (garis, centang),
+     --prs krem-tembaga (pilihan) */
+  --pr:#9c5522;--pr2:#b8692e;--prh:#a85d27;--prs:#f3e3d3;--ac:#b8692e;--acs:#f3e3d3;--kel2:#b5893e;
+  /* bingkai: navy dof */
+  --top:#1c2733;--toptx:#e8ecf2;--ink:#1c2733;--brandx:#e2a877;
+  --bs-top:#1c2733;--bs-btn:#2c3b57;--bs-btnhv:#36476a;--bs-btnon:#151d27;--bs-btnln:#41516f;--bs-btnbt:#121922;
+  --bs-face:#f7f5f0;--bs-facehv:#fcfbf8;--bs-ln:#d3cdc1;--bs-lnbt:#aaa293;--bs-hard:#cbc4b6;--bs-dis:#e7e4dd;--bs-distx:#9a958b;--bs-pop:#aaa293;--bs-thumb:#bdb6a8;
+  --mj:#9c5522;--mj2:#7f4419;--mjtx:#ffffff;--mjln:rgba(232,236,242,.22);--mjhv:rgba(232,236,242,.10);
+  /* kulit panel (skin_bm.js) & Project Tree (ptree.js): dari biru dingin ke abu hangat + krem-tembaga */
+  --sk-bg:#edebe6;--sk-card:#f7f5f0;--sk-ln:#ddd7cc;--sk-ln2:#d3cdc1;--sk-hv:#f2ece3;--sk-sel:#f3e3d3;--sk-seltx:#7f4419;--sk-tx:#1c2733;--sk-mu:#5c6672;
+  --sk-acc:#b8692e;--sk-bev:linear-gradient(#fbfaf7,#f3f0ea);--sk-bevh:linear-gradient(#fdfcf9,#f6efe6);--sk-pri:linear-gradient(#a85d27,#9c5522);--sk-prih:linear-gradient(#b8692e,#a85d27);
+  --ptsel:#f3e3d3;--ptselln:#d9a77c;--pthov:#f4eee6}
+html:root body.dark{
+  --sk-sel:#3b2a1d;--sk-seltx:#e2a877;--sk-acc:#d98a4e;--ptsel:#3b2a1d;--ptselln:#9c5522;
+  --pr:#d98a4e;--pr2:#e2a877;--prs:#3b2a1d;--ac:#d98a4e;--acs:#3b2a1d;--brandx:#e2a877;--mj:#b8692e;--mj2:#9c5522}
+body{background:var(--bg)}
+/* ---------- bingkai: bar menu / judul, status bar ---------- */
+#top{background:var(--top)!important;color:var(--toptx)!important;border-bottom:2px solid var(--ac)!important}
+#top .tb.on,#top .seg button.on,#lyrBtn.on{border-color:var(--ac)!important}
+#top .tb.pri{background:var(--pr)!important;border-color:var(--pr)!important;border-bottom-color:#7f4419!important;box-shadow:0 1px 0 #7f4419!important;color:#fff!important}
+#top .tb.pri:hover{background:var(--prh)!important}
+#status{background:var(--top)!important;color:var(--toptx)!important;border-top:2px solid var(--kel2)!important}
+#status *{border-color:rgba(232,236,242,.18)}
+.gcxw .gcxm{color:var(--ac)!important}
+/* ---------- tombol utama, tab aktif, centang, slider ---------- */
+.btn-pri,#side .btn-pri,.impFoot .btn-pri,.ib:not(.ghost),.sb,.mdbtn,#bxDlg .mdbtn,#pBM .mdbtn{background-color:var(--pr)!important;border-color:var(--pr)!important;color:#fff!important;border-bottom-color:#7f4419!important}
+.btn-pri:hover,.ib:not(.ghost):hover,.sb:hover,.mdbtn:hover{background-color:var(--prh)!important;border-color:var(--prh)!important}
+.uitabs button.on,.rptabs button.on,#plTools button.on,#dmMenu .sprow button.on,#s3Box .s3seg button.on{background:var(--pr)!important;border-color:var(--pr)!important;color:#fff!important}
+.uisec.dock{border-left-color:var(--ac)!important}
+input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:var(--ac)}
+.sw input:checked{background:var(--ac)!important}
+a{color:var(--pr)}
+::selection{background:var(--prs)}
+/* ---------- Project Tree: baris terpilih & sorotan ---------- */
+#ptree .ptr.sel{background:var(--ptsel)!important;border-color:var(--ptselln)!important;box-shadow:inset 3px 0 0 var(--ac)!important}
+
+/* ---------- kepala panel, legenda, judul bagian ---------- */
+#tpLeg .tplg-t{background:var(--top)!important;color:var(--toptx)!important;border-bottom:2px solid var(--ac)!important}
+/* ---------- halaman muka (impor) ---------- */
+#imp .card .no{background:var(--ink)!important}
+#imp .sb,#imp .ib:not(.ghost){background:var(--pr)!important;border-color:var(--pr)!important;color:#fff!important}
+#imp .sb:hover,#imp .ib:not(.ghost):hover{background:var(--prh)!important;border-color:var(--prh)!important}
+#imp .sb.ghostb,#imp label.ghostb{background:transparent!important;color:var(--pr)!important;border:1px solid var(--pr)!important}
+.gxSite{border-left-color:var(--ac)!important}
+/* ---------- latar 3D: gradasi hangat (bawaan) / navy dof ---------- */
+#stage{background:linear-gradient(#d9d6cc,#f8f6f1)}
+#stage.bglat-lembut{background:linear-gradient(#d9d6cc,#f8f6f1)!important}
+#stage.bglat-navy{background:linear-gradient(#1c2733,#3a4658)!important}
+/* ---------- demo & sorotan memakai tembaga ---------- */
+#dmBar{border-color:rgba(184,105,46,.6)!important;background:rgba(28,39,51,.95)!important}
+#dmHi{border-color:var(--ac)!important;box-shadow:0 0 0 5px rgba(184,105,46,.25),0 0 18px rgba(184,105,46,.55)!important}
