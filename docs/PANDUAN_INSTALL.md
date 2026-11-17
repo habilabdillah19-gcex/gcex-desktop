@@ -5586,3 +5586,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Aplikasi desktop: menu bawaan (File / Tampilan / Bantuan Electron) disembunyikan agar tidak ada dua bar menu;
   tekan **Alt** untuk memunculkannya (mis. lisensi pihak ketiga, ukuran tampilan).
 - Block Model 0.24.107, Drillhole 0.24.110, DB-Ex 0.46.10: hanya naik versi karena berkas jendela desktop bersama berubah.
+
+## 276. Ore Works 0.20.0 — dok Project (pohon objek) di kiri
+
+- Di kiri jendela Ore Works kini ada **dok Project**: daftar semua isi project dalam bentuk pohon — Data bor, Permukaan,
+  Ortofoto, Wireframe, Solid Studio (induk → cabang → string penampang), Struktur, Pemetaan, Plan bor, Poligon area,
+  **Arsip GIS** (tabel MapInfo dan gambar georeferensi peta / penampang geofisika), Analisis.
+- **Centang** = tampilkan / sembunyikan (centang kelompok mengatur seluruh isinya). **Klik** = pilih, **klik ganda** = arahkan
+  kamera ke objek, **klik kanan** = menu objek (Arahkan kamera, Tampilkan saja ini, Buka di Studio, Lihat di panel Data, Hapus …).
+- Keyboard (klik pohon dulu): ↑ ↓ pindah baris, ← → tutup / buka kelompok, Spasi tampil / sembunyi, Enter arahkan kamera.
+- Kotak **Cari objek…** menyaring pohon. Tombol **–** memperkecil dok jadi strip tepi (klik strip untuk membuka), tepi kanan dok
+  bisa diseret untuk mengubah lebar. Buka / tutup dok: **Tampilan → Panel Project (kiri)** atau tombol **Project** di toolbar.
+
