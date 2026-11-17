@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.17.0';</script>
+<script>window.GCEX_VER='0.17.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5395,6 +5395,7 @@ function xf(){const cv=cvs(),R=cv.getBoundingClientRect(),w=Math.max(50,R.width)
 {const _sc=scCollect;scCollect=function(q){const r=_sc.apply(this,arguments);SC.lastG=r;return r;};}
 {const _sd=scDraw;scDraw=function(){_sd.apply(this,arguments);try{if(window.lgDraw2)lgDraw2();}catch(e){}try{const cv=cvs(),x=cv.getContext('2d');MS.base=x.getImageData(0,0,cv.width,cv.height);overlay();}catch(e){}};}
 function snapPts(q){const out=[],G=SC.lastG,F=window.__stSnap;if(G&&(!F||F.bor)){for(const s of G.segs){out.push(s[0],s[1]);}for(const d of G.dots)out.push(d[0]);}
+ if(F&&F.sil&&window.__stSilPts)for(const p of __stSilPts)out.push(p);
  for(const M of MS.L){if((F&&!F.titik)||!sameFrame(M,q)||!M.S.length)continue;const sh=aSh(M,q),si=strHere(M,q),L2=(si>=0?[M.S[si]]:[]).concat(ghosts(M,q));for(const s of L2)for(const p of s.pts)out.push([p[0]-sh,p[1]]);}
  if(MS.drw)for(const p of MS.drw)out.push(p);return out;}
 function snapAt(px,py,alt,q){const T2=xf();if(!T2)return null;const F=window.__stSnap;let best=null,bd=12*12;if(!alt&&g('mssnap').checked)for(const p of snapPts(q)){const dx=T2.X(p)-px,dy=T2.Y(p)-py,d=dx*dx+dy*dy;if(d<bd){bd=d;best=p;}}
@@ -6826,6 +6827,94 @@ async function buka(f){const SQL=await sqlSiap(),db=new SQL.Database(new Uint8Ar
 window.owprBuka=buka;
 /* tombol format lama */
 {const b=g('pjsj');if(b)b.onclick=()=>{window.__pjJson=true;g('pjs').click();};}
+})();
+
+
+/* ================= Ore Works 0.17.1: Studio — siluet wireframe impor =================
+   Pemilik 17 Nov 2026: "di menu studio harus ada opsi (centang) untuk menampilkan siluet wireframe dari luar tersebut. Agar dapat
+   memandu proses pembuatan string. Tampilan wireframe dibuat semi transparan, tidak bisa diedit (seperti bayangan) dan yang digambar
+   bukan garis tepi, tapi tubuh wireframe yang di sayat" + "Pastikan ... tidak membuat ramai UI nya Panel Studio (bisa jadikan
+   tombol di tepi misalnya)". Tombol "Siluet" di tepi kanan kanvas (W) membuka panel kecil: wireframe mana, opasitas, snap ke
+   tepi siluet. Irisan tubuh wireframe di bidang penampang diisi semi-transparan + arsir, di bawah string; tidak bisa dipilih.
+   Klik kanan di dalam siluet -> "Jadikan string" (solid aktif / solid baru). */
+(function(){
+const g=id=>document.getElementById(id),X=()=>window.__ms2,ST=window.__st;
+if(!ST||!g('stdoCv'))return;
+const SIL=window.__sil={on:false,op:0.22,off:{},snap:true};try{Object.assign(SIL,JSON.parse(localStorage.getItem('ow.stsil')||'{}'));}catch(e){}
+const simpan=()=>{try{localStorage.setItem('ow.stsil',JSON.stringify(SIL));}catch(e){}};
+const css=document.createElement('style');css.textContent=`
+#stdoSilB{position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:3;writing-mode:vertical-rl;padding:10px 5px;border:1px solid #b9c6da;border-right:0;border-radius:8px 0 0 8px;background:#f7f9fc;color:#1b2a4e;font-size:11.5px;font-weight:600;margin:0;display:flex;align-items:center;gap:6px;box-shadow:-2px 0 6px #0001}
+#stdoSilB.on{background:#1f6feb;color:#fff;border-color:#1f6feb}#stdoSilB svg{transform:rotate(90deg)}
+#stdoSilP{position:absolute;right:30px;top:50%;transform:translateY(-50%);z-index:4;width:250px;display:none;flex-direction:column;background:#fff;border:1px solid #b9c6da;border-radius:8px;box-shadow:0 8px 24px #0003;font-size:12px}
+#stdoSilP.buka{display:flex}#stdoSilP .hd{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#1b2a4e;color:#fff;border-radius:8px 8px 0 0;font-weight:600}
+#stdoSilP .hd button{margin:0;padding:0 6px;height:22px;border:0;background:transparent;color:#fff}
+#stdoSilP label{display:flex;align-items:center;gap:6px;margin:0;padding:3px 10px}#stdoSilP .ls{max-height:180px;overflow:auto;border-top:1px solid #e1e7f0;border-bottom:1px solid #e1e7f0;padding:3px 0}
+#stdoSilP .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}#stdoSilP .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#stdoSilP .nt{color:#4a5a78;padding:5px 10px 8px;line-height:1.4}#stdoSilP input[type=range]{flex:1}
+#stdoSilM{position:fixed;z-index:990;display:none;flex-direction:column;background:#fff;border:1px solid #b9c6da;border-radius:6px;box-shadow:0 8px 24px #0003;font-size:12px;padding:4px 0}
+#stdoSilM button{margin:0;border:0;border-radius:0;background:transparent;text-align:left;padding:6px 14px;color:#1b2a4e}#stdoSilM button:hover{background:#eef3ff}
+`;document.head.appendChild(css);
+const cvw=g('stdoCv');
+const b=document.createElement('button');b.id='stdoSilB';b.title='Siluet wireframe impor (W): irisan tubuh wireframe sebagai panduan digitasi';
+b.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Siluet';cvw.appendChild(b);
+const P=document.createElement('div');P.id='stdoSilP';P.innerHTML='<div class="hd"><span style="flex:1">Siluet wireframe</span><button id="stdoSilX" aria-label="Tutup">&#10005;</button></div>'+
+ '<label><input type="checkbox" id="stdoSilOn">Tampilkan siluet</label><div class="ls" id="stdoSilL"></div>'+
+ '<label>Opasitas <input type="range" id="stdoSilOp" min="0.06" max="0.6" step="0.02"></label><label><input type="checkbox" id="stdoSilSn">Snap ke tepi siluet</label>'+
+ '<div class="nt">Klik kanan di dalam siluet &rarr; <b>Jadikan string</b>. Siluet tidak bisa diedit.</div>';cvw.appendChild(P);
+const MN=document.createElement('div');MN.id='stdoSilM';document.body.appendChild(MN);
+const daftar=()=>(typeof WI!=='undefined'?WI:[]).filter(m=>!m.ms&&m.v&&m.t&&m.t.length);
+function isiP(){g('stdoSilOn').checked=SIL.on;g('stdoSilOp').value=SIL.op;g('stdoSilSn').checked=SIL.snap;const L=daftar();
+ g('stdoSilL').innerHTML=L.length?L.map((m,i)=>'<label title="'+esc(m.nm)+'"><input type="checkbox" data-i="'+i+'"'+(SIL.off[m.nm]?'':' checked')+'><span class="sw" style="background:'+m.col+'"></span><span class="nm">'+esc(m.nm)+'</span></label>').join('')
+  :'<div class="nt">Belum ada wireframe impor. Wireframe &rarr; Impor (DXF / STR+DTM / OBJ).</div>';
+ g('stdoSilL').querySelectorAll('input[data-i]').forEach(c=>c.onchange=()=>{const m=L[+c.dataset.i];if(c.checked)delete SIL.off[m.nm];else SIL.off[m.nm]=1;simpan();gambarUlang();});}
+function tandai(){b.classList.toggle('on',SIL.on);b.setAttribute('aria-pressed',SIL.on?'true':'false');window.__stSnap&&(window.__stSnap.sil=SIL.on&&SIL.snap);}
+function gambarUlang(){tandai();if(ST.on)scDraw();}
+b.onclick=()=>{P.classList.toggle('buka');if(P.classList.contains('buka'))isiP();};g('stdoSilX').onclick=()=>P.classList.remove('buka');
+g('stdoSilOn').onchange=e=>{SIL.on=e.target.checked;simpan();gambarUlang();};
+g('stdoSilOp').oninput=e=>{SIL.op=+e.target.value;simpan();gambarUlang();};
+g('stdoSilSn').onchange=e=>{SIL.snap=e.target.checked;simpan();tandai();};
+/* ---- irisan: segmen -> lingkaran tertutup ---- */
+function loops(seg){const key=p=>Math.round(p[0]*1e3)+','+Math.round(p[1]*1e3),M=new Map(),pakai=new Uint8Array(seg.length);
+ seg.forEach((s,i)=>{for(const e of [0,1]){const k=key(s[e]);(M.get(k)||M.set(k,[]).get(k)).push(i);}});const out=[];
+ for(let i=0;i<seg.length;i++){if(pakai[i])continue;pakai[i]=1;const L=[seg[i][0],seg[i][1]];let ujung=seg[i][1],tutup=false;
+  for(let n=0;n<seg.length;n++){const c=M.get(key(ujung));let j=-1;if(c)for(const x of c)if(!pakai[x]){j=x;break;}if(j<0)break;pakai[j]=1;const s=seg[j],nx=key(s[0])===key(ujung)?s[1]:s[0];if(key(nx)===key(L[0])){tutup=true;break;}L.push(nx);ujung=nx;}
+  if(L.length>=3)out.push({p:L,tutup});}
+ return out;}
+let CACHE=null;window.__stSilPts=null;
+function hitung(){const q=SC.q;if(!q)return [];const L=daftar().filter(m=>m.on!==false&&!SIL.off[m.nm]),R=[],pts=[];
+ for(const m of L){const seg=[];seg.LH=Infinity;scCut(q,m.v,m.t,false,seg,null);if(!seg.length)continue;const lp=loops(seg);lp.forEach(l=>l.p.forEach(p=>pts.push(p)));R.push({m,lp});}
+ window.__stSilPts=pts;CACHE=R;return R;}
+let pola=null;
+function arsir(x,col){const c=document.createElement('canvas');c.width=c.height=10;const y=c.getContext('2d');y.strokeStyle=col;y.lineWidth=1;y.globalAlpha=.55;y.beginPath();y.moveTo(0,10);y.lineTo(10,0);y.stroke();return x.createPattern(c,'repeat');}
+function gambar(){if(!ST.on||!SIL.on){window.__stSilPts=null;CACHE=null;return;}const cv=g('scc'),x=cv.getContext('2d'),T2=X().xf();if(!T2)return;const dpr=window.devicePixelRatio||1;
+ const R=hitung();x.save();x.setTransform(dpr,0,0,dpr,0,0);
+ for(const {m,lp} of R){x.beginPath();for(const l of lp){l.p.forEach((p,i)=>i?x.lineTo(T2.X(p),T2.Y(p)):x.moveTo(T2.X(p),T2.Y(p)));if(l.tutup)x.closePath();}
+  x.globalAlpha=SIL.op;x.fillStyle=m.col;x.fill('evenodd');x.globalAlpha=Math.min(1,SIL.op*1.6);x.fillStyle=arsir(x,m.col);x.fill('evenodd');
+  x.globalAlpha=Math.min(1,SIL.op*2.6);x.strokeStyle=m.col;x.lineWidth=1;x.setLineDash([3,3]);x.stroke();x.setLineDash([]);
+  let big=null,ba=0;for(const l of lp){if(!l.tutup)continue;const a=Math.abs(X().area(l.p));if(a>ba){ba=a;big=l;}}
+  if(big){const c=X().cent(big.p);x.globalAlpha=.85;x.font='italic 600 11px Inter,Arial';x.fillStyle=m.col;const t=m.nm,tw=x.measureText(t).width;x.fillText(t,T2.X(c)-tw/2,T2.Y(c)+4);}}
+ x.restore();}
+{const _l=window.lgDraw2;window.lgDraw2=function(){if(_l)_l.apply(this,arguments);try{gambar();}catch(e){console.warn('siluet',e);}};}
+/* ---- klik kanan: Jadikan string ---- */
+function dalam(p,P2){let c=false;for(let i=0,j=P2.length-1;i<P2.length;j=i++){const a=P2[i],b2=P2[j];if((a[1]>p[1])!==(b2[1]>p[1])&&p[0]<(b2[0]-a[0])*(p[1]-a[1])/(b2[1]-a[1])+a[0])c=!c;}return c;}
+function sederhana(P2,tol){if(P2.length<=4)return P2;const d2=(p,a,b2)=>{const dx=b2[0]-a[0],dy=b2[1]-a[1],L=dx*dx+dy*dy;let t=L?((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=a[0]+dx*t-p[0],y=a[1]+dy*t-p[1];return x*x+y*y;};
+ const keep=new Uint8Array(P2.length);keep[0]=keep[P2.length-1]=1;const st=[[0,P2.length-1]];while(st.length){const [a,z]=st.pop();let bi=-1,bd=tol*tol;for(let i=a+1;i<z;i++){const d=d2(P2[i],P2[a],P2[z]);if(d>bd){bd=d;bi=i;}}if(bi>0){keep[bi]=1;st.push([a,bi],[bi,z]);}}
+ return P2.filter((_,i)=>keep[i]);}
+function tutupMenu(){MN.style.display='none';}
+window.addEventListener('mousedown',e=>{if(!MN.contains(e.target))tutupMenu();},true);
+window.addEventListener('contextmenu',e=>{if(!ST.on||!SIL.on||e.target!==g('scc')||!CACHE)return;const MS=window.MS;if(MS.drw)return;const r=g('scc').getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+ if(X().hitV(px,py))return;const p=SC.inv(px,py);let hit=null;for(const {m,lp} of CACHE)for(const l of lp)if(l.tutup&&dalam(p,l.p)){if(!hit||Math.abs(X().area(l.p))<Math.abs(X().area(hit.l.p)))hit={m,l};}
+ if(!hit)return;e.preventDefault();e.stopPropagation();const M=X().mCur(),T2=X().xf(),tol=Math.max(0.05,2/(SC.v?SC.v.s:10));
+ const jadi=(baru)=>{tutupMenu();let pts=sederhana(hit.l.p.concat([hit.l.p[0]]),tol);pts.pop();if(pts.length<3){window.sbToast&&sbToast('Irisan terlalu kecil.');return;}
+  if(baru){X().newModel(hit.m.nm);}MS.drw=pts.map(p=>p.slice());X().finish();window.sbToast&&sbToast('Siluet "'+hit.m.nm+'" dijadikan string ('+pts.length+' titik) · rapikan dengan V, Ctrl+Z untuk batal');};
+ MN.innerHTML='<button data-k="a"'+(M?'':' disabled')+'>Jadikan string di solid aktif'+(M?' ('+esc(M.nm)+')':'')+'</button><button data-k="b">Jadikan string di solid baru "'+esc(hit.m.nm)+'"</button>';
+ MN.querySelector('[data-k=a]').onclick=()=>jadi(false);MN.querySelector('[data-k=b]').onclick=()=>jadi(true);
+ MN.style.left=e.clientX+'px';MN.style.top=e.clientY+'px';MN.style.display='flex';},true);
+window.addEventListener('keydown',e=>{if(!ST.on)return;const tg=e.target;if(tg&&(/INPUT|TEXTAREA|SELECT/.test(tg.tagName)||tg.isContentEditable))return;
+ if((e.key==='w'||e.key==='W')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!(window.MS&&MS.drw)){e.preventDefault();e.stopPropagation();SIL.on=!SIL.on;simpan();if(P.classList.contains('buka'))isiP();gambarUlang();}
+ if(e.key==='Escape')tutupMenu();},true);
+/* snap: titik tepi siluet ikut daftar snap Studio */
+setInterval(()=>{if(ST.on&&window.__stSnap)window.__stSnap.sil=SIL.on&&SIL.snap;},500);tandai();
 })();
 
 </script>

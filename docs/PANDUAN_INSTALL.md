@@ -5493,3 +5493,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Simpan lebih lama karena menulis tabel bor dan mengompres; tahap berikutnya memindahkannya ke latar (Web Worker)
   agar layar tidak tertahan.
 - Bayangan string penampang tetangga (Studio / Penampang 2D) kini lebih pudar dan semi-transparan.
+
+## 267. Ore Works 0.17.1 — siluet wireframe di Studio
+
+- Di Studio Pemodelan, tombol **Siluet** di tepi kanan kanvas (atau tombol **W**) menampilkan irisan **tubuh** wireframe
+  impor (Wireframe → Impor) di bidang penampang: diisi semi-transparan + arsir, berlabel nama, di bawah string.
+  Siluet hanya panduan — tidak bisa dipilih atau diedit.
+- Panel kecil Siluet: centang *Tampilkan siluet*, pilih wireframe mana yang tampil, atur opasitas, *Snap ke tepi siluet*.
+- **Klik kanan di dalam siluet → Jadikan string**: irisan disalin menjadi string di solid aktif atau solid baru bernama
+  wireframe itu (titik disederhanakan), lalu rapikan dengan **V**. Ctrl+Z membatalkan.
