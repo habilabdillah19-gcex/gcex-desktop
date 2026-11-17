@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.18.1';</script>
+<script>window.GCEX_VER='0.19.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -4070,9 +4070,9 @@ table th{background:linear-gradient(#f3f6fa,#e7ecf3)!important;border-bottom:1px
 const st=document.createElement('style');st.id='os-shell';st.textContent=css;document.head.appendChild(st);
 
 /* ---- latar viewport ---- */
-const BGS={terang:['#cfd9e8','#f7f9fc'],gelap:['#1b2a4e','#43567f'],polos:null};
+const BGS={terang:['#D9D6CC','#F8F6F1'],gelap:['#1C2733','#3A4658'],polos:null};
 function bgSet(k){if(!BGS.hasOwnProperty(k))k='terang';const g=BGS[k];if(S.background&&S.background.isTexture)S.background.dispose();
- if(!g)S.background=new THREE.Color(0xf6f7f9);else{const c=document.createElement('canvas');c.width=4;c.height=256;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,0,256);gr.addColorStop(0,g[0]);gr.addColorStop(1,g[1]);x.fillStyle=gr;x.fillRect(0,0,4,256);S.background=new THREE.CanvasTexture(c);}
+ if(!g)S.background=new THREE.Color(0xF4F2EC);else{const c=document.createElement('canvas');c.width=4;c.height=256;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,0,256);gr.addColorStop(0,g[0]);gr.addColorStop(1,g[1]);x.fillStyle=gr;x.fillRect(0,0,4,256);S.background=new THREE.CanvasTexture(c);}
  document.body.dataset.bg=k;try{localStorage.setItem('oreworks.bg',k);}catch(e){}const sel=document.getElementById('osbg');if(sel)sel.value=k;}
 window.osBg=bgSet;let bg0='terang';try{bg0=localStorage.getItem('oreworks.bg')||'terang';}catch(e){}bgSet(bg0);
 
@@ -4106,7 +4106,7 @@ const bLg=add('lg','Legenda','Tampilkan / sembunyikan legenda',()=>{clk('lgtg');
 const bRp=add('tree','Data','Panel data (pemetaan & struktur per layer)',()=>{clk('rptg');setTimeout(sync,50);});sep();
 add('slice','Slicing','Penampang / level (slicing)',()=>clk('sltg'));add('ana','Analisis','Analisis geometri bijih',()=>clk('ogtg'));add('map','Layout peta','Layout peta siap cetak (PNG / PDF)',()=>clk('fmlay'));sep();
 add('cam','','Simpan gambar viewport 3D (PNG)',shot);
-const bgl=document.createElement('span');bgl.className='tl';bgl.style.marginLeft='auto';bgl.textContent='Latar';tb.appendChild(bgl);const bgs=document.createElement('select');bgs.id='osbg';bgs.innerHTML='<option value="terang">Gradasi terang</option><option value="gelap">Gradasi navy</option><option value="polos">Polos</option>';bgs.value=document.body.dataset.bg||'terang';bgs.onchange=()=>bgSet(bgs.value);tb.appendChild(bgs);
+const bgl=document.createElement('span');bgl.className='tl';bgl.style.marginLeft='auto';bgl.textContent='Latar';tb.appendChild(bgl);const bgs=document.createElement('select');bgs.id='osbg';bgs.innerHTML='<option value="terang">Gradasi hangat</option><option value="gelap">Gradasi navy dof</option><option value="polos">Polos</option>';bgs.value=document.body.dataset.bg||'terang';bgs.onchange=()=>bgSet(bgs.value);tb.appendChild(bgs);
 function sync(){const c=$('lbad');bLab.classList.toggle('on',!c||c.checked);const lw=$('lgw');bLg.classList.toggle('on',!!lw&&getComputedStyle(lw).display!=='none');bRp.classList.toggle('on',document.body.classList.contains('rp'));const vx=$('vx');if(vx)ves.value=String(+vx.value);}
 setInterval(sync,800);
 function dolly(f){const t=CT.target,d=C.position.clone().sub(t);C.position.copy(t.clone().add(d.multiplyScalar(f)));CT.update();}
@@ -7076,6 +7076,61 @@ fs.onclick=async()=>{try{if(desk()){await gcexDesktop.fullscreen(null);}else if(
 function tanda(){const on=!!document.fullscreenElement||(desk()&&Math.abs(innerHeight-screen.height)<3&&Math.abs(innerWidth-screen.width)<3);fs.classList.toggle('on',on);fs.title=on?'Keluar layar penuh (F11)':'Layar penuh (F11)';}
 window.addEventListener('resize',()=>setTimeout(tanda,100));document.addEventListener('fullscreenchange',tanda);tanda();
 st.onclick=()=>{if(window.__st&&__st.on){stdoTutup();return;}if(typeof SC!=='undefined'&&!SC.open&&typeof scOpen==='function')scOpen(true);if(window.stdoBuka)stdoBuka();};
+})();
+
+
+/* ================= Ore Works 0.19.0: palet "Keluarga GC-Ex · aksen Ore Works" =================
+   Pemilik 17 Nov 2026: "Color palet nya harus lebih berbeda [dari Surpac / Micromine], dan mencerminkan independensi kita" →
+   memilih opsi 8 mockup: bingkai navy dof #1C2733 & panel abu hangat (sama dengan keluarga GC-Ex / Drill Hole), aksen Ore Works
+   malakit #17806B, aksen kedua emas tua #B5893E; "warna latar 3D disesuaikan dengan palet" → gradasi hangat. Latar dipindah dari
+   toolbar ke bagian Tampilan. Hanya warna: tata letak desktop menyusul bertahap. */
+(function(){
+const css=document.createElement('style');css.id='ow-palet';css.textContent=`
+:root{--pri:#17806B;--pri2:#126A58;--navy:#1C2733;--tx:#1C2733;--mut:#5C6672;--bd:#D3CDC1;--bg:#EDEBE6;--soft:#D5ECE4;--owgold:#B5893E}
+body{background:#EDEBE6}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:#17806B}
+#mbar{background:#1C2733!important;border-bottom:2px solid #17806B!important}
+#mbar .mbb{color:#E8ECF2!important}
+#mbar .mbb:hover{background:#2C3B57!important;border-color:#3A4A69!important}
+#mbar .mbb.on{background:#2C3B57!important;border-color:#17806B!important;color:#fff!important}
+#mbar .brand,#mbar .brand *{color:#fff!important}#mbar .brand svg path{fill:#2FB594!important}
+#mbar button:not(.mbb){background:#2C3B57!important;color:#E8ECF2!important;border-color:#3A4A69!important}
+#otb{background:#EDEBE6!important;border-bottom:1px solid #D3CDC1!important}
+#otb .tb:hover{background:#E0EEE8!important;border-color:#9CC9BA!important}
+#otb .tb.on{background:#D5ECE4!important;border-color:#17806B!important}
+#otb .tb:active{background:#C3E2D6!important}
+#otb .ts{background:#C9C3B6!important;box-shadow:1px 0 #fff!important}
+#otb .tl{color:#5C6672!important}#otb select{border-color:#C2BCAE!important}
+#cv{box-shadow:inset 0 0 0 1px #C9C3B6!important}
+footer#status{background:#1C2733!important;border-top:1px solid #B5893E!important;color:#DDE3EA!important}
+footer#status #sbst{color:#7FD3B6!important}
+button{background:linear-gradient(#FFFFFF,#F1EFEA);border-color:#C9C3B6}
+button:hover{background:linear-gradient(#FFFFFF,#E3F0EA);border-color:#9CC9BA}
+button.pri,#fmrp,#flpdf,#flpng,#stpadd,#fmdig{background:#17806B!important;border-color:#126A58!important;color:#fff!important}
+.flw{border-color:#9AA19B!important;background:#FBFAF7!important}
+.flh{background:#1C2733!important}.flh span,.flh small{color:#C9D2DD}
+.flh button.pri,.flw #flpdf,.flw #flpng{background:#17806B!important;border-color:#2FB594!important}
+.subh{background:linear-gradient(#F6F4EF,#ECE9E2)!important;border-color:#D3CDC1!important;border-left:3px solid #17806B!important;color:#1C2733!important}
+#lgb .lgt{color:#1C2733!important;border-bottom-color:#E2DED5}
+#rpan{background:#FBFAF7!important;border-left-color:#C9C3B6!important}
+#rpan .rph{background:#1C2733!important}
+.rpr.l0{background:#EDEBE6!important}.rpr:hover{background:#E0EEE8!important}
+#scw{border-color:#9AA19B!important}#sch{background:#1C2733!important}
+table th{background:linear-gradient(#F6F4EF,#ECE9E2)!important;border-bottom-color:#D3CDC1}
+#side{background:#FBFAF7!important;border-right-color:#D3CDC1!important}
+::-webkit-scrollbar-thumb{background:#C9C3B6;border-color:#EDEBE6}::-webkit-scrollbar-thumb:hover{background:#A9A293}::-webkit-scrollbar-track{background:#EDEBE6}
+/* Studio Pemodelan */
+#scw.studio{background:#EDEBE6!important}#stdoHd,#stdoRt .hd,#stdoStat,#stdoPip,#stdoSilP .hd{background:#1C2733!important}
+#stdoTop,#stdoTools,#stdoRt{background:#F7F5F0!important;border-color:#D3CDC1!important}
+#stdoTools button.on{background:#17806B!important;border-color:#17806B!important;color:#fff!important}#stdoTools button:hover{background:#E0EEE8}
+#stdoTop button.chip.on,#stdoFl button.on{border-color:#17806B!important;background:#D5ECE4!important;color:#0E4F42!important}
+#stdoSl .it.on{background:#E0EEE8!important;box-shadow:inset 3px 0 #17806B!important}#stdoSl .hr{color:#17806B!important}
+#stdoSilB.on{background:#17806B!important;border-color:#17806B!important}
+#stdoHd button,#stdoRt .hd button{background:#2C3B57!important;border-color:#3A4A69!important}
+`;document.head.appendChild(css);
+/* Latar: cukup di bagian Tampilan (Latar 3D), pilihan di toolbar dihapus */
+const sel=document.getElementById('osbg');if(sel){const lab=sel.previousElementSibling;if(lab&&lab.classList.contains('tl'))lab.remove();sel.remove();}
+const s2=document.getElementById('osbg2');if(s2){const nm={terang:'Gradasi hangat',gelap:'Gradasi navy dof',polos:'Polos'};[...s2.options].forEach(o=>{if(nm[o.value])o.textContent=nm[o.value];});}
 })();
 
 </script>

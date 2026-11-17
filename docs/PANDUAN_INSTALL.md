@@ -5565,3 +5565,11 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Bilah keterangan Demo tidak lagi menyempit (teks bertumpuk) saat panel lebar seperti Geostatistik atau Model Estimation
   terbuka.
 - DB-Ex, Ore Works: tidak berubah.
+
+## 274. Ore Works 0.19.0 — palet warna baru (keluarga GC-Ex, aksen malakit)
+
+- Warna antarmuka Ore Works kini: bar menu & status bar **navy dof**, panel & toolbar **abu hangat**, aksen **hijau malakit**
+  (tombol utama, tombol aktif, centang) dan **emas tua** (garis status bar). Warna data (skala kadar, litologi, solid) tidak berubah.
+- Latar 3D bawaan **Gradasi hangat**; pilihan lain *Gradasi navy dof* dan *Polos* ada di **Tampilan → Latar 3D**
+  (pilihan Latar di toolbar dihapus).
+- Ini tahap 1 dari tampilan desktop yang disetujui; menu tarik, panel Project / Properti, tab dan Tabel atribut menyusul.
