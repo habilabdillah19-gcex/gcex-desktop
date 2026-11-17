@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.17.3';</script>
+<script>window.GCEX_VER='0.18.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -6963,6 +6963,99 @@ window.addEventListener('resize',()=>{if(P.style.display==='flex')tata();});
 /* lapisan disembunyikan hanya saat kanvas 3D dipinjam Studio */
 const _r=R.render.bind(R);R.render=function(s,c){if(!ST.on)return _r(s,c);const ch=[];for(const k in PL){if(PL[k]===false&&L[k]&&L[k].visible){L[k].visible=false;ch.push(k);}}try{return _r(s,c);}finally{for(const k of ch)L[k].visible=true;}};
 setInterval(()=>{if(!ST.on&&P.style.display==='flex')P.style.display='none';},800);
+})();
+
+
+/* ================= Ore Works 0.18.0: ortofoto GeoTIFF mode "Tajam (ber-tile)" =================
+   Pemilik 17 Nov 2026: ortofoto 10 cm (GeoTIFF) tampil ±50 cm karena GeoTIFF dibaca turun-resolusi ke 4.096 px. Mode baru per
+   ortofoto: tekstur dasar tetap seperti sekarang ("Seimbang"), dan bila "Tajam" dipilih, saat kamera mendekat potongan (tile)
+   1.024 px dibaca LANGSUNG dari berkas GeoTIFF asli pada resolusi yang dibutuhkan (overview bila ada; pool worker geotiff.js),
+   ditempel di atas tekstur dasar. Tiap segitiga topografi hanya milik satu tile (menurut titik beratnya) dan tekstur tile
+   memuat tepi cadangan selebar segitiga terbesar -> tanpa garis sambungan. Maks 48 tile aktif, yang jauh dilepas.
+   Berkas GeoTIFF asli hanya ada selama sesi; setelah proyek dibuka ulang, sambungkan lagi berkasnya (tombol di daftar). */
+(function(){
+if(typeof orTiff!=='function'||typeof orBuild!=='function')return;
+const TS=1024,MAXT=48,MAXCACHE=96;
+let POOL=null;try{if(window.GeoTIFF&&GeoTIFF.Pool)POOL=new GeoTIFF.Pool(Math.max(1,Math.min(3,(navigator.hardwareConcurrency||2)-1)));}catch(e){POOL=null;}
+async function bukaGT(f){const T=await GeoTIFF.fromBlob(f),n=await T.getImageCount(),IM=[];for(let i=0;i<n;i++){const im=await T.getImage(i);IM.push({im,w:im.getWidth(),h:im.getHeight()});}
+ const W0=IM[0].w,H0=IM[0].h;return {T,IM:IM.filter(x=>Math.abs(x.w/x.h-W0/H0)<0.02*(W0/H0)),W0,H0,nm:f.name,size:f.size};}
+{const _ot=orTiff;orTiff=async function(f,aff){const o=await _ot.apply(this,arguments);try{o.gt=await bukaGT(f);o.gtW=o.gt.W0;o.gtH=o.gt.H0;}catch(e){}if(!o.mode)o.mode='seimbang';return o;};}
+{const _s=orSave;orSave=function(){const L=_s.apply(this,arguments);return L.map((q,i)=>{const o=ORT[i];return o?Object.assign(q,{mode:o.mode||undefined,gtW:o.gtW||undefined,gtH:o.gtH||undefined}):q;});};}
+const piks=o=>Math.hypot(o.aff[0],o.aff[1]);                                   /* m per piksel gambar dasar (o.w) */
+const texelDasar=o=>{const tw=o.tex&&o.tex.image?o.tex.image.width:o.w;return piks(o)*o.w/tw;};
+const piksAsli=o=>o.gtW?piks(o)*o.w/o.gtW:piks(o);
+/* ---- struktur tile ---- */
+function siapkan(o){if(o.tl)return o.tl;if(!o.mesh||!o.gt)return null;const p0=piksAsli(o),tb=texelDasar(o),Lmax=Math.ceil(Math.log2(tb/p0)-1e-9)-1;if(Lmax<0){o.tl={Lmax:-1};return o.tl;}
+ const g=o.mesh.geometry,P=g.attributes.position.array,U=g.attributes.uv.array,I=g.index?g.index.array:null,flat=!o._m,W0=o.gt.W0,H0=o.gt.H0,LV=[];
+ for(let L=0;L<=Lmax;L++){const sp=TS*Math.pow(2,L),nx=Math.ceil(W0/sp),ny=Math.ceil(H0/sp),du=sp/W0,dv=sp/H0,T=new Map();
+  if(!flat&&I){for(let t=0;t<I.length;t+=3){const a=I[t],b=I[t+1],c=I[t+2],u=(U[a*2]+U[b*2]+U[c*2])/3,v=(U[a*2+1]+U[b*2+1]+U[c*2+1])/3,i=Math.min(nx-1,Math.max(0,Math.floor(u/du))),j=Math.min(ny-1,Math.max(0,Math.floor((1-v)/dv))),k=i+','+j;let A=T.get(k);if(!A){A=[];T.set(k,A);}A.push(t);}}
+  else for(let i=0;i<nx;i++)for(let j=0;j<ny;j++)T.set(i+','+j,null);
+  LV.push({L,sp,nx,ny,du,dv,T});}
+ o.tl={Lmax,LV,tiles:new Map(),p0,tb,flat};return o.tl;}
+function persegi(lv,i,j){const u0=i*lv.du,u1=Math.min(1,(i+1)*lv.du),v1=1-j*lv.dv,v0=Math.max(0,1-(j+1)*lv.dv);return [u0,u1,v0,v1];}
+function buatTile(o,lv,i,j){const tl=o.tl,k=lv.L+':'+i+','+j;let T=tl.tiles.get(k);if(T)return T;const [u0,u1,v0,v1]=persegi(lv,i,j);
+ const gm=new THREE.BufferGeometry();let wu0=u0,wu1=u1,wv0=v0,wv1=v1;const box=new THREE.Box3();
+ if(!tl.flat){const g=o.mesh.geometry,P=g.attributes.position.array,U=g.attributes.uv.array,N=g.attributes.normal?g.attributes.normal.array:null,I=g.index.array,tri=lv.T.get(i+','+j)||[];if(!tri.length)return null;
+  const map=new Map(),pos=[],uv=[],nr=[],ix=[];let mu=0,mv=0;
+  for(const t of tri)for(let e=0;e<3;e++){const a=I[t+e];if(!map.has(a)){map.set(a,pos.length/3);pos.push(P[a*3],P[a*3+1],P[a*3+2]);uv.push(U[a*2],U[a*2+1]);if(N)nr.push(N[a*3],N[a*3+1],N[a*3+2]);box.expandByPoint(new THREE.Vector3(P[a*3],P[a*3+1],P[a*3+2]));mu=Math.max(mu,u0-U[a*2],U[a*2]-u1);mv=Math.max(mv,v0-U[a*2+1],U[a*2+1]-v1);}ix.push(map.get(a));}
+  mu=Math.min(Math.max(mu,0)+0.5/o.gt.W0*Math.pow(2,lv.L),(u1-u0)*0.5);mv=Math.min(Math.max(mv,0)+0.5/o.gt.H0*Math.pow(2,lv.L),(v1-v0)*0.5);
+  wu0=Math.max(0,u0-mu);wu1=Math.min(1,u1+mu);wv0=Math.max(0,v0-mv);wv1=Math.min(1,v1+mv);
+  for(let q=0;q<uv.length;q+=2){uv[q]=(uv[q]-wu0)/(wu1-wu0);uv[q+1]=(uv[q+1]-wv0)/(wv1-wv0);}
+  gm.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));gm.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));if(nr.length)gm.setAttribute('normal',new THREE.Float32BufferAttribute(nr,3));else gm.computeVertexNormals();gm.setIndex(pos.length/3>65535?new THREE.Uint32BufferAttribute(ix,1):new THREE.Uint16BufferAttribute(ix,1));}
+ else{const K=orCorners(o),z=(+o.rl||0)-O[2],W=(u,v)=>{const x=K[0][0]+u*(K[1][0]-K[0][0])+(1-v)*(K[3][0]-K[0][0]),y=K[0][1]+u*(K[1][1]-K[0][1])+(1-v)*(K[3][1]-K[0][1]);return [x-O[0],z,-(y-O[1])];};
+  const q=[W(u0,v1),W(u1,v1),W(u1,v0),W(u0,v0)],pos=[].concat(...q);q.forEach(p=>box.expandByPoint(new THREE.Vector3(...p)));
+  gm.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));gm.setAttribute('uv',new THREE.Float32BufferAttribute([0,1,1,1,1,0,0,0],2));gm.setIndex([0,2,1,0,3,2]);gm.computeVertexNormals();}
+ const d=tl.Lmax-lv.L,M=o.shade?THREE.MeshLambertMaterial:THREE.MeshBasicMaterial,mat=new M({side:THREE.DoubleSide,transparent:!!o.alpha,alphaTest:o.alpha?0.03:0,polygonOffset:true,polygonOffsetFactor:-3-d,polygonOffsetUnits:-6-2*d,clippingPlanes:CL});
+ const me=new THREE.Mesh(gm,mat);me.visible=false;me.renderOrder=2+d;me.userData.orto=o;L.orto.add(me);
+ T={k,o,L:lv.L,i,j,win:[wu0,wu1,wv0,wv1],box,me,tex:null,muat:false,pakai:0};tl.tiles.set(k,T);return T;}
+let antri=[],jalan=0;
+async function muat(T){T.muat=true;jalan++;try{const o=T.o,gt=o.gt;if(!gt)return;const [wu0,wu1,wv0,wv1]=T.win,f=Math.pow(2,T.L),x0=wu0*gt.W0,x1=wu1*gt.W0,y0=(1-wv1)*gt.H0,y1=(1-wv0)*gt.H0;
+  const tw=Math.max(1,Math.round((x1-x0)/f)),th=Math.max(1,Math.round((y1-y0)/f)),need=gt.W0/f;let src=gt.IM[0];for(const x of gt.IM)if(x.w>=need*0.999&&x.w<src.w)src=x;const s=src.w/gt.W0;
+  const opt={window:[Math.floor(x0*s),Math.floor(y0*s),Math.min(src.w,Math.ceil(x1*s)),Math.min(src.h,Math.ceil(y1*s))],width:tw,height:th,interleave:true,enableAlpha:true,resampleMethod:'bilinear'};
+  let d;try{d=await src.im.readRGB(Object.assign({pool:POOL||undefined},opt));}catch(e){if(POOL){POOL=null;d=await src.im.readRGB(opt);}else throw e;}
+  if(!T.me.parent)return;const ch=Math.round(d.length/(tw*th)),cn=document.createElement('canvas');cn.width=tw;cn.height=th;const x=cn.getContext('2d'),id=x.createImageData(tw,th);
+  for(let i=0,j=0;i<tw*th;i++,j+=ch){id.data[i*4]=d[j];id.data[i*4+1]=d[j+1];id.data[i*4+2]=d[j+2];id.data[i*4+3]=ch>=4?d[j+3]:255;}x.putImageData(id,0,0);
+  const tx=new THREE.CanvasTexture(cn);tx.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy?R.capabilities.getMaxAnisotropy():1);tx.minFilter=THREE.LinearMipmapLinearFilter;tx.wrapS=tx.wrapT=THREE.ClampToEdgeWrapping;
+  T.tex=tx;T.me.material.map=tx;T.me.material.needsUpdate=true;OT.dimuat++;}
+ catch(e){T.gagal=(T.gagal||0)+1;console.warn('tile orto',T.k,e);}finally{T.muat=false;jalan--;jadwal();}}
+function lepas(T){if(T.tex){T.tex.dispose();T.tex=null;T.me.material.map=null;}T.me.visible=false;}
+function buang(o){if(!o.tl)return;if(o.tl.tiles)for(const T of o.tl.tiles.values()){lepas(T);if(T.me.parent)T.me.parent.remove(T.me);T.me.geometry.dispose();T.me.material.dispose();}o.tl=null;}
+const OT=window.__ortT={dimuat:0,aktif:0};
+{const _d=orDispose;orDispose=function(o){buang(o);return _d.apply(this,arguments);};}
+{const _b=orBuild;orBuild=function(o){buang(o);const r=_b.apply(this,arguments);jadwal();return r;};}
+/* ---- LOD ---- */
+const FR=new THREE.Frustum(),PM4=new THREE.Matrix4(),BX=new THREE.Box3();let detik=0;
+function perbarui(){detik=performance.now();const H=R.domElement.clientHeight||R.domElement.height||800,f=(H/2)/Math.tan(C.fov*Math.PI/360);C.updateMatrixWorld();PM4.multiplyMatrices(C.projectionMatrix,C.matrixWorldInverse);FR.setFromProjectionMatrix(PM4);
+ L.orto.updateMatrixWorld();const MW=L.orto.matrixWorld,cam=C.getWorldPosition(new THREE.Vector3()),butuh=[];
+ for(const o of ORT){const on=o.mode==='tajam'&&o.gt&&o.on&&o.mesh&&(o.op>=1||o.alpha)&&L.orto.visible;if(!on){if(o.tl&&o.tl.tiles)for(const T of o.tl.tiles.values())T.me.visible=false;continue;}
+  const tl=siapkan(o);if(!tl||tl.Lmax<0)continue;
+  const cek=(L2,i,j)=>{const lv=tl.LV[L2],key=i+','+j;if(!tl.flat&&!lv.T.get(key))return;let T=tl.tiles.get(L2+':'+key);if(!T){T=buatTile(o,lv,i,j);if(!T)return;}
+   BX.copy(T.box).applyMatrix4(MW);if(!FR.intersectsBox(BX))return;const dist=BX.distanceToPoint(cam),sreq=dist/f,up=L2===tl.Lmax?tl.tb:tl.p0*Math.pow(2,L2+1);if(sreq>=up)return;
+   butuh.push({T,skor:sreq/(tl.p0*Math.pow(2,L2)),dist});if(L2>0){const c=tl.LV[L2-1];for(let a=i*2;a<Math.min(c.nx,i*2+2);a++)for(let b=j*2;b<Math.min(c.ny,j*2+2);b++)cek(L2-1,a,b);}};
+  const top=tl.LV[tl.Lmax];for(let i=0;i<top.nx;i++)for(let j=0;j<top.ny;j++)cek(tl.Lmax,i,j);}
+ butuh.sort((a,b)=>a.dist-b.dist);const pilih=new Set(butuh.slice(0,MAXT).map(x=>x.T));OT.aktif=0;
+ for(const o of ORT)if(o.tl&&o.tl.tiles)for(const T of o.tl.tiles.values()){const on=pilih.has(T);if(on){T.pakai=detik;if(T.tex){T.me.visible=true;OT.aktif++;}else{T.me.visible=false;if(!T.muat&&(T.gagal||0)<2&&!antri.includes(T))antri.push(T);}}else T.me.visible=false;}
+ antri=antri.filter(T=>pilih.has(T)&&!T.tex&&!T.muat);antri.sort((a,b)=>a.box.distanceToPoint(cam)-b.box.distanceToPoint(cam));while(jalan<3&&antri.length)muat(antri.shift());
+ /* lepas tekstur yang lama tidak dipakai */const semua=[];for(const o of ORT)if(o.tl&&o.tl.tiles)for(const T of o.tl.tiles.values())if(T.tex&&!pilih.has(T))semua.push(T);
+ if(semua.length>MAXCACHE-MAXT){semua.sort((a,b)=>a.pakai-b.pakai);semua.slice(0,semua.length-(MAXCACHE-MAXT)).forEach(lepas);}
+ const n=ORT.filter(o=>o.mode==='tajam').length;if(n&&window.__ortInfo)window.__ortInfo();}
+let tm=0;function jadwal(){clearTimeout(tm);tm=setTimeout(()=>{try{perbarui();}catch(e){console.warn('orto tile',e);}},120);}
+window.ortTileUpdate=jadwal;CT.addEventListener('change',jadwal);window.addEventListener('resize',jadwal);setInterval(()=>{if(ORT.some(o=>o.mode==='tajam'))jadwal();},1500);
+/* ---- daftar ortofoto: kualitas + info resolusi ---- */
+const cm=v=>v<1?(v*100).toFixed(v<0.1?1:0)+' cm':v.toFixed(2).replace('.',',')+' m';
+{const _l=orList;orList=function(){const r=_l.apply(this,arguments);try{tambah();}catch(e){console.warn(e);}return r;};}
+function tambah(){const el=document.getElementById('orl');if(!el)return;const rows=[...el.children].filter(x=>x.classList.contains('dsr'));
+ rows.forEach((r,i)=>{const o=ORT[i];if(!o||r.querySelector('.o-q'))return;const d=document.createElement('div');d.className='fl';d.style.marginLeft='22px';d.style.flexWrap='wrap';
+  const isTif=!!(o.gt||o.gtW),asli=piksAsli(o),tamp=o.tex?texelDasar(o):piks(o);
+  d.innerHTML='Kualitas <select class="o-q"><option value="seimbang">Seimbang (1 tekstur)</option><option value="tajam"'+(isTif?'':' disabled')+'>Tajam (ber-tile)</option></select>'+
+   '<span class="note o-qi" style="flex-basis:100%"></span>'+(o.mode==='tajam'&&!o.gt?'<label class="fbtn" style="margin:0">Sambungkan GeoTIFF asli<input type="file" class="o-gt" accept=".tif,.tiff" style="display:none"></label>':'');
+  r.appendChild(d);const s=d.querySelector('.o-q');s.value=o.mode==='tajam'?'tajam':'seimbang';
+  s.onchange=()=>{o.mode=s.value;if(o.mode!=='tajam'&&o.tl)buang(o);orList();jadwal();};
+  const inp=d.querySelector('.o-gt');if(inp)inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const gt=await bukaGT(f);if(Math.abs(gt.W0/gt.H0-o.w/o.h)>0.01*(o.w/o.h))throw new Error('ukuran tidak cocok dengan ortofoto ini');o.gt=gt;o.gtW=gt.W0;o.gtH=gt.H0;buang(o);orList();jadwal();}catch(err){alert('Gagal menyambungkan: '+err.message);}};
+  const info=()=>{const q=d.querySelector('.o-qi');if(!q)return;let t='';if(isTif)t='Asli '+cm(asli)+' · dasar '+cm(tamp);else t='Tampil '+cm(tamp)+' (tile hanya untuk GeoTIFF)';
+   if(o.mode==='tajam'){if(!o.gt)t+=' · berkas GeoTIFF asli belum tersambung (perlu setelah proyek dibuka ulang)';else if(o.tl&&o.tl.Lmax<0)t+=' · sudah resolusi penuh, tile tidak diperlukan';else{let n=0;if(o.tl&&o.tl.tiles)for(const T of o.tl.tiles.values())if(T.me.visible)n++;t+=' · zoom dekat hingga '+cm(asli)+' · '+n+' tile aktif';}}
+   else if(isTif&&asli<tamp*0.7)t+=' · pilih Tajam agar zoom dekat setajam aslinya';q.textContent=t;};d._info=info;info();});}
+window.__ortInfo=()=>{const el=document.getElementById('orl');if(!el)return;el.querySelectorAll('.fl').forEach(d=>{if(d._info)d._info();});};
 })();
 
 </script>

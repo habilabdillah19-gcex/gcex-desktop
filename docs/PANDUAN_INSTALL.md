@@ -5533,3 +5533,15 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   pita diwarnai skala kadar yang sama dengan tampilan 3D, centang *kode* menulis nilai kadarnya, legenda menampilkan
   skala rendah–tinggi. Unsur mengikuti pilihan unsur aktif di toolbar.
 - Bawaan saat data dibuka: kiri **Litologi**, kanan **Assay**. Alterasi tetap bisa dipilih di salah satu sisi.
+
+## 270. Ore Works 0.18.0 — ortofoto GeoTIFF mode Tajam (ber-tile)
+
+- GeoTIFF dibaca turun-resolusi ke 4.096 px sebagai tekstur dasar (mis. ortofoto 10 cm seluas 2 km tampil ± 50 cm).
+- Di daftar **Ortofoto**, tiap GeoTIFF punya pilihan **Kualitas**:
+  - **Seimbang** (bawaan) — satu tekstur seperti sebelumnya.
+  - **Tajam (ber-tile)** — saat kamera mendekat, potongan 1.024 px dibaca langsung dari berkas GeoTIFF asli pada resolusi
+    yang dibutuhkan; dari jauh tetap tekstur dasar. Baris info menampilkan resolusi asli vs dasar dan jumlah tile aktif.
+  Ganti pilihan untuk membandingkan keduanya pada sudut pandang yang sama.
+- Berkas GeoTIFF asli tidak ikut disimpan di proyek (terlalu besar). Setelah proyek dibuka ulang, klik
+  **Sambungkan GeoTIFF asli** pada ortofoto bermode Tajam.
+- JPG / PNG + world file tetap seperti sebelumnya (maks 8.192 px).
