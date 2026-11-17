@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.1';</script>
+<script>window.GCEX_VER='0.13.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -4115,7 +4115,12 @@ function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{co
   const k=(nu.length>1?'('+nu.join('+')+')':nu[0])+'/'+(de.length>1?'('+de.join('+')+')':de[0]);GD.cr=(GD.cr||[]).filter(r=>r.k!==k);GD.cr.push(de.length>1?{k,num:nu,dens:de}:{k,num:nu,den:de[0]});GD.pvR.push(k);gdRender();};
  const cv=g('gd-csv');if(cv)cv.onclick=()=>{const ST=GD._st||[],L2=['Unsur,n,Panjang_m,Min,P2.5,P25,Median,Rata2,P75,P97.5,Maks,SD,CV'].concat(ST.map(([e,s])=>[e,s.n,s.L.toFixed(2),s.min,s.p025,s.p25,s.med,+s.mean.toPrecision(6),s.p75,s.p975,s.max,+s.sd.toPrecision(6),+s.cv.toFixed(3)].join(',')));
   const b=new Blob(['﻿'+L2.join('\r\n')+'\r\n'],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='Statistik_geokimia.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);};
- const pr=g('gd-prn');if(pr)pr.onclick=()=>{const w=window.open('','_blank');if(!w){alert('Izinkan jendela pop-up untuk mencetak.');return;}w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dashboard geokimia</title><style>'+document.getElementById('gd-css').textContent+' body{margin:10mm;font-family:Segoe UI,Arial} .gdfb select,.gdfb button,.gdfb input{display:none}</style></head><body><h3 style="color:#1b2a4e;margin:0 0 6px">Dashboard geokimia · '+gdE((document.getElementById('pjn')||{}).textContent||'')+'</h3><div id="gdw">'+g('gdw').innerHTML+'</div></body></html>');w.document.close();setTimeout(()=>w.print(),400);};}
+ const pr=g('gd-prn');if(pr)pr.onclick=()=>{const w=window.open('','_blank');if(!w){alert('Izinkan jendela pop-up untuk mencetak.');return;}/* OW 0.13.2: PDF utuh & berwarna -- tanpa batas tinggi/gulir, warna latar dicetak, kanvas -> gambar, pilihan -> teks */
+ const src=g('gdw'),cl=src.cloneNode(true),c0=src.querySelectorAll('canvas'),c1=cl.querySelectorAll('canvas');c0.forEach((c,i)=>{try{const im=document.createElement('img');im.src=c.toDataURL('image/png');im.style.width=(c.clientWidth||c.width)+'px';im.style.height=(c.clientHeight||c.height)+'px';im.style.maxWidth='100%';c1[i].replaceWith(im);}catch(e){}});
+ const s0=src.querySelectorAll('select'),s1=cl.querySelectorAll('select');s0.forEach((x,i)=>{const sp=document.createElement('span');sp.className='gdsel';sp.style.cssText='display:inline-block;border:1px solid #c9d3e1;border-radius:5px;padding:1px 6px;font-size:11px';sp.textContent=x.selectedOptions[0]?x.selectedOptions[0].text:'';s1[i].replaceWith(sp);});
+ cl.querySelectorAll('input[type=checkbox]').forEach((x,i)=>{const o=src.querySelectorAll('input[type=checkbox]')[i];if(o&&o.checked)x.setAttribute('checked','');});
+ const pcss=' html,body{background:#fff} body{margin:0;font-family:Segoe UI,Arial} *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important} #gdw{max-height:none!important;height:auto!important;overflow:visible!important;padding:0!important} #gdw .gdp{break-inside:avoid;page-break-inside:avoid} #gdw .gdfb button,#gdw .gdfb input[type=search],#gdw button{display:none!important} @page{size:A4 portrait;margin:9mm}';
+ w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dashboard geokimia</title><style>'+document.getElementById('gd-css').textContent+pcss+'</style></head><body><h3 style="color:#1b2a4e;margin:0 0 6px">Dashboard geokimia · '+gdE((document.getElementById('pjn')||{}).textContent||'')+'</h3><div id="gdw">'+cl.innerHTML+'</div></body></html>');w.document.close();const go=()=>{const ims=[...w.document.images];if(ims.every(i=>i.complete))w.print();else setTimeout(go,150);};setTimeout(go,400);};}
 /* ---- pasang ke jendela Analisis ---- */
 {const css=document.createElement('style');css.id='gd-css';css.textContent=`
 #gdw{padding:6px 8px 8px;font:12px/1.4 "Segoe UI",Inter,Arial,sans-serif;color:#1d2433;max-height:76vh;overflow:auto}

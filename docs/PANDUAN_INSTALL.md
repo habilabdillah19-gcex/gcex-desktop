@@ -5273,3 +5273,8 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   mengekspor ke JPG. Posisi diambil dari georeferensi GeoTIFF; bila GeoTIFF tidak membawa georeferensi, pilih juga file
   .tfw-nya. Ortofoto sangat besar ditampilkan dengan resolusi maksimal 4096 px.
 - Tooltip RL topografi saat kursor di 3D kini bawaan mati (RL & koordinat tetap ada di bilah status bawah).
+
+## 248. Ore Works 0.13.2 — PDF dashboard geokimia
+
+- **Analisis → Geokimia → PDF**: hasil cetak / simpan PDF kini memuat seluruh dashboard (tidak terpotong) dengan warna
+  lengkap. Di dialog cetak pilih *Save as PDF*; centang *Background graphics* bila pilihan itu muncul.
