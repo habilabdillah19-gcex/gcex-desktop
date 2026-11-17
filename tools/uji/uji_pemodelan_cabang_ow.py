@@ -58,7 +58,9 @@ async def main():
             L2 = [(s['off'], sorted([i for i in s['ics'] if i['c'] == c], key=lambda i: -((np.array(i['hw']) + np.array(i['fw'])) / 2)[1])) for s in secs]
             L2 = [(o, ic) for o, ic in L2 if ic]
             for k, (o, ics) in enumerate(L2):
-                d = tr[c]; HW = [np.array(i['hw']) for i in ics]; FW = [np.array(i['fw']) for i in ics]
+                d = tr[c]; nrm = np.array([-d[1], d[0]])  # kontak dipisah per sisi (barat / timur jejak vein), bukan per From/To lubang
+                side = lambda i: (np.array(i['hw']), np.array(i['fw'])) if np.dot(np.array(i['hw']) - np.array(i['fw']), nrm) > 0 else (np.array(i['fw']), np.array(i['hw']))
+                HW = [side(i)[0] for i in ics]; FW = [side(i)[1] for i in ics]
                 if c == 'V1': ztop = max(i['cz'] for i in ics); zbot = zsp - 4
                 else:
                     ztop = zsp + 4

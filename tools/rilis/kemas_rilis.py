@@ -210,7 +210,8 @@ def main():
           (D / "DB-Ex_Panduan_Teknis.pdf", "Panduan_Teknis/DB-Ex_Panduan_Teknis.pdf"),
           (D / "tutorial-core" / "README.md", "Tutorial/DB-Ex_tutorial_README.md")] if has_core else [])
       + ([(D / "tutorial-ow" / "Ore_Works_Tutorial_Penggunaan.pdf", "Tutorial/Ore_Works_Tutorial_Penggunaan.pdf"),
-          (D / "tutorial-ow" / "Ore_Works_Petunjuk_Teknis.pdf", "Panduan_Teknis/Ore_Works_Petunjuk_Teknis.pdf")] if has_ow else []))
+          (D / "tutorial-ow" / "Ore_Works_Petunjuk_Teknis.pdf", "Panduan_Teknis/Ore_Works_Petunjuk_Teknis.pdf"),
+          (D / "tutorial-ow" / "Ore_Works_Tutorial_Vein_Bercabang.pdf", "Tutorial/Ore_Works_Tutorial_Vein_Bercabang.pdf")] if has_ow else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
     items = []
@@ -221,7 +222,7 @@ def main():
         if core_dummy and core_dummy.exists():
             items.append((core_dummy, "DB-Ex_Data_Dummy"))
     if has_ow:
-        items += [(D / "tutorial-ow" / "data", "Ore_Works_Latihan"), (D / "tutorial-ow" / "src" / "buat_data_latihan_ow.py", "Generator/buat_data_latihan_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_channel_dxf_ow.py", "Generator/buat_data_channel_dxf_ow.py")]
+        items += [(D / "tutorial-ow" / "data", "Ore_Works_Latihan"), (D / "tutorial-ow" / "src" / "buat_data_latihan_ow.py", "Generator/buat_data_latihan_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_channel_dxf_ow.py", "Generator/buat_data_channel_dxf_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_cabang_ow.py", "Generator/buat_data_vein_cabang_ow.py")]
     zip_dir(dat, items)
     # ---- 3 lisensi & tentang
     tentang = outd / "TENTANG.txt"

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.13.3';</script>
+<script>window.GCEX_VER='0.13.4';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -3609,7 +3609,7 @@ if(window.subFold)subFold();
 
 /* ---------- menu bar atas (ala Surpac): semua bagian jadi menu, panel kiri disembunyikan ---------- */
 (function(){const cv=document.getElementById('cv'),side=document.getElementById('side'),sp=document.getElementById('split'),bar=document.createElement('div');bar.id='mbar';document.body.insertBefore(bar,document.getElementById('wrap'));document.body.classList.add('mb');
- const hs=[...document.querySelectorAll('#side h2')],nm=h=>h.firstChild.textContent.trim(),M=[['File kerja project','&#128190; File'],['Tampilan','&#128065; Tampilan'],['Data bor','&#9673; Data bor'],['Plan bor','&#10010; Plan bor'],['Topografi & desain pit','&#9968; Topografi'],['Wireframe geologi','&#9651; Wireframe'],['Struktur','&#8725; Struktur'],['Pemetaan lapangan','&#128506; Pemetaan'],['@ogtg','&#9707; Analisis'],['@sltg','&#9986; Slicing'],['@lgtg','&#9636; Legenda'],['Cara pakai','? Bantuan']];
+ const hs=[...document.querySelectorAll('#side h2')],nm=h=>h.firstChild.textContent.trim(),M=[['File kerja project','&#128190; File'],['Tampilan','&#128065; Tampilan'],['Data bor','&#9673; Data bor'],['Plan bor','&#10010; Plan bor'],['Topografi & desain pit','&#9968; Permukaan'],['Wireframe geologi','&#9651; Wireframe'],['Struktur','&#8725; Struktur'],['Pemetaan lapangan','&#128506; Pemetaan'],['@ogtg','&#9707; Analisis'],['@sltg','&#9986; Slicing'],['@lgtg','&#9636; Legenda'],['Cara pakai','? Bantuan']];
  const br=document.createElement('span');br.className='brand';br.innerHTML='<svg width="34" height="28" viewBox="0 0 34 28" aria-hidden="true"><path d="M1 27 L12 8 L18 18 L22 12 L33 27 Z" fill="#1f6feb"/><path d="M12 8 L15.5 14 L12.5 13 L10 16 Z" fill="#fff" opacity=".85"/><path d="M22 12 L25 17 L22.5 16.2 L20.4 18.4 Z" fill="#fff" opacity=".7"/><path d="M1 27 L12 8 L14 11.4 L5.5 27 Z" fill="#0b4fc4"/></svg><span class="bx"><b>Ore Works</b></span>';bar.appendChild(br);const pj=document.getElementById('pjname');if(pj){pj.classList.add('inbar');bar.appendChild(pj);}
  const sep=()=>{const d=document.createElement('span');d.className='sep';bar.appendChild(d);};sep();
  const place=(w,b)=>{if(!w)return;const r=cv.getBoundingClientRect(),bb=b.getBoundingClientRect();w.style.left=Math.max(4,Math.min(bb.left-r.left,r.width-(w.offsetWidth||360)-8))+'px';w.style.top='8px';w.style.right='auto';};
@@ -4310,7 +4310,7 @@ function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{co
 /* ===================== Ore Works 0.6 · panel Data = repositori tunggal (Bor, Permukaan, Wireframe, Pemetaan, Titik & Bidang struktur) ===================== */
 (function(){const g=id=>document.getElementById(id);
  const HOST={bor:{l:'Bor',ids:['dsl'],e:'Belum ada dataset bor. Menu Data bor → Impor tabel.',f:'Centang = tampil · ✕ hapus dataset · Upsert/Append sesuai saat impor'},
-  sf:{l:'Permukaan',ids:['sfl','orl'],e:'Belum ada topografi / desain pit / ortofoto. Menu Topografi → impor.',f:'Topografi, desain pit & ortofoto: tampil, warna, transparansi, hapus'},
+  sf:{l:'Permukaan',ids:['sfl','orl'],e:'Belum ada topografi / desain pit / ortofoto. Menu Permukaan → impor.',f:'Topografi, desain pit & ortofoto: tampil, warna, transparansi, hapus'},
   wf:{l:'Wireframe',ids:['wil'],e:'Belum ada wireframe impor. Menu Wireframe → impor.',f:'Isi kolom Domain dengan nama vein · warna & transparansi per wireframe'},
   stp:{l:'Titik struktur',ids:['stpw2','stpl'],e:'Belum ada titik struktur. Menu Struktur → Tambah titik / Impor CSV.',f:'Klik ▸ Ubah untuk mengedit · ⌖ arahkan kamera · ✕ hapus'}};
  const ORD=[['bor','Bor'],['sf','Permukaan'],['wf','Wireframe'],['fm','Pemetaan'],['stp','Titik struktur'],['str','Bidang struktur']];
@@ -4741,7 +4741,7 @@ function fmDxfApply(){const P=FMDX;if(!P)return;const ck=id=>{const e=fmg(id);re
   +(R.noz?'<br><span style="color:#c62828">'+R.noz+' objek tanpa elevasi dilewati: muat topografi dulu, lalu impor ulang.</span>':'')+(jm.length?'<br><span style="color:#b26a00">Elevasi meloncat tajam pada layer: '+jm.map(esc).join(', ')+'. Periksa di 3D atau tempelkan dengan <i>Ikuti topografi</i>.</span>':'')+(P.bad.length?'<br><span style="color:#c62828">'+P.bad.join('<br>')+'</span>':'');
  FMDX=null;fmDxfShow();if(window.sbToast)sbToast('DXF: '+R.line+' garis, '+R.pt+' grab, '+R.stp+' titik struktur');}
 (function(){const inp=fmg('fmdxf');if(!inp)return;inp.onchange=async e=>{const fs=[...(e.target.files||[])],w=fmg('fmdxw'),out=[],err=[];e.target.value='';if(!fs.length)return;w.textContent='Membaca '+fs.length+' file…';
-  for(const f of fs){try{if(f.size>60e6)throw new Error('file terlalu besar untuk impor pemetaan ('+Math.round(f.size/1e6)+' MB); DXF topografi dimuat lewat menu Topografi');const ents=dxfRead(await f.text());if(!ents.length)throw new Error('tidak ada garis / titik');out.push({name:f.name,ents});}catch(x){err.push(esc(f.name)+': '+esc(x.message));}}
+  for(const f of fs){try{if(f.size>60e6)throw new Error('file terlalu besar untuk impor pemetaan ('+Math.round(f.size/1e6)+' MB); DXF topografi dimuat lewat menu Permukaan');const ents=dxfRead(await f.text());if(!ents.length)throw new Error('tidak ada garis / titik');out.push({name:f.name,ents});}catch(x){err.push(esc(f.name)+': '+esc(x.message));}}
   w.innerHTML=err.length?'<span style="color:#c62828">'+err.join('<br>')+'</span>':'Periksa daftar di bawah, lalu klik <b>Impor ke Pemetaan</b>.';FMDX=out.length?fmDxfPlan(out):null;fmDxfShow();};})();
 
 /* ===================== Ore Works 0.9.1 · review 16 Nov: sinkronisasi channel, legenda, Batal untuk impor, pesan tidak menghalangi ===================== */
@@ -5579,6 +5579,57 @@ setInterval(()=>render(false),1200);
 show(!!PT.open);
 window.ptRender=()=>render(true);
 }
+
+/* Ore Works 0.13.4 (pemilik 17 Nov 2026): "skala bisa digeser-geser dong sama user, terus simbol kompasnya jelek, pakai saja
+   dari GCEx, tapi dengan transparansi." Kompas = kompas 3D GC-Ex (gcex_base.html cpDraw: piringan horizontal ikut miring
+   bersama kamera, jarum Utara merah, panah Z ke atas), isi semi-transparan. Klik = pandangan plan (seperti gizmo lama).
+   Kotak skala & kompas bisa diseret; posisi disimpan per komputer (localStorage); klik ganda = posisi bawaan. */
+(function(){const $=id=>document.getElementById(id),cv=$('cv');if(!cv||$('owKp'))return;
+ const st=document.createElement('style');st.textContent=`#ogz{display:none!important}
+#owSkala{pointer-events:auto!important;cursor:move;user-select:none;touch-action:none;z-index:4!important}
+#owKp{position:absolute;left:10px;bottom:8px;z-index:4;width:100px;cursor:pointer;user-select:none;touch-action:none;opacity:.8;transition:opacity .15s}
+#owKp:hover{opacity:1}#owKp.geser,#owSkala.geser{cursor:grabbing;opacity:1}
+#owKp svg{display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
+#owKp .cpo{fill:#fff;fill-opacity:.42;stroke:#8fa1bd;stroke-width:1.5}
+#owKp .cpi{fill:#eef3fb;fill-opacity:.5;stroke:#1b2a4e;stroke-opacity:.85;stroke-width:1.4}
+#owKp .cpn{fill:#c92a2a;stroke:#8f1d1d;stroke-width:.6;stroke-linejoin:round}
+#owKp .cps{fill:#f4f6f9;fill-opacity:.85;stroke:#5b6b7c;stroke-width:.6;stroke-linejoin:round}
+#owKp .cpt{fill:none;stroke:#5b6b7c;stroke-width:1.2}#owKp .cpc{fill:#1d2433}
+#owKp .cpz{fill:none;stroke:#b5893e;stroke-width:1.8}#owKp .cpzh{fill:#b5893e}
+#owKp text{font:700 10px Segoe UI,Arial,sans-serif;text-anchor:middle;fill:#3d4b5c;paint-order:stroke;stroke:#ffffffb0;stroke-width:2.2px}
+#owKp text.cpN{fill:#c92a2a;font-size:12px}#owKp text.cpZt{fill:#b5893e;font-size:9px}#owKp:hover .cpo{stroke:#1f6feb}`;document.head.appendChild(st);
+ const d=document.createElement('div');d.id='owKp';d.title='Kompas · klik: pandangan plan · seret: pindahkan · klik ganda: posisi bawaan';
+ d.innerHTML='<svg viewBox="-50 -50 100 100" width="100" height="100"><circle r="47" class="cpo"></circle><path id="kpEll" class="cpi"></path><path id="kpTk" class="cpt"></path>'+
+  '<polygon id="kpSn" class="cps"></polygon><polygon id="kpNn" class="cpn"></polygon><path id="kpZ" class="cpz"></path><polygon id="kpZh" class="cpzh"></polygon>'+
+  '<text id="kpLU" class="cpN">U</text><text id="kpLT">T</text><text id="kpLS">S</text><text id="kpLB">B</text><text id="kpLZ" class="cpZt">Z</text><circle r="2.6" class="cpc"></circle></svg>';
+ cv.appendChild(d);
+ const S=(id,a,v)=>{const e=$(id);if(e)e.setAttribute(a,v);},f=p=>p[0].toFixed(1)+','+p[1].toFixed(1);
+ function draw(rt,us){const K=32,P=v=>[K*(v[0]*rt[0]+v[1]*rt[1]+v[2]*rt[2]),-K*(v[0]*us[0]+v[1]*us[1]+v[2]*us[2])];
+  let e='';for(let i=0;i<=48;i++){const a=i/48*2*Math.PI;e+=(i?'L':'M')+f(P([Math.sin(a),Math.cos(a),0]));}S('kpEll','d',e+'Z');
+  let tk='';for(let i=0;i<8;i++){const b=i/8*2*Math.PI,sn=Math.sin(b),cs=Math.cos(b),q=i%2?0.86:0.78;tk+='M'+f(P([sn*q,cs*q,0]))+'L'+f(P([sn,cs,0]));}S('kpTk','d',tk);
+  S('kpNn','points',[P([0,0.98,0]),P([0.16,0,0]),P([0,0,0.03]),P([-0.16,0,0])].map(f).join(' '));S('kpSn','points',[P([0,-0.98,0]),P([0.16,0,0]),P([-0.16,0,0])].map(f).join(' '));
+  const L=(id,v)=>{const p=P(v);S(id,'x',p[0].toFixed(1));S(id,'y',(p[1]+3.5).toFixed(1));};L('kpLU',[0,1.3,0]);L('kpLT',[1.3,0,0]);L('kpLS',[0,-1.3,0]);L('kpLB',[-1.3,0,0]);
+  const z=P([0,0,1.05]),zl=Math.hypot(z[0],z[1]);
+  if(zl>7){const ux=z[0]/zl,uy=z[1]/zl;S('kpZ','d','M0,0L'+f([z[0]-ux*5,z[1]-uy*5]));S('kpZh','points',[z,[z[0]-ux*7-uy*3.5,z[1]-uy*7+ux*3.5],[z[0]-ux*7+uy*3.5,z[1]-uy*7-ux*3.5]].map(f).join(' '));S('kpLZ','x',(z[0]+ux*7).toFixed(1));S('kpLZ','y',(z[1]+uy*7+3).toFixed(1));}
+  else{S('kpZ','d','M-4,0a4,4 0 1,0 8,0a4,4 0 1,0 -8,0');S('kpZh','points','0,0 0,0 0,0');S('kpLZ','x','7');S('kpLZ','y','-6');}}
+ /* kamera three.js: x = E, y = RL, z = -N  →  sumbu layar dalam koordinat (E, N, RL) */
+ let last='';function up(){try{C.updateMatrixWorld();const m=C.matrixWorld.elements,rt=[m[0],-m[2],m[1]],us=[m[4],-m[6],m[5]],k=rt.concat(us).map(v=>v.toFixed(3)).join();if(k===last)return;last=k;draw(rt,us);}catch(e){}}
+ try{CT.addEventListener('change',up);}catch(e){}setInterval(up,250);up();
+ /* seret: kompas & kotak skala */
+ function geser(el,key,def,onTap){let p=null;try{p=JSON.parse(localStorage.getItem(key)||'null');}catch(e){}
+  const put=()=>{const c=cv.getBoundingClientRect(),q=p||def,w=el.offsetWidth||100,h=el.offsetHeight||40;
+   el.style.left=Math.max(0,Math.min(Math.max(0,c.width-w),q.l))+'px';el.style.bottom=Math.max(0,Math.min(Math.max(0,c.height-h),q.b))+'px';el.style.right='auto';el.style.top='auto';};
+  put();addEventListener('resize',put);let s0=null,moved=false;
+  el.addEventListener('pointerdown',e=>{if(e.button!==0)return;const r=el.getBoundingClientRect(),c=cv.getBoundingClientRect();s0={x:e.clientX,y:e.clientY,l:r.left-c.left,b:c.bottom-r.bottom,cw:c.width,ch:c.height,w:r.width,h:r.height};moved=false;try{el.setPointerCapture(e.pointerId);}catch(_){}e.stopPropagation();e.preventDefault();});
+  el.addEventListener('pointermove',e=>{if(!s0)return;const dx=e.clientX-s0.x,dy=e.clientY-s0.y;if(!moved&&Math.hypot(dx,dy)<4)return;moved=true;el.classList.add('geser');
+   p={l:Math.max(0,Math.min(s0.cw-s0.w,s0.l+dx)),b:Math.max(0,Math.min(s0.ch-s0.h,s0.b-dy))};el.style.left=p.l+'px';el.style.bottom=p.b+'px';});
+  el.addEventListener('pointerup',e=>{if(!s0)return;s0=null;el.classList.remove('geser');if(moved){try{localStorage.setItem(key,JSON.stringify(p));}catch(_){}}else if(onTap)onTap();});
+  el.addEventListener('dblclick',e=>{e.stopPropagation();e.preventDefault();p=null;try{localStorage.removeItem(key);}catch(_){}put();});
+  return put;}
+ let tap=null;geser(d,'ow.kompasPos',{l:10,b:8},()=>{clearTimeout(tap);tap=setTimeout(()=>{try{view('plan');}catch(e){}},230);});
+ d.addEventListener('dblclick',()=>clearTimeout(tap),true);
+ const sk=()=>{const b=$('owSkala');if(!b){setTimeout(sk,300);return;}b.title='Seret untuk memindahkan · klik ganda: posisi bawaan';geser(b,'ow.skalaPos',{l:118,b:10});};sk();
+})();
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */

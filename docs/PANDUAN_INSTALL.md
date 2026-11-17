@@ -5312,3 +5312,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Untuk vein yang bercabang, digit tiap cabang sebagai solid sendiri (mis. V1A, V1B, V1C) dan biarkan string cabang sedikit
   menumpang ke solid induk di titik percabangan. Lalu di *Pemodelan string* pilih tiap cabang → *Cabang dari* = induk.
   Hasilnya satu solid tertutup (union) dan satu domain; wireframe cabang tidak lagi tampil terpisah.
+
+## 252. Ore Works 0.13.4 — tutorial vein bercabang, kompas, skala, menu Permukaan
+
+- **Tutorial baru**: *Ore Works — Tutorial Vein Bercabang* (PDF, di ZIP Dokumen → `Tutorial/`). Data latihannya di ZIP
+  Data-Latihan → `Ore_Works_Latihan/Vein_Cabang/` (BR_collar, BR_survey, BR_assay, BR_geologi).
+- Aturan digit yang ditegaskan di tutorial: klik **kontak sisi barat dari atas ke bawah, lalu sisi timur dari bawah ke atas**,
+  tidak peduli lubang datang dari arah mana. Mengikuti urutan From/To lubang membuat poligon menyilang.
+- **Kompas** di kiri bawah layar 3D kini kompas GC-Ex (piringan U/T/S/B, jarum Utara merah, panah Z), semi-transparan.
+  Klik = pandangan plan.
+- **Kotak skala dan kompas bisa diseret** ke mana saja di layar 3D. Posisinya diingat di komputer itu; klik ganda =
+  kembali ke posisi bawaan.
+- Menu **Topografi** berganti nama menjadi **Permukaan** (isinya topografi, desain pit, ortofoto).
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
