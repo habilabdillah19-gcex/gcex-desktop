@@ -5339,3 +5339,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   isi ≥ untuk hanya menampilkan kadar di atas ambang. Label bertumpuk disembunyikan — zoom in untuk melihat lebih banyak.
 - Block Model, Drillhole, DB-Ex: tidak berubah.
 
+## 254. Ore Works 0.13.6 — simpan peta level
+
+- Analisis → **Peta** → ▶ Buat peta, lalu **⭳ PNG** (gambar resolusi 3× layar) atau **⎙ PDF** (A4 lanskap: di dialog
+  cetak pilih *Simpan sebagai PDF* / *Microsoft Print to PDF*).
+- Untuk peta tampilan 3D (plan) dengan kop dan grid tetap memakai toolbar **Layout peta**.
+- Block Model, Drillhole, DB-Ex: tidak berubah.
+
