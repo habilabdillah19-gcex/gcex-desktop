@@ -636,6 +636,12 @@ B.append('<p><code>web-src/keluarga_bm.css</code> dipasang <code>web-src/build.p
          'hanya di Block Model. Variabel di <code>html:root</code>: <code>--pr</code> #9C5522, <code>--prh</code> #A85D27, <code>--pr2</code>/<code>--ac</code> #B8692E, '
          '<code>--prs</code> #F3E3D3, <code>--top</code> #1C2733, panel <code>--sf</code> #F7F5F0, <code>--sk-*</code> (skin_bm.js) dan <code>--ptsel</code> (ptree.js). '
          'Skrip kecil di &lt;head&gt; mengisi <code>gcex_bm_latar</code>=lembut bila belum ada; <code>#stage.bglat-lembut</code> = gradasi #D9D6CC&rarr;#F8F6F1.</p>')
+B.append('<h3>8.30 Ganti palet warna (BM 0.24.109 / DH 0.24.111)</h3>')
+B.append('<p><code>web-src/palet.js</code> (<code>GXPAL</code>): jangkar = warna terukur palet bawaan tiap aplikasi; tiap hex &le; 95 (aksen &le; 45) dari jangkar '
+         'digeser ke jangkar palet terpilih dengan selisih sama, teks asli tiap &lt;style&gt; disimpan di WeakMap; <code>#keluargaBm</code> dimatikan untuk BM Dasar; '
+         'tombol utama = aksen digelapkan sampai kontras putih &ge; 4,5:1; DH punya jangkar teks (#1F2430, #1C2733) agar teks tidak ikut bilah kuning Dasar; '
+         'latar 3D lewat <code>#gxPalBg</code>; UI di <code>#pView</code> (<code>#gxPal</code>); localStorage <code>gcex_palet_bm</code> / <code>gcex_palet_dh</code>. '
+         'Uji: <code>tools/uji/uji_palet.py</code>.</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '

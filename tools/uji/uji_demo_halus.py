@@ -66,7 +66,7 @@ with sync_playwright() as pw:
     pg.on("pageerror", lambda e: E.append(str(e)[:300])); pg.on("dialog", lambda x: x.accept())
     pg.goto("http://127.0.0.1:%d/index.html" % P); pg.wait_for_function("window.DLAT && DLAT.siap", timeout=60000); pg.evaluate("document.getElementById('dlatBtn').click()")
     pg.wait_for_function("window.BX && BX.m", timeout=600000); pg.wait_for_function("!DLAT.busy", timeout=600000); pg.wait_for_timeout(4000)
-    pg.evaluate("dmStart();DM.spd=0.25;"); pg.wait_for_timeout(25000); i = pg.evaluate("DM.i"); pg.evaluate("dmStop()"); pg.wait_for_timeout(1500)
+    pg.evaluate("dmStart();DM.spd=0.25;"); pg.wait_for_timeout(40000); i = pg.evaluate("DM.i")  # 40 s: latar gradasi BM 0.24.108 sedikit lebih lambat dirender tanpa GPU; pg.evaluate("dmStop()"); pg.wait_for_timeout(1500)
     cek(i >= 5 and not E and bool(pg.evaluate("!!window.DMH")), "H6 BM demo jalan sampai langkah %d tanpa galat %s" % (i, E[:2]))
     srv.terminate(); b.close()
 print("LULUS" if not gagal else "GAGAL: %s" % gagal); sys.exit(1 if gagal else 0)

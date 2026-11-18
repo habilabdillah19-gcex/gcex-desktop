@@ -5657,3 +5657,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   Garnierit, Garnierit-Malakit, GC-Ex, Keluarga GC-Ex · aksen Ore Works = bawaan, Hitam-putih). Warna data kadar dan lapisan
   tidak berubah. Pilihan diingat saat aplikasi dibuka lagi.
 
+## 282. Block Model 0.24.109 / Drillhole 0.24.111 — ganti palet warna
+
+- Buka **Project Tree › Pengaturan tampilan › Tampilan & performa**. Bagian paling atas panel, **Palet warna**, berisi 10
+  pilihan dengan contoh warnanya (bingkai, aksen, aksen kedua, panel). Klik salah satu; centang menandai yang aktif.
+  1. Dasar (palet pertama aplikasi) · 2. Malakit · 3. Oksida · 4. Kuarsa-Emas · 5. Azurit · 6. Garnierit ·
+  7. Garnierit-Malakit · 8. GC-Ex (seperti Drill Hole) · 9. Keluarga GC-Ex · aksen aplikasi (bawaan) · 10. Hitam-putih.
+- Yang berganti: bilah atas, menu, status bar, toolbar, panel, garis, tombol, tab aktif, centang, sorotan pilihan dan latar
+  3D (Gradasi lembut / Gradasi navy). Latar **Polos** tetap putih.
+- Warna data tidak berubah: kelas kadar, warna blok, domain, lapisan, legenda data.
+- Pilihan diingat di komputer ini (terpisah untuk Block Model dan Drillhole). Kembali ke palet 9 untuk warna bawaan.
+- DB-Ex, Ore Works: tidak berubah (Ore Works sudah punya pilihan palet sejak 0.24.0).

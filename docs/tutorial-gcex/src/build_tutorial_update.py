@@ -1350,6 +1350,10 @@ B.append('<h3>16z. Warna Keluarga GC-Ex: aksen tembaga (Block Model 0.24.108)</h
 B.append('<p>Block Model kini berwarna aksen <b>tembaga</b> di atas bingkai navy dof dan panel abu hangat yang sama dengan aplikasi GC-Ex lain '
          '(Drillhole emas tua, Ore Works malakit). Latar 3D bawaan menjadi gradasi hangat; pilihan Polos dan Gradasi navy tetap ada di <b>Latar 3D</b>. '
          'Warna data (kelas kadar, blok, domain) tidak berubah.</p>')
+B.append('<h3>16za. Ganti palet warna (Block Model 0.24.109 / Drillhole 0.24.111)</h3>')
+B.append('<p>Buka <b>Pengaturan tampilan &rsaquo; Tampilan &amp; performa</b>; bagian <b>Palet warna</b> berisi 10 pilihan: Dasar (palet pertama aplikasi), '
+         'Malakit, Oksida, Kuarsa-Emas, Azurit, Garnierit, Garnierit-Malakit, GC-Ex (seperti Drill Hole), Keluarga GC-Ex (bawaan) dan Hitam-putih. Bingkai, '
+         'panel, tombol, sorotan dan latar 3D ikut berganti; warna data (kelas kadar, blok, domain) tetap. Pilihan diingat di komputer ini.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
