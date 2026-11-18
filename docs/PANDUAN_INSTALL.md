@@ -5646,3 +5646,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Tata letak diingat saat aplikasi dibuka lagi. **Tampilan → Kembalikan tata letak** = kembali ke bawaan (Project kiri,
   Properti kanan, tanpa belah).
 
+## 281. Ore Works 0.24.0 — legenda, pesan, dan palet warna
+
+- **Legenda** selalu di pojok area 3D. Tombol **–** memperkecil jadi strip judul (klik lagi untuk membuka). Seret judulnya ke
+  pojok lain; saat dilepas legenda menempel ke pojok terdekat dan tetap di sana walau panel diubah. Legenda 3D disembunyikan
+  sendiri saat Penampang / Tabel atribut / Studio memenuhi area tengah.
+- **Pesan** tampil di status bar (bawah): pesan terakhir dan jumlah pesan baru (lingkaran merah = ada galat). Klik untuk
+  melihat semua pesan beserta jamnya; **Bersihkan** mengosongkan daftar. Bila melapor masalah, sertakan isi daftar ini.
+- **Palet warna**: **Tampilan → Palet warna**, pilih salah satu dari 10 palet (Dasar, Malakit, Oksida, Kuarsa-Emas, Azurit,
+  Garnierit, Garnierit-Malakit, GC-Ex, Keluarga GC-Ex · aksen Ore Works = bawaan, Hitam-putih). Warna data kadar dan lapisan
+  tidak berubah. Pilihan diingat saat aplikasi dibuka lagi.
+

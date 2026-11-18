@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.23.0';</script>
+<script>window.GCEX_VER='0.24.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -7260,7 +7260,7 @@ const IC={baru:'M4 2.5h6l3 3v8H4zM10 2.5v3h3',buka:'M1.5 4.5h5l1.5 1.5h6.5v7h-13
  png:'M2 3h12v10H2zM2 11l3.5-3.5 3 3 2-2L14 12',peta:'M1.5 3.5l4-1.5 5 2 4-1.5v10l-4 1.5-5-2-4 1.5z',undo:'M6 9L2.5 5.5 6 2M2.5 5.5H10a3.5 3.5 0 010 7H7',
  studio:'M2.5 2.5h11v11h-11zM4.5 11l2-4.5 2.5 2.5 2.5-5',panel:'M2 2.5h12v11H2zM6 2.5v11',plan:'M2.5 2.5h11v11h-11zM8 4v8M4 8h8',sec:'M2 12l4-6 3 3 5-6',
  obl:'M8 1.5l5.5 3v7L8 14.5l-5.5-3v-7zM8 7.5l5.5-3M8 7.5v7M8 7.5l-5.5-3',latar:'M2 2.5h12v11H2zM2 9.5l4-3 3 2 5-4',label:'M2 5h9l3 3-3 3H2z',
- leg:'M2 3h3v3H2zM2 9.5h3v3H2zM7 4.5h7M7 11h7',data:'M2 3h12M2 6.5h12M2 10h12M2 13.5h8',tree:'M2 3h12v10H2zM2 6.5h12M2 10h12M6 3v10',full:'M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4',
+ leg:'M2 3h3v3H2zM2 9.5h3v3H2zM7 4.5h7M7 11h7',data:'M2 3h12M2 6.5h12M2 10h12M2 13.5h8',tree:'M2 3h12v10H2zM2 6.5h12M2 10h12M6 3v10',palet:'M8 1.5a6.5 6.5 0 100 13c1 0 1.5-.6 1.5-1.4 0-.9-.8-1.2-.8-2s.7-1.3 1.6-1.3h1.7c1.4 0 2.5-1.1 2.5-2.6C14.5 3.6 11.6 1.5 8 1.5zM4.8 7.5h.01M7 4.6h.01M10.2 4.8h.01',full:'M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4',
  hide:'M2 4h12M2 7h12M5 11l3 3 3-3',wf:'M8 1.5l6 3.5v6L8 14.5 2 11V5zM2 5l6 3.5L14 5M8 8.5v6',impor:'M8 2v8M5 7l3 3 3-3M2.5 11v2.5h11V11',
  ana:'M2 14V9M6 14V4M10 14V7M14 14V2',slice:'M2 13L14 3M4 6l6 6',help:'M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM6 6a2 2 0 113 1.7c-.7.4-1 .8-1 1.6M8 11.5v.2',
  info:'M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 7v4.5M8 4.6v.2',keys:'M1.5 4h13v8h-13zM4 7h1M7 7h1M10 7h1M4.5 9.5h7',log:'M3 2.5h10v11H3zM5.5 5.5h5M5.5 8h5M5.5 10.5h3'};
@@ -7306,6 +7306,7 @@ const MENU={
  'Tampilan':()=>{const bg=document.body.dataset.bg||'terang',lb=g('lbad');return [['panel','Panel Tampilan (pandangan, VE, label, potong RL)…','',ORIG['Tampilan']],'-',
   ['plan','Plan (dari atas)','',()=>view('plan')],['sec','Penampang dari WSW','',()=>view('wsw')],['sec','Penampang dari ENE','',()=>view('ene')],['sec','Sepanjang strike (NNW)','',()=>view('nnw')],['obl','Oblik dari SSE','',()=>view('sse')],'-',
   ['latar','Latar 3D','',null,[['Gradasi hangat',bg==='terang',()=>osBg('terang')],['Gradasi navy dof',bg==='gelap',()=>osBg('gelap')],['Polos',bg==='polos',()=>osBg('polos')]]],
+  ['palet','Palet warna','',null,(window.owPalet?owPalet.daftar():[]).map(p=>['<span style="display:inline-flex;gap:1px;margin-right:8px;vertical-align:-2px">'+[p.c.chrome,p.c.accent,p.c.accent2,p.c.dock].map(c=>'<i style="display:inline-block;width:9px;height:12px;background:'+c+';border:1px solid #0002"></i>').join('')+'</span>'+p.nm,owPalet.aktif()===p.k,()=>owPalet.pakai(p.k)])],
   ['label','Label adaptif','',()=>{if(lb){lb.checked=!lb.checked;lb.dispatchEvent(new Event('input'));lb.dispatchEvent(new Event('change'));}},null,!lb||lb.checked],
   ['leg','Legenda di 3D','',()=>klik('lgtg'),null,lgOn()],['tree','Panel Project (kiri)','',()=>{if(window.ptShow)ptShow(!ptOpen());},null,!!(window.ptOpen&&ptOpen())],['prop','Panel Properti (kanan)','',()=>{if(window.prShow)prShow(!prOpen());},null,!!(window.prOpen&&prOpen())],['belah','Belah 3D | Penampang','',()=>{if(window.__belah)__belah.toggle();},null,!!(window.__belah&&__belah.on)],['reset','Kembalikan tata letak','',()=>{if(window.__tata)__tata.kembalikan();}],['data','Panel Data (kanan)','',()=>klik('rptg'),null,document.body.classList.contains('rp')],'-',
   ['full','Layar penuh','F11',()=>klik('otbfs')],['hide','Sembunyikan bar menu & toolbar','Ctrl+Shift+M',()=>klik('barhd')]];},
@@ -7844,6 +7845,103 @@ function kembalikan(){if(BL.on)belah(false);LT=DEF();simpan();for(const k of ['o
  if(window.sbToast)sbToast('Tata letak dikembalikan ke bawaan');}
 terapkan();if(LT.belah.on)setTimeout(()=>{LT.belah.on=false;belah(true);},300);
 window.__tata={LT:()=>LT,terapkan,lepasTempel,belah,kembalikan,get belahOn(){return BL.on;}};window.__belah={get on(){return BL.on;},w:lebarB,toggle:()=>belah(!BL.on)};
+}
+
+/* ================= Ore Works 0.24.0: legenda di pojok 3D + pesan di status bar (tahap 7) + pilihan palet warna =================
+   Mockup disetujui pemilik 17 Nov 2026: "Tanpa panel bawah: legenda selalu di pojok 3D (bisa diperkecil jadi strip, bisa diseret);
+   pesan di status bar (pesan terakhir + jumlah, klik = daftar)".
+   Pemilik 18 Nov 2026: "Fitur ganti color palet. Dari 8 palet di artifact, ditambah palet dasar yang pertama banget dan palet
+   hitam-putih" → Tampilan → Palet warna (10 pilihan). Bawaan tetap "Keluarga GC-Ex · aksen Ore Works".
+   Cara kerja palet: semua CSS bertema (berisi warna palet bawaan) disalin aslinya, lalu tiap warna yang dekat dengan salah
+   satu warna jangkar palet bawaan digeser ke jangkar palet terpilih dengan selisih yang sama (hover, pilihan, garis tetap
+   proporsional). Warna data (skala kadar, lapisan, ikon objek) tidak disentuh. Latar 3D ikut palet. */
+{
+const g=id=>document.getElementById(id);
+/* ---------- legenda: strip & menempel di pojok 3D ---------- */
+const lgw=g('lgw'),lgb=g('lgb'),lgh=g('lgh'),cv=g('cv');
+const css=document.createElement('style');css.textContent=`#lgw.strip{width:auto!important;min-width:0!important}#lgw.strip #lgh b:before{content:"▤ ";color:#17806B}
+#lgw{border-radius:2px!important;box-shadow:0 2px 8px #1C273326!important}#lgh{cursor:move}
+body.bukan3d #lgw{display:none!important}
+#sbpsn{display:flex;align-items:center;gap:6px;padding:0 10px;cursor:pointer;border-left:1px solid #ffffff1f;white-space:nowrap;max-width:420px;min-width:0}
+#sbpsn:hover{background:#ffffff14}#sbpsn .t{overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.85}#sbpsn.baru .t{opacity:1}
+#sbpsn .n{min-width:16px;height:15px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#B5893E;color:#1C2733;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+#sbpsn.galat .n{background:#E5484D;color:#fff}
+#psnw{position:fixed;z-index:9998;display:none;width:460px;max-height:min(420px,60vh);flex-direction:column;background:#fff;border:1px solid #9AA19B;border-radius:2px;box-shadow:0 8px 22px #1C273344;font:12px "Segoe UI",Inter,Arial,sans-serif;color:#1C2733}
+#psnw .hd{height:28px;flex:none;display:flex;align-items:center;gap:6px;padding:0 6px 0 10px;background:#EDEBE6;border-bottom:1px solid #D3CDC1;font-weight:600}
+#psnw .hd span{flex:1}#psnw .hd button{height:20px;margin:0;padding:0 8px;font:inherit;font-weight:400;border:1px solid #B9B2A4;border-radius:2px;background:#fff;cursor:pointer}
+#psnl{overflow:auto;flex:1}#psnl .r{display:flex;gap:8px;padding:4px 10px;border-bottom:1px solid #EFEBE3;line-height:1.35}#psnl .r .w{color:#8A8F99;flex:none;font-variant-numeric:tabular-nums}
+#psnl .r.galat{background:#FDECEC}#psnl .r.galat .m{color:#B42318}#psnl .em{padding:18px;color:#8A8F99;text-align:center}`;document.head.appendChild(css);
+/* strip: tombol – memperkecil jadi strip judul */
+const mn=g('lgmin');if(mn){const o=mn.onclick;mn.onclick=e=>{if(o)o.call(mn,e);const strip=lgb.style.display==='none';lgw.classList.toggle('strip',strip);try{localStorage.setItem('ow.lgstrip',strip?'1':'');}catch(x){}setTimeout(pojok,0);};
+ try{if(localStorage.getItem('ow.lgstrip')==='1'&&lgb.style.display!=='none')mn.onclick();}catch(x){}}
+/* menempel ke pojok terdekat setelah diseret; tetap di pojok saat area 3D berubah ukuran */
+let POJ='kb';try{POJ=localStorage.getItem('ow.lgpoj')||'kb';}catch(e){}
+function pojok(){if(!lgw||lgw.style.display==='none')return;const m=10,s=lgw.style,w={left:POJ[0]==='k'?'auto':m+'px',right:POJ[0]==='k'?m+'px':'auto',top:POJ[1]==='b'?'auto':m+'px',bottom:POJ[1]==='b'?(m+2)+'px':'auto'};for(const k in w)if(s[k]!==w[k])s[k]=w[k];}
+let seret=false;
+if(lgh)lgh.addEventListener('mousedown',e=>{if(e.button!==0||e.target.closest('button'))return;seret=true;const up=()=>{removeEventListener('mouseup',up);setTimeout(()=>{seret=false;const r=lgw.getBoundingClientRect(),c=cv.getBoundingClientRect();if(!r.width)return;
+ const cx=r.left+r.width/2-c.left,cy=r.top+r.height/2-c.top;POJ=(cx>c.width/2?'k':'l')+(cy>c.height/2?'b':'a');try{localStorage.setItem('ow.lgpoj',POJ);}catch(x){}pojok();},0);};addEventListener('mouseup',up);});
+try{new ResizeObserver(()=>pojok()).observe(cv);}catch(e){}if(lgw){new MutationObserver(()=>{if(!seret&&lgw.style.display!=='none')pojok();}).observe(lgw,{attributes:true,attributeFilter:['style']});}
+setTimeout(pojok,300);
+/* sembunyikan legenda 3D saat area tengah menampilkan Penampang penuh / Tabel penuh / Studio */
+setInterval(()=>{const scw=g('scw'),ta=window.__ta&&__ta.TA,b=(scw&&scw.classList.contains('penuh'))||(ta&&ta.on&&!ta.bawah)||(window.__st&&__st.on);document.body.classList.toggle('bukan3d',!!b);},400);
+/* ---------- pesan di status bar ---------- */
+const PS=[];let baca=0;const st=document.querySelector('footer#status'),sp=document.createElement('span');sp.id='sbpsn';sp.title='Pesan aplikasi — klik untuk melihat daftar';sp.innerHTML='<span class="n">0</span><span class="t">Belum ada pesan</span>';
+const ref=g('sbmsg');if(st){if(ref&&ref.parentNode===st)ref.after(sp);else st.appendChild(sp);}
+const pw=document.createElement('div');pw.id='psnw';pw.innerHTML='<div class="hd"><span>Pesan</span><button id="psnc">Bersihkan</button><button id="psnx" title="Tutup">✕</button></div><div id="psnl"></div>';document.body.appendChild(pw);
+const jam=d=>d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+function catat(m,jenis){m=String(m==null?'':m).trim();if(!m)return;const L0=PS[PS.length-1];if(L0&&L0.m===m&&Date.now()-L0.d<1500)return;PS.push({m,d:Date.now(),j:jenis||'info'});if(PS.length>300)PS.splice(0,PS.length-300);tampil(true);if(pw.style.display==='flex')daftar();}
+function tampil(baru){const n=PS.length-baca,L0=PS[PS.length-1];sp.querySelector('.n').textContent=n>99?'99+':String(Math.max(0,n));sp.querySelector('.n').style.visibility=n>0?'visible':'hidden';
+ sp.querySelector('.t').textContent=L0?L0.m:'Belum ada pesan';sp.title=L0?jam(new Date(L0.d))+' — '+L0.m+'\nKlik untuk melihat semua pesan':'Pesan aplikasi';sp.classList.toggle('galat',PS.slice(baca).some(p=>p.j==='galat'));
+ if(baru){sp.classList.add('baru');clearTimeout(tampil.t);tampil.t=setTimeout(()=>sp.classList.remove('baru'),8000);}}
+function daftar(){const l=g('psnl');l.innerHTML=PS.length?PS.slice().reverse().map(p=>'<div class="r '+p.j+'"><span class="w">'+jam(new Date(p.d))+'</span><span class="m">'+esc(p.m)+'</span></div>').join(''):'<div class="em">Belum ada pesan.</div>';}
+sp.onclick=e=>{e.stopPropagation();if(pw.style.display==='flex'){pw.style.display='none';return;}daftar();pw.style.display='flex';const r=sp.getBoundingClientRect();pw.style.left=Math.max(4,Math.min(innerWidth-pw.offsetWidth-4,r.left))+'px';pw.style.top=(r.top-pw.offsetHeight-4)+'px';baca=PS.length;tampil(false);};
+g('psnx').onclick=()=>{pw.style.display='none';};g('psnc').onclick=()=>{PS.length=0;baca=0;daftar();tampil(false);};
+document.addEventListener('mousedown',e=>{if(pw.style.display==='flex'&&!pw.contains(e.target)&&!sp.contains(e.target))pw.style.display='none';});
+tampil(false);
+if(typeof window.sbToast==='function'){const t0=window.sbToast;window.sbToast=function(m,u){catat(m);return t0.apply(this,arguments);};}
+addEventListener('error',e=>{if(e&&e.message)catat('Galat: '+e.message+(e.filename?' ('+String(e.filename).split('/').pop()+':'+e.lineno+')':''),'galat');});
+addEventListener('unhandledrejection',e=>{const r=e&&e.reason;catat('Galat: '+(r&&r.message?r.message:String(r)),'galat');});
+window.owPesan=catat;
+/* ---------- palet warna ---------- */
+const BASE={chrome:'#1C2733',chrome2:'#2C3B57',chromeTx:'#E8ECF2',bar:'#EDEBE6',dock:'#F7F5F0',line:'#D3CDC1',accent:'#17806B',accent2:'#B5893E',sel:'#D5ECE4',sub:'#5C6672'};
+const PAL=[
+ {k:'dasar',nm:'Dasar (palet pertama Ore Works)',asli:true,c:{chrome:'#1B2A4E',chrome2:'#2A3F6C',chromeTx:'#E6ECF7',bar:'#E6EBF2',dock:'#F7F9FC',line:'#C9D2E0',accent:'#1F6FEB',accent2:'#E0962E',sel:'#DCE8FC',sub:'#667085'},bg:{terang:['#cfd9e8','#f7f9fc'],gelap:['#1b2a4e','#43567f'],polos:'#f6f7f9'}},
+ {k:'malakit',nm:'Malakit',c:{chrome:'#14322F',chromeTx:'#E4EFEC',bar:'#F3F1EC',dock:'#FAF8F4',line:'#D5D0C6',accent:'#1E8C6E',accent2:'#B8692E',sel:'#D7EDE5',sub:'#5C6660'},vp:'#EEF1EE'},
+ {k:'oksida',nm:'Oksida',c:{chrome:'#262321',chromeTx:'#F1ECE6',bar:'#F4F1ED',dock:'#FBF9F6',line:'#D8D1C8',accent:'#C4571E',accent2:'#3F7D74',sel:'#F5E1D3',sub:'#665E57'},vp:'#F1EFEC'},
+ {k:'kuarsa',nm:'Kuarsa-Emas',c:{chrome:'#1F2328',chromeTx:'#ECEDEF',bar:'#F2F2F0',dock:'#FAFAF8',line:'#D3D3CF',accent:'#A88412',accent2:'#4A6B8A',sel:'#F1E7C4',sub:'#5D6168'},vp:'#EFF0F0'},
+ {k:'azurit',nm:'Azurit',c:{chrome:'#16205A',chromeTx:'#E6E9F7',bar:'#F3F4F9',dock:'#FAFAFD',line:'#D2D5E4',accent:'#2F4BC4',accent2:'#1E8C6E',sel:'#DCE2FA',sub:'#5A5F75'},vp:'#EEF0F6'},
+ {k:'garnierit',nm:'Garnierit',c:{chrome:'#1E3A2C',chromeTx:'#E8F1E6',bar:'#F4F3EB',dock:'#FBFAF4',line:'#D6D3C2',accent:'#4E9A3E',accent2:'#A8692A',sel:'#E0EED3',sub:'#5D6655'},vp:'#F0F2EC'},
+ {k:'garmal',nm:'Garnierit-Malakit',c:{chrome:'#1B3A30',chromeTx:'#E6F0EA',bar:'#F4F3EC',dock:'#FBFAF5',line:'#D4D2C3',accent:'#17806B',accent2:'#A8692A',sel:'#D5ECE4',sub:'#5A645B'},vp:'#EFF2EE'},
+ {k:'gcex',nm:'GC-Ex (seperti Drill Hole)',c:{chrome:'#1C2733',chrome2:'#2C3B57',chromeTx:'#E8ECF2',bar:'#EDEBE6',dock:'#F7F5F0',line:'#D3CDC1',accent:'#B5893E',accent2:'#2C3B57',sel:'#F0E5CF',sub:'#5C6672'},bg:{terang:['#D9D6CC','#F8F6F1'],gelap:['#1C2733','#3A4658'],polos:'#F4F2EC'}},
+ {k:'ow',nm:'Keluarga GC-Ex · aksen Ore Works (bawaan)',c:BASE,bg:{terang:['#D9D6CC','#F8F6F1'],gelap:['#1C2733','#3A4658'],polos:'#F4F2EC'}},
+ {k:'hp',nm:'Hitam-putih',c:{chrome:'#141414',chrome2:'#2A2A2A',chromeTx:'#F2F2F2',bar:'#EEEEEE',dock:'#F8F8F8',line:'#CFCFCF',accent:'#2B2B2B',accent2:'#7A7A7A',sel:'#E1E1E1',sub:'#5E5E5E'},bg:{terang:['#D4D4D4','#FAFAFA'],gelap:['#141414','#3A3A3A'],polos:'#F4F4F4'}}];
+const hx=h=>{h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
+const th=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('').toUpperCase();
+const mix=(a,b,t)=>th(hx(a).map((v,i)=>v+(hx(b)[i]-v)*t));
+const ANK=Object.keys(BASE).map(k=>[k,hx(BASE[k])]);
+function peta(P){const c=Object.assign({},P.c);if(!c.chrome2)c.chrome2=mix(c.chrome,'#FFFFFF',0.12);const cache=new Map();
+ return h=>{const k=h.toUpperCase();if(cache.has(k))return cache.get(k);const v=hx(k);let best=null,bd=1e9;
+  if(k!=='#FFFFFF'&&k!=='#000000')for(const [n,a] of ANK){const d=Math.hypot(v[0]-a[0],v[1]-a[1],v[2]-a[2]);if(d<bd){bd=d;best=[n,a];}}
+  let r=k;if(best&&bd<=95){const t=hx(c[best[0]]),a=best[1];r=th(v.map((x,i)=>t[i]+(x-a[i])));}cache.set(k,r);return r;};}
+const ASLI=new WeakMap();
+function bertema(s){if(ASLI.has(s))return true;const t=s.textContent||'';if(/#17806B|#1C2733|#F7F5F0|#B5893E/i.test(t)){ASLI.set(s,t);return true;}return false;}
+let PK='ow';try{PK=localStorage.getItem('ow.palet')||'ow';}catch(e){}
+let tunda=false;
+function terapkan(k){const P=PAL.find(p=>p.k===k)||PAL.find(p=>p.k==='ow');PK=P.k;try{localStorage.setItem('ow.palet',PK);}catch(e){}tunda=true;
+ const f=P.k==='ow'?null:peta(P);
+ for(const s of document.querySelectorAll('style')){if(!bertema(s))continue;const t=ASLI.get(s);
+  if(s.id==='ow-palet'&&P.asli){if(s.media!=='not all')s.media='not all';continue;}if(s.id==='ow-palet'&&s.media==='not all')s.media='';
+  const n=f?t.replace(/#[0-9a-fA-F]{6}(?=[0-9a-fA-F]{2}(?![0-9a-fA-F])|(?![0-9a-fA-F]))/g,m0=>f(m0)):t;if(s.textContent!==n)s.textContent=n;}
+ tunda=false;document.body.dataset.palet=PK;latar();if(window.reqR)reqR();}
+/* latar 3D ikut palet */
+function bgP(){const P=PAL.find(p=>p.k===PK)||PAL[8];if(P.bg)return P.bg;const c=P.c,vp=P.vp||c.dock;return {terang:[mix(vp,c.line,0.55),mix(vp,'#FFFFFF',0.45)],gelap:[c.chrome,mix(c.chrome,'#FFFFFF',0.16)],polos:mix(vp,c.bar,0.4)};}
+function latar(){try{const k=document.body.dataset.bg||'terang',B=bgP();if(S.background&&S.background.isTexture)S.background.dispose();
+ if(k==='polos'||!B[k])S.background=new THREE.Color(B.polos);else{const c=document.createElement('canvas');c.width=4;c.height=256;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,0,256);gr.addColorStop(0,B[k][0]);gr.addColorStop(1,B[k][1]);x.fillStyle=gr;x.fillRect(0,0,4,256);S.background=new THREE.CanvasTexture(c);}if(window.reqR)reqR();}catch(e){}}
+if(typeof window.osBg==='function'){const o=window.osBg;window.osBg=function(k){const r=o.apply(this,arguments);latar();return r;};}
+/* CSS bertema yang ditambahkan belakangan ikut diwarnai */
+new MutationObserver(ms=>{if(tunda||PK==='ow')return;for(const m of ms)for(const n of m.addedNodes)if(n.tagName==='STYLE'&&bertema(n)){terapkan(PK);return;}}).observe(document.head,{childList:true});
+window.owPalet={daftar:()=>PAL.map(p=>({k:p.k,nm:p.nm,c:p.c})),pakai:k=>{terapkan(k);catat('Palet warna: '+(PAL.find(p=>p.k===PK)||{}).nm);},aktif:()=>PK};
+setTimeout(()=>{if(PK!=='ow')terapkan(PK);},0);
 }
 
 </script>
