@@ -15,7 +15,9 @@ import os
 import numpy as np
 
 W = os.path.dirname(os.path.abspath(__file__))
-D = os.path.join(W, 'data')
+import sys
+# folder data bisa diberikan sebagai argumen (dipakai make_sim_data.py setelah membuat data, mis. di CI)
+D = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(W, 'data')
 VEIN = {'QV', 'QVB', 'BX', 'QV_AND'}
 
 # definisi geometri lensa = bagian awal make_sim_data.py (sebelum lubang bor dibuat; tidak menulis berkas)

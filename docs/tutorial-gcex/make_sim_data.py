@@ -739,3 +739,9 @@ buka setelah Anda mencoba sendiri.
 """ % (len(kecil), len(holes), len(A), len(gc_holes), len(Agc)))
 
 print('OK ->', OUTD)
+
+# Kolom kode vein ("Vein", untuk Flag dari kolom kode / vein system, sejak Drillhole 0.24.71) ditambahkan oleh
+# tambah_kode_vein.py. Dipanggil di sini supaya data yang dibuat ulang (mis. di CI sebelum tutorial PDF) tetap memuatnya;
+# tanpa ini SIM_geologi.csv kehilangan kolom Vein dan build_tutorial_update.py gagal (CI 18 Nov 2026).
+import subprocess
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tambah_kode_vein.py'), OUTD], check=True)
