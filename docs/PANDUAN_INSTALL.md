@@ -5691,3 +5691,21 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   tombol Topografi menyala). Bila ada topografi juga, titik jatuh di permukaan yang paling dekat ke kamera.
 - Semua tulisan sudah diuji terbaca di ke-10 palet warna (kontras minimal 4,5:1).
 
+## 285. Ore Works 0.26.0 — Studio untuk pemula: Demo, setelan awal, ujung solid, label adaptif
+
+- **▶ Demo** (bar judul Studio Pemodelan): pilih jenis sistem vein, lalu Ore Works memperagakan sendiri seluruh alur — memuat data
+  bor simulasi, membuka penampang, menggambar string, membuat cabang, union, sampai membandingkan dengan vein sebenarnya. Spasi =
+  jeda / lanjut, → = lompat langkah, Esc = stop; kecepatan 0,5× / 1× / 2× di bilah bawah. Bila sudah ada data terbuka, project
+  ditutup dulu (seperti Project baru) — simpan dulu bila perlu. Setelah demo selesai, data & solid tetap terbuka untuk dicoba.
+- **Setelan awal**: saat Studio dibuka pertama kali (belum ada solid), arah penampang otomatis tegak lurus jurus vein, langkah =
+  jarak pagar bor, slab ± ½ langkah, snap kontak bor nyala. Tombol **↺ Setelan awal** di bar atas Studio mengulanginya; kolom **Az**
+  untuk mengubah arah penampang kini ada di bar atas Studio.
+- **Ujung solid** diatur per sisi (Ujung U / S, atau bawah / atas di mode Level): runcing, datar, atau diteruskan sejauh jarak
+  tertentu. Arahkan kursor ke baris ujung untuk melihat string mana yang dimaksud (disorot kuning). Solid cabang mengatur ujungnya
+  sendiri (ujung dekat induk diteruskan menembus induk); ubah manual bila perlu, ↺ otomatis untuk kembali.
+- **Peringatan di panel solid**: union terpecah (cabang tidak menyentuh induk, tombol Perpanjang +5 m), saran mode Level untuk
+  tubuh yang hanya terpotong satu penampang, indikator spasi · tebal (kuning = tambah penampang di antaranya), dan tanda kuning
+  ×angka di penampang untuk lubang yang memotong vein sangat miring (jangan gambar string setebal interval itu).
+- **Label penampang adaptif**: baris Log geologi → label = adaptif (bawaan) / semua / mati. Adaptif menampilkan Hole ID, kadar
+  ≥ cut-off dan kode yang bukan batuan dominan, dan tidak menggambar label yang saling menimpa.
+

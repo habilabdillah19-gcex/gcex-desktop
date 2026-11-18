@@ -9,3 +9,5 @@ Tubuh vein (kode Vein_Type):
 Aktual gabungan: 87072 m³, 1 bagian. 54 lubang bor (4272 m), pagar tegak lurus jurus setempat tiap 20 m, 3 lubang/pagar.
 Berkas: SI_collar/survey/assay/geologi.csv, SI_topografi.str, aktual_vein.obj (gabungan, tertutup), aktual_<kode>.obj, geom.json
 Pembuat & uji: python tools/uji/sim_vein_sistem_ow.py buat|uji silang <folder>
+
+SI_string_interpretasi.json: string penampang hasil interpretasi interval bor (dipakai Demo Studio Ore Works 0.26.0; paket demo: python web-src-ow/sisip_demo_ow.py).

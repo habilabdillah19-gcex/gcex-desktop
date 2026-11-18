@@ -336,7 +336,7 @@ async def uji(nama, B, mode='bor'):
                     if not Ls: continue
                     L = max(Ls, key=len)[:-1]; L = L[::int(math.ceil(len(L) / 60))] if len(L) > 60 else L
                     STR.append({'o': round(float(z), 2), 'pts': [[round(float(q[0] + E0), 3), round(float(q[1] + N0), 3)] for q in L]})
-                SOL.append({'nm': T.kode + '_RL', 'az': 0.0, 'm': 'h', 'S': STR}); continue
+                SOL.append({'nm': T.kode + '_RL', 'az': 0.0, 'm': 'h', 'S': STR, 'sambung': True}); continue
             if mode == 'segmen' and len(sk) >= 6 and float(np.ptp(T.hd)) > math.radians(15):          # vein melengkung: dua solid dengan arah penampang sendiri, saling berbagi pagar tengah
                 h = len(sk) // 2; kel = [list(range(0, h + 1)), list(range(h, len(sk)))]
             for gi, idx in enumerate(kel):
@@ -372,12 +372,15 @@ async def uji(nama, B, mode='bor'):
                         bh = to_z(HW[-1], zb, d) if HW[-1][1] > zb else HW[-1] + d * 2
                         bf = to_z(FW[-1], zb, d) if FW[-1][1] > zb else FW[-1] + d * 2
                         STR.append({'o': s['off'], 'pts': [[round(float(q[0]), 3), round(float(q[1]), 3)] for q in [th] + HW + [bh, bf] + FW[::-1] + [tf]]})
-                if T.sambung and gi == 0 and STR:          # string pertemuan diteruskan masuk ke tubuh induk
+                # 0.26.0: ujung cabang dekat induk otomatis 'diteruskan' oleh Studio; SAMBUNG_MANUAL=1 = cara lama (string pertemuan disalin masuk ke induk)
+                if T.sambung and gi == 0 and STR and os.environ.get('SAMBUNG_MANUAL') == '1':
                     first = min(STR, key=lambda x: abs(x['o'] - float(np.dot(T.Cs(s0), nr))))
                     STR = [{'o': float(np.dot(T.Cs(-8.0), nr)), 'pts': first['pts']}] + STR
-                SOL.append({'nm': T.kode + ('' if len(kel) == 1 else '_%d' % (gi + 1)), 'az': az, 'S': STR})
+                SOL.append({'nm': T.kode + ('' if len(kel) == 1 else '_%d' % (gi + 1)), 'az': az, 'S': STR, 'sambung': bool(T.sambung)})
         rep['solid'] = {x['nm']: {'az_penampang': round(x['az'], 1), 'string': len(x['S'])} for x in SOL}
-        await E("""(a)=>{let id=800;for(const x of a.L){MS.L.push({id:id++,nm:x.nm,col:'#d81b60',cap:x.m==='h'?'datar':'titik',capd:x.m==='h'?0:10,den:2.6,on:true,m:x.m||'v',az:x.az,E:a.E,N:a.N,S:x.S});}
+        if os.environ.get('SIMPAN_SOL'):          # string interpretasi untuk paket demo Studio (web-src-ow/buat_demo_ow.py)
+            json.dump({'L': SOL, 'E': E0, 'N': N0}, open(OUT + 'sol_%s_%s.json' % (nama, mode), 'w'))
+        await E("""(a)=>{let id=800;for(const x of a.L){MS.L.push({id:id++,nm:x.nm,col:'#d81b60',cap:x.m==='h'?'datar':'titik',capd:x.m==='h'?0:10,den:2.6,on:true,m:x.m||'v',az:x.az,E:a.E,N:a.N,S:x.S,capM:!x.sambung});}
           for(const M of MS.L)__ms.build(M,true);}""", {'L': SOL, 'E': E0, 'N': N0})
         await pg.wait_for_timeout(1000)
         indiv = await E("()=>MS.L.filter(m=>m.id>=800).map(m=>[m.nm,m.res&&Math.round(m.res.vol),m.res&&m.res.open])")
