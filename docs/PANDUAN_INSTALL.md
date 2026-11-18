@@ -5714,3 +5714,8 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Kotak saran "mode Level (RL)" di panel solid kini hanya muncul untuk solid cabang yang baru punya 1 string penampang, atau
   setelah mode digit dimatikan — tidak lagi mengganggu saat string pertama sebuah solid baru saja digambar.
 
+## 287. Ore Works 0.26.2 — ujung cabang pada vein yang menyilang
+
+- Solid cabang yang sudah menembus atau menyilang induknya (mis. vein landai yang memotong vein curam) tidak lagi diperpanjang
+  otomatis: kedua ujungnya runcing. Ujung "terus ke induk" hanya dipakai bila cabang berhenti sebelum menyentuh induk.
+

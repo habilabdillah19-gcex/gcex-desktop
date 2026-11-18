@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.26.1';</script>
+<script>window.GCEX_VER='0.26.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8205,6 +8205,9 @@ function sinar(o,d,V,T){const H=[];for(let k=0;k<T.length;k+=3){const a=T[k]*3,b
   const qq=[s[1]*e1[2]-s[2]*e1[1],s[2]*e1[0]-s[0]*e1[2],s[0]*e1[1]-s[1]*e1[0]],v=(d[0]*qq[0]+d[1]*qq[1]+d[2]*qq[2])*iv;if(v<0||u+v>1)continue;
   const t=(e2[0]*qq[0]+e2[1]*qq[1]+e2[2]*qq[2])*iv;if(t>1e-6)H.push(t);}return H.sort((a,b)=>a-b);}
 window.msAutoUjung=(M,S)=>{const MS=MSx(),P=MS.L.find(x=>x.id===M.par&&x!==M);if(!P||!S.length)return;const x=X2(),R=x.solid(P);if(!R)return;const V=R.v,T=R.t;
+ /* cabang yang sudah menembus / menyilang induk di antara string-stringnya (mis. vein silang) tidak perlu diteruskan */
+ for(let k=0;k+1<S.length;k++){const a0=x.w3(M,S[k].o,x.cent(S[k].pts)),b0=x.w3(M,S[k+1].o,x.cent(S[k+1].pts)),dd=[b0[0]-a0[0],b0[1]-a0[1],b0[2]-a0[2]],ln=Math.hypot(...dd);if(ln<1e-6)continue;
+  if(sinar(a0,dd.map(v=>v/ln),V,T).some(t=>t<ln)){M.cap0='titik';M.cap1='titik';M.capd0=M.capd1=undefined;M.capAuto={e:-1,d:0,c:'silang'};return;}}
  const E=[0,1].map(e=>{const s=e?S[S.length-1]:S[0],c=x.cent(s.pts),p0=x.w3(M,s.o,c),p1=x.w3(M,s.o+(e?1:-1),c),d=[p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2]];
   const H=sinar(p0,d,V,T);let nr=1e18;for(let i=0;i<V.length;i+=3){const q=Math.hypot(V[i]-p0[0],V[i+1]-p0[1],V[i+2]-p0[2]);if(q<nr)nr=q;}
   const di=H.length%2===1;return {di,h:H.length?H[0]:null,nr,skor:di?-1:(H.length?H[0]:nr*1.5)};});
