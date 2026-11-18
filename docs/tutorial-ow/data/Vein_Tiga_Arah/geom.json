@@ -1,0 +1,48 @@
+{
+ "E0": 60000.0,
+ "N0": 90000.0,
+ "tinggi_m": 100.0,
+ "pertemuan_RL_puncak": 217.0,
+ "lengan": {
+  "VA": {
+   "az": 18.0,
+   "L": 170.0,
+   "dip": 72.0,
+   "t0": 2.8,
+   "dipdir": 108.0
+  },
+  "VB": {
+   "az": 138.0,
+   "L": 130.0,
+   "dip": 68.0,
+   "t0": 2.2,
+   "dipdir": 228.0
+  },
+  "VC": {
+   "az": 262.0,
+   "L": 110.0,
+   "dip": 78.0,
+   "t0": 1.6,
+   "dipdir": 352.0
+  }
+ },
+ "volume_m3": {
+  "VA": 34395.3,
+  "VB": 21837.1,
+  "VC": 14268.7
+ },
+ "volume_union_m3": 67795.6,
+ "tumpang_tindih_m3": 2705.6,
+ "segitiga_union": 30280,
+ "rl_union": [
+  117.0,
+  218.1
+ ],
+ "lubang": 48,
+ "meter_bor": 3789,
+ "interval_vein_1m": {
+  "VA": 105,
+  "VB": 67,
+  "VC": 51
+ }
+}

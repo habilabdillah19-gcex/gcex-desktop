@@ -1,0 +1,23 @@
+VEIN TIGA ARAH — data latihan fiktif Ore Works (19 Nov 2026)
+================================================================
+Vein epitermal "aktual" dengan percabangan TIGA ARAH jurus yang menyatu di tengah, tinggi vein 100 m.
+Dipakai untuk menguji pemodelan eksplisit (Studio Pemodelan): buat string dari intercept bor, bangun solid,
+lalu bandingkan dengan wireframe aktual.
+
+Lengan (jurus = arah lengan menjauh dari titik pertemuan):
+  VA  jurus 018°  panjang 170 m  dip 72° ke 108°  tebal dasar 2,8 m (lengan utama)
+  VB  jurus 138°  panjang 130 m  dip 68° ke 228°  tebal dasar 2,2 m
+  VC  jurus 262°  panjang 110 m  dip 78° ke 352°  tebal dasar 1,6 m
+Pertemuan di E 60.000 / N 90.000; puncak vein = topografi - 2 m (RL ±217), dasar 100 m di bawahnya (RL ±117).
+Dekat pertemuan ketiga lengan tegak dan menyatu; menjauh dari pertemuan kemiringan berangsur ke dip masing-masing.
+Bentuk: liuk sepanjang jurus, pinch & swell, menebal di pertemuan (zona dilatasi), menipis ke ujung & ke dasar (lensa).
+Tebal = lebar horizontal tegak lurus jurus.
+
+Berkas:
+  VT_collar / VT_survey / VT_assay / VT_geologi .csv   48 lubang (3 di zona pertemuan), logging 1 m, Vein_Type VA/VB/VC
+  VT_topografi.str                                      topografi grid 5 m (Surpac string)
+  VT_aktual_vein.obj                                    wireframe AKTUAL gabungan (tertutup, satu tubuh, ±67.800 m³)
+  VT_aktual_VA/VB/VC.obj                                tiap lengan (saling menumpang 12 m di pertemuan)
+  geom.json                                             parameter & ringkasan
+Pembuat: tools/uji/buat_data_vein_tiga_arah_ow.py (numpy, trimesh, manifold3d).
+Uji: 223/223 interval vein berada di dalam wireframe aktual; 8 dari 3.566 interval non-vein (batas interval 1 m) di dalamnya.
