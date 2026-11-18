@@ -5668,3 +5668,11 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Warna data tidak berubah: kelas kadar, warna blok, domain, lapisan, legenda data.
 - Pilihan diingat di komputer ini (terpisah untuk Block Model dan Drillhole). Kembali ke palet 9 untuk warna bawaan.
 - DB-Ex, Ore Works: tidak berubah (Ore Works sudah punya pilihan palet sejak 0.24.0).
+
+## 283. Block Model 0.24.110 / Drillhole 0.24.112 — semua tulisan terbaca di setiap palet
+
+- Seluruh tulisan yang tampil diperiksa kontrasnya di ke-10 palet. Yang sebelumnya sulit dibaca sekarang jelas:
+  subjudul logo di bilah atas, jam di tombol **Proyek**, tombol **Geostatistik** (Drillhole), pita **Jalur Lanjutan**
+  (Drillhole), judul legenda pada palet Malakit, dan bilah status bawah pada palet **Dasar** Drillhole (kini tetap navy).
+- Warna tulisan itu otomatis digeser lebih terang/gelap sampai kontrasnya minimal 4,5:1 (standar keterbacaan WCAG).
+  Warna data tidak berubah.

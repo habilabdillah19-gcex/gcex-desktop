@@ -1354,6 +1354,9 @@ B.append('<h3>16za. Ganti palet warna (Block Model 0.24.109 / Drillhole 0.24.111
 B.append('<p>Buka <b>Pengaturan tampilan &rsaquo; Tampilan &amp; performa</b>; bagian <b>Palet warna</b> berisi 10 pilihan: Dasar (palet pertama aplikasi), '
          'Malakit, Oksida, Kuarsa-Emas, Azurit, Garnierit, Garnierit-Malakit, GC-Ex (seperti Drill Hole), Keluarga GC-Ex (bawaan) dan Hitam-putih. Bingkai, '
          'panel, tombol, sorotan dan latar 3D ikut berganti; warna data (kelas kadar, blok, domain) tetap. Pilihan diingat di komputer ini.</p>')
+B.append('<h3>16zb. Semua tulisan terbaca di setiap palet (Block Model 0.24.110 / Drillhole 0.24.112)</h3>')
+B.append('<p>Subjudul logo, jam di tombol Proyek, tombol Geostatistik, pita Jalur Lanjutan dan bilah status bawah kini selalu kontras (&ge; 4,5:1) di ke-10 palet; '
+         'warnanya digeser otomatis bila latar terlalu mirip. Warna data tetap.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

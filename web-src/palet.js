@@ -17,7 +17,8 @@
   var lum = function (h) { return hx(h).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce(function (s, v, i) { return s + v * [0.2126, 0.7152, 0.0722][i]; }, 0); };
   var kontras = function (a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   /* tombol bertulisan putih: gelapkan sampai kontras >= 4,5:1 */
-  var tombol = function (c) { for (var k = 0; k < 30 && kontras(c, '#FFFFFF') < 4.5; k++) c = mix(c, '#000000', 0.06); return c; };
+  /* 4,9 (bukan 4,5) supaya teks berwarna aksen di panel krem (#FAF8F4 dsb.) juga tetap >= 4,5:1 */
+  var tombol = function (c) { for (var k = 0; k < 30 && kontras(c, '#FFFFFF') < 4.9; k++) c = mix(c, '#000000', 0.06); return c; };
 
   /* jangkar = palet bawaan (palet 9) aplikasi ini: warna TERUKUR di aplikasi (getComputedStyle), bukan nama variabel */
   var BASE = DH
@@ -72,7 +73,9 @@
     var s = document.getElementById('gxPalBg');
     if (P.bawaan || P.asli) { if (s) s.remove(); return; }
     var B = bgP(P); if (!s) { s = document.createElement('style'); s.id = 'gxPalBg'; }
-    s.textContent = '#stage,#stage.bglat-lembut{background:linear-gradient(' + B.terang[0] + ',' + B.terang[1] + ')!important}#stage.bglat-navy{background:linear-gradient(' + B.gelap[0] + ',' + B.gelap[1] + ')!important}';
+    s.textContent = '#stage,#stage.bglat-lembut{background:linear-gradient(' + B.terang[0] + ',' + B.terang[1] + ')!important}#stage.bglat-navy{background:linear-gradient(' + B.gelap[0] + ',' + B.gelap[1] + ')!important}' +
+      /* bilah atas terang (Dasar DH = kuning): bilah status bawah tetap gelap, kalau tidak teks terangnya hilang */
+      (P.c && kontras(P.c.chrome, '#000000') > kontras(P.c.chrome, '#FFFFFF') ? '#status{background:' + (P.c.accent2 || P.c.btn || '#233A7E') + '!important}' : '');
     document.body.appendChild(s);
   }
   function terapkan(k) {
@@ -86,8 +89,37 @@
       var n = f ? t.replace(/#[0-9a-fA-F]{6}(?=[0-9a-fA-F]{2}(?![0-9a-fA-F])|(?![0-9a-fA-F]))/g, function (m0) { return f(m0); }) : t;
       if (s.textContent !== n) s.textContent = n;
     });
-    tunda = false; document.body.dataset.palet = PK; latar(P); gambarUI();
+    tunda = false; document.body.dataset.palet = PK; latar(P); gambarUI(); setTimeout(jagaKontras, 0);
     try { if (window.Plotly && document.getElementById('plotDiv') && document.getElementById('plotDiv')._fullLayout) Plotly.Plots.resize('plotDiv'); } catch (e) { }
+  }
+  /* ---- penjaga kontras teks (pemilik 18 Nov 2026: "sudah tidak ada warna yang menghalangi pembacaan tulisan?") ----
+     Audit semua teks yang tampil di ke-10 palet menemukan teks di bilah atas yang warnanya ikut aksen / abu redup (subjudul
+     logo, jam di tombol Proyek, tombol Geostatistik DH) dan pita Jalur Lanjutan. Untuk elemen-elemen itu warna teks diukur
+     terhadap latar sebenarnya; bila < 4,5:1 warnanya digeser ke arah putih / hitam (mana yang lebih kontras) sampai lolos. */
+  var JAGA = '.gcxm,#pjTime,.tb.pri,#top .tb,#jlrPita,#jlrPita *,#top .brand small,.tplg-h,#status>span,#status span';
+  var rgbS = function (s) { var m = (s || '').match(/[\d.]+/g); return m ? [+m[0], +m[1], +m[2], m.length > 3 ? +m[3] : 1] : null; };
+  var keHex = function (c) { return th([c[0], c[1], c[2]]); };
+  /* latar efektif; bila ada gradien, semua titik warnanya (alpha >= 0,5) jadi kandidat dan teks harus lolos di semuanya */
+  function latarEl(e) {
+    var st = [];
+    for (var p = e; p && p.nodeType === 1; p = p.parentElement) {
+      var cs = getComputedStyle(p);
+      if (/gradient/.test(cs.backgroundImage || '')) { var g = (cs.backgroundImage.match(/rgba?\([^)]*\)/g) || []).map(rgbS).filter(function (c) { return c[3] >= 0.5; }); if (g.length) return g.map(keHex); }
+      var c = rgbS(cs.backgroundColor); if (c && c[3] > 0.05) { st.push(c); if (c[3] >= 0.95) break; }
+    }
+    var r = [255, 255, 255]; for (var i = st.length - 1; i >= 0; i--) { var c = st[i], a = c[3]; r = [c[0] * a + r[0] * (1 - a), c[1] * a + r[1] * (1 - a), c[2] * a + r[2] * (1 - a)]; } return [keHex(r)];
+  }
+  function jagaKontras() {
+    document.querySelectorAll(JAGA).forEach(function (e) {
+      if (e.dataset.gxKon) { e.style.removeProperty('color'); delete e.dataset.gxKon; }
+      if (!e.offsetWidth) return; var fg = rgbS(getComputedStyle(e).color); if (!fg) return; var f = keHex(fg), bgs = latarEl(e);
+      var min = function (c) { return Math.min.apply(null, bgs.map(function (b) { return kontras(c, b); })); };
+      if (min(f) >= 4.5) return;
+      var gelap = bgs.reduce(function (s, b) { return s + (kontras('#FFFFFF', b) >= kontras('#000000', b) ? 1 : 0); }, 0) * 2 >= bgs.length;
+      var arah = gelap ? '#FFFFFF' : '#000000', c = f;
+      for (var k = 0; k < 40 && min(c) < 4.5; k++) c = mix(c, arah, 0.08);
+      e.style.setProperty('color', c, 'important'); e.dataset.gxKon = '1';
+    });
   }
   /* <style> bertema yang ditambahkan belakangan ikut diwarnai */
   var mo = new MutationObserver(function (ms) { if (tunda || PK === 'bawaan') return; for (var i = 0; i < ms.length; i++) for (var j = 0; j < ms[i].addedNodes.length; j++) { var n = ms[i].addedNodes[j]; if (n.tagName === 'STYLE' && n.id !== 'gxPalBg' && bertema(n)) { terapkan(PK); return; } } });
@@ -108,7 +140,9 @@
     }).join('');
     box.querySelectorAll('.pr').forEach(function (b) { b.onclick = function () { terapkan(b.getAttribute('data-k')); }; });
   }
-  window.GXPAL = { daftar: function () { return PAL.map(function (p) { return { k: p.k, nm: p.nm, c: target(p) }; }); }, pakai: terapkan, aktif: function () { return PK; }, kontras: kontras };
-  var mulai = function () { mo.observe(document.head, { childList: true }); mo.observe(document.body, { childList: true }); gambarUI(); if (PK !== 'bawaan') terapkan(PK); };
+  window.GXPAL = { daftar: function () { return PAL.map(function (p) { return { k: p.k, nm: p.nm, c: target(p) }; }); }, pakai: terapkan, aktif: function () { return PK; }, kontras: kontras, jaga: function () { jagaKontras(); } };
+  var mulai = function () { mo.observe(document.head, { childList: true }); mo.observe(document.body, { childList: true }); gambarUI(); if (PK !== 'bawaan') terapkan(PK); setTimeout(jagaKontras, 300); setTimeout(jagaKontras, 3000);
+    /* legenda & bilah atas digambar ulang belakangan: jaga lagi (dibatasi) */
+    var jd = null; new MutationObserver(function () { if (jd) return; jd = setTimeout(function () { jd = null; jagaKontras(); }, 400); }).observe(document.getElementById('top') || document.body, { childList: true, subtree: true, characterData: true }); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(mulai, 0); }); else setTimeout(mulai, 0);
 })();
