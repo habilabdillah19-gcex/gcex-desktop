@@ -1,0 +1,14 @@
+Vein_EnEchelon — data latihan fiktif Ore Works (19 Nov 2026)
+============================================================
+4 segmen en echelon jurus 045° bertangga kanan 14 m, tumpang 25 m (dip 75° ke SE), satu vein penghubung
+
+Tubuh vein (kode Vein_Type):
+  VE1  panjang 90 m  dip 75° ke 135°  tebal dasar 2.0 m  volume 9323 m³
+  VE2  panjang 90 m  dip 75° ke 135°  tebal dasar 2.4 m  volume 11801 m³
+  VE3  panjang 90 m  dip 75° ke 135°  tebal dasar 2.2 m  volume 9740 m³
+  VE4  panjang 90 m  dip 75° ke 135°  tebal dasar 1.8 m  volume 7508 m³
+  VE5  panjang 24 m  dip 75° ke 135°  tebal dasar 1.4 m  volume 2452 m³
+
+Aktual gabungan: 40484 m³, 3 bagian. 36 lubang bor (2605 m), pagar tegak lurus jurus setempat tiap 20 m, 3 lubang/pagar.
+Berkas: EN_collar/survey/assay/geologi.csv, EN_topografi.str, aktual_vein.obj (gabungan, tertutup), aktual_<kode>.obj, geom.json
+Pembuat & uji: python tools/uji/sim_vein_sistem_ow.py buat|uji echelon <folder>

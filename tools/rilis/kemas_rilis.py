@@ -222,7 +222,7 @@ def main():
         if core_dummy and core_dummy.exists():
             items.append((core_dummy, "DB-Ex_Data_Dummy"))
     if has_ow:
-        items += [(D / "tutorial-ow" / "data", "Ore_Works_Latihan"), (D / "tutorial-ow" / "src" / "buat_data_latihan_ow.py", "Generator/buat_data_latihan_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_channel_dxf_ow.py", "Generator/buat_data_channel_dxf_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_cabang_ow.py", "Generator/buat_data_vein_cabang_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_tiga_arah_ow.py", "Generator/buat_data_vein_tiga_arah_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_geofisika_ow.py", "Generator/buat_data_geofisika_ow.py")]
+        items += [(D / "tutorial-ow" / "data", "Ore_Works_Latihan"), (D / "tutorial-ow" / "src" / "buat_data_latihan_ow.py", "Generator/buat_data_latihan_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_channel_dxf_ow.py", "Generator/buat_data_channel_dxf_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_cabang_ow.py", "Generator/buat_data_vein_cabang_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_tiga_arah_ow.py", "Generator/buat_data_vein_tiga_arah_ow.py"), (ROOT / "tools" / "uji" / "sim_vein_sistem_ow.py", "Generator/sim_vein_sistem_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_geofisika_ow.py", "Generator/buat_data_geofisika_ow.py")]
     zip_dir(dat, items)
     # ---- 3 lisensi & tentang
     tentang = outd / "TENTANG.txt"

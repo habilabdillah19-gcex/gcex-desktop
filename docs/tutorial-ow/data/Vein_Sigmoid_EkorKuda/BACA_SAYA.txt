@@ -1,0 +1,13 @@
+Vein_Sigmoid_EkorKuda — data latihan fiktif Ore Works (19 Nov 2026)
+============================================================
+vein utama jurus melengkung 340°→020° (240 m, dip 70° ke E), ujung utara pecah 3 cabang ekor kuda
+
+Tubuh vein (kode Vein_Type):
+  VS1  panjang 240 m  dip 70° ke 90°  tebal dasar 2.6 m  volume 39204 m³
+  VS2  panjang 55 m  dip 70° ke 90°  tebal dasar 1.2 m  volume 3939 m³
+  VS3  panjang 70 m  dip 70° ke 90°  tebal dasar 1.5 m  volume 5822 m³
+  VS4  panjang 50 m  dip 70° ke 90°  tebal dasar 1.0 m  volume 3139 m³
+
+Aktual gabungan: 49458 m³, 1 bagian. 41 lubang bor (3077 m), pagar tegak lurus jurus setempat tiap 20 m, 3 lubang/pagar.
+Berkas: SI_collar/survey/assay/geologi.csv, SI_topografi.str, aktual_vein.obj (gabungan, tertutup), aktual_<kode>.obj, geom.json
+Pembuat & uji: python tools/uji/sim_vein_sistem_ow.py buat|uji sigmoid <folder>

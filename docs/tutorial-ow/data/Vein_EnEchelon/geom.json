@@ -1,0 +1,61 @@
+{
+ "sistem": "Vein_EnEchelon",
+ "deskripsi": "4 segmen en echelon jurus 045° bertangga kanan 14 m, tumpang 25 m (dip 75° ke SE), satu vein penghubung",
+ "E0": 40000.0,
+ "N0": 50000.0,
+ "awalan_berkas": "EN",
+ "tubuh": {
+  "VE1": {
+   "L": 90.0,
+   "dip": 75.0,
+   "vektor_dip_az": 135.0,
+   "t0": 2.0,
+   "H": 95.0,
+   "vol_m3": 9323.4
+  },
+  "VE2": {
+   "L": 90.0,
+   "dip": 75.0,
+   "vektor_dip_az": 135.0,
+   "t0": 2.4,
+   "H": 100.0,
+   "vol_m3": 11801.4
+  },
+  "VE3": {
+   "L": 90.0,
+   "dip": 75.0,
+   "vektor_dip_az": 135.0,
+   "t0": 2.2,
+   "H": 90.0,
+   "vol_m3": 9739.8
+  },
+  "VE4": {
+   "L": 90.0,
+   "dip": 75.0,
+   "vektor_dip_az": 135.0,
+   "t0": 1.8,
+   "H": 85.0,
+   "vol_m3": 7507.7
+  },
+  "VE5": {
+   "L": 23.804493814764452,
+   "dip": 75.0,
+   "vektor_dip_az": 135.0,
+   "t0": 1.4,
+   "H": 72.0,
+   "vol_m3": 2452.2
+  }
+ },
+ "vol_union_m3": 40484.1,
+ "bagian_union": 3,
+ "lubang": 36,
+ "meter_bor": 2605,
+ "interval_vein_1m": {
+  "VE1": 23,
+  "VE2": 39,
+  "VE3": 25,
+  "VE5": 10,
+  "VE4": 15
+ },
+ "lubang_tanpa_vein": []
+}

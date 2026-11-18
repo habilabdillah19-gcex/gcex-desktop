@@ -1,0 +1,11 @@
+Vein_Silang — data latihan fiktif Ore Works (19 Nov 2026)
+============================================================
+vein curam jurus 090° dip 80° ke S disilang vein landai jurus 000° dip 32° ke W, keduanya menerus
+
+Tubuh vein (kode Vein_Type):
+  VX1  panjang 260 m  dip 80° ke 180°  tebal dasar 2.4 m  volume 33999 m³
+  VX2  panjang 220 m  dip 32° ke 270°  tebal dasar 4.5 m  volume 53899 m³
+
+Aktual gabungan: 87072 m³, 1 bagian. 54 lubang bor (4272 m), pagar tegak lurus jurus setempat tiap 20 m, 3 lubang/pagar.
+Berkas: SI_collar/survey/assay/geologi.csv, SI_topografi.str, aktual_vein.obj (gabungan, tertutup), aktual_<kode>.obj, geom.json
+Pembuat & uji: python tools/uji/sim_vein_sistem_ow.py buat|uji silang <folder>

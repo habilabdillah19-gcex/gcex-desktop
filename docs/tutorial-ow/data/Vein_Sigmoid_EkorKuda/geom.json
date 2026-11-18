@@ -1,0 +1,52 @@
+{
+ "sistem": "Vein_Sigmoid_EkorKuda",
+ "deskripsi": "vein utama jurus melengkung 340°→020° (240 m, dip 70° ke E), ujung utara pecah 3 cabang ekor kuda",
+ "E0": 70000.0,
+ "N0": 30000.0,
+ "awalan_berkas": "SI",
+ "tubuh": {
+  "VS1": {
+   "L": 240.0,
+   "dip": 70.0,
+   "vektor_dip_az": 90.0,
+   "t0": 2.6,
+   "H": 100.0,
+   "vol_m3": 39203.5
+  },
+  "VS2": {
+   "L": 55.0,
+   "dip": 70.0,
+   "vektor_dip_az": 90.0,
+   "t0": 1.2,
+   "H": 74.29007209746676,
+   "vol_m3": 3938.7
+  },
+  "VS3": {
+   "L": 70.0,
+   "dip": 70.0,
+   "vektor_dip_az": 90.0,
+   "t0": 1.5,
+   "H": 74.29007209746676,
+   "vol_m3": 5822.3
+  },
+  "VS4": {
+   "L": 50.0,
+   "dip": 70.0,
+   "vektor_dip_az": 90.0,
+   "t0": 1.0,
+   "H": 74.29007209746676,
+   "vol_m3": 3139.3
+  }
+ },
+ "vol_union_m3": 49458.3,
+ "bagian_union": 1,
+ "lubang": 41,
+ "meter_bor": 3077,
+ "interval_vein_1m": {
+  "VS1": 95,
+  "VS2": 12,
+  "VS3": 26,
+  "VS4": 24
+ },
+ "lubang_tanpa_vein": []
+}
