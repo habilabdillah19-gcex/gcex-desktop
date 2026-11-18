@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.26.0';</script>
+<script>window.GCEX_VER='0.26.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8230,7 +8230,7 @@ function kerapatan(M){const S=M.S.filter(s=>s.pts.length>=3).sort((a,b)=>a.o-b.o
  return {sp:med(gp),tb:med(tb)};}
 window.msInfoX=M=>{const el=g('msinfo');if(!el)return;let h='';const MS=MSx();
  const k=kerapatan(M);if(k&&k.tb>0){const r=k.sp/k.tb,ok=r<=8;h+='<div><span class="msdens '+(ok?'ok':'war')+'" title="'+(ok?'Spasi penampang cukup rapat terhadap tebal vein.':'Spasi antar-string '+fmt(r,0)+'× tebal vein. Bentuk di antara penampang hanya ditarik lurus: tambah penampang di tengah bila vein berbelok, menipis, atau bercabang.')+'">spasi '+fmt(k.sp)+' m · tebal ±'+fmt(k.tb)+' m</span></div>';}
- if(M.m==='v'&&M.S.length===1)h+='<div class="mssaran">Baru 1 string penampang. Tubuh pendek atau miring di antara penampang (mis. <i>jog</i>) lebih pas didigit di mode <b>Level (RL)</b>.<br><button class="msrl">Solid baru mode Level</button></div>';
+ if(M.m==='v'&&M.S.length===1&&(M.par||!MS.dig))h+='<div class="mssaran">Baru 1 string penampang. Tubuh pendek atau miring di antara penampang (mis. <i>jog</i>) lebih pas didigit di mode <b>Level (RL)</b>.<br><button class="msrl">Solid baru mode Level</button></div>';
  const P=M.par?MS.L.find(x=>x.id===M.par):M,bp=P&&P.bpisah;
  if(bp&&bp.pisah.length&&(!M.par||bp.pisah.includes(M.nm))){const nm=bp.pisah.map(s=>'<b>'+esc(s)+'</b>').join(', ');
   h+='<div class="mswarn">&#9888; Union jadi <b>'+bp.n+' bagian</b>: '+nm+' tidak menyentuh <b>'+esc(bp.induk||P.nm)+'</b>. Teruskan ujung cabang yang dekat induk, atau tambah string di celahnya.<br><button class="msext">Perpanjang ujung ke induk +5 m</button></div>';}

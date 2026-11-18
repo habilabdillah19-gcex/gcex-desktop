@@ -5709,3 +5709,8 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Label penampang adaptif**: baris Log geologi → label = adaptif (bawaan) / semua / mati. Adaptif menampilkan Hole ID, kadar
   ≥ cut-off dan kode yang bukan batuan dominan, dan tidak menggambar label yang saling menimpa.
 
+## 286. Ore Works 0.26.1 — saran mode Level lebih tepat
+
+- Kotak saran "mode Level (RL)" di panel solid kini hanya muncul untuk solid cabang yang baru punya 1 string penampang, atau
+  setelah mode digit dimatikan — tidak lagi mengganggu saat string pertama sebuah solid baru saja digambar.
+
