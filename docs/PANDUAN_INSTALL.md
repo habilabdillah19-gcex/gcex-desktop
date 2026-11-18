@@ -5676,3 +5676,18 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   (Drillhole), judul legenda pada palet Malakit, dan bilah status bawah pada palet **Dasar** Drillhole (kini tetap navy).
 - Warna tulisan itu otomatis digeser lebih terang/gelap sampai kontrasnya minimal 4,5:1 (standar keterbacaan WCAG).
   Warna data tidak berubah.
+
+## 284. Ore Works 0.25.0 — Arsip GIS ke Pemetaan, Shapefile, digit di gambar datar
+
+- **Jadikan data pemetaan**: di Pemetaan → Arsip GIS, tiap tabel punya tombol **➜ Pemetaan** (juga klik kanan tabel di dok
+  Project). Pilih **Kelas dari kolom** (mis. JENIS / LITO), lalu tentukan tiap kelas menjadi Vein, Kontak, Jejak struktur,
+  Channel, Poligon, Grab atau Observasi (atau abaikan). Semua kolom atribut ikut ke fitur Pemetaan; nilai kelas menjadi layer.
+- **Ekspor Shapefile**: tombol **⇩ SHP** di tiap tabel Arsip GIS, dan **Semua fitur .shp** di Pemetaan → 4 · Ekspor. Hasilnya satu
+  berkas .zip (titik / garis / poligon terpisah, dengan Z). Koordinat = koordinat project; berkas .prj hanya disertakan bila
+  data asalnya Shapefile ber-.prj — atur sistem koordinat di aplikasi GIS bila perlu.
+- **Impor Shapefile**: Pemetaan → Arsip GIS → **Impor Shapefile** (.zip, atau pilih .shp .dbf .shx .prj sekaligus) → masuk Arsip GIS.
+  Dari Pemetaan → 1 · **Impor Shapefile → pemetaan** langsung membuka dialog Jadikan data pemetaan.
+- **Digit di atas gambar datar**: gambar / ortofoto dengan Drape ke = datar di RL kini bisa langsung didigit (Pemetaan → Digitasi,
+  tombol Topografi menyala). Bila ada topografi juga, titik jatuh di permukaan yang paling dekat ke kamera.
+- Semua tulisan sudah diuji terbaca di ke-10 palet warna (kontras minimal 4,5:1).
+

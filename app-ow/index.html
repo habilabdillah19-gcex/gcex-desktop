@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.24.0';</script>
+<script>window.GCEX_VER='0.25.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -3630,7 +3630,8 @@ function fmTmp(){const G=L.fmtmp;fmClear(G);if(!FD.on||!FD.cur.length)return;con
 function fmDigSet(on){if(on&&FE.f){FE.f=null;fmHandles();fmList();}FD.on=on;FD.cur=[];const b=fmg('fmdig');b.style.background=on?'#c92a2a':'';b.style.color=on?'#fff':'';fmg('fmdw').innerHTML=on?'<b>Digitasi '+FMK[fmg('fmk').value].nm+'</b>: klik titik di 3D (menempel ke titik pick-up / verteks terdekat ≤ 14 px). Enter / klik ganda = selesai · Backspace = hapus titik terakhir · Esc = batal.':'Klik ✎ untuk mulai mendigit. Tombol biru = aktif: titik menempel ke pick-up terdekat dan/atau ke permukaan topografi. Keduanya mati = bidang datar di RL titik sebelumnya.';fmTmp();}
 function fmFinish(){if(!FD.on)return;const k=fmg('fmk').value,K=FMK[k],P=[];FD.cur.forEach(p=>{const l=P[P.length-1];if(!l||Math.hypot(l[0]-p[0],l[1]-p[1],l[2]-p[2])>1e-3)P.push(p);});
  if(P.length<(K.g==='poly'?3:K.g==='pt'?1:2)){alert(K.g==='poly'?'Poligon butuh minimal 3 titik.':'Garis butuh minimal 2 titik.');return;}FD.cur=[];fmTmp();fmNew(k,P);}
-function fmTopoHit(rc){const t=[],p=[];for(const s2 of SF)if(s2.on&&s2.mesh)(s2.kind==='pit'?p:t).push(s2.mesh);if(typeof ORT!=='undefined')for(const o of ORT)if(o.on&&o.mesh&&o.tg!=='flat')t.push(o.mesh);return (t.length&&rc.intersectObjects(t,false)[0])||(p.length&&rc.intersectObjects(p,false)[0])||null;}
+function fmTopoHit(rc){const t=[],p=[],fl=[];for(const s2 of SF)if(s2.on&&s2.mesh)(s2.kind==='pit'?p:t).push(s2.mesh);if(typeof ORT!=='undefined')for(const o of ORT)if(o.on&&o.mesh)(o.tg==='flat'?fl:t).push(o.mesh);/* 0.25.0: gambar / ortofoto datar di RL ikut ditempel; yang terdekat ke kamera menang */
+  const h=(t.length&&rc.intersectObjects(t,false)[0])||(p.length&&rc.intersectObjects(p,false)[0])||null,f=fl.length?rc.intersectObjects(fl,false)[0]:null;return f&&(!h||f.distance<h.distance)?f:h;}
 function fmSurfZ(E,N){let z=topoZ(E,N);if(isFinite(z))return z;for(const s2 of SF){if(!s2.on||s2.kind!=='pit'||!s2.tin)continue;const q=gridZ(sfGrid(s2),E,N);if(!isNaN(q)&&!(z<=q))z=q;}return z;}
 function fmFollow(f,step){const P=f.pts,cl=FMK[f.k].g==='poly'&&P.length>2,n=P.length,o=[],idx=[];let miss=0;const zf=(E,N,zd)=>{const z=fmSurfZ(E,N);if(!isFinite(z)){miss++;return zd;}return z;};
  for(let i=0;i<n;i++){const a=P[i];idx.push(o.length);o.push([a[0],a[1],zf(a[0],a[1],a[2])]);if(i===n-1&&!cl)break;const b=P[(i+1)%n],L=Math.hypot(b[0]-a[0],b[1]-a[1]),k=Math.floor(L/step);for(let j=1;j<k+(L/step-k>0.25?1:0);j++){const t=j*step/L;if(t>=1)break;const E=a[0]+(b[0]-a[0])*t,N=a[1]+(b[1]-a[1])*t;o.push([E,N,zf(E,N,a[2]+(b[2]-a[2])*t)]);}}
@@ -5804,8 +5805,8 @@ body.pt #ptw{display:flex}#ptw.mini{width:22px!important}#ptw.mini>*:not(#ptstri
 #ptb .tw{width:14px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;color:#5B6478;cursor:pointer}
 #ptb .ptr input{margin:0;width:13px;height:13px;flex:none;accent-color:#17806B;cursor:pointer}#ptb .ptr .nc{width:13px;flex:none}
 #ptb .ic{display:flex;flex:none;width:13px;justify-content:center}#ptb .dt{width:5px;height:5px;border-radius:1px;background:#9AA3AD;margin:4px}
-#ptb .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}#ptb .l0 .nm{font-weight:600}#ptb .ptr.off .nm{color:#7C828C}
-#ptb .ct{color:#6B7486;font-size:11px;flex:none}#ptb .em{padding:0 8px 0 47px;color:#9AA0A6;height:20px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+#ptb .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}#ptb .l0 .nm{font-weight:600}#ptb .ptr.off .nm{color:#5F6875}
+#ptb .ct{color:#5C6672;font-size:11px;flex:none}#ptb .em{padding:0 8px 0 47px;color:#5C6672;height:20px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
 #ptgr{position:absolute;top:0;bottom:0;right:-3px;width:6px;cursor:ew-resize;z-index:3}#ptgr:hover,body.ptdrag #ptgr{background:#17806B44}body.ptdrag{user-select:none;cursor:ew-resize}#ptw.mini #ptgr{display:none}
 #ptcm{position:fixed;z-index:9999;display:none;min-width:210px;background:#fff;border:1px solid #9AA19B;border-radius:2px;box-shadow:0 6px 16px #1C273340;padding:3px 0;font:12.5px "Segoe UI",Inter,Arial,sans-serif;color:#1C2733}
 #ptcm .it{display:flex;align-items:center;gap:8px;height:25px;padding:0 14px 0 10px;cursor:pointer;white-space:nowrap}#ptcm .it:hover{background:#E0EEE8}#ptcm .it.bh{color:#B42318}#ptcm hr{border:0;border-top:1px solid #E2DED5;margin:3px 0}
@@ -5942,6 +5943,7 @@ B.addEventListener('contextmenu',e=>{const r=rowOf(e);if(!r)return;e.preventDefa
   if(r.kids&&(n.kids||[]).some(hasChk))A.push(['Tampilkan semua isinya',()=>{(n.kids||[]).forEach(k=>setOn(k,true));setOn(n,true);later();}]);}
  if(r.kids){A.push(['-']);A.push([r.open?'Tutup kelompok':'Buka kelompok',()=>lipat(r,!r.open)]);}
  const tab=n.tab||(r.par&&r.par.tab),ta=n.ta||(n.kind==='bidang'?'str':n.kind==='titik'?'stp':n.kind==='fm'?'fm':n.kind==='solid'?'ms':null);if(ta&&window.taBuka||tab&&window.rpOpenTab)A.push(['-']);if(ta&&window.taBuka)A.push(['Buka tabel atribut',()=>taBuka(ta)]);if(tab&&window.rpOpenTab)A.push(['Lihat di panel Data',()=>rpOpenTab(tab)]);
+ if(window.__ptExtra)try{window.__ptExtra(n,A);}catch(e){}
  if(n.del){A.push(['-']);A.push(['Hapus…',()=>{n.del();later();},'bh']);}
  if(!A.length)return;cm.innerHTML='<div class="hd">'+esc(n.nm)+'</div>';A.forEach(a=>{if(a[0]==='-'){if(cm.lastChild&&cm.lastChild.tagName!=='HR')cm.appendChild(document.createElement('hr'));return;}const d=document.createElement('div');d.className='it'+(a[2]?' '+a[2]:'');d.setAttribute('role','menuitem');d.textContent=a[0];d.onclick=()=>{tutupCm();setTimeout(()=>{try{a[1]();}catch(err){console.warn(err);}},0);};cm.appendChild(d);});
  if(cm.lastChild&&cm.lastChild.tagName==='HR')cm.lastChild.remove();cm.style.display='block';cm.style.left=Math.min(e.clientX,innerWidth-cm.offsetWidth-4)+'px';cm.style.top=Math.min(e.clientY,innerHeight-cm.offsetHeight-4)+'px';});
@@ -6649,7 +6651,7 @@ body.studio-on::before{content:"";position:fixed;inset:0;background:#0f172480;z-
 #stdoSl{flex:none;max-height:34vh;overflow:auto;background:#fff;border-bottom:1px solid #cfd8e6}
 #stdoSl .it{display:flex;align-items:center;gap:6px;height:30px;padding-right:10px;border-bottom:1px solid #eef1f6;cursor:pointer;white-space:nowrap}
 #stdoSl .it:hover{background:#f3f6fb}#stdoSl .it.on{background:#e3ecff;box-shadow:inset 3px 0 #1f6feb}
-#stdoSl .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}#stdoSl .nm i{color:#6b7a96;font-style:normal;font-size:11px}
+#stdoSl .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}#stdoSl .nm i{color:#55607a;font-style:normal;font-size:11px}
 #stdoSl .vl{color:#4a5a78;font-variant-numeric:tabular-nums;font-size:11.5px}
 #stdoSl .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}#stdoSl .dt{width:9px;height:9px;border-radius:5px;flex-shrink:0}#stdoSl .dt.stok{background:#2b8a3e}#stdoSl .dt.stno{background:#e8590c}#stdoSl .dt.stnil{background:#adb5bd}
 #stdoSl .hr{color:#1f6feb;font-size:10px}#stdoSl .tg{width:20px;height:22px;border:0;background:transparent;padding:0;margin:0;color:#33415e;font-size:11px;flex-shrink:0}#stdoSl .tg0{width:20px;flex-shrink:0}
@@ -7273,7 +7275,7 @@ const css=document.createElement('style');css.textContent=`
 #owdd .ic,#owdd2 .ic{width:16px;display:flex;color:#3A4658}
 #owdd .lb,#owdd2 .lb{flex:1}#owdd .ky,#owdd2 .ky{color:#6B7280;margin-left:22px}#owdd .ar{color:#5C6672}
 #owdd hr,#owdd2 hr{border:0;border-top:1px solid #E2DED5;margin:3px 0}
-#owdd .it.mati{color:#9AA0A6;cursor:default}#owdd .it.mati:hover{background:none}
+#owdd .it.mati{color:#5C6672;cursor:default}#owdd .it.mati:hover{background:none}
 #mbar .mbb.owm:after{content:" \\25BE";font-size:9px;opacity:.6}
 #mbar .mbb.owo{background:#2C3B57!important;border-color:#17806B!important;color:#fff!important}
 #owdlg{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:#1C273355}
@@ -7366,16 +7368,16 @@ body.prd #prw{display:flex}#prw.mini{width:22px!important}#prw.mini>*:not(#prstr
 #prh .tb.on{background:#F7F5F0;color:#1C2733;box-shadow:inset 0 2px #17806B;margin-bottom:-1px}#prh .sp{flex:1}
 #prh .ib2{width:20px;height:20px;align-self:center;padding:0;margin:0;border:0;border-radius:2px;background:transparent;color:#4A5568;display:flex;align-items:center;justify-content:center;cursor:pointer}#prh .ib2:hover{background:#DDD8CE}
 #prb{flex:1;overflow:auto;min-height:0}#prw.data #prb{display:none}#prw:not(.data) #rpan{display:none!important}
-#prt{padding:7px 10px 6px;border-bottom:1px solid #E4DFD5;display:flex;align-items:center;gap:7px}#prt .k{color:#6B7486;font-size:11px}#prt b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+#prt{padding:7px 10px 6px;border-bottom:1px solid #E4DFD5;display:flex;align-items:center;gap:7px}#prt .k{color:#5C6672;font-size:11px}#prt b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
 #prt i{width:12px;height:12px;flex:none;border:1px solid #0003;border-radius:2px}
 #prb table{width:100%;border-collapse:collapse;table-layout:fixed}#prb th{text-align:left;background:#EDEBE6;color:#3A4658;font-size:11px;font-weight:600;padding:3px 10px;border-top:1px solid #E4DFD5;border-bottom:1px solid #E4DFD5}
 #prb td{height:22px;padding:1px 10px;border-bottom:1px solid #EFEBE3;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}#prb td.l{width:42%;color:#4A5568;white-space:nowrap}#prb td.v{color:#1C2733}
 #prb td.v input[type=text],#prb td.v input[type=number],#prb td.v select{width:100%;box-sizing:border-box;height:20px;margin:0;padding:0 4px;font:inherit;border:1px solid #CFC8BA;border-radius:2px;background:#fff}
-#prb td.v input[type=range]{width:calc(100% - 38px);vertical-align:middle;margin:0;accent-color:#17806B}#prb td.v .rv{display:inline-block;width:34px;text-align:right;color:#6B7486;font-size:11px}
+#prb td.v input[type=range]{width:calc(100% - 38px);vertical-align:middle;margin:0;accent-color:#17806B}#prb td.v .rv{display:inline-block;width:34px;text-align:right;color:#5C6672;font-size:11px}
 #prb td.v input[type=checkbox]{margin:0;accent-color:#17806B;vertical-align:middle}#prb td.v input[type=color]{width:26px;height:18px;padding:0;margin:0 6px 0 0;border:1px solid #9AA19B;vertical-align:middle}
-#prb .ok{color:#2B8A3E;font-weight:600}#prb .bad{color:#B42318;font-weight:600}#prb .mut{color:#8A8F99}
+#prb .ok{color:#2B8A3E;font-weight:600}#prb .bad{color:#B42318;font-weight:600}#prb .mut{color:#5C6672}
 #prb .act{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px}#prb .act button{margin:0;padding:2px 10px;height:24px;font:inherit;border:1px solid #B9B2A4;border-radius:2px;background:#fff;color:#1C2733;cursor:pointer}#prb .act button:hover{background:#E0EEE8;border-color:#17806B}
-#prb .nt{padding:8px 10px;color:#6B7486;font-size:11px;line-height:1.45}
+#prb .nt{padding:8px 10px;color:#5C6672;font-size:11px;line-height:1.45}
 #prgr{position:absolute;top:0;bottom:0;left:-3px;width:6px;cursor:ew-resize;z-index:3}#prgr:hover,body.prdrag #prgr{background:#17806B44}body.prdrag{user-select:none;cursor:ew-resize}#prw.mini #prgr{display:none}
 #prw #rpan{width:auto!important;flex:1!important;border:0!important;position:static!important;box-shadow:none!important;resize:none!important;min-height:0}#prw #rpan .rph,#prw #rpgr{display:none!important}
 #prw #rpan #rptab{background:#F7F5F0;flex-wrap:wrap}`;document.head.appendChild(css);
@@ -7538,16 +7540,16 @@ const css=document.createElement('style');css.textContent=`#wrap{position:relati
 #tatb{height:32px;flex:none;display:flex;align-items:center;gap:6px;padding:0 8px;background:#F7F5F0;border-bottom:1px solid #D3CDC1;white-space:nowrap;overflow:hidden}
 #tatb select,#tatb input{height:22px;box-sizing:border-box;font:inherit;border:1px solid #CFC8BA;border-radius:2px;background:#fff;color:#1C2733;margin:0;padding:0 5px}#tatb select{max-width:300px}#taq{width:180px}
 #tatb button{height:22px;margin:0;padding:0 9px;font:inherit;border:1px solid #B9B2A4;border-radius:2px;background:#fff;color:#1C2733;cursor:pointer}#tatb button:hover{background:#E0EEE8;border-color:#17806B}#tatb button.on{background:#D5ECE4;border-color:#17806B}
-#tatb .n{color:#6B7486;font-size:11px;margin-left:4px}#tatb .sp{flex:1}
+#tatb .n{color:#5C6672;font-size:11px;margin-left:4px}#tatb .sp{flex:1}
 #tabd{flex:1;overflow:auto;position:relative;min-height:0}#tabd table{border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}
 #tabd thead th{position:sticky;top:0;z-index:2;background:#EDEBE6;border-right:1px solid #D3CDC1;border-bottom:1px solid #D3CDC1;height:24px;padding:0 6px;text-align:left;font-weight:600;color:#3A4658;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 #tabd thead th:hover{background:#E2DED4}#tabd thead th .so{color:#17806B;margin-left:3px}#tabd thead tr.fi th{top:24px;height:24px;padding:1px 2px;background:#F7F5F0;cursor:default}
 #tabd thead tr.fi input{width:100%;height:20px;box-sizing:border-box;font:inherit;font-size:11px;border:1px solid #DDD7CB;border-radius:2px;padding:0 4px;margin:0;background:#fff}#tabd thead tr.fi input:focus{outline:1px solid #17806B;border-color:#17806B}
-#tabd thead th.rn,#tabd td.rn{width:52px;text-align:right;color:#8A8F99;background:#F7F5F0;position:sticky;left:0;z-index:1}#tabd thead th.rn{z-index:3}
+#tabd thead th.rn,#tabd td.rn{width:52px;text-align:right;color:#5C6672;background:#F7F5F0;position:sticky;left:0;z-index:1}#tabd thead th.rn{z-index:3}
 #tabd td{user-select:none;height:22px;padding:0 6px;border-right:1px solid #EFEBE3;border-bottom:1px solid #EFEBE3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
 #tabd td.nu{text-align:right}#tabd td.ed{text-decoration:underline dotted #9AA19B;text-underline-offset:3px;cursor:text}#tabd tr.sel td{background:#D5ECE4}#tabd tr.sel td.rn{background:#BFE0D4;color:#1C2733}#tabd tbody tr:hover td{background:#F2EFE8}#tabd tbody tr.sel:hover td{background:#CBE6DC}
 #tabd td input.ce{width:100%;height:20px;box-sizing:border-box;font:inherit;border:1px solid #17806B;margin:0;padding:0 4px}
-#taem{padding:30px;color:#6B7486;text-align:center;line-height:1.6}`;document.head.appendChild(css);
+#taem{padding:30px;color:#5C6672;text-align:center;line-height:1.6}`;document.head.appendChild(css);
 /* ---- bar tab ---- */
 const TB=document.createElement('div');TB.id='dtb';TB.setAttribute('role','tablist');
 const TABS=[['3d','3D'],['pen','Penampang'],['lvl','Peta level'],['st','Studio'],['tab','Tabel atribut']];
@@ -7862,6 +7864,7 @@ const lgw=g('lgw'),lgb=g('lgb'),lgh=g('lgh'),cv=g('cv');
 const css=document.createElement('style');css.textContent=`#lgw.strip{width:auto!important;min-width:0!important}#lgw.strip #lgh b:before{content:"▤ ";color:#17806B}
 #lgw{border-radius:2px!important;box-shadow:0 2px 8px #1C273326!important}#lgh{cursor:move}
 body.bukan3d #lgw{display:none!important}
+#mbar .mbb.cmo{background:#2C3B57!important;border-color:#17806B!important;color:#fff!important}#otb span.tl{color:#5C6672}.subw .flh .sdp,.sdk .sdp,.sdkh .sdp{color:#C9D0DA!important}#rptab button.on{color:#1C2733!important;border-bottom-color:#17806B!important}
 #sbpsn{display:flex;align-items:center;gap:6px;padding:0 10px;cursor:pointer;border-left:1px solid #ffffff1f;white-space:nowrap;max-width:420px;min-width:0}
 #sbpsn:hover{background:#ffffff14}#sbpsn .t{overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.85}#sbpsn.baru .t{opacity:1}
 #sbpsn .n{min-width:16px;height:15px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#B5893E;color:#1C2733;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
@@ -7869,8 +7872,8 @@ body.bukan3d #lgw{display:none!important}
 #psnw{position:fixed;z-index:9998;display:none;width:460px;max-height:min(420px,60vh);flex-direction:column;background:#fff;border:1px solid #9AA19B;border-radius:2px;box-shadow:0 8px 22px #1C273344;font:12px "Segoe UI",Inter,Arial,sans-serif;color:#1C2733}
 #psnw .hd{height:28px;flex:none;display:flex;align-items:center;gap:6px;padding:0 6px 0 10px;background:#EDEBE6;border-bottom:1px solid #D3CDC1;font-weight:600}
 #psnw .hd span{flex:1}#psnw .hd button{height:20px;margin:0;padding:0 8px;font:inherit;font-weight:400;border:1px solid #B9B2A4;border-radius:2px;background:#fff;cursor:pointer}
-#psnl{overflow:auto;flex:1}#psnl .r{display:flex;gap:8px;padding:4px 10px;border-bottom:1px solid #EFEBE3;line-height:1.35}#psnl .r .w{color:#8A8F99;flex:none;font-variant-numeric:tabular-nums}
-#psnl .r.galat{background:#FDECEC}#psnl .r.galat .m{color:#B42318}#psnl .em{padding:18px;color:#8A8F99;text-align:center}`;document.head.appendChild(css);
+#psnl{overflow:auto;flex:1}#psnl .r{display:flex;gap:8px;padding:4px 10px;border-bottom:1px solid #EFEBE3;line-height:1.35}#psnl .r .w{color:#5C6672;flex:none;font-variant-numeric:tabular-nums}
+#psnl .r.galat{background:#FDECEC}#psnl .r.galat .m{color:#B42318}#psnl .em{padding:18px;color:#5C6672;text-align:center}`;document.head.appendChild(css);
 /* strip: tombol – memperkecil jadi strip judul */
 const mn=g('lgmin');if(mn){const o=mn.onclick;mn.onclick=e=>{if(o)o.call(mn,e);const strip=lgb.style.display==='none';lgw.classList.toggle('strip',strip);try{localStorage.setItem('ow.lgstrip',strip?'1':'');}catch(x){}setTimeout(pojok,0);};
  try{if(localStorage.getItem('ow.lgstrip')==='1'&&lgb.style.display!=='none')mn.onclick();}catch(x){}}
@@ -7892,6 +7895,7 @@ const jam=d=>d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',secon
 function catat(m,jenis){m=String(m==null?'':m).trim();if(!m)return;const L0=PS[PS.length-1];if(L0&&L0.m===m&&Date.now()-L0.d<1500)return;PS.push({m,d:Date.now(),j:jenis||'info'});if(PS.length>300)PS.splice(0,PS.length-300);tampil(true);if(pw.style.display==='flex')daftar();}
 function tampil(baru){const n=PS.length-baca,L0=PS[PS.length-1];sp.querySelector('.n').textContent=n>99?'99+':String(Math.max(0,n));sp.querySelector('.n').style.visibility=n>0?'visible':'hidden';
  sp.querySelector('.t').textContent=L0?L0.m:'Belum ada pesan';sp.title=L0?jam(new Date(L0.d))+' — '+L0.m+'\nKlik untuk melihat semua pesan':'Pesan aplikasi';sp.classList.toggle('galat',PS.slice(baca).some(p=>p.j==='galat'));
+ {const nb=sp.querySelector('.n');nb.style.background='';const m=getComputedStyle(nb).backgroundColor.match(/\d+(\.\d+)?/g);if(m){const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);},L=0.2126*f(+m[0])+0.7152*f(+m[1])+0.0722*f(+m[2]);nb.style.background='';const cb=(L+0.05)/0.057,cw=1.05/(L+0.05);if(Math.max(cb,cw)<4.6){nb.style.background='rgb('+[+m[0],+m[1],+m[2]].map(v=>Math.round(v*0.62)).join(',')+')';nb.style.color='#FFFFFF';}else nb.style.color=cb>=cw?'#141414':'#FFFFFF';}}
  if(baru){sp.classList.add('baru');clearTimeout(tampil.t);tampil.t=setTimeout(()=>sp.classList.remove('baru'),8000);}}
 function daftar(){const l=g('psnl');l.innerHTML=PS.length?PS.slice().reverse().map(p=>'<div class="r '+p.j+'"><span class="w">'+jam(new Date(p.d))+'</span><span class="m">'+esc(p.m)+'</span></div>').join(''):'<div class="em">Belum ada pesan.</div>';}
 sp.onclick=e=>{e.stopPropagation();if(pw.style.display==='flex'){pw.style.display='none';return;}daftar();pw.style.display='flex';const r=sp.getBoundingClientRect();pw.style.left=Math.max(4,Math.min(innerWidth-pw.offsetWidth-4,r.left))+'px';pw.style.top=(r.top-pw.offsetHeight-4)+'px';baca=PS.length;tampil(false);};
@@ -7905,7 +7909,7 @@ window.owPesan=catat;
 /* ---------- palet warna ---------- */
 const BASE={chrome:'#1C2733',chrome2:'#2C3B57',chromeTx:'#E8ECF2',bar:'#EDEBE6',dock:'#F7F5F0',line:'#D3CDC1',accent:'#17806B',accent2:'#B5893E',sel:'#D5ECE4',sub:'#5C6672'};
 const PAL=[
- {k:'dasar',nm:'Dasar (palet pertama Ore Works)',asli:true,c:{chrome:'#1B2A4E',chrome2:'#2A3F6C',chromeTx:'#E6ECF7',bar:'#E6EBF2',dock:'#F7F9FC',line:'#C9D2E0',accent:'#1F6FEB',accent2:'#E0962E',sel:'#DCE8FC',sub:'#667085'},bg:{terang:['#cfd9e8','#f7f9fc'],gelap:['#1b2a4e','#43567f'],polos:'#f6f7f9'}},
+ {k:'dasar',nm:'Dasar (palet pertama Ore Works)',asli:true,c:{chrome:'#1B2A4E',chrome2:'#2A3F6C',chromeTx:'#E6ECF7',bar:'#E6EBF2',dock:'#F7F9FC',line:'#C9D2E0',accent:'#1F6FEB',accent2:'#E0962E',sel:'#DCE8FC',sub:'#545E72'},bg:{terang:['#cfd9e8','#f7f9fc'],gelap:['#1b2a4e','#43567f'],polos:'#f6f7f9'}},
  {k:'malakit',nm:'Malakit',c:{chrome:'#14322F',chromeTx:'#E4EFEC',bar:'#F3F1EC',dock:'#FAF8F4',line:'#D5D0C6',accent:'#1E8C6E',accent2:'#B8692E',sel:'#D7EDE5',sub:'#5C6660'},vp:'#EEF1EE'},
  {k:'oksida',nm:'Oksida',c:{chrome:'#262321',chromeTx:'#F1ECE6',bar:'#F4F1ED',dock:'#FBF9F6',line:'#D8D1C8',accent:'#C4571E',accent2:'#3F7D74',sel:'#F5E1D3',sub:'#665E57'},vp:'#F1EFEC'},
  {k:'kuarsa',nm:'Kuarsa-Emas',c:{chrome:'#1F2328',chromeTx:'#ECEDEF',bar:'#F2F2F0',dock:'#FAFAF8',line:'#D3D3CF',accent:'#A88412',accent2:'#4A6B8A',sel:'#F1E7C4',sub:'#5D6168'},vp:'#EFF0F0'},
@@ -7919,7 +7923,10 @@ const hx=h=>{h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.sl
 const th=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('').toUpperCase();
 const mix=(a,b,t)=>th(hx(a).map((v,i)=>v+(hx(b)[i]-v)*t));
 const ANK=Object.keys(BASE).map(k=>[k,hx(BASE[k])]);
-function peta(P){const c=Object.assign({},P.c);if(!c.chrome2)c.chrome2=mix(c.chrome,'#FFFFFF',0.12);const cache=new Map();
+const lumH=h=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);};const a=hx(h);return 0.2126*f(a[0])+0.7152*f(a[1])+0.0722*f(a[2]);},kontras=(a,b)=>{const x=lumH(a),y=lumH(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
+/* 0.25.0 uji keterbacaan: aksen dipakai sebagai teks di panel terang & latar tombol bertulisan putih → digelapkan sampai kontras ≥ 4,6:1 (WCAG AA) */
+const gelapkan=(h,min)=>{let x=h,k=0;while(kontras(x,'#FFFFFF')<min&&k<40){x=mix(x,'#000000',0.04);k++;}return x;};
+function peta(P){const c=Object.assign({},P.c);if(!c.chrome2)c.chrome2=mix(c.chrome,'#FFFFFF',0.12);c.accent=gelapkan(c.accent,4.6);c.sub=gelapkan(c.sub,5.2);const cache=new Map();
  return h=>{const k=h.toUpperCase();if(cache.has(k))return cache.get(k);const v=hx(k);let best=null,bd=1e9;
   if(k!=='#FFFFFF'&&k!=='#000000')for(const [n,a] of ANK){const d=Math.hypot(v[0]-a[0],v[1]-a[1],v[2]-a[2]);if(d<bd){bd=d;best=[n,a];}}
   let r=k;if(best&&bd<=95){const t=hx(c[best[0]]),a=best[1];r=th(v.map((x,i)=>t[i]+(x-a[i])));}cache.set(k,r);return r;};}
@@ -7932,7 +7939,7 @@ function terapkan(k){const P=PAL.find(p=>p.k===k)||PAL.find(p=>p.k==='ow');PK=P.
  for(const s of document.querySelectorAll('style')){if(!bertema(s))continue;const t=ASLI.get(s);
   if(s.id==='ow-palet'&&P.asli){if(s.media!=='not all')s.media='not all';continue;}if(s.id==='ow-palet'&&s.media==='not all')s.media='';
   const n=f?t.replace(/#[0-9a-fA-F]{6}(?=[0-9a-fA-F]{2}(?![0-9a-fA-F])|(?![0-9a-fA-F]))/g,m0=>f(m0)):t;if(s.textContent!==n)s.textContent=n;}
- tunda=false;document.body.dataset.palet=PK;latar();if(window.reqR)reqR();}
+ tunda=false;document.body.dataset.palet=PK;latar();if(window.reqR)reqR();try{tampil(false);}catch(e){}}
 /* latar 3D ikut palet */
 function bgP(){const P=PAL.find(p=>p.k===PK)||PAL[8];if(P.bg)return P.bg;const c=P.c,vp=P.vp||c.dock;return {terang:[mix(vp,c.line,0.55),mix(vp,'#FFFFFF',0.45)],gelap:[c.chrome,mix(c.chrome,'#FFFFFF',0.16)],polos:mix(vp,c.bar,0.4)};}
 function latar(){try{const k=document.body.dataset.bg||'terang',B=bgP();if(S.background&&S.background.isTexture)S.background.dispose();
@@ -7940,8 +7947,180 @@ function latar(){try{const k=document.body.dataset.bg||'terang',B=bgP();if(S.bac
 if(typeof window.osBg==='function'){const o=window.osBg;window.osBg=function(k){const r=o.apply(this,arguments);latar();return r;};}
 /* CSS bertema yang ditambahkan belakangan ikut diwarnai */
 new MutationObserver(ms=>{if(tunda||PK==='ow')return;for(const m of ms)for(const n of m.addedNodes)if(n.tagName==='STYLE'&&bertema(n)){terapkan(PK);return;}}).observe(document.head,{childList:true});
-window.owPalet={daftar:()=>PAL.map(p=>({k:p.k,nm:p.nm,c:p.c})),pakai:k=>{terapkan(k);catat('Palet warna: '+(PAL.find(p=>p.k===PK)||{}).nm);},aktif:()=>PK};
+window.owPalet={bg:()=>bgP(),daftar:()=>PAL.map(p=>({k:p.k,nm:p.nm,c:p.c})),pakai:k=>{terapkan(k);catat('Palet warna: '+(PAL.find(p=>p.k===PK)||{}).nm);},aktif:()=>PK};
 setTimeout(()=>{if(PK!=='ow')terapkan(PK);},0);
+}
+
+/* ================= Ore Works 0.25.0: Arsip GIS ⇄ Pemetaan, Shapefile (SHP) ekspor & impor, digit menempel ke gambar datar =================
+   Pemilik 19 Nov 2026 (dari usulan): "1-3 saja dulu":
+   1. "Jadikan data pemetaan" langsung dari Arsip GIS — pilih kolom kelas, tiap kelas dipetakan ke kategori Pemetaan
+      (Vein / Channel / Kontak / Jejak struktur / Poligon / Grab / Observasi / abaikan); SEMUA atribut ikut (f.a), layer =
+      nilai kelas; garis & poligon ditempel ke topografi (diperhalus ±5 m) bila tak ber-Z.
+   2. Shapefile: ekspor tabel Arsip GIS & fitur Pemetaan ke .zip (.shp .shx .dbf .cpg [.prj]) — PointZ / PolyLineZ / PolygonZ,
+      atribut ikut; impor .zip atau berkas lepas (.shp .dbf .shx .prj .cpg) ke Arsip GIS (atribut + Z dibaca), dari panel
+      Pemetaan langsung lanjut ke "Jadikan data pemetaan". Tanpa pustaka tambahan (ZIP terkompresi dibuka dengan
+      DecompressionStream bawaan Chromium/Electron).
+   3. Digitasi Pemetaan menempel juga ke gambar / ortofoto yang diletakkan DATAR di RL (sebelumnya hanya yang di-drape). */
+{
+const g=id=>document.getElementById(id);
+const gi=()=>window.__gis||{};
+const num=v=>{if(v==null||v==='')return NaN;if(typeof v==='number')return v;const s=String(v).trim().replace(/^(-?\d+),(\d+)$/,'$1.$2');return s===''?NaN:+s;};
+const css=document.createElement('style');css.textContent=`#gpw{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:#1C273355;font:12px "Segoe UI",Inter,Arial,sans-serif;color:#1C2733}
+#gpw .bx{width:min(760px,calc(100vw - 40px));max-height:calc(100vh - 60px);display:flex;flex-direction:column;background:#F7F5F0;border:1px solid #8D958F;border-radius:2px;box-shadow:0 14px 40px #1C273366}
+#gpw .hd{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;background:#1C2733;color:#E8ECF2;font-weight:600}#gpw .hd b{flex:1}#gpw .hd button{background:transparent;border:0;color:#E8ECF2;font-size:14px;cursor:pointer;margin:0;padding:0 6px}
+#gpw .bd{padding:10px 12px;overflow:auto;flex:1;min-height:0}#gpw .rw{display:flex;align-items:center;gap:8px;margin:0 0 8px}#gpw .rw>span:first-child{width:120px;flex:none;color:#4A5568}
+#gpw select,#gpw input[type=text]{height:22px;box-sizing:border-box;font:inherit;border:1px solid #CFC8BA;border-radius:2px;background:#fff;color:#1C2733;margin:0;padding:0 4px}
+#gpw table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #D3CDC1}#gpw th{background:#EDEBE6;text-align:left;font-weight:600;color:#3A4658;padding:4px 8px;border-bottom:1px solid #D3CDC1;position:sticky;top:0}
+#gpw td{padding:2px 8px;border-bottom:1px solid #EFEBE3;height:24px}#gpw td.n{text-align:right;color:#5C6672;font-variant-numeric:tabular-nums;width:70px}#gpw td.g{color:#5C6672;width:90px}#gpw td select{width:100%}
+#gpw .tb{max-height:min(46vh,420px);overflow:auto}#gpw .nt{color:#5C6672;font-size:11.5px;line-height:1.45;margin:8px 0 0}
+#gpw .ft{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #D3CDC1;background:#EDEBE6}#gpw .ft span{flex:1;color:#4A5568}
+#gpw .ft button{height:26px;margin:0;padding:0 14px;font:inherit;border:1px solid #B9B2A4;border-radius:2px;background:#fff;color:#1C2733;cursor:pointer}#gpw .ft button.pri{background:#17806B;border-color:#17806B;color:#fff;font-weight:600}
+#gisl .gt .fl button.shp,#gisl .gt .fl button.kefm{margin-left:0}#gisw label.fbtn>input[type=file]{display:none}`;document.head.appendChild(css);
+const unduh=(blob,nm)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);};
+const pesan=m=>{if(window.sbToast)sbToast(m);else if(window.owPesan)owPesan(m);};
+const slug=s=>String(s||'data').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,'_').slice(0,60)||'data';
+/* ---------------- ZIP (tulis: store; baca: store + deflate) ---------------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+function zipTulis(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;for(const [nm,isi] of files){const d=isi instanceof Uint8Array?isi:enc.encode(isi),n=enc.encode(nm),c=crc32(d),h=new DataView(new ArrayBuffer(30));
+  h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);parts.push(new Uint8Array(h.buffer),n,d);
+  const e=new DataView(new ArrayBuffer(46));e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint32(16,c,true);e.setUint32(20,d.length,true);e.setUint32(24,d.length,true);e.setUint16(28,n.length,true);e.setUint32(42,off,true);cd.push(new Uint8Array(e.buffer),n);off+=30+n.length+d.length;}
+ const cs=cd.reduce((s,a)=>s+a.length,0),z=new DataView(new ArrayBuffer(22));z.setUint32(0,0x06054b50,true);z.setUint16(8,files.length,true);z.setUint16(10,files.length,true);z.setUint32(12,cs,true);z.setUint32(16,off,true);
+ return new Blob([...parts,...cd,new Uint8Array(z.buffer)],{type:'application/zip'});}
+async function zipBaca(buf){const v=new DataView(buf),u=new Uint8Array(buf);let e=-1;for(let i=u.length-22;i>=Math.max(0,u.length-65600);i--)if(v.getUint32(i,true)===0x06054b50){e=i;break;}if(e<0)throw new Error('Bukan berkas ZIP');
+ const n=v.getUint16(e+10,true);let p=v.getUint32(e+16,true);const out=[];
+ for(let k=0;k<n;k++){if(v.getUint32(p,true)!==0x02014b50)break;const met=v.getUint16(p+10,true),cs=v.getUint32(p+20,true),nl=v.getUint16(p+28,true),xl=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),lo=v.getUint32(p+42,true),fl=v.getUint16(p+8,true);
+  const nm=new TextDecoder(fl&0x800?'utf-8':'windows-1252').decode(u.subarray(p+46,p+46+nl));p+=46+nl+xl+cl;if(nm.endsWith('/'))continue;
+  const ln=v.getUint16(lo+26,true),lx=v.getUint16(lo+28,true),d0=lo+30+ln+lx,raw=u.subarray(d0,d0+cs);let d;
+  if(met===0)d=raw.slice();else if(met===8){if(typeof DecompressionStream==='undefined')throw new Error('ZIP terkompresi tidak didukung di sini — ekstrak dulu');d=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());}
+  else throw new Error('Metode kompresi ZIP '+met+' tidak didukung');out.push({nm,d});}
+ return out;}
+/* ---------------- DBF ---------------- */
+function dbfTulis(cols,rows){/* cols:[{nm,t:'C'|'N',w,d}] rows:[[...]] */const enc=new TextEncoder();const used=new Set();
+ const F=cols.map(c=>{let b=String(c.nm||'F').normalize('NFKD').replace(/[^\w]/g,'_').toUpperCase().slice(0,10)||'F',k=1;while(used.has(b)){const s=String(k++);b=b.slice(0,10-s.length)+s;}used.add(b);return Object.assign({},c,{fn:b});});
+ const vals=rows.map(r=>F.map((c,j)=>{const v=r[j];if(c.t==='N'){const x=num(v);if(!isFinite(x))return '';return c.d?x.toFixed(c.d):String(Math.round(x));}return v==null?'':String(v);}));
+ F.forEach((c,j)=>{if(c.t==='N'){let w=1;for(const r of vals)w=Math.max(w,r[j].length);c.w=Math.min(19,Math.max(c.d?c.d+3:4,w));}else{let w=1;for(const r of vals)w=Math.max(w,enc.encode(r[j]).length);c.w=Math.min(254,Math.max(1,w));}});
+ const hl=32+32*F.length+1,rl=1+F.reduce((s,c)=>s+c.w,0),buf=new Uint8Array(hl+rl*rows.length+1),v=new DataView(buf.buffer),d=new Date();
+ buf[0]=3;buf[1]=d.getFullYear()-1900;buf[2]=d.getMonth()+1;buf[3]=d.getDate();v.setUint32(4,rows.length,true);v.setUint16(8,hl,true);v.setUint16(10,rl,true);buf[29]=0;
+ F.forEach((c,j)=>{const o=32+32*j;for(let k=0;k<c.fn.length;k++)buf[o+k]=c.fn.charCodeAt(k);buf[o+11]=c.t.charCodeAt(0);buf[o+16]=c.w;buf[o+17]=c.t==='N'?(c.d||0):0;});buf[hl-1]=0x0D;
+ let p=hl;for(const r of vals){buf[p++]=0x20;F.forEach((c,j)=>{let b=enc.encode(r[j]);if(b.length>c.w){b=b.subarray(0,c.w);}const pad=c.w-b.length;if(c.t==='N'){buf.fill(0x20,p,p+pad);buf.set(b,p+pad);}else{buf.set(b,p);buf.fill(0x20,p+b.length,p+c.w);}p+=c.w;});}
+ buf[p]=0x1A;return buf;}
+function dbfBaca(u,cpg){const v=new DataView(u.buffer,u.byteOffset,u.byteLength),n=v.getUint32(4,true),hl=v.getUint16(8,true),rl=v.getUint16(10,true),F=[];
+ for(let p=32;p+32<=hl&&u[p]!==0x0D;p+=32){let nm='';for(let k=0;k<11&&u[p+k];k++)nm+=String.fromCharCode(u[p+k]);F.push({nm:nm.trim(),t:String.fromCharCode(u[p+11]),w:u[p+16],d:u[p+17]});}
+ let dec;const cp=String(cpg||'').trim().toUpperCase();if(/UTF-?8/.test(cp))dec=new TextDecoder('utf-8');else if(cp){try{dec=new TextDecoder(/^\d+$/.test(cp)?'windows-'+cp:cp.replace(/^ANSI\s*/,'windows-'));}catch(e){dec=null;}}
+ if(!dec){try{new TextDecoder('utf-8',{fatal:true}).decode(u.subarray(hl,Math.min(u.length,hl+rl*Math.min(n,2000))));dec=new TextDecoder('utf-8');}catch(e){dec=new TextDecoder('windows-1252');}}
+ const kol=F.map(f=>({nm:f.nm,tp:f.t==='C'?'char':(f.t==='N'&&!f.d)?'integer':(f.t==='N'||f.t==='F')?'float':f.t==='L'?'logical':f.t==='D'?'date':'char',w:f.w,d:f.d}));
+ const rows=[],del=[];let p=hl;for(let i=0;i<n;i++){const r={};del.push(u[p]===0x2A);let q=p+1;F.forEach((f,j)=>{const s=dec.decode(u.subarray(q,q+f.w)).replace(/\0/g,'').trim();q+=f.w;const tp=kol[j].tp;
+   r[f.nm]=tp==='integer'||tp==='float'?(s===''||!isFinite(+s)?null:+s):tp==='logical'?(/^[TtYy]/.test(s)?'T':/^[FfNn]/.test(s)?'F':''):tp==='date'&&/^\d{8}$/.test(s)?s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6):s;});rows.push(r);p+=rl;}
+ return {kolom:kol,baris:rows,hapus:del};}
+/* ---------------- SHP ---------------- */
+const ringArea=r=>{let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=(r[j][0]*r[i][1]-r[i][0]*r[j][1]);return a/2;};
+function shpTulis(tipe,recs){/* tipe 'pt'|'ln'|'pg'; recs:[[part:[[x,y,z],...],...]] → {shp,shx} (Z-type, M nol) */const ST=tipe==='pt'?11:tipe==='ln'?13:15;
+ const R=recs.map(parts=>{if(tipe==='pg')parts=parts.map(r=>{let q=r.slice();if(q.length&&(q[0][0]!==q[q.length-1][0]||q[0][1]!==q[q.length-1][1]))q.push(q[0]);if(ringArea(q)>0)q.reverse();return q;});return parts.filter(p=>p.length);});
+ const len=R.map(parts=>{if(ST===11)return 36;const np=parts.reduce((s,p)=>s+p.length,0);return 44+4*parts.length+16*np+16+8*np+16+8*np;});
+ const tot=100+len.reduce((s,l)=>s+8+l,0),shp=new ArrayBuffer(tot),shx=new ArrayBuffer(100+8*R.length),a=new DataView(shp),x=new DataView(shx);
+ let bb=[Infinity,Infinity,-Infinity,-Infinity,Infinity,-Infinity];for(const parts of R)for(const p of parts)for(const q of p){bb[0]=Math.min(bb[0],q[0]);bb[1]=Math.min(bb[1],q[1]);bb[2]=Math.max(bb[2],q[0]);bb[3]=Math.max(bb[3],q[1]);const z=+q[2]||0;bb[4]=Math.min(bb[4],z);bb[5]=Math.max(bb[5],z);}
+ if(!isFinite(bb[0]))bb=[0,0,0,0,0,0];
+ const hd=(dv,L)=>{dv.setInt32(0,9994,false);dv.setInt32(24,L/2,false);dv.setInt32(28,1000,true);dv.setInt32(32,ST,true);[bb[0],bb[1],bb[2],bb[3],bb[4],bb[5],0,0].forEach((v,i)=>dv.setFloat64(36+8*i,v,true));};hd(a,tot);hd(x,100+8*R.length);
+ let o=100;R.forEach((parts,i)=>{x.setInt32(100+8*i,o/2,false);x.setInt32(104+8*i,len[i]/2,false);a.setInt32(o,i+1,false);a.setInt32(o+4,len[i]/2,false);let p=o+8;a.setInt32(p,ST,true);p+=4;
+  if(ST===11){const q=parts[0][0];a.setFloat64(p,q[0],true);a.setFloat64(p+8,q[1],true);a.setFloat64(p+16,+q[2]||0,true);a.setFloat64(p+24,0,true);}
+  else{const P=[].concat(...parts);let b=[Infinity,Infinity,-Infinity,-Infinity],z0=Infinity,z1=-Infinity;for(const q of P){b[0]=Math.min(b[0],q[0]);b[1]=Math.min(b[1],q[1]);b[2]=Math.max(b[2],q[0]);b[3]=Math.max(b[3],q[1]);const z=+q[2]||0;z0=Math.min(z0,z);z1=Math.max(z1,z);}
+   b.forEach((v,k)=>a.setFloat64(p+8*k,v,true));p+=32;a.setInt32(p,parts.length,true);a.setInt32(p+4,P.length,true);p+=8;let s=0;for(const pt of parts){a.setInt32(p,s,true);p+=4;s+=pt.length;}
+   for(const q of P){a.setFloat64(p,q[0],true);a.setFloat64(p+8,q[1],true);p+=16;}a.setFloat64(p,z0,true);a.setFloat64(p+8,z1,true);p+=16;for(const q of P){a.setFloat64(p,+q[2]||0,true);p+=8;}a.setFloat64(p,0,true);a.setFloat64(p+8,0,true);p+=16;for(let k=0;k<P.length;k++){a.setFloat64(p,0,true);p+=8;}}
+  o+=8+len[i];});
+ return {shp:new Uint8Array(shp),shx:new Uint8Array(shx)};}
+function shpBaca(u){const v=new DataView(u.buffer,u.byteOffset,u.byteLength),G=[];let p=100;const L=v.byteLength;
+ while(p+8<=L){const cl=v.getInt32(p+4,false)*2;const s=p+8;p=s+cl;if(cl<4||p>L)break;const t=v.getInt32(s,true);
+  if(t===0){G.push(null);continue;}const hasZ=t===11||t===13||t===15||t===18;
+  if(t===1||t===11||t===21){const q=[v.getFloat64(s+4,true),v.getFloat64(s+12,true)];if(t===11)q.push(v.getFloat64(s+20,true));G.push({t:'pt',c:[[q]]});continue;}
+  if(t===8||t===18||t===28){const np=v.getInt32(s+36,true),c=[];for(let k=0;k<np;k++){const q=[v.getFloat64(s+40+16*k,true),v.getFloat64(s+48+16*k,true)];c.push([q]);}if(hasZ){const z0=s+40+16*np+16;c.forEach((r,k)=>r[0].push(v.getFloat64(z0+8*k,true)));}G.push({t:'pt',c});continue;}
+  if([3,5,13,15,23,25].includes(t)){const nP=v.getInt32(s+36,true),np=v.getInt32(s+40,true),pa=[];for(let k=0;k<nP;k++)pa.push(v.getInt32(s+44+4*k,true));const x0=s+44+4*nP,pts=[];
+   for(let k=0;k<np;k++)pts.push([v.getFloat64(x0+16*k,true),v.getFloat64(x0+16*k+8,true)]);if(hasZ){const z0=x0+16*np+16;for(let k=0;k<np;k++)pts[k].push(v.getFloat64(z0+8*k,true));}
+   const c=pa.map((a,k)=>pts.slice(a,k+1<nP?pa[k+1]:np)).filter(r=>r.length);G.push({t:(t===5||t===15||t===25)?'pg':'ln',c});continue;}
+  G.push(null);}
+ return G;}
+/* ---------------- ekspor ---------------- */
+const zTopo=(E,N,dflt)=>{const z=typeof topoZ==='function'?topoZ(E,N):NaN;return isFinite(z)?z:dflt;};
+function paketSHP(nama,lapis,prj){/* lapis:[{akhir,tipe,recs,cols,rows}] */const F=[];for(const l of lapis){if(!l.recs.length)continue;const b=slug(nama)+(lapis.filter(x=>x.recs.length).length>1?'_'+l.akhir:'');const s=shpTulis(l.tipe,l.recs);
+  F.push([b+'.shp',s.shp],[b+'.shx',s.shx],[b+'.dbf',dbfTulis(l.cols,l.rows)],[b+'.cpg','UTF-8']);if(prj)F.push([b+'.prj',prj]);}
+ if(!F.length){pesan('Tidak ada geometri untuk diekspor.');return 0;}unduh(zipTulis(F),slug(nama)+'_shp.zip');return F.length/(prj?5:4);}
+function gisSHP(T){const K=T.kolom||[],cols=K.map(k=>({nm:k.nm,t:['integer','smallint','largeint','float','decimal'].includes(k.tp)?'N':'C',d:k.tp==='integer'||k.tp==='smallint'||k.tp==='largeint'?0:(k.tp==='decimal'?Math.min(8,k.d||3):6)}));
+ const L3={pt:{akhir:'titik',tipe:'pt',recs:[],cols,rows:[]},ln:{akhir:'garis',tipe:'ln',recs:[],cols,rows:[]},pg:{akhir:'poligon',tipe:'pg',recs:[],cols,rows:[]}};
+ (T.geom||[]).forEach((G,i)=>{if(!G||!L3[G.t]||(T.hapus&&T.hapus[i]))return;const z=q=>isFinite(q[2])?q[2]:(T.kz?(num(T.baris[i][T.kz])>0?num(T.baris[i][T.kz]):zTopo(q[0],q[1],T.z0)):zTopo(q[0],q[1],T.z0));
+  const row=K.map(k=>(T.baris[i]||{})[k.nm]);if(G.t==='pt'){for(const r of G.c){const q=r[0];L3.pt.recs.push([[[q[0],q[1],z(q)]]]);L3.pt.rows.push(row);}return;}
+  L3[G.t].recs.push(G.c.map(r=>r.map(q=>[q[0],q[1],z(q)])));L3[G.t].rows.push(row);});
+ const prj=T.proj&&T.proj.wkt?T.proj.wkt:null;const n=paketSHP(T.nm,[L3.pt,L3.ln,L3.pg],prj);if(n)pesan('SHP "'+T.nm+'": '+(L3.pt.recs.length+L3.ln.recs.length+L3.pg.recs.length).toLocaleString('id-ID')+' objek'+(prj?'':' (tanpa .prj — sistem koordinat = koordinat project)'));}
+function fmSHP(){if(!window.FM||!FM.F.length){pesan('Belum ada fitur pemetaan.');return;}
+ const vk=f=>{const o={};for(const k in f.a||{})if(typeof f.a[k]!=='object'||f.a[k]===null)o[k]=f.a[k];if(f.a&&f.a.v&&typeof f.a.v==='object')for(const e in f.a.v)if(f.a.v[e]!=null&&!Object.keys(o).some(k=>k.toLowerCase()===e.toLowerCase()))o[e]=f.a.v[e];return o;};
+ const L3={pt:{akhir:'titik',tipe:'pt',recs:[],rows:[],F:[]},line:{akhir:'garis',tipe:'ln',recs:[],rows:[],F:[]},poly:{akhir:'poligon',tipe:'pg',recs:[],rows:[],F:[]}};for(const f of FM.F){const K=FMK[f.k];if(K&&L3[K.g])L3[K.g].F.push(f);}
+ for(const l of Object.values(L3)){const ks=[];const V=l.F.map(vk);V.forEach(o=>{for(const k in o)if(!ks.includes(k))ks.push(k);});l.ks=ks;l.V=V;l.cols=[{nm:'OW_ID',t:'N',d:0},{nm:'OW_JENIS',t:'C'},{nm:'OW_NAMA',t:'C'},{nm:'OW_LAYER',t:'C'},{nm:'OW_PJG_M',t:'N',d:2}].concat(ks.map(k=>({nm:k,t:V.every(o=>o[k]==null||o[k]===''||isFinite(num(o[k])))&&V.some(o=>o[k]!=null&&o[k]!=='')?'N':'C',d:6})));}
+ for(const l of Object.values(L3))l.F.forEach((f,fi)=>{const K=FMK[f.k];if(!f.pts||!f.pts.length)return;let len=0;for(let i=1;i<f.pts.length;i++)len+=Math.hypot(f.pts[i][0]-f.pts[i-1][0],f.pts[i][1]-f.pts[i-1][1],f.pts[i][2]-f.pts[i-1][2]);
+  const row=[f.id,K.nm,f.nm,typeof fmGrp==='function'?fmGrp(f):'',len].concat(l.ks.map(k=>l.V[fi][k]));if(K.g==='pt'){for(const q of f.pts){l.recs.push([[q.slice(0,3)]]);l.rows.push(row);}}else{l.recs.push([f.pts.map(q=>q.slice(0,3))]);l.rows.push(row);}});
+ const n=paketSHP('Pemetaan',[L3.pt,L3.line,L3.poly]);if(n)pesan('SHP Pemetaan: '+(L3.pt.recs.length+L3.line.recs.length+L3.poly.recs.length).toLocaleString('id-ID')+' fitur (koordinat = koordinat project)');}
+/* ---------------- impor ---------------- */
+async function imporSHP(files){const by=new Map();const masuk=(nm,d)=>{const m=/^(.*?)\.([^.\/\\]+)$/.exec(nm.split(/[\\/]/).pop());if(!m)return;const k=m[1].toLowerCase(),ext=m[2].toLowerCase();if(!by.has(k))by.set(k,{nm:m[1]});by.get(k)[ext]=d;};
+ for(const f of files){const ab=await f.arrayBuffer();if(/\.zip$/i.test(f.name)){for(const e of await zipBaca(ab))masuk(e.nm,e.d);}else masuk(f.name,new Uint8Array(ab));}
+ const baru=[],msg=[];for(const [,s] of by){if(!s.shp){if(s.dbf)msg.push(s.nm+': tanpa .shp, dilewati');continue;}
+  try{const G=shpBaca(s.shp);let A=s.dbf?dbfBaca(s.dbf,s.cpg?new TextDecoder().decode(s.cpg):''):{kolom:[],baris:G.map(()=>({})),hapus:G.map(()=>false)};
+   while(A.baris.length<G.length){A.baris.push({});A.hapus.push(false);}const prj=s.prj?new TextDecoder().decode(s.prj).trim():'';const pn=/^(PROJCS|GEOGCS|PROJCRS|GEOGCRS)\["([^"]+)"/.exec(prj);
+   if(/^GEOG/.test(prj))msg.push(s.nm+': koordinat geografis (derajat) — pastikan sistem koordinat sama dengan project');
+   const T=gi().tambah({nm:s.nm,kolom:A.kolom,baris:A.baris.slice(0,G.length),hapus:A.hapus.slice(0,G.length),geom:G,proj:prj?{wkt:prj,nm:pn?pn[2]:'WKT'}:null,sumber:'Shapefile'});
+   if(gi().bangun)gi().bangun(T);baru.push(T);const nz=G.filter(Boolean).length;msg.push(s.nm+': '+G.length.toLocaleString('id-ID')+' baris, '+nz.toLocaleString('id-ID')+' objek'+(pn?' · '+pn[2]:''));}
+  catch(err){msg.push(s.nm+': gagal dibaca ('+err.message+')');}}
+ if(gi().daftar)gi().daftar();if(gi().lab)gi().lab();if(window.ptRender)ptRender();msg.forEach(pesan);return baru;}
+/* ---------------- Arsip GIS → Pemetaan ---------------- */
+const KAT={line:[['vein','Vein pick-up'],['kon','Kontak geologi'],['sl','Jejak struktur'],['ch','Channel sampling']],poly:[['pol','Poligon litologi / alterasi'],['kon','Kontak geologi (sebagai garis)']],pt:[['obs','Stasiun observasi / foto'],['grab','Grab sample']]};
+function tebak(nm,gt,T){const s=String(nm||'').toLowerCase();if(gt==='pt')return (T.kolom||[]).some(k=>/^(au|au_?ppm|au_?gpt|grade)$/i.test(k.nm))||/grab|sampel|sample|rock/.test(s)?'grab':'obs';
+ if(gt==='poly')return 'pol';if(/vein|urat|vn\b|qz|kuarsa|quartz|lode/.test(s))return 'vein';if(/sesar|fault|struk|kekar|joint|shear|lineament|kelurusan|frac/.test(s))return 'sl';if(/channel|ch\b|parit|trench/.test(s))return 'ch';return 'kon';}
+const gT=t=>t==='pg'?'poly':t==='ln'?'line':'pt';
+function dialog(T){const D=g('gpw')||(()=>{const d=document.createElement('div');d.id='gpw';d.innerHTML='<div class="bx" role="dialog" aria-modal="true" aria-labelledby="gpwt"><div class="hd"><b id="gpwt">Jadikan data pemetaan</b><button id="gpwx" title="Tutup">✕</button></div><div class="bd" id="gpwb"></div><div class="ft"><span id="gpws"></span><button id="gpwc">Batal</button><button id="gpwo" class="pri">Jadikan pemetaan</button></div></div>';document.body.appendChild(d);
+  d.addEventListener('mousedown',e=>{if(e.target===d)d.style.display='none';});g('gpwx').onclick=g('gpwc').onclick=()=>{d.style.display='none';};return d;})();
+ const K=T.kolom||[];let ck=T.ck&&K.some(k=>k.nm===T.ck)?T.ck:'';const lk0=T.lk&&K.some(k=>k.nm===T.lk)?T.lk:'';
+ const kelas=()=>{const M=new Map();(T.geom||[]).forEach((G,i)=>{if(!G||(T.hapus&&T.hapus[i]))return;const gt=gT(G.t),v=ck?String((T.baris[i]||{})[ck]??'').trim()||'(kosong)':T.nm,key=gt+'\u0001'+v;if(!M.has(key))M.set(key,{gt,v,n:0});M.get(key).n+=G.t==='pt'?G.c.length:1;});return [...M.values()].sort((a,b)=>a.gt.localeCompare(b.gt)||b.n-a.n);};
+ const nmG={line:'garis',poly:'poligon',pt:'titik'};let KL=[];
+ const isi=()=>{KL=kelas();const lebih=KL.length>300;const tampil=KL.slice(0,300);
+  g('gpwb').innerHTML='<div class="rw"><span>Tabel</span><b>'+esc(T.nm)+'</b></div>'+
+   '<div class="rw"><span>Kelas dari kolom</span><select id="gpck"><option value="">(semua satu kelas)</option>'+K.map(k=>'<option'+(k.nm===ck?' selected':'')+'>'+esc(k.nm)+'</option>').join('')+'</select></div>'+
+   '<div class="rw"><span>Nama fitur dari</span><select id="gplk"><option value="">(otomatis, mis. VN-001)</option>'+K.map(k=>'<option'+(k.nm===lk0?' selected':'')+'>'+esc(k.nm)+'</option>').join('')+'</select></div>'+
+   '<div class="tb"><table><thead><tr><th>Kelas (jadi layer)</th><th>Jenis</th><th>Objek</th><th style="width:240px">Jadikan</th></tr></thead><tbody>'+
+   tampil.map((c,i)=>'<tr><td title="'+esc(c.v)+'">'+esc(c.v)+'</td><td class="g">'+nmG[c.gt]+'</td><td class="n">'+c.n.toLocaleString('id-ID')+'</td><td><select data-i="'+i+'">'+KAT[c.gt].map(o=>'<option value="'+o[0]+'"'+(o[0]===tebak(c.v,c.gt,T)?' selected':'')+'>'+o[1]+'</option>').join('')+'<option value="">— abaikan —</option></select></td></tr>').join('')+'</tbody></table></div>'+
+   '<label class="nt" style="display:block"><input type="checkbox" id="gpsem" checked> Sembunyikan tabel GIS ini setelah dijadikan pemetaan</label>'+
+   '<div class="nt">Semua kolom atribut ikut ke fitur Pemetaan. Nilai kelas menjadi <b>layer</b> (poligon: <b>kode</b>, dengan tipe = nama kolom kelas). Garis & poligon tanpa Z ditempel ke topografi dan diperhalus ±5 m; titik memakai kolom elevasi / Z bila ada.'+(lebih?' <b>Hanya 300 kelas terbanyak yang ditampilkan; sisanya diabaikan — pilih kolom kelas lain.</b>':'')+'</div>';
+  g('gpck').onchange=e=>{ck=e.target.value;isi();};
+  const tot=KL.reduce((s,c)=>s+c.n,0);g('gpws').textContent=KL.length.toLocaleString('id-ID')+' kelas · '+tot.toLocaleString('id-ID')+' objek';};
+ isi();D.style.display='flex';
+ g('gpwo').onclick=()=>{const map=new Map();g('gpwb').querySelectorAll('select[data-i]').forEach(s=>{const c=KL[+s.dataset.i];if(c&&s.value)map.set(c.gt+'\u0001'+c.v,s.value);});
+  const lk=g('gplk').value,sem=g('gpsem').checked;D.style.display='none';const n=jadikan(T,ck,lk,map);
+  if(sem&&n){T.on=false;if(gi().bangun)gi().bangun(T);if(gi().daftar)gi().daftar();}pesan(n?'"'+T.nm+'" → '+n.toLocaleString('id-ID')+' fitur pemetaan':'Tidak ada objek yang dijadikan pemetaan');};}
+function drape(r,z0,step){const P=[];const zz=(e,n,z)=>isFinite(z)&&z!==0?z:zTopo(e,n,z0);for(let i=0;i<r.length;i++){const a=r[i];P.push([a[0],a[1],zz(a[0],a[1],a[2])]);if(i+1<r.length&&!(isFinite(a[2])&&a[2]!==0)){const b=r[i+1],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.min(200,Math.floor(d/step));
+  for(let k=1;k<n;k++){const t=k/n,e=a[0]+(b[0]-a[0])*t,nn=a[1]+(b[1]-a[1])*t;P.push([e,nn,zTopo(e,nn,z0)]);}}}return P;}
+function jadikan(T,ck,lk,map){if(!window.FM||typeof FMK==='undefined')return 0;const K=T.kolom||[],cnt={};let n=0;const z0=isFinite(T.z0)?T.z0:O[2];
+ const RES2=new Set(['grup','kode','tipe']),EL=(FM.els||[]).map(e=>[e,e.toLowerCase()]),elOf=nm=>{const s=nm.toLowerCase().replace(/[\s_]*(\(?(ppm|ppb|gpt|g\/t|pct|%)\)?)$/,'');const h=EL.find(e=>e[1]===nm.toLowerCase()||e[1]===s);return h?h[0]:null;};
+ const atr=(i,grab)=>{const a={},r=T.baris[i]||{};for(const k of K){const v=r[k.nm];if(v==null||v==='')continue;const lo=k.nm.toLowerCase();if(lo==='sid'){a.sid=String(v);continue;}a[RES2.has(lo)?'gis_'+k.nm:k.nm]=v;if(grab&&isFinite(num(v))&&typeof v!=='boolean'){const e=elOf(k.nm);if(e){a.v=a.v||{};a.v[e]=num(v);}}}a.sumber=T.nm;return a;};
+ (T.geom||[]).forEach((G,i)=>{if(!G||(T.hapus&&T.hapus[i]))return;const gt=gT(G.t),v=ck?String((T.baris[i]||{})[ck]??'').trim()||'(kosong)':T.nm,k=map.get(gt+'\u0001'+v);if(!k||!FMK[k])return;const KK=FMK[k];
+  const nama=a=>{if(lk){const s=String((T.baris[i]||{})[lk]??'').trim();if(s)return s;}if(k==='grab'&&a&&a.sid)return a.sid;cnt[k]=(cnt[k]||FM.F.filter(f=>f.k===k).length)+1;return KK.pre+'-'+String(cnt[k]).padStart(3,'0');};
+  const tambahF=pts=>{const a=atr(i,k==='grab');if(k==='pol'){a.kode=v;if(ck)a.tipe=ck;}else a.grup=v;const f={id:FM.id++,k,nm:nama(a),pts,on:true,a};if(k==='grab'&&!f.a.sid)f.a.sid=f.nm;FM.F.push(f);if(k==='ch'&&typeof fmIvSeg==='function')try{fmIvSeg(f);}catch(e){}n++;};
+  if(KK.g==='pt'){for(const r of G.c){const q=r[0];const z=isFinite(q[2])&&q[2]!==0?q[2]:zOfT(T,q[0],q[1],i,z0);tambahF([[q[0],q[1],z]]);}return;}
+  for(const r0 of G.c){let r=r0.filter(q=>isFinite(q[0])&&isFinite(q[1]));if(KK.g==='poly'||G.t==='pg'){if(r.length>1&&r[0][0]===r[r.length-1][0]&&r[0][1]===r[r.length-1][1])r=r.slice(0,-1);}
+   if(KK.g==='poly'&&r.length<3)continue;if(KK.g==='line'&&G.t==='pg'&&r.length>2)r=r.concat([r[0]]);if(r.length<2)continue;tambahF(drape(r,z0,5));}});
+ if(typeof fmDraw==='function')fmDraw();if(typeof fmList==='function')fmList();if(window.rpDraw)rpDraw();if(window.ptRender)ptRender();
+ const lf=g('fm')||document.querySelector('[data-l="fm"]');if(lf&&!lf.checked)lf.click();return n;}
+function zOfT(T,E,N,i,z0){if(T.kz){const z=num((T.baris[i]||{})[T.kz]);if(isFinite(z)&&z>0)return z;}return zTopo(E,N,z0);}
+/* ---------------- tombol di panel ---------------- */
+function pasangTombol(){const L2=g('gisl');if(!L2)return;const G=window.GIS||[];L2.querySelectorAll('.gt').forEach((d,i)=>{const T=G[i];if(!T)return;const fl=d.querySelector('.csv')&&d.querySelector('.csv').parentNode;if(!fl||fl.querySelector('.shp'))return;
+ const b1=document.createElement('button');b1.className='shp';b1.innerHTML='&#8681; SHP';b1.title='Ekspor Shapefile (.zip: shp, shx, dbf, cpg)';b1.onclick=()=>gisSHP(T);
+ const b2=document.createElement('button');b2.className='kefm';b2.innerHTML='&#10140; Pemetaan';b2.title='Jadikan data pemetaan (atribut ikut)';b2.onclick=()=>dialog(T);fl.append(b1,b2);});}
+{const L2=g('gisl');if(L2){new MutationObserver(pasangTombol).observe(L2,{childList:true});pasangTombol();}}
+/* impor SHP di Arsip GIS */
+{const st=g('gisst');if(st){const lb=document.createElement('label');lb.className='fbtn';lb.innerHTML='&#8679; Impor Shapefile (.zip / .shp .dbf .shx .prj)<input type="file" id="gisshp" multiple accept=".zip,.shp,.dbf,.shx,.prj,.cpg" style="display:none">';st.parentNode.insertBefore(lb,st);
+ g('gisshp').onchange=async e=>{const fs=[...(e.target.files||[])];e.target.value='';if(!fs.length)return;st.textContent='Membaca Shapefile…';try{const B=await imporSHP(fs);st.textContent=B.length?B.length+' tabel Shapefile masuk Arsip GIS.':'Tidak ada Shapefile yang terbaca.';}catch(err){st.textContent='Gagal: '+err.message;}};}}
+/* Pemetaan: impor SHP → langsung dialog; ekspor SHP */
+{const dx=g('fmdxf'),lab=dx&&dx.closest('label');if(lab){const l2=document.createElement('label');l2.className='fbtn';l2.innerHTML='&#8679; Impor Shapefile → pemetaan<input type="file" id="fmshp" multiple accept=".zip,.shp,.dbf,.shx,.prj,.cpg" style="display:none">';lab.after(l2);
+ g('fmshp').onchange=async e=>{const fs=[...(e.target.files||[])];e.target.value='';if(!fs.length)return;try{const B=await imporSHP(fs);if(B[0])dialog(B[0]);if(B.length>1)pesan((B.length-1)+' tabel lain ada di Arsip GIS — pakai tombol ➜ Pemetaan di sana');}catch(err){pesan('Shapefile gagal dibaca: '+err.message);}};}
+ const fx=g('fmxstr');if(fx){const b=document.createElement('button');b.id='fmxshp';b.textContent='Semua fitur .shp';b.title='Ekspor fitur pemetaan ke Shapefile (.zip; titik / garis / poligon terpisah, atribut ikut)';b.onclick=fmSHP;fx.after(b);}}
+/* dok Project: klik kanan tabel GIS */
+window.__ptExtra=(n,A)=>{if(n.kind==='gis'&&n.obj){A.push(['-']);A.push(['Jadikan data pemetaan…',()=>dialog(n.obj)]);A.push(['Ekspor Shapefile (.zip)',()=>gisSHP(n.obj)]);}if(n.id==='fm'){A.push(['-']);A.push(['Ekspor Shapefile (.zip)',fmSHP]);}};
+window.__shp={zipTulis,zipBaca,dbfTulis,dbfBaca,shpTulis,shpBaca,gisSHP,fmSHP,imporSHP,dialog,jadikan};
 }
 
 </script>
