@@ -647,7 +647,7 @@ B.append('<h3>8.31 Penjaga kontras teks (BM 0.24.110 / DH 0.24.112)</h3>')
 B.append('<p><code>jagaKontras()</code> di <code>palet.js</code>: untuk selektor <code>.gcxm, #pjTime, .tb.pri, #top .tb, #jlrPita, .tplg-h, #status span</code> warna teks diukur terhadap latar efektif '
          '(alpha ditumpuk; gradien = semua titik warna alpha &ge; 0,5) dan dicampur ke putih/hitam per 8% sampai &ge; 4,5:1 (inline <code>!important</code>, ditandai <code>data-gx-kon</code>, dihapus dulu saat dihitung ulang). '
          'Dipanggil setelah ganti palet, 0,3 s &amp; 3 s setelah mulai, dan (dibatasi 400 ms) saat isi <code>#top</code> berubah. <code>tombol()</code> menarget 4,9:1. Bila bilah atas terang, <code>#status</code> memakai aksen kedua. '
-         'Uji: <code>tools/uji/uji_kontras_palet.py</code> (audit semua teks tampil, 10 palet &times; 3 panel).</p>
+         'Uji: <code>tools/uji/uji_kontras_palet.py</code> (audit semua teks tampil, 10 palet &times; 3 panel).</p>')
 
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
