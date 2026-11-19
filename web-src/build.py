@@ -1,6 +1,9 @@
 import re, sys
 import os
 W = os.path.dirname(os.path.abspath(__file__)) + '/'
+# kamus bahasa antarmuka (bahasa.js) dibuat ulang dari web-src/bahasa/kamus.tsv
+import subprocess as _sp
+_sp.run([sys.executable, os.path.join(W, '..', 'tools', 'bahasa', 'buat_kamus.py')], check=True)
 OUT = os.path.join(W, '..', 'app', 'index.html')
 s = open(W + 'gcex_base.html', encoding='utf-8').read()
 # pembaca daftar atribut .mdl (bersama Drillhole) disisipkan di bagian IMPORT, bukan di EXTRA (yang hanya jalan di viewer)
@@ -239,7 +242,7 @@ rep1("var pg={W:W,H:H,ops:ops,scale:0},b=lyPdf([pg]);", "var pg={W:W,H:H,ops:ops
 # ---------- 7z. Cek sintaks semua modul JS (bila Node.js tersedia) supaya galat ketahuan saat build ----------
 import shutil as _sh, subprocess as _sp
 # modul tambahan 0.14.0+ (dipasang di akhir lapisan UI, berurutan)
-EXTRA = ['skala.js', 'ukur.js', 'tutup.js', 'palet.js', 'delaunator.min.js', 'tinz.js', 'tinhr.js', 'glskip.js', 'kinerja.js', 'theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js', 'ortho2d_bm.js', 'period_bm.js', 'gcops_bm.js', 'rppit.js', 'rpsfrac.js', 'rpmetode.js', 'digqt.js', 'amroof.js', 'amnyata.js', 'amkunci.js', 'demox.js', 'demohalus.js', 'manifold.js', 'mfbool.js', 'svein_bm.js', 'svbool_bm.js', 'svrek_bm.js', 'topopit_bm.js', 'skin_bm.js', 'shell_bm.js', 'layx_bm.js', 'popout.js', 'strwarna_bm.js']
+EXTRA = ['skala.js', 'ukur.js', 'tutup.js', 'palet.js', 'bahasa_kamus.js', 'bahasa.js', 'delaunator.min.js', 'tinz.js', 'tinhr.js', 'glskip.js', 'kinerja.js', 'theme_ui.js', 'bm2dimg.js', 'digman.js', 'amedit.js', 'amups.js', 'sec_bm.js', 'am3d.js', 'ui19.js', 'flrev_bm.js', 'ortho2d_bm.js', 'period_bm.js', 'gcops_bm.js', 'rppit.js', 'rpsfrac.js', 'rpmetode.js', 'digqt.js', 'amroof.js', 'amnyata.js', 'amkunci.js', 'demox.js', 'demohalus.js', 'manifold.js', 'mfbool.js', 'svein_bm.js', 'svbool_bm.js', 'svrek_bm.js', 'topopit_bm.js', 'skin_bm.js', 'shell_bm.js', 'layx_bm.js', 'popout.js', 'strwarna_bm.js']
 if _sh.which('node'):
     for _m in EXTRA + ['am2.js', 'sgfix.js', 'multiel.js', 'mdlsum.js', 'rpbm.js', 'prj.js', 'wm.js', 'ui_layer.js', 'fp2.js', 'mdlbig.js', 'guide.js', 'desk_text.js', 'bigline.js', 'ptree.js', 'ptree_bm.js', 'amfloor.js']:
         _r = _sp.run(['node', '--check', W + _m], capture_output=True, text=True)

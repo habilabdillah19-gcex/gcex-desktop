@@ -2862,7 +2862,7 @@ gmSyncCat();gmPanel();
         A(2,function(){GM._openAuto=true;GM.opt.scope='all';GM.opt.minL=1;GM.opt.dil=1;var th=($('thr').value||'').split(/[;, ]+/).map(parseFloat).filter(isFinite);GM.opt.cut=th.length?th[0]:0.5;GM.opt.keep=true;gmPanel();dmPoint('[onclick^="gmAuto"]');});A(3.5,function(){gmAuto();});
         A(7,function(){dmPoint('[onclick^="gmDraft(false)"]');});A(8.2,function(){gmDraft(false);});A(13.5,function(){if(VIEW2D)toggle2D();});}});
     return S;};
-  var host=document.querySelector('#dmMenu');if(host){var bs=host.querySelectorAll('button.sub'),ref=null;bs.forEach(function(b){if(b.textContent==='Sayatan')ref=b;});var nb=document.createElement('button');nb.className='sub';nb.textContent='Geological Modelling';nb.onclick=function(){dmStart('Geological Modelling');};if(ref)ref.parentNode.insertBefore(nb,ref.nextSibling);else host.appendChild(nb);}})();
+  var host=document.querySelector('#dmMenu');if(host){var bs=host.querySelectorAll('button.sub'),ref=null;bs.forEach(function(b){if((window.GXLANG?GXLANG.asli(b):b.textContent)==='Sayatan')ref=b;});var nb=document.createElement('button');nb.className='sub';nb.textContent='Geological Modelling';nb.onclick=function(){dmStart('Geological Modelling');};if(ref)ref.parentNode.insertBefore(nb,ref.nextSibling);else host.appendChild(nb);}})();
 
 /* gambar ulang kanvas edit/digit setiap skala sumbu 2D berubah (zoom, pan, ubah ukuran, gambar ulang Plotly):
    tanpa ini string yang sedang diedit tergambar dengan skala lama -> tampak bergeser / hilang sampai zoom lagi */

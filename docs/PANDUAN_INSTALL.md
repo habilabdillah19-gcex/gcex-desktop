@@ -5767,3 +5767,11 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Studio Implisit → tab **Flag** → **Flag dari kolom kode**: pilih kolom (mis. Vein_Type), isi nama domain tiap kode
   (kosong = lewati; nama sama = beberapa kode ke satu domain), lalu **Flag dari kolom**. Domain dibuat otomatis.
 
+## 294. Block Model 0.24.111 / Drillhole 0.24.113 — pilihan bahasa antarmuka
+
+- Buka **Tampilan & performa** (Project Tree → Pengaturan tampilan). Di bagian paling atas ada **Bahasa · Language**:
+  Bahasa Indonesia (bawaan), English (UK), English (US), Español, Basa Sunda. Pilihan langsung berlaku dan diingat.
+- Tahap 1: menu, tombol, judul panel, label isian, Project Tree, dan tooltip. Pesan peringatan, keterangan panjang,
+  dan laporan masih Bahasa Indonesia; menyusul di rilis berikutnya.
+- Data Anda (Hole ID, kode litologi, nama domain, angka) tidak ikut diterjemahkan. Istilah Surpac (flitch, dig block,
+  wireframe, string) sengaja tidak diubah supaya sama dengan istilah di lapangan.

@@ -1357,6 +1357,9 @@ B.append('<p>Buka <b>Pengaturan tampilan &rsaquo; Tampilan &amp; performa</b>; b
 B.append('<h3>16zb. Semua tulisan terbaca di setiap palet (Block Model 0.24.110 / Drillhole 0.24.112)</h3>')
 B.append('<p>Subjudul logo, jam di tombol Proyek, tombol Geostatistik, pita Jalur Lanjutan dan bilah status bawah kini selalu kontras (&ge; 4,5:1) di ke-10 palet; '
          'warnanya digeser otomatis bila latar terlalu mirip. Warna data tetap.</p>')
+B.append('<h3>16zc. Pilihan bahasa antarmuka (Block Model 0.24.111 / Drillhole 0.24.113)</h3>')
+B.append('<p>Tampilan &amp; performa &rarr; <b>Bahasa &middot; Language</b>: Bahasa Indonesia (bawaan), English (UK), English (US), Espa&ntilde;ol, Basa Sunda. '
+         'Tahap 1 menerjemahkan menu, tombol, judul panel, label, Project Tree dan tooltip; pesan &amp; laporan masih Bahasa Indonesia. Data tidak ikut diterjemahkan.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

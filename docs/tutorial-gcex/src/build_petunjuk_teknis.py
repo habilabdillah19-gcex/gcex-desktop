@@ -649,6 +649,13 @@ B.append('<p><code>jagaKontras()</code> di <code>palet.js</code>: untuk selektor
          'Dipanggil setelah ganti palet, 0,3 s &amp; 3 s setelah mulai, dan (dibatasi 400 ms) saat isi <code>#top</code> berubah. <code>tombol()</code> menarget 4,9:1. Bila bilah atas terang, <code>#status</code> memakai aksen kedua. '
          'Uji: <code>tools/uji/uji_kontras_palet.py</code> (audit semua teks tampil, 10 palet &times; 3 panel).</p>')
 
+B.append('<h3>8.32 Pemilih bahasa antarmuka (BM 0.24.111 / DH 0.24.113)</h3>')
+B.append('<p><code>bahasa.js</code> (GXLANG) + <code>bahasa_kamus.js</code> (dibuat <code>tools/bahasa/buat_kamus.py</code> dari <code>web-src/bahasa/kamus.tsv</code> setiap build). '
+         'Penerjemahan di tampilan: simpul teks yang induknya cocok dengan selektor tombol/label/judul/opsi/Project Tree, plus atribut <code>title</code>/<code>placeholder</code>. '
+         'Kunci = teks inti (ikon depan &amp; tanda baca belakang dipisah lalu dipasang kembali); pola angka memakai <code>#</code>. Teks asli disimpan di WeakMap sehingga kembali ke Indonesia memulihkan persis; '
+         'teks yang ditulis ulang aplikasi dianggap asli baru. MutationObserver hanya aktif bila bahasa bukan Indonesia. Kode yang membandingkan teks tombol memakai <code>GXLANG.asli(el)</code>. '
+         'Kunci localStorage <code>gcex_bahasa</code>. Uji: <code>tools/uji/uji_bahasa.py</code>.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))
