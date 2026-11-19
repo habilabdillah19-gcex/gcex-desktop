@@ -306,10 +306,11 @@ def irisan_ideal(mesh, S, az, off):
     return pts
 
 
-JS_IMPLISIT = """(a)=>{const I=__im;I.buka();I.doms.length=0;const ids={};for(const k of a.B){const d=I.domBaru({nm:k,kol:'Vein_Type',kode:[k],p:Object.assign({},a.p||{})});ids[k]=d.id;}
-  for(const [k,pa] of Object.entries(a.par))if(pa&&ids[k]&&ids[pa])I.doms.find(d=>d.id===ids[k]).par=ids[pa];
+JS_IMPLISIT = """async (a)=>{const I=__im;I.buka();I.doms.length=0;I.flags={};I.R={};const map={};for(const k of a.B)map[k]=k;I.flagKolom('Vein_Type',map);
+  for(const d of I.doms)d.p=Object.assign({},a.p||{});const ids={};I.doms.forEach(d=>ids[d.nm]=d.id);
+  for(const [k,pa] of Object.entries(a.par))if(pa&&ids[k]&&ids[pa])I.doms.find(d=>d.id===ids[k]).par=ids[pa];I.opt.uni=false;
   const out={};for(const d of I.doms.slice().sort((x,y)=>(x.par?1:0)-(y.par?1:0))){const R=I.bangun(d,true);out[d.nm]=R?{vol_m3:Math.round(R.st.vol),interval_dalam:R.st.nin+'/'+R.st.nfl,rms_m:+R.st.rms.toFixed(2),ekstrapolasi15_pct:Math.round(100*R.st.far15)}:{galat:I.R[d.id].err};}
-  if(I.doms.length>1)I.unionSemua();return out;}"""
+  if(I.doms.length>1)await I.unionSemua();return out;}"""
 
 
 JS_SAMPEL = """()=>{const out=[];for(const s of SEGS){if(!(s[2]>0))continue;const a=s[0],b=s[1],l=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2])/10;out.push([(a[0]+b[0])/20+O[0],(a[1]+b[1])/20+O[1],(a[2]+b[2])/20+O[2],s[2],l]);}return out;}"""

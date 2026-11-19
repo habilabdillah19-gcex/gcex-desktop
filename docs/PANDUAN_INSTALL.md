@@ -5736,3 +5736,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   **Data bor → Tampilan lubang → Label di kanan / kiri, geser … ↑ … px** (berlaku untuk semua label).
 - Penjelasan panjang di panel kini disembunyikan di ikon **ⓘ**: arahkan kursor ke ikon untuk membacanya.
 
+## 290. Ore Works 0.29.0 — Studio Implisit lengkap (Geomodeller GC-Ex) & lebar pita log
+
+- **Studio → Studio Implisit**. Alur: tab **Domain** → *Flag dari kolom kode* (mis. kolom Vein_Type, satu kode = satu domain) atau
+  **+ Domain** → tab **Flag** (✎ Flag lalu klik / tarik interval di penampang, atau *Usulkan ke domain aktif* dari cut-off kadar) →
+  **▶ Bangun**. String HW / FW (tab **String**) dipakai untuk mengarahkan permukaan di antara bor.
+- Wireframe Leapfrog / Surpac: tab **Wireframe** → **Serap → domain** (menjadi flag + string yang bisa disunting) atau **Eksak**
+  (dipakai apa adanya).
+- Cabang: di tab Domain pilih *cabang dari* induknya; centang *Satukan induk + cabang (union)* di panel kanan.
+- Penampang: bar **Log geologi** kini punya pilihan **lebar** pita (otomatis / 3–14 px). Pita kanan bawaan tidak lagi
+  menampilkan Assay karena jejak lubang di tengah sudah berwarna kadar; pilih *(tidak ada)* bila cukup satu pita.
+
