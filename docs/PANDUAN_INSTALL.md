@@ -5786,3 +5786,7 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Shift + klik** di penampang vertikal → penampang Level di RL titik itu.
 - **Demo Studio**: tombol ▶ Eksplisit / ▶ Implisit per sistem vein.
 
+## 296. Ore Works 0.30.1 — perbaikan Demo Implisit
+
+- Demo Studio → En echelon → ▶ Implisit: VE5 kini terpasang sebagai cabang VE2 (nama solid demo VE5_RL dicocokkan ke domain VE5).
+

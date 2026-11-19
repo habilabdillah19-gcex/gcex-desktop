@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.30.0';</script>
+<script>window.GCEX_VER='0.30.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -9535,7 +9535,7 @@ DM.skImp=(Y,h)=>{const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:min==n
  const kids=sol.filter(s=>s.par);
  if(kids.length)st(B4,'Cabang dari induk','Domain cabang diikat ke induknya: kontak induk di dekatnya menjadi titik percabangan, lalu induk + cabang disatukan (union).',async()=>{
   await h.klik(document.querySelector('#imTabs button[data-t="dom"]'),{jeda:500});
-  for(const S0 of kids){const d=dom(S0.nm),p=dom(S0.par);if(!d||!p)continue;const sel=document.querySelector('.imd[data-id="'+d.id+'"] select[data-k="par"]');if(sel)await h.dmPilih(sel,String(p.id));else d.par=p.id;}},4000);
+  for(const S0 of kids){const d=dom(S0.nm)||dom(String(S0.nm).split('_')[0]),p=dom(S0.par)||dom(String(S0.par).split('_')[0]);if(!d||!p)continue;const sel=document.querySelector('.imd[data-id="'+d.id+'"] select[data-k="par"]');if(sel)await h.dmPilih(sel,String(p.id));else d.par=p.id;}},4000);
  st(B4,'Bangun semua domain','Permukaan HW dan FW tiap domain dihitung dengan RBF dari kontak bor, dipotong topografi, lalu ditutup menjadi solid.',async()=>{
   await h.klik(g('imGoAll'),{jeda:600});await h.sampai(()=>IM().doms.every(d=>IM().R[d.id]),90000);
   const roots=IM().doms.filter(d=>!d.par&&!d.env&&IM().doms.some(k=>k.par===d.id));await h.sampai(()=>roots.every(r=>WI.some(w=>w.imU2===r.id)),90000);await h.tunggu(800);},4600);
