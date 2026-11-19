@@ -14,7 +14,7 @@ tertentu, menipis ke dasar. Tebal = lebar horizontal tegak lurus jurus setempat.
 
 Pakai:
   python tools/uji/sim_vein_sistem_ow.py buat <sigmoid|echelon|silang> <folder>
-  python tools/uji/sim_vein_sistem_ow.py uji  <sigmoid|echelon|silang> <folder data> [bor|ideal|ideal10|segmen]
+  python tools/uji/sim_vein_sistem_ow.py uji  <sigmoid|echelon|silang> <folder data> [bor|ideal|ideal10|ideal5|segmen]
 Perlu: numpy, trimesh, rtree, manifold3d; uji: playwright + chromium.
 """
 import math, csv, json, os, sys, asyncio, pathlib
@@ -345,9 +345,9 @@ async def uji(nama, B, mode='bor'):
                 secs = await E(JS_ICS, {'pagar': pag, 'az': az, 'E': E0, 'N': N0, 'kode': T.kode})
                 MIDS += [i['mid'] for s in secs for i in s['ics']]
                 secs = [s for s in secs if s['ics']]
-                if mode in ('ideal', 'ideal10'):
-                    if mode == 'ideal10':
-                        ss = np.arange(sk[idx[0]], sk[idx[-1]] + 0.1, 10.0)
+                if mode.startswith('ideal'):                 # ideal = irisan vein aktual di pagar bor; idealN = tiap N m
+                    if mode != 'ideal':
+                        ss = np.arange(sk[idx[0]], sk[idx[-1]] + 0.1, float(mode[5:]))
                     else:
                         ss = [sk[i] for i in idx]
                     STR = []
