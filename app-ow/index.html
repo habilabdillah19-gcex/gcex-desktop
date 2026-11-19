@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.29.2';</script>
+<script>window.GCEX_VER='0.29.3';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8635,7 +8635,7 @@ function flagKolom(kol,map){/* Vein System GC-Ex: satu kolom kode → domain (ma
  for(const [k,nm] of Object.entries(map)){if(!nm)continue;let d=IM.doms.find(x=>x.nm.toLowerCase()===nm.toLowerCase());if(!d)d=domBaru({nm});byNm[k]=d.id;}
  for(const [id,iv] of G){if(!lubang(id))continue;const R=[];for(const x of iv){const v=String(x.v&&x.v[kol]!=null?x.v[kol]:'').trim();if(byNm[v]!=null)R.push({id,f:+x.f,t:+x.t,d:byNm[v]});}
   const byD={};R.forEach(r=>{(byD[r.d]=byD[r.d]||[]).push(r);});for(const [did,L2] of Object.entries(byD))for(const r of gabungRun(L2,0.01)){flagSet(id,r.f,r.t,+did);n++;}}
- IM.msg.dom=n+' interval di-flag dari kolom '+kol+' ke '+Object.keys(byNm).length+' kode.';kotor();return n;}
+ IM.msg.flag=n+' interval di-flag dari kolom '+kol+' ke '+Object.keys(byNm).length+' kode.';kotor();return n;}
 function flagCsv(){const r=['HoleID,From,To,Domain'];Object.keys(IM.flags).sort().forEach(id=>IM.flags[id].forEach(f=>{const d=dom(f[2]);if(d)r.push([id,f[0],f[1],d.nm].join(','));}));
  for(const e of IM.doms.filter(isEnv))for(const [h,L2] of Object.entries(IM.envF[e.id]||{}))L2.forEach(f=>r.push([h,f[0],f[1],e.nm].join(',')));
  if(r.length<2){T_('Belum ada flag.');return;}fmDl(r.join('\r\n')+'\r\n','Flag_Domain.csv','text/csv');}
@@ -9053,16 +9053,19 @@ function tabDom(){const roots=IM.doms.filter(d=>!d.par&&!d.env),urut=roots.flatM
    (isEnv(d)?'<div class="pr">selubung dari <b>'+e(dom(d.env).nm)+'</b></div>':'<div class="pr">cabang dari <select data-k="par"><option value="">—</option>'+roots.filter(r=>r!==d).map(r=>'<option value="'+r.id+'"'+(d.par===r.id?' selected':'')+'>'+e(r.nm)+'</option>').join('')+'</select>'+(!d.par?'<button data-k="env" title="Buat selubung (halo) ber-COG lebih kecil di sekitar vein ini" style="height:22px;padding:0 6px;margin:0">+ Selubung</button>':'')+'</div>')+
    '<small>'+s.h.size+' lubang · '+s.n+' run · '+fmt(s.l,1)+' m'+(s.lv?' · '+fmt(s.m/s.lv,2)+' '+e(el):'')+(d.eksak?' · eksak':'')+'</small></div>';}).join(''):'<div class="imst">Belum ada domain.</div>');
  h+='<div class="imrow f"><input id="imNmB" placeholder="Nama domain baru (mis. QV_Utama)"><button id="imBaruB" class="pri" style="flex:none">+ Domain</button></div>';
+ if(IM.msg.dom)h+='<div class="imst">'+e(IM.msg.dom)+'</div>';return h;}
+function kodeHtml(){let h='';
  const kol=kolomGeo(),kk=IM._kol&&kol.includes(IM._kol)?IM._kol:(kol.find(c=>/vein|urat|domain|zona|ore/i.test(c))||kol[0]||'');IM._kol=kk;
  h+='<details class="imdt"'+(IM._openK?' open':'')+' id="imDK"><summary>Flag dari kolom kode</summary><div class="imrow f"><label class="imsw" style="flex:none">Kolom</label><select id="imKol">'+kol.map(c=>'<option'+(c===kk?' selected':'')+'>'+e(c)+'</option>').join('')+'</select></div>'+
   '<table class="imtb"><tr><th>Kode</th><th>n</th><th>→ domain</th></tr>'+(kk?kodeDi(kk).slice(0,40).map(([k,n])=>'<tr><td>'+e(k)+'</td><td>'+n+'</td><td><input data-k="'+e(k)+'" value="'+(k==='-'||/^(none|nil|kosong|waste)$/i.test(k)?'':e(k))+'" placeholder="lewati" style="width:100%;height:21px"></td></tr>').join(''):'')+'</table>'+
   '<div class="imrow f"><button id="imFK" class="pri" title="Satu kode → satu domain; nama domain sama = beberapa kode ke satu domain; kosong = lewati">Flag dari kolom</button></div></details>';
- if(IM.msg.dom)h+='<div class="imst">'+e(IM.msg.dom)+'</div>';return h;}
+ return h;}
 function tabFlag(){const d=dom(IM.act),md=IM.mode,o=IM.opt,els=kolomAs(),el=o.el&&els.includes(o.el)?o.el:els.find(x=>/^au/i.test(x))||els[0]||'';o.el=el;
  let h='<h5>Flag interval bor</h5><div class="imst">'+(md==='flag'?'<b style="color:'+(d?d.col:'')+'">● Flag: '+e(d?d.nm:'-')+'</b>':md==='erase'?'<b style="color:#c62828">● Hapus flag</b>':'Domain aktif: <b style="color:'+(d?d.col:'')+'">'+e(d?d.nm:'-')+'</b>')+
   (md==='flag'||md==='erase'?'<br><small>Klik interval · tarik sepanjang lubang = rentang · Shift + tarik = kotak · Ctrl+Z · Esc</small>':'')+'</div>'+
   '<div class="imrow f"><button data-m="flag" class="'+(md==='flag'?'on':'')+'">&#9998; Flag</button><button data-m="erase" class="'+(md==='erase'?'on':'')+'">&#9003; Hapus</button><button data-m="">Selesai</button></div>'+
   '<div class="imrow"><button id="imUnd"'+(IM.und.length?'':' disabled')+'>&#8630; Urungkan ('+IM.und.length+')</button><label class="imsw"><input type="checkbox" id="imShowC"'+(o.showC?' checked':'')+'>Titik kontak HW / FW</label></div>';
+ h+=kodeHtml();
  if(d&&isEnv(d)){const E2=envO(d);h+='<h5>Usulan halo (selubung '+e(d.nm)+')</h5><div class="imgr g3"><label>COG halo ≥<input type="number" step="any" data-e="cut" value="'+E2.cut+'"></label><label>Dilusi maks (m)<input type="number" step="any" data-e="dil" value="'+E2.dil+'"></label><label>Panjang min (m)<input type="number" step="any" data-e="minL" value="'+E2.minL+'"></label>'+
   '<label title="0 = tanpa batas">Perluasan maks (m)<input type="number" step="any" data-e="ext" value="'+E2.ext+'"></label></div><label class="imsw"><input type="checkbox" data-e="iso"'+(E2.iso?' checked':'')+'>Ikutkan bor tanpa vein</label><label class="imsw" title="Satu bentang dari kontak teratas s/d terbawah (induk + cabang + halo)"><input type="checkbox" data-e="bridge"'+(E2.bridge?' checked':'')+'>Satukan cabang</label>'+
   '<div class="imrow f"><button id="imAuto" class="pri">Usulkan halo</button></div>';}
@@ -9156,7 +9159,7 @@ function tata(){if(!IM.on||!c3)return;const v=IM.view,M=g('imMid').getBoundingCl
  c3.style.left=x+'px';c3.style.top=y+'px';c3.style.display=(v==='intip'&&mn)?'none':'';R.setSize(Math.max(50,w),Math.max(50,h));C.aspect=w/Math.max(1,h);C.updateProjectionMatrix();}
 function buka(){if(IM.on)return;if(window.__st&&__st.on)stdoTutup();IM.on=true;wn.classList.add('on');c3=R.domElement;c3css=c3.style.cssText;c3.classList.add('im3d');
  scWas=SC.open;if(!SC.open)scOpen(true);g('scw').style.display='none';const cv=kanvas();scHome=[cv.parentNode,cv.nextSibling];g('imSec').appendChild(cv);{const lb=g('lgbar');if(lb){lgHome=[lb.parentNode,lb.nextSibling,lb.style.display];g('imSec').prepend(lb);g('imSec').classList.toggle('lg',lb.style.display!=='none');}}
- if(!IM.doms.length&&Object.keys(IM.flags).length===0){const kol=kolomGeo(),k=kol.find(c=>/vein|urat/i.test(c));if(k){IM._kol=k;IM._openK=true;}}
+ if(!IM.doms.length&&Object.keys(IM.flags).length===0){const kol=kolomGeo(),k=kol.find(c=>/vein|urat/i.test(c));if(k){IM._kol=k;IM._openK=true;IM.tab='flag';}}
  aturView(IM.view||'intip');segar3D();segarUI();setTimeout(()=>{tata();SC.v=null;try{scDraw();}catch(err){}},40);}
 function tutup(){if(!IM.on)return;if(IM.mode==='digit')simpanDigit();IM.mode=null;IM.on=false;wn.classList.remove('on');pip.style.display='none';if(c3){c3.classList.remove('im3d');c3.style.cssText=c3css;}
  const cv=kanvas();if(scHome){const [pa,nx]=scHome;if(nx&&nx.parentNode===pa)pa.insertBefore(cv,nx);else pa.appendChild(cv);}{const lb=g('lgbar');if(lb&&lgHome){const [pa,nx]=lgHome;if(nx&&nx.parentNode===pa)pa.insertBefore(lb,nx);else pa.appendChild(lb);}}g('scw').style.display='';scOpen(scWas);segar3D();window.dispatchEvent(new Event('resize'));}

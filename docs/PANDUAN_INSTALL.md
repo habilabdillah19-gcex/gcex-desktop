@@ -5762,3 +5762,8 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Studio Implisit, kanan atas: **3D** (3D saja) · **2D** (penampang saja) · **Belah** (berdampingan) · **Intip** (penampang + 3D kecil).
   Tab = 3D penuh / kembali.
 
+## 293. Ore Works 0.29.3 — Flag dari kolom kode di tab Flag
+
+- Studio Implisit → tab **Flag** → **Flag dari kolom kode**: pilih kolom (mis. Vein_Type), isi nama domain tiap kode
+  (kosong = lewati; nama sama = beberapa kode ke satu domain), lalu **Flag dari kolom**. Domain dibuat otomatis.
+
