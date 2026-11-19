@@ -5730,3 +5730,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Snap ke kontak log geologi** (opsi): di Studio Eksplisit, di sebelah tombol *Kontak bor*, ganti *sampel assay* menjadi
   *log geologi · <kolom>*. Titik snap lalu jatuh tepat di batas interval log (belah ketupat hijau), bukan di batas sampel 1 m.
 
+## 289. Ore Works 0.28.0 — label lubang gaya Leapfrog & panel ringkas
+
+- Label lubang bor (Hole ID, kadar, kode log) di 3D dan penampang kini berupa teks biasa di samping lubang. Atur posisinya di
+  **Data bor → Tampilan lubang → Label di kanan / kiri, geser … ↑ … px** (berlaku untuk semua label).
+- Penjelasan panjang di panel kini disembunyikan di ikon **ⓘ**: arahkan kursor ke ikon untuk membacanya.
+
