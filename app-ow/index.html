@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.29.1';</script>
+<script>window.GCEX_VER='0.29.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8937,7 +8937,7 @@ function kenaString(px){const q=qNow(),T2=window.__ms2.xf();let best=null,bd=8*8
   for(let i=1;i<P.length;i++){const m=[(P[i-1][0]+P[i][0])/2,(P[i-1][1]+P[i][1])/2],e=(T2.X(m)-px[0])**2+(T2.Y(m)-px[1])**2;if(e<Math.min(bd,6*6)){bd=e;best={si,i,tipe:'m'};}}});return best;}
 function simpanDigit(){const d=dom(IM.act),q=qNow();if(!d||IM.cur.length<2){IM.cur=[];return;}simpanUndo();const n=IM.str.filter(s=>s.dom===d.id&&s.role===IM.role).length+1;
  IM.str.push({id:IM.sid++,dom:d.id,role:IM.role,name:d.nm+'_'+IM.role+'_'+String(n).padStart(2,'0'),pts:IM.cur.map(p=>keDunia(q,p[0],p[1]).map(v=>Math.round(v*1000)/1000)),vis:true,pl:bidang(q),ed:true});IM.cur=[];kotor();}
-function mulai(m){if(IM.mode==='digit'&&m!=='digit')simpanDigit();IM.mode=IM.mode===m?null:m;IM.cur=[];PT.box=null;if(IM.mode&&IM.view==='besar')aturView('kecil');segarUI();ulang();}
+function mulai(m){if(IM.mode==='digit'&&m!=='digit')simpanDigit();IM.mode=IM.mode===m?null:m;IM.cur=[];PT.box=null;if(IM.mode&&(IM.view==='3d'))aturView(IM.prevV&&IM.prevV!=='3d'?IM.prevV:'intip');segarUI();ulang();}
 const ulang=()=>{try{window.__ms2.repaint();}catch(e){}};
 {const cv=kanvas();
  cv.addEventListener('mousedown',e=>{if(!IM.on||e.button!==0)return;const px=pxP(e);
@@ -8990,7 +8990,7 @@ const css=document.createElement('style');css.textContent=`
 #imBody{flex:1;min-height:0;display:grid;grid-template-columns:290px 1fr 280px}
 #imL,#imR{min-height:0;overflow:auto;background:#fff}#imL{border-right:1px solid #d5dce8}#imR{border-left:1px solid #d5dce8}
 #imTabs{position:sticky;top:0;z-index:2;display:flex;background:#1b2a4e}#imTabs button{flex:1;margin:0;height:32px;border:0;border-radius:0;background:transparent;color:#c5d3ea;font-weight:600}#imTabs button.on{background:#fff;color:#1b2a4e}
-#imMid{position:relative;min-width:0;min-height:0;display:flex}#imSec{position:relative;flex:1;min-width:0;background:#fff}
+#imMid{position:relative;min-width:0;min-height:0;display:flex}#imMid.vbelah{padding-left:45%}#imMid.vbelah #imSec{border-left:1px solid #d5dce8}#imMid.v3d #imSec{visibility:hidden}#imTop .vw{display:flex;gap:0}#imTop .vw button{border-radius:0;margin-left:-1px}#imTop .vw button:first-child{border-radius:6px 0 0 6px}#imTop .vw button:last-child{border-radius:0 6px 6px 0}#imTop .vw button.on{background:#1b2a4e;color:#fff;border-color:#1b2a4e}#imSec{position:relative;flex:1;min-width:0;background:#fff}
 #imSec>canvas#scc{position:absolute;inset:0;width:100%!important;height:100%!important}#imSec.lg>canvas#scc{top:27px;height:calc(100% - 27px)!important}#imSec>#lgbar{position:absolute;top:0;left:0;right:0;height:27px;box-sizing:border-box;overflow:hidden;z-index:3}#imSec>#lgbar select{max-width:96px;height:22px}#imSec>#lgbar #lgn{display:none}
 .ims{padding:6px 10px}.ims h5{margin:8px 0 4px;font-size:11.5px;color:#1b2a4e;border-bottom:1px solid #e3e8f0;padding-bottom:2px}
 .imrow{display:flex;align-items:center;gap:6px;margin:4px 0}.imrow>*{margin:0}.imrow button{height:27px;padding:0 9px}.imrow .pri,.imbtn .pri{background:#1f6feb;color:#fff;border-color:#1f6feb;font-weight:700}.imrow .on{background:#1b2a4e;color:#fff;border-color:#1b2a4e}
@@ -9006,7 +9006,7 @@ details.imdt>summary{cursor:pointer;font-weight:600;font-size:11.5px;margin:6px 
 #otbstMenu{position:fixed;z-index:2000;display:none;min-width:290px;background:#fff;border:1px solid #cfd8e6;border-radius:9px;box-shadow:0 12px 34px #0003;padding:5px;font:12.5px Inter,Arial,sans-serif}
 #otbstMenu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin:0;padding:7px 10px;border:0;border-radius:6px;background:transparent;text-align:left;color:#1b2a4e;height:auto}
 #otbstMenu button:hover{background:#eaf2ff}#otbstMenu b{font-size:13px}#otbstMenu span{color:#5C6672;font-size:11.5px}
-canvas.im3d{position:fixed!important;z-index:905!important;border:1px solid #3d5488;border-top:0;box-shadow:0 6px 18px #0005}
+canvas.im3d{position:fixed!important;z-index:905!important}canvas.im3d.pipm{border:1px solid #3d5488;border-top:0;box-shadow:0 6px 18px #0005}
 #imPip{position:fixed;z-index:906;display:none;align-items:center;gap:6px;height:28px;box-sizing:border-box;padding:0 4px 0 9px;background:#1b2a4e;color:#fff;border-radius:7px 7px 0 0;font-size:12px}
 #imPip b{flex:1;font-weight:600}#imPip span{color:#c5d3ea;font-size:11px}#imPip button{margin:0;height:22px;min-width:24px;padding:0 6px;border:1px solid #3d5488;border-radius:5px;background:#24386a;color:#fff}`;
 document.head.appendChild(css);
@@ -9017,18 +9017,18 @@ const wn=document.createElement('div');wn.id='imw';wn.innerHTML=
  '<label title="Penampang vertikal (azimut) atau level (RL)">Penampang <select id="imM"><option value="v">Vertikal</option><option value="h">Level</option></select></label><label id="imAzL">Az <input id="imAz" type="number" step="any"></label>'+
  '<button id="imPrev" title="Penampang sebelumnya">&#9664;</button><span id="imGeser"></span><button id="imNext" title="Penampang berikutnya">&#9654;</button>'+
  '<label>Langkah <input id="imStep" type="number" step="any" min="0.5"></label><label>Slab ± <input id="imSlab" type="number" step="any" min="0.05"></label><button id="imFit" title="Pas ke layar">Pas</button><span class="sep"></span>'+
- '<button id="imT3" title="Intip 3D besar / kecil (Tab)">3D besar</button></div>'+
+ '<span class="vw"><button data-v="3d" title="3D saja">3D</button><button data-v="2d" title="Penampang saja">2D</button><button data-v="belah" title="3D dan penampang berdampingan">Belah</button><button data-v="intip" title="Penampang + intip 3D kecil (Tab = 3D penuh / kembali)">Intip</button></span></div>'+
  '<div id="imBody"><div id="imL"><div id="imTabs"><button data-t="dom">Domain</button><button data-t="flag">Flag</button><button data-t="str">String</button><button data-t="wf">Wireframe</button></div><div id="imLc" class="ims"></div></div>'+
  '<div id="imMid"><div id="imSec"></div></div><div id="imR"><div id="imRc" class="ims"></div></div></div>';
 document.body.appendChild(wn);
 const e=s=>esc(String(s==null?'':s));
 const pip=document.createElement('div');pip.id='imPip';pip.innerHTML='<b>Intip 3D</b><span>Tab = besar</span><button id="imP0" title="Lihat tegak lurus penampang">&#8634;</button><button id="imPm" title="Kecilkan / tampilkan">&minus;</button>';document.body.appendChild(pip);
-function aturView(v){IM.view=v==='besar'?'besar':'kecil';g('imT3').textContent=IM.view==='besar'?'3D kecil':'3D besar';g('imT3').classList.toggle('on',IM.view==='besar');if(IM.view==='besar')pip.classList.remove('min');setTimeout(()=>{tata();try{scDraw();}catch(err){}},20);}
-g('imT3').onclick=()=>aturView(IM.view==='besar'?'kecil':'besar');
+function aturView(v){v=v==='besar'?'3d':v==='kecil'?'intip':v;if(!/^(3d|2d|belah|intip)$/.test(v))v='intip';if(v!=='3d')IM.prevV=v;IM.view=v;g('imMid').className='v'+v;wn.querySelectorAll('#imTop .vw button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ if(v==='3d')pip.classList.remove('min');setTimeout(()=>{tata();try{if(v!=='3d')scDraw();}catch(err){}},20);}
 g('imP0').onclick=()=>{const q=SC.q||scPar();try{const t=CT.target,d=Math.max(80,C.position.distanceTo(t));if(q.m==='h')C.position.set(t.x,t.y+d,t.z+0.01);else C.position.set(t.x-q.nr[0]*d,t.y+d*0.12,t.z+q.nr[1]*d);CT.update();}catch(e){}};
 g('imPm').onclick=()=>{pip.classList.toggle('min');g('imPm').innerHTML=pip.classList.contains('min')?'+':'&minus;';tata();};
-window.addEventListener('keydown',ev=>{if(!IM.on||ev.key!=='Tab'||ev.ctrlKey||ev.altKey)return;const tg=(document.activeElement||{}).tagName||'';if(/INPUT|SELECT|TEXTAREA/.test(tg))return;ev.preventDefault();aturView(IM.view==='besar'?'kecil':'besar');});
-wn.querySelectorAll('.vw button').forEach(b=>b.onclick=()=>aturView(b.dataset.v));
+window.addEventListener('keydown',ev=>{if(!IM.on||ev.key!=='Tab'||ev.ctrlKey||ev.altKey)return;const tg=(document.activeElement||{}).tagName||'';if(/INPUT|SELECT|TEXTAREA/.test(tg))return;ev.preventDefault();aturView(IM.view==='3d'?(IM.prevV||'intip'):'3d');});
+wn.querySelectorAll('#imTop .vw button').forEach(b=>b.onclick=()=>aturView(b.dataset.v));
 /* bar atas */
 function isiTop(){const d=dom(IM.act);g('imDom').innerHTML=IM.doms.length?IM.doms.map(x=>'<option value="'+x.id+'">'+(x.env?'◌ ':isKid(x)?'↳ ':'')+e(x.nm)+'</option>').join(''):'<option>(belum ada)</option>';if(d)g('imDom').value=d.id;
  const q=SC.q||scPar();g('imM').value=g('scm').value;g('imAzL').style.display=g('scm').value==='v'?'':'none';if(document.activeElement!==g('imAz'))g('imAz').value=+(+g('sca').value||0).toFixed(2);
@@ -9148,14 +9148,16 @@ function segarR(){const d=dom(IM.act),c=g('imRc');if(!d){c.innerHTML='<div class
 function segarUI(){if(!IM.on)return;isiTop();segarL();segarR();}
 /* buka / tutup */
 let c3=null,c3css='',scHome=null,scWas=false,lgHome=null;
-function tata(){if(!IM.on||!c3)return;const r=g('imSec').getBoundingClientRect(),top=r.top+(g('imSec').classList.contains('lg')?27:0),mn=pip.classList.contains('min');let x,y,w,h;
- if(IM.view==='besar'){x=r.left;y=top+28;w=r.width;h=Math.max(80,r.bottom-y);}else{w=Math.min(360,Math.max(220,r.width*0.3));h=Math.round(w*0.66);x=r.left+10;y=r.bottom-10-h;}
- pip.style.display='flex';pip.style.left=x+'px';pip.style.top=(y-28)+'px';pip.style.width=w+'px';pip.querySelector('span').textContent=IM.view==='besar'?'Tab = kembali':'Tab = besar';
- c3.style.left=x+'px';c3.style.top=y+'px';c3.style.display=mn?'none':'';R.setSize(w,h);C.aspect=w/h;C.updateProjectionMatrix();}
+function tata(){if(!IM.on||!c3)return;const v=IM.view,M=g('imMid').getBoundingClientRect(),r=g('imSec').getBoundingClientRect(),mn=pip.classList.contains('min');let x,y,w,h;
+ c3.classList.toggle('pipm',v==='intip');
+ if(v==='2d'){pip.style.display='none';c3.style.display='none';return;}
+ if(v==='3d'||v==='belah'){pip.style.display='none';x=M.left;y=M.top;w=v==='3d'?M.width:Math.round(M.width*0.45);h=M.height;}
+ else{w=Math.min(360,Math.max(220,r.width*0.3));h=Math.round(w*0.66);x=r.left+10;y=r.bottom-10-h;pip.style.display='flex';pip.style.left=x+'px';pip.style.top=(y-28)+'px';pip.style.width=w+'px';pip.querySelector('span').textContent='Tab = besar';}
+ c3.style.left=x+'px';c3.style.top=y+'px';c3.style.display=(v==='intip'&&mn)?'none':'';R.setSize(Math.max(50,w),Math.max(50,h));C.aspect=w/Math.max(1,h);C.updateProjectionMatrix();}
 function buka(){if(IM.on)return;if(window.__st&&__st.on)stdoTutup();IM.on=true;wn.classList.add('on');c3=R.domElement;c3css=c3.style.cssText;c3.classList.add('im3d');
  scWas=SC.open;if(!SC.open)scOpen(true);g('scw').style.display='none';const cv=kanvas();scHome=[cv.parentNode,cv.nextSibling];g('imSec').appendChild(cv);{const lb=g('lgbar');if(lb){lgHome=[lb.parentNode,lb.nextSibling,lb.style.display];g('imSec').prepend(lb);g('imSec').classList.toggle('lg',lb.style.display!=='none');}}
  if(!IM.doms.length&&Object.keys(IM.flags).length===0){const kol=kolomGeo(),k=kol.find(c=>/vein|urat/i.test(c));if(k){IM._kol=k;IM._openK=true;}}
- aturView(IM.view||'kecil');segar3D();segarUI();setTimeout(()=>{tata();SC.v=null;try{scDraw();}catch(err){}},40);}
+ aturView(IM.view||'intip');segar3D();segarUI();setTimeout(()=>{tata();SC.v=null;try{scDraw();}catch(err){}},40);}
 function tutup(){if(!IM.on)return;if(IM.mode==='digit')simpanDigit();IM.mode=null;IM.on=false;wn.classList.remove('on');pip.style.display='none';if(c3){c3.classList.remove('im3d');c3.style.cssText=c3css;}
  const cv=kanvas();if(scHome){const [pa,nx]=scHome;if(nx&&nx.parentNode===pa)pa.insertBefore(cv,nx);else pa.appendChild(cv);}{const lb=g('lgbar');if(lb&&lgHome){const [pa,nx]=lgHome;if(nx&&nx.parentNode===pa)pa.insertBefore(lb,nx);else pa.appendChild(lb);}}g('scw').style.display='';scOpen(scWas);segar3D();window.dispatchEvent(new Event('resize'));}
 window.addEventListener('resize',()=>{if(IM.on)setTimeout(()=>{tata();try{scDraw();}catch(e){}},0);});
@@ -9235,39 +9237,42 @@ setTimeout(()=>{document.querySelectorAll(KELAS).forEach(e=>static0.add(e));semu
 window.owRingkas=semua;
 })();
 
-/* ================= Ore Works 0.29.1: tarik sayatan langsung di penampang Studio =================
-   Pemilik 19 Nov 2026: "Pada saat membuka studio, dimana saya bisa menarik sayatan vertikal atau horizontal nya?"
-   Tombol "✎ Sayatan" di bar atas Studio Eksplisit & Implisit:
-   - di penampang Level (denah): tekan, tarik, lepas = penampang vertikal baru sepanjang garis itu;
-   - di penampang Vertikal: klik satu titik = penampang Level (horizontal) pada RL titik itu.
-   Esc = batal. */
+/* ================= Ore Works 0.29.1: tarik sayatan dari Studio memakai alat sayatan utama (3D) =================
+   Pemilik 19 Nov 2026: "Pada saat membuka studio, dimana saya bisa menarik sayatan vertikal atau horizontal nya?" lalu
+   "menu sayatan ini bisa nyambung ke menu sayatan utama. Proses penarikannya di display 3D, begitu garis selesai dibuat,
+   akan kembali ke jendela studionya". Tombol "✎ Sayatan" di bar atas Studio Eksplisit & Implisit:
+   3D dibesarkan + pandangan Plan, alat "Tarik garis sayatan" (Slicing) diaktifkan; tekan-tarik-lepas = penampang vertikal,
+   klik saja = penampang Level pada RL titik yang diklik; Esc = batal. Selesai → kamera & tampilan Studio dikembalikan. */
 (function(){
 const g=id=>document.getElementById(id),T_=m=>{if(window.sbToast)sbToast(m);};
-const SY={on:false,a:null,b:null};window.__sayat=SY;
-const css=document.createElement('style');css.textContent='.syBtn.on{background:#ff9800!important;color:#fff!important;border-color:#ef6c00!important}#scc.sypick{cursor:crosshair!important}';document.head.appendChild(css);
+const SY={on:false,s0:null};window.__sayat=SY;
+const css=document.createElement('style');css.textContent='.syBtn.on{background:#ff9800!important;color:#fff!important;border-color:#ef6c00!important}';document.head.appendChild(css);
 const BTN=[];
-function pasang(after,cls){const a=g(after);if(!a)return;const b=document.createElement('button');b.className='syBtn'+(cls?' '+cls:'');b.type='button';b.innerHTML='&#9998; Sayatan';
- b.title='Tarik sayatan: di penampang Level tekan-tarik-lepas = penampang vertikal baru; di penampang Vertikal klik = Level di RL itu (Esc batal)';
- if(a.style&&a.style.height)b.style.height=a.style.height;a.after(b);b.onclick=()=>atur(!SY.on);BTN.push(b);}
+function pasang(after){const a=g(after);if(!a)return;const b=document.createElement('button');b.className='syBtn';b.type='button';b.innerHTML='&#9998; Sayatan';
+ b.title='Tarik garis sayatan di 3D (alat Slicing): tekan-tarik-lepas = penampang vertikal, klik = penampang Level. Esc batal.';a.after(b);b.onclick=()=>{if(SY.on)g('slpk').onclick();else mulai();};BTN.push(b);}
 pasang('imFit');pasang('stdoFit');
-function atur(on){SY.on=on;SY.a=SY.b=null;BTN.forEach(b=>b.classList.toggle('on',on));const c=g('scc');if(c)c.classList.toggle('sypick',on);
- if(on){if(window.__im&&__im.mode){__im.mode=null;if(__im.segar)__im.segar();}const q=SC.q||scPar();T_(q.m==='h'?'Tekan di titik awal, tarik ke titik akhir, lalu lepas.':'Klik pada RL yang diinginkan untuk penampang Level.');}
- try{scDraw();}catch(e){}}
-const pt=ev=>{const c=g('scc'),r=c.getBoundingClientRect();return SC.inv?SC.inv(ev.clientX-r.left,ev.clientY-r.top):null;};
-const henti=ev=>{ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();};
-window.addEventListener('mousedown',ev=>{if(!SY.on||ev.target.id!=='scc'||ev.button!==0)return;henti(ev);const p=pt(ev),q=SC.q||scPar();if(!p)return;
- if(q.m!=='h'){const Z=p[1];g('scm').value='h';g('scm').dispatchEvent(new Event('change'));g('scr').value=+Z.toFixed(2);atur(false);SC.v=null;scUpd();T_('Penampang Level RL '+Z.toFixed(1).replace('.',',')+'.');return;}
- SY.a=p;SY.b=p;},true);
-window.addEventListener('mousemove',ev=>{if(!SY.on||!SY.a)return;henti(ev);const p=pt(ev);if(p){SY.b=p;try{scDraw();}catch(e){}}},true);
-window.addEventListener('mouseup',ev=>{if(!SY.on||!SY.a)return;henti(ev);const a=SY.a,b=pt(ev)||SY.b,dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);SY.a=SY.b=null;
- if(len<1){T_('Garis terlalu pendek: tekan, tarik, lalu lepas.');try{scDraw();}catch(e){}return;}let az=Math.atan2(dx,dy)*180/Math.PI;if(az<0)az+=360;atur(false);
- g('scm').value='v';g('scm').dispatchEvent(new Event('change'));g('sca').value=+az.toFixed(1);g('sce').value=+((a[0]+b[0])/2).toFixed(2);g('scn').value=+((a[1]+b[1])/2).toFixed(2);g('sco').value=0;if(g('scl'))g('scl').value=0;
- SC.v=null;scUpd();T_('Penampang vertikal az '+az.toFixed(0)+'°, panjang garis '+len.toFixed(0)+' m.');},true);
-window.addEventListener('keydown',ev=>{if(SY.on&&ev.key==='Escape'){henti(ev);atur(false);}},true);
-/* pratinjau garis di atas penampang */
-{const ox=window.msOverlayX;window.msOverlayX=function(){const r=ox?ox.apply(this,arguments):undefined;if(SY.on&&SY.a&&SY.b&&SC.v)try{const c=g('scc'),R=c.getBoundingClientRect(),V=SC.v,ve=SC.ve||1,x=c.getContext('2d'),dpr=window.devicePixelRatio||1;x.setTransform(dpr,0,0,dpr,0,0);
-  const X=p=>R.width/2+20+(p[0]-V.cx)*V.s,Y=p=>R.height/2-12-(p[1]-V.cy)*V.s*ve;x.strokeStyle='#ff6d00';x.lineWidth=2;x.setLineDash([7,4]);x.beginPath();x.moveTo(X(SY.a),Y(SY.a));x.lineTo(X(SY.b),Y(SY.b));x.stroke();x.setLineDash([]);
-  x.fillStyle='#ff6d00';[SY.a,SY.b].forEach(p=>{x.beginPath();x.arc(X(p),Y(p),4,0,7);x.fill();});}catch(e){}return r;};}
+const aktif=()=>g('slpk')&&g('slpk').classList.contains('on');
+function mulai(){if(!g('slpk'))return;const IM=window.__im,ST=window.__st;
+ SY.s0={im:!!(IM&&IM.on),st:!!(ST&&ST.on),view:IM&&IM.view,big3:ST&&ST.big3,cam:[C.position.clone(),CT.target.clone()]};
+ if(SY.s0.im&&IM.aturView)IM.aturView('3d');else if(SY.s0.st){ST.big3=true;window.dispatchEvent(new Event('resize'));}
+ try{view('plan');}catch(e){}
+ SY.on=true;BTN.forEach(b=>b.classList.add('on'));if(!aktif())g('slpk').onclick();
+ T_('Tarik garis sayatan di 3D: tekan, tarik, lepas = penampang vertikal · klik saja = penampang Level · Esc = batal.');}
+function selesai(){if(!SY.on)return;SY.on=false;BTN.forEach(b=>b.classList.remove('on'));const s=SY.s0||{};
+ try{if(s.cam){C.position.copy(s.cam[0]);CT.target.copy(s.cam[1]);CT.update();}}catch(e){}
+ if(s.im&&window.__im&&__im.on){g('scw').style.display='none';__im.aturView(s.view||'intip');}
+ else if(s.st&&window.__st&&__st.on){__st.big3=!!s.big3;window.dispatchEvent(new Event('resize'));}
+ setTimeout(()=>{SC.v=null;try{scUpd();}catch(e){}},60);}
+new MutationObserver(()=>{if(SY.on&&!aktif())selesai();}).observe(g('slpk'),{attributes:true,attributeFilter:['class']});
+/* klik tanpa tarik = penampang Level di RL titik yang diklik */
+{const rc=new THREE.Raycaster(),m=new THREE.Vector2();let d0=null;
+ const hitZ=ev=>{const r=R.domElement.getBoundingClientRect();m.x=(ev.clientX-r.left)/r.width*2-1;m.y=-(ev.clientY-r.top)/r.height*2+1;rc.setFromCamera(m,C);
+  const objs=[];for(const k of ['surf','wfi','env','holes','dh'])if(L[k]&&L[k].visible)L[k].traverse(o=>{if(o.isMesh&&o.visible!==false)objs.push(o);});
+  const h=rc.intersectObjects(objs,false)[0];if(!h)return null;return h.point.y/W.scale.y+O[2];};
+ R.domElement.addEventListener('pointerdown',ev=>{if(SY.on)d0=[ev.clientX,ev.clientY];});
+ R.domElement.addEventListener('pointerup',ev=>{if(!SY.on||!d0||!aktif())return;const pind=Math.hypot(ev.clientX-d0[0],ev.clientY-d0[1]);d0=null;if(pind>4)return;
+  const Z=hitZ(ev);if(Z==null){T_('Klik di permukaan / wireframe untuk penampang Level, atau tarik garis untuk penampang vertikal.');return;}
+  g('scm').value='h';g('scm').dispatchEvent(new Event('change'));g('scr').value=+Z.toFixed(2);g('slpk').onclick();T_('Penampang Level RL '+Z.toFixed(1).replace('.',',')+'.');});}
 })();
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */

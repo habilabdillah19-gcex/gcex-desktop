@@ -5755,3 +5755,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **✎ Sayatan** (bar atas Studio): di penampang **Level** tekan, tarik, lepas → penampang vertikal sepanjang garis itu;
   di penampang **Vertikal** klik satu titik → penampang Level pada RL titik itu. Esc = batal.
 
+## 292. Ore Works 0.29.2 — Sayatan Studio lewat 3D & 4 mode tampilan
+
+- **✎ Sayatan** di bar atas Studio: 3D otomatis besar dalam pandangan Plan. Tekan, tarik, lepas = penampang vertikal sepanjang
+  garis; klik saja pada permukaan / wireframe = penampang Level di RL titik itu; Esc = batal. Setelah itu Studio kembali seperti semula.
+- Studio Implisit, kanan atas: **3D** (3D saja) · **2D** (penampang saja) · **Belah** (berdampingan) · **Intip** (penampang + 3D kecil).
+  Tab = 3D penuh / kembali.
+
