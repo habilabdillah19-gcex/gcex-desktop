@@ -5775,3 +5775,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   dan laporan masih Bahasa Indonesia; menyusul di rilis berikutnya.
 - Data Anda (Hole ID, kode litologi, nama domain, angka) tidak ikut diterjemahkan. Istilah Surpac (flitch, dig block,
   wireframe, string) sengaja tidak diubah supaya sama dengan istilah di lapangan.
+
+## 295. Ore Works 0.30.0 — Stratified / Laterit, bahasa, Shift + klik, Demo Implisit
+
+- **Studio → Studio Implisit → Stratified / Laterit**: pilih *Kolom log* dan *Preset* (Laterit nikel / Bauksit / Stratiform),
+  periksa tabel **Kode → lapisan**, isi densitas & kadar air tiap lapisan, lalu **▶ Bangun lapisan**. Laporan per lapisan
+  (tebal, m³, DMT, kadar komposit) ada di panel kanan; WMT tampil saat kursor di atas DMT dan ada di *Ekspor → Laporan CSV*.
+  Sesar: centang bidang struktur di *Lanjutan → Sesar* agar permukaan tidak diinterpolasi menyeberangi sesar.
+- **Bahasa**: pemilih 🌐 di ujung kanan bar menu (Indonesia, English US / UK, Español, Basa Sunda); tersimpan untuk sesi berikutnya.
+- **Shift + klik** di penampang vertikal → penampang Level di RL titik itu.
+- **Demo Studio**: tombol ▶ Eksplisit / ▶ Implisit per sistem vein.
+
