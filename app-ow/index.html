@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.30.1';</script>
+<script>window.GCEX_VER='0.30.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8687,8 +8687,15 @@ function titik(d,P){/* GC-Ex imPts: string kontrol yang tampil + kontak bor + ti
   for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2])/r));for(let j=1;j<=n;j++){const t=j/n;L2.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t,0]);}}});
  if(P.src!=='str')K.L.forEach(c=>{H.push([c.hw.x,c.hw.y,c.hw.z,1]);W.push([c.fw.x,c.fw.y,c.fw.z,1]);nc++;});
  let nj=0,njAll=0;if(isKid(d)&&P.join!==false&&H.length){const Jd=Math.max(0,P.joinD!=null?+P.joinD:30),bh=new Set(K.L.map(c=>c.id)),B=H.concat(W),cand=[];
-  kontak(dom(d.par)).L.forEach(c=>{if(bh.has(c.id))return;const mx=(c.hw.x+c.fw.x)/2,my=(c.hw.y+c.fw.y)/2,mz=(c.hw.z+c.fw.z)/2;let dm=1e18;for(const q of B){const e=(q[0]-mx)**2+(q[1]-my)**2+(q[2]-mz)**2;if(e<dm)dm=e;}if(Math.sqrt(dm)<=Jd)cand.push([Math.sqrt(dm),mx,my,mz]);});
-  cand.sort((a,b)=>a[0]-b[0]);njAll=cand.length;cand.slice(0,Math.max(3,nc)).forEach(e=>{H.push([e[1],e[2],e[3],2]);W.push([e[1],e[2],e[3],2]);nj++;});}
+  /* 0.30.2: titik sambung hanya kontak induk yang dilalui perpanjangan bidang cabang (|jarak ke bidang| ≤ maks(3 m, 2 × tebal cabang));
+     kontak induk di samping cabang tidak lagi menarik / memuntir cabang. Maks 4 titik. */
+  const PM=K.L.length>=3?K.L.map(c=>[(c.hw.x+c.fw.x)/2,(c.hw.y+c.fw.y)/2,(c.hw.z+c.fw.z)/2]):B.map(q=>[q[0],q[1],q[2]]);let bp=null;
+  if(PM.length>=3){const c0=[0,1,2].map(i=>PM.reduce((s2,q)=>s2+q[i],0)/PM.length),Cv=[[0,0,0],[0,0,0],[0,0,0]];PM.forEach(q=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)Cv[i][j]+=(q[i]-c0[i])*(q[j]-c0[j]);});
+   const E3=eig3(Cv),im=E3.val.indexOf(Math.min(...E3.val)),srt=E3.val.slice().sort((x,y)=>x-y);if(srt[1]>4*srt[0]+1e-9)bp={c:c0,n:E3.vec[im]};}
+  const tb=K.L.map(c=>Math.hypot(c.hw.x-c.fw.x,c.hw.y-c.fw.y,c.hw.z-c.fw.z)).sort((x,y)=>x-y),tol=Math.max(3,2*(tb.length?tb[tb.length>>1]:1));
+  kontak(dom(d.par)).L.forEach(c=>{if(bh.has(c.id))return;const mx=(c.hw.x+c.fw.x)/2,my=(c.hw.y+c.fw.y)/2,mz=(c.hw.z+c.fw.z)/2;let dm=1e18;for(const q of B){const e=(q[0]-mx)**2+(q[1]-my)**2+(q[2]-mz)**2;if(e<dm)dm=e;}if(Math.sqrt(dm)>Jd)return;
+   if(bp&&Math.abs((mx-bp.c[0])*bp.n[0]+(my-bp.c[1])*bp.n[1]+(mz-bp.c[2])*bp.n[2])>tol)return;cand.push([Math.sqrt(dm),mx,my,mz]);});
+  cand.sort((a,b)=>a[0]-b[0]);njAll=cand.length;cand.slice(0,Math.min(4,Math.max(2,nc))).forEach(e=>{H.push([e[1],e[2],e[3],2]);W.push([e[1],e[2],e[3],2]);nj++;});}
  const ST=[];if(P.str!==false&&typeof STP!=='undefined'){const R2=+P.strR||25,B=H.concat(W);for(const p of STP){if(!p.on||!isFinite(p.E)||!isFinite(p.Z)||(typeof stpLin==="function"&&stpLin(p)))continue;let dm=1e18;for(let i=0;i<B.length;i+=Math.max(1,Math.floor(B.length/2000))){const q=B[i],e=(q[0]-p.E)**2+(q[1]-p.N)**2+(q[2]-p.Z)**2;if(e<dm)dm=e;}
    if(Math.sqrt(dm)>R2)continue;const dr=Math.PI/180,de=(+p.dip||0)*dr,az=(+p.dd||0)*dr;ST.push({c:[p.E,p.N,p.Z],n:[Math.sin(de)*Math.sin(az),Math.sin(de)*Math.cos(az),Math.cos(de)]});}}
  return {H,W,nc,nj,njAll,K,nsp,ns,ST};}

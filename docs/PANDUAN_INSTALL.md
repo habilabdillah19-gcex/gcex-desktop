@@ -5790,3 +5790,8 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 
 - Demo Studio → En echelon → ▶ Implisit: VE5 kini terpasang sebagai cabang VE2 (nama solid demo VE5_RL dicocokkan ke domain VE5).
 
+## 297. Ore Works 0.30.2 — cabang implisit tidak terpuntir
+
+- Studio Implisit, domain cabang dengan *Sambung ke induk*: titik sambung kini hanya kontak induk yang segaris dengan bidang
+  cabang (maks 4 titik). Bila sebelumnya cabang tampak tertekuk / tertarik ke induk, cukup ▶ Bangun ulang.
+
