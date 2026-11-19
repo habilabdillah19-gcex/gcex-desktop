@@ -5747,3 +5747,11 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Penampang: bar **Log geologi** kini punya pilihan **lebar** pita (otomatis / 3–14 px). Pita kanan bawaan tidak lagi
   menampilkan Assay karena jejak lubang di tengah sudah berwarna kadar; pilih *(tidak ada)* bila cukup satu pita.
 
+## 291. Ore Works 0.29.1 — Intip 3D di Studio Implisit & tarik sayatan di Studio
+
+- Studio Implisit: 3D tampil sebagai **Intip 3D** kecil di pojok kiri bawah penampang. **Tab** (atau tombol *3D besar*) =
+  3D besar / kembali; ↺ = pandangan tegak lurus penampang; − = sembunyikan.
+- Panel kanan kini hanya parameter utama; parameter lain ada di **Lanjutan**.
+- **✎ Sayatan** (bar atas Studio): di penampang **Level** tekan, tarik, lepas → penampang vertikal sepanjang garis itu;
+  di penampang **Vertikal** klik satu titik → penampang Level pada RL titik itu. Esc = batal.
+

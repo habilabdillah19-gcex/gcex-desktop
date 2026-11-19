@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.29.0';</script>
+<script>window.GCEX_VER='0.29.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8589,7 +8589,7 @@ const WARNA=['#d81b60','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c4
 const IMDEF={minT:1,pinD:5,aoi:null,res:2,smo:1,rob:true,top:'topo',ori:'auto',dip:60,ddir:0,aS:50,aD:50,pitch:0,adp:false,adpK:4,join:true,joinD:30,src:'both',str:true,strR:25};
 const ENVD={cut:0.2,dil:3,minL:1,ext:0,iso:false,bridge:true};
 const IM=window.__im={doms:[],act:null,R:{},flags:{},envF:{},str:[],und:[],mode:null,role:'HW',cur:[],edit:-1,on:false,nid:1,sid:1,ver:0,
- opt:{sg:2.6,op:0.55,auto:true,uni:true,el:'',cut:0.5,minL:1,dil:2,scope:'all',keep:true,live:true,showC:true,strMerge:2},tab:'dom',view:'belah',msg:{}};
+ opt:{sg:2.6,op:0.55,auto:true,uni:true,el:'',cut:0.5,minL:1,dil:2,scope:'all',keep:true,live:true,showC:true,strMerge:2},tab:'dom',view:'kecil',msg:{}};
 const imPar=d=>Object.assign({},IMDEF,d&&d.p||{});
 const dom=id=>IM.doms.find(d=>d.id===id);
 const isKid=d=>!!(d&&d.par&&d.par!==d.id&&dom(d.par)&&!dom(d.par).par&&!d.env);
@@ -8937,7 +8937,7 @@ function kenaString(px){const q=qNow(),T2=window.__ms2.xf();let best=null,bd=8*8
   for(let i=1;i<P.length;i++){const m=[(P[i-1][0]+P[i][0])/2,(P[i-1][1]+P[i][1])/2],e=(T2.X(m)-px[0])**2+(T2.Y(m)-px[1])**2;if(e<Math.min(bd,6*6)){bd=e;best={si,i,tipe:'m'};}}});return best;}
 function simpanDigit(){const d=dom(IM.act),q=qNow();if(!d||IM.cur.length<2){IM.cur=[];return;}simpanUndo();const n=IM.str.filter(s=>s.dom===d.id&&s.role===IM.role).length+1;
  IM.str.push({id:IM.sid++,dom:d.id,role:IM.role,name:d.nm+'_'+IM.role+'_'+String(n).padStart(2,'0'),pts:IM.cur.map(p=>keDunia(q,p[0],p[1]).map(v=>Math.round(v*1000)/1000)),vis:true,pl:bidang(q),ed:true});IM.cur=[];kotor();}
-function mulai(m){if(IM.mode==='digit'&&m!=='digit')simpanDigit();IM.mode=IM.mode===m?null:m;IM.cur=[];PT.box=null;if(IM.mode&&IM.view==='3d')aturView('belah');segarUI();ulang();}
+function mulai(m){if(IM.mode==='digit'&&m!=='digit')simpanDigit();IM.mode=IM.mode===m?null:m;IM.cur=[];PT.box=null;if(IM.mode&&IM.view==='besar')aturView('kecil');segarUI();ulang();}
 const ulang=()=>{try{window.__ms2.repaint();}catch(e){}};
 {const cv=kanvas();
  cv.addEventListener('mousedown',e=>{if(!IM.on||e.button!==0)return;const px=pxP(e);
@@ -8987,11 +8987,11 @@ const css=document.createElement('style');css.textContent=`
 #imTop label{display:flex;align-items:center;gap:4px;margin:0}#imTop select,#imTop input{height:26px}#imTop input[type=number]{width:58px}#imTop .sep{width:1px;height:22px;background:#d5dce8}
 #imTop button{height:26px;margin:0;padding:0 9px}#imTop .pri{background:#1f6feb;color:#fff;border-color:#1f6feb;font-weight:700}#imTop .vw button.on{background:#1b2a4e;color:#fff;border-color:#1b2a4e}
 #imGeser{min-width:120px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
-#imBody{flex:1;min-height:0;display:grid;grid-template-columns:300px 1fr 330px}
+#imBody{flex:1;min-height:0;display:grid;grid-template-columns:290px 1fr 280px}
 #imL,#imR{min-height:0;overflow:auto;background:#fff}#imL{border-right:1px solid #d5dce8}#imR{border-left:1px solid #d5dce8}
 #imTabs{position:sticky;top:0;z-index:2;display:flex;background:#1b2a4e}#imTabs button{flex:1;margin:0;height:32px;border:0;border-radius:0;background:transparent;color:#c5d3ea;font-weight:600}#imTabs button.on{background:#fff;color:#1b2a4e}
-#imMid{position:relative;min-width:0;min-height:0;display:flex}#imCv{position:relative;flex:1;min-width:0;background:#e9edf3}#imSec{position:relative;flex:1.25;min-width:0;background:#fff;border-left:1px solid #d5dce8}
-#imMid.v3d #imSec,#imMid.vpen #imCv{display:none}#imSec>canvas#scc{position:absolute;inset:0;width:100%!important;height:100%!important}#imSec.lg>canvas#scc{top:27px;height:calc(100% - 27px)!important}#imSec>#lgbar{position:absolute;top:0;left:0;right:0;height:27px;box-sizing:border-box;overflow:hidden;z-index:3}#imSec>#lgbar select{max-width:96px;height:22px}#imSec>#lgbar #lgn{display:none}
+#imMid{position:relative;min-width:0;min-height:0;display:flex}#imSec{position:relative;flex:1;min-width:0;background:#fff}
+#imSec>canvas#scc{position:absolute;inset:0;width:100%!important;height:100%!important}#imSec.lg>canvas#scc{top:27px;height:calc(100% - 27px)!important}#imSec>#lgbar{position:absolute;top:0;left:0;right:0;height:27px;box-sizing:border-box;overflow:hidden;z-index:3}#imSec>#lgbar select{max-width:96px;height:22px}#imSec>#lgbar #lgn{display:none}
 .ims{padding:6px 10px}.ims h5{margin:8px 0 4px;font-size:11.5px;color:#1b2a4e;border-bottom:1px solid #e3e8f0;padding-bottom:2px}
 .imrow{display:flex;align-items:center;gap:6px;margin:4px 0}.imrow>*{margin:0}.imrow button{height:27px;padding:0 9px}.imrow .pri,.imbtn .pri{background:#1f6feb;color:#fff;border-color:#1f6feb;font-weight:700}.imrow .on{background:#1b2a4e;color:#fff;border-color:#1b2a4e}
 .imrow.f>*{flex:1}.imgr{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}.imgr.g3{grid-template-columns:1fr 1fr 1fr}.imgr label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#3d4a63;margin:0}.imgr input,.imgr select{height:25px;width:100%;box-sizing:border-box}
@@ -9001,12 +9001,14 @@ const css=document.createElement('style');css.textContent=`
 .imd .pr select{height:22px;flex:1}.imd.kid{padding-left:12px}.imd.env{padding-left:12px;background:#f6f8fb}
 .imst{margin:6px 0;padding:6px 8px;border-radius:7px;background:#f3f6fb;border:1px solid #dbe3ef;line-height:1.45;font-size:11.5px}.imst .w{color:#8a4b00}
 .imtb{width:100%;border-collapse:collapse;font-size:11.5px}.imtb th{text-align:left;background:#eef2f8;padding:3px 5px;font-weight:600}.imtb td{padding:2px 5px;border-bottom:1px solid #f0f2f6;font-variant-numeric:tabular-nums}
-.imtb button{height:20px;padding:0 5px;margin:0;font-size:11px}#imPeta{display:block;width:100%;height:170px;border:1px solid #e3e8f0;border-radius:6px}
+.imtb button{height:20px;padding:0 5px;margin:0;font-size:11px}
 details.imdt>summary{cursor:pointer;font-weight:600;font-size:11.5px;margin:6px 0 3px}
 #otbstMenu{position:fixed;z-index:2000;display:none;min-width:290px;background:#fff;border:1px solid #cfd8e6;border-radius:9px;box-shadow:0 12px 34px #0003;padding:5px;font:12.5px Inter,Arial,sans-serif}
 #otbstMenu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin:0;padding:7px 10px;border:0;border-radius:6px;background:transparent;text-align:left;color:#1b2a4e;height:auto}
 #otbstMenu button:hover{background:#eaf2ff}#otbstMenu b{font-size:13px}#otbstMenu span{color:#5C6672;font-size:11.5px}
-canvas.im3d{position:fixed!important;z-index:905!important}`;
+canvas.im3d{position:fixed!important;z-index:905!important;border:1px solid #3d5488;border-top:0;box-shadow:0 6px 18px #0005}
+#imPip{position:fixed;z-index:906;display:none;align-items:center;gap:6px;height:28px;box-sizing:border-box;padding:0 4px 0 9px;background:#1b2a4e;color:#fff;border-radius:7px 7px 0 0;font-size:12px}
+#imPip b{flex:1;font-weight:600}#imPip span{color:#c5d3ea;font-size:11px}#imPip button{margin:0;height:22px;min-width:24px;padding:0 6px;border:1px solid #3d5488;border-radius:5px;background:#24386a;color:#fff}`;
 document.head.appendChild(css);
 const wn=document.createElement('div');wn.id='imw';wn.innerHTML=
  '<div id="imHd"><b>Studio Implisit</b><div class="seg"><button data-t="vein" class="on" title="Vein: permukaan HW / FW (RBF) dari kontak bor & string kontrol">Vein</button><button data-t="strata" title="Endapan berlapis (laterit Ni / bauksit / stratiform): lapisan dari log, permukaan atap / lantai">Stratified / Laterit</button></div>'+
@@ -9015,12 +9017,17 @@ const wn=document.createElement('div');wn.id='imw';wn.innerHTML=
  '<label title="Penampang vertikal (azimut) atau level (RL)">Penampang <select id="imM"><option value="v">Vertikal</option><option value="h">Level</option></select></label><label id="imAzL">Az <input id="imAz" type="number" step="any"></label>'+
  '<button id="imPrev" title="Penampang sebelumnya">&#9664;</button><span id="imGeser"></span><button id="imNext" title="Penampang berikutnya">&#9654;</button>'+
  '<label>Langkah <input id="imStep" type="number" step="any" min="0.5"></label><label>Slab ± <input id="imSlab" type="number" step="any" min="0.05"></label><button id="imFit" title="Pas ke layar">Pas</button><span class="sep"></span>'+
- '<span class="vw" style="display:flex;gap:3px"><button data-v="3d">3D</button><button data-v="pen">Penampang</button><button data-v="belah">Belah</button></span></div>'+
+ '<button id="imT3" title="Intip 3D besar / kecil (Tab)">3D besar</button></div>'+
  '<div id="imBody"><div id="imL"><div id="imTabs"><button data-t="dom">Domain</button><button data-t="flag">Flag</button><button data-t="str">String</button><button data-t="wf">Wireframe</button></div><div id="imLc" class="ims"></div></div>'+
- '<div id="imMid" class="vbelah"><div id="imCv"></div><div id="imSec"></div></div><div id="imR"><div id="imRc" class="ims"></div></div></div>';
+ '<div id="imMid"><div id="imSec"></div></div><div id="imR"><div id="imRc" class="ims"></div></div></div>';
 document.body.appendChild(wn);
 const e=s=>esc(String(s==null?'':s));
-function aturView(v){IM.view=v;g('imMid').className='v'+v;wn.querySelectorAll('.vw button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));setTimeout(()=>{tata();try{if(v!=='3d')scDraw();}catch(err){}},20);}
+const pip=document.createElement('div');pip.id='imPip';pip.innerHTML='<b>Intip 3D</b><span>Tab = besar</span><button id="imP0" title="Lihat tegak lurus penampang">&#8634;</button><button id="imPm" title="Kecilkan / tampilkan">&minus;</button>';document.body.appendChild(pip);
+function aturView(v){IM.view=v==='besar'?'besar':'kecil';g('imT3').textContent=IM.view==='besar'?'3D kecil':'3D besar';g('imT3').classList.toggle('on',IM.view==='besar');if(IM.view==='besar')pip.classList.remove('min');setTimeout(()=>{tata();try{scDraw();}catch(err){}},20);}
+g('imT3').onclick=()=>aturView(IM.view==='besar'?'kecil':'besar');
+g('imP0').onclick=()=>{const q=SC.q||scPar();try{const t=CT.target,d=Math.max(80,C.position.distanceTo(t));if(q.m==='h')C.position.set(t.x,t.y+d,t.z+0.01);else C.position.set(t.x-q.nr[0]*d,t.y+d*0.12,t.z+q.nr[1]*d);CT.update();}catch(e){}};
+g('imPm').onclick=()=>{pip.classList.toggle('min');g('imPm').innerHTML=pip.classList.contains('min')?'+':'&minus;';tata();};
+window.addEventListener('keydown',ev=>{if(!IM.on||ev.key!=='Tab'||ev.ctrlKey||ev.altKey)return;const tg=(document.activeElement||{}).tagName||'';if(/INPUT|SELECT|TEXTAREA/.test(tg))return;ev.preventDefault();aturView(IM.view==='besar'?'kecil':'besar');});
 wn.querySelectorAll('.vw button').forEach(b=>b.onclick=()=>aturView(b.dataset.v));
 /* bar atas */
 function isiTop(){const d=dom(IM.act);g('imDom').innerHTML=IM.doms.length?IM.doms.map(x=>'<option value="'+x.id+'">'+(x.env?'◌ ':isKid(x)?'↳ ':'')+e(x.nm)+'</option>').join(''):'<option>(belum ada)</option>';if(d)g('imDom').value=d.id;
@@ -9103,63 +9110,55 @@ function segarL(){wn.querySelectorAll('#imTabs button').forEach(b=>b.classList.t
  const s1=g('imSS');if(s1)s1.onclick=()=>strEkspor('str');const s2=g('imSD');if(s2)s2.onclick=()=>strEkspor('dxf');
  const wf=g('imWf');if(wf)wf.onchange=()=>{IM._wf=wf.value;};const sr=g('imSerap');if(sr)sr.onclick=()=>{serap(g('imWf').value,+g('imWfD').value||null,g('imWfK').checked);if(IM.opt.auto)bangunGrup(dom(IM.act));};
  const ek=g('imEksak');if(ek)ek.onclick=()=>eksak(g('imWf').value,+g('imWfD').value||null);c.querySelectorAll('[data-lepas]').forEach(b=>b.onclick=()=>{const d=dom(+b.dataset.lepas);delete d.eksak;bangun(d,true);segarUI();});}
-function keBidang(pl){if(!pl)return;g('scm').value=pl.m;if(pl.m==='h')g('scr').value=pl.rl;else{g('sca').value=pl.az;g('sce').value=pl.E;g('scn').value=pl.N;g('sco').value=pl.off;}SC.v=null;scUpd();if(IM.view==='3d')aturView('belah');isiTop();}
-/* panel kanan: parameter solid (menu GC-Ex) + hasil + Vein System */
-function segarR(){const d=dom(IM.act),c=g('imRc');if(!d){c.innerHTML='<div class="imst">Buat domain di tab Domain.</div>';return;}const P=imPar(d),R=IM.R[d.id],au=R&&R.st&&R.st.dip!=null&&P.ori!=='man'?R.st:null;
+function keBidang(pl){if(!pl)return;g('scm').value=pl.m;if(pl.m==='h')g('scr').value=pl.rl;else{g('sca').value=pl.az;g('sce').value=pl.E;g('scn').value=pl.N;g('sco').value=pl.off;}SC.v=null;scUpd();isiTop();}
+/* panel kanan: parameter inti + Lanjutan, hasil ringkas, Vein System */
+function segarR(){const d=dom(IM.act),c=g('imRc');if(!d){c.innerHTML='<div class="imst">Buat domain di tab Domain.</div>';return;}const P=imPar(d),R=IM.R[d.id],au=R&&R.st&&R.st.dip!=null&&P.ori!=='man'?R.st:null,sg=IM.opt.sg;
  const n=(k,v,t)=>'<input type="number" step="any" data-k="'+k+'" value="'+(v==null?'':v)+'"'+(k==='aoi'?' placeholder="otomatis'+(R&&R.st&&R.st.aoiA?' ('+String(R.st.aoiA).replace('.',',')+')':'')+'"':'')+(t?' title="'+t+'"':'')+'>',sw=(k,v,lb,t)=>'<label class="imsw"'+(t?' title="'+t+'"':'')+'><input type="checkbox" data-k="'+k+'"'+(v?' checked':'')+'>'+lb+'</label>';
- let h='<h5 style="margin-top:2px">Solid: <span style="color:'+d.col+'">'+e(d.nm)+'</span>'+(d.eksak?' (eksak)':'')+'</h5>';
- if(!d.eksak){h+='<details class="imdt" open><summary>Batas model</summary><div class="imgr"><label title="Model diperpanjang sejauh ini dari data terluar lalu dipotong. Kosong = otomatis maks(10, 0,55 × jarak pagar bor).">Radius strike (m)'+n('aoi',P.aoi)+'</label><label title="Jarak penipisan ke nol searah dip">Pinch-out dip (m)'+n('pinD',P.pinD)+'</label>'+
-  '<label>Ujung atas<select data-k="top"><option value="topo"'+(P.top==='topo'?' selected':'')+'>Potong topografi</option><option value="pinch"'+(P.top==='pinch'?' selected':'')+'>Pinch-out</option></select></label><label>Tebal minimum (m)'+n('minT',P.minT)+'</label>'+
-  '<label title="Kosong = otomatis 1,5 × tebal kontak terbesar">Batas tebal (m)'+n('tCap',P.tCap)+'</label><label>Sumber titik<select data-k="src"><option value="both"'+(P.src==='both'?' selected':'')+'>String + kontak</option><option value="str"'+(P.src==='str'?' selected':'')+'>String saja</option><option value="con"'+(P.src==='con'?' selected':'')+'>Kontak saja</option></select></label></div>'+
-  (isKid(d)?'<div class="imgr" style="margin-top:4px">'+sw('join',P.join!==false,'Sambung ke induk')+'<label title="Kontak induk dalam jarak ini dari data cabang menjadi titik percabangan">Jarak sambung (m)'+n('joinD',P.joinD)+'</label></div>':'')+'</details>';
-  h+='<details class="imdt"><summary>Struktur (dip / dip azimuth)</summary><div class="imgr">'+sw('str',P.str!==false,'Pakai titik struktur')+'<label title="Titik struktur Ore Works dalam jarak ini dari data vein ikut membentuk kemiringan permukaan">Radius (m)'+n('strR',P.strR)+'</label></div></details>';
-  h+='<details class="imdt"><summary>Orientasi &amp; elipsoid RBF</summary><div class="imgr"><label>Orientasi<select data-k="ori"><option value="auto"'+(P.ori!=='man'?' selected':'')+'>Otomatis</option><option value="man"'+(P.ori==='man'?' selected':'')+'>Manual</option></select></label>'+
-   (P.ori==='man'?'<label>Dip / dip dir (°)<span style="display:flex;gap:4px">'+n('dip',P.dip)+n('ddir',P.ddir)+'</span></label>':'<label>&nbsp;<span style="font-size:11px;color:#1b2a4e">'+(au?au.dip.toFixed(0)+'° → '+au.ddir.toFixed(0)+'° <a href="javascript:void(0)" id="imOriC">ubah</a>':'saat dibangun')+'</span></label>')+'</div>'+
-   '<div class="imgr g3" style="margin-top:4px"><label title="Sumbu panjang, searah pitch">Mayor (m)'+n('aS',P.aS)+'</label><label>Semi-mayor (m)'+n('aD',P.aD)+'</label><label title="Sudut sumbu mayor dari strike di bidang vein">Pitch (°)'+n('pitch',P.pitch)+'</label></div></details>';
-  h+='<details class="imdt"><summary>RBF &amp; mesh</summary><div class="imgr"><label>Resolusi (m)'+n('res',P.res)+'</label><label>Kehalusan<select data-k="smo">'+[[0,'Tepat di data'],[1,'Halus'],[2,'Sangat halus'],[3,'Maksimum']].map(o=>'<option value="'+o[0]+'"'+(+P.smo===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'+
-   sw('adp',P.adp,'Resolusi adaptif','Rapat di dekat data, makin jarang menjauh')+'<label>Jarang maks (×)'+n('adpK',P.adpK)+'</label>'+sw('rob',P.rob!==false,'Anti-spike','Kontak bor menggantikan string di sekitarnya; verteks string bersudut lancip diabaikan')+'</div>'+
-   '<div class="imrow f"><button id="imDef">&#8634; Bawaan</button><button id="imAll">Pakai untuk semua</button></div></details>';}
- h+='<div class="imrow f"><button id="imB1" class="pri">&#9654; Bangun '+e(d.nm)+'</button></div>';
- if(R&&R.err)h+='<div class="imst w">'+e(R.err)+'</div>';else if(R&&R.st){const S=R.st,sg=IM.opt.sg;
-  h+='<div class="imst">Volume <b>'+fmt(S.vol)+' m³</b> · <b>'+fmt(S.vol*sg)+' t</b>'+(R.eksak?' (mesh wireframe)':'')+(R.uni&&R.uni.vol?'<br>Induk + cabang (union): <b>'+fmt(R.uni.vol)+' m³</b>'+(R.uni.nb>1?' · <span class="w">'+R.uni.nb+' bagian</span>':''):'')+
-   (S.dip!=null?'<br>Dip '+S.dip.toFixed(0)+'° → '+S.ddir.toFixed(0)+'° · tebal rata-rata '+fmt(S.tav,2)+' m (maks '+fmt(S.tmax,2)+')'+
-   '<br>Titik: '+S.nc+' kontak'+(S.ns?' + '+S.ns+' string':'')+(S.nj?' + '+S.nj+' sambung induk':'')+(S.nst?' + '+S.nst+' struktur':'')+' · RMS '+fmt(S.rms,2)+' m'+
-   '<br>Interval di dalam: <b>'+S.nin+' / '+S.nfl+'</b>'+(S.nab?' · '+S.nab+' tertambang':'')+' · ekstrapolasi &gt; 15 m '+(S.far15*100).toFixed(0)+'%'+(S.far15>0.25?' <span class="w">(data jarang)</span>':'')+
-   (S.nsp?'<br><span class="w">Anti-spike: '+S.nsp+' verteks string lancip diabaikan</span>':'')+'<br><small>radius strike '+fmt(S.aoi,1)+' m'+(S.aoiA?' (otomatis)':'')+' · pinch-out '+fmt(P.pinD,1)+' m · '+(S.ms/1000).toFixed(2).replace('.',',')+' s</small>':'')+'</div>';
-  if(!R.eksak)h+='<canvas id="imPeta" title="Peta tebal di bidang vein: biru tipis → merah tebal · titik = kontak bor · garis = batas model"></canvas>';
-  h+='<div class="imrow f"><button data-x="obj">&#8681; OBJ</button><button data-x="dxf">&#8681; DXF</button><button data-x="str">&#8681; STR+DTM</button></div>';}
- /* Vein System (GC-Ex vsys) */const B=IM.doms.filter(x=>IM.R[x.id]&&IM.R[x.id].st);let tv=0;B.forEach(x=>{tv+=IM.R[x.id].st.vol;});
- h+='<h5>Vein System</h5><table class="imtb"><tr><th>Domain</th><th>m³</th><th>t</th></tr>'+IM.doms.map(x=>{const R2=IM.R[x.id];return '<tr><td><b style="color:'+x.col+'">'+(x.env?'◌ ':isKid(x)?'↳ ':'')+e(x.nm)+'</b></td><td>'+(R2&&R2.st?fmt(R2.st.vol):R2&&R2.err?'<span class="w">gagal</span>':'–')+'</td><td>'+(R2&&R2.st?fmt(R2.st.vol*IM.opt.sg):'')+'</td></tr>';}).join('')+
-  '<tr><td><b>Jumlah</b></td><td><b>'+fmt(tv)+'</b></td><td><b>'+fmt(tv*IM.opt.sg)+'</b></td></tr></table>'+
-  '<label class="imsw" title="Solid induk + cabang digabung (boolean union, manifold) menjadi satu kulit"><input type="checkbox" id="imUni"'+(IM.opt.uni?' checked':'')+'>Satukan induk + cabang (union)</label>'+
-  '<div class="imrow f"><button id="imUniAll" title="Satukan semua domain menjadi satu solid">&#8746; Union semua</button></div><div class="imrow f"><button data-xa="obj">&#8681; Semua OBJ</button><button data-xa="dxf">&#8681; Semua DXF</button></div>'+(IM.msg.vs?'<div class="imst">'+e(IM.msg.vs)+'</div>':'');
- h+='<h5>Tampilan</h5><div class="imgr"><label>SG<input type="number" step="any" min="0" id="imSG" value="'+IM.opt.sg+'"></label><label>Opasitas<input type="range" min="0.1" max="1" step="0.05" id="imOp" value="'+IM.opt.op+'"></label></div><label class="imsw" title="Bangun ulang otomatis saat flag / string / parameter berubah"><input type="checkbox" id="imAutoB"'+(IM.opt.auto?' checked':'')+'>Jalankan ulang otomatis</label>';
+ let h='<div class="imrow"><b style="flex:1;color:'+d.col+'">'+e(d.nm)+(d.eksak?' (eksak)':'')+'</b><button id="imB1" class="pri">&#9654; Bangun</button></div>';
+ if(!d.eksak){h+='<div class="imgr"><label title="Model diperpanjang sejauh ini dari data terluar. Kosong = otomatis.">Radius strike (m)'+n('aoi',P.aoi)+'</label><label title="Jarak penipisan ke nol searah dip">Pinch-out (m)'+n('pinD',P.pinD)+'</label>'+
+  '<label>Ujung atas<select data-k="top"><option value="topo"'+(P.top==='topo'?' selected':'')+'>Topografi</option><option value="pinch"'+(P.top==='pinch'?' selected':'')+'>Pinch-out</option></select></label><label>Tebal min (m)'+n('minT',P.minT)+'</label></div>'+
+  (isKid(d)?'<div class="imgr" style="margin-top:4px">'+sw('join',P.join!==false,'Sambung ke induk')+'<label title="Kontak induk dalam jarak ini menjadi titik percabangan">Jarak sambung (m)'+n('joinD',P.joinD)+'</label></div>':'');
+  h+='<details class="imdt"'+(IM._openP?' open':'')+' id="imLanj"><summary>Lanjutan</summary><div class="imgr"><label title="Kosong = 1,5 × tebal kontak terbesar">Batas tebal (m)'+n('tCap',P.tCap)+'</label><label>Sumber titik<select data-k="src"><option value="both"'+(P.src==='both'?' selected':'')+'>String + kontak</option><option value="str"'+(P.src==='str'?' selected':'')+'>String</option><option value="con"'+(P.src==='con'?' selected':'')+'>Kontak</option></select></label>'+
+   '<label>Orientasi<select data-k="ori"><option value="auto"'+(P.ori!=='man'?' selected':'')+'>Otomatis'+(au?' '+au.dip.toFixed(0)+'°/'+au.ddir.toFixed(0)+'°':'')+'</option><option value="man"'+(P.ori==='man'?' selected':'')+'>Manual</option></select></label>'+
+   (P.ori==='man'?'<label>Dip / dip dir (°)<span style="display:flex;gap:4px">'+n('dip',P.dip)+n('ddir',P.ddir)+'</span></label>':'<label>Resolusi (m)'+n('res',P.res)+'</label>')+
+   '<label title="Sumbu panjang elipsoid RBF">Mayor (m)'+n('aS',P.aS)+'</label><label>Semi-mayor (m)'+n('aD',P.aD)+'</label><label title="Sudut sumbu mayor dari strike">Pitch (°)'+n('pitch',P.pitch)+'</label>'+
+   '<label>Kehalusan<select data-k="smo">'+[[0,'Tepat di data'],[1,'Halus'],[2,'Sangat halus'],[3,'Maksimum']].map(o=>'<option value="'+o[0]+'"'+(+P.smo===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'+
+   (P.ori==='man'?'<label>Resolusi (m)'+n('res',P.res)+'</label>':'')+'<label title="Titik struktur dalam radius ini ikut membentuk kemiringan">Radius struktur (m)'+n('strR',P.strR)+'</label></div>'+
+   sw('str',P.str!==false,'Pakai titik struktur')+sw('adp',P.adp,'Resolusi adaptif','Rapat di dekat data, jarang menjauh')+sw('rob',P.rob!==false,'Anti-spike','Kontak bor menggantikan string di sekitarnya')+
+   '<div class="imrow f"><button id="imDef">Bawaan</button><button id="imAll">Pakai untuk semua</button></div></details>';}
+ if(R&&R.err)h+='<div class="imst w">'+e(R.err)+'</div>';else if(R&&R.st){const S=R.st,tip='Dip '+(S.dip!=null?S.dip.toFixed(0)+'° → '+S.ddir.toFixed(0)+'°':'-')+' · tebal rata-rata '+fmt(S.tav,2)+' m (maks '+fmt(S.tmax,2)+')\nTitik: '+S.nc+' kontak'+(S.ns?' + '+S.ns+' string':'')+(S.nj?' + '+S.nj+' sambung':'')+(S.nst?' + '+S.nst+' struktur':'')+' · RMS '+fmt(S.rms,2)+' m\nradius strike '+fmt(S.aoi,1)+' m · '+(S.ms/1000).toFixed(2).replace('.',',')+' s';
+  const war=[];if(S.nfl&&S.nin<S.nfl)war.push((S.nfl-S.nin)+' interval di luar solid');if(S.far15>0.25)war.push('data jarang ('+(S.far15*100).toFixed(0)+'% ekstrapolasi > 15 m)');if(R.uni&&R.uni.nb>1)war.push('union '+R.uni.nb+' bagian');
+  h+='<div class="imst" title="'+e(tip)+'"><b>'+fmt(S.vol)+' m³ · '+fmt(S.vol*sg)+' t</b>'+(S.nfl?' · '+S.nin+'/'+S.nfl+' interval':'')+(war.length?'<br><span class="w">'+e(war.join(' · '))+'</span>':'')+'</div>';}
+ const B=IM.doms.filter(x=>IM.R[x.id]&&IM.R[x.id].st);let tv=0;B.forEach(x=>{tv+=IM.R[x.id].st.vol;});
+ h+='<h5>Vein System</h5><table class="imtb"><tr><th>Domain</th><th>m³</th><th>t</th></tr>'+IM.doms.map(x=>{const R2=IM.R[x.id];return '<tr><td><b style="color:'+x.col+'">'+(x.env?'◌ ':isKid(x)?'↳ ':'')+e(x.nm)+'</b></td><td>'+(R2&&R2.st?fmt(R2.st.vol):R2&&R2.err?'<span class="w">gagal</span>':'–')+'</td><td>'+(R2&&R2.st?fmt(R2.st.vol*sg):'')+'</td></tr>';}).join('')+
+  '<tr><td><b>Jumlah</b></td><td><b>'+fmt(tv)+'</b></td><td><b>'+fmt(tv*sg)+'</b></td></tr></table>'+
+  '<div class="imrow"><label class="imsw" style="flex:1" title="Induk + cabang digabung (boolean union) menjadi satu kulit"><input type="checkbox" id="imUni"'+(IM.opt.uni?' checked':'')+'><span style="white-space:nowrap">Union induk + cabang</span></label><label style="display:flex;align-items:center;gap:4px;font-size:11.5px;margin:0" title="Densitas (t/m³) untuk tonase">SG <input type="number" step="any" min="0" id="imSG" value="'+sg+'" style="width:50px;height:22px"></label></div>'+
+  '<div class="imrow f"><button id="imUniAll" style="white-space:nowrap" title="Satukan semua domain menjadi satu solid">&#8746; Union semua</button><select id="imX1" title="Ekspor solid" style="min-width:0;width:100%"><option value="">&#8681; Ekspor…</option><option value="d:obj">Domain aktif · OBJ</option><option value="d:dxf">Domain aktif · DXF</option><option value="d:str">Domain aktif · STR + DTM</option><option value="a:obj">Semua · OBJ</option><option value="a:dxf">Semua · DXF</option></select></div>'+
+  (IM.msg.vs?'<div class="imst">'+e(IM.msg.vs)+'</div>':'')+'<label class="imsw" title="Bangun ulang otomatis saat flag / string / parameter berubah"><input type="checkbox" id="imAutoB"'+(IM.opt.auto?' checked':'')+'>Bangun ulang otomatis</label>';
  c.innerHTML=h;
- c.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;d.p=d.p||{};d.p[k]=i.type==='checkbox'?i.checked:(i.tagName==='SELECT'&&!/^(top|ori|src)$/.test(k))?+i.value:i.type==='number'?(i.value===''?null:+i.value):i.value;if(k==='res'&&d.p.res!=null)d.p.res=Math.max(0.5,d.p.res);kotor();});
- const oc=g('imOriC');if(oc)oc.onclick=()=>{d.p=Object.assign(d.p||{},{ori:'man',dip:+au.dip.toFixed(1),ddir:+au.ddir.toFixed(1)});kotor();};
+ c.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;d.p=d.p||{};d.p[k]=i.type==='checkbox'?i.checked:(i.tagName==='SELECT'&&!/^(top|ori|src)$/.test(k))?+i.value:i.type==='number'?(i.value===''?null:+i.value):i.value;if(k==='res'&&d.p.res!=null)d.p.res=Math.max(0.5,d.p.res);
+  if(k==='ori'&&i.value==='man'&&au){d.p.dip=+au.dip.toFixed(1);d.p.ddir=+au.ddir.toFixed(1);}kotor();});
+ const lj=g('imLanj');if(lj)lj.ontoggle=()=>{IM._openP=lj.open;};
  const df=g('imDef');if(df)df.onclick=()=>{d.p={};kotor();};const al=g('imAll');if(al)al.onclick=()=>{IM.doms.forEach(x=>{if(x!==d&&!x.env)x.p=Object.assign({},d.p);});T_('Parameter '+d.nm+' dipakai untuk semua domain.');if(IM.opt.auto)bangunSemua();};
- g('imB1').onclick=()=>bangunGrup(d);c.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const R2=IM.R[d.id];if(R2&&R2.v)ekspor([[d.nm,R2.v,R2.t]],b.dataset.x,d.nm+'_implisit');});
- c.querySelectorAll('[data-xa]').forEach(b=>b.onclick=()=>ekspor(IM.doms.filter(x=>IM.R[x.id]&&IM.R[x.id].v).map(x=>[x.nm,IM.R[x.id].v,IM.R[x.id].t]),b.dataset.xa,'Vein_System_implisit'));
+ g('imB1').onclick=()=>bangunGrup(d);
+ g('imX1').onchange=ev=>{const v=ev.target.value;ev.target.value='';if(!v)return;const [w,f]=v.split(':');if(w==='d'){const R2=IM.R[d.id];if(R2&&R2.v)ekspor([[d.nm,R2.v,R2.t]],f,d.nm+'_implisit');else T_('Bangun solid dulu.');}
+  else ekspor(IM.doms.filter(x=>IM.R[x.id]&&IM.R[x.id].v).map(x=>[x.nm,IM.R[x.id].v,IM.R[x.id].t]),f,'Vein_System_implisit');};
  g('imUni').onchange=ev=>{IM.opt.uni=ev.target.checked;(async()=>{for(const x of IM.doms.filter(y=>!y.par&&!y.env))await unionInduk(x);})();};g('imUniAll').onclick=unionSemua;
- g('imSG').onchange=ev=>{IM.opt.sg=+ev.target.value||2.6;segarUI();};g('imOp').oninput=ev=>{IM.opt.op=+ev.target.value;for(const w of WI)if(w.im||w.imU2||w.imU){w.op=IM.opt.op;wiBuild(w);}tampilWi();};g('imAutoB').onchange=ev=>{IM.opt.auto=ev.target.checked;};
- if(g('imPeta'))requestAnimationFrame(gambarPeta);}
-function gambarPeta(){const cv=g('imPeta'),R=IM.R[IM.act];if(!cv||!R||!R.peta)return;const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=Math.max(10,r.width*dpr);cv.height=Math.max(10,r.height*dpr);const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
- const P=R.peta;let s0=1e18,s1=-1e18,d0=1e18,d1=-1e18;P.kol.forEach(K=>K.forEach(c=>{s0=Math.min(s0,c[0]);s1=Math.max(s1,c[0]);d0=Math.min(d0,c[1]);d1=Math.max(d1,c[2]);}));
- const w=r.width-12,h=r.height-12,sc=Math.min(w/Math.max(1,s1-s0),h/Math.max(1,d1-d0)),X=s=>6+(s-s0)*sc+(w-(s1-s0)*sc)/2,Y=dd=>6+(d1-dd)*sc+(h-(d1-d0)*sc)/2,tm=Math.max(0.5,R.st.tmax||1),cs=Math.max(2,R.st.res*sc);
- for(const c of P.far){const t=Math.min(1,c[3]/tm);x.fillStyle='hsl('+(220-200*t)+',75%,'+(78-28*t)+'%)';x.fillRect(X(c[0])-cs/2,Y(c[1])-cs/2,cs+0.5,cs+0.5);}
- x.strokeStyle='#1b2a4e';x.lineWidth=1;P.kol.forEach(K=>{x.beginPath();K.forEach((c,i)=>i?x.lineTo(X(c[0]),Y(c[1])):x.moveTo(X(c[0]),Y(c[1])));for(let i=K.length-1;i>=0;i--)x.lineTo(X(K[i][0]),Y(K[i][2]));x.closePath();x.stroke();});
- x.fillStyle='#111';P.QH.forEach(q=>{x.beginPath();x.arc(X(q[0]),Y(q[1]),2,0,7);x.fill();});}
+ g('imSG').onchange=ev=>{IM.opt.sg=+ev.target.value||2.6;segarUI();};g('imAutoB').onchange=ev=>{IM.opt.auto=ev.target.checked;};}
 function segarUI(){if(!IM.on)return;isiTop();segarL();segarR();}
 /* buka / tutup */
 let c3=null,c3css='',scHome=null,scWas=false,lgHome=null;
-function tata(){if(!IM.on||!c3)return;const r=g('imCv').getBoundingClientRect();if(IM.view==='pen'){c3.style.display='none';return;}c3.style.display='';c3.style.left=r.left+'px';c3.style.top=r.top+'px';R.setSize(Math.max(50,r.width),Math.max(50,r.height));C.aspect=r.width/Math.max(1,r.height);C.updateProjectionMatrix();}
+function tata(){if(!IM.on||!c3)return;const r=g('imSec').getBoundingClientRect(),top=r.top+(g('imSec').classList.contains('lg')?27:0),mn=pip.classList.contains('min');let x,y,w,h;
+ if(IM.view==='besar'){x=r.left;y=top+28;w=r.width;h=Math.max(80,r.bottom-y);}else{w=Math.min(360,Math.max(220,r.width*0.3));h=Math.round(w*0.66);x=r.left+10;y=r.bottom-10-h;}
+ pip.style.display='flex';pip.style.left=x+'px';pip.style.top=(y-28)+'px';pip.style.width=w+'px';pip.querySelector('span').textContent=IM.view==='besar'?'Tab = kembali':'Tab = besar';
+ c3.style.left=x+'px';c3.style.top=y+'px';c3.style.display=mn?'none':'';R.setSize(w,h);C.aspect=w/h;C.updateProjectionMatrix();}
 function buka(){if(IM.on)return;if(window.__st&&__st.on)stdoTutup();IM.on=true;wn.classList.add('on');c3=R.domElement;c3css=c3.style.cssText;c3.classList.add('im3d');
  scWas=SC.open;if(!SC.open)scOpen(true);g('scw').style.display='none';const cv=kanvas();scHome=[cv.parentNode,cv.nextSibling];g('imSec').appendChild(cv);{const lb=g('lgbar');if(lb){lgHome=[lb.parentNode,lb.nextSibling,lb.style.display];g('imSec').prepend(lb);g('imSec').classList.toggle('lg',lb.style.display!=='none');}}
  if(!IM.doms.length&&Object.keys(IM.flags).length===0){const kol=kolomGeo(),k=kol.find(c=>/vein|urat/i.test(c));if(k){IM._kol=k;IM._openK=true;}}
- aturView(IM.view||'belah');segar3D();segarUI();setTimeout(()=>{tata();SC.v=null;try{scDraw();}catch(err){}},40);}
-function tutup(){if(!IM.on)return;if(IM.mode==='digit')simpanDigit();IM.mode=null;IM.on=false;wn.classList.remove('on');if(c3){c3.classList.remove('im3d');c3.style.cssText=c3css;}
+ aturView(IM.view||'kecil');segar3D();segarUI();setTimeout(()=>{tata();SC.v=null;try{scDraw();}catch(err){}},40);}
+function tutup(){if(!IM.on)return;if(IM.mode==='digit')simpanDigit();IM.mode=null;IM.on=false;wn.classList.remove('on');pip.style.display='none';if(c3){c3.classList.remove('im3d');c3.style.cssText=c3css;}
  const cv=kanvas();if(scHome){const [pa,nx]=scHome;if(nx&&nx.parentNode===pa)pa.insertBefore(cv,nx);else pa.appendChild(cv);}{const lb=g('lgbar');if(lb&&lgHome){const [pa,nx]=lgHome;if(nx&&nx.parentNode===pa)pa.insertBefore(lb,nx);else pa.appendChild(lb);}}g('scw').style.display='';scOpen(scWas);segar3D();window.dispatchEvent(new Event('resize'));}
-window.addEventListener('resize',()=>{if(IM.on)setTimeout(()=>{tata();try{if(IM.view!=='3d')scDraw();}catch(e){}},0);});
+window.addEventListener('resize',()=>{if(IM.on)setTimeout(()=>{tata();try{scDraw();}catch(e){}},0);});
 g('imX').onclick=tutup;g('imKeEks').onclick=()=>{tutup();stdoBuka();};
 {const _u=scUpd;scUpd=function(){const r=_u.apply(this,arguments);if(IM.on)try{isiTop();}catch(e){}return r;};}
 window.imBuka=buka;window.imTutup=tutup;
@@ -9236,6 +9235,40 @@ setTimeout(()=>{document.querySelectorAll(KELAS).forEach(e=>static0.add(e));semu
 window.owRingkas=semua;
 })();
 
+/* ================= Ore Works 0.29.1: tarik sayatan langsung di penampang Studio =================
+   Pemilik 19 Nov 2026: "Pada saat membuka studio, dimana saya bisa menarik sayatan vertikal atau horizontal nya?"
+   Tombol "✎ Sayatan" di bar atas Studio Eksplisit & Implisit:
+   - di penampang Level (denah): tekan, tarik, lepas = penampang vertikal baru sepanjang garis itu;
+   - di penampang Vertikal: klik satu titik = penampang Level (horizontal) pada RL titik itu.
+   Esc = batal. */
+(function(){
+const g=id=>document.getElementById(id),T_=m=>{if(window.sbToast)sbToast(m);};
+const SY={on:false,a:null,b:null};window.__sayat=SY;
+const css=document.createElement('style');css.textContent='.syBtn.on{background:#ff9800!important;color:#fff!important;border-color:#ef6c00!important}#scc.sypick{cursor:crosshair!important}';document.head.appendChild(css);
+const BTN=[];
+function pasang(after,cls){const a=g(after);if(!a)return;const b=document.createElement('button');b.className='syBtn'+(cls?' '+cls:'');b.type='button';b.innerHTML='&#9998; Sayatan';
+ b.title='Tarik sayatan: di penampang Level tekan-tarik-lepas = penampang vertikal baru; di penampang Vertikal klik = Level di RL itu (Esc batal)';
+ if(a.style&&a.style.height)b.style.height=a.style.height;a.after(b);b.onclick=()=>atur(!SY.on);BTN.push(b);}
+pasang('imFit');pasang('stdoFit');
+function atur(on){SY.on=on;SY.a=SY.b=null;BTN.forEach(b=>b.classList.toggle('on',on));const c=g('scc');if(c)c.classList.toggle('sypick',on);
+ if(on){if(window.__im&&__im.mode){__im.mode=null;if(__im.segar)__im.segar();}const q=SC.q||scPar();T_(q.m==='h'?'Tekan di titik awal, tarik ke titik akhir, lalu lepas.':'Klik pada RL yang diinginkan untuk penampang Level.');}
+ try{scDraw();}catch(e){}}
+const pt=ev=>{const c=g('scc'),r=c.getBoundingClientRect();return SC.inv?SC.inv(ev.clientX-r.left,ev.clientY-r.top):null;};
+const henti=ev=>{ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();};
+window.addEventListener('mousedown',ev=>{if(!SY.on||ev.target.id!=='scc'||ev.button!==0)return;henti(ev);const p=pt(ev),q=SC.q||scPar();if(!p)return;
+ if(q.m!=='h'){const Z=p[1];g('scm').value='h';g('scm').dispatchEvent(new Event('change'));g('scr').value=+Z.toFixed(2);atur(false);SC.v=null;scUpd();T_('Penampang Level RL '+Z.toFixed(1).replace('.',',')+'.');return;}
+ SY.a=p;SY.b=p;},true);
+window.addEventListener('mousemove',ev=>{if(!SY.on||!SY.a)return;henti(ev);const p=pt(ev);if(p){SY.b=p;try{scDraw();}catch(e){}}},true);
+window.addEventListener('mouseup',ev=>{if(!SY.on||!SY.a)return;henti(ev);const a=SY.a,b=pt(ev)||SY.b,dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);SY.a=SY.b=null;
+ if(len<1){T_('Garis terlalu pendek: tekan, tarik, lalu lepas.');try{scDraw();}catch(e){}return;}let az=Math.atan2(dx,dy)*180/Math.PI;if(az<0)az+=360;atur(false);
+ g('scm').value='v';g('scm').dispatchEvent(new Event('change'));g('sca').value=+az.toFixed(1);g('sce').value=+((a[0]+b[0])/2).toFixed(2);g('scn').value=+((a[1]+b[1])/2).toFixed(2);g('sco').value=0;if(g('scl'))g('scl').value=0;
+ SC.v=null;scUpd();T_('Penampang vertikal az '+az.toFixed(0)+'°, panjang garis '+len.toFixed(0)+' m.');},true);
+window.addEventListener('keydown',ev=>{if(SY.on&&ev.key==='Escape'){henti(ev);atur(false);}},true);
+/* pratinjau garis di atas penampang */
+{const ox=window.msOverlayX;window.msOverlayX=function(){const r=ox?ox.apply(this,arguments):undefined;if(SY.on&&SY.a&&SY.b&&SC.v)try{const c=g('scc'),R=c.getBoundingClientRect(),V=SC.v,ve=SC.ve||1,x=c.getContext('2d'),dpr=window.devicePixelRatio||1;x.setTransform(dpr,0,0,dpr,0,0);
+  const X=p=>R.width/2+20+(p[0]-V.cx)*V.s,Y=p=>R.height/2-12-(p[1]-V.cy)*V.s*ve;x.strokeStyle='#ff6d00';x.lineWidth=2;x.setLineDash([7,4]);x.beginPath();x.moveTo(X(SY.a),Y(SY.a));x.lineTo(X(SY.b),Y(SY.b));x.stroke();x.setLineDash([]);
+  x.fillStyle='#ff6d00';[SY.a,SY.b].forEach(p=>{x.beginPath();x.arc(X(p),Y(p),4,0,7);x.fill();});}catch(e){}return r;};}
+})();
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */
 (function(){const DB='ore-studio',SN='p',PFX='ORESTUDIO:';
