@@ -5719,3 +5719,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Solid cabang yang sudah menembus atau menyilang induknya (mis. vein landai yang memotong vein curam) tidak lagi diperpanjang
   otomatis: kedua ujungnya runcing. Ujung "terus ke induk" hanya dipakai bila cabang berhenti sebelum menyentuh induk.
 
+## 288. Ore Works 0.27.0 — Studio Implisit & snap ke kontak log geologi
+
+- **Studio Implisit**: klik **Studio** → pilih **Studio Implisit**. Buat domain (**+ Domain**), pilih sumber interval: *kode log
+  geologi* (kolom + kode, mis. Vein_Type = VS1) atau *kadar ≥ cut-off*. Tabel kiri menampilkan intercept tiap lubang; hilangkan
+  centang untuk mengeluarkan interval yang meragukan. Klik **▶ Bangun**: permukaan atap (HW) dan lantai (FW) vein dihitung dari
+  kontak semua lubang, lalu solid diisi di antaranya. Untuk cabang, isi **Cabang dari** agar menyambung ke induk; **∪ Union semua
+  domain** menyatukan semuanya. Parameter (radius strike, pinch-out, topografi, orientasi, elipsoid, kehalusan) ada di kanan;
+  biarkan bawaan bila ragu. Hasil masuk daftar Wireframe dan ikut tersimpan di Project.
+- **Snap ke kontak log geologi** (opsi): di Studio Eksplisit, di sebelah tombol *Kontak bor*, ganti *sampel assay* menjadi
+  *log geologi · <kolom>*. Titik snap lalu jatuh tepat di batas interval log (belah ketupat hijau), bukan di batas sampel 1 m.
+

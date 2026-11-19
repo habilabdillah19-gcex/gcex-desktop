@@ -14,7 +14,8 @@ tertentu, menipis ke dasar. Tebal = lebar horizontal tegak lurus jurus setempat.
 
 Pakai:
   python tools/uji/sim_vein_sistem_ow.py buat <sigmoid|echelon|silang> <folder>
-  python tools/uji/sim_vein_sistem_ow.py uji  <sigmoid|echelon|silang> <folder data> [bor|ideal|ideal10|ideal5|segmen]
+  python tools/uji/sim_vein_sistem_ow.py uji  <sigmoid|echelon|silang> <folder data> [bor|ideal|ideal10|ideal5|segmen|implisit]
+  (implisit: IMP_P='{"aoi":10,"pinD":5}' IMP_TAG=nama untuk parameter lain; hasil memuat recall/presisi, toleransi 0,5 m, tonase, kadar, logam)
 Perlu: numpy, trimesh, rtree, manifold3d; uji: playwright + chromium.
 """
 import math, csv, json, os, sys, asyncio, pathlib
@@ -305,6 +306,78 @@ def irisan_ideal(mesh, S, az, off):
     return pts
 
 
+JS_IMPLISIT = """(a)=>{const I=__im;I.buka();I.doms.length=0;const ids={};for(const k of a.B){const d=I.domBaru({nm:k,kol:'Vein_Type',kode:[k],p:Object.assign({},a.p||{})});ids[k]=d.id;}
+  for(const [k,pa] of Object.entries(a.par))if(pa&&ids[k]&&ids[pa])I.doms.find(d=>d.id===ids[k]).par=ids[pa];
+  const out={};for(const d of I.doms.slice().sort((x,y)=>(x.par?1:0)-(y.par?1:0))){const R=I.bangun(d,true);out[d.nm]=R?{vol_m3:Math.round(R.st.vol),interval_dalam:R.st.nin+'/'+R.st.nfl,rms_m:+R.st.rms.toFixed(2),ekstrapolasi15_pct:Math.round(100*R.st.far15)}:{galat:I.R[d.id].err};}
+  if(I.doms.length>1)I.unionSemua();return out;}"""
+
+
+JS_SAMPEL = """()=>{const out=[];for(const s of SEGS){if(!(s[2]>0))continue;const a=s[0],b=s[1],l=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2])/10;out.push([(a[0]+b[0])/20+O[0],(a[1]+b[1])/20+O[1],(a[2]+b[2])/20+O[2],s[2],l]);}return out;}"""
+
+
+class SinarZ:
+    """uji di-dalam & sampel volume cepat dengan sinar tegak (+z) pada grid xy 1 m (pengganti contains/proximity trimesh
+    yang lambat & boros memori untuk vein tipis)."""
+    def __init__(self, M, g=1.0):
+        self.T = M.vertices[M.faces]; self.g = g; lo = self.T[:, :, :2].min(1); hi = self.T[:, :, :2].max(1)
+        self.o = lo.min(0) - g; i0 = np.floor((lo - self.o) / g).astype(int); i1 = np.floor((hi - self.o) / g).astype(int); self.C = {}
+        for k in range(len(self.T)):
+            for a in range(i0[k, 0], i1[k, 0] + 1):
+                for b in range(i0[k, 1], i1[k, 1] + 1): self.C.setdefault((a, b), []).append(k)
+        self.C = {k: np.array(v) for k, v in self.C.items()}; self.lo, self.hi = M.bounds
+    def zhit(self, x, y):
+        k = self.C.get((int((x - self.o[0]) // self.g), int((y - self.o[1]) // self.g)))
+        if k is None: return np.zeros(0)
+        T = self.T[k]; a, b, c = T[:, 0], T[:, 1], T[:, 2]
+        d = (b[:, 1] - c[:, 1]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 1] - c[:, 1]); ok = np.abs(d) > 1e-12; d = np.where(ok, d, 1)
+        l1 = ((b[:, 1] - c[:, 1]) * (x - c[:, 0]) + (c[:, 0] - b[:, 0]) * (y - c[:, 1])) / d; l2 = ((c[:, 1] - a[:, 1]) * (x - c[:, 0]) + (a[:, 0] - c[:, 0]) * (y - c[:, 1])) / d; l3 = 1 - l1 - l2
+        m = ok & (l1 >= 0) & (l2 >= 0) & (l3 >= 0)
+        return np.sort((l1 * a[:, 2] + l2 * b[:, 2] + l3 * c[:, 2])[m])
+    def dalam(self, Q):
+        out = np.zeros(len(Q), bool)
+        for i, (x, y, z) in enumerate(Q + [1.37e-4, 2.71e-4, 0]):
+            out[i] = (self.zhit(x, y) > z).sum() % 2 == 1
+        return out
+    def sampel(self, n, rng):
+        X = rng.uniform(self.lo[0], self.hi[0], n * 6); Y = rng.uniform(self.lo[1], self.hi[1], n * 6); seg = []
+        for x, y in zip(X, Y):
+            z = self.zhit(x, y)
+            for j in range(0, len(z) - 1, 2): seg.append((x, y, z[j], z[j + 1]))
+        S = np.array(seg); L = S[:, 3] - S[:, 2]; k = rng.choice(len(S), n, p=L / L.sum())
+        return np.column_stack([S[k, 0], S[k, 1], S[k, 2] + rng.uniform(0, 1, n) * L[k]])
+
+
+def ukur_adil(model, aktual, sampel, E0, N0, tol=0.5, den=2.6, n=6000):
+    """Ukuran yang adil untuk vein tipis (pemilik 19 Nov 2026): kecocokan bertoleransi ±tol m (setengah panjang sampel 1 m),
+    selisih tonase (densitas sama) dan selisih logam (tonase x kadar rata-rata tertimbang panjang dari sampel di dalam tubuh)."""
+    rng = np.random.default_rng(11); Zm, Za = SinarZ(model), SinarZ(aktual)
+    D = np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]] + [[a, b, c] for a in (1, -1) for b in (1, -1) for c in (1, -1)], float)
+    D = D / np.linalg.norm(D, axis=1)[:, None]
+    def cocok(Z, Q):
+        k = Z.dalam(Q)
+        for r in (tol, tol / 2):
+            for d in D:
+                j = np.where(~k)[0]
+                if not len(j): break
+                k[j] = Z.dalam(Q[j] + d * r)
+        return k
+    Pa, Pm = Za.sampel(n, rng), Zm.sampel(n, rng)
+    r = {'recall_tol%s_%%' % str(tol).replace('.', ','): round(100 * float(cocok(Zm, Pa).mean()), 1),
+         'presisi_tol%s_%%' % str(tol).replace('.', ','): round(100 * float(cocok(Za, Pm).mean()), 1)}
+    S = np.array(sampel, float) if len(sampel) else np.zeros((0, 5))
+    if len(S):
+        S[:, 0] -= E0; S[:, 1] -= N0
+    def kadar(Z):
+        if not len(S): return 0.0
+        k = Z.dalam(S[:, :3]); w = S[k, 4]
+        return float((S[k, 3] * w).sum() / w.sum()) if w.sum() > 0 else 0.0
+    tm, ta = model.volume * den, aktual.volume * den; gm, ga = kadar(Zm), kadar(Za)
+    r['tonase'] = {'model_t': round(tm), 'aktual_t': round(ta), 'selisih_%': round(100 * (tm - ta) / ta, 1)}
+    r['kadar_Au'] = {'model_ppm': round(gm, 3), 'aktual_ppm': round(ga, 3), 'selisih_%': round(100 * (gm - ga) / ga, 1) if ga else None}
+    r['logam_Au'] = {'model_g': round(tm * gm), 'aktual_g': round(ta * ga), 'selisih_%': round(100 * (tm * gm - ta * ga) / (ta * ga), 1) if ga else None}
+    return r
+
+
 async def uji(nama, B, mode='bor'):
     S = sistem(nama); B = B.rstrip('/') + '/'; G = json.load(open(B + 'geom.json')); p = G['awalan_berkas']; E0, N0 = S.E0, S.N0
     OUT = str(pathlib.Path.cwd()) + '/'; rep = {'sistem': S.nama, 'mode': mode}
@@ -321,82 +394,93 @@ async def uji(nama, B, mode='bor'):
             await pg.set_input_files('#dsf-' + k, B + '%s_%s.csv' % (p, 'geologi' if k == 'geo' else k))
         await pg.wait_for_timeout(1500); await E("()=>document.getElementById('dsgo').click()"); await pg.wait_for_timeout(3500)
         await pg.set_input_files('#sff', B + '%s_topografi.str' % p); await pg.wait_for_timeout(2500)
-        SOL = []; MIDS = []
-        for T in S.B:
-            s0 = 3.0 if T.sambung else 10.0; sk = list(np.arange(s0, T.L - 10.0, 20.0))
-            kel = [list(range(len(sk)))]
-            if os.environ.get('JOG_H') == '1' and T.sambung and len(sk) <= 1:
-                # vein penghubung pendek: string HORIZONTAL (mode RL) dari irisan sebenarnya tiap 10 m — cara memodelkan
-                # tubuh pendek/miring yang hanya terpotong satu penampang
-                mb = akt_b[T.kode]; STR = []
-                for z in np.arange(mb.bounds[0][2] + 2, mb.bounds[1][2] - 0.5, 10.0):
-                    sec = mb.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
-                    if sec is None: continue
-                    Ls = [L for L in sec.discrete if len(L) >= 4]
-                    if not Ls: continue
-                    L = max(Ls, key=len)[:-1]; L = L[::int(math.ceil(len(L) / 60))] if len(L) > 60 else L
-                    STR.append({'o': round(float(z), 2), 'pts': [[round(float(q[0] + E0), 3), round(float(q[1] + N0), 3)] for q in L]})
-                SOL.append({'nm': T.kode + '_RL', 'az': 0.0, 'm': 'h', 'S': STR, 'sambung': True}); continue
-            if mode == 'segmen' and len(sk) >= 6 and float(np.ptp(T.hd)) > math.radians(15):          # vein melengkung: dua solid dengan arah penampang sendiri, saling berbagi pagar tengah
-                h = len(sk) // 2; kel = [list(range(0, h + 1)), list(range(h, len(sk)))]
-            for gi, idx in enumerate(kel):
-                az = bidang(T, [sk[i] for i in idx]); r = math.radians(az); nr = np.array([math.cos(r), -math.sin(r)])
-                pag = [{'off': float(np.dot(T.Cs(sk[i]), nr)), 'awal': '%s%02d_' % (T.kode, i + 1), 't': 60.0} for i in idx]
-                secs = await E(JS_ICS, {'pagar': pag, 'az': az, 'E': E0, 'N': N0, 'kode': T.kode})
-                MIDS += [i['mid'] for s in secs for i in s['ics']]
-                secs = [s for s in secs if s['ics']]
-                if mode.startswith('ideal'):                 # ideal = irisan vein aktual di pagar bor; idealN = tiap N m
-                    if mode != 'ideal':
-                        ss = np.arange(sk[idx[0]], sk[idx[-1]] + 0.1, float(mode[5:]))
+        MIDS = []
+        if mode == 'implisit':                        # 0.27.0: Studio Implisit (RBF HW/FW dari kontak bor, mesin GC-Ex), parameter bawaan
+            par = {T.kode: (('VE2' if T.kode == 'VE5' else S.B[0].kode) if T.sambung else None) for T in S.B}
+            r = await E(JS_IMPLISIT, {'B': [T.kode for T in S.B], 'par': par, 'p': json.loads(os.environ.get('IMP_P', '{}'))})
+            for _ in range(240):
+                await pg.wait_for_timeout(250); u = await E("()=>{const w=WI.find(w=>w.imU);return w?w.v.length:0}")
+                if u: break
+            rep['solid'] = r; rep['union_status'] = 'union implisit %d domain' % len(r)
+            mesh = await E("()=>{const w=WI.find(w=>w.imU)||WI.find(w=>w.im);return {v:Array.from(w.v),t:Array.from(w.t)}}")
+        else:
+            SOL = []; MIDS = []
+            for T in S.B:
+                s0 = 3.0 if T.sambung else 10.0; sk = list(np.arange(s0, T.L - 10.0, 20.0))
+                kel = [list(range(len(sk)))]
+                if os.environ.get('JOG_H') == '1' and T.sambung and len(sk) <= 1:
+                    # vein penghubung pendek: string HORIZONTAL (mode RL) dari irisan sebenarnya tiap 10 m — cara memodelkan
+                    # tubuh pendek/miring yang hanya terpotong satu penampang
+                    mb = akt_b[T.kode]; STR = []
+                    for z in np.arange(mb.bounds[0][2] + 2, mb.bounds[1][2] - 0.5, 10.0):
+                        sec = mb.section(plane_origin=[0, 0, z], plane_normal=[0, 0, 1])
+                        if sec is None: continue
+                        Ls = [L for L in sec.discrete if len(L) >= 4]
+                        if not Ls: continue
+                        L = max(Ls, key=len)[:-1]; L = L[::int(math.ceil(len(L) / 60))] if len(L) > 60 else L
+                        STR.append({'o': round(float(z), 2), 'pts': [[round(float(q[0] + E0), 3), round(float(q[1] + N0), 3)] for q in L]})
+                    SOL.append({'nm': T.kode + '_RL', 'az': 0.0, 'm': 'h', 'S': STR, 'sambung': True}); continue
+                if mode == 'segmen' and len(sk) >= 6 and float(np.ptp(T.hd)) > math.radians(15):          # vein melengkung: dua solid dengan arah penampang sendiri, saling berbagi pagar tengah
+                    h = len(sk) // 2; kel = [list(range(0, h + 1)), list(range(h, len(sk)))]
+                for gi, idx in enumerate(kel):
+                    az = bidang(T, [sk[i] for i in idx]); r = math.radians(az); nr = np.array([math.cos(r), -math.sin(r)])
+                    pag = [{'off': float(np.dot(T.Cs(sk[i]), nr)), 'awal': '%s%02d_' % (T.kode, i + 1), 't': 60.0} for i in idx]
+                    secs = await E(JS_ICS, {'pagar': pag, 'az': az, 'E': E0, 'N': N0, 'kode': T.kode})
+                    MIDS += [i['mid'] for s in secs for i in s['ics']]
+                    secs = [s for s in secs if s['ics']]
+                    if mode.startswith('ideal'):                 # ideal = irisan vein aktual di pagar bor; idealN = tiap N m
+                        if mode != 'ideal':
+                            ss = np.arange(sk[idx[0]], sk[idx[-1]] + 0.1, float(mode[5:]))
+                        else:
+                            ss = [sk[i] for i in idx]
+                        STR = []
+                        for s in ss:
+                            o = float(np.dot(T.Cs(s), nr)); pts = irisan_ideal(akt_b[T.kode], S, az, o)
+                            if pts: STR.append({'o': o, 'pts': [[round(x, 3), round(z, 3)] for x, z in pts]})
                     else:
-                        ss = [sk[i] for i in idx]
-                    STR = []
-                    for s in ss:
-                        o = float(np.dot(T.Cs(s), nr)); pts = irisan_ideal(akt_b[T.kode], S, az, o)
-                        if pts: STR.append({'o': o, 'pts': [[round(x, 3), round(z, 3)] for x, z in pts]})
-                else:
-                    STR = []; dg = trend([(np.array(i['hw']) + np.array(i['fw'])) / 2 for s in secs for i in s['ics']])
-                    for k, s in enumerate(secs):
-                        ics = sorted(s['ics'], key=lambda i: -((np.array(i['hw']) + np.array(i['fw'])) / 2)[1])
-                        loc = [(np.array(i['hw']) + np.array(i['fw'])) / 2 for j in range(max(0, k - 1), min(len(secs), k + 2)) for i in secs[j]['ics']]
-                        d = trend([(np.array(i['hw']) + np.array(i['fw'])) / 2 for i in ics]) if len(ics) >= 3 else (trend(loc) if len(loc) >= 2 else dg)
-                        if d is None or abs(d[1]) < 0.3: d = dg if dg is not None else np.array([0.0, -1.0])
-                        nrm = np.array([-d[1], d[0]])
-                        side = lambda i: (np.array(i['hw']), np.array(i['fw'])) if np.dot(np.array(i['hw']) - np.array(i['fw']), nrm) > 0 else (np.array(i['fw']), np.array(i['hw']))
-                        HW = [side(i)[0] for i in ics]; FW = [side(i)[1] for i in ics]
-                        m0 = ics[0]['mid']; zt = float(S.topo(m0[0] - E0, m0[1] - N0)) - T.cover
-                        nb = [secs[j]['ics'] for j in range(max(0, k - 1), min(len(secs), k + 2))]
-                        zb = min(min(i['hw'][1], i['fw'][1]) for L in nb for i in L) - 10 * (-d[1])
-                        to_z = lambda q, z, dd: q + dd * ((z - q[1]) / dd[1])
-                        th, tf = to_z(HW[0], zt, -d), to_z(FW[0], zt, -d)
-                        bh = to_z(HW[-1], zb, d) if HW[-1][1] > zb else HW[-1] + d * 2
-                        bf = to_z(FW[-1], zb, d) if FW[-1][1] > zb else FW[-1] + d * 2
-                        STR.append({'o': s['off'], 'pts': [[round(float(q[0]), 3), round(float(q[1]), 3)] for q in [th] + HW + [bh, bf] + FW[::-1] + [tf]]})
-                # 0.26.0: ujung cabang dekat induk otomatis 'diteruskan' oleh Studio; SAMBUNG_MANUAL=1 = cara lama (string pertemuan disalin masuk ke induk)
-                if T.sambung and gi == 0 and STR and os.environ.get('SAMBUNG_MANUAL') == '1':
-                    first = min(STR, key=lambda x: abs(x['o'] - float(np.dot(T.Cs(s0), nr))))
-                    STR = [{'o': float(np.dot(T.Cs(-8.0), nr)), 'pts': first['pts']}] + STR
-                SOL.append({'nm': T.kode + ('' if len(kel) == 1 else '_%d' % (gi + 1)), 'az': az, 'S': STR, 'sambung': bool(T.sambung)})
-        rep['solid'] = {x['nm']: {'az_penampang': round(x['az'], 1), 'string': len(x['S'])} for x in SOL}
-        if os.environ.get('SIMPAN_SOL'):          # string interpretasi untuk paket demo Studio (web-src-ow/buat_demo_ow.py)
-            json.dump({'L': SOL, 'E': E0, 'N': N0}, open(OUT + 'sol_%s_%s.json' % (nama, mode), 'w'))
-        await E("""(a)=>{let id=800;for(const x of a.L){MS.L.push({id:id++,nm:x.nm,col:'#d81b60',cap:x.m==='h'?'datar':'titik',capd:x.m==='h'?0:10,den:2.6,on:true,m:x.m||'v',az:x.az,E:a.E,N:a.N,S:x.S,capM:!x.sambung});}
-          for(const M of MS.L)__ms.build(M,true);}""", {'L': SOL, 'E': E0, 'N': N0})
-        await pg.wait_for_timeout(1000)
-        indiv = await E("()=>MS.L.filter(m=>m.id>=800).map(m=>[m.nm,m.res&&Math.round(m.res.vol),m.res&&m.res.open])")
-        rep['solid_sendiri'] = {x[0]: {'vol_m3': x[1], 'sisi_terbuka': x[2]} for x in indiv}
-        await E("()=>{for(const m of MS.L)if(m.id>800)m.par=800;__ms.build(MS.L.find(m=>m.id===800),true);}")
-        for _ in range(160):
-            await pg.wait_for_timeout(250); st = await E("()=>MS.L.find(m=>m.id===800).bst||''")
-            if st and 'menghitung' not in st: break
-        rep['union_status'] = await E("()=>MS.L.find(m=>m.id===800).bst")
-        mesh = await E("()=>{const w=WI.find(w=>w.ms===800);return {v:Array.from(w.v),t:Array.from(w.t)}}")
+                        STR = []; dg = trend([(np.array(i['hw']) + np.array(i['fw'])) / 2 for s in secs for i in s['ics']])
+                        for k, s in enumerate(secs):
+                            ics = sorted(s['ics'], key=lambda i: -((np.array(i['hw']) + np.array(i['fw'])) / 2)[1])
+                            loc = [(np.array(i['hw']) + np.array(i['fw'])) / 2 for j in range(max(0, k - 1), min(len(secs), k + 2)) for i in secs[j]['ics']]
+                            d = trend([(np.array(i['hw']) + np.array(i['fw'])) / 2 for i in ics]) if len(ics) >= 3 else (trend(loc) if len(loc) >= 2 else dg)
+                            if d is None or abs(d[1]) < 0.3: d = dg if dg is not None else np.array([0.0, -1.0])
+                            nrm = np.array([-d[1], d[0]])
+                            side = lambda i: (np.array(i['hw']), np.array(i['fw'])) if np.dot(np.array(i['hw']) - np.array(i['fw']), nrm) > 0 else (np.array(i['fw']), np.array(i['hw']))
+                            HW = [side(i)[0] for i in ics]; FW = [side(i)[1] for i in ics]
+                            m0 = ics[0]['mid']; zt = float(S.topo(m0[0] - E0, m0[1] - N0)) - T.cover
+                            nb = [secs[j]['ics'] for j in range(max(0, k - 1), min(len(secs), k + 2))]
+                            zb = min(min(i['hw'][1], i['fw'][1]) for L in nb for i in L) - 10 * (-d[1])
+                            to_z = lambda q, z, dd: q + dd * ((z - q[1]) / dd[1])
+                            th, tf = to_z(HW[0], zt, -d), to_z(FW[0], zt, -d)
+                            bh = to_z(HW[-1], zb, d) if HW[-1][1] > zb else HW[-1] + d * 2
+                            bf = to_z(FW[-1], zb, d) if FW[-1][1] > zb else FW[-1] + d * 2
+                            STR.append({'o': s['off'], 'pts': [[round(float(q[0]), 3), round(float(q[1]), 3)] for q in [th] + HW + [bh, bf] + FW[::-1] + [tf]]})
+                    # 0.26.0: ujung cabang dekat induk otomatis 'diteruskan' oleh Studio; SAMBUNG_MANUAL=1 = cara lama (string pertemuan disalin masuk ke induk)
+                    if T.sambung and gi == 0 and STR and os.environ.get('SAMBUNG_MANUAL') == '1':
+                        first = min(STR, key=lambda x: abs(x['o'] - float(np.dot(T.Cs(s0), nr))))
+                        STR = [{'o': float(np.dot(T.Cs(-8.0), nr)), 'pts': first['pts']}] + STR
+                    SOL.append({'nm': T.kode + ('' if len(kel) == 1 else '_%d' % (gi + 1)), 'az': az, 'S': STR, 'sambung': bool(T.sambung)})
+            rep['solid'] = {x['nm']: {'az_penampang': round(x['az'], 1), 'string': len(x['S'])} for x in SOL}
+            if os.environ.get('SIMPAN_SOL'):          # string interpretasi untuk paket demo Studio (web-src-ow/buat_demo_ow.py)
+                json.dump({'L': SOL, 'E': E0, 'N': N0}, open(OUT + 'sol_%s_%s.json' % (nama, mode), 'w'))
+            await E("""(a)=>{let id=800;for(const x of a.L){MS.L.push({id:id++,nm:x.nm,col:'#d81b60',cap:x.m==='h'?'datar':'titik',capd:x.m==='h'?0:10,den:2.6,on:true,m:x.m||'v',az:x.az,E:a.E,N:a.N,S:x.S,capM:!x.sambung});}
+              for(const M of MS.L)__ms.build(M,true);}""", {'L': SOL, 'E': E0, 'N': N0})
+            await pg.wait_for_timeout(1000)
+            indiv = await E("()=>MS.L.filter(m=>m.id>=800).map(m=>[m.nm,m.res&&Math.round(m.res.vol),m.res&&m.res.open])")
+            rep['solid_sendiri'] = {x[0]: {'vol_m3': x[1], 'sisi_terbuka': x[2]} for x in indiv}
+            await E("()=>{for(const m of MS.L)if(m.id>800)m.par=800;__ms.build(MS.L.find(m=>m.id===800),true);}")
+            for _ in range(160):
+                await pg.wait_for_timeout(250); st = await E("()=>MS.L.find(m=>m.id===800).bst||''")
+                if st and 'menghitung' not in st: break
+            rep['union_status'] = await E("()=>MS.L.find(m=>m.id===800).bst")
+            mesh = await E("()=>{const w=WI.find(w=>w.ms===800);return {v:Array.from(w.v),t:Array.from(w.t)}}")
         V = np.array(mesh['v'], float).reshape(-1, 3) - [E0, N0, 0]; Tt = np.array(mesh['t'], int).reshape(-1, 3)
         model = trimesh.Trimesh(V, Tt, process=True)
         rep['union'] = {'vol_m3': round(float(model.volume), 1), 'tertutup': bool(model.is_watertight), 'bagian': len(model.split(only_watertight=False))}
         rep['aktual'] = {'vol_m3': round(float(aktual.volume), 1), 'bagian': G['bagian_union']}
         ka = ke_mf(aktual); km = ke_mf(model); vi = (ka ^ km).volume()
         rep['recall_%'] = round(100 * vi / aktual.volume, 1); rep['presisi_%'] = round(100 * vi / model.volume, 1)
+        rep.update(ukur_adil(model, aktual, await E(JS_SAMPEL), E0, N0))
         # rincian per tubuh & zona: titik acak seragam di dalam tiap tubuh (bentuk parametrik)
         rng = np.random.default_rng(5); zona = {}
         cont = lambda M, Q: np.concatenate([M.contains(Q[i:i + 500]) for i in range(0, len(Q), 500)])
@@ -415,14 +499,14 @@ async def uji(nama, B, mode='bor'):
                 k3 = (v >= v0) & (v < v1)
                 if k3.sum(): zona['%s_%s' % (T.kode, nm2)] = round(100 * inm[k3].mean(), 1)
         rep['recall_per_zona_%'] = zona
-        mids = np.array(MIDS) - [E0, N0, 0]
+        mids = np.array(MIDS).reshape(-1, 3) - [E0, N0, 0]
         rep['intercept_dalam_solid'] = '%d/%d' % (cont(model, mids).sum(), len(mids)) if len(mids) else '0/0'
         nonv = await E("""()=>{const GA=geoActive(),M=activeHoles(),out=[];for(const [id,{h}] of M){const iv=GA.get(id);if(!iv)continue;const cum=cumP(h.p);for(const x of iv){const v=String(x.v.Vein_Type||'').trim();if(v&&v!=='-')continue;const d=(x.f+x.t)/2;for(let i=0;i+1<cum.length;i++)if(d<=cum[i+1]){const f=(d-cum[i])/(cum[i+1]-cum[i]);out.push([(h.p[i*3]+(h.p[i*3+3]-h.p[i*3])*f)/10+O[0],(h.p[i*3+1]+(h.p[i*3+4]-h.p[i*3+1])*f)/10+O[1],(h.p[i*3+2]+(h.p[i*3+5]-h.p[i*3+2])*f)/10+O[2]]);break;}}}return out;}""")
         nonv = np.array(nonv) - [E0, N0, 0]; lo, hi = model.bounds[0] - 2, model.bounds[1] + 2
         near = nonv[np.all((nonv >= lo) & (nonv <= hi), 1)]
         rep['sampel_nonvein_dalam_solid'] = '%d/%d' % (cont(model, near).sum() if len(near) else 0, len(nonv))
         rep['galat_js'] = errs
-        tag = '%s_%s%s' % (nama, mode, '_jogh' if os.environ.get('JOG_H') == '1' else '')
+        tag = '%s_%s%s%s' % (nama, mode, '_jogh' if os.environ.get('JOG_H') == '1' else '', ('_' + os.environ['IMP_TAG']) if os.environ.get('IMP_TAG') else '')
         json.dump(rep, open(OUT + 'uji_%s.json' % tag, 'w'), ensure_ascii=False, indent=1)
         # gambar: model + aktual (bayangan)
         await pg.set_input_files('#wif', B + 'aktual_vein.obj'); await pg.wait_for_timeout(2500)

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.26.2';</script>
+<script>window.GCEX_VER='0.27.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -5402,7 +5402,7 @@ const cvs=()=>g('scc');
 function xf(){const cv=cvs(),R=cv.getBoundingClientRect(),w=Math.max(50,R.width),h=Math.max(50,R.height),V=SC.v,ve=SC.ve||1;if(!V)return null;return {w,h,X:p=>w/2+20+(p[0]-V.cx)*V.s,Y:p=>h/2-12-(p[1]-V.cy)*V.s*ve};}
 {const _sc=scCollect;scCollect=function(q){const r=_sc.apply(this,arguments);SC.lastG=r;return r;};}
 {const _sd=scDraw;scDraw=function(){_sd.apply(this,arguments);try{if(window.lgDraw2)lgDraw2();}catch(e){}try{const cv=cvs(),x=cv.getContext('2d');MS.base=x.getImageData(0,0,cv.width,cv.height);overlay();}catch(e){}};}
-function snapPts(q){const out=[],G=SC.lastG,F=window.__stSnap;if(G&&(!F||F.bor)){for(const s of G.segs){out.push(s[0],s[1]);}for(const d of G.dots)out.push(d[0]);}
+function snapPts(q){const out=[],G=SC.lastG,F=window.__stSnap;if(G&&(!F||F.bor)){if(window.__snapGeo&&__snapGeo.aktif()){for(const p of __snapGeo.pts(q))out.push(p);}else{for(const s of G.segs){out.push(s[0],s[1]);}for(const d of G.dots)out.push(d[0]);}}
  if(F&&F.sil&&window.__stSilPts)for(const p of __stSilPts)out.push(p);
  for(const M of MS.L){if((F&&!F.titik)||!sameFrame(M,q)||!M.S.length)continue;const sh=aSh(M,q),si=strHere(M,q),L2=(si>=0?[M.S[si]]:[]).concat(ghosts(M,q));for(const s of L2)for(const p of s.pts)out.push([p[0]-sh,p[1]]);}
  if(MS.drw)for(const p of MS.drw)out.push(p);return out;}
@@ -8369,7 +8369,7 @@ async function klik(el,o){o=o||{};const v=await ke(el);if(v){riak();el.classList
 async function ketik(el,teks,o){o=o||{};if(!el)return;const v=await ke(el);if(v){riak();await tunggu(140);}el.focus();el.classList.add('dm-ketik');el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));
  const s=String(teks);for(let i=0;i<s.length;i++){el.value+=s[i];el.dispatchEvent(new Event('input',{bubbles:true}));await tunggu(75+((i*37)%5)*14);}
  await tunggu(220);el.classList.remove('dm-ketik');el.dispatchEvent(new Event('change',{bubbles:true}));el.blur();await tunggu(o.jeda!=null?o.jeda:300);}
-async function pilih(el,val){await klik(el,{aksi:()=>{el.value=val;el.dispatchEvent(new Event('change',{bubbles:true}));},jeda:350});}
+async function dmPilih(el,val){await klik(el,{aksi:()=>{el.value=val;el.dispatchEvent(new Event('change',{bubbles:true}));},jeda:350});}
 /* ---------- kamera 3D ---------- */
 const kam=()=>({p:C.position.clone(),t:CT.target.clone()});
 async function kameraKe(k,ms){const a=kam();view(k);const b=kam();C.position.copy(a.p);CT.target.copy(a.t);await anim(ms,p=>{const e=ease(p);C.position.lerpVectors(a.p,b.p,e);CT.target.lerpVectors(a.t,b.t,e);CT.update();});}
@@ -8419,7 +8419,7 @@ function skenario(Y){const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:mi
   const M0=sol[0];g('scm').value=M0.m;g('sca').value=M0.az;g('sce').value=Y.E;g('scn').value=Y.N;g('sco').value=M0.S[0].o;g('sct').value=10;g('scs').value=20;scUpd();
   const b=terlihat(g('otbst'))?g('otbst'):g('stdoOpen');await klik(b,{aksi:()=>{if(!SC.open)scOpen(true);stdoBuka();},jeda:900});});
  st(B2,'Arah & jarak penampang','Penampang dibuat tegak lurus jurus vein (az '+fmt(sol[0].az,1)+'°), tiap 20 m dengan tebal irisan ±10 m.',async()=>{
-  await pilih(g('stdoMode'),'v');await ketik(g('stdoAz'),fmt(sol[0].az,1).replace(',','.'));await ketik(g('stdoStep'),'20');await ketik(g('stdoSlab'),'10');});
+  await dmPilih(g('stdoMode'),'v');await ketik(g('stdoAz'),fmt(sol[0].az,1).replace(',','.'));await ketik(g('stdoStep'),'20');await ketik(g('stdoSlab'),'10');});
  let induk={};
  sol.forEach((S0,j)=>{const cab=!!S0.par,nm=S0.nm,pertama=j===0,lv=S0.m==='h';
   st(cab?B4:B3,cab?('Cabang "'+nm+'" dari "'+S0.par+'"'):('Solid baru "'+nm+'"'),
@@ -8428,7 +8428,7 @@ function skenario(Y){const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:mi
    const buat=()=>{M=x.newModel(nm);M.col=['#d81b60','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b'][j%6];if(cab){const P=byNm(S0.par);if(P){M.par=P.id;M.cap=P.cap;}}M._demoS=S0.S.map(s=>({o:s.o,pts:s.pts}));x.panel();};
    await klik(cab?document.querySelector('#stdoTools [data-t="cabang"]'):g('stdoNew2'),{aksi:buat,jeda:420});
    if(!cab)await ketik(g('msnm'),nm);M=MS.L.find(m=>m.nm===nm)||M;MS.cur=M.id;x.panel();
-   if(lv){await pilih(g('stdoMode'),'h');SC.v=null;}else if(Math.abs((+g('sca').value||0)-S0.az)>0.01){await ketik(g('stdoAz'),fmt(S0.az,1).replace(',','.'));}
+   if(lv){await dmPilih(g('stdoMode'),'h');SC.v=null;}else if(Math.abs((+g('sca').value||0)-S0.az)>0.01){await ketik(g('stdoAz'),fmt(S0.az,1).replace(',','.'));}
    M.m=S0.m;M.az=S0.az;M.E=Y.E;M.N=Y.N;keGeser(M,S0.S[0].o);await bingkai(M,1000);
    const bt=document.querySelector('#stdoTools [data-t="digit"]');if(!MS.dig||(window.__st&&__st.tool!=='digit'))await klik(bt,{jeda:300});},cab?3600:3000);
   if(lv)st(B4,'Mode Level (RL)','Tubuh pendek dan miring (jog) lebih pas digambar sebagai irisan mendatar di beberapa RL.',async()=>{await tunggu(600);},3400);
@@ -8505,27 +8505,397 @@ window.owDemo=bukaDialog;
    - snap kontak bor + titik string nyala; label log geologi adaptif; ujung solid runcing ½ spasi; cabang otomatis. */
 {
 const g=id=>document.getElementById(id),T_=m=>{if(window.sbToast)sbToast(m);};
-function hitung(){if(typeof SEGS==='undefined'||!SEGS.length)return null;let cut=0;try{cut=UCL().cut;}catch(e){}
+function awalHitung(){if(typeof SEGS==='undefined'||!SEGS.length)return null;let cut=0;try{cut=UCL().cut;}catch(e){}
  const P=[],H=new Map();for(const s of SEGS){if(!(s[2]>=cut)||!(s[2]>0))continue;const E=(s[0][0]+s[1][0])/20+O[0],N=(s[0][1]+s[1][1])/20+O[1];P.push([E,N]);if(!H.has(s[3]))H.set(s[3],[E,N]);}
  if(P.length<4||H.size<2)return null;let mx=0,my=0;P.forEach(p=>{mx+=p[0];my+=p[1];});mx/=P.length;my/=P.length;let a=0,b=0,c=0;P.forEach(p=>{const dx=p[0]-mx,dy=p[1]-my;a+=dx*dx;b+=dx*dy;c+=dy*dy;});
  const th=0.5*Math.atan2(2*b,a-c),u=[Math.cos(th),Math.sin(th)],jurus=((Math.atan2(u[0],u[1])*180/Math.PI)%180+180)%180,az=Math.round((jurus+90)%180);
  const pr=[...H.values()].map(p=>(p[0]-mx)*u[0]+(p[1]-my)*u[1]).sort((x,y)=>x-y),gp=[];for(let i=1;i<pr.length;i++){const d=pr[i]-pr[i-1];if(d>4)gp.push(d);}
  gp.sort((x,y)=>x-y);let st=gp.length?gp[Math.floor(gp.length/2)]:20;st=Math.max(10,Math.min(50,Math.round(st/5)*5||20));
  return {az,jurus:Math.round(jurus),E:Math.round(mx),N:Math.round(my),st,slab:st/2,n:H.size};}
-function terapkan(diam){const r=hitung();if(!r){if(!diam)T_('Setelan awal butuh data bor ber-assay (interval kadar tinggi) — muat data bor dulu.');return false;}
+function awalTerapkan(diam){const r=awalHitung();if(!r){if(!diam)T_('Setelan awal butuh data bor ber-assay (interval kadar tinggi) — muat data bor dulu.');return false;}
  const set=(id,v)=>{const e=g(id);if(e)e.value=v;};set('scm','v');set('sca',r.az);set('sce',r.E);set('scn',r.N);set('sco',0);set('scs',r.st);set('sct',r.slab);
  const vx=g('vx');if(vx&&+vx.value!==1){vx.value=1;vx.dispatchEvent(new Event('input'));}
  try{const sn=JSON.parse(localStorage.getItem('ow.stsnap')||'{}');sn.bor=true;sn.titik=true;localStorage.setItem('ow.stsnap',JSON.stringify(sn));}catch(e){}if(window.__stSnap){__stSnap.bor=true;__stSnap.titik=true;}
  const lk=g('lgkm');if(lk&&lk.value!=='adaptif'){lk.value='adaptif';lk.dispatchEvent(new Event('change'));}
  SC.v=null;scUpd();
  T_('Setelan awal: penampang az '+r.az+'° (tegak lurus jurus vein ≈ '+String(r.jurus).padStart(3,'0')+'°), langkah '+r.st+' m, slab ±'+r.slab+' m, dari '+r.n+' lubang kadar tinggi.'+(diam?' Ubah kapan saja; ↺ Setelan awal untuk mengulang.':''));return true;}
-window.stdoSetelanAwal=terapkan;
+window.stdoSetelanAwal=awalTerapkan;
 {const top=g('stdoTop'),md=g('stdoMode');if(top&&md){const b=document.createElement('button');b.id='stdoAwal';b.title='Setelan awal pemula: arah penampang tegak lurus jurus vein, langkah = jarak pagar bor, slab ½ langkah, snap kontak bor';b.innerHTML='&#8634; Setelan awal';
- md.closest('label').before(b);b.onclick=()=>{terapkan(false);};}}
+ md.closest('label').before(b);b.onclick=()=>{awalTerapkan(false);};}}
 let sig=null;
 {const wn=g('scw');if(wn)new MutationObserver(()=>{if(!wn.classList.contains('studio'))return;try{const MS=window.MS,s=(typeof DS!=='undefined'?DS.length:0)+'#'+(typeof SEGS!=='undefined'?SEGS.length:0);
-  if(MS&&!MS.L.length&&typeof SEGS!=='undefined'&&SEGS.length&&s!==sig&&!(window.__demo&&__demo.on)){sig=s;setTimeout(()=>terapkan(true),80);}}catch(e){}}).observe(wn,{attributes:true,attributeFilter:['class']});}
+  if(MS&&!MS.L.length&&typeof SEGS!=='undefined'&&SEGS.length&&s!==sig&&!(window.__demo&&__demo.on)){sig=s;setTimeout(()=>awalTerapkan(true),80);}}catch(e){}}).observe(wn,{attributes:true,attributeFilter:['class']});}
 }
+
+/* ================= Ore Works 0.27.0: snap ke kontak log geologi (opsi) =================
+   Pemilik 19 Nov 2026: "Snap ke kontak di log geologi didahulukan di atas batas sampel assay. Jadikan ini sebagai pilihan bagi
+   user, bukan default. Penempatan harus jelas." → di sebelah tombol Snap "Kontak bor" (Studio) dan kotak Snap penampang ada
+   pilihan sumber: "sampel assay" (bawaan: batas segmen kadar / interval tampil) atau "log geologi · <kolom>": titik snap =
+   batas interval log geologi tempat nilai kolom itu berganti (mis. Vein_Type '-' → 'VS1'), diproyeksikan ke penampang. */
+{
+const g=id=>document.getElementById(id),T_=m=>{if(window.sbToast)sbToast(m);};
+const SG=window.__snapGeo={src:'assay'};try{SG.src=localStorage.getItem('ow.snapsrc')||'assay';}catch(e){}
+const kolom=()=>{const gs=[];for(const d of (typeof DS!=='undefined'?DS:[]))if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);return gs;};
+let C={key:null,P:[]};
+function sgPosAt(h,cum,d){for(let i=0;i+1<cum.length;i++)if(d<=cum[i+1]+1e-9){const f=cum[i+1]>cum[i]?(d-cum[i])/(cum[i+1]-cum[i]):0;return [(h.p[i*3]+(h.p[i*3+3]-h.p[i*3])*f)/10+O[0],(h.p[i*3+1]+(h.p[i*3+4]-h.p[i*3+1])*f)/10+O[1],(h.p[i*3+2]+(h.p[i*3+5]-h.p[i*3+2])*f)/10+O[2]];}return null;}
+SG.aktif=()=>SG.src&&SG.src.startsWith('geo:')&&kolom().includes(SG.src.slice(4));
+SG.pts=q=>{const kol=SG.src.slice(4),key=[kol,q.m,q.E,q.N,q.azd,q.off,q.rl,q.t,q.len,typeof SEGS!=='undefined'?SEGS.length:0].join('|');if(C.key===key)return C.P;
+ const P=[],GA=geoActive(),M=activeHoles(),LH=q.m==='v'&&q.len>0?q.len/2:Infinity;
+ for(const [id,{h}] of M){const iv=GA.get(id);if(!iv||!h.p||h.p.length<6)continue;const cum=cumP(h.p),S=iv.slice().sort((a,b)=>a.f-b.f),val=x=>String((x.v&&x.v[kol])!=null?x.v[kol]:'').trim(),kosong=v=>!v||v==='-';
+  const D=new Set();for(let i=0;i<S.length;i++){const v=val(S[i]),pv=i?val(S[i-1]):null,nv=i+1<S.length?val(S[i+1]):null;if(kosong(v))continue;
+   if(i===0||pv!==v||Math.abs(S[i-1].t-S[i].f)>1e-6)D.add(+S[i].f.toFixed(3));if(i+1===S.length||nv!==v||Math.abs(S[i+1].f-S[i].t)>1e-6)D.add(+S[i].t.toFixed(3));}
+  for(const d of D){const w=sgPosAt(h,cum,d);if(!w)continue;if(Math.abs(scDist(q,...w))>q.t)continue;const p=scProj(q,...w);if(Math.abs(p[0])>LH)continue;P.push(p);}}
+ C={key,P};return P;};
+/* pilihan sumber: Studio (sebelah "Kontak bor") + kotak snap penampang biasa */
+function sgIsi(sel){const k=kolom(),cur=SG.src;sel.innerHTML='<option value="assay">sampel assay</option>'+k.map(c=>'<option value="geo:'+esc(c)+'">log geologi · '+esc(c)+'</option>').join('');
+ sel.value=(cur.startsWith('geo:')&&k.includes(cur.slice(4)))?cur:'assay';sel.classList.toggle('geo',sel.value!=='assay');}
+function pakai(v){SG.src=v;try{localStorage.setItem('ow.snapsrc',v);}catch(e){}C.key=null;document.querySelectorAll('.snapsrc').forEach(s=>{if(s.value!==v)s.value=v;s.classList.toggle('geo',v!=='assay');});
+ try{window.__ms2&&__ms2.repaint();}catch(e){}T_(v==='assay'?'Snap kontak bor: batas sampel assay / interval tampil (bawaan).':'Snap kontak bor: kontak log geologi kolom '+v.slice(4)+' (batas tempat nilainya berganti).');}
+function buat(){const s=document.createElement('select');s.className='snapsrc';s.title='Sumber titik snap "Kontak bor": batas sampel assay (bawaan) atau kontak log geologi pada kolom yang dipilih';s.onchange=()=>pakai(s.value);s.onfocus=()=>sgIsi(s);sgIsi(s);return s;}
+const css=document.createElement('style');css.textContent='.snapsrc{height:24px;max-width:170px;font-size:11.5px;margin-left:2px}.snapsrc.geo{background:#e6f4ea;border-color:#43a047;color:#1e6b34;font-weight:600}';document.head.appendChild(css);
+{const b=document.querySelector('#stdoTop .chip[data-sn="bor"]');if(b){const s=buat();b.after(s);}}
+{const m=g('mssnap');if(m){const lb=m.closest('label')||m;const s=buat();lb.after(s);}}
+/* data baru dimuat → isi ulang daftar kolom */
+setInterval(()=>{const k=kolom().join('|');if(k!==SG._k){SG._k=k;document.querySelectorAll('.snapsrc').forEach(sgIsi);}},1500);
+/* penanda kontak geologi (belah ketupat hijau) saat digit, agar jelas titik mana yang menjadi sasaran snap */
+{const o=window.msOverlayX;window.msOverlayX=(x,T2,q)=>{if(o)o(x,T2,q);try{const MS=window.MS;if(SG.aktif()&&(MS.dig||(window.__st&&__st.on))){x.save();x.fillStyle='#2e7d32';x.strokeStyle='#fff';x.lineWidth=1;
+ for(const p of SG.pts(q)){const X=T2.X(p),Y=T2.Y(p);x.beginPath();x.moveTo(X,Y-4.5);x.lineTo(X+4.5,Y);x.lineTo(X,Y+4.5);x.lineTo(X-4.5,Y);x.closePath();x.fill();x.stroke();}x.restore();}}catch(e){}};}
+}
+
+/* ================= Ore Works 0.27.0: Studio Implisit — vein HW / FW (RBF) dari kontak bor =================
+   Pemilik 19 Nov 2026: "Mode vein implisit: permukaan atap dan lantai vein dibentuk dari kontak semua lubang dalam 3D, lalu solid
+   diisi di antaranya ... Tolong untuk Mode Implisit dibuat di jendela terpisah. Ketika user memilih studio maka ada opsi untuk
+   implisit atau eksplisit" + "Fitur-fitur dan menu-menu implisit ambil saja dari GCEx dengan mempertahankan UIUX-nya Ore Works".
+   Mesin & parameter diambil dari GC-Ex Drillhole "Geological Modelling → Model vein HW / FW → solid (RBF)" (imBuild 0.24.71):
+   RBF thin-plate teregularisasi per permukaan (HW & FW terpisah), bidang rata-rata PCA + arah HW, elipsoid anisotropi di bidang
+   vein, kelompok strike + convex hull, radius pengaruh searah strike (potong tegas), pinch-out searah dip, atas dipotong topografi,
+   tebal minimum (softplus) & batas tebal 1,5 x kontak terbesar, resolusi adaptif, cabang menyambung ke induk, validasi interval
+   flag di dalam solid & porsi ekstrapolasi. Domain di Ore Works dibentuk dari kode log geologi atau kadar >= cut-off (bukan
+   klik flag satu per satu); interval bisa dikeluarkan per lubang. Hasil = wireframe Ore Works (ikut Project, ekspor, tabel). */
+(function(){
+const g=id=>document.getElementById(id),T_=m=>{if(window.sbToast)sbToast(m);};
+const fmt=(v,d)=>(+v).toLocaleString('id-ID',{maximumFractionDigits:d==null?0:d,minimumFractionDigits:d&&d>0&&Math.abs(v)<10?Math.min(d,1):0});
+const WARNA=['#d81b60','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c41','#3949ab'];
+/* bawaan Ore Works (uji 3 sistem vein, 19 Nov 2026): radius strike otomatis = maks(10, 0,55 × jarak pagar bor), pinch-out 5 m —
+   GC-Ex 15 / 15 menggembungkan tonase +13…+32 %; 10 / 5 memberi selisih logam ±2 % */
+const IMDEF={minT:1,pinD:5,aoi:null,res:2,smo:1,rob:true,top:'topo',ori:'auto',dip:60,ddir:0,aS:50,aD:50,pitch:0,adp:false,adpK:4,join:true,joinD:30};
+const IM=window.__im={doms:[],act:null,R:{},opt:{sg:2.6,op:0.55,auto:true},on:false,nid:1};
+const imPar=d=>Object.assign({},IMDEF,d&&d.p||{});
+const dom=id=>IM.doms.find(d=>d.id===id);
+const isKid=d=>!!(d&&d.par&&d.par!==d.id&&dom(d.par)&&!dom(d.par).par);
+
+/* ---------- data: interval domain (kode log geologi / kadar) → kontak HW & FW ---------- */
+function holePos(h,cum,d){for(let i=0;i+1<cum.length;i++)if(d<=cum[i+1]+1e-9){const f=cum[i+1]>cum[i]?(d-cum[i])/(cum[i+1]-cum[i]):0;return {x:(h.p[i*3]+(h.p[i*3+3]-h.p[i*3])*f)/10+O[0],y:(h.p[i*3+1]+(h.p[i*3+4]-h.p[i*3+1])*f)/10+O[1],z:(h.p[i*3+2]+(h.p[i*3+5]-h.p[i*3+2])*f)/10+O[2]};}return null;}
+const kolomGeo=()=>{const gs=[];for(const d of (typeof DS!=='undefined'?DS:[]))if(d.on)for(const c of d.gcols||[])if(!gs.includes(c))gs.push(c);return gs;};
+const kolomAs=()=>{const as=[];for(const d of (typeof DS!=='undefined'?DS:[]))if(d.on)for(const c of d.acols||[])if(!as.includes(c)&&!/^(hole|bhid|from|to|dari|ke)/i.test(c))as.push(c);return as;};
+function kodeDi(kol){const n=new Map();for(const iv of geoActive().values())for(const x of iv){const v=String(x.v&&x.v[kol]!=null?x.v[kol]:'').trim();if(!v)continue;n.set(v,(n.get(v)||0)+1);}return [...n.entries()].sort((a,b)=>b[1]-a[1]);}
+function gabung(R,gap){const o=[];R.slice().sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:a.f-b.f).forEach(r=>{const l=o[o.length-1];if(l&&l.id===r.id&&r.f-l.t<=gap)l.t=Math.max(l.t,r.t);else o.push({id:r.id,f:r.f,t:r.t});});return o;}
+function runsKadar(iv,el,o){/* GC-Ex gmAutoRuns: kadar >= cut, gabung bila sisipan (<= dilusi maks) tetap >= cut rata-rata, buang yang terlalu pendek */
+ const A=iv.map(q=>[+q.f,+q.t,parseFloat(String(q.v&&q.v[el]).replace(',','.'))]).filter(a=>a[1]>a[0]).sort((a,b)=>a[0]-b[0]),R=[];
+ A.forEach(a=>{const v=isFinite(a[2])?a[2]:0;if(v<o.cut)return;const L=a[1]-a[0],p=R[R.length-1];if(p&&a[0]-p.t<0.01){p.t=a[1];p.m+=v*L;}else R.push({f:a[0],t:a[1],m:v*L});});
+ const wm=(f,t)=>{let m=0;A.forEach(a=>{if(a[0]>=f-1e-6&&a[1]<=t+1e-6)m+=(isFinite(a[2])?a[2]:0)*(a[1]-a[0]);});return m;};
+ const M=[];R.forEach(r=>{const p=M[M.length-1];if(p){const gp=r.f-p.t;if(gp<=o.dil+1e-6){const m=p.m+wm(p.t,r.f)+r.m;if(m/(r.t-p.f)>=o.cut){p.t=r.t;p.m=m;return;}}}M.push({f:r.f,t:r.t,m:r.m});});
+ return M.filter(r=>{const L=r.t-r.f;return L>=o.minL-1e-6||r.m>=o.minL*o.cut;});}
+function runs(d){const R=[];const H=activeHoles();
+ if(d.src==='as'){const A=asActive();for(const [id,iv] of A){if(!H.has(id))continue;runsKadar(iv,d.el,{cut:+d.cut||0,dil:+d.dil||0,minL:+d.minL||0}).forEach(r=>R.push({id,f:r.f,t:r.t}));}}
+ else{const K=new Set(d.kode||[]);for(const [id,iv] of geoActive()){if(!H.has(id))continue;for(const x of iv){const v=String(x.v&&x.v[d.kol]!=null?x.v[d.kol]:'').trim();if(K.has(v))R.push({id,f:+x.f,t:+x.t});}}}
+ const out=[];for(const r of gabung(R,d.src==='as'?0.01:(d.gap!=null?+d.gap:3))){const h=H.get(r.id).h;if(!h.p||h.p.length<6)continue;const cum=cumP(h.p),mx=cum[cum.length-1];r.t=Math.min(r.t,mx);if(r.t>r.f)out.push(r);}return out;}
+const kunci=r=>r.id+'@'+r.f.toFixed(2);
+function kontak(d){/* GC-Ex gmContacts: arah HW = sisi atas bidang rata-rata titik tengah (normal ke atas) */
+ const H=activeHoles(),X=new Set(d.x||[]),P=[];
+ for(const r of runs(d)){const h=H.get(r.id).h,cum=cumP(h.p),a=holePos(h,cum,r.f),b=holePos(h,cum,r.t);if(!a||!b)continue;P.push({r,a,b,ok:!X.has(kunci(r)),m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:(a.z+b.z)/2}});}
+ const U=P.filter(p=>p.ok);let n=null;
+ if(U.length>=3){let c=[0,0,0];U.forEach(p=>{c[0]+=p.m.x;c[1]+=p.m.y;c[2]+=p.m.z;});c=c.map(v=>v/U.length);const C=[[0,0,0],[0,0,0],[0,0,0]];U.forEach(p=>{const e=[p.m.x-c[0],p.m.y-c[1],p.m.z-c[2]];for(let i=0;i<3;i++)for(let j=0;j<3;j++)C[i][j]+=e[i]*e[j];});
+  const E=eig3(C);let k=0;for(let i=1;i<3;i++)if(E.val[i]<E.val[k])k=i;const sv=E.val.slice().sort((a,b)=>a-b);if(sv[1]>1e-6&&sv[0]/sv[1]<0.6){n=E.vec[k];if(n[2]<0)n=[-n[0],-n[1],-n[2]];}}
+ const L=P.map(p=>{const hwA=n?(n[0]*p.a.x+n[1]*p.a.y+n[2]*p.a.z)>=(n[0]*p.b.x+n[1]*p.b.y+n[2]*p.b.z):p.a.z>=p.b.z;return {id:p.r.id,f:p.r.f,t:p.r.t,ok:p.ok,key:kunci(p.r),hw:hwA?p.a:p.b,fw:hwA?p.b:p.a,tb:Math.hypot(p.a.x-p.b.x,p.a.y-p.b.y,p.a.z-p.b.z)};});
+ return {L,n};}
+function eig3(C){const A=C.map(r=>r.slice()),V=[[1,0,0],[0,1,0],[0,0,1]];
+ for(let it=0;it<50;it++){let p=0,q=1,mx=Math.abs(A[0][1]);if(Math.abs(A[0][2])>mx){mx=Math.abs(A[0][2]);p=0;q=2;}if(Math.abs(A[1][2])>mx){mx=Math.abs(A[1][2]);p=1;q=2;}if(mx<1e-12)break;
+  const th=(A[q][q]-A[p][p])/(2*A[p][q]),t=(th>=0?1:-1)/(Math.abs(th)+Math.sqrt(th*th+1)),c=1/Math.sqrt(t*t+1),s=t*c;
+  for(let k=0;k<3;k++){const akp=A[k][p],akq=A[k][q];A[k][p]=c*akp-s*akq;A[k][q]=s*akp+c*akq;}
+  for(let k=0;k<3;k++){const apk=A[p][k],aqk=A[q][k];A[p][k]=c*apk-s*aqk;A[q][k]=s*apk+c*aqk;}
+  for(let k=0;k<3;k++){const vkp=V[k][p],vkq=V[k][q];V[k][p]=c*vkp-s*vkq;V[k][q]=s*vkp+c*vkq;}}
+ return {val:[A[0][0],A[1][1],A[2][2]],vec:[0,1,2].map(j=>[V[0][j],V[1][j],V[2][j]])};}
+function titik(d,P){/* GC-Ex imPts (sumber: kontak bor) + titik sambung cabang ke induk */
+ const K=kontak(d),H=[],W=[];let nc=0;K.L.forEach(c=>{if(!c.ok)return;H.push([c.hw.x,c.hw.y,c.hw.z,1]);W.push([c.fw.x,c.fw.y,c.fw.z,1]);nc++;});
+ let nj=0,njAll=0;if(isKid(d)&&P.join!==false&&H.length){const Jd=Math.max(0,P.joinD!=null?+P.joinD:30),bh=new Set(K.L.map(c=>c.id)),B=H.concat(W),cand=[];
+  kontak(dom(d.par)).L.forEach(c=>{if(!c.ok||bh.has(c.id))return;const mx=(c.hw.x+c.fw.x)/2,my=(c.hw.y+c.fw.y)/2,mz=(c.hw.z+c.fw.z)/2;let dm=1e18;for(const q of B){const e=(q[0]-mx)**2+(q[1]-my)**2+(q[2]-mz)**2;if(e<dm)dm=e;}if(Math.sqrt(dm)<=Jd)cand.push([Math.sqrt(dm),mx,my,mz]);});
+  cand.sort((a,b)=>a[0]-b[0]);njAll=cand.length;cand.slice(0,Math.max(3,nc)).forEach(e=>{H.push([e[1],e[2],e[3],2]);W.push([e[1],e[2],e[3],2]);nj++;});}
+ return {H,W,nc,nj,njAll,K};}
+
+/* ---------- mesin GC-Ex: bidang rata-rata, RBF thin-plate, batas & mesh ---------- */
+function imFrame(H,W,P){const A=H.concat(W),n=A.length;let c=[0,0,0];A.forEach(p=>{c[0]+=p[0];c[1]+=p[1];c[2]+=p[2];});c=c.map(v=>v/n);
+ const C=[[0,0,0],[0,0,0],[0,0,0]];A.forEach(p=>{const e=[p[0]-c[0],p[1]-c[1],p[2]-c[2]];for(let i=0;i<3;i++)for(let j=0;j<3;j++)C[i][j]+=e[i]*e[j];});
+ const E=eig3(C),dot=(v,p)=>v[0]*(p[0]-c[0])+v[1]*(p[1]-c[1])+v[2]*(p[2]-c[2]),mean=(v,L)=>{let s=0;L.forEach(p=>{s+=dot(v,p);});return s/L.length;};let best=-1,nr=null;
+ for(let k=0;k<3;k++){const v=E.vec[k],sep=mean(v,H)-mean(v,W),sc=Math.abs(sep)/Math.sqrt(Math.max(E.val[k]/n,1e-6));if(sc>best){best=sc;nr=sep>=0?v:[-v[0],-v[1],-v[2]];}}
+ if(P&&P.ori==='man'&&isFinite(+P.dip)&&isFinite(+P.ddir)){const dr=Math.PI/180,de=Math.max(0.5,Math.min(90,+P.dip))*dr,az=(+P.ddir)*dr,m0=[Math.sin(de)*Math.sin(az),Math.sin(de)*Math.cos(az),Math.cos(de)];nr=(mean(m0,H)-mean(m0,W))>=0?m0:[-m0[0],-m0[1],-m0[2]];}
+ const L=Math.hypot(nr[0],nr[1],nr[2]);nr=nr.map(x=>x/L);let u=[-nr[1],nr[0],0];const lu=Math.hypot(u[0],u[1]);u=lu<1e-6?[1,0,0]:[u[0]/lu,u[1]/lu,0];
+ let v2=[nr[1]*u[2]-nr[2]*u[1],nr[2]*u[0]-nr[0]*u[2],nr[0]*u[1]-nr[1]*u[0]];if(v2[2]<0){v2=v2.map(x=>-x);u=u.map(x=>-x);}
+ return {c,n:nr,u,v:v2};}
+const imLoc=(F,p)=>{const c=F.c,e=[p[0]-c[0],p[1]-c[1],p[2]-c[2]];return [F.u[0]*e[0]+F.u[1]*e[1]+F.u[2]*e[2],F.v[0]*e[0]+F.v[1]*e[1]+F.v[2]*e[2],F.n[0]*e[0]+F.n[1]*e[1]+F.n[2]*e[2],p[3],p[4]||0];};
+const imXYZ=(F,s,d,w)=>{const c=F.c;return [c[0]+F.u[0]*s+F.v[0]*d+F.n[0]*w,c[1]+F.u[1]*s+F.v[1]*d+F.n[1]*w,c[2]+F.u[2]*s+F.v[2]*d+F.n[2]*w];};
+function imThin(Q,cs,max){let out=Q;for(let g2=0;g2<30;g2++){const M={};Q.forEach(q=>{const k=Math.floor(q[0]/cs)+'_'+Math.floor(q[1]/cs),e=M[k]||(M[k]=[0,0,0,0,0,0,0,0]),o=q[3]?4:0;e[o]+=q[0];e[o+1]+=q[1];e[o+2]+=q[2];e[o+3]++;});
+  out=Object.keys(M).map(k=>{const e=M[k],o=e[7]?4:0;return [e[o]/e[o+3],e[o+1]/e[o+3],e[o+2]/e[o+3],e[7]?1:0];});if(out.length<=max)return out;cs*=1.35;}return out;}
+function imSolve(A,b,m){for(let k=0;k<m;k++){let p=k,mx=Math.abs(A[k*m+k]);for(let i=k+1;i<m;i++){const v=Math.abs(A[i*m+k]);if(v>mx){mx=v;p=i;}}if(mx<1e-10)return null;
+  if(p!==k){for(let j=k;j<m;j++){const t=A[k*m+j];A[k*m+j]=A[p*m+j];A[p*m+j]=t;}const t=b[k];b[k]=b[p];b[p]=t;}const rk=k*m,pk=A[rk+k];
+  for(let i=k+1;i<m;i++){const ri=i*m,f=A[ri+k]/pk;if(f===0)continue;for(let j=k;j<m;j++)A[ri+j]-=f*A[rk+j];b[i]-=f*b[k];}}
+ const x=new Float64Array(m);for(let k=m-1;k>=0;k--){let s=b[k];for(let j=k+1;j<m;j++)s-=A[k*m+j]*x[j];x[k]=s/A[k*m+k];}return x;}
+function imTps(P,lam){const n=P.length;let s0=1e18,s1=-1e18,d0=1e18,d1=-1e18;P.forEach(p=>{s0=Math.min(s0,p[0]);s1=Math.max(s1,p[0]);d0=Math.min(d0,p[1]);d1=Math.max(d1,p[1]);});
+ const ps=s1-s0>1e-3*(Math.abs(s1)+Math.abs(s0)+1e-9)&&s1-s0>1e-6,pd=d1-d0>1e-3*(Math.abs(d1)+Math.abs(d0)+1e-9)&&d1-d0>1e-6,np=1+(ps?1:0)+(pd?1:0),m=n+np,A=new Float64Array(m*m),b=new Float64Array(m),X=new Float64Array(n),Y=new Float64Array(n);
+ for(let i=0;i<n;i++){X[i]=P[i][0];Y[i]=P[i][1];b[i]=P[i][2];}
+ for(let i=0;i<n;i++){const ri=i*m;for(let j=i+1;j<n;j++){const dx=X[i]-X[j],dy=Y[i]-Y[j],r2=dx*dx+dy*dy,k=r2>0?0.5*r2*Math.log(r2):0;A[ri+j]=k;A[j*m+i]=k;}A[ri+i]=Array.isArray(lam)?lam[i]:lam;
+  let c=n;A[ri+c]=1;A[c*m+i]=1;c++;if(ps){A[ri+c]=X[i];A[c*m+i]=X[i];c++;}if(pd){A[ri+c]=Y[i];A[c*m+i]=Y[i];}}
+ const w=imSolve(A,b,m);if(!w)return null;
+ return (x,y)=>{let s=w[n],c=n+1;if(ps)s+=w[c++]*x;if(pd)s+=w[c]*y;for(let i=0;i<n;i++){const dx=x-X[i],dy=y-Y[i],r2=dx*dx+dy*dy;if(r2>0)s+=w[i]*0.5*r2*Math.log(r2);}return s;};}
+function imHull(Q){const P=Q.map(q=>[q[0],q[1]]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);if(P.length<3)return P;const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),L=[],U=[];
+ P.forEach(p=>{while(L.length>=2&&cr(L[L.length-2],L[L.length-1],p)<=0)L.pop();L.push(p);});for(let i=P.length-1;i>=0;i--){const p=P[i];while(U.length>=2&&cr(U[U.length-2],U[U.length-1],p)<=0)U.pop();U.push(p);}
+ L.pop();U.pop();return L.concat(U);}
+function imHullD(H,s){let lo=1e18,hi=-1e18;const n=H.length;if(!n)return [0,0];let s0=1e18,s1=-1e18;H.forEach(p=>{s0=Math.min(s0,p[0]);s1=Math.max(s1,p[0]);});s=Math.max(s0,Math.min(s1,s));
+ for(let i=0;i<n;i++){const a=H[i],b=H[(i+1)%n];if(Math.abs(a[0]-s)<1e-6){lo=Math.min(lo,a[1]);hi=Math.max(hi,a[1]);}if((a[0]-s)*(b[0]-s)<0){const t=(s-a[0])/(b[0]-a[0]),d=a[1]+(b[1]-a[1])*t;lo=Math.min(lo,d);hi=Math.max(hi,d);}}
+ if(lo>hi){H.forEach(p=>{lo=Math.min(lo,p[1]);hi=Math.max(hi,p[1]);});}return [lo,hi];}
+function imHullW(H,s,r){const E=imHullD(H,s);if(!(r>0))return E;const A=imHullD(H,s-r),B=imHullD(H,s+r);let lo=Math.min(E[0],A[0],B[0]),hi=Math.max(E[1],A[1],B[1]);H.forEach(p=>{if(p[0]>=s-r&&p[0]<=s+r){lo=Math.min(lo,p[1]);hi=Math.max(hi,p[1]);}});return [lo,hi];}
+function imEnvSmooth(C,r){const n=C.length;if(n<3||r<1)return;const sg=r/2,W=[];for(let k=-r;k<=r;k++)W.push(Math.exp(-k*k/(2*sg*sg)));
+ const f=key=>C.map((c,i)=>{let a=0,b=0;for(let k=-r;k<=r;k++){const j=Math.max(0,Math.min(n-1,i+k));a+=W[k+r]*C[j][key];b+=W[k+r];}return a/b;});const LO=f('da'),HI=f('db');C.forEach((c,i)=>{c.da=Math.min(c.da,LO[i]);if(!c.tp)c.db=Math.max(c.db,HI[i]);});}
+function imGroups(A,aoi){const S=A.slice().sort((a,b)=>a[0]-b[0]),G=[];let cur=[];S.forEach(q=>{if(cur.length&&q[0]-cur[cur.length-1][0]>2*aoi){G.push(cur);cur=[];}cur.push(q);});if(cur.length)G.push(cur);return G;}
+function imAdpNodes(a0,a1,D,h0,K){K=Math.max(1,+K||4);const n=D.length,near=x=>{if(!n)return 1e9;let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(D[m]<x)lo=m;else hi=m;}return Math.min(Math.abs(x-D[lo]),Math.abs(x-D[hi]));};
+ let o=[a0],x=a0,gg=0;while(x<a1-1e-9&&gg++<200000){const h=h0*Math.min(K,1+near(x)/(3*h0));x=x+h;if(x>a1-0.3*h)x=a1;o.push(x);}if(o[o.length-1]!==a1)o.push(a1);
+ while(o.length<3){const e=[o[0]];for(let i=1;i<o.length;i++)e.push((o[i-1]+o[i])/2,o[i]);o=e;}return o;}
+const imSmax=(t,mn)=>{const k=0.25,x=(t-mn)/k;return mn+(x>30?t-mn:k*Math.log1p(Math.exp(x)));};
+function imAniso(P){const aS=Math.max(0.1,+P.aS||1),aD=Math.max(0.1,+P.aD||1),gm=Math.sqrt(aS*aD),pr=(+P.pitch||0)*Math.PI/180,c=Math.cos(pr),sn=Math.sin(pr);if(Math.abs(aS-aD)<1e-9)return null;return (s,d)=>{const a=c*s+sn*d,b=-sn*s+c*d;return [a*gm/aS,b*gm/aD];};}
+const IMSMO=[0,3e-4,2e-3,1e-2];
+function imNearC(Q,rc){const C=Q.filter(q=>q[3]);if(!C.length)return {Q,n:0};const G={},k=(a,b)=>a+'_'+b;C.forEach(c=>{const t=k(Math.floor(c[0]/rc),Math.floor(c[1]/rc));(G[t]=G[t]||[]).push(c);});let n=0;
+ const R=Q.filter(q=>{if(q[3])return true;const gx=Math.floor(q[0]/rc),gy=Math.floor(q[1]/rc);for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const L2=G[k(gx+a,gy+b)];if(!L2)continue;for(const c of L2)if(Math.hypot(c[0]-q[0],c[1]-q[1])<rc){n++;return false;}}return true;});return {Q:R,n};}
+function imTpsR(P,lev){let s0=1e18,s1=-1e18,d0=1e18,d1=-1e18;P.forEach(p=>{s0=Math.min(s0,p[0]);s1=Math.max(s1,p[0]);d0=Math.min(d0,p[1]);d1=Math.max(d1,p[1]);});
+ const cx=(s0+s1)/2,cy=(d0+d1)/2,L2=Math.max(1,s1-s0,d1-d0),lb=IMSMO[Math.max(0,Math.min(3,lev|0))],Q=P.map(p=>[(p[0]-cx)/L2,(p[1]-cy)/L2,p[2],p[3]]),lam=Q.map(q=>q[3]?lb*0.01:lb);
+ const f=imTps(Q,lam);if(!f)return null;return (x,y)=>f((x-cx)/L2,(y-cy)/L2);}
+const topoOk=()=>typeof SF!=='undefined'&&SF.some(s=>s.on&&s.kind==='topo'&&s.tin);
+const tZ=(x,y)=>{const z=topoZ(x,y);return isFinite(z)?z:null;};
+function imBuild(d,P,X){const t0=performance.now(),FAR=[];
+ if(X.H.length<3||X.W.length<3)throw new Error('kontak kurang (perlu ≥ 3 lubang; ada '+X.nc+')');
+ const Fr=imFrame(X.H,X.W,P);let QH=X.H.map(p=>imLoc(Fr,p)),QW=X.W.map(p=>imLoc(Fr,p));const res0=Math.max(0.5,+P.res||2),cs=Math.max(0.5,res0*0.75);
+ let nnc=0;if(P.rob!==false){const rc=Math.max(3,1.5*res0),a1=imNearC(QH,rc),a2=imNearC(QW,rc);QH=a1.Q;QW=a2.Q;nnc=a1.n+a2.n;}
+ const TH=imThin(QH,cs,650),TW=imThin(QW,cs,650),lev=P.smo!=null?+P.smo:1,Tr=imAniso(P),mp=L2=>Tr?L2.map(q=>{const a=Tr(q[0],q[1]);return [a[0],a[1],q[2],q[3]];}):L2;
+ const gH=imTpsR(mp(TH),lev),gW=imTpsR(mp(TW),lev);if(!gH||!gW)throw new Error('sistem RBF singular (titik segaris / terlalu sedikit)');
+ const mkF=gf=>Tr?(s,dd)=>{const a=Tr(s,dd);return gf(a[0],a[1]);}:gf,fH=mkF(gH),fW=mkF(gW);
+ let aoiA=null;if(P.aoi==null||P.aoi===''){const sv=QH.filter(q=>q[3]===1).map(q=>q[0]).sort((a,b)=>a-b),cl2=[];sv.forEach(x=>{if(!cl2.length||x-cl2[cl2.length-1]>3)cl2.push(x);});const gp=[];for(let i=1;i<cl2.length;i++)gp.push(cl2[i]-cl2[i-1]);gp.sort((a,b)=>a-b);
+  const sp=gp.length?gp[Math.floor(gp.length/2)]:20;aoiA=Math.round(Math.max(10,0.55*sp)*10)/10;}
+ const pD=Math.max(0,+P.pinD||0),aoi=aoiA!=null?aoiA:Math.max(0,+P.aoi),minT=Math.max(0,+P.minT||0),tap=x=>x>=1?0:1-x*x;let pDb=pD,pDt=pD;
+ const tz=P.top==='topo'&&topoOk();let nclamp=0;const cl=p=>{if(!tz)return p;const z=tZ(p[0],p[1]);if(z!=null&&p[2]>z){p[2]=z;nclamp++;}return p;};
+ if(X.nj){let dlo=1e18,dhi=-1e18;QH.concat(QW).forEach(q=>{if(q[3]!==2){dlo=Math.min(dlo,q[1]);dhi=Math.max(dhi,q[1]);}});QH.concat(QW).forEach(q=>{if(q[3]===2){if(q[1]<dlo-1)pDb=0;if(q[1]>dhi+1)pDt=0;}});}
+ let tCapV=Infinity,tObs=0,nObs=0;X.K.L.forEach(c=>{if(!c.ok)return;const a=imLoc(Fr,[c.hw.x,c.hw.y,c.hw.z,1]),b=imLoc(Fr,[c.fw.x,c.fw.y,c.fw.z,1]),t=Math.abs(a[2]-b[2]);if(t>tObs)tObs=t;nObs++;});
+ if(+P.tCap>0)tCapV=+P.tCap;else if(P.tCap!==0&&nObs>=3)tCapV=Math.max(1.5*tObs,2*minT,2);
+ const A=QH.concat(QW),GR=imGroups(A,Math.max(aoi,res0));let smin=1e18,smax=-1e18;A.forEach(q=>{smin=Math.min(smin,q[0]);smax=Math.max(smax,q[0]);});
+ const VX=[],VY=[],VZ=[],TI=[],TJ=[],TK=[],TB=[],TC=[],KOL=[];let tmin=1e18,tmax=0,tsum=0,ncore=0,area=0,nuT=0,nvT=0,res=res0;const midAt=(s,dd)=>(fH(s,dd)+fW(s,dd))/2;
+ const topD=(s,lo,hi)=>{if(!tz)return null;let dd=hi,ok=false;const vz=Math.max(0.15,Fr.v[2]);for(let it=0;it<12;it++){const p=imXYZ(Fr,s,dd,midAt(s,dd)),z=tZ(p[0],p[1]);if(z==null)break;ok=true;if(p[2]>=z)break;dd+=Math.max(res,(z-p[2])/vz);if(dd-hi>600)break;}return ok?Math.max(hi,dd)+res:null;};
+ GR.forEach(G=>{const Hh=imHull(G);let g0=1e18,g1=-1e18;G.forEach(q=>{g0=Math.min(g0,q[0]);g1=Math.max(g1,q[0]);});
+  let S0=g0-aoi,S1=g1+aoi;if(S1-S0<res0){const cm=(S0+S1)/2;S0=cm-res0/2;S1=cm+res0/2;}
+  const adp=!!P.adp,adK=Math.max(1,+P.adpK||4),Ds=adp?G.map(q=>q[0]).sort((a,b)=>a-b):null,Dd=adp?G.map(q=>q[1]).sort((a,b)=>a-b):null;let SN=null,UN=null;
+  res=res0;let nu=Math.max(3,Math.ceil((S1-S0)/res)+1),cols=[],dmx=0;const mk=()=>{if(adp){SN=imAdpNodes(S0,S1,Ds,res,adK);nu=SN.length;}cols=[];dmx=0;for(let i=0;i<nu;i++){const s=adp?SN[i]:S0+(S1-S0)*i/(nu-1),E=imHullW(Hh,s,Math.max(res0,Math.min(aoi,25))),tp=topD(s,E[0],E[1]),da=E[0]-pDb,db=tp!=null?tp:E[1]+pDt;cols.push({s,E,da,db,tp:tp!=null});dmx=Math.max(dmx,db-da);}};
+  mk();imEnvSmooth(cols,Math.max(1,Math.round(Math.max(res0,Math.min(aoi,20))/((S1-S0)/(nu-1)))));const mkU=()=>{if(!adp)return Math.max(3,Math.ceil(dmx/res)+1);let D0=1e18,D1=-1e18;cols.forEach(C2=>{D0=Math.min(D0,C2.da);D1=Math.max(D1,C2.db);});const L2=Math.max(1e-6,D1-D0);UN=imAdpNodes(D0,D1,Dd,res,adK).map(v=>(v-D0)/L2);return UN.length;};
+  let nv=mkU();while(nu*nv>60000){res*=1.25;nu=Math.max(3,Math.ceil((S1-S0)/res)+1);mk();imEnvSmooth(cols,Math.max(1,Math.round(Math.max(res0,Math.min(aoi,20))/((S1-S0)/(nu-1)))));nv=mkU();}
+  nuT+=nu;nvT=Math.max(nvT,nv);KOL.push(cols.map(c2=>[c2.s,c2.da,c2.db]));const ds=(S1-S0)/(nu-1),N=nu*nv,ti=new Int32Array(N),bi=new Int32Array(N);
+  const wS=i=>{if(!adp)return ds;return (cols[Math.min(nu-1,i+1)].s-cols[Math.max(0,i-1)].s)/2;},wD=(C2,j)=>{if(!adp)return (C2.db-C2.da)/(nv-1);return (C2.db-C2.da)*(UN[Math.min(nv-1,j+1)]-UN[Math.max(0,j-1)])/2;};
+  for(let i=0;i<nu;i++){const C2=cols[i],s=C2.s,ins=s>=g0-1e-6&&s<=g1+1e-6,wsi=wS(i);
+   for(let j=0;j<nv;j++){const dd=C2.da+(C2.db-C2.da)*(adp?UN[j]:j/(nv-1)),E=C2.E,Bd=j===0||j===nv-1,ed=dd<E[0]-1e-6?(pDb>0?(E[0]-dd)/pDb:1):(!C2.tp&&dd>E[1]+1e-6)?(pDt>0?(dd-E[1])/pDt:1):0;
+    const f=Bd?0:tap(Math.min(1,ed)),h=fH(s,dd),w=fW(s,dd),mid=(h+w)/2,T=Math.min(imSmax(h-w,minT),tCapV)*f,k=i*nv+j;
+    if(ins&&ed===0&&!Bd&&dd<=E[1]+1e-6){ncore++;tsum+=T;tmin=Math.min(tmin,T);tmax=Math.max(tmax,T);area+=adp?wsi*wD(C2,j):ds*(C2.db-C2.da)/(nv-1);}if(!Bd&&T>0)FAR.push([s,dd,adp?T*wsi*wD(C2,j):T*ds*(C2.db-C2.da)/(nv-1),T]);
+    const p=cl(imXYZ(Fr,s,dd,mid+T/2));ti[k]=VX.length;VX.push(p[0]);VY.push(p[1]);VZ.push(p[2]);
+    if(Bd)bi[k]=ti[k];else{const q=cl(imXYZ(Fr,s,dd,mid-T/2));bi[k]=VX.length;VX.push(q[0]);VY.push(q[1]);VZ.push(q[2]);}}}
+  for(let i=0;i<nu-1;i++)for(let j=0;j<nv-1;j++){const a=i*nv+j,b=(i+1)*nv+j,c=(i+1)*nv+j+1,e=i*nv+j+1;TI.push(ti[a],ti[a]);TJ.push(ti[b],ti[c]);TK.push(ti[c],ti[e]);}
+  for(let i=0;i<nu-1;i++)for(let j=0;j<nv-1;j++){const a=i*nv+j,b=(i+1)*nv+j,c=(i+1)*nv+j+1,e=i*nv+j+1;TB.push([bi[a],bi[c],bi[b]],[bi[a],bi[e],bi[c]]);}
+  [0,nu-1].forEach(ii=>{for(let j=0;j<nv-1;j++){const k0=ii*nv+j,k1=k0+1,T0=ti[k0],T1=ti[k1],B0=bi[k0],B1=bi[k1],F=ii===0?[[T0,T1,B1],[T0,B1,B0]]:[[T0,B1,T1],[T0,B0,B1]];F.forEach(t=>{if(t[0]!==t[1]&&t[1]!==t[2]&&t[0]!==t[2])TC.push(t);});}});});
+ TB.forEach(t=>{TI.push(t[0]);TJ.push(t[1]);TK.push(t[2]);});TC.forEach(t=>{TI.push(t[0]);TJ.push(t[1]);TK.push(t[2]);});
+ const nvx=VX.length,nt=TI.length;let J=TJ,K=TK;
+ const cx=Fr.c[0],cy=Fr.c[1],cz=Fr.c[2];let vol=0;for(let t2=0;t2<nt;t2++){const A1=TI[t2],B1=J[t2],C1=K[t2],ax=VX[A1]-cx,ay=VY[A1]-cy,az=VZ[A1]-cz,bx=VX[B1]-cx,by=VY[B1]-cy,bz=VZ[B1]-cz,qx=VX[C1]-cx,qy=VY[C1]-cy,qz=VZ[C1]-cz;vol+=(ax*(by*qz-bz*qy)-ay*(bx*qz-bz*qx)+az*(bx*qy-by*qx))/6;}
+ if(vol<0){vol=-vol;const tmp=J;J=K;K=tmp;}
+ let se=0,ne=0,emax=0;[[QH,fH],[QW,fW]].forEach(R=>{R[0].forEach(q=>{if(q[3]!==1)return;const e2=R[1](q[0],q[1])-q[2];se+=e2*e2;ne++;emax=Math.max(emax,Math.abs(e2));});});
+ const v=new Float64Array(nvx*3),t=new Uint32Array(nt*3);for(let i=0;i<nvx;i++){v[i*3]=VX[i];v[i*3+1]=VY[i];v[i*3+2]=VZ[i];}for(let i=0;i<nt;i++){t[i*3]=TI[i];t[i*3+1]=J[i];t[i*3+2]=K[i];}
+ /* validasi: interval domain yang titik tengahnya di dalam solid; interval di atas topografi = sudah tertambang */
+ const In=dalamMesh(v,t);let nin=0,nfl=0,lin=0,lfl=0,nab=0,lab=0;X.K.L.forEach(c=>{if(!c.ok)return;const m={x:(c.hw.x+c.fw.x)/2,y:(c.hw.y+c.fw.y)/2,z:(c.hw.z+c.fw.z)/2},L2=c.t-c.f;nfl++;lfl+=L2;
+  if(In(m.x,m.y,m.z)){nin++;lin+=L2;}else if(topoOk()){const zt=tZ(m.x,m.y);if(zt!=null&&m.z>zt){nab++;lab+=L2;}}});
+ /* ekstrapolasi: volume yang jauh (> 15 / 30 m di bidang vein) dari kontak bor */
+ let far15=0,far30=0,vTot=0;{let C2=QH.filter(q=>q[3]===1);if(!C2.length)C2=QH;const Gd={},c2=10,key=(a,b)=>Math.floor(a/c2)+'|'+Math.floor(b/c2);C2.forEach(q=>{const k=key(q[0],q[1]);(Gd[k]||(Gd[k]=[])).push(q);});
+  const dmin=(s,dd)=>{const i0=Math.floor(s/c2),j0=Math.floor(dd/c2);let best=1e18;for(let r=0;r<12;r++){for(let i=i0-r;i<=i0+r;i++)for(let j=j0-r;j<=j0+r;j++){if(Math.max(Math.abs(i-i0),Math.abs(j-j0))!==r)continue;const L3=Gd[i+'|'+j];if(L3)L3.forEach(q=>{const e=(q[0]-s)**2+(q[1]-dd)**2;if(e<best)best=e;});}if(best<1e18&&Math.sqrt(best)<=r*c2)break;}return Math.sqrt(best);};
+  FAR.forEach(c=>{const w=c[2];vTot+=w;const dm=dmin(c[0],c[1]);if(dm>15)far15+=w;if(dm>30)far30+=w;});}
+ const dip=Math.acos(Math.min(1,Math.abs(Fr.n[2])))*180/Math.PI;let dd2=Math.atan2(Fr.n[0],Fr.n[1])*180/Math.PI;if(Fr.n[2]<0)dd2+=180;dd2=(dd2+360)%360;
+ return {v,t,fr:Fr,fH,fW,peta:{far:FAR,kol:KOL,QH:QH.filter(q=>q[3]===1),QW:QW.filter(q=>q[3]===1)},st:{vol,area,tav:ncore?tsum/ncore:0,tmin:ncore?tmin:0,tmax,nH:X.H.length,nW:X.W.length,nHt:TH.length,nWt:TW.length,nc:X.nc,rms:ne?Math.sqrt(se/ne):0,emax,
+  njAll:X.njAll||0,nj:X.nj||0,tCap:isFinite(tCapV)?tCapV:0,tObs,nin,nfl,lin,lfl,nab,lab,far15:vTot?far15/vTot:0,far30:vTot?far30/vTot:0,nnc,dip,ddir:dd2,sExt:smax-smin,ngr:GR.length,aoi,aoiA,res,nu:nuT,nvv:nvT,adp:!!P.adp,adpK:+P.adpK||4,nnode:nvx,clamp:nclamp,ms:performance.now()-t0}};}
+/* uji titik di dalam mesh: sinar +z, grid xy 2 m */
+function dalamMesh(v,t){const g2=2,C=new Map();let x0=1e18,y0=1e18;for(let i=0;i<v.length;i+=3){x0=Math.min(x0,v[i]);y0=Math.min(y0,v[i+1]);}
+ for(let k=0;k<t.length;k+=3){let a0=1e18,a1=-1e18,b0=1e18,b1=-1e18;for(let j=0;j<3;j++){const p=t[k+j]*3;a0=Math.min(a0,v[p]);a1=Math.max(a1,v[p]);b0=Math.min(b0,v[p+1]);b1=Math.max(b1,v[p+1]);}
+  for(let a=Math.floor((a0-x0)/g2);a<=Math.floor((a1-x0)/g2);a++)for(let b=Math.floor((b0-y0)/g2);b<=Math.floor((b1-y0)/g2);b++){const kk=a+'|'+b;(C.get(kk)||C.set(kk,[]).get(kk)).push(k);}}
+ return (x,y,z)=>{x+=1.37e-4;y+=2.71e-4;const L2=C.get(Math.floor((x-x0)/g2)+'|'+Math.floor((y-y0)/g2));if(!L2)return false;let n=0;
+  for(const k of L2){const A=t[k]*3,B=t[k+1]*3,Cc=t[k+2]*3,d=(v[B+1]-v[Cc+1])*(v[A]-v[Cc])+(v[Cc]-v[B])*(v[A+1]-v[Cc+1]);if(Math.abs(d)<1e-12)continue;
+   const l1=((v[B+1]-v[Cc+1])*(x-v[Cc])+(v[Cc]-v[B])*(y-v[Cc+1]))/d,l2=((v[Cc+1]-v[A+1])*(x-v[Cc])+(v[A]-v[Cc])*(y-v[Cc+1]))/d,l3=1-l1-l2;if(l1<0||l2<0||l3<0)continue;
+   if(l1*v[A+2]+l2*v[B+2]+l3*v[Cc+2]>z)n++;}return n%2===1;};}
+
+/* ---------- bangun domain → wireframe Ore Works ---------- */
+function wiDom(d){return WI.find(w=>w.im===d.id)||WI.find(w=>w.nm===d.nm+' (implisit)');}
+function bangun(d,diam){const P=imPar(d);let R;try{const X=titik(d,P);R=imBuild(d,P,X);R.X=X;}catch(e){IM.R[d.id]={err:e.message};if(!diam)T_('Implisit "'+d.nm+'": '+e.message);gambarSemua();return null;}
+ IM.R[d.id]=R;let w=wiDom(d);const nm=d.nm+' (implisit)';
+ if(w){w.v=R.v;w.t=R.t;w.nm=nm;w.col=d.col;w.im=d.id;w._ix=null;wiBuild(w);}else{w=wiAdd({nm,v:R.v,t:R.t,col:d.col,op:IM.opt.op,dom:d.nm,im:d.id});}
+ w.on=d.on!==false;if(w.g)w.g.visible=w.on;wiList();if(window.anSched)anSched();if(window.SCR)SCR();gambarSemua();return R;}
+function bangunSemua(){const L2=IM.doms.slice().sort((a,b)=>(isKid(a)?1:0)-(isKid(b)?1:0));let n=0;for(const d of L2)if(bangun(d,true))n++;T_(n+' dari '+IM.doms.length+' domain dibangun.');}
+let jadwal=null;const ubah=d=>{if(!IM.opt.auto||!d)return;clearTimeout(jadwal);jadwal=setTimeout(()=>{bangun(d,true);},350);};
+function domBaru(o){const id=IM.nid++,d=Object.assign({id,nm:'Vein '+id,col:WARNA[(id-1)%WARNA.length],src:'geo',kol:'',kode:[],el:'',cut:0.5,dil:2,minL:1,gap:3,par:null,x:[],p:{},on:true},o||{});
+ if(!d.kol){const k=kolomGeo();d.kol=k.find(c=>/vein|urat|domain|zona/i.test(c))||k[0]||'';}if(!d.el){const a=kolomAs();d.el=a.find(c=>/^au/i.test(c))||a[0]||'';}
+ IM.doms.push(d);IM.act=d.id;return d;}
+
+/* ---------- jendela Studio Implisit ---------- */
+const css=document.createElement('style');css.textContent=`
+#imw{position:fixed;inset:0;z-index:900;display:none;flex-direction:column;background:#f4f6fa;font:12.5px/1.35 Inter,"Segoe UI",Arial,sans-serif;color:#1b2a4e}
+#imw.on{display:flex}#imHd{flex:none;display:flex;align-items:center;gap:10px;height:38px;padding:0 10px 0 14px;background:#1b2a4e;color:#fff}
+#imHd b{font-size:14px}#imHd .sub{color:#c5d3ea}#imHd button{margin:0 0 0 auto;height:28px;border:1px solid #3d5488;border-radius:6px;background:#24386a;color:#fff;padding:0 10px}
+#imHd button+button{margin-left:6px}
+#imTop{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 10px;background:#fbfcfe;border-bottom:1px solid #d5dce8}
+#imTop label{display:flex;align-items:center;gap:4px;margin:0}#imTop select,#imTop input{height:26px}#imTop input[type=number]{width:62px}#imTop .sep{width:1px;height:22px;background:#d5dce8}
+#imTop button{height:26px;margin:0;padding:0 9px}#imTop .pri{background:#1f6feb;color:#fff;border-color:#1f6feb;font-weight:700}
+#imKode{min-width:110px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}#imKode.kosong{color:#b3261e;font-weight:400}
+#imKodeP{position:fixed;z-index:2001;display:none;max-height:300px;overflow:auto;min-width:180px;background:#fff;border:1px solid #cfd8e6;border-radius:8px;box-shadow:0 10px 28px #0003;padding:6px;font:12px Inter,Arial,sans-serif}
+#imKodeP label{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:4px;margin:0}#imKodeP label:hover{background:#eaf2ff}#imKodeP small{margin-left:auto;color:#5C6672}
+#imBody{flex:1;min-height:0;display:grid;grid-template-columns:290px 1fr 330px}
+#imL,#imR{min-height:0;overflow:auto;background:#fff;border-right:1px solid #d5dce8}#imR{border-right:0;border-left:1px solid #d5dce8}
+#imL h4,#imR h4{margin:0;padding:7px 10px;background:#1b2a4e;color:#fff;font-size:12px;display:flex;align-items:center;gap:6px}#imL h4 button,#imR h4 button{margin:0 0 0 auto;height:22px;padding:0 8px;font-size:11px}
+#imCv{position:relative;min-width:0;min-height:0;background:#e9edf3}
+.imd{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #edf0f5;cursor:pointer}.imd.on{background:#eaf2ff}.imd i{flex:none;width:10px;height:10px;border-radius:3px}
+.imd b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.imd small{color:#5C6672;white-space:nowrap}.imd .kid{padding-left:14px}
+#imTab{width:100%;border-collapse:collapse;font-size:11.5px}#imTab th{position:sticky;top:0;background:#eef2f8;text-align:left;padding:3px 6px;font-weight:600}#imTab td{padding:2px 6px;border-bottom:1px solid #f0f2f6;font-variant-numeric:tabular-nums}
+#imTab tr.off td{color:#9aa3ad;text-decoration:line-through}#imTab td:first-child{width:18px}
+#imPeta{display:block;width:100%;height:190px;border-top:1px solid #edf0f5}
+.imsec{margin:8px 10px 3px;font-weight:700;font-size:11.5px;color:#1b2a4e;border-bottom:1px solid #e3e8f0;padding-bottom:2px}
+.imf{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px;padding:0 10px}.imf.g3{grid-template-columns:1fr 1fr 1fr}.imf label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#3d4a63;margin:0}
+.imf input,.imf select{height:25px;width:100%;box-sizing:border-box}.imsw{display:flex!important;flex-direction:row!important;align-items:center;gap:5px}.imsw input{width:auto!important;height:auto!important}
+.imh{padding:4px 10px;color:#5C6672;font-size:11px}.imst{margin:8px 10px;padding:7px 9px;border-radius:7px;background:#f3f6fb;border:1px solid #dbe3ef;line-height:1.45;font-size:11.5px}
+.imst .w{color:#8a4b00}.imbtn{display:flex;gap:6px;padding:6px 10px}.imbtn button{flex:1;height:28px;margin:0}.imbtn .pri{background:#1f6feb;color:#fff;border-color:#1f6feb;font-weight:700}
+#otbstMenu{position:fixed;z-index:2000;display:none;min-width:290px;background:#fff;border:1px solid #cfd8e6;border-radius:9px;box-shadow:0 12px 34px #0003;padding:5px;font:12.5px Inter,Arial,sans-serif}
+#otbstMenu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin:0;padding:7px 10px;border:0;border-radius:6px;background:transparent;text-align:left;color:#1b2a4e;height:auto}
+#otbstMenu button:hover{background:#eaf2ff}#otbstMenu b{font-size:13px}#otbstMenu span{color:#5C6672;font-size:11.5px}
+canvas.im3d{position:fixed!important;z-index:905!important}`;
+document.head.appendChild(css);
+const wn=document.createElement('div');wn.id='imw';wn.innerHTML=
+ '<div id="imHd"><b>Studio Implisit</b><span class="sub">permukaan HW / FW dari kontak bor (RBF) · solid di antaranya</span><button id="imKeEks" title="Pindah ke Studio Eksplisit (penampang & string)">&#8644; Eksplisit</button><button id="imX">&#10005; Tutup</button></div>'+
+ '<div id="imTop"><label>Domain <select id="imDom"></select></label><button id="imBaru" title="Domain vein baru">+ Domain</button><label title="Cabang: menyambung ke induk & ikut union">Cabang dari <select id="imPar"></select></label><span class="sep"></span>'+
+ '<label title="Interval yang menjadi vein">Interval <select id="imSrc"><option value="geo">kode log geologi</option><option value="as">kadar ≥ cut-off</option></select></label>'+
+ '<span id="imSrcGeo" style="display:contents"><label>Kolom <select id="imKol"></select></label><label>Kode <button id="imKode" title="Pilih kode log geologi yang menjadi vein domain ini (boleh lebih dari satu)">(pilih kode)</button></label><label title="Interval kode yang sama berjarak ≤ ini digabung">Gabung ≤ <input id="imGap" type="number" step="any" min="0"> m</label></span>'+
+ '<span id="imSrcAs" style="display:contents"><label>Unsur <select id="imEl"></select></label><label>Cut-off <input id="imCut" type="number" step="any" min="0"></label><label title="Sisipan di bawah cut-off yang boleh ikut (dilusi)">Dilusi maks <input id="imDil" type="number" step="any" min="0"> m</label><label>Panjang min <input id="imMinL" type="number" step="any" min="0"> m</label></span>'+
+ '<span class="sep"></span><button id="imGo" class="pri" title="Bangun solid domain aktif">&#9654; Bangun</button><button id="imGoAll" title="Bangun semua domain">&#9654;&#9654; Semua</button></div>'+
+ '<div id="imBody"><div id="imL"><h4>Domain vein<button id="imHapus" title="Hapus domain aktif">Hapus</button></h4><div id="imList"></div>'+
+ '<h4>Intercept domain aktif<span id="imNi" style="font-weight:400;color:#c5d3ea"></span></h4><div style="max-height:34vh;overflow:auto"><table id="imTab"><thead><tr><th></th><th>Lubang</th><th>Dari</th><th>Ke</th><th>Tebal</th></tr></thead><tbody></tbody></table></div>'+
+ '<h4>Peta tebal (bidang vein)</h4><canvas id="imPeta"></canvas><div class="imh" id="imPetaK">Warna = tebal model · titik = kontak bor · garis = batas model</div></div>'+
+ '<div id="imCv"></div><div id="imR"><h4>Parameter domain aktif</h4><div id="imPrm"></div><h4>Hasil</h4><div id="imHasil"></div></div></div>';
+document.body.appendChild(wn);
+/* bar atas */
+function isiTop(){const d=dom(IM.act);g('imDom').innerHTML=IM.doms.map(x=>'<option value="'+x.id+'">'+esc(x.nm)+'</option>').join('')||'<option>(belum ada)</option>';if(d)g('imDom').value=d.id;
+ g('imPar').innerHTML='<option value="">(domain sendiri)</option>'+IM.doms.filter(x=>d&&x.id!==d.id&&!x.par).map(x=>'<option value="'+x.id+'">'+esc(x.nm)+'</option>').join('');g('imPar').value=d&&d.par?d.par:'';
+ const kg=kolomGeo(),ka=kolomAs();g('imKol').innerHTML=kg.map(c=>'<option>'+esc(c)+'</option>').join('');g('imEl').innerHTML=ka.map(c=>'<option>'+esc(c)+'</option>').join('');
+ if(d){g('imSrc').value=d.src;g('imKol').value=d.kol;g('imKode').textContent=d.kode.length?d.kode.join(', '):'(pilih kode)';g('imKode').classList.toggle('kosong',!d.kode.length);g('imGap').value=d.gap;g('imEl').value=d.el;g('imCut').value=d.cut;g('imDil').value=d.dil;g('imMinL').value=d.minL;}
+ g('imSrcGeo').style.display=d&&d.src==='as'?'none':'contents';g('imSrcAs').style.display=d&&d.src==='as'?'contents':'none';}
+const ubahD=(f)=>{const d=dom(IM.act);if(!d)return;f(d);isiTop();gambarSemua();ubah(d);};
+g('imDom').onchange=e=>{IM.act=+e.target.value;isiTop();gambarSemua();};
+g('imBaru').onclick=()=>{const d=domBaru();d.nm=prompt('Nama domain vein baru:',d.nm)||d.nm;isiTop();gambarSemua();};
+g('imPar').onchange=e=>ubahD(d=>{d.par=+e.target.value||null;});
+g('imSrc').onchange=e=>ubahD(d=>{d.src=e.target.value;});
+g('imKol').onchange=e=>ubahD(d=>{d.kol=e.target.value;d.kode=[];});
+{const pop=document.createElement('div');pop.id='imKodeP';document.body.appendChild(pop);
+ g('imKode').onclick=e=>{e.stopPropagation();const d=dom(IM.act);if(!d)return;if(pop.style.display==='block'){pop.style.display='none';return;}const K=kodeDi(d.kol),r=g('imKode').getBoundingClientRect();
+  pop.innerHTML='<div class="imh" style="padding:2px 4px 5px">Kode di kolom <b>'+esc(d.kol)+'</b> (jumlah interval)</div>'+K.map(([k,n])=>'<label><input type="checkbox" value="'+esc(k)+'"'+(d.kode.includes(k)?' checked':'')+'>'+esc(k)+' <small>'+n+'</small></label>').join('');
+  pop.style.left=r.left+'px';pop.style.top=(r.bottom+3)+'px';pop.style.display='block';
+  pop.querySelectorAll('input').forEach(i=>i.onchange=()=>ubahD(d2=>{d2.kode=[...pop.querySelectorAll('input:checked')].map(x=>x.value);if(d2.kode.length===1&&/^Vein \d+$/.test(d2.nm))d2.nm=d2.kode[0];}));};
+ document.addEventListener('mousedown',e=>{if(!pop.contains(e.target)&&e.target!==g('imKode'))pop.style.display='none';});}
+for(const [id,k] of [['imGap','gap'],['imCut','cut'],['imDil','dil'],['imMinL','minL']])g(id).onchange=e=>ubahD(d=>{d[k]=Math.max(0,+e.target.value||0);});
+g('imEl').onchange=e=>ubahD(d=>{d.el=e.target.value;});
+g('imGo').onclick=()=>{const d=dom(IM.act);if(d){const R=bangun(d);if(R)T_('Solid "'+d.nm+'": '+fmt(R.st.vol)+' m³ · '+fmt(R.st.vol*IM.opt.sg)+' t ('+(R.st.ms/1000).toFixed(1).replace('.',',')+' s).');}};
+g('imGoAll').onclick=bangunSemua;
+g('imHapus').onclick=()=>{const d=dom(IM.act);if(!d||!confirm('Hapus domain "'+d.nm+'" beserta solidnya?'))return;const w=wiDom(d);if(w){wiDispose(w);WI.splice(WI.indexOf(w),1);wiList();}
+ IM.doms=IM.doms.filter(x=>x!==d);IM.doms.forEach(x=>{if(x.par===d.id)x.par=null;});delete IM.R[d.id];IM.act=IM.doms[0]?IM.doms[0].id:null;isiTop();gambarSemua();};
+/* daftar domain + tabel intercept + peta */
+function gambarDaftar(){g('imList').innerHTML=IM.doms.length?IM.doms.filter(d=>!d.par).flatMap(d=>[d].concat(IM.doms.filter(k=>k.par===d.id))).map(d=>{const R=IM.R[d.id],st=R&&R.st?fmt(R.st.vol)+' m³':(R&&R.err?'<span style="color:#b3261e">gagal</span>':'belum');
+  return '<div class="imd'+(d.id===IM.act?' on':'')+'" data-id="'+d.id+'"><input type="checkbox" '+(d.on!==false?'checked':'')+' title="Tampilkan solid"><i style="background:'+d.col+'"></i><b class="'+(d.par?'kid':'')+'">'+(d.par?'↳ ':'')+esc(d.nm)+'</b><small>'+st+'</small></div>';}).join(''):'<div class="imh">Belum ada domain. Klik <b>+ Domain</b>, lalu pilih kolom & kode log geologi vein (atau kadar ≥ cut-off).</div>';
+ g('imList').querySelectorAll('.imd').forEach(r=>{const d=dom(+r.dataset.id);r.onclick=e=>{if(e.target.tagName==='INPUT')return;IM.act=d.id;isiTop();gambarSemua();};r.querySelector('input').onchange=e=>{d.on=e.target.checked;const w=wiDom(d);if(w){w.on=d.on;if(w.g)w.g.visible=d.on;wiList();}};});}
+function gambarTabel(){const d=dom(IM.act),tb=g('imTab').tBodies[0];if(!d){tb.innerHTML='';g('imNi').textContent='';return;}let K;try{K=kontak(d).L;}catch(e){K=[];}
+ g('imNi').textContent=' · '+K.filter(c=>c.ok).length+' dari '+K.length+' dipakai';
+ tb.innerHTML=K.map(c=>'<tr class="'+(c.ok?'':'off')+'"><td><input type="checkbox" '+(c.ok?'checked':'')+' data-k="'+esc(c.key)+'" title="Pakai / keluarkan interval ini"></td><td>'+esc(c.id)+'</td><td>'+fmt(c.f,2)+'</td><td>'+fmt(c.t,2)+'</td><td>'+fmt(c.tb,2)+'</td></tr>').join('')||'<tr><td colspan="5" class="imh">Tidak ada interval dengan kode / kadar ini.</td></tr>';
+ tb.querySelectorAll('input').forEach(i=>i.onchange=()=>ubahD(d2=>{const X=new Set(d2.x||[]);if(i.checked)X.delete(i.dataset.k);else X.add(i.dataset.k);d2.x=[...X];}));}
+function gambarPeta(){const cv=g('imPeta'),R=IM.R[IM.act],r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=Math.max(10,r.width*dpr);cv.height=Math.max(10,r.height*dpr);const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,r.width,r.height);
+ if(!R||!R.peta){x.fillStyle='#8a94a6';x.font='11px Inter,Arial';x.fillText('Bangun solid untuk melihat peta tebal',10,20);return;}const P=R.peta;let s0=1e18,s1=-1e18,d0=1e18,d1=-1e18;P.kol.forEach(K=>K.forEach(c=>{s0=Math.min(s0,c[0]);s1=Math.max(s1,c[0]);d0=Math.min(d0,c[1]);d1=Math.max(d1,c[2]);}));
+ const w=r.width-16,h=r.height-16,sc=Math.min(w/Math.max(1,s1-s0),h/Math.max(1,d1-d0)),X=s=>8+(s-s0)*sc+(w-(s1-s0)*sc)/2,Y=dd=>8+(d1-dd)*sc+(h-(d1-d0)*sc)/2,tm=Math.max(0.5,R.st.tmax||1);
+ const cs=Math.max(2,R.st.res*sc);for(const c of P.far){const t=c[3]/tm;x.fillStyle='hsl('+(220-200*Math.min(1,t))+',75%,'+(78-28*Math.min(1,t))+'%)';x.fillRect(X(c[0])-cs/2,Y(c[1])-cs/2,cs+0.5,cs+0.5);}
+ x.strokeStyle='#1b2a4e';x.lineWidth=1;P.kol.forEach(K=>{x.beginPath();K.forEach((c,i)=>i?x.lineTo(X(c[0]),Y(c[1])):x.moveTo(X(c[0]),Y(c[1])));for(let i=K.length-1;i>=0;i--)x.lineTo(X(K[i][0]),Y(K[i][2]));x.closePath();x.stroke();});
+ x.fillStyle='#111';P.QH.forEach(q=>{x.beginPath();x.arc(X(q[0]),Y(q[1]),2.2,0,7);x.fill();});
+ g('imPetaK').textContent='Warna = tebal model (biru tipis → merah ±'+fmt(tm,1)+' m) · titik = kontak bor · garis = batas model · atas = arah naik dip';}
+/* parameter (menu GC-Ex, gaya Ore Works) */
+function gambarPrm(){const d=dom(IM.act),el=g('imPrm');if(!d){el.innerHTML='<div class="imh">Pilih / buat domain dulu.</div>';return;}const P=imPar(d),R=IM.R[d.id],au=R&&R.st&&P.ori!=='man'?R.st:null;
+ const n=(k,v,t,st)=>'<input type="number" step="'+(st||'any')+'" data-k="'+k+'" value="'+v+'"'+(k==='aoi'?' placeholder="otomatis'+(R&&R.st&&R.st.aoiA?' ('+String(R.st.aoiA).replace('.',',')+')':'')+'"':'')+(t?' title="'+t+'"':'')+'>',sw=(k,v,lb,t)=>'<label class="imsw"'+(t?' title="'+t+'"':'')+'><input type="checkbox" data-k="'+k+'" '+(v?'checked':'')+'>'+lb+'</label>';
+ let h='<div class="imsec">Batas model</div><div class="imf"><label title="Model diperpanjang sejauh ini dari data terluar lalu dipotong tegas. Celah antar data > 2× radius = model diputus. Kosong = otomatis: maks(10, 0,55 × jarak pagar bor).">Radius searah strike (m)'+n('aoi',P.aoi!=null?P.aoi:'')+'</label><label title="Jarak penipisan ke nol di bawah (dan di atas bila tidak dipotong topografi)">Pinch-out searah dip (m)'+n('pinD',P.pinD)+'</label>'+
+  '<label>Ujung atas<select data-k="top"><option value="topo"'+(P.top==='topo'?' selected':'')+'>Potong di topografi'+(topoOk()?'':' (belum ada)')+'</option><option value="pinch"'+(P.top==='pinch'?' selected':'')+'>Pinch-out</option></select></label><label>Tebal minimum (m)'+n('minT',P.minT)+'</label></div>';
+ if(isKid(d))h+='<div class="imf" style="margin-top:5px">'+sw('join',P.join!==false,'Sambung ke induk ('+esc(dom(d.par).nm)+')')+'<label title="Kontak induk di lubang tanpa cabang, dalam jarak ini dari data cabang, menjadi titik percabangan">Jarak sambung (m)'+n('joinD',P.joinD)+'</label></div>';
+ h+='<div class="imsec">Orientasi vein</div><div class="imf"><label>Sumber<select data-k="ori"><option value="auto"'+(P.ori!=='man'?' selected':'')+'>Otomatis dari data</option><option value="man"'+(P.ori==='man'?' selected':'')+'>Diisi manual</option></select></label>'+
+  (P.ori==='man'?'<div class="imf" style="padding:0">'+'<label>Dip (°)'+n('dip',P.dip)+'</label><label>Dip dir (°)'+n('ddir',P.ddir)+'</label></div>':'<div class="imh" style="padding:14px 0 0">'+(au?'Dip '+au.dip.toFixed(0)+'° → '+au.ddir.toFixed(0)+'° (strike '+((au.ddir+270)%360).toFixed(0)+'°) <a href="javascript:void(0)" id="imOriC">pakai &amp; ubah</a>':'dihitung saat dibangun')+'</div>')+'</div>';
+ h+='<div class="imsec">Elipsoid RBF (anisotropi di bidang vein)</div><div class="imf g3"><label title="Sumbu panjang, searah pitch">Mayor (m)'+n('aS',P.aS)+'</label><label>Semi-mayor (m)'+n('aD',P.aD)+'</label><label title="Sudut sumbu mayor dari arah strike di bidang vein (0 = strike, 90 = dip)">Pitch (°)'+n('pitch',P.pitch)+'</label></div><div class="imh">Mayor &gt; semi-mayor = permukaan lebih menerus searah pitch; 1 : 1 = isotropik. Tebal tetap dari jarak HW–FW.</div>';
+ h+='<div class="imsec">RBF &amp; mesh</div><div class="imf"><label>Resolusi mesh (m)'+n('res',P.res)+'</label><label>Kehalusan permukaan<select data-k="smo">'+[[0,'Tepat di data'],[1,'Halus (bawaan)'],[2,'Sangat halus'],[3,'Maksimum']].map(o=>'<option value="'+o[0]+'"'+(+P.smo===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'+
+  sw('adp',P.adp,'Resolusi adaptif','Segitiga rapat di dekat kontak bor, makin jarang menjauh dari data')+'<label>Jarang maks. (× resolusi)'+n('adpK',P.adpK)+'</label>'+sw('rob',P.rob!==false,'Anti-spike / hierarki data')+'<label title="0 = otomatis (1,5 × tebal kontak terbesar)">Batas tebal (m)'+n('tCap',P.tCap!=null?P.tCap:'',)+'</label></div>'+
+  '<div class="imbtn"><button id="imDef" title="Kembalikan parameter bawaan untuk domain ini">&#8634; Bawaan</button><button id="imAll" title="Pakai parameter ini untuk semua domain">Pakai untuk semua</button></div>';
+ h+='<div class="imsec">Tampilan &amp; tonase</div><div class="imf"><label>SG untuk tonase<input type="number" step="any" min="0" id="imSG" value="'+IM.opt.sg+'"></label><label>Opasitas<input type="range" min="0.1" max="1" step="0.05" id="imOp" value="'+IM.opt.op+'"></label>'+
+  '<label class="imsw" title="Bangun ulang otomatis saat parameter / interval berubah"><input type="checkbox" id="imAuto" '+(IM.opt.auto?'checked':'')+'>Jalankan ulang otomatis</label></div>';
+ el.innerHTML=h;
+ el.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>ubahD(d2=>{const k=i.dataset.k;d2.p=d2.p||{};d2.p[k]=i.type==='checkbox'?i.checked:(i.tagName==='SELECT'&&!/^(top|ori)$/.test(k))?+i.value:i.type==='number'?(i.value===''?null:+i.value):i.value;if(k==='res')d2.p.res=Math.max(0.5,+i.value||2);gambarPrm();}));
+ const oc=g('imOriC');if(oc)oc.onclick=()=>ubahD(d2=>{d2.p=Object.assign(d2.p||{},{ori:'man',dip:+au.dip.toFixed(1),ddir:+au.ddir.toFixed(1)});gambarPrm();});
+ g('imDef').onclick=()=>ubahD(d2=>{d2.p={};gambarPrm();});g('imAll').onclick=()=>{IM.doms.forEach(x=>{if(x!==d)x.p=Object.assign({},d.p);});T_('Parameter "'+d.nm+'" dipakai untuk '+(IM.doms.length-1)+' domain lain.');if(IM.opt.auto)bangunSemua();};
+ g('imSG').onchange=e=>{IM.opt.sg=+e.target.value||2.6;gambarHasil();gambarDaftar();};g('imOp').oninput=e=>{IM.opt.op=+e.target.value;for(const w of WI)if(w.im){w.op=IM.opt.op;wiBuild(w);}};g('imAuto').onchange=e=>{IM.opt.auto=e.target.checked;};}
+function gambarHasil(){const d=dom(IM.act),el=g('imHasil'),R=d&&IM.R[d.id];if(!d){el.innerHTML='';return;}if(!R){el.innerHTML='<div class="imh">Belum dibangun. Klik <b>▶ Bangun</b>.</div>';return;}if(R.err){el.innerHTML='<div class="imst w">'+esc(R.err)+'</div>';return;}
+ const S=R.st,P=imPar(d),sg=IM.opt.sg;let h='<div class="imst"><b>'+esc(d.nm)+'</b>: bidang rata-rata dip '+S.dip.toFixed(0)+'° ke '+S.ddir.toFixed(0)+'° · panjang data sepanjang strike '+fmt(S.sExt)+' m<br>'+
+  'Volume <b>'+fmt(S.vol)+' m³</b> · tonase <b>'+fmt(S.vol*sg)+' t</b> (SG '+String(sg).replace('.',',')+') · luas bidang '+fmt(S.area)+' m²<br>'+
+  'Tebal (zona data): rata-rata '+fmt(S.tav,2)+' · min '+fmt(S.tmin,2)+' · maks '+fmt(S.tmax,2)+' m'+(S.tCap?' · dibatasi '+fmt(S.tCap,1)+' m':'')+'<br>'+
+  'Titik: '+S.nc+' kontak bor'+(S.nj?' + '+S.nj+' titik sambung ke induk':'')+' → '+S.nHt+' / '+S.nWt+' titik RBF · selisih di kontak RMS '+fmt(S.rms,2)+' m (maks '+fmt(S.emax,2)+')<br>'+
+  'Interval di dalam solid: <b>'+S.nin+' / '+S.nfl+'</b> ('+(S.lfl?(100*S.lin/S.lfl).toFixed(0):0)+'% panjang)'+(S.nab?' · '+S.nab+' di atas topografi (tertambang)':'')+'<br>'+
+  'Volume jauh dari kontak bor: '+(S.far15*100).toFixed(0)+'% &gt; 15 m · '+(S.far30*100).toFixed(0)+'% &gt; 30 m'+(S.far15>0.25?' <span class="w">— sebagian besar ekstrapolasi; perkecil radius strike / pinch-out bila data jarang</span>':'')+
+  '<br><small>'+'radius strike '+fmt(S.aoi,1)+' m'+(S.aoiA?' (otomatis)':'')+' · pinch-out '+fmt(P.pinD,1)+' m · '+(S.ngr>1?'<b>'+S.ngr+' bagian terpisah</b> (celah strike &gt; '+fmt(2*S.aoi)+' m) · ':'')+(S.adp?'mesh adaptif '+fmt(S.nnode)+' verteks':'mesh '+S.nu+' × '+S.nvv+' node')+', resolusi '+fmt(S.res,1)+' m'+(S.clamp?' · '+S.clamp+' verteks dipotong topografi':'')+' · '+(S.ms/1000).toFixed(2).replace('.',',')+' s</small></div>';
+ h+='<div class="imbtn"><button data-x="obj" title="Leapfrog / umum">&#8681; OBJ</button><button data-x="dxf" title="3DFACE">&#8681; DXF</button><button data-x="str" title="Surpac string + DTM">&#8681; STR+DTM</button></div>';
+ const roots=IM.doms.filter(x=>!x.par);if(IM.doms.length>1)h+='<div class="imbtn"><button id="imUni" title="Satukan semua domain (induk + cabang) menjadi satu solid (boolean union)">&#8746; Union semua domain → 1 solid</button></div>';
+ h+='<div class="imh">Solid tampil di 3D dan masuk daftar <b>Wireframe</b> (ikut Project, Tabel atribut, ekspor). Tebal diukur tegak lurus bidang rata-rata vein.</div>';
+ el.innerHTML=h;el.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>ekspor(d,R,b.dataset.x));const u=g('imUni');if(u)u.onclick=unionSemua;}
+function gambarSemua(){if(!IM.on)return;gambarDaftar();gambarTabel();gambarPrm();gambarHasil();requestAnimationFrame(gambarPeta);}
+/* ekspor (format sama dengan solid Studio eksplisit / GC-Ex) */
+function ekspor(d,R,fx){const slug=String(d.nm).replace(/[^A-Za-z0-9_-]+/g,'_'),f3=v=>(+v).toFixed(3),V=R.v,T=R.t;
+ if(fx==='obj'){const r=['# Ore Works - '+d.nm+' (implisit RBF HW/FW)','o '+slug];for(let i=0;i<V.length;i+=3)r.push('v '+f3(V[i])+' '+f3(V[i+1])+' '+f3(V[i+2]));for(let i=0;i<T.length;i+=3)r.push('f '+(T[i]+1)+' '+(T[i+1]+1)+' '+(T[i+2]+1));fmDl(r.join('\r\n')+'\r\n',slug+'_implisit.obj','text/plain');return;}
+ if(fx==='dxf'){const r=['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','ENTITIES'],P2=k=>[V[k*3],V[k*3+1],V[k*3+2]];for(let i=0;i<T.length;i+=3){const a=P2(T[i]),b=P2(T[i+1]),c=P2(T[i+2]);r.push('0','3DFACE','8',slug,'10',f3(a[0]),'20',f3(a[1]),'30',f3(a[2]),'11',f3(b[0]),'21',f3(b[1]),'31',f3(b[2]),'12',f3(c[0]),'22',f3(c[1]),'32',f3(c[2]),'13',f3(c[0]),'23',f3(c[1]),'33',f3(c[2]));}r.push('0','ENDSEC','0','EOF');fmDl(r.join('\r\n')+'\r\n',slug+'_implisit.dxf','application/dxf');return;}
+ const sn=slug.toLowerCase(),dt=new Date(),sd=('0'+dt.getDate()).slice(-2)+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()]+'-'+String(dt.getFullYear()).slice(-2),S=[sn+','+sd+',,','0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000'];
+ for(let i=0;i<V.length;i+=3)S.push('1, '+f3(V[i+1])+', '+f3(V[i])+', '+f3(V[i+2])+',');S.push('0, 0.000, 0.000, 0.000,','0, 0.000, 0.000, 0.000, END');
+ const tri=[];for(let i=0;i<T.length;i+=3)tri.push([T[i],T[i+1],T[i+2]]);const E=new Map(),key=(a,b)=>a<b?a+'_'+b:b+'_'+a;tri.forEach((a,ti)=>{[[a[0],a[1]],[a[1],a[2]],[a[2],a[0]]].forEach(e=>{const k=key(e[0],e[1]);(E.get(k)||E.set(k,[]).get(k)).push(ti);});});
+ const Dt=[sn+'.str,'+sd+',,','0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000','OBJECT, 1,','TRISOLATION, 1, neighbours=yes,validated=true,closed=yes'];tri.forEach((a,ti)=>{const nb=[[a[0],a[1]],[a[1],a[2]],[a[2],a[0]]].map(e=>{for(const q of E.get(key(e[0],e[1])))if(q!==ti)return q+1;return 0;});Dt.push((ti+1)+', '+(a[0]+1)+', '+(a[1]+1)+', '+(a[2]+1)+', '+nb.join(', ')+',');});Dt.push('END');
+ fmDl(S.join('\r\n')+'\r\n',sn+'_implisit.str','text/plain');setTimeout(()=>fmDl(Dt.join('\r\n')+'\r\n',sn+'_implisit.dtm','text/plain'),500);}
+/* union semua domain (manifold, sama dengan union Studio eksplisit) */
+async function unionSemua(){const L2=IM.doms.map(d=>IM.R[d.id]).filter(R=>R&&R.v);if(L2.length<2){T_('Perlu ≥ 2 domain yang sudah dibangun.');return;}
+ if(!window.MFB){T_('Mesin boolean tidak tersedia di build ini.');return;}T_('Menghitung union '+L2.length+' domain…');
+ try{await MFB.load();const W3=MFB.mod,F=L2.map((R,i)=>({v:R.v,t:R.t,nv:R.v.length/3,nt:R.t.length/3,name:'domain '+(i+1)})),c=MFB._pusat(F),U=W3.Manifold.union(F.map(f=>MFB._keMf(W3,f,c)));const R=MFB._pecah(U,c);const V=[],T=[];R.bodies.forEach(b=>{const o=V.length/3;for(const x of b.v)V.push(x);for(const x of b.t)T.push(x+o);});
+  const nm='Union implisit ('+L2.length+' domain)';let w=WI.find(x=>x.nm===nm||x.imU);if(w){w.v=Float64Array.from(V);w.t=Uint32Array.from(T);w.nm=nm;wiBuild(w);}else w=wiAdd({nm,v:Float64Array.from(V),t:Uint32Array.from(T),col:'#5e35b1',op:IM.opt.op,dom:'implisit',imU:true});
+  wiList();T_('Union: '+fmt(R.vol)+' m³ · '+fmt(R.vol*IM.opt.sg)+' t · '+R.bodies.length+' bagian.');}catch(e){T_('Union gagal: '+e.message);}}
+/* buka / tutup: kanvas 3D dipindah ke tengah jendela */
+let c3=null,c3css='';
+function tata(){if(!IM.on||!c3)return;const r=g('imCv').getBoundingClientRect();c3.style.left=r.left+'px';c3.style.top=r.top+'px';R.setSize(Math.max(50,r.width),Math.max(50,r.height));C.aspect=r.width/Math.max(1,r.height);C.updateProjectionMatrix();}
+function buka(){if(IM.on)return;if(window.__st&&__st.on)stdoTutup();IM.on=true;wn.classList.add('on');c3=R.domElement;c3css=c3.style.cssText;c3.classList.add('im3d');
+ if(!IM.doms.length&&kolomGeo().length){const d=domBaru();const K=kodeDi(d.kol).filter(([k])=>k&&k!=='-');if(K.length&&/vein|urat/i.test(d.kol)){d.kode=[K[0][0]];d.nm=K[0][0];}}
+ isiTop();setTimeout(()=>{tata();gambarSemua();},30);}
+function tutup(){if(!IM.on)return;IM.on=false;wn.classList.remove('on');if(c3){c3.classList.remove('im3d');c3.style.cssText=c3css;}window.dispatchEvent(new Event('resize'));}
+window.addEventListener('resize',()=>{if(IM.on)setTimeout(()=>{tata();gambarPeta();},0);});
+g('imX').onclick=tutup;g('imKeEks').onclick=()=>{tutup();stdoBuka();};
+window.addEventListener('keydown',e=>{if(IM.on&&e.key==='Escape'&&!(window.__demo&&__demo.on)&&!/INPUT|SELECT|TEXTAREA/.test((document.activeElement||{}).tagName||'')){tutup();}},true);
+window.imBuka=buka;window.imTutup=tutup;
+/* tombol Studio: pilih Eksplisit / Implisit */
+{const b=g('otbst');if(b){const old=b.onclick,mn=document.createElement('div');mn.id='otbstMenu';
+  mn.innerHTML='<button data-m="eks"><b>Studio Eksplisit</b><span>Penampang &amp; string: gambar batas vein di tiap penampang (gaya Micromine / Surpac)</span></button><button data-m="imp"><b>Studio Implisit</b><span>Permukaan HW / FW dari kontak bor (RBF), solid diisi di antaranya — mengikuti lengkung vein</span></button>';
+  document.body.appendChild(mn);const tutupM=()=>{mn.style.display='none';};
+  b.onclick=e=>{if((window.__st&&__st.on)||IM.on){if(IM.on)tutup();else old.call(b,e);return;}if(window.__demo&&__demo.on){old.call(b,e);return;}
+   const r=b.getBoundingClientRect();mn.style.left=Math.min(innerWidth-310,r.left)+'px';mn.style.top=(r.bottom+4)+'px';mn.style.display='block';e.stopPropagation();};
+  mn.querySelectorAll('button').forEach(x=>x.onclick=e=>{tutupM();if(x.dataset.m==='imp')buka();else old.call(b,e);});document.addEventListener('mousedown',e=>{if(!mn.contains(e.target)&&e.target!==b)tutupM();});}}
+/* simpan / buka project: ikut blok "pemodelan" */
+{const s0=window.msSave,r0=window.msRestore;
+ window.msSave=()=>{const r=(s0&&s0())||{};if(IM.doms.length)r.implisit={doms:IM.doms.map(d=>({id:d.id,nm:d.nm,col:d.col,src:d.src,kol:d.kol,kode:d.kode,el:d.el,cut:d.cut,dil:d.dil,minL:d.minL,gap:d.gap,par:d.par,x:d.x,p:d.p,on:d.on})),opt:IM.opt,nid:IM.nid,act:IM.act};return Object.keys(r).length?r:undefined;};
+ window.msRestore=st=>{if(r0)r0(st);IM.doms=[];IM.R={};const I=st&&st.implisit;if(I){IM.doms=I.doms||[];IM.opt=Object.assign(IM.opt,I.opt||{});IM.nid=I.nid||IM.doms.length+1;IM.act=I.act;
+  for(const d of IM.doms){const w=WI.find(x=>x.nm===d.nm+' (implisit)');if(w)w.im=d.id;}setTimeout(()=>{for(const d of IM.doms)if(wiDom(d))bangun(d,true);},400);}if(IM.on){isiTop();gambarSemua();}};}
+/* API untuk uji & demo */
+Object.assign(IM,{segar:()=>{isiTop();gambarSemua();},domBaru,bangun,bangunSemua,kontak,runs,buka,tutup,unionSemua,imPar});
+})();
 
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */
