@@ -5804,3 +5804,14 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Tema terang / gelap**: tombol Tema; pilihan diingat. Di tema gelap, kanvas penampang dibalik warnanya (hue vein ikut bergeser);
   tampilan 3D belum ikut gelap.
 
+## 299. Ore Works 0.32.0 — splay vein (Y / Triple Y) dari string tertutup
+
+- Studio Implisit, alat **Digit**: klik titik-titik batas vein di penampang, lalu **klik titik awal** (≥ 3 titik) untuk menutup.
+  String tertutup diberi nama `<domain>_Y_nn`, diarsir tipis, dan dipakai sebagai **batas vein** — tidak perlu memilih HW / FW.
+- Saat **Bangun**, poligon disapu sepanjang sumbu panjangnya: bagian dengan satu pasang tepi = batang, dua pasang = dua lengan (Y),
+  tiga pasang = Triple Y. Tiap lengan menjadi lajur (lengan sendiri + batang bersama), dibangun dengan engine HW / FW biasa tanpa
+  pinch-out tambahan (ujung poligon = ujung vein), lalu disatukan (boolean union) menjadi **satu solid** domain.
+- Penampang tanpa percabangan cukup digit sebagai poligon biasa (batang); lengan menyambung ke batang di penampang itu.
+- Flag bor, string HW / FW terbuka, dan titik sambung domain itu dibagi ke lajur terdekat.
+- Batasan: lengan diurut dari sisi atas (HW) ke bawah; satu lengan yang terpotong menjadi dua poligon di satu penampang belum didukung.
+  Perluasan sepanjang jurus tetap mengikuti *radius strike* seperti string biasa.

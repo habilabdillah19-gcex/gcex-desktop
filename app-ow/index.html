@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.31.0';</script>
+<script>window.GCEX_VER='0.32.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8672,6 +8672,36 @@ function kontak(d){/* GC-Ex gmContacts: HW = sisi atas bidang rata-rata titik te
   const E=eig3(C);let k=0;for(let i=1;i<3;i++)if(E.val[i]<E.val[k])k=i;const sv=E.val.slice().sort((a,b)=>a-b);if(sv[1]>1e-6&&sv[0]/sv[1]<0.6){n=E.vec[k];if(n[2]<0)n=[-n[0],-n[1],-n[2]];}}
  const L2=P.map(p=>{const hwA=n?(n[0]*p.a.x+n[1]*p.a.y+n[2]*p.a.z)>=(n[0]*p.b.x+n[1]*p.b.y+n[2]*p.b.z):p.a.z>=p.b.z;return {id:p.r.id,f:p.r.f,t:p.r.t,ok:true,hw:hwA?p.a:p.b,fw:hwA?p.b:p.a,tb:Math.hypot(p.a.x-p.b.x,p.a.y-p.b.y,p.a.z-p.b.z)};});
  return {L:L2,n};}
+/* 0.32.0: STRING TERTUTUP = BATAS VEIN (splay / Y / Triple Y). Pemilik 20 Nov 2026: bentuk wireframe splay langsung dari string
+   kontrol tanpa UI tambahan. Poligon tertutup di penampang disapu sepanjang sumbu panjangnya; tiap posisi dipotong garis
+   melintang -> pasangan (HW atas, FW bawah). 1 pasang = batang, 2 = dua lengan (Y), 3 = Triple Y. Tiap lengan menjadi LAJUR:
+   lajur memakai lengannya sendiri + batang bersama; semua lajur dibangun dengan engine yang sama lalu disatukan (union). */
+function lajurPoli(s){let p=s.pts.slice();if(p.length>2){const a=p[0],b=p[p.length-1];if(Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<1e-6)p.pop();}if(p.length<3)return null;
+ const n=p.length,c=[0,1,2].map(i=>p.reduce((t,q)=>t+q[i],0)/n),C=[[0,0,0],[0,0,0],[0,0,0]];p.forEach(q=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)C[i][j]+=(q[i]-c[i])*(q[j]-c[j]);});
+ const E=eig3(C),ix=[0,1,2].sort((x,y)=>E.val[y]-E.val[x]),ax=E.vec[ix[0]];let by=E.vec[ix[1]];
+ if(by[2]<-1e-9||(Math.abs(by[2])<=1e-9&&by[0]+by[1]<0))by=by.map(v=>-v);/* sisi +y = atas = HW */
+ const X=p.map(q=>ax[0]*(q[0]-c[0])+ax[1]*(q[1]-c[1])+ax[2]*(q[2]-c[2])),Y=p.map(q=>by[0]*(q[0]-c[0])+by[1]*(q[1]-c[1])+by[2]*(q[2]-c[2]));
+ const x0=Math.min(...X),x1=Math.max(...X),ns=Math.max(40,Math.min(400,Math.ceil((x1-x0)/0.5))),h=(x1-x0)/ns,S=[];
+ for(let k=0;k<ns;k++){let x=x0+(k+0.5)*h;for(let tr=0;tr<3;tr++){const cr=[];for(let i=0;i<n;i++){const j=(i+1)%n,xa=X[i],xb=X[j];if((xa-x)*(xb-x)<0||(xa===x&&xb!==x)){const t=(x-xa)/(xb-xa);cr.push({y:Y[i]+(Y[j]-Y[i])*t,p:[0,1,2].map(m=>p[i][m]+(p[j][m]-p[i][m])*t)});}}
+   if(cr.length%2===0){cr.sort((u,v)=>v.y-u.y);const I=[];for(let m=0;m+1<cr.length;m+=2)I.push({hi:cr[m].y,lo:cr[m+1].y,hw:cr[m].p,fw:cr[m+1].p});if(I.length)S.push(I);break;}x+=h*1e-3;}}
+ if(!S.length)return null;const M=Math.max(...S.map(I=>I.length));
+ /* acuan: tengah run terpanjang yang jumlah pasangannya = M; lajur dilacak ke dua arah (tumpang-tindih terbesar / pusat terdekat) */
+ let bs=0,bl=0;for(let k=0;k<S.length;){if(S[k].length!==M){k++;continue;}let e=k;while(e<S.length&&S[e].length===M)e++;if(e-k>bl){bl=e-k;bs=k;}k=e;}const r0=bs+(bl>>1),L=[];for(let j=0;j<M;j++)L.push([]);
+ const ikut=(dir)=>{let last=S[r0].slice();for(let k=r0+(dir>0?0:-1);k>=0&&k<S.length;k+=dir){const I=S[k];last=last.map(a=>{let b=null,bo=-1e18;I.forEach(q=>{const o=Math.min(a.hi,q.hi)-Math.max(a.lo,q.lo),sc=o>0?o:-Math.abs((a.hi+a.lo)/2-(q.hi+q.lo)/2)-1e6;if(sc>bo){bo=sc;b=q;}});return b;});
+   last.forEach((q,j)=>{if(dir>0)L[j].push(q);else L[j].unshift(q);});}};ikut(1);ikut(-1);return {M,L};}
+function lajurDom(d){/* null bila domain tanpa string tertutup; selain itu daftar lajur [{H:[pts],W:[pts],mid:[pts]}] */
+ const Pg=IM.str.filter(s=>s.dom===d.id&&s.vis&&s.tutup&&s.pts&&s.pts.length>3).map(lajurPoli).filter(Boolean);if(!Pg.length)return null;
+ const Mg=Math.max(...Pg.map(g=>g.M)),Ln=[];for(let j=0;j<Mg;j++)Ln.push({H:[],W:[],mid:[]});
+ Pg.forEach(g=>{for(let j=0;j<Mg;j++){const L=g.L[Math.min(j,g.M-1)];L.forEach(q=>{Ln[j].H.push([q.hw[0],q.hw[1],q.hw[2],0]);Ln[j].W.push([q.fw[0],q.fw[1],q.fw[2],0]);Ln[j].mid.push([(q.hw[0]+q.fw[0])/2,(q.hw[1]+q.fw[1])/2,(q.hw[2]+q.fw[2])/2]);});}});
+ return Ln;}
+function titikLajur(d,P){/* titik per lajur: lajur poligon + titik lain domain (kontak bor, string terbuka, sambung) dibagi ke lajur terdekat */
+ const Ln=lajurDom(d);if(!Ln)return null;const X0=titik(d,P),nL=Ln.length;
+ const jar=(q,j)=>{let b=1e18;const A=Ln[j].mid,st=Math.max(1,Math.floor(A.length/1500));for(let i=0;i<A.length;i+=st){const e=(A[i][0]-q[0])**2+(A[i][1]-q[1])**2+(A[i][2]-q[2])**2;if(e<b)b=e;}return Math.sqrt(b);};
+ const keL=q=>{if(nL===1)return [0];const D=Ln.map((_,j)=>jar(q,j)),m=Math.min(...D);return D.map((v,j)=>v<=m+1?j:-1).filter(j=>j>=0);};
+ const XS=Ln.map(L=>({H:L.H.slice(),W:L.W.slice(),nc:0,nj:X0.nj,njAll:X0.njAll,nsp:X0.nsp,ns:X0.ns,ST:X0.ST,K:{L:[],n:X0.K.n}}));
+ X0.H.forEach(q=>keL(q).forEach(j=>XS[j].H.push(q)));X0.W.forEach(q=>keL(q).forEach(j=>XS[j].W.push(q)));
+ X0.K.L.forEach(c=>{const m=[(c.hw.x+c.fw.x)/2,(c.hw.y+c.fw.y)/2,(c.hw.z+c.fw.z)/2];keL(m).forEach(j=>{XS[j].K.L.push(c);XS[j].nc++;});});
+ XS.forEach(x=>{x.ns=(X0.ns||0)+1;});return {XS,X0};}
 function eig3(C){const A=C.map(r=>r.slice()),V=[[1,0,0],[0,1,0],[0,0,1]];
  for(let it=0;it<50;it++){let p=0,q=1,mx=Math.abs(A[0][1]);if(Math.abs(A[0][2])>mx){mx=Math.abs(A[0][2]);p=0;q=2;}if(Math.abs(A[1][2])>mx){mx=Math.abs(A[1][2]);p=1;q=2;}if(mx<1e-12)break;
   const th=(A[q][q]-A[p][p])/(2*A[p][q]),t=(th>=0?1:-1)/(Math.abs(th)+Math.sqrt(th*th+1)),c=1/Math.sqrt(t*t+1),s=t*c;
@@ -8683,7 +8713,7 @@ function imDespike(p){const o=[];let n=0;for(let i=0;i<p.length;i++){if(i>0&&i<p
    if(lu>1e-6&&lw>1e-6&&(u[0]*w[0]+u[1]*w[1]+u[2]*w[2])/(lu*lw)>0.5){n++;continue;}}o.push(p[i]);}return {p:o,n};}
 function titik(d,P){/* GC-Ex imPts: string kontrol yang tampil + kontak bor + titik sambung cabang + struktur */
  const H=[],W=[],r=Math.max(0.5,+P.res||2),K=kontak(d);let nc=0,nsp=0,ns=0;
- if(P.src!=='con')IM.str.forEach(s=>{if(s.dom!==d.id||!s.vis||!s.pts||s.pts.length<1)return;ns++;const L2=s.role==='FW'?W:H;let p=s.pts;if(P.rob!==false){const ds=imDespike(p);if(ds.n){p=ds.p;nsp+=ds.n;}}L2.push([p[0][0],p[0][1],p[0][2],0]);
+ if(P.src!=='con')IM.str.forEach(s=>{if(s.dom!==d.id||!s.vis||!s.pts||s.pts.length<1||s.tutup)return;ns++;const L2=s.role==='FW'?W:H;let p=s.pts;if(P.rob!==false){const ds=imDespike(p);if(ds.n){p=ds.p;nsp+=ds.n;}}L2.push([p[0][0],p[0][1],p[0][2],0]);
   for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2])/r));for(let j=1;j<=n;j++){const t=j/n;L2.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t,0]);}}});
  if(P.src!=='str')K.L.forEach(c=>{H.push([c.hw.x,c.hw.y,c.hw.z,1]);W.push([c.fw.x,c.fw.y,c.fw.z,1]);nc++;});
  let nj=0,njAll=0;if(isKid(d)&&P.join!==false&&H.length){const Jd=Math.max(0,P.joinD!=null?+P.joinD:30),bh=new Set(K.L.map(c=>c.id)),B=H.concat(W),cand=[];
@@ -8818,15 +8848,24 @@ const wiUni=d=>WI.find(w=>w.imU2===d.id);
 function volMesh(v,t){let s=0;for(let i=0;i<t.length;i+=3){const a=t[i]*3,b=t[i+1]*3,c=t[i+2]*3;s+=v[a]*(v[b+1]*v[c+2]-v[b+2]*v[c+1])-v[a+1]*(v[b]*v[c+2]-v[b+2]*v[c])+v[a+2]*(v[b]*v[c+1]-v[b+1]*v[c]);}return Math.abs(s/6);}
 function bangun(d,diam){const P=imPar(d);let R;
  try{if(d.eksak){const w=WI.find(x=>x.nm===d.eksak&&!x.im);if(!w)throw new Error('wireframe eksak "'+d.eksak+'" tidak ada');R={v:Float64Array.from(w.v),t:Uint32Array.from(w.t),eksak:true,st:{vol:volMesh(w.v,w.t),ms:0}};}
-  else{const X=titik(d,P);R=imBuild(d,P,X);R.X=X;}}
+  else{const TL=titikLajur(d,P);if(TL){const P2=Object.assign({},P,{pinD:0})/* batas poligon = ujung vein: tanpa pinch-out tambahan */,RL=TL.XS.map(X=>{const r=imBuild(d,P2,X);r.X=X;return r;});R=RL[0];R.lj=RL;R.X0=TL.X0;}else{const X=titik(d,P);R=imBuild(d,P,X);R.X=X;}}}
  catch(e){IM.R[d.id]={err:e.message};if(!diam)T_('Implisit "'+d.nm+'": '+e.message);segarUI();return null;}
  R.ver=IM.ver;IM.R[d.id]=R;if(!R.eksak){let w=wiDom(d);const nm=d.nm+' (implisit)';
   if(w){w.v=R.v;w.t=R.t;w.nm=nm;w.col=d.col;w.im=d.id;w._ix=null;wiBuild(w);}else w=wiAdd({nm,v:R.v,t:R.t,col:d.col,op:IM.opt.op,dom:d.nm,im:d.id});}
+ if(R.lj&&R.lj.length>1){IM.LJ=IM.LJ||{};IM.LJ[d.id]=satukanLajur(d,R);}
  tampilWi();wiList();if(window.anSched)anSched();segarUI();return R;}
 function tampilWi(){/* union induk + cabang menggantikan kulit masing-masing di 3D (GC-Ex vunion) */
  for(const d of IM.doms){const w=wiDom(d);if(!w)continue;const r=d.par&&!d.env?dom(d.par):d,u=IM.opt.uni&&r&&wiUni(r);const on=d.vis!==false&&!(u&&grup(r.id).includes(d.id));w.on=on;if(w.g)w.g.visible=on;}
  for(const w of WI)if(w.imU2){const d=dom(w.imU2);const on=!!(d&&IM.opt.uni&&d.vis!==false);w.on=on;if(w.g)w.g.visible=on;}}
-async function unionInduk(d){if(!IM.opt.uni||!window.MFB)return;const G=grup(d.id).map(i=>IM.R[i]).filter(R=>R&&R.v);const old=wiUni(d);
+async function satukanLajur(d,R){/* 0.32.0: union lajur splay (Y / Triple Y) menjadi satu solid domain */
+ if(!window.MFB){R.ljErr='mesin boolean tidak tersedia';return;}
+ try{await MFB.load();if(IM.R[d.id]!==R)return;const W3=MFB.mod,F=R.lj.map((r,i)=>({v:r.v,t:r.t,nv:r.v.length/3,nt:r.t.length/3,name:'lajur '+(i+1)})),c=MFB._pusat(F),U=W3.Manifold.union(F.map(f=>MFB._keMf(W3,f,c))),B=MFB._pecah(U,c);
+  const V=[],T=[];B.bodies.forEach(b=>{const o=V.length/3;for(const x of b.v)V.push(x);for(const x of b.t)T.push(x+o);});if(!T.length)throw new Error('union kosong');
+  R.v=Float64Array.from(V);R.t=Uint32Array.from(T);R.st=Object.assign({},R.st,{vol:B.vol,nlj:R.lj.length,nbLj:B.bodies.length});
+  const In=dalamMesh(R.v,R.t);let nin=0,nfl=0,lin=0,lfl=0;(R.X0.K.L||[]).forEach(k=>{if(!k.ok)return;const L2=k.t-k.f;nfl++;lfl+=L2;if(In((k.hw.x+k.fw.x)/2,(k.hw.y+k.fw.y)/2,(k.hw.z+k.fw.z)/2)){nin++;lin+=L2;}});Object.assign(R.st,{nin,nfl,lin,lfl});
+  const w=wiDom(d);if(w){w.v=R.v;w.t=R.t;w._ix=null;wiBuild(w);}CC={key:null};}
+ catch(e){R.ljErr=e.message;}tampilWi();wiList();if(window.anSched)anSched();segarUI();}
+async function unionInduk(d){if(!IM.opt.uni||!window.MFB)return;if(IM.LJ)await Promise.all(grup(d.id).map(i=>IM.LJ[i]).filter(Boolean));const G=grup(d.id).map(i=>IM.R[i]).filter(R=>R&&R.v);const old=wiUni(d);
  if(G.length<2){if(old){wiDispose(old);WI.splice(WI.indexOf(old),1);}tampilWi();wiList();return;}
  try{await MFB.load();const W3=MFB.mod,F=G.map((R,i)=>({v:R.v,t:R.t,nv:R.v.length/3,nt:R.t.length/3,name:'domain '+(i+1)})),c=MFB._pusat(F),U=W3.Manifold.union(F.map(f=>MFB._keMf(W3,f,c))),R=MFB._pecah(U,c);
   const V=[],T=[];R.bodies.forEach(b=>{const o=V.length/3;for(const x of b.v)V.push(x);for(const x of b.t)T.push(x+o);});const nm=d.nm+' + cabang (union)';
@@ -8916,7 +8955,7 @@ function gambarSeksi(x,T2,q){if(!IM.on||IM.strata)return;const {X,Y}=T2,cc=cache
  /* titik kontak HW ▲ / FW ▼ domain aktif */const d=dom(IM.act);if(d&&IM.opt.showC){const K=CC.K&&CC.Kv===IM.ver&&CC.Kd===d.id?CC.K:(CC.K=kontak(d).L,CC.Kv=IM.ver,CC.Kd=d.id,CC.K);
   for(const c of K){if(!cc.slab.has(c.id))continue;for(const [p,up] of [[c.hw,1],[c.fw,-1]]){const [a,b]=pp(scProj(q,p.x,p.y,p.z));x.fillStyle=up>0?d.col:'#fff';x.strokeStyle=d.col;x.lineWidth=1.5;x.beginPath();x.moveTo(a,b-5*up);x.lineTo(a+4.5,b+3*up);x.lineTo(a-4.5,b+3*up);x.closePath();x.fill();x.stroke();}}}
  /* string kontrol di bidang ini */for(const s of IM.str){if(!s.vis||!samaBidang(s.pl,q))continue;const dd=dom(s.dom);if(!dd)continue;const P=s.pts.map(p=>pp(scProj(q,...p))),akt=s.dom===IM.act;
-  x.strokeStyle=dd.col;x.lineWidth=akt?2.4:1.6;x.setLineDash(s.role==='FW'?[7,4]:[]);x.beginPath();P.forEach((p,i)=>i?x.lineTo(...p):x.moveTo(...p));x.stroke();x.setLineDash([]);
+  x.strokeStyle=dd.col;x.lineWidth=akt?2.4:1.6;x.setLineDash(s.role==='FW'&&!s.tutup?[7,4]:[]);x.beginPath();P.forEach((p,i)=>i?x.lineTo(...p):x.moveTo(...p));x.stroke();if(s.tutup){x.globalAlpha=.12;x.fillStyle=dd.col;x.fill();x.globalAlpha=1;}x.setLineDash([]);
   if(akt||IM.edit===IM.str.indexOf(s)){x.fillStyle='#fff';P.forEach(p=>{x.fillRect(p[0]-3,p[1]-3,6,6);x.strokeRect(p[0]-3,p[1]-3,6,6);});x.fillStyle=dd.col;for(let i=1;i<P.length;i++){x.beginPath();x.arc((P[i-1][0]+P[i][0])/2,(P[i-1][1]+P[i][1])/2,2.5,0,7);x.fill();}}
   const L3=P[0];x.font='600 10.5px Inter,Arial';x.lineWidth=3;x.strokeStyle='rgba(255,255,255,.95)';x.strokeText(s.name,L3[0]+6,L3[1]-6);x.fillStyle=dd.col;x.fillText(s.name,L3[0]+6,L3[1]-6);}
  /* digit berjalan */if(IM.mode==='digit'&&IM.cur.length){const dd=dom(IM.act);x.strokeStyle=dd?dd.col:'#e8590c';x.lineWidth=2;x.setLineDash(IM.role==='FW'?[7,4]:[]);x.beginPath();IM.cur.forEach((p,i)=>{const [a,b]=pp(p);i?x.lineTo(a,b):x.moveTo(a,b);});if(PT.m)x.lineTo(PT.m[0],PT.m[1]);x.stroke();x.setLineDash([]);
@@ -8943,19 +8982,23 @@ function snapTitik(px){const q=qNow(),T2=window.__ms2.xf(),d=dom(IM.act);let bes
 function kenaString(px){const q=qNow(),T2=window.__ms2.xf();let best=null,bd=8*8;IM.str.forEach((s,si)=>{if(!s.vis||!samaBidang(s.pl,q))return;const P=s.pts.map(p=>scProj(q,...p));
   P.forEach((p,i)=>{const e=(T2.X(p)-px[0])**2+(T2.Y(p)-px[1])**2;if(e<bd){bd=e;best={si,i,tipe:'v'};}});
   for(let i=1;i<P.length;i++){const m=[(P[i-1][0]+P[i][0])/2,(P[i-1][1]+P[i][1])/2],e=(T2.X(m)-px[0])**2+(T2.Y(m)-px[1])**2;if(e<Math.min(bd,6*6)){bd=e;best={si,i,tipe:'m'};}}});return best;}
-function simpanDigit(){const d=dom(IM.act),q=qNow();if(!d||IM.cur.length<2){IM.cur=[];return;}simpanUndo();const n=IM.str.filter(s=>s.dom===d.id&&s.role===IM.role).length+1;
- IM.str.push({id:IM.sid++,dom:d.id,role:IM.role,name:d.nm+'_'+IM.role+'_'+String(n).padStart(2,'0'),pts:IM.cur.map(p=>keDunia(q,p[0],p[1]).map(v=>Math.round(v*1000)/1000)),vis:true,pl:bidang(q),ed:true});IM.cur=[];kotor();}
+function simpanDigit(tt){const d=dom(IM.act),q=qNow();if(!d||IM.cur.length<(tt?3:2)){IM.cur=[];return;}simpanUndo();const rl=tt?'Y':IM.role,n=IM.str.filter(s=>s.dom===d.id&&(tt?s.tutup:s.role===rl&&!s.tutup)).length+1;
+ const pts=IM.cur.map(p=>keDunia(q,p[0],p[1]).map(v=>Math.round(v*1000)/1000));if(tt)pts.push(pts[0].slice());
+ IM.str.push({id:IM.sid++,dom:d.id,role:tt?'HW':IM.role,name:d.nm+'_'+rl+'_'+String(n).padStart(2,'0'),pts,vis:true,pl:bidang(q),ed:true,tutup:tt?true:undefined});IM.cur=[];kotor();}
 function mulai(m){if(IM.mode==='digit'&&m!=='digit')simpanDigit();IM.mode=IM.mode===m?null:m;IM.cur=[];PT.box=null;if(IM.mode&&(IM.view==='3d'))aturView(IM.prevV&&IM.prevV!=='3d'?IM.prevV:'intip');segarUI();ulang();}
 const ulang=()=>{try{window.__ms2.repaint();}catch(e){}};
 {const cv=kanvas();
  cv.addEventListener('mousedown',e=>{if(!IM.on||e.button!==0)return;const px=pxP(e);
   if(IM.mode==='flag'||IM.mode==='erase'){e.stopImmediatePropagation();e.preventDefault();if(e.shiftKey){PT.down={box:true,px};PT.box=[px[0],px[1],px[0],px[1]];return;}const h=kenaLubang(px);PT.down={px,h};return;}
-  if(IM.mode==='digit'){e.stopImmediatePropagation();e.preventDefault();const s=snapTitik(px),p=s&&!e.altKey?s[2]:SC.inv(px[0],px[1]);IM.cur.push([p[0],p[1]]);ulang();return;}
+  if(IM.mode==='digit'){e.stopImmediatePropagation();e.preventDefault();
+   /* 0.32.0: klik titik awal (≥ 3 titik) = tutup string → batas vein (splay / Y) */
+   if(IM.cur.length>=3){const T2=window.__ms2.xf(),f=IM.cur[0];if((T2.X(f)-px[0])**2+(T2.Y(f)-px[1])**2<=9*9){simpanDigit(true);ulang();return;}}
+   const s=snapTitik(px),p=s&&!e.altKey?s[2]:SC.inv(px[0],px[1]);IM.cur.push([p[0],p[1]]);ulang();return;}
   if(IM.mode==='edit'||(IM.opt.live&&!IM.mode)){const k=kenaString(px);if(!k)return;e.stopImmediatePropagation();e.preventDefault();const s=IM.str[k.si];simpanUndo();
    if(k.tipe==='v'&&e.shiftKey){if(s.pts.length>2){s.pts.splice(k.i,1);s.ed=true;kotor();}else IM.und.pop();return;}
    if(k.tipe==='m'){const q=qNow(),a=s.pts[k.i-1],b=s.pts[k.i];s.pts.splice(k.i,0,[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2]);PT.drag={si:k.si,i:k.i};}else PT.drag={si:k.si,i:k.i};IM.edit=k.si;}},true);
  cv.addEventListener('mousemove',e=>{if(!IM.on)return;const px=pxP(e);PT.m=px;
-  if(PT.drag){const s=IM.str[PT.drag.si],q=qNow(),sn=e.altKey?null:snapTitik(px);const p=sn?sn[2]:SC.inv(px[0],px[1]);s.pts[PT.drag.i]=keDunia(q,p[0],p[1]).map(v=>Math.round(v*1000)/1000);s.ed=true;PT.snap=sn;ubahVer();ulang();e.stopImmediatePropagation();return;}
+  if(PT.drag){const s=IM.str[PT.drag.si],q=qNow(),sn=e.altKey?null:snapTitik(px);const p=sn?sn[2]:SC.inv(px[0],px[1]);s.pts[PT.drag.i]=keDunia(q,p[0],p[1]).map(v=>Math.round(v*1000)/1000);if(s.tutup){const L=s.pts.length-1;if(PT.drag.i===0)s.pts[L]=s.pts[0].slice();else if(PT.drag.i===L)s.pts[0]=s.pts[L].slice();}s.ed=true;PT.snap=sn;ubahVer();ulang();e.stopImmediatePropagation();return;}
   if(PT.down&&PT.down.box){PT.box[2]=px[0];PT.box[3]=px[1];ulang();e.stopImmediatePropagation();return;}
   if(IM.mode==='digit'){const s=e.altKey?null:snapTitik(px);PT.snap=s;ulang();}else if(PT.snap){PT.snap=null;ulang();}
   if(IM.mode==='flag'||IM.mode==='erase'){cv.style.cursor=kenaLubang(px)?'pointer':'crosshair';}else if(IM.opt.live||IM.mode==='edit'){const k=kenaString(px);cv.style.cursor=k?(k.tipe==='m'?'copy':'move'):'';}},true);
@@ -9169,7 +9212,7 @@ function segarR(){const d=dom(IM.act),c=g('imRc');g('imRtt').textContent=d?'Bang
    sw('str',P.str!==false,'Pakai titik struktur')+sw('adp',P.adp,'Resolusi adaptif','Rapat di dekat data, jarang menjauh')+sw('rob',P.rob!==false,'Anti-spike','Kontak bor menggantikan string di sekitarnya')+
    '<div class="imrow f"><button id="imDef">Bawaan</button><button id="imAll">Pakai untuk semua</button></div></details>';}
  if(R&&R.err)h+='<div class="imst w">'+e(R.err)+'</div>';else if(R&&R.st){const S=R.st,tip='Dip '+(S.dip!=null?S.dip.toFixed(0)+'° → '+S.ddir.toFixed(0)+'°':'-')+' · tebal rata-rata '+fmt(S.tav,2)+' m (maks '+fmt(S.tmax,2)+')\nTitik: '+S.nc+' kontak'+(S.ns?' + '+S.ns+' string':'')+(S.nj?' + '+S.nj+' sambung':'')+(S.nst?' + '+S.nst+' struktur':'')+' · RMS '+fmt(S.rms,2)+' m\nradius strike '+fmt(S.aoi,1)+' m · '+(S.ms/1000).toFixed(2).replace('.',',')+' s';
-  const war=[];if(S.nfl&&S.nin<S.nfl)war.push((S.nfl-S.nin)+' interval di luar solid');if(S.far15>0.25)war.push('data jarang ('+(S.far15*100).toFixed(0)+'% ekstrapolasi > 15 m)');if(R.uni&&R.uni.nb>1)war.push('union '+R.uni.nb+' bagian');
+  const war=[];if(S.nfl&&S.nin<S.nfl)war.push((S.nfl-S.nin)+' interval di luar solid');if(S.far15>0.25)war.push('data jarang ('+(S.far15*100).toFixed(0)+'% ekstrapolasi > 15 m)');if(R.uni&&R.uni.nb>1)war.push('union '+R.uni.nb+' bagian');if(R.ljErr)war.push('union lajur splay gagal: '+R.ljErr);else if(R.st&&R.st.nbLj>1)war.push('lajur splay menjadi '+R.st.nbLj+' bagian terpisah');
   h+='<div class="imst" title="'+e(tip)+'"><b>'+fmt(S.vol)+' m³ · '+fmt(S.vol*sg)+' t</b>'+(S.nfl?' · '+S.nin+'/'+S.nfl+' interval':'')+(war.length?'<br><span class="w">'+e(war.join(' · '))+'</span>':'')+'</div>';}
  const B=IM.doms.filter(x=>IM.R[x.id]&&IM.R[x.id].st);let tv=0;B.forEach(x=>{tv+=IM.R[x.id].st.vol;});
  h+='<h5>Vein System</h5><table class="imtb"><tr><th>Domain</th><th>m³</th><th>t</th></tr>'+IM.doms.map(x=>{const R2=IM.R[x.id];return '<tr><td><b style="color:'+x.col+'">'+(x.env?'◌ ':isKid(x)?'↳ ':'')+e(x.nm)+'</b></td><td>'+(R2&&R2.st?fmt(R2.st.vol):R2&&R2.err?'<span class="w">gagal</span>':'–')+'</td><td>'+(R2&&R2.st?fmt(R2.st.vol*sg):'')+'</td></tr>';}).join('')+
@@ -9228,7 +9271,7 @@ window.imBuka=buka;window.imTutup=tutup;
     (async()=>{for(const d of urutBangun(IM.doms))if(wiDom(d)||d.eksak)bangun(d,true);for(const d of IM.doms.filter(x=>!x.par&&!x.env))if(wiUni(d))await unionInduk(d);segar3D();})();},400);}
   if(IM.on)segarUI();};}
 /* API untuk uji & demo */
-Object.assign(IM,{segar:segarUI,domBaru,bangun,bangunGrup,bangunSemua,kontak,flagSet,flagKolom,usulKadar,usulHalo,selubungBaru,tarikOtomatis,serap,eksak,unionSemua,unionInduk,buka,tutup,imPar,aturView,keBidang});
+Object.assign(IM,{segar:segarUI,dalamMesh,domBaru,bangun,bangunGrup,bangunSemua,kontak,flagSet,flagKolom,usulKadar,usulHalo,selubungBaru,tarikOtomatis,serap,eksak,unionSemua,unionInduk,buka,tutup,imPar,aturView,keBidang});
 
 /* ---------- 0.30.0: mode Stratified / Laterit (port Geomodeller Stratified-Laterite GC-Ex 0.21: permukaan + solid) ----------
    Pemilik 19 Nov 2026: "Termasuk implicite untuk Vein maupun untuk laterit/stratified berbeda (tapi masih 1 jendela)";
