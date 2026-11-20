@@ -1,0 +1,17 @@
+Vein_Splay_Vertikal — data latihan fiktif Ore Works (20 Nov 2026)
+==================================================================
+vein curam jurus 000° (dip 82° ke E, mulai 40 m di bawah topografi) pecah ke atas menjadi dua lengan:
+lengan barat dip 65° ke E, lengan timur dip 80° ke W. Penampang tegak lurus jurus berbentuk huruf Y.
+
+Tubuh vein (kode Vein_Type):
+  VY1  batang   panjang 220 m  dip 82° ke 090°  tebal dasar 2.6 m  volume 27172 m³
+  VY2  lengan   panjang 220 m  dip 65° ke 090°  tebal dasar 1.5 m  volume  9477 m³
+  VY3  lengan   panjang 220 m  dip 80° ke 270°  tebal dasar 1.3 m  volume  8216 m³
+
+Aktual gabungan: 44230 m³, 1 bagian. 37 lubang bor (2936 m), pagar tegak lurus jurus tiap 20 m.
+Lengan hanya ditembus satu lubang per pagar: data bor sengaja jarang di bagian atas.
+Berkas: SP_collar/survey/assay/geologi.csv, SP_topografi.str, aktual_vein.obj (gabungan, tertutup), aktual_<kode>.obj, geom.json
+Pembuat & uji: python tools/uji/sim_vein_sistem_ow.py buat|uji splay <folder>
+
+SP_string_interpretasi.json: irisan vein aktual di pagar bor (mode "ideal"), dipakai Demo Studio Eksplisit.
+Demo Implisit memakai poligon Y tertutup tiap 20 m (irisan vein aktual) — menguji mesin string tertutup Ore Works 0.32.

@@ -5815,3 +5815,13 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Flag bor, string HW / FW terbuka, dan titik sambung domain itu dibagi ke lajur terdekat.
 - Batasan: lengan diurut dari sisi atas (HW) ke bawah; satu lengan yang terpotong menjadi dua poligon di satu penampang belum didukung.
   Perluasan sepanjang jurus tetap mengikuti *radius strike* seperti string biasa.
+
+## 300. Ore Works 0.32.1 — demo Implisit vein bercabang vertikal
+
+- Menu **Demo**: kartu baru **Bercabang vertikal (Y)** dengan sketsa penampang. ▶ Implisit memperagakan string tertutup Y:
+  flag tiga kode ke satu domain → bangun dari kontak bor saja (celah di antara lengan ikut terisi) → digit poligon Y tertutup di
+  tiap penampang → bangun ulang → solid satu badan dibandingkan dengan vein sebenarnya. ▶ Eksplisit memakai solid batang + dua cabang.
+- Data latihan: `Vein_Splay_Vertikal` (ikut `_2_Data-Latihan.zip`).
+- Perbaikan pemecahan poligon: tonjolan kecil di sekitar puncak celah tidak lagi menambah lajur, dan lengan yang lebih pendek
+  berhenti di ujungnya (sebelumnya membentuk "tutup" di atas celah).
+

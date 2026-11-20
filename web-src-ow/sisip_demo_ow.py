@@ -27,6 +27,8 @@ SISTEM = [
      '4 segmen sejajar bertangga; satu vein penghubung pendek dan miring (jog).', {'VE5_RL': 'VE2'}),
     ('silang', 'Vein_Silang', 'Silang landai–curam',
      'Vein curam timur–barat disilang vein landai utara–selatan; keduanya menerus.', {'VX2': 'VX1'}),
+    ('splay', 'Vein_Splay_Vertikal', 'Bercabang vertikal (Y)',
+     'Vein curam pecah ke atas menjadi dua lengan; penampangnya berbentuk huruf Y.', {'VY2': 'VY1', 'VY3': 'VY1'}),
 ]
 
 
@@ -96,9 +98,18 @@ def paket():
             V, F = mesh_kasar(T)
             akt.append({'k': T.kode, 'v': [int(round(c * 10)) for c in V.reshape(-1)], 't': F.reshape(-1).tolist()})
         csv = {t: (D / ('%s_%s.csv' % (pre, t))).read_text(encoding='utf-8') for t in ('collar', 'survey', 'assay', 'geologi')}
+        if k == 'splay':                     # 0.32.0: poligon Y tertutup per penampang (irisan vein aktual) untuk demo Implisit
+            import trimesh
+            Ua = trimesh.load(D / 'aktual_vein.obj', process=True); Ua.apply_translation([-S.E0, -S.N0, 0]); az0 = sol[0]['az']; yp = []
+            r = math.radians(az0); nr = np.array([math.cos(r), -math.sin(r)])
+            for nl in range(-90, 91, 20):
+                o = float(np.dot([0.0, float(nl)], nr)); pts = sim.irisan_ideal(Ua, S, az0, o)
+                if pts: yp.append({'o': round(o, 2), 'pts': [[round(a, 2), round(b, 2)] for a, b in jarang([list(q) for q in pts], 26)]})
+        else:
+            yp = None
         P['sistem'].append({'k': k, 'nm': nm, 'desk': desk, 'pre': pre, 'E0': S.E0, 'N0': S.N0, 'E': I['E'], 'N': I['N'],
                             'nl': G['lubang'], 'vakt': G['vol_union_m3'], 'csv': csv, 'topo': topo_jarang(D / ('%s_topografi.str' % pre)),
-                            'sol': sol, 'akt': akt})
+                            'sol': sol, 'akt': akt, **({'yp': yp, 'az': sol[0]['az']} if yp else {})})
     return P
 
 

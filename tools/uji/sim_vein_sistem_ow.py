@@ -176,6 +176,19 @@ def sistem(nama):
         Tubuh(S, 'VX1', (-150.0, 0.0), lambda s: np.full(np.shape(s), 90.0), 260.0, 180.0, 80.0, 100.0, 2.4, ph=0.4)
         Tubuh(S, 'VX2', (70.0, -110.0), lambda s: np.full(np.shape(s), 0.0), 220.0, 270.0, 32.0, 100.0, 4.5, ph=1.9, liuk=0.8)
         return S
+    if nama == 'splay':                               # Ore Works 0.32.0: vein bercabang vertikal (splay ke atas, penampang berbentuk Y)
+        topo = lambda e, n: 215.0 + 0.012 * e - 0.01 * n + 5.0 * np.exp(-((e - 15) ** 2 + (n + 10) ** 2) / (2 * 140.0 ** 2))
+        S = Sistem('Vein_Splay_Vertikal', 60000.0, 80000.0, topo,
+                   'vein curam jurus 000° (dip 82° ke E, mulai 40 m di bawah topografi) pecah ke atas menjadi dua lengan: lengan barat dip 65° ke E, lengan timur dip 80° ke W')
+        Tubuh(S, 'VY1', (0.0, -110.0), lambda s: np.full(np.shape(s), 0.0), 220.0, 90.0, 82.0, 75.0, 2.6, ph=0.3, cover=40.0, liuk=0.6, benjol=[(120, 0.4, 35)])
+        rr = lambda s: np.clip(np.abs(2 * np.asarray(s, float) / 220.0 - 1), 0, 0.999)
+        Hk = lambda s: 44.0 / np.maximum(0.35, (1 - rr(s) ** 2) ** 0.6)        # dasar lengan tetap menempel pada atap batang
+        x0 = 6.0 / math.tan(math.radians(82.0))
+        Tubuh(S, 'VY2', (x0 - 44.0 / math.tan(math.radians(65.0)), -110.0), lambda s: np.full(np.shape(s), 0.0), 220.0, 90.0, 65.0, 44.0, 1.5, ph=0.3,
+              liuk=0.6, Hfn=Hk, ps=0.25)
+        Tubuh(S, 'VY3', (x0 + 44.0 / math.tan(math.radians(80.0)), -110.0), lambda s: np.full(np.shape(s), 0.0), 220.0, 270.0, 80.0, 44.0, 1.3, ph=0.3,
+              liuk=0.6, Hfn=Hk, ps=0.25)
+        return S
     raise SystemExit('sistem tidak dikenal: ' + nama)
 
 
