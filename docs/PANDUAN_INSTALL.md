@@ -5795,3 +5795,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Studio Implisit, domain cabang dengan *Sambung ke induk*: titik sambung kini hanya kontak induk yang segaris dengan bidang
   cabang (maks 4 titik). Bila sebelumnya cabang tampak tertekuk / tertarik ke induk, cukup ▶ Bangun ulang.
 
+## 298. Ore Works 0.31.0 — antarmuka gaya Micromine
+
+- **Studio Implisit**: bar atas kini memakai ikon (🏴 Flag, ⌫ Hapus flag, ✎ Digit). Panel kiri berupa daftar lapisan yang bisa dilipat
+  (Domain, Flag, String, Wireframe). Parameter domain aktif ada di jendela **Bangun Vein — <domain>** di atas viewport (tombol – untuk
+  menciutkan, ▶▶ Semua untuk membangun semua domain). Baris **Perintah** di bawah menampilkan petunjuk alat yang aktif dan koordinat kursor.
+- **Studio Eksplisit**: palet Ore Works; tombol **Tema** di bar judul.
+- **Tema terang / gelap**: tombol Tema; pilihan diingat. Di tema gelap, kanvas penampang dibalik warnanya (hue vein ikut bergeser);
+  tampilan 3D belum ikut gelap.
+

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.30.2';</script>
+<script>window.GCEX_VER='0.31.0';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -9018,17 +9018,42 @@ canvas.im3d{position:fixed!important;z-index:905!important}canvas.im3d.pipm{bord
 #imPip{position:fixed;z-index:906;display:none;align-items:center;gap:6px;height:28px;box-sizing:border-box;padding:0 4px 0 9px;background:#1b2a4e;color:#fff;border-radius:7px 7px 0 0;font-size:12px}
 #imPip b{flex:1;font-weight:600}#imPip span{color:#c5d3ea;font-size:11px}#imPip button{margin:0;height:22px;min-width:24px;padding:0 6px;border:1px solid #3d5488;border-radius:5px;background:#24386a;color:#fff}`;
 document.head.appendChild(css);
+const css2=document.createElement('style');css2.textContent=`
+#imw,#imR{--bg:#EDEBE6;--pn:#F7F5F0;--p2:#FFFFFF;--bd:#D3CDC1;--tx:#1C2733;--mu:#5C6672;--ac:#17806B;--acf:#126A58;--soft:#D5ECE4;--bar:#1C2733;--gold:#d9ae66;background:var(--bg);color:var(--tx)}
+#imw.dk,#imR.dk{--bg:#121a22;--pn:#1C2733;--p2:#263646;--bd:#36485b;--tx:#EDEBE6;--mu:#a3afbd;--acf:#5fc9ae;--soft:#1f3d3b}
+#imHd{background:var(--bar);color:#EDEBE6}#imHd b{color:var(--gold)}#imHd .seg{border-color:#34465a}#imHd .seg button{color:#9fb0c2}#imHd .seg button.on{background:var(--ac);color:#fff}#imHd .kn button{background:#263646;border-color:#34465a;color:#EDEBE6}
+#imTop{background:var(--pn);border-color:var(--bd)}#imTop .sep{background:var(--bd)}
+#imTop .tg{display:inline-flex;gap:2px}#imTop .tg button{width:30px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--tx)}
+#imR .pri,#imR .imrow .on,#imw .pri,#imw #imTop .vw button.on,#imw #imTop .tg button.on,#imw .imrow .on{background:var(--ac)!important;border-color:var(--ac)!important;color:#fff!important}
+#imBody{grid-template-columns:250px 1fr;position:relative}#imL,#imR{background:var(--pn)}#imL{border-color:var(--bd)}#imTabs{display:none}
+.imac{display:flex;align-items:center;gap:6px;padding:7px 8px;background:var(--p2);border-top:1px solid var(--bd);font:700 11px Inter,"Segoe UI",Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);cursor:pointer;user-select:none}
+.imac.on{color:var(--acf)}.imac i{margin-left:auto;font-style:normal;font-weight:400}.imac .ch{display:inline-block;transition:transform .15s}.imac.on .ch{transform:rotate(90deg)}.imacb{padding:2px 8px 8px}
+#imLc.ims{padding:0}#imLc .imacb{border-top:1px solid var(--bd)}
+#imR{position:fixed;right:14px;top:130px;width:288px;z-index:910;display:none;font:12.5px/1.35 Inter,"Segoe UI",Arial,sans-serif;border:1px solid var(--bd);border-radius:5px;box-shadow:0 8px 24px #0007;flex-direction:column;overflow:hidden}#imw.on+#imR{display:flex}
+#imRt{flex:none;display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:var(--p2);border-bottom:1px solid var(--bd);font-weight:700}
+#imRt button{margin:0;border:0;background:none;color:var(--mu);height:20px;padding:0 6px;font-size:14px}#imR.min #imRc{display:none}#imR #imRc{overflow:auto;min-height:0}
+.ims h5{color:var(--tx);border-color:var(--bd)}.imgr label{color:var(--mu)}.imsw{color:var(--tx)}.imd.on{background:var(--soft)}.imd.env{background:var(--p2)}.imd{border-color:var(--bd)}
+.imst{background:var(--p2);border-color:var(--bd);color:var(--tx)}.imtb th{background:var(--p2);color:var(--tx)}.imtb td{border-color:var(--bd)}
+#imw.dk input:not([type=checkbox]):not([type=radio]):not([type=color]),#imw.dk select,#imw.dk button,#imR.dk input:not([type=checkbox]):not([type=radio]):not([type=color]),#imR.dk select,#imR.dk button{background:var(--p2);color:var(--tx);border-color:var(--bd)}
+#imw.dk #imSec canvas#scc{filter:invert(1) hue-rotate(180deg)}
+#imTop #imDom,#imTop label:has(#imDom),#imTop #imGo,#imTop #imGoAll{display:none}#imTop .vw{margin-left:auto}#imRt .a{display:flex;gap:2px;align-items:center}#imRt #imRAll{font-size:11px;font-weight:600;color:var(--acf)}
+#imw .imtb th,#imR .imtb th{background:var(--p2)!important;color:var(--tx)!important}#imw #imSec>#lgbar{background:var(--pn)!important;color:var(--tx)!important;border-bottom:1px solid var(--bd)}#imw.dk #imSec>#lgbar{filter:none}.imrow button{white-space:nowrap}
+#imSt{flex:none;display:flex;align-items:center;gap:14px;height:30px;padding:0 10px;background:var(--pn);border-top:1px solid var(--bd);font-size:12px;color:var(--mu)}
+#imSt .cmd{flex:1 1 auto;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#imSt .cmd b{color:var(--mu);font-weight:600;margin-right:6px}#imSt .co{font:11px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+`;document.head.appendChild(css2);
 const wn=document.createElement('div');wn.id='imw';wn.innerHTML=
  '<div id="imHd"><b>Studio Implisit</b><div class="seg"><button data-t="vein" class="on" title="Vein: permukaan HW / FW (RBF) dari kontak bor & string kontrol">Vein</button><button data-t="strata" title="Endapan berlapis (laterit Ni / bauksit / stratiform): lapisan dari log, permukaan atap / lantai">Stratified / Laterit</button></div>'+
- '<div class="kn"><button id="imKeEks" title="Pindah ke Studio Eksplisit (penampang & string poligon)">&#8644; Eksplisit</button><button id="imX">&#10005; Tutup</button></div></div>'+
- '<div id="imTop"><label>Domain <select id="imDom"></select></label><button id="imGo" class="pri" title="Bangun solid domain aktif (+ cabang & selubungnya)">&#9654; Bangun</button><button id="imGoAll" title="Bangun semua domain">&#9654;&#9654; Semua</button><span class="sep"></span>'+
+ '<div class="kn"><button id="imTema" title="Ganti tema terang / gelap">&#9680; Tema</button><button id="imKeEks" title="Pindah ke Studio Eksplisit (penampang & string poligon)">&#8644; Eksplisit</button><button id="imX">&#10005; Tutup</button></div></div>'+
+ '<div id="imTop"><span class="tg"><button data-m="flag" title="Flag interval bor (klik / tarik)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></button><button data-m="erase" title="Hapus flag"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l9-11 7 6-6 8H8zM9 20h11"/></svg></button><button data-m="digit" title="Digit string HW / FW"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l3-1 11-11-2-2L5 17zM14 6l2 2"/></svg></button></span><span class="sep"></span><label>Domain <select id="imDom"></select></label><button id="imGo" class="pri" title="Bangun solid domain aktif (+ cabang & selubungnya)">&#9654; Bangun</button><button id="imGoAll" title="Bangun semua domain">&#9654;&#9654; Semua</button><span class="sep"></span>'+
  '<label title="Penampang vertikal (azimut) atau level (RL)">Penampang <select id="imM"><option value="v">Vertikal</option><option value="h">Level</option></select></label><label id="imAzL">Az <input id="imAz" type="number" step="any"></label>'+
  '<button id="imPrev" title="Penampang sebelumnya">&#9664;</button><span id="imGeser"></span><button id="imNext" title="Penampang berikutnya">&#9654;</button>'+
  '<label>Langkah <input id="imStep" type="number" step="any" min="0.5"></label><label>Slab ± <input id="imSlab" type="number" step="any" min="0.05"></label><button id="imFit" title="Pas ke layar">Pas</button><span class="sep"></span>'+
  '<span class="vw"><button data-v="3d" title="3D saja">3D</button><button data-v="2d" title="Penampang saja">2D</button><button data-v="belah" title="3D dan penampang berdampingan">Belah</button><button data-v="intip" title="Penampang + intip 3D kecil (Tab = 3D penuh / kembali)">Intip</button></span></div>'+
  '<div id="imBody"><div id="imL"><div id="imTabs"><button data-t="dom">Domain</button><button data-t="flag">Flag</button><button data-t="str">String</button><button data-t="wf">Wireframe</button></div><div id="imLc" class="ims"></div></div>'+
- '<div id="imMid"><div id="imSec"></div></div><div id="imR"><div id="imRc" class="ims"></div></div></div>';
-document.body.appendChild(wn);
+ '<div id="imMid"><div id="imSec"></div></div><div id="imR"><div id="imRt"><span id="imRtt">Parameter</span><span class="a"><button id="imRAll" title="Bangun semua domain">&#9654;&#9654; Semua</button><button id="imRm" title="Ciutkan / buka jendela">&minus;</button></span></div><div id="imRc" class="ims"></div></div></div>';
+document.body.appendChild(wn);wn.after(g('imR'));
+{const st=document.createElement('div');st.id='imSt';st.innerHTML='<span class="cmd" id="imCmd"></span><span class="co" id="imCo"></span><span id="imSn">Offline</span>';wn.appendChild(st);}
+try{if(localStorage.getItem('ow.imTema')==='dk'){wn.classList.add('dk');g('imR').classList.add('dk');}}catch(err){}
 const e=s=>esc(String(s==null?'':s));
 const pip=document.createElement('div');pip.id='imPip';pip.innerHTML='<b>Intip 3D</b><span>Tab = besar</span><button id="imP0" title="Lihat tegak lurus penampang">&#8634;</button><button id="imPm" title="Kecilkan / tampilkan">&minus;</button>';document.body.appendChild(pip);
 function aturView(v){v=v==='besar'?'3d':v==='kecil'?'intip':v;if(!/^(3d|2d|belah|intip)$/.test(v))v='intip';if(v!=='3d')IM.prevV=v;IM.view=v;g('imMid').className='v'+v;wn.querySelectorAll('#imTop .vw button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
@@ -9049,6 +9074,10 @@ g('imPrev').onclick=()=>{scStep(-1);isiTop();};g('imNext').onclick=()=>{scStep(1
 wn.querySelectorAll('#imHd .seg button').forEach(b=>b.onclick=()=>{if(b.dataset.t==='strata'){if(window.__imStrata){wn.querySelectorAll('#imHd .seg button').forEach(x=>x.classList.toggle('on',x===b));__imStrata.buka();}else T_('Mode Stratified / Laterit menyusul di rilis berikutnya.');return;}
  wn.querySelectorAll('#imHd .seg button').forEach(x=>x.classList.toggle('on',x===b));if(window.__imStrata)__imStrata.tutup();});
 wn.querySelectorAll('#imTabs button').forEach(b=>b.onclick=()=>{IM.tab=b.dataset.t;segarUI();});
+wn.querySelectorAll('#imTop .tg button').forEach(b=>b.onclick=()=>{if(b.dataset.m==='flag'||b.dataset.m==='erase')IM.tab='flag';else if(b.dataset.m==='digit')IM.tab='str';mulai(IM.mode===b.dataset.m?null:b.dataset.m);});
+g('imRAll').onclick=()=>bangunSemua();g('imRm').onclick=()=>{const r=g('imR');r.classList.toggle('min');g('imRm').innerHTML=r.classList.contains('min')?'+':'&minus;';};
+g('imTema').onclick=()=>{wn.classList.toggle('dk');g('imR').classList.toggle('dk',wn.classList.contains('dk'));try{localStorage.setItem('ow.imTema',wn.classList.contains('dk')?'dk':'');}catch(err){}try{scDraw();}catch(err){}};
+g('imSec').addEventListener('mousemove',ev=>{try{const cv=kanvas(),r=cv.getBoundingClientRect(),q=SC.q;if(!q||!SC.inv)return;const p=SC.inv(ev.clientX-r.left,ev.clientY-r.top);g('imCo').textContent=q.m==='h'?'E '+fmt(p[0],1)+'   N '+fmt(p[1],1)+'   RL '+fmt(q.rl,1):'Jarak '+fmt(p[0],1)+'   RL '+fmt(p[1],1)+'   Az '+fmt(+g('sca').value||0,1)+'\u00b0';}catch(err){}});
 /* statistik domain */
 function statDom(d){const s={h:new Set(),n:0,l:0,m:0,lv:0},el=IM.opt.el||kolomAs()[0],A=asActive();
  for(const [h,L2] of Object.entries(IM.flags))for(const f of L2){if(f[2]!==d.id)continue;s.h.add(h);s.n++;s.l+=f[1]-f[0];for(const q of A.get(h)||[]){const a=Math.max(f[0],+q.f),b=Math.min(f[1],+q.t),v=nilai(q,el);if(b>a&&v!=null){s.m+=v*(b-a);s.lv+=b-a;}}}
@@ -9101,7 +9130,9 @@ function tabWf(){const L2=wiLuar(),cur=IM._wf&&L2.some(w=>w.nm===IM._wf)?IM._wf:
   '<div class="imst">Impor wireframe dulu (Wireframe → impor .msh / .dtm / .obj / .dxf).</div>');
  if(IM.msg.wf)h+='<div class="imst">'+e(IM.msg.wf)+'</div>';
  const ek=IM.doms.filter(d=>d.eksak);if(ek.length)h+='<h5>Domain eksak</h5>'+ek.map(d=>'<div class="imrow"><b style="color:'+d.col+';flex:1">'+e(d.nm)+'</b><small>'+e(d.eksak)+'</small><button data-lepas="'+d.id+'" title="Kembali ke RBF dari flag & string">Lepas</button></div>').join('');return h;}
-function segarL(){wn.querySelectorAll('#imTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===IM.tab));const c=g('imLc');c.innerHTML=IM.tab==='dom'?tabDom():IM.tab==='flag'?tabFlag():IM.tab==='str'?tabStr():tabWf();
+function segarL(){wn.querySelectorAll('#imTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===IM.tab));const c=g('imLc');{const FN={dom:tabDom,flag:tabFlag,str:tabStr,wf:tabWf},nF=Object.values(IM.flags).reduce((a,l)=>a+l.length,0),AC=[['dom','Domain',IM.doms.length],['flag','Flag',nF],['str','String',IM.str.length],['wf','Wireframe',wiLuar().length]];
+ c.innerHTML=AC.map(([t,l,n])=>'<div class="imac'+(t===IM.tab?' on':'')+'" data-ac="'+t+'"><span class="ch">&#9656;</span><span>'+l+'</span><i>'+n+'</i></div>'+(t===IM.tab?'<div class="imacb">'+FN[t]()+'</div>':'')).join('');
+ c.querySelectorAll('.imac').forEach(b=>b.onclick=()=>{IM.tab=b.dataset.ac;segarUI();});}
  c.querySelectorAll('.imd').forEach(r=>{const d=dom(+r.dataset.id),[ra,co,nm,vi,x]=r.querySelectorAll('input[type=radio],input[type=color],input[type=text],input[type=checkbox],button.x');
   ra.onchange=()=>{IM.act=d.id;segarUI();ulang();};co.onchange=()=>{d.col=co.value;const w=wiDom(d);if(w){w.col=d.col;wiBuild(w);}kotor();};nm.onchange=()=>{const w=wiDom(d);d.nm=nm.value.trim()||d.nm;if(w){w.nm=d.nm+' (implisit)';w.dom=d.nm;wiList();}segarUI();};
   vi.onchange=()=>{d.vis=vi.checked;tampilWi();segar3D();ulang();};x.onclick=()=>{if(confirm('Hapus domain "'+d.nm+'" beserta flag, string dan solidnya?'))hapusDom(d);};
@@ -9123,7 +9154,7 @@ function segarL(){wn.querySelectorAll('#imTabs button').forEach(b=>b.classList.t
  const ek=g('imEksak');if(ek)ek.onclick=()=>eksak(g('imWf').value,+g('imWfD').value||null);c.querySelectorAll('[data-lepas]').forEach(b=>b.onclick=()=>{const d=dom(+b.dataset.lepas);delete d.eksak;bangun(d,true);segarUI();});}
 function keBidang(pl){if(!pl)return;g('scm').value=pl.m;if(pl.m==='h')g('scr').value=pl.rl;else{g('sca').value=pl.az;g('sce').value=pl.E;g('scn').value=pl.N;g('sco').value=pl.off;}SC.v=null;scUpd();isiTop();}
 /* panel kanan: parameter inti + Lanjutan, hasil ringkas, Vein System */
-function segarR(){const d=dom(IM.act),c=g('imRc');if(!d){c.innerHTML='<div class="imst">Buat domain di tab Domain.</div>';return;}const P=imPar(d),R=IM.R[d.id],au=R&&R.st&&R.st.dip!=null&&P.ori!=='man'?R.st:null,sg=IM.opt.sg;
+function segarR(){const d=dom(IM.act),c=g('imRc');g('imRtt').textContent=d?'Bangun Vein \u2014 '+d.nm:'Domain';if(!d){c.innerHTML='<div class="imst">Buat domain di tab Domain.</div>';return;}const P=imPar(d),R=IM.R[d.id],au=R&&R.st&&R.st.dip!=null&&P.ori!=='man'?R.st:null,sg=IM.opt.sg;
  const n=(k,v,t)=>'<input type="number" step="any" data-k="'+k+'" value="'+(v==null?'':v)+'"'+(k==='aoi'?' placeholder="otomatis'+(R&&R.st&&R.st.aoiA?' ('+String(R.st.aoiA).replace('.',',')+')':'')+'"':'')+(t?' title="'+t+'"':'')+'>',sw=(k,v,lb,t)=>'<label class="imsw"'+(t?' title="'+t+'"':'')+'><input type="checkbox" data-k="'+k+'"'+(v?' checked':'')+'>'+lb+'</label>';
  let h='<div class="imrow"><b style="flex:1;color:'+d.col+'">'+e(d.nm)+(d.eksak?' (eksak)':'')+'</b><button id="imB1" class="pri">&#9654; Bangun</button></div>';
  if(!d.eksak){h+='<div class="imgr"><label title="Model diperpanjang sejauh ini dari data terluar. Kosong = otomatis.">Radius strike (m)'+n('aoi',P.aoi)+'</label><label title="Jarak penipisan ke nol searah dip">Pinch-out (m)'+n('pinD',P.pinD)+'</label>'+
@@ -9156,10 +9187,13 @@ function segarR(){const d=dom(IM.act),c=g('imRc');if(!d){c.innerHTML='<div class
   else ekspor(IM.doms.filter(x=>IM.R[x.id]&&IM.R[x.id].v).map(x=>[x.nm,IM.R[x.id].v,IM.R[x.id].t]),f,'Vein_System_implisit');};
  g('imUni').onchange=ev=>{IM.opt.uni=ev.target.checked;(async()=>{for(const x of IM.doms.filter(y=>!y.par&&!y.env))await unionInduk(x);})();};g('imUniAll').onclick=unionSemua;
  g('imSG').onchange=ev=>{IM.opt.sg=+ev.target.value||2.6;segarUI();};g('imAutoB').onchange=ev=>{IM.opt.auto=ev.target.checked;};}
-function segarUI(){if(!IM.on)return;isiTop();segarL();segarR();}
+function isiSt(){const d=dom(IM.act),md=IM.mode,nm=d?d.nm:'-';
+ const T=md==='digit'?['Digit '+IM.role,'klik titik (snap kontak & string) · Enter simpan · Backspace hapus titik · Alt = tanpa snap · Esc batal']:md==='flag'?['Flag '+nm,'klik interval · tarik = rentang · Shift + tarik = kotak · Ctrl+Z urungkan · Esc selesai']:md==='erase'?['Hapus flag','klik interval · tarik = rentang · Shift + tarik = kotak · Esc selesai']:md==='edit'?['Sunting string','tarik titik · klik bulatan tengah = sisip · Shift+klik = hapus · Esc selesai']:['Siap','domain aktif '+nm+' · Tab = 3D penuh / kembali'];
+ g('imCmd').innerHTML='<b>Perintah:</b>'+e(T[0])+' \u2014 '+e(T[1]);wn.querySelectorAll('#imTop .tg button').forEach(b=>b.classList.toggle('on',b.dataset.m===md));}
+function segarUI(){if(!IM.on)return;isiTop();segarL();segarR();isiSt();}
 /* buka / tutup */
 let c3=null,c3css='',scHome=null,scWas=false,lgHome=null;
-function tata(){if(!IM.on||!c3)return;const v=IM.view,M=g('imMid').getBoundingClientRect(),r=g('imSec').getBoundingClientRect(),mn=pip.classList.contains('min');let x,y,w,h;
+function tata(){if(IM.on){const M0=g('imMid').getBoundingClientRect(),rr=g('imR');rr.style.top=(M0.top+12)+'px';rr.style.maxHeight=Math.max(200,M0.height-24)+'px';}if(!IM.on||!c3)return;const v=IM.view,M=g('imMid').getBoundingClientRect(),r=g('imSec').getBoundingClientRect(),mn=pip.classList.contains('min');let x,y,w,h;
  c3.classList.toggle('pipm',v==='intip');
  if(v==='2d'){pip.style.display='none';c3.style.display='none';return;}
  if(v==='3d'||v==='belah'){pip.style.display='none';x=M.left;y=M.top;w=v==='3d'?M.width:Math.round(M.width*0.45);h=M.height;}
@@ -9560,6 +9594,31 @@ DM.skImp=(Y,h)=>{const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:min==n
   g('dmKl').textContent='Abu-abu = vein sebenarnya (hanya diketahui di data simulasi): '+fmt(Y.vakt)+' m³; model implisit: '+fmt(v)+' m³ ('+fmt(100*v/Y.vakt)+'%).';await h.putar(110,9000,0.12);},5000);
  st(B6,'Demo selesai','Coba sendiri: ubah parameter di panel kanan, flag interval di penampang, atau pilih Stratified / Laterit untuk endapan berlapis.',async()=>{await h.tunggu(2500);},3500);
  return L;};
+})();
+/* ================= Ore Works 0.31.0: antarmuka gaya Micromine (Studio Eksplisit): palet Ore Works + tema terang / gelap ================= */
+(function(){const g=id=>document.getElementById(id);const wn=g('scw'),hd=g('stdoHd');if(!wn||!hd||!window.__st||g('stdoCss2'))return;
+ const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}};
+ const st=document.createElement('style');st.id='stdoCss2';st.textContent=`
+#scw.studio{--bg:#EDEBE6;--pn:#F7F5F0;--p2:#FFFFFF;--bd:#D3CDC1;--tx:#1C2733;--mu:#5C6672;--ac:#17806B;--acf:#126A58;--soft:#D5ECE4;border-color:#34465a!important;background:var(--bg)!important;color:var(--tx)}
+body.ow-dk #scw.studio{--bg:#121a22;--pn:#1C2733;--p2:#263646;--bd:#36485b;--tx:#EDEBE6;--mu:#a3afbd;--acf:#5fc9ae;--soft:#1f3d3b}
+#stdoHd,#stdoRt .hd,#stdoStat,#stdoPip{background:#1C2733!important}#stdoHd b{color:#d9ae66}#stdoHd .sub{color:#9fb0c2}
+#stdoHd button,#stdoRt .hd button,#stdoPip button{background:#263646!important;border-color:#34465a!important}#stdoHd button:hover{background:#2f4458!important}
+#stdoTop,#stdoTools,#stdoRt{background:var(--pn)!important;border-color:var(--bd)!important;color:var(--tx)}
+#stdoTop select,#stdoTop input,#stdoTop button,#stdoFl input,#stdoFl button{background:var(--p2)!important;border-color:var(--bd)!important;color:var(--tx)!important}
+#stdoTop .sep{background:var(--bd)}#stdoTop button.chip.on,#stdoFl button.on{border-color:var(--ac)!important;background:var(--soft)!important;color:var(--acf)!important}
+#stdoTools button{color:var(--tx)}#stdoTools button:hover{background:var(--soft)}#stdoTools button.on{background:var(--ac)!important;border-color:var(--ac)!important;color:#fff!important}
+#stdoSec{color:var(--tx)}#stdoSl{background:var(--p2)!important;border-color:var(--bd)!important}#stdoSl .it{border-color:var(--bd)}#stdoSl .it:hover{background:var(--soft)}
+#stdoSl .it.on{background:var(--soft)!important;box-shadow:inset 3px 0 var(--ac)!important}#stdoSl .nm i,#stdoSl .vl,#stdoSl .kos{color:var(--mu)}#stdoSl .tg{color:var(--tx)}#stdoSl .hr{color:var(--acf)}
+#stdoHint{background:#1C2733e6}#stdoStat .sn{color:#d9ae66}#stdoN{color:#9fb0c2!important}
+#stdoRt #mspnl{color:var(--tx)}#stdoRt #mspnl input,#stdoRt #mspnl select,#stdoRt #mspnl button{background:var(--p2);color:var(--tx);border-color:var(--bd)}
+#stdoRt #mspnl .pri,#stdoRt #mspnl button.on{background:var(--ac)!important;border-color:var(--ac)!important;color:#fff!important}
+#stdoRt #mspnl .note,#stdoRt #mspnl .dsr,#stdoRt #mspnl label{color:var(--tx)}
+#scw.studio #lgbar{background:var(--pn)!important;color:var(--tx)!important;border-bottom:1px solid var(--bd)}
+body.ow-dk #scw.studio #stdoCv{background:#000}body.ow-dk #scw.studio #stdoCv #scc{filter:invert(1) hue-rotate(180deg)}
+`;document.head.appendChild(st);
+ if(LS('ow.imTema')==='dk')document.body.classList.add('ow-dk');
+ const b=document.createElement('button');b.id='stdoTema';b.title='Ganti tema terang / gelap';b.innerHTML='&#9680; <span>Tema</span>';hd.insertBefore(b,g('stdoFs'));
+ b.onclick=()=>{const v=document.body.classList.toggle('ow-dk');LS('ow.imTema',v?'dk':'');try{scDraw();}catch(e){}};
 })();
 </script>
 <script>/* Ore Works: pemuat paket zona (.gcv.json berisi 'bawaan') */
