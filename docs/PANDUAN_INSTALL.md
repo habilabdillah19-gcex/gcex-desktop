@@ -5825,3 +5825,7 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Perbaikan pemecahan poligon: tonjolan kecil di sekitar puncak celah tidak lagi menambah lajur, dan lengan yang lebih pendek
   berhenti di ujungnya (sebelumnya membentuk "tutup" di atas celah).
 
+## 301. Ore Works 0.32.2 — demo Implisit Y: solid bor saja disembunyikan saat digit
+
+- Langkah **Digit batas Y — string tertutup** di demo Implisit (kartu Bercabang vertikal) tidak lagi menampilkan solid "kontak bor saja". Solid itu hanya pembanding; setelah Bangun ulang, solid lajur menggantikannya.
+- Tidak ada perubahan mesin. Video demo diperbarui.

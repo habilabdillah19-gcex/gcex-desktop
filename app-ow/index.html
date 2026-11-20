@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.32.1';</script>
+<script>window.GCEX_VER='0.32.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -9714,7 +9714,8 @@ function skSplay(Y,h){const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:m
   const fb=g('imFK');if(ok===3&&vis(fb))await h.klik(fb,{jeda:700});else IM().flagKolom('Vein_Type',{VY1:'VY',VY2:'VY',VY3:'VY'});if(dom())IM().act=dom().id;IM().segar();await h.tunggu(1200);},5200);
  st(B3,'Bangun dari kontak bor saja','Satu domain = satu pasang permukaan HW / FW. Ruang di antara kedua lengan tidak bisa dikosongkan: celah Y ikut terisi.',async()=>{
   const b=tbl('#imGo')||tbl('#imB1');await h.klik(b,{aksi:()=>IM().bangun(dom()),jeda:300});await siap(h,dom());v0=volDom(dom());await h.tunggu(2200);},5200);
- st(B4,'Digit batas Y — string tertutup','Alat Digit yang sama dengan HW / FW: klik batas vein, lalu klik titik awal untuk menutup. String tertutup otomatis menjadi batas vein.',async()=>{
+ st(B4,'Digit batas Y — string tertutup','Solid kontak bor saja disembunyikan selama digit, jadi yang tampak hanya poligon Y. Alat Digit sama dengan HW / FW: klik batas vein, lalu klik titik awal untuk menutup.',async()=>{
+  const d0=dom();if(d0){delete IM().R[d0.id];IM().segar();}
   const b=tbl('#imTop button[data-m="digit"]')||tbl('#imLc button[data-m="digit"]');if(b)await h.klik(b,{jeda:500});if(IM().mode!=='digit'){IM().mode='digit';IM().segar();}
   await bingkai(h,yp[m0],900);await digitY(h,yp[m0],false);},4000);
  st(B4,'Penampang lain (dipercepat)','Pindah penampang (▶) lalu tutup poligon Y lagi. Penampang tanpa celah cukup digambar sebagai poligon biasa.',async()=>{
