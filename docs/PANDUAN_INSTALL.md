@@ -5860,3 +5860,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Data latihan fiktif ada di folder pemasangan `resources\data-latihan` (topografi `.str` dan block model `.mdl`).
 - Block Model 0.24.113, Drillhole 0.24.115, DB-Ex 0.46.11 dan Ore Works 0.32.3 ikut naik karena berkas jendela aplikasi
   (`electron/`) yang dipakai bersama berubah; tidak ada perubahan fitur di keempatnya.
+
+## 304. Pit Studio 0.1.1 — Turun per elevasi, Laporan & grafik, jejak jalur
+
+- **Turun per elevasi** (panel Pit Schedule, baris biru): gambar **Batas fase**, muat block model, isi selang penurunan
+  (mis. 10 m), tekan **Hitung G×T×SR**. Seluruh area digali lapis demi lapis sampai lantai desain; tiap penurunan
+  elevasi dilaporkan ton @ g/t per kelas, waste, SR dan logam. Bila sudah ada jalur gali, jalur itulah yang dilaporkan.
+- **Laporan & grafik** (tombol di hasil jadwal → Grade × Tonnage): ringkasan, grafik ton per periode dengan garis kadar
+  ore, tabel dengan kolom kumulatif (Σ ore, Σ g/t, Σ SR) dan kapan tiap periode selesai. Klik batang atau baris untuk
+  melihat permukaan periode itu di 3D; tombol **ringkas** menyisakan grafik saja.
+- **Jejak jalur gali**: ikon mata di daftar Jalur gali menyembunyikan / menampilkan satu jalur (jalur tetap digali);
+  per fleet ada *tampil semua / sembunyikan semua / hanya terakhir*; pilihan **jejak** di panel: semua fleet, fleet
+  aktif, atau mati.
+- Menu **Demo** bab K: tutorial dari jadwal sampai laporan grade × tonnage × SR.
+- Block Model, Drillhole, DB-Ex dan Ore Works tidak berubah.

@@ -581,7 +581,7 @@ input,select{border-color:#b8c4d6!important}input:focus,select:focus{outline:1px
  </div>
 </div>
 
-<script>window.GCEX_VER='0.1.0';</script>
+<script>window.GCEX_VER='0.1.1';</script>
 <script>/**
  * @license
  * Copyright 2010-2021 Three.js Authors
@@ -12821,7 +12821,7 @@ const SCHA=[['ex20','Excavator kelas 20 t (PC200)',0.9,18],['ex40','Excavator ke
  '<div class="r">blok <input id="schbx" type="number" step="any" value="5">×<input id="schby" type="number" step="any" value="5"> m · lapis <input id="schh2" type="number" step="any" value="2.5"> m'+
  '<details class="schadv"><summary>&#9881;</summary><div class="r">azimut grid <input id="schaz" type="number" step="any" value="90">° · tepi <input id="schmg" type="number" step="any" value="10"> m · <button id="schgr">&#9638; lihat grid</button></div>'+
  '<div class="r">shift / hari <select id="schsd"><option value="1">1</option><option value="2" selected>2 (DS / NS)</option><option value="3">3</option></select> · mulai <input id="schdt" type="date"></div><div class="r">SG <input id="schsg" type="number" step="any" value="2.5"> t/BCM · lereng antar-blok <input id="schlr" type="number" step="any" value="60" title="Opsi A: blok tetangga ikut digali bila beda tinggi melebihi sudut ini (0 = mati)">°</div><div class="r"><button id="schaq" title="Mode cepat (bukan default): seluruh blok di dalam poligon digali sampai lantai, lapis demi lapis">&#11040; Area cepat (gali penuh)</button> · <label><input type="checkbox" id="schshw" checked> tampilkan di 3D</label> <label title="Desain pit acuan (permukaan, string, bentuk awal, label) saat jadwal tampil: 0 = disembunyikan">desain acuan <input id="schdo" type="range" min="0" max="100" step="5" value="0" style="width:70px;vertical-align:middle"><b id="schdov">0%</b></label> <label title="Garis kontur tiap flitch (tipis) & tiap bench (tegas, berlabel RL) pada permukaan jadwal"><input type="checkbox" id="schct" checked> kontur teras</label></div></details></div>'+
- '<div class="r"><button id="schap" title="Poligon batas fase: blok AOI di luar batas tidak pernah digali. Klik titik di 3D, Enter / klik ganda = selesai">&#11040; Batas fase</button><button id="schal" title="Tarik jalur gali A→B (dst.) di 3D. Tiap lintasan menggali n flitch di blok AOI yang dilewati; jalur yang sering ditarik makin dalam">&#10140; Jalur gali</button><button id="schfl" title="Tambah fleet (alat) baru; jalur gali berikutnya masuk ke fleet ini">+ Fleet</button><span id="schbn" style="font-size:11px;color:#6c757d"></span></div><div class="r"><span id="schdg" style="color:#c92a2a;font-size:11px"></span></div>'+
+ '<div class="r"><button id="schap" title="Poligon batas fase: blok AOI di luar batas tidak pernah digali. Klik titik di 3D, Enter / klik ganda = selesai">&#11040; Batas fase</button><button id="schal" title="Tarik jalur gali A→B (dst.) di 3D. Tiap lintasan menggali n flitch di blok AOI yang dilewati; jalur yang sering ditarik makin dalam">&#10140; Jalur gali</button><button id="schfl" title="Tambah fleet (alat) baru; jalur gali berikutnya masuk ke fleet ini">+ Fleet</button><span id="schbn" style="font-size:11px;color:#6c757d"></span><label style="font-size:11px;color:#495057;margin-left:auto" title="Jejak jalur gali di 3D. Tiap jalur juga bisa dimatikan sendiri (ikon mata di daftar Jalur gali)">jejak <select id="schtr" style="font-size:11px"><option value="all">semua fleet</option><option value="sel">fleet aktif</option><option value="off">mati</option></select></label></div><div class="r"><span id="schdg" style="color:#c92a2a;font-size:11px"></span></div>'+
  '<div id="schph"></div><div id="schtl"></div><div id="sched"></div>'+
  '<div class="r" style="margin-top:4px"><button id="schrun" style="font-weight:700;background:#5b3a12;color:#fff;border:0;border-radius:4px;padding:4px 14px">&#9654; Jalankan</button></div><div id="schinf"></div>'+
  '<div id="schres" style="display:none;border-top:1px solid #e3e7ef;padding-top:5px"><div class="r"><button id="schpl">&#9654; Putar</button><button id="schp0" title="Kembali ke topo awal">&#9198;</button><button id="schpm">&#9664;</button><button id="schpp">&#9654;</button>'+
@@ -12862,11 +12862,11 @@ function schDigEnd(ok){const d=SCH.dig;SCH.dig=null;SCH.dn=null;cv.style.cursor=
  const P=[];for(const p of d.pts)if(!P.length||Math.hypot(p[0]-P[P.length-1][0],p[1]-P[P.length-1][1])>0.5)P.push(p);
  const cl=d.type==='poly'||d.type==='bnd';if(cl&&P.length>2&&Math.hypot(P[0][0]-P[P.length-1][0],P[0][1]-P[P.length-1][1])<0.5)P.pop();
  if(P.length<(cl?3:2)){schMsg('Titik kurang — '+(cl?'poligon butuh ≥ 3 titik':'jalur butuh ≥ 2 titik')+'.',1);return;}if(d.type==='haul'){d.tk.hr=P.map(p=>[p[0],p[1],p[2]]);if(d.tk.type==='line')for(const l of SCH.tasks)if(l.type==='line'&&(l.grp||'A1')===(d.tk.grp||'A1'))l.hr=d.tk.hr.map(q=>q.slice());schTasks();schDrawStatic();schMsg('Jalur angkut "'+esc(d.tk.nm)+'": '+schF(schRL(P))+' m.');return;}if(d.type==='bnd'){schPh().bnd=P.map(p=>[p[0],p[1],p[2]]);schTasks();schDrawStatic();schMsg('Batas fase dibuat. Sekarang tarik jalur gali.');return;}schAdd(d.type,P);}
-function schAdd(type,P,o){const k=SCH.nid++;if(type==='line'){const g=(o&&o.grp)||SCH.curG||'A1';const lt=[...SCH.tasks].reverse().find(x=>x.type==='line'&&(x.grp||'A1')===g)||[...SCH.tasks].reverse().find(x=>x.type==='line');const base=lt?JSON.parse(JSON.stringify(lt)):{};for(const q of ['id','nm','pts','col','_lim','_v','_s','_d'])delete base[q];o=Object.assign({fl:1,rep:1,nb:1,fm:schDes().length?'des':'none',fd:'res'},base,(base.nbN||base.flN||base.repN)?{nb:Math.max(1,base.nbN|0||base.nb||1),fl:Math.max(1,base.flN|0||base.fl||1),rep:Math.max(1,base.repN|0||base.rep||1)}:{},o||{},{grp:g});o.col=schGcol(g);}let adv=90;if(type==='poly'){let bi=0,bl=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);if(l>bl){bl=l;bi=i;}}const a=P[bi],b=P[(bi+1)%P.length];adv=Math.round(((Math.atan2(b[0]-a[0],b[1]-a[1])*180/Math.PI)+360)%360);}
+function schAdd(type,P,o){const k=SCH.nid++;if(type==='line'){const g=(o&&o.grp)||SCH.curG||'A1';const lt=[...SCH.tasks].reverse().find(x=>x.type==='line'&&(x.grp||'A1')===g)||[...SCH.tasks].reverse().find(x=>x.type==='line');const base=lt?JSON.parse(JSON.stringify(lt)):{};for(const q of ['id','nm','pts','col','_lim','_v','_s','_d','vis','_elev'])delete base[q];o=Object.assign({fl:1,rep:1,nb:1,fm:schDes().length?'des':'none',fd:'res'},base,(base.nbN||base.flN||base.repN)?{nb:Math.max(1,base.nbN|0||base.nb||1),fl:Math.max(1,base.flN|0||base.fl||1),rep:Math.max(1,base.repN|0||base.rep||1)}:{},o||{},{grp:g});o.col=schGcol(g);}let adv=90;if(type==='poly'){let bi=0,bl=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);if(l>bl){bl=l;bi=i;}}const a=P[bi],b=P[(bi+1)%P.length];adv=Math.round(((Math.atan2(b[0]-a[0],b[1]-a[1])*180/Math.PI)+360)%360);}
  const t=Object.assign({id:k,nm:(type==='poly'?'Area ':'Jalur ')+k,type,pts:P.map(p=>[p[0],p[1],p[2]]),w:10,wm:'blok',nb:1,alat:'ex120',pm2:'bkt',bkt:6.7,cyc:27,ff:0.85,eff:0.83,sw:30,prod:250,unit:'bcmh',sch:11,pa:90,ua:80,nu:1,start:1,hl:false,hk:'r90',hp:91,hv:60,vl:22,ve:38,td:1.0,ts:0.8,hn:0,hd:800,hr:null,hf:1.15,hg:8,fm:'depth',fv:5,fd:'res',bat:0,adv,pm:'lapis',col:SCHC[(k-1)%SCHC.length],on:true},o||{});SCH.tasks.push(t);SCH.sel=t.type==='line'?'g:'+(t.grp||'A1'):t.id;if(t.type==='line'){SCH.curG=t.grp||'A1';SCH.newG=null;}schTasks();schDrawStatic();schMsg('"'+esc(t.nm)+'" ditambahkan — atur alat & lantai, lalu Jalankan.');return t;}
 function schDes(){const o=[];const add=(id,nm,R)=>{try{if(R&&R.tin&&R.tin.G)o.push({id,nm,G:R.tin.G});}catch(_){}};try{add('res','Pit final',RES);}catch(_){}try{add('stg','Staging',STG);}catch(_){}try{if(ED)add('edo','Pit hasil edit',ED.out);}catch(_){}return o;}
 /* daftar ringkas: 1 baris = 1 fleet (rekap semua jalur gali alat itu) + baris area cepat */
-const SCHLF=['nm','pts','fl','rep','nb','id','col','on','type','grp','_lim','_v','_s','_d','_pb'];
+const SCHLF=['nm','pts','fl','rep','nb','id','col','on','type','grp','_lim','_v','_s','_d','_pb','vis','_elev'];
 function schGcol(g){const f=SCH.tasks.find(x=>x.type==='line'&&(x.grp||'A1')===g);return f?f.col:SCHC[(['A1','A2','A3','A4','A5','A6'].indexOf(g)+6)%SCHC.length];}
 /* setelan jalur baru untuk fleet g (lebar blok, flitch, lintasan) */
 function schNewFor(g){const L=SCH.tasks.filter(x=>x.type==='line'&&(x.grp||'A1')===g),t=L[L.length-1];if(!t)return {nb:1,fl:1,rep:1};const f=(k)=>Math.max(1,(t[k+'N']||t[k]||1)|0);return {nb:f('nb'),fl:f('fl'),rep:f('rep')};}
@@ -12899,7 +12899,7 @@ function schEdit(){const el=$('sched'),F=schFleets(),fg=typeof SCH.sel==='string
  '<div class="r">angkut '+sel('hk',[['','— tanpa —'],...SCHH.map(a=>[a[0],a[1]])],t.hl?t.hk:'')+(t.hl?' DT '+num('hn',t.hn,'0 = dihitung otomatis')+'</div><div class="r">'+(t.hr?'jalur angkut '+schF(schRL(t.hr))+' m <button data-a="hrx">&#10005;</button>':'jarak '+num('hd',t.hd)+' m')+' <button data-a="hr" title="Gambar jalur angkut di 3D: mulut pit → dump">&#9998; jalur</button>':'')+'</div>'+
  '<div class="r" style="color:#5b3a12;font-size:11px">'+schF(schPrd(t))+' BCM/jam × '+schF(schEj(t),2)+' jam ef. × '+Math.max(1,t.nu|0)+' = <b>'+schF(schCap(t))+' BCM/shift</b>'+(t.hl?'<br>'+schHtxt(t):'')+'</div>';
  if(FL){const np=FL.reduce((a,l)=>a+Math.max(1,l.rep|0),0);if(!FL.some(l=>l.id===SCH.selL))SCH.selL=null;
-  h+='<details id="schjl"'+(SCH.jOpen?' open':'')+'><summary>Jalur gali ('+FL.length+' jalur · '+np+' lintasan)</summary><div style="max-height:150px;overflow:auto">'+FL.map((l,k)=>'<div class="ti'+(l.id===SCH.selL?' sel':'')+'" data-l="'+l.id+'" style="padding:1px 4px"><span class="n">'+(k+1)+'. '+esc(l.nm)+' <span style="color:#6c757d">'+Math.max(1,l.rep|0)+'× '+Math.max(1,l.fl|0)+' flitch · '+Math.max(1,l.nb|0)+' blok ('+schF(Math.max(1,l.nb|0)*Math.min(+$('schbx').value||5,+$('schby').value||5))+' m)</span></span><button data-m="-1" style="padding:0 3px">&#9650;</button><button data-m="1" style="padding:0 3px">&#9660;</button><button data-lx style="padding:0 4px">&#10005;</button></div>').join('')+'</div>';
+  h+='<details id="schjl"'+(SCH.jOpen?' open':'')+'><summary>Jalur gali ('+FL.length+' jalur · '+np+' lintasan'+(FL.some(l=>l.vis===false)?' · '+FL.filter(l=>l.vis===false).length+' disembunyikan':'')+')</summary><div class="r" style="font-size:11px;color:#6c757d">jejak di 3D: <button data-lva="1" style="padding:0 5px">tampil semua</button><button data-lva="0" style="padding:0 5px">sembunyikan semua</button><button data-lva="2" style="padding:0 5px" title="Hanya jalur yang terakhir ditarik">hanya terakhir</button></div><div style="max-height:150px;overflow:auto">'+FL.map((l,k)=>'<div class="ti'+(l.id===SCH.selL?' sel':'')+'" data-l="'+l.id+'" style="padding:1px 4px"><span class="n">'+(k+1)+'. '+esc(l.nm)+' <span style="color:#6c757d">'+Math.max(1,l.rep|0)+'× '+Math.max(1,l.fl|0)+' flitch · '+Math.max(1,l.nb|0)+' blok ('+schF(Math.max(1,l.nb|0)*Math.min(+$('schbx').value||5,+$('schby').value||5))+' m)</span></span><button data-lv title="Tampilkan / sembunyikan jejak jalur ini di 3D (jalur tetap digali)" style="padding:0 3px;'+(l.vis===false?'opacity:.35;text-decoration:line-through':'')+'">&#128065;</button><button data-m="-1" style="padding:0 3px">&#9650;</button><button data-m="1" style="padding:0 3px">&#9660;</button><button data-lx style="padding:0 4px">&#10005;</button></div>').join('')+'</div>';
   const l=FL.find(x=>x.id===SCH.selL);if(l)h+='<div style="border-top:1px dashed #ecd9bd;margin-top:3px;padding-top:2px"><div class="r"><input type="text" data-l2="nm" value="'+esc(l.nm)+'" style="width:100px"> '+'<input data-l2="fl" type="number" value="'+Math.max(1,l.fl|0)+'" title="flitch per lintasan"> flitch × <input data-l2="rep" type="number" value="'+Math.max(1,l.rep|0)+'" title="jumlah lintasan"> lintasan</div>'+
    '<div class="r">lebar <input data-l2="nb" type="number" value="'+Math.max(1,l.nb|0)+'"> blok · pindah ke <select data-l2="grp">'+['A1','A2','A3','A4','A5','A6'].map(x=>'<option'+(x===(l.grp||'A1')?' selected':'')+'>'+x+'</option>').join('')+'</select></div>'+
    '<div class="r"><button data-a="par" title="Salin jalur ini sejajar (bergeser selebar jalur), arah bolak-balik">&#8649; Salin sejajar</button> × <input id="schpn" type="number" value="5" style="width:40px"> ke <select id="schps"><option value="1">kanan</option><option value="-1">kiri</option></select></div></div>';
@@ -13115,7 +13115,7 @@ function schDrawStatic(grid){schGrp();const g=SCH.gs;while(g.children.length){co
 function schFleetLines(g){/* jejak jalur gali SEMUA fleet (warna fleet); fleet terpilih tebal + nomor urut, fleet lain tipis + label jalur terakhir */
  const fg=typeof SCH.sel==='string'?SCH.sel.slice(2):SCH.curG,F=schFleets();if(!F.size)return;const S=SCH.sim&&SCH.show&&SCH.grid?schSurf(SCH.p):null,Gd=SCH.grid;
  const zAt=(x,y)=>{if(S&&Gd){const sx=x*Gd.ux+y*Gd.uy,sq=x*Gd.vx+y*Gd.vy,i=Math.floor((sx-Gd.s0)/Gd.bx),j=Math.floor((sq-Gd.t0)/Gd.by);if(i>=0&&j>=0&&i<Gd.nx&&j<Gd.ny&&isFinite(S[j*Gd.nx+i]))return S[j*Gd.nx+i];}const z=topoZ(x,y);return isFinite(z)?z:0;};
- for(const [gk,L0] of F){const L=L0.filter(t=>t.on);if(!L.length)continue;const sel=gk===fg,col=L[0].col;
+ if(SCH.trace==='off')return;for(const [gk,L0] of F){if(SCH.trace==='sel'&&gk!==fg)continue;const L=L0.filter(t=>t.on&&t.vis!==false);if(!L.length)continue;const sel=gk===fg,col=L[0].col;
   L.forEach((t,k)=>{const last=k===L.length-1;const P=densify(t.pts.map(p=>[p[0],p[1],0]),4).map(p=>[p[0],p[1],zAt(p[0],p[1])+0.8]);const o=lineObj(P,col,false,{depthTest:false,transparent:true,opacity:sel?0.95:(last?0.85:0.45)});o.renderOrder=8;g.add(o);
    if(sel||last){const a=P[P.length-2]||P[0],b=P[P.length-1],dx=b[0]-a[0],dy=b[1]-a[1],ln=Math.hypot(dx,dy)||1,ux=dx/ln,uy=dy/ln,ah=4;const ar=lineObj([[b[0]-ux*ah-uy*ah*0.6,b[1]-uy*ah+ux*ah*0.6,b[2]],b,[b[0]-ux*ah+uy*ah*0.6,b[1]-uy*ah-ux*ah*0.6,b[2]]],col,false,{depthTest:false});ar.renderOrder=8;g.add(ar);
     try{const sp=sprite(sel?String(k+1):gk+' · '+(k+1),col,sel?0.02:0.017,V(P[0][0],P[0][1],P[0][2]+1.5));sp.renderOrder=9;if(sp.material)sp.material.depthTest=false;g.add(sp);}catch(_){}}});}}
@@ -13254,6 +13254,14 @@ window.__PS3=window.__PS3||{};window.__PS3.sch={px:(x,y)=>{R.render(S,C);const g
 /* cutTopo (lubang topografi oleh pit desain) dijalankan ulang saat jadwal tampil: kembalikan status asli dulu, lalu lubangi ulang AOI */
 try{const _ct=cutTopo;cutTopo=function(){for(const t of TP)if(t.__schKey){t.Tshow=t.__schSv.Tshow;t.cut=t.__schSv.cut;t.show=t.__schSv.show;delete t.__schSv;delete t.__schKey;}const r=_ct.apply(this,arguments);try{if(SCH.show&&SCH.sim)schFade(true);}catch(_){}return r;};}catch(_){}
 
+/* jejak jalur: tampil / sembunyi per jalur (ikon mata), per fleet (tampil semua / sembunyikan / hanya terakhir), dan global (#schtr) */
+(function(){const sd=$('sched');if(sd)sd.addEventListener('click',e=>{const b=e.target.closest('[data-lv],[data-lva]');if(!b)return;e.stopPropagation();e.preventDefault();
+  if(b.hasAttribute('data-lv')){const row=b.closest('[data-l]'),t=SCH.tasks.find(x=>x.id===+row.dataset.l);if(t)t.vis=t.vis===false;}
+  else{const g=typeof SCH.sel==='string'?SCH.sel.slice(2):SCH.curG,L=SCH.tasks.filter(x=>x.type==='line'&&(x.grp||'A1')===g),m=+b.dataset.lva;L.forEach((t,k)=>{t.vis=m===1?true:m===0?false:k===L.length-1;});}
+  SCH.jOpen=true;schTasks();schDrawStatic();if(SCH.sim&&SCH.show)schPaint();},true);
+ const tr=$('schtr');if(tr)tr.onchange=()=>{SCH.trace=tr.value;schDrawStatic();if(SCH.sim&&SCH.show)schPaint();};})();
+try{window.__PS3.sch.vis=()=>SCH.tasks.filter(t=>t.type==='line').map(t=>t.vis!==false);}catch(_){}
+
 /* a32: Demo bab J — Pit Schedule: jalur gali per fleet (bench-by-bench), sump pojok utara, hauling DT (simulasi 19 Nov 2026).
    Memakai topografi & pit dua lantai FIKTIF dari bab I (dijalankan cepat bila belum ada). */
 DMCH.push({id:'J',nm:'Pit Schedule — jadwal per fleet, grade × tonnage, desain face position',run:async()=>{
@@ -13292,6 +13300,7 @@ DMCH.push({id:'J',nm:'Pit Schedule — jadwal per fleet, grade × tonnage, desai
  await dmCap('J · 8 Hasil','Periode per bench','Periode bisa per jam, shift, hari, minggu, bulan, flitch, atau bench — tabel volume & CSV ikut periode itu.');{const e=$('schun');await dmPoint(e);e.value='b';e.dispatchEvent(new Event('change'));}await dW(500);
  {const d=$('schtb').closest('details');if(d){d.open=true;}}await dmPoint('#schtb');await dW(1600);{const d=$('schtb').closest('details');if(d)d.open=false;}
  await dmCap('J · 9 Hauling','DT di jalur angkut','DT muat di excavator → angkut → dump (bak terangkat) → kembali. Kebutuhan DT tiap fleet tampil di ringkasan.');await dmCam([600760,9200990,245,520,0.7],1600);await dW(3500);
+ if(window.__DMJK)return;
  await dmCap('J · 10 Sayatan','Penampang lewat sump','Sayatan N–S: topografi (hijau), pit final (biru), permukaan jadwal (jingga) — sump di pojok utara tertahan lantai desain.');
  await dmCam([600640,9200800,232,330,0.85],1200);try{window.__PS3.say.set([600610,9200715],[600610,9200885]);}catch(_){}await dW(3500);try{$('sayw').style.display='none';sayLine3D();}catch(_){}
  await dmCap('J · 11 Grade × Tonnage','Block model .mdl','Muat block model Surpac (.mdl): hanya blok di jendela AOI yang dibaca. Cara Surpac — blok dihitung saat permukaan gali melewati titik pusatnya. Data demo fiktif.');
@@ -13304,6 +13313,67 @@ DMCH.push({id:'J',nm:'Pit Schedule — jadwal per fleet, grade × tonnage, desai
  await dmCap('J · 13 Fase','Kunci & lanjut fase','Setelah satu fase selesai, permukaan akhirnya menjadi topografi awal fase berikut — nomor shift & tanggal bersambung.');await dmPoint('#schph [data-a=nx]');await dW(1500);
  lay(/Permukaan pit|Label RL|Garis potong/,true);
  await dmCap('Selesai','Demo selesai','Semua desain di demo ini memenuhi empat tolok ukur kerapian; Pit Schedule mensimulasikan penggalian per fleet. Tekan Stop untuk mengembalikan pengaturan.');await dW(2500);}});
+/* Bab K — TUTORIAL khusus Pit Schedule → Grade × Tonnage.
+   Kasus 1: satu area diturunkan per selang elevasi (G × T × SR tiap penurunan). Kasus 2: jalur gali per fleet (bab J 1–9) + laporan rinci. */
+DMCH.push({id:'K',nm:'Tutorial: Pit Schedule → Grade × Tonnage × SR (turun per elevasi, per fleet, cut-off)',run:async()=>{
+ const ok=()=>{try{return !!RES&&TP.some(t=>/topo_latihan_dua_lantai/.test(t.nm));}catch(_){return false;}};
+ if(!ok()){await dmCap('Tutorial','Menyiapkan pit latihan','Memakai topografi & pit dua lantai fiktif dari bab I — dijalankan cepat lebih dulu.');const I=DMCH.find(c=>c.id==='I'),sp=DMO.spd,cp0=dmCap,sh=dmShot;DMO.spd=60;dmCap=async()=>{};dmShot=async()=>{};try{await I.run();}finally{DMO.spd=sp;dmCap=cp0;dmShot=sh;}}
+ const tz=p=>{const z=topoZ(p[0],p[1]);return [p[0],p[1],isFinite(z)?z:250];},BND=[[600560,9200720],[600800,9200720],[600800,9200880],[600560,9200880]].map(tz);
+ const lay=(re,on)=>{for(const l of document.querySelectorAll('#lay input[type=checkbox]'))if(re.test(l.parentElement.innerText)&&l.checked!==on)l.click();};
+ const wt=async n=>{for(let i=0;i<(n||160)&&(GT.busy||!GT.res);i++)await dRaw(250);},sb=()=>{const b=$('schbd');b.scrollTop=b.scrollHeight;},bigPos=()=>{const w=$('gtrw');w.style.left='590px';w.style.top='74px';w.style.width='838px';gtBigDraw();};
+ const sum=()=>{const A=gtAgg({out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:false}),K=A.K;let o=0,m=0;for(let k=0;k<K;k++){o+=A.tot.t[k];m+=A.tot.gt[k];}return {o,g:o>0?m/o:0,w:A.tot.t[K]};};
+ const bars=async ms=>{const n=SCH.bd.length;for(let i=0;i<n;i++){const r=document.querySelector('#gtrg rect.b[data-i="'+i+'"]');if(!r)continue;await dmPoint(r,450);dmRip();schStop();schSet(i);await dW(ms);}};
+ const S1='Kasus 1 · Turun per elevasi',S2='Kasus 2 · Jalur gali per fleet';
+ /* tutorial: beri waktu baca tiap keterangan (± 35 ms per huruf) */
+ const cap0=dmCap;dmCap=async(x,y,z)=>{await cap0(x,y,z);await dW(Math.min(5200,600+34*String(z||'').length));};try{
+ /* ---------- Kasus 1 ---------- */
+ dmWin();try{$('sayw').style.display='none';}catch(_){}try{gtBig(false);gtOpen(false);}catch(_){}schReset();lay(/Permukaan pit|Label RL|Garis potong/,false);
+ await dmCap(S1,'Kasusnya','Mine plan diminta menjadwalkan satu area: setiap penurunan elevasi menghasilkan berapa ton, kadar dan stripping ratio? Buka menu Pit Schedule.');
+ await dmCam([600680,9200800,240,520,0.8],1400);await dmClick('#mbsch');{const w=$('schw');w.style.left='12px';w.style.top='78px';}await dW(900);
+ await dmCap(S1+' 1','Batas fase = area yang dijadwalkan','Gambar poligon area di 3D. Blok AOI 5 × 5 m, lapis 2,5 m; di luar poligon tidak pernah digali.');
+ await dmCam([600680,9200800,240,420,0],1200);await dmClick('#schap',{noFire:true});await dmDraw(BND,true,250);schPh().bnd=BND.map(q=>q.slice());dmDrawClear();schTasks();schDrawStatic();await dW(700);
+ await dmCap(S1+' 2','Muat block model (.mdl)','Menu Impor → Block model. File Surpac dibaca seperti di GC-Ex; hanya blok di bawah topografi dan di area kerja yang dimuat. Kelas: LG 0,4–1 g/t, HG ≥ 1 g/t, sisanya waste. Data demo fiktif.');
+ gtMount();gtOpen(true);{const w=$('bmw');w.style.left='590px';w.style.right='auto';w.style.top='78px';}await dW(500);await dmPoint('#gtld');dmRip();await gtLoad(dmMdlFiktif());await dW(1000);await dmPoint('#gttp');await dW(1000);$('gtkd').open=true;await dW(300);await dmPoint('#gtrl');await dW(2200);gtOpen(false);
+ await dmCap(S1+' 3','Turun per elevasi tiap 10 m','Isi selang penurunan lalu Hitung: seluruh area digali lapis demi lapis sampai lantai desain (lereng antar-blok dijaga), lalu dilaporkan per 10 m.');
+ await dmCam([600680,9200800,236,360,0.85],1200);await dmType('#schev',10);dmSet('schev',10);await dmPoint('#schego');dmRip();await schElev();await wt();bigPos();await dW(1200);
+ await dmCap(S1+' 4','Tiap penurunan: ton, kadar, SR','Satu baris = satu penurunan elevasi: ton @ g/t tiap kelas, waste, SR, logam. Kolom kanan = kumulatif (Σ ore, Σ kadar, Σ SR) dan kapan selang itu selesai menurut kapasitas alat.');
+ await dmPoint('#gtrc');await dW(2600);await dmPoint('#gtrg');await dW(3000);await dmPoint('#gtrt');await dW(4500);
+ await dmCap(S1+' 5','Lihat tiap elevasi di 3D','Klik batang / baris: permukaan area pada akhir penurunan itu. Warna = kelas material yang tergali (merah HG, hijau LG, cokelat waste) — seperti tampilan blok berwarna di Minex.');
+ gtBigMin(true);{const w=$('gtrw');w.style.left='832px';w.style.top='74px';}await dmCam([600770,9200800,236,300,0.85],1300);await bars(2300);gtBigMin(false);bigPos();
+ await dmCap(S1+' 6','Ubah selang: tiap 5 m','Selang bebas diatur (kelipatan tinggi lapis). Dengan 5 m terlihat lebih rinci di elevasi mana ore mulai muncul dan SR turun.');
+ await dmType('#schev',5);dmSet('schev',5);await dmPoint('#schego');dmRip();GT.res=null;await schElev();await wt();bigPos();await dW(900);await dmPoint('#gtrg');await dW(2600);await dmPoint('#gtrt');await dW(3600);
+ await dmCap(S1+' 7','Waktu mengikuti alat','Kolom "selesai" dihitung dari alat area ini (unit, jam, PA, UA). Ubah alat atau jumlah unit di kartu area → jadwal & laporan dihitung ulang. Tombol CSV mengekspor tabelnya.');
+ await dmPoint('#schtl');await dW(2600);await dmPoint('#gtrcsv');await dW(1800);gtBig(false);
+ /* ---------- Kasus 2: bab J langkah 1–9 ---------- */
+ await dmCap(S2,'Bila urutan gali ditentukan per alat','Kasus kedua: arah & urutan gali ditentukan sendiri — tarik jalur gali untuk tiap fleet. Laporan yang sama lalu bisa dirinci per periode dan per fleet.');await dW(2600);
+ {const e=$('schcm');e.value='rl';e.dispatchEvent(new Event('change'));}
+ try{$('schbd').scrollTop=0;$('schw').style.width='';$('gtbox').open=false;schOpen(false);}catch(_){}
+ const J=DMCH.find(c=>c.id==='J'),cp=dmCap;window.__DMJK=1;dmCap=async(a,b,c)=>cp(String(a).replace(/^J · Pit Schedule$/,S2).replace(/^J · \d+ ?/,S2+' · '),b,c);
+ try{await J.run();}finally{window.__DMJK=0;dmCap=cp;}
+ try{$('sayw').style.display='none';}catch(_){}
+ await dmCap(S2+' · Laporan','Laporan & grafik per periode','Block model sudah dimuat, jadi laporan langsung dihitung setiap kali jadwal dijalankan. Buka "Laporan & grafik".');
+ gtMount();{const d=$('gtbox');d.open=true;sb();}await wt();sb();await dmPoint('#gtsum');await dW(1800);await dmClick('#gtbigb');bigPos();await dW(600);await dmPoint('#gtrg');await dW(2800);
+ await dmCap(S2+' · Laporan','Ganti periode','Per shift, per hari, per bench … tabel, grafik dan CSV ikut berubah — terlihat kapan ore mulai keluar.');
+ for(const u of ['s','d','b']){const e=$('gtru2');await dmPoint(e);dmRip();e.value=u;e.dispatchEvent(new Event('change'));await dW(u==='b'?1800:3000);}
+ await dmCap(S2+' · Laporan','Rincian per fleet','Centang "per fleet": tiap periode dipecah menurut fleet yang menggali blok itu — fleet mana membawa ore, mana mengupas waste.');
+ {const e=$('gtrf');await dmPoint(e);dmRip();e.checked=true;e.dispatchEvent(new Event('change'));}await dW(600);await dmPoint('#gtrt');await dW(4200);{const e=$('gtrf');e.checked=false;e.dispatchEvent(new Event('change'));}
+ await dmCap(S2+' · Jejak','Jejak jalur: tampil atau mati','Tiap jalur punya ikon mata di daftar Jalur gali; ada juga "tampil semua / sembunyikan semua / hanya terakhir" dan pilihan jejak semua fleet, fleet aktif, atau mati.');
+ gtBig(false);{const e=$('schcm');e.value='rl';e.dispatchEvent(new Event('change'));}schSet(SCH.bd.length-1);await dmCam([600680,9200800,236,330,0.5],1200);
+ SCH.sel='g:A1';SCH.jOpen=true;schTasks();schEdit();{const b=$('schbd');const j=$('schjl');if(j)b.scrollTop=Math.max(0,j.offsetTop-80);}await dW(900);
+ for(const m of ['0','2','1']){const b=document.querySelector('#schjl [data-lva="'+m+'"]');if(b){await dmPoint(b);dmRip();b.click();{const bb=$('schbd'),j=$('schjl');if(j)bb.scrollTop=Math.max(0,j.offsetTop-80);}await dW(1900);}}
+ {const b=document.querySelector('#schjl [data-lv]');if(b){await dmPoint(b);dmRip();b.click();await dW(1700);const b2=document.querySelector('#schjl [data-lv]');if(b2)b2.click();}}
+ {const e=$('schtr');await dmPoint(e);dmRip();e.value='off';e.dispatchEvent(new Event('change'));await dW(1700);e.value='all';e.dispatchEvent(new Event('change'));await dW(900);}SCH.jOpen=false;schEdit();
+ const s0=sum();await dmCap(S2+' · Cut-off','Uji cut-off','Cut-off LG 0,4 g/t: ore '+schF(s0.o)+' t @ '+s0.g.toFixed(2)+' g/t. Naikkan batas bawah LG ke 0,6 g/t — laporan langsung dihitung ulang.');
+ gtBig(true);bigPos();gtOpen(true);{const w=$('bmw');w.style.left='60px';w.style.right='auto';w.style.top='120px';w.style.zIndex=58;}$('gtkd').open=true;await dW(500);await dmType('#gtrl input[data-k=lo][data-i="0"]',0.6);{const e=document.querySelector('#gtrl input[data-k=lo][data-i="0"]');e.value=0.6;e.dispatchEvent(new Event('change'));}await dRaw(300);await wt(80);gtOpen(false);
+ const s1=sum();await dmCap(S2+' · Cut-off','Hasil cut-off 0,6 g/t','Ore turun menjadi '+schF(s1.o)+' t, kadar naik ke '+s1.g.toFixed(2)+' g/t; '+schF(s0.o-s1.o)+' t pindah ke waste. Setelah dicoba, dikembalikan ke 0,4 g/t.');
+ await dmPoint('#gtrc');await dW(4200);GT.rules[0].lo=0.4;gtRules();await gtRun().catch(()=>{});await wt(80);
+ const s2=sum();GT.rule='prop';try{$('gtru').value='prop';}catch(_){}await gtRun().catch(()=>{});await wt(80);const s3=sum();
+ await dmCap(S2+' · Aturan blok','Cara Surpac vs proporsional','Pusat blok (cara Surpac): '+schF(s2.o)+' t @ '+s2.g.toFixed(2)+' g/t · proporsional: '+schF(s3.o)+' t @ '+s3.g.toFixed(2)+' g/t. Laporan resmi memakai cara Surpac agar cocok dengan GC-Ex.');
+ await dmPoint('#gtrc');await dW(4500);GT.rule='pusat';try{$('gtru').value='pusat';}catch(_){}await gtRun().catch(()=>{});await wt(80);
+ await dmCap(S2+' · Desain','Bandingkan dengan desain','Laporan desain (topografi → pit final, per bench) memakai block model & kelas yang sama: terlihat berapa bagian ore desain yang sudah terjadwal di fase ini.');
+ gtBig(false);gtOpen(true);{const w=$('bmw');w.style.left='590px';w.style.right='auto';w.style.top='78px';}$('gtkd').open=false;try{$('gdds').value='res';}catch(_){}await dmClick('#gdgo');for(let i=0;i<200&&(GT.busy||!GT.dres);i++)await dRaw(250);{const b=$('bmwb');b.scrollTop=b.scrollHeight;}await dmPoint('#gdsum');await dW(2200);await dmPoint('#gdtb');await dW(3800);
+ gtOpen(false);$('gtbox').open=false;lay(/Permukaan pit|Label RL|Garis potong/,true);
+ await dmCap('Selesai','Tutorial selesai','Kasus 1: Batas fase → Turun per elevasi → G × T × SR tiap penurunan. Kasus 2: jalur gali per fleet → laporan per periode / fleet. Tekan Stop untuk mengembalikan pengaturan.');await dW(3000);}finally{dmCap=cap0;window.__DMJK=0;}}});
 /* block model FIKTIF untuk demo (.mdl Surpac Version 4.0): kotak blok seragam + fungsi kadar rekaan */
 function dmMdlBuat(o){const bs=o.bs,O=[Math.floor(o.x0/bs[0])*bs[0],Math.floor(o.y0/bs[1])*bs[1],Math.floor(o.z0/bs[2])*bs[2]],N=[Math.ceil((o.x1-O[0])/bs[0]),Math.ceil((o.y1-O[1])/bs[1]),Math.ceil((o.z1-O[2])/bs[2])],L=Math.max(1,Math.ceil(Math.log2(Math.max(...N)))),RT=bs.map(b=>b*2**L);
  const enc=t=>Uint8Array.from(t,ch=>ch.charCodeAt(0)),P=[];let seed=7;const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
@@ -13329,7 +13399,7 @@ try{const A=DMCH.find(c=>c.id==='A'),B=DMCH.find(c=>c.id==='B'),C=DMCH.find(c=>c
  if(B){const r0=B.run;B.run=async()=>{await r0();await dmBmLap('res','B · Laporan','Pit final vs topografi: ton @ g/t per kelas kadar, waste, SR dan logam tiap bench — cara Surpac (pusat blok). Kelas & tujuan memakai preset GC-Ex Block Model.');};}
  if(C){const r0=C.run;C.run=async()=>{await r0();await dmBmLap('stg','C · Laporan','Staging vs topografi: ore, waste dan SR tahap ini per bench — dasar untuk target ore bulanan.');};}}catch(e){console.warn(e);}
 try{const I=DMCH.find(c=>c.id==='I');if(I){const run0=I.run;I.run=async()=>{const _cap=dmCap;dmCap=async(a,b,c)=>{if(a==='Selesai')return;return _cap(a,b,c);};try{await run0();}finally{dmCap=_cap;}};}}catch(e){}
-try{const w=$('dmoList');if(w){w.innerHTML=DMCH.map((c,i)=>'<div class="fl"><button class="sm" data-dmo="'+i+'">&#9654; '+c.id+'</button><span>&nbsp;'+esc(c.nm)+'</span></div>').join('');w.querySelectorAll('[data-dmo]').forEach(b=>b.onclick=()=>dmoPlay(+b.dataset.dmo,+b.dataset.dmo+1));}}catch(e){}
+try{const w=$('dmoList');if(w){w.innerHTML=DMCH.map((c,i)=>'<div class="fl"><button class="sm" data-dmo="'+i+'">&#9654; '+c.id+'</button><span>&nbsp;'+esc(c.nm)+'</span></div>').join('');w.querySelectorAll('[data-dmo]').forEach(b=>b.onclick=()=>dmoPlay(+b.dataset.dmo,+b.dataset.dmo+1));try{$('dmoAll').onclick=()=>dmoPlay(0,DMCH.findIndex(c=>c.id==='K'));}catch(_){}}}catch(e){}
 
 /* a34: review sinkronisasi menu & UI/UX (19 Nov 2026).
    1) Bilah menu responsif (1280–1560 px): padding/huruf mengecil, chip status dipotong elipsis — tidak ada menu yang tersembunyi.
@@ -13685,6 +13755,80 @@ function gtCsvX(X,fn){if(!X)return;const A=gtAgg(X),{B,rows,tot,K,TS,fl}=A,q=s=>
 window.__PS3=window.__PS3||{};try{gtWin();$('gdhb').oninput=()=>{GT.hbSet=1;};}catch(e){console.warn(e);}
 {const _r=schReset;schReset=function(){const r=_r.apply(this,arguments);try{GT.res=null;$('gttb')&&($('gttb').innerHTML='');$('gtsum')&&($('gtsum').innerHTML='');}catch(_){}return r;};}
 window.__PS3.gt={grids:()=>{const g=G=>({x0:G.x0,y0:G.y0,cell:G.cell,nx:G.nx,ny:G.ny,Z:[...G.Z].map(v=>v===v?v:null)});return {D:g(RES.tin.G),T:g(TP.find(q=>q.on&&q.G).G)};},open:on=>gtOpen(on!==false),design:()=>gtDesign(),S:GT,load:f=>gtLoad(f),run:()=>gtRun(),busy:()=>!!GT.busy,agg:()=>gtAgg(),mount:()=>gtMount()};
+
+/* a38: jendela besar "Laporan Grade × Tonnage" untuk Pit Schedule — kartu ringkasan, grafik per periode
+   (batang bertumpuk ton per kelas + waste, garis kadar ore), tabel lengkap. Klik batang / baris = pindah ke periode itu di 3D. */
+const GTR={W:'#a1887f'};
+function gtBigWin(){if($('gtrw'))return;const st=document.createElement('style');st.textContent=
+`#gtrw{position:fixed;left:300px;top:70px;width:900px;max-width:calc(100vw - 40px);max-height:calc(100vh - 90px);background:#fff;border:1px solid #9fb0cc;border-radius:7px;box-shadow:0 8px 28px rgba(20,32,58,.28);z-index:42;display:none;flex-direction:column;font:12px system-ui,Segoe UI,Arial,sans-serif}
+#gtrh{display:flex;align-items:center;gap:8px;padding:5px 8px;background:linear-gradient(#1f3a5f,#152a47);color:#fff;cursor:move;user-select:none;border-radius:7px 7px 0 0}#gtrh button{background:#34527d;color:#fff;border:0;border-radius:4px;padding:2px 8px;cursor:pointer}#gtrh select{font-size:11px}#gtrh>*{white-space:nowrap;flex-shrink:0}#gtrh>b{flex-shrink:1;overflow:hidden;text-overflow:ellipsis}
+#gtrb{overflow:auto;padding:8px 10px 10px}#gtrc{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}#gtrc div{flex:1;min-width:110px;border:1px solid #dde3ee;border-radius:6px;padding:4px 8px;background:#f8f9fb}#gtrc small{display:block;color:#6c757d;font-size:10.5px}#gtrc b{font-size:15px;color:#1f3a5f}
+#gtrg{border:1px solid #e3e7ef;border-radius:6px}#gtrg rect.b{cursor:pointer}#gtrl2{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 2px;font-size:11px;color:#495057}#gtrl2 i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px}
+#gtrt{max-height:300px;overflow:auto;border:1px solid #e3e7ef;margin-top:6px}#gtrt table{border-collapse:collapse;width:100%;font-size:11.5px}#gtrt th,#gtrt td{border-bottom:1px solid #eef1f6;padding:3px 6px;text-align:right;white-space:nowrap}#gtrt th{position:sticky;top:0;background:#f1f3f7}#gtrt td:first-child,#gtrt th:first-child{text-align:left}#gtrt tr.tot td{font-weight:700;border-top:2px solid #9fb0cc}#gtrt tr[data-i]{cursor:pointer}#gtrt tr.on td{background:#fff3bf}#gtrd{font-size:11.5px;margin-top:5px;color:#343a40}`;
+ document.head.appendChild(st);const w=document.createElement('div');w.id='gtrw';
+ w.innerHTML='<div id="gtrh"><b>&#9878; Laporan Grade × Tonnage — <span id="gtrn"></span></b><span style="flex:1"></span>periode <select id="gtru2"></select><label><input type="checkbox" id="gtrf"> per fleet</label><button id="gtrmin" title="Ringkas: hanya grafik (agar 3D terlihat) / lengkap">&#9645; ringkas</button><button id="gtrcsv">&#8681; CSV</button><button id="gtrx">&#10005;</button></div>'+
+  '<div id="gtrb"><div id="gtrc"></div><div id="gtrg"></div><div id="gtrl2"></div><div id="gtrd"></div><div id="gtrt"></div></div>';
+ document.body.appendChild(w);let mv=null;$('gtrh').addEventListener('mousedown',e=>{if(/BUTTON|SELECT|INPUT|LABEL/.test(e.target.tagName))return;mv=[e.clientX,e.clientY,w.offsetLeft,w.offsetTop];e.preventDefault();});
+ window.addEventListener('mousemove',e=>{if(!mv)return;w.style.left=Math.max(0,mv[2]+e.clientX-mv[0])+'px';w.style.top=Math.max(0,mv[3]+e.clientY-mv[1])+'px';});window.addEventListener('mouseup',()=>{mv=null;});
+ w.addEventListener('mousedown',()=>{let m=40;document.querySelectorAll('.flw.win,#schw,#sayw,#bmw').forEach(x=>{const z=+getComputedStyle(x).zIndex||0;if(z>m&&z<60)m=z;});w.style.zIndex=Math.min(59,m+1);},true);
+ $('gtrx').onclick=()=>gtBig(false);$('gtrmin').onclick=()=>gtBigMin(!GTR.min);$('gtrcsv').onclick=()=>gtCsv();
+ $('gtru2').innerHTML=$('schun').innerHTML;$('gtru2').onchange=()=>{const s=$('schun');s.value=$('gtru2').value;s.dispatchEvent(new Event('change'));};
+ $('gtrf').onchange=()=>{const c=$('gtfl');if(c){c.checked=$('gtrf').checked;c.dispatchEvent(new Event('change'));}};}
+function gtBig(on){gtBigWin();$('gtrw').style.display=on?'flex':'none';if(on)gtBigDraw();}
+function gtBigMin(on){gtBigWin();GTR.min=!!on;const w=$('gtrw');for(const id of ['gtrc','gtrt','gtrd'])$(id).style.display=on?'none':'';if(on){GTR.w0=w.style.width;w.style.width='600px';}else w.style.width=GTR.w0||'';$('gtrmin').innerHTML=on?'&#9645; lengkap':'&#9645; ringkas';gtBigDraw();}
+function gtNice(v){if(!(v>0))return 1;const e=Math.pow(10,Math.floor(Math.log10(v))),m=v/e;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*e;}
+function gtShort(v){return v>=1e6?schF(v/1e6,2)+' jt':v>=1e3?schF(v/1e3,v>=1e5?0:1)+' rb':schF(v);}
+function gtBigDraw(){const w=$('gtrw');if(!w||w.style.display==='none')return;GTR.pi=SCH.pi;if(!GT.res||!SCH.sim){$('gtrc').innerHTML='<div><small>Belum ada laporan</small><b>Muat block model lalu Hitung laporan</b></div>';$('gtrg').innerHTML=$('gtrt').innerHTML=$('gtrd').innerHTML=$('gtrl2').innerHTML='';return;}
+ $('gtrn').textContent=schPh().nm;$('gtru2').value=$('schun').value;$('gtrf').checked=!!GT.fleet;
+ const X={out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:false},A=gtAgg(X),{B,rows,tot,K}=A,n=B.length;
+ const ore=a=>{let s=0;for(let k=0;k<K;k++)s+=a.t[k];return s;},met=a=>{let s=0;for(let k=0;k<K;k++)s+=a.gt[k];return s;},ot=ore(tot),om=met(tot);
+ $('gtrc').innerHTML=[['Ore',gtShort(ot)+' t'],['Kadar ore',(ot>0?(om/ot).toFixed(2):'–')+' g/t'],['Logam',schF(om/31.1035)+' oz'],['Waste',gtShort(tot.t[K])+' t'],['Stripping ratio',ot>0?(tot.t[K]/ot).toFixed(2):'–'],['Blok terhitung',GT.res.nIn.toLocaleString('id-ID')+(GT.rule==='prop'?' · proporsional':' · pusat blok')]].map(c=>'<div><small>'+c[0]+'</small><b>'+c[1]+'</b></div>').join('');
+ /* grafik */
+ const W=878,H=250,L=58,R=48,T=14,Bm=n>14?58:34,pw=W-L-R,ph=H-T-Bm;let tm=0,gm=0;const R0=rows.map(r=>r[0]);
+ R0.forEach(a=>{tm=Math.max(tm,ore(a)+a.t[K]);const o=ore(a);if(o>0)gm=Math.max(gm,met(a)/o);});tm=gtNice(tm);gm=gtNice(gm*1.1);
+ const bw=Math.min(54,pw/Math.max(1,n)*0.72),xc=i=>L+(i+0.5)*pw/n,y=v=>T+ph-v/tm*ph,yg=g=>T+ph-g/gm*ph;let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block">';
+ for(let i=0;i<=4;i++){const v=tm*i/4,yy=y(v);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" stroke="#e9ecef"/><text x="'+(L-5)+'" y="'+(yy+3.5)+'" text-anchor="end" font-size="10" fill="#6c757d">'+gtShort(v)+'</text><text x="'+(W-R+5)+'" y="'+(yy+3.5)+'" font-size="10" fill="#c2255c">'+(gm*i/4).toFixed(2)+'</text>';}
+ s+='<text x="12" y="'+(T+ph/2)+'" font-size="10" fill="#6c757d" transform="rotate(-90 12 '+(T+ph/2)+')" text-anchor="middle">ton per periode</text><text x="'+(W-8)+'" y="'+(T+ph/2)+'" font-size="10" fill="#c2255c" transform="rotate(90 '+(W-8)+' '+(T+ph/2)+')" text-anchor="middle">kadar ore g/t</text>';
+ const every=Math.max(1,Math.ceil(n/(n>14?30:14)));let path='';
+ R0.forEach((a,i)=>{let acc=0;const x0=xc(i)-bw/2,seg=(t,c)=>{if(!(t>0))return;const y1=y(acc+t),hh=y(acc)-y1;s+='<rect class="b" data-i="'+i+'" x="'+x0.toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0.5,hh).toFixed(1)+'" fill="'+c+'"><title>'+esc(B[i].lab)+'</title></rect>';acc+=t;};
+  seg(a.t[K],GTR.W);for(let k=0;k<K;k++)seg(a.t[k],GT.rules[k].c);
+  if(i===SCH.pi)s+='<rect x="'+(x0-3).toFixed(1)+'" y="'+T+'" width="'+(bw+6).toFixed(1)+'" height="'+ph+'" fill="none" stroke="#f08c00" stroke-width="1.6" stroke-dasharray="4 3"/>';
+  const o=ore(a);if(o>0){const g=met(a)/o;path+=(path?'L':'M')+xc(i).toFixed(1)+' '+yg(g).toFixed(1);s+='<circle cx="'+xc(i).toFixed(1)+'" cy="'+yg(g).toFixed(1)+'" r="2.6" fill="#c2255c"/>'+(n<=16?'<text x="'+xc(i).toFixed(1)+'" y="'+(yg(g)-6).toFixed(1)+'" text-anchor="middle" font-size="9.5" fill="#c2255c">'+g.toFixed(2)+'</text>':'');}
+  if(i%every===0){const lab=esc(String(B[i].lab).replace(/^Bench RL /,'RL '));s+=n>14?'<text x="'+xc(i).toFixed(1)+'" y="'+(T+ph+10)+'" font-size="9.5" fill="#495057" text-anchor="end" transform="rotate(-40 '+xc(i).toFixed(1)+' '+(T+ph+10)+')">'+lab+'</text>':'<text x="'+xc(i).toFixed(1)+'" y="'+(T+ph+14)+'" font-size="10" fill="#495057" text-anchor="middle">'+lab+'</text>';}});
+ s+='<path d="'+path+'" fill="none" stroke="#c2255c" stroke-width="1.6"/><line x1="'+L+'" x2="'+(W-R)+'" y1="'+(T+ph)+'" y2="'+(T+ph)+'" stroke="#868e96"/></svg>';$('gtrg').innerHTML=s;
+ $('gtrg').querySelectorAll('rect.b').forEach(r=>r.onclick=()=>{schStop();schSet(+r.dataset.i);});
+ $('gtrl2').innerHTML=GT.rules.map(r=>'<span><i style="background:'+r.c+'"></i>'+esc(r.m)+' ('+r.lo+(r.hi===''?'+':'–'+r.hi)+' g/t)</span>').join('')+'<span><i style="background:'+GTR.W+'"></i>Waste</span><span><i style="background:#c2255c;height:3px;vertical-align:3px"></i>kadar ore (sumbu kanan)</span><span style="color:#868e96">klik batang / baris = lihat periode itu di 3D</span>';
+ const H2=gtHtml(gtAgg(),'Total '+schPh().nm,'Periode');$('gtrt').innerHTML=H2.h;$('gtrd').innerHTML=H2.dest;
+ /* kolom kumulatif (ore, kadar, SR) + kapan selesai — hanya tanpa rincian fleet */
+ if(!GT.fleet){const tb=$('gtrt'),hr=tb.querySelector('thead tr');if(hr)hr.insertAdjacentHTML('beforeend','<th style="border-left:2px solid #dde3ee">Σ ore t</th><th>Σ g/t</th><th>Σ SR</th><th>selesai</th>');let co=0,cm=0,cw=0;const off=SCH.sim.off||0;
+  R0.forEach((a,i)=>{co+=ore(a);cm+=met(a);cw+=a.t[K];const tr=tb.querySelector('tr[data-i="'+i+'"]');if(tr)tr.insertAdjacentHTML('beforeend','<td style="border-left:2px solid #dde3ee">'+schF(co)+'</td><td>'+(co>0?(cm/co).toFixed(2):'–')+'</td><td>'+(co>0?(cw/co).toFixed(2):'–')+'</td><td style="color:#6c757d">'+esc(schLab(B[i].b,0,off))+'</td>');});
+  const tt=tb.querySelector('tr.tot');if(tt)tt.insertAdjacentHTML('beforeend','<td style="border-left:2px solid #dde3ee"></td><td></td><td></td><td></td>');}
+ $('gtrt').querySelectorAll('tr[data-i]').forEach(tr=>{tr.onclick=()=>{schStop();schSet(+tr.dataset.i);};if(+tr.dataset.i===SCH.pi)tr.classList.add('on');});}
+{const _t=gtTable;gtTable=function(){const r=_t.apply(this,arguments);try{gtBigDraw();}catch(e){console.error(e);}return r;};}
+{const _h=gtHi;gtHi=function(){const r=_h.apply(this,arguments);try{const w=$('gtrw');if(w&&w.style.display!=='none'&&GTR.pi!==SCH.pi){GTR.pi=SCH.pi;gtBigDraw();}}catch(_){}return r;};}
+{const _m=gtMount;gtMount=function(){const r=_m.apply(this,arguments);try{if($('gtcsv')&&!$('gtbigb')){const b=document.createElement('button');b.id='gtbigb';b.innerHTML='&#10530; Laporan &amp; grafik';b.title='Jendela besar: ringkasan, grafik ton & kadar per periode, tabel lengkap';b.onclick=()=>gtBig(true);$('gtcsv').after(b);}}catch(_){}return r;};}
+{const _r=schReset;schReset=function(){const r=_r.apply(this,arguments);try{gtBigDraw();}catch(_){}return r;};}
+try{window.__PS3.gt.big=on=>gtBig(on!==false);}catch(_){}
+
+/* a39: "Turun per elevasi" — kasus mine plan: satu area (batas fase) diturunkan per selang RL, tiap penurunan dilaporkan
+   grade × tonnage × SR (+ kumulatif & kapan selesai menurut kapasitas fleet). Memakai mesin Pit Schedule (area gali penuh,
+   lapis demi lapis, lereng antar-blok, lantai ikut desain) lalu periode "per bench" setinggi selang itu. */
+(function(){const dg=$('schdg');if(!dg||$('schelv'))return;const d=document.createElement('div');d.className='r';d.id='schelv';d.style.cssText='background:#f1f8ff;border:1px solid #c5dcf5;border-radius:5px;padding:3px 6px';
+ d.innerHTML='<b title="Kasus cepat: seluruh area di dalam Batas fase diturunkan lapis demi lapis; laporan dibuat per selang elevasi ini">&#11015; Turun per elevasi</b> tiap <input id="schev" type="number" step="any" min="0.5" value="10" style="width:46px"> m <button id="schego" style="font-weight:700" title="Hitung grade × tonnage × SR tiap penurunan elevasi (perlu Batas fase; block model .mdl untuk kadar)">&#9654; Hitung G×T×SR</button>';
+ dg.parentElement.insertAdjacentElement('afterend',d);$('schego').onclick=()=>{schElev().catch(e=>{schMsg(esc(e.message),1);console.error(e);});};})();
+async function schElev(){const ph=schPh(),dz=Math.max(+$('schh2').value||2.5,+$('schev').value||10);if(!ph.bnd||ph.bnd.length<3){schMsg('Gambar <b>Batas fase</b> dulu (poligon area yang dijadwalkan), lalu tekan Hitung.',1);return false;}
+ if(ph.lock)throw new Error(ph.nm+' sudah dikunci.');const D=schDes(),own=SCH.tasks.find(t=>t._elev),lines=SCH.tasks.filter(t=>t.on&&!t._elev);
+ if(!lines.length){const o={nm:'Area fase (turun per elevasi)',_elev:1};if(D.length){o.fm='des';o.fd=(D.find(x=>x.id==='res')||D[0]).id;}else{o.fm='depth';o.fv=Math.max(dz,30);}
+  if(own){own.pts=ph.bnd.map(q=>q.slice());own.on=true;}else schAdd('poly',ph.bnd.map(q=>[q[0],q[1],q[2]||0]),o);}
+ else if(own)own.on=false;
+ schRun();const u=$('schun');$('schhb').value=dz;SCH.hbSet=1;u.value='b';u.dispatchEvent(new Event('change'));GTR.cum=true;gtMount();
+ if(GT.file){for(let i=0;i<400&&GT.busy;i++)await new Promise(r=>setTimeout(r,100));if(!GT.res)await gtRun();try{const e=$('schcm');e.value='kls';e.dispatchEvent(new Event('change'));}catch(_){}gtBig(true);
+  schMsg('Turun per '+schF(dz,1)+' m: '+SCH.bd.length+' selang elevasi'+(lines.length?' (mengikuti jalur gali yang ada)':' (seluruh area, lapis demi lapis)')+'. Klik baris / batang untuk melihat permukaannya.');}
+ else{gtOpen(true);schMsg('Volume per '+schF(dz,1)+' m sudah dihitung (tabel volume). Untuk <b>kadar, tonase ore & SR</b>: muat block model .mdl di jendela Block model — laporan langsung muncul.');}
+ return true;}
+/* setelah block model dimuat sementara jadwal per elevasi sudah ada → laporan besar langsung tampil */
+{const _l=gtLoad;gtLoad=async function(){const r=await _l.apply(this,arguments);try{if(GTR.cum&&SCH.sim&&GT.file&&!GT.res){await gtRun();gtBig(true);}}catch(_){}return r;};}
+try{window.__PS3.sch.elev=()=>schElev();}catch(_){}
 
 /* a29: PILIHAN BAHASA — Indonesia (asli), English, Español, Basa Sunda.
    Kamus frasa antarmuka (menu, tombol, judul jendela, label, petunjuk, title/placeholder) diterapkan langsung ke DOM
