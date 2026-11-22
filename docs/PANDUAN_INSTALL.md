@@ -5903,3 +5903,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Analisis → Peta level**: garis putus-putus = batas domain sebelum pergeseran, garis solid = sesudah, panah = arah interpretasi.
 - **Tampilan → Ukuran font panel**: 80%, 90%, 100%, 110%. Pilihan disimpan di browser dan berlaku ke panel samping dan jendela mengambang.
 - Belum ada: panah dan ghost di 3D.
+
+## 308. Ore Works 0.32.6 — 3D: bidang ghost & panah pergeseran
+
+- Di tampilan 3D, struktur dengan pergeseran punya bidang abu-abu transparan (posisi sebelum) dan panah dari bidang itu ke posisi bidang sesudah.
+- Panjang panah = besar pergeseran tegak lurus bidang (meter). Mengikuti centang "Usulan bidang struktur" dan centang struktur di daftar.
+- Belum diuji pada data proyek nyata.
