@@ -5943,3 +5943,8 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Bahasa**: menu baru sudah diterjemahkan (English, Español, Basa Sunda). Angka hasil dan teks di dalam gambar penampang tetap
   berbahasa Indonesia.
 - Batas yang diketahui: block model yang diputar (rotasi) belum digambar miring di sayatan.
+
+## 311. Pit Studio 0.1.5 — perbaikan kecil tombol Demo
+
+- Saat demo berjalan, menu tarik (File, Tampilan, …) kini menutup sendiri begitu demo berpindah ke tombol di luar menu, sehingga tidak
+  lagi menutupi jendela lain. Tidak ada perubahan pada hitungan atau desain.

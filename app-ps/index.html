@@ -581,7 +581,7 @@ input,select{border-color:#b8c4d6!important}input:focus,select:focus{outline:1px
  </div>
 </div>
 
-<script>window.GCEX_VER='0.1.4';</script>
+<script>window.GCEX_VER='0.1.5';</script>
 <script>/**
  * @license
  * Copyright 2010-2021 Three.js Authors
@@ -14453,7 +14453,7 @@ function shEmpty(){const e=$('shpe'),D=$('dock');if(!e||!D)return;const any=[...
 {const _m=schMsg;schMsg=function(t,err){const r=_m.apply(this,arguments);try{shMsg(t,err);}catch(_){}return r;};}
 function shMsg(t,err){const e=$('shmsg'),l=$('shlog');if(!e||!t)return;e.innerHTML=(err?'⚠ ':'')+t;e.style.color=err?'#ffb3b3':'#ffe9b0';const d=document.createElement('div');d.innerHTML='<small>'+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</small>'+(err?'⚠ ':'')+t;l.insertBefore(d,l.firstChild);while(l.children.length>60)l.lastChild.remove();}
 /* demo: tombol yang berada di dalam menu tarik → menu dibuka dulu supaya terlihat */
-{const _e=dmEl;dmEl=function(s){const e=_e.apply(this,arguments);try{if(SH.on&&e&&e.closest){const p=e.closest('.shmp');if(p&&SH.open!==p.parentElement){shClose();p.parentElement.classList.add('op');SH.open=p.parentElement;}}}catch(_){}return e;};}
+{const _e=dmEl;dmEl=function(s){const e=_e.apply(this,arguments);try{if(SH.on&&e&&e.closest){const p=e.closest('.shmp');if(p&&SH.open!==p.parentElement){shClose();p.parentElement.classList.add('op');SH.open=p.parentElement;}else if(!p&&SH.open&&typeof DMO!=='undefined'&&DMO.on)shClose();}}catch(_){}return e;};}
 /* demo: dmWin menampilkan jendela langsung (tanpa winShow) → tempel ke Properti juga; jendela mengambang dijaga tetap di area 3D */
 {const _d=dmWin;dmWin=function(...ids){const r=_d.apply(this,arguments);try{if(SH.on){for(const id of ids){const w=$(id);if(w&&w.classList.contains('win')&&!DOCKX.has(id)&&w.querySelector('.pin')&&!w.classList.contains('docked'))dockSet(w,true,true);if(w&&w.classList.contains('docked'))try{$('dock').insertBefore(w,$('dock').firstChild);}catch(_){}}
    const s=$('schw');if(ids.length&&s&&s.classList.contains('dkd')&&s.style.display==='flex'&&!s.classList.contains('dkm')&&ids.some(id=>{const w=$(id);return w&&w.classList.contains('docked');}))dkpMin('schw',true);sideAuto();shEmpty();}}catch(e){console.warn(e);}return r;};}
