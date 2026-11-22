@@ -5829,3 +5829,17 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 
 - Langkah **Digit batas Y — string tertutup** di demo Implisit (kartu Bercabang vertikal) tidak lagi menampilkan solid "kontak bor saja". Solid itu hanya pembanding; setelah Bangun ulang, solid lajur menggantikannya.
 - Tidak ada perubahan mesin. Video demo diperbarui.
+
+## 302. Block Model 0.24.112 — block model terotasi
+
+- **Import block model** (CSV) kini punya bagian **Rotasi model (opsional)**:
+  - **Bearing sumbu X model**, sama dengan isian *Bearing* di Surpac. 90 = tidak diputar.
+  - **Koordinat X / Y di file adalah**: pilih *koordinat lapangan* bila pusat blok di file sudah koordinat sebenarnya
+    (hanya arah blok yang diputar), atau *koordinat lokal model* bila koordinat file belum diputar (diputar terhadap
+    titik putar; kosongkan untuk memakai sudut minimum model).
+- Yang sudah memperhitungkan rotasi: tampilan 3D, sayatan 2D, filter, statistik, batas pit / topografi / domain, dan
+  laporan grade × tonase.
+- Yang **belum** mendukung model terotasi (dihentikan dengan pesan): dig block otomatis, garis luar blok, snap sudut
+  blok, komposit / tonase flitch, as-mined.
+- File `.mdl` Surpac yang terotasi: rotasinya belum dibaca. Sementara, ekspor model dari Surpac ke CSV lalu import
+  CSV dengan isian rotasi.

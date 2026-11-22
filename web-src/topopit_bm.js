@@ -267,11 +267,11 @@
     var m = BX.m, I = BX.sc.v.idx, buf = Math.max(0, +((E('ovBukaM') || {}).value) || 0), k = BX.sc.key + '|' + buf;
     if (TP._jj && TP._jj.k === k) return TP._jj;
     var x0 = 1e18, x1 = -1e18, y0 = 1e18, y1 = -1e18, cs = 1e9, q;
-    for (q = 0; q < I.length; q++) { var i = I[q], x = m.x[i] - offX, y = m.y[i] - offY, hx = m.sx[i] / 2, hy = m.sy[i] / 2; if (x - hx < x0) x0 = x - hx; if (x + hx > x1) x1 = x + hx; if (y - hy < y0) y0 = y - hy; if (y + hy > y1) y1 = y + hy; if (q < 2000) cs = Math.min(cs, m.sx[i], m.sy[i]); }
+    for (q = 0; q < I.length; q++) { var i = I[q], x = m.x[i] - offX, y = m.y[i] - offY, hx = window.BMR ? BMR.hx(m, i) : m.sx[i] / 2, hy = window.BMR ? BMR.hy(m, i) : m.sy[i] / 2; /* blok terotasi: kotak pembatas */ if (x - hx < x0) x0 = x - hx; if (x + hx > x1) x1 = x + hx; if (y - hy < y0) y0 = y - hy; if (y + hy > y1) y1 = y + hy; if (q < 2000) cs = Math.min(cs, m.sx[i], m.sy[i]); }
     cs = Math.max(0.25, cs / 2); x0 -= buf; y0 -= buf; x1 += buf; y1 += buf;
     while ((x1 - x0) / cs * (y1 - y0) / cs > 2e7) cs *= 1.5;
     var gx = Math.ceil((x1 - x0) / cs) + 1, gy = Math.ceil((y1 - y0) / cs) + 1, G = new Float32Array(gx * gy).fill(-Infinity);
-    for (q = 0; q < I.length; q++) { var j = I[q], cx = m.x[j] - offX, cy = m.y[j] - offY, a0 = Math.floor((cx - m.sx[j] / 2 - buf - x0) / cs), a1 = Math.floor((cx + m.sx[j] / 2 + buf - x0) / cs), b0 = Math.floor((cy - m.sy[j] / 2 - buf - y0) / cs), b1 = Math.floor((cy + m.sy[j] / 2 + buf - y0) / cs);
+    for (q = 0; q < I.length; q++) { var j = I[q], cx = m.x[j] - offX, cy = m.y[j] - offY, hxj = window.BMR ? BMR.hx(m, j) : m.sx[j] / 2, hyj = window.BMR ? BMR.hy(m, j) : m.sy[j] / 2, a0 = Math.floor((cx - hxj - buf - x0) / cs), a1 = Math.floor((cx + hxj + buf - x0) / cs), b0 = Math.floor((cy - hyj - buf - y0) / cs), b1 = Math.floor((cy + hyj + buf - y0) / cs);
       var zt = m.z[j] + m.sz[j] / 2; /* atap blok: permukaan di ATAS ini yang dibuka, lantai pit di bawah blok tetap */
       for (var u = Math.max(0, a0); u <= Math.min(gx - 1, a1); u++) for (var w = Math.max(0, b0); w <= Math.min(gy - 1, b1); w++) if (zt > G[w * gx + u]) G[w * gx + u] = zt; }
     TP._jj = { k: k, x0: x0, y0: y0, cs: cs, gx: gx, gy: gy, G: G }; return TP._jj;

@@ -1360,6 +1360,9 @@ B.append('<p>Subjudul logo, jam di tombol Proyek, tombol Geostatistik, pita Jalu
 B.append('<h3>16zc. Pilihan bahasa antarmuka (Block Model 0.24.111 / Drillhole 0.24.113)</h3>')
 B.append('<p>Tampilan &amp; performa &rarr; <b>Bahasa &middot; Language</b>: Bahasa Indonesia (bawaan), English (UK), English (US), Espa&ntilde;ol, Basa Sunda. '
          'Tahap 1 menerjemahkan menu, tombol, judul panel, label, Project Tree dan tooltip; pesan &amp; laporan masih Bahasa Indonesia. Data tidak ikut diterjemahkan.</p>')
+B.append('<h3>16zd. Block model terotasi (Block Model 0.24.112)</h3>')
+B.append('<p>Import block model (CSV) &rarr; <b>Rotasi model</b>: isi <i>Bearing sumbu X model</i> seperti di Surpac (90 = tidak diputar) dan pilih apakah koordinat file sudah koordinat lapangan atau masih lokal model. '
+         'Tampilan 3D, sayatan, filter, statistik dan laporan grade &times; tonase memperhitungkan rotasi. Dig block otomatis, snap sudut blok, komposit flitch dan as-mined belum mendukung model terotasi.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

@@ -656,6 +656,13 @@ B.append('<p><code>bahasa.js</code> (GXLANG) + <code>bahasa_kamus.js</code> (dib
          'teks yang ditulis ulang aplikasi dianggap asli baru. MutationObserver hanya aktif bila bahasa bukan Indonesia. Kode yang membandingkan teks tombol memakai <code>GXLANG.asli(el)</code>. '
          'Kunci localStorage <code>gcex_bahasa</code>. Uji: <code>tools/uji/uji_bahasa.py</code>.</p>')
 
+B.append('<h3>8.33 Block model terotasi (BM 0.24.112)</h3>')
+B.append('<p><code>bmrot.js</code> (BMR). Konvensi Surpac: bearing <i>b</i> = azimuth sumbu X model; e<sub>x</sub> = (sin b, cos b), e<sub>y</sub> = (&minus;cos b, sin b); 90 = tanpa rotasi. '
+         '<code>SA.buildBM</code> memanggil <code>BMR.terapkan(m, cfg.rot)</code>: mode <i>lokal</i> memutar pusat blok terhadap titik putar (bawaan sudut minimum), mode <i>dunia</i> hanya mencatat arah. '
+         '<code>m.x/m.y</code> = koordinat lapangan, <code>m.sx/m.sy</code> searah sumbu model, <code>m.rot</code> = {b, ex, ey, mode, px, py} (ikut tersimpan di proyek; <code>cfg.rot</code> ikut di <code>m.src.cfg</code>). '
+         '<code>bxSlabHit</code>: setengah tebal = (sx|n&middot;e<sub>x</sub>| + sy|n&middot;e<sub>y</sub>| + sz|n<sub>z</sub>|)/2. <code>bxTraces</code>: kubus dibangun di kerangka lokal (<code>BMR.lokal</code>, cache WeakMap) lalu titik sudut diputar. '
+         'Sayatan denah: poligon miring (raster <code>bm2dimg</code> dilewati). <code>amRun, dbAuto, bxOutline, lyTon, lyComp, dbCorners, bxCorners, dmBMPick</code> dicegat bila <code>m.rot</code>. Uji: <code>tools/uji/uji_bm_rotasi.py</code>.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

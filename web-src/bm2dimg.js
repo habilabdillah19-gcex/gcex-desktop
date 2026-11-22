@@ -49,6 +49,8 @@ function bmImgRGBA(c,op){var k=c+'|'+op;if(BMRGBA[k]!==undefined)return BMRGBA[k
       if(C2.k&&C2.k[0]===key[0]&&C2.k[1]===key[1]&&C2.T){BMIMG.cur=C2.img;BMIMG.t=Date.now();if(C2.img&&BMIMG.box)BMIMG.cur=BMIMG.box;return C2.T.slice();}}}catch(e){key=null;}
     var T=bxTraces2Dr.apply(this,arguments);C2.k=key;C2.T=T&&T.slice();C2.img=BMIMG.cur;return T;};
   var bxTraces2Dr=function(o,F){var T=_bt.apply(this,arguments);BMIMG.cur=null;if(!BMIMG.on||!T||!T.length)return T;
+    /* BM 0.24.112: denah blok terotasi = poligon miring; raster ini hanya untuk kotak sejajar sumbu -> tetap vektor */
+    if(BX.m&&BX.m.rot&&o&&o.g&&o.g.m==='H')return T;
     var R=T.filter(function(t){return t&&t.fill==='toself'&&Array.isArray(t.x);});if(!R.length)return T;var img=null;try{img=bmImgRaster(R);}catch(e){console.error(e);}if(!img)return T;
     BMIMG.cur=img;BMIMG.t=Date.now();
     var bb={type:'scatter',mode:'markers',x:[img.x,img.x+img.sizex],y:[img.y-img.sizey,img.y],marker:{size:1,opacity:0},hoverinfo:'skip',showlegend:false,name:'bmimg-bb'};

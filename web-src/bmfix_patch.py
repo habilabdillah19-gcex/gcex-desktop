@@ -59,8 +59,10 @@ def patch(s):
       else{var c=F(m.x[i]-offX,m.y[i]-offY,m.z[i]),hw=(m.sx[i]*Math.abs(u[0])+m.sy[i]*Math.abs(u[1]))/2;x0=c[0]-hw;x1=c[0]+hw;y0=c[1]-m.sz[i]/2;y1=c[1]+m.sz[i]/2;}
       X.push(x0,x1,x1,x0,x0,null);Y.push(y0,y0,y1,y1,y0,null);});""",
             """  Object.keys(G).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var L=G[k],ci=bxClassInfo(k),X=[],Y=[],R=[];
-    L.forEach(function(i){var x0,x1,y0,y1;if(g.m==='H'){x0=m.x[i]-m.sx[i]/2;x1=m.x[i]+m.sx[i]/2;y0=m.y[i]-m.sy[i]/2;y1=m.y[i]+m.sy[i]/2;}
-      else{var c=F(m.x[i]-offX,m.y[i]-offY,m.z[i]),hw=(m.sx[i]*Math.abs(u[0])+m.sy[i]*Math.abs(u[1]))/2;x0=c[0]-hw;x1=c[0]+hw;y0=c[1]-m.sz[i]/2;y1=c[1]+m.sz[i]/2;}
+    var RO=m.rot;L.forEach(function(i){var x0,x1,y0,y1;
+      if(g.m==='H'&&RO){/* BM 0.24.112 blok terotasi: denah = persegi panjang miring (tidak ikut digabung) */var hx=m.sx[i]/2,hy=m.sy[i]/2;[[-1,-1],[1,-1],[1,1],[-1,1],[-1,-1]].forEach(function(s){X.push(m.x[i]+s[0]*hx*RO.ex[0]+s[1]*hy*RO.ey[0]);Y.push(m.y[i]+s[0]*hx*RO.ex[1]+s[1]*hy*RO.ey[1]);});X.push(null);Y.push(null);return;}
+      if(g.m==='H'){x0=m.x[i]-m.sx[i]/2;x1=m.x[i]+m.sx[i]/2;y0=m.y[i]-m.sy[i]/2;y1=m.y[i]+m.sy[i]/2;}
+      else{var c=F(m.x[i]-offX,m.y[i]-offY,m.z[i]),hw=RO?(m.sx[i]*Math.abs(u[0]*RO.ex[0]+u[1]*RO.ex[1])+m.sy[i]*Math.abs(u[0]*RO.ey[0]+u[1]*RO.ey[1]))/2:(m.sx[i]*Math.abs(u[0])+m.sy[i]*Math.abs(u[1]))/2;x0=c[0]-hw;x1=c[0]+hw;y0=c[1]-m.sz[i]/2;y1=c[1]+m.sz[i]/2;}
       R.push([x0,x1,y0,y1]);});
     bxMergeRects(R).forEach(function(r){X.push(r[0],r[1],r[1],r[0],r[0],null);Y.push(r[2],r[2],r[3],r[3],r[2],null);});""")
 
