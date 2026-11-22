@@ -1,0 +1,93 @@
+{
+  "appId": "com.gcex.pitstudio",
+  "productName": "Pit Studio",
+  "copyright": "Copyright © 2026 Habil Abdillah",
+  "extraMetadata": {
+    "version": "0.1.0",
+    "name": "pitstudio",
+    "productName": "Pit Studio",
+    "description": "Pit Studio - desain pit, staging, jalan tambang, Pit Schedule & laporan grade x tonnage (offline), keluarga GC-Ex",
+    "gcex": {
+      "page": "app-ps/index.html",
+      "title": "Pit Studio",
+      "icon": "build/ps-icon.ico",
+      "theme": "ps"
+    }
+  },
+  "directories": {
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "files": [
+    "electron/**/*",
+    "app-ps/**/*",
+    "package.json",
+    "build/ps-icon.ico"
+  ],
+  "extraResources": [
+    {
+      "from": "dist-backend/gcex-backend",
+      "to": "backend",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "legal",
+      "to": "legal",
+      "filter": [
+        "*.txt",
+        "*.html"
+      ]
+    },
+    {
+      "from": "legal-ps",
+      "to": "legal",
+      "filter": [
+        "*.txt"
+      ]
+    },
+    {
+      "from": "docs/tutorial-ps/data",
+      "to": "data-latihan",
+      "filter": [
+        "*.str",
+        "*.mdl",
+        "*.txt"
+      ]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "build/ps-icon.ico",
+    "artifactName": "Pit-Studio-Setup-${version}.${ext}",
+    "legalTrademarks": "Pit Studio adalah nama produk milik Habil Abdillah (keluarga GC-Ex)"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Pit Studio",
+    "uninstallDisplayName": "Pit Studio ${version}",
+    "license": "legal/SYARAT_PENGGUNAAN.txt"
+  },
+  "electronFuses": {
+    "runAsNode": false,
+    "enableCookieEncryption": true,
+    "enableNodeOptionsEnvironmentVariable": false,
+    "enableNodeCliInspectArguments": false,
+    "enableEmbeddedAsarIntegrityValidation": true,
+    "onlyLoadAppFromAsar": true
+  },
+  "asar": true,
+  "publish": null
+}

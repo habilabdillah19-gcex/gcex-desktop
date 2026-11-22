@@ -1,0 +1,303 @@
+<div id="mbar">
+ <span class="brand"><svg width="38" height="30" viewBox="0 0 38 30" aria-hidden="true"><rect x="0.75" y="0.75" width="36.5" height="28.5" rx="4" fill="#fff" stroke="#c9d3e1" stroke-width="1.5"/><path d="M3 8 H35 L31.5 13 H27.5 L25 18.5 H22 L20.5 24 H17.5 L16 18.5 H13 L10.5 13 H6.5 Z" fill="#1d5fd1"/></svg><span class="bx"><b>Pit Studio</b><i>Desain pit otomatis · urat epitermal</i></span></span>
+ <span id="pjname"><span id="pjn" contenteditable="true" spellcheck="false">Pit baru</span><span class="ed">&#9998;</span></span>
+ <div id="tabs"><button data-t="design" class="on">&#10010; Desain baru</button><button data-t="edit">&#9998; Edit pit</button></div>
+ <span class="sep"></span>
+ <button class="mbb" data-w="fw">&#128190; File</button>
+ <button class="mbb" data-w="iw">&#8679; Impor</button>
+ <button class="mbb" data-w="vw2">&#128065; Tampilan</button>
+ <button class="mbb" data-w="gw" title="Mendesain pit sendiri dari atas ke bawah, bench demi bench, dengan bantuan hitungan, pandangan ke depan, dan saran">&#9998; Desain terpandu</button>
+ <button class="mbb" data-w="aw" title="Atas → bawah: bandingkan beberapa pola jalan sekaligus lalu pilih yang terbaik">&#9881; Rancang Otomatis</button>
+ <button class="mbb" id="mbds" title="Langkah desain pit: bentuk awal, geoteknik, jalan, buat pit">&#9638; Desain baru &#9662;</button>
+ <button class="mbb" id="mbea" title="Langkah edit otomatis: sumber pit, ubah string bench, bench mengikuti, perdalam / sump, push back / shrinkage, front bulanan">&#9881; Edit Otomatis &#9662;</button>
+ <button class="mbb" id="mbmw" title="Alat string manual ala Minescape (menu bertingkat)">&#9998; Edit Manual &#9662;</button>
+ <button class="mbb" id="mbpd" title="Bentuk pit seperti Play-Doh dengan kuas sapuan (menu bertingkat)">&#128396; Play-Doh &#9662;</button>
+ <button class="mbb" data-w="hw">&#9638; Hasil &amp; volume</button>
+ <button class="mbb" data-w="xw">&#8681; Ekspor</button>
+ <button class="mbb" id="lytg">&#128506; Layout peta</button>
+ <span class="sep"></span>
+ <button class="mbb" data-w="bw">? Bantuan</button>
+ <span class="sp"></span>
+ <span id="dbar"><button class="chip" id="chT" title="Topografi aktif — klik untuk impor / kelola"></button><button class="chip" id="chF" title="Batas pit final untuk staging — klik untuk atur"></button><button class="chip" id="chG" title="Profil geoteknik — klik untuk pilih / simpan profil"></button></span>
+</div>
+<div id="wrap">
+ <div id="side">
+  <div id="mode" hidden><button data-m="new" class="on">Pit final</button><button data-m="stage">Staging</button><button data-m="edit">Edit</button></div>
+  <div id="dkindw"><div class="seg" id="dkind"><button data-v="new" class="on">&#9650; Pit final</button><button data-v="stage">&#9638; Staging (dibatasi pit final)</button></div></div>
+  <div id="m-stg" hidden><span id="s0st" hidden></span></div>
+  <!-- ======== DESAIN BARU ======== -->
+  <div id="m-new">
+   <div class="step" id="s1" hidden><div class="sh"><span class="no">1</span><b>Topografi</b><span class="st" id="s1st"></span></div><div class="sb">
+    <div id="tpsum" class="info"></div>
+    <div class="hint">Topografi / asbuilt dipakai untuk menghentikan pit di permukaan (daylight) dan menghitung volume.</div>
+   </div></div>
+   <div class="step" id="s2"><div class="sh"><span class="no">1</span><b>Bentuk awal pit</b><span class="st" id="s2st"></span></div><div class="sb">
+    <div class="rlbox" title="Batas galian: volume &amp; bench hanya dibentuk di antara RL bawah dan RL atas. Kosong = otomatis (atas: topografi, bawah: lantai minimum / RL dasar). Bisa diisi berbeda per area di daftar area di bawah.">
+     <div class="fl" id="zmaxw"><span><b>RL atas</b> galian</span><input id="pZmax" type="number" step="any" placeholder="otomatis (topografi)"><span class="u">m</span></div>
+     <div class="fl" id="zminw"><span><b>RL bawah</b> galian</span><input id="pZmin" type="number" step="any" placeholder="otomatis (lantai)"><span class="u">m</span></div>
+     <div class="hint">Berlaku untuk semua area; isian per area (daftar di bawah) menimpa nilai ini.</div>
+    </div>
+
+    <div class="seg" id="smode"><button data-v="bot" class="on">Dasar pit (bottom)</button><button data-v="top">Puncak pit (crest atas)</button><button data-v="topo" title="Digit batas terluar mengikuti elevasi topografi (snap topo), lalu proyeksi bench ke bawah">Batas topo (atas &#8594; bawah)</button></div>
+    <div class="fl"><span id="rllb">RL dasar</span><input id="srl" type="number" step="any" placeholder="mis. 185"><span class="u">m</span></div>
+    <div class="grid2">
+     <button id="dgv" class="pri" title="Gambar garis tengah urat, lalu poligon dibuat selebar dasar pit">&#9135; Gambar garis urat</button>
+     <button id="dgp" title="Gambar poligon bebas">&#11040; Gambar poligon</button>
+    </div>
+    <div class="fl" id="vwrow">Lebar dasar sepanjang urat <input id="vw" type="number" step="any" value="15"><span class="u">m</span><label style="margin-left:8px" title="Ujung garis urat dibuat membulat (urat menipis di ujung) sehingga lantai tidak kotak kaku dan bench di atasnya lebih mudah dibangun. Matikan untuk ujung persegi."><input type="checkbox" id="vrnd" checked> ujung bulat</label></div>
+    <span hidden><input type="file" id="plf" accept=".str,.dxf,.txt" hidden></span>
+    <div class="fl" id="dgsnw"><label style="flex:1"><input type="checkbox" id="dgsn"> Snap ke string topografi</label><input id="dgsnd" type="number" step="any" value="3" style="width:56px"><span class="u">m</span></div>
+    <div class="grid2"><button id="dgvein" class="sm" title="Gambar garis urat berikutnya di pit yang sama (urat paralel / bercabang). Dasar urat yang berdekatan digabung otomatis.">&#10010; Tambah urat lain</button>
+    <button id="dgadd" class="sm" title="Bentuk berikutnya (gambar / impor) ditambahkan sebagai area pit terpisah">&#10010; Tambah area pit lain</button></div>
+    <div class="fl" id="vgrow" style="display:none" title="Dasar dua urat yang celahnya lebih kecil dari nilai ini digabung jadi satu lantai. Urat yang lebih jauh tetap terpisah di bawah dan menyatu sendiri saat bench naik.">Gabung dasar urat bila celah &lt; <input id="vgap" type="number" step="any" value="20" style="width:58px"><span class="u">m</span></div>
+    <div id="dgmsg" class="hint">Urat epitermal: cukup gambar <b>garis tengah urat</b> (sepanjang strike) di 3D, lalu isi lebar dasar. Klik = titik, Enter / klik ganda = selesai, Backspace = hapus titik, Esc = batal.</div>
+    <div id="plinfo" class="info"></div>
+   </div></div>
+   <div class="step" id="s3"><div class="sh"><span class="no">2</span><b>Parameter geoteknik</b><span class="st" id="s3st"></span></div><div class="sb">
+    <svg id="sk" viewBox="0 0 300 120"></svg>
+    <div class="pg">
+     <label>Tinggi bench<span><input id="pH" type="number" step="any" value="5">m</span></label>
+     <label>Sudut muka bench<span><input id="pA" type="number" step="any" value="68">°</span></label>
+     <label>Lebar berm<span><input id="pB" type="number" step="any" value="3">m</span></label>
+     <label>Berm setiap<span><input id="pN" type="number" step="1" value="3">bench</span></label>
+     <label>Lebar lantai min.<span><input id="pF" type="number" step="any" value="15">m</span></label>
+     <label title="Bench terbawah berhenti bila luas lantai di bawah nilai ini">Luas lantai min.<span><input id="pFA" type="number" step="any" value="300">m²</span></label>
+     <label>Overall slope maks.<span><input id="pO" type="number" step="any" value="55">°</span></label>
+    </div>
+    <div class="fl" title="Bila garis bench / lantai berada dekat garis kontur topografi pada RL yang sama, garis itu otomatis mengikuti bentuk topografi">Ikuti topografi, jarak tangkap <input id="ptf" type="number" step="any" value="3" style="width:60px"><span class="u">m</span></div>
+    <div class="fl" title="Membulatkan sudut & membuang taji/takik lebih kecil dari nilai ini pada setiap string">Penghalusan string <input id="psm" type="number" step="any" value="1" style="width:60px"><span class="u">m</span></div>
+    <div class="grid2"><button id="gpopen" class="sm">&#128190; Simpan / pakai profil geoteknik…</button><span id="gpcur" class="hint" style="align-self:center"></span></div>
+    <div class="secw"><div class="fl"><b style="flex:1">Zona geoteknik (area)</b><button id="secadd" class="sm">&#10010; Gambar</button><label class="fbtn sm" style="margin:0">&#8679; Impor<input type="file" id="secf" accept=".str,.dxf,.txt" hidden></label></div><div id="secl"></div><div class="hint">Poligon di denah (mis. batas alterasi argilik, zona oksida, sesar). Dinding di dalamnya memakai sudut / berm / tiap sendiri, bisa dibatasi RL. Zona paling bawah di daftar menang bila tumpang tindih.</div></div>
+    <div class="fl" title="Bench di bawah poligon bentuk awal dihaluskan dengan radius ini (tonjolan & lekuk kontur topografi hilang); crest teratas tetap mengikuti poligon. 0 = mati.">Haluskan bench di bawah poligon <input id="psb" type="number" step="any" value="8" style="width:60px"><span class="u">m</span></div>
+    <div class="fl" title="Gelombang kecil pada string crest / toe / lantai (bekas proyeksi topografi dan potongan poligon) dihaluskan dengan skala ini; sudut bench, sambungan jalan dan bentuk besar tidak berubah. String tidak digeser bila akan menyilang string lain. 0 = mati.">Haluskan gelombang string <input id="pss" type="number" step="any" value="3" style="width:60px"><span class="u">m</span></div>
+    <div class="fl">Sudut bench</div><div class="seg" id="pcor"><button data-v="miter" class="on">&#9698; Tajam (seperti Surpac)</button><button data-v="round">&#9711; Bulat</button></div><div class="hint">Untuk alat gali (mis. PC400): pilih <b>Bulat</b> dan isi <b>Penghalusan string</b> 6–10 m — semua sudut cembung &amp; cekung dibulatkan dengan radius itu, jalan tetap tersambung.</div>
+    <div id="slopeinfo" class="info"></div>
+    <button id="ovr" class="sm">&#9881; Beda parameter per RL (mis. zona oksida)…</button>
+   </div></div>
+   <div class="step" id="s4"><div class="sh"><span class="no">3</span><b>Jalan tambang (ramp)</b><span class="st" id="s4st"></span></div><div class="sb">
+    <label class="sw2"><input type="checkbox" id="rOn" checked> Buat jalan</label>
+    <div class="pg">
+     <label>Lebar jalan<span><input id="rW" type="number" step="any" value="12">m</span></label>
+     <label>Kemiringan<span><input id="rG" type="number" step="any" value="10">%</span></label>
+     <label title="Bagian datar di awal jalan (bench pertama) agar ada ruang dari dinding untuk truk masuk">Landing awal<span><input id="rL" type="number" step="any" value="20">m</span></label>
+     <label title="Radius tempat putar pada switchback">Radius putar<span><input id="rR" type="number" step="any" value="12">m</span></label>
+    <label title="Di ujung pit yang sempit, jalan yang mengikuti dinding bisa terlipat (berjalan mundur) lalu terpotong, sehingga RL jalan melompat. Bila dicentang, ruas seperti itu ditolak dan jalan berbalik arah (switchback) di ujung ruas sebelumnya. Bisa mengubah lantai dan volume."><input type="checkbox" id="rFold"> Tolak lipatan jalan di ujung pit yang sempit (jalan berbalik arah)</label>
+    </div>
+    <div class="seg" id="rdir"><button data-v="1" class="on">&#8635; Berlawanan jarum jam</button><button data-v="-1">&#8634; Searah jarum jam</button></div>
+    <div class="seg" id="rpat"><button data-v="zig" class="on" title="Jalan lurus mengikuti dinding panjang; berbalik arah (switchback) saat dinding mulai melengkung">&#8645; Lurus + switchback</button><button data-v="spiral" title="Jalan terus memutari dinding">&#8635; Spiral</button><button data-v="free" title="Jalan lurus, tidak mengikuti dinding. Dari dasar ke atas: memotong dinding sampai permukaan searah tarikan. Dari batas topo (atas → bawah, pit final maupun staging): satu ramp lurus dari bibir pit ke dasar; pintu masuk = titik yang ditarik (arah = arah tarikan), tanpa tarikan = bibir terendah yang muat dengan arah otomatis.">&#8599; Lurus bebas</button></div>
+    <button id="rdrw" class="pri" title="Klik titik 1 (awal jalan, dekat dinding) lalu titik 2 (arah). Jalan mengikuti dinding searah tarikan; bila dinding berbelok > 40° jalan otomatis berbalik (switchback).">&#8599; Tarik arah jalan (titik 1 &#8594; titik 2)</button>
+    <div id="rinfo" class="hint"></div>
+   </div></div>
+   <div class="step" id="s5"><div class="sh"><span class="no">4</span><b>Buat pit</b><span class="st" id="s5st"></span></div><div class="sb">
+    <div class="seg" id="gmode"><button data-v="auto" class="on">&#9193; Otomatis sampai permukaan</button><button data-v="bench">&#9636; Bench demi bench</button></div>
+    <button id="go" class="pri big">&#9654; Buat pit</button>
+    <div id="ibw" hidden class="info">Panel <b>Bench demi bench</b> terbuka di layar 3D (kanan atas). <button id="ibopen" class="sm">Tampilkan panel</button></div>
+    <div id="res" class="info"></div>
+   </div></div>
+  </div>
+  <!-- ======== EDIT PIT JADI ======== -->
+  <div id="m-edit" hidden>
+   <div id="ehrest" class="info" hidden></div>
+   <div id="ehbar" class="info"></div>
+   <div id="edsum" class="info"></div>
+   <div class="step open"><div class="sh"><span class="no">1</span><b>Sumber: pit jadi atau hasil desain</b><span class="st" id="e1st"></span></div><div class="sb">
+    <span hidden><input type="file" id="epf" accept=".str,.dxf,.txt" hidden></span>
+    <button id="efrom" class="sm" title="Edit string hasil Pit final / Staging yang baru dibuat">&#8635; Pakai hasil Desain baru</button>
+    <div id="einfo" class="info"></div>
+    <div class="hint">Topografi dipakai bersama — lihat chip Topo di kanan atas.</div>
+   </div></div>
+   <div class="step open"><div class="sh"><span class="no">2</span><b>Pilih &amp; ubah satu string bench</b><span class="st" id="e2st"></span></div><div class="sb">
+    <button id="esel" class="pri" title="Atau langsung klik ganda string di 3D">&#8982; Klik string di 3D</button><span class="hint"> atau <b>klik ganda</b> string di 3D</span>
+    <div id="eseli" class="info"></div>
+    <div class="fl" id="etyrow" hidden>String ini adalah <select id="ety"><option value="crest">Crest (puncak lereng)</option><option value="toe">Toe (kaki lereng)</option></select></div>
+    <div class="hint">Seret <b>titik putih</b> untuk memindah · klik <b>titik kuning</b> di tengah segmen untuk menambah titik · <b>Shift+klik</b> titik putih untuk menghapus. RL string tetap.</div>
+    <div class="fl"><label style="flex:1"><input type="checkbox" id="esnp" checked> Snap ke titik string lain</label><input id="esnpx" type="number" value="12" style="width:46px"><span class="u">px</span></div>
+    <label class="sw2"><input type="checkbox" id="esnpt"> … atau ke string topografi</label>
+    <div class="fl"><button id="estr" class="sm" style="flex:1" title="Bulatkan sudut tajam, buang taji/takik dan titik zig-zag pada string terpilih">&#9135; Luruskan string</button>radius<input id="esr" type="number" step="any" value="2" style="width:50px"><span class="u">m</span></div>
+    <div class="grid2"><button id="eund">&#8630; Batalkan perubahan</button><button id="edone">&#10003; Selesai seret</button></div>
+   </div></div>
+   <div class="step open"><div class="sh"><span class="no">3</span><b>Bench di bawahnya mengikuti</b><span class="st" id="e3st"></span></div><div class="sb">
+    <div class="hint">Memakai profil geoteknik &amp; jalan dari tab <b>Desain baru</b> (langkah 2–3). Bench di atas tidak diubah kecuali dicentang di bawah.</div>
+    <label class="sw2"><input type="checkbox" id="eup"> Bench di atas juga ikut (dibangun ulang ke atas)</label>
+    <label class="sw2" title="Lebar, kemiringan dan pola jalan dibaca dari jalan lama di bawah string terpilih, lalu dipakai untuk bench baru"><input type="checkbox" id="eadp" checked> Jalan adaptif: tiru jalan lama (lebar, kemiringan, pola)</label>
+    <label class="sw2"><input type="checkbox" id="erOn"> Lanjutkan jalan dari titik di string terpilih</label>
+    <label class="sw2" title="Bila jalan pit lama baru mulai di bawah string yang diedit, jalan itu ikut dibangun ulang dari RL awalnya — tidak dihapus. Batas string yang diedit tetap; jalan memakan ke dalam."><input type="checkbox" id="ekeep" checked> Pertahankan jalan lama di bawah string ini</label>
+    <button id="erpk" disabled>&#8982; Pilih titik jalan</button>
+    <button id="ego" class="pri big">&#9654; Perbarui bench di bawah</button>
+    <div id="eres" class="info"></div>
+   </div></div>
+   <div class="step open"><div class="sh"><span class="no">4</span><b>Perdalam pit (tambah RL di bawah lantai)</b><span class="st" id="e4st"></span></div><div class="sb">
+    <div class="hint">Lantai pit sekarang dijadikan crest, lalu bench baru dibentuk ke bawah sampai RL target memakai profil geoteknik aktif. Jalan lama diteruskan dari ujung bawahnya (lebar, kemiringan, pola ditiru). Bila lantai lama terlalu sempit untuk bench baru, dinding bawah otomatis didorong (pushback) sampai menyatu lagi dengan desain lama; di atasnya desain lama tetap.</div>
+    <div class="fl"><span>Lantai sekarang</span><b id="edfl">–</b></div>
+    <div class="fl"><span>RL lantai baru</span><input id="edz" type="number" step="any" placeholder="mis. 170"><span class="u">m</span></div>
+    <div class="grid2"><button id="edzb" title="Gambar poligon di lantai: hanya bagian lantai di dalam poligon yang diperdalam (sump / pocket)">&#11040; Batasi di poligon (sump)</button><button id="edzc" title="Hapus poligon pembatas">&#10005; Hapus batas</button></div>
+    <div class="fl"><label style="flex:1"><input type="checkbox" id="edzr"> Buat jalan ke dalam sump</label><span title="Lebar lantai minimum khusus sump">lantai min</span><input id="edzf" type="number" step="any" value="5" style="width:50px"><span class="u">m</span></div>
+    <div id="edzi" class="hint"></div>
+    <button id="edgo" class="pri big">&#9660; Perdalam pit</button>
+    <div id="edres" class="info"></div>
+   </div></div>
+   <div class="step open"><div class="sh"><span class="no">5</span><b>Push Back / Shrinkage (ubah lebar pit)</b><span class="st" id="e5st"></span></div><div class="sb">
+    <div class="hint"><b>Push Back</b> mendorong lantai keluar, <b>Shrinkage</b> menyusutkan lantai ke dalam, sejauh jarak di bawah (seluruh lantai, atau hanya di dalam poligon batas langkah 4). Dinding dibangun ulang ke atas dari lantai baru memakai geoteknik aktif sampai menyatu lagi dengan desain lama (atau sampai topografi). <b>Jalan dibuat ulang meniru jalan lama</b>: pola, arah, lebar &amp; kemiringan diukur dari desain lama, dimulai dari titik ujung bawah jalan lama yang dipindah ke lantai baru; di atas titik menyatu jalan lama tetap.</div>
+    <div class="fl"><span>Jarak</span><input id="erd" type="number" step="any" value="10"><span class="u">m</span></div>
+    <div class="grid2"><button id="erzb" title="Gambar poligon: hanya tepi lantai di dalam poligon yang didorong / disusutkan (mis. push back ke satu arah saja). Poligon yang sama dengan pembatas di langkah 4.">&#11040; Batasi di poligon (satu sisi)</button><button id="erzc" title="Hapus poligon pembatas: push back berlaku untuk seluruh keliling">&#10005; Hapus batas</button></div>
+    <div id="erzi" class="hint"></div>
+    <div class="grid2"><button id="epush" class="pri">&#8596; Push Back</button><button id="eshr" class="pri">&#8594;&#8592; Shrinkage</button></div>
+    <div id="erres" class="info"></div>
+    <button id="eradd" title="Untuk pit yang belum punya jalan: batas bukaan pit ini (hasil push back / edit) dikirim ke Desain baru sebagai batas topo, RL bawah = RL lantai, lalu Rancang Otomatis dibuka untuk memilih pola & pintu masuk jalan.">&#43; Tambah jalan pada pit ini (Rancang Otomatis)</button>
+   </div></div>
+   <div class="step open"><div class="sh"><span class="no">6</span><b>Front galian bulanan (rangkaian bulan)</b><span class="st" id="e6st"></span></div><div class="sb">
+    <div class="hint">Untuk rencana bulanan dari pit / digplan yang sudah ada (termasuk desain terbuka di lereng). Gambar <b>satu atau beberapa poligon front</b>; tiap front digali dari permukaan kerja (topografi dikurangi pit dasar dan bulan-bulan sebelumnya) turun sampai RL bawahnya, <b>tidak melewati pit final</b>, dengan jalan masuk dari bibir terendah. Volume yang dilaporkan = tambahan galian bulan itu. Geoteknik &amp; jalan memakai isian tab Desain baru.</div>
+    <div class="grid2"><button id="epfb">&#9707; Muat pit final&hellip;</button><label title="Dinding front dijepit ke dinding pit final (jarak tangkap sama dengan staging)"><input type="checkbox" id="epfin" checked> Jangan melewati pit final</label></div><input type="file" id="epff" hidden accept=".str,.dxf,.csv,.txt"><div id="epfi" class="hint"></div>
+    <label title="Dinding front bulanan (dinding sementara staging) memakai sudut muka bench sendiri yang lebih curam dari dinding pit final. Sudut di luar rentang izin ditolak. Dinding yang menempel pit final tetap mengikuti pit final."><input type="checkbox" id="epwOn"> <b>Dinding runcing</b> (dinding sementara staging)</label>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 5px;align-items:center;margin:4px 0;font-size:12.5px">Muka bench <input id="epwA" type="number" step="any" value="75" style="flex:0 0 52px;width:52px">&deg; &middot; izin <input id="epwA0" type="number" step="any" value="70" style="flex:0 0 46px;width:46px">&ndash;<input id="epwA1" type="number" step="any" value="90" style="flex:0 0 46px;width:46px">&deg;<span style="flex-basis:100%;height:0"></span>Berm <input id="epwB" type="number" step="any" value="4" style="flex:0 0 46px;width:46px">m tiap <input id="epwN" type="number" step="1" value="2" style="flex:0 0 42px;width:42px">bench</div><label title="Uji coba. Poligon yang digambar = LANTAI front di RL bawah. Bench dibangun dari lantai ke atas dengan garis sejajar, jalan naik menempel dinding sampai bertemu permukaan. Tanpa centang: poligon = batas di permukaan."><input type="checkbox" id="epwBox"> Bangun dari lantai ke atas (uji coba; poligon = lantai)</label><div id="epwi" class="hint"></div>
+    <div class="fl"><span><b>RL base</b> bulan ini</span><input id="epz" type="number" step="any" placeholder="mis. 258"><span class="u">m</span></div>
+    <div class="fl"><span>Target volume</span><input id="epv" type="number" step="any" value="80000"><span class="u">m&sup3;</span></div>
+    <div class="fl"><span>Toleransi</span><input id="ept" type="number" step="any" value="10"><span class="u">%</span></div>
+    <div class="fl" title="Batas kenaikan / penurunan volume terhadap bulan sebelumnya (bulan pertama: terhadap pit dasar). Kosong = tidak diperiksa."><span>Beda antar bulan maks</span><input id="epd" type="number" step="any" value="5"><span class="u">%</span></div>
+    <label title="Poligon tiap front diperbesar / diperkecil merata sampai volumenya = target dibagi jumlah front"><input type="checkbox" id="epauto" checked> Sesuaikan ukuran poligon otomatis ke target (dibagi rata per front)</label>
+    <div class="grid2"><button id="epadd">&#10010; Gambar poligon front</button><button id="eppt" title="Jalan front dimulai dari bibir yang paling dekat dengan titik ini. Kosong = ujung jalan bulan sebelumnya.">&#8982; Titik sambung jalan</button></div>
+    <button id="epdrop" title="Jalan lama diteruskan menuruni lantai lama (ramp + lantai kecil di RL bawah) tanpa memundurkan dinding. Volume kecil; cocok untuk memperdalam saat kapasitas alat terbatas.">&#10515; Ramp turun di lantai (drop cut)</button>
+    <div id="epl"></div>
+    <button id="epgo" class="pri">&#9654; Buat front bulan ini</button>
+    <div id="epres" class="info"></div>
+    <div id="eptab"></div>
+   </div></div>
+  </div>
+ </div>
+ <div id="split" title="Seret untuk mengubah lebar panel · klik ganda untuk menyembunyikan"><span></span></div>
+ <div id="cv">
+  <div id="lgw" class="flw"><div class="flh"><b>Legenda</b></div><div class="flb" id="lgb"></div></div>
+  <div id="tip"></div><div id="sbar"><span id="sbl">Belum ada desain</span><span class="sp"></span><span id="hud">E/N/RL: arahkan kursor</span><span class="cpy" title="Pit Studio — dibuat dan hak cipta oleh Habil Abdillah">Pit Studio · Created &amp; Copyright © Habil Abdillah 2026</span></div>
+  <div id="lay" class="flw"><div class="flh"><b>Lapisan</b><span class="sp"></span><button id="layc" title="Ciutkan">&#8211;</button></div><div class="flb" id="layb"></div></div>
+  <!-- jendela -->
+  <div id="fw" class="flw win"><div class="flh"><b>File kerja</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+   <button id="pjs" class="pri">&#128190; Simpan project (.pit.json)</button>
+   <label class="fbtn">&#128194; Buka project<input type="file" id="pjo" accept=".json" hidden></label>
+   <button id="pjnew">Project baru</button>
+   <div class="hint">Project menyimpan topografi, poligon awal, parameter, jalan, pit impor dan hasil. Tidak ada yang tersimpan otomatis.</div>
+  </div></div>
+  <div id="vw2" class="flw win" data-id="vw"><div class="flh"><b>Tampilan</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+   <div class="grid3"><button data-v="plan">Plan</button><button data-v="sw">Oblik SW</button><button data-v="ne">Oblik NE</button><button data-v="ew">Dari Timur</button><button data-v="ns">Dari Selatan</button><button data-v="fit">Pas ke pit</button></div>
+   <div class="fl">Sorot kontur topo RL <input id="hlz" type="number" step="any" style="width:80px"><button id="hlc" class="sm">Hapus sorot</button></div>
+   <div class="fl">Eksagerasi vertikal <input id="vx" type="range" min="1" max="3" step="0.5" value="1"><b id="vxv">1×</b></div>
+   <label><input type="checkbox" id="lbrl" checked> Label RL bench</label>
+   <div class="fl">Transparansi topografi <input id="tpo" type="range" min="0.2" max="1" step="0.05" value="1"></div>
+  </div></div>
+  <div id="gw" class="flw win" style="width:430px"><div class="flh"><b>&#9998; Desain terpandu — atas &#8594; bawah</b><span class="sp"></span><button class="x" title="Tutup">&#10005;</button></div><div class="flb">
+    <div class="hint">Anda yang menentukan bentuk dan letak pit; Pit Studio menghitung bench, jalan, dan volume, memberi pandangan ke depan, dan memberi saran. Satu langkah = satu bench turun, seperti urutan penambangan di lapangan.</div>
+    <div id="gwl"></div>
+    <div class="fl" title="Kosong = tanpa target. Selama mendesain tampil persen terhadap target."><span><b>4.</b> Target volume</span><input id="gwtv" type="number" step="any" placeholder="opsional"><span class="u">m³</span></div>
+    <div class="fl" title="RL lantai yang dituju. Kosong = turun sampai lantai minimum."><span>RL target (lantai)</span><input id="gwz" type="number" step="any" placeholder="opsional"><span class="u">m</span></div>
+    <label title="Semua dinding dihitung dari satu RL acuan sehingga garis bench lurus dan sejajar, sudut denah tajam. Tanpa centang: dinding mengikuti naik-turun topografi di batas."><input type="checkbox" id="gwbox" checked> Garis bench lurus &amp; sejajar, sudut tajam (seperti string desain staging)</label>
+    <div class="fl" title="Sudut terkecil yang boleh terbentuk di sudut bukaan dan saat mengubah bentuk bench, mis. 120 untuk sudut pit yang terbuka. Sama dengan isian Sudut min di bilah Bantu gambar. Kosong = tanpa batas."><span>Sudut dalam minimum</span><input id="gwmin" type="number" step="any" placeholder="opsional, mis. 120"><span class="u">&deg;</span></div>
+    <button id="gwgo" class="pri">&#9654; Mulai desain terpandu</button>
+    <div class="hint">Saat menggambar batas, pakai bilah <b>Bantu gambar</b> di atas layar 3D: kunci sudut 90° untuk bentuk kotak, snap ke string, atau ketik panjang segmen.</div>
+  </div></div>
+  <div id="mw" class="flw win"><div class="flh"><b id="mwtt">&#9998; Edit Manual</b><span class="sp"></span><button class="x" title="Tutup">&#10005;</button></div><div class="flb" id="mwb">
+    <div id="mwinf" class="info"></div>
+    <div class="mwr" data-row="autofix">Tempel ujung lepas bila celah ≤<input id="mwfx" type="number" step="any" value="3"><span class="u">m</span></div>
+    <div class="mwr" data-row="reduce">Toleransi<input id="mwred" type="number" step="any" value="0.5"><span class="u">m</span><span class="hint">titik yang menyimpang kurang dari ini dibuang</span></div>
+    <div class="mwr" data-row="dens">Jarak antar titik<input id="mwden" type="number" step="any" value="2"><span class="u">m</span></div>
+    <div class="mwr" data-row="smooth">Rata-rata ±<input id="mwsm" type="number" step="1" value="2"><span class="u">titik</span></div>
+    <div class="mwr" data-row="offset">Jarak<input id="mwoff" type="number" step="any" value="5"><span class="u">m</span> ΔRL<input id="mwodz" type="number" step="any" value="0"><label><input type="checkbox" id="mwocp" checked> salinan</label><span class="hint">poligon: + keluar, − dalam · garis: + kiri, − kanan</span></div>
+    <div class="mwr" data-row="proj">ke<select id="mwpm"><option value="rl">RL tetap</option><option value="topo">topografi</option><option value="pit">permukaan pit</option></select><input id="mwprl" type="number" step="any" placeholder="RL"></div>
+    <div class="mwr" data-row="move dup">ΔE<input id="mwmx" type="number" step="any" value="0">ΔN<input id="mwmy" type="number" step="any" value="0">ΔRL<input id="mwmz" type="number" step="any" value="0"></div>
+    <div class="mwr" data-row="snapx"><label><input type="checkbox" id="mwsz" checked> RL ikut titik tujuan</label><span class="hint">matikan agar string bench tetap datar (hanya E, N yang dipindah)</span></div>
+    <div class="mwr" data-row="loose">Celah dianggap lepas bila &gt;<input id="mwtol" type="number" step="any" value="1"><span class="u">m</span><label><input type="checkbox" id="mwlo"> Sorot ujung lepas</label></div>
+    <button id="mwgo" class="pri" data-op="" hidden>Terapkan</button>
+    <div class="hint">Semua alat ada di menu <b>Edit Manual &#9662;</b>. Setiap alat tercatat di riwayat (&#8630; / Ctrl+Z di panel Edit) dan tersimpan otomatis.</div>
+  </div></div>
+  <div id="pdw" class="flw win"><div class="flh"><b>&#128396; Play-Doh — kuas sapuan</b><span class="sp"></span><button class="x" title="Tutup">&#10005;</button></div><div class="flb">
+    <div class="hint">Sapukan kuas di sepanjang dinding: dinding di bawah sapuan didorong keluar atau ditarik ke dalam, dari lantai sampai bibir. Semua bench di kolom yang sama bergeser bersama, sehingga berm, jalan, dan sambungan string tetap sejajar. Di luar kuas desain lama tetap, dengan transisi halus.</div>
+    <input type="hidden" id="pdm" value="push">
+    <div class="grid2" id="pdmb"><button data-v="push" class="on">&#8596; Dorong keluar</button><button data-v="shrink">&#8594;&#8592; Tarik ke dalam</button></div>
+    <div class="fl">Kekuatan per sapuan<input id="pds" type="number" step="any" value="5"><span class="u">m</span></div>
+    <div class="fl">Jari-jari kuas<input id="pdr" type="number" step="any" value="25"><span class="u">m</span></div>
+    <button id="pdgo" class="pri big">&#128396; Sapukan kuas</button>
+    <div id="pdinf" class="info"></div>
+    <div class="hint">Satu sapuan = satu langkah riwayat (&#8630; Batalkan / Ctrl+Z). Bila sapuan terlalu kuat untuk bentuk lantai, sapuan ditolak dengan saran kekuatan yang muat.</div>
+  </div></div>
+  <div id="tdw" class="flw win"><div class="flh"><b>&#9888; Rekomendasi sistem</b><span class="sp"></span><button class="x" title="Tutup">&#10005;</button></div><div class="flb" id="tdwb"></div></div>
+  <div id="aw" class="flw win"><div class="flh"><b>&#9881; Rancang Otomatis — atas &#8594; bawah</b><span class="sp"></span><button class="x" title="Tutup">&#10005;</button></div><div class="flb">
+    <div class="hint">Aplikasi merancang pit sekaligus beberapa pola jalan dari batas yang sama, menilai tiap jalan (akses sampai dasar, kemiringan, switchback, tumpukan, volume), lalu Bapak memilih satu. Hasil pilihan tetap bisa diubah lewat <b>Bench demi bench</b> atau tab <b>Edit pit</b>.</div>
+    <div id="auchk" class="info"></div>
+    <div class="fl" style="flex-wrap:wrap;gap:4px 14px"><label><input type="checkbox" id="auSp" checked> Spiral (dua arah)</label><label><input type="checkbox" id="auZz" checked> Lurus + switchback (dua arah)</label><label title="Satu ramp lurus dari bibir pit langsung ke dasar. Pintu masuk: bibir terendah yang muat (otomatis), dan titik yang Anda klik di langkah 3 bila ada. Arah dicari otomatis menuju lantai. Batas bukaan tetap, ramp memakan ke dalam."><input type="checkbox" id="auLn" checked> Lurus dari bibir ke dasar</label><label title="Pit tanpa jalan sebagai acuan: dasar pit & volume maksimum"><input type="checkbox" id="auNo" checked> Acuan tanpa jalan</label></div>
+    <label title="Untuk memutuskan jalan BELAKANGAN: batas bukaan tetap, lalu jalan dicoba masuk dari 4 sisi keliling batas (dua arah putar). Kolom Volume menunjukkan berapa persen volume berkurang dibanding acuan tanpa jalan, karena jalan memakan ke dalam."><input type="checkbox" id="auEn" checked> Bandingkan pintu masuk jalan dari 4 sisi batas (jalan diputuskan belakangan)</label>
+    <button id="aurun" class="pri big">&#9654; Jalankan &amp; bandingkan</button>
+    <div id="auprog" class="hint"></div><div id="aures"></div>
+  </div></div>
+  <div id="hw" class="flw win"><div class="flh"><b>Hasil &amp; volume</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb" id="hwb"><div class="hint">Buat pit dulu.</div></div></div>
+  <div id="xw" class="flw win"><div class="flh"><b>Ekspor</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+   <label><input type="checkbox" id="xcut" checked> Potong string di topografi (hanya bagian galian)</label>
+   <button id="xstr" class="pri">String pit Surpac (.str)</button>
+   <button id="xdxf">String pit (.dxf, polyline 3D)</button>
+   <button id="xsrf">Permukaan akhir (.dxf 3DFACE)</button>
+   <button id="xcsv">Tabel volume per bench (.csv)</button>
+   <div class="hint">.str: string 1 = crest, 2 = toe, 3 = tepi jalan, 4 = lantai, 5 = garis potong topo (batas galian tertutup), 9 = pit lama; D1 = jenis, D2 = RL bench.</div>
+  </div></div>
+  <div id="bw" class="flw win"><div class="flh"><b>Bantuan</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+   <p><b>Pit final</b> — ikuti langkah 1 → 5 di panel kiri.</p><p><b>Staging bulanan</b> — langkah 0: pilih pit final sebagai batas (hasil tab Pit final atau impor .str). Langkah 1–5 sama. Staging dipotong oleh pit final, dan dinding yang tinggal <p><b>Desain pit baru</b> — ikuti langkah 1 → 5 di panel kiri.</p>lt; jarak tangkap (bawaan 5 m) dari final otomatis mengikuti garis final.</p>
+   <ol><li>Impor topografi / asbuilt.</li><li>Pilih <b>Dasar pit</b> (pit dibangun ke atas sampai permukaan) atau <b>Puncak pit</b> (dibangun ke bawah sampai lantai minimum). Gambar garis tengah urat (paling cepat untuk urat) atau poligon bebas, isi RL.</li><li>Isi parameter geoteknik. Overall slope dihitung otomatis.</li><li>Atur jalan: lebar, kemiringan, arah, titik awal.</li><li>Klik <b>Buat pit</b>. Ubah parameter → klik lagi.</li></ol>
+   <p><b>Jalan</b> — pola <b>Lurus + switchback</b> (bawaan): jalan lurus menyusuri dinding panjang dan berbalik arah saat dinding mulai melengkung. <b>Spiral</b>: jalan memutari pit. Banyak area: langkah 2 → <b>Tambah area pit lain</b>; tiap area mendapat jalannya sendiri.</p>
+   <p><b>Bench demi bench</b> (langkah 5): pratinjau satu bench + jalannya, atur arah / switchback (klik titik di dinding), lalu <b>Terima bench ini &amp; lanjut</b>. Ulangi sampai permukaan, lalu <b>Selesai</b>.</p>
+   <p><b>Staging bulanan</b> — langkah 0: pakai hasil tab Pit final atau impor pit final (.str). Lalu langkah 1–5 sama seperti pit final (gambar bentuk awal staging, mis. lantai bulan ini). Setiap bench dipotong supaya <b>tidak melewati pit final</b>; dinding yang tinggal &lt; jarak tangkap (bawaan 5 m) dari final otomatis <b>mengambil garis final</b>. Garis abu-abu tembus pandang = pit final.</p>
+   <p><b>Data dasar</b> — topografi, batas pit final (staging) dan profil geoteknik tampil sebagai chip di kanan atas; klik untuk mengganti. Semua impor lewat menu <b>Impor</b>. Panel <b>Lapisan</b> (kanan atas) untuk tampil/sembunyi/hapus data; bilah bawah menampilkan ringkasan hasil.</p>
+   <p><b>Sektor dinding</b> (langkah 2) — gambar poligon di denah; dinding di dalamnya memakai sudut/berm sendiri. <b>Penghalusan string</b> membulatkan sudut dan membuang taji kecil. <b>Snap ke string topografi</b> (staging) menempelkan klik ke garis topo terdekat.</p>
+   <p><b>Jalan</b> — <b>Landing awal</b>: bagian datar di awal jalan agar ada ruang truk dari dinding. <b>Radius putar</b>: tempat putar di switchback.</p>
+   <p><b>Edit pit jadi</b> — impor pit .str, klik string satu bench, seret titiknya, lalu <b>Perbarui bench di bawah</b>.</p>
+   <p>Navigasi 3D: seret = putar · klik kanan = geser · roda = zoom.</p>
+  </div></div>
+  <div id="ibwin" class="flw win"><div class="flh"><b>&#9636; Desain terpandu · bench demi bench</b><span class="sp"></span><button class="x" title="Sembunyikan panel">&#10005;</button></div><div class="flb">
+    
+     <div id="ibst" class="info"></div>
+     <div id="gdnum" class="info"></div>
+     <div class="fl" title="Target volume desain ini (opsional)."><span>Target volume</span><input id="gdtv" type="number" step="any" placeholder="opsional"><span class="u">m³</span></div>
+     <div class="hint"><b>Jalan di bench ini</b> — <b>aktif</b>: jalan turun di bench ini · <b>Balik</b>: arah sebaliknya · <b>sb di ujung</b>: switchback di akhir bench · atau tarik arah baru / klik titik switchback di bawah.</div>
+     <div id="ibrl"></div>
+     <button id="ibdr" class="pri">&#8599; Tarik arah jalan bench ini (titik 1 &#8594; 2)</button>
+     <button id="ibsb">&#10558; Klik titik switchback</button>
+     <div id="brkw"><div class="fl"><b style="flex:1">Bench Break (zona turun)</b><button id="brkadd" class="sm">&#11040; Gambar zona</button></div><div id="brkl" class="hint">Mulai bench berikutnya, penurunan hanya di dalam poligon zona; sisi lain berhenti (jadi lantai).</div></div>
+     <div class="grid2"><button id="gded" title="Seret titik putih untuk memindah; klik titik kuning di tengah sisi untuk menambah titik; Shift+klik titik putih untuk menghapus. Hanya bisa mengecilkan ke arah dalam — batas geoteknik tetap dijaga.">&#9998; Ubah bentuk bench ini</button><button id="gdedx" title="Buang perubahan bentuk pada bench ini">&#8634; Bentuk usulan</button></div>
+     <div id="gdla" class="info"></div><div id="gdsg"></div>
+     <button id="ibok" class="pri">&#10003; Terima bench ini &amp; lanjut</button>
+     <div class="grid2"><button id="ibun">&#8630; Batalkan bench terakhir</button><button id="ibauto">&#9193; Otomatis sampai habis</button></div>
+     <button id="ibend">&#9632; Selesai — jadikan hasil</button>
+     <div class="hint">Pratinjau bench berikutnya tampil putus-putus; jalan = pita jingga dengan panah naik. Klik <b>Klik titik switchback</b> lalu klik di dinding: jalan berbalik arah di titik itu.</div>
+    
+   <div class="hint">Pintasan: <b>Enter</b> terima · <b>Backspace</b> batalkan · <b>R</b> balik arah jalan A · <b>S</b> klik switchback</div>
+  </div></div>
+  <div id="ovw" class="flw win"><div class="flh"><b>Beda parameter per RL</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+     <div class="hint">Baris ini menimpa parameter di atas pada rentang RL tertentu. Kosongkan sel yang tidak diubah.</div>
+     <table class="tb"><thead><tr><th>RL dari</th><th>RL sampai</th><th>Sudut °</th><th>Berm m</th><th>Tiap</th><th></th></tr></thead><tbody id="ovb"></tbody></table>
+     <button id="ova">+ Tambah baris</button>
+    </div></div>
+  <div id="iw" class="flw win"><div class="flh"><b>&#8679; Impor data</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+   <div class="ih">1. Topografi / asbuilt <span class="hint">(dipakai semua tab)</span></div>
+    <label class="fbtn">&#8679; Impor topografi (.str / .dxf)<input type="file" id="tpf" multiple accept=".str,.dxf,.txt" hidden></label>
+    <div id="tpl"></div>
+   <div class="ih">2. Pit final <span class="hint">(batas staging → tab Staging)</span></div>
+   <label class="fbtn" for="sff">&#8679; Impor pit final (.str / .dxf)</label>
+   <div class="ih">3. Pit jadi untuk direvisi <span class="hint">(→ tab Edit pit jadi)</span></div>
+   <label class="fbtn" for="epf">&#8679; Impor pit jadi (.str / .dxf)</label>
+   <div class="ih">4. Bentuk awal / garis urat acuan <span class="hint">(langkah 2)</span></div>
+   <label class="fbtn" for="plf">&#8679; Impor poligon / garis acuan</label>
+   <div class="hint">Semua tombol impor ada di sini. Aplikasi otomatis pindah ke tab yang sesuai.</div>
+  </div></div>
+  <div id="fbw" class="flw win"><div class="flh"><b>Batas pit final (staging)</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+    <div class="hint">Staging tidak boleh melewati pit final. Aturan bawaan: bila dinding staging berjarak <b>kurang dari 10 m</b> (jarak tangkap) ke dinding final, dinding di daerah itu saja otomatis <b>mengikuti bentuk pit final</b>; bagian lain tetap mengikuti desain staging.</div>
+    <div class="grid2"><button id="sfuse" class="pri">&#10003; Pakai hasil Pit final</button><label class="fbtn" for="sff">&#8679; Impor pit final</label><span hidden><input type="file" id="sff" accept=".str,.dxf,.txt" hidden></span></div>
+    <label class="sw2"><input type="checkbox" id="fshow" checked> Tampilkan pit final di 3D</label>
+    <div class="fl"><span>Jarak tangkap ke final</span><input id="sfsnap" type="number" step="any" value="10"><span class="u">m</span></div><div class="fl"><label title="Staging atas → bawah: bila jalan pit final ada di dalam staging, jalan staging otomatis direncanakan mundur dari ujung atas jalan final sehingga keduanya tersambung"><input type="checkbox" id="sfroad" checked> Jalan staging menuju jalan pit final (otomatis)</label></div>
+    <div id="sfinfo" class="info"></div>
+   </div></div>
+  <div id="gpw" class="flw win"><div class="flh"><b>Profil geoteknik</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+   <div class="hint">Simpan parameter (tinggi, sudut, berm, beda per RL, sektor dinding) sebagai profil agar bisa dipakai ulang.</div>
+   <div id="gpl"></div>
+   <div class="fl"><input id="gpn" placeholder="Nama profil, mis. Z3 staging"><button id="gps" class="pri">Simpan</button></div>
+   <button id="gpe">&#9998; Ubah parameter (panel kiri)</button>
+  </div></div>
+  <div id="lyw" class="flw"><div class="flh"><b>Layout peta</b><span class="note">gulir = zoom · seret = geser</span><span class="sp"></span><button id="lyfit">Pas</button><button id="lypng" class="pri">&#8681; PNG</button><button id="lypdf" class="pri">&#8681; PDF</button><button class="x">&#10005;</button></div><div class="flb">
+   <div class="lyf"><label>Kertas<select id="lyp"><option value="A4L">A4 lanskap</option><option value="A4P">A4 potret</option><option value="A3L">A3 lanskap</option><option value="A3P">A3 potret</option></select></label><label>Judul<input id="lyt"></label><label>Subjudul<input id="lys"></label><label>Dibuat oleh<input id="lya"></label><label>Skala 1 : (kosong = pas)<input id="lyk" type="number"></label><label>Kontur topo (m)<input id="lyki" type="number" value="5"></label></div>
+   <canvas id="lycv"></canvas></div></div>
+ </div>
+</div>

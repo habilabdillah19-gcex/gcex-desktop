@@ -5843,3 +5843,20 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   blok, komposit / tonase flitch, as-mined.
 - File `.mdl` Surpac yang terotasi: rotasinya belum dibaca. Sementara, ekspor model dari Surpac ke CSV lalu import
   CSV dengan isian rotasi.
+
+## 303. Pit Studio 0.1.0 — aplikasi baru (installer desktop)
+
+- Installer baru **`Pit-Studio-Setup-0.1.0.exe`**: Pit Studio dipasang berdampingan dengan aplikasi GC-Ex lain (penyimpanan
+  sendiri di `%APPDATA%\Pit Studio`), tanpa internet dan tanpa hak administrator. Lisensi memakai kode aplikasi **ps**
+  (alat pembuat lisensi: centang *Pit Studio*).
+- Isi: desain pit final & staging (otomatis / terpandu), jalan tambang, sayatan, **Pit Schedule** per fleet (jalur gali,
+  hauling, periode jam … bench), desain dari face position, dan menu **Demo** bab A–J.
+- **Block model .mdl** dibuka dari menu **Impor** (di awal alur kerja). Centang **hanya di bawah topografi** supaya blok
+  di udara tidak ikut dimuat. Laporan **grade × tonnage** tersedia untuk desain (final / staging, per bench) dan untuk
+  Pit Schedule (per periode dan per fleet); kelas kadar dan tujuan material mengikuti preset GC-Ex Block Model.
+- **Block model besar**: berkas .mdl ≥ 150 MB dibaca lewat backend yang sama dengan GC-Ex Block Model. Pembukaan pertama
+  membangun cache di disk (ada penunjuk kemajuan); sesudah itu hanya blok di area kerja yang dimuat, sehingga model
+  ratusan MB tetap ringan. Bila backend tidak tersedia, aplikasi kembali membaca berkas secara langsung.
+- Data latihan fiktif ada di folder pemasangan `resources\data-latihan` (topografi `.str` dan block model `.mdl`).
+- Block Model 0.24.113, Drillhole 0.24.115, DB-Ex 0.46.11 dan Ore Works 0.32.3 ikut naik karena berkas jendela aplikasi
+  (`electron/`) yang dipakai bersama berubah; tidak ada perubahan fitur di keempatnya.

@@ -1,0 +1,10 @@
+Data latihan Pit Studio (semuanya FIKTIF: bukit / urat rekaan, koordinat rekaan)
+
+PS_topo_latihan_dua_lantai.str        topografi latihan (titik grid 4 m) - Impor > Impor topografi
+PS_blockmodel_fiktif_dua_lantai.mdl   block model Surpac .mdl (blok 5 x 5 x 2,5 m; au, sg, sxs, kelas)
+                                      - Impor > Block model (.mdl) & Grade x Tonnage
+
+Alur singkat: impor topografi -> impor block model -> buat desain pit (atau jalankan Demo bab I) ->
+Block model > Laporan desain > Hitung; lalu Pit Schedule > tarik jalur gali > Jalankan > Grade x Tonnage.
+Tombol Demo di aplikasi memakai data fiktif yang tertanam (tidak perlu berkas ini).
+Generator: Generator/buat_data_latihan_ps.py

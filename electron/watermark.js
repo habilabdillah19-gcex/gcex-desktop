@@ -12,7 +12,9 @@ const TEXT = 'Copyright © Habil Abdillah 2026';
 const POS = {
   bm: { bottom: '6px', right: '10px', reserve: 'footer#status', existing: 'footer#status' },
   dh: { bottom: '6px', right: '10px', reserve: 'footer#status', existing: 'footer#status' },
-  core: { bottom: '6px', right: '10px', reserve: '#sbar', existing: '#sbar' }
+  core: { bottom: '6px', right: '10px', reserve: '#sbar', existing: '#sbar' },
+  // Pit Studio: tulisan hak cipta ada di bilah status (.cpy)
+  ps: { bottom: '4px', right: '10px', reserve: '', existing: '.cpy' }
 };
 const RESERVE_PX = 220;
 

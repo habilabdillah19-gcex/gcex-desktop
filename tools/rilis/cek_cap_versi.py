@@ -33,6 +33,7 @@ APLIKASI = [
     ("GC-Ex Drillhole", "app-dh/index.html", ("builder-dh.json", ("extraMetadata", "version"))),
     ("DB-Ex", "app-core/index.html", ("builder-core.json", ("extraMetadata", "version"))),
     ("Ore Works", "app-ow/index.html", ("builder-ow.json", ("extraMetadata", "version"))),
+    ("Pit Studio", "app-ps/index.html", ("builder-ps.json", ("extraMetadata", "version"))),
 ]
 
 POLA = re.compile(r"GCEX_VER\s*=\s*'([^']*)'")

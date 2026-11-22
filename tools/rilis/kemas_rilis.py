@@ -1,7 +1,7 @@
 """Kemas satu rilis GC-Ex lengkap untuk GitHub Release (dipanggil CI setelah ketiga installer dibangun).
 
 Isi folder keluaran (semua diunggah ke Release v<versi>):
-  GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, DB-Ex-Setup-<v>.exe, Ore-Works-Setup-<v>.exe
+  GC-Ex-Setup-<v>.exe, GC-Ex-Drillhole-Setup-<v>.exe, DB-Ex-Setup-<v>.exe, Ore-Works-Setup-<v>.exe, Pit-Studio-Setup-<v>.exe
                                      installer (dipasang terpisah, masing-masing pada versinya sendiri)
   DB-Ex-Qt-Setup-<v>.exe             installer DB-Ex versi Qt (semua ruang kerja: Core box, Singkapan & Model 3D,
                                      Borang, QAQC), bila CI berhasil membangunnya (dist-qt/)
@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 APPS = [("GC-Ex-Setup", "GC-Ex Block Model"), ("GC-Ex-Drillhole-Setup", "GC-Ex Drillhole"), ("DB-Ex-Setup", "DB-Ex"),
-        ("Ore-Works-Setup", "Ore Works")]
+        ("Ore-Works-Setup", "Ore Works"), ("Pit-Studio-Setup", "Pit Studio")]
 KUNCI_PRIVAT = ("KUNCI_PRIVAT", "private", ".pem", ".key")
 
 
@@ -76,6 +76,7 @@ VERSI_APP = {
     "GC-Ex Drillhole": ("builder-dh.json", ("extraMetadata", "version")),
     "DB-Ex": ("builder-core.json", ("extraMetadata", "version")),
     "Ore Works": ("builder-ow.json", ("extraMetadata", "version")),
+    "Pit Studio": ("builder-ps.json", ("extraMetadata", "version")),
 }
 MILIK = {
     "GC-Ex Block Model": ["app/", "web-src/", "electron/", "backend/", "build/", "legal/", "package-lock.json",
@@ -88,6 +89,8 @@ MILIK = {
               "docs/PANDUAN_CORE", "docs/DB-Ex_", "builder-core.json"],
     # Ore Works: satu berkas HTML (three.js), tanpa backend Python
     "Ore Works": ["app-ow/", "web-src-ow/", "electron/", "legal/", "legal-ow/", "build/ow-icon", "docs/tutorial-ow/"],
+    # Pit Studio: satu berkas HTML (three.js) + backend Python GC-Ex untuk block model .mdl besar; pembaca .mdl dirakit dari web-src/
+    "Pit Studio": ["app-ps/", "web-src-ps/", "web-src/gcex_base.html", "web-src/mdlattr.js", "web-src/delaunator.min.js", "electron/", "backend/", "legal/", "legal-ps/", "build/ps-icon", "docs/tutorial-ps/", "builder-ps.json"],
 }
 # berkas Block Model di docs/tutorial-gcex/ tidak dihitung milik Drillhole
 BUKAN_DH = ("docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py", "docs/tutorial-gcex/src/bm_bab.py",
@@ -195,6 +198,7 @@ def main():
     has_core = any(n.startswith("DB-Ex") for n, _, _ in inst)
     has_gcex = any(n.startswith("GC-Ex") for n, _, _ in inst)
     has_ow = any(n.startswith("Ore-Works") for n, _, _ in inst)
+    has_ps = any(n.startswith("Pit-Studio") for n, _, _ in inst)
 
     D = ROOT / "docs"
     # ---- 1 dokumen
@@ -223,13 +227,15 @@ def main():
             items.append((core_dummy, "DB-Ex_Data_Dummy"))
     if has_ow:
         items += [(D / "tutorial-ow" / "data", "Ore_Works_Latihan"), (D / "tutorial-ow" / "src" / "buat_data_latihan_ow.py", "Generator/buat_data_latihan_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_channel_dxf_ow.py", "Generator/buat_data_channel_dxf_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_cabang_ow.py", "Generator/buat_data_vein_cabang_ow.py"), (ROOT / "tools" / "uji" / "buat_data_vein_tiga_arah_ow.py", "Generator/buat_data_vein_tiga_arah_ow.py"), (ROOT / "tools" / "uji" / "sim_vein_sistem_ow.py", "Generator/sim_vein_sistem_ow.py"), (D / "tutorial-ow" / "src" / "buat_data_geofisika_ow.py", "Generator/buat_data_geofisika_ow.py")]
+    if has_ps:
+        items += [(D / "tutorial-ps" / "data", "Pit_Studio_Latihan"), (D / "tutorial-ps" / "src" / "buat_data_latihan_ps.py", "Generator/buat_data_latihan_ps.py")]
     zip_dir(dat, items)
     # ---- 3 lisensi & tentang
     tentang = outd / "TENTANG.txt"
     pk = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     tentang.write_text(
         f"GC-Ex (Grade Control Excellence) {ver}\r\n"
-        f"Aplikasi: GC-Ex Block Model, GC-Ex Drillhole, DB-Ex, Ore Works (dipasang terpisah)\r\n"
+        f"Aplikasi: GC-Ex Block Model, GC-Ex Drillhole, DB-Ex, Ore Works, Pit Studio (dipasang terpisah)\r\n"
         f"Commit sumber: {sha}\r\nBuild GitHub Actions run: {run}\r\nTanggal build: {now}\r\n"
         f"Electron {pk.get('devDependencies', {}).get('electron', '?')}\r\n"
         f"Offline: aplikasi tidak memeriksa / memasang pembaruan lewat internet. Versi baru diminta ke admin.\r\n"

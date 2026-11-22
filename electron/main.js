@@ -27,7 +27,14 @@ if (process.env.GCEX_APP === 'core' && !app.isPackaged) {
   app.setName('DB-Ex');
   app.setPath('userData', path.join(app.getPath('appData'), 'DB-Ex'));
 }
+if (process.env.GCEX_APP === 'ps' && !app.isPackaged) {
+  Object.assign(G, { page: 'app-ps/index.html', title: 'Pit Studio', icon: 'build/ps-icon.ico', theme: 'ps' });
+  app.setName('Pit Studio');
+  app.setPath('userData', path.join(app.getPath('appData'), 'Pit Studio'));
+}
 const APP_NAME = G.title;
+// aplikasi dengan bar menu sendiri di dalam halaman & dialog Tentang sendiri (Ore Works, Pit Studio)
+const PAGE_MENU = G.theme === 'ow' || G.theme === 'ps';
 // 0.18.0: GC-Ex Core Interpretation -> Core-Ex; 0.31.0: Core-Ex -> DB-Ex. Pengaturan, cache & log lama dipindahkan sekali ke folder baru
 if (G.theme === 'core') {
   for (const nm of ['Core-Ex', 'GC-Ex Core Interpretation']) {
@@ -309,13 +316,13 @@ ipcMain.handle('gcex:ollamaStart', (e, host) => {
 function createWindow() {
   mainWin = new BrowserWindow({
     width: 1600, height: 950, minWidth: 1100, minHeight: 700, show: false,
-    title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : G.theme === 'core' ? '#ecebe6' : G.theme === 'ow' ? '#1c2733' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
+    title: APP_NAME, backgroundColor: G.theme === 'dh' ? '#f0c047' : G.theme === 'core' ? '#ecebe6' : G.theme === 'ow' ? '#1c2733' : G.theme === 'ps' ? '#f4f6f9' : '#1f3a5f', icon: path.join(__dirname, '..', G.icon),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, devTools: DEVTOOLS,
       // simpan otomatis & sinyal kunci proyek tetap berjalan normal walau jendela diminimalkan
       backgroundThrottling: false }
   });
   // Ore Works 0.19.1: bar menu aplikasi di dalam halaman (menu tarik) -> menu bawaan disembunyikan agar tidak dobel; tombol Alt memunculkannya
-  if (G.theme === 'ow') { try { mainWin.setAutoHideMenuBar(true); mainWin.setMenuBarVisibility(false); } catch (e) {} }
+  if (PAGE_MENU) { try { mainWin.setAutoHideMenuBar(true); mainWin.setMenuBarVisibility(false); } catch (e) {} }
   mainWin.once('ready-to-show', () => { mainWin.maximize(); mainWin.show(); });
   mainWin.webContents.on('did-finish-load', () => { try { mainWin.webContents.setZoomFactor(zoomNow()); } catch (e) {} PRJ.ready = true; markWindow(mainWin.webContents); });
   mainWin.webContents.on('dom-ready', () => markWindow(mainWin.webContents));
@@ -494,10 +501,25 @@ async function tentangOW() {
   if (r.response === 3) dialog.showMessageBox(mainWin, { type: 'info', title: 'Pintasan keyboard', message: 'Pintasan keyboard Ore Works', detail: OW_KEYS });
 }
 
+// ---------- Pit Studio: Tentang (theme 'ps') ----------
+async function tentangPS() {
+  const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
+  const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang Pit Studio', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true,
+    message: 'Pit Studio - desain pit, staging, jalan tambang & Pit Schedule (keluarga GC-Ex)',
+    detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +
+      (I && c.ok ? '\n\nDilisensikan kepada: ' + I.n + (I.o ? ' (' + I.o + ')' : '') + '\nBerlaku sampai: ' + (I.e || 'tanpa batas waktu') : '') +
+      '\n\nFitur: desain pit final & staging (otomatis / terpandu / manual), domain geoteknik, jalan dalam & luar pit, edit pit, sayatan, Layout peta, ' +
+      'Pit Schedule (jalur gali per fleet, hauling, fase), laporan grade x tonnage dari block model Surpac .mdl (model besar lewat backend GC-Ex). Berjalan offline.' +
+      '\n\nMemakai komponen open source: three.js (MIT), Clipper (Boost 1.0), Delaunator (ISC), Electron / Chromium (MIT, BSD), Python (PSF), FastAPI, Uvicorn, NumPy.' +
+      '\nSurpac, GEOVIA, Minex, Minescape, Whittle, AutoCAD, Microsoft Excel dan nama produk lain adalah merek dagang milik pemiliknya; Pit Studio tidak berafiliasi dengan mereka.' });
+  if (r.response === 1) openLegal();
+  if (r.response === 2) openLegal('SYARAT_PENGGUNAAN.txt');
+}
+
 function buildMenu() {
   const tpl = [
     { label: 'File', submenu: [
-      { label: G.theme === 'ow' ? 'Muat ulang Ore Works' : 'Muat ulang GC-Ex', accelerator: 'F5', click: () => reloadSafe() },
+      { label: G.theme === 'ow' ? 'Muat ulang Ore Works' : G.theme === 'ps' ? 'Muat ulang Pit Studio' : 'Muat ulang GC-Ex', accelerator: 'F5', click: () => reloadSafe() },
       { type: 'separator' },
       { label: 'Keluar', role: 'quit' }
     ] },
@@ -533,9 +555,10 @@ function buildMenu() {
       { type: 'separator' },
       { label: 'Syarat penggunaan & penafian', click: () => openLegal('SYARAT_PENGGUNAAN.txt') },
       { label: 'Lisensi pihak ketiga (open source) & merek dagang', click: () => openLegal() },
-      { label: G.theme === 'ow' ? 'Lisensi Ore Works…' : 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
-      { label: G.theme === 'ow' ? 'Tentang Ore Works' : 'Tentang GC-Ex', click: async () => {
+      { label: G.theme === 'ow' ? 'Lisensi Ore Works…' : G.theme === 'ps' ? 'Lisensi Pit Studio…' : 'Lisensi GC-Ex…', visible: LIC_ON, click: () => showLicense('info') },
+      { label: G.theme === 'ow' ? 'Tentang Ore Works' : G.theme === 'ps' ? 'Tentang Pit Studio' : 'Tentang GC-Ex', click: async () => {
           if (G.theme === 'ow') return tentangOW();
+          if (G.theme === 'ps') return tentangPS();
           const c = LIC_ON ? LIC.check(G.theme) : null, I = c && c.info;
           const r = await dialog.showMessageBox(mainWin, { type: 'info', title: 'Tentang GC-Ex', buttons: ['OK', 'Lisensi open source & merek', 'Syarat penggunaan'], defaultId: 0, noLink: true, message: APP_NAME + (G.theme === 'core' ? ' - Database Excellence (keluarga GC-Ex)' : ' - Grade Control Excellence'),
             detail: 'Versi ' + app.getVersion() + '\nCopyright © 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.' +
