@@ -5874,3 +5874,19 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   aktif, atau mati.
 - Menu **Demo** bab K: tutorial dari jadwal sampai laporan grade × tonnage × SR.
 - Block Model, Drillhole, DB-Ex dan Ore Works tidak berubah.
+
+## 305. Pit Studio 0.1.2 — Blok tambang (bench × strip × blok) & cadangan per blok
+
+- Panel **Pit Schedule** kini dimulai dari **Blok tambang**: isi *bench × strip × blok* (mis. 10 × 20 × 40 m). Begitu **Batas
+  fase** digambar, area dibagi sendiri menjadi blok tambang bernama, mis. `B250-S4-02` = bench RL 250, strip 4, blok 2.
+- **Arah strip**: klik tombolnya lalu tarik garis A→B di 3D; strip dibuat sejajar garis itu dan bisa ditarik ulang.
+- **Cadangan**: tabel per blok tambang (volume, ton @ g/t tiap kelas, waste, SR, logam), bisa diurutkan dan diekspor CSV.
+  Perlu block model .mdl (menu Impor) untuk kadar; tanpa itu hanya volume.
+- **Warna blok di 3D**: kadar ore, SR, kelas dominan, ton ore, atau fleet yang menjadwalkan; bisa melihat bench tertentu.
+- **Cara gali** (ketiganya memakai mesin jadwal yang sama): **Turun per bench** (seluruh area, laporan tiap bench),
+  **Klik blok** (klik blok di 3D → antrean fleet tujuan; klik kolom yang sama lagi = bench berikutnya), atau **Jalur gali**.
+- **Kotak hitung** (dulu "blok AOI") tidak perlu diisi lagi: sistem memakai ¼ lebar strip dan ¼ tinggi bench. Bila perlu
+  resolusi khusus, buka ⚙ dan matikan *kotak hitung otomatis*.
+- Volume tergali bisa sedikit lebih besar dari jumlah volume blok yang dijadwalkan, karena kotak tetangga ikut digali untuk
+  menjaga lereng antar-blok (bawaan 60°, di ⚙).
+- Menu **Demo** bab L memperagakan alur ini. Block Model, Drillhole, DB-Ex dan Ore Works tidak berubah.

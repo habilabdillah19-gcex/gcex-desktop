@@ -87,7 +87,7 @@ async function gtEnsure(N){const f=GT.file,H=GT.H,W=GT.win,st=$('gtst');
  const D=window.gcexDesktop;let m=null,via='langsung',note='';
  if(D&&D.apiBin&&D.api&&f.size>=gtBigMB()*1048576){try{let path=D.pathOf?D.pathOf(f):'';if(!path)throw new Error('lokasi file tidak diketahui');
    for(;;){const s=await D.api('/mdl/open',{path});if(s.state==='ready')break;if(s.state==='error')throw new Error(s.error||'backend gagal membaca .mdl');st.textContent='backend: membangun cache .mdl '+Math.round(s.pct||0)+'% · '+(s.n||0).toLocaleString('id-ID')+' blok (sekali saja)';await new Promise(r=>setTimeout(r,600));}
-   st.textContent='backend: mengambil potongan AOI…';const r=await D.apiBin('/mdl/subset',{path,z_min:zlo,z_max:zhi,bbox:[N.x0,N.x1,N.y0,N.y1],max_n:maxN}),nSub=+(r.headers['x-gcex-n']||0);
+   st.textContent='backend: mengambil potongan area…';const r=await D.apiBin('/mdl/subset',{path,z_min:zlo,z_max:zhi,bbox:[N.x0,N.x1,N.y0,N.y1],max_n:maxN}),nSub=+(r.headers['x-gcex-n']||0);
    if(!nSub)throw Object.assign(new Error('Tidak ada blok model di jendela AOI (RL '+schF(zlo,1)+'–'+schF(zhi,1)+').'),{keras:1});
    if(r.headers['x-gcex-capped']==='1')note=' · <span style="color:#c92a2a">melebihi batas '+maxN.toLocaleString('id-ID')+' blok: hanya RL ≥ '+esc(r.headers['x-gcex-zmin'])+' yang dimuat — perkecil AOI / fase</span>';
    m=await MDLSA.readMDL(new File([r.buf],f.name),null,{pit:PG,topo:TG,zMin:zlo,zMax:zhi});via='backend GC-Ex (cache disk, '+nSub.toLocaleString('id-ID')+' blok dikirim)';}
