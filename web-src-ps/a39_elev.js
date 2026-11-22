@@ -6,7 +6,7 @@
  dg.parentElement.insertAdjacentElement('afterend',d);$('schego').onclick=()=>{schElev().catch(e=>{schMsg(esc(e.message),1);console.error(e);});};})();
 async function schElev(){const ph=schPh(),dz=Math.max(+$('schh2').value||2.5,+($('mbbh')||{}).value||10);if(!ph.bnd||ph.bnd.length<3){schMsg('Gambar <b>Batas fase</b> dulu (poligon area yang dijadwalkan), lalu tekan Hitung.',1);return false;}
  if(ph.lock)throw new Error(ph.nm+' sudah dikunci.');const D=schDes(),own=SCH.tasks.find(t=>t._elev),lines=SCH.tasks.filter(t=>t.on&&!t._elev);
- if(!lines.length){const o={nm:'Area fase (turun per elevasi)',_elev:1};if(D.length){o.fm='des';o.fd=(D.find(x=>x.id==='res')||D[0]).id;}else{o.fm='depth';o.fv=Math.max(dz,30);}
+ if(!lines.length){const o={nm:'Area fase (turun per elevasi)',_elev:1};if(D.length){o.fm='des';o.fd=schRefDes(D).id;}else{o.fm='depth';o.fv=Math.max(dz,30);}
   if(own){own.pts=ph.bnd.map(q=>q.slice());own.on=true;}else schAdd('poly',ph.bnd.map(q=>[q[0],q[1],q[2]||0]),o);}
  else if(own)own.on=false;
  schRun();const u=$('schun');$('schhb').value=dz;SCH.hbSet=1;u.value='b';u.dispatchEvent(new Event('change'));GTR.cum=true;gtMount();

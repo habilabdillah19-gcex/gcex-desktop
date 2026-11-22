@@ -90,7 +90,7 @@ MILIK = {
     # Ore Works: satu berkas HTML (three.js), tanpa backend Python
     "Ore Works": ["app-ow/", "web-src-ow/", "electron/", "legal/", "legal-ow/", "build/ow-icon", "docs/tutorial-ow/"],
     # Pit Studio: satu berkas HTML (three.js) + backend Python GC-Ex untuk block model .mdl besar; pembaca .mdl dirakit dari web-src/
-    "Pit Studio": ["app-ps/", "web-src-ps/", "web-src/gcex_base.html", "web-src/mdlattr.js", "web-src/delaunator.min.js", "electron/", "backend/", "legal/", "legal-ps/", "build/ps-icon", "docs/tutorial-ps/", "builder-ps.json"],
+    "Pit Studio": ["app-ps/", "web-src-ps/", "web-src/gcex_base.html", "web-src/mdlattr.js", "web-src/delaunator.min.js", "web-src/tinz.js", "electron/", "backend/", "legal/", "legal-ps/", "build/ps-icon", "docs/tutorial-ps/", "builder-ps.json"],
 }
 # berkas Block Model di docs/tutorial-gcex/ tidak dihitung milik Drillhole
 BUKAN_DH = ("docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py", "docs/tutorial-gcex/src/bm_bab.py",

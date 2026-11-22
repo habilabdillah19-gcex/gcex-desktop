@@ -51,7 +51,7 @@ DMCH.push({id:'J',nm:'Pit Schedule — jadwal per fleet, grade × tonnage, desai
  await dmCap('Selesai','Demo selesai','Semua desain di demo ini memenuhi empat tolok ukur kerapian; Pit Schedule mensimulasikan penggalian per fleet. Tekan Stop untuk mengembalikan pengaturan.');await dW(2500);}});
 /* Bab K — TUTORIAL khusus Pit Schedule → Grade × Tonnage.
    Kasus 1: satu area diturunkan per selang elevasi (G × T × SR tiap penurunan). Kasus 2: jalur gali per fleet (bab J 1–9) + laporan rinci. */
-DMCH.push({id:'K',nm:'Tutorial: Pit Schedule → Grade × Tonnage × SR (turun per elevasi, per fleet, cut-off)',run:async()=>{
+DMCH.push({id:'K',nm:'Tutorial: Pit Schedule → Grade × Tonnage × SR (turun per bench, per fleet, cut-off)',run:async()=>{
  const ok=()=>{try{return !!RES&&TP.some(t=>/topo_latihan_dua_lantai/.test(t.nm));}catch(_){return false;}};
  if(!ok()){await dmCap('Tutorial','Menyiapkan pit latihan','Memakai topografi & pit dua lantai fiktif dari bab I — dijalankan cepat lebih dulu.');const I=DMCH.find(c=>c.id==='I'),sp=DMO.spd,cp0=dmCap,sh=dmShot;DMO.spd=60;dmCap=async()=>{};dmShot=async()=>{};try{await I.run();}finally{DMO.spd=sp;dmCap=cp0;dmShot=sh;}}
  const tz=p=>{const z=topoZ(p[0],p[1]);return [p[0],p[1],isFinite(z)?z:250];},BND=[[600560,9200720],[600800,9200720],[600800,9200880],[600560,9200880]].map(tz);
@@ -59,7 +59,7 @@ DMCH.push({id:'K',nm:'Tutorial: Pit Schedule → Grade × Tonnage × SR (turun p
  const wt=async n=>{for(let i=0;i<(n||160)&&(GT.busy||!GT.res);i++)await dRaw(250);},sb=()=>{const b=$('schbd');b.scrollTop=b.scrollHeight;},bigPos=()=>{const w=$('gtrw');w.style.left='590px';w.style.top='74px';w.style.width='838px';gtBigDraw();};
  const sum=()=>{const A=gtAgg({out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:false}),K=A.K;let o=0,m=0;for(let k=0;k<K;k++){o+=A.tot.t[k];m+=A.tot.gt[k];}return {o,g:o>0?m/o:0,w:A.tot.t[K]};};
  const bars=async ms=>{const n=SCH.bd.length;for(let i=0;i<n;i++){const r=document.querySelector('#gtrg rect.b[data-i="'+i+'"]');if(!r)continue;await dmPoint(r,450);dmRip();schStop();schSet(i);await dW(ms);}};
- const S1='Kasus 1 · Turun per elevasi',S2='Kasus 2 · Jalur gali per fleet';
+ const S1='Kasus 1 · Turun per bench',S2='Kasus 2 · Jalur gali per fleet';
  /* tutorial: beri waktu baca tiap keterangan (± 35 ms per huruf) */
  const cap0=dmCap;dmCap=async(x,y,z)=>{await cap0(x,y,z);await dW(Math.min(5200,600+34*String(z||'').length));};try{
  /* ---------- Kasus 1 ---------- */
@@ -84,8 +84,8 @@ DMCH.push({id:'K',nm:'Tutorial: Pit Schedule → Grade × Tonnage × SR (turun p
  await dmCap(S2,'Bila urutan gali ditentukan per alat','Kasus kedua: arah & urutan gali ditentukan sendiri — tarik jalur gali untuk tiap fleet. Laporan yang sama lalu bisa dirinci per periode dan per fleet.');await dW(2600);
  {const e=$('schcm');e.value='rl';e.dispatchEvent(new Event('change'));}
  try{$('schbd').scrollTop=0;$('schw').style.width='';$('gtbox').open=false;schOpen(false);}catch(_){}
- const J=DMCH.find(c=>c.id==='J'),cp=dmCap;window.__DMJK=1;dmCap=async(a,b,c)=>cp(String(a).replace(/^J · Pit Schedule$/,S2).replace(/^J · \d+ ?/,S2+' · '),b,c);
- try{await J.run();}finally{window.__DMJK=0;dmCap=cp;}
+ window.__DMAUTOP=1;const J=DMCH.find(c=>c.id==='J'),cp=dmCap;window.__DMJK=1;dmCap=async(a,b,c)=>cp(String(a).replace(/^J · Pit Schedule$/,S2).replace(/^J · \d+ ?/,S2+' · '),b,c);
+ try{await J.run();}finally{window.__DMJK=0;dmCap=cp;window.__DMAUTOP=0;}
  try{$('sayw').style.display='none';}catch(_){}
  await dmCap(S2+' · Laporan','Laporan & grafik per periode','Block model sudah dimuat, jadi laporan langsung dihitung setiap kali jadwal dijalankan. Buka "Laporan & grafik".');
  gtMount();{const d=$('gtbox');d.open=true;sb();}await wt();sb();await dmPoint('#gtsum');await dW(1800);await dmClick('#gtbigb');bigPos();await dW(600);await dmPoint('#gtrg');await dW(2800);
@@ -108,8 +108,8 @@ DMCH.push({id:'K',nm:'Tutorial: Pit Schedule → Grade × Tonnage × SR (turun p
  await dmPoint('#gtrc');await dW(4500);GT.rule='pusat';try{$('gtru').value='pusat';}catch(_){}await gtRun().catch(()=>{});await wt(80);
  await dmCap(S2+' · Desain','Bandingkan dengan desain','Laporan desain (topografi → pit final, per bench) memakai block model & kelas yang sama: terlihat berapa bagian ore desain yang sudah terjadwal di fase ini.');
  gtBig(false);gtOpen(true);{const w=$('bmw');w.style.left='590px';w.style.right='auto';w.style.top='78px';}$('gtkd').open=false;try{$('gdds').value='res';}catch(_){}await dmClick('#gdgo');for(let i=0;i<200&&(GT.busy||!GT.dres);i++)await dRaw(250);{const b=$('bmwb');b.scrollTop=b.scrollHeight;}await dmPoint('#gdsum');await dW(2200);await dmPoint('#gdtb');await dW(3800);
- gtOpen(false);$('gtbox').open=false;lay(/Permukaan pit|Label RL|Garis potong/,true);
- await dmCap('Selesai','Tutorial selesai','Kasus 1: Batas fase → Turun per elevasi → G × T × SR tiap penurunan. Kasus 2: jalur gali per fleet → laporan per periode / fleet. Tekan Stop untuk mengembalikan pengaturan.');await dW(3000);}finally{dmCap=cap0;window.__DMJK=0;}}});
+
+ await dmCap('Selesai','Tutorial selesai','Kasus 1: Batas fase → Turun per bench → G × T × SR tiap bench. Kasus 2: jalur gali per fleet → laporan per periode / fleet. Tekan Stop untuk mengembalikan pengaturan.');gtOpen(false);$('gtbox').open=false;lay(/Permukaan pit|Label RL|Garis potong/,true);await dW(3000);}finally{dmCap=cap0;window.__DMJK=0;}}});
 /* block model FIKTIF untuk demo (.mdl Surpac Version 4.0): kotak blok seragam + fungsi kadar rekaan */
 function dmMdlBuat(o){const bs=o.bs,O=[Math.floor(o.x0/bs[0])*bs[0],Math.floor(o.y0/bs[1])*bs[1],Math.floor(o.z0/bs[2])*bs[2]],N=[Math.ceil((o.x1-O[0])/bs[0]),Math.ceil((o.y1-O[1])/bs[1]),Math.ceil((o.z1-O[2])/bs[2])],L=Math.max(1,Math.ceil(Math.log2(Math.max(...N)))),RT=bs.map(b=>b*2**L);
  const enc=t=>Uint8Array.from(t,ch=>ch.charCodeAt(0)),P=[];let seed=7;const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
@@ -127,11 +127,12 @@ function dmMdlFiktif(){return dmMdlBuat({name:'demo_fiktif_pit_schedule',bs:[5,5
 function dmMdlUrat(){let x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;for(const [u,v] of [[-460,-230],[460,-230],[460,230],[-460,230]]){const p=DP(u,v);x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);}
  return dmMdlBuat({name:'demo_fiktif_urat',bs:[10,10,5],x0,x1,y0,y1,z0:225,z1:350,au:(x,y,z,rnd)=>{const du=(x-DCX)*DUX+(y-DCY)*DUY,dv=(x-DCX)*DPX+(y-DCY)*DPY;let g=0.04+0.05*rnd();if(Math.abs(du)<380){for(const [v0,dip,w,pk] of [[0,0.3,14,3.0],[55,0.2,9,1.4]]){const d=Math.abs(dv-(v0+(320-z)*dip));if(d<w*2)g+=pk*Math.exp(-((d/w)**2))*(0.7+0.6*rnd())*(0.75+0.35*Math.cos(du/120));}}return g;}});}
 async function dmBmSiap(){gtWin();if(!GT.file||!GT.H||GT.H.name!=='demo_fiktif_urat'){await gtLoad(dmMdlUrat());}}
-async function dmBmLap(id,cap1,cap2){try{if(!schDes().some(x=>x.id===id))return;await dmBmSiap();await dmCap(cap1,'Grade × Tonnage desain',cap2);gtOpen(true);{const w=$('bmw');w.style.left='12px';w.style.right='auto';w.style.top='78px';}$('gdds').value=id;await dW(400);await dmClick('#gdgo',{noFire:true});GT.dres=null;await gtDesign();await dmPoint('#gdtb');await dW(2600);gtOpen(false);}catch(e){console.warn('demo GT',e);try{gtOpen(false);}catch(_){}}}
+async function dmBmLap(id,cap1,cap2){try{if(!schDes().some(x=>x.id===id))return;await dmBmSiap();await dmCap(cap1,'Grade × Tonnage desain',cap2);gtOpen(true);{const w=$('bmw');w.style.left='12px';w.style.right='auto';w.style.top='78px';}$('gdds').value=id;await dW(400);await dmClick('#gdgo',{noFire:true});GT.dres=null;await gtDesign();await dmPoint('#gdtb');await dW(2600);{const b=$('bmwb');if(b)b.scrollTop=b.scrollHeight;}await dmShotL(id==='res'?'M02_laporan_pit_final':'M03_laporan_staging',cap1,'Grade × Tonnage desain',cap2);gtOpen(false);}catch(e){console.warn('demo GT',e);try{gtOpen(false);}catch(_){}}}
 /* bab A: impor block model di awal; bab B & C: laporan grade × tonnage desain */
 try{const A=DMCH.find(c=>c.id==='A'),B=DMCH.find(c=>c.id==='B'),C=DMCH.find(c=>c.id==='C');
+ if(A){const r00=A.run;A.run=async()=>{try{if(typeof SH!=='undefined'&&SH.on){await dmCap('A · Kerangka','Menu, Project Tree, Properti','Bar menu tarik di atas; Project Tree di kiri berisi data, desain dan jadwal; halaman Properti di kanan menampilkan pengaturan; 3D selalu utuh di tengah; pesan muncul di status bar.');await dmPoint('#shbar');await dW(1200);await dmPoint('#shtree');await dW(1400);await dmPoint('#side .shph');await dW(1400);await dmPoint('#shmsg^');await dW(1100);}}catch(_){}await r00();};}
  if(A){const r0=A.run;A.run=async()=>{await r0();await dmCap('A · Block model','Impor block model (.mdl)','Menu Impor → Block model: file .mdl Surpac dibaca seperti di GC-Ex. Hanya blok di bawah topografi dan di area desain yang dimuat, sehingga model besar tetap ringan. Data demo fiktif.');
-   gtOpen(true);{const w=$('bmw');w.style.left='12px';w.style.right='auto';w.style.top='78px';}await dmPoint('#gtld');dmRip();await gtLoad(dmMdlUrat());await dW(900);await dmPoint('#gttp');await dW(900);$('gtkd').open=true;await dmPoint('#gtrl');await dW(1500);$('gtkd').open=false;gtOpen(false);};}
+   gtOpen(true);{const w=$('bmw');w.style.left='12px';w.style.right='auto';w.style.top='78px';}await dmPoint('#gtld');dmRip();await gtLoad(dmMdlUrat());await dW(900);await dmPoint('#gttp');await dW(900);$('gtkd').open=true;await dmPoint('#gtrl');await dW(1500);await dmShotL('M01_impor_block_model','A · Block model','Impor block model (.mdl)','Menu Impor → Block model: file .mdl Surpac dibaca seperti di GC-Ex. Pilih atribut kadar & SG, aturan blok (cara Surpac = pusat blok), centang "hanya di bawah topografi", dan atur kelas kadar & tujuan (bisa impor preset GC-Ex). Data demo fiktif.');$('gtkd').open=false;gtOpen(false);};}
  if(B){const r0=B.run;B.run=async()=>{await r0();await dmBmLap('res','B · Laporan','Pit final vs topografi: ton @ g/t per kelas kadar, waste, SR dan logam tiap bench — cara Surpac (pusat blok). Kelas & tujuan memakai preset GC-Ex Block Model.');};}
  if(C){const r0=C.run;C.run=async()=>{await r0();await dmBmLap('stg','C · Laporan','Staging vs topografi: ore, waste dan SR tahap ini per bench — dasar untuk target ore bulanan.');};}}catch(e){console.warn(e);}
 try{const I=DMCH.find(c=>c.id==='I');if(I){const run0=I.run;I.run=async()=>{const _cap=dmCap;dmCap=async(a,b,c)=>{if(a==='Selesai')return;return _cap(a,b,c);};try{await run0();}finally{dmCap=_cap;}};}}catch(e){}
@@ -155,8 +156,8 @@ DMCH.push({id:'L',nm:'Blok tambang: bench × strip × blok, cadangan per blok, j
  await dmCap(S+' 3','Ukuran blok & tabel Cadangan','Isi bench × strip × blok (10 × 20 × 40 m). Blok dibuat otomatis; tombol Cadangan membuka tabelnya. Tiap blok diberi nama, mis. B250-S4-02 = bench RL 250, strip 4, blok 2.');
  await dmPoint('#mbbh');await dW(700);await dmPoint('#mbsw');await dW(700);await dmPoint('#mbbl');await dW(700);await dmPoint('#mbtb');dmRip();await mbCalc();{const w=$('mbw');w.style.left='640px';w.style.top='74px';w.style.width='780px';}await dmCam([600660,9200800,240,330,0.8],1300);
  await dmCap(S+' 4','Basis data cadangan per blok','Tiap blok tambang: volume, ton @ g/t per kelas, waste, SR, logam — dihitung sekali dari block model dengan aturan Surpac. Klik judul kolom untuk mengurutkan; CSV untuk ekspor.');
- await dmPoint('#mbws');await dW(2200);await dmPoint('#mbwt');await dW(3200);{const t=document.querySelector('#mbwt th[data-s=g]');if(t){await dmPoint(t);dmRip();t.click();await dW(2600);}}$('mbw').style.display='none';MB.sort='nm';
- await dmCap(S+' 5','Blok berwarna di 3D','Warna menurut kadar ore: terlihat strip mana yang kaya. Label = strip-blok · kadar.');await dW(2200);
+ await dmPoint('#mbws');await dW(2200);await dmPoint('#mbwt');await dW(3200);{const t=document.querySelector('#mbwt th[data-s=g]');if(t){await dmPoint(t);dmRip();t.click();await dW(2600);}}
+ await dmCap(S+' 5','Blok berwarna di 3D','Warna menurut kadar ore: terlihat strip mana yang kaya. Label = strip-blok · kadar.');$('mbw').style.display='none';MB.sort='nm';mbTable();await dW(2200);
  await dmCap(S+' 5','Warna SR dan kelas dominan','Ganti warna ke SR (biru rendah → merah tinggi) atau kelas dominan (merah HG, hijau LG, cokelat waste).');
  for(const v of ['sr','kls']){const e=$('mbcol');await dmPoint(e);dmRip();e.value=v;e.dispatchEvent(new Event('change'));await dW(2600);}
  await dmCap(S+' 5','Lihat bench di bawahnya','"Tampil" bisa dipindah ke bench tertentu untuk melihat isi bench yang belum terbuka.');
@@ -170,10 +171,56 @@ DMCH.push({id:'L',nm:'Blok tambang: bench × strip × blok, cadangan per blok, j
  schSet(-1);await dW(600);await dmClick('#schpl');for(let i=0;i<60&&SCH.play;i++)await dRaw(250);await dW(1200);
  await dmCap(S+' 8','Laporan per periode & per fleet','Laporan Grade × Tonnage dihitung dari jadwal blok itu: per shift, per bench, per fleet — cocok dengan cadangan tiap blok.');
  gtMount();$('gtbox').open=true;gtBig(true);{const w=$('gtrw');w.style.left='590px';w.style.top='74px';w.style.width='838px';}{const e=$('gtrf');e.checked=true;e.dispatchEvent(new Event('change'));}gtBigDraw();await dmPoint('#gtrg');await dW(2600);await dmPoint('#gtrt');await dW(3800);
- {const e=$('gtrf');e.checked=false;e.dispatchEvent(new Event('change'));}gtBig(false);$('gtbox').open=false;lay(/Permukaan pit|Label RL|Garis potong|String desain/,true);
- await dmCap('Selesai','Blok tambang selesai','Batas fase → Arah strip → Hitung cadangan → klik blok per fleet → Jalankan → laporan. Jalur gali dan Turun per elevasi tetap bisa dipakai bersama.');await dW(3000);
+ await dmCap('Selesai','Blok tambang selesai','Batas fase → Arah strip → Cadangan → klik blok per fleet → Jalankan → laporan. Jalur gali dan Turun per bench tetap bisa dipakai bersama.');{const e=$('gtrf');e.checked=false;e.dispatchEvent(new Event('change'));}gtBig(false);$('gtbox').open=false;lay(/Permukaan pit|Label RL|Garis potong|String desain/,true);await dW(3000);
  }finally{dmCap=cap0;try{$('schaz').value=az0;}catch(_){}}}});
+try{const w=$('dmoList');if(w){w.innerHTML=DMCH.map((c,i)=>'<div class="fl"><button class="sm" data-dmo="'+i+'">&#9654; '+c.id+'</button><span>&nbsp;'+esc(c.nm)+'</span></div>').join('');w.querySelectorAll('[data-dmo]').forEach(b=>b.onclick=()=>dmoPlay(+b.dataset.dmo,+b.dataset.dmo+1));}}catch(e){}
+/* Bab M — Scheduling berdiri sendiri dengan panel 4 langkah (data → blok tambang → alat & cara gali → hasil) */
+DMCH.push({id:'M',nm:'Pit Schedule 4 langkah: data sendiri, batas dari desain, simpan / impor blok, klik blok berulang, laporan',run:async()=>{
+ const ok=()=>{try{return !!RES&&TP.some(t=>/topo_latihan_dua_lantai/.test(t.nm));}catch(_){return false;}};
+ if(!ok()){await dmCap('Pit Schedule','Menyiapkan pit latihan','Memakai topografi & pit dua lantai fiktif dari bab I — dijalankan cepat lebih dulu.');const I=DMCH.find(c=>c.id==='I'),sp=DMO.spd,cp0=dmCap,sh=dmShot;DMO.spd=60;dmCap=async()=>{};dmShot=async()=>{};try{await I.run();}finally{DMO.spd=sp;dmCap=cp0;dmShot=sh;}}
+ const tz=p=>{const z=topoZ(p[0],p[1]);return [p[0],p[1],isFinite(z)?z:250];},BND=[[600560,9200720],[600800,9200720],[600800,9200880],[600560,9200880]].map(tz),DIR=[[600590,9200765],[600770,9200831]].map(tz),LN=[[600585,9200735],[600775,9200735]].map(tz);
+ const lay=(re,on)=>{for(const l of document.querySelectorAll('#lay input[type=checkbox]'))if(re.test(l.parentElement.innerText)&&l.checked!==on)l.click();},az0=$('schaz').value;
+ const cap0=dmCap;dmCap=async(x,y,z)=>{await cap0(x,y,z);await dW(Math.min(5200,600+34*String(z||'').length));};
+ const clickB=async(s,b,ms)=>{const R=MB.R,col=R.L.filter(o=>o.s===s&&o.b===b).sort((a,q)=>q.k-a.k);if(!col.length)return;const o=col[0],w=schCorner(SCH.grid,(o.i0+o.i1+1)/2,(o.j0+o.j1+1)/2),q=dmScr(w[0],w[1],o.zt);await dmMove(q[0],q[1],600);dmRip();mbClick(w[0],w[1]);await dW(ms||700);};
+ const step=async i=>{await dmClick('#uxs'+i+' .uxh',{noFire:true});UX.sel=i;uxSync(true);await dW(500);},wtR=async()=>{for(let i=0;i<60&&!MB.R;i++)await dRaw(200);};
+ UX.keep=true;try{dmWin();try{$('sayw').style.display='none';gtBig(false);gtOpen(false);schOpen(false);$('mbw').style.display='none';}catch(_){}schReset();SCH.refId=null;lay(/Permukaan pit|Label RL|Garis potong|String desain|Bentuk awal/,false);
+ await dmCap('Pit Schedule','Berdiri sendiri, 4 langkah','Pit Schedule tidak bergantung pada mode Pit final / Staging. Datanya sendiri: topografi, desain acuan, block model. Panelnya 4 langkah bernomor — judul tiap langkah memberi tahu apa yang harus dilakukan.');
+ await dmCam([600950,9200950,250,1150,0.55],1300);await dmClick('#mbsch');{const w=$('schw');w.style.left='12px';w.style.top='78px';}uxSync(true);await dW(900);
+ await dmCap('Langkah 1 · Data','Desain acuan & block model','Desain acuan dipilih dari daftar, atau diimpor (.str / .dxf) langsung di panel — menjadi lantai galian jadwal. Block model (.mdl) juga dimuat di sini. Data demo fiktif.');
+ await dmPoint('#uxtp');await dW(900);await dmPoint('#uxdes');await dW(1100);await dmPoint('#uxdfb');await dW(1100);SCH.refId='res';uxSync(true);
+ await dmClick('#uxbmb',{noFire:true});gtMount();await gtLoad(dmMdlFiktif());uxSync(true);await dW(1300);
+ await dmCap('Langkah 1 · Area','Pakai batas desain — satu klik','Batas area bisa diambil langsung dari tapak galian desain acuan: blok tambang seluruh pit langsung dibuat dan diwarnai kadar (cokelat = tanpa ore).');
+ await dmClick('#uxbd');await wtR();await dW(600);for(let i=0;i<40&&MB._rc;i++)await dRaw(150);await dmCam([600950,9200950,250,900,0.7],1300);await dW(2600);
+ await dmCap('Langkah 1 · Area','Atau gambar sendiri area kerja','Untuk menjadwalkan sebagian saja: Batas fase, klik titik-titik di 3D, Enter. Selama menggambar, tampilan terkunci dari putaran (roda = zoom, seret kanan = geser) — petunjuknya di atas 3D.');
+ await dmCam([600680,9200800,240,420,0],1300);await dmClick('#schap',{noFire:true});schDigStart('bnd');await dW(500);await dmDraw(BND,true,300);await dW(700);schDigEnd(false);schPh().bnd=BND.map(q=>q.slice());MB.R=null;dmDrawClear();schTasks();schDrawStatic();await wtR();await dW(900);
+ await dmCap('Langkah 2 · Blok tambang','Ukuran & arah strip','Langkah 2 sudah terisi sendiri (✓). Buka bila ingin mengubah bench × strip × blok, atau menarik Arah strip di 3D — blok dihitung ulang otomatis.');
+ await step(2);await dmPoint('#mbbh');await dW(600);await dmPoint('#mbbl');await dW(600);await dmClick('#mbdir',{noFire:true});schDigStart('dir');await dW(400);await dmDraw(DIR,false,300);await dW(600);schDigEnd(false);dmDrawClear();schAdd('dir',DIR);await dW(300);MB.R=null;mbAutoCalc();await wtR();await dmCam([600660,9200800,240,330,0.8],1300);await dW(900);
+ await dmCap('Langkah 2 · Blok tambang','Simpan & impor blok','Simpan blok (.str) menyimpan batas, ukuran bench × strip × blok dan arah strip. Di proyek / laptop lain: Impor blok / batas — nama blok persis sama. Poligon batas dari Surpac juga bisa diimpor.');
+ await dmPoint('#mbsv');await dW(1500);await dmPoint('#mbim');await dW(1500);{const e=$('mbcol');await dmPoint(e);dmRip();e.value='kadarb';e.dispatchEvent(new Event('change'));await dW(1500);e.value='sr';e.dispatchEvent(new Event('change'));await dW(1500);e.value='kadar';e.dispatchEvent(new Event('change'));await dW(700);}
+ await dmCap('Langkah 3 · Cara gali','Tiga cara, boleh digabung','Turun per bench (seluruh area), Klik blok (pilih blok satu per satu), atau Jalur gali (tarik garis arah gali). Alat tiap fleet diatur di kartu fleet.');
+ await step(3);await dmPoint('#schego');await dW(900);await dmPoint('#mbpk');await dW(900);await dmPoint('#schal');await dW(900);
+ await dmCap('Langkah 3 · Klik blok','Blok yang sama diklik berulang = lebih dalam','Klik blok memasukkannya ke antrean fleet. Klik blok yang sama lagi = bench berikutnya di kolom itu (Shift + klik = batal): di sini satu blok diturunkan 3 bench, tetangganya 1 bench.');
+ await dmClick('#mbpk');for(const [s,b] of [[5,3],[5,3],[5,3],[5,2],[4,3],[4,2]])await clickB(s,b,900);await dW(900);
+ await dmCap('Langkah 3 · Fleet kedua','+ Fleet, lalu klik blok lain','Blok berikutnya masuk ke Fleet A2. Warna garis blok = fleet; angka = urutan gali.');
+ await dmClick('#schfl');for(const [s,b] of [[6,4],[6,4],[7,3],[7,4]])await clickB(s,b,800);{const e=$('mbcol');e.value='fleet';e.dispatchEvent(new Event('change'));}await dW(2000);mbPick(false);
+ await dmCap('Langkah 3 · Alat','Kartu fleet','Klik baris fleet untuk mengatur alat, jumlah unit, jam kerja, PA dan UA — menentukan kapan tiap blok selesai. Lalu tekan Jalankan.');
+ SCH.sel='g:A1';schTasks();schEdit();{const b=$('schbd');b.scrollTop=b.scrollHeight;}await dmPoint('#schtl');await dW(1800);await dmPoint('#sched');await dW(1800);
+ await dmClick('#schrun');for(let i=0;i<160&&(GT.busy||!GT.res);i++)await dRaw(250);uxSync(true);await dW(600);
+ await dmCap('Langkah 4 · Hasil','Putar jadwal','Langkah 4 terbuka sendiri. Putar: blok yang digali berulang turun paling dalam; lereng antar-blok dijaga otomatis.');
+ {const e=$('mbcol');e.value='kadar';e.dispatchEvent(new Event('change'));}schSet(-1);await dW(500);await dmClick('#schpl');for(let i=0;i<80&&SCH.play;i++)await dRaw(250);await dW(1000);
+ await dmCap('Langkah 4 · Laporan','Grade × Tonnage × SR','Laporan & grafik: per bench, per shift, per fleet; kolom kumulatif dan kapan selesai. CSV untuk ekspor.');
+ gtMount();$('gtbox').open=true;{const u=$('schun');u.value='b';u.dispatchEvent(new Event('change'));}gtBig(true);{const w=$('gtrw');w.style.left='590px';w.style.top='74px';w.style.width='838px';}gtBigDraw();await dmPoint('#gtrg');await dW(2600);{const e=$('gtrf');await dmPoint(e);dmRip();e.checked=true;e.dispatchEvent(new Event('change'));}await dmPoint('#gtrt');await dW(3600);
+ await dmCap('Selesai','Ringkasnya','1 Data & area → 2 Blok tambang (otomatis) → 3 Alat & cara gali → Jalankan → 4 Hasil & laporan.');{const e=$('gtrf');e.checked=false;e.dispatchEvent(new Event('change'));}await dW(2600);gtBig(false);$('gtbox').open=false;lay(/Permukaan pit|Label RL|Garis potong|String desain|Bentuk awal/,true);
+ }finally{dmCap=cap0;UX.keep=false;try{$('schaz').value=az0;uxSync(true);}catch(_){}}}});
 try{const w=$('dmoList');if(w){w.innerHTML=DMCH.map((c,i)=>'<div class="fl"><button class="sm" data-dmo="'+i+'">&#9654; '+c.id+'</button><span>&nbsp;'+esc(c.nm)+'</span></div>').join('');w.querySelectorAll('[data-dmo]').forEach(b=>b.onclick=()=>dmoPlay(+b.dataset.dmo,+b.dataset.dmo+1));}}catch(e){}
 /* kait uji: siapkan pit bab I + batas fase + block model fiktif (tanpa animasi) */
 try{window.__PS3.demo.prepK=async()=>{const I=DMCH.find(c=>c.id==='I'),sp=DMO.spd,cp0=dmCap,sh=dmShot;DMO.spd=60;dmCap=async()=>{};dmShot=async()=>{};try{await I.run();}finally{DMO.spd=sp;dmCap=cp0;dmShot=sh;}
  const tz=p=>{const z=topoZ(p[0],p[1]);return [p[0],p[1],isFinite(z)?z:250];};schReset();schOpen(true);schPh().bnd=[[600560,9200720],[600800,9200720],[600800,9200880],[600560,9200880]].map(tz);schTasks();schDrawStatic();gtMount();await gtLoad(dmMdlFiktif());return true;};window.__PS3.demo.cam=async f=>{const sp=DMO.spd;DMO.spd=60;try{await dmCam(f,60);}finally{DMO.spd=sp;}};}catch(_){}
+
+/* PDF tutorial: langkah bab J / K / L dipotret otomatis saat keterangan berikutnya muncul — hanya bila perekam memasang __DMSHOT */
+async function dmShotL(nm,sec,ti,tx){if(!window.__DMSHOT)return;(window.__DMLOG=window.__DMLOG||[]).push({nm,sec,ti,tx});await dmShot(nm);}
+function dmAutoShot(pre){if(!window.__DMSHOT||window.__DMAUTO)return {end:async()=>{}};window.__DMAUTO=1;const c0=dmCap;let cur=null,n=0;
+ const flush=async()=>{if(!cur)return;const q=cur;cur=null;if(window.__DMAUTOP)return;await dmShotL(pre+String(++n).padStart(2,'0'),q[0],q[1],q[2]);};
+ dmCap=async(a,b,c)=>{await flush();cur=(a==='Selesai'||/Menyiapkan pit/.test(b)||window.__DMAUTOP)?null:[a,b,c];return c0(a,b,c);};
+ return {end:async()=>{try{await flush();}finally{dmCap=c0;window.__DMAUTO=0;}}};}
+for(const [id,pre] of [['J','S'],['K','T'],['L','U']]){const C=DMCH.find(c=>c.id===id);if(C){const r0=C.run;C.run=async()=>{const a=dmAutoShot(pre);try{await r0();}finally{await a.end();}};}}

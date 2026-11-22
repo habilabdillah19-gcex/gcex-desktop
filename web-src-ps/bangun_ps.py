@@ -6,6 +6,7 @@
 - Versi = builder-ps.json extraMetadata.version, dicap sebagai window.GCEX_VER.
 - Pembaca block model Surpac .mdl (a35) TIDAK disimpan di sini: dirakit dari sumber GC-Ex Block Model
   (web-src/mdlattr.js + web-src/gcex_base.html) setiap kali membangun, supaya hasil bacanya selalu sama.
+- TIN presisi (a42) juga diambil langsung dari web-src/tinz.js (hitungan blok terhadap permukaan = GC-Ex Block Model).
 """
 import json
 import sys
@@ -17,7 +18,8 @@ URUT = ["a1_core.js", "a2_ui.js", "a3_digit.js", "a4_param.js", "a5_gen.js", "a6
         "a10_ui2.js", "a11_auto.js", "a12_plan.js", "a13_guide.js", "a14_manual.js", "a15_xroad.js", "a16_smooth.js", "a17_openedit.js",
         "a18_rampout.js", "a19_rampjoin.js", "a20_tools.js", "a21_fix.js", "a22_toptrim.js", "a23_terrace.js", "a24_data.js",
         "a24_demo.js", "a26_link.js", "a27_strict.js", "a28_demo2.js", "a30_sayatan.js", "a31_sched.js", "a32_demo3.js",
-        "a34_review.js", "@mdl", "a36_gt.js", "a38_gtrep.js", "a39_elev.js", "a40_blok.js", "a29_i18n.js", "a33_i18n_sched.js", "a37_desktop.js"]
+        "a34_review.js", "@mdl", "a36_gt.js", "a38_gtrep.js", "a39_elev.js", "a40_blok.js",
+        "a41_ux.js", "@tinz", "a43_presisi.js", "a44_dock.js", "a45_shell.js", "a29_i18n.js", "a33_i18n_sched.js", "a37_desktop.js"]
 PUSTAKA = [P / "lib" / "three.min.js", P / "lib" / "OrbitControls.js", ROOT / "web-src" / "delaunator.min.js", P / "lib" / "clipper.js"]
 IKON = ("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 38 30%27%3E%3Crect x=%270.75%27 y=%270.75%27 "
         "width=%2736.5%27 height=%2728.5%27 rx=%274%27 fill=%27%23fff%27 stroke=%27%23c9d3e1%27 stroke-width=%271.5%27/%3E%3Cpath d=%27M3 8 H35 "
@@ -39,9 +41,14 @@ def mdl() -> str:
             "const MDLSA=(function(){const SA={};\n" + baca(ROOT / "web-src" / "mdlattr.js") + "\n" + kode + "\nreturn SA;})();\n")
 
 
+def tinz() -> str:
+    return ("/* a42: TIN presisi GC-Ex Block Model (Delaunay + interpolasi linear dalam segitiga) — disalin APA ADANYA dari web-src/tinz.js */\n"
+            + baca(ROOT / "web-src" / "tinz.js"))
+
+
 def bangun() -> str:
     ver = json.loads(baca(ROOT / "builder-ps.json"))["extraMetadata"]["version"]
-    app = "\n".join(mdl() if f == "@mdl" else baca(P / f) for f in URUT)
+    app = "\n".join(mdl() if f == "@mdl" else tinz() if f == "@tinz" else baca(P / f) for f in URUT)
     aman = lambda s: s.replace("</script", "<\\/script")
     return ('<!DOCTYPE html>\n<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>Pit Studio</title><link rel="icon" href="' + IKON + '">\n<style>' + baca(P / "app.css") + "</style></head><body>\n"

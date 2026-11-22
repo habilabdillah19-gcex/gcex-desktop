@@ -39,7 +39,8 @@ function gtWin(){if($('bmw'))return;const st=document.createElement('style');st.
  /* pintu masuk: menu Impor (di awal alur) + Hasil & volume */
  for(const [id,txt] of [['iw','&#9878; Block model (.mdl) & Grade × Tonnage…'],['hw','&#9878; Laporan Grade × Tonnage (block model)…']]){const fb=document.querySelector('#'+id+' .flb');if(!fb)continue;const b=document.createElement('button');b.className='fbtn';b.style.cssText='display:block;width:100%;margin-top:6px;text-align:left';b.innerHTML=txt;b.onclick=()=>gtOpen(true);fb.appendChild(b);}
  gtRules();}
-function gtOpen(on){gtWin();const w=$('bmw');w.style.display=on?'flex':'none';if(on){const D=schDes(),s=$('gdds'),v=s.value;s.innerHTML=D.length?D.map(x=>'<option value="'+x.id+'">'+esc(x.nm)+'</option>').join(''):'<option value="">(belum ada desain)</option>';if(v&&D.some(x=>x.id===v))s.value=v;try{const ph=$('pH');if(ph&&+ph.value>0&&!GT.hbSet)$('gdhb').value=ph.value;}catch(_){}}}
+function gtDsFill(){const D=schDes(),s=$('gdds'),v=s.value,h=D.length?D.map(x=>'<option value="'+x.id+'">'+esc(x.nm)+'</option>').join(''):'<option value="">(belum ada desain)</option>';if(s.innerHTML!==h){s.innerHTML=h;if(v&&D.some(x=>x.id===v))s.value=v;}}
+function gtOpen(on){gtWin();const w=$('bmw');w.style.display=on?'flex':'none';if(on){if(!GT._dsl){GT._dsl=1;$('gdds').addEventListener('mousedown',gtDsFill);$('gdds').addEventListener('focus',gtDsFill);}const D=schDes(),s=$('gdds'),v=s.value;s.innerHTML=D.length?D.map(x=>'<option value="'+x.id+'">'+esc(x.nm)+'</option>').join(''):'<option value="">(belum ada desain)</option>';if(v&&D.some(x=>x.id===v))s.value=v;try{const ph=$('pH');if(ph&&+ph.value>0&&!GT.hbSet)$('gdhb').value=ph.value;}catch(_){}}}
 function gtRedo(){if(GT.res)gtRun().catch(()=>{});if(GT.dres)gtDesign().catch(()=>{});}
 function gtMount(){gtWin();const R=$('schres');if(!R||$('gtbox'))return;const d=document.createElement('details');d.id='gtbox';
  d.innerHTML='<summary>&#9878; Grade × Tonnage (block model)</summary>'+
@@ -133,20 +134,23 @@ function gtTable(){const el=$('gttb');if(!el||!GT.res)return;const A=gtAgg(),H=g
  el.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>{schStop();schSet(+tr.dataset.i);});gtHi();
  $('gtsum').innerHTML=H.sum+' · '+GT.res.nIn.toLocaleString('id-ID')+' blok'+(GT.rule==='prop'?' (proporsional)':' (pusat blok, cara Surpac)')+'<br>'+H.dest;}
 /* ---- laporan per DESAIN: blok di antara topografi aktif dan permukaan desain, per bench ---- */
-async function gtDesign(){if(!GT.file)throw new Error('Muat block model .mdl dulu.');const D=schDes(),d=D.find(x=>x.id===$('gdds').value)||D[0];if(!d)throw new Error('Belum ada desain (pit final / staging / hasil edit).');
+async function gtDesign(){if(!GT.file)throw new Error('Muat block model .mdl dulu.');const D=schDes(),d=D.find(x=>x.id===$('gdds').value)||D[0];if(!d)throw new Error('Belum ada desain. Buat dulu (Desain baru / Staging → Buat pit), atau impor pit final (.str / .dxf) di mode Staging.');
  const tp=TP.find(q=>q.on&&q.G)||TP.find(q=>q.G);if(!tp)throw new Error('Muat topografi dulu.');if(GT.busy)return;GT.busy=1;
  try{const G=d.G,Hb=Math.max(0.5,+$('gdhb').value||10);let x0=1e18,x1=-1e18,y0=1e18,y1=-1e18,zlo=1e18,zhi=-1e18;
   for(let j=0;j<G.ny;j++)for(let i=0;i<G.nx;i++){const z=G.Z[j*G.nx+i];if(!(z===z))continue;const x=G.x0+i*G.cell,y=G.y0+j*G.cell,zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(z<zt-0.05))continue;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(z<zlo)zlo=z;if(zt>zhi)zhi=zt;}
   if(!(zlo<1e17))throw new Error('Desain "'+d.nm+'" tidak memotong topografi aktif.');
   await gtEnsure({x0:x0-G.cell,x1:x1+G.cell,y0:y0-G.cell,y1:y1+G.cell,zlo,zhi,tp,c:Math.max(1,G.cell)});const m=GT.m;if(!m.num[GT.attr])throw new Error('Atribut kadar "'+GT.attr+'" tidak ada di block model.');
   const Gr=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],kT=Math.ceil(zhi/Hb),NB=kT-Math.floor(zlo/Hb)+1;let nIn=0;
-  for(let b=0;b<m.n;b++){const x=m.x[b],y=m.y[b],cz=m.z[b],hz=m.sz[b]/2,zd=gridZ(G,x,y);if(!(zd===zd))continue;const zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(zd<zt-0.05))continue;let f=1;
-   if(!prop){if(!(cz>zd&&cz<zt))continue;}else{const top=Math.min(zt,cz+hz),bot=Math.max(zd,cz-hz);if(!(top>bot))continue;f=(top-bot)/(2*hz);}
+  const fT=pxTopoFn(tp),fD=pxDesFn(d),PXon=!!(fT&&fD);GT.pxNote=pxInfo(tp,d);
+  for(let b=0;b<m.n;b++){const x=m.x[b],y=m.y[b],cz=m.z[b],hz=m.sz[b]/2;let f=1;
+   if(PXon){/* resep GC-Ex: TIN presisi; pusat blok di bawah/pada topografi dan di atas/pada desain */if(!prop){const zd=fD(x,y);if(!(zd===zd))continue;const zt=fT(x,y);if(!(zt===zt)||cz>zt||cz<zd)continue;}else{f=pxFrac(fT,fD,x,y,cz,m.sx[b],m.sy[b],m.sz[b]);if(!(f>0))continue;}}
+   else{const zd=gridZ(G,x,y);if(!(zd===zd))continue;const zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(zd<zt-0.05))continue;
+   if(!prop){if(!(cz>zd&&cz<zt))continue;}else{const top=Math.min(zt,cz+hz),bot=Math.max(zd,cz-hz);if(!(top>bot))continue;f=(top-bot)/(2*hz);}}
    let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=Gr[b],bi=Math.max(0,Math.min(NB-1,kT-1-Math.floor(cz/Hb)));out.push(bi,0,gtCls(g),m.sx[b]*m.sy[b]*m.sz[b]*sg*f,g,(GT.sfOn&&SX&&SX[b]>GT.sxsThr)?1:0,0);nIn++;}
   const B=[];for(let i=0;i<NB;i++){const top=(kT-i)*Hb;B.push({a:i,b:i,lab:'Bench RL '+schF(top,1)+' → '+schF(top-Hb,1)});}
   GT.dres={out,B,np:NB,nm:d.nm,nIn};const A=gtAgg({out,B,np:NB,fl:false});const keep=[];A.rows.forEach((r,i)=>{let s=0;for(const v of r[0].t)s+=v;if(s>0)keep.push(i);});
   A.B=keep.map(i=>B[i]);A.rows=keep.map(i=>A.rows[i]);const H=gtHtml(A,'Total '+d.nm,'Bench');$('gdtb').innerHTML=H.h;
-  $('gdsum').innerHTML='<b>'+esc(d.nm)+'</b> vs topografi "'+esc(tp.nm)+'": '+H.sum+' · '+nIn.toLocaleString('id-ID')+' blok'+(prop?' (proporsional)':' (pusat blok, cara Surpac)')+'<br>'+H.dest;}
+  $('gdsum').innerHTML='<b>'+esc(d.nm)+'</b> vs topografi "'+esc(tp.nm)+'": '+H.sum+' · '+nIn.toLocaleString('id-ID')+' blok'+(prop?' (proporsional 4 × 4 kolom, cara GC-Ex)':' (pusat blok, cara Surpac)')+'<br>'+H.dest+'<br><span style="color:#6c757d">'+esc(GT.pxNote||'')+'</span>';}
  finally{GT.busy=0;}}
 function gtHi(){const el=$('gttb');if(!el)return;el.querySelectorAll('tr.on').forEach(r=>r.classList.remove('on'));el.querySelectorAll('tr[data-i="'+SCH.pi+'"]').forEach(r=>{r.classList.add('on');if(SCH.play)r.scrollIntoView({block:'nearest'});});}
 function gtCsv(){if(!GT.res)return;gtCsvX({out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:GT.fleet,nm:schPh().nm},'pit_schedule_grade_tonnage_'+schPh().nm.replace(/\s/g,''));}
