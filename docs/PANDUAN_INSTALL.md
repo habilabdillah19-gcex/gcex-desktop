@@ -5925,3 +5925,21 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   diingat. **Tampilan → Layar penuh** (F11). Pilihan alat (PC) diingat untuk jalur berikutnya.
 - Tombol **Demo**: bab A memperkenalkan kerangka; bab M (Pit Schedule 4 langkah) memuat simpan / impor blok.
 - Tutorial PDF masih memakai tampilan 0.1.2; pembaruannya menyusul.
+
+## 310. Pit Studio 0.1.4 — Grade × Tonnage otomatis, Sayatan dengan block model, tombol Ukur
+
+- **Grade × Tonnage otomatis**: setelah block model (.mdl) dimuat, setiap desain — Pit final, Staging, hasil Edit pit, pit final impor —
+  langsung dihitung tiap kali berubah. Hasilnya (ton ore @ g/t, waste, SR, oz) tampil di pojok kiri atas 3D; klik barisnya untuk rincian
+  per bench. Tidak perlu membuka jendela Block model atau menekan Hitung.
+- **Pemberitahuan perubahan**: bila hasil berubah (mis. setelah mengedit pit), muncul pemberitahuan selisih ore, kadar, waste dan SR.
+  Hijau = ore bertambah / waste berkurang; merah = sebaliknya. Baris ↳ menyimpan perubahan terakhir. Tautan *matikan* menghentikan
+  hitungan otomatis.
+- **Sayatan** kini memuat **block model**: centang *block model*, pilih warna *per kelas kadar* atau *nilai kadar*. Blok di dalam galian
+  tampil penuh, di luarnya pudar. Kanan atas: luas ore @ g/t dan waste pada sayatan. Gerakkan kursor untuk membaca RL tiap permukaan,
+  tebal galian dan kadar blok. **PNG** menghasilkan gambar lengkap dengan judul, skala dan legenda.
+- **📐 Ukur** (tombol kecil di pojok kanan atas 3D, atau tombol Ukur di jendela Sayatan): klik dua titik → jarak datar, jarak miring,
+  beda RL, sudut (° dan %), arah (azimut dan bearing). Klik ketiga = mulai lagi; Esc = selesai. Memutar 3D tetap bisa dengan menyeret.
+- **Pit Schedule**: semua langkah (1–4) bisa ditutup dengan klik judulnya agar panel Properti pendek.
+- **Bahasa**: menu baru sudah diterjemahkan (English, Español, Basa Sunda). Angka hasil dan teks di dalam gambar penampang tetap
+  berbahasa Indonesia.
+- Batas yang diketahui: block model yang diputar (rotasi) belum digambar miring di sayatan.

@@ -19,7 +19,8 @@ URUT = ["a1_core.js", "a2_ui.js", "a3_digit.js", "a4_param.js", "a5_gen.js", "a6
         "a18_rampout.js", "a19_rampjoin.js", "a20_tools.js", "a21_fix.js", "a22_toptrim.js", "a23_terrace.js", "a24_data.js",
         "a24_demo.js", "a26_link.js", "a27_strict.js", "a28_demo2.js", "a30_sayatan.js", "a31_sched.js", "a32_demo3.js",
         "a34_review.js", "@mdl", "a36_gt.js", "a38_gtrep.js", "a39_elev.js", "a40_blok.js",
-        "a41_ux.js", "@tinz", "a43_presisi.js", "a44_dock.js", "a45_shell.js", "a29_i18n.js", "a33_i18n_sched.js", "a37_desktop.js"]
+        "a41_ux.js", "@tinz", "a43_presisi.js", "a44_dock.js", "a45_shell.js",
+        "a46_autogt.js", "a47_dmhuman.js", "a48_say2.js", "a49_ukur.js", "a29_i18n.js", "a33_i18n_sched.js", "a50_i18n3.js", "a37_desktop.js"]
 PUSTAKA = [P / "lib" / "three.min.js", P / "lib" / "OrbitControls.js", ROOT / "web-src" / "delaunator.min.js", P / "lib" / "clipper.js"]
 IKON = ("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 38 30%27%3E%3Crect x=%270.75%27 y=%270.75%27 "
         "width=%2736.5%27 height=%2728.5%27 rx=%274%27 fill=%27%23fff%27 stroke=%27%23c9d3e1%27 stroke-width=%271.5%27/%3E%3Cpath d=%27M3 8 H35 "

@@ -22,6 +22,6 @@ function i18Apply(l){LANG=I18NL[l]?l:'id';try{localStorage.setItem('ps_lang',LAN
  b.onclick=e=>{e.stopPropagation();const r=b.getBoundingClientRect();m.style.left=r.left+'px';m.style.top=(r.bottom+2)+'px';m.querySelectorAll('[data-lg]').forEach(d=>d.classList.toggle('on',d.dataset.lg===LANG));m.style.display=m.style.display==='block'?'none':'block';};
  m.onclick=e=>{const d=e.target.closest('[data-lg]');if(!d)return;m.style.display='none';i18Apply(d.dataset.lg);};document.addEventListener('click',()=>{m.style.display='none';});
  if(LANG!=='id')setTimeout(()=>i18Apply(LANG),0);})();
-try{window.__PS3=window.__PS3||{};window.__PS3.lang=l=>{if(l)i18Apply(l);return LANG;};}catch(_){}
+try{window.__PS3=window.__PS3||{};window.__PS3.lang=l=>{if(l)i18Apply(l);return LANG;};window.__PS3.i18t=(t,l)=>{const L=LANG;LANG=l||'en';try{return i18t(t);}finally{LANG=L;}};}catch(_){}
 /* Demo mencocokkan teks menu berbahasa Indonesia → selama demo diputar antarmuka kembali ke Indonesia, lalu dikembalikan. */
 {const _dp=dmoPlay;dmoPlay=async function(a,b){const L0=LANG;if(L0!=='id')i18Apply('id');try{return await _dp.apply(this,arguments);}finally{if(L0!=='id')i18Apply(L0);}};}
