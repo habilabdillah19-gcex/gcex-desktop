@@ -215,7 +215,8 @@ def main():
           (D / "tutorial-core" / "README.md", "Tutorial/DB-Ex_tutorial_README.md")] if has_core else [])
       + ([(D / "tutorial-ow" / "Ore_Works_Tutorial_Penggunaan.pdf", "Tutorial/Ore_Works_Tutorial_Penggunaan.pdf"),
           (D / "tutorial-ow" / "Ore_Works_Petunjuk_Teknis.pdf", "Panduan_Teknis/Ore_Works_Petunjuk_Teknis.pdf"),
-          (D / "tutorial-ow" / "Ore_Works_Tutorial_Vein_Bercabang.pdf", "Tutorial/Ore_Works_Tutorial_Vein_Bercabang.pdf")] if has_ow else [])
+          (D / "tutorial-ow" / "Ore_Works_Tutorial_Vein_Bercabang.pdf", "Tutorial/Ore_Works_Tutorial_Vein_Bercabang.pdf"),
+          (D / "tutorial-ow" / "Tentang_Ore_Works.pdf", "Tentang/Tentang_Ore_Works.pdf")] if has_ow else [])
       + ([(D / "tutorial-ps" / "Pit_Studio_Tutorial_Penggunaan.pdf", "Tutorial/Pit_Studio_Tutorial_Penggunaan.pdf")] if has_ps else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
