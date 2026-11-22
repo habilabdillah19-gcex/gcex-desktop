@@ -5890,3 +5890,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Volume tergali bisa sedikit lebih besar dari jumlah volume blok yang dijadwalkan, karena kotak tetangga ikut digali untuk
   menjaga lereng antar-blok (bawaan 60°, di ⚙).
 - Menu **Demo** bab L memperagakan alur ini. Block Model, Drillhole, DB-Ex dan Ore Works tidak berubah.
+
+## 306. Ore Works 0.32.4 — panah pergeseran batas domain & pembesaran inset 10×
+
+- **Analisis → Peta level**: usulan pergeseran (dan struktur yang sudah diterima) yang memiliki besar pergeseran digambar sebagai panah. Arah panah = arah interpretasi pergeseran ore, label = Δ batas dalam meter. Usulan (putus-putus) tampil bila "Usulan bidang struktur" dicentang di menu Struktur.
+- Panjang panah mengikuti skala peta, dibatasi 18–160 px agar tetap terbaca; nilai sebenarnya ada di label.
+- **Layout peta → Inset, grid & elemen peta → Pembesaran**: pilihan 2×–10× (sebelumnya sampai 4×). Faktor tetap dibatasi kotak inset.
