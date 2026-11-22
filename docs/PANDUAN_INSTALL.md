@@ -5896,3 +5896,10 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Analisis → Peta level**: usulan pergeseran (dan struktur yang sudah diterima) yang memiliki besar pergeseran digambar sebagai panah. Arah panah = arah interpretasi pergeseran ore, label = Δ batas dalam meter. Usulan (putus-putus) tampil bila "Usulan bidang struktur" dicentang di menu Struktur.
 - Panjang panah mengikuti skala peta, dibatasi 18–160 px agar tetap terbaca; nilai sebenarnya ada di label.
 - **Layout peta → Inset, grid & elemen peta → Pembesaran**: pilihan 2×–10× (sebelumnya sampai 4×). Faktor tetap dibatasi kotak inset.
+
+## 307. Ore Works 0.32.5 — batas dua sisi, ghost batas, ukuran font panel
+
+- **Analisis → Interpretasi struktur**: usulan pergeseran kini punya Δ atas dan Δ bawah (dinding bidang diukur dari titik masuk dan keluar intercept), selain Δ tengah.
+- **Analisis → Peta level**: garis putus-putus = batas domain sebelum pergeseran, garis solid = sesudah, panah = arah interpretasi.
+- **Tampilan → Ukuran font panel**: 80%, 90%, 100%, 110%. Pilihan disimpan di browser dan berlaku ke panel samping dan jendela mengambang.
+- Belum ada: panah dan ghost di 3D.
