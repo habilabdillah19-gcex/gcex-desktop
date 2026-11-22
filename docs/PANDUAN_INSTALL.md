@@ -5897,7 +5897,6 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Panjang panah mengikuti skala peta, dibatasi 18–160 px agar tetap terbaca; nilai sebenarnya ada di label.
 - **Layout peta → Inset, grid & elemen peta → Pembesaran**: pilihan 2×–10× (sebelumnya sampai 4×). Faktor tetap dibatasi kotak inset.
 
-<<<<<<< Updated upstream
 ## 307. Ore Works 0.32.5 — batas dua sisi, ghost batas, ukuran font panel
 
 - **Analisis → Interpretasi struktur**: usulan pergeseran kini punya Δ atas dan Δ bawah (dinding bidang diukur dari titik masuk dan keluar intercept), selain Δ tengah.
@@ -5910,8 +5909,7 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Di tampilan 3D, struktur dengan pergeseran punya bidang abu-abu transparan (posisi sebelum) dan panah dari bidang itu ke posisi bidang sesudah.
 - Panjang panah = besar pergeseran tegak lurus bidang (meter). Mengikuti centang "Usulan bidang struktur" dan centang struktur di daftar.
 - Belum diuji pada data proyek nyata.
-=======
-## 307. Pit Studio 0.1.3 — kerangka baru, Pit Schedule 4 langkah, simpan / impor blok tambang
+## 309. Pit Studio 0.1.3 — kerangka baru, Pit Schedule 4 langkah, simpan / impor blok tambang
 
 - **Kerangka**: menu tarik di atas (File, Tampilan, Desain, Edit, Jadwal, Laporan, Bantuan), **Project Tree** di kiri (data,
   desain, jadwal), halaman **Properti** di kanan, pesan di status bar. Tampilan 3D selalu utuh di tengah.
@@ -5927,4 +5925,3 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
   diingat. **Tampilan → Layar penuh** (F11). Pilihan alat (PC) diingat untuk jalur berikutnya.
 - Tombol **Demo**: bab A memperkenalkan kerangka; bab M (Pit Schedule 4 langkah) memuat simpan / impor blok.
 - Tutorial PDF masih memakai tampilan 0.1.2; pembaruannya menyusul.
->>>>>>> Stashed changes
