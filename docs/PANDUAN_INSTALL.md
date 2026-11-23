@@ -5948,3 +5948,13 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 
 - Saat demo berjalan, menu tarik (File, Tampilan, …) kini menutup sendiri begitu demo berpindah ke tombol di luar menu, sehingga tidak
   lagi menutupi jendela lain. Tidak ada perubahan pada hitungan atau desain.
+
+## 312. Ore Works 0.32.7 — usulan struktur lebih selektif
+
+- **Uji signifikansi pergeseran batas**: usulan *Pergeseran* hanya muncul bila perbedaan residu dua sisi batas lolos uji Mann-Whitney (p ≤ 0,05, default) **dan** selisih ≥ 2 σ robust. Keduanya bisa diatur di panel *Log sesar / usulan* (kolom *Signifikansi usulan pergeseran*).
+- **Minimal sampel per sisi** = 5 intercept (sebelumnya 3). Bin tipis tidak lagi menghasilkan usulan.
+- **Maks usulan per domain** = 3, dan usulan pada lokasi yang berdekatan (≤ 1,5 × bin) digabung, diambil yang paling kuat.
+- **Kandidat lemah** disembunyikan secara default. Centang *tampilkan kandidat lemah* untuk melihatnya; diberi label `[lemah]`.
+- **Log sesar darurat**: min titik default naik dari 5 ke 8.
+- Setiap usulan pergeseran menampilkan nilai p dan σ di keterangan bukti.
+- Belum diuji pada data proyek nyata; ambang default perlu dikalibrasi dengan data sebenarnya.
