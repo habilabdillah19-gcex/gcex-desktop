@@ -5986,3 +5986,13 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - **Sinkron kursor 2D ↔ 3D**: kursor di penampang 2D ditandai titik merah muda di 3D; kursor di 3D ditandai silang *kursor 3D* di penampang 2D (tidak ikut PNG).
 - **Tombol 3D** di jendela penampang: memutar kamera ke pandangan oblik yang memperlihatkan bidang penampang, dengan jarak zoom tetap. Bila bidang belum ditampilkan, tombol ini menyalakannya.
 - Diuji pada data latihan fiktif (LTH); belum diuji pada data proyek nyata.
+
+## 316. Ore Works 0.33.1 — seri penampang & label 3D adaptif
+
+- **Buat seri penampang**: di panel Penampang isi *Seri* (jumlah) dan *jarak* (m), lalu *Buat seri*. Penampang dibuat sejajar mulai dari penampang aktif: vertikal digeser tiap jarak, level horizontal diturunkan RL tiap jarak. Nama otomatis A, B, C, …
+- **Konfirmasi timpa**: menyimpan dengan nama yang sudah ada dan parameter berbeda kini bertanya dulu: *OK* = timpa, *Batal* = simpan sebagai penampang baru dengan huruf berikutnya.
+- **Menyembunyikan garis penampang di peta**: hilangkan centang **Garis penampang** pada *Lapisan* di Peta level atau di Layout peta. Hanya garis di peta itu yang hilang; daftar penampang dan tampilan 3D tidak berubah.
+- Label ujung garis (A … A') dan panah arah pandang kini diletakkan di bagian garis yang masuk bingkai peta, termasuk untuk penampang tanpa batas panjang.
+- **Label 3D** (nama penampang, arah pandang, label struktur, titik struktur, label pemetaan, label data): latar transparan dengan pinggiran putih, dan ukurannya menyesuaikan tinggi tampilan 3D serta setelan *Ukuran font panel*.
+- Garis aksen hijau/emas di atas tab aktif (3D, Penampang, PROPERTI, dll.) dihapus.
+- Diuji pada data latihan fiktif (LTH).
