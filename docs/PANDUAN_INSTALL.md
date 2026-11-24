@@ -5958,3 +5958,9 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Log sesar darurat**: min titik default naik dari 5 ke 8.
 - Setiap usulan pergeseran menampilkan nilai p dan σ di keterangan bukti.
 - Belum diuji pada data proyek nyata; ambang default perlu dikalibrasi dengan data sebenarnya.
+
+## 313. Ore Works 0.32.8 — pandangan mempertahankan zoom
+
+- Mengganti pandangan (WSW, ENE, NNW, Oblik SSE, Plan) kini **mempertahankan jarak kamera dan titik fokus** yang sedang dipakai, sehingga skala zoom tidak melompat ke tampilan jauh.
+- Perilaku sebelumnya: setiap pandangan memakai jarak hasil Fit. Itu dipertahankan hanya saat data dimuat atau tombol Fit ditekan.
+- Belum diuji pada data proyek nyata.
