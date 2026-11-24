@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.32.8';</script>
+<script>window.GCEX_VER='0.32.9';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -386,7 +386,7 @@ body.rp #rpan{display:flex}
 <div id="ogbd"><div id="ogtabs"><button data-t="dom">Domain</button><button data-t="sum" class="on">Ringkasan</button><button data-t="ls">Long section</button><button data-t="pr">Profil strike</button><button data-t="pv">Profil vertikal</button><button data-t="jn">Pertemuan vein</button><button data-t="env">Envelope</button><button data-t="ut">Belum teruji</button><button data-t="si">&#9881; Interpretasi struktur</button><button data-t="op">&#9873; Potensi terbuka</button><button data-t="pt">&#9733; Peta level</button></div><div id="ogp-pv" class="ogp" style="display:none"><div class="fl">Domain <select id="pvdom"></select> Pita RL <input id="pvbw" type="number" step="any" value="10"> m · min sampel per pita <input id="pvmin" type="number" step="1" value="2"></div>
 <div id="pvcfg"></div><div class="fl"><button id="pvadd">+ Panel</button><button id="pvpng">&#8681; PNG</button><button id="pvcsv">&#8681; CSV</button></div>
 <div class="note">Format sama dengan <b>Profil per domain</b> GC-Ex (Analisis Geostatistik Sayatan): rata-rata tertimbang panjang per pita RL; pita dengan sampel kurang dari minimum tidak digambar. Data = sampel yang titik tengahnya di dalam intercept domain terpilih (sumber domain dari tab Domain). Unsur selain Au dari dataset assay impor; % kode geologi dari dataset Geologi.</div></div><div id="ogp-si" class="ogp" style="display:none"><div class="fl">GT cut-off <input id="sicut" type="number" step="any" value="0.6"> · ujung: turun &lt; <input id="sidrop" type="number" step="any" value="0.25"> × GT · pergeseran ≥ <input id="sioff" type="number" step="any" value="15"> m</div>
-<div class="fl">Signifikansi usulan pergeseran: p ≤ <input id="sip" type="number" step="any" value="0.05"> · selisih ≥ <input id="sisg" type="number" step="any" value="2"> σ · min sampel per sisi <input id="simb" type="number" step="any" value="5"> · maks usulan per domain <input id="sicap" type="number" step="any" value="3"> · <label><input type="checkbox" id="sishow"> tampilkan kandidat lemah</label></div>
+<div class="fl">Signifikansi usulan pergeseran: p ≤ <input id="sip" type="number" step="any" value="0.05"> · selisih ≥ <input id="sisg" type="number" step="any" value="2"> σ · min lubang per sisi <input id="simb" type="number" step="any" value="3"> · maks usulan per domain <input id="sicap" type="number" step="any" value="3"> · <label><input type="checkbox" id="sishow"> tampilkan kandidat lemah</label></div>
 <div class="fl">Log sesar: jarak kelompok <input id="sirad" type="number" step="any" value="20"> m · min titik <input id="simin" type="number" step="any" value="8"> · hubungan kadar: dekat ≤ <input id="sidn" type="number" step="any" value="10"> m</div>
 <div class="fl"><button id="sirun">&#9654; Hitung usulan struktur</button></div>
 <div class="note">Usulan otomatis: (1) ujung ore — GT bin ≥ cut-off lalu turun tajam padahal ada data bor; (2) pergeseran bidang tengah domain ≥ ambang antar bin; (3) bidang dari kelompok log sesar (kode di menu Struktur); (4) domain sejajar 5–40 m. Terima → masuk menu Struktur (bisa diedit); Tolak → tidak diusulkan lagi. Dihitung ulang saat data berubah; struktur diterima yang buktinya hilang diberi ⚠.</div></div><div id="ogp-op" class="ogp" style="display:none"><div class="fl">Au ujung lubang ≥ <input id="opau" type="number" step="any" value="0.5"> g/t pada <input id="oplen" type="number" step="any" value="3"> m terakhir · GT intercept ≥ <input id="opgt" type="number" step="any" value="0.6"> g/t·m</div>
@@ -2271,7 +2271,7 @@ document.getElementById('sff').onchange=e=>{const fs=[...(e.target.files||[])];i
     if(!n){msg.push(esc(f.name)+': tidak ada string ber-koordinat');continue;}if(n>800000){msg.push(esc(f.name)+': terlalu rapat ('+n+' titik)');continue;}
     const s=sfAdd({nm:f.name,kind,L:Ls});const far=Math.hypot(cx/n-O[0],cy/n-O[1]);msg.push(esc(f.name)+' → '+SFK[kind].nm+': '+n.toLocaleString('id-ID')+' titik'+(far>5000?' <span style="color:#c62828">(berjarak '+Math.round(far/1000)+' km dari data bor, cek sistem koordinat)</span>':''));}
    catch(err){msg.push('<span style="color:#c62828">'+esc(f.name)+': '+esc(err.message)+'</span>');}}
-  w.innerHTML=msg.join('<br>');e.target.value='';sfList();holesBuild();fitView();}).catch(err=>{w.textContent='Gagal membaca: '+err.message;});};
+  w.innerHTML=msg.join('<br>');e.target.value='';sfList();holesBuild();fitView(false);}).catch(err=>{w.textContent='Gagal membaca: '+err.message;});};
 document.getElementById('sfs').onchange=e=>SF.forEach(s=>{if(s.lines)s.lines.visible=e.target.checked;});
 document.getElementById('sft').onchange=e=>SF.forEach(s=>{if(s.wire)s.wire.visible=e.target.checked;});
 sfList();
@@ -2384,7 +2384,7 @@ document.getElementById('dsgo').onclick=()=>{const w=document.getElementById('ds
  const chR=dsChToFm(d);delete d._sid;delete d._vert;
  w.innerHTML=d.used.map(esc).join('<br>')+(d.warn.length?'<br><span style="color:#c62828">'+d.warn.map(esc).join('<br>')+'</span>':'');if(chR.msg)w.innerHTML+='<br>'+chR.msg;if(chR.n&&!d.holes.length){document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();if(window.dsDropClear)dsDropClear();dsList();return;}
   if(!d.holes.length&&!Object.keys(d.geo).length){w.innerHTML+='<br><b>Tidak ada lubang atau geologi yang bisa ditampilkan.</b>';return;}
- DS.push(d);document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();if(window.dsDropClear)dsDropClear();dsList();holesBuild();if(D.kosong)fitView();};
+ DS.push(d);document.getElementById('dsn').value='';for(const k in SLOT)SLOT[k]=null;slotUI();if(window.dsDropClear)dsDropClear();dsList();holesBuild();fitView(false);};
 slotUI();
 /* warna lubang menurut kolom geologi */
 const GPAL=['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe','#008080','#e6beff','#9a6324','#800000','#aaffc3','#808000'].map(h=>[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]);
@@ -2423,7 +2423,7 @@ function cumP(p){const c=[0];for(let i=3;i<p.length;i+=3)c.push(c[c.length-1]+Ma
  tg.onclick=()=>{sd.style.display='';sp.style.display='';tg.style.display='none';done();};}
 dsList();holesBuild();
 
-function fitView(){const b=new THREE.Box3();W.updateMatrixWorld(true);for(const k of ['pdh','gc','hi','surf','wfi'])if(L[k]&&L[k].children.length)b.expandByObject(L[k]);if(b.isEmpty())return;
+function fitView(force){if(force===false&&window.__fitSudah)return;const b=new THREE.Box3();W.updateMatrixWorld(true);for(const k of ['pdh','gc','hi','surf','wfi'])if(L[k]&&L[k].children.length)b.expandByObject(L[k]);if(b.isEmpty())return;window.__fitSudah=true;
  const c=b.getCenter(new THREE.Vector3()),sz=b.getSize(new THREE.Vector3());VT=c;window.__viewInit=false;VD=Math.max(sz.x,sz.y,sz.z,50)*1.3;
  const zmin=Math.floor((b.min.y/W.scale.y+O[2])/5)*5,zmax=Math.ceil((b.max.y/W.scale.y+O[2])/5)*5;cl.min=zmin;cl.max=zmax;cl.value=zmax;cl.oninput();C.far=Math.max(5000,VD*10);C.updateProjectionMatrix();view('wsw');}
 
@@ -2510,7 +2510,7 @@ document.getElementById('wif').onchange=async e=>{const fs=[...(e.target.files||
    msg.push(esc(f.name)+': '+mm.info+(far>5000?' <span style="color:#c62828">(berjarak '+Math.round(far/1000)+' km dari data bor, cek koordinat)</span>':''));}
   catch(err){msg.push('<span style="color:#c62828">'+esc(err.message)+'</span>');}}
  if(strs.length&&!fs.some(f=>fext(f.name)!=='str'))msg.push('<span style="color:#c62828">File .str saja tidak membentuk wireframe: pilih juga file .dtm-nya. (Untuk topografi/pit pakai bagian Topografi &amp; desain pit.)</span>');
- w.innerHTML=msg.join('<br>');e.target.value='';wiList();if(window.SCR)window.SCR();if(D.kosong)fitView();};
+ w.innerHTML=msg.join('<br>');e.target.value='';wiList();if(window.SCR)window.SCR();fitView(false);};
 wiList();
 
 /* ---------- Slicing 2D / 3D ---------- */
@@ -2811,7 +2811,7 @@ document.getElementById('plnew').onclick=()=>{const nm='Plan '+plTgl()+(document
 document.getElementById('plf').onchange=e=>{const fs=[...(e.target.files||[])];if(!fs.length)return;const msg=[];let k=0;fs.forEach(f=>{const r=new FileReader();r.onload=()=>{try{const P2=plParse(String(r.result),f.name);if(P2.rows.length)OSETF(P2.rows.map(q=>[q.E,q.N,q.Z]));
    PLAN.push({nm:f.name,on:true,col:PPAL[PLAN.length%PPAL.length],hd:P2.hd,rows:P2.rows});let far=0;P2.rows.forEach(q=>far=Math.max(far,Math.hypot(q.E-O[0],q.N-O[1])));msg.push(esc(f.name)+': '+P2.rows.length+' lubang'+(far>5000?' <span style="color:#c62828">(jauh dari data, cek koordinat)</span>':''));}
   catch(err){msg.push('<span style="color:#c62828">'+esc(err.message)+'</span>');}
-  if(++k===fs.length){document.getElementById('plmsg').innerHTML=msg.join('<br>');plList();plDraw();if(D.kosong)fitView();}};r.readAsText(f);});e.target.value='';};
+  if(++k===fs.length){document.getElementById('plmsg').innerHTML=msg.join('<br>');plList();plDraw();fitView(false);}};r.readAsText(f);});e.target.value='';};
 plList();
 
 /* ---------- Ore Geometry Lite ---------- */
@@ -3042,7 +3042,7 @@ function ptDraw(){if(!PM.c){if(ptv('ptrl').value===''){const t=CT.target;ptv('pt
     if(it[0]==='o'){x.beginPath();x.arc(bx+7,yy+3,4,0,7);x.fillStyle='#fff';x.fill();x.strokeStyle='#111';x.lineWidth=1.5;x.stroke();}if(it[0]==='g'){x.beginPath();x.arc(bx+7,yy+3,2.2,0,7);x.fillStyle='#333';x.fill();}if(it[0]==='e'){x.beginPath();x.arc(bx+7,yy+3,3,0,7);x.strokeStyle='#222';x.lineWidth=1.2;x.stroke();}
     if(it[0]==='p'){x.strokeStyle='#d6249f';x.lineWidth=2;x.beginPath();x.moveTo(bx+2,yy+3);x.lineTo(bx+12,yy+3);x.moveTo(bx+7,yy-2);x.lineTo(bx+7,yy+8);x.stroke();}x.fillStyle='#111';x.fillText(it[1],bx+20,yy+6);}yy+=13;}}}
 function ptReset(){PM.c=null;if(OG.tab==='pt')ogDraw();}
-{const _og=ogCalc;ogCalc=function(){PM.c=null;const r=_og.apply(this,arguments);if(window.OP&&OP.res&&!OP._busy){OP._busy=1;setTimeout(()=>{opRun();OP._busy=0;},0);}if(window.__siOn&&!window.__siBusy){window.__siBusy=1;setTimeout(()=>{siRun();window.__siBusy=0;},0);}return r;};}
+{const _og=ogCalc;ogCalc=function(){PM.c=null;const r=_og.apply(this,arguments);if(window.OP&&OP.res&&!OP._busy){OP._busy=1;setTimeout(()=>{try{opRun();}catch(e){console.warn(e);}finally{OP._busy=0;}},0);}if(window.__siOn&&!window.__siBusy){window.__siBusy=1;setTimeout(()=>{try{siRun();}catch(e){console.warn(e);}finally{window.__siBusy=0;}},0);}return r;};}
 document.getElementById('ptgo').onclick=ptReset;for(const i of ['ptrl','ptt','ptmode','ptcls','ptrat','ptaz','ptrng','ptmask','ptalt','ptamin','ptki','ptres'])document.getElementById(i).onchange=ptReset;
 document.querySelectorAll('.ptl').forEach(c=>c.onchange=()=>{if(OG.tab==='pt')ogDraw();});for(const i of ['ptwm','ptlw'])document.getElementById(i).oninput=()=>{if(OG.tab==='pt')ogDraw();};
 document.getElementById('ptup').onclick=()=>{ptv('ptrl').value=(+ptv('ptrl').value||0)+(+ptv('ptst').value||5);ptReset();};document.getElementById('ptdn').onclick=()=>{ptv('ptrl').value=(+ptv('ptrl').value||0)-(+ptv('ptst').value||5);ptReset();};
@@ -3174,7 +3174,7 @@ function stLogPts(){const P2=[];for(let i=0;i+2<(D.fb||[]).length;i+=3)P2.push([
  for(const [id,iv] of GA){const e=M.get(id);if(!e)continue;const p=e.h.p,cum=cumP(p);for(const q of iv){const v=String(q.v[col]==null?'':q.v[col]).trim().toUpperCase();if(!v||!C.has(v))continue;const md=(q.f+q.t)/2;let k=1;while(k<cum.length-1&&cum[k]<md)k++;const t=(md-cum[k-1])/((cum[k]-cum[k-1])||1);
    P2.push([(p[(k-1)*3]+(p[k*3]-p[(k-1)*3])*t)/10+O[0],(p[(k-1)*3+1]+(p[k*3+1]-p[(k-1)*3+1])*t)/10+O[1],(p[(k-1)*3+2]+(p[k*3+2]-p[(k-1)*3+2])*t)/10+O[2],id+' '+v]);}}return P2;}
 /* ---- Analisis: interpretasi struktur ---- */
-function siRun(){if(!OG.X)ogCalc();const sip=g0('sip',0.05),sisg=g0('sisg',2),simb=g0('simb',5),sicap=g0('sicap',3),sigOn=!!(document.getElementById('sishow')||{}).checked;const X=OG.X||[],g=id=>+document.getElementById(id).value,cut=g('sicut')||0.6,drop=g('sidrop')||0.25,thr=g('sioff')||15,rr=g('sirad')||20,mp=g('simin')||8,bw=+document.getElementById('ubin').value||25,azS=(+document.getElementById('ogaz').value||+document.getElementById('ustk').value||0),U=[];
+function siRun(){if(!OG.X)ogCalc();const sip=g0('sip',0.05),sisg=g0('sisg',2),simb=g0('simb',3),sicap=g0('sicap',3),sigOn=!!(document.getElementById('sishow')||{}).checked;const X=OG.X||[],g=id=>+document.getElementById(id).value,cut=g0('sicut',0.6),drop=g0('sidrop',0.25),thr=g0('sioff',15),rr=g0('sirad',20),mp=g0('simin',8),bw=+document.getElementById('ubin').value||25,azS=(+document.getElementById('ogaz').value||+document.getElementById('ustk').value||0),U=[];
  const byD=new Map();X.forEach(q=>{if(!byD.has(q.d))byD.set(q.d,[]);byD.get(q.d).push(q);});const segs=[];for(const [id,{h}] of activeHoles()){const p=h.p;for(let i=0;i+5<p.length;i+=3)segs.push([(p[i]+p[i+3])/20+O[0],(p[i+1]+p[i+4])/20+O[1],(p[i+2]+p[i+5])/20+O[2]]);}
  const planes=new Map();
  for(const [d,I] of byD){if(I.length<15)continue;const pl=stFit(I.map(q=>[q.E,q.N,q.Z]));pl.dom=d;planes.set(d,pl);const {n}=stDirs(pl),cov=new Map();
@@ -3188,7 +3188,7 @@ function siRun(){if(!OG.X)ogCalc();const sip=g0('sip',0.05),sisg=g0('sisg',2),si
   const W=ks.filter(k=>bins.get(k).length>=3).map(k=>{const B=bins.get(k);return [k,med(B.map(q=>(q.E-pl.E)*n[0]+(q.N-pl.N)*n[1]+(q.Z-pl.Z)*n[2])),B];});
   const WL=ks.filter(k=>bins.get(k).length>=3).map(k=>{const B=bins.get(k),pr=(E,N,Z)=>(E-pl.E)*n[0]+(N-pl.N)*n[1]+(Z-pl.Z)*n[2],lo=[],hi=[];B.forEach(q=>{const a=pr(q.E-q.u[0]*q.L/20,q.N-q.u[1]*q.L/20,q.Z-q.u[2]*q.L/20),b=pr(q.E+q.u[0]*q.L/20,q.N+q.u[1]*q.L/20,q.Z+q.u[2]*q.L/20);lo.push(Math.min(a,b));hi.push(Math.max(a,b));});return [k,med(lo),med(hi)];});
   for(let i=0;i+1<W.length;i++){if(W[i+1][0]-W[i][0]>2)continue;const dw=W[i+1][1]-W[i][1],dwL=WL[i+1][1]-WL[i][1],dwH=WL[i+1][2]-WL[i][2];if(Math.abs(dw)<thr)continue;const B=W[i][2].concat(W[i+1][2]),sb=(W[i+1][0])*bw,sm=med(B.map(q=>q.s)),E=med(B.map(q=>q.E))+ua[0]*(sb-sm),N=med(B.map(q=>q.N))+ua[1]*(sb-sm),hdir=dirN(((Math.atan2(n[0],n[1])*180/Math.PI)+(dw>0?0:180)+360)%360);
-   const rs=v=>v.map(q=>(q.E-pl.E)*n[0]+(q.N-pl.N)*n[1]+(q.Z-pl.Z)*n[2]),s1=rs(W[i][2]),s2=rs(W[i+1][2]),sgm=v=>{const m=med(v);return 1.4826*med(v.map(x=>Math.abs(x-m)))/Math.sqrt(v.length);},se=Math.hypot(sgm(s1),sgm(s2))||1e-9,zS=Math.abs(dw)/se,nOk=s1.length>=simb&&s2.length>=simb,pv=nOk?mwP(s1,s2):1,pass=nOk&&pv<=sip&&zS>=sisg;if(!pass&&!sigOn)continue;
+   const hm=B=>{const by=new Map();B.forEach(q=>{const r=(q.E-pl.E)*n[0]+(q.N-pl.N)*n[1]+(q.Z-pl.Z)*n[2],k=q.id;if(!by.has(k))by.set(k,[]);by.get(k).push(r);});return [...by.values()].map(v=>med(v));},s1=hm(W[i][2]),s2=hm(W[i+1][2]),sgm=v=>{const m=med(v);return 1.4826*med(v.map(x=>Math.abs(x-m)))/Math.sqrt(v.length);},se=Math.max(Math.hypot(sgm(s1),sgm(s2)),0.1),zS=Math.abs(dw)/se,nOk=s1.length>=simb&&s2.length>=simb,pv=nOk?mwP(s1,s2):1,pass=nOk&&pv<=sip&&zS>=sisg;if(!pass&&!sigOn)continue;
    U.push({nm:(pass?'':'[lemah] ')+'Pergeseran '+d+' '+Math.abs(dw).toFixed(0)+' m ke '+hdir+' ('+(sb>=0?'+':'')+sb.toFixed(0)+' m)',src:'usul_off',dom:d,sbv:sb,sz:zS,lemah:!pass,E,N,Z:(zr[0]+zr[1])/2,strike:(pl.strike+90)%360,dip:90,L:60,H:zr[1]-zr[0]+40,col:'#26a69a',ev:'bidang tengah bergeser '+Math.abs(dw).toFixed(1)+' m antar bin '+bw+' m · p='+pv.toFixed(3)+' · '+zS.toFixed(1)+' σ',dw,dwLo:dwL,dwHi:dwH,dwP:Math.abs(dw)/(Math.hypot(n[0],n[1])||1),nn:[n[0],n[1],n[2]],zlo:zr[0],zhi:zr[1],ux:Math.sign(dw)*n[0]/(Math.hypot(n[0],n[1])||1),uy:Math.sign(dw)*n[1]/(Math.hypot(n[0],n[1])||1)});}}
  const LP=stLogPts();if(LP.length){const used=new Uint8Array(LP.length),key=p=>Math.floor(p[0]/rr)+','+Math.floor(p[1]/rr)+','+Math.floor(p[2]/rr),G=new Map();LP.forEach((p,i)=>{const k=key(p);if(!G.has(k))G.set(k,[]);G.get(k).push(i);});
   for(let i=0;i<LP.length;i++){if(used[i])continue;const cl=[],st=[i];used[i]=1;while(st.length){const j=st.pop();cl.push(j);const p=LP[j],kx=Math.floor(p[0]/rr),ky=Math.floor(p[1]/rr),kz=Math.floor(p[2]/rr);for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)for(let c=-1;c<=1;c++){const L2=G.get((kx+a)+','+(ky+b)+','+(kz+c));if(L2)for(const m of L2)if(!used[m]&&Math.hypot(LP[m][0]-p[0],LP[m][1]-p[1],LP[m][2]-p[2])<=rr){used[m]=1;st.push(m);}}}
@@ -3202,9 +3202,9 @@ function siRun(){if(!OG.X)ogCalc();const sip=g0('sip',0.05),sisg=g0('sisg',2),si
  for(let i=STR.length-1;i>=0;i--)if(STR[i].st==='usulan')STR.splice(i,1);const keys=new Set(U.map(u=>u.key));
  STR.forEach(s=>{if(String(s.src).startsWith('usul'))s.warn=!keys.has(s.key);});const acc=new Set(STR.map(s=>s.key).filter(Boolean));
  U.forEach(u=>{if(!STRJ.has(u.key)&&!acc.has(u.key))stAdd(Object.assign(u,{st:'usulan'}));});stDraw();stList();if(OG.tab==='si')ogDraw();}
-function g0(id,def){const v=+((document.getElementById(id)||{}).value);return isFinite(v)&&v!==0?v:def;}
-function mwP(a,b){const n1=a.length,n2=b.length;if(n1<3||n2<3)return NaN;const all=a.map(v=>[v,0]).concat(b.map(v=>[v,1])).sort((x,y)=>x[0]-y[0]);let r1=0;for(let i=0;i<all.length;){let j=i;while(j+1<all.length&&all[j+1][0]===all[i][0])j++;const rk=(i+j)/2+1;for(let k=i;k<=j;k++)if(all[k][1]===0)r1+=rk;i=j+1;}
- const U1=r1-n1*(n1+1)/2,mu=n1*n2/2,sd=Math.sqrt(n1*n2*(n1+n2+1)/12),z=Math.abs(U1-mu)/sd;const t=1/(1+0.2316419*z),pd=Math.exp(-z*z/2)/Math.sqrt(2*Math.PI)*(t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429)))));return 2*pd;}
+function g0(id,def){const raw=String(((document.getElementById(id)||{}).value)||'').trim();if(raw==='')return def;const v=+raw;return isFinite(v)?v:def;}
+function mwP(a,b){const n1=a.length,n2=b.length;if(n1<3||n2<3)return NaN;const all=a.map(v=>[v,0]).concat(b.map(v=>[v,1])).sort((x,y)=>x[0]-y[0]);let r1=0,T=0;for(let i=0;i<all.length;){let j=i;while(j+1<all.length&&all[j+1][0]===all[i][0])j++;const tg=j-i+1,rk=(i+j)/2+1;T+=tg*tg*tg-tg;for(let k=i;k<=j;k++)if(all[k][1]===0)r1+=rk;i=j+1;}
+const N=n1+n2,U1=r1-n1*(n1+1)/2,mu=n1*n2/2,v0=n1*n2/12*((N+1)-T/(N*(N-1))),sd=Math.sqrt(v0)||1e-9,z=Math.abs(U1-mu)/sd;const t=1/(1+0.2316419*z),pd=Math.exp(-z*z/2)/Math.sqrt(2*Math.PI)*(t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429)))));return 2*pd;}
 function siRel(){const X=OG.X||[],dn=+document.getElementById('sidn').value||10;return STR.filter(s=>s.on).map(s=>{const P0=s.mesh?stFit(Array.from({length:s.mesh.v.length/3},(_,i)=>[s.mesh.v[i*3],s.mesh.v[i*3+1],s.mesh.v[i*3+2]])):s,{u,d,n}=stDirs(P0),near=[],far=[];
  X.forEach(q=>{const v=[q.E-P0.E,q.N-P0.N,q.Z-P0.Z],a=v[0]*u[0]+v[1]*u[1]+v[2]*u[2],b=v[0]*d[0]+v[1]*d[1]+v[2]*d[2],w=Math.abs(v[0]*n[0]+v[1]*n[1]+v[2]*n[2]);const inside=Math.abs(a)<=P0.L/2+dn&&Math.abs(b)<=P0.H/2+dn;if(inside&&w<=dn)near.push(q.gt);else if(!inside||w>2*dn)far.push(q.gt);});
  return {s,n:near.length,mn:med(near),mf:med(far),p:mwP(near,far)};});}
@@ -4596,7 +4596,7 @@ function gdWire(C,RT){const g=id=>document.getElementById(id),on=(id,k,num)=>{co
   const ft=g('rpfoot');if(ft)ft.textContent=HOST[k].f;};}
  /* render ulang daftar -> segarkan tab yang sedang terbuka */
  const refresh=()=>{if(window.RP&&HOST[RP.tab]&&document.body.classList.contains('rp'))setTimeout(rpDraw,0);};
- for(const fn of ['dsList','sfList','orList','wiList','stpList']){try{const f=eval(fn);if(typeof f==='function'){eval(fn+'=function(){const r=f.apply(this,arguments);refresh();return r;}');}}catch(e){}}
+ for(const fn of ['dsList','sfList','orList','wiList','stpList']){try{const f=window[fn];if(typeof f==='function'){window[fn]=function(){const r=f.apply(this,arguments);refresh();return r;};}}catch(e){}}
  {const q=g('rpq');if(q)q.addEventListener('input',()=>{if(window.RP&&HOST[RP.tab])rpDraw();});}
  {const b=g('wiopen');if(b)b.onclick=()=>rpOpenTab('wf');}
  const css=document.createElement('style');css.textContent=`#rptab{display:flex;flex-wrap:wrap;gap:2px 0}#rptab button{font-size:12px!important;padding:5px 8px!important}#rphost{flex:1;overflow:auto;padding:4px 10px 8px}#rphost .dsr{margin:4px 0}`;document.head.appendChild(css);
@@ -4795,7 +4795,7 @@ async function topoStream(file,opt,prog){const CH=8<<20,dec=new TextDecoder('utf
      w.textContent='Membangun permukaan '+f.name+' ('+nf(r.kept)+' titik) …';await new Promise(q=>setTimeout(q,30));sfAdd({nm:f.name,kind,L:r.L});r.L=null;
      msg.push(esc(f.name)+' → '+SFK[kind].nm+': '+nf(r.read)+' titik dibaca'+(box?' · '+nf(r.inbox)+' di area data bor (+'+buf+' m)':(crop?' · belum ada data bor, jadi seluruh file dipakai (impor data bor dulu agar dipotong ke areanya)':''))+' · dipakai '+nf(r.kept)+(r.tol?' (jarak antartitik ≥ '+String(+r.tol.toFixed(2)).replace('.',',')+' m sepanjang string)':'')+' · '+((performance.now()-t0)/1000).toFixed(0)+' detik');}
     catch(err){msg.push('<span style="color:#c62828">'+esc(f.name)+': '+esc(err.message)+'</span>');}}
-   w.innerHTML=msg.join('<br>');e.target.value='';}finally{window.OWBUSY=0;}sfList();holesBuild();fitView();})();return true;};})();
+   w.innerHTML=msg.join('<br>');e.target.value='';}finally{window.OWBUSY=0;}sfList();holesBuild();fitView(false);})();return true;};})();
 
 /* ===================== Ore Works 0.8 · Layout peta: inset lokasi, inset detail, kop peta, grid, elemen bisa digeser ===================== */
 var FLX={pos:{},det:[],logo:null,logoImg:null,draw:false,cache:{}};

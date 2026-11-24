@@ -5964,3 +5964,12 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - Mengganti pandangan (WSW, ENE, NNW, Oblik SSE, Plan) kini **mempertahankan jarak kamera dan titik fokus** yang sedang dipakai, sehingga skala zoom tidak melompat ke tampilan jauh.
 - Perilaku sebelumnya: setiap pandangan memakai jarak hasil Fit. Itu dipertahankan hanya saat data dimuat atau tombol Fit ditekan.
 - Belum diuji pada data proyek nyata.
+
+## 314. Ore Works 0.32.9 — perbaikan hasil review kode
+
+- **Analisis struktur & panel optimasi tidak macet**: bila satu perhitungan gagal, flag sibuk tetap direset sehingga analisis berikutnya berjalan otomatis. Sebelumnya satu error menghentikan pembaruan sampai halaman dimuat ulang.
+- **Usulan pergeseran diuji per lubang**: sampel dalam satu lubang dirata-rata dahulu, lalu dibandingkan antar sisi. Minimal **3 lubang** per sisi (kolom *min lubang per sisi*, sebelumnya sampel). Uji Mann-Whitney kini memakai koreksi nilai sama (ties).
+- **Setelan bernilai 0** (mis. maks usulan per domain atau ambang) bisa dipakai. Kolom kosong tetap memakai nilai default.
+- **Impor data**: kamera hanya diatur ulang pada impor pertama. Impor berikutnya tidak menggeser pandangan; gunakan *Zoom ke semua data* bila data baru di luar layar.
+- Perbaikan kecil pada penyambung fungsi panel data (tanpa `eval`).
+- Belum diuji pada data proyek nyata.
