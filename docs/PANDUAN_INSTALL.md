@@ -5973,3 +5973,16 @@ Block Model › Layout & Plot PDF › **Pengayaan lembar (inset, kop, grid, labe
 - **Impor data**: kamera hanya diatur ulang pada impor pertama. Impor berikutnya tidak menggeser pandangan; gunakan *Zoom ke semua data* bila data baru di luar layar.
 - Perbaikan kecil pada penyambung fungsi panel data (tanpa `eval`).
 - Belum diuji pada data proyek nyata.
+
+## 315. Ore Works 0.33.0 — penanda lokasi penampang
+
+Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati secara default**; nyalakan sesuai kebutuhan di panel **Penampang / Sayatan**.
+
+- **Tampilkan bidang sayatan di 3D** (sudah ada, kini dilengkapi): selain bidang oranye, tampil garis slab ± tebal (putus-putus), label ujung **A** dan **A'**, serta panah *dilihat dari …* yang menunjukkan arah pandang penampang 2D. Bidang tetap tampil walau jendela 2D ditutup, seperti *Tampilkan bidang potong* di GC-Ex Drillhole.
+- **Simpan penampang**: beri nama (kosong = otomatis A, B, …) lalu tekan *Simpan penampang*. Daftar penampang tersimpan: klik nama untuk menjadikannya aktif, ✕ untuk menghapus. Daftar ikut tersimpan di file proyek. Menyimpan dengan nama yang sudah ada akan menimpanya.
+- **Tampilkan semua penampang tersimpan di 3D**: semua bidang tersimpan tampil biru dengan labelnya; penampang aktif tetap oranye.
+- **Garis penampang di peta**: centang lapisan **Garis penampang** di *Peta level* atau *Layout peta*. Garis aktif biru tebal, tersimpan biru putus-putus, dengan label ujung dan panah arah pandang. Hanya penampang vertikal yang digambar.
+- **Inset lokasi di penampang 2D**: peta kecil di kanan atas penampang 2D berisi collar, garis penampang dan arah pandang; ikut tersimpan saat ekspor PNG. Nama ujung (A … A') juga ditulis di tepi atas penampang. Untuk level horizontal, inset menandai area yang sedang tampil.
+- **Sinkron kursor 2D ↔ 3D**: kursor di penampang 2D ditandai titik merah muda di 3D; kursor di 3D ditandai silang *kursor 3D* di penampang 2D (tidak ikut PNG).
+- **Tombol 3D** di jendela penampang: memutar kamera ke pandangan oblik yang memperlihatkan bidang penampang, dengan jarak zoom tetap. Bila bidang belum ditampilkan, tombol ini menyalakannya.
+- Diuji pada data latihan fiktif (LTH); belum diuji pada data proyek nyata.
