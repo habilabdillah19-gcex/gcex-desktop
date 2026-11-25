@@ -6027,3 +6027,16 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - Blok tanpa nilai untuk suatu unsur tidak ikut dirata-ratakan untuk unsur itu. Ruang galian di luar block model (waste SG konstanta) juga tidak memengaruhi kadar unsur.
 - Atribut teks (mis. *kelas*) disembunyikan dari daftar setelah blok dimuat.
 - Diuji dengan block model fiktif demo (au, sg, sxs): kadar sxs ore di tabel sama dengan hitungan manual dari rekaman blok.
+
+## 320. Ore Works 0.34.0 — Studio Pemetaan (F8)
+
+- Buka dengan **F8**, menu **Pemetaan ▸ Studio Pemetaan (F8)**, ikon peta di toolbar, atau tombol **Studio Pemetaan (2D)** di jendela *2 · Digitasi*. F8 lagi / ✕ Tutup = kembali ke 3D.
+- Mendigit di **plan view**: pilih alat di kiri (tombol 1–8) — Vein, Channel, Kontak, Struktur, Poligon, Grab, Strike/dip, Observasi. Klik = titik, Enter / klik ganda = selesai, klik kanan = hapus titik terakhir, Esc = batal. Snap ke titik pick-up & titik fitur lain; Alt = tanpa snap, Shift = ortho.
+- **RL titik** bawaan dari **topografi**; bisa dari **pick-up** terdekat atau **RL tetap**. **Filter RL** (bawaan mati) hanya untuk pit bertingkat: di luar rentang disamarkan dan tidak di-snap; PgUp / PgDn = naik / turun.
+- **Strike/dip (7)**: klik lokasi lalu seret ke arah strike (dip ke kanan arah seret); dip dan jenis dari isian di bilah atas. Hasil masuk ke Titik struktur.
+- **Muka dinding**: tekan **W**, klik dua titik sejajar dinding di plan → penampang tegak sejajar dinding (tebal ± bisa diatur); digit di bidang dinding.
+- Edit dengan **Pilih (V)**: seret titik, Ctrl+klik garis = sisip titik, klik kanan titik = hapus titik, Delete = hapus fitur, Ctrl+Z / Ctrl+Y = urungkan / ulangi.
+- Panel kanan: daftar fitur (centang tampil, cari) dan atribut fitur terpilih; **Editor lengkap** membuka jendela lama (interval channel, kadar, warna).
+- **☰ Latar**: kontur (dibuat otomatis dari topografi), ortofoto, string desain pit, pick-up, lubang bor, fitur, titik strike/dip.
+- Intip 3D (Tab = besar), tema terang / gelap, layar penuh. Semua hasil langsung tampil di 3D, Layout peta dan tersimpan di project seperti fitur pemetaan biasa.
+
