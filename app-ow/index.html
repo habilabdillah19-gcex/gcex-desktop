@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.33.1';</script>
+<script>window.GCEX_VER='0.33.2';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -9877,4 +9877,50 @@ DM.skImp=(Y,h)=>Y.yp?skSplay(Y,h):lama(Y,h);
   ui(D0);const sc=document.createElement('script');sc.textContent=document.getElementById('ore-main').textContent;document.body.appendChild(sc);
   if(st){st.__boot=true;const inp=document.getElementById('pjo'),dt=new DataTransfer();dt.items.add(new File([JSON.stringify(st)],(st.nama||'paket')+'.gcv.json',{type:'application/json'}));inp.files=dt.files;inp.dispatchEvent(new Event('change'));}}
  take().then(run,()=>run(null));})();
-</script></body></html>
+</script><style id="owRapi">
+/* 0.33.2 · kerapian antarmuka (pemilik 24 Nov 2026: "untuk seluruh bar, tab, atau panel, hilangkan garis border atau aksen").
+   Warna memakai jangkar palet bawaan (aksen #17806B, garis #D3CDC1) supaya ikut Tampilan → Palet warna. */
+#mbar#mbar{border-bottom-color:transparent!important}
+#stdoSl .it.on.on{box-shadow:none!important}
+:where(button,summary,select,input,textarea,a,.mbb,.tb,.cmi,[tabindex]):focus-visible{outline:2px solid #17806B!important;outline-offset:1px!important;box-shadow:0 0 0 1px #FFFFFF!important}
+#stdoTop .owzg{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:inherit;column-gap:inherit}
+.fl:has(>#msxobj){flex-wrap:wrap;row-gap:4px}
+.fl:has(>#msxobj)>*{white-space:nowrap}
+.cmi>.ic{flex:none;width:16px;margin-right:-10px;text-align:center}
+.cmi>.ic+span{flex:1}
+#prb td.v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0;width:100%}
+/* status bar: selama sorotan pesan baru tampil, teks pesan terakhir (isinya sama) disembunyikan; angka jumlah pesan tetap */
+#status #sbmsg[style*="flex"]~#sbpsn .t{display:none}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+<script>/* 0.33.2 · kerapian antarmuka: ikon bilah alat satu warna, tombol zoom Studio tidak terpisah baris, ikon menu satu kolom */
+(function(){
+ /* ikon bilah alat satu warna (ikut warna teks tombol); warna latar terang dibuang, garis bantu tipis dibuat samar */
+ const terang=c=>{c=(c||'').toLowerCase();return c==='#fff'||c==='#ffffff'||c==='white'||/^#e[0-9a-f]f[0-9a-f]ff$|^#eef4ff$/.test(c);};
+ const bantu=c=>/^#9fb0c8$|^#b8c4d6$|^#c9d3e1$/i.test(c||'');
+ function mono(root){if(!root)return;for(const el of root.querySelectorAll('.tb svg *')){if(el.dataset.owm)continue;el.dataset.owm=1;
+   const f=el.getAttribute('fill'),s=el.getAttribute('stroke');
+   const gs=s&&s!=='none';
+   /* bidang berwarna yang punya garis tepi → garis tepi saja (ikon garis); bidang tanpa garis tepi (swatch, panah) → warna teks */
+   if(f&&f!=='none'&&f!=='currentColor'){if(terang(f)||gs)el.setAttribute('fill','none');else el.setAttribute('fill','currentColor');}
+   if(s&&s!=='none'&&s!=='currentColor'){el.setAttribute('stroke','currentColor');if(bantu(s))el.setAttribute('stroke-opacity','.45');}}}
+ /* Studio: −, +, Pas, Sayatan satu kelompok supaya tidak pecah di layar 1280 px */
+ function zgrup(){const zo=document.getElementById('stdoZo'),fit=document.getElementById('stdoFit');if(!zo||!fit||zo.parentElement.classList.contains('owzg'))return;
+   const g=document.createElement('span');g.className='owzg';zo.before(g);
+   for(const id of ['stdoZo','stdoZi','stdoFit']){const e=document.getElementById(id);if(e)g.appendChild(e);}
+   const sy=g.nextElementSibling&&g.nextElementSibling.classList.contains('syBtn')?g.nextElementSibling:null;if(sy)g.appendChild(sy);}
+ /* menu tarik: simbol di depan teks dipindah ke kolom ikon; butir tanpa simbol diberi kolom kosong supaya teks sejajar */
+ const SIM=/^([←-⯿☀-➿-]|[\uD83C-\uD83E][\uDC00-\uDFFF])️?\s+/;
+ function menuIkon(m){if(!m)return;const it=[...m.querySelectorAll(':scope>.cmi')];if(!it.length||it.every(x=>x.querySelector(':scope>.ic')))return;
+   const ada=it.some(x=>{const t=x.firstElementChild;return t&&SIM.test(t.textContent);});if(!ada)return;
+   for(const x of it){if(x.querySelector(':scope>.ic'))continue;const t=x.firstElementChild;const ic=document.createElement('span');ic.className='ic';
+     if(t&&t.childElementCount===0){const m2=t.textContent.match(SIM);if(m2){ic.textContent=m2[1];t.textContent=t.textContent.slice(m2[0].length);}}
+     x.insertBefore(ic,x.firstChild);}}
+ function semua(){try{mono(document.getElementById('otb'));zgrup();menuIkon(document.getElementById('cmenu'));}catch(e){}}
+ const mo=new MutationObserver(()=>{if(semua._t)return;semua._t=requestAnimationFrame(()=>{semua._t=0;semua();});});
+ /* bilah alat & Studio dibangun / diterjemahkan ulang sesudah halaman dimuat → amati seluruh body (dibatasi satu kali per bingkai) */
+ const mulai=()=>{semua();mo.observe(document.body,{childList:true,subtree:true});};
+ if(document.readyState==='complete')setTimeout(mulai,0);else addEventListener('load',()=>setTimeout(mulai,0));
+})();
+</script>
+</body></html>

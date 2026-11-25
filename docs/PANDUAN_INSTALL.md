@@ -6007,3 +6007,12 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
   Teks abu-abu di Project Tree lebih mudah dibaca, dan tombol yang dipilih dengan Tab di keyboard diberi bingkai fokus.
 - Ringkasan Grade × Tonnage di pojok 3D tidak lagi menutupi tab Properti pada layar sempit.
 - Tutorial PDF dan video demo masih memakai tampilan lama.
+
+## 318. Ore Works 0.33.2 — tampilan lebih bersih
+
+- Garis warna di bawah bar menu dan di sisi solid aktif (Studio) dihapus; tab / baris aktif ditandai warna latar.
+- Ikon bilah alat kini satu warna dan seragam bergaya garis.
+- Studio Pemodelan pada layar 1280 px: tombol − + Pas Sayatan tetap berdampingan; tombol ekspor solid tidak terlipat.
+- Menu tarik: semua teks butir sejajar walau sebagian butir berikon.
+- Tombol / isian yang dipilih dengan Tab di keyboard diberi bingkai warna aksen.
+- Status bar tidak lagi menampilkan pesan yang sama dua kali; nilai panjang di panel Properti dipotong dengan … (arahkan kursor untuk teks lengkap).
