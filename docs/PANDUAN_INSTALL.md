@@ -6016,3 +6016,14 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - Menu tarik: semua teks butir sejajar walau sebagian butir berikon.
 - Tombol / isian yang dipilih dengan Tab di keyboard diberi bingkai warna aksen.
 - Status bar tidak lagi menampilkan pesan yang sama dua kali; nilai panjang di panel Properti dipotong dengan … (arahkan kursor untuk teks lengkap).
+
+## 319. Pit Studio 0.1.7 — Grade × Tonnage multi-unsur
+
+- Di jendela **Block model & Grade × Tonnage**, baris baru **unsur lain** berisi semua atribut numerik block model (selain atribut kadar utama dan SG). **Tidak ada yang dicentang secara default**; centang unsur yang ingin ikut dilaporkan (mis. Ag, Cu, S).
+- Tiap unsur yang dicentang menambah kolom **<unsur> ore** dan **<unsur> waste** = kadar rata-rata tertimbang tonase. Arahkan kursor ke sel ore untuk melihat kadar per kelas. Ringkasan di atas tabel juga menyebut kadar ore tiap unsur.
+- **CSV** menambah kolom per kelas (mis. *LG Ag*, *HG Ag*), *Ag ore* dan *Ag waste*, serta mencatat unsur yang dipakai.
+- Berlaku untuk laporan desain (topografi → desain), laporan per periode Pit Schedule, dan laporan cetak Grade × Tonnage.
+- Kelas ore (LG / HG / waste) tetap ditentukan oleh atribut **kadar** utama. Logam (g / oz) tetap hanya untuk kadar utama, karena satuan unsur lain (g/t, ppm, %) bisa berbeda.
+- Blok tanpa nilai untuk suatu unsur tidak ikut dirata-ratakan untuk unsur itu. Ruang galian di luar block model (waste SG konstanta) juga tidak memengaruhi kadar unsur.
+- Atribut teks (mis. *kelas*) disembunyikan dari daftar setelah blok dimuat.
+- Diuji dengan block model fiktif demo (au, sg, sxs): kadar sxs ore di tabel sama dengan hitungan manual dari rekaman blok.

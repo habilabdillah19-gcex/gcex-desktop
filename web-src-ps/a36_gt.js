@@ -4,7 +4,7 @@
    (pusat blok harus di bawah topografi awal fase). Opsi: proporsional (fraksi tinggi blok di antara permukaan sebelum/sesudah).
    Kelas kadar & tujuan mengikuti format preset GC-Ex Block Model (BX.ui.rules / destR / pst) — bisa diimpor dari gcex_project.json.
    Laporan per periode (jam … bench, sama dengan pilihan periode Pit Schedule) × fleet: ton @ kadar per kelas, waste, SR, logam. */
-const GT={m:null,H:null,file:null,attr:'',sg:'',sgc:2.6,sx:'',rule:'pusat',rules:[{lo:0.4,hi:1,c:'#7ee04a',m:'LG'},{lo:1,hi:'',c:'#ff1a1a',m:'HG'}],sfOn:false,sxsThr:0.8,destR:[{m:'LG',sf:'any',d:'Stockpile LG'},{m:'HG',sf:'any',d:'ROM'}],dest:'',fleet:false,res:null,dres:null,topoF:true,src:'bawaan GC-Ex'};
+const GT={ex:[],m:null,H:null,file:null,attr:'',sg:'',sgc:2.6,sx:'',rule:'pusat',rules:[{lo:0.4,hi:1,c:'#7ee04a',m:'LG'},{lo:1,hi:'',c:'#ff1a1a',m:'HG'}],sfOn:false,sxsThr:0.8,destR:[{m:'LG',sf:'any',d:'Stockpile LG'},{m:'HG',sf:'any',d:'ROM'}],dest:'',fleet:false,res:null,dres:null,topoF:true,src:'bawaan GC-Ex'};
 (function(){const st=document.createElement('style');st.textContent=
 `#gtbox{border-top:1px solid #e3e7ef;margin-top:6px;padding-top:4px}#gtbox summary{cursor:pointer;font-weight:600;color:#5b3a12}
 #gttb{max-height:240px;overflow:auto;border:1px solid #e3e7ef;margin-top:4px}#gttb table{border-collapse:collapse;width:100%;font-size:11px}#gttb th,#gttb td{border-bottom:1px solid #eef1f6;padding:2px 4px;text-align:right;white-space:nowrap}
@@ -20,6 +20,7 @@ function gtWin(){if($('bmw'))return;const st=document.createElement('style');st.
  const w=document.createElement('div');w.id='bmw';w.innerHTML='<div id="bmwh"><b>&#9878; Block model &amp; Grade × Tonnage</b><span style="flex:1"></span><button id="bmwx">&#10005;</button></div><div id="bmwb">'+
  '<div class="r"><button id="gtld" title="Muat block model Surpac .mdl (Version 4.0) — dibaca dengan pembaca GC-Ex Block Model">&#128194; Muat .mdl…</button><input id="gtf" type="file" accept=".mdl" style="display:none"><span id="gtst" style="font-size:11px;color:#6c757d;flex:1">belum ada block model</span></div>'+
  '<div id="gtcfg" style="display:none"><div class="r">kadar <select id="gtat"></select> SG <select id="gtsg"></select> <input id="gtsgc" type="number" step="any" value="2.6" title="SG bila atribut kosong / tidak dipilih" style="width:46px"> aturan <select id="gtru"><option value="pusat">pusat blok (cara Surpac)</option><option value="prop">proporsional</option></select></div>'+
+ '<div class="r" title="Unsur tambahan yang ikut dilaporkan: kadar rata-rata tertimbang tonase per kelas, ore dan waste. Kelas ore tetap ditentukan atribut kadar utama.">unsur lain <span id="gtexl" style="display:flex;flex-wrap:wrap;gap:2px 8px"><i style="color:#6c757d">(muat block model dulu)</i></span></div>'+
  '<div class="r"><label title="Seperti GC-Ex: blok di atas topografi tidak dimuat (memperkecil block model besar)"><input type="checkbox" id="gttp" checked> hanya di bawah topografi</label> <label title="Hanya blok di area kerja (desain / AOI jadwal) yang dimuat — selalu aktif"><input type="checkbox" checked disabled> hanya di area desain / AOI</label></div>'+
  '<details id="gtkd"><summary style="cursor:pointer;color:#1f3a5f">kelas kadar &amp; tujuan <span id="gtsrc" style="font-weight:400;color:#6c757d"></span></summary><div id="gtrl"></div>'+
  '<div class="r"><button id="gtra">+ kelas</button><button id="gtpj" title="Ambil preset kelas kadar & tujuan dari file proyek GC-Ex Block Model (gcex_project.json)">&#8681; Impor preset GC-Ex…</button><input id="gtpf" type="file" accept=".json" style="display:none"><select id="gtps" style="display:none"></select></div>'+
@@ -34,7 +35,7 @@ function gtWin(){if($('bmw'))return;const st=document.createElement('style');st.
  $('gtpj').onclick=()=>$('gtpf').click();$('gtpf').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)gtPreset(f);};
  $('gtra').onclick=()=>{const L=GT.rules,hi=L.length?+L[L.length-1].lo||0:0;GT.rules.push({lo:hi+1,hi:'',c:'#ffa94d',m:'K'+(L.length+1)});GT.src='diubah';gtRules();};
  const rd=()=>{GT.attr=$('gtat').value;GT.sg=$('gtsg').value;GT.sgc=+$('gtsgc').value||2.6;GT.rule=$('gtru').value;GT.sx=$('gtsx').value;GT.sxsThr=+$('gtsxt').value||0;GT.sfOn=$('gtsfo').checked;if(GT.topoF!==$('gttp').checked){GT.topoF=$('gttp').checked;GT.win=null;}gtRedo();};
- ['gtat','gtsg','gtsgc','gtru','gtsx','gtsxt','gtsfo','gttp'].forEach(i=>$(i).onchange=rd);
+ ['gtat','gtsg','gtsgc','gtru','gtsx','gtsxt','gtsfo','gttp'].forEach(i=>$(i).onchange=rd);$('gtat').addEventListener('change',gtExList);$('gtsg').addEventListener('change',gtExList);
  $('gdgo').onclick=()=>{gtDesign().catch(err=>{$('gdsum').innerHTML='<span style="color:#c92a2a">'+esc(err.message)+'</span>';console.error(err);});};$('gdcsv').onclick=()=>gtCsvX(GT.dres,'grade_tonnage_desain_'+(GT.dres?GT.dres.nm.replace(/\s/g,'_'):''));
  /* pintu masuk: menu Impor (di awal alur) + Hasil & volume */
  for(const [id,txt] of [['iw','&#9878; Block model (.mdl) & Grade × Tonnage…'],['hw','&#9878; Laporan Grade × Tonnage (block model)…']]){const fb=document.querySelector('#'+id+' .flb');if(!fb)continue;const b=document.createElement('button');b.className='fbtn';b.style.cssText='display:block;width:100%;margin-top:6px;text-align:left';b.innerHTML=txt;b.onclick=()=>gtOpen(true);fb.appendChild(b);}
@@ -71,7 +72,7 @@ async function gtLoad(f){const st=$('gtst');st.textContent='membaca header…';t
   const num=H.attrs.filter(a=>a.calc||a.type===2||a.type===1).map(a=>a.name),opt=(sel,L,blank)=>{sel.innerHTML=(blank?'<option value="">'+blank+'</option>':'')+L.map(n=>'<option>'+esc(n)+'</option>').join('');};
   opt($('gtat'),num);opt($('gtsg'),num,'(konstanta)');opt($('gtsx'),num,'(tidak ada)');
   const pick=(re,sel)=>{const n=num.find(x=>re.test(x));if(n)$(sel).value=n;};pick(/^au|au$|grade|kadar/i,'gtat');pick(/^sg|dens|bd$|^sg/i,'gtsg');pick(/sxs|sulf|^s_?tot|stot/i,'gtsx');
-  GT.attr=$('gtat').value;GT.sg=$('gtsg').value;GT.sx=$('gtsx').value;$('gtcfg').style.display='';GT.dres=null;try{$('gdtb').innerHTML='';$('gdsum').innerHTML='';}catch(_){}
+  GT.attr=$('gtat').value;GT.sg=$('gtsg').value;GT.sx=$('gtsx').value;GT.num=num;gtExList();$('gtcfg').style.display='';GT.dres=null;try{$('gdtb').innerHTML='';$('gdsum').innerHTML='';}catch(_){}
   st.innerHTML='<b>'+esc(H.name)+'</b> · '+schF(f.size/1048576,1)+' MB · ±'+H.estN.toLocaleString('id-ID')+' blok · '+H.attrs.length+' atribut'+(H.rot?' · <span style="color:#c92a2a">model memakai rotasi (belum diterapkan)</span>':'')+' — blok dimuat saat menghitung, hanya di jendela AOI';
   if(SCH.sim)await gtRun();}catch(e){st.innerHTML='<span style="color:#c92a2a">'+esc(e.message)+'</span>';console.error(e);}}
 /* jendela yang dibutuhkan fase aktif */
@@ -94,7 +95,7 @@ async function gtEnsure(N){const f=GT.file,H=GT.H,W=GT.win,st=$('gtst');
    m=await MDLSA.readMDL(new File([r.buf],f.name),null,{pit:PG,topo:TG,zMin:zlo,zMax:zhi});via='backend GC-Ex (cache disk, '+nSub.toLocaleString('id-ID')+' blok dikirim)';}
   catch(e){if(e.keras)throw e;console.warn('[Pit Studio] backend .mdl gagal, baca langsung:',e);note=' · backend tidak dipakai: '+esc(e.message);m=null;}}
  if(!m){m=await MDLSA.readMDL(f,prog,{head:H,pit:PG,topo:TG,zMin:zlo,zMax:zhi,maxN});if(m.mdl&&m.mdl.over)note+=' · <span style="color:#c92a2a">'+m.mdl.over.toLocaleString('id-ID')+' blok melebihi batas memori — perkecil AOI / fase</span>';}
- GT.m=m;GT.win={f,tp:N.tp,x0:N.x0,x1:N.x1,y0:N.y0,y1:N.y1,zlo,zhi};GT.via=via;
+ GT.m=m;GT.win={f,tp:N.tp,x0:N.x0,x1:N.x1,y0:N.y0,y1:N.y1,zlo,zhi};GT.via=via;try{gtExList();}catch(_){}
  st.innerHTML='<b>'+esc(H.name)+'</b> · '+m.n.toLocaleString('id-ID')+' blok di jendela kerja'+(GT.topoF!==false?', di bawah topografi':'')+' (RL '+schF(zlo,1)+'–'+schF(zhi,1)+') · '+esc(via)+' · '+Math.round(performance.now()-t0)+' ms'+(m.warn?' · <span style="color:#c92a2a">'+esc(m.warn)+'</span>':'')+note;}
 async function gtPreset(f){try{const J=JSON.parse(await f.text());const fd=(o,d)=>{if(!o||typeof o!=='object'||d>8)return null;if(o.bxui&&typeof o.bxui==='object')return o.bxui;if(Array.isArray(o.rules)&&('rAttr' in o||'pst' in o))return o;for(const k of Object.keys(o)){const r=fd(o[k],d+1);if(r)return r;}return null;};
   const U=fd(J,0);if(!U)throw new Error('Tidak ada pengaturan kelas kadar di file ini (bukan gcex_project.json GC-Ex Block Model?).');
@@ -107,15 +108,15 @@ async function gtPreset(f){try{const J=JSON.parse(await f.text());const fd=(o,d)
 function gtPhase(F){const Sm=F.sim,Gd=F.grid,m=GT.m,{nx,ny,z0}=Gd,n=nx*ny,NP=Sm.np;
  /* riwayat per sel (CSR): urutan periode naik */const cnt=new Int32Array(n+1);for(let p=0;p<NP;p++)for(const c of Sm.DC[p])cnt[c+1]++;for(let c=0;c<n;c++)cnt[c+1]+=cnt[c];
  const HP=new Int32Array(cnt[n]),HZ=new Float32Array(cnt[n]),HO=new Int8Array(cnt[n]),w=cnt.slice(0,n);for(let p=0;p<NP;p++){const C=Sm.DC[p],Z=Sm.DZ[p],Ow=Sm.DO?Sm.DO[p]:null;for(let i=0;i<C.length;i++){const k=w[C[i]]++;HP[k]=p;HZ[k]=Z[i];HO[k]=Ow?Ow[i]:0;}}
- const G=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],VO=[];let nIn=0;
+ const G=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],VO=[],EX=gtExCols(m),XV=[];let nIn=0;
  for(let b=0;b<m.n;b++){const x=m.x[b],y=m.y[b],s=x*Gd.ux+y*Gd.uy,q=x*Gd.vx+y*Gd.vy,i=Math.floor((s-Gd.s0)/Gd.bx),j=Math.floor((q-Gd.t0)/Gd.by);if(i<0||j<0||i>=nx||j>=ny)continue;const c=j*nx+i;if(cnt[c]===cnt[c+1])continue;
   const zt=z0[c],cz=m.z[b],hz=m.sz[b]/2;if(!(zt===zt))continue;const vol=m.sx[b]*m.sy[b]*m.sz[b];let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=G?G[b]:NaN,k=gtCls(g),sul=!!(GT.sfOn&&SX&&SX[b]>GT.sxsThr);
-  if(!prop){if(!(cz<zt))continue;/* pusat di bawah topo awal fase */for(let h=cnt[c];h<cnt[c+1];h++)if(HZ[h]<cz){out.push(HP[h],HO[h],k,vol*sg,g,sul?1:0,c);VO.push(vol);nIn++;break;}}
-  else{let zp=zt;for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],top=Math.min(zp,cz+hz),bot=Math.max(za,cz-hz);if(top>bot){const f=(top-bot)/(2*hz);out.push(HP[h],HO[h],k,vol*sg*f,g,sul?1:0,c);VO.push(vol*f);nIn++;}zp=za;}}}
+  if(!prop){if(!(cz<zt))continue;/* pusat di bawah topo awal fase */for(let h=cnt[c];h<cnt[c+1];h++)if(HZ[h]<cz){out.push(HP[h],HO[h],k,vol*sg,g,sul?1:0,c);VO.push(vol);gtExPush(XV,EX,b);nIn++;break;}}
+  else{let zp=zt;for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],top=Math.min(zp,cz+hz),bot=Math.max(za,cz-hz);if(top>bot){const f=(top-bot)/(2*hz);out.push(HP[h],HO[h],k,vol*sg*f,g,sul?1:0,c);VO.push(vol*f);gtExPush(XV,EX,b);nIn++;}zp=za;}}}
  /* ruang galian tanpa blok → waste (volume × SG konstanta) */let unc=0;const Ac=Gd.bx*Gd.by,sgc=GT.sgc||2.6;
  for(let c=0;c<n;c++){if(cnt[c]===cnt[c+1])continue;let zp=z0[c];if(!(zp===zp))continue;const i=c%nx,j=(c-i)/nx,s=Gd.s0+(i+0.5)*Gd.bx,q=Gd.t0+(j+0.5)*Gd.by,x=s*Gd.ux+q*Gd.vx,y=s*Gd.uy+q*Gd.vy;
-  for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],u=gtUnc(m,x,y,za,zp,h===cnt[c])*Ac;if(u>1e-3){out.push(HP[h],HO[h],-1,u*sgc,NaN,0,c);VO.push(u);unc+=u;}zp=za;}}
- GTV.set(out,VO);return {out,nIn,F,unc,vol:VO};}
+  for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],u=gtUnc(m,x,y,za,zp,h===cnt[c])*Ac;if(u>1e-3){out.push(HP[h],HO[h],-1,u*sgc,NaN,0,c);VO.push(u);gtExPush(XV,EX,-1);unc+=u;}zp=za;}}
+ GTV.set(out,VO);GTX.set(out,{nm:EX.nm,v:XV});return {out,nIn,F,unc,vol:VO};}
 async function gtRun(){if(!GT.file)throw new Error('Muat block model .mdl dulu.');if(!SCH.sim)throw new Error('Jalankan simulasi Pit Schedule dulu.');if(GT.busy){GT.again=1;return;}GT.busy=1;
  try{schPhSave();const ph=SCH.phs[SCH.ph];await gtEnsure(gtNeed(ph));if(!GT.m.num[GT.attr])throw new Error('Atribut kadar "'+GT.attr+'" tidak ada di block model.');const R=gtPhase(ph);GT.res=R;gtTable();try{if($('schcm').value==='kls')schPaint();}catch(_){}}
  catch(e){GT.res=null;try{$('gttb').innerHTML='';$('gtsum').innerHTML='<span style="color:#c92a2a">'+esc(e.message)+'</span>';}catch(_){}throw e;}
@@ -125,6 +126,19 @@ function gtBand(){/* pita periode = SCH.bd (jam … bench) */return SCH.bd||[];}
    Ruang galian yang tidak berisi blok sama sekali (block model tidak sampai ke situ) dihitung sebagai WASTE: volumenya masuk,
    tonase = volume × SG konstanta (GT.sgc). */
 const GTV=new WeakMap();
+/* 25 Nov 2026 (pemilik): unsur lain yang DICENTANG pengguna ikut dilaporkan (kadar rata-rata tertimbang tonase).
+   Nilai disimpan per rekaman 'out' di GTX (WeakMap out → {nm:[unsur], v:[n_rekaman × n_unsur]}), rekaman 'out' 7 kolom tidak berubah. */
+const GTX=new WeakMap();
+function gtExCols(m){const nm=(GT.ex||[]).filter(n=>m&&m.num&&m.num[n]&&n!==GT.attr);const c=nm.map(n=>m.num[n]);c.nm=nm;return c;}
+function gtExPush(XV,EX,b){for(let e=0;e<EX.length;e++){const v=b>=0?EX[e][b]:NaN;XV.push(v===v&&v>-1e29&&v<1e29?v:NaN);}}
+function gtExAvg(a,e,K,k0,k1){let m=0,t=0;for(let k=k0;k<k1;k++){const q=e*(K+1)+k;m+=a.xm[q];t+=a.xt[q];}return t>0?m/t:null;}
+function gtExFmt(v){if(v==null||!(v===v))return '–';const x=Math.abs(v);return v.toFixed(x>=100?0:x>=10?1:x>=0.1?2:3);}
+function gtExCsv(v){return v==null||!(v===v)?'':(+v.toFixed(4)).toString();}
+function gtExKls(a,e,K){return GT.rules.map((r,k)=>r.m+' '+gtExFmt(gtExAvg(a,e,K,k,k+1))).join(', ');}
+function gtExList(){const el=$('gtexl');if(!el)return;const mn=GT.m&&GT.m.num,L=(GT.num||[]).filter(n=>n!==$('gtat').value&&n!==$('gtsg').value&&(!mn||mn[n]));GT.ex=(GT.ex||[]).filter(n=>L.includes(n));
+ if(!L.length){el.innerHTML='<i style="color:#6c757d">(tidak ada atribut numerik lain)</i>';return;}
+ el.innerHTML=L.map(n=>'<label><input type="checkbox" data-gx="'+esc(n)+'"'+(GT.ex.includes(n)?' checked':'')+'> '+esc(n)+'</label>').join('');
+ el.querySelectorAll('[data-gx]').forEach(c=>c.onchange=()=>{GT.ex=[...el.querySelectorAll('[data-gx]:checked')].map(x=>x.dataset.gx);gtRedo();});}
 function gtCov(m){if(m._cov)return m._cov;let hs=1e9,mz=0,x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(let b=0;b<m.n;b++){hs=Math.min(hs,m.sx[b],m.sy[b]);mz=Math.max(mz,m.sz[b]);x0=Math.min(x0,m.x[b]-m.sx[b]/2);y0=Math.min(y0,m.y[b]-m.sy[b]/2);x1=Math.max(x1,m.x[b]+m.sx[b]/2);y1=Math.max(y1,m.y[b]+m.sy[b]/2);}
  hs=Math.max(0.5,hs<1e8?hs:5);const I0=Math.floor(x0/hs)-1,J0=Math.floor(y0/hs)-1,NJ=Math.floor(y1/hs)-J0+2,H=new Map(),K=(i,j)=>(i-I0)*NJ+(j-J0);
  for(let b=0;b<m.n;b++){const i0=Math.floor((m.x[b]-m.sx[b]/2)/hs+1e-6),i1=Math.floor((m.x[b]+m.sx[b]/2)/hs-1e-6),j0=Math.floor((m.y[b]-m.sy[b]/2)/hs+1e-6),j1=Math.floor((m.y[b]+m.sy[b]/2)/hs-1e-6);
@@ -137,19 +151,19 @@ function gtUnc(m,x,y,za,zb,isTop){if(!(zb>za+1e-6))return 0;const C=gtCov(m),a=C
  if(!I.length)return zb-za;I.sort((p,q)=>p[0]-q[0]);let cur=za,u=0,last=0;for(const [lo,hi] of I){if(lo>cur&&cur<zb){const g=Math.min(lo,zb)-cur;u+=g;last=0;}cur=Math.max(cur,hi);if(cur>=zb)break;}
  if(cur<zb){last=zb-cur;u+=last;if(isTop&&last<=C.mz+1e-6)u-=last;}return Math.max(0,u);}
 function gtAgg(X){X=X||{out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:GT.fleet};const O=X.out,B=X.B,K=GT.rules.length,fl=X.fl&&X.TS,pb=new Int32Array(X.np).fill(-1);B.forEach((r,i)=>{for(let p=r.a;p<=r.b;p++)pb[p]=i;});
- const mk=()=>({t:new Float64Array(K+1),gt:new Float64Array(K+1),v:new Float64Array(K+1)});const rows=B.map(()=>fl?X.TS.map(mk):[mk()]),tot=mk(),dl={},VV=X.vol||GTV.get(O)||null,sgc=GT.sgc||2.6;
- for(let i=0;i<O.length;i+=7){const p=O[i],f=O[i+1],k=O[i+2],t=O[i+3],g=O[i+4],bi=pb[p];if(bi<0)continue;const A=rows[bi][fl?f:0],kk=k<0?K:k,v=VV?VV[i/7]:t/sgc;A.t[kk]+=t;A.gt[kk]+=t*(g===g?g:0);A.v[kk]+=v;tot.t[kk]+=t;tot.gt[kk]+=t*(g===g?g:0);tot.v[kk]+=v;
+ const E=GTX.get(O)||null,NE=E?E.nm.length:0,mk=()=>({t:new Float64Array(K+1),gt:new Float64Array(K+1),v:new Float64Array(K+1),xm:new Float64Array(NE*(K+1)),xt:new Float64Array(NE*(K+1))});const rows=B.map(()=>fl?X.TS.map(mk):[mk()]),tot=mk(),dl={},VV=X.vol||GTV.get(O)||null,sgc=GT.sgc||2.6;
+ for(let i=0;i<O.length;i+=7){const p=O[i],f=O[i+1],k=O[i+2],t=O[i+3],g=O[i+4],bi=pb[p];if(bi<0)continue;const A=rows[bi][fl?f:0],kk=k<0?K:k,v=VV?VV[i/7]:t/sgc;A.t[kk]+=t;A.gt[kk]+=t*(g===g?g:0);A.v[kk]+=v;tot.t[kk]+=t;tot.gt[kk]+=t*(g===g?g:0);tot.v[kk]+=v;if(NE){const r0=(i/7)*NE;for(let e=0;e<NE;e++){const xv=E.v[r0+e];if(xv===xv){const q=e*(K+1)+kk;A.xm[q]+=t*xv;A.xt[q]+=t;tot.xm[q]+=t*xv;tot.xt[q]+=t;}}}
   const dst=k<0?(GT.wdest||'Waste dump'):(gtDestOf(GT.rules[k].m,O[i+5]===1)||'—');dl[dst]=(dl[dst]||0)+t;}
- return {B,rows,tot,K,TS:X.TS,fl,dl};}
+ return {B,rows,tot,K,TS:X.TS,fl,dl,ex:E?E.nm:[]};}
 /* SR = BCM waste / ton ore */
 function gtSR(a,K){let o=0;for(let k=0;k<K;k++)o+=a.t[k];return o>0?a.v[K]/o:null;}
 function gtHtml(A,totLab,c0){const {B,rows,tot,K,TS,fl}=A,F=n=>schF(n),G=(t,gt)=>t>0?(gt/t).toFixed(2):'–';
  const oreT=a=>{let s=0;for(let k=0;k<K;k++)s+=a.t[k];return s;},oreM=a=>{let s=0;for(let k=0;k<K;k++)s+=a.gt[k];return s;};
- const cell=a=>GT.rules.map((r,k)=>'<td>'+(a.t[k]>0?F(a.t[k])+' @ '+G(a.t[k],a.gt[k]):'')+'</td>').join('')+'<td>'+(a.t[K]>0?F(a.t[K]):'')+'</td><td>'+(a.v[K]>0?F(a.v[K]):'')+'</td><td><b>'+F(oreT(a)+a.t[K])+'</b></td><td>'+(oreT(a)>0?(a.v[K]/oreT(a)).toFixed(2):'–')+'</td><td>'+F(oreM(a))+'</td><td>'+(oreM(a)/31.1035).toFixed(0)+'</td>';
- let h='<table><thead><tr><th>'+c0+'</th>'+(fl?'<th>Fleet</th>':'')+GT.rules.map(r=>'<th><i style="display:inline-block;width:8px;height:8px;background:'+r.c+'"></i> '+esc(r.m)+' t @ g/t</th>').join('')+'<th>Waste t</th><th>Waste BCM</th><th>Total t</th><th title="Stripping ratio = BCM waste / ton ore">SR (BCM/t)</th><th>Logam g</th><th>oz</th></tr></thead><tbody>';
+ const EXn=A.ex||[],cell=a=>GT.rules.map((r,k)=>'<td>'+(a.t[k]>0?F(a.t[k])+' @ '+G(a.t[k],a.gt[k]):'')+'</td>').join('')+'<td>'+(a.t[K]>0?F(a.t[K]):'')+'</td><td>'+(a.v[K]>0?F(a.v[K]):'')+'</td><td><b>'+F(oreT(a)+a.t[K])+'</b></td><td>'+(oreT(a)>0?(a.v[K]/oreT(a)).toFixed(2):'–')+'</td><td>'+F(oreM(a))+'</td><td>'+(oreM(a)/31.1035).toFixed(0)+'</td>'+EXn.map((n,e)=>'<td title="'+esc(n)+' per kelas: '+esc(gtExKls(a,e,K))+'">'+gtExFmt(gtExAvg(a,e,K,0,K))+'</td><td>'+gtExFmt(gtExAvg(a,e,K,K,K+1))+'</td>').join('');
+ let h='<table><thead><tr><th>'+c0+'</th>'+(fl?'<th>Fleet</th>':'')+GT.rules.map(r=>'<th><i style="display:inline-block;width:8px;height:8px;background:'+r.c+'"></i> '+esc(r.m)+' t @ g/t</th>').join('')+'<th>Waste t</th><th>Waste BCM</th><th>Total t</th><th title="Stripping ratio = BCM waste / ton ore">SR (BCM/t)</th><th>Logam g</th><th>oz</th>'+EXn.map(n=>'<th title="Kadar rata-rata tertimbang tonase, seluruh kelas ore">'+esc(n)+' ore</th><th title="Kadar rata-rata tertimbang tonase, waste">'+esc(n)+' waste</th>').join('')+'</tr></thead><tbody>';
  B.forEach((b,i)=>{rows[i].forEach((a,f)=>{const any=oreT(a)+a.t[K]>0;if(fl&&!any)return;h+='<tr data-i="'+i+'"><td>'+esc(b.lab)+'</td>'+(fl?'<td style="color:'+TS[f].t.col+'">'+esc(schWn(TS[f]))+'</td>':'')+cell(a)+'</tr>';});});
  h+='<tr class="tot"><td>'+esc(totLab)+'</td>'+(fl?'<td></td>':'')+cell(tot)+'</tr></tbody></table>';const ot=oreT(tot),om=oreM(tot);
- return {h,sum:'<b>'+F(ot)+' t ore @ '+G(ot,om)+' g/t</b> ('+(om/31.1035).toFixed(0)+' oz) · waste '+F(tot.v[K])+' BCM ('+F(tot.t[K])+' t) · SR '+(ot>0?(tot.v[K]/ot).toFixed(2):'–')+' BCM/t',dest:'Tujuan: '+Object.entries(A.dl).map(([d,t])=>esc(d)+' '+F(t)+' t').join(' · ')};}
+ return {h,sum:'<b>'+F(ot)+' t ore @ '+G(ot,om)+' g/t</b> ('+(om/31.1035).toFixed(0)+' oz)'+EXn.map((n,e)=>' · '+esc(n)+' '+gtExFmt(gtExAvg(tot,e,K,0,K))).join('')+' · waste '+F(tot.v[K])+' BCM ('+F(tot.t[K])+' t) · SR '+(ot>0?(tot.v[K]/ot).toFixed(2):'–')+' BCM/t',dest:'Tujuan: '+Object.entries(A.dl).map(([d,t])=>esc(d)+' '+F(t)+' t').join(' · ')};}
 function gtTable(){const el=$('gttb');if(!el||!GT.res)return;const A=gtAgg(),H=gtHtml(A,'Total '+schPh().nm,'Periode');el.innerHTML=H.h;
  el.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>{schStop();schSet(+tr.dataset.i);});gtHi();
  $('gtsum').innerHTML=H.sum+' · '+GT.res.nIn.toLocaleString('id-ID')+' blok'+(GT.rule==='prop'?' (proporsional)':' (pusat blok, cara Surpac)')+'<br>'+H.dest;}
@@ -160,20 +174,20 @@ async function gtDesign(){if(!GT.file)throw new Error('Muat block model .mdl dul
   for(let j=0;j<G.ny;j++)for(let i=0;i<G.nx;i++){const z=G.Z[j*G.nx+i];if(!(z===z))continue;const x=G.x0+i*G.cell,y=G.y0+j*G.cell,zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(z<zt-0.05))continue;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(z<zlo)zlo=z;if(zt>zhi)zhi=zt;}
   if(!(zlo<1e17))throw new Error('Desain "'+d.nm+'" tidak memotong topografi aktif.');
   await gtEnsure({x0:x0-G.cell,x1:x1+G.cell,y0:y0-G.cell,y1:y1+G.cell,zlo,zhi,tp,c:Math.max(1,G.cell)});const m=GT.m;if(!m.num[GT.attr])throw new Error('Atribut kadar "'+GT.attr+'" tidak ada di block model.');
-  const Gr=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],VO=[],kT=Math.ceil(zhi/Hb),NB=kT-Math.floor(zlo/Hb)+1;let nIn=0;
+  const Gr=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],VO=[],EX=gtExCols(m),XV=[],kT=Math.ceil(zhi/Hb),NB=kT-Math.floor(zlo/Hb)+1;let nIn=0;
   const fT=pxTopoFn(tp),fD=pxDesFn(d),PXon=!!(fT&&fD);GT.pxNote=pxInfo(tp,d);
   for(let b=0;b<m.n;b++){const x=m.x[b],y=m.y[b],cz=m.z[b],hz=m.sz[b]/2;let f=1;
    if(PXon){/* resep GC-Ex: TIN presisi; pusat blok di bawah/pada topografi dan di atas/pada desain */if(!prop){const zd=fD(x,y);if(!(zd===zd))continue;const zt=fT(x,y);if(!(zt===zt)||cz>zt||cz<zd)continue;}else{f=pxFrac(fT,fD,x,y,cz,m.sx[b],m.sy[b],m.sz[b]);if(!(f>0))continue;}}
    else{const zd=gridZ(G,x,y);if(!(zd===zd))continue;const zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(zd<zt-0.05))continue;
    if(!prop){if(!(cz>zd&&cz<zt))continue;}else{const top=Math.min(zt,cz+hz),bot=Math.max(zd,cz-hz);if(!(top>bot))continue;f=(top-bot)/(2*hz);}}
-   let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=Gr[b],bi=Math.max(0,Math.min(NB-1,kT-1-Math.floor(cz/Hb)));out.push(bi,0,gtCls(g),m.sx[b]*m.sy[b]*m.sz[b]*sg*f,g,(GT.sfOn&&SX&&SX[b]>GT.sxsThr)?1:0,0);VO.push(m.sx[b]*m.sy[b]*m.sz[b]*f);nIn++;}
+   let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=Gr[b],bi=Math.max(0,Math.min(NB-1,kT-1-Math.floor(cz/Hb)));out.push(bi,0,gtCls(g),m.sx[b]*m.sy[b]*m.sz[b]*sg*f,g,(GT.sfOn&&SX&&SX[b]>GT.sxsThr)?1:0,0);VO.push(m.sx[b]*m.sy[b]*m.sz[b]*f);gtExPush(XV,EX,b);nIn++;}
   /* ruang galian desain yang tidak berisi blok (block model tidak sampai ke situ) → waste: volume × SG konstanta */
   const UV=new Float64Array(NB),A2=G.cell*G.cell;let unc=0;
   for(let j=0;j<G.ny;j++)for(let i=0;i<G.nx;i++){const x=G.x0+i*G.cell,y=G.y0+j*G.cell;let zd=PXon?fD(x,y):G.Z[j*G.nx+i],zt=PXon?fT(x,y):gridZ(tp.G,x,y);if(!(zd===zd)||!(zt===zt)||!(zd<zt-0.05))continue;
    const C=gtCov(m),a=C.H.get(C.K(Math.floor(x/C.hs),Math.floor(y/C.hs)));const I=[];if(a)for(const b of a)if(Math.abs(x-m.x[b])<=m.sx[b]/2+1e-6&&Math.abs(y-m.y[b])<=m.sy[b]/2+1e-6)I.push([m.z[b]-m.sz[b]/2,m.z[b]+m.sz[b]/2]);
    const gaps=[];if(!I.length)gaps.push([zd,zt]);else{I.sort((p,q)=>p[0]-q[0]);let cur=zd;for(const [lo,hi] of I){if(lo>cur&&cur<zt)gaps.push([cur,Math.min(lo,zt)]);cur=Math.max(cur,hi);if(cur>=zt)break;}if(cur<zt&&zt-cur>C.mz+1e-6)gaps.push([cur,zt]);}
    for(const [ga,gb] of gaps)for(let k=Math.floor(ga/Hb);k<=Math.floor((gb-1e-9)/Hb);k++){const top=Math.min(gb,(k+1)*Hb),bot=Math.max(ga,k*Hb);if(top>bot){const bi=Math.max(0,Math.min(NB-1,kT-1-k));UV[bi]+=(top-bot)*A2;}}}
-  const sgc=GT.sgc||2.6;for(let bi=0;bi<NB;bi++)if(UV[bi]>0.5){out.push(bi,0,-1,UV[bi]*sgc,NaN,0,0);VO.push(UV[bi]);unc+=UV[bi];}GTV.set(out,VO);
+  const sgc=GT.sgc||2.6;for(let bi=0;bi<NB;bi++)if(UV[bi]>0.5){out.push(bi,0,-1,UV[bi]*sgc,NaN,0,0);VO.push(UV[bi]);gtExPush(XV,EX,-1);unc+=UV[bi];}GTV.set(out,VO);GTX.set(out,{nm:EX.nm,v:XV});
   const B=[];for(let i=0;i<NB;i++){const top=(kT-i)*Hb;B.push({a:i,b:i,lab:'Bench RL '+schF(top,1)+' → '+schF(top-Hb,1)});}
   GT.dres={out,B,np:NB,nm:d.nm,nIn,unc,vol:VO};const A=gtAgg({out,B,np:NB,fl:false});const keep=[];A.rows.forEach((r,i)=>{let s=0;for(const v of r[0].t)s+=v;if(s>0)keep.push(i);});
   A.B=keep.map(i=>B[i]);A.rows=keep.map(i=>A.rows[i]);const H=gtHtml(A,'Total '+d.nm,'Bench');$('gdtb').innerHTML=H.h;
@@ -182,10 +196,10 @@ async function gtDesign(){if(!GT.file)throw new Error('Muat block model .mdl dul
 function gtHi(){const el=$('gttb');if(!el)return;el.querySelectorAll('tr.on').forEach(r=>r.classList.remove('on'));el.querySelectorAll('tr[data-i="'+SCH.pi+'"]').forEach(r=>{r.classList.add('on');if(SCH.play)r.scrollIntoView({block:'nearest'});});}
 function gtCsv(){if(!GT.res)return;gtCsvX({out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:GT.fleet,nm:schPh().nm},'pit_schedule_grade_tonnage_'+schPh().nm.replace(/\s/g,''));}
 function gtCsvX(X,fn){if(!X)return;const A=gtAgg(X),{B,rows,tot,K,TS,fl}=A,q=s=>'"'+String(s).replace(/"/g,'""')+'"',L=[];
- L.push([X.TS?'Periode':'Bench',...(fl?['Fleet']:[]),...GT.rules.flatMap(r=>[r.m+' t',r.m+' g/t']),'Waste t','Waste BCM','Total t','SR (BCM waste / t ore)','Logam g','Logam oz'].map(q).join(','));
- const row=(lab,fnm,a)=>{let ot=0,om=0,all=a.t[K];for(let k=0;k<K;k++){ot+=a.t[k];om+=a.gt[k];}if(!(ot+all>0))return;L.push([q(lab),...(fl?[q(fnm)]:[]),...GT.rules.flatMap((r,k)=>[a.t[k].toFixed(1),a.t[k]>0?(a.gt[k]/a.t[k]).toFixed(3):'']),a.t[K].toFixed(1),a.v[K].toFixed(1),(ot+a.t[K]).toFixed(1),ot>0?(a.v[K]/ot).toFixed(3):'',om.toFixed(1),(om/31.1035).toFixed(2)].join(','));};
+ L.push([X.TS?'Periode':'Bench',...(fl?['Fleet']:[]),...GT.rules.flatMap(r=>[r.m+' t',r.m+' g/t']),'Waste t','Waste BCM','Total t','SR (BCM waste / t ore)','Logam g','Logam oz',...(A.ex||[]).flatMap(n=>[...GT.rules.map(r=>r.m+' '+n),n+' ore',n+' waste'])].map(q).join(','));
+ const row=(lab,fnm,a)=>{let ot=0,om=0,all=a.t[K];for(let k=0;k<K;k++){ot+=a.t[k];om+=a.gt[k];}if(!(ot+all>0))return;L.push([q(lab),...(fl?[q(fnm)]:[]),...GT.rules.flatMap((r,k)=>[a.t[k].toFixed(1),a.t[k]>0?(a.gt[k]/a.t[k]).toFixed(3):'']),a.t[K].toFixed(1),a.v[K].toFixed(1),(ot+a.t[K]).toFixed(1),ot>0?(a.v[K]/ot).toFixed(3):'',om.toFixed(1),(om/31.1035).toFixed(2),...(A.ex||[]).flatMap((n,e)=>[...GT.rules.map((r,k)=>gtExCsv(gtExAvg(a,e,K,k,k+1))),gtExCsv(gtExAvg(a,e,K,0,K)),gtExCsv(gtExAvg(a,e,K,K,K+1))])].join(','));};
  B.forEach((b,i)=>rows[i].forEach((a,f)=>row(b.lab,fl?schWn(TS[f]):'',a)));row('Total '+X.nm,'',tot);
- L.push('');L.push(q('Block model: '+(GT.H?GT.H.name:'')+' · kadar '+GT.attr+' · SG '+(GT.sg||('konstanta '+GT.sgc))+' · aturan '+(GT.rule==='prop'?'proporsional':'pusat blok (cara Surpac)')+' · kelas: '+GT.src+(GT.topoF!==false?' · hanya di bawah topografi':'')));
+ L.push('');L.push(q('Block model: '+(GT.H?GT.H.name:'')+' · kadar '+GT.attr+((A.ex||[]).length?' · unsur lain: '+A.ex.join(', '):'')+' · SG '+(GT.sg||('konstanta '+GT.sgc))+' · aturan '+(GT.rule==='prop'?'proporsional':'pusat blok (cara Surpac)')+' · kelas: '+GT.src+(GT.topoF!==false?' · hanya di bawah topografi':'')));
  L.push(q('Tujuan'));for(const [d,t] of Object.entries(A.dl))L.push(q(d)+','+t.toFixed(1));
  dl('﻿'+L.join('\r\n'),fn+'.csv','text/csv');}
 /* integrasi: panel hasil, sorot baris, warna 3D per kelas material */
