@@ -2,6 +2,7 @@
    Sayatan v2 dan alat Ukur. Angka hasil hitungan, keterangan Demo dan teks di dalam gambar penampang tetap berbahasa Indonesia.
    Bahasa Sunda perlu ditinjau penutur asli. */
 Object.assign(I18N,{
+ 'Kamera & tampilan 3D':['Camera & 3D view','Cámara y vista 3D','Kaméra & tampilan 3D'],'👁 Kamera & tampilan 3D':['👁 Camera & 3D view','👁 Cámara y vista 3D','👁 Kaméra & tampilan 3D'],
  /* kerangka */
  'Project Tree':['Project Tree','Árbol del proyecto','Tangkal Proyék'],'Properti':['Properties','Propiedades','Properti'],'Panel Properti':['Properties panel','Panel de propiedades','Panel Properti'],'Jadwal':['Schedule','Programa','Jadwal'],'Laporan':['Report','Informe','Laporan'],'Desain':['Design','Diseño','Desain'],
  'Kembalikan tata letak':['Reset layout','Restablecer diseño','Balikkeun tata perenah'],'Tampilan klasik (tanpa kerangka)':['Classic view (no frame)','Vista clásica (sin marco)','Pintonan klasik (tanpa rangka)'],'⛶ Layar penuh':['⛶ Full screen','⛶ Pantalla completa','⛶ Layar pinuh'],

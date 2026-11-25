@@ -24,7 +24,7 @@ function gtBigDraw(){const w=$('gtrw');if(!w||w.style.display==='none')return;GT
  $('gtrn').textContent=schPh().nm;$('gtru2').value=$('schun').value;$('gtrf').checked=!!GT.fleet;
  const X={out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:false},A=gtAgg(X),{B,rows,tot,K}=A,n=B.length;
  const ore=a=>{let s=0;for(let k=0;k<K;k++)s+=a.t[k];return s;},met=a=>{let s=0;for(let k=0;k<K;k++)s+=a.gt[k];return s;},ot=ore(tot),om=met(tot);
- $('gtrc').innerHTML=[['Ore',gtShort(ot)+' t'],['Kadar ore',(ot>0?(om/ot).toFixed(2):'–')+' g/t'],['Logam',schF(om/31.1035)+' oz'],['Waste',gtShort(tot.t[K])+' t'],['Stripping ratio',ot>0?(tot.t[K]/ot).toFixed(2):'–'],['Blok terhitung',GT.res.nIn.toLocaleString('id-ID')+(GT.rule==='prop'?' · proporsional':' · pusat blok')]].map(c=>'<div><small>'+c[0]+'</small><b>'+c[1]+'</b></div>').join('');
+ $('gtrc').innerHTML=[['Ore',gtShort(ot)+' t'],['Kadar ore',(ot>0?(om/ot).toFixed(2):'–')+' g/t'],['Logam',schF(om/31.1035)+' oz'],['Waste',gtShort(tot.v[K])+' BCM · '+gtShort(tot.t[K])+' t'],['SR (BCM/t)',ot>0?(tot.v[K]/ot).toFixed(2):'–'],['Blok terhitung',GT.res.nIn.toLocaleString('id-ID')+(GT.rule==='prop'?' · proporsional':' · pusat blok')]].map(c=>'<div><small>'+c[0]+'</small><b>'+c[1]+'</b></div>').join('');
  /* grafik */
  const W=878,H=250,L=58,R=48,T=14,Bm=n>14?58:34,pw=W-L-R,ph=H-T-Bm;let tm=0,gm=0;const R0=rows.map(r=>r[0]);
  R0.forEach(a=>{tm=Math.max(tm,ore(a)+a.t[K]);const o=ore(a);if(o>0)gm=Math.max(gm,met(a)/o);});tm=gtNice(tm);gm=gtNice(gm*1.1);
@@ -42,8 +42,8 @@ function gtBigDraw(){const w=$('gtrw');if(!w||w.style.display==='none')return;GT
  $('gtrl2').innerHTML=GT.rules.map(r=>'<span><i style="background:'+r.c+'"></i>'+esc(r.m)+' ('+r.lo+(r.hi===''?'+':'–'+r.hi)+' g/t)</span>').join('')+'<span><i style="background:'+GTR.W+'"></i>Waste</span><span><i style="background:#c2255c;height:3px;vertical-align:3px"></i>kadar ore (sumbu kanan)</span><span style="color:#868e96">klik batang / baris = lihat periode itu di 3D</span>';
  const H2=gtHtml(gtAgg(),'Total '+schPh().nm,'Periode');$('gtrt').innerHTML=H2.h;$('gtrd').innerHTML=H2.dest;
  /* kolom kumulatif (ore, kadar, SR) + kapan selesai — hanya tanpa rincian fleet */
- if(!GT.fleet){const tb=$('gtrt'),hr=tb.querySelector('thead tr');if(hr)hr.insertAdjacentHTML('beforeend','<th style="border-left:2px solid #dde3ee">Σ ore t</th><th>Σ g/t</th><th>Σ SR</th><th>selesai</th>');let co=0,cm=0,cw=0;const off=SCH.sim.off||0;
-  R0.forEach((a,i)=>{co+=ore(a);cm+=met(a);cw+=a.t[K];const tr=tb.querySelector('tr[data-i="'+i+'"]');if(tr)tr.insertAdjacentHTML('beforeend','<td style="border-left:2px solid #dde3ee">'+schF(co)+'</td><td>'+(co>0?(cm/co).toFixed(2):'–')+'</td><td>'+(co>0?(cw/co).toFixed(2):'–')+'</td><td style="color:#6c757d">'+esc(schLab(B[i].b,0,off))+'</td>');});
+ if(!GT.fleet){const tb=$('gtrt'),hr=tb.querySelector('thead tr');if(hr)hr.insertAdjacentHTML('beforeend','<th style="border-left:2px solid #dde3ee">Σ ore t</th><th>Σ g/t</th><th title="BCM waste / ton ore, kumulatif">Σ SR</th><th>selesai</th>');let co=0,cm=0,cw=0;const off=SCH.sim.off||0;
+  R0.forEach((a,i)=>{co+=ore(a);cm+=met(a);cw+=a.v[K];const tr=tb.querySelector('tr[data-i="'+i+'"]');if(tr)tr.insertAdjacentHTML('beforeend','<td style="border-left:2px solid #dde3ee">'+schF(co)+'</td><td>'+(co>0?(cm/co).toFixed(2):'–')+'</td><td>'+(co>0?(cw/co).toFixed(2):'–')+'</td><td style="color:#6c757d">'+esc(schLab(B[i].b,0,off))+'</td>');});
   const tt=tb.querySelector('tr.tot');if(tt)tt.insertAdjacentHTML('beforeend','<td style="border-left:2px solid #dde3ee"></td><td></td><td></td><td></td>');}
  $('gtrt').querySelectorAll('tr[data-i]').forEach(tr=>{tr.onclick=()=>{schStop();schSet(+tr.dataset.i);};if(+tr.dataset.i===SCH.pi)tr.classList.add('on');});}
 {const _t=gtTable;gtTable=function(){const r=_t.apply(this,arguments);try{gtBigDraw();}catch(e){console.error(e);}return r;};}

@@ -109,7 +109,7 @@ function slopeStat(R0){const cr=R0.S.filter(s=>s.t==='crest'||s.t==='old');if(!c
  const ang=[];for(const q of best.values()){let bd=1e18,bz=0;for(const f of fl){if(f.z>q[2]-1)continue;const n=ringNear(f.r,f.c,q);if(n.d<bd){bd=n.d;bz=f.z;}}if(bd<1e17&&bd>0.5&&q[2]-bz>=10)ang.push(Math.atan2(q[2]-bz,bd)*180/Math.PI);}
  if(!ang.length)return null;ang.sort((a,b)=>a-b);const p95=ang[Math.floor(ang.length*0.95)];return {mean:ang.reduce((a,b)=>a+b,0)/ang.length,max:p95,min:ang[0]};}
 /* ---------- tombol Buat pit ---------- */
-$('go').onclick=()=>{if(!BASE){alert('Langkah 2: buat bentuk awal pit dulu (garis urat atau poligon).');openStep('s2');return;}if(gmode()==='bench'){try{ibStart();}catch(err){alert(err.message);}return;}const t0=performance.now();$('res').innerHTML='Menghitung…';
+$('go').onclick=()=>{if(!BASE){alert('Langkah 1 · Bentuk awal pit: gambar dulu garis urat atau poligon dasar pit.');openStep('s2');return;}if(gmode()==='bench'){try{ibStart();}catch(err){alert(err.message);}return;}const t0=performance.now();$('res').innerHTML='Menghitung…';
  setTimeout(()=>{try{runNew();$('res').innerHTML+=' <span class="hint">('+((performance.now()-t0)/1000).toFixed(1)+' dtk)</span>';}catch(err){console.error(err);$('res').innerHTML='<span class="bad">Gagal: '+esc(err.message)+'</span>';}},20);};
 /* desain atas→bawah dari batas topo (dipakai Desain baru dan Edit ▸ front bulanan) */
 /* pola "Lurus bebas" pada desain atas→bawah (pit final & staging): satu ramp lurus dari bibir ke dasar.
@@ -143,7 +143,7 @@ function topoDesign0(CL,z){if($('rOn').checked&&rpat()==='free'){const ts=topoSt
    d.warn.push('Jalan pit final tidak bisa disambung dari permukaan di dalam poligon staging ini (ujung atasnya masih di bawah tanah / tidak terjangkau jalan staging). Jalan staging dibuat sendiri dari bibir pit sampai lantai; bentuk jalan final tidak dipakai di staging ini. Agar memakai jalan final, perluas poligon sampai jalan final keluar ke permukaan.');}
   else if(planned)for(const w of pw)d.warn.push('ℹ '+w);if(moved)d.warn.push(moved);
   return {d,ts};}
-function runNew(){const CL=MODE==='stage'?finClamp():null;if(MODE==='stage'&&!CL&&!confirm('Belum ada batas pit final (langkah 0). Lanjutkan staging TANPA batas pit final?'))throw new Error('Langkah 0: tentukan pit final dulu, atau lanjutkan tanpa batas.');const tops=areas().map(aTop),zmax=tops.every(isFinite)?Math.max(...tops):NaN,z=BASE.z;let P=BASE.P;let B=[],warn=[],floor=null,zmin=z;
+function runNew(){const CL=MODE==='stage'?finClamp():null;if(MODE==='stage'&&!CL&&!confirm('Belum ada batas pit final (langkah 0). Lanjutkan staging TANPA batas pit final?'))throw new Error('Staging: impor / tentukan pit final dulu sebagai batas, atau lanjutkan tanpa batas.');const tops=areas().map(aTop),zmax=tops.every(isFinite)?Math.max(...tops):NaN,z=BASE.z;let P=BASE.P;let B=[],warn=[],floor=null,zmin=z;
  if(BASE.mode==='bot'){window.__FLCW=[];const ss=startSet(CL);const r=genUp(ss.P0,ss.z0,{ramps:rampsInit(),zmax,zref:ss.z0,clamp:CL,lim:CL?limAt:null,finRoads:CL?finRoadStrings():null,pend:ss.pend});if(window.__FLCW&&window.__FLCW.length)for(const w of window.__FLCW)r.warn.unshift('ℹ '+w);B=r.B;warn=r.warn;floor=ss.floors;zmin=ss.z0;}
  else if(BASE.mode==='topo'){const td=topoDesign(CL,z),d=td.d,ts=td.ts;B=d.B.slice().reverse();warn=d.warn;floor=d.floor;zmin=floor?floor.z:ts.z;}
  else{const d=genDown(P,z,{ramps:rampsInit(),zref:z,clamp:CL,zmin:aBot(BASE)});B=d.B.slice().reverse();warn=d.warn;floor=d.floor;zmin=floor?floor.z:z;

@@ -32,7 +32,7 @@ G.mw=new THREE.Group();W.add(G.mw);
 const MWS={sel:[],pick:false,ppick:null,pv:[],loose:false};
 function mwS(){return ED?ED.base.S:[];}
 function looseEnds(S,tol){tol=tol||1;const o=[];const H=new Map(),k=(x,y)=>Math.floor(x/4)+'_'+Math.floor(y/4);S.forEach((s,i)=>{for(let j=0;j<s.pts.length;j++){const p=s.pts[j],kk=k(p[0],p[1]);let a=H.get(kk);if(!a)H.set(kk,a=[]);a.push([i,j]);}});
- S.forEach((s,i)=>{if(s.closed||s.pts.length<2)return;for(const j of [0,s.pts.length-1]){const p=s.pts[j];let bd=1e9;const cx=Math.floor(p[0]/4),cy=Math.floor(p[1]/4);for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){for(const [i2,j2] of (H.get((cx+dx)+'_'+(cy+dy))||[])){if(i2===i&&j2===j)continue;const q=S[i2].pts[j2];if(Math.abs(q[2]-p[2])>0.6)continue;if(i2===i&&Math.abs(j2-j)<2)continue;bd=Math.min(bd,Math.hypot(q[0]-p[0],q[1]-p[1]));}
+ S.forEach((s,i)=>{if(s.closed||s.pts.length<2)return;for(const j of [0,s.pts.length-1]){const p=s.pts[j];let bd=1e9;const cx=Math.floor(p[0]/4),cy=Math.floor(p[1]/4);for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){for(const [i2,j2] of (H.get((cx+dx)+'_'+(cy+dy))||[])){if(i2===i&&j2===j)continue;const q=S[i2].pts[j2];if(Math.abs(q[2]-p[2])>0.6)continue;if(i2===i&&Math.abs(j2-j)<Math.max(2,s.pts.length/2))continue;/* titik di string yang sama dekat ujung ini (sepanjang garis) bukan sambungan; hanya ujung seberangnya */bd=Math.min(bd,Math.hypot(q[0]-p[0],q[1]-p[1]));}
    /* juga ke tengah ruas string lain */}
   if(bd>tol){for(let i2=0;i2<S.length&&bd>tol;i2++){if(i2===i)continue;const P=S[i2].pts;for(let m=1;m<P.length;m++){const a=P[m-1],b=P[m];if(Math.abs(a[2]-p[2])>0.6&&Math.abs(b[2]-p[2])>0.6)continue;const ex=b[0]-a[0],ey=b[1]-a[1],L2=ex*ex+ey*ey||1e-9,t=Math.max(0,Math.min(1,((p[0]-a[0])*ex+(p[1]-a[1])*ey)/L2)),d=Math.hypot(p[0]-a[0]-ex*t,p[1]-a[1]-ey*t);if(d<bd)bd=d;}}}
   if(bd>tol)o.push({i,j,p,d:bd});}});return o;}
@@ -53,9 +53,9 @@ function mwNeed(n){if(!ED)throw new Error('Impor pit dulu di tab Edit.');if(MWS.
 const mwL=()=>mwS().map(s=>s.pts.map(p=>p.slice()));
 const openPts=s=>s.closed?s.pts.slice(0,-1).map(p=>p.slice()):s.pts.map(p=>p.slice());
 const closeIt=P=>P.concat([P[0].slice()]);
-function mwPickPoint(n,msg,cb,row,title){mwNeed(1);MWS.pick=true;MWS.pv=[];MWS.ppick={n,cb};cv.style.cursor='crosshair';mwShow(row||null,title);if(row)$('mwgo').hidden=true;mwInfo(msg,'warn');}
-function mwClick(e){const S=mwS();if(MWS.ppick){/* titik pada string terpilih terdekat ke kursor */const r=R.domElement.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;let b=null,bd=16;for(const si of MWS.sel){const s=S[si];s.pts.forEach((p,vi)=>{const q=scr(p[0],p[1],p[2]);if(q[2]>=1)return;const d=Math.hypot(q[0]-mx,q[1]-my);if(d<bd){bd=d;b={si,vi};}});}
-  if(!b){mwInfo('Klik lebih dekat ke titik pada string terpilih (titik berwarna).','warn');return;}MWS.pv.push(b);mwDraw();if(MWS.pv.length>=MWS.ppick.n){const cb=MWS.ppick.cb,pv=MWS.pv.slice();MWS.ppick=null;MWS.pick=false;cv.style.cursor='';try{cb(pv);}catch(err){mwAfter('&#9888; '+esc(err.message),'warn');}}return;}
+function mwPickPoint(n,msg,cb,row,title){if(!ED)throw new Error('Impor pit dulu di tab Edit.');MWS.pick=true;MWS.pv=[];MWS.ppick={n,cb,all:!MWS.sel.length};/* tanpa pilihan: titik boleh di string mana pun */if(!MWS.sel.length)msg+=' <span class="hint">(tidak perlu memilih string dulu)</span>';cv.style.cursor='crosshair';mwShow(row||null,title);if(row)$('mwgo').hidden=true;mwInfo(msg,'warn');}
+function mwClick(e){const S=mwS();if(MWS.ppick){/* titik pada string terpilih terdekat ke kursor */const r=R.domElement.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;let b=null,bd=16;for(const si of (MWS.ppick.all?S.map((_,i)=>i):MWS.sel)){const s=S[si];s.pts.forEach((p,vi)=>{const q=scr(p[0],p[1],p[2]);if(q[2]>=1)return;const d=Math.hypot(q[0]-mx,q[1]-my);if(d<bd){bd=d;b={si,vi};}});}
+  if(!b){mwInfo(MWS.ppick.all?'Klik lebih dekat ke titik string.':'Klik lebih dekat ke titik pada string terpilih (titik berwarna).','warn');return;}MWS.pv.push(b);if(MWS.ppick.all&&!MWS.sel.includes(b.si))MWS.sel=MWS.sel.concat([b.si]).slice(-2);mwDraw();if(MWS.pv.length>=MWS.ppick.n){const cb=MWS.ppick.cb,pv=MWS.pv.slice();MWS.ppick=null;MWS.pick=false;cv.style.cursor='';try{cb(pv);}catch(err){mwAfter('&#9888; '+esc(err.message),'warn');}}return;}
  let i=nearStr(e,S,false,14);if(i<0){mwInfo('Tidak ada string di dekat klik.','warn');return;}if(e.shiftKey||e.ctrlKey){if(MWS.sel.includes(i))MWS.sel=MWS.sel.filter(x=>x!==i);else MWS.sel=MWS.sel.slice(-1).concat([i]);}else MWS.sel=[i];mwDraw();mwInfo();}
 {const _ec=window.edClick;window.edClick=e=>{if(MWS.pick&&ED&&MODE==='edit'){mwClick(e);return;}return _ec&&_ec(e);};}
 function rdp3(P,tol){if(P.length<3)return P.slice();const k=rdpL(P,tol);return k;}
@@ -115,8 +115,8 @@ function mwMenu(){return [
  {t:'Lepas pilihan',ic:'&#10005;',kb:'Esc',fn:()=>selClear(),dis:()=>!MWS.sel.length&&!(ED&&ED.sel>=0)},
  '-',
  {t:'Sambungan',ic:'&#128279;',sub:[
-  {t:'Sambung A + B',ic:'&#10133;',fn:run('join'),tip:'Sambung dua garis terbuka di ujung terdekat; bila ujung akhirnya bertemu, jadi poligon'},
-  {t:'Putus di titik',ic:'&#9986;',fn:run('brk'),tip:'Garis → dua garis; poligon → dibuka di titik itu'},
+  {t:'Sambung A + B',ic:'&#10133;',fn:run('join'),on:()=>{try{return SMB.on;}catch(_){return false;}},tip:'Tanpa pilihan: klik ujung string 1 lalu ujung string 2 (langsung tersambung). 1 garis terpilih: kedua ujungnya disambung jadi poligon. 2 string terpilih: sambung A + B.'},
+  {t:'Putus di titik',ic:'&#9986;',fn:run('brk'),on:()=>{try{return PUT.on;}catch(_){return false;}},tip:'Mode putus: klik ruas string mana pun → ruas itu langsung terputus. Esc = selesai.'},
   {t:'Potong antara 2 titik',ic:'&#9988;',fn:run('cut')},
   {t:'Jadikan poligon',ic:'&#11040;',fn:run('close')},
   '-',
@@ -145,8 +145,8 @@ function mwMenu(){return [
  {t:'Simpan project (.pit.json)',ic:'&#128190;',fn:()=>{const b=$('pjs');if(b)b.click();}},
  {t:'Panel info Edit Manual',ic:'&#8505;',fn:()=>{needED();mwShow(null);}}];}
 function pdMenu(){return [
- {t:'Sapu: dorong dinding keluar',ic:'&#8596;',fn:()=>pdStart('push')},
- {t:'Sapu: tarik dinding ke dalam',ic:'&#8594;&#8592;',fn:()=>pdStart('shrink')},
+ {t:'Sapu: dorong dinding keluar',ic:'&#8596;',fn:()=>pdStart('push'),on:()=>PD.arm&&$('pdm').value==='push',tip:'Tahan & sapukan kuas di sepanjang dinding → didorong keluar. Kuas tetap aktif; Esc / klik lagi = selesai.'},
+ {t:'Sapu: tarik dinding ke dalam',ic:'&#8594;&#8592;',fn:()=>pdStart('shrink'),on:()=>PD.arm&&$('pdm').value==='shrink',tip:'Tahan & sapukan kuas di sepanjang dinding → ditarik ke dalam. Kuas tetap aktif; Esc / klik lagi = selesai.'},
  '-',
  {t:'Kekuatan & jari-jari kuas…',ic:'&#9881;',fn:()=>winShow($('pdw'),true)},
  {t:'Batalkan sapuan terakhir',ic:'&#8630;',kb:'Ctrl+Z',fn:()=>ehGo(EH.i-1),dis:()=>EH.i<=0}];}
@@ -166,9 +166,11 @@ function pdZ(){const f=edFloor();return f?f.z:(ED?ED.zmin:0);}
 function pdDrawStroke(){clr(G.pd);if(PD.pts.length<2)return;const z=pdZ()+0.5,r=+$('pdr').value||25;const o=lineObj(PD.pts.map(p=>[p[0],p[1],z]),'#ae3ec9',false,{depthTest:false});o.renderOrder=12;G.pd.add(o);
  const c=[];for(let k=0;k<=24;k++){const t=k/24*2*Math.PI,p=PD.pts[PD.pts.length-1];c.push([p[0]+r*Math.cos(t),p[1]+r*Math.sin(t),z]);}const o2=lineObj(c,'#ae3ec9',false,{depthTest:false});o2.renderOrder=12;G.pd.add(o2);}
 function pdArm(on){PD.arm=on;$('pdgo').classList.toggle('on',on);cv.style.cursor=on?'crosshair':'';if(on)pdInfo('Tahan klik kiri lalu <b>sapukan</b> kuas di sepanjang dinding yang ingin '+($('pdm').value==='push'?'didorong keluar':'ditarik ke dalam')+'. Lepas klik = terapkan.','warn');}
-cv.addEventListener('pointerdown',e=>{if(!PD.arm||e.button!==0||MODE!=='edit'||!ED)return;const p=hitPlane(e,pdZ());if(!p)return;e.stopPropagation();e.preventDefault();CT.enabled=false;PD.drag=true;PD.pts=[[p[0],p[1]]];pdDrawStroke();},true);
-cv.addEventListener('pointermove',e=>{if(!PD.drag)return;const p=hitPlane(e,pdZ());if(!p)return;const q=PD.pts[PD.pts.length-1];if(Math.hypot(p[0]-q[0],p[1]-q[1])>1.5){PD.pts.push([p[0],p[1]]);pdDrawStroke();}},true);
-addEventListener('pointerup',e=>{if(!PD.drag)return;PD.drag=null;CT.enabled=true;pdArm(false);setTimeout(pdApply,20);},true);
+cv.addEventListener('pointerdown',e=>{if(!PD.arm||e.button!==0||MODE!=='edit'||!ED)return;const p=pdHit(e);if(!p)return;e.stopPropagation();e.preventDefault();CT.enabled=false;PD.drag=true;PD.pts=[[p[0],p[1]]];pdDrawStroke();},true);
+cv.addEventListener('pointermove',e=>{if(!PD.drag)return;const p=pdHit(e);if(!p)return;const q=PD.pts[PD.pts.length-1];if(Math.hypot(p[0]-q[0],p[1]-q[1])>1.5){PD.pts.push([p[0],p[1]]);pdDrawStroke();}},true);
+addEventListener('pointerup',e=>{if(!PD.drag)return;PD.drag=null;CT.enabled=true;/* kuas tetap aktif untuk sapuan berikutnya; Esc / klik tombol lagi = selesai */setTimeout(()=>{pdApply();if(PD.arm){try{$('pdinf').insertAdjacentHTML('beforeend','<div class="hint">Kuas masih aktif — sapukan lagi, atau Esc untuk selesai.</div>');}catch(_){}cv.style.cursor='crosshair';}},20);},true);
+addEventListener('keydown',e=>{if(e.key==='Escape'&&PD.arm&&!PD.drag){pdArm(false);pdInfo('');}});
+/* titik kuas: di permukaan pit / topografi di bawah kursor (dulu bidang RL lantai → sapuan bergeser dari dinding pada tampilan miring) */function pdHit(e){let p=null;try{p=hitTopo(e);}catch(_){}return p?[p[0],p[1]]:hitPlane(e,pdZ());}
 function pdApply(){if(!ED||PD.pts.length<1)return;const kind=$('pdm').value,d=Math.max(0.5,+$('pds').value||5),r=Math.max(3,+$('pdr').value||25);const v0=ED.base.vol?ED.base.vol.tot:0;
  const dz0=ED.dzone,zu=ED.zoneUsed;let res=null;try{if(ED.out){EH.next='Hasil diterima';edAccept();}ED.dzone=null;ED.lastResize=null;ED.brush={pts:densify(PD.pts.map(p=>[p[0],p[1],0]),2).map(p=>[p[0],p[1]]),r};res=runResize(kind,d);}catch(err){ED.brush=null;ED.dzone=dz0;clr(G.pd);pdInfo('&#9888; '+esc(err.message).replace(/\n/g,'<br>'),'warn');return;}
  ED.brush=null;ED.dzone=dz0;ED.zoneUsed=zu;EH.next='Play-Doh: '+(kind==='push'?'dorong':'tarik')+' '+f1(d)+' m (kuas '+f1(r)+' m)';edAccept();ED.lastResize=null;clr(G.pd);

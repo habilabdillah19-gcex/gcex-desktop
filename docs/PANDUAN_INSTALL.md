@@ -5996,3 +5996,14 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - **Label 3D** (nama penampang, arah pandang, label struktur, titik struktur, label pemetaan, label data): latar transparan dengan pinggiran putih, dan ukurannya menyesuaikan tinggi tampilan 3D serta setelan *Ukuran font panel*.
 - Garis aksen hijau/emas di atas tab aktif (3D, Penampang, PROPERTI, dll.) dihapus.
 - Diuji pada data latihan fiktif (LTH).
+
+## 317. Pit Studio 0.1.6 — antarmuka ala Ore Works, Rencana tambang, jadwal otomatis, palet warna
+
+- Semua pembaruan Pit Studio 23–24 Nov 2026 yang sebelumnya hanya dibagikan sebagai berkas HTML kini ada di installer: menu & bilah alat bertingkat,
+  panel Properti ala Ore Works (tab DATA, bagian bisa dilipat), **Tampilan → Palet warna** (10 pilihan) dan **Ukuran tulisan**, Legenda di pojok 3D,
+  **Jadwal → Pengaturan unit** dan **Kalender kerja**, Rencana tambang di dalam Pit Schedule, penjadwalan otomatis, tombol **Reset** di bilah alat,
+  geoteknik per bench / RL, warna & shading topografi, Block model 3D, sayatan di 3D, ekspor string tertutup (.str / .dxf).
+- Tampilan lebih bersih: garis warna aksen di bar menu, status bar, tab, dan kepala panel dihapus; tab / baris aktif ditandai warna latar.
+  Teks abu-abu di Project Tree lebih mudah dibaca, dan tombol yang dipilih dengan Tab di keyboard diberi bingkai fokus.
+- Ringkasan Grade × Tonnage di pojok 3D tidak lagi menutupi tab Properti pada layar sempit.
+- Tutorial PDF dan video demo masih memakai tampilan lama.

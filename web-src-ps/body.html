@@ -5,7 +5,7 @@
  <span class="sep"></span>
  <button class="mbb" data-w="fw">&#128190; File</button>
  <button class="mbb" data-w="iw">&#8679; Impor</button>
- <button class="mbb" data-w="vw2">&#128065; Tampilan</button>
+ <button class="mbb" data-w="vw2" title="Arah pandang kamera (Plan, Oblik, dari Timur/Selatan, pas ke pit), sorot kontur RL, eksagerasi vertikal, label RL bench, transparansi topografi">&#128065; Kamera &amp; tampilan 3D</button>
  <button class="mbb" data-w="gw" title="Mendesain pit sendiri dari atas ke bawah, bench demi bench, dengan bantuan hitungan, pandangan ke depan, dan saran">&#9998; Desain terpandu</button>
  <button class="mbb" data-w="aw" title="Atas → bawah: bandingkan beberapa pola jalan sekaligus lalu pilih yang terbaik">&#9881; Rancang Otomatis</button>
  <button class="mbb" id="mbds" title="Langkah desain pit: bentuk awal, geoteknik, jalan, buat pit">&#9638; Desain baru &#9662;</button>
@@ -176,7 +176,7 @@
    <button id="pjnew">Project baru</button>
    <div class="hint">Project menyimpan topografi, poligon awal, parameter, jalan, pit impor dan hasil. Tidak ada yang tersimpan otomatis.</div>
   </div></div>
-  <div id="vw2" class="flw win" data-id="vw"><div class="flh"><b>Tampilan</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
+  <div id="vw2" class="flw win" data-id="vw"><div class="flh"><b>Kamera &amp; tampilan 3D</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
    <div class="grid3"><button data-v="plan">Plan</button><button data-v="sw">Oblik SW</button><button data-v="ne">Oblik NE</button><button data-v="ew">Dari Timur</button><button data-v="ns">Dari Selatan</button><button data-v="fit">Pas ke pit</button></div>
    <div class="fl">Sorot kontur topo RL <input id="hlz" type="number" step="any" style="width:80px"><button id="hlc" class="sm">Hapus sorot</button></div>
    <div class="fl">Eksagerasi vertikal <input id="vx" type="range" min="1" max="3" step="0.5" value="1"><b id="vxv">1×</b></div>
@@ -271,6 +271,9 @@
      <table class="tb"><thead><tr><th>RL dari</th><th>RL sampai</th><th>Sudut °</th><th>Berm m</th><th>Tiap</th><th></th></tr></thead><tbody id="ovb"></tbody></table>
      <button id="ova">+ Tambah baris</button>
     </div></div>
+  <div id="plw" class="flw win"><div class="flh"><b>&#128197; Rencana tambang</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb" id="plwb"></div></div>
+  <div id="ulw" class="flw win"><div class="flh"><b>&#9881; Pengaturan unit</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb" id="ulwb"></div></div>
+  <div id="epw" class="flw win"><div class="flh"><b>&#9998; Pilih pit untuk diedit</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb" id="epwb"></div></div>
   <div id="iw" class="flw win"><div class="flh"><b>&#8679; Impor data</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb">
    <div class="ih">1. Topografi / asbuilt <span class="hint">(dipakai semua tab)</span></div>
     <label class="fbtn">&#8679; Impor topografi (.str / .dxf)<input type="file" id="tpf" multiple accept=".str,.dxf,.txt" hidden></label>

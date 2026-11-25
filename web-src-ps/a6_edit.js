@@ -87,14 +87,17 @@ function snapTarget(e,s){if(!$('esnp').checked)return null;const r=R.domElement.
  if(!best&&$('esnpt').checked&&TP.length){const p=hitTopo(e);if(p&&typeof topoSnap==='function'){const q=topoSnap(p[0],p[1],3);if(q)best=[q[0],q[1],q[2]];}}return best;}
 cv.addEventListener('pointerdown',e=>{if(MODE!=='edit'||!ED||ED.sel<0||ED.out||EPICK||EPK||e.button!==0||e.target!==R.domElement||(typeof MVX!=='undefined'&&MVX.on))return;const h=vtxAt(e);if(h.v<0&&h.m<0)return;
  const s=ED.base.S[ED.sel];let U=verts(s).map(p=>p.slice());e.stopPropagation();CT.enabled=false;
- if(h.v>=0&&e.shiftKey){if(U.length>(s.closed?3:2)){U.splice(h.v,1);setU(s,U);edDraw();}CT.enabled=true;return;}
+ if(h.v>=0&&e.shiftKey){if(U.length>(s.closed?3:2)){U.splice(h.v,1);setU(s,U);edDraw();ED.dirty=true;edCommitSoon();}CT.enabled=true;return;}
  if(h.m>=0){const a=U[h.m],b=U[(h.m+1)%U.length];U.splice(h.m+1,0,[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2]);setU(s,U);DRG={i:h.m+1};}else DRG={i:h.v};edDraw();},true);
 let SNPM=null;
 addEventListener('pointermove',e=>{if(!DRG)return;const s=ED.base.S[ED.sel],U=verts(s).map(p=>p.slice()),zv=vz(s,U[DRG.i]);let p=hitPlane(e,zv);if(!p)return;let sn=snapTarget(e,s),txt='';
  if(sn){p=[sn[0],sn[1],s.flat&&s.pure?zv:sn[2]];txt=' · <b>snap</b>';}else p=[p[0],p[1],zv];U[DRG.i]=p;setU(s,U);edDraw();
  if(sn){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.b,sizeAttenuation:false,depthTest:false}));sp.scale.set(.022,.022,1);sp.position.copy(V(sn[0],sn[1],sn[2]+0.3));sp.renderOrder=12;G.edit.add(sp);}
  tip('E '+p[0].toFixed(2)+' · N '+p[1].toFixed(2)+' · RL '+f1(p[2])+txt,e);});
-addEventListener('pointerup',()=>{if(!DRG)return;DRG=null;CT.enabled=true;tip(null);const s=ED.base.S[ED.sel];$('e2st').textContent=(s.closed?'RL '+f1(s.z):'string terbuka')+' · diubah';ED.dirty=true;});
+addEventListener('pointerup',()=>{if(!DRG)return;DRG=null;CT.enabled=true;tip(null);const s=ED.base.S[ED.sel];$('e2st').textContent=(s.closed?'RL '+f1(s.z):'string terbuka')+' · diubah';ED.dirty=true;edCommitSoon();});
+/* seret / sisip / hapus titik langsung diterapkan (permukaan, string & riwayat) 0,4 s setelah dilepas — dulu baru saat tombol Selesai,
+   sehingga garis string & permukaan tertinggal dari titik yang diseret dan tidak tercatat di riwayat */
+let EDCT=0;function edCommitSoon(){clearTimeout(EDCT);EDCT=setTimeout(()=>{if(DRG||!ED||!ED.dirty||ED.out)return;const S=ED.base.S;try{ED.base.foot=footOf(S);ED.base.tin=surfOf(S,ED.base.foot,40);ED.base.vol=volOf(ED.base);}catch(e){console.warn(e);}ED.dirty=false;pitRedraw();try{ehPush('Seret titik string');}catch(_){}$('e2st').textContent='✓ diterapkan';},400);}
 $('eund').onclick=()=>{if(!ED||ED.sel<0)return;const s=ED.base.S[ED.sel];s.pts=ED.orig.map(p=>p.slice());s.area=ringArea(s.pts);ED.out=null;pitRedraw();$('eres').innerHTML='';};
 $('edone').onclick=()=>{edStopPick();EPK=false;clr(G.edit);if(ED&&ED.dirty&&!ED.out){ED.dirty=false;const S=ED.base.S;ED.base.foot=footOf(S);ED.base.tin=surfOf(S,ED.base.foot,40);ED.base.vol=volOf(ED.base);pitRedraw();}$('e2st').textContent=ED&&ED.sel>=0?'✓ RL '+f1(ED.base.S[ED.sel].z):'';};
 /* perbarui bench di bawah */

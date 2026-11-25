@@ -41,9 +41,9 @@ body.shx #sbar{white-space:nowrap;overflow:hidden;gap:14px!important}body.shx #s
 body.shx #lgw{border-radius:2px!important}body.shx #dkL,body.shx #dkR{z-index:38}`;document.head.appendChild(css);
  /* ---------- menu tarik: tombol lama dipindah ke dalam menu ---------- */
  const q=s=>mb.querySelector(s),first=q('.mbb'),bar=document.createElement('span');bar.id='shbar';bar.style.cssText='display:none;align-items:center';
- const DEF=[['File',['[data-w=fw]','[data-w=iw]','-','[data-w=xw]','#lytg']],['Tampilan',['[data-w=vw2]','#mbsay','#mbfs','-','@tree','@prop','@reset','-','@klasik']],['Desain',['#mbds','[data-w=gw]','[data-w=aw]','-','#mbtt']],['Edit',['#mbea','#mbmw','#mbpd','@edhint']],['Jadwal',['#mbsch','-','@bm','@cad']],['Laporan',['[data-w=hw]','-','@gt','@gd']],['Bantuan',['#mbdemo','[data-w=bw]','#mblang']]];
- const ACT={tree:['Project Tree',()=>shTree(!SH.tree)],prop:['Panel Properti',()=>shProp(!SH.prop)],reset:['Kembalikan tata letak',()=>shReset()],klasik:['Tampilan klasik (tanpa kerangka)',()=>shSet(false)],
-  bm:['Block model (.mdl)…',()=>gtOpen(true)],cad:['Cadangan per blok tambang',()=>{mbCalc().catch(e=>schMsg(esc(e.message),1));}],gt:['Laporan Grade × Tonnage — jadwal',()=>gtBig(true)],gd:['Laporan Grade × Tonnage — desain',()=>gtOpen(true)],edhint:['(alat edit aktif di tab ✎ Edit pit)',()=>{try{$('tabs').querySelector('[data-t="edit"]').click();}catch(_){}}]};
+ const DEF=[['File',['[data-w=fw]','[data-w=iw]','-','[data-w=xw]','#lytg']],['Tampilan',['[data-w=vw2]','@bm3d','#mbsay','#mbfs','-','@tree','@prop','@reset','-','@klasik']],['Desain',['#mbds','[data-w=gw]','[data-w=aw]','-','#mbtt']],['Edit',['#mbea','#mbmw','#mbpd','@edhint']],['Jadwal',['#mbsch','@unit','-','@bm','@cad']],['Laporan',['[data-w=hw]','-','@gt','@gd']],['Bantuan',['#mbdemo','[data-w=bw]','#mblang']]];
+ const ACT={plan:['📅 Rencana tambang (target · urutan · laporan)…',()=>plOpen()],unit:['⚙ Pengaturan unit (alat gali)…',()=>ulOpen()],tree:['Project Tree',()=>shTree(!SH.tree)],prop:['Panel Properti',()=>shProp(!SH.prop)],reset:['Kembalikan tata letak',()=>shReset()],klasik:['Tampilan klasik (tanpa kerangka)',()=>shSet(false)],
+  bm:['Block model (.mdl)…',()=>gtOpen(true)],bm3d:['▦ Block model 3D (warna · filter)…',()=>b3Show(true)],cad:['Cadangan per blok tambang',()=>{mbCalc().catch(e=>schMsg(esc(e.message),1));}],gt:['Laporan Grade × Tonnage — jadwal',()=>gtBig(true)],gd:['Laporan Grade × Tonnage — desain',()=>gtOpen(true)],edhint:['(alat edit aktif di tab ✎ Edit pit)',()=>{try{$('tabs').querySelector('[data-t="edit"]').click();}catch(_){}}]};
  SH.home=[];SH.menus=[];
  for(const [nm,items] of DEF){const m=document.createElement('span');m.className='shm';m.innerHTML='<button class="shmt">'+nm+'</button><div class="shmp"></div>';const p=m.lastChild;
   for(const it of items){if(it==='-'){p.appendChild(document.createElement('hr'));continue;}if(it[0]==='@'){const a=ACT[it.slice(1)],b=document.createElement('button');b.className='shi';b.dataset.a=it.slice(1);b.textContent=a[0];b.onclick=()=>{shClose();a[1]();};p.appendChild(b);continue;}
@@ -74,7 +74,7 @@ function shReset(){SH.float={};try{localStorage.removeItem('psShFloat');localSto
 /* ---------- isi Project Tree ---------- */
 function shTreeData(){const N=[],g=(id,nm,n)=>N.push({g:id,nm,bd:n}),it=(grp,k,ic,nm,bd,off,act)=>N.push({p:grp,k,ic,nm,bd,off,act});let v;
  const tpn=TP.length;g('data','Data',tpn+(GT.file?1:0)||'');TP.forEach((s,i)=>it('data','tp:'+i,'⛰',String(s.nm).replace(/^[0-9a-f]{8}-/,''),s.on?'':'mati',!s.on));if(!tpn)it('data','imp','＋','Impor topografi…','',true);
- it('data','bm','▦',GT.file?GT.file.name:'Block model (.mdl)…',GT.file?(GT.attr||''):'belum',!GT.file);
+ it('data','bm','▦',GT.file?GT.file.name:'Block model (.mdl)…',GT.file?(GT.attr||''):'belum',!GT.file);if(GT.file)it('data','b3','◧','Block model 3D',(typeof B3!=='undefined'&&B3.on&&B3.sel)?B3.sel.length.toLocaleString('id-ID')+' blok':'tampilkan',false);
  const D=schDes();g('des','Desain',D.length||'');const vol=R=>{try{return R&&R.vol&&R.vol.tot?gtShort(R.vol.tot)+' m³':'';}catch(_){return '';}};
  it('des','d:res','▲','Pit final',RES?vol(RES):'belum',!RES);it('des','d:stg','▤','Staging',STG?vol(STG):'belum',!STG);if(ED&&ED.out)it('des','d:edo','✎','Pit hasil edit',vol(ED.out));if(FIN)it('des','d:fin','⬚','Pit final impor',String(FIN.nm||'').replace(/^[0-9a-f]{8}-/,'').slice(0,18));
  let nt=0;try{nt=SCH.tasks.filter(t=>t.on).length;}catch(_){}g('sch','Jadwal (Pit Schedule)',nt||'');
@@ -85,10 +85,10 @@ function shTreeData(){const N=[],g=(id,nm,n)=>N.push({g:id,nm,bd:n}),it=(grp,k,i
 function shTreeDraw(){const el=$('shtree');if(!el||!SH.on)return;let N;try{N=shTreeData();}catch(e){return;}const sg=JSON.stringify([N,SH.cl]);if(sg===SH.sig)return;SH.sig=sg;const cl=SH.cl||{};
  el.innerHTML=N.map(n=>n.g?'<div class="shn g" data-g="'+n.g+'"><span class="tw">'+(cl[n.g]?'▸':'▾')+'</span><span class="nm">'+esc(n.nm)+'</span><span class="bd">'+esc(String(n.bd||''))+'</span></div>':cl[n.p]?'':'<div class="shn'+(n.off?' off':'')+(n.act?' act':'')+'" data-k="'+n.k+'" style="padding-left:'+(n.ind?30:16)+'px"><span class="ic">'+n.ic+'</span><span class="nm" title="'+esc(n.nm)+'">'+esc(n.nm)+'</span><span class="bd">'+esc(String(n.bd||''))+'</span></div>').join('');}
 function shAct(k){const W=id=>winShow($(id),true),ck=s=>{const b=document.querySelector(s);if(b)b.click();};
- if(k.startsWith('tp:')||k==='imp'){W('iw');return;}if(k==='bm'){gtOpen(true);return;}
+ if(k.startsWith('tp:')||k==='imp'){W('iw');return;}if(k==='bm'){gtOpen(true);return;}if(k==='b3'){b3Show(true);return;}
  if(k.startsWith('d:')){const id=k.slice(2);if(id==='fin'){try{W('fbw');}catch(_){}return;}if((id==='res'&&!RES)||(id==='stg'&&!STG)){try{dsOpen(0);}catch(_){ck('#mbds');}return;}W('hw');return;}
  if(k.startsWith('ph:')||k.startsWith('fl:')||k.startsWith('tk:')||k==='res'){if($('schw').style.display!=='flex')schOpen(true);if(k.startsWith('fl:')){SCH.sel='g:'+k.slice(3);SCH.curG=k.slice(3);UX.sel=3;schTasks();try{schEdit();}catch(_){}uxSync(true);}else if(k.startsWith('tk:')){SCH.sel=+k.slice(3);UX.sel=3;schTasks();try{schEdit();}catch(_){}uxSync(true);}else if(k==='res'){UX.sel=4;uxSync(true);}else{UX.sel=1;uxSync(true);}return;}
- if(k==='rep'){gtBig(true);return;}if(k==='say'){ck('#mbsay');return;}if(k==='lyt'){ck('#lytg');return;}if(k==='vol'){W('hw');return;}if(k==='exp'){W('xw');return;}}
+ if(k==='pl'){plOpen();return;}if(k==='rep'){gtBig(true);return;}if(k==='say'){ck('#mbsay');return;}if(k==='lyt'){ck('#lytg');return;}if(k==='vol'){W('hw');return;}if(k==='exp'){W('xw');return;}}
 /* ---------- jendela lama → halaman Properti ---------- */
 {const _w=winShow;winShow=function(w,on){try{if(SH.on&&w&&w.classList&&w.classList.contains('win')&&!DOCKX.has(w.id)&&w.querySelector('.pin')){const want=on===undefined?w.style.display!=='block':on;
    if(want&&!w.classList.contains('docked')&&!SH.float[w.id])dockSet(w,true,true);

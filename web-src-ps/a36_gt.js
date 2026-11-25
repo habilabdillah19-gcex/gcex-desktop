@@ -107,29 +107,49 @@ async function gtPreset(f){try{const J=JSON.parse(await f.text());const fd=(o,d)
 function gtPhase(F){const Sm=F.sim,Gd=F.grid,m=GT.m,{nx,ny,z0}=Gd,n=nx*ny,NP=Sm.np;
  /* riwayat per sel (CSR): urutan periode naik */const cnt=new Int32Array(n+1);for(let p=0;p<NP;p++)for(const c of Sm.DC[p])cnt[c+1]++;for(let c=0;c<n;c++)cnt[c+1]+=cnt[c];
  const HP=new Int32Array(cnt[n]),HZ=new Float32Array(cnt[n]),HO=new Int8Array(cnt[n]),w=cnt.slice(0,n);for(let p=0;p<NP;p++){const C=Sm.DC[p],Z=Sm.DZ[p],Ow=Sm.DO?Sm.DO[p]:null;for(let i=0;i<C.length;i++){const k=w[C[i]]++;HP[k]=p;HZ[k]=Z[i];HO[k]=Ow?Ow[i]:0;}}
- const G=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[];let nIn=0;
+ const G=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],VO=[];let nIn=0;
  for(let b=0;b<m.n;b++){const x=m.x[b],y=m.y[b],s=x*Gd.ux+y*Gd.uy,q=x*Gd.vx+y*Gd.vy,i=Math.floor((s-Gd.s0)/Gd.bx),j=Math.floor((q-Gd.t0)/Gd.by);if(i<0||j<0||i>=nx||j>=ny)continue;const c=j*nx+i;if(cnt[c]===cnt[c+1])continue;
   const zt=z0[c],cz=m.z[b],hz=m.sz[b]/2;if(!(zt===zt))continue;const vol=m.sx[b]*m.sy[b]*m.sz[b];let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=G?G[b]:NaN,k=gtCls(g),sul=!!(GT.sfOn&&SX&&SX[b]>GT.sxsThr);
-  if(!prop){if(!(cz<zt))continue;/* pusat di bawah topo awal fase */for(let h=cnt[c];h<cnt[c+1];h++)if(HZ[h]<cz){out.push(HP[h],HO[h],k,vol*sg,g,sul?1:0,c);nIn++;break;}}
-  else{let zp=zt;for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],top=Math.min(zp,cz+hz),bot=Math.max(za,cz-hz);if(top>bot){const f=(top-bot)/(2*hz);out.push(HP[h],HO[h],k,vol*sg*f,g,sul?1:0,c);nIn++;}zp=za;}}}
- return {out,nIn,F};}
+  if(!prop){if(!(cz<zt))continue;/* pusat di bawah topo awal fase */for(let h=cnt[c];h<cnt[c+1];h++)if(HZ[h]<cz){out.push(HP[h],HO[h],k,vol*sg,g,sul?1:0,c);VO.push(vol);nIn++;break;}}
+  else{let zp=zt;for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],top=Math.min(zp,cz+hz),bot=Math.max(za,cz-hz);if(top>bot){const f=(top-bot)/(2*hz);out.push(HP[h],HO[h],k,vol*sg*f,g,sul?1:0,c);VO.push(vol*f);nIn++;}zp=za;}}}
+ /* ruang galian tanpa blok → waste (volume × SG konstanta) */let unc=0;const Ac=Gd.bx*Gd.by,sgc=GT.sgc||2.6;
+ for(let c=0;c<n;c++){if(cnt[c]===cnt[c+1])continue;let zp=z0[c];if(!(zp===zp))continue;const i=c%nx,j=(c-i)/nx,s=Gd.s0+(i+0.5)*Gd.bx,q=Gd.t0+(j+0.5)*Gd.by,x=s*Gd.ux+q*Gd.vx,y=s*Gd.uy+q*Gd.vy;
+  for(let h=cnt[c];h<cnt[c+1];h++){const za=HZ[h],u=gtUnc(m,x,y,za,zp,h===cnt[c])*Ac;if(u>1e-3){out.push(HP[h],HO[h],-1,u*sgc,NaN,0,c);VO.push(u);unc+=u;}zp=za;}}
+ GTV.set(out,VO);return {out,nIn,F,unc,vol:VO};}
 async function gtRun(){if(!GT.file)throw new Error('Muat block model .mdl dulu.');if(!SCH.sim)throw new Error('Jalankan simulasi Pit Schedule dulu.');if(GT.busy){GT.again=1;return;}GT.busy=1;
  try{schPhSave();const ph=SCH.phs[SCH.ph];await gtEnsure(gtNeed(ph));if(!GT.m.num[GT.attr])throw new Error('Atribut kadar "'+GT.attr+'" tidak ada di block model.');const R=gtPhase(ph);GT.res=R;gtTable();try{if($('schcm').value==='kls')schPaint();}catch(_){}}
  catch(e){GT.res=null;try{$('gttb').innerHTML='';$('gtsum').innerHTML='<span style="color:#c92a2a">'+esc(e.message)+'</span>';}catch(_){}throw e;}
  finally{GT.busy=0;if(GT.again){GT.again=0;gtRun().catch(()=>{});}}}
 function gtBand(){/* pita periode = SCH.bd (jam … bench) */return SCH.bd||[];}
+/* 23 Nov 2026 (pemilik): SR = BCM waste / ton ore. Tiap rekaman 'out' punya volume (BCM) di GTV (WeakMap out → vol[]).
+   Ruang galian yang tidak berisi blok sama sekali (block model tidak sampai ke situ) dihitung sebagai WASTE: volumenya masuk,
+   tonase = volume × SG konstanta (GT.sgc). */
+const GTV=new WeakMap();
+function gtCov(m){if(m._cov)return m._cov;let hs=1e9,mz=0,x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(let b=0;b<m.n;b++){hs=Math.min(hs,m.sx[b],m.sy[b]);mz=Math.max(mz,m.sz[b]);x0=Math.min(x0,m.x[b]-m.sx[b]/2);y0=Math.min(y0,m.y[b]-m.sy[b]/2);x1=Math.max(x1,m.x[b]+m.sx[b]/2);y1=Math.max(y1,m.y[b]+m.sy[b]/2);}
+ hs=Math.max(0.5,hs<1e8?hs:5);const I0=Math.floor(x0/hs)-1,J0=Math.floor(y0/hs)-1,NJ=Math.floor(y1/hs)-J0+2,H=new Map(),K=(i,j)=>(i-I0)*NJ+(j-J0);
+ for(let b=0;b<m.n;b++){const i0=Math.floor((m.x[b]-m.sx[b]/2)/hs+1e-6),i1=Math.floor((m.x[b]+m.sx[b]/2)/hs-1e-6),j0=Math.floor((m.y[b]-m.sy[b]/2)/hs+1e-6),j1=Math.floor((m.y[b]+m.sy[b]/2)/hs-1e-6);
+  for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const k=K(i,j);let a=H.get(k);if(!a)H.set(k,a=[]);a.push(b);}}
+ return m._cov={H,hs,mz,K};}
+/* panjang selang [za,zb] di titik (x,y) yang tidak berisi blok. Bila zb = topografi dan kolom itu punya blok, celah teratas yang lebih
+   pendek dari tinggi blok terbesar dianggap tertutup: blok di atas topografi memang tidak dimuat (saringan GC-Ex). */
+function gtUnc(m,x,y,za,zb,isTop){if(!(zb>za+1e-6))return 0;const C=gtCov(m),a=C.H.get(C.K(Math.floor(x/C.hs),Math.floor(y/C.hs)));const I=[];
+ if(a)for(const b of a)if(Math.abs(x-m.x[b])<=m.sx[b]/2+1e-6&&Math.abs(y-m.y[b])<=m.sy[b]/2+1e-6)I.push([m.z[b]-m.sz[b]/2,m.z[b]+m.sz[b]/2]);
+ if(!I.length)return zb-za;I.sort((p,q)=>p[0]-q[0]);let cur=za,u=0,last=0;for(const [lo,hi] of I){if(lo>cur&&cur<zb){const g=Math.min(lo,zb)-cur;u+=g;last=0;}cur=Math.max(cur,hi);if(cur>=zb)break;}
+ if(cur<zb){last=zb-cur;u+=last;if(isTop&&last<=C.mz+1e-6)u-=last;}return Math.max(0,u);}
 function gtAgg(X){X=X||{out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:GT.fleet};const O=X.out,B=X.B,K=GT.rules.length,fl=X.fl&&X.TS,pb=new Int32Array(X.np).fill(-1);B.forEach((r,i)=>{for(let p=r.a;p<=r.b;p++)pb[p]=i;});
- const mk=()=>({t:new Float64Array(K+1),gt:new Float64Array(K+1)});const rows=B.map(()=>fl?X.TS.map(mk):[mk()]),tot=mk(),dl={};
- for(let i=0;i<O.length;i+=7){const p=O[i],f=O[i+1],k=O[i+2],t=O[i+3],g=O[i+4],bi=pb[p];if(bi<0)continue;const A=rows[bi][fl?f:0],kk=k<0?K:k;A.t[kk]+=t;A.gt[kk]+=t*(g===g?g:0);tot.t[kk]+=t;tot.gt[kk]+=t*(g===g?g:0);
+ const mk=()=>({t:new Float64Array(K+1),gt:new Float64Array(K+1),v:new Float64Array(K+1)});const rows=B.map(()=>fl?X.TS.map(mk):[mk()]),tot=mk(),dl={},VV=X.vol||GTV.get(O)||null,sgc=GT.sgc||2.6;
+ for(let i=0;i<O.length;i+=7){const p=O[i],f=O[i+1],k=O[i+2],t=O[i+3],g=O[i+4],bi=pb[p];if(bi<0)continue;const A=rows[bi][fl?f:0],kk=k<0?K:k,v=VV?VV[i/7]:t/sgc;A.t[kk]+=t;A.gt[kk]+=t*(g===g?g:0);A.v[kk]+=v;tot.t[kk]+=t;tot.gt[kk]+=t*(g===g?g:0);tot.v[kk]+=v;
   const dst=k<0?(GT.wdest||'Waste dump'):(gtDestOf(GT.rules[k].m,O[i+5]===1)||'—');dl[dst]=(dl[dst]||0)+t;}
  return {B,rows,tot,K,TS:X.TS,fl,dl};}
+/* SR = BCM waste / ton ore */
+function gtSR(a,K){let o=0;for(let k=0;k<K;k++)o+=a.t[k];return o>0?a.v[K]/o:null;}
 function gtHtml(A,totLab,c0){const {B,rows,tot,K,TS,fl}=A,F=n=>schF(n),G=(t,gt)=>t>0?(gt/t).toFixed(2):'–';
  const oreT=a=>{let s=0;for(let k=0;k<K;k++)s+=a.t[k];return s;},oreM=a=>{let s=0;for(let k=0;k<K;k++)s+=a.gt[k];return s;};
- const cell=a=>GT.rules.map((r,k)=>'<td>'+(a.t[k]>0?F(a.t[k])+' @ '+G(a.t[k],a.gt[k]):'')+'</td>').join('')+'<td>'+(a.t[K]>0?F(a.t[K]):'')+'</td><td><b>'+F(oreT(a)+a.t[K])+'</b></td><td>'+(oreT(a)>0?(a.t[K]/oreT(a)).toFixed(2):'–')+'</td><td>'+F(oreM(a))+'</td><td>'+(oreM(a)/31.1035).toFixed(0)+'</td>';
- let h='<table><thead><tr><th>'+c0+'</th>'+(fl?'<th>Fleet</th>':'')+GT.rules.map(r=>'<th><i style="display:inline-block;width:8px;height:8px;background:'+r.c+'"></i> '+esc(r.m)+' t @ g/t</th>').join('')+'<th>Waste t</th><th>Total t</th><th>SR</th><th>Logam g</th><th>oz</th></tr></thead><tbody>';
+ const cell=a=>GT.rules.map((r,k)=>'<td>'+(a.t[k]>0?F(a.t[k])+' @ '+G(a.t[k],a.gt[k]):'')+'</td>').join('')+'<td>'+(a.t[K]>0?F(a.t[K]):'')+'</td><td>'+(a.v[K]>0?F(a.v[K]):'')+'</td><td><b>'+F(oreT(a)+a.t[K])+'</b></td><td>'+(oreT(a)>0?(a.v[K]/oreT(a)).toFixed(2):'–')+'</td><td>'+F(oreM(a))+'</td><td>'+(oreM(a)/31.1035).toFixed(0)+'</td>';
+ let h='<table><thead><tr><th>'+c0+'</th>'+(fl?'<th>Fleet</th>':'')+GT.rules.map(r=>'<th><i style="display:inline-block;width:8px;height:8px;background:'+r.c+'"></i> '+esc(r.m)+' t @ g/t</th>').join('')+'<th>Waste t</th><th>Waste BCM</th><th>Total t</th><th title="Stripping ratio = BCM waste / ton ore">SR (BCM/t)</th><th>Logam g</th><th>oz</th></tr></thead><tbody>';
  B.forEach((b,i)=>{rows[i].forEach((a,f)=>{const any=oreT(a)+a.t[K]>0;if(fl&&!any)return;h+='<tr data-i="'+i+'"><td>'+esc(b.lab)+'</td>'+(fl?'<td style="color:'+TS[f].t.col+'">'+esc(schWn(TS[f]))+'</td>':'')+cell(a)+'</tr>';});});
  h+='<tr class="tot"><td>'+esc(totLab)+'</td>'+(fl?'<td></td>':'')+cell(tot)+'</tr></tbody></table>';const ot=oreT(tot),om=oreM(tot);
- return {h,sum:'<b>'+F(ot)+' t ore @ '+G(ot,om)+' g/t</b> ('+(om/31.1035).toFixed(0)+' oz) · waste '+F(tot.t[K])+' t · SR '+(ot>0?(tot.t[K]/ot).toFixed(2):'–'),dest:'Tujuan: '+Object.entries(A.dl).map(([d,t])=>esc(d)+' '+F(t)+' t').join(' · ')};}
+ return {h,sum:'<b>'+F(ot)+' t ore @ '+G(ot,om)+' g/t</b> ('+(om/31.1035).toFixed(0)+' oz) · waste '+F(tot.v[K])+' BCM ('+F(tot.t[K])+' t) · SR '+(ot>0?(tot.v[K]/ot).toFixed(2):'–')+' BCM/t',dest:'Tujuan: '+Object.entries(A.dl).map(([d,t])=>esc(d)+' '+F(t)+' t').join(' · ')};}
 function gtTable(){const el=$('gttb');if(!el||!GT.res)return;const A=gtAgg(),H=gtHtml(A,'Total '+schPh().nm,'Periode');el.innerHTML=H.h;
  el.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>{schStop();schSet(+tr.dataset.i);});gtHi();
  $('gtsum').innerHTML=H.sum+' · '+GT.res.nIn.toLocaleString('id-ID')+' blok'+(GT.rule==='prop'?' (proporsional)':' (pusat blok, cara Surpac)')+'<br>'+H.dest;}
@@ -140,23 +160,30 @@ async function gtDesign(){if(!GT.file)throw new Error('Muat block model .mdl dul
   for(let j=0;j<G.ny;j++)for(let i=0;i<G.nx;i++){const z=G.Z[j*G.nx+i];if(!(z===z))continue;const x=G.x0+i*G.cell,y=G.y0+j*G.cell,zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(z<zt-0.05))continue;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(z<zlo)zlo=z;if(zt>zhi)zhi=zt;}
   if(!(zlo<1e17))throw new Error('Desain "'+d.nm+'" tidak memotong topografi aktif.');
   await gtEnsure({x0:x0-G.cell,x1:x1+G.cell,y0:y0-G.cell,y1:y1+G.cell,zlo,zhi,tp,c:Math.max(1,G.cell)});const m=GT.m;if(!m.num[GT.attr])throw new Error('Atribut kadar "'+GT.attr+'" tidak ada di block model.');
-  const Gr=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],kT=Math.ceil(zhi/Hb),NB=kT-Math.floor(zlo/Hb)+1;let nIn=0;
+  const Gr=m.num[GT.attr],SGa=GT.sg?m.num[GT.sg]:null,SX=GT.sx?m.num[GT.sx]:null,prop=GT.rule==='prop',out=[],VO=[],kT=Math.ceil(zhi/Hb),NB=kT-Math.floor(zlo/Hb)+1;let nIn=0;
   const fT=pxTopoFn(tp),fD=pxDesFn(d),PXon=!!(fT&&fD);GT.pxNote=pxInfo(tp,d);
   for(let b=0;b<m.n;b++){const x=m.x[b],y=m.y[b],cz=m.z[b],hz=m.sz[b]/2;let f=1;
    if(PXon){/* resep GC-Ex: TIN presisi; pusat blok di bawah/pada topografi dan di atas/pada desain */if(!prop){const zd=fD(x,y);if(!(zd===zd))continue;const zt=fT(x,y);if(!(zt===zt)||cz>zt||cz<zd)continue;}else{f=pxFrac(fT,fD,x,y,cz,m.sx[b],m.sy[b],m.sz[b]);if(!(f>0))continue;}}
    else{const zd=gridZ(G,x,y);if(!(zd===zd))continue;const zt=gridZ(tp.G,x,y);if(!(zt===zt)||!(zd<zt-0.05))continue;
    if(!prop){if(!(cz>zd&&cz<zt))continue;}else{const top=Math.min(zt,cz+hz),bot=Math.max(zd,cz-hz);if(!(top>bot))continue;f=(top-bot)/(2*hz);}}
-   let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=Gr[b],bi=Math.max(0,Math.min(NB-1,kT-1-Math.floor(cz/Hb)));out.push(bi,0,gtCls(g),m.sx[b]*m.sy[b]*m.sz[b]*sg*f,g,(GT.sfOn&&SX&&SX[b]>GT.sxsThr)?1:0,0);nIn++;}
+   let sg=SGa?SGa[b]:GT.sgc;if(!(sg>0))sg=GT.sgc;const g=Gr[b],bi=Math.max(0,Math.min(NB-1,kT-1-Math.floor(cz/Hb)));out.push(bi,0,gtCls(g),m.sx[b]*m.sy[b]*m.sz[b]*sg*f,g,(GT.sfOn&&SX&&SX[b]>GT.sxsThr)?1:0,0);VO.push(m.sx[b]*m.sy[b]*m.sz[b]*f);nIn++;}
+  /* ruang galian desain yang tidak berisi blok (block model tidak sampai ke situ) → waste: volume × SG konstanta */
+  const UV=new Float64Array(NB),A2=G.cell*G.cell;let unc=0;
+  for(let j=0;j<G.ny;j++)for(let i=0;i<G.nx;i++){const x=G.x0+i*G.cell,y=G.y0+j*G.cell;let zd=PXon?fD(x,y):G.Z[j*G.nx+i],zt=PXon?fT(x,y):gridZ(tp.G,x,y);if(!(zd===zd)||!(zt===zt)||!(zd<zt-0.05))continue;
+   const C=gtCov(m),a=C.H.get(C.K(Math.floor(x/C.hs),Math.floor(y/C.hs)));const I=[];if(a)for(const b of a)if(Math.abs(x-m.x[b])<=m.sx[b]/2+1e-6&&Math.abs(y-m.y[b])<=m.sy[b]/2+1e-6)I.push([m.z[b]-m.sz[b]/2,m.z[b]+m.sz[b]/2]);
+   const gaps=[];if(!I.length)gaps.push([zd,zt]);else{I.sort((p,q)=>p[0]-q[0]);let cur=zd;for(const [lo,hi] of I){if(lo>cur&&cur<zt)gaps.push([cur,Math.min(lo,zt)]);cur=Math.max(cur,hi);if(cur>=zt)break;}if(cur<zt&&zt-cur>C.mz+1e-6)gaps.push([cur,zt]);}
+   for(const [ga,gb] of gaps)for(let k=Math.floor(ga/Hb);k<=Math.floor((gb-1e-9)/Hb);k++){const top=Math.min(gb,(k+1)*Hb),bot=Math.max(ga,k*Hb);if(top>bot){const bi=Math.max(0,Math.min(NB-1,kT-1-k));UV[bi]+=(top-bot)*A2;}}}
+  const sgc=GT.sgc||2.6;for(let bi=0;bi<NB;bi++)if(UV[bi]>0.5){out.push(bi,0,-1,UV[bi]*sgc,NaN,0,0);VO.push(UV[bi]);unc+=UV[bi];}GTV.set(out,VO);
   const B=[];for(let i=0;i<NB;i++){const top=(kT-i)*Hb;B.push({a:i,b:i,lab:'Bench RL '+schF(top,1)+' → '+schF(top-Hb,1)});}
-  GT.dres={out,B,np:NB,nm:d.nm,nIn};const A=gtAgg({out,B,np:NB,fl:false});const keep=[];A.rows.forEach((r,i)=>{let s=0;for(const v of r[0].t)s+=v;if(s>0)keep.push(i);});
+  GT.dres={out,B,np:NB,nm:d.nm,nIn,unc,vol:VO};const A=gtAgg({out,B,np:NB,fl:false});const keep=[];A.rows.forEach((r,i)=>{let s=0;for(const v of r[0].t)s+=v;if(s>0)keep.push(i);});
   A.B=keep.map(i=>B[i]);A.rows=keep.map(i=>A.rows[i]);const H=gtHtml(A,'Total '+d.nm,'Bench');$('gdtb').innerHTML=H.h;
-  $('gdsum').innerHTML='<b>'+esc(d.nm)+'</b> vs topografi "'+esc(tp.nm)+'": '+H.sum+' · '+nIn.toLocaleString('id-ID')+' blok'+(prop?' (proporsional 4 × 4 kolom, cara GC-Ex)':' (pusat blok, cara Surpac)')+'<br>'+H.dest+'<br><span style="color:#6c757d">'+esc(GT.pxNote||'')+'</span>';}
+  $('gdsum').innerHTML='<b>'+esc(d.nm)+'</b> vs topografi "'+esc(tp.nm)+'": '+H.sum+' · '+nIn.toLocaleString('id-ID')+' blok'+(prop?' (proporsional 4 × 4 kolom, cara GC-Ex)':' (pusat blok, cara Surpac)')+(unc>0.5?'<br><span style="color:#b5893e">Termasuk '+schF(unc)+' BCM ruang galian di luar block model — dihitung sebagai waste (SG '+schF(GT.sgc||2.6,2)+').</span>':'')+'<br>'+H.dest+'<br><span style="color:#6c757d">'+esc(GT.pxNote||'')+'</span>';}
  finally{GT.busy=0;}}
 function gtHi(){const el=$('gttb');if(!el)return;el.querySelectorAll('tr.on').forEach(r=>r.classList.remove('on'));el.querySelectorAll('tr[data-i="'+SCH.pi+'"]').forEach(r=>{r.classList.add('on');if(SCH.play)r.scrollIntoView({block:'nearest'});});}
 function gtCsv(){if(!GT.res)return;gtCsvX({out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:GT.fleet,nm:schPh().nm},'pit_schedule_grade_tonnage_'+schPh().nm.replace(/\s/g,''));}
 function gtCsvX(X,fn){if(!X)return;const A=gtAgg(X),{B,rows,tot,K,TS,fl}=A,q=s=>'"'+String(s).replace(/"/g,'""')+'"',L=[];
- L.push([X.TS?'Periode':'Bench',...(fl?['Fleet']:[]),...GT.rules.flatMap(r=>[r.m+' t',r.m+' g/t']),'Waste t','Total t','SR','Logam g','Logam oz'].map(q).join(','));
- const row=(lab,fnm,a)=>{let ot=0,om=0,all=a.t[K];for(let k=0;k<K;k++){ot+=a.t[k];om+=a.gt[k];}if(!(ot+all>0))return;L.push([q(lab),...(fl?[q(fnm)]:[]),...GT.rules.flatMap((r,k)=>[a.t[k].toFixed(1),a.t[k]>0?(a.gt[k]/a.t[k]).toFixed(3):'']),a.t[K].toFixed(1),(ot+a.t[K]).toFixed(1),ot>0?(a.t[K]/ot).toFixed(3):'',om.toFixed(1),(om/31.1035).toFixed(2)].join(','));};
+ L.push([X.TS?'Periode':'Bench',...(fl?['Fleet']:[]),...GT.rules.flatMap(r=>[r.m+' t',r.m+' g/t']),'Waste t','Waste BCM','Total t','SR (BCM waste / t ore)','Logam g','Logam oz'].map(q).join(','));
+ const row=(lab,fnm,a)=>{let ot=0,om=0,all=a.t[K];for(let k=0;k<K;k++){ot+=a.t[k];om+=a.gt[k];}if(!(ot+all>0))return;L.push([q(lab),...(fl?[q(fnm)]:[]),...GT.rules.flatMap((r,k)=>[a.t[k].toFixed(1),a.t[k]>0?(a.gt[k]/a.t[k]).toFixed(3):'']),a.t[K].toFixed(1),a.v[K].toFixed(1),(ot+a.t[K]).toFixed(1),ot>0?(a.v[K]/ot).toFixed(3):'',om.toFixed(1),(om/31.1035).toFixed(2)].join(','));};
  B.forEach((b,i)=>rows[i].forEach((a,f)=>row(b.lab,fl?schWn(TS[f]):'',a)));row('Total '+X.nm,'',tot);
  L.push('');L.push(q('Block model: '+(GT.H?GT.H.name:'')+' · kadar '+GT.attr+' · SG '+(GT.sg||('konstanta '+GT.sgc))+' · aturan '+(GT.rule==='prop'?'proporsional':'pusat blok (cara Surpac)')+' · kelas: '+GT.src+(GT.topoF!==false?' · hanya di bawah topografi':'')));
  L.push(q('Tujuan'));for(const [d,t] of Object.entries(A.dl))L.push(q(d)+','+t.toFixed(1));

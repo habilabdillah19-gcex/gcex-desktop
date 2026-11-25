@@ -17,10 +17,14 @@ P = ROOT / "web-src-ps"
 URUT = ["a1_core.js", "a2_ui.js", "a3_digit.js", "a4_param.js", "a5_gen.js", "a6_edit.js", "a7_out.js", "a8_stage.js", "a9_ramp.js",
         "a10_ui2.js", "a11_auto.js", "a12_plan.js", "a13_guide.js", "a14_manual.js", "a15_xroad.js", "a16_smooth.js", "a17_openedit.js",
         "a18_rampout.js", "a19_rampjoin.js", "a20_tools.js", "a21_fix.js", "a22_toptrim.js", "a23_terrace.js", "a24_data.js",
-        "a24_demo.js", "a26_link.js", "a27_strict.js", "a28_demo2.js", "a30_sayatan.js", "a31_sched.js", "a32_demo3.js",
-        "a34_review.js", "@mdl", "a36_gt.js", "a38_gtrep.js", "a39_elev.js", "a40_blok.js",
-        "a41_ux.js", "@tinz", "a43_presisi.js", "a44_dock.js", "a45_shell.js",
-        "a46_autogt.js", "a47_dmhuman.js", "a48_say2.js", "a49_ukur.js", "a29_i18n.js", "a33_i18n_sched.js", "a50_i18n3.js", "a37_desktop.js"]
+        "a24_demo.js", "a26_link.js", "a27_strict.js", "a28_demo2.js", "a30_sayatan.js", "a31_sched.js", "a32_demo3.js", "a34_review.js",
+        "@mdl", "a36_gt.js", "a38_gtrep.js", "a39_elev.js", "a40_blok.js", "a41_ux.js", "@tinz", "a43_presisi.js", "a44_dock.js",
+        "a45_shell.js", "a46_autogt.js", "a47_dmhuman.js", "a48_say2.js", "a49_ukur.js", "a51_xclose.js", "a52_fix23.js", "a53_unit.js",
+        "a54_plan.js", "a55_plangab.js", "a56_putus.js", "a57_mulus.js", "a58_kendali.js", "a59_topowarna.js", "a60_bm3d.js",
+        "a61_menu.js", "a62_geobench.js", "a63_demo4.js", "a64_ux24.js", "a65_editkb.js", "a66_stgsnap.js", "a67_kalender.js",
+        "a68_autosched.js", "a69_reset.js", "a70_fleet.js", "a71_owlook.js", "a72_grid.js", "a73_palet.js", "a75_legenda.js",
+        "a76_ukuran.js", "a77_rapi.js", "a78_lapis.js", "a79_rapi2.js", "a80_adaptif.js", "a81_sayx.js", "a82_demo25.js",
+        "a83_rapi_aksen.js", "a29_i18n.js", "a33_i18n_sched.js", "a50_i18n3.js", "a74_i18n4.js", "a37_desktop.js"]
 PUSTAKA = [P / "lib" / "three.min.js", P / "lib" / "OrbitControls.js", ROOT / "web-src" / "delaunator.min.js", P / "lib" / "clipper.js"]
 IKON = ("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 38 30%27%3E%3Crect x=%270.75%27 y=%270.75%27 "
         "width=%2736.5%27 height=%2728.5%27 rx=%274%27 fill=%27%23fff%27 stroke=%27%23c9d3e1%27 stroke-width=%271.5%27/%3E%3Cpath d=%27M3 8 H35 "

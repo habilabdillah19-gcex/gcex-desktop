@@ -60,14 +60,14 @@ sayDraw=function(){const w=$('sayw');if(w.style.display!=='flex')return;const D=
  /* ---- block model ---- */let B=null,hb=null;SY2.sum=null;
  if(SY2.bm&&haveBm){try{B=sy2Blocks(D.L);}catch(_){B=null;}}
  if(B&&B.length){const n=tp?tp.P.length-1:0,zAt=(P,d)=>{if(!P||!n)return NaN;const f=d/D.L.L*n,i=Math.max(0,Math.min(n-1,Math.floor(f))),a=P[i][1],b=P[i+1][1];return isFinite(a)&&isFinite(b)?a+(b-a)*(f-i):(isFinite(a)?a:b);};
-  let oa=0,og=0,wa=0;const hv=SY2.hov&&SAY.view?sayInv(SY2.hov[0],SY2.hov[1]):null,pxm=pw/(V.s1-V.s0),pzm=ph/(V.z1-V.z0);g.lineWidth=0.6;
+  let oa=0,og=0,wa=0,ot=0;const SGa=GT.sg&&GT.m.num?GT.m.num[GT.sg]:null;const hv=SY2.hov&&SAY.view?sayInv(SY2.hov[0],SY2.hov[1]):null,pxm=pw/(V.s1-V.s0),pzm=ph/(V.z1-V.z0);g.lineWidth=0.6;
   for(const q of B){const dm=(q[0]+q[1])/2,zc=(q[2]+q[3])/2,zt=zAt(tp&&tp.P,dm);if(isFinite(zt)&&zc>zt)continue;const zd=ds?zAt(ds.P,dm):NaN,ins=isFinite(zd)&&isFinite(zt)&&zd<zt-0.05&&zc>=zd;
-   if(ins){const a=(q[1]-q[0])*(q[3]-q[2]);if(gtCls(q[4])>=0){oa+=a;og+=a*q[4];}else wa+=a;}
+   if(ins){const a=(q[1]-q[0])*(q[3]-q[2]);if(gtCls(q[4])>=0){let sg=SGa?SGa[q[5]]:GT.sgc;if(!(sg>0))sg=GT.sgc||2.6;oa+=a;og+=a*q[4];ot+=a*sg;}else wa+=a;}
    if(q[1]<V.s0||q[0]>V.s1||q[3]<V.z0||q[2]>V.z1)continue;const x=X(q[0]),y=Y(q[3]),bw=(q[1]-q[0])*pxm,bh=(q[3]-q[2])*pzm;g.globalAlpha=ins?0.92:(ds?0.28:0.8);g.fillStyle=sy2Col(q[4]);g.fillRect(x,y,bw,bh);
    if(bw>5&&bh>5){g.globalAlpha=ins?0.55:0.25;g.strokeStyle='#fff';g.strokeRect(x+.3,y+.3,bw-.6,bh-.6);}
    if(SY2.lab&&bw>30&&bh>13&&q[4]===q[4]&&(ins||!ds)){g.globalAlpha=1;g.fillStyle=gtCls(q[4])<0?'#5c6370':'#1b1b1b';g.font='10px '+FT;g.textAlign='center';g.fillText(q[4].toFixed(2),x+bw/2,y+bh/2+3.5);g.textAlign='left';}
    if(hv&&hv[0]>=q[0]&&hv[0]<=q[1]&&hv[1]>=q[2]&&hv[1]<=q[3])hb=q;}
-  g.globalAlpha=1;SY2.sum={oa,g:oa>0?og/oa:0,wa};if(hb){g.strokeStyle=NV;g.lineWidth=1.6;g.strokeRect(X(hb[0]),Y(hb[3]),(hb[1]-hb[0])*pxm,(hb[3]-hb[2])*pzm);}}
+  g.globalAlpha=1;SY2.sum={oa,g:oa>0?og/oa:0,wa,ot};if(hb){g.strokeStyle=NV;g.lineWidth=1.6;g.strokeRect(X(hb[0]),Y(hb[3]),(hb[1]-hb[0])*pxm,(hb[3]-hb[2])*pzm);}}
  /* ---- garis permukaan ---- */g.lineJoin='round';g.lineCap='round';
  for(const s of vis){g.strokeStyle=s.col;g.lineWidth=s.topo?(s.on?2:1.3):2.4;g.setLineDash(s.topo&&!s.on?[6,4]:[]);g.beginPath();let pen=false;for(const p of s.P){if(!isFinite(p[1])){pen=false;continue;}const x=X(p[0]),y=Y(p[1]);if(!pen){g.moveTo(x,y);pen=true;}else g.lineTo(x,y);}g.stroke();}
  g.setLineDash([]);if(!SAY.hide.__x)for(const q of D.X){g.fillStyle=q.t==='crest'?'#c92a2a':q.t==='toe'?'#1971c2':q.t==='floor'?'#2f9e44':'#e8590c';g.strokeStyle='#fff';g.lineWidth=1.2;g.beginPath();g.arc(X(q.d),Y(q.z),3.4,0,7);g.fill();g.stroke();}
@@ -89,7 +89,7 @@ sayDraw=function(){const w=$('sayw');if(w.style.display!=='flex')return;const D=
  g.textAlign='left';g.fillStyle=MU;g.font='10.5px '+FT;g.save();g.translate(13,mt+ph/2);g.rotate(-Math.PI/2);g.textAlign='center';g.fillText('Elevasi (RL, m)',0,0);g.restore();g.textAlign='center';g.fillText('Jarak dari A (m)',ml+pw/2,mt+ph+31);
  g.textAlign='left';g.fillStyle='#ff6f00';g.font='600 10.5px '+FT;g.fillText('A',ml,mt+ph+31);g.fillStyle=MU;g.font='10.5px '+FT;g.fillText('  E '+id(D.L.a[0])+' · N '+id(D.L.a[1]),ml+8,mt+ph+31);
  g.textAlign='right';g.fillText('E '+id(D.L.b[0])+' · N '+id(D.L.b[1])+'  ',ml+pw-9,mt+ph+31);g.fillStyle=NV;g.font='600 10.5px '+FT;g.fillText('B',ml+pw,mt+ph+31);
- /* ringkasan kanan-atas */g.textAlign='right';g.fillStyle=NV;g.font='11.5px '+FT;let sm='';if(SY2.sum&&(SY2.sum.oa>0||SY2.sum.wa>0))sm='Galian pada sayatan: ore '+Math.round(SY2.sum.oa).toLocaleString('id-ID')+' m² @ '+SY2.sum.g.toFixed(2)+' g/t · waste '+Math.round(SY2.sum.wa).toLocaleString('id-ID')+' m²'+(SY2.sum.oa>0?' · SR luas '+(SY2.sum.wa/SY2.sum.oa).toFixed(2):'');
+ /* ringkasan kanan-atas */g.textAlign='right';g.fillStyle=NV;g.font='11.5px '+FT;let sm='';if(SY2.sum&&(SY2.sum.oa>0||SY2.sum.wa>0))sm='Galian pada sayatan: ore '+Math.round(SY2.sum.oa).toLocaleString('id-ID')+' m² @ '+SY2.sum.g.toFixed(2)+' g/t · waste '+Math.round(SY2.sum.wa).toLocaleString('id-ID')+' m²'+(SY2.sum.ot>0?' · SR '+(SY2.sum.wa/SY2.sum.ot).toFixed(2)+' BCM/t (per m tebal)':'');
  else if(SY2.bm&&!GT.file)sm='block model belum dimuat (Impor → Block model)';else if(SY2.bm&&haveBm&&!(B&&B.length))sm=SY2.load===1?'memuat block model…':'tidak ada blok model di sayatan ini';
  if(sm)g.fillText(sm,ml+pw,19);g.fillStyle=MU;g.font='10.5px '+FT;g.fillText('Pit Studio · '+new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}),ml+pw,39);g.textAlign='left';
  /* kotak baca */if(tip){const Ls=['Jarak '+id(tip.s)+' m  ·  RL '+id(tip.z)];for(const q of tip.R)Ls.push(['●',q[0],q[1].slice(0,26)+'  RL '+id(q[2])]);if(tip.th!=null)Ls.push('Tebal galian '+id(tip.th)+' m');if(tip.hb){const q=tip.hb,k=gtCls(q[4]),m=GT.m;Ls.push('Blok '+GT.attr+' '+(q[4]===q[4]?q[4].toFixed(2):'–')+' g/t · '+(k<0?'waste':GT.rules[k].m)+' · '+m.sx[q[5]]+'×'+m.sy[q[5]]+'×'+m.sz[q[5]]+' m');}
