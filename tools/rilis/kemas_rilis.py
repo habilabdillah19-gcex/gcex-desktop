@@ -7,7 +7,7 @@ Isi folder keluaran (semua diunggah ke Release v<versi>):
                                      Borang, QAQC), bila CI berhasil membangunnya (dist-qt/)
   GC-Ex-<v>_1_Dokumen.zip            README, panduan teknis, tutorial PDF (GC-Ex, DB-Ex, aktivasi lisensi)
   GC-Ex-<v>_2_Data-Latihan.zip       data dummy / simulasi (GC-Ex Drillhole & Block Model, DB-Ex) + generatornya
-  GC-Ex-<v>_3_Lisensi-dan-Tentang.zip  TENTANG.txt, syarat penggunaan, lisensi pihak ketiga, penafian merek,
+  GC-Ex-<v>_3_Lisensi-dan-Tentang.zip  TENTANG.txt, Tentang_GCEx.pdf, syarat penggunaan, lisensi pihak ketiga, penafian merek,
                                      alat pembuat lisensi untuk admin (TANPA kunci privat)
   GC-Ex-<v>_CATATAN_RILIS.md         isi rilis, daftar perubahan (commit) sejak rilis sebelumnya, SHA-256 tiap file
   SHA256SUMS.txt                     sidik jari semua file rilis
@@ -246,6 +246,7 @@ def main():
     lis = outd / f"GC-Ex-{ver}_3_Lisensi-dan-Tentang.zip"
     zip_dir(lis, [
         (tentang, "TENTANG.txt"),
+        (ROOT / "docs" / "Tentang_GCEx.pdf", "Tentang_GCEx.pdf"),
         (ROOT / "legal", "Legal"),
         (ROOT / "tools" / "lisensi", "Alat_Admin_Lisensi"),
     ] + ([(D / "tutorial-ps" / "Tentang_Pit_Studio_for_Desktop.pdf", "Tentang_Pit_Studio_for_Desktop.pdf")] if has_ps else []))
