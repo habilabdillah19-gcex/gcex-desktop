@@ -55,7 +55,7 @@ ax.add_patch(FancyBboxPatch((0.02, 0.03), 0.96, 0.94, boxstyle="round,pad=0,roun
 ax.text(0.04, 0.935, "Komputer pengguna (Windows 64-bit) — tidak ada lalu lintas ke internet", color=MU, fontsize=8.2, style="italic")
 ax.add_patch(FancyBboxPatch((0.04, 0.33), 0.60, 0.57, boxstyle="round,pad=0,rounding_size=0.012", fc="white", ec=AC, lw=1.4))
 ax.text(0.06, 0.865, "Pit Studio.exe  (Electron · Chromium)", color=AC, fontsize=9, fontweight="bold")
-box(ax, 0.06, 0.56, 0.56, 0.27, "Renderer — satu halaman app-ps/index.html (±2,4 MB)\n48 modul JavaScript · three.js (3D) · Clipper (poligon)\nDelaunator + TIN GC-Ex (permukaan presisi) · 4 bahasa", fc=PN, ec=LN, fs=8.1)
+box(ax, 0.06, 0.56, 0.56, 0.27, "Renderer — satu halaman app-ps/index.html (±2,9 MB)\n87 modul JavaScript · three.js (3D) · Clipper (poligon)\nDelaunator + TIN GC-Ex (permukaan presisi) · 4 bahasa", fc=PN, ec=LN, fs=8.1)
 box(ax, 0.06, 0.36, 0.27, 0.15, "preload (contextIsolation,\nsandbox, tanpa Node)", fc="white", ec=LN, fs=7.8)
 box(ax, 0.35, 0.36, 0.27, 0.15, "proses utama: menu, dialog,\nlisensi Ed25519, file lokal", fc="white", ec=LN, fs=7.8)
 arr(ax, (0.195, 0.56), (0.195, 0.51), st="<|-|>"); arr(ax, (0.33, 0.435), (0.35, 0.435), st="<|-|>")
@@ -90,14 +90,14 @@ ax.text(0.5, 0.06, "Semua langkah berjalan offline; data contoh di installer ber
 save(f, "d3_alur.png")
 
 # 4. Komposisi kode sumber
-G = {"Mesin desain pit & jalan": "a1 a3 a4 a5 a8 a9 a11 a13 a15 a16 a17 a18 a19 a21 a22 a23 a26",
-     "Edit, front bulanan & tolok ukur": "a6 a12 a14 a20 a27",
-     "Pit Schedule & blok tambang": "a31 a39 a40 a41",
-     "Block model, G × T & presisi": "a36 a38 a43 a46",
-     "Sayatan, ukur & keluaran": "a7 a30 a48 a49",
-     "Antarmuka & kerangka": "a2 a10 a34 a37 a44 a45",
-     "Terjemahan (4 bahasa)": "a29 a33 a50",
-     "Demo otomatis (kode)": "a24_demo a28 a32 a47"}
+G = {"Mesin desain pit & jalan": "a1 a3 a4 a5 a8 a9 a11 a13 a15 a16 a17 a18 a19 a21 a22 a23 a26 a51 a57 a62 a85 a88",
+     "Edit, front bulanan & tolok ukur": "a6 a12 a14 a20 a27 a52 a54 a55 a56 a58 a65 a66 a86",
+     "Pit Schedule & blok tambang": "a31 a39 a40 a41 a67 a68 a70 a78",
+     "Block model, G × T & presisi": "a36 a38 a43 a46 a53 a60 a84 a87",
+     "Sayatan, ukur & keluaran": "a7 a30 a48 a49 a59 a81",
+     "Antarmuka & kerangka": "a2 a10 a34 a37 a44 a45 a61 a64 a69 a71 a72 a73 a75 a76 a77 a79 a80 a83",
+     "Terjemahan (4 bahasa)": "a29 a33 a50 a74",
+     "Demo otomatis (kode)": "a24_demo a28 a32 a47 a63 a82 a89"}
 sz = {}
 for p in glob.glob(os.path.join(SRC, "a*.js")):
     sz[os.path.basename(p)[:-3]] = os.path.getsize(p)
