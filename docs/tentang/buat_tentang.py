@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Bangun docs/Tentang_GCEx.pdf — "Tentang GC-Ex": panduan menjawab pertanyaan Ahli IT / Programmer dan Investor
+"""Bangun docs/Tentang_GCEx_BlockModel.pdf dan docs/Tentang_GCEx_Drillhole.pdf (dipisah per aplikasi, pemilik 26 Nov 2026) — panduan menjawab pertanyaan Ahli IT / Programmer dan Investor
 teknologi tentang GC-Ex Drillhole & Block Model for Desktop (pemilik, 23 Nov 2026).
 
 Isi diambil dari repo (versi, jumlah uji, catatan perubahan) supaya angka selalu sesuai saat dibangun ulang.
@@ -11,7 +11,6 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
-OUT = ROOT / 'docs' / 'Tentang_GCEx.pdf'
 
 import matplotlib
 matplotlib.use('Agg')
@@ -72,7 +71,7 @@ def g_aktivitas():
     ax.set_ylabel('commit / hari'); ax.tick_params(axis='x', labelsize=7.5, rotation=0); ax.set_ylim(0, max(n) * 1.2)
     return svg(fig)
 
-def g_cakupan():
+def g_cakupan(sorot=None):
     tahap = ['Database bor & validasi', 'Pemodelan geologi (domain / vein)', 'Geostatistik & estimasi BM', 'Reporting grade × tonase',
              'Klasifikasi sumber daya (M/I/I)', 'Desain pit & jadwal', 'Dig block harian & dig plan', 'As-mined & rekonsiliasi', 'Foto core / borang / QAQC', 'Pemetaan lapangan (struktur)']
     app = ['GC-Ex\nDrillhole', 'GC-Ex\nBlock Model', 'DB-Ex', 'Ore Works', 'Pit Studio']
@@ -85,7 +84,9 @@ def g_cakupan():
         for c, v in enumerate(row):
             ax.add_patch(plt.Rectangle((c, r), 0.94, 0.86, color=col[v]))
             ax.text(c + 0.47, r + 0.43, {0: '', 1: 'sebagian', 2: 'inti'}[v], ha='center', va='center', fontsize=7.5, color='white' if v == 2 else INK)
-    ax.set_xlim(0, len(app)); ax.set_ylim(len(tahap), 0)
+    if sorot is not None:
+        ax.add_patch(plt.Rectangle((sorot - 0.04, -0.06), 1.02, len(tahap) + 0.02, fill=False, ec=NAVY, lw=2.2, clip_on=False))
+    ax.set_xlim(-0.06, len(app)); ax.set_ylim(len(tahap) + 0.04, -0.1)
     ax.set_xticks([i + 0.47 for i in range(len(app))]); ax.set_xticklabels(app, fontsize=8)
     ax.set_yticks([i + 0.43 for i in range(len(tahap))]); ax.set_yticklabels(tahap, fontsize=8)
     ax.xaxis.tick_top(); ax.tick_params(length=0)
@@ -130,22 +131,26 @@ def d_arsitektur():
     s += kotak(530, 140, 120, 60, 'Internet', 'tidak dipakai', fill='white', stroke='#C0392B', tc='#C0392B')
     s += '<line x1="498" y1="170" x2="526" y2="170" stroke="#C0392B" stroke-width="2"/><line x1="505" y1="160" x2="519" y2="180" stroke="#C0392B" stroke-width="2.4"/><line x1="519" y1="160" x2="505" y2="180" stroke="#C0392B" stroke-width="2.4"/>'
     s += '<text x="590" y="222" text-anchor="middle" font-size="8.5" fill="%s">tanpa telemetri,</text><text x="590" y="234" text-anchor="middle" font-size="8.5" fill="%s">tanpa auto-update,</text><text x="590" y="246" text-anchor="middle" font-size="8.5" fill="%s">tanpa akun cloud</text>' % (MUTED, MUTED, MUTED)
+    s += kotak(516, 272, 138, 86, 'Versi .html portabel', 'tanpa instal · Edge/Chrome', fill=CREAM, stroke=GOLD, fs=10)
+    s += '<text x="585" y="340" text-anchor="middle" font-size="8.5" fill="%s">tanpa backend Python</text>' % MUTED
     return s + '</svg>'
 
-def d_alur():
+def d_alur(sorot=None):
     W, H = 660, 250
     s = '<svg viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">%s' % (W, H, DEFS)
+    redup = {'dh': '<g opacity=".42">', 'bm': '<g>'} if sorot == 'bm' else ({'dh': '<g>', 'bm': '<g opacity=".42">'} if sorot == 'dh' else {'dh': '<g>', 'bm': '<g>'})
+    s += redup['dh']
     s += '<rect x="4" y="8" width="652" height="98" rx="10" fill="#F3EDE4"/><text x="16" y="26" font-size="10.5" font-weight="600" fill="%s">GC-Ex DRILLHOLE — dari data bor ke block model</text>' % COPPER
     a = [('Data bor', 'collar·survey·assay'), ('Validasi', 'upsert·kampanye'), ('Pemodelan', 'domain·vein RBF'), ('Geostatistik', 'variogram·KNA'), ('Estimasi', 'OK·ID²·sub-blok'), ('Reporting', 'pit·topo·M/I/I')]
     for i, (t, u) in enumerate(a):
         x = 14 + i * 107; s += kotak(x, 36, 95, 58, t, u, fill='white', stroke=COPPER, fs=10.5)
         if i: s += panah(x - 12, 65, x - 2, 65)
-    s += '<rect x="4" y="142" width="652" height="102" rx="10" fill="#E6EAF0"/><text x="16" y="236" font-size="10.5" font-weight="600" fill="%s">GC-Ex BLOCK MODEL — dari block model ke tambang harian</text>' % NAVY
+    s += '</g>' + redup['bm'] + '<rect x="4" y="142" width="652" height="102" rx="10" fill="#E6EAF0"/><text x="16" y="236" font-size="10.5" font-weight="600" fill="%s">GC-Ex BLOCK MODEL — dari block model ke tambang harian</text>' % NAVY
     b = [('Import BM', '.mdl / CSV'), ('Flitch aktif', 'sayatan 2D'), ('Dig block', 'otomatis·manual'), ('Dig plan', 'PDF·STR·DXF'), ('As-mined', 'pick-up survei'), ('Rekonsiliasi', 'register Excel·Access')]
     for i, (t, u) in enumerate(b):
         x = 14 + i * 107; s += kotak(x, 152, 95, 58, t, u, fill='white', stroke=NAVY, fs=10.5)
         if i: s += panah(x - 12, 181, x - 2, 181)
-    s += '<polyline points="596,96 596,122 61,122 61,149" fill="none" stroke="%s" stroke-width="1.6" marker-end="url(#ah)"/>' % GOLD
+    s += '</g><polyline points="596,96 596,122 61,122 61,149" fill="none" stroke="%s" stroke-width="1.6" marker-end="url(#ah)"/>' % GOLD
     s += '<text x="330" y="117" text-anchor="middle" font-size="8.5" fill="%s">block model GC (.mdl, format Surpac)</text>' % MUTED
     s += '<path d="M 645 181 C 662 181, 662 66, 647 66" fill="none" stroke="%s" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ah)"/>' % MUTED
     s += '<text x="640" y="136" text-anchor="end" font-size="8.5" fill="%s">bor infill → update model</text>' % MUTED
@@ -224,217 +229,226 @@ ul{margin:2px 0 8px 16px;padding:0}li{margin:0 0 3px}
 code{font-family:'DejaVu Sans Mono',monospace;font-size:8.3pt;background:#F1EEE8;padding:0 3px;border-radius:3px}
 """ % (ROOT / 'docs' / 'fonts' / 'PlayfairDisplay-wght.ttf', INK, NAVY, COPPER, NAVY2, MUTED, CREAM, LINE, COPPER, MUTED, NAVY, LINE, MUTED, COPPER, NAVY, INK, NAVY2, COPPER, NAVY, COPPER, GOLD)
 
-B = []
-B.append('''<div class="sampul"><div><div class="logo">GC-Ex<small>GRADE CONTROL EXCELLENCE</small></div></div>
-<div><h1>Tentang GC-Ex</h1><div class="garis"></div>
-<div class="sub">GC-Ex Drillhole &amp; GC-Ex Block Model for Desktop — apa itu, bagaimana bekerja, apa yang ditawarkan,
-kelebihan, status legal, dan cara menjawab pertanyaan dari <b>ahli IT / programmer</b> maupun <b>investor teknologi</b>.</div></div>
-<div class="meta">Versi dokumen: %s · GC-Ex Block Model %s · GC-Ex Drillhole %s<br>Copyright © Habil Abdillah 2026 · Dokumen internal pemilik, bukan nasihat hukum atau investasi.</div></div>''' % (TGL, V['bm'], V['dh']))
 
-# 1. ringkasan
-B.append('''<div class="bab"><h2>1. Jawaban singkat (30 detik)</h2>
-<p class="lead"><b>GC-Ex</b> (Grade Control Excellence) adalah perangkat lunak desktop Windows untuk <b>grade control tambang</b>:
-mengolah data bor menjadi model geologi dan block model (<b>GC-Ex Drillhole</b>), lalu memakai block model itu untuk pekerjaan
-tambang harian — dig block, dig plan, as-mined, rekonsiliasi (<b>GC-Ex Block Model</b>). Seluruhnya berjalan <b>offline di
-laptop pengguna</b>, membaca &amp; menulis format Surpac, dan hasil hitungnya diaudit terhadap Surpac.</p>
-<div class="kartu">
-<div class="k"><b>2 aplikasi inti</b><span>Drillhole (pemodelan &amp; estimasi) + Block Model (operasi harian)</span></div>
-<div class="k"><b>100%% offline</b><span>tanpa cloud, tanpa telemetri, tanpa auto-update</span></div>
-<div class="k"><b>%d skrip uji</b><span>uji otomatis tampilan &amp; backend di repo</span></div>
-<div class="k"><b>%d catatan rilis</b><span>riwayat perubahan terdokumentasi di README</span></div></div>
+# ================================================================ isi per aplikasi
+APP = {
+    'bm': dict(nama='GC-Ex Block Model', file='Tentang_GCEx_BlockModel.pdf', ver=V['bm'], kol=1, src='web-src', exe='GC-Ex-Setup', html='GCEx_BlockModel.html',
+               peran='dari block model ke tambang harian',
+               untuk='junior grade control dan short-term / junior mine planner — pekerjaan harian per flitch: dig block, dig plan, as-mined, laporan produksi',
+               masuk='Block model (.mdl Surpac / CSV, termasuk model terotasi lewat CSV); topografi, desain pit, pick-up survei (.str / .dxf / CSV); orthofoto (GeoTIFF / JPG + world file)',
+               keluar='Dig block &amp; dig plan (PDF / STR / DXF dengan string number sesuai warna), model as-mined (.mdl), register poligon Excel / Access, laporan grade × tonase harian–bulanan'),
+    'dh': dict(nama='GC-Ex Drillhole', file='Tentang_GCEx_Drillhole.pdf', ver=V['dh'], kol=0, src='web-src-dh', exe='GC-Ex-Drillhole-Setup', html='GCEx_DrillHole.html',
+               peran='dari data bor ke block model',
+               untuk='geologist pemodelan / resource geologist di tambang — membangun domain vein, estimasi block model, laporan sumber daya',
+               masuk='Collar, survey, assay, geologi (CSV / Excel, header dinamis); wireframe (Surpac / Leapfrog); topografi &amp; desain pit (.str / .dxf); orthofoto',
+               keluar='Domain / solid vein, variogram, block model GC (.mdl Surpac), laporan grade × tonase dengan klasifikasi Measured / Indicated / Inferred, string &amp; DXF'),
+}
+FITUR = {
+    'bm': [['Block model', 'Import .mdl Surpac (termasuk &gt; 6 GB di RAM 8 GB) atau CSV; <b>block model terotasi</b> (bearing, konvensi Surpac) lewat import CSV; filter &amp; SG; kelas kadar &amp; warna .ssi Surpac'],
+           ['Flitch &amp; dig block', 'Flitch aktif, sayatan 2D, orthofoto resolusi tinggi; dig block otomatis &amp; manual; additional flagging (garis ganda); pemeriksaan sebelum dig plan terbit; preset kelas kadar &amp; tujuan material'],
+           ['Dig plan', 'Layout &amp; plot PDF dengan kop, legenda, skala; export STR / DXF dengan string number sesuai warna'],
+           ['As-mined', 'Atap dari pick-up survei, lantai dari DTM, kunci per tanggal-shift; Solid Vein Aktual; model as-mined (.mdl)'],
+           ['Laporan', 'Grade × tonase dalam constraint topografi / pit / RL (cara Surpac), ringkasan harian, rekap per flitch, laporan mingguan / bulanan, per desain pit, rekonsiliasi'],
+           ['Integrasi', 'Register poligon langsung ke workbook Excel yang sudah ada (rumus &amp; makro tetap utuh) dan ke MS Access'],
+           ['Kenyamanan', 'Project Tree mengikuti urutan kerja, mode Demo terpandu, 10 palet warna (kontras teks dijaga), 5 bahasa antarmuka, alat ukur jarak 3D / 2D, panel bisa ditutup']],
+    'dh': [['Database bor', 'Import collar / survey / assay / geologi dengan header dinamis; validasi; database per kampanye; upsert bor infill; filter AND / OR; export terfilter'],
+           ['Pemodelan geologi', 'Geomodeller Vein (domain vein, flag otomatis dari kadar &amp; dari kolom kode, koreksi interaktif, string HW/FW, solid RBF), vein bercabang, struktur dip / dip azimuth, sesar 3D dengan offset &amp; urutan umur; menyerap wireframe Leapfrog menjadi domain yang bisa diedit'],
+           ['Geostatistik', 'Statistik per domain, komposit, top-cut, variogram &amp; anisotropi, KNA, estimasi per lapisan (unfold)'],
+           ['Estimasi', 'Block model dari nol (kerangka AOI) atau melanjutkan model lama; Ordinary Kriging / ID²; sub-blok &amp; proporsi volume; estimasi waste; radius pencarian &amp; area pengaruh'],
+           ['Reporting', 'Grade × tonase dengan constraint topografi / pit / domain / RL; beberapa desain pit; progres topo-ke-topo; klasifikasi Measured / Indicated / Inferred'],
+           ['Pendukung', 'Plan bor, Ore Geometry Studio (long section, ore shoot), orthofoto di-drape ke topografi, sayatan memotong topografi &amp; pit, export .mdl / .str / DXF'],
+           ['Kenyamanan', 'Project Tree mengikuti urutan kerja, mode Demo terpandu, 10 palet warna (kontras teks dijaga), 5 bahasa antarmuka, alat ukur jarak 3D / 2D, panel bisa ditutup']],
+}
+FORMAT = {'bm': [['Baca', 'Surpac .mdl, .str, .ssi; DXF; CSV / Excel; GeoTIFF / JPG + world file; MS Access .accdb / .mdb'],
+                 ['Tulis', 'Surpac .mdl, .str (+ .ssi); DXF; CSV; Excel .xlsx; PDF; PNG; MS Access']],
+          'dh': [['Baca', 'CSV / Excel (collar, survey, assay, geologi); Surpac .str, .mdl, wireframe; DXF; GeoTIFF / JPG + world file'],
+                 ['Tulis', 'Surpac .mdl, .str (+ .ssi); DXF; CSV; Excel .xlsx; PNG']]}
+BATAS = {'bm': [['Block model terotasi dari .mdl belum dibaca langsung (lewat CSV sudah bisa)', 'Butuh contoh .mdl terotasi dari Surpac untuk dicocokkan'],
+                ['Dig block otomatis, snap sudut blok, komposit flitch &amp; as-mined belum mendukung model terotasi (dihentikan dengan pesan)', 'Kerjakan di kerangka lokal model'],
+                ['Tanpa klasifikasi sumber daya (sengaja: fokus operasi harian)', 'Klasifikasi ada di GC-Ex Drillhole'],
+                ['Penampil Qt (native) masih percobaan', 'Versi HTML/Electron tetap utama'],
+                ['Pengembang tunggal; baru divalidasi pada data satu tambang emas vein', 'Programmer kedua; uji coba di tambang lain'],
+                ['Hanya Windows; satu pengguna per proyek (ada kunci pemakai)', 'Kolaborasi lewat folder proyek bersama']],
+         'dh': [['Pemodelan vein memakai RBF GC-Ex sendiri, tidak meniru Leapfrog (keputusan pemilik)', 'Hanya fitur Leapfrog yang layak yang diadopsi'],
+                ['Grafis 3D bergantung GPU (sudah diuji di Intel Iris Xe)', 'Mode ringan &amp; LOD sudah ada'],
+                ['Pengembang tunggal; baru divalidasi pada data satu tambang emas vein', 'Programmer kedua; uji coba di tambang / komoditas lain'],
+                ['Hanya Windows; satu pengguna per proyek (ada kunci pemakai)', 'Kolaborasi lewat folder proyek bersama'],
+                ['Belum ada audit independen oleh competent person', 'Siapkan studi pembanding vs Surpac untuk ditinjau pihak ketiga']]}
+FAQ_KHUSUS = {
+    'bm': [('Seberapa besar block model yang sanggup diolah?', 'Diuji: .mdl lebih dari 6 GB di laptop RAM 8 GB (di aplikasi terpasang, backend membuat cache kolom di disk); topografi / pit .str 500–700 MB dibaca per potongan; orthofoto 1 GB.', 'it'),
+           ('Bisa membaca block model terotasi?', 'Ya, untuk rotasi bearing (konvensi Surpac, 90 = tidak diputar) lewat import CSV: pusat blok, sayatan, 3D dan laporan memperhitungkan rotasi. Pembacaan rotasi langsung dari file .mdl menyusul setelah ada contoh dari Surpac.', 'it'),
+           ('Bagaimana angka tonase / kadar dicocokkan dengan Surpac?', 'Dig block, as-mined dan reporting memakai cara Surpac sebagai bawaan (cara GC-Ex tetap tersedia sebagai pilihan); hasilnya diaudit terhadap laporan Surpac pada data nyata.', 'dua')],
+    'dh': [('Algoritma estimasi apa yang dipakai?', 'Ordinary Kriging dan ID² dengan sub-blok di batas solid, didahului variogram dan Kriging Neighbourhood Analysis. Aturan sampel (radius, jumlah sampel, boundary) mengikuti Surpac; hard / soft boundary tetap bisa dipilih.', 'it'),
+           ('Bagaimana domain vein dibuat?', 'Interval bor ditandai (flag) dari kadar atau kolom kode, dikoreksi interaktif, lalu permukaan HW / FW diinterpolasi dengan RBF menjadi solid tertutup; wireframe dari Leapfrog / Surpac bisa diserap menjadi domain yang tetap bisa diperbarui saat ada bor baru.', 'it'),
+           ('Apakah laporannya layak untuk pelaporan sumber daya?', 'GC-Ex menghitung grade × tonase dan klasifikasi M/I/I, tetapi pelaporan publik (JORC / KCMI) tetap tanggung jawab competent person; GC-Ex adalah alat, bukan pengganti tinjauan itu.', 'inv')]}
+
+def bangun(k):
+    A = APP[k]; lain = APP['dh' if k == 'bm' else 'bm']
+    B = []
+    B.append('''<div class="sampul"><div><div class="logo">GC-Ex<small>GRADE CONTROL EXCELLENCE</small></div></div>
+<div><h1>Tentang %s</h1><div class="garis"></div>
+<div class="sub">%s for Desktop — %s. Apa itu, bagaimana bekerja, apa yang ditawarkan, kelebihan, status legal, dan cara menjawab
+pertanyaan dari <b>ahli IT / programmer</b> maupun <b>investor teknologi</b>.</div></div>
+<div class="meta">Versi dokumen: %s · %s %s · aplikasi saudara: %s %s<br>Copyright © Habil Abdillah 2026 · Dokumen internal pemilik, bukan nasihat hukum atau investasi.</div></div>''' % (A['nama'], A['nama'], A['peran'], TGL, A['nama'], A['ver'], lain['nama'], lain['ver']))
+    # 1 ringkasan
+    pitch = {'bm': '<b>GC-Ex Block Model</b> adalah perangkat lunak desktop Windows untuk <b>pekerjaan grade control harian</b>: memuat block model, membuat dig block dan dig plan per flitch, mencatat yang benar-benar tergali (as-mined), dan merekonsiliasi tonase &amp; kadar. Berjalan <b>offline di laptop pengguna</b> — terpasang lewat installer, atau sebagai <b>file .html portabel tanpa instal</b> — membaca &amp; menulis format Surpac, dan hasil hitungnya diaudit terhadap Surpac.',
+             'dh': '<b>GC-Ex Drillhole</b> adalah perangkat lunak desktop Windows untuk <b>mengolah data bor menjadi model geologi dan block model</b>: database bor, domain vein, geostatistik, estimasi, dan laporan grade × tonase dengan klasifikasi sumber daya. Berjalan <b>offline di laptop pengguna</b> — terpasang lewat installer, atau sebagai <b>file .html portabel tanpa instal</b> — membaca &amp; menulis format Surpac, dan hasil hitungnya diaudit terhadap Surpac.'}[k]
+    masalah = {'bm': 'pekerjaan harian grade control (membuat dig block, menghitung tonase &amp; kadar yang akan digali, mencatat yang benar-benar tergali) banyak dikerjakan manual atau dengan perangkat lunak tambang umum yang mahal, berat, dan tidak mengikuti alur kerja harian tim GC.',
+               'dh': 'memperbarui model geologi dan block model setiap ada bor infill lambat bila harus bolak-balik antar perangkat lunak serba guna yang mahal; tim GC butuh alat yang mengikuti alur kerja mereka dan tetap selaras dengan Surpac.'}[k]
+    B.append('''<div class="bab"><h2>1. Jawaban singkat (30 detik)</h2><p class="lead">%s</p>
+<div class="kartu"><div class="k"><b>v%s</b><span>versi saat dokumen dibuat</span></div>
+<div class="k"><b>100%% offline</b><span>tanpa cloud, telemetri, atau auto-update</span></div>
+<div class="k"><b>2 cara pakai</b><span>installer, atau .html portabel tanpa hak admin</span></div>
+<div class="k"><b>%d skrip uji</b><span>uji otomatis keluarga GC-Ex di repo</span></div></div>
 <h3>Versi 2 menit — tiga kalimat yang perlu diingat</h3>
-<ul><li><b>Masalah:</b> pekerjaan grade control harian (membuat dig block, menghitung tonase &amp; kadar yang akan digali, mencatat yang benar-benar tergali)
-banyak dikerjakan manual atau dengan perangkat lunak tambang umum yang mahal, berat, dan tidak mengikuti alur kerja harian tim GC.</li>
-<li><b>Solusi:</b> GC-Ex mengikuti alur kerja itu langkah demi langkah, dari data bor sampai rekonsiliasi, di satu laptop, dengan angka yang bisa dicocokkan ke Surpac.</li>
-<li><b>Bukti:</b> dipakai dan diuji pada data tambang emas vein sungguhan oleh pengembangnya (geologist GC), dengan block model .mdl lebih dari 6 GB di laptop RAM 8 GB.</li></ul>
-<div class="fig">%s</div><div class="cap">Gambar 1 — Alur kerja yang dicakup GC-Ex. Drillhole menghasilkan block model; Block Model memakainya untuk tambang harian; bor infill memperbarui model.</div>
-<div class="catat"><b>Cara memakai dokumen ini.</b> Bab 2–6 menjelaskan produk; Bab 7 adalah daftar pertanyaan yang biasa diajukan beserta usulan jawaban,
-ditandai <span class="tag it">IT</span> atau <span class="tag inv">Investor</span>. Jawab sesuai fakta; bagian yang belum ada (harga, pelanggan, pencatatan HKI) jawab jujur sebagai "belum" atau "sedang disiapkan".</div></div>''' % (N_UJI, N_LOG, d_alur()))
-
-# 2. apa itu
-B.append('''<div class="bab"><h2>2. Apa itu GC-Ex Drillhole dan GC-Ex Block Model</h2>
-<p>GC-Ex adalah keluarga aplikasi buatan Habil Abdillah, geologist grade control. Dokumen ini membahas dua aplikasi intinya.
-Aplikasi keluarga lainnya (DB-Ex, Ore Works, Pit Studio) disebut sebagai konteks.</p>
+<ul><li><b>Masalah:</b> %s</li>
+<li><b>Solusi:</b> %s mengikuti alur kerja itu langkah demi langkah di satu laptop, dengan angka yang bisa dicocokkan ke Surpac.</li>
+<li><b>Bukti:</b> dipakai dan diuji pada data tambang emas vein sungguhan oleh pengembangnya (geologist GC); %d catatan perubahan terdokumentasi.</li></ul>
+<div class="fig">%s</div><div class="cap">Gambar 1 — Alur kerja keluarga GC-Ex. Bagian yang terang adalah wilayah %s; bagian redup dikerjakan %s.</div>
+<div class="catat"><b>Cara memakai dokumen ini.</b> Bab 2–6 menjelaskan produk; Bab 7 berisi pertanyaan yang biasa diajukan beserta usulan jawaban (<span class="tag it">IT</span> / <span class="tag inv">Investor</span>).
+Jawab sesuai fakta; yang belum ada (harga, pelanggan, pencatatan HKI) jawab jujur sebagai "belum" atau "sedang disiapkan".</div></div>''' % (
+        pitch, A['ver'], N_UJI, masalah, A['nama'], N_LOG, d_alur(k), A['nama'], lain['nama']))
+    # 2 apa itu
+    B.append('''<div class="bab"><h2>2. Apa itu %s</h2>
+<p>%s adalah salah satu dari lima aplikasi keluarga GC-Ex buatan Habil Abdillah, geologist grade control. Pasangannya, <b>%s</b>, %s.</p>
 %s
-<h3>Untuk siapa</h3>
-<ul><li><b>GC-Ex Drillhole:</b> geologist pemodelan / resource geologist di tambang — membangun domain vein, estimasi block model, laporan sumber daya.</li>
-<li><b>GC-Ex Block Model:</b> junior grade control dan short-term / junior mine planner — pekerjaan harian per flitch: dig block, dig plan, as-mined, laporan produksi.</li></ul>
+<h3>Untuk siapa</h3><p>%s.</p>
 <h3>Posisi terhadap perangkat lunak tambang umum</h3>
-<p>Surpac, Leapfrog, Micromine dan sejenisnya adalah perangkat lunak <b>serba guna</b> untuk seluruh siklus tambang. GC-Ex <b>bukan pengganti penuh</b>
-perangkat lunak itu; GC-Ex fokus pada alur kerja <b>grade control harian</b> dan dibuat agar <b>berdampingan</b> dengan Surpac: membaca &amp; menulis format Surpac
-(<code>.mdl</code>, <code>.str</code>, <code>.ssi</code>, DXF), dan setiap hitungan yang punya cara Surpac memakai cara Surpac sebagai bawaan supaya hasil bisa direkonsiliasi.</p>
-<div class="fig">%s</div><div class="cap">Gambar 2 — Cakupan tahap kerja per aplikasi keluarga GC-Ex (penilaian pengembang). "Inti" = fitur utama; "sebagian" = tersedia sebagai pendukung.</div></div>''' % (
-    tabel(['', 'GC-Ex Drillhole', 'GC-Ex Block Model'], [
-        ['Peran', 'Dari data bor ke block model', 'Dari block model ke tambang harian'],
-        ['Versi saat ini', V['dh'], V['bm']],
-        ['Masukan utama', 'Collar, survey, assay, geologi (CSV / Excel); wireframe; topografi &amp; pit (.str / .dxf)', 'Block model (.mdl Surpac / CSV); topografi, pit, pick-up survei; orthofoto'],
-        ['Keluaran utama', 'Domain / solid vein, variogram, block model GC (.mdl), laporan grade × tonase + klasifikasi', 'Dig block &amp; dig plan (PDF / STR / DXF), model as-mined, register poligon Excel / Access, laporan harian–bulanan'],
-        ['Installer', 'GC-Ex-Drillhole-Setup-&lt;versi&gt;.exe', 'GC-Ex-Setup-&lt;versi&gt;.exe']], w=['18%', '41%', '41%']), g_cakupan()))
-
-# 3. cara kerja
-B.append('''<div class="bab"><h2>3. Bagaimana GC-Ex bekerja</h2>
-<p>GC-Ex adalah aplikasi <b>desktop hibrida</b>: tampilannya dibangun dengan teknologi web (HTML/JavaScript) dan dijalankan oleh <b>Electron</b>
-(Chromium + Node.js) sebagai aplikasi Windows biasa. Pekerjaan berat yang tidak cocok di browser — membaca block model .mdl berukuran gigabyte,
-menulis ke workbook Excel yang sudah ada, membaca database MS Access — dikerjakan oleh <b>backend Python (FastAPI)</b> yang dijalankan aplikasi
-di komputer itu sendiri, hanya di alamat <code>127.0.0.1</code> dengan port acak, dan dimatikan saat aplikasi ditutup.</p>
+<p>Surpac, Leapfrog, Micromine dan sejenisnya adalah perangkat lunak <b>serba guna</b> untuk seluruh siklus tambang. %s <b>bukan pengganti penuh</b>
+perangkat lunak itu; ia fokus pada alur kerja grade control dan dibuat <b>berdampingan</b> dengan Surpac: membaca &amp; menulis format Surpac
+(<code>.mdl</code>, <code>.str</code>, <code>.ssi</code>, DXF), dan setiap hitungan yang punya cara Surpac memakai cara Surpac sebagai bawaan.</p>
+<div class="fig">%s</div><div class="cap">Gambar 2 — Cakupan tahap kerja per aplikasi keluarga GC-Ex (penilaian pengembang); kolom bergaris tebal = %s.</div></div>''' % (
+        A['nama'], A['nama'], lain['nama'], lain['peran'],
+        tabel(['', A['nama']], [['Peran', A['peran'][0].upper() + A['peran'][1:]], ['Versi saat ini', A['ver']], ['Masukan utama', A['masuk']], ['Keluaran utama', A['keluar']],
+                                ['Cara pakai', 'Installer <code>%s-&lt;versi&gt;.exe</code> (per pengguna, tanpa hak admin) <b>atau</b> file <code>%s</code> portabel di Edge / Chrome' % (A['exe'], A['html'])]], w=['22%', '78%']),
+        A['untuk'][0].upper() + A['untuk'][1:], A['nama'], g_cakupan(A['kol']), A['nama']))
+    # 3 cara kerja
+    B.append('''<div class="bab"><h2>3. Bagaimana %s bekerja</h2>
+<p>Aplikasi <b>desktop hibrida</b>: tampilan dibangun dengan teknologi web (HTML/JavaScript) dan dijalankan oleh <b>Electron</b> (Chromium + Node.js) sebagai aplikasi Windows biasa.
+Pekerjaan berat — membaca block model .mdl berukuran gigabyte, menulis ke workbook Excel yang sudah ada, membaca MS Access — dikerjakan <b>backend Python (FastAPI)</b>
+yang berjalan di komputer itu sendiri, hanya di <code>127.0.0.1</code> dengan port acak, dan mati bersama aplikasi.</p>
 <div class="fig">%s</div><div class="cap">Gambar 3 — Arsitektur. Semua komponen berjalan di laptop pengguna; tidak ada server luar.</div>
-%s
-<h3>Mesin hitung</h3>
-<p>Perhitungan geologi dikerjakan di kode GC-Ex sendiri (bukan pustaka hitung pihak ketiga): interpolasi permukaan vein dengan RBF, variogram dan
-Kriging Neighbourhood Analysis, estimasi Ordinary Kriging / ID² dengan sub-blok di batas solid, triangulasi (TIN) untuk permukaan, dan laporan
-grade × tonase dengan constraint topografi / pit / domain. Prinsip yang dipegang: <b>angka laporan harus sama dengan Surpac</b>; tampilan boleh berbeda.</p></div>''' % (d_arsitektur(), tabel(['Lapisan', 'Teknologi', 'Catatan'], [
-    ['Shell aplikasi', 'Electron %s' % ELECTRON.lstrip('^~'), 'contextIsolation aktif, nodeIntegration mati, sandbox aktif'],
-    ['Tampilan &amp; visual', 'HTML / JavaScript satu file, Plotly.js (WebGL)', '3D, sayatan 2D, grafik; tanpa CDN — semua aset dibundel'],
-    ['Backend', 'Python, FastAPI, Uvicorn, NumPy, openpyxl, pyodbc', 'dibekukan dengan PyInstaller menjadi gcex-backend.exe'],
-    ['Penyimpanan', 'IndexedDB (proyek), SQLite (gcex_proyek.db), file kerja', 'proyek bisa dipindah ke laptop lain untuk dilanjutkan'],
-    ['Installer', 'electron-builder + NSIS, per pengguna', 'tanpa hak administrator, tanpa internet saat pasang'],
-    ['Lisensi', 'Ed25519 (kriptografi kunci publik)', 'kunci terikat ID komputer, satu file lisensi untuk semua aplikasi']], w=['18%', '40%', '42%'])))
-
-# 4. yang ditawarkan
-B.append('''<div class="bab"><h2>4. Apa saja yang ditawarkan</h2>
-<h3>GC-Ex Drillhole — pemodelan &amp; estimasi</h3>
-%s
-<h3>GC-Ex Block Model — operasi tambang harian</h3>
-%s
-<h3>Format data</h3>
-%s
-<p>Kedua aplikasi juga punya: Project Tree mengikuti urutan alur kerja, mode demo terpandu, 10 palet warna, 5 bahasa antarmuka
-(Indonesia, English UK / US, Español, Basa Sunda — tahap 1), alat ukur jarak 3D / 2D, dan tutorial PDF bergambar dengan data latihan fiktif.</p></div>''' % (
-    tabel(['Kelompok', 'Fitur'], [
-        ['Database bor', 'Import collar / survey / assay / geologi dengan header dinamis; validasi; database per kampanye; upsert bor infill; filter AND / OR; export terfilter'],
-        ['Pemodelan geologi', 'Geomodeller Vein (domain vein, flag otomatis dari kadar, koreksi interaktif, string HW/FW, solid RBF), vein bercabang, struktur dip / dip azimuth, sesar 3D dengan offset &amp; urutan umur; menyerap wireframe Leapfrog menjadi domain yang bisa diedit'],
-        ['Geostatistik', 'Statistik per domain, komposit, top-cut, variogram &amp; anisotropi, KNA, estimasi per lapisan (unfold)'],
-        ['Estimasi', 'Block model dari nol (kerangka AOI) atau melanjutkan model lama; Ordinary Kriging / ID²; sub-blok &amp; proporsi volume; estimasi waste; radius pencarian &amp; area pengaruh'],
-        ['Reporting', 'Grade × tonase dengan constraint topografi / pit / domain / RL; beberapa desain pit; progres topo-ke-topo; klasifikasi Measured / Indicated / Inferred'],
-        ['Pendukung', 'Plan bor, Ore Geometry Studio (long section, ore shoot), orthofoto di-drape ke topografi, export .mdl / .str / DXF']], w=['18%', '82%']),
-    tabel(['Kelompok', 'Fitur'], [
-        ['Block model', 'Import .mdl Surpac (termasuk &gt; 6 GB di RAM 8 GB) atau CSV; block model terotasi (bearing); filter &amp; SG; kelas kadar &amp; warna .ssi Surpac'],
-        ['Flitch &amp; dig block', 'Flitch aktif, sayatan 2D, orthofoto resolusi tinggi; dig block otomatis &amp; manual; additional flagging (garis ganda); pemeriksaan sebelum dig plan terbit; preset kelas kadar &amp; tujuan material'],
-        ['Dig plan', 'Layout &amp; plot PDF dengan kop, legenda, skala; export STR / DXF dengan string number sesuai warna'],
-        ['As-mined', 'Atap dari pick-up survei, lantai dari DTM, kunci per tanggal-shift; Solid Vein Aktual; model as-mined (.mdl)'],
-        ['Laporan', 'Grade × tonase dalam constraint, ringkasan harian, rekap per flitch, laporan mingguan / bulanan, laporan per desain pit, rekonsiliasi'],
-        ['Integrasi', 'Register poligon langsung ke workbook Excel yang sudah ada (rumus &amp; makro tetap utuh) dan ke MS Access']], w=['18%', '82%']),
-    tabel(['Arah', 'Format'], [
-        ['Baca', 'Surpac .mdl, .str, .ssi; DXF; CSV / Excel; GeoTIFF / JPG + world file; wireframe; MS Access .accdb / .mdb'],
-        ['Tulis', 'Surpac .mdl, .str (+ .ssi); DXF; CSV; Excel .xlsx; PDF; PNG; MS Access']], w=['18%', '82%'])))
-
-# 5. kelebihan
-B.append('''<div class="bab"><h2>5. Kelebihan</h2>
-%s
+%s</div>''' % (
+        A['nama'], d_arsitektur(),
+        tabel(['Lapisan', 'Teknologi', 'Catatan'], [
+            ['Shell aplikasi', 'Electron %s' % ELECTRON.lstrip('^~'), 'contextIsolation aktif, nodeIntegration mati, sandbox aktif'],
+            ['Tampilan &amp; visual', 'HTML / JavaScript satu file, Plotly.js (WebGL)', '3D, sayatan 2D, grafik; tanpa CDN — semua aset dibundel'],
+            ['Backend', 'Python, FastAPI, Uvicorn, NumPy, openpyxl, pyodbc', 'dibekukan dengan PyInstaller menjadi gcex-backend.exe'],
+            ['Penyimpanan', 'Folder proyek (JSON + salinan file sumber + backup berversi), IndexedDB, SQLite riwayat', 'proyek bisa dipindah ke laptop lain; kunci pemakai mencegah dua orang menyunting bersamaan'],
+            ['Installer', 'electron-builder + NSIS, per pengguna', 'tanpa hak administrator, tanpa internet saat pasang'],
+            ['Lisensi', 'Ed25519 (kriptografi kunci publik)', 'kunci terikat ID komputer (aplikasi terpasang)']], w=['18%', '40%', '42%'])))
+    DUA = tabel(['', 'Aplikasi terpasang', 'File .html portabel'], [
+            ['Cara pasang', 'Installer per pengguna (tanpa hak admin)', 'Ekstrak ZIP, buka file di Edge / Chrome — tidak ada yang diinstal'],
+            ['Untuk', 'Laptop pribadi / laptop yang boleh memasang program', 'Laptop kantor yang tidak mengizinkan instalasi'],
+            ['Folder proyek', 'Ya (mis. D:\\GC-Ex\\Proyek\\…)', 'Ya, format sama; izin folder diberikan lewat browser'],
+            ['Backend Python', 'Ya: .mdl sangat besar lewat cache, tulis langsung ke Excel / Access', 'Tidak: .mdl dibaca langsung oleh browser; Excel / Access lewat export'],
+            ['Lisensi per komputer', 'Ya', 'Tidak ada pemeriksaan lisensi (lihat Bab 6)']], w=['18%', '41%', '41%'])
+    # 4 fitur
+    B.append('''<div class="bab"><h2>4. Apa saja yang ditawarkan</h2>
+<h3>Dua cara pakai: terpasang atau portabel</h3>%s
+<p>Folder proyek berformat sama untuk kedua cara: proyek yang dibuat di aplikasi terpasang bisa dibuka dari file .html dan sebaliknya (diuji otomatis).
+Bila file sumber proyek (mis. block model) dipindah, aplikasi mencarinya di subfolder proyek lalu memunculkan jendela <b>Sambungkan file</b> untuk menunjuk lokasi barunya.</p>
+<h3>Fitur</h3>%s<h3>Format data</h3>%s
+<p>Setiap fitur memiliki tutorial PDF bergambar dengan data latihan fiktif, dan mode Demo di dalam aplikasi memperagakan alur kerjanya langkah demi langkah.</p></div>''' % (
+        DUA, tabel(['Kelompok', 'Fitur'], FITUR[k], w=['18%', '82%']), tabel(['Arah', 'Format'], FORMAT[k], w=['18%', '82%'])))
+    # 5 kelebihan
+    data_besar = 'Block model .mdl &gt; 6 GB di RAM 8 GB; topo / pit .str 500–700 MB; orthofoto 1 GB' if k == 'bm' else 'Assay 200.000 baris; topo / pit .str 500–700 MB; orthofoto 1 GB'
+    B.append('''<div class="bab"><h2>5. Kelebihan</h2>%s
 <h3>Ukuran dan aktivitas pengembangan</h3>
-<div class="fig">%s</div><div class="cap">Gambar 4 — Ukuran kode sumber per komponen (dihitung dari repo saat dokumen dibangun). Pustaka pihak ketiga (Plotly, Electron, Python) tidak dihitung.</div>
-<div class="fig">%s</div><div class="cap">Gambar 5 — Commit per hari pada riwayat yang tersedia di repo (%s hari terakhir). Setiap commit yang mengubah installer menaikkan versi dan menerbitkan GitHub Release.</div></div>''' % (
-    tabel(['Kelebihan', 'Artinya bagi pengguna', 'Bukti / cara mengecek'], [
-        ['Offline penuh', 'Aman dipakai di site tanpa sinyal; data tambang tidak keluar dari laptop', 'Tidak ada pemanggilan jaringan; backend hanya 127.0.0.1; publish: null (tanpa auto-update)'],
-        ['Selaras dengan Surpac', 'Angka bisa direkonsiliasi dengan perangkat lunak yang diakui di tambang', 'Cara Surpac jadi bawaan untuk dig block, as-mined dan reporting; uji paritas di repo'],
-        ['Mengikuti alur kerja GC', 'Langkah di aplikasi = langkah kerja harian tim; cepat dipelajari junior', 'Project Tree berurutan; tutorial per langkah; mode demo'],
-        ['Data besar di laptop biasa', 'Tidak perlu workstation', 'Block model .mdl &gt; 6 GB di RAM 8 GB; topo / pit .str 500–700 MB; assay 200.000 baris; orthofoto 1 GB'],
-        ['Terintegrasi dengan Excel &amp; Access', 'Register tetap di file kantor yang sudah ada', 'Penulisan sel input saja, rumus / makro / grafik tetap, cadangan otomatis'],
-        ['Iterasi cepat', 'Permintaan lapangan bisa masuk rilis berikutnya dalam hitungan hari', 'Rilis otomatis via GitHub Actions; %d catatan perubahan' % N_LOG],
-        ['Teruji otomatis', 'Perubahan tidak diam-diam merusak fitur lama', '%d skrip uji (Playwright untuk tampilan, pytest untuk backend)' % N_UJI],
-        ['Lisensi aman', 'Pemakaian terkendali per komputer', 'Tanda tangan Ed25519; kunci privat tidak pernah ada di repo / Release']], w=['20%', '38%', '42%']),
-    g_ukuran(), g_aktivitas(), len(HARI)))
-
-# 6. legal
-B.append('''<div class="bab"><h2>6. Status legal</h2>
-<div class="catat">Bagian ini merangkum dokumen di folder <code>legal/</code> repo dan ketentuan UU Hak Cipta. <b>Ini bukan nasihat hukum</b>; untuk
-kesepakatan dengan investor atau perusahaan, mintalah pendapat konsultan kekayaan intelektual.</div>
-<h3>Yang sudah ada</h3>
-%s
+<div class="fig">%s</div><div class="cap">Gambar 4 — Ukuran kode sumber keluarga GC-Ex per komponen (dihitung dari repo saat dokumen dibangun; pustaka pihak ketiga tidak dihitung).</div>
+<div class="fig">%s</div><div class="cap">Gambar 5 — Commit per hari pada riwayat yang tersedia di repo (%d hari terakhir). Setiap commit yang mengubah installer menaikkan versi dan menerbitkan GitHub Release.</div></div>''' % (
+        tabel(['Kelebihan', 'Artinya bagi pengguna', 'Bukti / cara mengecek'], [
+            ['Offline penuh', 'Aman dipakai di site tanpa sinyal; data tambang tidak keluar dari laptop', 'Tidak ada pemanggilan jaringan; backend hanya 127.0.0.1; tanpa auto-update'],
+            ['Bisa tanpa instal', 'Tetap bisa dipakai di laptop kantor yang melarang instalasi program', 'File .html portabel; proyek desktop terbuka di .html dengan isi sama (uji otomatis)'],
+            ['Selaras dengan Surpac', 'Angka bisa direkonsiliasi dengan perangkat lunak yang diakui di tambang', 'Cara Surpac jadi bawaan; uji paritas di repo'],
+            ['Mengikuti alur kerja GC', 'Langkah di aplikasi = langkah kerja; cepat dipelajari', 'Project Tree berurutan; tutorial per langkah; mode Demo'],
+            ['Data besar di laptop biasa', 'Tidak perlu workstation', data_besar],
+            ['Proyek tahan pindah', 'Proyek tidak rusak bila file dipindah atau dibuka di laptop lain', 'Backup berversi, kunci pemakai, pencarian &amp; jendela Sambungkan file'],
+            ['Iterasi cepat', 'Permintaan lapangan bisa masuk rilis berikutnya dalam hitungan hari', 'Rilis otomatis via GitHub Actions; %d catatan perubahan' % N_LOG],
+            ['Teruji otomatis', 'Perubahan tidak diam-diam merusak fitur lama', '%d skrip uji (Playwright untuk tampilan, pytest untuk backend)' % N_UJI]], w=['20%', '38%', '42%']),
+        g_ukuran(), g_aktivitas(), len(HARI)))
+    # 6 legal
+    B.append('''<div class="bab"><h2>6. Status legal</h2>
+<div class="catat">Ringkasan dokumen di folder <code>legal/</code> repo dan ketentuan UU Hak Cipta. <b>Ini bukan nasihat hukum</b>; untuk kesepakatan dengan investor atau perusahaan, mintalah pendapat konsultan kekayaan intelektual.</div>
+<h3>Yang sudah ada</h3>%s
 <h3>Lisensi kepada pengguna</h3>
-<div class="fig">%s</div><div class="cap">Gambar 6 — Alur kunci lisensi. Aplikasi hanya memegang kunci publik, jadi kunci tidak bisa dipalsukan tanpa kunci privat pemilik.</div>
-%s
-<h3>Yang perlu diperkuat sebelum bicara investasi</h3>
-%s
+<div class="fig">%s</div><div class="cap">Gambar 6 — Alur kunci lisensi aplikasi terpasang. Aplikasi hanya memegang kunci publik, jadi kunci tidak bisa dipalsukan tanpa kunci privat pemilik.</div>
+<p>Dua hal yang perlu disampaikan terbuka kepada investor: (1) <b>versi .html portabel tidak memeriksa lisensi</b> — kendali pemakaiannya bergantung pada distribusi file dan syarat penggunaan; (2) kode sumber
+disimpan di repositori GitHub <b>publik</b>. Publik tidak sama dengan open source: repo tidak memakai lisensi open source, jadi semua hak tetap pada pemilik, tetapi siapa pun dapat membaca kodenya.
+Pertimbangkan menjadikan repo privat dan menambahkan pemeriksaan lisensi ringan di versi .html sebelum pembicaraan investasi.</p>
+<h3>Yang perlu diperkuat sebelum bicara investasi</h3>%s
 <div class="fig">%s</div><div class="cap">Gambar 7 — Jalur rilis: dari commit sampai laptop pengguna.</div></div>''' % (
-    tabel(['Aspek', 'Status'], [
-        ['Hak cipta', 'GC-Ex dinyatakan ciptaan Habil Abdillah, dilindungi sebagai Program Komputer menurut UU No. 28 Tahun 2014. Hak cipta timbul otomatis (prinsip deklaratif); pencatatan bukan syarat untuk mendapatkan hak cipta (Pasal 64 ayat 2). Masa perlindungan program komputer: 50 tahun sejak pertama kali diumumkan (Pasal 59).'],
-        ['Syarat penggunaan', '<code>legal/SYARAT_PENGGUNAAN.txt</code> (versi 2026-10-29): perangkat lunak dilisensikan, bukan dijual; lisensi non-eksklusif, tidak dapat dialihkan, dapat dicabut; larangan menjual, menyewakan, membongkar (reverse engineering) dan menghapus tanda hak cipta.'],
-        ['Komponen open source', 'Electron, Chromium, Node.js, Python, FastAPI, Uvicorn, NumPy, Plotly.js, font OFL, dll. Lisensi masing-masing (MIT, BSD, Apache-2.0, PSF, OFL, dll.) dibundel di folder legal dan menu Bantuan.'],
-        ['Merek pihak lain', '<code>legal/PENAFIAN_MEREK.txt</code>: Surpac, Leapfrog, Micromine, Microsoft, dll. disebut hanya untuk menjelaskan kecocokan format; GC-Ex tidak berafiliasi dengan pemilik merek tersebut.'],
-        ['Tanda hak cipta', '"Copyright © Habil Abdillah 2026" tampil di setiap aplikasi; watermark cadangan muncul bila tulisan itu dihapus.'],
-        ['Data contoh', 'Data latihan di repo dan Release fiktif (tanpa nama perusahaan, Hole ID atau koordinat proyek nyata).']], w=['20%', '80%']),
-    d_lisensi(),
-    '<p>Kode sumber disimpan di GitHub dalam repositori <b>publik</b> (agar build otomatis tidak memakan kuota). <b>Publik tidak sama dengan open source</b>: '
-    'repo tidak memakai lisensi open source, jadi semua hak tetap pada pemilik dan syarat penggunaan tetap berlaku. Bagi investor, hal ini perlu disampaikan '
-    'terbuka karena siapa pun dapat membaca kodenya; nilai produk terletak pada pengetahuan domain, kecepatan pengembangan, dan kepercayaan pengguna, bukan '
-    'pada kerahasiaan kode. Pertimbangkan menjadikan repo privat kembali sebelum pembicaraan investasi.</p>',
-    tabel(['Hal', 'Mengapa penting', 'Langkah'], [
-        ['Pencatatan ciptaan di DJKI', 'Bukan syarat hak cipta, tetapi menjadi bukti awal kepemilikan yang kuat di hadapan investor atau pengadilan', 'Ajukan pencatatan program komputer GC-Ex (dan DB-Ex, Ore Works, Pit Studio) secara daring di DJKI'],
-        ['Hubungan kerja dengan perusahaan', 'Pasal 36 UU Hak Cipta: kecuali diperjanjikan lain, pencipta dan pemegang hak cipta atas ciptaan dalam hubungan kerja adalah pihak yang membuat ciptaan. Perjanjian kerja bisa mengatur lain', 'Periksa perjanjian kerja / kebijakan HKI perusahaan; bila perlu buat surat pernyataan atau perjanjian tertulis tentang kepemilikan GC-Ex'],
-        ['Pemakaian data perusahaan', 'Investor akan bertanya apakah produk dibangun dari data milik perusahaan', 'Tegaskan data contoh fiktif; data nyata tidak pernah masuk repo / Release'],
-        ['Merek "GC-Ex" / "Grade Control Excellence"', 'Nama produk adalah aset; belum ada pendaftaran merek', 'Cek ketersediaan dan daftarkan merek di DJKI pada kelas perangkat lunak'],
-        ['Badan usaha &amp; kontrak lisensi', 'Investor berinvestasi ke badan usaha, bukan ke perorangan; pelanggan perusahaan butuh kontrak (EULA, SLA)', 'Siapkan badan usaha (mis. PT perorangan / PT), EULA komersial, kebijakan dukungan'],
-        ['Kode yang ditulis dengan bantuan AI', 'Sebagian besar kode disusun dengan bantuan asisten AI di bawah arahan, pengujian dan keputusan pemilik', 'Siapkan penjelasan proses pengembangan; minta konsultan menilai implikasinya terhadap klaim hak cipta']], w=['22%', '40%', '38%']),
-    d_rilis()))
-
-# 7. tanya jawab
-qa_it = [
-    ('Dibangun dengan teknologi apa?', 'Electron (Chromium + Node.js) untuk aplikasi desktop, tampilan HTML / JavaScript dengan Plotly.js untuk 3D, dan backend Python (FastAPI, Uvicorn, NumPy) yang dibekukan dengan PyInstaller. Installer dibuat electron-builder + NSIS.'),
-    ('Kenapa Electron, bukan aplikasi native?', 'GC-Ex awalnya aplikasi HTML offline; Electron memungkinkan kode yang sama menjadi aplikasi Windows tanpa menulis ulang, dengan akses file dan proses lokal. Penampil Qt (PySide6) untuk Block Model sedang diuji berdampingan sebagai jalur native.'),
-    ('Apakah butuh internet atau server?', 'Tidak. Semua proses di laptop. Backend Python hanya mendengar di 127.0.0.1 dengan port acak dan mati bersama aplikasi. Tidak ada telemetri, akun cloud, atau pemeriksaan pembaruan online.'),
-    ('Bagaimana keamanan aplikasinya?', 'Jendela Electron memakai contextIsolation, sandbox, dan nodeIntegration dimatikan; halaman hanya bicara ke sistem lewat jembatan preload yang terbatas. Lisensi diverifikasi dengan tanda tangan Ed25519; kunci privat tidak pernah ada di repo atau installer.'),
-    ('Data disimpan di mana? Bisa dipindah?', 'Proyek disimpan lokal (IndexedDB dan SQLite <code>gcex_proyek.db</code> di folder proyek, dengan tabel riwayat perubahan). Proyek bisa disalin ke laptop lain untuk dilanjutkan rekan.'),
-    ('Seberapa besar data yang sanggup diolah?', 'Diuji: block model .mdl lebih dari 6 GB di RAM 8 GB / VRAM 4 GB (indeks RL di luar RAM), topografi / pit .str 500–700 MB dibaca per potongan, assay 200.000 baris, orthofoto 1 GB.'),
-    ('Bagaimana memastikan hitungannya benar?', 'Setiap hitungan yang punya cara Surpac memakai cara Surpac sebagai bawaan, dan hasil diaudit terhadap laporan Surpac pada data nyata. %d skrip uji otomatis dijalankan; uji tampilan memakai Playwright, backend memakai pytest.' % N_UJI),
-    ('Bagaimana proses rilis dan versi?', 'Setiap push ke cabang utama menjalankan GitHub Actions: uji, build backend, cek backend menyala, build installer, lalu terbit di GitHub Release lengkap dengan dokumen, data latihan, lisensi, catatan rilis dan SHA-256. Versi tiap aplikasi naik hanya bila isi installernya berubah.'),
-    ('Bisa diintegrasikan dengan sistem lain?', 'Lewat format file standar tambang (Surpac .mdl / .str, DXF, CSV, Excel) dan langsung ke workbook Excel / database MS Access. API backend lokal ada, tetapi saat ini hanya untuk aplikasi itu sendiri.'),
-    ('Apa keterbatasan teknisnya?', 'Hanya Windows 64-bit; satu pengguna per proyek (belum kolaborasi bersamaan); grafis 3D bergantung GPU (sudah diuji di Intel Iris Xe); block model terotasi baru lewat CSV; pengembang inti satu orang.'),
-    ('Kodenya open source?', 'Tidak. Repo GitHub saat ini publik agar build gratis, tetapi tanpa lisensi open source; semua hak tetap pada pemilik. Komponen pihak ketiga tetap di bawah lisensinya masing-masing.')]
-qa_inv = [
-    ('Masalah apa yang diselesaikan dan seberapa penting?', 'Selisih antara rencana dan realisasi tambang (dilusi, ore loss, salah tujuan material) langsung menjadi kerugian. GC-Ex mempercepat dan merapikan keputusan harian grade control serta pencatatannya, dengan angka yang bisa direkonsiliasi ke Surpac.'),
-    ('Siapa penggunanya dan siapa pembelinya?', 'Pengguna: geologist grade control, junior GC, short-term mine planner. Pembeli yang mungkin: perusahaan tambang (departemen geologi / mine planning) dan kontraktor tambang. <i>Saat ini dipakai internal oleh pengembang; belum ada pelanggan berbayar.</i>'),
-    ('Apa bedanya dengan Surpac / Leapfrog?', 'GC-Ex tidak berusaha menggantikan perangkat lunak serba guna itu. GC-Ex fokus pada alur kerja GC harian, berjalan offline di laptop biasa, berbahasa Indonesia, dan tetap kompatibel dengan format Surpac sehingga bisa dipakai berdampingan.'),
-    ('Seberapa matang produknya?', 'Versi masih 0.x: Block Model %s, Drillhole %s. Fitur inti lengkap dan diuji pada data nyata satu tambang emas vein; validasi di tambang lain dan pengguna di luar pengembang belum ada.' % (V['bm'], V['dh'])),
-    ('Siapa timnya?', 'Pengembang tunggal: Habil Abdillah, geologist grade control yang memakai sendiri alat ini. Kekuatan: pemahaman domain langsung dan iterasi cepat. Risiko: ketergantungan pada satu orang — bagian dari rencana penggunaan dana.'),
-    ('Bagaimana model bisnisnya?', 'Mekanisme lisensi per komputer sudah ada (kunci bertanda tangan, bisa diberi tanggal kedaluwarsa), sehingga model langganan tahunan atau lisensi per kursi bisa langsung dijalankan. <i>Harga belum ditetapkan</i> — siapkan angka sebelum pertemuan.'),
-    ('Apa yang melindungi dari peniru?', 'Hak cipta atas kode, pengetahuan domain grade control yang tertanam di alur kerja, kepercayaan karena angka cocok dengan Surpac, dan kecepatan iterasi. Kode yang terlihat publik melemahkan kerahasiaan — pertimbangkan repo privat dan pencatatan HKI.'),
-    ('Bagaimana status kepemilikannya?', 'Hak cipta dinyatakan atas nama Habil Abdillah. Sebelum investasi, pastikan tidak ada klaim perusahaan tempat bekerja (Pasal 36 UU Hak Cipta dan perjanjian kerja) dan lakukan pencatatan ciptaan di DJKI. Lihat Bab 6.'),
-    ('Untuk apa dana investasi?', 'Usulan: (1) tim kecil (programmer kedua, QA) untuk mengurangi risiko satu orang; (2) validasi di beberapa tambang; (3) legal &amp; HKI; (4) dukungan pelanggan dan pelatihan; (5) versi native Qt dan kolaborasi multi-pengguna.'),
-    ('Apakah bisa dipakai di luar Indonesia / komoditas lain?', 'Antarmuka sudah 5 bahasa (tahap 1). Data latihan mencakup vein emas, laterit nikel, bauksit dan stratiform; alur kerja grade control berlaku umum untuk tambang terbuka.')]
-B.append('<div class="bab"><h2>7. Pertanyaan yang sering diajukan &amp; usulan jawaban</h2><h3>Dari ahli IT / programmer</h3>' + ''.join(qa(q, a, 'it') for q, a in qa_it) +
-         '<h3>Dari investor teknologi</h3>' + ''.join(qa(q, a, 'inv') for q, a in qa_inv) +
-         '<div class="ok"><b>Tips menjawab.</b> Bedakan tegas "sudah ada", "sedang diuji", dan "rencana". Tunjukkan demo langsung (mode Demo di aplikasi) dan satu contoh rekonsiliasi angka GC-Ex vs Surpac. '
-         'Jangan menyebut nama tambang, data, atau koordinat nyata tanpa izin perusahaan.</div></div>')
-
-# 8. keterbatasan & peta jalan, istilah
-B.append('''<div class="bab"><h2>8. Keterbatasan jujur &amp; langkah berikut</h2>
-%s
-<h2 style="margin-top:18px">9. Istilah untuk pendengar non-tambang</h2>
-%s
-<p class="cap" style="margin-top:14px">Dokumen ini dibangun otomatis dari repo GC-Ex (<code>docs/tentang/buat_tentang.py</code>); angka versi, jumlah uji dan grafik ikut terbarui setiap kali dibangun ulang.</p></div>''' % (
-    tabel(['Keterbatasan saat ini', 'Langkah berikut'], [
-        ['Pengembang tunggal', 'Tambah programmer kedua; dokumentasi teknis sudah tersedia (Petunjuk Teknis)'],
-        ['Baru divalidasi pada data satu tambang (emas vein)', 'Uji coba di tambang lain / komoditas lain dengan data fiktif dan nyata'],
-        ['Hanya Windows 64-bit, satu pengguna per proyek', 'Kolaborasi lewat file proyek; kolaborasi bersamaan dipertimbangkan kemudian'],
-        ['Block model terotasi dari .mdl belum dibaca langsung', 'Butuh contoh .mdl terotasi dari Surpac untuk dicocokkan'],
-        ['Belum ada pencatatan HKI, merek, badan usaha, dan harga', 'Lihat Bab 6; tetapkan harga dan model lisensi'],
-        ['Repo publik', 'Kembalikan ke privat bila kerahasiaan kode menjadi pertimbangan investor']], w=['50%', '50%']),
-    tabel(['Istilah', 'Arti singkat'], [
-        ['Grade control (GC)', 'Pekerjaan memastikan batuan yang digali dikirim ke tujuan yang benar (bijih ke pabrik / stockpile, waste ke timbunan)'],
-        ['Block model', 'Model 3D tubuh bijih yang dipotong menjadi kubus; setiap kubus punya kadar dan berat jenis'],
-        ['Estimasi (Kriging / ID²)', 'Cara menghitung kadar tiap blok dari sampel bor di sekitarnya'],
-        ['Flitch', 'Lapisan horizontal penggalian (mis. setebal 2,5 m)'],
-        ['Dig block / dig plan', 'Poligon batas penggalian per jenis material di satu flitch, dan peta kerja yang dibagikan ke lapangan'],
-        ['As-mined', 'Volume yang benar-benar tergali menurut pengukuran survei, untuk dibandingkan dengan rencana'],
-        ['Rekonsiliasi', 'Membandingkan tonase dan kadar rencana, model, dan realisasi'],
-        ['Surpac', 'Perangkat lunak tambang komersial yang menjadi acuan di banyak tambang']], w=['26%', '74%'])))
-
-DOC = '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Tentang GC-Ex</title><style>%s</style></head><body>%s</body></html>' % (CSS, '\n'.join(B))
+        tabel(['Aspek', 'Status'], [
+            ['Hak cipta', '%s dinyatakan ciptaan Habil Abdillah, dilindungi sebagai Program Komputer menurut UU No. 28 Tahun 2014. Hak cipta timbul otomatis (prinsip deklaratif); pencatatan bukan syarat (Pasal 64 ayat 2). Masa perlindungan program komputer: 50 tahun sejak pertama kali diumumkan (Pasal 59).' % A['nama']],
+            ['Syarat penggunaan', '<code>legal/SYARAT_PENGGUNAAN.txt</code>: dilisensikan, bukan dijual; non-eksklusif, tidak dapat dialihkan, dapat dicabut; dilarang menjual, menyewakan, membongkar, dan menghapus tanda hak cipta. Ikut dibundel di installer dan di paket .html portabel.'],
+            ['Komponen open source', 'Electron, Chromium, Node.js, Python, FastAPI, Uvicorn, NumPy, Plotly.js, font OFL, dll.; lisensinya (MIT, BSD, Apache-2.0, PSF, OFL) dibundel.'],
+            ['Merek pihak lain', '<code>legal/PENAFIAN_MEREK.txt</code>: Surpac, Leapfrog, Micromine, Microsoft dll. disebut hanya untuk kecocokan format; tidak berafiliasi.'],
+            ['Tanda hak cipta', '"Copyright © Habil Abdillah 2026" tampil di aplikasi (juga di versi .html); watermark cadangan di aplikasi terpasang.'],
+            ['Data contoh', 'Data latihan fiktif (tanpa nama perusahaan, Hole ID atau koordinat proyek nyata).']], w=['20%', '80%']),
+        d_lisensi(),
+        tabel(['Hal', 'Mengapa penting', 'Langkah'], [
+            ['Pencatatan ciptaan di DJKI', 'Bukan syarat hak cipta, tetapi bukti awal kepemilikan yang kuat', 'Ajukan pencatatan program komputer secara daring di DJKI'],
+            ['Hubungan kerja dengan perusahaan', 'Pasal 36 UU Hak Cipta: kecuali diperjanjikan lain, pemegang hak cipta atas ciptaan dalam hubungan kerja adalah pihak yang membuat ciptaan; perjanjian kerja bisa mengatur lain', 'Periksa perjanjian kerja / kebijakan HKI perusahaan; bila perlu buat perjanjian tertulis'],
+            ['Pemakaian di laptop kantor', 'Versi .html dipakai karena kantor melarang instalasi; investor / perusahaan bisa bertanya soal kepatuhan kebijakan TI', 'Pastikan pemakaian sesuai kebijakan TI; bila perlu minta persetujuan tertulis'],
+            ['Merek "GC-Ex"', 'Nama produk adalah aset; belum didaftarkan', 'Cek ketersediaan dan daftarkan merek di DJKI'],
+            ['Badan usaha &amp; kontrak', 'Investor berinvestasi ke badan usaha; pelanggan butuh EULA / SLA', 'Siapkan badan usaha, EULA komersial, kebijakan dukungan'],
+            ['Kode yang ditulis dengan bantuan AI', 'Sebagian besar kode disusun dengan bantuan asisten AI di bawah arahan, pengujian dan keputusan pemilik', 'Siapkan penjelasan proses; minta konsultan menilai implikasinya']], w=['22%', '40%', '38%']),
+        d_rilis()))
+    # 7 tanya jawab
+    it = [('Dibangun dengan teknologi apa?', 'Electron untuk aplikasi desktop, tampilan HTML / JavaScript dengan Plotly.js untuk 3D, dan backend Python (FastAPI, Uvicorn, NumPy) yang dibekukan dengan PyInstaller. Installer dibuat electron-builder + NSIS.'),
+          ('Butuh internet atau server?', 'Tidak. Semua proses di laptop; backend hanya di 127.0.0.1 dengan port acak. Tidak ada telemetri, akun cloud, atau pemeriksaan pembaruan online.'),
+          ('Bisa dipakai tanpa instal?', 'Bisa. Aplikasinya satu file .html yang dibuka di Edge / Chrome; folder proyek disimpan di drive lokal (mis. D:) lewat pemilih folder browser. Tanpa backend: Excel / Access lewat export, .mdl dibaca langsung oleh browser.'),
+          ('Bagaimana keamanan aplikasinya?', 'Jendela Electron memakai contextIsolation dan sandbox, nodeIntegration mati; halaman bicara ke sistem hanya lewat jembatan preload terbatas. Lisensi diverifikasi tanda tangan Ed25519; kunci privat tidak pernah di repo atau installer.'),
+          ('Data disimpan di mana? Bisa dipindah?', 'Di folder proyek (JSON + salinan file sumber + backup berversi), dengan kunci pemakai agar tidak disunting dua orang bersamaan. Folder bisa disalin ke laptop lain; file sumber yang pindah bisa disambungkan ulang lewat jendela Sambungkan file.'),
+          ('Bagaimana memastikan hitungannya benar?', 'Cara Surpac menjadi bawaan dan hasil diaudit terhadap Surpac pada data nyata; %d skrip uji otomatis (Playwright + pytest) dijalankan.' % N_UJI),
+          ('Bagaimana proses rilis?', 'Setiap push menjalankan GitHub Actions: uji, build backend, build installer, terbit di GitHub Release lengkap dengan dokumen, data latihan, lisensi, catatan rilis dan SHA-256. Versi naik hanya bila isi installer berubah.'),
+          ('Apa keterbatasan teknisnya?', 'Hanya Windows 64-bit; satu pengguna per proyek; grafis 3D bergantung GPU; pengembang inti satu orang. Lihat Bab 8.'),
+          ('Kodenya open source?', 'Tidak. Repo GitHub saat ini publik agar build gratis, tetapi tanpa lisensi open source; semua hak tetap pada pemilik.')]
+    inv = [('Masalah apa yang diselesaikan?', masalah[0].upper() + masalah[1:]),
+           ('Siapa pengguna dan pembelinya?', 'Pengguna: %s. Pembeli yang mungkin: perusahaan tambang dan kontraktor tambang. <i>Saat ini dipakai internal oleh pengembang; belum ada pelanggan berbayar.</i>' % A['untuk'].split(' — ')[0]),
+           ('Apa bedanya dengan Surpac / Leapfrog?', 'Tidak menggantikan perangkat lunak serba guna itu; fokus pada alur kerja grade control, offline di laptop biasa (bahkan tanpa instal), berbahasa Indonesia dan 4 bahasa lain, dan kompatibel dengan format Surpac.'),
+           ('Seberapa matang produknya?', 'Versi masih 0.x (%s %s). Fitur inti lengkap dan diuji pada data nyata satu tambang emas vein; validasi di tambang lain belum ada.' % (A['nama'], A['ver'])),
+           ('Siapa timnya?', 'Pengembang tunggal: Habil Abdillah, geologist grade control yang memakai sendiri alat ini. Kekuatan: pemahaman domain dan iterasi cepat. Risiko: ketergantungan pada satu orang.'),
+           ('Bagaimana model bisnisnya?', 'Mekanisme lisensi per komputer sudah ada (bisa diberi kedaluwarsa), jadi langganan tahunan atau lisensi per kursi bisa langsung dijalankan untuk versi terpasang. <i>Harga belum ditetapkan</i>; versi .html portabel perlu kebijakan lisensi tersendiri.'),
+           ('Apa yang melindungi dari peniru?', 'Hak cipta, pengetahuan domain di alur kerja, kepercayaan karena angka cocok dengan Surpac, dan kecepatan iterasi. Kode yang publik melemahkan kerahasiaan — pertimbangkan repo privat dan pencatatan HKI.'),
+           ('Untuk apa dana investasi?', 'Usulan: tim kecil (programmer kedua, QA), validasi di beberapa tambang, legal &amp; HKI, dukungan pelanggan dan pelatihan, versi native Qt dan kolaborasi multi-pengguna.')]
+    for q, a, w in FAQ_KHUSUS[k]:
+        (it if w in ('it', 'dua') else inv).insert(3, (q, a))
+    B.append('<div class="bab"><h2>7. Pertanyaan yang sering diajukan &amp; usulan jawaban</h2><h3>Dari ahli IT / programmer</h3>' + ''.join(qa(q, a, 'it') for q, a in it) +
+             '<h3>Dari investor teknologi</h3>' + ''.join(qa(q, a, 'inv') for q, a in inv) +
+             '<div class="ok"><b>Tips menjawab.</b> Bedakan tegas "sudah ada", "sedang diuji", dan "rencana". Tunjukkan demo langsung (mode Demo) dan satu contoh rekonsiliasi angka GC-Ex vs Surpac. '
+             'Jangan menyebut nama tambang, data, atau koordinat nyata tanpa izin perusahaan.</div></div>')
+    # 8-9
+    istilah = [['Grade control (GC)', 'Memastikan batuan yang digali dikirim ke tujuan yang benar (bijih ke pabrik / stockpile, waste ke timbunan)'],
+               ['Block model', 'Model 3D tubuh bijih yang dipotong menjadi kubus; tiap kubus punya kadar dan berat jenis']]
+    istilah += ([['Flitch', 'Lapisan horizontal penggalian (mis. setebal 2,5 m)'], ['Dig block / dig plan', 'Poligon batas penggalian per jenis material di satu flitch, dan peta kerja untuk lapangan'],
+                 ['As-mined', 'Volume yang benar-benar tergali menurut survei, dibandingkan dengan rencana'], ['Rekonsiliasi', 'Membandingkan tonase dan kadar rencana, model, dan realisasi'],
+                 ['Rotasi block model', 'Model yang sumbunya diputar mengikuti arah urat; posisi blok harus diputar balik ke koordinat lapangan']] if k == 'bm' else
+                [['Collar / survey / assay', 'Posisi mulut lubang bor, arah lubang, dan hasil analisis kadar per interval'], ['Domain / vein', 'Tubuh geologi (mis. urat kuarsa) yang diestimasi terpisah'],
+                 ['Variogram', 'Ukuran seberapa jauh kadar masih saling berkaitan'], ['Estimasi (Kriging / ID²)', 'Cara menghitung kadar tiap blok dari sampel bor di sekitarnya'],
+                 ['Klasifikasi M/I/I', 'Tingkat keyakinan sumber daya: Measured, Indicated, Inferred']])
+    istilah.append(['Surpac', 'Perangkat lunak tambang komersial yang menjadi acuan di banyak tambang'])
+    B.append('''<div class="bab"><h2>8. Keterbatasan jujur &amp; langkah berikut</h2>%s
+<h2 style="margin-top:18px">9. Istilah untuk pendengar non-tambang</h2>%s
+<p class="cap" style="margin-top:14px">Dokumen ini dibangun otomatis dari repo GC-Ex (<code>docs/tentang/buat_tentang.py</code>); versi, jumlah uji dan grafik ikut terbarui setiap kali dibangun ulang. Dokumen pasangan: Tentang %s.</p></div>''' % (
+        tabel(['Keterbatasan saat ini', 'Langkah berikut'], BATAS[k] + [['Belum ada pencatatan HKI, merek, badan usaha, harga; versi .html tanpa pemeriksaan lisensi', 'Lihat Bab 6']], w=['55%', '45%']),
+        tabel(['Istilah', 'Arti singkat'], istilah, w=['26%', '74%']), lain['nama']))
+    return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Tentang %s</title><style>%s</style></head><body>%s</body></html>' % (A['nama'], CSS, '\n'.join(B))
 
 def cetak():
     from playwright.sync_api import sync_playwright
-    tmp = HERE / '_tentang.html'; tmp.write_text(DOC, encoding='utf-8')
     with sync_playwright() as p:
-        b = p.chromium.launch(); pg = b.new_page()
-        pg.goto(tmp.as_uri()); pg.wait_for_timeout(500)
-        pg.pdf(path=str(OUT), format='A4', print_background=True, display_header_footer=True,
-               header_template='<span></span>',
-               footer_template='<div style="font-size:7pt;color:#5C6672;width:100%;padding:0 15mm;display:flex;justify-content:space-between;font-family:Inter,sans-serif"><span>Tentang GC-Ex · Copyright © Habil Abdillah 2026</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>',
-               margin={'top': '16mm', 'bottom': '16mm', 'left': '15mm', 'right': '15mm'})
+        b = p.chromium.launch()
+        for k in ('bm', 'dh'):
+            A = APP[k]; out = ROOT / 'docs' / A['file']
+            tmp = HERE / ('_tentang_%s.html' % k); tmp.write_text(bangun(k), encoding='utf-8')
+            pg = b.new_page(); pg.goto(tmp.as_uri()); pg.wait_for_timeout(500)
+            pg.pdf(path=str(out), format='A4', print_background=True, display_header_footer=True, header_template='<span></span>',
+                   footer_template='<div style="font-size:7pt;color:#5C6672;width:100%%;padding:0 15mm;display:flex;justify-content:space-between;font-family:Inter,sans-serif"><span>Tentang %s · Copyright © Habil Abdillah 2026</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>' % A['nama'],
+                   margin={'top': '16mm', 'bottom': '16mm', 'left': '15mm', 'right': '15mm'})
+            pg.close(); tmp.unlink()
+            print('OK', out, out.stat().st_size, 'byte')
         b.close()
-    tmp.unlink()
-    print('OK', OUT, OUT.stat().st_size, 'byte')
 
 if __name__ == '__main__':
     cetak()
