@@ -162,6 +162,7 @@ s = brand_build.apply(s, 'dh', OUT, open(SHARED + 'theme_earthy.css', encoding='
 print('Identitas GC-Ex 0.19: OK')
 # data latihan bawaan: modul shell (di luar sumber viewer -- tombolnya ada di halaman import)
 _dl = open(SHARED + 'demodata.js', encoding='utf-8').read()
+_dl += '\n' + open(SHARED + 'sambung.js', encoding='utf-8').read()  # Sambungkan file: aktif sebelum proyek dibuka
 assert '</scr' + 'ipt>' not in _dl
 assert s.count('</body>') == 1
 s = s.replace('</body>', '<script>\n' + _dl + '\n</script>\n</body>', 1)

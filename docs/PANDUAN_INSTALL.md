@@ -6046,4 +6046,12 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - **Tutorial PDF**: `Tutorial/Ore_Works_Tutorial_Studio_Pemetaan.pdf` di `_1_Dokumen.zip` Release.
 - **Tentang Ore Works** (`Tentang/Tentang_Ore_Works.pdf`) diperbarui: kemampuan lengkap sampai Studio Pemetaan dan daftar pembaruan sejak 0.32.6.
 - Seret titik di Studio Pemetaan tidak lagi putus bila kursor keluar kanvas.
+## 322. Block Model 0.24.114 / Drillhole 0.24.116 — Sambungkan file
 
+- Bila file sumber proyek (block model `.mdl` / `.csv`, versi block model, AOI) sudah dipindah, GC-Ex lebih dulu
+  mencarinya di seluruh subfolder folder proyek (sampai 5 tingkat). Ketemu → langsung dipakai.
+- Bila tetap tidak ada, muncul jendela **Sambungkan file**: klik **Cari file…**, tunjuk lokasi barunya. GC-Ex
+  mengecek nama dan ukuran; bila berbeda, Anda diminta konfirmasi. Centang **Salin ke folder proyek\sumber\**
+  (bawaan) supaya proyek tidak putus lagi.
+- **Lewati** membuka proyek tanpa file itu, seperti sebelumnya.
+- Berlaku juga di versi `.html` portabel.

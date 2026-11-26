@@ -663,6 +663,10 @@ B.append('<p><code>bmrot.js</code> (BMR). Konvensi Surpac: bearing <i>b</i> = az
          '<code>bxSlabHit</code>: setengah tebal = (sx|n&middot;e<sub>x</sub>| + sy|n&middot;e<sub>y</sub>| + sz|n<sub>z</sub>|)/2. <code>bxTraces</code>: kubus dibangun di kerangka lokal (<code>BMR.lokal</code>, cache WeakMap) lalu titik sudut diputar. '
          'Sayatan denah: poligon miring (raster <code>bm2dimg</code> dilewati). <code>amRun, dbAuto, bxOutline, lyTon, lyComp, dbCorners, bxCorners, dmBMPick</code> dicegat bila <code>m.rot</code>. Uji: <code>tools/uji/uji_bm_rotasi.py</code>.</p>')
 
+B.append('<h3>8.34 Sambungkan file (BM 0.24.114 / DH 0.24.116)</h3>')
+B.append('<p><code>sambung.js</code> (skrip halaman pembuka, bukan vsrc; menunggu <code>FP</code> ada). <code>FP.loadSrc</code> dibungkus: selama membaca sumber, <code>FP.findFile</code> yang gagal &rarr; <code>FP.findDeep</code> (BFS &le; 5 tingkat, &le; 600 folder, tanpa backup/export di akar; nama + ukuran) &rarr; <code>FP.sambungDialog</code> (showOpenFilePicker / input file; nama / ukuran beda &rarr; confirm; opsi <code>FP.salinSumber</code> ke sumber/&lt;nama tercatat&gt;). '
+         'Hasil hanya ditanyakan sekali per <code>loadSrc</code>; <code>FP.srcState</code> dan ekspor proyek tidak memunculkan jendela. Uji: <code>tools/uji/uji_sambung_file.py</code>.</p>')
+
 B.append('<h2>9. Dua jalur estimasi: vein dan berlapis</h2>')
 B.append(fig(F3, 'Vein dan endapan berlapis dikerjakan mesin yang berbeda, dengan wadah domain dan ruang '
                  'hitung yang berbeda pula.'))

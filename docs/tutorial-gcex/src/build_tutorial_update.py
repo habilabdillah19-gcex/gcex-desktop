@@ -1363,6 +1363,8 @@ B.append('<p>Tampilan &amp; performa &rarr; <b>Bahasa &middot; Language</b>: Bah
 B.append('<h3>16zd. Block model terotasi (Block Model 0.24.112)</h3>')
 B.append('<p>Import block model (CSV) &rarr; <b>Rotasi model</b>: isi <i>Bearing sumbu X model</i> seperti di Surpac (90 = tidak diputar) dan pilih apakah koordinat file sudah koordinat lapangan atau masih lokal model. '
          'Tampilan 3D, sayatan, filter, statistik dan laporan grade &times; tonase memperhitungkan rotasi. Dig block otomatis, snap sudut blok, komposit flitch dan as-mined belum mendukung model terotasi.</p>')
+B.append('<h3>16ze. Sambungkan file (Block Model 0.24.114 / Drillhole 0.24.116)</h3>')
+B.append('<p>File sumber proyek yang dipindah dicari otomatis di subfolder folder proyek; bila tidak ketemu muncul jendela <b>Sambungkan file</b> &rarr; <b>Cari file&hellip;</b> (nama &amp; ukuran dicek, bisa langsung disalin ke folder proyek\\sumber\\). <b>Lewati</b> membuka proyek tanpa file itu.</p>')
 
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),

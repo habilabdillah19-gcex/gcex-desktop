@@ -254,6 +254,7 @@ ui = open(W + 'am2.js', encoding='utf-8').read() + '\n' + open(W + 'amfloor.js',
 ui += ''.join('\n' + open(W + _m, encoding='utf-8').read() for _m in EXTRA)
 # data latihan bawaan: modul shell (di luar sumber viewer, karena tombolnya ada di halaman import)
 _dl = open(W + 'demodata.js', encoding='utf-8').read()
+_dl += '\n' + open(W + 'sambung.js', encoding='utf-8').read()  # Sambungkan file: harus aktif SEBELUM proyek dibuka (di luar vsrc)
 assert '</scr' + 'ipt>' not in _dl
 s = s.replace('</body>', '<script>\n' + _dl + '\n</script>\n</body>', 1)
 

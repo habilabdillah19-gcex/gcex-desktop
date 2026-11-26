@@ -952,3 +952,5 @@ Koordinat X / Y di file adalah	X / Y coordinates in the file are	Las coordenadas
 Koordinat lapangan (pusat blok sudah benar; hanya arah blok yang diputar)	Field coordinates (block centres already correct; only block orientation is rotated)	Coordenadas de campo (centros ya correctos; solo se gira la orientación)	Koordinat lapangan (puseur blok tos leres; ngan arah blok nu diputer)
 Koordinat lokal model (diputar ke lapangan terhadap titik putar)	Local model coordinates (rotated to field about the pivot)	Coordenadas locales del modelo (giradas al campo alrededor del pivote)	Koordinat lokal modél (diputer ka lapangan kana titik puteran)
 Titik putar X / Y (koordinat lokal; kosong = sudut minimum model)	Pivot X / Y (local coordinates; empty = model minimum corner)	Pivote X / Y (coordenadas locales; vacío = esquina mínima del modelo)	Titik puteran X / Y (koordinat lokal; kosong = juru minimum modél)
+Cari file	Find file	Buscar archivo	Milarian file
+Lewati (buka tanpa file ini)	Skip (open without this file)	Omitir (abrir sin este archivo)	Liwat (buka tanpa file ieu)
