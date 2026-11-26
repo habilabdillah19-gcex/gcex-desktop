@@ -6040,3 +6040,10 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - **☰ Latar**: kontur (dibuat otomatis dari topografi), ortofoto, string desain pit, pick-up, lubang bor, fitur, titik strike/dip.
 - Intip 3D (Tab = besar), tema terang / gelap, layar penuh. Semua hasil langsung tampil di 3D, Layout peta dan tersimpan di project seperti fitur pemetaan biasa.
 
+## 321. Ore Works 0.34.1 — Demo & tutorial Studio Pemetaan
+
+- **Demo**: menu Bantuan ▸ Demo ▸ kartu **Studio Pemetaan ▸ ▶ Demo Pemetaan**, atau tombol **▶ Demo** di kepala Studio Pemetaan (aplikasi dimuat ulang dengan project demo fiktif; simpan project Anda dulu). Demo ±100 detik, 6 bab: muat data → latar & RL → digit tiap kategori → edit atribut / titik / urungkan → muka dinding → hasil 3D. Jeda, Lompat bab, Stop, kecepatan 0,5× / 1× / 2× tersedia.
+- **Tutorial PDF**: `Tutorial/Ore_Works_Tutorial_Studio_Pemetaan.pdf` di `_1_Dokumen.zip` Release.
+- **Tentang Ore Works** (`Tentang/Tentang_Ore_Works.pdf`) diperbarui: kemampuan lengkap sampai Studio Pemetaan dan daftar pembaruan sejak 0.32.6.
+- Seret titik di Studio Pemetaan tidak lagi putus bila kursor keluar kanvas.
+

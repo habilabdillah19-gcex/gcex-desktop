@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ore Works</title>
-<script>window.GCEX_VER='0.34.0';</script>
+<script>window.GCEX_VER='0.34.1';</script>
 <script>/* Ore Works Desktop: prompt() / alert() / confirm() lewat jendela milik aplikasi (Electron tidak menyediakan prompt()).
    Di browser biasa tidak berubah. Sama dengan web-src/mdlbig.js GC-Ex. */
 (function(){var D=window.gcexDesktop;if(!D)return;
@@ -8572,8 +8572,8 @@ function skenario(Y){const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:mi
 function kalimatBanding(Y){const roots=MSx().L.filter(m=>!m.par);let v=0;roots.forEach(r=>{if(r.res)v+=r.res.vol;});
  return 'Abu-abu = vein sebenarnya (hanya diketahui di data simulasi): '+fmt(Y.vakt)+' m³; model dari bor: '+fmt(v)+' m³ ('+fmt(100*v/Y.vakt)+'%).';}
 /* ---------- jalankan ---------- */
-async function jalankan(k,o){o=o||{};if(DM.on)return;const P=await paket(),Y=P.sistem.find(s=>s.k===k)||P.sistem[0];let L=skenario(Y);DM.mode=o.mode==='imp'?'imp':'eks';
- DM.h={tunggu,anim,sampai,ke,klik,ketik,gerak,riak,dmPilih,kameraKotak,putar,kotakBor,kotakSolid,ARAH3,terlihat,berkas,Stop,posK};if(DM.mode==='imp'&&DM.skImp)L=L.slice(0,3).concat(DM.skImp(Y,DM.h));else if(DM.skEksTambah)L=DM.skEksTambah(L,Y,DM.h);
+async function jalankan(k,o){o=o||{};if(DM.on)return;const P=await paket(),Y=P.sistem.find(s=>s.k===k)||P.sistem[0],PETA=k==='peta';let L=PETA?skPeta(P.sistem[0]):skenario(Y);DM.mode=o.mode==='imp'?'imp':'eks';
+ DM.h={tunggu,anim,sampai,ke,klik,ketik,gerak,riak,dmPilih,kameraKotak,putar,kotakBor,kotakSolid,ARAH3,terlihat,berkas,Stop,posK};if(PETA){}else if(DM.mode==='imp'&&DM.skImp)L=L.slice(0,3).concat(DM.skImp(Y,DM.h));else if(DM.skEksTambah)L=DM.skEksTambah(L,Y,DM.h);
  Object.assign(DM,{on:true,stop:false,lompat:false,jeda:false,selesai:false,rekam:!!o.rekam,n:L.length,i:0,tm:[],an:[]});jeda(false);
  blok.style.display='block';kur.style.display='block';cap.style.display='block';posK(innerWidth*0.55,innerHeight*0.45);
  let gagal=null;
@@ -8584,6 +8584,86 @@ async function jalankan(k,o){o=o||{};if(DM.on)return;const P=await paket(),Y=P.s
  Object.assign(DM,{on:false,lompat:false,jeda:false,selesai:true});DM.tm.length=0;DM.an.length=0;blok.style.display='none';kur.style.display='none';cap.style.display='none';
  document.querySelectorAll('.dmRip').forEach(r=>r.remove());
  T_(gagal?('Demo berhenti: '+gagal.message):DM.stop?'Demo dihentikan — data & solid tetap terbuka untuk dijelajahi.':'Demo selesai — silakan jelajahi sendiri.');}
+/* ---------- 0.34.1: Demo Studio Pemetaan (pemilik 26 Nov 2026: "Demo sudah terupdate belum?" → "Kerjakan sekalian") ----------
+   Data bor & topografi dari paket demo (sistem pertama); titik pick-up singkapan vein dan ortofoto (hillshade topografi) dibuat
+   di peramban dari data itu, jadi tetap fiktif. Demo menggerakkan Studio Pemetaan asli lewat event pointer di kanvasnya. */
+const SPx=()=>window.SPM;
+function petaGeo(){let cut=0;try{cut=UCL().cut;}catch(e){}const P=[];for(const s of SEGS){if(!(s[2]>=cut)||!(s[2]>0))continue;P.push([(s[0][0]+s[1][0])/20+O[0],(s[0][1]+s[1][1])/20+O[1]]);}
+ if(P.length<4)for(const s of SEGS)P.push([(s[0][0]+s[1][0])/20+O[0],(s[0][1]+s[1][1])/20+O[1]]);
+ let mx=0,my=0;P.forEach(p=>{mx+=p[0];my+=p[1];});mx/=P.length;my/=P.length;let a=0,b=0,c=0;P.forEach(p=>{const dx=p[0]-mx,dy=p[1]-my;a+=dx*dx;b+=dx*dy;c+=dy*dy;});
+ const th=0.5*Math.atan2(2*b,a-c),u=[Math.cos(th),Math.sin(th)],n=[-u[1],u[0]];let t0=1e18,t1=-1e18;P.forEach(p=>{const t=(p[0]-mx)*u[0]+(p[1]-my)*u[1];t0=Math.min(t0,t);t1=Math.max(t1,t);});
+ const L=Math.max(40,Math.min(110,(t1-t0)/2)),at=(t,o)=>{const E=mx+u[0]*t+n[0]*(o+5*Math.sin(t/35)),N=my+u[1]*t+n[1]*(o+5*Math.sin(t/35));return [E,N,topoZ(E,N)];};
+ return {c:[mx,my],u,n,L,at,az:((Math.atan2(u[0],u[1])*180/Math.PI)+360)%360};}
+function petaPickCsv(G){const r=['ID,East,North,RL,Code'];let k=1;for(let t=-G.L;t<=G.L+0.1;t+=10){for(const o of [0.9,-0.9]){const p=G.at(t,o);if(!isFinite(p[2]))continue;r.push('PU'+String(k++).padStart(3,'0')+','+p[0].toFixed(3)+','+p[1].toFixed(3)+','+p[2].toFixed(3)+',VN');}}return r.join('\n');}
+async function petaOrto(G){const s=SF.find(x=>x.kind==='topo');if(!s)return null;const Gd=sfGrid(s),W=320,H=320,E0=G.c[0]-G.L*1.6,N1=G.c[1]+G.L*1.6,px=(G.L*3.2)/W;
+ const cv=document.createElement('canvas');cv.width=W;cv.height=H;const cx=cv.getContext('2d'),im=cx.createImageData(W,H),z=(E,N)=>gridZ(Gd,E,N);
+ for(let j=0;j<H;j++)for(let i=0;i<W;i++){const E=E0+(i+0.5)*px,N=N1-(j+0.5)*px,a=z(E-px,N),b=z(E+px,N),c=z(E,N-px),d=z(E,N+px);let v=200;
+  if(isFinite(a)&&isFinite(b)&&isFinite(c)&&isFinite(d)){const dx=(b-a)/(2*px),dy=(d-c)/(2*px),sh=(-dx*0.6+dy*0.6+1)/Math.sqrt(dx*dx+dy*dy+1);v=Math.max(60,Math.min(250,120+110*sh));}
+  const q=(j*W+i)*4,tt=((i*7+j*13)%17)/17*10;im.data[q]=v*0.86+tt;im.data[q+1]=v*0.8+tt;im.data[q+2]=v*0.62+tt;im.data[q+3]=255;}
+ cx.putImageData(im,0,0);const bl=await new Promise(r=>cv.toBlob(r,'image/png'));return {png:new File([bl],'demo_ortofoto.png',{type:'image/png'}),pgw:new File([[px,0,0,-px,E0+px/2,N1-px/2].join('\n')],'demo_ortofoto.pgw',{type:'text/plain'})};}
+/* pointer ke kanvas studio */
+function ptr(t,x,y,o){o=o||{};const cv=SPx().api.canvas;cv.dispatchEvent(new PointerEvent(t,{clientX:x,clientY:y,button:o.button||0,buttons:t==='pointerup'?0:(o.button===2?2:1),pointerId:7,pointerType:'mouse',bubbles:true,cancelable:true,ctrlKey:!!o.ctrl,altKey:!!o.alt,shiftKey:false}));}
+const hover=(x,y)=>ptr('pointermove',x,y);
+async function tik(p,o){o=o||{};const [x,y]=SPx().api.w2s(p[0],p[1],p[2]);await gerak(x,y,o.ms,hover);riak();ptr('pointerdown',x,y,o);await tunggu(60);ptr('pointerup',x,y,o);await tunggu(o.jeda!=null?o.jeda:260);}
+async function tikXY(x,y,o){o=o||{};await gerak(x,y,o.ms,hover);riak();ptr('pointerdown',x,y,o);await tunggu(60);ptr('pointerup',x,y,o);await tunggu(o.jeda!=null?o.jeda:260);}
+async function seret(p,q,o){o=o||{};const a=SPx().api.w2s(...p),b=SPx().api.w2s(...q);await gerak(a[0],a[1],null,hover);riak();ptr('pointerdown',a[0],a[1],o);await tunggu(80);
+ await anim(o.ms||900,e=>{const k=ease(e);ptr('pointermove',a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k);posK(a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k);});ptr('pointerup',b[0],b[1],o);await tunggu(320);}
+const tombol=k=>{window.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true}));};
+const alat=t=>document.querySelector('#sptl .tl[data-t="'+t+'"]');
+async function garis(t,P,o){o=o||{};await klik(alat(t),{jeda:350});for(const p of P)await tik(p,{jeda:o.jeda||230});if(o.tutup)await tik(P[0],{jeda:300});else if(o.enter!==false){tombol('Enter');await tunggu(450);}}
+function skPeta(Y){const L=[],st=(bab,jd,kl,f,min)=>L.push({bab,jd,kl,f,min:min==null?3000:min});let G=null;
+ const B1='Bab 1 · Data lapangan',B2='Bab 2 · Studio Pemetaan',B3='Bab 3 · Digit di plan',B4='Bab 4 · Edit',B5='Bab 5 · Muka dinding',B6='Bab 6 · Hasil';
+ st(B1,'Memuat data bor simulasi',Y.nl+' lubang bor fiktif sebagai latar: collar, survey, assay dan log geologi.',async()=>{
+  if(SPx()&&SPx().on)spTutup();if(window.__st&&__st.on)stdoTutup();if(SC.open)scOpen(false);
+  const tb=[['collar','dsf-collar'],['survey','dsf-survey'],['assay','dsf-assay'],['geologi','dsf-geo']];
+  for(const [k,id] of tb){const inp=g(id);if(!inp)continue;const lab=inp.closest('label')||inp.parentNode;await ke(lab);berkas(inp,Y.pre+'_'+k+'.csv',Y.csv[k]);riak();await tunggu(300);}
+  await klik(g('dsgo'));await sampai(()=>typeof DS!=='undefined'&&DS.length>0,30000);await tunggu(500);});
+ st(B1,'Topografi','Permukaan tanah: Studio Pemetaan otomatis membuat kontur dari topografi dan memakai RL-nya untuk tiap titik digit.',async()=>{const inp=g('sff');if(inp){const lab=inp.closest('label')||inp.parentNode;await ke(lab);berkas(inp,Y.pre+'_topografi.str',Y.topo);riak();}
+  await sampai(()=>typeof SF!=='undefined'&&SF.length>0,30000);G=petaGeo();DM.petaG=G;await kameraKotak(kotakBor(),ARAH3.sse,1500,1.1);});
+ st(B1,'Titik pick-up singkapan vein','Titik survei batas atas & bawah vein dari lapangan (CSV: ID, East, North, RL). Garis vein nanti menempel ke titik-titik ini.',async()=>{
+  const inp=g('fmpf');if(inp){const lab=inp.closest('label')||inp.parentNode;await ke(lab);berkas(inp,'demo_pickup_vein.csv',petaPickCsv(G));riak();}await sampai(()=>FM.pf.length>0,15000);await tunggu(400);});
+ st(B1,'Ortofoto','Gambar udara ber-georeferensi (PNG + PGW) menjadi latar peta. Di sini dibuat dari bayangan topografi.',async()=>{
+  const f=await petaOrto(G),inp=g('orf');if(f&&inp){const lab=inp.closest('label')||inp.parentNode;await ke(lab);const dt=new DataTransfer();dt.items.add(f.png);dt.items.add(f.pgw);inp.files=dt.files;inp.dispatchEvent(new Event('change',{bubbles:true}));riak();
+   await sampai(()=>(window.ORT||[]).length>0,15000);}await tunggu(600);});
+ st(B2,'Buka Studio Pemetaan','Meja gambar 2D tampak atas (plan). Semua fitur pemetaan didigit di sini, hasilnya langsung tampil di 3D. Pintasan: F8.',async()=>{
+  const b=g('otbsp');await klik(b,{aksi:()=>spBuka(),jeda:900});await sampai(()=>SPx().on,5000);await tunggu(300);
+  const P=[];for(let t=-G.L;t<=G.L;t+=10)P.push(G.at(t,0));SPx().api.fitTo(P,1.9);await tunggu(500);});
+ st(B2,'Latar peta','☰ Latar: kontur, ortofoto, string desain pit, pick-up, lubang bor dan fitur bisa dinyalakan / dimatikan.',async()=>{await klik(g('splb'),{jeda:1600});await klik(g('splx'),{jeda:300});});
+ st(B2,'RL titik dari topografi','Bawaan: tiap titik yang diklik mengambil RL dari topografi (atau dari pick-up bila menempel). Filter RL hanya untuk pit bertingkat.',async()=>{
+  await klik(document.querySelector('#spw [data-z=topo]'),{jeda:400});await ketik(g('splyr'),'VN_Demo');});
+ st(B3,'Digit vein (1)','Klik titik demi titik di sepanjang singkapan; kursor menempel (snap) ke titik pick-up. Enter = selesai.',async()=>{
+  const P=[];for(let t=-G.L;t<=G.L+0.1;t+=20){const p=G.at(t,0.9);P.push(p);}const R=FM.pf[0]?FM.pf[0].P.filter(r=>/^PU/.test(r[0])):[];
+  const snapP=P.map(p=>{let b=null,d=1e18;R.forEach(r=>{const q=Math.hypot(r[1]-p[0],r[2]-p[1]);if(q<d){d=q;b=[+r[1],+r[2],+r[3]];}});return d<3?b:p;});
+  await garis('vein',snapP,{jeda:300});});
+ st(B3,'Channel sampling (2)','Garis channel memotong vein. Interval sampel dibuat otomatis; kadar diisi lewat Editor lengkap atau impor CSV assay.',async()=>{
+  await garis('ch',[G.at(-15,-9),G.at(-15,9)]);});
+ st(B3,'Kontak geologi (3)','Batas litologi digambar sebagai garis kontak.',async()=>{await garis('kon',[-1,-0.5,0,0.5,1].map(k=>G.at(k*G.L*0.9,-28+6*k*k)));});
+ st(B3,'Jejak struktur (4)','Sesar / shear dipetakan sebagai jejak struktur; arah dip dan nilainya diisi di panel atribut.',async()=>{
+  const c=G.at(G.L*0.35,0),a=[c[0]+G.n[0]*45+G.u[0]*12,c[1]+G.n[1]*45+G.u[1]*12],b=[c[0]-G.n[0]*45-G.u[0]*12,c[1]-G.n[1]*45-G.u[1]*12];
+  await garis('sl',[[a[0],a[1],topoZ(a[0],a[1])],[b[0],b[1],topoZ(b[0],b[1])]]);});
+ st(B3,'Poligon alterasi (5)','Zona alterasi di sekitar vein; klik titik pertama lagi untuk menutup poligon.',async()=>{
+  const P=[[-0.7,14],[0.1,16],[0.7,12],[0.6,-12],[-0.1,-15],[-0.7,-12]].map(([k,o])=>G.at(k*G.L,o));await garis('pol',P,{tutup:true,enter:false});});
+ st(B3,'Grab sample (6)','Satu klik = satu titik grab. Sample_ID dan kadar diisi di panel atribut.',async()=>{await klik(alat('grab'),{jeda:300});await tik(G.at(-G.L*0.45,0.5),{jeda:500});await tik(G.at(G.L*0.55,-0.4),{jeda:400});});
+ st(B3,'Strike / dip (7)','Klik lokasi lalu seret ke arah strike (aturan tangan kanan: dip ke kanan arah seret). Nilai dip dari kolom Dip.',async()=>{
+  await klik(alat('sd'),{jeda:300});await dmPilih(g('spsdj'),'Vein');await ketik(g('spdip'),'68');const p=G.at(G.L*0.1,0),q=[p[0]+G.u[0]*14,p[1]+G.u[1]*14,p[2]];await seret(p,q,{ms:1000});});
+ st(B3,'Stasiun observasi (8)','Titik observasi / foto lapangan; foto dan catatan dilampirkan lewat Editor lengkap.',async()=>{await klik(alat('obs'),{jeda:300});await tik(G.at(-G.L*0.2,-20),{jeda:600});});
+ st(B4,'Pilih & ubah atribut (V)','Alat Pilih: klik fitur, lalu isi atributnya di panel kanan — di sini tebal dan dip vein.',async()=>{
+  await klik(alat('sel'),{jeda:300});await tik(G.at(-G.L*0.5,0.9),{jeda:500});const tb=document.querySelector('#spat [data-a=tebal]'),dp=document.querySelector('#spat [data-a=dip]'),dd=document.querySelector('#spat [data-a=dd]');
+  if(tb)await ketik(tb,'1.2');if(dp)await ketik(dp,'68');if(dd)await ketik(dd,String(Math.round((G.az+90)%360)));});
+ st(B4,'Seret titik & urungkan','Seret titik untuk memindah, Ctrl+klik garis untuk menyisip titik, Ctrl+Z untuk mengurungkan.',async()=>{
+  const f=SPx().sel&&SPx().sel.f;if(!f)return;const p=f.pts[1],q=[p[0]+G.n[0]*8,p[1]+G.n[1]*8,p[2]];await seret(p,q,{ms:900});await tunggu(700);
+  await klik(g('spud'),{jeda:700});});
+ st(B5,'Garis dinding (W)','Untuk memetakan dinding: klik dua titik sejajar dinding di plan; tampilan berganti ke penampang tegak sejajar garis itu.',async()=>{
+  await klik(alat('wl'),{jeda:300});await tik(G.at(-G.L*0.8,3.5),{jeda:300});await tik(G.at(G.L*0.8,3.5),{jeda:900});await sampai(()=>SPx().mode==='wall',4000);await ketik(g('spwt'),'8');});
+ st(B5,'Digit di muka dinding','Di tampilan ini titik jatuh di bidang dinding: sumbu datar = jarak sepanjang dinding, sumbu tegak = RL.',async()=>{
+  const W=SPx().wall,P=[];for(const k of [-0.6,-0.2,0.2,0.6]){const u=W.len*(0.5+k*0.8),E=W.a[0]+u*W.ux,N=W.a[1]+u*W.uy,z=topoZ(E,N);P.push([E,N,z-6-8*(k+0.6)]);}
+  SPx().api.fitTo(P.concat(P.map(p=>[p[0],p[1],p[2]+14])),1.6);await tunggu(400);await garis('kon',P);});
+ st(B5,'Kembali ke plan','Tombol Plan / Muka dinding di bilah atas berpindah antar tampilan kapan saja.',async()=>{await klik(g('spvp'),{jeda:900});});
+ st(B6,'Lihat hasil di 3D','Tutup studio (F8): semua fitur sudah ada di 3D, panel Data, Layout peta dan ikut tersimpan di project.',async()=>{
+  await klik(g('spx'),{aksi:()=>spTutup(),jeda:600});const bx=kotak(bb=>{for(const f of FM.F)for(const p of f.pts){const v=new THREE.Vector3(p[0]-O[0],(p[2]-O[2]),-(p[1]-O[1]));W.localToWorld(v);bb.expandByPoint(v);}});await kameraKotak(bx,ARAH3.sse,1800,1.05);await putar(60,6000,0.12);},5000);
+ return L;}
+window.owDemoPeta=()=>{const ada=(typeof DS!=='undefined'&&DS.length)||MSx().L.length||FM.F.length;if(ada){if(!confirm('Demo Studio Pemetaan memuat data simulasi; project yang sedang terbuka akan ditutup (seperti Project baru). Lanjutkan?'))return;try{sessionStorage.setItem('ow.demo','peta|eks');}catch(e){}location.reload();return;}if(SPx()&&SPx().on)spTutup();jalankan('peta');};
+
 DM.jalankan=jalankan;
 /* ---------- dialog pilih jenis vein ---------- */
 const dlg=document.createElement('div');dlg.id='dmDlg';dlg.innerHTML='<div class="bx" role="dialog" aria-label="Demo Studio Pemodelan"><div class="hd"><b>&#9654; Demo Studio Pemodelan</b><span style="color:#c5d3ea">data simulasi fiktif</span><button id="dmX">Tutup</button></div><div class="ct">'+
@@ -8598,7 +8678,7 @@ function sketsa(Y){if(Y.yp&&Y.yp.length){/* 0.32.0: vein bercabang vertikal → 
  const s=Math.min(250/(b[1]-b[0]||1),120/(b[3]-b[2]||1)),ox=(260-(b[1]-b[0])*s)/2,oy=(132-(b[3]-b[2])*s)/2,C2=['#d81b60','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b'];
  return '<svg viewBox="0 0 260 132" aria-hidden="true">'+pts.map(p=>'<circle cx="'+(ox+(p[0]-b[0])*s).toFixed(1)+'" cy="'+(132-oy-(p[1]-b[2])*s).toFixed(1)+'" r="1.3" fill="'+C2[p[2]%6]+'" fill-opacity=".55"/>').join('')+'<text x="252" y="14" font-size="11" text-anchor="end" fill="#4a5a78">U&#8593;</text></svg>';}
 async function bukaDialog(){dlg.style.display='flex';const ada=(typeof DS!=='undefined'&&DS.length)||MSx().L.length;g('dmWar').style.display=ada?'':'none';
- try{const P=await paket();g('dmKar').innerHTML=P.sistem.map(Y=>'<div class="kr">'+sketsa(Y)+'<b>'+esc(Y.nm)+'</b><span>'+esc(Y.desk)+'</span><div style="display:flex;gap:6px"><button data-k="'+Y.k+'" data-m="eks" title="Penampang & string poligon">&#9654; Eksplisit</button><button data-k="'+Y.k+'" data-m="imp" title="'+(Y.yp?'String tertutup Y → lajur otomatis + union':'Flag, string HW / FW, RBF')+'" style="background:#0f766e">&#9654; Implisit</button></div></div>').join('');
+ try{const P=await paket();g('dmKar').innerHTML='<div class="kr" style="grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;background:#eef8f4;border-color:#9fd3c2"><svg viewBox="0 0 120 70" style="width:120px;height:70px;flex:none" aria-hidden="true"><path d="M4 52C30 40 50 30 116 14" stroke="#d62f2f" stroke-width="3" fill="none"/><path d="M10 20C40 30 70 22 110 34" stroke="#b5a98e" fill="none"/><path d="M10 60C40 66 70 58 110 64" stroke="#b5a98e" fill="none"/><circle cx="40" cy="37" r="4" fill="#fb8c00"/><path d="M76 34h16M84 34v7" stroke="#534ab7" stroke-width="2.2"/></svg><span style="flex:1"><b>Studio Pemetaan</b><br>Digitasi pemetaan di plan 2D: pick-up, ortofoto, vein, channel, kontak, struktur, poligon, grab, strike/dip, observasi, edit dan muka dinding.</span><button data-k="peta" data-m="eks" style="flex:none;padding:0 14px;background:#17806B">&#9654; Demo Pemetaan</button></div>'+P.sistem.map(Y=>'<div class="kr">'+sketsa(Y)+'<b>'+esc(Y.nm)+'</b><span>'+esc(Y.desk)+'</span><div style="display:flex;gap:6px"><button data-k="'+Y.k+'" data-m="eks" title="Penampang & string poligon">&#9654; Eksplisit</button><button data-k="'+Y.k+'" data-m="imp" title="'+(Y.yp?'String tertutup Y → lajur otomatis + union':'Flag, string HW / FW, RBF')+'" style="background:#0f766e">&#9654; Implisit</button></div></div>').join('');
   g('dmKar').querySelectorAll('button').forEach(b=>b.onclick=()=>{dlg.style.display='none';const k=b.dataset.k;
    const md=b.dataset.m||'eks';if(ada){try{sessionStorage.setItem('ow.demo',k+'|'+md);}catch(e){}location.reload();return;}jalankan(k,{mode:md});});}
  catch(e){g('dmKar').textContent='Paket demo tidak bisa dibuka: '+e.message;}}
@@ -9938,7 +10018,7 @@ const css=document.createElement('style');css.textContent=`
 /* ---------- HTML ---------- */
 const wn=document.createElement('div');wn.id='spw';
 wn.innerHTML='<div class="hd"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e9b45a" stroke-width="2"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg><b>Studio Pemetaan</b><span class="sub" id="spsub"></span><span class="sp"></span>'
- +'<button class="hb" id="sptema" title="Tema terang / gelap">&#9680; Tema</button><button class="hb" id="spfsb" title="Layar penuh (F11)">&#9974; Layar penuh</button><button class="hb" id="spx" title="Tutup (F8)">&#10005; Tutup</button></div>'
+ +'<button class="hb" id="spdemo" title="Demo otomatis Studio Pemetaan dengan data simulasi (untuk pemula)" style="background:#ffb300;border-color:#ffb300;color:#2a1d00;font-weight:700">&#9654; Demo</button><button class="hb" id="sptema" title="Tema terang / gelap">&#9680; Tema</button><button class="hb" id="spfsb" title="Layar penuh (F11)">&#9974; Layar penuh</button><button class="hb" id="spx" title="Tutup (F8)">&#10005; Tutup</button></div>'
  +'<div class="tb"><label>Layer</label><input id="splyr" list="fmgrpl" placeholder="mis. VN_2001" style="width:110px" title="Fitur baru masuk layer ini (sama dengan kolom Layer di Pemetaan › Digitasi)">'
  +'<label>Kategori</label><select id="spkat" style="max-width:170px"></select><span class="sep"></span>'
  +'<label>Tampilan</label><button class="bt" id="spvp">Plan</button><button class="bt" id="spvw" title="Penampang tegak sejajar garis dinding (alat W)">Muka dinding</button>'
@@ -10120,7 +10200,7 @@ function sub(){g('spsub').textContent=(SP.mode==='plan'?'Plan di atas '+({topo:'
 let dn=null,lastClk=0,lastXY=null;
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoom(e.deltaY<0?1.2:1/1.2,e.clientX-r.left,e.clientY-r.top);},{passive:false});
-cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;cv.setPointerCapture(e.pointerId);dn={x,y,b:e.button,mv:false,v:Object.assign({},VW()),ctrl:e.ctrlKey||e.metaKey,alt:e.altKey};
+cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;try{cv.setPointerCapture(e.pointerId);}catch(err){}dn={x,y,b:e.button,mv:false,v:Object.assign({},VW()),ctrl:e.ctrlKey||e.metaKey,alt:e.altKey};
  if(e.button===0&&SP.tool==='sel'&&SP.sel&&SP.sel.t==='f'){const k=vtxAt(SP.sel.f,x,y);if(k>=0){dn.vtx=k;dn.snap=snap0();}}
  if(e.button===0&&SP.tool==='sd'){const s=snapAt(x,y,e.altKey);dn.sd=s.p;}});
 cv.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;SHIFT=e.shiftKey;
@@ -10236,6 +10316,7 @@ g('spfit2').onclick=()=>{const s=SP.sel;if(!s){fit();return;}center(s.t==='f'?s.
 g('sptema').onclick=()=>{SP.dark=!SP.dark;wn.classList.toggle('dark',SP.dark);keep();draw();};
 g('spfsb').onclick=()=>{SP.fs=!SP.fs;wn.classList.toggle('fs',SP.fs);setTimeout(draw,30);};
 g('spx').onclick=()=>tutup();
+g('spdemo').onclick=()=>{if(window.owDemoPeta)owDemoPeta();};
 window.addEventListener('resize',()=>{if(SP.on)draw();});
 /* ---------- buka / tutup ---------- */
 function buka(){if(SP.on)return;SP.on=true;wn.style.display='flex';wn.classList.toggle('dark',SP.dark);g('sppk').classList.toggle('min',!SP.peek);SP.hc=null;
@@ -10243,6 +10324,8 @@ function buka(){if(SP.on)return;SP.on=true;wn.style.display='flex';wn.classList.
  zsrcSet(SP.zsrc);wn.classList.toggle('rl',SP.rlOn);requestAnimationFrame(()=>{draw0();if(!SP.v[SP.mode])fit();setTool(SP.tool);setMode(SP.mode);tree();attr();sub();peek(null,true);});}
 function tutup(){if(!SP.on)return;SP.on=false;SP.cur=[];SP.meas=[];SP.wpend=null;wn.style.display='none';g('splay').style.display='none';try{fmDraw();}catch(e){}}
 window.spBuka=buka;window.spTutup=tutup;
+/* untuk demo / uji: koordinat dunia → layar, pas-kan tampilan ke titik */
+SP.api={w2s:(E,N,Z)=>{const r=cv.getBoundingClientRect(),s=W2S(E,N,Z);return [r.left+s[0],r.top+s[1]];},fitTo:(P,f)=>{const v=VW();if(!v||!P.length)return;let x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;P.forEach(p=>{const a=SP.mode==='plan'?[p[0],p[1]]:[(p[0]-SP.wall.a[0])*SP.wall.ux+(p[1]-SP.wall.a[1])*SP.wall.uy,p[2]];x0=Math.min(x0,a[0]);x1=Math.max(x1,a[0]);y0=Math.min(y0,a[1]);y1=Math.max(y1,a[1]);});v.cx=(x0+x1)/2;v.cy=(y0+y1)/2;v.sc=Math.min(cw/Math.max(10,(x1-x0)*(f||1.3)),(chh-140)/Math.max(10,(y1-y0)*(f||1.3)));draw();},view:()=>Object.assign({},VW()),setView:o=>{Object.assign(VW(),o);draw();},canvas:cv,draw:()=>draw0()};
 /* data berubah di luar studio → segarkan */
 {const _hb=holesBuild;holesBuild=function(){SP.hc=null;const r=_hb.apply(this,arguments);if(SP.on)draw();return r;};}
 {const _fl=fmList;fmList=function(){const r=_fl.apply(this,arguments);if(SP.on&&!SP._inSync){SP._inSync=true;try{tree();draw();}finally{SP._inSync=false;}}return r;};}
