@@ -176,7 +176,7 @@ table.mini{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums
     </div>
     <div id="tip"></div>
     <div id="legend"><div class="lh"><span>Legenda</span><button id="legmin" title="Perkecil">–</button></div><div id="legbody"></div></div>
-    <div id="nodata"><div>Seret file ke sini atau pakai <b>Berkas → Buka file…</b><br><small>DXF · SHP · MIF/MID · KML/KMZ · GeoJSON · STR · DTM · MSH · OBJ · CSV · GeoTIFF</small></div></div>
+    <div id="nodata"><div>Seret file ke sini atau pakai <b>Berkas → Buka file…</b><br><small>DXF · SHP · TAB · MIF/MID · KML/KMZ · GeoJSON · STR · DTM · MSH · OBJ · CSV · GeoTIFF</small></div></div>
    </div>
    <div class="pane" id="p3d">
     <canvas id="cv"></canvas>
@@ -244,6 +244,7 @@ const FORMATS=[
  {id:'str',label:'Surpac STR (.str)',ext:'str',soft:'Surpac',r:1,w:1,note:'String teks (Y, X, Z)'},
  {id:'shp',label:'Shapefile (.shp + .dbf + .shx)',ext:'shp',soft:'MapInfo · Global Mapper · GIS',r:1,w:1,note:'PointZ / PolyLineZ / PolygonZ + atribut'},
  {id:'mif',label:'MapInfo MIF/MID',ext:'mif',soft:'MapInfo · Global Mapper',r:1,w:1,note:'Teks 2D; Z disimpan sebagai kolom atribut'},
+ {id:'tab',label:'MapInfo TAB (.tab + .dat + .map + .id)',ext:'tab',soft:'MapInfo',r:1,w:0,note:'Titik, garis, poligon, multipoint + atribut; proyeksi UTM dikenali. Teks, busur, elips dilewati'},
  {id:'csv',label:'CSV / XYZ (.csv)',ext:'csv',soft:'Semua',r:1,w:1,note:'Tabel titik X,Y,Z + atribut'}
 ];
 const SOFT={'Leapfrog':['msh','obj','dxf','csv'],'Surpac':['dtm','str','dxf','csv'],'MapInfo':['mif','shp','dxf'],'Global Mapper':['shp','dxf','obj','csv']};
@@ -323,7 +324,9 @@ function parseTable(text){
 }
 function guessMap(cols,rows){
  const f=(re)=>cols.findIndex(c=>re.test(c.trim()));
+ const numc=(c)=>{let ok=0,t=0;for(let r=0;r<Math.min(rows.length,50);r++){const v=rows[r][c];if(v===''||v==null)continue;t++;if(isNum(v))ok++;}return t>0&&ok===t;},f2=(re)=>cols.findIndex((c,i)=>re.test(c.trim())&&numc(i));
  let x=f(/^(x|e|east|easting|xcentre|xc|x_?coord\w*|xm|lon\w*|bujur)$/i),y=f(/^(y|n|north|northing|ycentre|yc|y_?coord\w*|ym|lat\w*|lintang)$/i),z=f(/^(z|rl|elev\w*|alt\w*|h|zc|zcentre|zm|tinggi|depth)$/i);
+ if(x<0||y<0||!numc(x)||!numc(y)){const x2=f2(/^(utm_?)?(m_?e|east(ing)?)(_?m)?$|^(utm_?)?x(_?utm)?$|^e(asting)?_?utm$/i),y2=f2(/^(utm_?)?(m_?n|north(ing)?)(_?m)?$|^(utm_?)?y(_?utm)?$|^n(orthing)?_?utm$/i);if(x2>=0&&y2>=0){x=x2;y=y2;}}
  if(x<0||y<0){const nu=[];for(let c=0;c<cols.length;c++){let ok=0,t=0;for(let r=0;r<Math.min(rows.length,20);r++){t++;if(isNum(rows[r][c]))ok++;}if(t&&ok===t)nu.push(c);}
   if(x<0)x=nu[0]!==undefined?nu[0]:-1;if(y<0)y=nu.filter(c=>c!==x)[0];if(y===undefined)y=-1;if(z<0)z=nu.filter(c=>c!==x&&c!==y)[0];if(z===undefined)z=-1;}
  return {x:x,y:y,z:z};
@@ -345,14 +348,14 @@ function fromTable(name,cols,rows,src,W){
 }
 
 /* ---------- DBF ---------- */
-function parseDBF(buf){
+function parseDBF(buf,keep){
  const u=u8of(buf),dv=new DataView(u.buffer,u.byteOffset,u.byteLength);
  const nrec=dv.getUint32(4,true),hl=dv.getUint16(8,true),rl=dv.getUint16(10,true);
  const fields=[];for(let p=32;p<hl-1&&u[p]!==0x0D;p+=32){let nm='';for(let i=0;i<11&&u[p+i];i++)nm+=String.fromCharCode(u[p+i]);fields.push({name:nm,type:String.fromCharCode(u[p+11]),len:u[p+16]});}
- const rows=[];
- for(let r=0;r<nrec;r++){const o=hl+r*rl;if(o+rl>u.length)break;if(u[o]===0x2A)continue;let p=o+1;const row=[];
-  for(const f of fields){const s=dec(u.subarray(p,p+f.len)).trim();p+=f.len;row.push(s);}rows.push(row);}
- return {cols:fields.map(f=>f.name),rows:rows,types:fields.map(f=>f.type)};
+ const rows=[],del=[];
+ for(let r=0;r<nrec;r++){const o=hl+r*rl;if(o+rl>u.length)break;const dl=u[o]===0x2A;if(dl&&!keep)continue;del.push(dl);let p=o+1;const row=[];
+  for(const f of fields){const s=dec(u.subarray(p,p+f.len)).replace(/\0/g,'').trim();p+=f.len;row.push(s);}rows.push(row);}
+ return {cols:fields.map(f=>f.name),rows:rows,del:del,types:fields.map(f=>f.type)};
 }
 function buildDBF(cols,rows){
  const types=cols.map((c,i)=>rows.length&&rows.every(r=>isNum(r[i]))?'N':'C');
@@ -645,10 +648,78 @@ function parseMIF(base,u,W,aux){
  if(!gb.v.length)throw new Error('MIF tidak berisi geometri yang dikenali');
  return [gb.done('mif',{cols:cols.length?cols:null})];
 }
+/* ---------- reader: MapInfo TAB native (.MAP + .ID + .DAT). Struktur objek mengikuti dokumentasi terbuka MITAB/GDAL. ---------- */
+function readMAP(mapBuf,idBuf,W){
+ const u=u8of(mapBuf),dv=new DataView(u.buffer,u.byteOffset,u.byteLength),iu=u8of(idBuf),idv=new DataView(iu.buffer,iu.byteOffset,iu.byteLength);
+ if(u.length<512||dv.getInt32(0x100,true)!==42424242)throw new Error('file .MAP tidak dikenali (bukan MapInfo MAP)');
+ const ver=dv.getInt16(0x104,true),bs=dv.getInt16(0x106,true)||512,quad=u[0x161],proj=u[0x16d],units=u[0x16f];
+ const xs=dv.getFloat64(0x170,true),ys=dv.getFloat64(0x178,true),xd=dv.getFloat64(0x180,true),yd=dv.getFloat64(0x188,true),pp=[];for(let k=0;k<6;k++)pp.push(dv.getFloat64(0x190+8*k,true));
+ const CX=(quad===2||quad===3||quad===0)?(n)=>-(n+xd)/xs:(n)=>(n-xd)/xs,CY=(quad===3||quad===4||quad===0)?(n)=>-(n+yd)/ys:(n)=>(n-yd)/ys;
+ /* pembaca blok koordinat berantai (tipe 3: int16 tipe, int16 n, int32 berikut; data mulai byte 8) */
+ function coordReader(ptr){let blk=Math.floor(ptr/bs)*bs,p=ptr;const need=(n)=>{if(p+n>blk+bs){const nx=dv.getInt32(blk+4,true);if(nx<=0||nx>=u.length)throw new Error('rantai blok koordinat .MAP terputus');blk=Math.floor(nx/bs)*bs;p=blk+8;}};
+  return {i16:()=>{need(2);const v=dv.getInt16(p,true);p+=2;return v;},i32:()=>{need(4);const v=dv.getInt32(p,true);p+=4;return v;}};}
+ const nrec=Math.floor(iu.length/4),out=new Array(nrec).fill(null),skip={};let nogeo=0;
+ const COMP=new Set([1,4,7,10,13,16,19,22,25,37,40,43,46,49,52,55,58,61,64,67]);
+ for(let r=0;r<nrec;r++){const o=idv.getInt32(4*r,true);if(o<=0||o+5>u.length){nogeo++;continue;}
+  const t=u[o],b=Math.floor(o/bs)*bs,cx=dv.getInt32(b+4,true),cy=dv.getInt32(b+8,true),c=COMP.has(t);let q=o+5;
+  try{
+   if(t===1||t===2||t===40||t===41||t===43||t===44){const x=c?dv.getInt16(q,true)+cx:dv.getInt32(q,true),y=c?dv.getInt16(q+2,true)+cy:dv.getInt32(q+4,true);out[r]={k:'pt',P:[[CX(x),CY(y)]]};}
+   else if(t===4||t===5){const g=(k)=>c?dv.getInt16(q+2*k,true)+(k%2?cy:cx):dv.getInt32(q+4*k,true);out[r]={k:'pl',S:[{P:[[CX(g(0)),CY(g(1))],[CX(g(2)),CY(g(3))]],closed:false}]};}
+   else if(t===19||t===20||t===22||t===23){if(t>=22)q+=c?4:8;const g=(k)=>c?dv.getInt16(q+2*k,true)+(k%2?cy:cx):dv.getInt32(q+4*k,true),x0=CX(g(0)),y0=CY(g(1)),x1=CX(g(2)),y1=CY(g(3));out[r]={k:'pl',S:[{P:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],closed:true}]};}
+   else if([7,8,13,14,37,38,46,47,49,50,58,59,61,62].indexOf(t)>=0){
+    const v8=t>=58,v45=t>=46,simple=(t===7||t===8),region=[13,14,46,47,58,59].indexOf(t)>=0,ptr=dv.getInt32(q,true);let size=dv.getInt32(q+4,true)&0x7FFFFFFF;q+=8;
+    let ns=1;if(!simple){if(v8){ns=dv.getInt32(q,true);q+=4;}else{ns=dv.getInt16(q,true);q+=2;}}if(v8)q+=33;
+    let ox=0,oy=0;if(c){q+=4;ox=dv.getInt32(q,true);oy=dv.getInt32(q+4,true);}
+    const R=coordReader(ptr),rd=()=>{const x=c?R.i16()+ox:R.i32(),y=c?R.i16()+oy:R.i32();return [CX(x),CY(y)];},S=[];
+    if(simple){const n=Math.floor(size/(c?4:8)),P=[];for(let k=0;k<n;k++)P.push(rd());S.push({P:P,closed:false});}
+    else{const nv=[];for(let s=0;s<ns;s++){nv.push(v45?R.i32():R.i16());if(v8)R.i32();else R.i16();if(c){R.i16();R.i16();R.i16();R.i16();}else{R.i32();R.i32();R.i32();R.i32();}R.i32();}
+     for(let s=0;s<ns;s++){const P=[];for(let k=0;k<nv[s];k++)P.push(rd());if(region&&P.length>1&&P[0][0]===P[P.length-1][0]&&P[0][1]===P[P.length-1][1])P.pop();S.push({P:P,closed:region});}}
+    out[r]={k:'pl',S:S};}
+   else if(t===52||t===53||t===64||t===65){const ptr=dv.getInt32(q,true),n=dv.getInt32(q+4,true);q+=8+15+(t>=64?33:0)+2;let ox=0,oy=0;if(c){q+=4;ox=dv.getInt32(q,true);oy=dv.getInt32(q+4,true);}
+    const R=coordReader(ptr),P=[];for(let k=0;k<n;k++){const x=c?R.i16()+ox:R.i32(),y=c?R.i16()+oy:R.i32();P.push([CX(x),CY(y)]);}out[r]={k:'pt',P:P};}
+   else{const nm={10:'Arc',11:'Arc',16:'Text',17:'Text',25:'Ellipse',26:'Ellipse',55:'Collection',56:'Collection',67:'Collection',68:'Collection'}[t]||('tipe '+t);skip[nm]=(skip[nm]||0)+1;}
+  }catch(e){skip['rusak']=(skip['rusak']||0)+1;}}
+ const sk=Object.keys(skip);if(sk.length)W.push('TAB: objek dilewati: '+sk.map(k=>k+' ×'+skip[k]).join(', '));
+ let crs=null,pj='tidak dikenal';if(proj===1)pj='lintang/bujur';else if(proj===0)pj='NonEarth (lokal)';else if(proj===8){pj='Transverse Mercator';const z=(pp[0]+183)/6;if(Math.abs(z-Math.round(z))<1e-6&&Math.abs(pp[2]-0.9996)<1e-6&&Math.abs(pp[3]-500000)<1e-3&&units===7){crs={zone:Math.round(z),south:pp[4]>1};pj='UTM zona '+crs.zone+(crs.south?'S':'N');}}else pj='proyeksi MapInfo #'+proj;
+ return {objs:out,nogeo:nogeo,crs:crs,proj:pj,ver:ver};
+}
+/* .DAT native MapInfo: header mirip dBase, tetapi Integer/Float/Date biner; tipe kolom ada di definisi .TAB */
+function tabFields(def){const m=/Fields\s+(\d+)([\s\S]*)/i.exec(def||'');if(!m)return null;const out=[],L=m[2].split(/\r?\n/);
+ for(const l of L){const q=/^\s*(\S+)\s+(Char|Integer|SmallInt|LargeInt|Float|Decimal|Date|Time|DateTime|Logical)\b/i.exec(l);if(q)out.push({name:q[1],type:q[2].toLowerCase()});if(out.length>=+m[1])break;}
+ return out.length?out:null;}
+function parseDAT(buf,defs){
+ const u=u8of(buf),dv=new DataView(u.buffer,u.byteOffset,u.byteLength),nrec=dv.getUint32(4,true),hl=dv.getUint16(8,true),rl=dv.getUint16(10,true),F=[];
+ for(let p=32;p<hl-1&&u[p]!==0x0D;p+=32){let nm='';for(let i=0;i<11&&u[p+i];i++)nm+=String.fromCharCode(u[p+i]);F.push({name:nm,len:u[p+16],type:'char'});}
+ const useDef=defs&&defs.length===F.length;if(useDef)F.forEach((f,i)=>{f.name=defs[i].name;f.type=defs[i].type;});
+ const bin=(o,n)=>{for(let k=0;k<n;k++){const c=u[o+k];if(c!==0&&(c<32||c>126)&&c<160)return true;}return false;};
+ if(!useDef&&nrec){let o=1;for(const f of F){let b=0,t=0;for(let r=0;r<Math.min(nrec,40);r++){const p=hl+r*rl+o;if(p+f.len>u.length)break;t++;if(bin(p,f.len)||(f.len===8&&u[p+7]>=0x3F&&u[p+7]<=0x41&&u[p]===0))b++;}if(t&&b>t*0.3)f.type=f.len===8?'float':f.len===4?'integer':f.len===2?'smallint':'char';o+=f.len;}}
+ const p2=(n)=>String(n).padStart(2,'0'),rows=[],del=[],td=new TextDecoder('windows-1252');
+ for(let r=0;r<nrec;r++){const o=hl+r*rl;if(o+rl>u.length)break;del.push(u[o]===0x2A);let p=o+1;const row=[];
+  for(const f of F){let v='';switch(f.type){
+    case 'float':{const x=dv.getFloat64(p,true);v=isFinite(x)?String(+x.toPrecision(15)):'';break;}
+    case 'integer':v=String(dv.getInt32(p,true));break;case 'smallint':v=String(dv.getInt16(p,true));break;
+    case 'largeint':v=String(dv.getBigInt64(p,true));break;
+    case 'date':case 'datetime':{const y=dv.getInt16(p,true),mo=u[p+2],d=u[p+3];v=y?y+'-'+p2(mo)+'-'+p2(d):'';if(f.type==='datetime'&&y){const ms=dv.getInt32(p+4,true);if(ms>0)v+=' '+p2(Math.floor(ms/3600000))+':'+p2(Math.floor(ms/60000)%60);}break;}
+    case 'time':{const ms=dv.getInt32(p,true);v=ms>=0?p2(Math.floor(ms/3600000))+':'+p2(Math.floor(ms/60000)%60)+':'+p2(Math.floor(ms/1000)%60):'';break;}
+    default:{let e=p+f.len;while(e>p&&(u[e-1]===0||u[e-1]===32))e--;let b=p;while(b<e&&u[b]===32)b++;v=td.decode(u.subarray(b,e)).replace(/\0/g,'');}}
+   row.push(v);p+=f.len;}rows.push(row);}
+ return {cols:F.map(f=>f.name),rows:rows,del:del,types:F.map(f=>f.type)};
+}
 function parseTAB(base,u,W,aux){
- W.push('TAB: geometri di .MAP/.ID MapInfo berformat tertutup dan tidak dibaca. Ekspor dari MapInfo ke MIF/MID atau SHP untuk membawa geometri.');
- if(aux&&aux.dat){const t=parseDBF(aux.dat);return [fromTable(base,t.cols,t.rows,'tab',W)];}
- throw new Error('TAB: file .DAT (atribut) tidak disertakan.');
+ aux=aux||{};const def=u&&u.length?dec(u):'',ty=(/^\s*Type\s+(\w+)/mi.exec(def)||[,''])[1].toUpperCase();
+ let tb=null;if(aux.dat){try{tb=(ty===''||ty==='NATIVE')?parseDAT(aux.dat,tabFields(def)):parseDBF(aux.dat,true);}catch(e){W.push('TAB: .DAT gagal dibaca ('+e.message+')');}}
+ else if(ty&&ty!=='NATIVE'){const src=(/File\s+"([^"]+)"/i.exec(def)||[,''])[1];W.push('TAB bertipe '+ty+': atributnya ada di file sumber'+(src?' "'+src+'"':'')+', bukan di .DAT. Hanya geometri yang dimuat; untuk atribut, buka juga file itu sebagai CSV atau simpan tabel sebagai TAB native (Save Copy As) di MapInfo.');}
+ if(aux.map&&aux.id){const M=readMAP(aux.map,aux.id,W),gb=new GB(base),cols=tb?tb.cols:['ID'];let n=0,zc=-1;
+  if(tb)zc=tb.cols.findIndex(c=>/^(z|rl|elev\w*|alt\w*|elevasi)$/i.test(c.trim()));
+  M.objs.forEach((o,i)=>{if(!o)return;if(tb&&tb.del[i])return;const row=tb?(tb.rows[i]||null):[String(i+1)];let z=0;if(zc>=0&&row){const v=parseFloat(row[zc]);if(isFinite(v))z=v;}n++;
+   if(o.k==='pt')o.P.forEach(p=>gb.point(gb.add(p[0],p[1],z),row));else o.S.forEach(s=>{if(s.P.length>1)gb.poly(s.P.map(p=>gb.add(p[0],p[1],z)),s.closed,row);});});
+  if(n){W.push('TAB: '+n+' objek dibaca dari .MAP (MapInfo v'+M.ver+', '+M.proj+')'+(M.nogeo?'; '+M.nogeo+' baris tanpa objek peta':'')+(zc>=0?'; Z dari kolom '+tb.cols[zc]:'')+'.');
+   let zero=0;for(let k=0;k<gb.v.length;k+=3)if(Math.abs(gb.v[k])<1&&Math.abs(gb.v[k+1])<1e4)zero++;if(zero&&M.crs)W.push('TAB: '+zero+' titik berada di sekitar koordinat (0, 0), kemungkinan sampel tanpa koordinat. Zoom semua mengabaikannya.');
+   return [gb.done('tab',{cols:cols,crs:M.crs,proj:M.proj})];}
+  W.push('TAB: .MAP tidak berisi objek yang bisa dibaca; dicoba dari kolom koordinat tabel.');}
+ else if(!aux.map||!aux.id)W.push('TAB: file .MAP dan .ID tidak disertakan, geometri tidak dimuat. Pilih .TAB, .DAT, .MAP, dan .ID bersamaan.');
+ if(tb)return [fromTable(base,tb.cols,tb.rows.filter((r,i)=>!tb.del[i]),'tab',W)];
+ throw new Error('TAB: tidak ada geometri (.MAP + .ID) maupun atribut (.DAT) yang bisa dibaca. Pilih semua file tabel bersamaan.');
 }
 function looksDBF(u){return u.length>32&&(u[0]===3||u[0]===0x83||u[0]===0x8B||u[0]===0xF5)&&u[u.length-1]===0x1A||(u.length>32&&u[0]===3&&new DataView(u.buffer,u.byteOffset,u.byteLength).getUint16(8,true)<u.length);}
 
@@ -666,8 +737,8 @@ function parse(name,buf,aux){
  else if(ext==='mif')g=parseMIF(base,u,W,aux);
  else if(ext==='tab')g=parseTAB(base,u,W,aux);
  else if(ext==='dtm')g=parseDTM(base,u,W,aux);
- else if(ext==='map'||ext==='id')throw new Error('File .'+ext.toUpperCase()+' MapInfo (geometri TAB) tertutup. Gunakan MIF/MID atau SHP.');
- else if((ext==='dbf'||ext==='dat')&&looksDBF(u)){const t=parseDBF(u);g=[fromTable(base,t.cols,t.rows,ext,W)];}
+ else if(ext==='map'||ext==='id')throw new Error('File .'+ext.toUpperCase()+' MapInfo harus dipilih bersama pasangannya (.TAB, .DAT, .MAP, .ID bernama sama).');
+ else if((ext==='dbf'||ext==='dat')&&looksDBF(u)){const t=ext==='dat'?(()=>{const q=parseDAT(u,null);q.rows=q.rows.filter((r,i)=>!q.del[i]);return q;})():parseDBF(u);g=[fromTable(base,t.cols,t.rows,ext,W)];}
  else{const t=parseTable(dec(u));if(!t.rows.length)throw new Error('Format file tidak dikenali');g=[fromTable(base,t.cols,t.rows,'csv',W)];}
  return {geoms:g,warn:W};
 }
@@ -682,8 +753,8 @@ function groupFiles(items){ // items: [{name,buf}]
  by.forEach(e=>{const f=e.files;
   if(f.shp)jobs.push({name:e.base+'.shp',buf:f.shp,aux:{dbf:f.dbf}});
   else if(f.mif)jobs.push({name:e.base+'.mif',buf:f.mif,aux:{mid:f.mid}});
-  else if(f.tab)jobs.push({name:e.base+'.tab',buf:f.tab,aux:{dat:f.dat||f.dbf}});
-  else for(const k in f){if(k==='shx'||k==='prj'||k==='cpg'||k==='sbn'||k==='sbx'||(k==='mid'&&f.mif))continue;
+  else if(f.tab||(f.map&&f.id))jobs.push({name:e.base+'.tab',buf:f.tab||new ArrayBuffer(0),aux:{dat:f.dat||f.dbf,map:f.map,id:f.id}});
+  else for(const k in f){if(k==='shx'||k==='prj'||k==='cpg'||k==='sbn'||k==='sbx'||k==='ind'||(k==='mid'&&f.mif))continue;
    if(k==='dtm'){jobs.push({name:e.base+'.dtm',buf:f[k],aux:{strs:strs},dtm:true});hasDtm.push(e);continue;}
    jobs.push({name:e.base+'.'+k,buf:f[k]});}
  });
@@ -1253,6 +1324,7 @@ function nice(v){const p=Math.pow(10,Math.floor(Math.log10(v))),m=v/p;return (m<
 function rampCss(t){t=t<0?0:t>1?1:t;const h=(1-t)*240;return 'hsl('+h.toFixed(0)+',85%,45%)';}
 function colorBy(g){const s=sty(g);if(s.colorBy<0||!g.PA.length)return null;const key=s.colorBy+':'+g.PA.length;if(g._cb&&g._cb.key===key)return g._cb;
  let mn=Infinity,mx=-Infinity;const v=new Float64Array(g.PA.length);for(let k=0;k<g.PA.length;k++){const x=g.PA[k]?parseFloat(g.PA[k][s.colorBy]):NaN;v[k]=x;if(x===x){if(x<mn)mn=x;if(x>mx)mx=x;}}
+ const sv=Array.from(v).filter(x=>x===x).sort((p,q)=>p-q);if(sv.length>20){const lo=sv[Math.floor(sv.length*0.02)],hi=sv[Math.floor(sv.length*0.98)];if(hi>lo){mn=lo;mx=hi;}}
  return (g._cb={key:key,v:v,min:mn,max:mx});}
 
 /* ---------- gambar lapisan (dipakai peta dan layout) ---------- */
@@ -1327,7 +1399,12 @@ function render(){
 }
 function resize(){if(!cv)return;const r=cv.parentNode.getBoundingClientRect();if(!r.width||!r.height)return;dpr=window.devicePixelRatio||1;W=r.width;Ht=r.height;cv.width=Math.round(W*dpr);cv.height=Math.round(Ht*dpr);cv.style.width=W+'px';cv.style.height=Ht+'px';draw();}
 function fitExt(e,pad){if(!e||!isFinite(e[0]))return;view.cx=(e[0]+e[2])/2;view.cy=(e[1]+e[3])/2;const w=Math.max(e[2]-e[0],1e-6),h=Math.max(e[3]-e[1],1e-6);view.s=Math.min(W/w,Ht/h)*(pad||0.9);if(!isFinite(view.s)||view.s<=0)view.s=1;if(w<=1e-6&&h<=1e-6)view.s=2;draw();moved();}
-function fit(only){let e=null;for(const g of (only||H.layers())){if(!only&&!g.visible)continue;const b=ext(g);if(!b)continue;e=e?[Math.min(e[0],b[0]),Math.min(e[1],b[1]),Math.max(e[2],b[2]),Math.max(e[3],b[3])]:b.slice();}fitExt(e);}
+/* batas tahan pencilan: titik nyasar (mis. koordinat 0,0) tidak membuat zoom semua menjauh */
+function rext(g){const b=ext(g);if(!b||g.ras||g.dem||g.V.length<60)return b;if(g._rbV===g.V)return g._rb;const n=g.V.length/3,st=Math.max(1,Math.floor(n/4000)),xs=[],ys=[];for(let i=0;i<n;i+=st){xs.push(g.V[3*i]);ys.push(g.V[3*i+1]);}
+ xs.sort((p,q)=>p-q);ys.sort((p,q)=>p-q);const q=(a,f)=>a[Math.min(a.length-1,Math.max(0,Math.round(f*(a.length-1))))];let r=b;
+ for(const f of [0.02,0.1,0.2,0.3]){const x0=q(xs,f),x1=q(xs,1-f),y0=q(ys,f),y1=q(ys,1-f),w=Math.max(x1-x0,1),h=Math.max(y1-y0,1);if((b[2]-b[0])>12*w||(b[3]-b[1])>12*h){r=[x0-w*0.25,y0-h*0.25,x1+w*0.25,y1+h*0.25];break;}}
+ g._rbV=g.V;g._rb=r;return r;}
+function fit(only){let e=null;for(const g of (only||H.layers())){if(!only&&!g.visible)continue;const b=rext(g);if(!b)continue;e=e?[Math.min(e[0],b[0]),Math.min(e[1],b[1]),Math.max(e[2],b[2]),Math.max(e[3],b[3])]:b.slice();}fitExt(e);}
 let mvT=0;function moved(){clearTimeout(mvT);mvT=setTimeout(()=>{if(H.onView)H.onView();},280);}
 
 /* ---------- snap, hit test ---------- */
@@ -1461,8 +1538,8 @@ function modal(title,html,wide){const m=el('div','modal');m.innerHTML='<div clas
 function showFormats(){modal('Format yang didukung','<table><tr><th>Format</th><th>Baca</th><th>Tulis</th><th>Catatan</th></tr>'+GC.FORMATS.map(f=>'<tr><td><b>'+esc(f.label)+'</b><br><small>'+esc(f.soft)+'</small></td><td>'+(f.r?'✓':'–')+'</td><td>'+(f.w?'✓':'–')+'</td><td>'+esc(f.note)+'</td></tr>').join('')+
  '<tr><td><b>GeoTIFF ortofoto (.tif)</b></td><td>✓</td><td>–</td><td>RGB/RGBA, LZW/Deflate/JPEG, bertingkat (overview); detail dibaca sesuai zoom. ECW dan MrSID tidak didukung (format tertutup).</td></tr>'+
  '<tr><td><b>JPG / PNG + world file</b></td><td>✓</td><td>–</td><td>Pilih gambar bersama .jgw / .pgw / .wld.</td></tr>'+
- '<tr><td><b>MapInfo TAB / DAT</b></td><td>atribut</td><td>–</td><td>Geometri .MAP/.ID tertutup. Ekspor dari MapInfo ke MIF/MID atau SHP.</td></tr></table>'+
- '<p class="hint"><b>Berkas berpasangan</b> pilih bersama: SHP + DBF, MIF + MID, TAB + DAT, DTM + STR, gambar + world file.</p>',true);}
+ '</table>'+
+ '<p class="hint"><b>Berkas berpasangan</b> pilih bersama: SHP + DBF, MIF + MID, <b>TAB + DAT + MAP + ID</b>, DTM + STR, gambar + world file.</p>',true);}
 function showHelp(){modal('Pintasan & cara pakai','<table><tr><th>Aksi</th><th>Cara</th></tr>'+[['Geser peta','seret (di semua alat)'],['Zoom','roda mouse; <b>Home</b> = zoom semua'],['Info fitur','klik fitur (alat Geser / Info)'],['Digit poligon / garis','<b>P</b> / <b>L</b>, klik titik-titik, klik ganda / Enter / klik kanan = selesai, Backspace = hapus titik terakhir, Esc = batal'],['Snap','otomatis ke vertex terdekat (kotak kuning)'],['Edit vertex','<b>E</b>, klik fitur, seret kotak; bulatan = sisip titik; Delete di atas kotak = hapus titik'],['Hapus fitur','pilih fitur lalu Delete'],['Ukur jarak / luas','<b>D</b> / <b>A</b>'],['Urungkan','Ctrl+Z'],['Urutan lapisan','seret baris di panel Lapisan (atas = digambar paling akhir)'],['Folder / subfolder','tombol <b>＋ Folder</b>, lalu seret lapisan atau folder ke dalamnya; klik kanan folder untuk subfolder, ekspor isi, atau hapus']].map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>');}
 function showAbout(){modal('Tentang Geo Pocket','<p><b>Geo Pocket</b> (sebelumnya GeoConv): penampil peta 2D, digitasi, luas, layout, dan konverter data geologi/tambang. Berjalan sepenuhnya di komputer Anda (offline).</p><p>Memakai ulang kode GC-Ex / Ore Works / Pit Studio: pembaca MSH, DTM+STR Surpac, STR biner, DXF BLOCK/INSERT, aturan TIN (rapatkan string 2 m, buang segitiga tepi panjang), serta pustaka yang sudah ada di repo: geotiff.js 2.1.3 (MIT) dan Delaunator (ISC).</p>');}
 function togDock(w){const d=$('#'+w),s=$(w==='left'?'#sp1':'#sp2'),on=d.style.display==='none';d.style.display=on?'':'none';s.style.display=on?'':'none';M2.resize();V3.resize();}
@@ -1473,7 +1550,7 @@ function dl(name,data,mime){const b=data instanceof Blob?data:new Blob([data],{t
 /* ---------- sistem koordinat ---------- */
 function dlgCRS(){const c=S.crs||{zone:50,south:true};
  const m=modal('Sistem koordinat proyek','<p class="hint">Dipakai untuk lintang/bujur di status bar, KML/KMZ/GeoJSON, file .prj Shapefile, CoordSys MIF, dan GeoTIFF. Datum WGS84.</p><div class="fr"><span>Jenis</span><select id="ctype"><option value="1"'+(S.crs?' selected':'')+'>UTM (WGS84)</option><option value="0"'+(S.crs?'':' selected')+'>Lokal / tidak ditentukan</option></select></div><div class="fr"><span>Zona UTM</span><select id="cz">'+Array.from({length:60},(_,i)=>'<option'+(i+1===c.zone?' selected':'')+' value="'+(i+1)+'">'+(i+1)+'  ('+(i*6-180)+'° s/d '+(i*6-174)+'°)</option>').join('')+'</select></div><div class="fr"><span>Belahan</span><select id="cs"><option value="1"'+(c.south?' selected':'')+'>Selatan (S)</option><option value="0"'+(c.south?'':' selected')+'>Utara (N)</option></select></div><p class="hint">Indonesia: 46–54. Sumbawa dan Lombok = <b>50S</b>; Jawa Timur–Bali 49S/50S; Flores 51S.</p><div class="row"><button class="btn" id="cok">Terapkan</button></div>');
- $('#cok',m).onclick=()=>{S.crs=$('#ctype',m).value==='1'?{zone:+$('#cz',m).value,south:$('#cs',m).value==='1'}:null;store.set('gc_crs',S.crs?'1':'0');if(S.crs){store.set('gc_zone',S.crs.zone);store.set('gc_south',S.crs.south?'1':'0');}m.remove();renderStatus();msg('Sistem koordinat proyek: '+GC.crsName(S.crs));if(S.tab==='conv')renderConv();};}
+ $('#cok',m).onclick=()=>{S.crs=$('#ctype',m).value==='1'?{zone:+$('#cz',m).value,south:$('#cs',m).value==='1'}:null;store.set('gc_crs',S.crs?'1':'0');if(S.crs){store.set('gc_zone',S.crs.zone);store.set('gc_south',S.crs.south?'1':'0');}S._crsUser=true;m.remove();renderStatus();msg('Sistem koordinat proyek: '+GC.crsName(S.crs));if(S.tab==='conv')renderConv();};}
 function reprojSel(){const g=gById(S.sel);if(!g||!isVec(g))return;if(!GC.looksGeo(g)){msg(g.name+': koordinat bukan lintang/bujur (di luar ±180/±90).','w');return;}GC.projectGeom(g,S.crs);refreshAll();M2.fit([g]);msg(g.name+' diproyeksikan ke '+GC.crsName(S.crs)+'.');}
 
 /* ---------- muat file ---------- */
@@ -1486,7 +1563,8 @@ async function unzip(buf){const u=new Uint8Array(buf),dv=new DataView(buf);let e
   p+=46+nl+xl+cl;}
  return out;}
 function addGeom(g,file){g.file=file;g.base=file.replace(/\.[^.]+$/,'');g.fold=S.selFold&&fById(S.selFold)?S.selFold:null;S.geoms.unshift(g);return g;}
-function postVec(g,fname){if(isVec(g)&&g.V.length&&GC.looksGeo(g)){if(S.crs){GC.projectGeom(g,S.crs);msg(fname+': koordinat lintang/bujur diproyeksikan ke '+GC.crsName(S.crs)+'.');}else msg(fname+': koordinat tampak lintang/bujur. Tentukan sistem koordinat proyek lalu Proyek → Proyeksikan lapisan.','w');}}
+function postVec(g,fname){const c=g.meta&&g.meta.crs;if(c){if(!S.crs||(!S.geoms.some(x=>x!==g&&x.V.length&&!x.meta.crs)&&(S.crs.zone!==c.zone||S.crs.south!==c.south)&&!S._crsUser)){S.crs=c;renderStatus();msg(fname+': sistem koordinat proyek diatur mengikuti file ('+GC.crsName(c)+').');}else if(S.crs.zone!==c.zone||S.crs.south!==c.south)msg(fname+': proyeksi file '+GC.crsName(c)+' berbeda dari proyek ('+GC.crsName(S.crs)+'); koordinat tidak diubah.','w');}
+ if(isVec(g)&&g.V.length&&GC.looksGeo(g)){if(S.crs){GC.projectGeom(g,S.crs);msg(fname+': koordinat lintang/bujur diproyeksikan ke '+GC.crsName(S.crs)+'.');}else msg(fname+': koordinat tampak lintang/bujur. Tentukan sistem koordinat proyek lalu Proyek → Proyeksikan lapisan.','w');}}
 async function loadFiles(list){
  const all=Array.from(list),vec=[],ras=[],wld={};
  for(const f of all){const x=(f.name.match(/\.([^.]+)$/)||[,''])[1].toLowerCase();if(RASX.test(x))ras.push(f);else if(WLDX.test(x))wld[f.name.replace(/\.[^.]+$/,'').toLowerCase()]=f;else vec.push(f);}
@@ -1623,10 +1701,10 @@ function sec(t,body,open){return '<details class="sc" '+(open===false?'':'open')
 function featHtml(g,f){const V=g.V,cols=g.meta.cols;let h='';
  if(f.type==='pl'&&g.P[f.i]){const p=g.P[f.i],L=GC.polyLen(V,p.idx,p.closed,false),A=p.closed&&p.idx.length>2?GC.polyArea(V,p.idx):0;let z0=Infinity,z1=-Infinity;for(const i of p.idx){if(V[3*i+2]<z0)z0=V[3*i+2];if(V[3*i+2]>z1)z1=V[3*i+2];}
   h+='<div class="kv"><span>Tipe</span><span>'+(p.closed?'Poligon':'Garis')+' #'+(f.i+1)+'</span><span>Titik</span><span>'+p.idx.length+'</span><span>'+(p.closed?'Keliling':'Panjang')+'</span><span>'+nf(L,2)+' m</span>'+(p.closed?'<span>Luas</span><span><b>'+nf(A,2)+' m²</b></span><span>Luas</span><span><b>'+nf(A/10000,4)+' ha</b></span>':'')+'<span>Z</span><span>'+nf(z0,2)+' s/d '+nf(z1,2)+'</span></div>';
-  if(cols&&!g.meta.map)h+='<div class="kv" style="margin-top:6px">'+cols.map((c,k)=>'<span>'+esc(c)+'</span><input type="text" data-fa="'+k+'" value="'+esc(p.attr&&p.attr[k]!=null?p.attr[k]:'')+'">').join('')+'</div>';
+  if(cols&&!g.meta.map){const big=cols.length>30,a=p.attr||[];h+='<div class="kv" style="margin-top:6px">'+cols.map((c,k)=>big&&(a[k]==null||a[k]==='')?'':'<span>'+esc(c)+'</span>'+(big?'<span>'+esc(a[k])+'</span>':'<input type="text" data-fa="'+k+'" value="'+esc(a[k]!=null?a[k]:'')+'">')).join('')+'</div>';}
   h+='<div class="row" style="margin-top:6px"><button class="btn2" id="fzoom">Zoom</button><button class="btn2" id="ftog">'+(p.closed?'Buka (jadi garis)':'Tutup (jadi poligon)')+'</button><button class="btn2" id="fdel">Hapus fitur</button></div>';}
  else if(f.type==='pt'&&f.i<g.PT.length){const i=g.PT[f.i],a=g.PA[f.i];h+='<div class="kv"><span>Tipe</span><span>Titik #'+(f.i+1)+'</span><span>X / Easting</span><span>'+nf(V[3*i],3)+'</span><span>Y / Northing</span><span>'+nf(V[3*i+1],3)+'</span><span>Z</span><span>'+nf(V[3*i+2],3)+'</span></div>';
-  if(cols&&a)h+='<div class="kv" style="margin-top:6px">'+cols.map((c,k)=>'<span>'+esc(c)+'</span>'+(g.meta.map?'<span>'+esc(a[k])+'</span>':'<input type="text" data-fa="'+k+'" value="'+esc(a[k]!=null?a[k]:'')+'">')).join('')+'</div>';
+  if(cols&&a){const big=cols.length>30;h+='<div class="kv" style="margin-top:6px">'+cols.map((c,k)=>big&&(a[k]==null||a[k]==='')?'':'<span>'+esc(c)+'</span>'+(g.meta.map||big?'<span>'+esc(a[k])+'</span>':'<input type="text" data-fa="'+k+'" value="'+esc(a[k]!=null?a[k]:'')+'">')).join('')+'</div>'+(big?'<p class="hint">'+cols.length+' kolom; hanya yang terisi ditampilkan.</p>':'');}
   h+='<div class="row" style="margin-top:6px"><button class="btn2" id="fdel">Hapus fitur</button></div>';}
  else if(f.type==='mesh'||f.type==='dem')h+='<div class="kv"><span>Posisi</span><span>'+nf(f.x,2)+' E, '+nf(f.y,2)+' N</span><span>Elevasi</span><span><b>'+nf(f.z,3)+' m</b></span></div>';
  else if(f.type==='ras')h+='<div class="kv"><span>Posisi</span><span>'+nf(f.x,2)+' E, '+nf(f.y,2)+' N</span></div>';

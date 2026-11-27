@@ -40,7 +40,7 @@ async def shots(p):
 def tabel_format():
     r = ''.join('<tr><td><b>%s</b></td><td>%s</td><td class="c">%s</td><td class="c">%s</td><td>%s</td></tr>' % (html.escape(f['label']), html.escape(f['soft']), '✓' if f['r'] else '–', '✓' if f['w'] else '–', html.escape(f['note'])) for f in FMT)
     r += '<tr><td><b>GeoTIFF ortofoto (.tif)</b></td><td>Global Mapper · drone</td><td class="c">✓</td><td class="c">–</td><td>RGB/RGBA; LZW, Deflate, JPEG; overview; detail dibaca sesuai zoom</td></tr>'
-    r += '<tr><td><b>JPG / PNG + world file</b></td><td>Umum</td><td class="c">✓</td><td class="c">–</td><td>.jgw / .pgw / .wld</td></tr><tr><td><b>MapInfo TAB / DAT</b></td><td>MapInfo</td><td class="c">atribut</td><td class="c">–</td><td>Geometri .MAP/.ID tertutup; pakai MIF/MID atau SHP</td></tr>'
+    r += '<tr><td><b>JPG / PNG + world file</b></td><td>Umum</td><td class="c">✓</td><td class="c">–</td><td>.jgw / .pgw / .wld</td></tr>'
     return '<table class="t"><tr><th>Format</th><th>Software</th><th>Baca</th><th>Tulis</th><th>Catatan</th></tr>' + r + '</table>'
 
 CSS = """@page{size:A4;margin:16mm 15mm 16mm}*{box-sizing:border-box}body{font:10pt/1.5 Inter,"Segoe UI",Arial,sans-serif;color:#1F2430;margin:0}
@@ -62,7 +62,7 @@ def halaman():
 {im('peta.png', 'Peta 2D: Project Tree berfolder dan subfolder, DEM hasil triangulasi string topografi, kontur 2 m, dan dua poligon digitasi beserta luasnya di panel Properti. Data latihan fiktif.')}
 <h2>Kemampuan utama</h2>
 <div class="g2">
-<div class="k"><b>Peta 2D bertumpuk</b><br>DXF, SHP, MIF/MID, KML/KMZ, GeoJSON, STR, DTM, MSH, CSV, dan GeoTIFF ditampilkan bersama. Urutan gambar = urutan pohon; seret untuk mengubah.</div>
+<div class="k"><b>Peta 2D bertumpuk</b><br>DXF, SHP, TAB MapInfo, MIF/MID, KML/KMZ, GeoJSON, STR, DTM, MSH, CSV, dan GeoTIFF ditampilkan bersama. Urutan gambar = urutan pohon; seret untuk mengubah.</div>
 <div class="k"><b>Project Tree berfolder</b><br>Lapisan dikelompokkan ke folder dan subfolder. File berlapis banyak (mis. DXF) otomatis masuk satu folder. Centang folder = tampil/sembunyi semua isinya; isi folder bisa diekspor sekaligus.</div>
 <div class="k"><b>Digitasi &amp; edit</b><br>Poligon, garis, titik; snap ke vertex terdekat; elevasi diambil dari DEM; seret, sisip, hapus vertex; urungkan (Ctrl+Z).</div>
 <div class="k"><b>Luas</b><br>Luas dan keliling tampil saat mendigit, per fitur (m² dan ha), total per lapisan, dan tabel luas yang bisa diunduh CSV. Ikut tertulis ke SHP dan MIF.</div>
@@ -75,27 +75,28 @@ def halaman():
 {im('layout.png', 'Layout peta: pratinjau halaman dengan grid, skala, legenda, dan blok informasi.')}
 {im('konversi.png', 'Tab Konversi: sumber, tujuan (di sini Surpac DTM + STR), dan opsi.')}
 <h2>Format yang didukung</h2>{tabel_format()}
-<p class="note">Berkas berpasangan dipilih bersamaan: SHP + DBF, MIF + MID, TAB + DAT, DTM + STR, gambar + world file.</p>
+<p class="note">Berkas berpasangan dipilih bersamaan: SHP + DBF, MIF + MID, TAB + DAT + MAP + ID, DTM + STR, gambar + world file.</p>
 <h2>Cara kerja</h2>
 <ul><li><b>Satu berkas HTML</b> dirakit dari modul sumber di <code>web-src-gp/</code> oleh <code>bangun_gp.py</code>: <code>core.js</code> (pembaca/penulis format), <code>geo2.js</code> (UTM, KML/GeoJSON, TIN, DEM, kontur, GeoTIFF, PDF), <code>map2d.js</code> (peta kanvas, digitasi), <code>view3d.js</code> (WebGL), <code>ui.js</code>.</li>
 <li><b>Tanpa server dan tanpa internet.</b> File dibaca langsung oleh browser di komputer pengguna; hasil diunduh sebagai file biasa.</li>
 <li><b>Memakai ulang kode keluarga GC-Ex:</b> pembaca MSH, STR/DTM Surpac (teks dan biner), DXF BLOCK/INSERT, aturan TIN (string dirapatkan 2 m, titik &lt; 1 mm disatukan, segitiga tepi lebih panjang dari 8 × median dibuang), dan palet antarmuka.</li>
 <li><b>Pustaka pihak ketiga</b> (sudah ada di repo): geotiff.js 2.1.3 (lisensi MIT) dan Delaunator (lisensi ISC).</li></ul>
 <h2>Pengujian</h2>
-<ul><li>Hasil tulis diperiksa dengan pembaca independen: ezdxf (DXF), GDAL (SHP, MIF, KML, KMZ, GeoJSON), trimesh (OBJ, STL, PLY), rasterio (GeoTIFF, ASC), pyproj (UTM), pdfinfo (PDF).</li>
+<ul><li>Hasil tulis diperiksa dengan pembaca independen: ezdxf (DXF), GDAL (SHP, MIF, TAB, KML, KMZ, GeoJSON), trimesh (OBJ, STL, PLY), rasterio (GeoTIFF, ASC), pyproj (UTM), pdfinfo (PDF).</li>
 <li>MSH yang ditulis ulang sama persis byte demi byte dengan aslinya; koordinat DXF, OBJ, STL ASCII, PLY, DTM identik sampai 3 desimal.</li>
 <li>Konversi UTM ↔ lintang/bujur selisih di bawah 0,001 mm terhadap pyproj. Luas poligon digitasi sama dengan luas yang dihitung GDAL dari hasil ekspor.</li>
-<li>Uji otomatis di repo: <code>node web-src-gp/uji/uji_inti.js</code> dan <code>uji_geo.js</code>; uji antarmuka di Chrome tanpa galat JavaScript.</li></ul>
+<li>Uji otomatis di repo: <code>node web-src-gp/uji/uji_inti.js</code>, <code>uji_geo.js</code>, <code>uji_tab.js</code>; uji antarmuka di Chrome tanpa galat JavaScript.</li></ul>
 <div class="w"><b>Belum diuji:</b> membuka hasil ekspor langsung di Leapfrog, Surpac, MapInfo, Global Mapper, dan Google Earth, serta data lapangan asli (ortofoto dan pick-up nyata). Semua uji memakai data latihan fiktif.</div>
 <h2>Batas yang perlu diketahui</h2>
-<ul><li>ECW dan MrSID tidak dibuka (format tertutup); konversi dulu ke GeoTIFF.</li><li>Geometri MapInfo TAB (.MAP/.ID) tidak dibaca; pakai MIF/MID atau SHP.</li>
+<ul><li>ECW dan MrSID tidak dibuka (format tertutup); konversi dulu ke GeoTIFF.</li><li>MapInfo TAB dibaca (titik, garis, poligon, multipoint, atribut), tetapi belum ditulis; untuk mengirim ke MapInfo pakai MIF/MID atau SHP. Objek teks, busur, dan elips dilewati. TAB yang menaut ke Excel (Type XLS) hanya dimuat geometrinya.</li>
 <li>Proyek belum bisa disimpan: lapisan, folder, dan digitasi hilang saat browser ditutup. Ekspor hasil digitasi sebelum menutup.</li>
 <li>STL biner memakai float32, presisi koordinat UTM turun sampai ±1 m; pakai STL ASCII.</li><li>DEM dari GeoTIFF di atas 3.000 piksel dicuplik; GeoTIFF lintang/bujur tidak diproyeksikan ulang.</li><li>Luas adalah luas planimetrik (tampak atas) pada bidang proyeksi.</li></ul>
 <h2>Riwayat</h2>
 <table class="t"><tr><th style="width:22%">Tanggal</th><th>Perubahan</th></tr>
 <tr><td>26 Nov 2026</td><td><b>GeoConv</b>: konverter MSH, OBJ, STL, PLY, DXF, STR, DTM, SHP, MIF/MID, CSV dengan pratinjau 3D.</td></tr>
 <tr><td>26 Nov 2026</td><td>Peta 2D ala Global Mapper: digitasi, luas, GeoTIFF, topo → DEM, kontur, layout peta, KML/KMZ/GeoJSON, sistem koordinat UTM.</td></tr>
-<tr><td>27 Nov 2026</td><td>Berganti nama menjadi <b>Geo Pocket</b>. Project Tree berfolder dan subfolder. Sumber masuk repo (<code>web-src-gp/</code>).</td></tr></table>
+<tr><td>27 Nov 2026</td><td>Berganti nama menjadi <b>Geo Pocket</b>. Project Tree berfolder dan subfolder. Sumber masuk repo (<code>web-src-gp/</code>).</td></tr>
+<tr><td>27 Nov 2026</td><td>MapInfo TAB native dibaca langsung: geometri dari .MAP/.ID, atribut dari .DAT (Float, Integer, tanggal biner sesuai definisi .TAB), proyeksi UTM dari header. Kolom koordinat <code>UTM_mE</code> / <code>UTM_mN</code> dikenali. Zoom semua mengabaikan titik nyasar di (0, 0).</td></tr></table>
 <p class="note" style="margin-top:14pt">© Copyright Habil Abdillah 2026. Leapfrog, Surpac, MapInfo, Global Mapper, dan Google Earth adalah merek pemiliknya masing-masing; Geo Pocket tidak berafiliasi dengan mereka. Tangkapan layar memakai data latihan fiktif.</p>
 </body></html>"""
 

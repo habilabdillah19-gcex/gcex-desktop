@@ -10,6 +10,7 @@ function nice(v){const p=Math.pow(10,Math.floor(Math.log10(v))),m=v/p;return (m<
 function rampCss(t){t=t<0?0:t>1?1:t;const h=(1-t)*240;return 'hsl('+h.toFixed(0)+',85%,45%)';}
 function colorBy(g){const s=sty(g);if(s.colorBy<0||!g.PA.length)return null;const key=s.colorBy+':'+g.PA.length;if(g._cb&&g._cb.key===key)return g._cb;
  let mn=Infinity,mx=-Infinity;const v=new Float64Array(g.PA.length);for(let k=0;k<g.PA.length;k++){const x=g.PA[k]?parseFloat(g.PA[k][s.colorBy]):NaN;v[k]=x;if(x===x){if(x<mn)mn=x;if(x>mx)mx=x;}}
+ const sv=Array.from(v).filter(x=>x===x).sort((p,q)=>p-q);if(sv.length>20){const lo=sv[Math.floor(sv.length*0.02)],hi=sv[Math.floor(sv.length*0.98)];if(hi>lo){mn=lo;mx=hi;}}
  return (g._cb={key:key,v:v,min:mn,max:mx});}
 
 /* ---------- gambar lapisan (dipakai peta dan layout) ---------- */
@@ -84,7 +85,12 @@ function render(){
 }
 function resize(){if(!cv)return;const r=cv.parentNode.getBoundingClientRect();if(!r.width||!r.height)return;dpr=window.devicePixelRatio||1;W=r.width;Ht=r.height;cv.width=Math.round(W*dpr);cv.height=Math.round(Ht*dpr);cv.style.width=W+'px';cv.style.height=Ht+'px';draw();}
 function fitExt(e,pad){if(!e||!isFinite(e[0]))return;view.cx=(e[0]+e[2])/2;view.cy=(e[1]+e[3])/2;const w=Math.max(e[2]-e[0],1e-6),h=Math.max(e[3]-e[1],1e-6);view.s=Math.min(W/w,Ht/h)*(pad||0.9);if(!isFinite(view.s)||view.s<=0)view.s=1;if(w<=1e-6&&h<=1e-6)view.s=2;draw();moved();}
-function fit(only){let e=null;for(const g of (only||H.layers())){if(!only&&!g.visible)continue;const b=ext(g);if(!b)continue;e=e?[Math.min(e[0],b[0]),Math.min(e[1],b[1]),Math.max(e[2],b[2]),Math.max(e[3],b[3])]:b.slice();}fitExt(e);}
+/* batas tahan pencilan: titik nyasar (mis. koordinat 0,0) tidak membuat zoom semua menjauh */
+function rext(g){const b=ext(g);if(!b||g.ras||g.dem||g.V.length<60)return b;if(g._rbV===g.V)return g._rb;const n=g.V.length/3,st=Math.max(1,Math.floor(n/4000)),xs=[],ys=[];for(let i=0;i<n;i+=st){xs.push(g.V[3*i]);ys.push(g.V[3*i+1]);}
+ xs.sort((p,q)=>p-q);ys.sort((p,q)=>p-q);const q=(a,f)=>a[Math.min(a.length-1,Math.max(0,Math.round(f*(a.length-1))))];let r=b;
+ for(const f of [0.02,0.1,0.2,0.3]){const x0=q(xs,f),x1=q(xs,1-f),y0=q(ys,f),y1=q(ys,1-f),w=Math.max(x1-x0,1),h=Math.max(y1-y0,1);if((b[2]-b[0])>12*w||(b[3]-b[1])>12*h){r=[x0-w*0.25,y0-h*0.25,x1+w*0.25,y1+h*0.25];break;}}
+ g._rbV=g.V;g._rb=r;return r;}
+function fit(only){let e=null;for(const g of (only||H.layers())){if(!only&&!g.visible)continue;const b=rext(g);if(!b)continue;e=e?[Math.min(e[0],b[0]),Math.min(e[1],b[1]),Math.max(e[2],b[2]),Math.max(e[3],b[3])]:b.slice();}fitExt(e);}
 let mvT=0;function moved(){clearTimeout(mvT);mvT=setTimeout(()=>{if(H.onView)H.onView();},280);}
 
 /* ---------- snap, hit test ---------- */
