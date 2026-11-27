@@ -1,0 +1,74 @@
+Pit Studio for Desktop (keluarga GC-Ex)
+PENAFIAN MEREK DAGANG / TRADEMARK DISCLAIMER
+======================================================================
+
+Bahasa Indonesia
+----------------
+Nama produk, merek dan logo pihak lain yang disebut di aplikasi Pit Studio, di
+dokumentasinya, atau di format file yang didukungnya adalah merek dagang atau
+merek dagang terdaftar milik pemiliknya masing-masing, antara lain:
+
+  - GEOVIA, Surpac, Minex dan Whittle — Dassault Systèmes atau anak
+    perusahaannya.
+  - AutoCAD dan DXF — Autodesk, Inc.
+  - Microsoft, Windows dan Excel — Microsoft Corporation.
+  - Electron — OpenJS Foundation.
+  - Python — Python Software Foundation.
+
+Pit Studio adalah perangkat lunak independen. Pit Studio TIDAK berafiliasi
+dengan, TIDAK disponsori, dan TIDAK didukung atau disahkan oleh pemilik
+merek-merek tersebut. Nama-nama itu dipakai semata-mata untuk menjelaskan
+kecocokan format file dan cara kerja (misalnya "membaca file string Surpac
+.str", "membaca block model .mdl", "ekspor .dxf", atau "constraint seperti di
+Surpac"), bukan untuk menyatakan hubungan apa pun. Pit Studio tidak memakai
+logo pihak-pihak tersebut. Kecocokan dengan perangkat lunak pihak lain
+diupayakan tetapi tidak dijamin, dan dapat berubah bila format file mereka
+berubah.
+
+"Pit Studio", "GC-Ex" dan "Grade Control Excellence" adalah nama produk milik
+Habil Abdillah.
+
+Hasil perhitungan
+-----------------
+Pit Studio adalah alat bantu. Desain pit, jalan tambang, staging, jadwal gali,
+volume, tonase, kadar, stripping ratio dan laporannya harus diperiksa dan
+menjadi tanggung jawab pengguna / tenaga teknis yang berwenang sebelum dipakai
+untuk keputusan teknis, keselamatan, pelaporan sumber daya / cadangan (mis.
+KCMI, JORC) atau keperluan komersial. Pit Studio tidak melakukan analisis
+kestabilan lereng dan tidak melakukan optimasi pit. Perangkat lunak disediakan
+"apa adanya" tanpa jaminan apa pun.
+
+
+English
+-------
+Product names, brands and logos of third parties mentioned in the Pit Studio
+application, its documentation or the file formats it supports are trademarks
+or registered trademarks of their respective owners, including:
+
+  - GEOVIA, Surpac, Minex and Whittle — Dassault Systèmes or its subsidiaries.
+  - AutoCAD and DXF — Autodesk, Inc.
+  - Microsoft, Windows and Excel — Microsoft Corporation.
+  - Electron — OpenJS Foundation.
+  - Python — Python Software Foundation.
+
+Pit Studio is independent software. Pit Studio is NOT affiliated with,
+sponsored by, or endorsed by any of these trademark owners. These names are
+used solely to describe file-format and workflow compatibility (for example
+"reads Surpac .str string files", "reads .mdl block models", "exports .dxf",
+or "a constraint like in Surpac"), not to imply any relationship. Pit Studio
+does not use the logos of these parties. Compatibility with third-party
+software is pursued but not guaranteed and may change if their file formats
+change.
+
+"Pit Studio", "GC-Ex" and "Grade Control Excellence" are product names of
+Habil Abdillah.
+
+Results
+-------
+Pit Studio is a support tool. Pit designs, haul roads, staging, dig schedules,
+volumes, tonnages, grades, stripping ratios and reports must be reviewed by,
+and remain the responsibility of, the user / qualified technical staff before
+being used for technical or safety decisions, resource / reserve reporting
+(e.g. KCMI, JORC) or commercial purposes. Pit Studio performs neither slope
+stability analysis nor pit optimisation. The software is provided "as is",
+without warranty of any kind.

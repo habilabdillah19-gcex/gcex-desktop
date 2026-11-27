@@ -4,6 +4,7 @@
    Warna = jangkar palet bawaan (a73), jadi ikut Palet warna. Dipasang di akhir <body> setelah semua modul memuat gayanya. */
 (function(){const css=
 `#mbar#mbar{border-bottom-color:transparent!important}
+body.shx #mbar#mbar .shmt,body.shx #mbar#mbar .shmt:hover,body.shx #mbar#mbar .shm.op>.shmt{box-shadow:none!important;border-top:0!important}
 #sbar#sbar{border-top-width:0!important}
 html body .flw .flh.flh.flh.flh,html body #lgw#lgw .flh.flh.flh{border-bottom:1px solid #D3CDC1!important}
 html body .shph>span{border-top-color:transparent!important}

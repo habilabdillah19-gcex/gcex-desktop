@@ -1,0 +1,127 @@
+Pit Studio for Desktop (keluarga GC-Ex)
+PEMBERITAHUAN LISENSI PIHAK KETIGA / THIRD-PARTY SOFTWARE NOTICES
+======================================================================
+
+Copyright (c) 2026 Habil Abdillah. Hak cipta atas kode Pit Studio dilindungi.
+
+Pit Studio memakai komponen perangkat lunak open-source di bawah ini. Setiap
+komponen tetap milik pemegang hak ciptanya dan didistribusikan sesuai
+lisensinya masing-masing. Lisensi komponen-komponen ini mengizinkan
+pemakaian, penyalinan dan distribusi (termasuk untuk keperluan komersial)
+dengan syarat pemberitahuan hak cipta dan teks lisensinya disertakan —
+itulah fungsi file ini dan file pendampingnya di folder yang sama.
+
+Pit Studio uses the open-source software components listed below. Each
+component remains the property of its copyright holders and is
+distributed under its own license, reproduced or referenced here.
+
+File di folder ini / files in this folder
+-----------------------------------------
+  LISENSI_PIHAK_KETIGA.txt     file ini: daftar komponen
+  SYARAT_PENGGUNAAN.txt        syarat penggunaan, lisensi pemakaian & penafian Pit Studio
+  PENAFIAN_MEREK.txt           penafian merek dagang / trademark disclaimer
+  LISENSI_THREEJS.txt          MIT License — three.js & OrbitControls
+  LISENSI_CLIPPER_BSL.txt      Boost Software License 1.0 — Clipper
+  LISENSI_DELAUNATOR_ISC.txt   ISC License — Delaunator
+  LISENSI_PYTHON.txt           teks lisensi lengkap Python, PyInstaller dan semua paket
+                               Python di backend (dibuat otomatis saat build oleh
+                               gen_licenses.py; versi di file itu = versi di installer)
+  LISENSI_ELECTRON.txt         lisensi Electron (disalin dari paket Electron saat build)
+  LISENSI_CHROMIUM.html        lisensi Chromium, Node.js dan komponen lain yang dibawa
+                               Electron (disalin dari paket Electron saat build)
+
+Salinan LICENSE.electron.txt dan LICENSES.chromium.html juga ada di folder
+instalasi aplikasi (disertakan otomatis oleh electron-builder).
+
+Pit Studio TIDAK membundel file font (huruf memakai font sistem Windows,
+mis. Segoe UI) dan TIDAK memakai manifold-3d; karena itu tidak ada
+LISENSI_FONT_OFL.txt maupun LISENSI_MANIFOLD_APACHE2.txt untuk Pit Studio.
+Pit Studio does NOT bundle font files (system fonts are used) and does NOT use
+manifold-3d; no OFL or Apache-2.0 notice is therefore required for them.
+
+
+1. DAFTAR KOMPONEN / COMPONENT LIST
+-----------------------------------
+
+  Komponen                    Versi     Lisensi                       Dipakai untuk
+  --------------------------  --------  ----------------------------  ---------------------------------
+  three.js                    r128      MIT                           tampilan 3D (tertanam di halaman
+    (termasuk OrbitControls)                                          aplikasi app-ps/index.html)
+  Clipper (js-clipper)        6.4.2     Boost Software License 1.0    offset & operasi boolean poligon:
+                                                                      crest, toe, jalan, batas (tertanam)
+  Delaunator                  5.1.0     ISC                           triangulasi permukaan topografi &
+                                                                      desain pit (TIN presisi; tertanam)
+  Electron                    44.10.0   MIT                           jendela aplikasi desktop
+    (termasuk Chromium & Node.js)       BSD-3-Clause, MIT & lainnya   lihat LISENSI_CHROMIUM.html
+  NSIS (installer, via        -         zlib/libpng                   installer & uninstaller Windows
+    electron-builder 26.18.1)
+  Python                      3.12      PSF License                   runtime backend (lihat LISENSI_PYTHON.txt)
+  PyInstaller (bootloader)    6.22.3    GPL-2.0 dengan pengecualian   pembungkus backend menjadi .exe;
+                                        bootloader (bootloader        pengecualian ini mengizinkan program
+                                        exception)                    hasil bungkusan didistribusikan
+                                                                      dengan lisensi apa pun
+  FastAPI                     0.162.0   MIT                           server lokal backend
+  Starlette                   (dep.)    BSD-3-Clause                  dependensi FastAPI
+  Uvicorn                     0.54.0    BSD-3-Clause                  server lokal backend
+  h11, anyio, sniffio,        (dep.)    MIT / MIT / MIT atau          dependensi Uvicorn / Starlette /
+    click, colorama, idna               Apache-2.0 / BSD-3-Clause /   Click
+                                        BSD-3-Clause / BSD-3-Clause
+  Pydantic, pydantic-core     2.14.1    MIT                           validasi data backend
+  annotated-types,            (dep.)    MIT / PSF-2.0                 dependensi Pydantic
+    typing-extensions
+  NumPy                       2.5.4     BSD-3-Clause (termasuk        pembaca block model besar (.mdl)
+                                        pustaka yang dibundel di
+                                        wheel, mis. OpenBLAS)
+  openpyxl, et-xmlfile        3.1.5     MIT                           ikut di backend bersama keluarga
+  lxml                        6.1.3     BSD-3-Clause (termasuk        GC-Ex (satu backend untuk semua
+                                        libxml2 & libxslt: MIT)       aplikasi); tidak dipakai langsung
+  Pillow                      13.0.0    MIT-CMU (HPND) (termasuk      oleh Pit Studio
+                                        pustaka gambar yang dibundel:
+                                        lisensi permisif masing-masing)
+  pyodbc                      5.3.0     MIT
+
+Versi paket Python di tabel ini mengikuti backend/requirements.txt pada
+tanggal file ini (2026-11-27); daftar dan versi yang persis ada di
+LISENSI_PYTHON.txt di dalam installer.
+
+
+2. THREE.JS, CLIPPER & DELAUNATOR
+---------------------------------
+
+Ketiga pustaka ditanam tanpa perubahan isi di halaman aplikasi. Teks lisensi
+lengkapnya ada di LISENSI_THREEJS.txt (MIT, Copyright (c) 2010-2021 three.js
+authors), LISENSI_CLIPPER_BSL.txt (Boost Software License 1.0, Copyright
+Angus Johnson 2010-2017) dan LISENSI_DELAUNATOR_ISC.txt (ISC, Mapbox).
+
+All three libraries are embedded unmodified in the application page; their
+full license texts are in the files named above.
+
+
+3. ELECTRON, CHROMIUM & NODE.JS
+-------------------------------
+
+Electron 44.10.0  dilisensikan dengan MIT License. Teks lengkapnya ada di
+LISENSI_ELECTRON.txt. Electron membawa Chromium, Node.js dan komponen lain;
+lisensi semuanya tercantum di LISENSI_CHROMIUM.html (dan LICENSES.chromium.html
+di folder instalasi).
+
+
+4. PYTHON, PYINSTALLER & PAKET PYTHON BACKEND
+---------------------------------------------
+
+Teks lengkap PSF License (Python), lisensi PyInstaller (GPL-2.0 dengan
+pengecualian bootloader) dan lisensi setiap paket Python yang dibundel di
+backend tercantum di LISENSI_PYTHON.txt.
+
+
+5. METODE & FORMAT YANG DIRUJUK (BUKAN KODE PIHAK KETIGA)
+---------------------------------------------------------
+
+Algoritme desain pit, jalan tambang, staging, kerapian string, Pit Schedule
+dan laporan Grade x Tonnage diimplementasikan sendiri di Pit Studio; tidak ada
+kode dari perangkat lunak komersial yang disalin. Aturan "blok dihitung bila
+pusatnya di antara dua permukaan" dan triangulasi permukaan dari string
+mengikuti praktik umum perangkat lunak tambang dan literatur terbuka
+(triangulasi Delaunay).
+Format file pihak lain (.str, .dtm, .mdl, .dxf) dibaca / ditulis semata-mata
+untuk kecocokan pertukaran data.

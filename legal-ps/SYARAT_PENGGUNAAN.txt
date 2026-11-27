@@ -1,0 +1,225 @@
+Pit Studio - SYARAT PENGGUNAAN, LISENSI & PENAFIAN
+Pit Studio - TERMS OF USE, LICENSE & DISCLAIMER
+Berlaku untuk / applies to: Pit Studio for Desktop (keluarga GC-Ex / GC-Ex family)
+dan berkas HTML Pit Studio / and the Pit Studio HTML file.
+Versi syarat / terms version: 2026-11-27.
+
+Copyright (c) 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.
+
+Dengan memasang, menyalin atau memakai perangkat lunak ini Anda menyatakan
+telah membaca dan menyetujui syarat di bawah. Bila tidak setuju, jangan
+memasang atau memakainya.
+
+======================================================================
+BAHASA INDONESIA
+======================================================================
+
+1. HAK CIPTA DAN KEPEMILIKAN
+   Pit Studio ("Perangkat Lunak"), termasuk kode program, tampilan, ikon,
+   nama "Pit Studio", data latihan, dokumentasi dan panduannya, adalah
+   ciptaan Habil Abdillah dan dilindungi sebagai Program Komputer menurut
+   Undang-Undang Republik Indonesia Nomor 28 Tahun 2014 tentang Hak Cipta.
+   Perangkat Lunak dilisensikan, bukan dijual.
+
+2. LISENSI PEMAKAIAN
+   Anda mendapat izin non-eksklusif, tidak dapat dialihkan dan dapat dicabut
+   untuk memasang dan memakai Perangkat Lunak bagi pekerjaan Anda, bila
+   installer dan kunci lisensi diterima dari Habil Abdillah atau dari pihak
+   yang ia izinkan.
+
+3. YANG TIDAK DIIZINKAN tanpa izin tertulis dari Habil Abdillah:
+   a. menjual, menyewakan, meminjamkan, atau membagikan Perangkat Lunak,
+      installer atau kunci lisensi kepada pihak lain di luar yang diizinkan;
+   b. menyalin, mengubah, menerjemahkan, membongkar (reverse engineering,
+      decompile, disassemble) atau membuat karya turunan, kecuali sejauh
+      diizinkan tegas oleh hukum yang berlaku;
+   c. menghapus, menutupi atau mengubah pemberitahuan hak cipta, tanda
+      "Copyright (c) Habil Abdillah 2026", watermark, atau file di folder
+      "legal";
+   d. mengakali, melewati atau menonaktifkan pemeriksaan lisensi;
+   e. memakai nama "Pit Studio", "GC-Ex" atau nama Habil Abdillah untuk
+      produk lain atau untuk menyatakan dukungan tanpa izin.
+
+4. KOMPONEN PIHAK KETIGA (OPEN SOURCE)
+   Perangkat Lunak memakai komponen open source (antara lain three.js,
+   Clipper, Delaunator, Electron, Chromium, Node.js, Python, FastAPI,
+   Uvicorn, Pydantic dan NumPy). Setiap komponen tetap milik pemegang hak
+   ciptanya dan berlaku lisensinya masing-masing (MIT, Boost Software
+   License 1.0, ISC, BSD, PSF, GPL-2.0 dengan pengecualian bootloader untuk
+   PyInstaller, dan lainnya). Daftar dan teks lengkapnya ada di folder
+   "legal" di folder instalasi (LISENSI_PIHAK_KETIGA.txt,
+   LISENSI_THREEJS.txt, LISENSI_CLIPPER_BSL.txt, LISENSI_DELAUNATOR_ISC.txt,
+   LISENSI_PYTHON.txt, LISENSI_ELECTRON.txt, LISENSI_CHROMIUM.html) dan
+   menu Bantuan. Syarat ini tidak membatasi hak Anda yang diberikan oleh
+   lisensi open source tersebut atas komponen yang bersangkutan.
+
+5. AKTIVASI LISENSI
+   Perangkat Lunak diaktifkan per komputer dengan kunci lisensi yang
+   diterbitkan Habil Abdillah. Pemeriksaan kunci dilakukan di komputer Anda
+   sendiri, tanpa internet. Kunci hanya berlaku untuk komputer yang
+   bersangkutan dan untuk masa berlaku yang tertulis di kunci itu.
+
+6. MEREK DAGANG
+   Surpac, GEOVIA, Minex, Whittle, AutoCAD, DXF, Microsoft, Windows, Excel,
+   Electron, Python dan nama produk lain adalah merek dagang milik
+   pemiliknya. Pit Studio tidak berafiliasi dengan, tidak disponsori dan
+   tidak didukung oleh mereka. Nama-nama itu dipakai hanya untuk menjelaskan
+   kecocokan format file dan cara kerja. Lihat PENAFIAN_MEREK.txt.
+
+7. TANPA JAMINAN
+   Perangkat Lunak disediakan "APA ADANYA" dan "SEBAGAIMANA TERSEDIA",
+   tanpa jaminan apa pun, tersurat maupun tersirat, termasuk jaminan
+   kelayakan untuk diperdagangkan, kesesuaian untuk tujuan tertentu,
+   ketepatan, kelengkapan, atau bebas dari kesalahan dan gangguan.
+
+8. HASIL TEKNIS ADALAH ALAT BANTU
+   a. Desain pit, jalan tambang, staging, jadwal gali, volume, tonase,
+      kadar, stripping ratio dan laporan Pit Studio adalah alat bantu.
+      Hasil wajib diperiksa oleh pengguna yang kompeten sebelum dipakai.
+   b. Parameter geoteknik (tinggi bench, sudut lereng, lebar berm, lebar dan
+      kemiringan jalan) diisi oleh pengguna. Pit Studio TIDAK melakukan
+      analisis kestabilan lereng. Desain TIDAK BOLEH dilaksanakan di
+      lapangan tanpa kajian geoteknik dan persetujuan pihak yang berwenang
+      (antara lain Kepala Teknik Tambang dan tenaga teknis yang kompeten).
+   c. Pit Studio tidak melakukan optimasi pit maupun optimasi jadwal;
+      Rancang Otomatis dan Pit Schedule adalah perancangan dan simulasi
+      berbasis aturan.
+   d. Pelaporan sumber daya dan cadangan (mis. KCMI, JORC) serta keputusan
+      teknis, keselamatan dan komersial tetap menjadi tanggung jawab
+      pengguna dan Competent Person yang berwenang.
+
+9. BATASAN TANGGUNG JAWAB
+   Sejauh diizinkan oleh hukum yang berlaku, Habil Abdillah tidak
+   bertanggung jawab atas kerugian langsung maupun tidak langsung,
+   insidental, khusus atau konsekuensial (termasuk kehilangan data,
+   keuntungan, produksi, atau gangguan usaha) yang timbul dari pemakaian
+   atau ketidakmampuan memakai Perangkat Lunak atau hasilnya, meskipun
+   kemungkinan kerugian tersebut telah diberitahukan.
+
+10. DATA DAN PRIVASI
+   a. Pit Studio memproses data di komputer Anda sendiri. Backend hanya
+      mendengar di 127.0.0.1. Pit Studio tidak mengirim topografi, desain,
+      block model atau hasil kerja ke internet, tidak memeriksa pembaruan
+      secara online, dan tidak mengumpulkan data pemakaian.
+   b. Hak atas data yang Anda olah (topografi, desain pit, block model,
+      jadwal, laporan) tetap milik pemiliknya. Anda bertanggung jawab
+      memastikan Anda berwenang memakai, menyimpan dan membagikan data
+      tersebut sesuai kebijakan perusahaan dan peraturan yang berlaku.
+   c. Hasil kerja disimpan di file proyek dan file ekspor yang Anda pilih.
+      Pencadangan (backup) adalah tanggung jawab pengguna.
+   d. Data latihan yang disertakan adalah data fiktif.
+
+11. PENGAKHIRAN
+   Izin ini berakhir otomatis bila Anda melanggar syarat ini atau bila masa
+   berlaku kunci lisensi habis. Setelah berakhir, hentikan pemakaian dan
+   hapus semua salinan Perangkat Lunak.
+
+12. HUKUM YANG BERLAKU
+   Syarat ini tunduk pada hukum Republik Indonesia. Bila ada ketentuan
+   yang tidak berlaku, ketentuan lain tetap berlaku.
+
+======================================================================
+ENGLISH
+======================================================================
+
+1. COPYRIGHT AND OWNERSHIP
+   Pit Studio (the "Software"), including its program code, user interface,
+   icons, the name "Pit Studio", training data, documentation and guides,
+   is the work of Habil Abdillah and is protected as a Computer Program
+   under Law of the Republic of Indonesia No. 28 of 2014 on Copyright. The
+   Software is licensed, not sold.
+
+2. LICENSE GRANT
+   You receive a non-exclusive, non-transferable, revocable permission to
+   install and use the Software for your work, if you received the installer
+   and the license key from Habil Abdillah or from a party he has
+   authorized.
+
+3. RESTRICTIONS - without written permission from Habil Abdillah you may not:
+   a. sell, rent, lend or distribute the Software, its installer or a
+      license key to parties beyond those authorized;
+   b. copy, modify, translate, reverse engineer, decompile, disassemble or
+      create derivative works, except to the extent expressly permitted by
+      applicable law;
+   c. remove, obscure or alter copyright notices, the "Copyright (c) Habil
+      Abdillah 2026" mark, watermarks, or the files in the "legal" folder;
+   d. circumvent, bypass or disable the license check;
+   e. use the names "Pit Studio", "GC-Ex" or Habil Abdillah for other
+      products or to imply endorsement without permission.
+
+4. THIRD-PARTY (OPEN SOURCE) COMPONENTS
+   The Software uses open-source components (including three.js, Clipper,
+   Delaunator, Electron, Chromium, Node.js, Python, FastAPI, Uvicorn,
+   Pydantic and NumPy). Each component remains the property of its
+   copyright holders under its own license (MIT, Boost Software License 1.0,
+   ISC, BSD, PSF, GPL-2.0 with the bootloader exception for PyInstaller, and
+   others). The list and full texts are in the "legal" folder of the
+   installation folder and in the Help menu. These terms do not limit the
+   rights granted to you by those open-source licenses for the respective
+   components.
+
+5. LICENSE ACTIVATION
+   The Software is activated per computer with a license key issued by
+   Habil Abdillah. The key is verified on your own computer, without
+   internet access. A key is valid only for that computer and for the
+   validity period stated in the key.
+
+6. TRADEMARKS
+   Surpac, GEOVIA, Minex, Whittle, AutoCAD, DXF, Microsoft, Windows, Excel,
+   Electron, Python and other product names are trademarks of their
+   respective owners. Pit Studio is not affiliated with, sponsored by or
+   endorsed by them. These names are used only to describe file-format and
+   workflow compatibility. See PENAFIAN_MEREK.txt.
+
+7. NO WARRANTY
+   The Software is provided "AS IS" and "AS AVAILABLE", without warranty of
+   any kind, express or implied, including warranties of merchantability,
+   fitness for a particular purpose, accuracy, completeness, or freedom
+   from errors and interruptions.
+
+8. TECHNICAL RESULTS ARE DECISION-SUPPORT ONLY
+   a. Pit designs, haul roads, staging, dig schedules, volumes, tonnages,
+      grades, stripping ratios and reports from Pit Studio are
+      decision-support aids. Results must be reviewed by a competent user
+      before use.
+   b. Geotechnical parameters (bench height, slope angle, berm width, road
+      width and gradient) are entered by the user. Pit Studio does NOT
+      perform slope stability analysis. A design MUST NOT be executed in the
+      field without a geotechnical review and approval by the responsible
+      persons (including the Mine Technical Manager / Kepala Teknik Tambang
+      and competent technical staff).
+   c. Pit Studio performs neither pit optimisation nor schedule
+      optimisation; Automated Design and Pit Schedule are rule-based design
+      and simulation.
+   d. Resource and reserve reporting (e.g. KCMI, JORC) and technical, safety
+      and commercial decisions remain the responsibility of the user and the
+      qualified Competent Person.
+
+9. LIMITATION OF LIABILITY
+   To the extent permitted by applicable law, Habil Abdillah is not liable
+   for any direct or indirect, incidental, special or consequential damages
+   (including loss of data, profit, production, or business interruption)
+   arising from the use of or inability to use the Software or its results,
+   even if advised of the possibility of such damages.
+
+10. DATA AND PRIVACY
+   a. Pit Studio processes data on your own computer. The backend listens
+      only on 127.0.0.1. Pit Studio does not send topography, designs, block
+      models or work results to the internet, does not check for updates
+      online, and does not collect usage data.
+   b. Rights to the data you process (topography, pit designs, block models,
+      schedules, reports) remain with their owners. You are responsible for
+      ensuring you are authorized to use, store and share that data under
+      company policy and applicable regulations.
+   c. Work results are saved in the project and export files you choose.
+      Backups are the user's responsibility.
+   d. The bundled training data is fictitious.
+
+11. TERMINATION
+   This permission ends automatically if you breach these terms or when the
+   license key expires. Upon termination, stop using the Software and
+   delete all copies.
+
+12. GOVERNING LAW
+   These terms are governed by the laws of the Republic of Indonesia. If
+   any provision is unenforceable, the remaining provisions stay in effect.

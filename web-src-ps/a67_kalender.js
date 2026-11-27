@@ -15,7 +15,7 @@ function kalDraw(){const b=$('kalb');if(!b)return;const c=plCfg().cal,off=new Se
  b.querySelectorAll('input,textarea').forEach(x=>x.onchange=sv);}
 function kalOpen(){kalDraw();winShow($('kalw'),true);}
 (function(){const w=document.createElement('div');w.id='kalw';w.className='flw win';w.style.width='380px';w.innerHTML='<div class="flh"><b>&#128197; Kalender kerja</b><span class="sp"></span><button class="x">&#10005;</button></div><div class="flb" id="kalb"></div>';
- const iw=$('iw');(iw&&iw.parentNode?iw.parentNode:document.body).insertBefore(w,iw||null);w.querySelector('.x').onclick=()=>winShow(w,false);try{flDrag(w);}catch(_){}
+ const iw=$('iw');(iw&&iw.parentNode?iw.parentNode:document.body).insertBefore(w,iw||null);w.querySelector('.x').onclick=()=>winShow(w,false);try{flDrag(w);}catch(_){}/* panel dibuat sesudah dockInit: pasang tombol tempel / lepas (pemilik 25 Nov: panel tidak bisa digeser) */try{dockInit();}catch(_){}
  const st=document.createElement('style');st.textContent='#kalb .r{display:flex;gap:6px;align-items:center;margin:5px 0;flex-wrap:wrap}';document.head.appendChild(st);
  try{const m=[...document.querySelectorAll('.shm')].find(x=>x.firstChild&&x.firstChild.textContent==='Jadwal');if(m){const p=m.querySelector('.shmp'),b=document.createElement('button');b.className='shi';b.dataset.a='kal';b.textContent='📅 Kalender kerja…';b.onclick=()=>{try{shClose();}catch(_){}kalOpen();};const u=p.querySelector('[data-a=unit]');p.insertBefore(b,u?u.nextSibling:null);}}catch(_){}})();
 /* warna blok padat mengikuti pilihan warna blok tambang (langkah 2) */

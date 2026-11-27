@@ -3,7 +3,7 @@
   "productName": "Pit Studio",
   "copyright": "Copyright © 2026 Habil Abdillah",
   "extraMetadata": {
-    "version": "0.1.7",
+    "version": "0.1.8",
     "name": "pitstudio",
     "productName": "Pit Studio",
     "description": "Pit Studio - desain pit, staging, jalan tambang, Pit Schedule & laporan grade x tonnage (offline), keluarga GC-Ex",
@@ -37,7 +37,14 @@
       "to": "legal",
       "filter": [
         "*.txt",
-        "*.html"
+        "*.html",
+        "!SYARAT_PENGGUNAAN.txt",
+        "!PENAFIAN_MEREK.txt",
+        "!LISENSI_PIHAK_KETIGA.txt",
+        "!LISENSI_FONT_OFL.txt",
+        "!LISENSI_MANIFOLD_APACHE2.txt",
+        "!LISENSI_PLOTLY_BUNDEL.txt",
+        "!LISENSI_QT_*.txt"
       ]
     },
     {
@@ -78,7 +85,7 @@
     "createStartMenuShortcut": true,
     "shortcutName": "Pit Studio",
     "uninstallDisplayName": "Pit Studio ${version}",
-    "license": "legal/SYARAT_PENGGUNAAN.txt"
+    "license": "legal-ps/SYARAT_PENGGUNAAN.txt"
   },
   "electronFuses": {
     "runAsNode": false,

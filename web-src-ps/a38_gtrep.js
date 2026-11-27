@@ -24,7 +24,7 @@ function gtBigDraw(){const w=$('gtrw');if(!w||w.style.display==='none')return;GT
  $('gtrn').textContent=schPh().nm;$('gtru2').value=$('schun').value;$('gtrf').checked=!!GT.fleet;
  const X={out:GT.res.out,B:gtBand(),np:GT.res.F.sim.np,TS:GT.res.F.sim.TS,fl:false},A=gtAgg(X),{B,rows,tot,K}=A,n=B.length;
  const ore=a=>{let s=0;for(let k=0;k<K;k++)s+=a.t[k];return s;},met=a=>{let s=0;for(let k=0;k<K;k++)s+=a.gt[k];return s;},ot=ore(tot),om=met(tot);
- $('gtrc').innerHTML=[['Ore',gtShort(ot)+' t'],['Kadar ore',(ot>0?(om/ot).toFixed(2):'–')+' g/t'],['Logam',schF(om/31.1035)+' oz'],['Waste',gtShort(tot.v[K])+' BCM · '+gtShort(tot.t[K])+' t'],['SR (BCM/t)',ot>0?(tot.v[K]/ot).toFixed(2):'–'],['Blok terhitung',GT.res.nIn.toLocaleString('id-ID')+(GT.rule==='prop'?' · proporsional':' · pusat blok')]].map(c=>'<div><small>'+c[0]+'</small><b>'+c[1]+'</b></div>').join('');
+ $('gtrc').innerHTML=[['Ore',gtShort(ot)+' t'],['Kadar ore',(ot>0?(om/ot).toFixed(2):'–')+' g/t'],['Logam',schF(om/31.1035)+' oz'],['Waste',gtShort(tot.v[K])+' BCM'],['SR (BCM/t)',ot>0?(tot.v[K]/ot).toFixed(2):'–'],['Blok terhitung',GT.res.nIn.toLocaleString('id-ID')+(GT.rule==='prop'?' · proporsional':' · pusat blok')]].map(c=>'<div><small>'+c[0]+'</small><b>'+c[1]+'</b></div>').join('');
  /* grafik */
  const W=878,H=250,L=58,R=48,T=14,Bm=n>14?58:34,pw=W-L-R,ph=H-T-Bm;let tm=0,gm=0;const R0=rows.map(r=>r[0]);
  R0.forEach(a=>{tm=Math.max(tm,ore(a)+a.t[K]);const o=ore(a);if(o>0)gm=Math.max(gm,met(a)/o);});tm=gtNice(tm);gm=gtNice(gm*1.1);

@@ -231,13 +231,13 @@ const DOCKX=new Set(['lgw','lay','lyw']);
 const CRUMB={mw:'Edit Manual',pdw:'Play-Doh',tdw:'Rekomendasi sistem'};
 function dockInit(){const side=$('side');if(!side)return;let D=$('dock');if(!D){D=document.createElement('div');D.id='dock';side.insertBefore(D,side.firstChild);}
  let saved={};try{saved=JSON.parse(localStorage.getItem('ps_dock')||'{}');}catch(_){}
- document.querySelectorAll('.flw.win').forEach(w=>{if(!w.id||DOCKX.has(w.id)||w.querySelector('.pin'))return;const h=w.querySelector('.flh'),x=h&&h.querySelector('.x');if(!h)return;const p=document.createElement('button');p.className='pin';p.innerHTML='&#8676;';p.title='Tempel ke panel kiri';h.insertBefore(p,x||null);w._home=w.parentNode;
+ document.querySelectorAll('.flw.win').forEach(w=>{if(!w.id||DOCKX.has(w.id)||w.querySelector('.pin'))return;const h=w.querySelector('.flh'),x=h&&h.querySelector('.x');if(!h)return;const p=document.createElement('button');p.className='pin';p.innerHTML='&#8676;';p.title='Tempel ke panel Properti';h.insertBefore(p,x||null);w._home=w.parentNode;
   p.onclick=e=>{e.stopPropagation();dockSet(w,!w.classList.contains('docked'));};if(saved[w.id])dockSet(w,true,true);});
  /* jejak menu di judul jendela */
  EDW.forEach((x,k)=>{const b=x.w.querySelector('.flh b');b.innerHTML='<span class="cr">Edit Otomatis &#8250; </span>'+(k+1)+' · '+x.title;});
  for(const id in CRUMB){const w=$(id),b=w&&w.querySelector('.flh b');if(b&&!b.querySelector('.cr'))b.insertAdjacentHTML('afterbegin','<span class="cr">'+CRUMB[id]+' &#8250; </span>');}}
 function dockSet(w,on,quiet){const D=$('dock'),p=w.querySelector('.pin');if(on){D.appendChild(w);w.classList.add('docked');if(p){p.innerHTML='&#8689;';p.title='Lepas jadi jendela mengambang';}if(!quiet)winShow(w,true);}
- else{(w._home||document.body).appendChild(w);w.classList.remove('docked');if(p){p.innerHTML='&#8676;';p.title='Tempel ke panel kiri';}if(!quiet)winShow(w,true);}
+ else{(w._home||document.body).appendChild(w);w.classList.remove('docked');if(p){p.innerHTML='&#8676;';p.title='Tempel ke panel Properti';}if(!quiet)winShow(w,true);}
  let saved={};try{saved=JSON.parse(localStorage.getItem('ps_dock')||'{}');}catch(_){}saved[w.id]=on;try{localStorage.setItem('ps_dock',JSON.stringify(saved));}catch(_){}sideAuto();}
 let SIDE_W=null;function sideAuto(){const side=$('side'),D=$('dock');if(!side||!D)return;const ed=MODE==='edit',has=[...D.children].some(w=>w.style.display==='block');const want=ed&&!has;if(want!==!!side._auto){side._auto=want;side.classList.toggle('hid',want);const sp=$('split');if(sp)sp.style.display=want?'none':'';setTimeout(()=>dispatchEvent(new Event('resize')),30);}}
 {const _w=winShow;winShow=function(w,on){const r=_w.apply(this,arguments);try{if(w&&w.classList&&w.classList.contains('docked'))sideAuto();}catch(_){}return r;};}

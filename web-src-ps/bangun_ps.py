@@ -24,7 +24,7 @@ URUT = ["a1_core.js", "a2_ui.js", "a3_digit.js", "a4_param.js", "a5_gen.js", "a6
         "a61_menu.js", "a62_geobench.js", "a63_demo4.js", "a64_ux24.js", "a65_editkb.js", "a66_stgsnap.js", "a67_kalender.js",
         "a68_autosched.js", "a69_reset.js", "a70_fleet.js", "a71_owlook.js", "a72_grid.js", "a73_palet.js", "a75_legenda.js",
         "a76_ukuran.js", "a77_rapi.js", "a78_lapis.js", "a79_rapi2.js", "a80_adaptif.js", "a81_sayx.js", "a82_demo25.js",
-        "a83_rapi_aksen.js", "a29_i18n.js", "a33_i18n_sched.js", "a50_i18n3.js", "a74_i18n4.js", "a37_desktop.js"]
+        "a83_rapi_aksen.js", "a84_unsur.js", "a85_jalan_berikut.js", "a86_buangpit.js", "a87_gtpoli.js", "a88_sayatrl.js", "a89_demo26.js", "a90_klikkanan.js", "a91_pintasan.js", "a29_i18n.js", "a33_i18n_sched.js", "a50_i18n3.js", "a74_i18n4.js", "a37_desktop.js"]
 PUSTAKA = [P / "lib" / "three.min.js", P / "lib" / "OrbitControls.js", ROOT / "web-src" / "delaunator.min.js", P / "lib" / "clipper.js"]
 IKON = ("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 38 30%27%3E%3Crect x=%270.75%27 y=%270.75%27 "
         "width=%2736.5%27 height=%2728.5%27 rx=%274%27 fill=%27%23fff%27 stroke=%27%23c9d3e1%27 stroke-width=%271.5%27/%3E%3Cpath d=%27M3 8 H35 "

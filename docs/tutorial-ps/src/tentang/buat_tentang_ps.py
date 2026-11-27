@@ -23,7 +23,7 @@ addMapping("DV", 0, 0, "DV"); addMapping("DV", 1, 0, "DVB"); addMapping("DV", 0,
 
 NV, GD, AC, PN, LN, MU = (colors.HexColor(c) for c in ("#1C2733", "#B5893E", "#2B5F9E", "#F7F5F0", "#D3CDC1", "#6b7280"))
 GR, KU, MR = colors.HexColor("#2f9e44"), colors.HexColor("#e8a33d"), colors.HexColor("#c92a2a")
-VER, TGL = "0.1.7", "26 November 2026"
+VER, TGL = "0.1.8", "28 November 2026"
 
 S = {}
 S["b"] = ParagraphStyle("b", fontName="DV", fontSize=9.6, leading=14, textColor=NV, spaceAfter=5)
@@ -144,8 +144,8 @@ E += [P("Cara memakai dokumen ini", "h1"),
         "sudah dipakai tim tambang: string Surpac, DXF dan block model .mdl. Ini aplikasi kelima di keluarga GC-Ex yang saya "
         "kembangkan; posisinya alat kerja harian yang ringan untuk geolog dan mine planner, bukan pengganti paket perencanaan "
         "tambang yang besar.”", "pitch"), Spacer(1, 6),
-      kartu([("VERSI", f"{VER} · 26 Nov 2026"), ("PLATFORM", "Windows 64-bit"), ("INSTALLER", "±152 MB, tanpa hak admin"),
-             ("JARINGAN", "100% offline"), ("KODE SUMBER", "87 modul · ±1,6 MB"), ("BAHASA", "ID · EN · ES · SU"),
+      kartu([("VERSI", f"{VER} · 28 Nov 2026"), ("PLATFORM", "Windows 64-bit"), ("INSTALLER", "±152 MB, tanpa hak admin"),
+             ("JARINGAN", "100% offline"), ("KODE SUMBER", "89 modul · ±1,6 MB"), ("BAHASA", "ID · EN · ES · SU"),
              ("FORMAT MASUK", ".str · .dxf · .mdl"), ("FORMAT KELUAR", ".str · .dxf · .csv · .png"), ("LISENSI", "per komputer, Ed25519")]),
       Spacer(1, 8)]
 E += fig("s_pit3d.jpg", w=W * 0.74, cap="Desain pit final hasil Rancang Otomatis di atas topografi latihan (data fiktif). Kiri: Project Tree; kanan: halaman Properti.")
@@ -179,7 +179,7 @@ E += [PageBreak(), P("2 · Bagaimana cara kerjanya?", "h1"),
       P("Komponen utama", "h2"),
       tbl([["Komponen", "Teknologi", "Tugas"],
            ["Kerangka aplikasi", "Electron (Chromium + Node.js), installer NSIS", "Jendela, menu, dialog file, lisensi; memuat halaman aplikasi dari arsip ASAR"],
-           ["Halaman aplikasi", "JavaScript (87 modul) digabung menjadi satu app-ps/index.html", "Seluruh desain, edit, jadwal, laporan, sayatan, ukur, terjemahan"],
+           ["Halaman aplikasi", "JavaScript (89 modul) digabung menjadi satu app-ps/index.html", "Seluruh desain, edit, jadwal, laporan, sayatan, ukur, terjemahan"],
            ["Grafik 3D", "three.js (MIT)", "Tampilan topografi, pit, jalan, blok, jejak jadwal"],
            ["Geometri poligon", "Clipper (Boost 1.0)", "Offset dan operasi boolean bench / crest / toe / batas"],
            ["Permukaan presisi", "Delaunator (ISC) + TIN GC-Ex", "Triangulasi topografi & desain; blok dihitung di dalam segitiga (cara DTM Surpac)"],
@@ -206,20 +206,21 @@ E += [PageBreak(), P("3 · Apa yang ditawarkan?", "h1"),
            ["Desain pit final", "Rancang Otomatis (atas → bawah), Desain Terpandu, Edit Manual; domain geoteknik per zona (tinggi bench, sudut, berm); lantai bertingkat; <b>sayat horizontal di RL</b> saat mendigit dasar pit — block model terlihat sebagai irisan di elevasi dasar*"],
            ["Jalan tambang", "Spiral & switchback, jalan luar (hauling road) dengan potong / timbun dan titik belok, jalan penghubung dua lantai, sampai tiga jalan per area*; kemiringan & lebar terjaga"],
            ["Staging & edit", "Fase / front galian bulanan dibatasi pit final; pindah titik, Play-Doh (kuas sapuan), trim, overcut, perdalam pit & sump; riwayat dan simpan otomatis"],
-           ["Grade × Tonnage", "Dihitung otomatis setiap desain berubah, dengan pemberitahuan selisih ore / kadar / waste / SR; kelas kadar & tujuan (ROM, stockpile, waste); preset GC-Ex; multi-unsur. <b>Laporan dibatasi poligon</b> seperti constraint Surpac — didigit, dipilih dari string di 3D, atau blok mining dari .str; di dalam / di luar*. <b>Kategori ore</b> (mis. Oxide / Sulfide) dari atribut block model apa pun*"],
+           ["Grade × Tonnage", "Dihitung otomatis setiap desain berubah, dengan pemberitahuan selisih ore / kadar / waste / SR; kelas kadar & tujuan (ROM, stockpile, waste); preset GC-Ex; multi-unsur. <b>Laporan dibatasi poligon</b> seperti constraint Surpac — didigit, dipilih dari string di 3D, atau blok mining dari .str; di dalam / di luar*. <b>Kategori ore</b> (mis. Oxide / Sulfide) dari atribut block model apa pun*. Tabel laporan: tiap kelas ore, <b>Total ore</b> (ton @ kadar), waste dalam BCM, SR*"],
            ["Pit Schedule", "4 langkah: data & area → blok tambang (bench × strip × blok) → alat & cara gali (turun per bench, klik blok, jalur gali) → laporan per periode & per fleet; hauling; fase"],
            ["Blok tambang", "Cadangan per blok; simpan / impor blok (.str) agar prospek yang sama memakai blok yang sama di proyek atau laptop lain; poligon batas dari Surpac"],
-           ["Keluaran", "Sayatan (penampang) dengan block model dan posisinya di 3D, alat Ukur jarak-sudut-arah (3D & 2D), Layout peta, ekspor .str / .dxf / .csv / .png, file proyek"],
+           ["Keluaran", "Sayatan (penampang) dengan block model dan posisinya di 3D — semua desain termasuk pit final impor ikut tersayat*, alat Ukur jarak-sudut-arah (3D & 2D), Layout peta, ekspor .str / .dxf / .csv / .png, file proyek"],
            ["Kualitas desain", "Tolok ukur kerapian string otomatis: menggantung, silang, tidak dipatuhi, bergelombang — target 0 / 0 / 0 / 0"],
-           ["Antarmuka", "Kerangka seperti aplikasi desktop (menu & bilah alat cascade, Project Tree, Properti, panel lepas-tempel), 10 palet warna, ukuran tulisan, isian adaptif per mode, layar penuh, 4 bahasa, tombol Demo yang memutar tutorial (bab A–P)"]],
+           ["Antarmuka", "Kerangka seperti aplikasi desktop (menu & bilah alat cascade, Project Tree, Properti, panel lepas-tempel), 10 palet warna, ukuran tulisan, isian adaptif per mode, <b>menu klik kanan</b> di 3D, sayatan 2D dan Lapisan*, daftar pintasan di menu Bantuan*, layar penuh, 4 bahasa, tombol Demo yang memutar tutorial (bab A–P)"]],
           [32 * mm, W - 32 * mm]),
-      P("* Pembaruan 26 November 2026: sudah berjalan dan diuji otomatis pada data latihan fiktif di pratinjau (HTML), belum termasuk installer 0.1.7 yang dirilis.", "s")]
+      P("* Baru di versi 0.1.8 (pembaruan 26–27 November 2026): diuji otomatis pada data latihan fiktif; uji pada data kerja masih berjalan.", "s")]
 E += [Spacer(1, 6)] + fig("s_edit_gt.jpg", cap="Edit pit (perdalam / sump). Pojok kiri atas: Grade × Tonnage tiap desain dihitung otomatis; baris ↳ menunjukkan selisih terhadap hitungan sebelumnya.")
 E += [CondPageBreak(110 * mm)] + fig("s_sayatan.jpg", cap="Sayatan A–B dengan block model per kelas kadar; garis bidik membaca RL, tebal galian dan kadar blok; tombol Ukur di pojok kanan atas.")
 E += fig("s_laporan.jpg", cap="Pit Schedule: laporan Grade × Tonnage per periode & per fleet (grafik ton dan kadar ore, tabel kumulatif).")
-E += [CondPageBreak(110 * mm)] + fig("s_batas.jpg", cap="Pembaruan 26 Nov — laporan block model dibatasi blok mining dari berkas .str: blok 2 dan 3 dipilih dengan klik di 3D (data fiktif).")
-E += [CondPageBreak(110 * mm)] + fig("s_kategori.jpg", cap="Pembaruan 26 Nov — kategori ore (Oxide / Sulfide) dari atribut block model; laporan dan CSV dipecah per kategori.")
-E += [CondPageBreak(110 * mm)] + fig("s_sayatrl.jpg", cap="Pembaruan 26 Nov — sayat horizontal di RL saat mendigit dasar pit: block model tampil sebagai irisan di elevasi dasar.")
+E += [CondPageBreak(110 * mm)] + fig("s_batas.jpg", cap="Baru di 0.1.8 — laporan block model dibatasi blok mining dari berkas .str: blok 2 dan 3 dipilih dengan klik di 3D (data fiktif).")
+E += [CondPageBreak(110 * mm)] + fig("s_kategori.jpg", cap="Baru di 0.1.8 — kategori ore (Oxide / Sulfide) dari atribut block model; laporan dan CSV dipecah per kategori.")
+E += [CondPageBreak(110 * mm)] + fig("s_klikkanan.jpg", w=W * 0.8, cap="Baru di 0.1.8 — menu klik kanan di atas string: jadikan batas laporan, salin info, ekspor string, sayatan lewat titik, ukur.")
+E += [CondPageBreak(110 * mm)] + fig("s_sayatrl.jpg", cap="Baru di 0.1.8 — sayat horizontal di RL saat mendigit dasar pit: block model tampil sebagai irisan di elevasi dasar.")
 
 # ---------------- 5. Kelebihan
 E += [PageBreak(), P("4 · Apa kelebihannya?", "h1"),
@@ -234,10 +235,10 @@ E += [PageBreak(), P("4 · Apa kelebihannya?", "h1"),
            ["<b>Kerapian desain diukur</b>", "Empat indikator kerapian string dihitung otomatis; uji regresi demo menargetkan 0 / 0 / 0 / 0"],
            ["<b>Mudah dipasang</b>", "Satu installer ±152 MB per aplikasi, per pengguna (tanpa hak administrator), Windows 64-bit"],
            ["<b>Bahasa lokal</b>", "Antarmuka asli Bahasa Indonesia; terjemahan English, Español, Basa Sunda"],
-           ["<b>Cepat berkembang</b>", "Delapan versi desktop (0.1.0 → 0.1.7) terbit 22–25 November 2026; tiap push dibangun ulang otomatis oleh CI"]],
+           ["<b>Cepat berkembang</b>", "Sembilan versi desktop (0.1.0 → 0.1.8) terbit 22–28 November 2026; tiap push dibangun ulang otomatis oleh CI"]],
           [52 * mm, W - 52 * mm]),
       Spacer(1, 6), *fig("c2_presisi.png", w=W * 0.92, cap="Gambar 5 — Verifikasi hitungan bijih pada desain uji (data fiktif). Cara raster lama kurang ±30 %; TIN presisi sama persis dengan acuan Python."),
-      *fig("c1_kode.png", w=W * 0.92, cap="Gambar 6 — Komposisi kode sumber Pit Studio per kelompok fungsi (total ±1,6 MB di 87 modul, termasuk pembaruan 26 November).")]
+      *fig("c1_kode.png", w=W * 0.92, cap="Gambar 6 — Komposisi kode sumber Pit Studio per kelompok fungsi (total ±1,6 MB di 89 modul, termasuk pembaruan 26–27 November).")]
 
 # ---------------- 6. Keamanan
 E += [PageBreak(), P("5 · Keamanan, data dan cara distribusi", "h1"),
@@ -309,7 +310,7 @@ E += [P("Komponen open source yang dikemas", "h2"),
            ["2", "Periksa kontrak kerja / peraturan perusahaan tentang kekayaan intelektual", "Bila aplikasi dibuat dalam hubungan kerja, kepemilikan dapat ditentukan oleh perjanjian kerja (UU Hak Cipta mengatur ciptaan dalam hubungan kerja). Investor pasti menanyakannya."],
            ["3", "Catatkan ciptaan ‘Pit Studio’ (dan keluarga GC-Ex) di DJKI", "Bukti tertulis kepemilikan dan tanggal ciptaan."],
            ["4", "Telusuri & daftarkan merek di DJKI (kelas perangkat lunak)", "Hak merek hanya lahir dari pendaftaran."],
-           ["5", "Perbarui SYARAT_PENGGUNAAN agar menyebut Ore Works & Pit Studio; tambah Minex, Minescape, Whittle di penafian merek", "Teks ‘berlaku untuk’ saat ini hanya menyebut GC-Ex Block Model, GC-Ex Drillhole dan DB-Ex."],
+           ["5", "Tinjau syarat penggunaan & penafian merek khusus Pit Studio (ada sejak 0.1.8) bersama penasihat hukum", "Berkasnya sudah dibuat (legal/SYARAT_PENGGUNAAN.txt, PENAFIAN_MEREK.txt, LISENSI_PIHAK_KETIGA.txt versi Pit Studio) tetapi belum ditinjau ahli hukum."],
            ["6", "Pertimbangkan badan usaha (PT / CV) sebagai pemegang lisensi distribusi", "Memudahkan kontrak, faktur, dan masuknya investor."],
            ["7", "Code signing Windows", "Menghilangkan peringatan SmartScreen; kesan profesional di perusahaan klien."]],
           [8 * mm, 70 * mm, W - 78 * mm])]
@@ -327,7 +328,7 @@ E += [PageBreak(), P("7 · Batasan saat ini — katakan dengan jujur", "h1"),
            ["Satu pengembang (pemilik) dengan bantuan asisten AI", "Lihat bank pertanyaan: risiko ketergantungan orang & rencana mitigasi."],
            ["Belum ada code signing; installer ±152 MB per aplikasi", "“Standar aplikasi Electron + Python; code signing ada di rencana.”"],
            ["Tutorial PDF masih memakai tampilan 0.1.2", "Video demo lengkap (24 Nov) tersedia; tombol Demo di aplikasi sudah sampai bab P (pembaruan 26 Nov)."],
-           ["Pembaruan 26 November baru diuji otomatis pada data latihan fiktif; belum masuk installer yang dirilis", "“Fitur itu sudah berjalan di pratinjau; rilis installernya menyusul setelah uji pada data kerja.”"]],
+           ["Fitur baru 0.1.8 baru diuji otomatis pada data latihan fiktif", "“Hitungannya sudah dicocokkan pada data latihan; uji pada data kerja sedang berjalan.”"]],
           [68 * mm, W - 68 * mm])]
 
 # ---------------- 9. Bank pertanyaan
@@ -425,7 +426,7 @@ E += [PageBreak(), P("10 · Saat presentasi: lakukan dan hindari", "h1"),
            ["0.1.5", "22 Nov 2026", "Perbaikan kecil tombol Demo"],
            ["0.1.6", "24 Nov 2026", "Antarmuka cascade & Properti gaya Ore Works, palet, lapisan jadwal, jadwal otomatis, posisi sayatan di 3D; tanpa garis aksen"],
            ["0.1.7", "25 Nov 2026", "Grade × Tonnage multi-unsur (unsur lain dipilih pengguna)"],
-           ["pratinjau", "26 Nov 2026", "Belum dirilis: hauling road v3, tiga jalan per area, filter per unsur, batas laporan (poligon / string 3D / blok mining, dalam / luar), kategori ore, sayat di RL, demo bab P"]],
+           ["0.1.8", "28 Nov 2026", "Batas laporan block model (poligon / string 3D / blok mining, dalam / luar), kategori ore, kolom laporan baru (Total ore, waste BCM), sayat di RL, menu klik kanan, sayatan 2D sinkron dengan pit final impor, Bantuan → Pintasan, hauling road v3, tiga jalan per area, filter per unsur, berkas legal Pit Studio, demo bab P"]],
           [20 * mm, 26 * mm, W - 46 * mm]),
       P("Prototipe HTML Pit Studio dikembangkan sejak setidaknya pertengahan November 2026 sebelum dikemas sebagai desktop.", "s"),
       P("Lampiran B — Istilah", "h2"),

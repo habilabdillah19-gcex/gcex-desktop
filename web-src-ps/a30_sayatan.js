@@ -57,10 +57,13 @@ function sayLine3D(tmp){if(!G.say){G.say=new THREE.Group();W.add(G.say);}clr(G.s
 /* daftar permukaan: semua topografi + desain yang ada */
 function saySurf(){const o=[];let k=0;for(const t of TP)if(t.G)o.push({id:'tp:'+t.nm,nm:t.nm,G:t.G,col:SAYC[(k++)%2===0?0:1],w:2,topo:true,on:t.on});
  const add=(id,nm,R,col)=>{if(R&&R.tin&&R.tin.G&&!o.some(x=>x.G===R.tin.G))o.push({id,nm,G:R.tin.G,col,w:2.2,R});};
- try{add('res','Pit final (Desain baru)',RES,'#1971c2');}catch(_){}try{add('stg','Staging',STG,'#e8590c');}catch(_){}try{if(ED){add('edo','Pit hasil edit',ED.out,'#ae3ec9');add('edb','Pit lama (sebelum edit)',ED.base,'#868e96');}}catch(_){}return o;}
+ try{add('res','Pit final (Desain baru)',RES,'#1971c2');}catch(_){}try{add('stg','Staging',STG,'#e8590c');}catch(_){}try{if(ED){add('edo','Pit hasil edit',ED.out,'#ae3ec9');add('edb','Pit lama (sebelum edit)',ED.base,'#868e96');}}catch(_){}
+ /* SATU daftar desain dengan laporan block model (schDes): pit final IMPOR dan pit yang sedang diedit dulu tidak ikut tersayat (keluhan pemilik 27 Nov 2026) */
+ try{const C2={fin:'#7048e8',edb:'#868e96'};for(const d of schDes()){if(!d.G||o.some(x=>x.G===d.G))continue;o.push({id:d.id,nm:d.nm,G:d.G,col:C2[d.id]||'#0b7285',w:2.2,R:d.id==='fin'?FIN:null});}}catch(_){}return o;}
 function sayProfiles(){const L=sayGeo();if(!L)return null;const n=Math.min(1600,Math.max(60,Math.ceil(L.L/1)));const S=saySurf(),out=[];
  for(const s of S){const P=[];for(let i=0;i<=n;i++){const d=L.L*i/n,E=L.a[0]+L.ux*d,N=L.a[1]+L.uy*d;let z=gridZ(s.G,E,N);if(!s.topo&&isFinite(z)){const t=topoZ(E,N);if(isFinite(t)&&z>t+0.05)z=NaN;/* bagian pit di atas tanah = udara */}P.push([d,z]);}out.push(Object.assign({P},s));}
  /* titik potong string desain */const X=[];try{const R=curR();if(R&&R.S)for(const s of R.S){if(!/^(crest|toe|road|floor)$/.test(s.t)||!s.pts)continue;const p=s.pts;for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],r=sayX(L,a,b);if(r){const z=a[2]+(b[2]-a[2])*r[1],E=L.a[0]+L.ux*r[0],N=L.a[1]+L.uy*r[0],tz=topoZ(E,N);if(!(isFinite(tz)&&z>tz+0.5))X.push({d:r[0],z,t:s.t});}}}}catch(_){}
+ /* titik potong string pit final impor (bila bukan desain aktif) */try{if(typeof FIN!=='undefined'&&FIN&&FIN.S&&out.some(q=>q.id==='fin')){const R0=curR();if(!R0||R0.S!==FIN.S)for(const s of FIN.S){const p=s.pts;if(!p)continue;for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],r=sayX(L,a,b);if(r){const z=a[2]+(b[2]-a[2])*r[1],E=L.a[0]+L.ux*r[0],N=L.a[1]+L.uy*r[0],tz=topoZ(E,N);if(!(isFinite(tz)&&z>tz+0.5))X.push({d:r[0],z,t:'crest'});}}}}}catch(_){}
  return {L,out,X};}
 function sayX(L,a,b){const ex=L.b[0]-L.a[0],ey=L.b[1]-L.a[1],fx=b[0]-a[0],fy=b[1]-a[1],den=ex*fy-ey*fx;if(Math.abs(den)<1e-9)return null;const gx=a[0]-L.a[0],gy=a[1]-L.a[1],t=(gx*fy-gy*fx)/den,u=(gx*ey-gy*ex)/den;if(t<0||t>1||u<0||u>1)return null;return [t*L.L,u];}
 function sayInv(mx,my){const V=SAY.view;return [V.s0+(mx-SAY.ml)/SAY.pw*(V.s1-V.s0),V.z1-(my-SAY.mt)/SAY.ph*(V.z1-V.z0)];}
@@ -87,3 +90,6 @@ function sayCsv(){const D=sayProfiles();if(!D)return;const h=['jarak_m','E','N']
 /* hasil baru / topo baru → gambar ulang */
 {const _sr=showResult;showResult=function(){const r=_sr.apply(this,arguments);try{if($('sayw').style.display==='flex'){SAY.view=SAY.view;sayLine3D();sayDraw();}}catch(_){}return r;};}
 try{window.__PS3=window.__PS3||{};window.__PS3.say={set:(a,b)=>saySet(a,b),prof:()=>{const D=sayProfiles();return D&&{L:D.L.L,n:D.out.map(s=>[s.nm,s.P.filter(p=>isFinite(p[1])).length]),x:D.X.length};},step:v=>{SAY.off+=v;sayUpd();},scr:(E,N,Z)=>{const q=scr(E,N,Z),r=R.domElement.getBoundingClientRect();return [q[0]+r.left,q[1]+r.top];}};}catch(_){}
+
+/* sinkron: selama jendela sayatan terbuka, daftar permukaan dipantau — desain diimpor / dibuat / dihapus / lapisan topo dinyalakan → sayatan digambar ulang sendiri */
+{let last='';setInterval(()=>{try{const w=$('sayw');if(!w||w.style.display!=='flex'||!SAY.a){last='';return;}const S=saySurf();if(!saySurf._id)saySurf._id=new WeakMap();let n=saySurf._n||0;const k=S.map(q=>{let i=saySurf._id.get(q.G);if(!i){i=++n;saySurf._id.set(q.G,i);}return q.id+':'+i+':'+(q.on===false?0:1);}).join('|');saySurf._n=n;if(last&&k!==last)sayDraw();last=k;}catch(_){}},700);}

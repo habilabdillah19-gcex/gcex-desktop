@@ -6082,3 +6082,18 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
   3 titik pick-up, lantainya memakai RL bawah flitch. Angka tetap dihitung, kini ditandai: ikon ⚠ di tabel Report,
   pita peringatan berisi jumlah poligon, kata **LANTAI NOMINAL** pada kolom Status saat *Salin / CSV*, dan
   **[LANTAI NOMINAL]** di kolom Keterangan register. Tambahkan titik lantai (atau periksa lapangan) sebelum angkanya dilaporkan.
+
+## 325. Pit Studio 0.1.8 — batas laporan, kategori ore, klik kanan, sayat di RL
+
+- **Laporan block model dibatasi poligon** (seperti constraint Surpac). Jendela **Block model & Grade × Tonnage → Laporan desain → batas poligon**: *Digit poligon* (klik titik di 3D, klik ganda / Enter selesai), *Pilih string di 3D* (klik string yang tampil; Ctrl+klik menambah / melepas), atau *Impor .str / .dxf*. Berkas berisi banyak poligon (blok / strip mining) tampil berlabel nomor string — klik di dalam blok yang mau dihitung. Pilihan **di dalam / di luar** muncul begitu ada batas. Blok dihitung bila pusatnya di dalam (atau di luar) poligon. Ringkasan otomatis di pojok 3D tetap untuk seluruh desain.
+- **Kategori ore** menggantikan centang *sulfida*: pilih satu atribut block model, centang *pakai*, atur rentang tiap kategori (bawaan Oxide < 0,8 dan Sulfide ≥ 0,8; mati). Laporan mendapat baris *↳ kategori* di bawah tiap bench / periode dan Total; CSV mendapat kolom *Kategori*. Nilai di luar semua rentang masuk *tanpa kategori*.
+- **Kolom laporan**: tiap kelas ore · **Total ore t @ g/t** · Waste BCM · SR · Logam g · oz · unsur lain (ore). Ton waste dan kadar waste tidak lagi ditampilkan; berlaku juga untuk CSV, laporan cetak, CSV blok tambang dan CSV rencana tambang.
+- **Sayat di RL** saat mendigit dasar pit: selama *Gambar poligon / garis* ada centang **Sayat di RL** di kiri atas kanvas (bawaan mati). Semua yang di atas RL dasar disembunyikan — termasuk Block model 3D bila sedang tampil — dan titik digit jatuh tepat di RL itu.
+- **Menu klik kanan** (klik kanan tanpa seret; seret kanan tetap menggeser): di 3D — selesai / hapus titik / batal saat mendigit, jadikan string batas laporan, salin koordinat atau info string, ekspor string (.str / .dxf), sayatan lewat titik, ukur dari sini, sayat tampilan di RL; di sayatan 2D — salin E / N / RL, tandai posisi di 3D, ukur, PNG, CSV; di Lapisan — tampilkan hanya ini, zoom, hapus.
+- **Sayatan 2D** kini menyayat semua desain yang ada di laporan, termasuk **pit final impor**, dan digambar ulang sendiri bila desain diimpor / dibuat saat jendela sayatan terbuka.
+- **Bantuan → Pintasan**: daftar pintasan keyboard dan tetikus.
+- **Jalan**: hauling road (jalan luar) dengan titik belok dan jarak aman ke pit; sampai tiga jalan per area. **Block model 3D / blok tambang**: filter dan kelas warna per unsur.
+- Pit hasil *Pulihkan* bisa dibuang: **Reset → Tutup & buang pit ini** (mode Edit pit).
+- **Berkas legal** di folder `legal` instalasi kini khusus Pit Studio (syarat penggunaan, penafian merek, pemberitahuan pihak ketiga).
+- Tombol **Demo** mendapat bab P (pembaruan di atas, data fiktif).
+- Diuji otomatis pada data latihan fiktif: jumlah di dalam + di luar poligon = seluruh desain; jumlah baris kategori = baris induknya. Belum diterjemahkan ke EN / ES / SU untuk teks baru.
