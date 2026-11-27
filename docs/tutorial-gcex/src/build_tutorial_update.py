@@ -1366,6 +1366,10 @@ B.append('<p>Import block model (CSV) &rarr; <b>Rotasi model</b>: isi <i>Bearing
 B.append('<h3>16ze. Sambungkan file (Block Model 0.24.114 / Drillhole 0.24.116)</h3>')
 B.append('<p>File sumber proyek yang dipindah dicari otomatis di subfolder folder proyek; bila tidak ketemu muncul jendela <b>Sambungkan file</b> &rarr; <b>Cari file&hellip;</b> (nama &amp; ukuran dicek, bisa langsung disalin ke folder proyek\\sumber\\). <b>Lewati</b> membuka proyek tanpa file itu.</p>')
 
+B.append('<h3>16zf. Pindah mode, as-mined aman, bawaan Surpac, panel rata (Block Model 0.24.115 / Drillhole 0.24.117)</h3>')
+B.append('<p>Bilah atas punya tombol <b>Dig Block | As-Mined</b> (Alt+1 / Alt+2) yang membuka panel terakhir tiap mode, dan <b>&#10226; Nol &amp; simpan</b> (Alt+0) yang menyimpan proyek lalu mengosongkan tampilan 3D. '
+         'Digit poligon as-mined tetap di panel As-Mined; Enter menutup poligon. Project Tree &rarr; &#8943; menyediakan <b>Hapus poligon as-mined</b>, <b>Hapus semua as-mined di flitch ini</b> dan, pada dig block, <b>Pindahkan ke As-Mined</b>. '
+         'Proyek baru memakai bawaan Surpac (lantai &amp; atap dari TIN pick-up, boundary menurut elevasi string). String flagging kini sejajar dengan string induknya. Panel Properti menyesuaikan lebar panel. Folder Legal berisi berkas khusus GC-Ex.</p>')
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

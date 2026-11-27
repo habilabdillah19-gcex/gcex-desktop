@@ -954,3 +954,10 @@ Koordinat lokal model (diputar ke lapangan terhadap titik putar)	Local model coo
 Titik putar X / Y (koordinat lokal; kosong = sudut minimum model)	Pivot X / Y (local coordinates; empty = model minimum corner)	Pivote X / Y (coordenadas locales; vacío = esquina mínima del modelo)	Titik puteran X / Y (koordinat lokal; kosong = juru minimum modél)
 Cari file	Find file	Buscar archivo	Milarian file
 Lewati (buka tanpa file ini)	Skip (open without this file)	Omitir (abrir sin este archivo)	Liwat (buka tanpa file ieu)
+Nol & simpan	Clear & save	Vaciar y guardar	Kosongkeun & simpen
+Menurut elevasi string (Surpac)	By string elevation (Surpac)	Según elevación del string (Surpac)	Numutkeun élévasi string (Surpac)
+Lantai pick-up (TIN, Surpac)	Pick-up floor (TIN, Surpac)	Piso del levantamiento (TIN, Surpac)	Lantai pick-up (TIN, Surpac)
+Tebal flitch penuh (lama)	Full flitch thickness (old)	Espesor completo del flitch (antiguo)	Kandel flitch pinuh (lami)
+Permukaan pick-up (TIN, Surpac)	Pick-up surface (TIN, Surpac)	Superficie del levantamiento (TIN, Surpac)	Permukaan pick-up (TIN, Surpac)
+Rata per poligon (satu elevasi)	Flat per polygon (one elevation)	Plano por polígono (una elevación)	Rata per poligon (hiji élévasi)
+RL atas flitch (nominal, lama)	Flitch top RL (nominal, old)	RL superior del flitch (nominal, antiguo)	RL luhur flitch (nominal, lami)

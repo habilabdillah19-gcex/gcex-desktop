@@ -3,7 +3,7 @@
   "productName": "GC-Ex Drillhole",
   "copyright": "Copyright © 2026 Habil Abdillah",
   "extraMetadata": {
-    "version": "0.24.116",
+    "version": "0.24.117",
     "name": "gcex-drillhole",
     "productName": "GC-Ex Drillhole",
     "description": "GC-Ex Drillhole Ultimate - aplikasi desktop",
@@ -37,7 +37,19 @@
       "to": "legal",
       "filter": [
         "*.txt",
-        "*.html"
+        "*.html",
+        "!SYARAT_PENGGUNAAN.txt",
+        "!PENAFIAN_MEREK.txt",
+        "!LISENSI_PIHAK_KETIGA.txt",
+        "!LISENSI_FONT_OFL.txt",
+        "!LISENSI_QT_*"
+      ]
+    },
+    {
+      "from": "legal-gcex",
+      "to": "legal",
+      "filter": [
+        "*.txt"
       ]
     },
     {
@@ -79,7 +91,7 @@
     "createStartMenuShortcut": true,
     "shortcutName": "GC-Ex Drillhole",
     "uninstallDisplayName": "GC-Ex Drillhole ${version}",
-    "license": "legal/SYARAT_PENGGUNAAN.txt"
+    "license": "legal-gcex/SYARAT_PENGGUNAAN.txt"
   },
   "fileAssociations": [
     {

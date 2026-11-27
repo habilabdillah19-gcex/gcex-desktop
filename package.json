@@ -1,7 +1,7 @@
 {
   "name": "gcex-desktop",
   "productName": "GC-Ex",
-  "version": "0.24.114",
+  "version": "0.24.115",
   "description": "GC-Ex Grade Control Excellence - aplikasi desktop (Block Model, Drillhole & DB-Ex)",
   "main": "electron/main.js",
   "author": "Habil Abdillah",
@@ -45,7 +45,19 @@
         "to": "legal",
         "filter": [
           "*.txt",
-          "*.html"
+          "*.html",
+          "!SYARAT_PENGGUNAAN.txt",
+          "!PENAFIAN_MEREK.txt",
+          "!LISENSI_PIHAK_KETIGA.txt",
+          "!LISENSI_FONT_OFL.txt",
+          "!LISENSI_QT_*"
+        ]
+      },
+      {
+        "from": "legal-gcex",
+        "to": "legal",
+        "filter": [
+          "*.txt"
         ]
       },
       {
@@ -81,7 +93,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "GC-Ex",
       "uninstallDisplayName": "GC-Ex ${version}",
-      "license": "legal/SYARAT_PENGGUNAAN.txt"
+      "license": "legal-gcex/SYARAT_PENGGUNAAN.txt"
     },
     "fileAssociations": [
       {

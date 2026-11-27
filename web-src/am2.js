@@ -10,6 +10,11 @@ function amR(){var U=amU();if(!U.reg)U.reg={};var R=U.reg,m=BX.m,D={pit:'',date:
     sxsThr:0.8,
     dst:[{o:'HG*',d:'ROM',l:'ROM Pad',j:'ROM Bin'},{o:'LGSF',d:'SPL',l:'Stockpile LG',j:'Stockpile'},{o:'MOSF',d:'SPL',l:'Stockpile LG',j:'Stockpile'},{o:'*OX',d:'SPO',l:'Stockpile Oksida',j:'Stockpile'},{o:'WS*',d:'WD',l:'Waste Dump',j:'Dump'}]};
   for(var k in D)if(R[k]===undefined)R[k]=JSON.parse(JSON.stringify(D[k]));
+  /* 0.24.116 (pemilik 27-11-2026): setelan panel Flitch, poligon, lantai & atap BAWAAN = cara Surpac (volume antara DTM lantai pick-up
+     dan DTM atap pick-up, string boundary pada elevasinya sendiri). Proyek LAMA yang sudah punya poligon as-mined & belum pernah
+     menyimpan pilihan ini tetap memakai rumus lama, supaya laporan yang sudah keluar tidak berubah diam-diam. */
+  if(R.sdef===undefined){var lama=!!(BX.ui&&BX.ui.amData&&(BX.ui.amData.bnd||[]).length);
+    if(R.floor===undefined)R.floor=lama?'flitch':'pickup';if(R.roof===undefined)R.roof=lama?'flitch':'pickup';if(R.bndZ===undefined)R.bndZ=lama?'active':'auto';R.sdef=lama?'lama':'surpac';}
   if(R.sxs===undefined&&m){var nm=Object.keys(m.num);R.sxs=(window.dbU&&dbU().sxsAttr)||nm.filter(function(a){return /^s(x|ulph?|ulf)?s$|^sxs|^s_?ox|^stot$|^s$/i.test(a);})[0]||'';}
   if(R.ag===undefined&&m){R.ag=Object.keys(m.num).filter(function(a){return /^ag/i.test(a);})[0]||'';}
   return R;}
@@ -20,7 +25,7 @@ function amShiftTxt(s){return /^N/i.test(s)?'Malam':'Siang';}
 function amDateTxt(d){var p=String(d||'').split('-');if(p.length<3)return String(d||'');return(+p[2])+'-'+AMMON[(+p[1]-1)%12]+'-'+p[0].slice(2);}
 function amDDMM(d){var p=String(d||'').split('-');return p.length<3?'':p[2]+p[1];}
 /* ---------- boundary = poligon (field register disimpan di objek boundary, ikut proyek) ---------- */
-function amBndAdd(pts,name,opt){/* opt (0.24.54): {top,bot,date,pit} dari NAMA FILE pick-up -- flitch, tanggal & pit tidak lagi ditebak dari flitch aktif / hari ini */var D=amD(),B=lyBench(),R=amR(),ZS=amZStat(pts);if(opt&&isFinite(opt.top)&&isFinite(opt.bot)&&opt.top>opt.bot)B=[+opt.top,+opt.bot];else if(ZS&&R.bndZ==='auto')B=amFlitchOfZ(ZS.med,B);var P=pts.map(function(q){return[+q[0],+q[1]];}),a=P[0],b=P[P.length-1];if(P.length>3&&Math.hypot(a[0]-b[0],a[1]-b[1])<0.05)P.pop();if(P.length<3)return false;
+function amBndAdd(pts,name,opt){/* opt (0.24.54): {top,bot,date,pit} dari NAMA FILE pick-up -- flitch, tanggal & pit tidak lagi ditebak dari flitch aktif / hari ini */var D=amD(),B=lyBench(),R=amR(),ZS=amZStat(pts);if(opt&&isFinite(opt.top)&&isFinite(opt.bot)&&opt.top>opt.bot)B=[+opt.top,+opt.bot];else if(ZS&&R.bndZ==='auto'&&!(ZS.min===0&&ZS.max===0))B=amFlitchOfZ(ZS.med,B);var P=pts.map(function(q){return[+q[0],+q[1]];}),a=P[0],b=P[P.length-1];if(P.length>3&&Math.hypot(a[0]-b[0],a[1]-b[1])<0.05)P.pop();if(P.length<3)return false;
   var key=P.map(function(q){return q[0].toFixed(2)+','+q[1].toFixed(2);}).join(';');if(D.bnd.some(function(x){return x.key===key&&Math.abs(x.top-B[0])<1e-6&&Math.abs(x.bot-B[1])<1e-6;}))return false;
   var o={id:amBid(),name:name,top:B[0],bot:B[1],zs:ZS,pts:P,key:key,on:true,pit:(opt&&opt.pit)||R.pit,blk:R.block,date:(opt&&opt.date)||R.date,shift:R.shift,src:(opt&&opt.src)||'',ore:'',dest:'',code:'',sid:'',dens:'',ket:'',print:true,st:null,open:false};
   D.bnd.push(o);AM.last=o.id;AM.lastFl=B;amAuto();return true;}

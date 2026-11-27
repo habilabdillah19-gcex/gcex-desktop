@@ -79,11 +79,11 @@ VERSI_APP = {
     "Pit Studio": ("builder-ps.json", ("extraMetadata", "version")),
 }
 MILIK = {
-    "GC-Ex Block Model": ["app/", "web-src/", "electron/", "backend/", "build/", "legal/", "package-lock.json",
+    "GC-Ex Block Model": ["app/", "web-src/", "electron/", "backend/", "build/", "legal/", "legal-gcex/", "package-lock.json",
                           "docs/tutorial-gcex/GCEx_Tutorial_Block_Model.pdf", "docs/tutorial-gcex/src/build_tutorial_bm.py",
                           "docs/tutorial-gcex/src/bm_bab.py", "docs/tutorial-gcex/src/tutorial_bm_shots.py",
                           "docs/tutorial-gcex/src/build_bm/", "docs/tutorial-gcex/data/SIM_BM_GC_kadar.csv", "docs/tutorial-gcex/tambah_unsur_bm.py"],
-    "GC-Ex Drillhole": ["app-dh/", "web-src-dh/", "web-src/", "electron/", "backend/", "build/", "legal/", "package-lock.json",
+    "GC-Ex Drillhole": ["app-dh/", "web-src-dh/", "web-src/", "electron/", "backend/", "build/", "legal/", "legal-gcex/", "package-lock.json",
                         "docs/tutorial-gcex/"],
     "DB-Ex": ["app-core/", "app_core_qt/", "electron/", "backend/", "build/", "legal/", "docs/tutorial-core/", "docs/referensi/",
               "docs/PANDUAN_CORE", "docs/DB-Ex_", "builder-core.json"],
@@ -252,6 +252,7 @@ def main():
         (ROOT / "docs" / "Tentang_GCEx_BlockModel.pdf", "Tentang_GCEx_BlockModel.pdf"),
         (ROOT / "docs" / "Tentang_GCEx_Drillhole.pdf", "Tentang_GCEx_Drillhole.pdf"),
         (ROOT / "legal", "Legal"),
+        (ROOT / "legal-gcex", "Legal_GC-Ex_BlockModel_Drillhole"),
         (ROOT / "tools" / "lisensi", "Alat_Admin_Lisensi"),
     ] + ([(D / "tutorial-ps" / "Tentang_Pit_Studio_for_Desktop.pdf", "Tentang_Pit_Studio_for_Desktop.pdf")] if has_ps else []))
     tentang.unlink()

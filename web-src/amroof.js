@@ -211,9 +211,9 @@ function amRoofBox() {
   }
   h += '<div class=amcm><label>Batas atas volume as-mined</label>' +
     '<select onchange="amRSet(\'roof\',this.value)">' +
-    '<option value=flitch' + (mode === 'flitch' ? ' selected' : '') + '>RL atas flitch (nominal, rumus lama)</option>' +
-    '<option value=flat' + (mode === 'flat' ? ' selected' : '') + '>Atap rata dari pick-up (satu elevasi per poligon)</option>' +
-    '<option value=pickup' + (mode === 'pickup' ? ' selected' : '') + '>Atap ikut permukaan pick-up (triangulasi / TIN, seperti Surpac)</option>' +
+    '<option value=pickup' + (mode === 'pickup' ? ' selected' : '') + '>Permukaan pick-up (TIN, Surpac)</option>' +
+    '<option value=flat' + (mode === 'flat' ? ' selected' : '') + '>Rata per poligon (satu elevasi)</option>' +
+    '<option value=flitch' + (mode === 'flitch' ? ' selected' : '') + '>RL atas flitch (nominal, lama)</option>' +
     '<option value=dtm' + (mode === 'dtm' ? ' selected' : '') + '>Atap dari permukaan / DTM yang sudah dimuat (menu Model)</option>' +
     '</select>';
   if (mode === 'dtm') {

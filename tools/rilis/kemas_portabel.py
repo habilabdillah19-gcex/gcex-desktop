@@ -103,9 +103,13 @@ def main():
         Z.writestr(f'{base}/PETUNJUK_PORTABEL.txt', petunjuk(vbm, vdh).replace('\n', '\r\n'))
         Z.writestr(f'{base}/Proyek/BACA_SAYA.txt', ('Letakkan setiap folder proyek GC-Ex di sini (satu subfolder = satu proyek).\r\n'
                                                     'Lihat ..\\PETUNJUK_PORTABEL.txt.\r\n'))
-        for p in sorted((ROOT / 'legal').rglob('*')):
-            if p.is_file():
-                Z.write(p, f'{base}/Legal/' + str(p.relative_to(ROOT / 'legal')).replace('\\', '/'))
+        # Legal: berkas khusus GC-Ex (legal-gcex/) menggantikan berkas umum keluarga GC-Ex di legal/ (27 Nov 2026)
+        ganti = {p.name for p in (ROOT / 'legal-gcex').glob('*.txt')}
+        for p in sorted((ROOT / 'legal').glob('*.txt')):
+            if p.name not in ganti and p.name != 'LISENSI_FONT_OFL.txt' and not p.name.startswith('LISENSI_QT_'):
+                Z.write(p, f'{base}/Legal/{p.name}')
+        for p in sorted((ROOT / 'legal-gcex').glob('*.txt')):
+            Z.write(p, f'{base}/Legal/{p.name}')
     print('OK', z, z.stat().st_size, 'byte')
     return z
 

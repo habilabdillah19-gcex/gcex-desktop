@@ -6055,3 +6055,20 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
   (bawaan) supaya proyek tidak putus lagi.
 - **Lewati** membuka proyek tanpa file itu, seperti sebelumnya.
 - Berlaku juga di versi `.html` portabel.
+
+## 323. Block Model 0.24.115 / Drillhole 0.24.117 — pindah mode, as-mined aman, bawaan Surpac, panel rata, legal
+
+- **Pindah mode cepat**: tombol **Dig Block | As-Mined** di bilah atas (Alt+1 / Alt+2) langsung membuka panel terakhir
+  yang Anda pakai di mode itu. Tombol **⟲ Nol & simpan** (Alt+0) menyimpan proyek dan mengosongkan tampilan 3D;
+  pilih mode atau panel untuk menggambar ulang.
+- **Digit poligon as-mined** tidak lagi memindah panel ke Dig Block. **Enter** menutup poligon as-mined (minimal 3 titik).
+  Poligon yang telanjur menjadi dig block: Project Tree → dig block itu → **⋯ → Pindahkan ke As-Mined**.
+- **Hapus as-mined**: Project Tree → As-Mined → Per flitch → poligon → **⋯ → Hapus poligon as-mined**
+  (atau di baris *Aktual*: hapus semua as-mined satu flitch). Poligon yang sudah dikunci tidak ikut terhapus.
+- **Bawaan seperti Surpac** untuk proyek baru: lantai & atap dari permukaan pick-up (TIN), boundary masuk flitch
+  menurut elevasi string. Proyek lama tetap memakai pilihan lamanya.
+- **String flagging (garis ganda)** kini sejajar dengan string dig block induknya, juga di file STR untuk Surpac.
+  Ekspor ulang STR yang sudah terlanjur dibuat.
+- **Panel Properti** menyesuaikan lebar panel: isian tidak lagi menggantung setengah baris, tidak terpotong, dan sejajar.
+- **Folder Legal** kini berisi syarat penggunaan, penafian merek dan daftar lisensi khusus GC-Ex (versi 27 Nov 2026).
+

@@ -1,0 +1,232 @@
+GC-Ex - SYARAT PENGGUNAAN, LISENSI & PENAFIAN
+GC-Ex - TERMS OF USE, LICENSE & DISCLAIMER
+Berlaku untuk / applies to: GC-Ex Block Model dan GC-Ex Drillhole (installer
+desktop dan versi HTML portabel / desktop installers and portable HTML edition).
+Versi syarat / terms version: 2026-11-27.
+
+Copyright (c) 2026 Habil Abdillah. Hak cipta dilindungi undang-undang.
+
+Dengan memasang, menyalin atau memakai perangkat lunak ini Anda menyatakan
+telah membaca dan menyetujui syarat di bawah. Bila tidak setuju, jangan
+memasang atau memakainya.
+
+======================================================================
+BAHASA INDONESIA
+======================================================================
+
+1. HAK CIPTA DAN KEPEMILIKAN
+   GC-Ex Block Model dan GC-Ex Drillhole ("Perangkat Lunak"), termasuk kode
+   program, tampilan, ikon, nama "GC-Ex" dan "Grade Control Excellence",
+   dokumentasi, tutorial dan data latihannya, adalah ciptaan Habil Abdillah
+   dan dilindungi sebagai Program Komputer menurut Undang-Undang Republik
+   Indonesia Nomor 28 Tahun 2014 tentang Hak Cipta. Perangkat Lunak
+   dilisensikan, bukan dijual.
+
+2. LISENSI PEMAKAIAN
+   Anda mendapat izin non-eksklusif, tidak dapat dialihkan dan dapat dicabut
+   untuk memasang dan memakai Perangkat Lunak bagi pekerjaan Anda, bila
+   installer atau berkas HTML portabel diterima dari Habil Abdillah atau dari
+   pihak yang ia izinkan.
+
+3. AKTIVASI LISENSI
+   a. Versi desktop memerlukan kunci lisensi yang terikat pada ID komputer
+      dan ditandatangani secara digital (Ed25519). Satu kunci berlaku untuk
+      komputer dan aplikasi yang tercantum di dalamnya, sampai tanggal yang
+      tercantum (bila ada).
+   b. Kunci lisensi bersifat pribadi bagi komputer tersebut: jangan dibagikan,
+      dijual atau dipindahkan ke komputer lain tanpa izin.
+   c. Dilarang mengakali, menonaktifkan atau memalsukan pemeriksaan lisensi,
+      tanda tangan digital, atau berkas lisensi.
+
+4. VERSI HTML PORTABEL
+   Berkas GCEx_BlockModel.html dan GCEx_DrillHole.html (versi portabel, tanpa
+   instalasi) tunduk pada syarat yang sama. Versi portabel boleh dipakai di
+   komputer yang tidak mengizinkan pemasangan program, sepanjang pemakaiannya
+   sesuai kebijakan TI tempat Anda bekerja. Folder proyek tetap tersimpan di
+   lokasi yang Anda pilih.
+
+5. YANG TIDAK DIIZINKAN tanpa izin tertulis dari Habil Abdillah:
+   a. menjual, menyewakan, meminjamkan, atau membagikan Perangkat Lunak,
+      installer atau berkas HTML portabel kepada pihak lain di luar yang
+      diizinkan;
+   b. menyalin, mengubah, menerjemahkan, membongkar (reverse engineering,
+      decompile, disassemble) atau membuat karya turunan, kecuali sejauh
+      diizinkan tegas oleh hukum yang berlaku;
+   c. menghapus, menutupi atau mengubah pemberitahuan hak cipta, tanda
+      "Copyright (c) Habil Abdillah 2026", watermark, atau file di folder
+      "legal";
+   d. memakai nama "GC-Ex" atau nama Habil Abdillah untuk produk lain atau
+      untuk menyatakan dukungan tanpa izin.
+
+6. KOMPONEN PIHAK KETIGA (OPEN SOURCE)
+   Perangkat Lunak memakai komponen open source (antara lain Electron,
+   Chromium, Node.js, Python, FastAPI, Uvicorn, Pydantic, NumPy, Pillow,
+   openpyxl, lxml, pyodbc, Plotly.js, Delaunator dan manifold-3d). Setiap
+   komponen tetap milik pemegang hak ciptanya dan berlaku lisensinya
+   masing-masing (MIT, BSD, ISC, PSF, Apache-2.0, zlib, GPL-2.0 dengan
+   pengecualian bootloader untuk PyInstaller, dan lainnya). Daftar dan teks
+   lengkapnya ada di folder "legal" di folder instalasi
+   (LISENSI_PIHAK_KETIGA.txt, LISENSI_PYTHON.txt, LISENSI_ELECTRON.txt,
+   LISENSI_CHROMIUM.html, LISENSI_MANIFOLD_APACHE2.txt,
+   LISENSI_PLOTLY_BUNDEL.txt) dan menu Bantuan. Syarat ini tidak membatasi
+   hak Anda yang diberikan oleh lisensi open source tersebut atas komponen
+   yang bersangkutan.
+
+7. MEREK DAGANG
+   Leapfrog, Seequent, Surpac, GEOVIA, Micromine, Global Mapper, AutoCAD,
+   Microsoft, Windows, Excel, Access, Edge, Google Chrome, Plotly, Electron,
+   Python dan nama produk lain adalah merek dagang milik pemiliknya. GC-Ex
+   tidak berafiliasi dengan, tidak disponsori dan tidak didukung oleh mereka.
+   Nama-nama itu dipakai hanya untuk menjelaskan kecocokan format file dan
+   cara hitung. Lihat PENAFIAN_MEREK.txt.
+
+8. TANPA JAMINAN
+   Perangkat Lunak disediakan "APA ADANYA" dan "SEBAGAIMANA TERSEDIA",
+   tanpa jaminan apa pun, tersurat maupun tersirat, termasuk jaminan
+   kelayakan untuk diperdagangkan, kesesuaian untuk tujuan tertentu,
+   ketepatan, kelengkapan, atau bebas dari kesalahan dan gangguan.
+
+9. HASIL TEKNIS ADALAH ALAT BANTU
+   a. Dig block, dig plan, tonase dan kadar, poligon as-mined, register
+      harian, rekonsiliasi, model geologi, variogram, estimasi dan block
+      model yang dihasilkan GC-Ex adalah alat bantu. Hasil wajib diperiksa
+      oleh pengguna yang kompeten sebelum dipakai.
+   b. Kecocokan cara hitung dengan Surpac diupayakan dan diuji, tetapi
+      tetap bergantung pada data masukan, setelan dan versi perangkat lunak
+      pembanding. Selisih wajib ditelusuri pengguna.
+   c. GC-Ex tidak menggantikan pengukuran survei, pengawasan lapangan,
+      kajian geoteknik, atau prosedur keselamatan tambang.
+   d. Pelaporan sumber daya dan cadangan (mis. KCMI, JORC) serta keputusan
+      teknis, produksi dan komersial tetap menjadi tanggung jawab pengguna,
+      Kepala Teknik Tambang dan Competent Person yang berwenang.
+
+10. BATASAN TANGGUNG JAWAB
+   Sejauh diizinkan oleh hukum yang berlaku, Habil Abdillah tidak
+   bertanggung jawab atas kerugian langsung maupun tidak langsung,
+   insidental, khusus atau konsekuensial (termasuk kehilangan data,
+   keuntungan, produksi, ore loss / dilusi, atau gangguan usaha) yang timbul
+   dari pemakaian atau ketidakmampuan memakai Perangkat Lunak atau hasilnya,
+   meskipun kemungkinan kerugian tersebut telah diberitahukan.
+
+11. DATA DAN PRIVASI
+   a. GC-Ex memproses data di komputer Anda sendiri. Backend lokal hanya
+      mendengar di 127.0.0.1. GC-Ex tidak mengirim data bor, assay, block
+      model, dig plan, pick-up survei atau hasil kerja ke internet, tidak
+      memeriksa pembaruan secara online, dan tidak mengumpulkan data
+      pemakaian.
+   b. Hak atas data yang Anda olah tetap milik pemiliknya. Anda bertanggung
+      jawab memastikan Anda berwenang memakai, menyimpan dan membagikan data
+      tersebut sesuai kebijakan perusahaan dan peraturan yang berlaku.
+   c. Hasil kerja disimpan di folder proyek yang Anda pilih. Pencadangan
+      (backup) adalah tanggung jawab pengguna.
+   d. Data latihan dan demo yang disertakan bersifat fiktif.
+
+12. PENGAKHIRAN
+   Izin ini berakhir otomatis bila Anda melanggar syarat ini. Setelah
+   berakhir, hentikan pemakaian dan hapus semua salinan Perangkat Lunak.
+
+13. HUKUM YANG BERLAKU
+   Syarat ini tunduk pada hukum Republik Indonesia. Bila ada ketentuan
+   yang tidak berlaku, ketentuan lain tetap berlaku.
+
+======================================================================
+ENGLISH
+======================================================================
+
+1. COPYRIGHT AND OWNERSHIP
+   GC-Ex Block Model and GC-Ex Drillhole (the "Software"), including program
+   code, user interface, icons, the names "GC-Ex" and "Grade Control
+   Excellence", documentation, tutorials and training data, are the work of
+   Habil Abdillah and are protected as a Computer Program under Law of the
+   Republic of Indonesia No. 28 of 2014 on Copyright. The Software is
+   licensed, not sold.
+
+2. LICENSE GRANT
+   You receive a non-exclusive, non-transferable, revocable permission to
+   install and use the Software for your work, if you received the installer
+   or portable HTML file from Habil Abdillah or from a party he has
+   authorized.
+
+3. LICENSE ACTIVATION
+   a. The desktop edition requires a license key bound to a computer ID and
+      digitally signed (Ed25519). A key is valid for the computer and
+      applications it names, until its stated expiry date (if any).
+   b. A license key is personal to that computer: do not share, sell or
+      move it to another computer without permission.
+   c. You may not circumvent, disable or forge the license check, digital
+      signature or license file.
+
+4. PORTABLE HTML EDITION
+   GCEx_BlockModel.html and GCEx_DrillHole.html (portable, no installation)
+   are covered by these same terms. The portable edition may be used on
+   computers that do not allow program installation, provided such use
+   complies with your workplace IT policy.
+
+5. RESTRICTIONS - without written permission from Habil Abdillah you may not:
+   a. sell, rent, lend or distribute the Software, its installer or the
+      portable HTML files to parties beyond those authorized;
+   b. copy, modify, translate, reverse engineer, decompile, disassemble or
+      create derivative works, except as expressly permitted by applicable
+      law;
+   c. remove, obscure or alter copyright notices, the "Copyright (c) Habil
+      Abdillah 2026" mark, watermarks, or files in the "legal" folder;
+   d. use the name "GC-Ex" or Habil Abdillah's name for other products or
+      to imply endorsement.
+
+6. THIRD-PARTY (OPEN SOURCE) COMPONENTS
+   The Software uses open source components that remain the property of
+   their copyright holders and are governed by their own licenses (MIT,
+   BSD, ISC, PSF, Apache-2.0, zlib, GPL-2.0 with bootloader exception for
+   PyInstaller, and others), listed with full texts in the "legal" folder
+   and the Help menu. These terms do not limit your rights under those open
+   source licenses for the respective components.
+
+7. TRADEMARKS
+   Third-party product names are trademarks of their respective owners.
+   GC-Ex is not affiliated with, sponsored or endorsed by them; the names are
+   used only to describe file-format and calculation compatibility. See
+   PENAFIAN_MEREK.txt.
+
+8. NO WARRANTY
+   The Software is provided "AS IS" and "AS AVAILABLE", without warranty of
+   any kind, express or implied, including merchantability, fitness for a
+   particular purpose, accuracy, completeness, or error-free operation.
+
+9. TECHNICAL RESULTS ARE DECISION-SUPPORT ONLY
+   a. Dig blocks, dig plans, tonnes and grades, as-mined polygons, daily
+      registers, reconciliation, geological models, variograms, estimates
+      and block models produced by GC-Ex must be reviewed by a competent
+      user before use.
+   b. Agreement with Surpac calculations is pursued and tested but depends
+      on input data, settings and the version of the reference software;
+      differences must be investigated by the user.
+   c. GC-Ex does not replace survey measurement, field supervision,
+      geotechnical studies or mine safety procedures.
+   d. Resource and reserve reporting (e.g. KCMI, JORC) and technical,
+      production or commercial decisions remain the responsibility of the
+      user, the mine manager and the qualified Competent Person.
+
+10. LIMITATION OF LIABILITY
+   To the extent permitted by applicable law, Habil Abdillah shall not be
+   liable for any direct, indirect, incidental, special or consequential
+   damages (including loss of data, profit, production, ore loss / dilution
+   or business interruption) arising from the use of or inability to use the
+   Software or its results, even if advised of the possibility of such
+   damages.
+
+11. DATA AND PRIVACY
+   GC-Ex processes data on your own computer; its local backend listens only
+   on 127.0.0.1. GC-Ex does not send drillhole data, assays, block models,
+   dig plans, survey pick-ups or work results to the internet, does not
+   check for updates online and collects no usage data. Rights to the data
+   you process remain with their owners; you are responsible for being
+   authorized to use, store and share that data. Backups are the user's
+   responsibility. Bundled training and demo data are fictitious.
+
+12. TERMINATION
+   This permission ends automatically if you breach these terms; you must
+   then stop using and delete all copies of the Software.
+
+13. GOVERNING LAW
+   These terms are governed by the laws of the Republic of Indonesia. If any
+   provision is unenforceable, the remaining provisions stay in effect.

@@ -3,7 +3,7 @@
       (di bawah lantai flitch / sekitar lantai / di dalam flitch / di atas flitch / tanpa Z), hover menampilkan Z & selisih.
    2) Import boundary: flitch tujuan = flitch aktif (abaikan Z, seperti sebelumnya) ATAU otomatis menurut median Z string
       (flitch dengan RL bawah terdekat). Statistik Z tiap boundary disimpan & ditampilkan; penyimpangan ditandai.
-   3) Volume as-mined: "Tebal flitch penuh" (bawaan, rumus lama) ATAU "Ikuti lantai pick-up": lantai tiap poligon
+   3) Volume as-mined: "Ikuti lantai pick-up" (bawaan sejak 0.24.116, seperti Surpac) ATAU "Tebal flitch penuh" (rumus lama): lantai tiap poligon
       diinterpolasi (IDW) dari titik pick-up di dalam / sekitar poligon dalam pita elevasi lantai; sub-blok dihitung
       dari lantai aktual sampai RL atas flitch (lantai lebih rendah = overdig ikut terhitung, lebih tinggi = underdig). */
 function amNumOr(v,d){var x=parseFloat(v);return isFinite(x)?x:d;}
@@ -81,8 +81,8 @@ function amFloorBox(){var D=amD(),R=amR(),B=lyBench(),fh=B[0]-B[1],F=amFloorPar(
   if(has){h+='<div class=g2><div><label>Tampilkan pick-up &plusmn; (m dari flitch)</label><input type=number step=any min=0 value="'+amE(amPTol())+'" onchange="amD().pTol=this.value;amPanel();updatePlot();amDirty()"'+(D.pAll?' disabled title="Semua RL dicentang"':'')+'></div>'+
       '<div class=hint style="align-self:end;margin:0">Median Z titik tampil: <b>'+(isFinite(S.med)?S.med.toFixed(2):'-')+'</b>'+(isFinite(S.med)?' ('+(S.med-B[1]>=0?'+':'')+(S.med-B[1]).toFixed(2)+' m dari RL bawah)':'')+'</div></div>'+
       '<div class=amzc>'+AMPC.map(function(c){return S.c[c[0]]?'<span><i style="background:'+c[2]+'"></i>'+c[1]+' <b>'+S.c[c[0]].toLocaleString()+'</b></span>':'';}).join('')+'</div>';}
-  h+='<div class=g2 style="margin-top:4px"><div><label>Import boundary masuk ke</label>'+sel(R.bndZ||'active',[['active','Flitch aktif (abaikan Z)'],['auto','Flitch menurut elevasi string']],"amRSet('bndZ',this.value)")+'</div>'+
-    '<div><label>Volume as-mined</label>'+sel(R.floor||'flitch',[['flitch','Tebal flitch penuh'],['pickup','Ikuti lantai pick-up (triangulasi / TIN)']],"amRSet('floor',this.value);amAuto()")+'</div></div>';
+  h+='<div class=g2 style="margin-top:4px"><div><label>Import boundary masuk ke</label>'+sel(R.bndZ||'active',[['auto','Menurut elevasi string (Surpac)'],['active','Flitch aktif (abaikan Z)']],"amRSet('bndZ',this.value)")+'</div>'+
+    '<div><label>Volume as-mined</label>'+sel(R.floor||'flitch',[['pickup','Lantai pick-up (TIN, Surpac)'],['flitch','Tebal flitch penuh (lama)']],"amRSet('floor',this.value);amAuto()")+'</div></div>';
   if(R.floor==='pickup'){h+=amFloorWarn(B)+'<details class=amadv><summary>Setelan lanjutan (pita, jarak, kode titik)</summary><div class=g3 style="margin-top:4px"><div><label>Lantai s/d bawah RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.dn)+'" onchange="amRSet(\'flDn\',this.value);amAuto()"></div>'+
       '<div><label>s/d atas RL bawah (m)</label><input type=number step=any min=0 value="'+amE(F.up)+'" onchange="amRSet(\'flUp\',this.value);amAuto()"></div><div><label>Jarak dari poligon (m)</label><input type=number step=any min=0 value="'+amE(F.buf)+'" onchange="amRSet(\'flBuf\',this.value);amAuto()"></div></div>'+
       '<div style="margin-top:4px"><label>Hanya kode / ID titik (opsional, mis. TOE|FLOOR)</label><input type=text value="'+amE(F.code)+'" placeholder="semua titik" onchange="amRSet(\'flCode\',this.value);amAuto()"></div>'+
