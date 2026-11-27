@@ -35,6 +35,19 @@ async def shots(p):
     await pg.evaluate("__GC.showTab('2d');__GC.LY.paper='A4';__GC.LY.title='PETA RENCANA BLOK GALI';__GC.LY.sub='Data latihan fiktif';__GC.LY.by='Geologi';__GC.LY.no='GP-001';__GC.dlgLayout()")
     await pg.wait_for_timeout(1500); await pg.screenshot(path=str(G / 'layout.png'))
     await pg.click('.modal [data-close]'); await pg.evaluate("__GC.C.soft='Surpac';__GC.C.fmt='dtm';__GC.showTab('conv')"); await pg.wait_for_timeout(300); await pg.screenshot(path=str(G / 'konversi.png'))
+    # Mode Pemetaan (data demo fiktif)
+    pg2 = await b.new_page(viewport={'width': 1360, 'height': 800}, device_scale_factor=1.5); pg2.on('dialog', lambda d: asyncio.ensure_future(d.accept()))
+    await pg2.goto(APP); await pg2.evaluate("__GC.startDemo()"); await pg2.wait_for_timeout(400); await pg2.click('#dmnext'); await pg2.wait_for_timeout(900); await pg2.click('#dmstop')
+    await pg2.evaluate("""(()=>{const G=__GC,MP=G.MP,S=G.S;G.mpToggle(true);MP.pick=S.geoms.find(g=>g.name==='Sampel permukaan').id;MP.layer='VN_A';MP.dip='65';
+      const go=(c,k,P,x)=>{MP.cat=c;G.mpDigit(k,P,x);};
+      go('vein','line',[[10060,20080,0],[10140,20120,0],[10220,20170,0],[10300,20220,0]]);
+      MP.jenis.kon='Tidak pasti';go('kon','line',[[10040,20250,0],[10200,20262,0],[10360,20240,0]]);
+      MP.jenis.sl='Sesar dugaan';go('sl','line',[[10100,20010,0],[10180,20290,0]]);
+      MP.jenis.pol='Alterasi';go('pol','poly',[[10250,20040,0],[10340,20050,0],[10350,20120,0],[10260,20130,0]]);
+      MP.layer='';go('grab','point',[[10120,20200,0]]);go('grab','point',[[10320,20160,0]]);
+      MP.dip='55';go('sd','sd',[[10215,20095,0]],{az:45});go('sd','sd',[[10060,20180,0]],{az:30});go('obs','point',[[10370,20280,0]]);
+      const g=S.geoms.find(x=>x.mapc==='pol');g.P[0].attr[1]='ARG';G.mpTool('sd');G.M2.fit();})()""")
+    await pg2.wait_for_timeout(700); await pg2.screenshot(path=str(G / 'pemetaan.png'))
     await b.close()
 
 def tabel_format():
@@ -68,17 +81,21 @@ def halaman():
 <div class="k"><b>Luas</b><br>Luas dan keliling tampil saat mendigit, per fitur (m² dan ha), total per lapisan, dan tabel luas yang bisa diunduh CSV. Ikut tertulis ke SHP dan MIF.</div>
 <div class="k"><b>GeoTIFF &amp; DEM</b><br>Ortofoto dibaca bertingkat sesuai zoom. Topografi dari string atau DXF dijadikan TIN lalu DEM, lengkap dengan kontur.</div>
 <div class="k"><b>Georeferensi gambar</b><br>Peta pindaian, tangkapan layar, atau foto tanpa koordinat diberi titik kontrol (2 titik atau afin 3+ titik dengan residu dan RMS), tampil di peta, dan diunduh sebagai GeoTIFF atau world file.</div>
+<div class="k"><b>Mode Pemetaan (F8)</b><br>Kategori pemetaan lapangan dengan atribut siap pakai (skema Studio Pemetaan Ore Works): Vein, Kontak, Struktur, Poligon litologi / alterasi, Grab, Strike/dip (klik lalu seret ke arah strike, simbol peta standar), Observasi. Snap ke titik pick-up; RL dari DEM, pick-up terdekat, atau tetap. Satu set diekspor sekaligus ke SHP, MIF, DXF, CSV, STR, KML, atau GeoJSON.</div>
+<div class="k"><b>Simpan proyek (.gpk)</b><br>Lapisan, folder, digitasi, pemetaan, gaya, sistem koordinat, tampilan, dan pengaturan layout disimpan dalam satu file .gpk (Ctrl+S) lalu dibuka lagi kapan saja, juga dengan menyeretnya ke jendela.</div>
+<div class="k"><b>Demo terpandu</b><br>Bantuan → Demo (atau tombol ▶ Demo) menjalankan 8 langkah dengan data fiktif: folder, DEM dan kontur, warna kadar, digitasi dan luas, georeferensi, tabel luas, layout, konversi.</div>
 <div class="k"><b>Layout peta</b><br>A4 sampai A1, skala otomatis atau pilihan, grid koordinat berlabel, arah utara, batang skala, legenda, blok judul. Unduh PDF atau PNG.</div>
 <div class="k"><b>Konversi format</b><br>Pilih software tujuan (Leapfrog, Surpac, MapInfo, Global Mapper, Google Earth) dan format yang disarankan muncul. Banyak file dikemas ZIP.</div>
 <div class="k"><b>Sistem koordinat</b><br>UTM WGS84 zona 1–60 U/S (bawaan 50S). Data lintang/bujur diproyeksikan otomatis; status bar menampilkan E/N dan lintang/bujur.</div>
 </div>
+{im('pemetaan.png', 'Mode Pemetaan: vein, kontak tidak pasti dan sesar dugaan (putus-putus), poligon alterasi, grab, simbol strike/dip, dan observasi; daftar fitur per kategori di panel Properti. Data demo fiktif.')}
 {im('tabel.png', 'Tabel atribut: panjang dan luas tiap poligon, dengan total luas.')}
 {im('layout.png', 'Layout peta: pratinjau halaman dengan grid, skala, legenda, dan blok informasi.')}
 {im('konversi.png', 'Tab Konversi: sumber, tujuan (di sini Surpac DTM + STR), dan opsi.')}
 <h2>Format yang didukung</h2>{tabel_format()}
 <p class="note">Berkas berpasangan dipilih bersamaan: SHP + DBF, MIF + MID, TAB + DAT + MAP + ID, DTM + STR, gambar + world file.</p>
 <h2>Cara kerja</h2>
-<ul><li><b>Satu berkas HTML</b> dirakit dari modul sumber di <code>web-src-gp/</code> oleh <code>bangun_gp.py</code>: <code>core.js</code> (pembaca/penulis format), <code>geo2.js</code> (UTM, KML/GeoJSON, TIN, DEM, kontur, GeoTIFF, PDF), <code>map2d.js</code> (peta kanvas, digitasi), <code>view3d.js</code> (WebGL), <code>ui.js</code>.</li>
+<ul><li><b>Satu berkas HTML</b> dirakit dari modul sumber di <code>web-src-gp/</code> oleh <code>bangun_gp.py</code>: <code>core.js</code> (pembaca/penulis format), <code>geo2.js</code> (UTM, KML/GeoJSON, TIN, DEM, kontur, GeoTIFF, PDF), <code>map2d.js</code> (peta kanvas, digitasi), <code>view3d.js</code> (WebGL), <code>pemetaan.js</code> (Mode Pemetaan), <code>proyek.js</code> (simpan / buka .gpk), <code>ui.js</code>, <code>georef.js</code>, <code>demo.js</code>.</li>
 <li><b>Tanpa server dan tanpa internet.</b> File dibaca langsung oleh browser di komputer pengguna; hasil diunduh sebagai file biasa.</li>
 <li><b>Memakai ulang kode keluarga GC-Ex:</b> pembaca MSH, STR/DTM Surpac (teks dan biner), DXF BLOCK/INSERT, aturan TIN (string dirapatkan 2 m, titik &lt; 1 mm disatukan, segitiga tepi lebih panjang dari 8 × median dibuang), dan palet antarmuka.</li>
 <li><b>Pustaka pihak ketiga</b> (sudah ada di repo): geotiff.js 2.1.3 (lisensi MIT) dan Delaunator (lisensi ISC).</li></ul>
@@ -86,11 +103,12 @@ def halaman():
 <ul><li>Hasil tulis diperiksa dengan pembaca independen: ezdxf (DXF), GDAL (SHP, MIF, TAB, KML, KMZ, GeoJSON), trimesh (OBJ, STL, PLY), rasterio (GeoTIFF DEM dan citra hasil georeferensi, ASC), pyproj (UTM), pdfinfo (PDF).</li>
 <li>MSH yang ditulis ulang sama persis byte demi byte dengan aslinya; koordinat DXF, OBJ, STL ASCII, PLY, DTM identik sampai 3 desimal.</li>
 <li>Konversi UTM ↔ lintang/bujur selisih di bawah 0,001 mm terhadap pyproj. Luas poligon digitasi sama dengan luas yang dihitung GDAL dari hasil ekspor.</li>
+<li>Mode Pemetaan: SHP, MIF/MID, dan DXF hasil ekspor set dibaca GDAL dan ezdxf dengan semua atribut (strike, dip, dip direction, Sample_ID, jenis). Proyek .gpk yang disimpan lalu dibuka ulang memberi lapisan, folder, atribut, DEM, dan sistem koordinat yang identik.</li>
 <li>Uji otomatis di repo: <code>node web-src-gp/uji/uji_inti.js</code>, <code>uji_geo.js</code>, <code>uji_tab.js</code>, <code>uji_georef.js</code>; uji antarmuka di Chrome tanpa galat JavaScript.</li></ul>
 <div class="w"><b>Belum diuji:</b> membuka hasil ekspor langsung di Leapfrog, Surpac, MapInfo, Global Mapper, dan Google Earth, serta data lapangan asli (ortofoto dan pick-up nyata). Semua uji memakai data latihan fiktif.</div>
 <h2>Batas yang perlu diketahui</h2>
 <ul><li>ECW dan MrSID tidak dibuka (format tertutup); konversi dulu ke GeoTIFF.</li><li>MapInfo TAB dibaca (titik, garis, poligon, multipoint, atribut), tetapi belum ditulis; untuk mengirim ke MapInfo pakai MIF/MID atau SHP. Objek teks, busur, dan elips dilewati. TAB yang menaut ke Excel (Type XLS) hanya dimuat geometrinya.</li>
-<li>Proyek belum bisa disimpan: lapisan, folder, dan digitasi hilang saat browser ditutup. Ekspor hasil digitasi sebelum menutup.</li>
+<li>Proyek .gpk menyimpan GeoTIFF besar sebagai pratinjau (≤ 4.096 piksel); untuk detail penuh buka lagi file aslinya. Browser tidak menyimpan otomatis: tekan Ctrl+S sebelum menutup (browser mengingatkan bila ada perubahan).</li>
 <li>STL biner memakai float32, presisi koordinat UTM turun sampai ±1 m; pakai STL ASCII.</li><li>DEM dari GeoTIFF di atas 3.000 piksel dicuplik; GeoTIFF lintang/bujur tidak diproyeksikan ulang.</li><li>Luas adalah luas planimetrik (tampak atas) pada bidang proyeksi.</li></ul>
 <h2>Riwayat</h2>
 <table class="t"><tr><th style="width:22%">Tanggal</th><th>Perubahan</th></tr>
@@ -98,7 +116,9 @@ def halaman():
 <tr><td>26 Nov 2026</td><td>Peta 2D ala Global Mapper: digitasi, luas, GeoTIFF, topo → DEM, kontur, layout peta, KML/KMZ/GeoJSON, sistem koordinat UTM.</td></tr>
 <tr><td>27 Nov 2026</td><td>Berganti nama menjadi <b>Geo Pocket</b>. Project Tree berfolder dan subfolder. Sumber masuk repo (<code>web-src-gp/</code>).</td></tr>
 <tr><td>27 Nov 2026</td><td>MapInfo TAB native dibaca langsung: geometri dari .MAP/.ID, atribut dari .DAT (Float, Integer, tanggal biner sesuai definisi .TAB), proyeksi UTM dari header. Kolom koordinat <code>UTM_mE</code> / <code>UTM_mN</code> dikenali. Zoom semua mengabaikan titik nyasar di (0, 0).</td></tr>
-<tr><td>27 Nov 2026</td><td>Georeferensi gambar ala Ore Works: titik kontrol di gambar, koordinat diketik atau diambil dari peta, hasil sebagai lapisan citra, GeoTIFF (RGB/RGBA, Deflate), atau world file.</td></tr></table>
+<tr><td>27 Nov 2026</td><td>Georeferensi gambar ala Ore Works: titik kontrol di gambar, koordinat diketik atau diambil dari peta, hasil sebagai lapisan citra, GeoTIFF (RGB/RGBA, Deflate), atau world file.</td></tr>
+<tr><td>27 Nov 2026</td><td>Demo terpandu 8 langkah di menu Bantuan.</td></tr>
+<tr><td>27 Nov 2026</td><td><b>Simpan / buka proyek (.gpk)</b> dan <b>Mode Pemetaan</b> (F8): 7 kategori pemetaan lapangan, alat strike/dip, snap pick-up, sumber RL, daftar fitur per kategori, ekspor satu set. MIF/MID kini membawa semua kolom atribut.</td></tr></table>
 <p class="note" style="margin-top:14pt">© Copyright Habil Abdillah 2026. Leapfrog, Surpac, MapInfo, Global Mapper, dan Google Earth adalah merek pemiliknya masing-masing; Geo Pocket tidak berafiliasi dengan mereka. Tangkapan layar memakai data latihan fiktif.</p>
 </body></html>"""
 

@@ -689,12 +689,16 @@ function shpOut(gs,o,W){
 function mifOut(gs,o,W){
  const d=o.dec;let cs='CoordSys NonEarth Units "m"';
  if(o.utm){const z=+o.utm.zone;cs='CoordSys Earth Projection 8, 104, "m", '+(z*6-183)+', 0, 0.9996, 500000, '+(o.utm.south?10000000:0);}
- const M=['Version 300','Charset "WindowsLatin1"','Delimiter ","',cs,'Columns 6','  ID Integer','  LAYER Char(32)','  TIPE Char(8)','  Z Float','  NAMA Char(64)','  LUAS_M2 Float','Data'];const D=[];let n=0;const tri=[];
- const row=(ly,tp,z,nm,ar)=>{n++;D.push(n+',"'+String(ly).replace(/"/g,"'")+'","'+tp+'",'+fx(z,d)+',"'+String(nm==null?'':nm).replace(/"/g,"'")+'",'+fx(ar||0,2));};
+ /* atribut ikut ditulis bila semua lapisan memakai kolom yang sama (mis. satu tabel / satu kategori pemetaan) */
+ const c0=gs[0].meta&&gs[0].meta.cols,XC=c0&&!gs[0].meta.map&&!gs[0].meta.tableOnly&&gs.every(g=>g.meta&&g.meta.cols&&g.meta.cols.join('|')===c0.join('|'))?c0:null,used=new Set(['ID','LAYER','TIPE','Z','NAMA','LUAS_M2']),XN=[],XW=[];
+ if(XC){XC.forEach((c,k)=>{let b=String(c).replace(/[^A-Za-z0-9_]/g,'_').replace(/^([0-9])/,'_$1').slice(0,28)||'K'+k,nm=b,j=2;while(used.has(nm.toUpperCase()))nm=b+'_'+(j++);used.add(nm.toUpperCase());XN.push(nm);let w=1;for(const g of gs){for(const p of g.P)if(p.attr&&p.attr[k]!=null)w=Math.max(w,String(p.attr[k]).length);for(const a of g.PA)if(a&&a[k]!=null)w=Math.max(w,String(a[k]).length);}XW.push(Math.min(254,w));});}
+ const M=['Version 300','Charset "WindowsLatin1"','Delimiter ","',cs,'Columns '+(6+XN.length),'  ID Integer','  LAYER Char(32)','  TIPE Char(8)','  Z Float','  NAMA Char(64)','  LUAS_M2 Float'].concat(XN.map((c,k)=>'  '+c+' Char('+XW[k]+')'),['Data']);const D=[];let n=0;const tri=[];
+ const q=(v)=>'"'+String(v==null?'':v).replace(/"/g,"'").replace(/[\r\n]+/g,' ')+'"';
+ const row=(ly,tp,z,nm,ar,at)=>{n++;D.push(n+','+q(ly)+',"'+tp+'",'+fx(z,d)+','+q(nm)+','+fx(ar||0,2)+(XN.length?','+XN.map((c,k)=>q(at?at[k]:'')).join(','):''));};
  for(const g of gs){const V=g.V,X=(i)=>fx(V[3*i],d)+' '+fx(V[3*i+1],d);
   for(let t=0;t<g.F.length;t+=3){const a=g.F[t],b=g.F[t+1],c=g.F[t+2];M.push('Region 1','  4','  '+X(a),'  '+X(b),'  '+X(c),'  '+X(a));row(g.name,'TRI',(V[3*a+2]+V[3*b+2]+V[3*c+2])/3);tri.push(1);}
-  for(const p of g.P){const z=p.idx.reduce((s,i)=>s+V[3*i+2],0)/p.idx.length;if(p.closed){M.push('Region 1','  '+(p.idx.length+1),...p.idx.map(i=>'  '+X(i)),'  '+X(p.idx[0]));let ar=0;for(let k=0;k<p.idx.length;k++){const a=p.idx[k],b=p.idx[(k+1)%p.idx.length];ar+=V[3*a]*V[3*b+1]-V[3*b]*V[3*a+1];}row(g.name,'RING',z,p.attr&&p.attr[0],Math.abs(ar)/2);}else{M.push('Pline '+p.idx.length,...p.idx.map(i=>'  '+X(i)));row(g.name,'LINE',z,p.attr&&p.attr[0],0);}}
-  for(let k=0;k<g.PT.length;k++){const i=g.PT[k];M.push('Point '+X(i));row(g.name,'PT',V[3*i+2],g.PA[k]&&!g.meta.map?g.PA[k][0]:'',0);}}
+  for(const p of g.P){const z=p.idx.reduce((s,i)=>s+V[3*i+2],0)/p.idx.length;if(p.closed){M.push('Region 1','  '+(p.idx.length+1),...p.idx.map(i=>'  '+X(i)),'  '+X(p.idx[0]));let ar=0;for(let k=0;k<p.idx.length;k++){const a=p.idx[k],b=p.idx[(k+1)%p.idx.length];ar+=V[3*a]*V[3*b+1]-V[3*b]*V[3*a+1];}row(g.name,'RING',z,p.attr&&p.attr[0],Math.abs(ar)/2,p.attr);}else{M.push('Pline '+p.idx.length,...p.idx.map(i=>'  '+X(i)));row(g.name,'LINE',z,p.attr&&p.attr[0],0,p.attr);}}
+  for(let k=0;k<g.PT.length;k++){const i=g.PT[k];M.push('Point '+X(i));row(g.name,'PT',V[3*i+2],g.PA[k]&&!g.meta.map?g.PA[k][0]:'',0,g.PA[k]);}}
  if(!n)throw new Error('Tidak ada geometri untuk ditulis ke MIF.');
  if(tri.length)W.push('MIF: MapInfo 2D, segitiga ditulis sebagai Region bidang datar (tampak atas); Z rata-rata disimpan di kolom Z.');else W.push('MIF: Z disimpan di kolom atribut Z (MapInfo 2D).');
  return [{name:o.base+'.mif',data:M.join('\n')+'\n'},{name:o.base+'.mid',data:D.join('\n')+'\n'}];
