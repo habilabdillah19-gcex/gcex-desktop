@@ -942,6 +942,8 @@ function prj(){return $('ortho').checked?'orthographic':'perspective';}
 /* kamera: tombol Top / Front / Side / Iso / Tegak lurus dirender ulang lewat updatePlot (bukan relayout) supaya rentang sumbu 3D selalu dihitung ulang;
    kamera saat ini (juga hasil putar mouse) & proyeksi Ortho dibawa ke setiap render, termasuk saat kembali dari Sayatan 2D */
 function camKeep(layout){if(window.VIEW2D||!layout.scene)return;var c=window.__camNext;if(!c){try{var L=$('plotDiv')._fullLayout,k=L&&L.scene&&L.scene.camera;if(k&&k.eye)c=k;}catch(e){}}if(!c&&window.__cam3d)c=window.__cam3d;window.__camNext=null;
+  /* 0.24.116: mode putar dikunci TURNTABLE (sumbu putar = Z; Plotly menegakkan up ke Z). Tanpa baris ini Plotly memakai mode bawaan 'orbit' (putaran bebas, up tidak dikunci) sehingga setelah bolak-balik memutar vektor up terbalik dan arah utara ke bawah. Zoom / pan pilihan pengguna dipertahankan. */
+  try{var dm0=$('plotDiv')._fullLayout.scene.dragmode;layout.scene.dragmode=(dm0==='zoom'||dm0==='pan')?dm0:'turntable';}catch(e){layout.scene.dragmode='turntable';}
   layout.scene.camera=c?{eye:{x:+c.eye.x,y:+c.eye.y,z:+c.eye.z},up:Object.assign({x:0,y:0,z:1},c.up||{}),center:Object.assign({x:0,y:0,z:0},c.center||{}),projection:{type:prj()}}:{projection:{type:prj()}};}
 function setCam(x,y,z,up){if(window.VIEW2D)return;window.__camNext={eye:{x:x,y:y,z:z},up:up||{x:0,y:0,z:1},center:{x:0,y:0,z:0}};updatePlot();}
 function orthoChanged(){if(window.VIEW2D)return;updatePlot();}
@@ -1174,7 +1176,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
      menurut POSISI dalam daftar: menyisipkan satu overlay di depan menggeser semua lapisan di belakangnya sehingga semuanya
      dianggap berubah dan diunggah ulang. Dengan uid, lapisan yang sama tetap pada objek WebGL yang sama. */
   else{var UIDN={};traces.forEach(function(t){if(t.uid&&!/^u[0-9a-z]+_\d+$/.test(t.uid))return;/* uid eksplisit (dhTraj dll.) dipertahankan; uid hasil hitungan DIHITUNG ULANG tiap gambar — objek lapisan dari cache (ovCache, bxTraces) membawa uid lama sehingga dua lapisan bisa ber-uid sama dan Plotly membuang salah satunya (topo + pit DH hilang, 9 Nov 2026) */var k=(t.name||t.type||'t')+'',n=UIDN[k]||0,h=5381;UIDN[k]=n+1;for(var q=0;q<k.length;q++)h=((h*33)^k.charCodeAt(q))>>>0;t.uid='u'+h.toString(36)+'_'+n;/* uid dipakai Plotly sebagai nama kelas CSS: hanya huruf/angka */});
-    Plotly.react('plotDiv',traces,layout,{responsive:true,displaylogo:false});}
+    Plotly.react('plotDiv',traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['orbitRotation']});}
   $('stats').innerHTML=dh.html;
   if(!draft){gsAutoHook();if(!$('pGeo').hidden)geoStat();}
   $('rtime').textContent=(VIEW2D?'2D':'3D')+(draft?' draft ':' render ')+Math.round(performance.now()-T0)+' ms'+(dh.nL?' | label '+dh.nL+(dh.lcut?' (dibatasi)':''):'');
@@ -4212,7 +4214,7 @@ function amLyPdf(keep){var P=keep&&LY.am&&LY.pages.length?LY.pages:amLyBuild();i
 var AMREGH=['Kode Poligon GC','Volume As-mined (BCM)','Densitas Override','GC Au (g/t)','GC Ag (g/t)','GC SxS (%)','Model Tonnes (ops)','Model Au g/t (ops)','Ritase Truck Count','TF (wt/rit, ops)','Keterangan','Pit','Flitch / Elevasi','Block','Tgl+Shift','Kode Ore','Kode Tujuan','Tanggal','Shift','Jenis Ore','Tujuan (Lokasi)','Jenis Lokasi','Densitas Dipakai',
   'Tonase As-mined (t)','Luas (m2)','RL Atas','RL Bawah','String ID','Warna','Sub-blok','Data Baru (% ton)','Metal (g)','Dihitung','Metode Tonase','Aturan SG','Perlu Hitung Ulang'];
 function amRegRows(){var R=amR();return amAllInfo().filter(function(I){return I.x.print!==false&&I.calc&&I.x.on;}).sort(function(a,b){return b.x.top-a.x.top||String(a.code).localeCompare(String(b.code));}).map(function(I){var x=I.x;
-  return[I.code,+I.bcm.toFixed(1),x.dens?+x.dens:'',+amF(I.gA,2)||0,isFinite(I.ag)?+I.ag.toFixed(2):'',isFinite(I.sx)?+I.sx.toFixed(2):'',+I.tM.toFixed(0),isFinite(I.gO)?+I.gO.toFixed(2):'','','',x.ket||'',x.pit||lyZone(),lyFmt(x.top),x.blk||'',amDDMM(x.date)+x.shift,I.ore,I.dest,amDateTxt(x.date),amShiftTxt(x.shift),I.jenis,I.lok,I.jl,+I.dens.toFixed(2),
+  return[I.code,+I.bcm.toFixed(1),x.dens?+x.dens:'',+amF(I.gA,2)||0,isFinite(I.ag)?+I.ag.toFixed(2):'',isFinite(I.sx)?+I.sx.toFixed(2):'',+I.tM.toFixed(0),isFinite(I.gO)?+I.gO.toFixed(2):'','','',((x.ket||'')+(window.AMK&&AMK.nominal&&AMK.nominal(I)?(x.ket?' ':'')+'[LANTAI NOMINAL]':'')),x.pit||lyZone(),lyFmt(x.top),x.blk||'',amDDMM(x.date)+x.shift,I.ore,I.dest,amDateTxt(x.date),amShiftTxt(x.shift),I.jenis,I.lok,I.jl,+I.dens.toFixed(2),
     +I.ton.toFixed(1),+I.area.toFixed(1),x.top,x.bot,I.sid,I.col,I.st.n,+I.pu.toFixed(0),isFinite(I.gA)?+(I.gA*I.ton).toFixed(1):'',(I.st.at||'').slice(0,16).replace('T',' '),amCMTxt(I.cm),amSGTxt(),I.stale?'YA':''].concat(amElReg().map(function(e){var v=I.el?I.el[e]:NaN;return isFinite(v)?+v.toFixed(4):'';}));});}
 function amFmtCell(v,dec,sep){if(typeof v==='number'){var s=String(v);if(dec===',')s=s.replace('.',',');return s;}var s2=String(v==null?'':v);if(s2.indexOf(sep)>=0||s2.indexOf('"')>=0||/[\r\n]/.test(s2))s2='"'+s2.replace(/"/g,'""')+'"';return s2;}
 function amRegCsv(){var R=amR(),sep=R.sep==='en'?',':';',dec=R.sep==='en'?'.':',',U=amU(),rows=amRegRows();if(!rows.length)return;var out=[amRegH().map(function(h){return amFmtCell(h,dec,sep);}).join(sep)];rows.forEach(function(r){out.push(r.map(function(v){return amFmtCell(v,dec,sep);}).join(sep));});
@@ -9569,10 +9571,14 @@ function amRoofFnDtm(o, B) {
   AMK.harian = function () { return (AMK.f.mode || 'hari') === 'hari'; };
   AMK.rows = function () { var f = AMK.f, g = AMK.range(); if (!g) return []; return amAllInfo().filter(function (I) { var x = I.x, dt = String(x.date || ''); return x.on && dt >= g[0] && dt <= g[1] && (!f.shift || String(x.shift || '') === f.shift); })
       .sort(function (a, b) { return String(a.x.date).localeCompare(String(b.x.date)) || String(a.x.shift).localeCompare(String(b.x.shift)) || b.x.top - a.x.top || String(a.code).localeCompare(String(b.code)); }); };
+  /* 0.24.116: poligon yang lantainya jatuh ke RL bawah NOMINAL (mode lantai pick-up aktif tetapi titik lantai < 3).
+     Angkanya tetap dihitung, tetapi tidak boleh lolos ke laporan tanpa tanda. */
+  function nom(I) { return !!(I && I.calc && I.st && I.st.fl && I.st.fl.none); }
+  AMK.nominal = nom;
   function elsOf(R) { var o = []; R.forEach(function (I) { (I.elA || []).forEach(function (e) { if (o.indexOf(e) < 0) o.push(e); }); }); return o; }
   function agg(R, els) { var t = 0, b = 0, g = {}, w = {}; R.forEach(function (I) { if (!I.calc) return; t += I.ton || 0; b += I.bcm || 0; els.forEach(function (e) { var v = I.el && I.el[e]; if (isFinite(v)) { g[e] = (g[e] || 0) + v * I.ton; w[e] = (w[e] || 0) + I.ton; } }); }); var o = {}; els.forEach(function (e) { o[e] = w[e] ? g[e] / w[e] : NaN; }); return { t: t, b: b, g: o }; }
   AMK.tsv = function () { var R = AMK.rows(), els = elsOf(R), h = ['Tanggal', 'Shift', 'Kode', 'Flitch', 'Ore', 'Tujuan', 'BCM', 'Ton'].concat(els).concat(['Status']);
-    return [h.join('\t')].concat(R.map(function (I) { var x = I.x; return [x.date, x.shift, I.code, lyNum(x.top) + '-' + lyNum(x.bot), I.ore, I.dest, I.calc ? I.bcm.toFixed(1) : '', I.calc ? I.ton.toFixed(1) : ''].concat(els.map(function (e) { var v = I.el && I.el[e]; return isFinite(v) ? (+v).toFixed(3) : ''; })).concat([I.lk ? 'TERKUNCI' : I.calc ? (I.lkBaru ? 'ditambah setelah dikunci' : 'belum dikunci') : 'BELUM DIHITUNG']).join('\t'); })).join('\r\n'); };
+    return [h.join('\t')].concat(R.map(function (I) { var x = I.x; return [x.date, x.shift, I.code, lyNum(x.top) + '-' + lyNum(x.bot), I.ore, I.dest, I.calc ? I.bcm.toFixed(1) : '', I.calc ? I.ton.toFixed(1) : ''].concat(els.map(function (e) { var v = I.el && I.el[e]; return isFinite(v) ? (+v).toFixed(3) : ''; })).concat([(I.lk ? 'TERKUNCI' : I.calc ? (I.lkBaru ? 'ditambah setelah dikunci' : 'belum dikunci') : 'BELUM DIHITUNG') + (nom(I) ? ' | LANTAI NOMINAL (titik pick-up < 3)' : '')]).join('\t'); })).join('\r\n'); };
   AMK.copy = function () { var t = AMK.tsv(), ok = false; try { if (window.amCopyFb) ok = amCopyFb(t); } catch (e) {} var m = document.getElementById('amkMsg'); if (m) m.textContent = ok ? 'Tersalin — tempel (Ctrl+V) di Excel.' : 'Gagal menyalin.'; };
   AMK.csv = function () { var f = AMK.f, t = AMK.tsv().split('\r\n').map(function (l) { return l.split('\t').map(function (v) { return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(';'); }).join('\r\n');
     dgDl('﻿' + t + '\r\n', 'Report_AsMined_' + (f.date || 'tanggal') + (f.shift ? '_' + f.shift : '') + '.csv', 'text/csv'); };
@@ -9611,13 +9617,15 @@ function amRoofFnDtm(o, B) {
       return '<div>' + (r ? '<span class=lk>&#128274; ' + s + ' terkunci</span> <small>' + E(tLk(r)) + (r.via ? ' &middot; ' + E(r.via) : '') + '</small> <button onclick="AMK.unlock(\'' + f.date + '\',\'' + s + '\')">Buka kunci</button>' : '<span>' + s + ': belum dilaporkan</span>') +
         (nb ? '<div class=hint style="margin:0">' + nb + ' poligon ' + (r ? 'baru ' : '') + 'akan terkunci otomatis saat <b>Salin ke Excel</b>, <b>Register CSV</b> atau <b>Kirim ke workbook</b> di bawah.</div>' : '') + '</div>'; }).join('') + '</div>';
     if (!R.length) return h + '<div class=hint>Tidak ada poligon pada ' + E(per) + (f.shift ? ' shift ' + f.shift : '') + '.</div></div>';
-    var sel = function (I) { return '<tr><td title="' + E(I.code) + '">' + (I.lk ? '&#128274; ' : '') + (AMK.harian() ? '' : E(amDateTxt(I.x.date)).replace(/-\d+$/, '') + ' ') + E(I.x.shift) + ' &middot; ' + E(String(I.x.blk || I.code).slice(0, 14)) + '</td><td>' + E(lyNum(I.x.top)) + '</td><td>' + (I.calc ? N(I.ton, 1) : '<span class=warn>belum dihitung</span>') + '</td>' + els.map(function (e) { var v = I.el && I.el[e]; return '<td>' + (I.calc && isFinite(v) ? N(v, 3) : '-') + '</td>'; }).join('') + '</tr>'; };
+    var sel = function (I) { return '<tr><td title="' + E(I.code) + (nom(I) ? ' - lantai = RL bawah nominal (titik pick-up kurang dari 3)' : '') + '">' + (I.lk ? '&#128274; ' : '') + (nom(I) ? '<span class=warn>&#9888;</span> ' : '') +(AMK.harian() ? '' : E(amDateTxt(I.x.date)).replace(/-\d+$/, '') + ' ') + E(I.x.shift) + ' &middot; ' + E(String(I.x.blk || I.code).slice(0, 14)) + '</td><td>' + E(lyNum(I.x.top)) + '</td><td>' + (I.calc ? N(I.ton, 1) : '<span class=warn>belum dihitung</span>') + '</td>' + els.map(function (e) { var v = I.el && I.el[e]; return '<td>' + (I.calc && isFinite(v) ? N(v, 3) : '-') + '</td>'; }).join('') + '</tr>'; };
     var tot = function (lab, P, cls) { var a = agg(P, els); return '<tr class=' + cls + '><td>' + lab + '</td><td></td><td>' + N(a.t, 1) + '</td>' + els.map(function (e) { return '<td>' + N(a.g[e], 3) + '</td>'; }).join('') + '</tr>'; };
     h += '<div class=amktb><table class=pltb><tr><th>Shift &middot; block</th><th>RL</th><th>Ton</th>' + els.map(function (e) { return '<th>' + E(e) + '</th>'; }).join('') + '</tr>';
     if (AMK.harian()) sh.forEach(function (s) { var P = R.filter(function (I) { return I.x.shift === s; }); if (!P.length) return; h += P.map(sel).join(''); if (sh.length > 1) h += tot('Subtotal ' + s, P, 'sub'); });
     else { var D = []; R.forEach(function (I) { if (D.indexOf(I.x.date) < 0) D.push(I.x.date); }); D.forEach(function (d) { var P = R.filter(function (I) { return I.x.date === d; }); h += P.map(sel).join('') + tot('Subtotal ' + amDateTxt(d), P, 'sub'); }); }
     h += tot('TOTAL ' + per, R, 'tot') + '</table></div>';
     if (R.some(function (I) { return I.x.tampal; })) h += '<div class="hint warn">&#9888; Ada poligon yang tampalannya dengan poligon terkunci tidak dikurangkan.</div>';
+    var nNom = R.filter(nom).length;
+    if (nNom) h += '<div class="hint warn">&#9888; ' + nNom + ' poligon memakai <b>lantai nominal</b> (RL bawah flitch) karena titik pick-up lantainya kurang dari 3. Tebal bisa terlalu besar bila lantai asli lebih tinggi (underdig). Tambahkan titik lantai atau periksa sebelum angkanya dilaporkan; ditandai di kolom Status pada Salin / CSV.</div>';
     if (R.some(function (I) { return !I.calc; })) h += '<div class="hint warn">Poligon "belum dihitung" tidak masuk total &amp; register: buka flitch-nya lalu Hitung.</div>';
     var nLk = R.filter(function (I) { return I.lk; }).length;
     h += '<div class=hint>' + R.length + ' poligon (' + nLk + ' terkunci). Kadar tertimbang tonase. ' + '<a href="javascript:void(0)" onclick="AMK.keXl()">&darr; Kirim ke workbook</a> &middot; ' + 'Salin / CSV / Kirim di bawah hanya memakai baris tanggal ini.</div></div>';
@@ -15396,7 +15404,7 @@ body.dark #imp .sb{background:var(--pr)!important;color:#11151d!important}
 
 </style>
 <script id="gxBrandJs">
-window.GCEX_APP='bm';window.GCEX_VER='0.24.115';
+window.GCEX_APP='bm';window.GCEX_VER='0.24.116';
 /* ================= GC-Ex 0.19: identitas visual bersama + nama project site =================
    GCEX_APP ('bm' | 'dh') ditulis oleh skrip build di depan file ini.
    - logo dua baris (GC-Ex / BLOCK MODEL | DRILL HOLE ULTIMATE), lebar kedua baris disamakan

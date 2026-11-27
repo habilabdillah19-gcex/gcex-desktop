@@ -1370,6 +1370,10 @@ B.append('<h3>16zf. Pindah mode, as-mined aman, bawaan Surpac, panel rata (Block
 B.append('<p>Bilah atas punya tombol <b>Dig Block | As-Mined</b> (Alt+1 / Alt+2) yang membuka panel terakhir tiap mode, dan <b>&#10226; Nol &amp; simpan</b> (Alt+0) yang menyimpan proyek lalu mengosongkan tampilan 3D. '
          'Digit poligon as-mined tetap di panel As-Mined; Enter menutup poligon. Project Tree &rarr; &#8943; menyediakan <b>Hapus poligon as-mined</b>, <b>Hapus semua as-mined di flitch ini</b> dan, pada dig block, <b>Pindahkan ke As-Mined</b>. '
          'Proyek baru memakai bawaan Surpac (lantai &amp; atap dari TIN pick-up, boundary menurut elevasi string). String flagging kini sejajar dengan string induknya. Panel Properti menyesuaikan lebar panel. Folder Legal berisi berkas khusus GC-Ex.</p>')
+B.append('<h3>16zg. Rotasi 3D stabil dan penanda lantai nominal (Block Model 0.24.116 / Drillhole 0.24.118)</h3>')
+B.append('<p>Memutar tampilan 3D bolak-balik tidak lagi membuat arah utara berbalik ke bawah: putaran kini dikunci mengelilingi sumbu Z dan tombol <i>Orbital rotation</i> dihilangkan (Zoom dan Pan tetap ada). '
+         'Bila kamera terasa aneh, klik kompas atau tombol Top / Front / Side / Iso. '
+         'Di Report As-Mined, poligon yang titik pick-up lantainya kurang dari 3 (lantai memakai RL bawah flitch) ditandai &#9888; dan kata <b>LANTAI NOMINAL</b> pada kolom Status serta Keterangan register; tonase tetap dihitung, tetapi periksa sebelum dilaporkan.</p>')
 import json as _json
 _json.dump(dict({k: (v.item() if hasattr(v, 'item') else v) for k, v in NOTE.items()}, PITCH=float(PITCH), DIP=float(DIP), DIPAZ=float(DIPAZ),
                STRIKE=float(STRIKE), FA_OFF=float(FA_OFF), WT_RL=float(WT_RL), F=F),

@@ -824,6 +824,8 @@ function prj(){return $('ortho').checked?'orthographic':'perspective';}
 /* kamera: tombol Top / Front / Side / Iso / Tegak lurus dirender ulang lewat updatePlot (bukan relayout) supaya rentang sumbu 3D selalu dihitung ulang;
    kamera saat ini (juga hasil putar mouse) & proyeksi Ortho dibawa ke setiap render, termasuk saat kembali dari Penampang 2D */
 function camKeep(layout){if(window.VIEW2D||!layout.scene)return;var c=window.__camNext;if(!c){try{var L=$('plotDiv')._fullLayout,k=L&&L.scene&&L.scene.camera;if(k&&k.eye)c=k;}catch(e){}}if(!c&&window.__cam3d)c=window.__cam3d;window.__camNext=null;
+  /* 0.24.116: mode putar dikunci TURNTABLE (sumbu putar = Z; Plotly menegakkan up ke Z). Tanpa baris ini Plotly memakai mode bawaan 'orbit' (putaran bebas, up tidak dikunci) sehingga setelah bolak-balik memutar vektor up terbalik dan arah utara ke bawah. Zoom / pan pilihan pengguna dipertahankan. */
+  try{var dm0=$('plotDiv')._fullLayout.scene.dragmode;layout.scene.dragmode=(dm0==='zoom'||dm0==='pan')?dm0:'turntable';}catch(e){layout.scene.dragmode='turntable';}
   layout.scene.camera=c?{eye:{x:+c.eye.x,y:+c.eye.y,z:+c.eye.z},up:Object.assign({x:0,y:0,z:1},c.up||{}),center:Object.assign({x:0,y:0,z:0},c.center||{}),projection:{type:prj()}}:{projection:{type:prj()}};}
 function setCam(x,y,z,up){if(window.VIEW2D)return;window.__camNext={eye:{x:x,y:y,z:z},up:up||{x:0,y:0,z:1},center:{x:0,y:0,z:0}};updatePlot();}
 function orthoChanged(){if(window.VIEW2D)return;updatePlot();}
@@ -1055,7 +1057,7 @@ function updatePlot(){var T0=performance.now(),draft=DRAFT;
      menurut POSISI dalam daftar: menyisipkan satu overlay di depan menggeser semua lapisan di belakangnya sehingga semuanya
      dianggap berubah dan diunggah ulang. Dengan uid, lapisan yang sama tetap pada objek WebGL yang sama. */
   else{var UIDN={};traces.forEach(function(t){if(t.uid&&!/^u[0-9a-z]+_\d+$/.test(t.uid))return;/* uid eksplisit (dhTraj dll.) dipertahankan; uid hasil hitungan DIHITUNG ULANG tiap gambar — objek lapisan dari cache (ovCache, bxTraces) membawa uid lama sehingga dua lapisan bisa ber-uid sama dan Plotly membuang salah satunya (topo + pit DH hilang, 9 Nov 2026) */var k=(t.name||t.type||'t')+'',n=UIDN[k]||0,h=5381;UIDN[k]=n+1;for(var q=0;q<k.length;q++)h=((h*33)^k.charCodeAt(q))>>>0;t.uid='u'+h.toString(36)+'_'+n;/* uid dipakai Plotly sebagai nama kelas CSS: hanya huruf/angka */});
-    Plotly.react('plotDiv',traces,layout,{responsive:true,displaylogo:false});}
+    Plotly.react('plotDiv',traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['orbitRotation']});}
   $('stats').innerHTML=dh.html;
   if(!draft){gsAutoHook();if(!$('pGeo').hidden)geoStat();}
   $('rtime').textContent=(VIEW2D?'2D':'3D')+(draft?' draft ':' render ')+Math.round(performance.now()-T0)+' ms'+(dh.nL?' | label '+dh.nL+(dh.lcut?' (dibatasi)':''):'');

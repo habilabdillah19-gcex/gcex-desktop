@@ -6072,3 +6072,13 @@ Untuk menjawab pertanyaan "di mana penampang ini berada?". **Semua penanda mati 
 - **Panel Properti** menyesuaikan lebar panel: isian tidak lagi menggantung setengah baris, tidak terpotong, dan sejajar.
 - **Folder Legal** kini berisi syarat penggunaan, penafian merek dan daftar lisensi khusus GC-Ex (versi 27 Nov 2026).
 
+## 324. Block Model 0.24.116 / Drillhole 0.24.118 — rotasi 3D stabil, penanda lantai nominal
+
+- **Rotasi 3D**: arah utara tidak lagi berbalik ke bawah setelah Anda memutar tampilan bolak-balik. Putaran kini selalu
+  mengelilingi sumbu Z (mode *turntable*); tombol *Orbital rotation* di bilah alat 3D dihilangkan. Zoom dan Pan tetap ada.
+  Pada penampang miring (dip < 90°) tampilan tidak lagi ikut berputar mengikuti bidang; sisi atas layar tetap ke atas.
+  Bila kamera terasa aneh, klik **kompas** (menghadap utara) atau tombol Top / Front / Side / Iso.
+- **Lantai nominal di laporan As-Mined**: bila mode lantai = pick-up (Surpac) tetapi sebuah poligon punya kurang dari
+  3 titik pick-up, lantainya memakai RL bawah flitch. Angka tetap dihitung, kini ditandai: ikon ⚠ di tabel Report,
+  pita peringatan berisi jumlah poligon, kata **LANTAI NOMINAL** pada kolom Status saat *Salin / CSV*, dan
+  **[LANTAI NOMINAL]** di kolom Keterangan register. Tambahkan titik lantai (atau periksa lapangan) sebelum angkanya dilaporkan.
