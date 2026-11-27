@@ -190,9 +190,11 @@ jobs:
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
-          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_FONT_OFL.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_MANIFOLD_APACHE2.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
+          # legal-gcex/ (27 Nov 2026) menggantikan berkas umum: syarat yang terkemas harus versi GC-Ex BM & DH, tanpa font OFL / Qt
+          if (-not (Select-String -Path "$d/resources/legal/SYARAT_PENGGUNAAN.txt" -SimpleMatch "GC-Ex Block Model dan GC-Ex Drillhole" -Quiet)) { throw "SYARAT_PENGGUNAAN bukan versi legal-gcex" }
       - name: Cek data latihan bawaan di GC-Ex Block Model
         shell: pwsh
         run: |
@@ -228,9 +230,11 @@ jobs:
         shell: pwsh
         run: |
           $d = "dist/win-unpacked"
-          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_FONT_OFL.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
+          foreach ($f in @("resources/legal/LISENSI_PIHAK_KETIGA.txt","resources/legal/PENAFIAN_MEREK.txt","resources/legal/SYARAT_PENGGUNAAN.txt","resources/legal/LISENSI_MANIFOLD_APACHE2.txt","resources/legal/LISENSI_PYTHON.txt","resources/legal/LISENSI_ELECTRON.txt","resources/legal/LISENSI_CHROMIUM.html","LICENSE.electron.txt","LICENSES.chromium.html")) {
             if (-not (Test-Path "$d/$f")) { throw "tidak ada: $f" } else { Write-Host ("OK " + $f + " " + (Get-Item "$d/$f").Length) }
           }
+          # legal-gcex/ (27 Nov 2026) menggantikan berkas umum: syarat yang terkemas harus versi GC-Ex BM & DH, tanpa font OFL / Qt
+          if (-not (Select-String -Path "$d/resources/legal/SYARAT_PENGGUNAAN.txt" -SimpleMatch "GC-Ex Block Model dan GC-Ex Drillhole" -Quiet)) { throw "SYARAT_PENGGUNAAN bukan versi legal-gcex" }
 
       - name: Cek data latihan bawaan di GC-Ex Drillhole
         shell: pwsh
