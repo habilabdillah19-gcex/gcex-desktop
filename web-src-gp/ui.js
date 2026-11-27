@@ -51,7 +51,7 @@ const MENUS=[
    {t:'Latar',sub:[['hangat','Hangat'],['terang','Putih'],['gelap','Gelap']].map(p=>({t:p[1],chk:()=>document.documentElement.dataset.latar===p[0],fn:()=>{document.documentElement.dataset.latar=p[0];store.set('gc_latar',p[0]);}}))},
    {t:'Mode 3D',sub:[['solid','Solid'],['solidwire','Solid + garis tepi'],['wire','Kerangka'],['points','Titik vertex']].map(p=>({t:p[1],chk:()=>V3.getMode()===p[0],fn:()=>V3.setMode(p[0])}))},'-',
    {t:'Panel Project Tree',chk:()=>$('#left').style.display!=='none',fn:()=>togDock('left')},{t:'Panel Properti',chk:()=>$('#right').style.display!=='none',fn:()=>togDock('right')}]},
- {t:'Bantuan',items:()=>[{t:'Format yang didukung',fn:showFormats},{t:'Pintasan & cara pakai',fn:showHelp},{t:'Tentang',fn:showAbout}]}
+ {t:'Bantuan',items:()=>[{t:'Demo (data fiktif, 8 langkah)',fn:()=>startDemo()},'-',{t:'Format yang didukung',fn:showFormats},{t:'Pintasan & cara pakai',fn:showHelp},{t:'Tentang',fn:showAbout}]}
 ];
 function initMenus(){const host=$('#menus');
  MENUS.forEach(m=>{const b=el('button','mb');b.textContent=m.t;host.append(b);
@@ -170,7 +170,7 @@ function renderTree(){normalize();const t=$('#tree'),sc=t.scrollTop,q=S.filter.t
     if(f.open||q)walk(f.id,d+1);}
    else{const g=n.g;if(!match(g))continue;
     h+='<div class="nd'+(g.id===S.sel?' sel':'')+(g.visible?'':' off')+'" data-g="'+g.id+'" draggable="true" style="padding-left:'+(6+d*14+(d?12:0))+'px" title="'+esc((g.file||'digitasi')+' · '+g.name)+'"><input type="checkbox" '+(g.visible?'checked':'')+' data-vis="'+g.id+'" aria-label="Tampilkan '+esc(g.name)+'"><span class="sw" style="background:'+(g.ras?'#888':g.dem?'#8FAA68':g.color)+'"></span>'+ic(kindOf(g))+'<span class="nm">'+esc(g.name)+'</span><span class="bd">'+badge(g)+'</span></div>';}}})(null,0);
- if(!S.geoms.length&&!S.folders.length)h='<div class="empty">Belum ada data.<br>Seret file ke jendela ini, atau pilih <b>Berkas → Buka file…</b><br><br>Lapisan teratas digambar paling akhir (di atas). Seret lapisan ke folder untuk mengelompokkan.</div>';
+ if(!S.geoms.length&&!S.folders.length)h='<div class="empty">Belum ada data.<br>Seret file ke jendela ini, atau pilih <b>Berkas → Buka file…</b><br>Baru pertama kali? Coba <b>Bantuan → Demo</b>.<br><br>Lapisan teratas digambar paling akhir (di atas). Seret lapisan ke folder untuk mengelompokkan.</div>';
  t.innerHTML=h;t.scrollTop=sc;}
 function redrawAll(){renderTree();renderLegend();M2.draw();V3.draw();}
 $('#tree').addEventListener('click',(e)=>{const tw=e.target.closest('[data-tw]');if(tw){const f=fById(+tw.dataset.tw);f.open=!f.open;renderTree();return;}
@@ -448,5 +448,5 @@ document.documentElement.dataset.palet=store.get('gc_palet','keluarga');document
 initMenus();
 M2.init($('#mc'),{layers:()=>S.geoms,selected:()=>S.selF,onCursor:onCursor,onPick:onPick,onDigit:onDigit,onView:refineRasters,beforeEdit:(g)=>pushUndo(g,'edit vertex'),onChange:(g)=>changed(g),onMeasure:()=>{}});
 try{if(!V3.init($('#cv'),$('#gz')))msg('WebGL tidak tersedia; tab 3D dimatikan, peta 2D dan konversi tetap bisa dipakai.','w');}catch(e){msg('3D gagal: '+e.message,'e');}
-M2.resize();setTool('pan');refreshAll();
-window.__GC={dlgGeoref:(f)=>dlgGeoref(f),S:S,C:C,GC:GC,V3:V3,M2:M2,loadFiles:loadFiles,runConvert:runConvert,select:select,showTab:showTab,setTool:setTool,renderLayout:renderLayout,LY:LY,dlgDEM:dlgDEM,dlgLayout:dlgLayout};
+M2.resize();setTool('pan');refreshAll();{const bd=document.getElementById('bdemo');if(bd)bd.onclick=(e)=>{e.stopPropagation();closeMenus();startDemo();};}
+window.__GC={startDemo:()=>startDemo(),dlgGeoref:(f)=>dlgGeoref(f),S:S,C:C,GC:GC,V3:V3,M2:M2,loadFiles:loadFiles,runConvert:runConvert,select:select,showTab:showTab,setTool:setTool,renderLayout:renderLayout,LY:LY,dlgDEM:dlgDEM,dlgLayout:dlgLayout};
