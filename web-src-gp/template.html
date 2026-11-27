@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id" data-palet="keluarga" data-latar="hangat">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Geo Pocket — Peta &amp; Konverter Data Geologi/Tambang</title>
+<style>/*CSS*/</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-file" viewBox="0 0 16 16"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/></symbol>
+<symbol id="i-mesh" viewBox="0 0 16 16"><path d="M2 12.5 8 2.5l6 10z"/><path d="M8 2.5v10M2 12.5 8 8l6 4.5"/></symbol>
+<symbol id="i-pts" viewBox="0 0 16 16"><circle cx="4" cy="11" r="1.3"/><circle cx="8" cy="5" r="1.3"/><circle cx="12" cy="10" r="1.3"/><circle cx="12.5" cy="3.5" r="1.3"/></symbol>
+<symbol id="i-line" viewBox="0 0 16 16"><path d="M2 12 6 5l4 5 4-7"/></symbol>
+<symbol id="i-tab" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10"/><path d="M2 6.5h12M2 10h12M6.5 3v10"/></symbol>
+<symbol id="i-3d" viewBox="0 0 16 16"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5zM8 8v6.5M2 5l6 3 6-3"/></symbol>
+<symbol id="i-conv" viewBox="0 0 16 16"><path d="M2 5h10M9 2l3 3-3 3M14 11H4M7 8l-3 3 3 3"/></symbol>
+<symbol id="i-map" viewBox="0 0 16 16"><path d="M1.5 4 6 2.5l4 1.5 4.5-1.5v9.5L10 13.5 6 12l-4.5 1.5z"/><path d="M6 2.5V12M10 4v9.5"/></symbol>
+<symbol id="i-img" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10"/><path d="M2 11l3.5-3.5 3 3 2-2L14 11"/><circle cx="10.5" cy="6" r="1"/></symbol>
+<symbol id="i-dem" viewBox="0 0 16 16"><path d="M1.5 13 6 5l3 4.5 2-2.5 3.5 6z"/><path d="M4.5 8.5c1 .6 2 .6 3-.2"/></symbol>
+<symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.5 4.5v8h13v-6.5h-6l-1.5-1.5z"/></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-dock" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></symbol>
+</svg>
+<div id="app">
+ <div id="mbar"><div id="logo"><b>GP</b>GEO POCKET</div><div id="menus"></div><div id="mright">Peta · digitasi · layout · konversi · offline</div></div>
+ <div id="main">
+  <aside class="dock" id="left">
+   <div class="dh">Project Tree<span class="sp"></span><button id="bfold" title="Folder baru (di dalam folder terpilih bila ada)">＋ Folder</button><button id="bleftc" title="Sembunyikan panel">«</button></div>
+   <input id="search" type="text" placeholder="Cari lapisan…" aria-label="Cari lapisan">
+   <div id="tree"></div>
+  </aside>
+  <div class="split" id="sp1"></div>
+  <section id="center">
+   <div id="tabs">
+    <button class="tab on" data-t="2d"><svg class="ic"><use href="#i-map"/></svg>Peta 2D</button>
+    <button class="tab" data-t="3d"><svg class="ic"><use href="#i-3d"/></svg>3D</button>
+    <button class="tab" data-t="tbl"><svg class="ic"><use href="#i-tab"/></svg>Tabel atribut</button>
+    <button class="tab" data-t="conv"><svg class="ic"><use href="#i-conv"/></svg>Konversi</button>
+   </div>
+   <div class="pane on" id="p2d">
+    <canvas id="mc"></canvas>
+    <div id="tb2" class="tbx">
+     <span class="tg"><button data-tool="pan" title="Geser / pilih (G)">Geser</button><button data-tool="info" title="Info fitur (I)">Info</button></span>
+     <span class="tg"><button data-tool="dist" title="Ukur jarak (D)">Jarak</button><button data-tool="area" title="Ukur luas (A)">Luas</button></span>
+     <span class="tg"><button data-tool="poly" title="Digit poligon (P)">Poligon</button><button data-tool="line" title="Digit garis (L)">Garis</button><button data-tool="point" title="Digit titik">Titik</button><button data-tool="edit" title="Edit vertex (E)">Edit</button></span>
+     <span class="tg"><button data-v="fit" title="Zoom semua (Home)">Zoom semua</button><button data-v="layout" title="Layout peta">Layout</button></span>
+    </div>
+    <div id="tip"></div>
+    <div id="legend"><div class="lh"><span>Legenda</span><button id="legmin" title="Perkecil">–</button></div><div id="legbody"></div></div>
+    <div id="nodata"><div>Seret file ke sini atau pakai <b>Berkas → Buka file…</b><br><small>DXF · SHP · MIF/MID · KML/KMZ · GeoJSON · STR · DTM · MSH · OBJ · CSV · GeoTIFF</small></div></div>
+   </div>
+   <div class="pane" id="p3d">
+    <canvas id="cv"></canvas>
+    <div id="tb3" class="tbx"><span class="tg"><button data-v="top">Atas</button><button data-v="front">Depan</button><button data-v="side">Samping</button><button data-v="iso">Iso</button><button data-v="fit">Zoom semua</button><button data-v="ortho" id="bortho">Ortho</button></span></div>
+    <canvas id="gz" width="76" height="76"></canvas>
+   </div>
+   <div class="pane" id="pt"><div id="tbar"></div><div id="tview"></div></div>
+   <div class="pane" id="pc"></div>
+  </section>
+  <div class="split" id="sp2"></div>
+  <aside class="dock" id="right">
+   <div class="dh">Properti<span class="sp"></span><button id="brightc" title="Sembunyikan panel">»</button></div>
+   <div id="props"></div>
+  </aside>
+ </div>
+ <div id="sbar"><div id="sbmsg"></div><div id="sbcoord"></div><div id="sbinfo"></div><button id="sbcrs" title="Sistem koordinat proyek"></button><div id="logpop"></div></div>
+</div>
+<div id="drop"><div>Lepas file di sini</div></div>
+<div id="ctx"></div>
+<input type="file" id="fin" multiple hidden>
+<script>/*DEL*/</script>
+<script>/*GTIFF*/</script>
+<script>/*CORE*/</script>
+<script>/*GEO2*/</script>
+<script>/*VIEW*/</script>
+<script>/*MAP*/</script>
+<script>/*UI*/</script>
+</body>
+</html>

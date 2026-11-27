@@ -219,7 +219,9 @@ def main():
           (D / "tutorial-ow" / "Ore_Works_Tutorial_Studio_Pemetaan.pdf", "Tutorial/Ore_Works_Tutorial_Studio_Pemetaan.pdf"),
           (D / "tutorial-ow" / "Tentang_Ore_Works.pdf", "Tentang/Tentang_Ore_Works.pdf")] if has_ow else [])
       + ([(D / "tutorial-ps" / "Pit_Studio_Tutorial_Penggunaan.pdf", "Tutorial/Pit_Studio_Tutorial_Penggunaan.pdf"),
-          (D / "tutorial-ps" / "Tentang_Pit_Studio_for_Desktop.pdf", "Tentang/Tentang_Pit_Studio_for_Desktop.pdf")] if has_ps else []))
+          (D / "tutorial-ps" / "Tentang_Pit_Studio_for_Desktop.pdf", "Tentang/Tentang_Pit_Studio_for_Desktop.pdf")] if has_ps else [])
+      + ([(D / "geo-pocket" / "Geo_Pocket.html", "Geo_Pocket/Geo_Pocket.html"),
+          (D / "geo-pocket" / "Tentang_Geo_Pocket.pdf", "Tentang/Tentang_Geo_Pocket.pdf")] if (D / "geo-pocket" / "Geo_Pocket.html").exists() else []))
     # ---- 2 data latihan
     dat = outd / f"GC-Ex-{ver}_2_Data-Latihan.zip"
     items = []
