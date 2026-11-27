@@ -67,6 +67,7 @@ def halaman():
 <div class="k"><b>Digitasi &amp; edit</b><br>Poligon, garis, titik; snap ke vertex terdekat; elevasi diambil dari DEM; seret, sisip, hapus vertex; urungkan (Ctrl+Z).</div>
 <div class="k"><b>Luas</b><br>Luas dan keliling tampil saat mendigit, per fitur (m² dan ha), total per lapisan, dan tabel luas yang bisa diunduh CSV. Ikut tertulis ke SHP dan MIF.</div>
 <div class="k"><b>GeoTIFF &amp; DEM</b><br>Ortofoto dibaca bertingkat sesuai zoom. Topografi dari string atau DXF dijadikan TIN lalu DEM, lengkap dengan kontur.</div>
+<div class="k"><b>Georeferensi gambar</b><br>Peta pindaian, tangkapan layar, atau foto tanpa koordinat diberi titik kontrol (2 titik atau afin 3+ titik dengan residu dan RMS), tampil di peta, dan diunduh sebagai GeoTIFF atau world file.</div>
 <div class="k"><b>Layout peta</b><br>A4 sampai A1, skala otomatis atau pilihan, grid koordinat berlabel, arah utara, batang skala, legenda, blok judul. Unduh PDF atau PNG.</div>
 <div class="k"><b>Konversi format</b><br>Pilih software tujuan (Leapfrog, Surpac, MapInfo, Global Mapper, Google Earth) dan format yang disarankan muncul. Banyak file dikemas ZIP.</div>
 <div class="k"><b>Sistem koordinat</b><br>UTM WGS84 zona 1–60 U/S (bawaan 50S). Data lintang/bujur diproyeksikan otomatis; status bar menampilkan E/N dan lintang/bujur.</div>
@@ -82,10 +83,10 @@ def halaman():
 <li><b>Memakai ulang kode keluarga GC-Ex:</b> pembaca MSH, STR/DTM Surpac (teks dan biner), DXF BLOCK/INSERT, aturan TIN (string dirapatkan 2 m, titik &lt; 1 mm disatukan, segitiga tepi lebih panjang dari 8 × median dibuang), dan palet antarmuka.</li>
 <li><b>Pustaka pihak ketiga</b> (sudah ada di repo): geotiff.js 2.1.3 (lisensi MIT) dan Delaunator (lisensi ISC).</li></ul>
 <h2>Pengujian</h2>
-<ul><li>Hasil tulis diperiksa dengan pembaca independen: ezdxf (DXF), GDAL (SHP, MIF, TAB, KML, KMZ, GeoJSON), trimesh (OBJ, STL, PLY), rasterio (GeoTIFF, ASC), pyproj (UTM), pdfinfo (PDF).</li>
+<ul><li>Hasil tulis diperiksa dengan pembaca independen: ezdxf (DXF), GDAL (SHP, MIF, TAB, KML, KMZ, GeoJSON), trimesh (OBJ, STL, PLY), rasterio (GeoTIFF DEM dan citra hasil georeferensi, ASC), pyproj (UTM), pdfinfo (PDF).</li>
 <li>MSH yang ditulis ulang sama persis byte demi byte dengan aslinya; koordinat DXF, OBJ, STL ASCII, PLY, DTM identik sampai 3 desimal.</li>
 <li>Konversi UTM ↔ lintang/bujur selisih di bawah 0,001 mm terhadap pyproj. Luas poligon digitasi sama dengan luas yang dihitung GDAL dari hasil ekspor.</li>
-<li>Uji otomatis di repo: <code>node web-src-gp/uji/uji_inti.js</code>, <code>uji_geo.js</code>, <code>uji_tab.js</code>; uji antarmuka di Chrome tanpa galat JavaScript.</li></ul>
+<li>Uji otomatis di repo: <code>node web-src-gp/uji/uji_inti.js</code>, <code>uji_geo.js</code>, <code>uji_tab.js</code>, <code>uji_georef.js</code>; uji antarmuka di Chrome tanpa galat JavaScript.</li></ul>
 <div class="w"><b>Belum diuji:</b> membuka hasil ekspor langsung di Leapfrog, Surpac, MapInfo, Global Mapper, dan Google Earth, serta data lapangan asli (ortofoto dan pick-up nyata). Semua uji memakai data latihan fiktif.</div>
 <h2>Batas yang perlu diketahui</h2>
 <ul><li>ECW dan MrSID tidak dibuka (format tertutup); konversi dulu ke GeoTIFF.</li><li>MapInfo TAB dibaca (titik, garis, poligon, multipoint, atribut), tetapi belum ditulis; untuk mengirim ke MapInfo pakai MIF/MID atau SHP. Objek teks, busur, dan elips dilewati. TAB yang menaut ke Excel (Type XLS) hanya dimuat geometrinya.</li>
@@ -96,7 +97,8 @@ def halaman():
 <tr><td>26 Nov 2026</td><td><b>GeoConv</b>: konverter MSH, OBJ, STL, PLY, DXF, STR, DTM, SHP, MIF/MID, CSV dengan pratinjau 3D.</td></tr>
 <tr><td>26 Nov 2026</td><td>Peta 2D ala Global Mapper: digitasi, luas, GeoTIFF, topo → DEM, kontur, layout peta, KML/KMZ/GeoJSON, sistem koordinat UTM.</td></tr>
 <tr><td>27 Nov 2026</td><td>Berganti nama menjadi <b>Geo Pocket</b>. Project Tree berfolder dan subfolder. Sumber masuk repo (<code>web-src-gp/</code>).</td></tr>
-<tr><td>27 Nov 2026</td><td>MapInfo TAB native dibaca langsung: geometri dari .MAP/.ID, atribut dari .DAT (Float, Integer, tanggal biner sesuai definisi .TAB), proyeksi UTM dari header. Kolom koordinat <code>UTM_mE</code> / <code>UTM_mN</code> dikenali. Zoom semua mengabaikan titik nyasar di (0, 0).</td></tr></table>
+<tr><td>27 Nov 2026</td><td>MapInfo TAB native dibaca langsung: geometri dari .MAP/.ID, atribut dari .DAT (Float, Integer, tanggal biner sesuai definisi .TAB), proyeksi UTM dari header. Kolom koordinat <code>UTM_mE</code> / <code>UTM_mN</code> dikenali. Zoom semua mengabaikan titik nyasar di (0, 0).</td></tr>
+<tr><td>27 Nov 2026</td><td>Georeferensi gambar ala Ore Works: titik kontrol di gambar, koordinat diketik atau diambil dari peta, hasil sebagai lapisan citra, GeoTIFF (RGB/RGBA, Deflate), atau world file.</td></tr></table>
 <p class="note" style="margin-top:14pt">© Copyright Habil Abdillah 2026. Leapfrog, Surpac, MapInfo, Global Mapper, dan Google Earth adalah merek pemiliknya masing-masing; Geo Pocket tidak berafiliasi dengan mereka. Tangkapan layar memakai data latihan fiktif.</p>
 </body></html>"""
 

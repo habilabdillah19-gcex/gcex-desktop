@@ -35,7 +35,7 @@ function closeMenus(){$$('#menus .dd').forEach(d=>d.remove());$$('.mb.on').forEa
 const wfmt=()=>GC.FORMATS.filter(f=>f.w);
 const exportSub=(fn)=>wfmt().map(f=>({t:f.label,fn:()=>fn(f.id)}));
 const MENUS=[
- {t:'Berkas',items:()=>[{t:'Buka file…',k:'Ctrl+O',fn:()=>$('#fin').click()},'-',
+ {t:'Berkas',items:()=>[{t:'Buka file…',k:'Ctrl+O',fn:()=>$('#fin').click()},{t:'Georeferensi gambar…',fn:()=>dlgGeoref()},'-',
    {t:'Ekspor lapisan terpilih sebagai',sub:exportSub((f)=>quickExport(f,S.sel?[gById(S.sel)]:[]))},
    {t:'Ekspor semua lapisan tampil sebagai',sub:exportSub((f)=>quickExport(f,S.geoms.filter(g=>g.visible)))},'-',
    {t:'Simpan tampilan peta (PNG)',fn:()=>dl('geopocket_peta.png',dataUrlBytes(S.tab==='3d'?V3.png():M2.png()),'image/png')},'-',
@@ -45,7 +45,7 @@ const MENUS=[
    {t:'Lapisan digitasi baru…',fn:newDigit},{t:'Folder baru…',fn:()=>askFolder(null)},{t:'Urungkan',k:'Ctrl+Z',fn:undo,dis:()=>!S.undo.length}]},
  {t:'Analisis',items:()=>[{t:'Ukur jarak',k:'D',fn:()=>setTool('dist')},{t:'Ukur luas',k:'A',fn:()=>setTool('area')},{t:'Tabel luas poligon lapisan terpilih',fn:()=>{S.view='pl';showTab('tbl');},dis:()=>!S.sel||!gById(S.sel).P.length},'-',
    {t:'Buat DEM dari topografi (string / DXF)…',fn:dlgDEM,dis:()=>!vecs().some(g=>g.V.length)},{t:'Buat kontur dari DEM…',fn:dlgContour,dis:()=>!S.geoms.some(g=>g.dem)}]},
- {t:'Peta',items:()=>[{t:'Layout peta (PNG / PDF)…',fn:dlgLayout,dis:()=>!S.geoms.length},'-',{t:'Grid koordinat',chk:()=>M2.st.grid,fn:()=>{M2.st.grid=!M2.st.grid;M2.draw();}},{t:'Label',chk:()=>M2.st.labels,fn:()=>{M2.st.labels=!M2.st.labels;M2.draw();}},'-',{t:'Zoom semua',k:'Home',fn:fitAll}]},
+ {t:'Peta',items:()=>[{t:'Layout peta (PNG / PDF)…',fn:dlgLayout,dis:()=>!S.geoms.length},{t:'Georeferensi gambar…',fn:()=>dlgGeoref()},'-',{t:'Grid koordinat',chk:()=>M2.st.grid,fn:()=>{M2.st.grid=!M2.st.grid;M2.draw();}},{t:'Label',chk:()=>M2.st.labels,fn:()=>{M2.st.labels=!M2.st.labels;M2.draw();}},'-',{t:'Zoom semua',k:'Home',fn:fitAll}]},
  {t:'Tampilan',items:()=>[
    {t:'Palet warna',sub:[['keluarga','Keluarga GC-Ex · Malakit'],['oksida','Oksida'],['kuarsa','Kuarsa-Emas'],['azurit','Azurit'],['hitam','Hitam-putih']].map(p=>({t:p[1],chk:()=>document.documentElement.dataset.palet===p[0],fn:()=>{document.documentElement.dataset.palet=p[0];store.set('gc_palet',p[0]);}}))},
    {t:'Latar',sub:[['hangat','Hangat'],['terang','Putih'],['gelap','Gelap']].map(p=>({t:p[1],chk:()=>document.documentElement.dataset.latar===p[0],fn:()=>{document.documentElement.dataset.latar=p[0];store.set('gc_latar',p[0]);}}))},
@@ -62,7 +62,7 @@ function showCtx(x,y,items){closeMenus();const dd=buildMenu(items);dd.style.posi
 function modal(title,html,wide){const m=el('div','modal');m.innerHTML='<div class="mc'+(wide?' wide':'')+'"><div class="mh">'+esc(title)+'<button class="btn2" data-close>Tutup</button></div><div class="mb2">'+html+'</div></div>';m.addEventListener('click',(e)=>{if(e.target===m||e.target.closest('[data-close]'))m.remove();});document.body.append(m);return m;}
 function showFormats(){modal('Format yang didukung','<table><tr><th>Format</th><th>Baca</th><th>Tulis</th><th>Catatan</th></tr>'+GC.FORMATS.map(f=>'<tr><td><b>'+esc(f.label)+'</b><br><small>'+esc(f.soft)+'</small></td><td>'+(f.r?'✓':'–')+'</td><td>'+(f.w?'✓':'–')+'</td><td>'+esc(f.note)+'</td></tr>').join('')+
  '<tr><td><b>GeoTIFF ortofoto (.tif)</b></td><td>✓</td><td>–</td><td>RGB/RGBA, LZW/Deflate/JPEG, bertingkat (overview); detail dibaca sesuai zoom. ECW dan MrSID tidak didukung (format tertutup).</td></tr>'+
- '<tr><td><b>JPG / PNG + world file</b></td><td>✓</td><td>–</td><td>Pilih gambar bersama .jgw / .pgw / .wld.</td></tr>'+
+ '<tr><td><b>JPG / PNG / TIFF tanpa koordinat</b></td><td>✓</td><td>GeoTIFF</td><td>Dengan world file langsung tampil; tanpa world file dibuka di Georeferensi gambar (titik kontrol), lalu bisa diunduh sebagai GeoTIFF.</td></tr>'+
  '</table>'+
  '<p class="hint"><b>Berkas berpasangan</b> pilih bersama: SHP + DBF, MIF + MID, <b>TAB + DAT + MAP + ID</b>, DTM + STR, gambar + world file.</p>',true);}
 function showHelp(){modal('Pintasan & cara pakai','<table><tr><th>Aksi</th><th>Cara</th></tr>'+[['Geser peta','seret (di semua alat)'],['Zoom','roda mouse; <b>Home</b> = zoom semua'],['Info fitur','klik fitur (alat Geser / Info)'],['Digit poligon / garis','<b>P</b> / <b>L</b>, klik titik-titik, klik ganda / Enter / klik kanan = selesai, Backspace = hapus titik terakhir, Esc = batal'],['Snap','otomatis ke vertex terdekat (kotak kuning)'],['Edit vertex','<b>E</b>, klik fitur, seret kotak; bulatan = sisip titik; Delete di atas kotak = hapus titik'],['Hapus fitur','pilih fitur lalu Delete'],['Ukur jarak / luas','<b>D</b> / <b>A</b>'],['Urungkan','Ctrl+Z'],['Urutan lapisan','seret baris di panel Lapisan (atas = digambar paling akhir)'],['Folder / subfolder','tombol <b>＋ Folder</b>, lalu seret lapisan atau folder ke dalamnya; klik kanan folder untuk subfolder, ekspor isi, atau hapus']].map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>');}
@@ -101,7 +101,7 @@ async function loadFiles(list){
    const fo=r.geoms.length>1?newFolder(j.name,S.selFold&&fById(S.selFold)?S.selFold:null,true):null;if(fo)fo.open=r.geoms.length<=12;
    for(const g of r.geoms.slice().reverse()){if(g.dem)g.dem.cv=demCanvas(g.dem,'hyps');addGeom(g,j.name);if(fo)g.fold=fo.id;postVec(g,j.name);}added=added||r.geoms[0];
    msg('Dimuat '+j.name+': '+r.geoms.length+' lapisan ('+Math.round(performance.now()-t0)+' ms)');}catch(e){msg(j.name+': '+e.message,'e');}}
- for(const f of ras){try{const g=await loadRaster(f,wld[f.name.replace(/\.[^.]+$/,'').toLowerCase()]);addGeom(g,f.name);added=added||g;msg('Dimuat '+f.name+': '+(g.dem?'DEM '+g.dem.nx+' × '+g.dem.ny+' sel':'citra '+nf(g.ras.W)+' × '+nf(g.ras.H)+' piksel, resolusi '+g.ras.px.toFixed(3)+' m'));}catch(e){msg(f.name+': '+e.message,'e');}}
+ for(const f of ras){try{const g=await loadRaster(f,wld[f.name.replace(/\.[^.]+$/,'').toLowerCase()]);addGeom(g,f.name);added=added||g;msg('Dimuat '+f.name+': '+(g.dem?'DEM '+g.dem.nx+' × '+g.dem.ny+' sel':'citra '+nf(g.ras.W)+' × '+nf(g.ras.H)+' piksel, resolusi '+g.ras.px.toFixed(3)+' m'));}catch(e){if(e.nogeo){if(!$('.modal')){msg(f.name+': gambar belum bergeoreferensi; dialog Georeferensi dibuka.');dlgGeoref(f);}else msg(f.name+': gambar belum bergeoreferensi. Buka lewat Peta → Georeferensi gambar.','w');}else msg(f.name+': '+e.message,'e');}}
  if(!added)return;refreshAll();if(first)fitAll();select(added.id);if(S.tab!=='2d'&&S.tab!=='3d')showTab('2d');
 }
 function demCanvas(d,mode){const c=document.createElement('canvas');c.width=d.nx;c.height=d.ny;c.getContext('2d').putImageData(new ImageData(GC.demRGBA(d,{mode:mode==='gray'?'gray':mode==='flat'?'flat':'hyps'}),d.nx,d.ny),0,0);d.mode=mode;return c;}
@@ -110,12 +110,12 @@ function rgbCanvas(data,w,h){const ch=Math.round(data.length/(w*h)),id=new Image
  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').putImageData(id,0,0);return c;}
 async function loadRaster(f,wf){
  const base=f.name.replace(/\.[^.]+$/,''),g=GC.mk({name:base,src:'tif'});
- if(!/\.tiff?$/i.test(f.name)){if(!wf)throw new Error('gambar tanpa world file (.jgw / .pgw / .wld); pilih keduanya bersamaan.');const w=GC.worldFile(await wf.text()),bm=await createImageBitmap(f),k=Math.min(1,8192/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+ if(!/\.tiff?$/i.test(f.name)){if(!wf){const e=new Error('gambar tanpa world file');e.nogeo=true;throw e;}const w=GC.worldFile(await wf.text()),bm=await createImageBitmap(f),k=Math.min(1,8192/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
   g.src='img';g.ras={cv:c,W:bm.width,H:bm.height,px:w.px,py:w.py,ext:[w.x0,w.y1-bm.height*w.py,w.x0+bm.width*w.px,w.y1]};return g;}
  if(typeof GeoTIFF==='undefined')throw new Error('pustaka GeoTIFF tidak termuat');
  const tiff=await GeoTIFF.fromBlob(f),img=await tiff.getImage(0),W=img.getWidth(),Hh=img.getHeight(),fd=img.fileDirectory;let px,py,x0,y1;
  try{const o=img.getOrigin(),r=img.getResolution();px=Math.abs(r[0]);py=Math.abs(r[1]);x0=o[0];y1=o[1];const gk=img.getGeoKeys()||{};if(gk.GTRasterTypeGeoKey===2){x0-=px/2;y1+=py/2;}}
- catch(e){if(!wf)throw new Error('TIFF tanpa georeferensi (bukan GeoTIFF dan tidak ada .tfw).');const w=GC.worldFile(await wf.text());px=w.px;py=w.py;x0=w.x0;y1=w.y1;}
+ catch(e){if(!wf){const er=new Error('TIFF tanpa georeferensi');er.nogeo=true;throw er;}const w=GC.worldFile(await wf.text());px=w.px;py=w.py;x0=w.x0;y1=w.y1;}
  const ext=[x0,y1-Hh*py,x0+W*px,y1];if(Math.abs(ext[0])<=180&&Math.abs(ext[2])<=180&&Math.abs(ext[1])<=90&&Math.abs(ext[3])<=90)msg(f.name+': GeoTIFF berkoordinat lintang/bujur; raster tidak diproyeksikan ulang. Simpan dalam UTM agar bertumpuk dengan data lain.','w');
  const spp=img.getSamplesPerPixel(),bps=img.getBitsPerSample(),sf=fd.SampleFormat?fd.SampleFormat[0]:1;
  if(spp===1&&(sf===3||bps>=16)&&fd.PhotometricInterpretation!==3){const k=Math.min(1,3000/Math.max(W,Hh)),w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(Hh*k)),nd=img.getGDALNoData();
@@ -319,9 +319,10 @@ $$('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 /* ---------- Konversi ---------- */
 const SOFTS=['Semua','Leapfrog','Surpac','MapInfo','Global Mapper','Google Earth'];
 const SOFTHINT={'Semua':'Pilih tujuan software untuk melihat format yang disarankan, atau langsung pilih format.','Leapfrog':'Mesh: MSH atau OBJ. Garis dan titik: DXF atau CSV.','Surpac':'Permukaan/solid: DTM + STR (dibuka bersama). String: STR. Umum: DXF.','MapInfo':'Impor MIF/MID lalu simpan sebagai TAB. SHP dan DXF juga terbuka. MapInfo 2D: Z jadi kolom atribut.','Global Mapper':'SHP (membawa Z dan atribut), DXF, KML, GeoJSON, GeoTIFF DEM, CSV.','Google Earth':'KML atau KMZ (lintang/bujur WGS84; perlu sistem koordinat proyek).'};
-const srcFor=(f)=>S.geoms.filter(g=>FMT[f].dem?!!g.dem:isVec(g));
+const srcFor=(f)=>S.geoms.filter(g=>FMT[f].ras?!!(g.ras&&g.ras.cv):FMT[f].dem?!!g.dem:isVec(g));
 const convGeoms=()=>srcFor(C.fmt).filter(g=>!C.off.has(g.id));
 function planInfo(){const gs=convGeoms(),f=C.fmt,out=[];let nt=0,np=0,npt=0,big=false;
+ if(FMT[f].ras){if(!gs.length)out.push(['e','Format ini hanya untuk lapisan citra. Buat lewat Peta → Georeferensi gambar, atau buka gambar + world file.']);else out.push(['i','Siap: '+gs.length+' citra.']);if(!S.crs)out.push(['w','Sistem koordinat proyek belum ditentukan; GeoTIFF ditulis tanpa kode EPSG.']);return out;}
  if(FMT[f].dem){if(!gs.length)out.push(['e','Format ini hanya untuk lapisan DEM. Buat dulu lewat Analisis → Buat DEM dari topografi.']);else out.push(['i','Siap: '+gs.length+' DEM.']);if(f==='tif'&&!S.crs)out.push(['w','Sistem koordinat proyek belum ditentukan; GeoTIFF ditulis tanpa kode EPSG.']);return out;}
  for(const g of gs){nt+=g.F.length/3;np+=g.P.length;npt+=g.PT.length;if(!big)for(let i=0;i<g.V.length;i+=3)if(Math.abs(g.V[i])>1e5){big=true;break;}}
  if(!gs.length){out.push(['e','Pilih minimal satu lapisan vektor di kolom Sumber.']);return out;}
@@ -336,10 +337,10 @@ function planInfo(){const gs=convGeoms(),f=C.fmt,out=[];let nt=0,np=0,npt=0,big=
  if(f==='stlb'&&big)out.push(['w','Koordinat UTM: float32 mengurangi presisi hingga ±1 m. Pakai STL ASCII bila presisi penting.']);
  if(!out.length)out.push(['i','Siap: '+gs.length+' lapisan, '+nf(nt)+' segitiga, '+nf(np)+' garis/poligon, '+nf(npt)+' titik.']);return out;}
 function renderConv(){const P=$('#pc'),sc=P.scrollTop,rec=GC.SOFT[C.soft]||[],L=srcFor(C.fmt);
- const src=L.length?L.map(g=>'<div class="row"><input type="checkbox" data-cs="'+g.id+'" '+(C.off.has(g.id)?'':'checked')+' id="cs'+g.id+'"><span class="sw" style="background:'+(g.dem?'#8FAA68':g.color)+'"></span><label for="cs'+g.id+'" title="'+esc(g.name)+'">'+esc(g.name)+' <span style="color:var(--sub)">'+esc(badge(g))+'</span></label></div>').join(''):'<div class="empty" style="padding:0">'+(FMT[C.fmt].dem?'Belum ada lapisan DEM.':'Belum ada lapisan vektor. Buka file dulu.')+'</div>';
+ const src=L.length?L.map(g=>'<div class="row"><input type="checkbox" data-cs="'+g.id+'" '+(C.off.has(g.id)?'':'checked')+' id="cs'+g.id+'"><span class="sw" style="background:'+(g.dem?'#8FAA68':g.color)+'"></span><label for="cs'+g.id+'" title="'+esc(g.name)+'">'+esc(g.name)+' <span style="color:var(--sub)">'+esc(badge(g))+'</span></label></div>').join(''):'<div class="empty" style="padding:0">'+(FMT[C.fmt].ras?'Belum ada lapisan citra.':FMT[C.fmt].dem?'Belum ada lapisan DEM.':'Belum ada lapisan vektor. Buka file dulu.')+'</div>';
  const fm=wfmt().map(f=>'<div class="fmt'+(f.id===C.fmt?' on':'')+'" data-fm="'+f.id+'"><input type="radio" name="fmt" '+(f.id===C.fmt?'checked':'')+' aria-label="'+esc(f.label)+'"><div><b>'+esc(f.label)+(rec.indexOf(f.id)>=0?' <span class="bd" style="color:var(--gold)">· disarankan</span>':'')+'</b><small>'+esc(f.note)+'</small></div></div>').join('');
  const multi=new Set(convGeoms().map(g=>g.base||g.name)).size>1,pl=planInfo();
- P.innerHTML='<div id="cgrid"><div class="cc"><div class="ch">1 · Sumber</div><div class="cb">'+src+(L.length?'<div class="row" style="margin-top:6px"><button class="btn2" id="call">Semua</button><button class="btn2" id="cnone">Kosongkan</button></div>':'')+'<p class="hint">Citra (ortofoto) tidak dikonversi. DEM hanya ke GeoTIFF / ASC / grid XYZ.</p></div></div>'+
+ P.innerHTML='<div id="cgrid"><div class="cc"><div class="ch">1 · Sumber</div><div class="cb">'+src+(L.length?'<div class="row" style="margin-top:6px"><button class="btn2" id="call">Semua</button><button class="btn2" id="cnone">Kosongkan</button></div>':'')+'<p class="hint">Citra hanya ke GeoTIFF citra. DEM hanya ke GeoTIFF DEM / ASC / grid XYZ.</p></div></div>'+
  '<div class="cc"><div class="ch">2 · Tujuan</div><div class="cb"><div class="chips">'+SOFTS.map(s=>'<button class="chip'+(C.soft===s?' on':'')+'" data-soft="'+s+'">'+s+'</button>').join('')+'</div><div class="hint">'+esc(SOFTHINT[C.soft])+'</div>'+fm+'</div></div>'+
  '<div class="cc"><div class="ch">3 · Opsi &amp; unduh</div><div class="cb"><div class="fr"><span>Nama file</span><input type="text" id="cbase" placeholder="otomatis" value="'+esc(C.base)+'"></div><div class="fr"><span>Desimal</span><input type="number" id="cdec" min="0" max="8" value="'+C.dec+'"></div>'+
  (C.fmt==='csv'||C.fmt==='xyz'?'<div class="fr"><span>Pemisah</span><select id="csep"><option value=","'+(C.sep===','?' selected':'')+'>koma ( , )</option><option value=";"'+(C.sep===';'?' selected':'')+'>titik koma ( ; )</option><option value="tab"'+(C.sep==='tab'?' selected':'')+'>tab</option></select></div>':'')+
@@ -355,7 +356,8 @@ function renderConv(){const P=$('#pc'),sc=P.scrollTop,rec=GC.SOFT[C.soft]||[],L=
  $('#cgo').onclick=()=>runConvert(C.fmt,convGeoms(),null);}
 function groupsFor(gs,forceBase){if(forceBase)return [{base:forceBase,geoms:gs}];const bases=Array.from(new Set(gs.map(g=>g.base||g.name)));
  if(bases.length>1&&C.mode==='auto')return bases.map(b=>({base:b,geoms:gs.filter(g=>(g.base||g.name)===b)}));return [{base:C.base||(bases.length===1?bases[0]:'konversi'),geoms:gs}];}
-function runConvert(fmt,gs,forceBase){gs=gs.filter(g=>FMT[fmt].dem?!!g.dem:isVec(g));if(!gs.length){msg('Tidak ada lapisan yang cocok untuk '+FMT[fmt].label+'.','e');return;}
+function runConvert(fmt,gs,forceBase){if(FMT[fmt].ras){const L=gs.filter(g=>g.ras&&g.ras.cv);if(!L.length){msg('Tidak ada lapisan citra untuk GeoTIFF.','e');return;}return exportRasterTIFF(L,forceBase||(L.length===1?C.base:''));}
+ gs=gs.filter(g=>FMT[fmt].dem?!!g.dem:isVec(g));if(!gs.length){msg('Tidak ada lapisan yang cocok untuk '+FMT[fmt].label+'.','e');return;}
  const out=[];let warns=[];const gr=groupsFor(gs,forceBase);
  try{for(const grp of gr){const r=GC.write(fmt,grp.geoms,{base:grp.base,dec:C.dec,sep:C.sep==='tab'?'\t':C.sep,utm:S.crs});out.push(...r.files);warns.push(...r.warn);}}catch(e){msg('Gagal konversi ke '+FMT[fmt].label+': '+e.message,'e');return;}
  Array.from(new Set(warns)).forEach(w=>msg(w,'w'));
@@ -447,4 +449,4 @@ initMenus();
 M2.init($('#mc'),{layers:()=>S.geoms,selected:()=>S.selF,onCursor:onCursor,onPick:onPick,onDigit:onDigit,onView:refineRasters,beforeEdit:(g)=>pushUndo(g,'edit vertex'),onChange:(g)=>changed(g),onMeasure:()=>{}});
 try{if(!V3.init($('#cv'),$('#gz')))msg('WebGL tidak tersedia; tab 3D dimatikan, peta 2D dan konversi tetap bisa dipakai.','w');}catch(e){msg('3D gagal: '+e.message,'e');}
 M2.resize();setTool('pan');refreshAll();
-window.__GC={S:S,C:C,GC:GC,V3:V3,M2:M2,loadFiles:loadFiles,runConvert:runConvert,select:select,showTab:showTab,setTool:setTool,renderLayout:renderLayout,LY:LY,dlgDEM:dlgDEM,dlgLayout:dlgLayout};
+window.__GC={dlgGeoref:(f)=>dlgGeoref(f),S:S,C:C,GC:GC,V3:V3,M2:M2,loadFiles:loadFiles,runConvert:runConvert,select:select,showTab:showTab,setTool:setTool,renderLayout:renderLayout,LY:LY,dlgDEM:dlgDEM,dlgLayout:dlgLayout};

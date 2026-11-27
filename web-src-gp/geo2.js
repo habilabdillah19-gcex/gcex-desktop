@@ -216,6 +216,31 @@ GC.WRITERS.asc=(gs,o,W)=>demOnly(gs,'ASC').map(g=>({name:(gs.length>1?GC.safeNam
 GC.WRITERS.xyz=(gs,o,W)=>demOnly(gs,'XYZ grid').map(g=>({name:(gs.length>1?GC.safeName(g.name,60):o.base)+'_grid.csv',data:xyzOut(g.dem,o)}));
 function worldFile(txt){const a=txt.trim().split(/\s+/).map(Number);if(a.length<6||a.some(v=>!isFinite(v)))throw new Error('World file tidak valid');if(Math.abs(a[1])>1e-9||Math.abs(a[2])>1e-9)throw new Error('World file berotasi belum didukung');return {px:a[0],py:-a[3],x0:a[4]-a[0]/2,y1:a[5]-a[3]/2};}
 
+
+/* ---------- georeferensi: afin dari titik kontrol (piksel = pusat piksel, konvensi world file; port dari Ore Works) ---------- */
+function fitAffine(P){if(P.length<2)return null;const C=P.map(q=>q.c-0.5),R=P.map(q=>q.r-0.5);let A,B,Cc,D,E,F;
+ if(P.length===2){const dc=C[1]-C[0],dr=R[1]-R[0];if(Math.abs(dc)<1||Math.abs(dr)<1)return {err:'2 titik harus berbeda kolom DAN baris (letakkan diagonal)'};A=(P[1].X-P[0].X)/dc;E=(P[1].Y-P[0].Y)/dr;B=0;D=0;Cc=P[0].X-A*C[0];F=P[0].Y-E*R[0];}
+ else{let mx=0,ex=1;for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){ex=Math.max(ex,Math.hypot(C[i]-C[j],R[i]-R[j]));for(let k=j+1;k<P.length;k++)mx=Math.max(mx,Math.abs((C[j]-C[i])*(R[k]-R[i])-(C[k]-C[i])*(R[j]-R[i]))/2);}
+  if(mx<0.02*ex*ex)return {err:'titik kontrol hampir segaris: sebar titik di tiga sudut gambar (bukan satu garis lurus)'};
+  const c0=C.reduce((a,v)=>a+v,0)/C.length,r0=R.reduce((a,v)=>a+v,0)/R.length,X0=P.reduce((a,q)=>a+q.X,0)/P.length,Y0=P.reduce((a,q)=>a+q.Y,0)/P.length;
+  const S=[[0,0,0],[0,0,0],[0,0,0]],bx=[0,0,0],by=[0,0,0];P.forEach((q,i)=>{const v=[C[i]-c0,R[i]-r0,1];for(let a=0;a<3;a++){for(let k=0;k<3;k++)S[a][k]+=v[a]*v[k];bx[a]+=v[a]*(q.X-X0);by[a]+=v[a]*(q.Y-Y0);}});
+  const sol=(M,y)=>{const m=M.map((r,i)=>r.concat([y[i]]));for(let i=0;i<3;i++){let p=i;for(let k=i+1;k<3;k++)if(Math.abs(m[k][i])>Math.abs(m[p][i]))p=k;[m[i],m[p]]=[m[p],m[i]];if(Math.abs(m[i][i])<1e-12)return null;for(let k=0;k<3;k++)if(k!==i){const f=m[k][i]/m[i][i];for(let j=i;j<4;j++)m[k][j]-=f*m[i][j];}}return m.map((r,i)=>r[3]/r[i]);};
+  const sx=sol(S,bx),sy=sol(S,by);if(!sx||!sy)return {err:'titik kontrol segaris: sebar titik di tiga sudut gambar'};A=sx[0];B=sx[1];Cc=sx[2]+X0-A*c0-B*r0;D=sy[0];E=sy[1];F=sy[2]+Y0-D*c0-E*r0;}
+ if(Math.abs(A*E-B*D)<1e-18)return {err:'transformasi tidak valid (skala nol)'};
+ const res=P.map((q,i)=>Math.hypot(A*C[i]+B*R[i]+Cc-q.X,D*C[i]+E*R[i]+F-q.Y));return {aff:[A,D,B,E,Cc,F],res:res,rms:Math.sqrt(res.reduce((a,v)=>a+v*v,0)/res.length),n:P.length};}
+/* GeoTIFF citra RGB / RGBA 8-bit, satu strip, kompresi Deflate bila tersedia */
+async function writeTIFFImage(rgba,w,h,x0,y1,px,py,crs,alpha){
+ const spp=alpha?4:3;let raw;if(alpha)raw=rgba instanceof Uint8Array?rgba:new Uint8Array(rgba.buffer,rgba.byteOffset,rgba.byteLength);else{raw=new Uint8Array(w*h*3);for(let i=0,j=0;i<w*h*4;i+=4){raw[j++]=rgba[i];raw[j++]=rgba[i+1];raw[j++]=rgba[i+2];}}
+ let data=raw,comp=1;if(typeof CompressionStream!=='undefined'&&typeof Response!=='undefined'){try{data=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());comp=8;}catch(e){data=raw;comp=1;}}
+ const dbl=(a)=>{const b=new Uint8Array(a.length*8),v=new DataView(b.buffer);a.forEach((x,i)=>v.setFloat64(8*i,x,true));return b;},sh=(a)=>{const b=new Uint8Array(a.length*2),v=new DataView(b.buffer);a.forEach((x,i)=>v.setUint16(2*i,x,true));return b;};
+ const epsg=crs?(crs.south?32700:32600)+(+crs.zone):0,keys=crs?[1,1,0,3,1024,0,1,1,1025,0,1,1,3072,0,1,epsg]:[1,1,0,2,1024,0,1,1,1025,0,1,1];
+ const T=[[256,4,1,w],[257,4,1,h],[258,3,spp,sh(new Array(spp).fill(8))],[259,3,1,comp],[262,3,1,2],[273,4,1,'DATA'],[277,3,1,spp],[278,4,1,h],[279,4,1,data.length],[284,3,1,1]];
+ if(alpha)T.push([338,3,1,2]);T.push([33550,12,3,dbl([px,py,0])],[33922,12,6,dbl([0,0,0,x0,y1,0])],[34735,3,keys.length,sh(keys)]);
+ const ifd=8,exStart=ifd+2+12*T.length+4;let exLen=0;for(const t of T)if(t[3] instanceof Uint8Array){if(t[3].length<=4){t.inl=true;continue;}t.off=exStart+exLen;exLen+=t[3].length+(t[3].length&1);}
+ const dataOff=exStart+exLen,out=new Uint8Array(dataOff+data.length),v=new DataView(out.buffer);out[0]=0x49;out[1]=0x49;v.setUint16(2,42,true);v.setUint32(4,ifd,true);v.setUint16(ifd,T.length,true);
+ T.forEach((t,i)=>{const p=ifd+2+12*i;v.setUint16(p,t[0],true);v.setUint16(p+2,t[1],true);v.setUint32(p+4,t[2],true);if(t.inl)out.set(t[3],p+8);else if(t[3] instanceof Uint8Array){v.setUint32(p+8,t.off,true);out.set(t[3],t.off);}else if(t[3]==='DATA')v.setUint32(p+8,dataOff,true);else if(t[1]===3)v.setUint16(p+8,t[3],true);else v.setUint32(p+8,t[3],true);});
+ out.set(data,dataOff);return out;}
+
 /* ---------- PDF satu halaman berisi gambar JPEG ---------- */
 function pdfFromJpeg(jpg,wpx,hpx,wmm,hmm){
  const W=wmm/25.4*72,H=hmm/25.4*72,parts=[],offs=[];let len=0;const push=(x)=>{const b=typeof x==='string'?enc(x):x;parts.push(b);len+=b.length;};
@@ -235,9 +260,10 @@ GC.FORMATS.push(
  {id:'kmz',label:'Google Earth KMZ (.kmz)',ext:'kmz',soft:'Google Earth · Global Mapper',r:1,w:1,note:'KML terkemas ZIP'},
  {id:'geojson',label:'GeoJSON (.geojson)',ext:'geojson',soft:'QGIS · Global Mapper · web',r:1,w:1,note:'Lintang/bujur WGS84 + atribut'},
  {id:'tif',label:'GeoTIFF DEM (.tif)',ext:'tif',soft:'Global Mapper · Surpac · QGIS',r:1,w:1,dem:1,note:'Grid elevasi Float32 + georeferensi UTM (hanya lapisan DEM)'},
+ {id:'gtif',label:'GeoTIFF citra (.tif)',ext:'tif',soft:'Global Mapper · Surpac · QGIS',r:1,w:1,ras:1,note:'Citra RGB/RGBA bergeoreferensi (hanya lapisan citra, mis. hasil georeferensi)'},
  {id:'asc',label:'ESRI ASCII Grid (.asc)',ext:'asc',soft:'Global Mapper · QGIS',r:1,w:1,dem:1,note:'Grid elevasi teks (hanya lapisan DEM)'},
  {id:'xyz',label:'Grid XYZ (.csv)',ext:'csv',soft:'Semua',r:0,w:1,dem:1,note:'Titik tengah sel DEM sebagai X,Y,Z'});
-GC.SOFT['Global Mapper']=['shp','dxf','kml','geojson','tif','csv'];GC.SOFT['Google Earth']=['kml','kmz'];GC.SOFT['Surpac']=['dtm','str','dxf','csv'];
+GC.SOFT['Global Mapper']=['shp','dxf','kml','geojson','tif','gtif','csv'];GC.WRITERS.gtif=()=>{throw new Error('GeoTIFF citra ditulis lewat antarmuka.');};GC.SOFT['Google Earth']=['kml','kmz'];GC.SOFT['Surpac']=['dtm','str','dxf','csv'];
 const parse0=GC.parse;
 GC.parse=function(name,buf,aux){const ext=((name.match(/\.([^.]+)$/)||[,''])[1]).toLowerCase(),base=name.replace(/\.[^.]+$/,''),W=[];
  if(ext==='kml')return {geoms:parseKML(base,u8of(buf),W),warn:W};
@@ -245,5 +271,5 @@ GC.parse=function(name,buf,aux){const ext=((name.match(/\.([^.]+)$/)||[,''])[1])
  if(ext==='asc'||ext==='grd'&&/^\s*ncols/i.test(dec(u8of(buf).subarray(0,20))))return {geoms:[parseASC(base,u8of(buf))],warn:W};
  return parse0(name,buf,aux);};
 Object.assign(GC,{ll2utm:ll2utm,utm2ll:utm2ll,looksGeo:looksGeo,projectGeom:projectGeom,crsName:crsName,polyArea:polyArea,polyLen:polyLen,setGeom:setGeom,bake:bake,addPoly:addPoly,addPoint:addPoint,snapshot:snapshot,restore:restore,
- buildTIN:buildTIN,tinGeom:tinGeom,niceCell:niceCell,tinToDEM:tinToDEM,mkDEM:mkDEM,demExt:demExt,demZ:demZ,demRGBA:demRGBA,contours:contours,writeTIFF:writeTIFF,writeASC:writeASC,worldFile:worldFile,pdfFromJpeg:pdfFromJpeg,parseKML:parseKML,xmlEsc:xmlEsc});
+ buildTIN:buildTIN,tinGeom:tinGeom,niceCell:niceCell,tinToDEM:tinToDEM,mkDEM:mkDEM,demExt:demExt,demZ:demZ,demRGBA:demRGBA,contours:contours,writeTIFF:writeTIFF,writeTIFFImage:writeTIFFImage,fitAffine:fitAffine,writeASC:writeASC,worldFile:worldFile,pdfFromJpeg:pdfFromJpeg,parseKML:parseKML,xmlEsc:xmlEsc});
 })(typeof GC!=='undefined'?GC:require('./core.js'));

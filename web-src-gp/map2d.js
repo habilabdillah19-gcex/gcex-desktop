@@ -134,13 +134,14 @@ function init(canvas,hooks){
  cv.addEventListener('pointermove',(e)=>{const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;
   if(st.drag){const w=world(e,true),d=st.drag,i=d.p.idx[d.k];d.g.V[3*i]=w[0];d.g.V[3*i+1]=w[1];if(st.snap||zAt(w[0],w[1]))d.g.V[3*i+2]=w[2];d.g._bbV=null;draw();if(H.onCursor)H.onCursor(w[0],w[1]);return;}
   if(st.pan){const dx=e.clientX-st.pan.x,dy=e.clientY-st.pan.y;if(!st.pan.moved&&Math.hypot(e.clientX-st.pan.x0,e.clientY-st.pan.y0)>4)st.pan.moved=true;if(st.pan.moved){view.cx-=dx/view.s;view.cy+=dy/view.s;st.pan.x=e.clientX;st.pan.y=e.clientY;draw();moved();}return;}
-  const dig=st.tool==='poly'||st.tool==='line'||st.tool==='point'||st.tool==='dist'||st.tool==='area';
+  const dig=!!st.pickCb||st.tool==='poly'||st.tool==='line'||st.tool==='point'||st.tool==='dist'||st.tool==='area';
   if(dig){st.cur=world(e,true);draw();}else{st.cur=null;if(st.snap){st.snap=null;draw();}}
   if(st.tool==='edit'){const h=handleAt(sx,sy);if((h&&!st.hov)||(!h&&st.hov)||(h&&st.hov&&(h.k!==st.hov.k||h.mid!==st.hov.mid))){st.hov=h;cv.style.cursor=h?'move':'default';draw();}}
   if(H.onCursor)H.onCursor(WX(sx),WY(sy));});
  cv.addEventListener('pointerup',(e)=>{
   if(st.drag){const d=st.drag;st.drag=null;st.snap=null;GC.bake(d.g);d.g._bbV=null;if(H.onChange)H.onChange(d.g);draw();return;}
   const p=st.pan;st.pan=null;cv.style.cursor=st.tool==='pan'?'grab':cv.style.cursor;if(!p)return;if(p.moved){draw();return;}
+  if(st.pickCb&&p.btn===0){const cb=st.pickCb;st.pickCb=null;const w=world(e,true);st.snap=null;cv.style.cursor=st.tool==='pan'?'grab':'crosshair';cb(w);draw();return;}
   if(p.btn===2){if(st.draft.length)finishDraft();else if(st.meas.length){st.measDone=true;draw();}return;}if(p.btn!==0)return;
   const w=world(e,st.tool!=='info'&&st.tool!=='pan'&&st.tool!=='edit');
   if(st.tool==='info'||st.tool==='pan'||st.tool==='edit'){const h=hit(w[0],w[1],st.tool==='edit');if(st.tool!=='pan'||h)if(H.onPick)H.onPick(h,st.tool);draw();}
@@ -151,10 +152,11 @@ function init(canvas,hooks){
  cv.addEventListener('pointerleave',()=>{if(H.onCursor)H.onCursor(null);});
 }
 function key(e){
+ if(e.key==='Escape'&&st.pickCb){const cb=st.pickCb;st.pickCb=null;st.snap=null;cb(null);draw();return true;}
  if(e.key==='Escape'){if(st.draft.length||st.meas.length){st.draft=[];st.meas=[];st.measDone=false;st.snap=null;draw();return true;}return false;}
  if(e.key==='Enter'){if(st.draft.length){finishDraft();return true;}if(st.meas.length){st.measDone=true;draw();return true;}}
  if(e.key==='Backspace'&&st.draft.length){st.draft.pop();draw();return true;}
  if((e.key==='Delete')&&st.tool==='edit'&&st.hov&&!st.hov.mid){const sel=H.selected();if(sel&&sel.type==='pl'){const g=sel.g,p=g.P[sel.i];if(p.idx.length>(p.closed?3:2)){if(H.beforeEdit)H.beforeEdit(g);p.idx.splice(st.hov.k,1);compact(g);st.hov=null;if(H.onChange)H.onChange(g);draw();}return true;}}
  return false;}
-return {init:init,draw:draw,resize:resize,fit:fit,fitExt:fitExt,setTool:setTool,tool:()=>st.tool,key:key,view:view,st:st,drawLayers:drawLayers,drawGrid:drawGrid,scaleBar:scaleBar,ext:ext,sty:sty,compact:compact,nice:nice,fmtLen:fmtLen,fmtArea:fmtArea,size:()=>[W,Ht],hit:hit,png:()=>cv.toDataURL('image/png')};
+return {pickOnce:(cb)=>{st.pickCb=cb;cv.style.cursor='crosshair';},init:init,draw:draw,resize:resize,fit:fit,fitExt:fitExt,setTool:setTool,tool:()=>st.tool,key:key,view:view,st:st,drawLayers:drawLayers,drawGrid:drawGrid,scaleBar:scaleBar,ext:ext,sty:sty,compact:compact,nice:nice,fmtLen:fmtLen,fmtArea:fmtArea,size:()=>[W,Ht],hit:hit,png:()=>cv.toDataURL('image/png')};
 })();
